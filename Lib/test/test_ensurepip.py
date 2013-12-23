@@ -160,6 +160,13 @@ class TestUninstall(unittest.TestCase):
         self.run_pip = run_pip_patch.start()
         self.addCleanup(run_pip_patch.stop)
 
+        # Avoid side effects on the actual os module
+        os_patch = unittest.mock.patch("ensurepip.os")
+        patched_os = os_patch.start()
+        self.addCleanup(os_patch.stop)
+        patched_os.path = os.path
+        self.os_environ = patched_os.environ = os.environ.copy()
+
     def test_uninstall_skipped_when_not_installed(self):
         with fake_pip(None):
             ensurepip._uninstall()
@@ -204,6 +211,13 @@ class TestUninstall(unittest.TestCase):
             ["uninstall", "-y", "-vvv", "pip", "setuptools"]
         )
 
+    def test_pip_environment_variables_removed(self):
+        # ensurepip deliberately ignores all pip environment variables
+        # See http://bugs.python.org/issue19734 for details
+        self.os_environ["PIP_THIS_SHOULD_GO_AWAY"] = "test fodder"
+        with fake_pip():
+            ensurepip._uninstall()
+        self.assertNotIn("PIP_THIS_SHOULD_GO_AWAY", self.os_environ)
 
 
 
