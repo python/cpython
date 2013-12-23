@@ -194,7 +194,7 @@ API changes
   are still permitted, but will always compare as unequal, regardless
   of view contents.
 
-* For further changes see `Build and C API Changes`_ and `Porting C code`_ .
+* For further changes see `Build and C API Changes`_ and `Porting C code`_.
 
 (Contributed by Stefan Krah in :issue:`10181`)
 

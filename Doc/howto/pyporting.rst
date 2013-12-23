@@ -640,7 +640,7 @@ developing under Python 2 or Python 3. Whether this approach or using
 
 To get a complete idea of what issues you will need to deal with, see the
 `What's New in Python 3.0`_. Others have reorganized the data in other formats
-such as http://docs.pythonsprints.com/python3_porting/py-porting.html .
+such as http://docs.pythonsprints.com/python3_porting/py-porting.html\ .
 
 The following are some steps to take to try to support both Python 2 & 3 from
 the same source code.

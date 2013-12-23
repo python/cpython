@@ -317,7 +317,7 @@ The special characters are:
    optional and can be omitted. For example,
    ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
    will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
-   not with ``'<user@host.com'`` nor ``'user@host.com>'`` .
+   not with ``'<user@host.com'`` nor ``'user@host.com>'``.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
