@@ -131,7 +131,8 @@ CPython implementation improvements:
 * :ref:`Secure and interchangeable hash algorithm <whatsnew-pep-456>`
   (:pep:`456`).
 * :ref:`Argument Clinic <whatsnew-pep-436>` (:pep:`436`).
-* A more efficient :mod:`marshal` format (:issue:`16475`).
+* The :mod:`marshal` format has been made :ref:`more compact and efficient
+  <whatsnew-marshal-3>` (:issue:`16475`).
 
 Please read on for a comprehensive list of user-facing changes.
 
@@ -624,6 +625,20 @@ As part of the implementation of the new :mod:`enum` module, the
 ``__dir__`` methods and dynamic class attributes provided through
 metaclasses (Contributed by Ethan Furman in :issue:`18929` and
 :issue:`19030`)
+
+
+.. _whatsnew-marshal-3:
+
+marshal
+-------
+
+The default :mod:`marshal` version has been bumped to 3.  The code implementing
+the new version restores the Python2 behavior of recording only one copy of
+interned strings and preserving the interning on deserialization, and extends
+this "one copy" ability to any object type (including handling recursive
+references).  This reduces both the size of ``.pyc`` files and the amount of
+memory a module occupies in memory when it is loaded from a ``.pyc`` (or
+``.pyo``) file.  (Contributed by Kristján Valur Jónsson in :issue:`16475`.)
 
 
 mmap
