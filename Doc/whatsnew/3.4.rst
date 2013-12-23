@@ -282,20 +282,19 @@ in :ref:`binary-transforms` and :ref:`text-transforms`.
 PEP 451: A ModuleSpec Type for the Import System
 ------------------------------------------------
 
-:pep:`451` provides an encapsulation of the information about a module
-that the import machinery will use to load it (that is, a module specification).
-This helps simplify both the import implementation and several
-import-related APIs.  The change is also a stepping stone for `several
-future import-related improvements`__.
+:pep:`451` provides an encapsulation of the information about a module that the
+import machinery will use to load it (that is, a module specification).  This
+helps simplify both the import implementation and several import-related APIs.
+The change is also a stepping stone for `several future import-related
+improvements`__.
 
 __ https://mail.python.org/pipermail/python-dev/2013-November/130111.html
 
 The public-facing changes from the PEP are entirely backward-compatible.
-Furthermore, they should be transparent to everyone but importer
-authors.  Key finder and loader methods have been deprecated, but they
-will continue working.  New importers should use the new methods
-described in the PEP.  Existing importers should be updated to implement
-the new methods.
+Furthermore, they should be transparent to everyone but importer authors.  Key
+finder and loader methods have been deprecated, but they will continue working.
+New importers should use the new methods described in the PEP.  Existing
+importers should be updated to implement the new methods.
 
 
 Other Language Changes
