@@ -294,11 +294,12 @@ class EnsurePipTest(BaseTest):
             # warnings in current versions of Python. Ensure related
             # environment settings don't cause venv to fail.
             envvars["PYTHONWARNINGS"] = "e"
-            # pip doesn't ignore environment variables when running in
-            # isolated mode, and we don't have an active virtualenv here,
-            # we're relying on the native venv support in 3.3+
+            # ensurepip is different enough from a normal pip invocation
+            # that we want to ensure it ignores the normal pip environment
+            # variable settings. We set PIP_NO_INSTALL here specifically
+            # to check that ensurepip (and hence venv) ignores it.
             # See http://bugs.python.org/issue19734 for details
-            del envvars["PIP_REQUIRE_VIRTUALENV"]
+            envvars["PIP_NO_INSTALL"] = "1"
             try:
                 self.run_with_capture(venv.create, self.env_dir, with_pip=True)
             except subprocess.CalledProcessError as exc:
@@ -328,11 +329,6 @@ class EnsurePipTest(BaseTest):
         # installers works (at least in a virtual environment)
         cmd = [envpy, '-Im', 'ensurepip._uninstall']
         with EnvironmentVarGuard() as envvars:
-            # pip doesn't ignore environment variables when running in
-            # isolated mode, and we don't have an active virtualenv here,
-            # we're relying on the native venv support in 3.3+
-            # See http://bugs.python.org/issue19734 for details
-            del envvars["PIP_REQUIRE_VIRTUALENV"]
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
             out, err = p.communicate()

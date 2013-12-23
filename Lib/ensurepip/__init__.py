@@ -43,9 +43,17 @@ def bootstrap(*, root=None, upgrade=False, user=False,
     """
     Bootstrap pip into the current Python installation (or the given root
     directory).
+
+    Note that calling this function will alter both sys.path and os.environ.
     """
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
+
+    # We deliberately ignore all pip environment variables
+    # See http://bugs.python.org/issue19734 for details
+    keys_to_remove = [k for k in os.environ if k.startswith("PIP_")]
+    for k in keys_to_remove:
+        del os.environ[k]
 
     # By default, installing pip and setuptools installs all of the
     # following scripts (X.Y == running Python version):
