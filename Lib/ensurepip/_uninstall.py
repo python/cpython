@@ -4,7 +4,7 @@ import argparse
 import ensurepip
 
 
-def main():
+def _main(argv=None):
     parser = argparse.ArgumentParser(prog="python -m ensurepip._uninstall")
     parser.add_argument(
         "--version",
@@ -21,10 +21,10 @@ def main():
               "times."),
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    ensurepip._uninstall(verbosity=args.verbosity)
+    ensurepip._uninstall_helper(verbosity=args.verbosity)
 
 
 if __name__ == "__main__":
-    main()
+    _main()
