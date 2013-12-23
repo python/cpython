@@ -1583,7 +1583,7 @@ expression support in the :mod:`re` module).
 .. method:: str.format_map(mapping)
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
-   used directly and not copied to a :class:`dict` .  This is useful
+   used directly and not copied to a :class:`dict`.  This is useful
    if for example ``mapping`` is a dict subclass:
 
    >>> class Default(dict):

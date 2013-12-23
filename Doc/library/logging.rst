@@ -809,7 +809,7 @@ LoggerAdapter Objects
 ---------------------
 
 :class:`LoggerAdapter` instances are used to conveniently pass contextual
-information into logging calls. For a usage example , see the section on
+information into logging calls. For a usage example, see the section on
 :ref:`adding contextual information to your logging output <context-info>`.
 
 .. class:: LoggerAdapter(logger, extra)
