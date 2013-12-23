@@ -136,7 +136,8 @@ CPython implementation improvements:
 * The :mod:`marshal` format has been made :ref:`more compact and efficient
   <whatsnew-marshal-3>` (:issue:`16475`).
 
-Please read on for a comprehensive list of user-facing changes.
+Please read on for a comprehensive list of user-facing changes, including
+sections on deprecations and porting issues.
 
 
 New expected features for Python implementations
