@@ -36,6 +36,14 @@ def version():
     """
     return _PIP_VERSION
 
+def _clear_pip_environment_variables():
+    # We deliberately ignore all pip environment variables
+    # when invoking pip
+    # See http://bugs.python.org/issue19734 for details
+    keys_to_remove = [k for k in os.environ if k.startswith("PIP_")]
+    for k in keys_to_remove:
+        del os.environ[k]
+
 
 def bootstrap(*, root=None, upgrade=False, user=False,
               altinstall=False, default_pip=False,
@@ -49,11 +57,7 @@ def bootstrap(*, root=None, upgrade=False, user=False,
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
-    # We deliberately ignore all pip environment variables
-    # See http://bugs.python.org/issue19734 for details
-    keys_to_remove = [k for k in os.environ if k.startswith("PIP_")]
-    for k in keys_to_remove:
-        del os.environ[k]
+    _clear_pip_environment_variables()
 
     # By default, installing pip and setuptools installs all of the
     # following scripts (X.Y == running Python version):
@@ -101,7 +105,10 @@ def bootstrap(*, root=None, upgrade=False, user=False,
         _run_pip(args + [p[0] for p in _PROJECTS], additional_paths)
 
 def _uninstall(*, verbosity=0):
-    """Helper to support a clean default uninstall process on Windows"""
+    """Helper to support a clean default uninstall process on Windows
+
+    Note that calling this function may alter os.environ.
+    """
     # Nothing to do if pip was never installed, or has been removed
     try:
         import pip
@@ -113,6 +120,8 @@ def _uninstall(*, verbosity=0):
         msg = ("ensurepip will only uninstall a matching pip "
                "({!r} installed, {!r} bundled)")
         raise RuntimeError(msg.format(pip.__version__, _PIP_VERSION))
+
+    _clear_pip_environment_variables()
 
     # Construct the arguments to be passed to the pip command
     args = ["uninstall", "-y"]
