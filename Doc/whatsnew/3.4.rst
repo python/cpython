@@ -88,6 +88,17 @@ New syntax features:
 
 * No new syntax features were added in Python 3.4.
 
+New expected features for Python implementations:
+
+* :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`
+  (:pep:`446`).
+* command line option for :ref:`isolated mode <using-on-misc-options>`,
+  (:issue:`16499`).
+* :ref:`improvements <codec-handling-improvements>` in the handling of
+  codecs that are not text encodings
+* :ref:`A ModuleSpec Type <whatsnew-pep-451>` for the Import System
+  (:pep:`451`).
+
 New library modules:
 
 * :mod:`asyncio`: New provisonal API for asynchronous IO (:pep:`3156`).
@@ -98,15 +109,6 @@ New library modules:
   :mod:`select` module primitives.
 * :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
 * :mod:`tracemalloc`: Trace Python memory allocations (:pep:`454`).
-
-New expected features for Python implementations:
-
-* :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`
-  (:pep:`446`).
-* command line option for :ref:`isolated mode <using-on-misc-options>`,
-  (:issue:`16499`).
-* :ref:`improvements <codec-handling-improvements>` in the handling of
-  codecs that are not text encodings
 
 Significantly Improved Library Modules:
 
@@ -137,8 +139,11 @@ CPython implementation improvements:
 Please read on for a comprehensive list of user-facing changes.
 
 
+New expected features for Python implementations
+================================================
+
 PEP 453: Explicit bootstrapping of pip in Python installations
-==============================================================
+--------------------------------------------------------------
 
 The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
 cross-platform mechanism to boostrap the pip installer into Python
@@ -176,7 +181,7 @@ install ``pip`` along with CPython itself.
 .. _whatsnew-pep-446:
 
 PEP 446: Make newly created file descriptors non-inheritable
-============================================================
+------------------------------------------------------------
 
 :pep:`446` makes newly created file descriptors :ref:`non-inheritable
 <fd_inheritance>`.  New functions and methods:
@@ -194,7 +199,7 @@ PEP 446: Make newly created file descriptors non-inheritable
 .. _codec-handling-improvements:
 
 Improvements to codec handling
-==============================
+------------------------------
 
 Since it was first introduced, the :mod:`codecs` module has always been
 intended to operate as a type-neutral dynamic encoding and decoding
@@ -272,10 +277,10 @@ in :ref:`binary-transforms` and :ref:`text-transforms`.
 (Contributed by Nick Coghlan in :issue:`7475`, , :issue:`17827`,
 :issue:`17828` and :issue:`19619`)
 
-.. _pep-451:
+.. _whatsnew-pep-451:
 
 PEP 451: A ModuleSpec Type for the Import System
-================================================
+------------------------------------------------
 
 :pep:`451` provides an encapsulation of the information about a module
 that the import machinery will use to load it, (i.e. a module spec).
@@ -293,24 +298,8 @@ described in the PEP.  Existing importers should be updated to implement
 the new methods.
 
 
-.. _whatsnew-protocol-4:
-
-Pickle protocol 4
-=================
-
-The new :mod:`pickle` protocol addresses a number of issues that were present
-in previous protocols, such as the serialization of nested classes, very
-large strings and containers, or classes whose :meth:`__new__` method takes
-keyword-only arguments.  It also brings a couple efficiency improvements.
-
-.. seealso::
-
-   :pep:`3154` - Pickle protocol 4
-      PEP written by Antoine Pitrou and implemented by Alexandre Vassalotti.
-
-
 Other Language Changes
-======================
+----------------------
 
 Some smaller changes made to the core Python language are:
 
@@ -695,6 +684,25 @@ command did.  Worse, the Python3 ``pdb print`` command shadowed the Python3
 ``print`` function, making it inaccessible at the ``pdb`` prompt.
 
 (Contributed by Connor Osborn in :issue:`18764`.)
+
+
+.. _whatsnew-protocol-4:
+
+Pickle
+------
+
+protocol 4
+
+:mod:`pickle` now supports (but does not use by default) a new pickle protocol,
+protocol 4.  This new protocol addresses a number of issues that were present
+in previous protocols, such as the serialization of nested classes, very large
+strings and containers, or classes whose :meth:`__new__` method takes
+keyword-only arguments.  It also provides some efficiency improvements.
+
+.. seealso::
+
+   :pep:`3154` - Pickle protocol 4
+      PEP written by Antoine Pitrou and implemented by Alexandre Vassalotti.
 
 
 poplib
