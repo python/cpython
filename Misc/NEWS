@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19734: ensurepip now ignores all pip environment variables to avoid
+  odd behaviour based on user configuration settings
+
 - Fix TypeError on "setup.py upload --show-response".
 
 - Issue #20045: Fix "setup.py register --list-classifiers".
