@@ -97,7 +97,7 @@ New expected features for Python implementations:
 * :ref:`improvements <codec-handling-improvements>` in the handling of
   codecs that are not text encodings
 * :ref:`A ModuleSpec Type <whatsnew-pep-451>` for the Import System
-  (:pep:`451`).
+  (:pep:`451`).  (Affects importer authors.)
 
 New library modules:
 
@@ -283,12 +283,12 @@ PEP 451: A ModuleSpec Type for the Import System
 ------------------------------------------------
 
 :pep:`451` provides an encapsulation of the information about a module
-that the import machinery will use to load it, (i.e. a module spec).
+that the import machinery will use to load it (that is, a module specification).
 This helps simplify both the import implementation and several
-import-related APIs.  The change is also a stepping stone for several
-future import-related improvements.
+import-related APIs.  The change is also a stepping stone for `several
+future import-related improvements`__.
 
-https://mail.python.org/pipermail/python-dev/2013-November/130111.html
+__ https://mail.python.org/pipermail/python-dev/2013-November/130111.html
 
 The public-facing changes from the PEP are entirely backward-compatible.
 Furthermore, they should be transparent to everyone but importer
