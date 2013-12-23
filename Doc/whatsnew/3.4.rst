@@ -105,8 +105,9 @@ New library modules:
 * :mod:`enum`: Support for enumeration types (:pep:`435`).
 * :mod:`ensurepip`: Bootstrapping the pip installer (:pep:`453`).
 * :mod:`pathlib`: Object-oriented filesystem paths (:pep:`428`).
-* :mod:`selectors`: High-level and efficient I/O multiplexing, built upon the
-  :mod:`select` module primitives (part of :pep:`3156`).
+* :mod:`selectors`: :ref:`High-level and efficient I/O multiplexing
+  <whatsnew-selectors>`, built upon the :mod:`select` module primitives (part
+  of :pep:`3156`).
 * :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
 * :mod:`tracemalloc`: Trace Python memory allocations (:pep:`454`).
 
@@ -377,6 +378,8 @@ For Python 3.4, this module is considered a :term:`provisional API`.
    :pep:`428` - The pathlib module -- object-oriented filesystem paths
       PEP written and implemented by Antoine Pitrou.
 
+
+.. _whatsnew-selectors:
 
 selectors
 ---------
