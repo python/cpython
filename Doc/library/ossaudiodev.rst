@@ -49,7 +49,7 @@ the standard audio interface for Linux and recent versions of FreeBSD.
       the official documentation for the OSS C API
 
    The module defines a large number of constants supplied by the OSS device
-   driver; see ``<sys/soundcard.h>`` on either Linux or FreeBSD for a listing .
+   driver; see ``<sys/soundcard.h>`` on either Linux or FreeBSD for a listing.
 
 :mod:`ossaudiodev` defines the following variables and functions:
 

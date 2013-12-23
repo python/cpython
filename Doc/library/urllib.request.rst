@@ -1072,7 +1072,7 @@ it receives from the http server. In general, a program will decode
 the returned bytes object to string once it determines or guesses
 the appropriate encoding.
 
-The following W3C document, http://www.w3.org/International/O-charset  , lists
+The following W3C document, http://www.w3.org/International/O-charset\ , lists
 the various ways in which a (X)HTML or a XML document could have specified its
 encoding information.
 

@@ -56,7 +56,7 @@ chain.from_iterable     iterable                        p0, p1, ... plast, q0, q
 :func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
 :func:`starmap`         func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
 :func:`takewhile`       pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
-:func:`tee`             it, n                           it1, it2 , ... itn  splits one iterator into n
+:func:`tee`             it, n                           it1, it2, ... itn  splits one iterator into n
 :func:`zip_longest`     p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
 ====================    ============================    =================================================   =============================================================
 
@@ -131,7 +131,7 @@ loops that truncate the stream.
       >>> inputs = repeat(x0, 36)     # only the initial value is used
       >>> [format(x, '.2f') for x in accumulate(inputs, logistic_map)]
       ['0.40', '0.91', '0.30', '0.81', '0.60', '0.92', '0.29', '0.79', '0.63',
-       '0.88' ,'0.39', '0.90', '0.33', '0.84', '0.52', '0.95', '0.18', '0.57',
+       '0.88', '0.39', '0.90', '0.33', '0.84', '0.52', '0.95', '0.18', '0.57',
        '0.93', '0.25', '0.71', '0.79', '0.63', '0.88', '0.39', '0.91', '0.32',
        '0.83', '0.54', '0.95', '0.20', '0.60', '0.91', '0.30', '0.80', '0.60']
 

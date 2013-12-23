@@ -180,7 +180,7 @@ documentation that exists. Here are some hints:
       The Tk/Tcl development is largely taking place at ActiveState.
 
    `Tcl and the Tk Toolkit <http://www.amazon.com/exec/obidos/ASIN/020163337X>`_
-      The book by John Ousterhout, the inventor of Tcl .
+      The book by John Ousterhout, the inventor of Tcl.
 
    `Practical Programming in Tcl and Tk <http://www.amazon.com/exec/obidos/ASIN/0130220280>`_
       Brent Welch's encyclopedic book.
@@ -613,7 +613,7 @@ bitmap
    preceded with an ``@``, as in ``"@/usr/contrib/bitmap/gumby.bit"``.
 
 boolean
-   You can pass integers 0 or 1 or the strings ``"yes"`` or ``"no"`` .
+   You can pass integers 0 or 1 or the strings ``"yes"`` or ``"no"``.
 
 callback
    This is any Python function that takes no arguments.  For example::
