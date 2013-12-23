@@ -14,6 +14,19 @@ _SETUPTOOLS_VERSION = "2.0.1"
 
 _PIP_VERSION = "1.5rc2"
 
+# pip currently requires ssl support, so we try to provide a nicer
+# error message when that is missing (http://bugs.python.org/issue19744)
+_MISSING_SSL_MESSAGE = ("pip {} requires SSL/TLS".format(_PIP_VERSION))
+try:
+    import ssl
+except ImportError:
+    ssl = None
+    def _require_ssl_for_pip():
+        raise RuntimeError(_MISSING_SSL_MESSAGE)
+else:
+    def _require_ssl_for_pip():
+        pass
+
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION),
     ("pip", _PIP_VERSION),
@@ -57,6 +70,7 @@ def bootstrap(*, root=None, upgrade=False, user=False,
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
+    _require_ssl_for_pip()
     _clear_pip_environment_variables()
 
     # By default, installing pip and setuptools installs all of the
@@ -121,6 +135,7 @@ def _uninstall_helper(*, verbosity=0):
                "({!r} installed, {!r} bundled)")
         raise RuntimeError(msg.format(pip.__version__, _PIP_VERSION))
 
+    _require_ssl_for_pip()
     _clear_pip_environment_variables()
 
     # Construct the arguments to be passed to the pip command

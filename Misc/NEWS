@@ -44,6 +44,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19744: ensurepip now provides a better error message when Python is
+  built without SSL/TLS support (pip currently requires that support to run,
+  even if only operating with local wheel files)
+
 - Issue #19734: ensurepip now ignores all pip environment variables to avoid
   odd behaviour based on user configuration settings
 

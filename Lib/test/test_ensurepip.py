@@ -9,6 +9,20 @@ import sys
 import ensurepip
 import ensurepip._uninstall
 
+# pip currently requires ssl support, so we ensure we handle
+# it being missing (http://bugs.python.org/issue19744)
+ensurepip_no_ssl = test.support.import_fresh_module("ensurepip",
+                                                    blocked=["ssl"])
+try:
+    import ssl
+except ImportError:
+    def requires_usable_pip(f):
+        deco = unittest.skip(ensurepip._MISSING_SSL_MESSAGE)
+        return deco(f)
+else:
+    def requires_usable_pip(f):
+        return f
+
 class TestEnsurePipVersion(unittest.TestCase):
 
     def test_returns_version(self):
@@ -28,8 +42,10 @@ class EnsurepipMixin:
         patched_os.path = os.path
         self.os_environ = patched_os.environ = os.environ.copy()
 
+
 class TestBootstrap(EnsurepipMixin, unittest.TestCase):
 
+    @requires_usable_pip
     def test_basic_bootstrapping(self):
         ensurepip.bootstrap()
 
@@ -44,6 +60,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         additional_paths = self.run_pip.call_args[0][1]
         self.assertEqual(len(additional_paths), 2)
 
+    @requires_usable_pip
     def test_bootstrapping_with_root(self):
         ensurepip.bootstrap(root="/foo/bar/")
 
@@ -56,6 +73,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
+    @requires_usable_pip
     def test_bootstrapping_with_user(self):
         ensurepip.bootstrap(user=True)
 
@@ -67,6 +85,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
+    @requires_usable_pip
     def test_bootstrapping_with_upgrade(self):
         ensurepip.bootstrap(upgrade=True)
 
@@ -78,6 +97,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
+    @requires_usable_pip
     def test_bootstrapping_with_verbosity_1(self):
         ensurepip.bootstrap(verbosity=1)
 
@@ -89,6 +109,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
+    @requires_usable_pip
     def test_bootstrapping_with_verbosity_2(self):
         ensurepip.bootstrap(verbosity=2)
 
@@ -100,6 +121,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
+    @requires_usable_pip
     def test_bootstrapping_with_verbosity_3(self):
         ensurepip.bootstrap(verbosity=3)
 
@@ -111,14 +133,17 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
+    @requires_usable_pip
     def test_bootstrapping_with_regular_install(self):
         ensurepip.bootstrap()
         self.assertEqual(self.os_environ["ENSUREPIP_OPTIONS"], "install")
 
+    @requires_usable_pip
     def test_bootstrapping_with_alt_install(self):
         ensurepip.bootstrap(altinstall=True)
         self.assertEqual(self.os_environ["ENSUREPIP_OPTIONS"], "altinstall")
 
+    @requires_usable_pip
     def test_bootstrapping_with_default_pip(self):
         ensurepip.bootstrap(default_pip=True)
         self.assertNotIn("ENSUREPIP_OPTIONS", self.os_environ)
@@ -128,6 +153,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             ensurepip.bootstrap(altinstall=True, default_pip=True)
         self.run_pip.assert_not_called()
 
+    @requires_usable_pip
     def test_pip_environment_variables_removed(self):
         # ensurepip deliberately ignores all pip environment variables
         # See http://bugs.python.org/issue19734 for details
@@ -169,6 +195,7 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_not_called()
 
 
+    @requires_usable_pip
     def test_uninstall(self):
         with fake_pip():
             ensurepip._uninstall_helper()
@@ -177,6 +204,7 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ["uninstall", "-y", "pip", "setuptools"]
         )
 
+    @requires_usable_pip
     def test_uninstall_with_verbosity_1(self):
         with fake_pip():
             ensurepip._uninstall_helper(verbosity=1)
@@ -185,6 +213,7 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ["uninstall", "-y", "-v", "pip", "setuptools"]
         )
 
+    @requires_usable_pip
     def test_uninstall_with_verbosity_2(self):
         with fake_pip():
             ensurepip._uninstall_helper(verbosity=2)
@@ -193,6 +222,7 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ["uninstall", "-y", "-vv", "pip", "setuptools"]
         )
 
+    @requires_usable_pip
     def test_uninstall_with_verbosity_3(self):
         with fake_pip():
             ensurepip._uninstall_helper(verbosity=3)
@@ -201,6 +231,7 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ["uninstall", "-y", "-vvv", "pip", "setuptools"]
         )
 
+    @requires_usable_pip
     def test_pip_environment_variables_removed(self):
         # ensurepip deliberately ignores all pip environment variables
         # See http://bugs.python.org/issue19734 for details
@@ -209,6 +240,30 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ensurepip._uninstall_helper()
         self.assertNotIn("PIP_THIS_SHOULD_GO_AWAY", self.os_environ)
 
+
+class TestMissingSSL(EnsurepipMixin, unittest.TestCase):
+
+    def setUp(self):
+        sys.modules["ensurepip"] = ensurepip_no_ssl
+        @self.addCleanup
+        def restore_module():
+            sys.modules["ensurepip"] = ensurepip
+        super().setUp()
+
+    def test_bootstrap_requires_ssl(self):
+        self.os_environ["PIP_THIS_SHOULD_STAY"] = "test fodder"
+        with self.assertRaisesRegex(RuntimeError, "requires SSL/TLS"):
+            ensurepip_no_ssl.bootstrap()
+        self.run_pip.assert_not_called()
+        self.assertIn("PIP_THIS_SHOULD_STAY", self.os_environ)
+
+    def test_uninstall_requires_ssl(self):
+        self.os_environ["PIP_THIS_SHOULD_STAY"] = "test fodder"
+        with self.assertRaisesRegex(RuntimeError, "requires SSL/TLS"):
+            with fake_pip():
+                ensurepip_no_ssl._uninstall_helper()
+        self.run_pip.assert_not_called()
+        self.assertIn("PIP_THIS_SHOULD_STAY", self.os_environ)
 
 # Basic testing of the main functions and their argument parsing
 
@@ -224,6 +279,7 @@ class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
         self.assertEqual(result, EXPECTED_VERSION_OUTPUT)
         self.run_pip.assert_not_called()
 
+    @requires_usable_pip
     def test_basic_bootstrapping(self):
         ensurepip._main([])
 
@@ -248,6 +304,7 @@ class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
         self.assertEqual(result, EXPECTED_VERSION_OUTPUT)
         self.run_pip.assert_not_called()
 
+    @requires_usable_pip
     def test_basic_uninstall(self):
         with fake_pip():
             ensurepip._uninstall._main([])
