@@ -119,6 +119,12 @@ Module API
 
    .. note::
 
+      The bootstrapping process has side effects on both ``sys.path`` and
+      ``os.environ``. Invoking the command line interface in a subprocess
+      instead allows these side effects to be avoided.
+
+   .. note::
+
       The bootstrapping process may install additional modules required by
       ``pip``, but other software should not assume those dependencies will
       always be present by default (as the dependencies may be removed in a

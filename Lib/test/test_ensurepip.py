@@ -126,6 +126,14 @@ class TestBootstrap(unittest.TestCase):
             ensurepip.bootstrap(altinstall=True, default_pip=True)
         self.run_pip.assert_not_called()
 
+    def test_pip_environment_variables_removed(self):
+        # ensurepip deliberately ignores all pip environment variables
+        # See http://bugs.python.org/issue19734 for details
+        self.os_environ["PIP_THIS_SHOULD_GO_AWAY"] = "test fodder"
+        ensurepip.bootstrap()
+        self.assertNotIn("PIP_THIS_SHOULD_GO_AWAY", self.os_environ)
+
+
 @contextlib.contextmanager
 def fake_pip(version=ensurepip._PIP_VERSION):
     if version is None:
