@@ -20,7 +20,7 @@ The following exception is defined:
 
 The :mod:`bdb` module also defines two classes:
 
-.. class:: Breakpoint(self, file, line, temporary=0, cond=None , funcname=None)
+.. class:: Breakpoint(self, file, line, temporary=0, cond=None, funcname=None)
 
    This class implements temporary breakpoints, ignore counts, disabling and
    (re-)enabling, and conditionals.

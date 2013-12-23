@@ -167,7 +167,7 @@ descriptor is useful for monitoring just a few chosen attributes::
             return self.val
 
         def __set__(self, obj, val):
-            print 'Updating' , self.name
+            print 'Updating', self.name
             self.val = val
 
     >>> class MyClass(object):

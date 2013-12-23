@@ -52,7 +52,7 @@ arguments should be used in most instances.
    Open the hash format file named *filename*.  Files never intended to be
    preserved on disk may be created by passing ``None`` as the  *filename*.  The
    optional *flag* identifies the mode used to open the file.  It may be ``'r'``
-   (read only), ``'w'`` (read-write) , ``'c'`` (read-write - create if necessary;
+   (read only), ``'w'`` (read-write), ``'c'`` (read-write - create if necessary;
    the default) or ``'n'`` (read-write - truncate to zero length).  The other
    arguments are rarely used and are just passed to the low-level :c:func:`dbopen`
    function.  Consult the Berkeley DB documentation for their use and

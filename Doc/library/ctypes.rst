@@ -1714,7 +1714,7 @@ the windows header file is this::
 
    WINUSERAPI int WINAPI
    MessageBoxA(
-       HWND hWnd ,
+       HWND hWnd,
        LPCSTR lpText,
        LPCSTR lpCaption,
        UINT uType);
