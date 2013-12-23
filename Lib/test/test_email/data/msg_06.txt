@@ -5,7 +5,7 @@ Content-Type: message/rfc822
 Content-Description: forwarded message
 Content-Transfer-Encoding: 7bit
 Message-ID: <15265.9482.641338.555352@python.org>
-From: barry@zope.com (Barry A. Warsaw)
+From: barry@python.org (Barry A. Warsaw)
 Sender: barry@python.org
 To: barry@python.org
 Subject: forwarded message from Barry A. Warsaw
@@ -20,7 +20,7 @@ Content-Type: text/plain; charset=us-ascii
 Return-Path: <barry@python.org>
 Delivered-To: barry@python.org
 Message-ID: <15265.9468.713530.98441@python.org>
-From: barry@zope.com (Barry A. Warsaw)
+From: barry@python.org (Barry A. Warsaw)
 Sender: barry@python.org
 To: barry@python.org
 Subject: testing
