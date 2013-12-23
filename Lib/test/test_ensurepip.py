@@ -1,20 +1,20 @@
 import unittest
 import unittest.mock
-import ensurepip
 import test.support
 import os
 import os.path
 import contextlib
 import sys
 
+import ensurepip
+import ensurepip._uninstall
 
 class TestEnsurePipVersion(unittest.TestCase):
 
     def test_returns_version(self):
         self.assertEqual(ensurepip._PIP_VERSION, ensurepip.version())
 
-
-class TestBootstrap(unittest.TestCase):
+class EnsurepipMixin:
 
     def setUp(self):
         run_pip_patch = unittest.mock.patch("ensurepip._run_pip")
@@ -27,6 +27,8 @@ class TestBootstrap(unittest.TestCase):
         self.addCleanup(os_patch.stop)
         patched_os.path = os.path
         self.os_environ = patched_os.environ = os.environ.copy()
+
+class TestBootstrap(EnsurepipMixin, unittest.TestCase):
 
     def test_basic_bootstrapping(self):
         ensurepip.bootstrap()
@@ -153,35 +155,23 @@ def fake_pip(version=ensurepip._PIP_VERSION):
         else:
             sys.modules["pip"] = orig_pip
 
-class TestUninstall(unittest.TestCase):
-
-    def setUp(self):
-        run_pip_patch = unittest.mock.patch("ensurepip._run_pip")
-        self.run_pip = run_pip_patch.start()
-        self.addCleanup(run_pip_patch.stop)
-
-        # Avoid side effects on the actual os module
-        os_patch = unittest.mock.patch("ensurepip.os")
-        patched_os = os_patch.start()
-        self.addCleanup(os_patch.stop)
-        patched_os.path = os.path
-        self.os_environ = patched_os.environ = os.environ.copy()
+class TestUninstall(EnsurepipMixin, unittest.TestCase):
 
     def test_uninstall_skipped_when_not_installed(self):
         with fake_pip(None):
-            ensurepip._uninstall()
+            ensurepip._uninstall_helper()
         self.run_pip.assert_not_called()
 
     def test_uninstall_fails_with_wrong_version(self):
         with fake_pip("not a valid version"):
             with self.assertRaises(RuntimeError):
-                ensurepip._uninstall()
+                ensurepip._uninstall_helper()
         self.run_pip.assert_not_called()
 
 
     def test_uninstall(self):
         with fake_pip():
-            ensurepip._uninstall()
+            ensurepip._uninstall_helper()
 
         self.run_pip.assert_called_once_with(
             ["uninstall", "-y", "pip", "setuptools"]
@@ -189,7 +179,7 @@ class TestUninstall(unittest.TestCase):
 
     def test_uninstall_with_verbosity_1(self):
         with fake_pip():
-            ensurepip._uninstall(verbosity=1)
+            ensurepip._uninstall_helper(verbosity=1)
 
         self.run_pip.assert_called_once_with(
             ["uninstall", "-y", "-v", "pip", "setuptools"]
@@ -197,7 +187,7 @@ class TestUninstall(unittest.TestCase):
 
     def test_uninstall_with_verbosity_2(self):
         with fake_pip():
-            ensurepip._uninstall(verbosity=2)
+            ensurepip._uninstall_helper(verbosity=2)
 
         self.run_pip.assert_called_once_with(
             ["uninstall", "-y", "-vv", "pip", "setuptools"]
@@ -205,7 +195,7 @@ class TestUninstall(unittest.TestCase):
 
     def test_uninstall_with_verbosity_3(self):
         with fake_pip():
-            ensurepip._uninstall(verbosity=3)
+            ensurepip._uninstall_helper(verbosity=3)
 
         self.run_pip.assert_called_once_with(
             ["uninstall", "-y", "-vvv", "pip", "setuptools"]
@@ -216,8 +206,55 @@ class TestUninstall(unittest.TestCase):
         # See http://bugs.python.org/issue19734 for details
         self.os_environ["PIP_THIS_SHOULD_GO_AWAY"] = "test fodder"
         with fake_pip():
-            ensurepip._uninstall()
+            ensurepip._uninstall_helper()
         self.assertNotIn("PIP_THIS_SHOULD_GO_AWAY", self.os_environ)
+
+
+# Basic testing of the main functions and their argument parsing
+
+EXPECTED_VERSION_OUTPUT = "pip " + ensurepip._PIP_VERSION
+
+class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
+
+    def test_bootstrap_version(self):
+        with test.support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit):
+                ensurepip._main(["--version"])
+        result = stdout.getvalue().strip()
+        self.assertEqual(result, EXPECTED_VERSION_OUTPUT)
+        self.run_pip.assert_not_called()
+
+    def test_basic_bootstrapping(self):
+        ensurepip._main([])
+
+        self.run_pip.assert_called_once_with(
+            [
+                "install", "--no-index", "--find-links",
+                unittest.mock.ANY, "--pre", "setuptools", "pip",
+            ],
+            unittest.mock.ANY,
+        )
+
+        additional_paths = self.run_pip.call_args[0][1]
+        self.assertEqual(len(additional_paths), 2)
+
+class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
+
+    def test_uninstall_version(self):
+        with test.support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit):
+                ensurepip._uninstall._main(["--version"])
+        result = stdout.getvalue().strip()
+        self.assertEqual(result, EXPECTED_VERSION_OUTPUT)
+        self.run_pip.assert_not_called()
+
+    def test_basic_uninstall(self):
+        with fake_pip():
+            ensurepip._uninstall._main([])
+
+        self.run_pip.assert_called_once_with(
+            ["uninstall", "-y", "pip", "setuptools"]
+        )
 
 
 
