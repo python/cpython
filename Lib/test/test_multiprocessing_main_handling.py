@@ -53,7 +53,7 @@ if __name__ == '__main__':
     p = Pool(5)
     results = []
     p.map_async(f, [1, 2, 3], callback=results.extend)
-    deadline = time.time() + 5 # up to 5 s to report the results
+    deadline = time.time() + 10 # up to 10 s to report the results
     while not results:
         time.sleep(0.05)
         if time.time() > deadline:
@@ -81,7 +81,7 @@ set_start_method(start_method)
 p = Pool(5)
 results = []
 p.map_async(int, [1, 4, 9], callback=results.extend)
-deadline = time.time() + 5 # up to 5 s to report the results
+deadline = time.time() + 10 # up to 10 s to report the results
 while not results:
     time.sleep(0.05)
     if time.time() > deadline:
