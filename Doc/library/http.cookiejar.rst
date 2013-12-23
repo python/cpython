@@ -309,7 +309,7 @@ FileCookieJar subclasses and co-operation with web browsers
 -----------------------------------------------------------
 
 The following :class:`CookieJar` subclasses are provided for reading and
-writing .
+writing.
 
 .. class:: MozillaCookieJar(filename, delayload=None, policy=None)
 

@@ -626,7 +626,7 @@ The Path Based Finder
 
 As mentioned previously, Python comes with several default meta path finders.
 One of these, called the :term:`path based finder`
-(:class:`~importlib.machinery.PathFinder`) , searches an :term:`import path`,
+(:class:`~importlib.machinery.PathFinder`), searches an :term:`import path`,
 which contains a list of :term:`path entries <path entry>`.  Each path
 entry names a location to search for modules.
 

@@ -160,7 +160,7 @@ We'll discuss here one particular HTTP header, to illustrate how to add headers
 to your HTTP request.
 
 Some websites [#]_ dislike being browsed by programs, or send different versions
-to different browsers [#]_ . By default urllib identifies itself as
+to different browsers [#]_. By default urllib identifies itself as
 ``Python-urllib/x.y`` (where ``x`` and ``y`` are the major and minor version
 numbers of the Python release,
 e.g. ``Python-urllib/2.5``), which may confuse the site, or just plain

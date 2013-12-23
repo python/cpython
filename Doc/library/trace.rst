@@ -41,7 +41,7 @@ Main options
 
 At least one of the following options must be specified when invoking
 :mod:`trace`.  The :option:`--listfuncs <-l>` option is mutually exclusive with
-the :option:`--trace <-t>` and :option:`--counts <-c>` options . When
+the :option:`--trace <-t>` and :option:`--counts <-c>` options. When
 :option:`--listfuncs <-l>` is provided, neither :option:`--counts <-c>` nor
 :option:`--trace <-t>` are accepted, and vice versa.
 

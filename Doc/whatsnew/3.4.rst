@@ -275,7 +275,7 @@ as::
 The binary and text transforms provided in the standard library are detailed
 in :ref:`binary-transforms` and :ref:`text-transforms`.
 
-(Contributed by Nick Coghlan in :issue:`7475`, , :issue:`17827`,
+(Contributed by Nick Coghlan in :issue:`7475`, :issue:`17827`,
 :issue:`17828` and :issue:`19619`)
 
 .. _whatsnew-pep-451:
