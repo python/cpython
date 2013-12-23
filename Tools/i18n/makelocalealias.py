@@ -13,8 +13,8 @@ LOCALE_ALIAS = '/usr/share/X11/locale/locale.alias'
 
 def parse(filename):
 
-    f = open(filename)
-    lines = f.read().splitlines()
+    with open(filename, encoding='latin1') as f:
+        lines = list(f)
     data = {}
     for line in lines:
         line = line.strip()
@@ -47,15 +47,15 @@ def parse(filename):
 def pprint(data):
     items = sorted(data.items())
     for k, v in items:
-        print('    %-40s%r,' % ('%r:' % k, v))
+        print('    %-40s%a,' % ('%a:' % k, v))
 
 def print_differences(data, olddata):
     items = sorted(olddata.items())
     for k, v in items:
         if k not in data:
-            print('#    removed %r' % k)
+            print('#    removed %a' % k)
         elif olddata[k] != data[k]:
-            print('#    updated %r -> %r to %r' % \
+            print('#    updated %a -> %a to %a' % \
                   (k, olddata[k], data[k]))
         # Additions are not mentioned
 
