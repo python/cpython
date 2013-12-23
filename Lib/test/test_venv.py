@@ -17,6 +17,9 @@ from test.support import (captured_stdout, captured_stderr, run_unittest,
 import textwrap
 import unittest
 import venv
+
+# pip currently requires ssl support, so we ensure we handle
+# it being missing (http://bugs.python.org/issue19744)
 try:
     import ssl
 except ImportError:
@@ -285,8 +288,8 @@ class EnsurePipTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
         self.assert_pip_not_installed()
 
-    # Temporary skip for http://bugs.python.org/issue19744
-    @unittest.skipIf(ssl is None, 'pip needs SSL support')
+    # Requesting pip fails without SSL (http://bugs.python.org/issue19744)
+    @unittest.skipIf(ssl is None, ensurepip._MISSING_SSL_MESSAGE)
     def test_with_pip(self):
         shutil.rmtree(self.env_dir)
         with EnvironmentVarGuard() as envvars:
