@@ -841,7 +841,7 @@ separate thread::
             },
             'loggers': {
                 'foo': {
-                    'handlers' : ['foofile']
+                    'handlers': ['foofile']
                 }
             },
             'root': {
@@ -1529,7 +1529,7 @@ works::
             },
             'loggers': {
                 'foo': {
-                    'handlers' : ['foofile']
+                    'handlers': ['foofile']
                 }
             },
             'root': {

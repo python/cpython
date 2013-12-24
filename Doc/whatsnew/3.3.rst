@@ -1823,12 +1823,12 @@ signal
 * The :mod:`signal` module has new functions:
 
   * :func:`~signal.pthread_sigmask`: fetch and/or change the signal mask of the
-    calling thread (Contributed by Jean-Paul Calderone in :issue:`8407`) ;
-  * :func:`~signal.pthread_kill`: send a signal to a thread ;
-  * :func:`~signal.sigpending`: examine pending functions ;
-  * :func:`~signal.sigwait`: wait a signal.
+    calling thread (Contributed by Jean-Paul Calderone in :issue:`8407`);
+  * :func:`~signal.pthread_kill`: send a signal to a thread;
+  * :func:`~signal.sigpending`: examine pending functions;
+  * :func:`~signal.sigwait`: wait a signal;
   * :func:`~signal.sigwaitinfo`: wait for a signal, returning detailed
-    information about it.
+    information about it;
   * :func:`~signal.sigtimedwait`: like :func:`~signal.sigwaitinfo` but with a
     timeout.
 
