@@ -999,6 +999,28 @@ describe the hash algorithm in use by the currently executing binary.  Otherwise
 the PEP does not alter any existing CPython APIs.
 
 
+.. _whatsnew-pep-436:
+
+PEP 436: Argument Clinic
+------------------------
+
+"Argument Clinic" (:pep:`436`) is now part of the CPython build process
+and can be used to simplify the process of defining and maintaining
+accurate signatures for builtins and standard library extension modules
+implemented in C.
+
+.. note::
+   The Argument Clinic PEP is not fully up to date with the state of the
+   implementation. This has been deemed acceptable by the release manager
+   and core development team in this case, as Argument Clinic will not
+   be made available as a public API for third party use in Python 3.4.
+
+.. seealso::
+
+   :pep:`436` - The Argument Clinic DSL
+       PEP written and implemented by Larry Hastings.
+
+
 Other build and C API changes
 -----------------------------
 
@@ -1012,19 +1034,6 @@ Other changes to Python's build process and to the C API include:
 * Most Python C APIs that don't mutate string arguments are now correctly
   marked as accepting ``const char *`` rather than ``char *`` (Contributed
   by Serhiy Storchaka in :issue:`1772673`).
-
-.. _whatsnew-pep-436:
-
-* "Argument Clinic" (:pep:`436`) is now part of the CPython build process
-  and can be used to simplify the process of defining and maintaining
-  accurate signatures for builtins and standard library extension modules
-  implemented in C.
-
-  .. note::
-     The Argument Clinic PEP is not fully up to date with the state of the
-     implementation. This has been deemed acceptable by the release manager
-     and core development team in this case, as Argument Clinic will not
-     be made available as a public API for third party use in Python 3.4.
 
 * New shell version of ``python-config``; can be used even when a python
   interpreter is not available (for example, in cross compilation scenarios).
