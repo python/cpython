@@ -247,7 +247,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
       ...
       Py_Initialize();  // Initialize Python.
       initmyAppc();  // Initialize (import) the helper class.
-      PyRun_SimpleString("import myApp") ;  // Import the shadow class.
+      PyRun_SimpleString("import myApp");  // Import the shadow class.
 
 5. There are two problems with Python's C API which will become apparent if you
    use a compiler other than MSVC, the compiler used to build pythonNN.dll.

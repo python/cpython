@@ -205,7 +205,7 @@ Telnet Objects
 .. method:: Telnet.set_option_negotiation_callback(callback)
 
    Each time a telnet option is read on the input flow, this *callback* (if set) is
-   called with the following parameters : callback(telnet socket, command
+   called with the following parameters: callback(telnet socket, command
    (DO/DONT/WILL/WONT), option).  No other action is done afterwards by telnetlib.
 
 
