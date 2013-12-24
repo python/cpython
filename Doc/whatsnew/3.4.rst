@@ -102,15 +102,21 @@ New expected features for Python implementations:
 
 New library modules:
 
-* :mod:`asyncio`: New provisional API for asynchronous IO (:pep:`3156`).
-* :mod:`enum`: Support for enumeration types (:pep:`435`).
-* :mod:`ensurepip`: Bootstrapping the pip installer (:pep:`453`).
-* :mod:`pathlib`: Object-oriented filesystem paths (:pep:`428`).
+* :mod:`asyncio`: :ref:`New provisional API for asynchronous IO
+  <whatsnew-asyncio>` (:pep:`3156`).
+* :mod:`ensurepip`: :ref:`Bootstrapping the pip installer <whatsnew-ensurepip>`
+  (:pep:`453`).
+* :mod:`enum`: :ref:`Support for enumeration types <whatsnew-enum>`
+  (:pep:`435`).
+* :mod:`pathlib`: :ref:`Object-oriented filesystem paths <whatsnew-pathlib>`
+  (:pep:`428`).
 * :mod:`selectors`: :ref:`High-level and efficient I/O multiplexing
   <whatsnew-selectors>`, built upon the :mod:`select` module primitives (part
   of :pep:`3156`).
-* :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
-* :mod:`tracemalloc`: Trace Python memory allocations (:pep:`454`).
+* :mod:`statistics`: A basic :ref:`numerically stable statistics library
+  <whatsnew-statistics>` (:pep:`450`).
+* :mod:`tracemalloc`: :ref:`Trace Python memory allocations
+  <whatsnew-tracemalloc>` (:pep:`454`).
 
 Significantly Improved Library Modules:
 
@@ -287,7 +293,7 @@ as::
 The binary and text transforms provided in the standard library are detailed
 in :ref:`binary-transforms` and :ref:`text-transforms`.
 
-(Contributed by Nick Coghlan in :issue:`7475`, :issue:`17827`,
+(Contributed by Nick Coghlan in :issue:`7475`, , :issue:`17827`,
 :issue:`17828` and :issue:`19619`)
 
 .. _whatsnew-pep-451:
@@ -340,6 +346,8 @@ New Modules
 ===========
 
 
+.. _whatsnew-asyncio:
+
 asyncio
 -------
 
@@ -356,7 +364,7 @@ For Python 3.4, this module is considered a :term:`provisional API`.
       PEP written and implementation led by Guido van Rossum.
 
 
-.. _whatsnew-ensurepip
+.. _whatsnew-ensurepip:
 
 ensurepip
 ---------
@@ -380,6 +388,8 @@ cause it to install the bundled copy of ``pip`` if the existing installed
 version of ``pip`` is older than the bundled copy.
 
 
+.. _whatsnew-enum:
+
 enum
 ----
 
@@ -395,6 +405,8 @@ compatible enumeration values.
       PEP written by Barry Warsaw, Eli Bendersky and Ethan Furman,
       implemented by Ethan Furman.
 
+
+.. _whatsnew-pathlib:
 
 pathlib
 -------
@@ -423,6 +435,8 @@ allows high-level and efficient I/O multiplexing, built upon the
 :mod:`select` module primitives.
 
 
+.. _whatsnew-statistics:
+
 statistics
 ----------
 
@@ -436,6 +450,7 @@ deviation of a data series.
    :pep:`450` - Adding A Statistics Module To The Standard Library
       PEP written and implemented by Steven D'Aprano
 
+.. _whatsnew-tracemalloc:
 
 tracemalloc
 -----------
