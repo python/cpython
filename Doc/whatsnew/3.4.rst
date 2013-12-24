@@ -1035,8 +1035,6 @@ implemented in C.
 Other Build and C API Changes
 -----------------------------
 
-Other changes to Python's build process and to the C API include:
-
 * The new :c:func:`Py_SetStandardStreamEncoding` pre-initialization API
   allows applications embedding the CPython interpreter to reliably force
   a particular encoding and error handler for the standard streams
@@ -1078,10 +1076,8 @@ Other Improvements
   :issue:`13390`).
 
 
-Optimizations
-=============
-
-Major performance enhancements have been added:
+Significant Optimizations
+=========================
 
 * The UTF-32 decoder is now 3x to 4x faster.
 
@@ -1112,6 +1108,12 @@ Major performance enhancements have been added:
 Deprecated
 ==========
 
+This section covers various APIs and other features that have been deprecated
+in Python 3.4, and will be removed in Python 3.5 or later.  In most (but not
+all) cases, using the deprecated APIs will produce a :exc:`DeprecationWarning`
+when the interpreter is run with deprecation warnings enabled (for example, by
+using ``-Wd``).
+
 
 Deprecated Python Modules, Functions and Methods
 ------------------------------------------------
@@ -1138,8 +1140,7 @@ Deprecated Python Modules, Functions and Methods
 Deprecated Functions and Types in the C API
 -------------------------------------------
 
-* The ``PyThreadState.tick_counter`` field has been removed: its value was
-  meaningless since Python 3.2 ("new GIL").
+XXX: None so far
 
 
 Deprecated Features
@@ -1152,8 +1153,11 @@ Deprecated Features
 Removed
 =======
 
-* Support for the following previously deprecated operating systems has been
-  removed from the source and build tools:
+The following previously deprecated APIs and features have been removed
+in Python 3.4:
+
+* Support for the following operating systems has been removed from the source
+  and build tools:
 
     * OS/2 (:issue:`16135`).
     * Windows 2000 (changeset e52df05b496a).
@@ -1166,15 +1170,18 @@ Removed
 * The ``SO`` makefile macro is removed (it was replaced by the
   ``SHLIB_SUFFIX`` and ``EXT_SUFFIX`` macros) (:issue:`16754`).
 
+* The ``PyThreadState.tick_counter`` field has been removed; its value has
+  been meaningless since Python 3.2, when the "new GIL" was introduced.
+
 
 Porting to Python 3.4
 =====================
 
-Changes in the Python API
--------------------------
-
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+Changes in the Python API
+-------------------------
 
 * The ABCs defined in :mod:`importlib.abc` now either raise the appropriate
   exception or return a default value instead of raising
