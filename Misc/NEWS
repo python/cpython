@@ -3500,8 +3500,8 @@ Tools/Demos
 - Issue #17028: Allowed Python arguments to be supplied to the Windows
   launcher.
 
-- Issue #17156: pygettext.py now uses an encoding of source file and correctly
-  writes and escapes non-ascii characters.
+- Issue #17156: pygettext.py now detects the encoding of source files and
+  correctly writes and escapes non-ascii characters.
 
 - Issue #15539: Fix a number of bugs in Tools/scripts/pindent.py.  Now
   pindent.py works with a "with" statement.  pindent.py no longer produces
