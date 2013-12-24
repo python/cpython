@@ -318,9 +318,9 @@ The :mod:`abc` module also provides the following functions:
 
    Returns the current abstract base class cache token.
 
-   The token is an opaque integer identifying the current version of the
-   abstract base class cache for virtual subclasses. This number changes
-   with every call to :meth:`ABCMeta.register` on any ABC.
+   The token is an opaque object (that supports equality testing) identifying
+   the current version of the abstract base class cache for virtual subclasses.
+   The token changes with every call to :meth:`ABCMeta.register` on any ABC.
 
    .. versionadded:: 3.4
 
