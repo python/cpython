@@ -18,7 +18,7 @@
    time of the original release will remain largely unknown to the community
    for years, even if they're added later. We also know from experience that
    other priorities can arise, and the maintainer will run out of time to do
-   updates - in such cases, end users will be much better served by partial
+   updates -- in such cases, end users will be much better served by partial
    notifications that at least give a hint about new features to
    investigate.
 
@@ -75,7 +75,7 @@ For full details, see the
 
 .. seealso::
 
-   :pep:`429` - Python 3.4 Release Schedule
+   :pep:`429` -- Python 3.4 Release Schedule
 
 
 Summary -- Release highlights
@@ -193,7 +193,7 @@ __ http://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distr
 
 .. seealso::
 
-   :pep:`453` - Explicit bootstrapping of pip in Python installations
+   :pep:`453` -- Explicit bootstrapping of pip in Python installations
       PEP written by Donald Stufft and Nick Coghlan, implemented by
       Donald Stufft, Nick Coghlan, Martin von Löwis and Ned Deily.
 
@@ -212,7 +212,7 @@ PEP 446: Make newly created file descriptors non-inheritable
 
 .. seealso::
 
-   :pep:`446` - Make newly created file descriptors non-inheritable
+   :pep:`446` -- Make newly created file descriptors non-inheritable
       PEP written and implemented by Victor Stinner.
 
 
@@ -361,7 +361,7 @@ For Python 3.4, this module is considered a :term:`provisional API`.
 
 .. seealso::
 
-   :pep:`3156` - Asynchronous IO Support Rebooted: the "asyncio" Module
+   :pep:`3156` -- Asynchronous IO Support Rebooted: the "asyncio" Module
       PEP written and implementation led by Guido van Rossum.
 
 
@@ -402,7 +402,7 @@ compatible enumeration values.
 
 .. seealso::
 
-   :pep:`435` - Adding an Enum type to the Python standard library
+   :pep:`435` -- Adding an Enum type to the Python standard library
       PEP written by Barry Warsaw, Eli Bendersky and Ethan Furman,
       implemented by Ethan Furman.
 
@@ -422,7 +422,7 @@ For Python 3.4, this module is considered a :term:`provisional API`.
 
 .. seealso::
 
-   :pep:`428` - The pathlib module -- object-oriented filesystem paths
+   :pep:`428` -- The pathlib module -- object-oriented filesystem paths
       PEP written and implemented by Antoine Pitrou.
 
 
@@ -448,7 +448,7 @@ deviation of a data series.
 
 .. seealso::
 
-   :pep:`450` - Adding A Statistics Module To The Standard Library
+   :pep:`450` -- Adding A Statistics Module To The Standard Library
       PEP written and implemented by Steven D'Aprano
 
 .. _whatsnew-tracemalloc:
@@ -466,7 +466,7 @@ trace memory blocks allocated by Python. It provides the following information:
 
 .. seealso::
 
-   :pep:`454` - Add a new tracemalloc module to trace Python memory allocations
+   :pep:`454` -- Add a new tracemalloc module to trace Python memory allocations
       PEP written and implemented by Victor Stinner
 
 
@@ -616,7 +616,7 @@ multiple implementations of an operation that allows it to work with
 
 .. seealso::
 
-   :pep:`443` - Single-dispatch generic functions
+   :pep:`443` -- Single-dispatch generic functions
       PEP written and implemented by Łukasz Langa.
 
 
@@ -757,7 +757,7 @@ keyword-only arguments.  It also provides some efficiency improvements.
 
 .. seealso::
 
-   :pep:`3154` - Pickle protocol 4
+   :pep:`3154` -- Pickle protocol 4
       PEP written by Antoine Pitrou and implemented by Alexandre Vassalotti.
 
 
@@ -953,7 +953,7 @@ the CPython interpreter.
 
 .. seealso::
 
-   :pep:`445` - Add new APIs to customize Python memory allocators
+   :pep:`445` -- Add new APIs to customize Python memory allocators
       PEP written and implemented by Victor Stinner.
 
 
@@ -976,7 +976,7 @@ was first introduced.
 
 .. seealso::
 
-   :pep:`442` - Safe object finalization
+   :pep:`442` -- Safe object finalization
       PEP written and implemented by Antoine Pitrou.
 
 
@@ -1017,7 +1017,7 @@ implemented in C.
 
 .. seealso::
 
-   :pep:`436` - The Argument Clinic DSL
+   :pep:`436` -- The Argument Clinic DSL
        PEP written and implemented by Larry Hastings.
 
 
