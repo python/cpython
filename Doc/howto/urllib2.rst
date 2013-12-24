@@ -18,7 +18,7 @@ Introduction
 .. sidebar:: Related Articles
 
     You may also find useful the following article on fetching web resources
-    with Python :
+    with Python:
 
     * `Basic Authentication <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
 
@@ -439,7 +439,7 @@ Authentication Tutorial
 
 When authentication is required, the server sends a header (as well as the 401
 error code) requesting authentication.  This specifies the authentication scheme
-and a 'realm'. The header looks like : ``WWW-Authenticate: SCHEME
+and a 'realm'. The header looks like: ``WWW-Authenticate: SCHEME
 realm="REALM"``.
 
 e.g. ::
@@ -511,7 +511,7 @@ the ``ProxyHandler``, which is part of the normal handler chain when a proxy
 setting is detected.  Normally that's a good thing, but there are occasions
 when it may not be helpful [#]_. One way to do this is to setup our own
 ``ProxyHandler``, with no proxies defined. This is done using similar steps to
-setting up a `Basic Authentication`_ handler : ::
+setting up a `Basic Authentication`_ handler: ::
 
     >>> proxy_support = urllib2.ProxyHandler({})
     >>> opener = urllib2.build_opener(proxy_support)

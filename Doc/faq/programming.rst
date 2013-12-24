@@ -910,7 +910,7 @@ ability, try converting the string to a list or use the array module::
    >>> a = array.array('c', s)
    >>> print a
    array('c', 'Hello, world')
-   >>> a[0] = 'y' ; print a
+   >>> a[0] = 'y'; print a
    array('c', 'yello, world')
    >>> a.tostring()
    'yello, world'

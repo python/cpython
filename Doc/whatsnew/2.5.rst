@@ -286,7 +286,7 @@ Python's standard :mod:`string` module?  There's no clean way to ignore
 :mod:`pkg.string` and look for the standard module; generally you had to look at
 the contents of ``sys.modules``, which is slightly unclean.    Holger Krekel's
 :mod:`py.std` package provides a tidier way to perform imports from the standard
-library, ``import py ; py.std.string.join()``, but that package isn't available
+library, ``import py; py.std.string.join()``, but that package isn't available
 on all Python installations.
 
 Reading code which relies on relative imports is also less clear, because a

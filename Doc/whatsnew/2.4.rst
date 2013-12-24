@@ -846,7 +846,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
      ['A', 'b', 'c', 'D']
 
   Finally, the *reverse* parameter takes a Boolean value.  If the value is true,
-  the list will be sorted into reverse order. Instead of ``L.sort() ;
+  the list will be sorted into reverse order. Instead of ``L.sort();
   L.reverse()``, you can now write ``L.sort(reverse=True)``.
 
   The results of sorting are now guaranteed to be stable.  This means that two

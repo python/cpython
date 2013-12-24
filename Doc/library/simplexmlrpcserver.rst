@@ -247,7 +247,7 @@ requests sent to Python CGI scripts.
 Example::
 
    class MyFuncs:
-       def div(self, x, y) : return x // y
+       def div(self, x, y): return x // y
 
 
    handler = CGIXMLRPCRequestHandler()

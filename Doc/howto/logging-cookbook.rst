@@ -834,4 +834,3 @@ When the above script is run, it prints::
 
 Note that the order of items might be different according to the version of
 Python used.
-
