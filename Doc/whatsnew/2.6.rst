@@ -1891,7 +1891,7 @@ changes, or look through the Subversion logs for all the details.
     >>> dq=deque(maxlen=3)
     >>> dq
     deque([], maxlen=3)
-    >>> dq.append(1) ; dq.append(2) ; dq.append(3)
+    >>> dq.append(1); dq.append(2); dq.append(3)
     >>> dq
     deque([1, 2, 3], maxlen=3)
     >>> dq.append(4)
@@ -2783,12 +2783,12 @@ http://www.json.org.
 types. The following example encodes and decodes a dictionary::
 
        >>> import json
-       >>> data = {"spam" : "foo", "parrot" : 42}
+       >>> data = {"spam": "foo", "parrot": 42}
        >>> in_json = json.dumps(data) # Encode the data
        >>> in_json
        '{"parrot": 42, "spam": "foo"}'
        >>> json.loads(in_json) # Decode into a Python object
-       {"spam" : "foo", "parrot" : 42}
+       {"spam": "foo", "parrot": 42}
 
 It's also possible to write your own decoders and encoders to support
 more types. Pretty-printing of the JSON strings is also supported.

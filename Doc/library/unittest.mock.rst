@@ -1652,17 +1652,17 @@ Methods and their defaults:
 * ``__gt__``: NotImplemented
 * ``__le__``: NotImplemented
 * ``__ge__``: NotImplemented
-* ``__int__`` : 1
-* ``__contains__`` : False
-* ``__len__`` : 1
-* ``__iter__`` : iter([])
-* ``__exit__`` : False
-* ``__complex__`` : 1j
-* ``__float__`` : 1.0
-* ``__bool__`` : True
-* ``__index__`` : 1
-* ``__hash__`` : default hash for the mock
-* ``__str__`` : default str for the mock
+* ``__int__``: 1
+* ``__contains__``: False
+* ``__len__``: 1
+* ``__iter__``: iter([])
+* ``__exit__``: False
+* ``__complex__``: 1j
+* ``__float__``: 1.0
+* ``__bool__``: True
+* ``__index__``: 1
+* ``__hash__``: default hash for the mock
+* ``__str__``: default str for the mock
 * ``__sizeof__``: default sizeof for the mock
 
 For example:

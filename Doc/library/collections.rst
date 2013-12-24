@@ -193,7 +193,7 @@ updates keys found deeper in the chain::
                     return
             raise KeyError(key)
 
-    >>> d = DeepChainMap({'zebra': 'black'}, {'elephant' : 'blue'}, {'lion' : 'yellow'})
+    >>> d = DeepChainMap({'zebra': 'black'}, {'elephant': 'blue'}, {'lion': 'yellow'})
     >>> d['lion'] = 'orange'         # update an existing key two levels down
     >>> d['snake'] = 'red'           # new keys get added to the topmost dict
     >>> del d['elephant']            # remove an existing key one level down
