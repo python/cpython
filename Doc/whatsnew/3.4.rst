@@ -90,39 +90,43 @@ New syntax features:
 
 New expected features for Python implementations:
 
+* :ref:`pip should always be "available" <whatsnew-pep-453>` (:pep:`453`).
 * :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`
   (:pep:`446`).
 * command line option for :ref:`isolated mode <using-on-misc-options>`,
   (:issue:`16499`).
-* :ref:`improvements <codec-handling-improvements>` in the handling of
-  codecs that are not text encodings
+* :ref:`improvements in the handling of codecs <codec-handling-improvements>`
+  that are not text encodings (multiple issues).
 * :ref:`A ModuleSpec Type <whatsnew-pep-451>` for the Import System
   (:pep:`451`).  (Affects importer authors.)
 
 New library modules:
 
-* :mod:`asyncio`: New provisonal API for asynchronous IO (:pep:`3156`).
+* :mod:`asyncio`: New provisional API for asynchronous IO (:pep:`3156`).
 * :mod:`enum`: Support for enumeration types (:pep:`435`).
 * :mod:`ensurepip`: Bootstrapping the pip installer (:pep:`453`).
 * :mod:`pathlib`: Object-oriented filesystem paths (:pep:`428`).
-* :mod:`selectors`: High-level and efficient I/O multiplexing, built upon the
-  :mod:`select` module primitives.
+* :mod:`selectors`: :ref:`High-level and efficient I/O multiplexing
+  <whatsnew-selectors>`, built upon the :mod:`select` module primitives (part
+  of :pep:`3156`).
 * :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
 * :mod:`tracemalloc`: Trace Python memory allocations (:pep:`454`).
 
 Significantly Improved Library Modules:
 
 * :ref:`Single-dispatch generic functions <whatsnew-singledispatch>` in
-  :mod:`functools` (:pep:`443`)
-* New :mod:`pickle` :ref:`protocol 4 <whatsnew-protocol-4>` (:pep:`3154`)
-* :ref:`SHA-3 (Keccak) support <whatsnew-sha3>` for :mod:`hashlib`.
-* :ref:`TLSv1.1 and TLSv1.2 support <whatsnew-tls-11-12>` for :mod:`ssl`.
+  :mod:`functools` (:pep:`443`).
+* New :mod:`pickle` :ref:`protocol 4 <whatsnew-protocol-4>` (:pep:`3154`).
+* :ref:`SHA-3 (Keccak) support <whatsnew-sha3>` for :mod:`hashlib`
+  (:issue:`16113`).
+* :ref:`TLSv1.1 and TLSv1.2 support <whatsnew-tls-11-12>` for :mod:`ssl`
+  (:issue:`16692`).
 * :mod:`multiprocessing` now has :ref:`an option to avoid using os.fork
   on Unix <whatsnew-multiprocessing-no-fork>` (:issue:`8713`).
 * :mod:`email` has a new submodule, :mod:`~email.contentmanager`, and
   a new :mod:`~email.message.Message` subclass
   (:class:`~email.contentmanager.EmailMessage`) that :ref:`simplify MIME
-  handling <whatsnew_email_contentmanager>`.
+  handling <whatsnew_email_contentmanager>` (:issue:`18891`).
 
 CPython implementation improvements:
 
@@ -143,6 +147,8 @@ sections on deprecations and porting issues.
 New expected features for Python implementations
 ================================================
 
+.. _whatsnew-pep-453:
+
 PEP 453: Explicit bootstrapping of pip in Python installations
 --------------------------------------------------------------
 
@@ -162,6 +168,12 @@ Makefile options.
 
 On Windows and Mac OS X, the CPython installers now offer the option to
 install ``pip`` along with CPython itself.
+
+As `discussed in the PEP`__, platform packagers may choose not to install
+``pip`` by default, as long as the command ``pip``, when invoked, provides
+clear and simple directions on how to install ``pip`` on the platform.
+
+__ http://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distributors
 
 .. note::
 
@@ -343,6 +355,31 @@ For Python 3.4, this module is considered a :term:`provisional API`.
    :pep:`3156` - Asynchronous IO Support Rebooted: the "asyncio" Module
       PEP written and implementation led by Guido van Rossum.
 
+
+.. _whatsnew-ensurepip
+
+ensurepip
+---------
+
+The new :mod:`ensurepip` module is the primary infrastructure for the
+:pep:`453` implementation.  In the normal course of events end users will not
+need to interact with this module, but it can be used to manually bootstrap
+``pip`` if the automated bootstrapping into an installation or virtual
+environment was declined.
+
+:mod:`ensurepip` includes a bundled copy of ``pip``, up-to-date as of the first
+release candidate of the release of CPython with which it ships (this applies
+to both maintenance releases and feature releases).  ``ensurepip`` does not
+access the internet.  (If the installation has Internet access, it is of course
+possible to upgrade ``pip`` to a release more recent than the bundled ``pip``
+by using the bundled ``pip`` command itself once it is installed.)
+
+The module is named *ensure*\ pip because if called when ``pip`` is already
+installed, it does nothing.  It also has an ``--upgrade`` option that will
+cause it to install the bundled copy of ``pip`` if the existing installed
+version of ``pip`` is older than the bundled copy.
+
+
 enum
 ----
 
@@ -375,6 +412,8 @@ For Python 3.4, this module is considered a :term:`provisional API`.
    :pep:`428` - The pathlib module -- object-oriented filesystem paths
       PEP written and implemented by Antoine Pitrou.
 
+
+.. _whatsnew-selectors:
 
 selectors
 ---------
