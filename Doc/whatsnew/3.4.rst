@@ -940,16 +940,13 @@ Add a filter function to ignore some packages (tests for instance),
 Other improvements
 ==================
 
-Tab-completion is now enabled by default in the interactive interpreter.
-(Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
+* Tab-completion is now enabled by default in the interactive interpreter.
+  (Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
 
-Python invocation changes
-=========================
-
-Invoking the Python interpreter with ``--version`` now outputs the version to
-standard output instead of standard error (:issue:`18338`). Similar changes
-were made to :mod:`argparse` (:issue:`18920`) and other modules that have
-script-like invocation capabilities (:issue:`18922`).
+* Invoking the Python interpreter with ``--version`` now outputs the version to
+  standard output instead of standard error (:issue:`18338`). Similar changes
+  were made to :mod:`argparse` (:issue:`18920`) and other modules that have
+  script-like invocation capabilities (:issue:`18922`).
 
 Optimizations
 =============
