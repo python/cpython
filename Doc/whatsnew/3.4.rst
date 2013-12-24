@@ -1002,7 +1002,7 @@ the PEP does not alter any existing CPython APIs.
 Other build and C API changes
 -----------------------------
 
-Changes to Python's build process and to the C API include:
+Other changes to Python's build process and to the C API include:
 
 * The new :c:func:`Py_SetStandardStreamEncoding` pre-initialization API
   allows applications embedding the CPython interpreter to reliably force
@@ -1025,6 +1025,9 @@ Changes to Python's build process and to the C API include:
      implementation. This has been deemed acceptable by the release manager
      and core development team in this case, as Argument Clinic will not
      be made available as a public API for third party use in Python 3.4.
+
+* New shell version of ``python-config``; can be used even when a python
+  interpreter is not available (for example, in cross compilation scenarios).
 
 
 Other improvements
@@ -1126,9 +1129,15 @@ Removed
 =======
 
 * The unmaintained ``Misc/TextMate`` and ``Misc/vim`` directories have been
-  removed (see the devguide__ for what to use instead).
+  removed (see the `devguide <http://docs.python.org/devguide>`_
+  for what to use instead).
 
-__ http://docs.python.org/devguide
+
+* OS/2 support code has been removed from the source tree and build tools
+  (:issue:`16135`).
+
+* Windows 2000 support code has been removed from the source tree and build
+  tools (changeset e52df05b496a).
 
 
 Porting to Python 3.4
