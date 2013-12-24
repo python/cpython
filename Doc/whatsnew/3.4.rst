@@ -878,6 +878,17 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 :meth:`sunau.open` now supports the context manager protocol (:issue:`18878`).
 
 
+sys
+---
+
+New function :func:`sys.getallocatedblocks` returns the current number of
+blocks allocated by the interpreter (in CPython with the default
+``--with-pymalloc`` setting, this is allocations made through the
+:c:func:`PyObject_Malloc` API).  This can be useful for tracking memory leaks,
+especially if automated via a test suite.  (Contributed by Antoine Pitrou
+in :issue:`13390`.)
+
+
 traceback
 ---------
 
@@ -1055,6 +1066,17 @@ Other improvements
   script at the windows command prompt by just typing its name without the
   ``.py`` extension.  (Contributed by Paul Moore in :issue:`18569`.)
 
+* A new ``make`` target `coverage-report
+  <http://docs.python.org/devguide/coverage.html#measuring-coverage-of-c-code-with-gcov-and-lcov>`_
+  will build python, run the test suite, and generate an HTML coverage report
+  for the C codebase using ``gcov`` and `lcov
+  <http://ltp.sourceforge.net/coverage/lcov.php>`_.
+
+* The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
+  also checks for memory allocation leaks, using
+  :func:`sys.getallocatedblocks()`.  (Contributed by Antoine Pitrou in
+  :issue:`13390`).
+
 
 Optimizations
 =============
@@ -1141,12 +1163,14 @@ Removed
   removed (see the `devguide <http://docs.python.org/devguide>`_
   for what to use instead).
 
-
 * OS/2 support code has been removed from the source tree and build tools
   (:issue:`16135`).
 
 * Windows 2000 support code has been removed from the source tree and build
   tools (changeset e52df05b496a).
+
+* The ``SO`` makefile macro is removed (it was replaced by the
+  ``SHLIB_SUFFIX`` and ``EXT_SUFFIX`` macros) (:issue:`16754`).
 
 
 Porting to Python 3.4
