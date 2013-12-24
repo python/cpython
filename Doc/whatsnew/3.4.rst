@@ -937,48 +937,6 @@ Add a filter function to ignore some packages (tests for instance),
 (Contributed by Christian Tismer in :issue:`19274`.)
 
 
-Other improvements
-==================
-
-* Tab-completion is now enabled by default in the interactive interpreter.
-  (Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
-
-* Invoking the Python interpreter with ``--version`` now outputs the version to
-  standard output instead of standard error (:issue:`18338`). Similar changes
-  were made to :mod:`argparse` (:issue:`18920`) and other modules that have
-  script-like invocation capabilities (:issue:`18922`).
-
-Optimizations
-=============
-
-Major performance enhancements have been added:
-
-* The UTF-32 decoder is now 3x to 4x faster.
-
-* The cost of hash collisions for sets is now reduced.  Each hash table
-  probe now checks a series of consecutive, adjacent key/hash pairs before
-  continuing to make random probes through the hash table.  This exploits
-  cache locality to make collision resolution less expensive.
-
-  The collision resolution scheme can be described as a hybrid of linear
-  probing and open addressing.  The number of additional linear probes
-  defaults to nine.  This can be changed at compile-time by defining
-  LINEAR_PROBES to be any value.  Set LINEAR_PROBES=0 to turn-off
-  linear probing entirely.
-
-  (Contributed by Raymond Hettinger in :issue:`18771`.)
-
-* The interpreter starts about 30% faster. A couple of measures lead to the
-  speedup. The interpreter loads fewer modules on startup, e.g. the :mod:`re`,
-  :mod:`collections` and :mod:`locale` modules and their dependencies are no
-  longer imported by default. The marshal module has been improved to load
-  compiled Python code faster.
-
-  (Contributed by Antoine Pitrou, Christian Heimes and Victor Stinner in
-  :issue:`19219`, :issue:`19218`, :issue:`19209`, :issue:`19205` and
-  :issue:`9548`)
-
-
 CPython Implementation Changes
 ==============================
 
@@ -1065,6 +1023,49 @@ Changes to Python's build process and to the C API include:
      implementation. This has been deemed acceptable by the release manager
      and core development team in this case, as Argument Clinic will not
      be made available as a public API for third party use in Python 3.4.
+
+
+Other improvements
+==================
+
+* Tab-completion is now enabled by default in the interactive interpreter.
+  (Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
+
+* Invoking the Python interpreter with ``--version`` now outputs the version to
+  standard output instead of standard error (:issue:`18338`). Similar changes
+  were made to :mod:`argparse` (:issue:`18920`) and other modules that have
+  script-like invocation capabilities (:issue:`18922`).
+
+
+Optimizations
+=============
+
+Major performance enhancements have been added:
+
+* The UTF-32 decoder is now 3x to 4x faster.
+
+* The cost of hash collisions for sets is now reduced.  Each hash table
+  probe now checks a series of consecutive, adjacent key/hash pairs before
+  continuing to make random probes through the hash table.  This exploits
+  cache locality to make collision resolution less expensive.
+
+  The collision resolution scheme can be described as a hybrid of linear
+  probing and open addressing.  The number of additional linear probes
+  defaults to nine.  This can be changed at compile-time by defining
+  LINEAR_PROBES to be any value.  Set LINEAR_PROBES=0 to turn-off
+  linear probing entirely.
+
+  (Contributed by Raymond Hettinger in :issue:`18771`.)
+
+* The interpreter starts about 30% faster. A couple of measures lead to the
+  speedup. The interpreter loads fewer modules on startup, e.g. the :mod:`re`,
+  :mod:`collections` and :mod:`locale` modules and their dependencies are no
+  longer imported by default. The marshal module has been improved to load
+  compiled Python code faster.
+
+  (Contributed by Antoine Pitrou, Christian Heimes and Victor Stinner in
+  :issue:`19219`, :issue:`19218`, :issue:`19209`, :issue:`19205` and
+  :issue:`9548`)
 
 
 Deprecated
