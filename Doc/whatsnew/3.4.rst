@@ -1112,13 +1112,6 @@ Major performance enhancements have been added:
 Deprecated
 ==========
 
-Unsupported Operating Systems
------------------------------
-
-* OS/2
-* Windows 2000
-* VMS
-
 
 Deprecated Python Modules, Functions and Methods
 ------------------------------------------------
@@ -1159,15 +1152,16 @@ Deprecated Features
 Removed
 =======
 
+* Support for the following previously deprecated operating systems has been
+  removed from the source and build tools:
+
+    * OS/2 (:issue:`16135`).
+    * Windows 2000 (changeset e52df05b496a).
+    * VMS (:issue:`16136`).
+
 * The unmaintained ``Misc/TextMate`` and ``Misc/vim`` directories have been
   removed (see the `devguide <http://docs.python.org/devguide>`_
   for what to use instead).
-
-* OS/2 support code has been removed from the source tree and build tools
-  (:issue:`16135`).
-
-* Windows 2000 support code has been removed from the source tree and build
-  tools (changeset e52df05b496a).
 
 * The ``SO`` makefile macro is removed (it was replaced by the
   ``SHLIB_SUFFIX`` and ``EXT_SUFFIX`` macros) (:issue:`16754`).
