@@ -744,7 +744,7 @@ command did.  Worse, the Python3 ``pdb print`` command shadowed the Python3
 
 .. _whatsnew-protocol-4:
 
-Pickle
+pickle
 ------
 
 protocol 4
@@ -1145,6 +1145,9 @@ XXX: None so far
 
 Deprecated Features
 -------------------
+
+* Running :ref:`idle` with the ``-n`` flag (no subprocess) is deprecated.
+  However, the feature will not be removed until :issue:`18823` is resolved.
 
 * The site module adding a "site-python" directory to sys.path, if it
   exists, is deprecated (:issue:`19375`).
