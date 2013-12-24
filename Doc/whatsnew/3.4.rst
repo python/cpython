@@ -473,6 +473,12 @@ trace memory blocks allocated by Python. It provides the following information:
 Improved Modules
 ================
 
+abc
+---
+
+New function :func:`abc.get_cache_token` can be used to know when to invalidate
+caches that are affected by changes in the object graph.  (Contributed
+by Łukasz Langa in :issue:`16832`.)
 
 aifc
 ----
