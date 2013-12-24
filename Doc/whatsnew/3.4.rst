@@ -473,6 +473,7 @@ trace memory blocks allocated by Python. It provides the following information:
 Improved Modules
 ================
 
+
 aifc
 ----
 
@@ -1037,6 +1038,11 @@ Other improvements
   were made to :mod:`argparse` (:issue:`18920`) and other modules that have
   script-like invocation capabilities (:issue:`18922`).
 
+* The CPython Windows installer now adds ``.py`` to the :envvar:`PATHEXT`
+  variable when extensions are registered, allowing users to run a python
+  script at the windows command prompt by just typing its name without the
+  ``.py`` extension.  (Contributed by Paul Moore in :issue:`18569`.)
+
 
 Optimizations
 =============
@@ -1114,6 +1120,15 @@ Deprecated features
 
 * The site module adding a "site-python" directory to sys.path, if it
   exists, is deprecated (:issue:`19375`).
+
+
+Removed
+=======
+
+* The unmaintained ``Misc/TextMate`` and ``Misc/vim`` directories have been
+  removed (see the devguide__ for what to use instead).
+
+__ http://docs.python.org/devguide
 
 
 Porting to Python 3.4
