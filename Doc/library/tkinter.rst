@@ -440,7 +440,7 @@ back will contain the name of the synonym and the "real" option (such as
 Example::
 
    >>> print(fred.config())
-   {'relief' : ('relief', 'relief', 'Relief', 'raised', 'groove')}
+   {'relief': ('relief', 'relief', 'Relief', 'raised', 'groove')}
 
 Of course, the dictionary printed will include all the options available and
 their values.  This is meant only as an example.
