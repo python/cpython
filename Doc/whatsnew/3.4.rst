@@ -78,7 +78,7 @@ For full details, see the
    :pep:`429` -- Python 3.4 Release Schedule
 
 
-Summary -- Release highlights
+Summary -- Release Highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.4.
@@ -151,12 +151,12 @@ other smaller improvements, CPython optimizations, deprecations, and potential
 porting issues.
 
 
-New expected features for Python implementations
+New Expected Features for Python Implementations
 ================================================
 
 .. _whatsnew-pep-453:
 
-PEP 453: Explicit bootstrapping of pip in Python installations
+PEP 453: Explicit Bootstrapping of PIP in Python Installations
 --------------------------------------------------------------
 
 The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
@@ -200,7 +200,7 @@ __ http://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distr
 
 .. _whatsnew-pep-446:
 
-PEP 446: Make newly created file descriptors non-inheritable
+PEP 446: Make Newly Created File Descriptors Non-Inheritable
 ------------------------------------------------------------
 
 :pep:`446` makes newly created file descriptors :ref:`non-inheritable
@@ -218,7 +218,7 @@ PEP 446: Make newly created file descriptors non-inheritable
 
 .. _codec-handling-improvements:
 
-Improvements to codec handling
+Improvements to Codec Handling
 ------------------------------
 
 Since it was first introduced, the :mod:`codecs` module has always been
@@ -956,7 +956,7 @@ CPython Implementation Changes
 
 .. _whatsnew-pep-445:
 
-PEP 445: Customization of CPython memory allocators
+PEP 445: Customization of CPython Memory Allocators
 ---------------------------------------------------
 
 :pep:`445` adds new C level interfaces to customize memory allocation in
@@ -970,7 +970,7 @@ the CPython interpreter.
 
 .. _whatsnew-pep-442:
 
-PEP 442: Safe object finalization
+PEP 442: Safe Object Finalization
 ---------------------------------
 
 :pep:`442` removes the current limitations and quirks of object finalization
@@ -1032,7 +1032,7 @@ implemented in C.
        PEP written and implemented by Larry Hastings.
 
 
-Other build and C API changes
+Other Build and C API Changes
 -----------------------------
 
 Other changes to Python's build process and to the C API include:
@@ -1050,7 +1050,7 @@ Other changes to Python's build process and to the C API include:
   interpreter is not available (for example, in cross compilation scenarios).
 
 
-Other improvements
+Other Improvements
 ==================
 
 * Tab-completion is now enabled by default in the interactive interpreter.
@@ -1120,7 +1120,7 @@ Unsupported Operating Systems
 * VMS
 
 
-Deprecated Python modules, functions and methods
+Deprecated Python Modules, Functions and Methods
 ------------------------------------------------
 
 * :meth:`difflib.SequenceMatcher.isbjunk` and
@@ -1142,14 +1142,14 @@ Deprecated Python modules, functions and methods
   require an explicit digest name or constructor as *digestmod* argument.
 
 
-Deprecated functions and types of the C API
+Deprecated Functions and Types in the C API
 -------------------------------------------
 
 * The ``PyThreadState.tick_counter`` field has been removed: its value was
   meaningless since Python 3.2 ("new GIL").
 
 
-Deprecated features
+Deprecated Features
 -------------------
 
 * The site module adding a "site-python" directory to sys.path, if it
