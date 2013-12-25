@@ -118,6 +118,8 @@ Library
 IDLE
 ----
 
+- Issue #20058: sys.stdin.readline() in IDLE now always returns only one line.
+
 - Issue #19481: print() of unicode, str or bytearray subclass instance in IDLE
   no more hangs.
 
