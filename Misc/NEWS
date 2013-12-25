@@ -169,6 +169,8 @@ Library
 IDLE
 ----
 
+- Issue #20058: sys.stdin.readline() in IDLE now always returns only one line.
+
 - Issue #19481: print() of string subclass instance in IDLE no longer hangs.
 
 - Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
