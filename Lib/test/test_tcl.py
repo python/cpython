@@ -35,6 +35,7 @@ class TclTest(unittest.TestCase):
 
     def setUp(self):
         self.interp = Tcl()
+        self.wantobjects = self.interp.tk.wantobjects()
 
     def testEval(self):
         tcl = self.interp
@@ -167,22 +168,31 @@ class TclTest(unittest.TestCase):
         def passValue(value):
             return self.interp.call('set', '_', value)
 
-        self.assertEqual(passValue(True), True)
-        self.assertEqual(passValue(False), False)
+        self.assertEqual(passValue(True), True if self.wantobjects else '1')
+        self.assertEqual(passValue(False), False if self.wantobjects else '0')
         self.assertEqual(passValue('string'), 'string')
         self.assertEqual(passValue('string\u20ac'), 'string\u20ac')
         for i in (0, 1, -1, 2**31-1, -2**31):
-            self.assertEqual(passValue(i), i)
+            self.assertEqual(passValue(i), i if self.wantobjects else str(i))
         for f in (0.0, 1.0, -1.0, 1/3,
                   sys.float_info.min, sys.float_info.max,
                   -sys.float_info.min, -sys.float_info.max):
-            self.assertEqual(passValue(f), f)
-        for f in float('nan'), float('inf'), -float('inf'):
-            if f != f: # NaN
-                self.assertNotEqual(passValue(f), f)
-            else:
+            if self.wantobjects:
                 self.assertEqual(passValue(f), f)
-        self.assertEqual(passValue((1, '2', (3.4,))), (1, '2', (3.4,)))
+            else:
+                self.assertEqual(float(passValue(f)), f)
+        if self.wantobjects:
+            f = passValue(float('nan'))
+            self.assertNotEqual(f, f)
+            self.assertEqual(passValue(float('inf')), float('inf'))
+            self.assertEqual(passValue(-float('inf')), -float('inf'))
+        else:
+            f = float(passValue(float('nan')))
+            self.assertNotEqual(f, f)
+            self.assertEqual(float(passValue(float('inf'))), float('inf'))
+            self.assertEqual(float(passValue(-float('inf'))), -float('inf'))
+        self.assertEqual(passValue((1, '2', (3.4,))),
+                         (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
 
     def test_splitlist(self):
         splitlist = self.interp.tk.splitlist
@@ -207,12 +217,15 @@ class TclTest(unittest.TestCase):
             ('a 3.4', ('a', '3.4')),
             (('a', 3.4), ('a', 3.4)),
             ((), ()),
-            (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
+            (call('list', 1, '2', (3.4,)),
+                (1, '2', (3.4,)) if self.wantobjects else
+                ('1', '2', '3.4')),
         ]
         if tcl_version >= (8, 5):
             testcases += [
                 (call('dict', 'create', 1, '\u20ac', b'\xe2\x82\xac', (3.4,)),
-                        (1, '\u20ac', '\u20ac', (3.4,))),
+                    (1, '\u20ac', '\u20ac', (3.4,)) if self.wantobjects else
+                    ('1', '\u20ac', '\u20ac', '3.4')),
             ]
         for arg, res in testcases:
             self.assertEqual(splitlist(arg), res, msg=arg)
@@ -244,12 +257,15 @@ class TclTest(unittest.TestCase):
             (('a', 3.4), ('a', 3.4)),
             (('a', (2, 3.4)), ('a', (2, 3.4))),
             ((), ()),
-            (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
+            (call('list', 1, '2', (3.4,)),
+                (1, '2', (3.4,)) if self.wantobjects else
+                ('1', '2', '3.4')),
         ]
         if tcl_version >= (8, 5):
             testcases += [
                 (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
-                        (12, '\u20ac', '\u20ac', (3.4,))),
+                    (12, '\u20ac', '\u20ac', (3.4,)) if self.wantobjects else
+                    ('12', '\u20ac', '\u20ac', '3.4')),
             ]
         for arg, res in testcases:
             self.assertEqual(split(arg), res, msg=arg)
