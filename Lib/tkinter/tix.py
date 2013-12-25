@@ -122,13 +122,9 @@ class tixCommand:
         elif cnf:
             cnf = _cnfmerge(cnf)
         if cnf is None:
-            cnf = {}
-            for x in self.tk.split(self.tk.call('tix', 'configure')):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
+            return self._getconfigure('tix', 'configure')
         if isinstance(cnf, str):
-            x = self.tk.split(self.tk.call('tix', 'configure', '-'+cnf))
-            return (x[0][1:],) + x[1:]
+            return self._getconfigure1('tix', 'configure', '-'+cnf)
         return self.tk.call(('tix', 'configure') + self._options(cnf))
 
     def tix_filedialog(self, dlgclass=None):
@@ -380,7 +376,7 @@ class TixWidget(tkinter.Widget):
         """Return the name of all subwidgets."""
         try:
             x = self.tk.call(self._w, 'subwidgets', '-all')
-            return self.tk.split(x)
+            return self.tk.splitlist(x)
         except TclError:
             return None
 
@@ -473,13 +469,6 @@ class TixSubWidget(TixWidget):
             self.tk.call('destroy', self._w)
 
 
-# Useful func. to split Tcl lists and return as a dict. From Tkinter.py
-def _lst2dict(lst):
-    dict = {}
-    for x in lst:
-        dict[x[0][1:]] = (x[0][1:],) + x[1:]
-    return dict
-
 # Useful class to create a display style - later shared by many items.
 # Contributed by Steffen Kremser
 class DisplayStyle:
@@ -515,10 +504,8 @@ class DisplayStyle:
         self.tk.call(self.stylename, 'configure', '-%s'%key, value)
 
     def config(self, cnf={}, **kw):
-        return _lst2dict(
-            self.tk.split(
-            self.tk.call(
-                  self.stylename, 'configure', *self._options(cnf,kw))))
+        return self._getconfigure(
+            self.stylename, 'configure', *self._options(cnf,kw))
 
     def __getitem__(self,key):
         return self.tk.call(self.stylename, 'cget', '-%s'%key)
@@ -928,9 +915,7 @@ class HList(TixWidget, XView, YView):
 
     def header_configure(self, col, cnf={}, **kw):
         if cnf is None:
-            return _lst2dict(
-                self.tk.split(
-                self.tk.call(self._w, 'header', 'configure', col)))
+            return self._getconfigure(self._w, 'header', 'configure', col)
         self.tk.call(self._w, 'header', 'configure', col,
                      *self._options(cnf, kw))
 
@@ -955,9 +940,8 @@ class HList(TixWidget, XView, YView):
 
     def indicator_configure(self, entry, cnf={}, **kw):
         if cnf is None:
-            return _lst2dict(
-                self.tk.split(
-                self.tk.call(self._w, 'indicator', 'configure', entry)))
+            return self._getconfigure(
+                self._w, 'indicator', 'configure', entry)
         self.tk.call(
               self._w, 'indicator', 'configure', entry, *self._options(cnf, kw))
 
@@ -1017,9 +1001,7 @@ class HList(TixWidget, XView, YView):
 
     def item_configure(self, entry, col, cnf={}, **kw):
         if cnf is None:
-            return _lst2dict(
-                self.tk.split(
-                self.tk.call(self._w, 'item', 'configure', entry, col)))
+            return self._getconfigure(self._w, 'item', 'configure', entry, col)
         self.tk.call(self._w, 'item', 'configure', entry, col,
               *self._options(cnf, kw))
 
@@ -1038,9 +1020,7 @@ class HList(TixWidget, XView, YView):
 
     def entryconfigure(self, entry, cnf={}, **kw):
         if cnf is None:
-            return _lst2dict(
-                self.tk.split(
-                self.tk.call(self._w, 'entryconfigure', entry)))
+            return self._getconfigure(self._w, 'entryconfigure', entry)
         self.tk.call(self._w, 'entryconfigure', entry,
               *self._options(cnf, kw))
 
@@ -1254,9 +1234,7 @@ class PanedWindow(TixWidget):
 
     def paneconfigure(self, entry, cnf={}, **kw):
         if cnf is None:
-            return _lst2dict(
-                self.tk.split(
-                self.tk.call(self._w, 'paneconfigure', entry)))
+            return self._getconfigure(self._w, 'paneconfigure', entry)
         self.tk.call(self._w, 'paneconfigure', entry, *self._options(cnf, kw))
 
     def panes(self):
