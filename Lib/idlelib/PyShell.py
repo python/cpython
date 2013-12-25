@@ -1381,6 +1381,9 @@ class PseudoInputFile(PseudoFile):
         line = self._line_buffer or self.shell.readline()
         if size < 0:
             size = len(line)
+        eol = line.find('\n', 0, size)
+        if eol >= 0:
+            size = eol + 1
         self._line_buffer = line[size:]
         return line[:size]
 
