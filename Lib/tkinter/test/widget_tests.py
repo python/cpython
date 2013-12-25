@@ -62,9 +62,7 @@ class AbstractWidgetTest:
         if not isinstance(widget, Scale):
             t = widget.configure(name)
             self.assertEqual(len(t), 5)
-            ## XXX
-            if not isinstance(t[4], tuple):
-                self.assertEqual2(t[4], expected, eq=eq)
+            self.assertEqual2(t[4], expected, eq=eq)
 
     def checkInvalidParam(self, widget, name, value, errmsg=None, *,
                           keep_orig=True):
