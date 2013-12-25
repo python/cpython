@@ -16,12 +16,13 @@ class TextTest(unittest.TestCase):
 
     def test_debug(self):
         text = self.text
+        wantobjects = self.root.wantobjects()
         olddebug = text.debug()
         try:
             text.debug(0)
-            self.assertEqual(text.debug(), 0)
+            self.assertEqual(text.debug(), 0 if wantobjects else '0')
             text.debug(1)
-            self.assertEqual(text.debug(), 1)
+            self.assertEqual(text.debug(), 1 if wantobjects else '1')
         finally:
             text.debug(olddebug)
             self.assertEqual(text.debug(), olddebug)
