@@ -1234,6 +1234,19 @@ class Misc:
         exc, val, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
         root = self._root()
         root.report_callback_exception(exc, val, tb)
+
+    def _getconfigure(self, *args):
+        """Call Tcl configure command and return the result as a dict."""
+        cnf = {}
+        for x in self.tk.splitlist(self.tk.call(*args)):
+            x = self.tk.splitlist(x)
+            cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+        return cnf
+
+    def _getconfigure1(self, *args):
+        x = self.tk.splitlist(self.tk.call(*args))
+        return (x[0][1:],) + x[1:]
+
     def _configure(self, cmd, cnf, kw):
         """Internal function."""
         if kw:
@@ -1241,15 +1254,9 @@ class Misc:
         elif cnf:
             cnf = _cnfmerge(cnf)
         if cnf is None:
-            cnf = {}
-            for x in self.tk.split(
-                    self.tk.call(_flatten((self._w, cmd)))):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
+            return self._getconfigure(_flatten((self._w, cmd)))
         if type(cnf) is StringType:
-            x = self.tk.split(
-                    self.tk.call(_flatten((self._w, cmd, '-'+cnf))))
-            return (x[0][1:],) + x[1:]
+            return self._getconfigure1(_flatten((self._w, cmd, '-'+cnf)))
         self.tk.call(_flatten((self._w, cmd)) + self._options(cnf))
     # These used to be defined in Widget:
     def configure(self, cnf=None, **kw):
@@ -1271,8 +1278,8 @@ class Misc:
         raise TypeError("Tkinter objects don't support 'in' tests.")
     def keys(self):
         """Return a list of all resource names of this widget."""
-        return map(lambda x: x[0][1:],
-               self.tk.split(self.tk.call(self._w, 'configure')))
+        return [x[0][1:] for x in
+                self.tk.splitlist(self.tk.call(self._w, 'configure'))]
     def __str__(self):
         """Return the window path name of this widget."""
         return self._w
@@ -3725,16 +3732,10 @@ class PanedWindow(Widget):
 
         """
         if cnf is None and not kw:
-            cnf = {}
-            for x in self.tk.split(
-                self.tk.call(self._w,
-                         'paneconfigure', tagOrId)):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
+            return self._getconfigure(self._w, 'paneconfigure', tagOrId)
         if type(cnf) == StringType and not kw:
-            x = self.tk.split(self.tk.call(
-                self._w, 'paneconfigure', tagOrId, '-'+cnf))
-            return (x[0][1:],) + x[1:]
+            return self._getconfigure1(
+                self._w, 'paneconfigure', tagOrId, '-'+cnf)
         self.tk.call((self._w, 'paneconfigure', tagOrId) +
                  self._options(cnf, kw))
     paneconfig = paneconfigure

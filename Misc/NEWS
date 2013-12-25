@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19020: Tkinter now uses splitlist() instead of split() in configure
+  methods.
+
 - Issue #12226: HTTPS is now used by default when connecting to PyPI.
 
 - Issue #20048: Fixed ZipExtFile.peek() when it is called on the boundary of
