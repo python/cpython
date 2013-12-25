@@ -473,12 +473,14 @@ trace memory blocks allocated by Python. It provides the following information:
 Improved Modules
 ================
 
+
 abc
 ---
 
 New function :func:`abc.get_cache_token` can be used to know when to invalidate
 caches that are affected by changes in the object graph.  (Contributed
 by Łukasz Langa in :issue:`16832`.)
+
 
 aifc
 ----
@@ -784,6 +786,13 @@ pprint
 
 The :mod:`pprint` module now supports *compact* mode for formatting long
 sequences (:issue:`19132`).
+
+
+pty
+---
+
+:func:`pty.spawn` now returns the status value from :func:`os.waitpid` on
+the child process, instead of ``None``.  (Contributed by Gregory P. Smith.)
 
 
 pydoc
@@ -1109,6 +1118,10 @@ Significant Optimizations
   (Contributed by Antoine Pitrou, Christian Heimes and Victor Stinner in
   :issue:`19219`, :issue:`19218`, :issue:`19209`, :issue:`19205` and
   :issue:`9548`)
+
+* :class:`bz2.BZ2File` is now as fast or faster than the Python2 version for
+  most cases.  :class:`lzma.LZMAFile` has also been optimized.  (Contributed by
+  Serhiy Storchaka and Nadeem Vawda in :issue:`16034`.)
 
 
 Deprecated

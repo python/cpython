@@ -2817,7 +2817,7 @@ Library
 - Issue #12034: Fix bogus caching of result in check_GetFinalPathNameByHandle.
   Patch by Atsuo Ishimoto.
 
-- Improve performance of `lzma.LZMAFile`.
+- Improve performance of `lzma.LZMAFile` (see also issue #16034).
 
 - Issue #16220: wsgiref now always calls close() on an iterable response.
   Patch by Brent Tubbs.
