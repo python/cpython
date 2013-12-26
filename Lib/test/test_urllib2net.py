@@ -14,6 +14,8 @@ try:
 except ImportError:
     ssl = None
 
+support.requires("network")
+
 TIMEOUT = 60  # seconds
 
 
@@ -339,5 +341,4 @@ class TimeoutTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    support.requires("network")
     unittest.main()
