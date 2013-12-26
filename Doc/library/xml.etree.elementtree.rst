@@ -831,8 +831,8 @@ ElementTree Objects
       :term:`file object`; make sure you do not try to write a string to a
       binary stream and vice versa.
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+      .. versionadded:: 3.4
+         The *short_empty_elements* parameter.
 
 
 This is the XML file that is going to be manipulated::

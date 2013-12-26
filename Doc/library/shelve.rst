@@ -121,7 +121,8 @@ Restrictions
    The *keyencoding* parameter is the encoding used to encode keys before they
    are used with the underlying dict.
 
-   :class:`Shelf` objects can also be used as context managers.
+   A :class:`Shelf` object can also be used as a context manager, in which
+   case it will be automatically closed when the :keyword:`with` block ends.
 
    .. versionchanged:: 3.2
       Added the *keyencoding* parameter; previously, keys were always encoded in
