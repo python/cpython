@@ -1668,9 +1668,8 @@ Notes:
       Previously, all negative indices were truncated to zero.
 
 (6)
-   The :meth:`pop` method is only supported by the list and array types.  The
-   optional argument *i* defaults to ``-1``, so that by default the last item is
-   removed and returned.
+   The :meth:`pop` method's optional argument *i* defaults to ``-1``, so that
+   by default the last item is removed and returned.
 
 (7)
    The :meth:`sort` and :meth:`reverse` methods modify the list in place for
