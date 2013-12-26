@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20046: Locale alias table no longer contains entities which can be
+  calculated.  Generalized support of the euro modifier.
+
 - Issue #20027: Fixed locale aliases for devanagari locales.
 
 - Issue #20067: Tkinter variables now work when wantobjects is false.
