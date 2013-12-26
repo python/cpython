@@ -7,6 +7,7 @@
 
 """
 import locale
+import sys
 
 # Location of the alias file
 LOCALE_ALIAS = '/usr/share/X11/locale/locale.alias'
@@ -65,9 +66,35 @@ def print_differences(data, olddata):
                   (k, olddata[k], data[k]))
         # Additions are not mentioned
 
+def optimize(data):
+    locale_alias = locale.locale_alias
+    locale.locale_alias = data.copy()
+    for k, v in data.items():
+        del locale.locale_alias[k]
+        if locale.normalize(k) != v:
+            locale.locale_alias[k] = v
+    newdata = locale.locale_alias
+    errors = check(data)
+    locale.locale_alias = locale_alias
+    if errors:
+        sys.exit(1)
+    return newdata
+
+def check(data):
+    # Check that all alias definitions from the X11 file
+    # are actually mapped to the correct alias locales.
+    errors = 0
+    for k, v in data.items():
+        if locale.normalize(k) != v:
+            print('ERROR: %a -> %a != %a' % (k, locale.normalize(k), v),
+                  file=sys.stderr)
+            errors += 1
+    return errors
+
 if __name__ == '__main__':
     data = locale.locale_alias.copy()
     data.update(parse(LOCALE_ALIAS))
+    data = optimize(data)
     print_differences(data, locale.locale_alias)
     print()
     print('locale_alias = {')
