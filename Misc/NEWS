@@ -182,6 +182,9 @@ IDLE
 Tests
 -----
 
+- Issue #19938: Re-enabled test_bug_1333982 in test_dis, which had been
+  disabled since 3.0 due to the changes in listcomp handling.
+
 - Issue #19320: test_tcl no longer fails when wantobjects is false.
 
 - Issue #19683: Removed empty tests from test_minidom.  Patch by Ajitesh Gupta.
