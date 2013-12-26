@@ -421,6 +421,20 @@ class NormalizeTest(unittest.TestCase):
         self.check('ca_ES@valencia', 'ca_ES.ISO8859-1@valencia')
         self.check('ca@valencia', 'ca_ES.ISO8859-1@valencia')
 
+    def test_devanagari_modifier(self):
+        self.check('ks_IN.UTF-8@devanagari', 'ks_IN.UTF-8@devanagari')
+        self.check('ks_IN@devanagari', 'ks_IN.UTF-8@devanagari')
+        self.check('ks@devanagari', 'ks_IN.UTF-8@devanagari')
+        self.check('ks_IN.UTF-8', 'ks_IN.UTF-8')
+        self.check('ks_IN', 'ks_IN.UTF-8')
+        self.check('ks', 'ks_IN.UTF-8')
+        self.check('sd_IN.UTF-8@devanagari', 'sd_IN.UTF-8@devanagari')
+        self.check('sd_IN@devanagari', 'sd_IN.UTF-8@devanagari')
+        self.check('sd@devanagari', 'sd_IN.UTF-8@devanagari')
+        self.check('sd_IN.UTF-8', 'sd_IN.UTF-8')
+        self.check('sd_IN', 'sd_IN.UTF-8')
+        self.check('sd', 'sd_IN.UTF-8')
+
 
 class TestMiscellaneous(unittest.TestCase):
     def test_getpreferredencoding(self):

@@ -23,6 +23,12 @@ def parse(filename):
         if line[:1] == '#':
             continue
         locale, alias = line.split()
+        # Fix non-standard locale names, e.g. ks_IN@devanagari.UTF-8
+        if '@' in alias:
+            alias_lang, _, alias_mod = alias.partition('@')
+            if '.' in alias_mod:
+                alias_mod, _, alias_enc = alias_mod.partition('.')
+                alias = alias_lang + '.' + alias_enc + '@' + alias_mod
         # Strip ':'
         if locale[-1] == ':':
             locale = locale[:-1]

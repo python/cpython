@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20027: Fixed locale aliases for devanagari locales.
+
 - Issue #20067: Tkinter variables now work when wantobjects is false.
 
 - Issue #19020: Tkinter now uses splitlist() instead of split() in configure
