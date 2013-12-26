@@ -92,3 +92,5 @@ a "deactivate" function, whereas on Windows there are separate scripts called
 ``deactivate.bat`` and ``Deactivate.ps1`` which are installed when the venv is
 created.
 
+.. versionadded:: 3.4
+   ``fish`` and ``csh`` activation scripts.
