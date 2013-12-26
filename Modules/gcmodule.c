@@ -1498,6 +1498,7 @@ PyDoc_STRVAR(gc__doc__,
 "isenabled() -- Returns true if automatic collection is enabled.\n"
 "collect() -- Do a full collection right now.\n"
 "get_count() -- Return the current collection counts.\n"
+"get_stats() -- Return list of dictionaries containing per-generation stats.\n"
 "set_debug() -- Set debugging flags.\n"
 "get_debug() -- Get debugging flags.\n"
 "set_threshold() -- Set the collection thresholds.\n"

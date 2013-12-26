@@ -628,6 +628,14 @@ multiple implementations of an operation that allows it to work with
       PEP written and implemented by Łukasz Langa.
 
 
+gc
+--
+
+New :func:`~gc.get_stats` returns a list of three per-generation dictionaries
+containing the collections statistics since interpreter startup.  (Contributed
+by Antoine Pitrou in :issue:`16351`.)
+
+
 hashlib
 -------
 
