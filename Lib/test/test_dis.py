@@ -7,6 +7,7 @@ import unittest
 import sys
 import dis
 import io
+import re
 import types
 import contextlib
 
@@ -106,27 +107,26 @@ def bug1333982(x=[]):
     pass
 
 dis_bug1333982 = """\
- %-4d         0 LOAD_CONST               1 (0)
-              3 JUMP_IF_TRUE            33 (to 39)
-              6 POP_TOP
-              7 LOAD_GLOBAL              0 (AssertionError)
-             10 BUILD_LIST               0
-             13 LOAD_FAST                0 (x)
-             16 GET_ITER
-        >>   17 FOR_ITER                12 (to 32)
-             20 STORE_FAST               1 (s)
-             23 LOAD_FAST                1 (s)
-             26 LIST_APPEND              2
-             29 JUMP_ABSOLUTE           17
+%3d           0 LOAD_CONST               1 (0)
+              3 POP_JUMP_IF_TRUE        35
+              6 LOAD_GLOBAL              0 (AssertionError)
+              9 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
+             12 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
+             15 MAKE_FUNCTION            0
+             18 LOAD_FAST                0 (x)
+             21 GET_ITER
+             22 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
 
- %-4d   >>   32 LOAD_CONST               2 (1)
-             35 BINARY_ADD
-             36 RAISE_VARARGS            2
-        >>   39 POP_TOP
+%3d          25 LOAD_CONST               4 (1)
+             28 BINARY_ADD
+             29 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
+             32 RAISE_VARARGS            1
 
- %-4d        40 LOAD_CONST               0 (None)
-             43 RETURN_VALUE
+%3d     >>   35 LOAD_CONST               0 (None)
+             38 RETURN_VALUE
 """ % (bug1333982.__code__.co_firstlineno + 1,
+       __file__,
+       bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
        bug1333982.__code__.co_firstlineno + 3)
 
@@ -244,8 +244,14 @@ class DisTests(unittest.TestCase):
     def get_disassemble_as_string(self, func, lasti=-1):
         return self.get_disassembly(func, lasti, False)
 
+    def strip_addresses(self, text):
+        return re.sub(r'\b0x[0-9A-Fa-f]+\b', '0x...', text)
+
     def do_disassembly_test(self, func, expected):
-        self.assertEqual(self.get_disassembly(func), expected)
+        got = self.get_disassembly(func)
+        if got != expected:
+            got = self.strip_addresses(got)
+        self.assertEqual(got, expected)
 
     def test_opmap(self):
         self.assertEqual(dis.opmap["NOP"], 9)
@@ -265,18 +271,13 @@ class DisTests(unittest.TestCase):
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
 
-    # Test has been disabled due to change in the way
-    # list comps are handled. The byte code now includes
-    # a memory address and a file location, so they change from
-    # run to run.
-    @unittest.skip('disabled due to a change in the way list comps are handled')
     def test_bug_1333982(self):
-        # XXX: re-enable this test!
         # This one is checking bytecodes generated for an `assert` statement,
         # so fails if the tests are run with -O.  Skip this test then.
+        if not __debug__:
+            self.skipTest('need asserts, run without -O')
 
-        if __debug__:
-            self.do_disassembly_test(bug1333982, dis_bug1333982)
+        self.do_disassembly_test(bug1333982, dis_bug1333982)
 
     def test_big_linenos(self):
         def func(count):
@@ -827,9 +828,5 @@ class BytecodeTests(unittest.TestCase):
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)
 
-def test_main():
-    run_unittest(DisTests, DisWithFileTests, CodeInfoTests,
-                 InstructionTests, BytecodeTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
