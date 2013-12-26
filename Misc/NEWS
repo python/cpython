@@ -253,6 +253,9 @@ IDLE
 Tests
 -----
 
+- Issue #20070: Don't run test_urllib2net when network resources are not
+  enabled.
+
 - Issue #19938: Re-enabled test_bug_1333982 in test_dis, which had been
   disabled since 3.0 due to the changes in listcomp handling.
 
