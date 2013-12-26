@@ -223,11 +223,13 @@ class Variable:
             _varnum += 1
         if value is not None:
             self.set(value)
-        elif not self._tk.call("info", "exists", self._name):
+        elif not self._tk.getboolean(self._tk.call("info", "exists", self._name)):
             self.set(self._default)
     def __del__(self):
         """Unset the variable in Tcl."""
-        self._tk.globalunsetvar(self._name)
+        if (self._tk is not None and
+            self._tk.getboolean(self._tk.call("info", "exists", self._name))):
+            self._tk.globalunsetvar(self._name)
     def __str__(self):
         """Return the name of the variable in Tcl."""
         return self._name
