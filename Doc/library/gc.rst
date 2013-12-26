@@ -69,9 +69,10 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: get_stats()
 
-   Return a list of 3 per-generation dictionaries containing collection
-   statistics since interpreter start.  At this moment, each dictionary will
-   contain the following items:
+   Return a list of three per-generation dictionaries containing collection
+   statistics since interpreter start.  The number of keys may change
+   in the future, but currently each dictionary will contain the following
+   items:
 
    * ``collections`` is the number of times this generation was collected;
 
