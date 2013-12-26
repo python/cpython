@@ -24,6 +24,9 @@ class TestBase(unittest.TestCase):
 
 class TestVariable(TestBase):
 
+    def info_exists(self, *args):
+        return self.root.getboolean(self.root.call("info", "exists", *args))
+
     def test_default(self):
         v = Variable(self.root)
         self.assertEqual("", v.get())
@@ -35,21 +38,21 @@ class TestVariable(TestBase):
         self.assertEqual("varname", str(v))
 
     def test___del__(self):
-        self.assertFalse(self.root.call("info", "exists", "varname"))
+        self.assertFalse(self.info_exists("varname"))
         v = Variable(self.root, "sample string", "varname")
-        self.assertTrue(self.root.call("info", "exists", "varname"))
+        self.assertTrue(self.info_exists("varname"))
         del v
-        self.assertFalse(self.root.call("info", "exists", "varname"))
+        self.assertFalse(self.info_exists("varname"))
 
     def test_dont_unset_not_existing(self):
-        self.assertFalse(self.root.call("info", "exists", "varname"))
+        self.assertFalse(self.info_exists("varname"))
         v1 = Variable(self.root, name="name")
         v2 = Variable(self.root, name="name")
         del v1
-        self.assertFalse(self.root.call("info", "exists", "name"))
+        self.assertFalse(self.info_exists("name"))
         # shouldn't raise exception
         del v2
-        self.assertFalse(self.root.call("info", "exists", "name"))
+        self.assertFalse(self.info_exists("name"))
 
     def test___eq__(self):
         # values doesn't matter, only class and name are checked
