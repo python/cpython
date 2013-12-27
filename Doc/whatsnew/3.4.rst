@@ -627,6 +627,11 @@ multiple implementations of an operation that allows it to work with
    :pep:`443` -- Single-dispatch generic functions
       PEP written and implemented by Łukasz Langa.
 
+A pure-python version of the :func:`~functools.partial` function is now in the
+stdlib; in CPython it is overridden by the C accelerated version, but it is
+available for other implementations to use.  (Contributed by Brian Thorne in
+:issue:`12428`.)
+
 
 gc
 --
@@ -665,6 +670,16 @@ are invited to set it explicitly and update your code to use this new feature.
 
 The *strict* argument of :class:`~html.parser.HTMLParser` is now deprecated.
 (Contributed by Ezio Melotti in :issue:`15114`)
+
+
+importlib
+---------
+
+The :class:`~importlib.abc.InspectLoader` ABC defines a new method,
+:meth:`~importlib.abc.InspectLoader.source_to_code` that accepts source
+data and a path and returns a code object.  The default implementation
+is equivalent to ``compile(data, path, 'exec', dont_inherit=True)``.
+(Contributed by Eric Snow and Brett Cannon in :issue:`15627`.)
 
 
 inspect
@@ -1208,8 +1223,8 @@ Deprecated Features
 Removed
 =======
 
-The following previously deprecated APIs and features have been removed
-in Python 3.4:
+The following obsolete and previously deprecated APIs and features have been
+removed in Python 3.4:
 
 * Support for the following operating systems has been removed from the source
   and build tools:
@@ -1227,6 +1242,9 @@ in Python 3.4:
 
 * The ``PyThreadState.tick_counter`` field has been removed; its value has
   been meaningless since Python 3.2, when the "new GIL" was introduced.
+
+* ``PyLoader`` and ``PyPycLoader`` have been removed from :mod:`importlib`.
+  (Contributed by Taras Lyapun in :issue:`15641`.)
 
 
 Porting to Python 3.4
@@ -1293,6 +1311,7 @@ Changes in the Python API
   working directory will also now have an absolute path, including when using
   ``-m`` with the interpreter (this does not influence when the path to a file
   is specified on the command-line).
+
 
 Changes in the C API
 --------------------
