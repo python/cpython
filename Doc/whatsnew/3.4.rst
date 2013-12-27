@@ -554,15 +554,15 @@ and Claudiu Popa in :issue:`17916`)
 doctest
 -------
 
-Added :data:`~doctest.FAIL_FAST` flag to halt test running as soon as the first
-failure is detected.  (Contributed by R. David Murray and Daniel Urban in
-:issue:`16522`.)
+A new :ref:`option flag <doctest-options>`, :data:`~doctest.FAIL_FAST`, halts
+test running as soon as the first failure is detected.  (Contributed by R.
+David Murray and Daniel Urban in :issue:`16522`.)
 
-Updated the doctest command line interface to use :mod:`argparse`, and added
-``-o`` and ``-f`` options to the interface.  ``-o`` allows doctest options to
-be specified on the command line, and ``-f`` is a shorthand for ``-o
-FAIL_FAST`` (to parallel the similar option supported by the :mod:`unittest`
-CLI).  (Contributed by R. David Murray in :issue:`11390`.)
+The :mod:`doctest` command line interface now uses :mod:`argparse`, and has two
+new options, ``-o`` and ``-f``.  ``-o`` allows :ref:`doctest options
+<doctest-options>` to be specified on the command line, and ``-f`` is a
+shorthand for ``-o FAIL_FAST`` (to parallel the similar option supported by the
+:mod:`unittest` CLI).  (Contributed by R. David Murray in :issue:`11390`.)
 
 
 email
@@ -795,13 +795,11 @@ keyword-only arguments.  It also provides some efficiency improvements.
 poplib
 ------
 
-New :meth:`~poplib.POP3.stls` method to switch a clear-text POP3 session into
-an encrypted POP3 session.
-
-New :meth:`~poplib.POP3.capa` method to query the capabilities advertised by the
-POP3 server.
-
-(Contributed by Lorenzo Catucci in :issue:`4473`.)
+Two new methods have been added to :mod:`poplib`: :meth:`~poplib.POP3.capa`,
+which returns the list of capabilities advertised by the POP server, and
+:meth:`~poplib.POP3.stls`, which switches a clear-text POP3 session into an
+encrypted POP3 session if the POP server supports it.  (Contributed by Lorenzo
+Catucci in :issue:`4473`.)
 
 
 pprint
@@ -947,8 +945,9 @@ reducing the amount of memory consumed (:issue:`1565525`).
 urllib
 ------
 
-Add support.for ``data:`` URLs in :mod:`urllib.request`.
-(Contributed by Mathias Panzenböck in :issue:`16423`.)
+:mod:`urllib.request` now supports ``data:`` URLs via the
+:class:`~urllib.request.DataHandler` class.  (Contributed by Mathias Panzenböck
+in :issue:`16423`.)
 
 
 unittest

@@ -198,14 +198,12 @@ An :class:`POP3` instance has the following methods:
 
    *context* parameter is a :class:`ssl.SSLContext` object which allows
    bundling SSL configuration options, certificates and private keys into
-   a single (potentially long-lived) structure.
+   a single (potentially long-lived) structure.  This method supports
+   hostname checking via :attr:`SSLContext.check_hostname`
+   :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+   :data:`~ssl.HAS_SNI`).
 
    .. versionadded:: 3.4
-
-   .. versionchanged:: 3.4
-      The method now supports hostname check with
-      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
-      :data:`~ssl.HAS_SNI`).
 
 
 Instances of :class:`POP3_SSL` have no additional methods. The interface of this
