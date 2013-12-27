@@ -1898,8 +1898,9 @@ Library
   do with byte strings.
 
 - Issue #18116: getpass was always getting an error when testing /dev/tty,
-  and thus was always falling back to stdin.  It also leaked an open file
-  when it did so.  Both of these issues are now fixed.
+  and thus was always falling back to stdin, and would then raise an exception
+  if stdin could not be used (such as /dev/null).  It also leaked an open file.
+  All of these issues are now fixed.
 
 - Issue #17198: Fix a NameError in the dbm module.  Patch by Valentina
   Mukhamedzhanova.
