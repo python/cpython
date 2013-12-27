@@ -29,6 +29,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #18116: getpass was always getting an error when testing /dev/tty,
+  and thus was always falling back to stdin, and would then raise an exception
+  if stdin could not be used (such as /dev/null).  It also leaked an open file.
+  All of these issues are now fixed.
+
 - Issue #20027: Fixed locale aliases for devanagari locales.
 
 - Issue #20067: Tkinter variables now work when wantobjects is false.
