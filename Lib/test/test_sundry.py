@@ -41,7 +41,6 @@ class TestUntestedModules(unittest.TestCase):
 
             import encodings
             import formatter
-            import getpass
             import html.entities
             import imghdr
             import keyword
