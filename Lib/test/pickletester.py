@@ -812,10 +812,18 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')
 
     def test_reduce(self):
-        pass
+        for proto in protocols:
+            inst = AAA()
+            dumped = self.dumps(inst, proto)
+            loaded = self.loads(dumped)
+            self.assertEqual(loaded, REDUCE_A)
 
     def test_getinitargs(self):
-        pass
+        for proto in protocols:
+            inst = initarg(1, 2)
+            dumped = self.dumps(inst, proto)
+            loaded = self.loads(dumped)
+            self.assert_is_copy(inst, loaded)
 
     def test_pop_empty_stack(self):
         # Test issue7455
