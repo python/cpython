@@ -51,6 +51,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         suite = unittest.TestSuite()
 
         self.assertEqual(suite.countTestCases(), 0)
+        # countTestCases() still works after tests are run
+        suite.run(unittest.TestResult())
+        self.assertEqual(suite.countTestCases(), 0)
 
     # "class TestSuite([tests])"
     # ...
@@ -62,6 +65,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
     def test_init__empty_tests(self):
         suite = unittest.TestSuite([])
 
+        self.assertEqual(suite.countTestCases(), 0)
+        # countTestCases() still works after tests are run
+        suite.run(unittest.TestResult())
         self.assertEqual(suite.countTestCases(), 0)
 
     # "class TestSuite([tests])"
@@ -84,6 +90,14 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         suite_3 = unittest.TestSuite(set(suite_1))
         self.assertEqual(suite_3.countTestCases(), 2)
 
+        # countTestCases() still works after tests are run
+        suite_1.run(unittest.TestResult())
+        self.assertEqual(suite_1.countTestCases(), 2)
+        suite_2.run(unittest.TestResult())
+        self.assertEqual(suite_2.countTestCases(), 2)
+        suite_3.run(unittest.TestResult())
+        self.assertEqual(suite_3.countTestCases(), 2)
+
     # "class TestSuite([tests])"
     # ...
     # "If tests is given, it must be an iterable of individual test cases
@@ -98,6 +112,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
             yield unittest.FunctionTestCase(lambda: None)
 
         suite = unittest.TestSuite(tests())
+        self.assertEqual(suite.countTestCases(), 2)
+        # countTestCases() still works after tests are run
+        suite.run(unittest.TestResult())
         self.assertEqual(suite.countTestCases(), 2)
 
     ################################################################
@@ -145,6 +162,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         suite = unittest.TestSuite((test1, test2))
 
         self.assertEqual(suite.countTestCases(), 2)
+        # countTestCases() still works after tests are run
+        suite.run(unittest.TestResult())
+        self.assertEqual(suite.countTestCases(), 2)
 
     # "Return the number of tests represented by the this test object.
     # ...this method is also implemented by the TestSuite class, which can
@@ -162,6 +182,10 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         parent = unittest.TestSuite((test3, child, Test1('test1')))
 
         self.assertEqual(parent.countTestCases(), 4)
+        # countTestCases() still works after tests are run
+        parent.run(unittest.TestResult())
+        self.assertEqual(parent.countTestCases(), 4)
+        self.assertEqual(child.countTestCases(), 2)
 
     # "Run the tests associated with this suite, collecting the result into
     # the test result object passed as result."
@@ -220,6 +244,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
 
         self.assertEqual(suite.countTestCases(), 1)
         self.assertEqual(list(suite), [test])
+        # countTestCases() still works after tests are run
+        suite.run(unittest.TestResult())
+        self.assertEqual(suite.countTestCases(), 1)
 
     # "Add a ... TestSuite to the suite"
     def test_addTest__TestSuite(self):
@@ -233,6 +260,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
 
         self.assertEqual(suite.countTestCases(), 1)
         self.assertEqual(list(suite), [suite_2])
+        # countTestCases() still works after tests are run
+        suite.run(unittest.TestResult())
+        self.assertEqual(suite.countTestCases(), 1)
 
     # "Add all the tests from an iterable of TestCase and TestSuite
     # instances to this test suite."
@@ -392,6 +422,7 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         self.assertEqual(len(result.errors), 1)
         self.assertEqual(len(result.failures), 0)
         self.assertEqual(result.testsRun, 2)
+        self.assertEqual(suite.countTestCases(), 2)
 
 
     def test_overriding_call(self):
