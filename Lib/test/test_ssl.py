@@ -232,6 +232,13 @@ class BasicSocketTests(unittest.TestCase):
         self.assertRaises(socket.error, ss.send, b'x')
         self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
 
+    def test_unsupported_dtls(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(s.close)
+        with self.assertRaises(NotImplementedError) as cx:
+            ssl.wrap_socket(s, cert_reqs=ssl.CERT_NONE)
+        self.assertEqual(str(cx.exception), "only stream sockets are supported")
+
 
 class NetworkedTests(unittest.TestCase):
 

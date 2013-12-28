@@ -89,6 +89,7 @@ else:
 
 from socket import socket, _fileobject, _delegate_methods, error as socket_error
 from socket import getnameinfo as _getnameinfo
+from socket import SOL_SOCKET, SO_TYPE, SOCK_STREAM
 import base64        # for DER-to-PEM translation
 import errno
 
@@ -108,6 +109,10 @@ class SSLSocket(socket):
                  ssl_version=PROTOCOL_SSLv23, ca_certs=None,
                  do_handshake_on_connect=True,
                  suppress_ragged_eofs=True, ciphers=None):
+        # Can't use sock.type as other flags (such as SOCK_NONBLOCK) get
+        # mixed in.
+        if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
+            raise NotImplementedError("only stream sockets are supported")
         socket.__init__(self, _sock=sock._sock)
         # The initializer for socket overrides the methods send(), recv(), etc.
         # in the instancce, which we don't need -- but we want to provide the

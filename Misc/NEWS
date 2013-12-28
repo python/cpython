@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19422: Explicitly disallow non-SOCK_STREAM sockets in the ssl
+  module, rather than silently let them emit clear text data.
+
 - Issue #20027: Fixed locale aliases for devanagari locales.
 
 - Issue #20067: Tkinter variables now work when wantobjects is false.
