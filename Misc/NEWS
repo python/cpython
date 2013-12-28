@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19422: Explicitly disallow non-SOCK_STREAM sockets in the ssl
+  module, rather than silently let them emit clear text data.
+
 - Issue #18116: getpass was always getting an error when testing /dev/tty,
   and thus was always falling back to stdin, and would then raise an exception
   if stdin could not be used (such as /dev/null).  It also leaked an open file.

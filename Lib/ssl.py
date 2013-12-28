@@ -111,6 +111,7 @@ else:
 from socket import getnameinfo as _getnameinfo
 from socket import error as socket_error
 from socket import socket, AF_INET, SOCK_STREAM, create_connection
+from socket import SOL_SOCKET, SO_TYPE
 import base64        # for DER-to-PEM translation
 import traceback
 import errno
@@ -296,6 +297,10 @@ class SSLSocket(socket):
             self.ssl_version = ssl_version
             self.ca_certs = ca_certs
             self.ciphers = ciphers
+        # Can't use sock.type as other flags (such as SOCK_NONBLOCK) get
+        # mixed in.
+        if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
+            raise NotImplementedError("only stream sockets are supported")
         if server_side and server_hostname:
             raise ValueError("server_hostname can only be specified "
                              "in client mode")
