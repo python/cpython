@@ -20,6 +20,7 @@ class BaseTestSuite(object):
 
     def __init__(self, tests=()):
         self._tests = []
+        self._removed_tests = 0
         self.addTests(tests)
 
     def __repr__(self):
@@ -37,9 +38,10 @@ class BaseTestSuite(object):
         return iter(self._tests)
 
     def countTestCases(self):
-        cases = 0
+        cases = self._removed_tests
         for test in self:
-            cases += test.countTestCases()
+            if test:
+                cases += test.countTestCases()
         return cases
 
     def addTest(self, test):
@@ -70,10 +72,16 @@ class BaseTestSuite(object):
     def _removeTestAtIndex(self, index):
         """Stop holding a reference to the TestCase at index."""
         try:
-            self._tests[index] = None
+            test = self._tests[index]
         except TypeError:
-            # support for suite implementations that have overriden self._test
+            # support for suite implementations that have overriden self._tests
             pass
+        else:
+            # Some unittest tests add non TestCase/TestSuite objects to
+            # the suite.
+            if hasattr(test, 'countTestCases'):
+                self._removed_tests += test.countTestCases()
+            self._tests[index] = None
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)

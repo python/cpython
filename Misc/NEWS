@@ -44,6 +44,8 @@ Core and Builtins
 Library
 -------
 
+- Fix breakage in TestSuite.countTestCases() introduced by issue #11798.
+
 - Issue #19918: Fix PurePath.relative_to() under Windows.
 
 - Issue #19422: Explicitly disallow non-SOCK_STREAM sockets in the ssl
