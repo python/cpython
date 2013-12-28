@@ -6,7 +6,7 @@ import pickle
 import sys
 import base64
 
-class UnseekableIO(io.FileIO):
+class UnseekableIO(file):
     def tell(self):
         raise io.UnsupportedOperation
 
