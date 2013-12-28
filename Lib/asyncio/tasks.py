@@ -1,6 +1,7 @@
 """Support for tasks, coroutines and the scheduler."""
 
 __all__ = ['coroutine', 'Task',
+           'iscoroutinefunction', 'iscoroutine',
            'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
            'wait', 'wait_for', 'as_completed', 'sleep', 'async',
            'gather', 'shield',
