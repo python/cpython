@@ -493,6 +493,18 @@ class BasicSocketTests(unittest.TestCase):
             support.gc_collect()
         self.assertIn(r, str(cm.warning.args[0]))
 
+    def test_unsupported_dtls(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(s.close)
+        with self.assertRaises(NotImplementedError) as cx:
+            ssl.wrap_socket(s, cert_reqs=ssl.CERT_NONE)
+        self.assertEqual(str(cx.exception), "only stream sockets are supported")
+        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        with self.assertRaises(NotImplementedError) as cx:
+            ctx.wrap_socket(s)
+        self.assertEqual(str(cx.exception), "only stream sockets are supported")
+
+
 class ContextTests(unittest.TestCase):
 
     @skip_if_broken_ubuntu_ssl
