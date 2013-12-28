@@ -780,27 +780,23 @@ class PurePath(object):
         parts = self._parts
         drv = self._drv
         root = self._root
-        if drv or root:
-            if root:
-                abs_parts = [drv, root] + parts[1:]
-            else:
-                abs_parts = [drv] + parts[1:]
+        if root:
+            abs_parts = [drv, root] + parts[1:]
         else:
             abs_parts = parts
         to_drv, to_root, to_parts = self._parse_args(other)
-        if to_drv or to_root:
-            if to_root:
-                to_abs_parts = [to_drv, to_root] + to_parts[1:]
-            else:
-                to_abs_parts = [to_drv] + to_parts[1:]
+        if to_root:
+            to_abs_parts = [to_drv, to_root] + to_parts[1:]
         else:
             to_abs_parts = to_parts
         n = len(to_abs_parts)
-        if n == 0 and (drv or root) or abs_parts[:n] != to_abs_parts:
+        cf = self._flavour.casefold_parts
+        if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError("{!r} does not start with {!r}"
                              .format(str(self), str(formatted)))
-        return self._from_parsed_parts('', '', abs_parts[n:])
+        return self._from_parsed_parts('', root if n == 1 else '',
+                                       abs_parts[n:])
 
     @property
     def parts(self):
