@@ -400,6 +400,12 @@ fp_readl(char *s, int size, struct tok_state *tok)
         buf = PyObject_CallObject(tok->decoding_readline, NULL);
         if (buf == NULL)
             return error_ret(tok);
+        if (!PyUnicode_Check(buf)) {
+            Py_DECREF(buf);
+            PyErr_SetString(PyExc_SyntaxError,
+                            "codec did not return a unicode object");
+            return error_ret(tok);
+        }
     } else {
         tok->decoding_buffer = NULL;
         if (PyString_CheckExact(buf))

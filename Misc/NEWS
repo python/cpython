@@ -9,6 +9,9 @@ What's New in Python 2.7.7?
 Core and Builtins
 -----------------
 
+- Raise a better error when non-unicode codecs are used for a file's coding
+  cookie.
+
 - Issue #17976: Fixed potential problem with file.write() not detecting IO error
   by inspecting the return value of fwrite().  Based on patches by Jaakko Moisio
   and Victor Stinner.

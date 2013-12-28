@@ -58,6 +58,11 @@ class PEP263Test(unittest.TestCase):
         with self.assertRaisesRegexp(SyntaxError, 'BOM'):
             compile('\xef\xbb\xbf# -*- coding: fake -*-\n', 'dummy', 'exec')
 
+    def test_non_unicode_codec(self):
+        with self.assertRaisesRegexp(SyntaxError,
+                                     'codec did not return a unicode'):
+            from test import bad_coding3
+
 
 def test_main():
     test_support.run_unittest(PEP263Test)
