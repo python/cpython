@@ -2671,8 +2671,9 @@ Library
   Content-Length and the incoming stream is finished.  Patch by Eran
   Rundstein.
 
-- Add abc.ABC class to use inheritance rather than a direct invocation of
-  ABCMeta metaclass. Patch by Bruno Dupuis.
+- Issue #16049: Add abc.ABC class to enable the use of inheritance to create
+  ABCs, rather than the more cumbersome metaclass=ABCMeta. Patch by Bruno
+  Dupuis.
 
 - Expose the TCP_FASTOPEN and MSG_FASTOPEN flags in socket when they're
   available.

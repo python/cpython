@@ -481,6 +481,12 @@ New function :func:`abc.get_cache_token` can be used to know when to invalidate
 caches that are affected by changes in the object graph.  (Contributed
 by Łukasz Langa in :issue:`16832`.)
 
+New class :class:`~abc.ABC` has :class:`~abc.ABCMeta` as its meta class.
+Using ``ABC`` as a base class has essentially the same effect as specifying
+``metaclass=abc.ABCMeta``, but is simpler to type and easier to read.
+(Contributed by Bruno Dupuis in :issue:`16049`.)
+
+
 
 aifc
 ----
