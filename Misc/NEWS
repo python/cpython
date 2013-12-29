@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12692: Backport the fix for ResourceWarning in test_urllib2net. This
+  also helps in closing the socket when Connection Close header is not sent.
+
 - Issue #19422: Explicitly disallow non-SOCK_STREAM sockets in the ssl
   module, rather than silently let them emit clear text data.
 
