@@ -1939,6 +1939,14 @@ Loading and running tests
 
         stream, descriptions, verbosity
 
+   .. method:: run(test)
+
+      This method is the main public interface to the `TextTestRunner`. This
+      method takes a :class:`TestSuite` or :class:`TestCase` instance. A
+      :class:`TestResult` is created by calling
+      :func:`_makeResult` and the test(s) are run and the
+      results printed to stdout.
+
 
 .. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, \
                    testLoader=unittest.defaultTestLoader, exit=True, verbosity=1, \
