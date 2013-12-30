@@ -655,7 +655,7 @@ New :func:`hashlib.pbkdf2_hmac` function.
 
 .. _whatsnew-sha3:
 
-New :ref:`hash algorithms <hash-algorithms>` ``sah3_224()``, ``sha3_256()``,
+New :ref:`hash algorithms <hash-algorithms>` ``sha3_224()``, ``sha3_256()``,
 ``sha3_384()``, and ``sha3_512()``.  (Contributed by Christian Heimes in
 :issue:`16113`.)
 
