@@ -308,7 +308,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
                            owner='kjhkjhkjg', group='oihohoh')
         self.assertTrue(os.path.exists(res))
 
-    @unittest.skipUnless(zlib, "Requires zlib")
+    @unittest.skipUnless(ZLIB_SUPPORT, "Requires zlib")
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     def test_tarfile_root_owner(self):
         tmpdir, tmpdir2, base_name =  self._create_files()
