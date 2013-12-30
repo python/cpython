@@ -429,7 +429,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEqual(sorted(filenames), ['fake-1.0', 'fake-1.0/PKG-INFO',
                                              'fake-1.0/README.manual'])
 
-    @unittest.skipUnless(zlib, "requires zlib")
+    @unittest.skipUnless(ZLIB_SUPPORT, "requires zlib")
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     @unittest.skipIf(find_executable('tar') is None,
                      "The tar command is not found")
