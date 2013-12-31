@@ -10,7 +10,7 @@ import tempfile
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "2.0.1"
+_SETUPTOOLS_VERSION = "2.0.2"
 
 _PIP_VERSION = "1.5rc4"
 
