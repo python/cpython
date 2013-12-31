@@ -453,6 +453,7 @@ deviation of a data series.
 
 .. _whatsnew-tracemalloc:
 
+
 tracemalloc
 -----------
 
@@ -902,6 +903,7 @@ The ``socket.AF_*`` and ``socket.SOCK_*`` constants are enumeration values,
 using the new :mod:`enum` module. This allows descriptive reporting during
 debugging, instead of seeing integer "magic numbers".
 
+
 ssl
 ---
 
@@ -1197,6 +1199,9 @@ Significant Optimizations
 * :class:`bz2.BZ2File` is now as fast or faster than the Python2 version for
   most cases.  :class:`lzma.LZMAFile` has also been optimized.  (Contributed by
   Serhiy Storchaka and Nadeem Vawda in :issue:`16034`.)
+
+* :func:`random.getrandbits` is 20%-40% faster for small integers (the most
+  common use case).  (Contributed by Serhiy Storchaka in :issue:`16674`).
 
 
 Deprecated
