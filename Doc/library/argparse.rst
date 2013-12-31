@@ -1671,6 +1671,9 @@ FileType objects
       >>> parser.parse_args(['-'])
       Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
 
+   .. versionadded:: 3.4
+      The *encodings* and *errors* keyword arguments.
+
 
 Argument groups
 ^^^^^^^^^^^^^^^
