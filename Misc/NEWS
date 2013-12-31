@@ -2518,7 +2518,7 @@ Library
   byte-compiled file is a symlink or non-regular file as a warning that import
   will not keep the file path type if it writes to that path.
 
-- Issue #180022: Have site.addpackage() consider already known paths even when
+- Issue #16972: Have site.addpackage() consider already known paths even when
   none are explicitly passed in. Bug report and fix by Kirill.
 
 - Issue #1602133: on Mac OS X a shared library build (``--enable-shared``)
