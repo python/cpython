@@ -495,6 +495,14 @@ The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
 
+argparse
+--------
+
+The :class:`~argparse.FileType` class now accepts *encoding* and
+*errors* arguments, which are passed through to :func:`open`.  (Contributed
+by Lucas Maystre in :issue:`11175`.)
+
+
 audioop
 -------
 
