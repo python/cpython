@@ -494,6 +494,11 @@ aifc
 The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
+:func:`aifc.open` now supports the context manager protocol: when used in a
+:keyword:`with` block, the :meth:`~aifc.aifc.close` method of the returned
+object will be called automatically at the end of the block.  (Contributed by
+Serhiy Storchacha in :issue:`16486`.)
+
 
 argparse
 --------
