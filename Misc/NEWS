@@ -2448,9 +2448,10 @@ Library
 - Issue #16564: Fixed regression relative to Python2 in the operation of
   email.encoders.encode_noop when used with binary data.
 
-- Issue #10355: In SpooledTemporaryFile class mode, name, encoding and
-  newlines properties now work for unrolled files.  Obsoleted and never
-  working on Python 3 xreadline method now removed.
+- Issue #10355: The mode, name, encoding and newlines properties now work on
+  SpooledTemporaryFile objects even when they have not yet rolled over.
+  Obsolete method xreadline (which has never worked in Python 3) has been
+  removed.
 
 - Issue #16686: Fixed a lot of bugs in audioop module.  Fixed crashes in
   avgpp(), maxpp() and ratecv().  Fixed an integer overflow in add(), bias(),
