@@ -58,9 +58,14 @@ The module defines the following:
    which can be used as Edge or Level Triggered interface for I/O
    events. *sizehint* is deprecated and completely ignored. *flags* can be set
    to :const:`EPOLL_CLOEXEC`, which causes the epoll descriptor to be closed
-   automatically when :func:`os.execve` is called. See section
-   :ref:`epoll-objects` below for the methods supported by epolling objects.
-   They also support the :keyword:`with` statement.
+   automatically when :func:`os.execve` is called.
+
+   See the :ref:`epoll-objects` section below for the methods supported by
+   epolling objects.
+
+   ``epoll`` objects support the context management protocol: when used in a
+   :keyword:`with` statement, the new file descriptor is automatically closed
+   at the end of the block.
 
    The new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
