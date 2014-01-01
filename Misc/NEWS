@@ -197,6 +197,9 @@ IDLE
 Tests
 -----
 
+- Issue #20055: Fix test_shutil under Windows with symlink privileges held.
+  Patch by Vajrasky Kok.
+
 - Issue #19938: Re-enabled test_bug_1333982 in test_dis, which had been
   disabled since 3.0 due to the changes in listcomp handling.
 
