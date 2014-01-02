@@ -1801,6 +1801,10 @@ Loading and running tests
       if __name__ == '__main__':
           unittest.main(verbosity=2)
 
+   The *defaultTest* argument is the name of the test to run if no test names
+   are specified via *argv*.  If not specified or ``None`` and no test names are
+   provided via *argv*, all tests found in *module* are run.
+
    The *argv* argument can be a list of options passed to the program, with the
    first element being the program name.  If not specified or ``None``,
    the values of :data:`sys.argv` are used.
