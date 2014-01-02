@@ -915,6 +915,15 @@ using the new :mod:`enum` module.  This allows meaningful names to be printed
 during debugging, instead of integer "magic numbers".
 
 
+sqlite3
+-------
+
+A new boolean parameter, *uri*, to the :func:`~sqlite3.connect` function can
+be used to indicate that the *database* parameter is a ``uri`` (see
+the `SQLite URI documentation <http://www.sqlite.org/uri.html>`_).
+(Contributed by poq in :issue:`13773`.)
+
+
 ssl
 ---
 
@@ -997,6 +1006,10 @@ unittest
 Support for easy dynamically-generated subtests using the
 :meth:`~unittest.TestCase.subTest` context manager.
 (Contributed by Antoine Pitrou in :issue:`16997`.)
+
+:func:`unittest.main` now also accepts an iterable of test names for
+*defaultTest*, where previously it only accepted a single test name as a
+string.  (Contributed by Jyrki Pulliainen in :issue:`15132`.)
 
 
 venv
@@ -1245,6 +1258,10 @@ Deprecated Python Modules, Functions and Methods
 
 * MD5 as default digestmod for :mod:`hmac` is deprecated. Python 3.6 will
   require an explicit digest name or constructor as *digestmod* argument.
+
+* The internal ``Netrc`` class in the :mod:`ftplib` module has been documented
+  as deprecated in its docstring for quite some time.  It now emits a
+  :exc:`DeprecationWarning` and will be removed completely in Python 3.5.
 
 
 Deprecated Functions and Types in the C API
