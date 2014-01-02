@@ -837,6 +837,20 @@ class TestDialectValidity(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          '"lineterminator" must be a string')
 
+    def test_invalid_chars(self):
+        def create_invalid(field_name, value):
+            class mydialect(csv.Dialect):
+                pass
+            setattr(mydialect, field_name, value)
+            d = mydialect()
+
+        for field_name in ("delimiter", "escapechar", "quotechar"):
+            with self.subTest(field_name=field_name):
+                self.assertRaises(csv.Error, create_invalid, field_name, "")
+                self.assertRaises(csv.Error, create_invalid, field_name, "abc")
+                self.assertRaises(csv.Error, create_invalid, field_name, b'x')
+                self.assertRaises(csv.Error, create_invalid, field_name, 5)
+
 
 class TestSniffer(unittest.TestCase):
     sample1 = """\
