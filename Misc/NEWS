@@ -303,6 +303,8 @@ Tests
 Build
 -----
 
+- Issue #19728: Enable pip installation by default on Windows.
+
 - Issue #16136: Remove VMS support
 
 - Issue #18215: Add script Tools/ssl/test_multiple_versions.py to compile and
