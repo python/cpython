@@ -495,7 +495,7 @@ Callable types
       | :attr:`__annotations__` | A dict containing annotations | Writable  |
       |                         | of parameters.  The keys of   |           |
       |                         | the dict are the parameter    |           |
-      |                         | names, or ``'return'`` for    |           |
+      |                         | names, and ``'return'`` for   |           |
       |                         | the return annotation, if     |           |
       |                         | provided.                     |           |
       +-------------------------+-------------------------------+-----------+
