@@ -528,9 +528,16 @@ class _BasePurePathTest(object):
         self.assertEqual(P('/a/b').with_suffix('.gz'), P('/a/b.gz'))
         self.assertEqual(P('a/b.py').with_suffix('.gz'), P('a/b.gz'))
         self.assertEqual(P('/a/b.py').with_suffix('.gz'), P('/a/b.gz'))
+        # Path doesn't have a "filename" component
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
+        # Invalid suffix
+        self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
+        self.assertRaises(ValueError, P('a/b').with_suffix, '/')
+        self.assertRaises(ValueError, P('a/b').with_suffix, '/.gz')
+        self.assertRaises(ValueError, P('a/b').with_suffix, 'c/d')
+        self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
 
     def test_relative_to_common(self):
         P = self.cls
@@ -920,10 +927,23 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('c:/a/b').with_suffix('.gz'), P('c:/a/b.gz'))
         self.assertEqual(P('c:a/b.py').with_suffix('.gz'), P('c:a/b.gz'))
         self.assertEqual(P('c:/a/b.py').with_suffix('.gz'), P('c:/a/b.gz'))
+        # Path doesn't have a "filename" component
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
         self.assertRaises(ValueError, P('//My/Share').with_suffix, '.gz')
+        # Invalid suffix
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, 'gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, '/')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, '\\')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, 'c:')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, '/.gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, '\\.gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, 'c:.gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, 'c/d')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, 'c\\d')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c/d')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c\\d')
 
     def test_relative_to(self):
         P = self.cls
