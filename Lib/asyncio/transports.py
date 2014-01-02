@@ -2,7 +2,7 @@
 
 import sys
 
-PY34 = sys.version_info >= (3, 4)
+_PY34 = sys.version_info >= (3, 4)
 
 __all__ = ['BaseTransport', 'ReadTransport', 'WriteTransport',
            'Transport', 'DatagramTransport', 'SubprocessTransport',
@@ -94,7 +94,7 @@ class WriteTransport(BaseTransport):
         The default implementation concatenates the arguments and
         calls write() on the result.
         """
-        if not PY34:
+        if not _PY34:
             # In Python 3.3, bytes.join() doesn't handle memoryview.
             list_of_data = (
                 bytes(data) if isinstance(data, memoryview) else data
