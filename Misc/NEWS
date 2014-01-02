@@ -44,6 +44,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20111: pathlib.Path.with_suffix() now sanity checks the given suffix.
+
 - Fix breakage in TestSuite.countTestCases() introduced by issue #11798.
 
 - Issue #20108: Avoid parameter name clash in inspect.getcallargs().
