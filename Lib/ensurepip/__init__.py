@@ -4,15 +4,13 @@ import pkgutil
 import sys
 import tempfile
 
-# TODO: Remove the --pre flag when a pip 1.5 final copy is available
-
 
 __all__ = ["version", "bootstrap"]
 
 
 _SETUPTOOLS_VERSION = "2.0.2"
 
-_PIP_VERSION = "1.5rc4"
+_PIP_VERSION = "1.5"
 
 # pip currently requires ssl support, so we try to provide a nicer
 # error message when that is missing (http://bugs.python.org/issue19744)
@@ -102,11 +100,7 @@ def bootstrap(*, root=None, upgrade=False, user=False,
             additional_paths.append(os.path.join(tmpdir, wheel_name))
 
         # Construct the arguments to be passed to the pip command
-        args = [
-            "install", "--no-index", "--find-links", tmpdir,
-            # Temporary until pip 1.5 is final
-            "--pre",
-        ]
+        args = ["install", "--no-index", "--find-links", tmpdir]
         if root:
             args += ["--root", root]
         if upgrade:
