@@ -52,7 +52,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "setuptools", "pip",
+                unittest.mock.ANY, "setuptools", "pip",
             ],
             unittest.mock.ANY,
         )
@@ -67,7 +67,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "--root", "/foo/bar/",
+                unittest.mock.ANY, "--root", "/foo/bar/",
                 "setuptools", "pip",
             ],
             unittest.mock.ANY,
@@ -80,7 +80,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "--user", "setuptools", "pip",
+                unittest.mock.ANY, "--user", "setuptools", "pip",
             ],
             unittest.mock.ANY,
         )
@@ -92,7 +92,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "--upgrade", "setuptools", "pip",
+                unittest.mock.ANY, "--upgrade", "setuptools", "pip",
             ],
             unittest.mock.ANY,
         )
@@ -104,7 +104,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "-v", "setuptools", "pip",
+                unittest.mock.ANY, "-v", "setuptools", "pip",
             ],
             unittest.mock.ANY,
         )
@@ -116,7 +116,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "-vv", "setuptools", "pip",
+                unittest.mock.ANY, "-vv", "setuptools", "pip",
             ],
             unittest.mock.ANY,
         )
@@ -128,7 +128,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "-vvv", "setuptools", "pip",
+                unittest.mock.ANY, "-vvv", "setuptools", "pip",
             ],
             unittest.mock.ANY,
         )
@@ -286,7 +286,7 @@ class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--pre", "setuptools", "pip",
+                unittest.mock.ANY, "setuptools", "pip",
             ],
             unittest.mock.ANY,
         )
