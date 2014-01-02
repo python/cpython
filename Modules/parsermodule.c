@@ -785,7 +785,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             }
         }
         if (!ok) {
-            PyObject *err = Py_BuildValue("os", elem,
+            PyObject *err = Py_BuildValue("Os", elem,
                                           "Illegal node construct.");
             PyErr_SetObject(parser_error, err);
             Py_XDECREF(err);
