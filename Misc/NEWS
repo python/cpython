@@ -46,6 +46,8 @@ Library
 
 - Fix breakage in TestSuite.countTestCases() introduced by issue #11798.
 
+- Issue #20108: Avoid parameter name clash in inspect.getcallargs().
+
 - Issue #19918: Fix PurePath.relative_to() under Windows.
 
 - Issue #19422: Explicitly disallow non-SOCK_STREAM sockets in the ssl
