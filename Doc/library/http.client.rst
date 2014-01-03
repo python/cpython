@@ -52,8 +52,8 @@ The module provides the following classes:
       *source_address* was added.
 
    .. versionchanged:: 3.4
-      The  *strict* parameter is removed. HTTP 0.9-style "Simple Responses" are
-      not supported.
+      The  *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
+      not longer supported.
 
 
 .. class:: HTTPSConnection(host, port=None, key_file=None, \
@@ -90,8 +90,8 @@ The module provides the following classes:
       if :data:`ssl.HAS_SNI` is true).
 
    .. versionchanged:: 3.4
-      The *strict* parameter is removed. HTTP 0.9-style "Simple Responses" are
-      not supported anymore.
+      The *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
+      no longer supported.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)
@@ -100,8 +100,8 @@ The module provides the following classes:
    instantiated directly by user.
 
    .. versionchanged:: 3.4
-      The *strict* parameter is removed. HTTP 0.9 style "Simple Responses" are
-      not supported anymore.
+      The *strict* parameter was removed. HTTP 0.9 style "Simple Responses" are
+      no longer supported.
 
 
 The following exceptions are raised as appropriate:

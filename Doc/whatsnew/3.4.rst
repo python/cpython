@@ -1303,7 +1303,7 @@ removed in Python 3.4:
 
 * The unmaintained ``Misc/TextMate`` and ``Misc/vim`` directories have been
   removed (see the `devguide <http://docs.python.org/devguide>`_
-  for what to use instead).
+  for suggestions on what to use instead).
 
 * The ``SO`` makefile macro is removed (it was replaced by the
   ``SHLIB_SUFFIX`` and ``EXT_SUFFIX`` macros) (:issue:`16754`).
@@ -1313,6 +1313,9 @@ removed in Python 3.4:
 
 * ``PyLoader`` and ``PyPycLoader`` have been removed from :mod:`importlib`.
   (Contributed by Taras Lyapun in :issue:`15641`.)
+
+* The *strict* argument to :class:`~http.client.HTTPConnection` has been
+  removed.  HTTP 0.9-style "Simple Responses" are no longer supported.
 
 
 Porting to Python 3.4
