@@ -11370,7 +11370,6 @@ unicode_hash(PyObject *self)
     _PyUnicode_HASH(self) = x;
     return x;
 }
-#undef HASH
 
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
