@@ -2876,10 +2876,6 @@ PyUnicode_AsWideCharString(PyObject *unicode,
 PyObject *
 PyUnicode_FromOrdinal(int ordinal)
 {
-    PyObject *v;
-    void *data;
-    int kind;
-
     if (ordinal < 0 || ordinal > MAX_UNICODE) {
         PyErr_SetString(PyExc_ValueError,
                         "chr() arg not in range(0x110000)");
@@ -11330,7 +11326,6 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
     void *data;
     enum PyUnicode_Kind kind;
     Py_UCS4 ch;
-    PyObject *res;
 
     if (!PyUnicode_Check(self) || PyUnicode_READY(self) == -1) {
         PyErr_BadArgument();
