@@ -1019,6 +1019,10 @@ If :class:`~unittest.SkipTest` is raised during test discovery (that is, at the
 module level in the test file), it is now reported as a skip instead of an
 error.  (Contributed by Zach Ware in :issue:`16935`.)
 
+:meth:`~unittest.TestLoader.discover` now sorts the discovered files to provide
+consistent test ordering.  (Contributed by Martin Melin and Jeff Ramnani in
+:issue:`16709`.)
+
 
 venv
 ----
@@ -1317,6 +1321,11 @@ removed in Python 3.4:
 * The *strict* argument to :class:`~http.client.HTTPConnection` and
   :class:`~http.client.HTTPSConnection` has been removed.  HTTP 0.9-style
   "Simple Responses" are no longer supported.
+
+* The deprecated :mod:`urllib.request.Request` getter and setter methods
+  ``add_data``, ``has_data``, ``get_data``, ``get_type``, ``get_host``,
+  ``get_selector``, ``set_proxy``, ``get_origin_req_host``, and
+  ``is_unverifiable`` have been removed (use direct attribute access instead).
 
 
 Porting to Python 3.4
