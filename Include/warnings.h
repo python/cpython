@@ -17,6 +17,7 @@ PyAPI_FUNC(int) PyErr_WarnFormat(
     Py_ssize_t stack_level,
     const char *format,         /* ASCII-encoded string  */
     ...);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyErr_WarnExplicitObject(
     PyObject *category,
     PyObject *message,
@@ -24,6 +25,7 @@ PyAPI_FUNC(int) PyErr_WarnExplicitObject(
     int lineno,
     PyObject *module,
     PyObject *registry);
+#endif
 PyAPI_FUNC(int) PyErr_WarnExplicit(
     PyObject *category,
     const char *message,        /* UTF-8 encoded string */
@@ -32,11 +34,13 @@ PyAPI_FUNC(int) PyErr_WarnExplicit(
     const char *module,         /* UTF-8 encoded string */
     PyObject *registry);
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int)
 PyErr_WarnExplicitFormat(PyObject *category,
                          const char *filename, int lineno,
                          const char *module, PyObject *registry,
                          const char *format, ...);
+#endif
 
 /* DEPRECATED: Use PyErr_WarnEx() instead. */
 #ifndef Py_LIMITED_API

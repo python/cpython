@@ -75,7 +75,9 @@ typedef PyOSErrorObject PyWindowsErrorObject;
 
 PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
+#endif
 PyAPI_FUNC(void) PyErr_SetString(
     PyObject *exception,
     const char *string   /* decoded from utf-8 */
@@ -321,16 +323,20 @@ PyAPI_FUNC(void) PyErr_SyntaxLocationEx(
     const char *filename,       /* decoded from the filesystem encoding */
     int lineno,
     int col_offset);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyErr_SyntaxLocationObject(
     PyObject *filename,
     int lineno,
     int col_offset);
+#endif
 PyAPI_FUNC(PyObject *) PyErr_ProgramText(
     const char *filename,       /* decoded from the filesystem encoding */
     int lineno);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
+#endif
 
 /* The following functions are used to create and modify unicode
    exceptions from C */

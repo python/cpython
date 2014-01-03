@@ -27,9 +27,11 @@ PyAPI_FUNC(int) _Py_stat(
     struct stat *statbuf);
 #endif
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
+#endif
 
 PyAPI_FUNC(FILE *) _Py_wfopen(
     const wchar_t *path,
@@ -61,12 +63,14 @@ PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
     wchar_t *buf,
     size_t size);
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _Py_get_inheritable(int fd);
 
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
 
 PyAPI_FUNC(int) _Py_dup(int fd);
+#endif
 
 #ifdef __cplusplus
 }
