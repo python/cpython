@@ -100,7 +100,6 @@ extensions = [
     '_lzma.pyd',
     '_decimal.pyd',
     '_testbuffer.pyd',
-    '_sha3.pyd',
     '_testimportmultiple.pyd',
     '_overlapped.pyd',
 ]

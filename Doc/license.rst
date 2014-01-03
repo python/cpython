@@ -590,25 +590,6 @@ The :mod:`select` and contains the following notice for the kqueue interface::
   SUCH DAMAGE.
 
 
-SHA-3
------
-
-The module :mod:`_sha3` and :mod:`hashlib` are using the reference
-implementation of Keccak. The files at :file:`Modules/_sha3/keccak/` contain
-the following note::
-
-  The Keccak sponge function, designed by Guido Bertoni, Joan Daemen,
-  Michaël Peeters and Gilles Van Assche. For more information, feedback or
-  questions, please refer to our website: http://keccak.noekeon.org/
-
-  Implementation by the designers,
-  hereby denoted as "the implementer".
-
-  To the extent possible under law, the implementer has waived all copyright
-  and related or neighboring rights to the source code in this file.
-  http://creativecommons.org/publicdomain/zero/1.0/
-
-
 SipHash24
 ---------
 

@@ -827,15 +827,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_sha1', ['sha1module.c'],
                                depends=['hashlib.h']) )
 
-        # SHA-3 (Keccak) module
-        sha3_depends = ['hashlib.h']
-        keccak = os.path.join(os.getcwd(), srcdir, 'Modules', '_sha3',
-                              'keccak')
-        for pattern in ('*.c', '*.h', '*.macros'):
-            sha3_depends.extend(glob(os.path.join(keccak, pattern)))
-        exts.append(Extension("_sha3", ["_sha3/sha3module.c"],
-                              depends=sha3_depends))
-
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
         # your machine, though none are defined by default because of library

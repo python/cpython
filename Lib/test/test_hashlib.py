@@ -38,10 +38,7 @@ def hexstr(s):
 class HashLibTestCase(unittest.TestCase):
     supported_hash_names = ( 'md5', 'MD5', 'sha1', 'SHA1',
                              'sha224', 'SHA224', 'sha256', 'SHA256',
-                             'sha384', 'SHA384', 'sha512', 'SHA512',
-                             'sha3_224', 'sha3_256', 'sha3_384',
-                             'sha3_512', 'SHA3_224', 'SHA3_256',
-                             'SHA3_384', 'SHA3_512' )
+                             'sha384', 'SHA384', 'sha512', 'SHA512')
 
     # Issue #14693: fallback modules are always compiled under POSIX
     _warn_on_extension_import = os.name == 'posix' or COMPILED_WITH_PYDEBUG
@@ -102,12 +99,6 @@ class HashLibTestCase(unittest.TestCase):
         if _sha512:
             add_builtin_constructor('sha384')
             add_builtin_constructor('sha512')
-        _sha3 = self._conditional_import_module('_sha3')
-        if _sha3:
-            add_builtin_constructor('sha3_224')
-            add_builtin_constructor('sha3_256')
-            add_builtin_constructor('sha3_384')
-            add_builtin_constructor('sha3_512')
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
@@ -234,10 +225,6 @@ class HashLibTestCase(unittest.TestCase):
         self.check_no_unicode('sha256')
         self.check_no_unicode('sha384')
         self.check_no_unicode('sha512')
-        self.check_no_unicode('sha3_224')
-        self.check_no_unicode('sha3_256')
-        self.check_no_unicode('sha3_384')
-        self.check_no_unicode('sha3_512')
 
     def check_blocksize_name(self, name, block_size=0, digest_size=0):
         constructors = self.constructors_to_test[name]
@@ -257,10 +244,6 @@ class HashLibTestCase(unittest.TestCase):
         self.check_blocksize_name('sha256', 64, 32)
         self.check_blocksize_name('sha384', 128, 48)
         self.check_blocksize_name('sha512', 128, 64)
-        self.check_blocksize_name('sha3_224', NotImplemented, 28)
-        self.check_blocksize_name('sha3_256', NotImplemented, 32)
-        self.check_blocksize_name('sha3_384', NotImplemented, 48)
-        self.check_blocksize_name('sha3_512', NotImplemented, 64)
 
     def test_case_md5_0(self):
         self.check('md5', b'', 'd41d8cd98f00b204e9800998ecf8427e')
@@ -396,27 +379,6 @@ class HashLibTestCase(unittest.TestCase):
           "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"+
           "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b")
 
-    # SHA-3 family
-    def test_case_sha3_224_0(self):
-        self.check('sha3_224', b"",
-          "F71837502BA8E10837BDD8D365ADB85591895602FC552B48B7390ABD")
-
-    def test_case_sha3_224_1(self):
-        self.check('sha3_224', bytes.fromhex("CC"),
-          "A9CAB59EB40A10B246290F2D6086E32E3689FAF1D26B470C899F2802")
-
-    def test_case_sha3_224_2(self):
-        self.check('sha3_224', bytes.fromhex("41FB"),
-          "615BA367AFDC35AAC397BC7EB5D58D106A734B24986D5D978FEFD62C")
-
-    def test_case_sha3_224_3(self):
-        self.check('sha3_224', bytes.fromhex(
-            "433C5303131624C0021D868A30825475E8D0BD3052A022180398F4CA4423B9"+
-            "8214B6BEAAC21C8807A2C33F8C93BD42B092CC1B06CEDF3224D5ED1EC29784"+
-            "444F22E08A55AA58542B524B02CD3D5D5F6907AFE71C5D7462224A3F9D9E53"+
-            "E7E0846DCBB4CE"),
-          "62B10F1B6236EBC2DA72957742A8D4E48E213B5F8934604BFD4D2C3A")
-
     @bigmemtest(size=_4G + 5, memuse=1)
     def test_case_sha3_224_huge(self, size):
         if size == _4G + 5:
@@ -425,78 +387,6 @@ class HashLibTestCase(unittest.TestCase):
                            '58ef60057c9dddb6a87477e9ace5a26f0d9db01881cf9b10a9f8c224')
             except OverflowError:
                 pass # 32-bit arch
-
-
-    def test_case_sha3_256_0(self):
-        self.check('sha3_256', b"",
-          "C5D2460186F7233C927E7DB2DCC703C0E500B653CA82273B7BFAD8045D85A470")
-
-    def test_case_sha3_256_1(self):
-        self.check('sha3_256', bytes.fromhex("CC"),
-          "EEAD6DBFC7340A56CAEDC044696A168870549A6A7F6F56961E84A54BD9970B8A")
-
-    def test_case_sha3_256_2(self):
-        self.check('sha3_256', bytes.fromhex("41FB"),
-          "A8EACEDA4D47B3281A795AD9E1EA2122B407BAF9AABCB9E18B5717B7873537D2")
-
-    def test_case_sha3_256_3(self):
-        self.check('sha3_256', bytes.fromhex(
-            "433C5303131624C0021D868A30825475E8D0BD3052A022180398F4CA4423B9"+
-            "8214B6BEAAC21C8807A2C33F8C93BD42B092CC1B06CEDF3224D5ED1EC29784"+
-            "444F22E08A55AA58542B524B02CD3D5D5F6907AFE71C5D7462224A3F9D9E53"+
-            "E7E0846DCBB4CE"),
-          "CE87A5173BFFD92399221658F801D45C294D9006EE9F3F9D419C8D427748DC41")
-
-
-    def test_case_sha3_384_0(self):
-        self.check('sha3_384', b"",
-          "2C23146A63A29ACF99E73B88F8C24EAA7DC60AA771780CCC006AFBFA8FE2479B"+
-          "2DD2B21362337441AC12B515911957FF")
-
-    def test_case_sha3_384_1(self):
-        self.check('sha3_384', bytes.fromhex("CC"),
-          "1B84E62A46E5A201861754AF5DC95C4A1A69CAF4A796AE405680161E29572641"+
-          "F5FA1E8641D7958336EE7B11C58F73E9")
-
-    def test_case_sha3_384_2(self):
-        self.check('sha3_384', bytes.fromhex("41FB"),
-          "495CCE2714CD72C8C53C3363D22C58B55960FE26BE0BF3BBC7A3316DD563AD1D"+
-          "B8410E75EEFEA655E39D4670EC0B1792")
-
-    def test_case_sha3_384_3(self):
-        self.check('sha3_384', bytes.fromhex(
-            "433C5303131624C0021D868A30825475E8D0BD3052A022180398F4CA4423B9"+
-            "8214B6BEAAC21C8807A2C33F8C93BD42B092CC1B06CEDF3224D5ED1EC29784"+
-            "444F22E08A55AA58542B524B02CD3D5D5F6907AFE71C5D7462224A3F9D9E53"+
-            "E7E0846DCBB4CE"),
-          "135114508DD63E279E709C26F7817C0482766CDE49132E3EDF2EEDD8996F4E35"+
-          "96D184100B384868249F1D8B8FDAA2C9")
-
-
-    def test_case_sha3_512_0(self):
-        self.check('sha3_512', b"",
-          "0EAB42DE4C3CEB9235FC91ACFFE746B29C29A8C366B7C60E4E67C466F36A4304"+
-          "C00FA9CAF9D87976BA469BCBE06713B435F091EF2769FB160CDAB33D3670680E")
-
-    def test_case_sha3_512_1(self):
-        self.check('sha3_512', bytes.fromhex("CC"),
-          "8630C13CBD066EA74BBE7FE468FEC1DEE10EDC1254FB4C1B7C5FD69B646E4416"+
-          "0B8CE01D05A0908CA790DFB080F4B513BC3B6225ECE7A810371441A5AC666EB9")
-
-    def test_case_sha3_512_2(self):
-        self.check('sha3_512', bytes.fromhex("41FB"),
-          "551DA6236F8B96FCE9F97F1190E901324F0B45E06DBBB5CDB8355D6ED1DC34B3"+
-          "F0EAE7DCB68622FF232FA3CECE0D4616CDEB3931F93803662A28DF1CD535B731")
-
-    def test_case_sha3_512_3(self):
-        self.check('sha3_512', bytes.fromhex(
-            "433C5303131624C0021D868A30825475E8D0BD3052A022180398F4CA4423B9"+
-            "8214B6BEAAC21C8807A2C33F8C93BD42B092CC1B06CEDF3224D5ED1EC29784"+
-            "444F22E08A55AA58542B524B02CD3D5D5F6907AFE71C5D7462224A3F9D9E53"+
-            "E7E0846DCBB4CE"),
-          "527D28E341E6B14F4684ADB4B824C496C6482E51149565D3D17226828884306B"+
-          "51D6148A72622C2B75F5D3510B799D8BDC03EAEDE453676A6EC8FE03A1AD0EAB")
-
 
     def test_gil(self):
         # Check things work fine with an input larger than the size required
