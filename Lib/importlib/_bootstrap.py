@@ -1406,7 +1406,7 @@ class WindowsRegistryFinder:
     @classmethod
     def find_module(cls, fullname, path=None):
         """Find module named in the registry."""
-        spec = self.find_spec(fullname, path)
+        spec = cls.find_spec(fullname, path)
         if spec is not None:
             return spec.loader
         else:
