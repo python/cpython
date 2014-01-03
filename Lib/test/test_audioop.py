@@ -269,6 +269,11 @@ class TestAudioop(unittest.TestCase):
             self.assertEqual(audioop.lin2adpcm(b'\0' * w * 10, w, None),
                              (b'\0' * 5, (0, 0)))
 
+    def test_invalid_adpcm_state(self):
+        # state must be a tuple or None, not an integer
+        self.assertRaises(TypeError, audioop.adpcm2lin, b'\0', 1, 555)
+        self.assertRaises(TypeError, audioop.lin2adpcm, b'\0', 1, 555)
+
     def test_lin2alaw(self):
         self.assertEqual(audioop.lin2alaw(datas[1], 1),
                          b'\xd5\x87\xa4\x24\xaa\x2a\x5a')
