@@ -78,6 +78,7 @@ For full details, see the
    :pep:`429` -- Python 3.4 Release Schedule
 
 
+
 Summary -- Release Highlights
 =============================
 
@@ -147,6 +148,7 @@ CPython implementation improvements:
 Please read on for a comprehensive list of user-facing changes, including many
 other smaller improvements, CPython optimizations, deprecations, and potential
 porting issues.
+
 
 
 New Expected Features for Python Implementations
@@ -341,6 +343,7 @@ Some smaller changes made to the core Python language are:
   :issue:`12892`.
 
 
+
 New Modules
 ===========
 
@@ -469,6 +472,7 @@ trace memory blocks allocated by Python. It provides the following information:
       PEP written and implemented by Victor Stinner
 
 
+
 Improved Modules
 ================
 
@@ -484,7 +488,6 @@ New class :class:`~abc.ABC` has :class:`~abc.ABCMeta` as its meta class.
 Using ``ABC`` as a base class has essentially the same effect as specifying
 ``metaclass=abc.ABCMeta``, but is simpler to type and easier to read.
 (Contributed by Bruno Dupuis in :issue:`16049`.)
-
 
 
 aifc
@@ -1078,6 +1081,7 @@ Add a filter function to ignore some packages (tests for instance),
 (Contributed by Christian Tismer in :issue:`19274`.)
 
 
+
 CPython Implementation Changes
 ==============================
 
@@ -1176,6 +1180,7 @@ Other Build and C API Changes
   interpreter is not available (for example, in cross compilation scenarios).
 
 
+
 Other Improvements
 ==================
 
@@ -1202,6 +1207,7 @@ Other Improvements
   also checks for memory allocation leaks, using
   :func:`sys.getallocatedblocks()`.  (Contributed by Antoine Pitrou in
   :issue:`13390`).
+
 
 
 Significant Optimizations
@@ -1234,6 +1240,7 @@ Significant Optimizations
 
 * :func:`random.getrandbits` is 20%-40% faster for small integers (the most
   common use case).  (Contributed by Serhiy Storchaka in :issue:`16674`).
+
 
 
 Deprecated
@@ -1331,6 +1338,7 @@ removed:
   ``add_data``, ``has_data``, ``get_data``, ``get_type``, ``get_host``,
   ``get_selector``, ``set_proxy``, ``get_origin_req_host``, and
   ``is_unverifiable`` have been removed (use direct attribute access instead).
+
 
 
 Porting to Python 3.4
