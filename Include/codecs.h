@@ -94,7 +94,7 @@ PyAPI_FUNC(PyObject *) PyCodec_Decode(
        const char *errors
        );
 
-#ifndef PY_LIMITED_API
+#ifndef Py_LIMITED_API
 /* Text codec specific encoding and decoding API.
 
    Checks the encoding against a list of codecs which do not

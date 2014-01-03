@@ -10,6 +10,9 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
+- Issue #19526: Exclude all new API from the stable ABI. Exceptions can be
+  made if a need is demonstrated.
+
 - Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
   argument is not in range [0; 255].
 

@@ -236,7 +236,9 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 /* Helper/diagnostic function - return 1 if the current thread
  * currently holds the GIL, 0 otherwise
  */
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyGILState_Check(void);
+#endif
 
 #endif   /* #ifdef WITH_THREAD */
 
