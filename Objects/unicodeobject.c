@@ -1772,6 +1772,9 @@ unicode_char(Py_UCS4 ch)
 
     assert(ch <= MAX_UNICODE);
 
+    if (ch < 256)
+        return get_latin1_char(ch);
+
     unicode = PyUnicode_New(1, ch);
     if (unicode == NULL)
         return NULL;
