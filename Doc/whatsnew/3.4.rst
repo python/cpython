@@ -1314,8 +1314,9 @@ removed in Python 3.4:
 * ``PyLoader`` and ``PyPycLoader`` have been removed from :mod:`importlib`.
   (Contributed by Taras Lyapun in :issue:`15641`.)
 
-* The *strict* argument to :class:`~http.client.HTTPConnection` has been
-  removed.  HTTP 0.9-style "Simple Responses" are no longer supported.
+* The *strict* argument to :class:`~http.client.HTTPConnection` and
+  :class:`~http.client.HTTPSConnection` has been removed.  HTTP 0.9-style
+  "Simple Responses" are no longer supported.
 
 
 Porting to Python 3.4
@@ -1382,6 +1383,12 @@ Changes in the Python API
   working directory will also now have an absolute path, including when using
   ``-m`` with the interpreter (this does not influence when the path to a file
   is specified on the command-line).
+
+* The removal of the *strict* argument to :class:`~http.client.HTTPConnection`
+  and :class:`~http.client.HTTPSConnection` changes the meaning of the
+  remaining arguments if you are specifying them positionally rather than by
+  keyword.  If you've been paying attention to deprecation warnings your code
+  should already be specifying any additional arguments via keywords.
 
 
 Changes in the C API
