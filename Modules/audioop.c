@@ -1525,6 +1525,9 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
         /* First time, it seems. Set defaults */
         valpred = 0;
         index = 0;
+    } else if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
+        goto exit;
     } else if (!PyArg_ParseTuple(state, "ii", &valpred, &index))
         goto exit;
 
@@ -1631,6 +1634,9 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
         /* First time, it seems. Set defaults */
         valpred = 0;
         index = 0;
+    } else if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
+        goto exit;
     } else if (!PyArg_ParseTuple(state, "ii", &valpred, &index))
         goto exit;
 
