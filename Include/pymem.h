@@ -11,9 +11,11 @@
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+#endif
 
 
 /* BEWARE:
@@ -58,8 +60,10 @@ PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
 PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
+#endif
 
 /* Macros. */
 

@@ -155,10 +155,12 @@ PyAPI_FUNC(struct symtable *) Py_SymtableString(
     const char *str,
     const char *filename,       /* decoded from the filesystem encoding */
     int start);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(struct symtable *) Py_SymtableStringObject(
     const char *str,
     PyObject *filename,
     int start);
+#endif
 
 PyAPI_FUNC(void) PyErr_Print(void);
 PyAPI_FUNC(void) PyErr_PrintEx(int);

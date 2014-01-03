@@ -2004,10 +2004,12 @@ PyAPI_FUNC(int) PyUnicode_Compare(
     PyObject *right             /* Right string */
     );
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyUnicode_CompareWithId(
     PyObject *left,             /* Left string */
     _Py_Identifier *right       /* Right identifier */
     );
+#endif
 
 PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,

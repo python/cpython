@@ -50,6 +50,7 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
  * (*) The siphash member may not be available on 32 bit platforms without
  *     an unsigned int64 data type.
  */
+#ifndef Py_LIMITED_API
 typedef union {
     /* ensure 24 bytes */
     unsigned char uc[24];
@@ -76,6 +77,7 @@ typedef union {
     } expat;
 } _Py_HashSecret_t;
 PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
+#endif
 
 #ifdef Py_DEBUG
 PyAPI_DATA(int) _Py_HashSecret_Initialized;
