@@ -501,7 +501,6 @@ coverage-lcov:
 	: # remove 3rd party modules and system headers
 	@lcov --remove $(COVERAGE_INFO) \
 	    '*/Modules/_ctypes/libffi*/*' \
-	    '*/Modules/_sha3/keccak/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/zlib/*' \

@@ -140,7 +140,6 @@ _hashlib
 _msi
 _multiprocessing
 _overlapped
-_sha3
 _socket
 _testcapi
 _testbuffer

@@ -54,8 +54,7 @@ More condensed:
 
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
-__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
-                      'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512')
+__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
 
 algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
@@ -86,13 +85,6 @@ def __get_builtin_constructor(name):
             import _sha512
             cache['SHA384'] = cache['sha384'] = _sha512.sha384
             cache['SHA512'] = cache['sha512'] = _sha512.sha512
-        elif name in {'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
-                      'SHA3_224', 'SHA3_256', 'SHA3_384', 'SHA3_512'}:
-            import _sha3
-            cache['SHA3_224'] = cache['sha3_224'] = _sha3.sha3_224
-            cache['SHA3_256'] = cache['sha3_256'] = _sha3.sha3_256
-            cache['SHA3_384'] = cache['sha3_384'] = _sha3.sha3_384
-            cache['SHA3_512'] = cache['sha3_512'] = _sha3.sha3_512
     except ImportError:
         pass  # no extension module, this hash is unsupported.
 
