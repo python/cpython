@@ -329,11 +329,6 @@ uint_converter(PyObject *obj, void *ptr)
         uval = PyLong_AsUnsignedLong(obj);
         if (uval == (unsigned long)-1 && PyErr_Occurred())
             return 0;
-        if (uval > UINT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "Python int too large for C unsigned int");
-            return 0;
-        }
     }
     else {
         if (val < 0) {
@@ -342,6 +337,12 @@ uint_converter(PyObject *obj, void *ptr)
             return 0;
         }
         uval = (unsigned long)val;
+    }
+
+    if (uval > UINT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large for C unsigned int");
+        return 0;
     }
 
     *(unsigned int *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned int);
