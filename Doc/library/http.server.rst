@@ -116,7 +116,7 @@ of which this module provides three different variants:
       HTTP error code value. *message* should be a string containing a
       (detailed) error message of what occurred, and *explain* should be an
       explanation of the error code number. Default *message* and *explain*
-      values can found in the *responses* class variable.
+      values can found in the :attr:`responses` class variable.
 
    .. attribute:: error_content_type
 
@@ -173,11 +173,14 @@ of which this module provides three different variants:
    .. method:: send_error(code, message=None, explain=None)
 
       Sends and logs a complete error reply to the client. The numeric *code*
-      specifies the HTTP error code, with *message* as optional, more specific
-      text, usually referring to short message response.  The *explain*
-      argument can be used to send a detailed information about the error in
-      response content body.  A complete set of headers is sent, followed by
-      text composed using the :attr:`error_message_format` class variable.
+      specifies the HTTP error code, with *message* as an optional, short, human
+      readable description of the error.  The *explain* argument can be used to
+      provide more detailed information about the error; it will be formatted
+      using the :attr:`error_message_format` class variable and emitted, after
+      a complete set of headers, as the response body.  The :attr:`responses`
+      class variable holds the default values for *message* and *explain* that
+      will be used if no value is provided; for unknown codes the default value
+      for both is the string ``???``.
 
       .. versionchanged:: 3.4
          The error response includes a Content-Length header.
