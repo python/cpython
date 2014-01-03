@@ -1015,6 +1015,10 @@ Support for easy dynamically-generated subtests using the
 *defaultTest*, where previously it only accepted a single test name as a
 string.  (Contributed by Jyrki Pulliainen in :issue:`15132`.)
 
+If :class:`~unittest.SkipTest` is raised during test discovery (that is, at the
+module level in the test file), it is now reported as a skip instead of an
+error.  (Contributed by Zach Ware in :issue:`16935`.)
+
 
 venv
 ----

@@ -559,8 +559,9 @@ The following decorators implement test skipping and expected failures:
    Usually you can use :meth:`TestCase.skipTest` or one of the skipping
    decorators instead of raising this directly.
 
-Skipped tests will not have :meth:`setUp` or :meth:`tearDown` run around them.
-Skipped classes will not have :meth:`setUpClass` or :meth:`tearDownClass` run.
+Skipped tests will not have :meth:`~TestCase.setUp` or :meth:`~TestCase.tearDown` run around them.
+Skipped classes will not have :meth:`~TestCase.setUpClass` or :meth:`~TestCase.tearDownClass` run.
+Skipped modules will not have :func:`setUpModule` or :func:`tearDownModule` run.
 
 
 .. _subtests:
