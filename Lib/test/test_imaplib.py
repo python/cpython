@@ -187,6 +187,9 @@ class ThreadedNetworkedTestsSSL(BaseThreadedNetworkedTests):
     server_class = SecureTCPServer
     imap_class = IMAP4_SSL
 
+    def test_linetoolong(self):
+        raise unittest.SkipTest("test is not reliable on 2.7; see issue 20118")
+
 
 class RemoteIMAPTest(unittest.TestCase):
     host = 'cyrus.andrew.cmu.edu'
