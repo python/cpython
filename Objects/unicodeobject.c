@@ -1749,7 +1749,6 @@ unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
     }
 }
 
-
 static PyObject*
 get_latin1_char(unsigned char ch)
 {
@@ -1763,6 +1762,31 @@ get_latin1_char(unsigned char ch)
         unicode_latin1[ch] = unicode;
     }
     Py_INCREF(unicode);
+    return unicode;
+}
+
+static PyObject*
+unicode_char(Py_UCS4 ch)
+{
+    PyObject *unicode;
+
+    assert(ch <= MAX_UNICODE);
+
+    unicode = PyUnicode_New(1, ch);
+    if (unicode == NULL)
+        return NULL;
+    switch (PyUnicode_KIND(unicode)) {
+    case PyUnicode_1BYTE_KIND:
+        PyUnicode_1BYTE_DATA(unicode)[0] = (Py_UCS1)ch;
+        break;
+    case PyUnicode_2BYTE_KIND:
+        PyUnicode_2BYTE_DATA(unicode)[0] = (Py_UCS2)ch;
+        break;
+    default:
+        assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
+        PyUnicode_4BYTE_DATA(unicode)[0] = ch;
+    }
+    assert(_PyUnicode_CheckConsistency(unicode, 1));
     return unicode;
 }
 
@@ -1964,22 +1988,8 @@ _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
     assert(size > 0);
-    if (size == 1) {
-        Py_UCS4 ch = u[0];
-        int kind;
-        void *data;
-        if (ch < 256)
-            return get_latin1_char((unsigned char)ch);
-
-        res = PyUnicode_New(1, ch);
-        if (res == NULL)
-            return NULL;
-        kind = PyUnicode_KIND(res);
-        data = PyUnicode_DATA(res);
-        PyUnicode_WRITE(kind, data, 0, ch);
-        assert(_PyUnicode_CheckConsistency(res, 1));
-        return res;
-    }
+    if (size == 1)
+        return unicode_char(u[0]);
 
     max_char = ucs2lib_find_max_char(u, u + size);
     res = PyUnicode_New(size, max_char);
@@ -2004,22 +2014,8 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
     assert(size > 0);
-    if (size == 1) {
-        Py_UCS4 ch = u[0];
-        int kind;
-        void *data;
-        if (ch < 256)
-            return get_latin1_char((unsigned char)ch);
-
-        res = PyUnicode_New(1, ch);
-        if (res == NULL)
-            return NULL;
-        kind = PyUnicode_KIND(res);
-        data = PyUnicode_DATA(res);
-        PyUnicode_WRITE(kind, data, 0, ch);
-        assert(_PyUnicode_CheckConsistency(res, 1));
-        return res;
-    }
+    if (size == 1)
+        return unicode_char(u[0]);
 
     max_char = ucs4lib_find_max_char(u, u + size);
     res = PyUnicode_New(size, max_char);
@@ -2887,17 +2883,7 @@ PyUnicode_FromOrdinal(int ordinal)
         return NULL;
     }
 
-    if ((Py_UCS4)ordinal < 256)
-        return get_latin1_char((unsigned char)ordinal);
-
-    v = PyUnicode_New(1, ordinal);
-    if (v == NULL)
-        return NULL;
-    kind = PyUnicode_KIND(v);
-    data = PyUnicode_DATA(v);
-    PyUnicode_WRITE(kind, data, 0, ordinal);
-    assert(_PyUnicode_CheckConsistency(v, 1));
-    return v;
+    return unicode_char((Py_UCS4)ordinal);
 }
 
 PyObject *
@@ -11354,17 +11340,7 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
     kind = PyUnicode_KIND(self);
     data = PyUnicode_DATA(self);
     ch = PyUnicode_READ(kind, data, index);
-    if (ch < 256)
-        return get_latin1_char(ch);
-
-    res = PyUnicode_New(1, ch);
-    if (res == NULL)
-        return NULL;
-    kind = PyUnicode_KIND(res);
-    data = PyUnicode_DATA(res);
-    PyUnicode_WRITE(kind, data, 0, ch);
-    assert(_PyUnicode_CheckConsistency(res, 1));
-    return res;
+    return unicode_char(ch);
 }
 
 /* Believe it or not, this produces the same value for ASCII strings
