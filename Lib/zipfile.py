@@ -475,13 +475,15 @@ class _ZipDecrypter:
                     crc = ((crc >> 1) & 0x7FFFFFFF)
             table[i] = crc
         return table
-    crctable = _GenerateCRCTable()
+    crctable = None
 
     def _crc32(self, ch, crc):
         """Compute the CRC32 primitive on one byte."""
         return ((crc >> 8) & 0xffffff) ^ self.crctable[(crc ^ ch) & 0xff]
 
     def __init__(self, pwd):
+        if _ZipDecrypter.crctable is None:
+            _ZipDecrypter.crctable = _ZipDecrypter._GenerateCRCTable()
         self.key0 = 305419896
         self.key1 = 591751049
         self.key2 = 878082192
