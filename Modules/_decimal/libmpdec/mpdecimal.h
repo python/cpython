@@ -406,7 +406,7 @@ mpd_ssize_t mpd_to_sci_size(char **res, const mpd_t *dec, int fmt);
 mpd_ssize_t mpd_to_eng_size(char **res, const mpd_t *dec, int fmt);
 int mpd_validate_lconv(mpd_spec_t *spec);
 int mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps);
-char * mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec, const mpd_context_t *ctx, uint32_t *status);
+char *mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec, const mpd_context_t *ctx, uint32_t *status);
 char *mpd_qformat(const mpd_t *dec, const char *fmt, const mpd_context_t *ctx, uint32_t *status);
 
 #define MPD_NUM_FLAGS 15
@@ -465,7 +465,7 @@ int mpd_qcheck_nan(mpd_t *nanresult, const mpd_t *a, const mpd_context_t *ctx, u
 int mpd_qcheck_nans(mpd_t *nanresult, const mpd_t *a, const mpd_t *b, const mpd_context_t *ctx, uint32_t *status);
 void mpd_qfinalize(mpd_t *result, const mpd_context_t *ctx, uint32_t *status);
 
-const char * mpd_class(const mpd_t *a, const mpd_context_t *ctx);
+const char *mpd_class(const mpd_t *a, const mpd_context_t *ctx);
 
 int mpd_qcopy(mpd_t *result, const mpd_t *a,  uint32_t *status);
 mpd_t *mpd_qncopy(const mpd_t *a);
@@ -579,7 +579,7 @@ size_t mpd_qexport_u32(uint32_t **rdata, size_t rlen, uint32_t base,
 /*                           Signalling functions                             */
 /******************************************************************************/
 
-char * mpd_format(const mpd_t *dec, const char *fmt, mpd_context_t *ctx);
+char *mpd_format(const mpd_t *dec, const char *fmt, mpd_context_t *ctx);
 void mpd_import_u16(mpd_t *result, const uint16_t *srcdata, size_t srclen, uint8_t srcsign, uint32_t base, mpd_context_t *ctx);
 void mpd_import_u32(mpd_t *result, const uint32_t *srcdata, size_t srclen, uint8_t srcsign, uint32_t base, mpd_context_t *ctx);
 size_t mpd_export_u16(uint16_t **rdata, size_t rlen, uint32_t base, const mpd_t *src, mpd_context_t *ctx);
