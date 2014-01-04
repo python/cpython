@@ -5085,21 +5085,31 @@ _PyUnicode_EncodeUTF32(PyObject *str,
                        const char *errors,
                        int byteorder)
 {
-    enum PyUnicode_Kind kind;
-    const void *data;
+    int kind;
+    void *data;
     Py_ssize_t len;
     PyObject *v;
-    PY_UINT32_T *out;
+    unsigned char *p;
+    Py_ssize_t nsize, i;
+    /* Offsets from p for storing byte pairs in the right order. */
 #if PY_LITTLE_ENDIAN
-    int native_ordering = byteorder <= 0;
+    int iorder[] = {0, 1, 2, 3};
 #else
-    int native_ordering = byteorder >= 0;
+    int iorder[] = {3, 2, 1, 0};
 #endif
     const char *encoding;
-    Py_ssize_t nsize, pos;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     PyObject *rep = NULL;
+
+#define STORECHAR(CH)                           \
+    do {                                        \
+        p[iorder[3]] = ((CH) >> 24) & 0xff;     \
+        p[iorder[2]] = ((CH) >> 16) & 0xff;     \
+        p[iorder[1]] = ((CH) >> 8) & 0xff;      \
+        p[iorder[0]] = (CH) & 0xff;             \
+        p += 4;                                 \
+    } while(0)
 
     if (!PyUnicode_Check(str)) {
         PyErr_BadArgument();
@@ -5111,53 +5121,59 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     data = PyUnicode_DATA(str);
     len = PyUnicode_GET_LENGTH(str);
 
-    if (len > PY_SSIZE_T_MAX / 4 - (byteorder == 0))
-        return PyErr_NoMemory();
     nsize = len + (byteorder == 0);
+    if (nsize > PY_SSIZE_T_MAX / 4)
+        return PyErr_NoMemory();
     v = PyBytes_FromStringAndSize(NULL, nsize * 4);
     if (v == NULL)
         return NULL;
 
-    /* output buffer is 4-bytes aligned */
-    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(v), 4));
-    out = (PY_UINT32_T *)PyBytes_AS_STRING(v);
+    p = (unsigned char *)PyBytes_AS_STRING(v);
     if (byteorder == 0)
-        *out++ = 0xFEFF;
+        STORECHAR(0xFEFF);
     if (len == 0)
-        goto done;
+        return v;
 
-    if (byteorder == -1)
+    if (byteorder == -1) {
+        /* force LE */
+        iorder[0] = 0;
+        iorder[1] = 1;
+        iorder[2] = 2;
+        iorder[3] = 3;
         encoding = "utf-32-le";
-    else if (byteorder == 1)
+    }
+    else if (byteorder == 1) {
+        /* force BE */
+        iorder[0] = 3;
+        iorder[1] = 2;
+        iorder[2] = 1;
+        iorder[3] = 0;
         encoding = "utf-32-be";
+    }
     else
         encoding = "utf-32";
 
     if (kind == PyUnicode_1BYTE_KIND) {
-        ucs1lib_utf32_encode((const Py_UCS1 *)data, len, &out, native_ordering);
-        goto done;
+        for (i = 0; i < len; i++)
+            STORECHAR(PyUnicode_READ(kind, data, i));
+        return v;
     }
 
-    pos = 0;
-    while (pos < len) {
+    for (i = 0; i < len;) {
         Py_ssize_t repsize, moreunits;
-
-        if (kind == PyUnicode_2BYTE_KIND) {
-            pos += ucs2lib_utf32_encode((const Py_UCS2 *)data + pos, len - pos,
-                                        &out, native_ordering);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        i++;
+        assert(ch <= MAX_UNICODE);
+        if (!Py_UNICODE_IS_SURROGATE(ch)) {
+            STORECHAR(ch);
+            continue;
         }
-        else {
-            assert(kind == PyUnicode_4BYTE_KIND);
-            pos += ucs4lib_utf32_encode((const Py_UCS4 *)data + pos, len - pos,
-                                        &out, native_ordering);
-        }
-        if (pos == len)
-            break;
 
         rep = unicode_encode_call_errorhandler(
                 errors, &errorHandler,
                 encoding, "surrogates not allowed",
-                str, &exc, pos, pos + 1, &pos);
+                str, &exc, i-1, i, &i);
+
         if (!rep)
             goto error;
 
@@ -5165,7 +5181,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
             repsize = PyBytes_GET_SIZE(rep);
             if (repsize & 3) {
                 raise_encode_exception(&exc, encoding,
-                                       str, pos - 1, pos,
+                                       str, i - 1, i,
                                        "surrogates not allowed");
                 goto error;
             }
@@ -5178,7 +5194,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
             moreunits = repsize = PyUnicode_GET_LENGTH(rep);
             if (!PyUnicode_IS_ASCII(rep)) {
                 raise_encode_exception(&exc, encoding,
-                                       str, pos - 1, pos,
+                                       str, i - 1, i,
                                        "surrogates not allowed");
                 goto error;
             }
@@ -5186,7 +5202,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
 
         /* four bytes are reserved for each surrogate */
         if (moreunits > 1) {
-            Py_ssize_t outpos = out - (PY_UINT32_T*) PyBytes_AS_STRING(v);
+            Py_ssize_t outpos = p - (unsigned char*) PyBytes_AS_STRING(v);
             Py_ssize_t morebytes = 4 * (moreunits - 1);
             if (PyBytes_GET_SIZE(v) > PY_SSIZE_T_MAX - morebytes) {
                 /* integer overflow */
@@ -5195,16 +5211,20 @@ _PyUnicode_EncodeUTF32(PyObject *str,
             }
             if (_PyBytes_Resize(&v, PyBytes_GET_SIZE(v) + morebytes) < 0)
                 goto error;
-            out = (PY_UINT32_T*) PyBytes_AS_STRING(v) + outpos;
+            p = (unsigned char*) PyBytes_AS_STRING(v) + outpos;
         }
 
         if (PyBytes_Check(rep)) {
-            Py_MEMCPY(out, PyBytes_AS_STRING(rep), repsize);
-            out += moreunits;
+            Py_MEMCPY(p, PyBytes_AS_STRING(rep), repsize);
+            p += repsize;
         } else /* rep is unicode */ {
+            const Py_UCS1 *repdata;
             assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
-            ucs1lib_utf32_encode(PyUnicode_1BYTE_DATA(rep), repsize,
-                                 &out, native_ordering);
+            repdata = PyUnicode_1BYTE_DATA(rep);
+            while (repsize--) {
+                Py_UCS4 ch = *repdata++;
+                STORECHAR(ch);
+            }
         }
 
         Py_CLEAR(rep);
@@ -5213,12 +5233,11 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     /* Cut back to size actually needed. This is necessary for, for example,
        encoding of a string containing isolated surrogates and the 'ignore'
        handler is used. */
-    nsize = (unsigned char*) out - (unsigned char*) PyBytes_AS_STRING(v);
+    nsize = p - (unsigned char*) PyBytes_AS_STRING(v);
     if (nsize != PyBytes_GET_SIZE(v))
       _PyBytes_Resize(&v, nsize);
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-  done:
     return v;
   error:
     Py_XDECREF(rep);
@@ -5226,6 +5245,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     Py_XDECREF(exc);
     Py_XDECREF(v);
     return NULL;
+#undef STORECHAR
 }
 
 PyObject *
