@@ -28,4 +28,5 @@ Currently, the HOWTOs are:
    webservers.rst
    argparse.rst
    ipaddress.rst
+   clinic.rst
 
