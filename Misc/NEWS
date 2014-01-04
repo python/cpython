@@ -2282,7 +2282,7 @@ Library
 
 - Issue #15596: Faster pickling of unicode strings.
 
-- Issue #17572: Avoid chained exceptions while passing bad directives to
+- Issue #17572: Avoid chained exceptions when passing bad directives to
   time.strptime().  Initial patch by Claudiu Popa.
 
 - Issue #17435: threading.Timer's __init__ method no longer uses mutable
@@ -2291,7 +2291,7 @@ Library
 - Issue #17526: fix an IndexError raised while passing code without filename to
   inspect.findsource().  Initial patch by Tyler Doyle.
 
-- Issue #17540: Added style to formatter configuration by dict.
+- Issue #17540: Added style parameter to logging formatter configuration by dict.
 
 - Issue #16692: The ssl module now supports TLS 1.1 and TLS 1.2.  Initial
   patch by Michele Orrù.
@@ -2312,10 +2312,10 @@ Library
 - Issue #17521: Corrected non-enabling of logger following two calls to
   fileConfig().
 
-- Issue #17508: Corrected MemoryHandler configuration in dictConfig() where
-  the target handler wasn't configured first.
+- Issue #17508: Corrected logging MemoryHandler configuration in dictConfig()
+  where the target handler wasn't configured first.
 
-- Issue #17209: curses.window.get_wch() now handles correctly KeyboardInterrupt
+- Issue #17209: curses.window.get_wch() now correctly handles KeyboardInterrupt
   (CTRL+c).
 
 - Issue #5713: smtplib now handles 421 (closing connection) error codes when
