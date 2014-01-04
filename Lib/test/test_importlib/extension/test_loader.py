@@ -28,6 +28,15 @@ class LoaderTests(abc.LoaderTests):
         with self.assertRaises(ImportError):
             self.load_module('XXX')
 
+    def test_equality(self):
+        other = self.machinery.ExtensionFileLoader(ext_util.NAME,
+                                                   ext_util.FILEPATH)
+        self.assertEqual(self.loader, other)
+
+    def test_inequality(self):
+        other = self.machinery.ExtensionFileLoader('_' + ext_util.NAME,
+                                                   ext_util.FILEPATH)
+        self.assertNotEqual(self.loader, other)
 
     def test_module(self):
         with util.uncache(ext_util.NAME):
