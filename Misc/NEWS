@@ -257,6 +257,8 @@ Library
 
 - Issue #19713: Move away from using find_module/load_module.
 
+- Issue #19708: Update pkgutil to use the new importer APIs.
+
 - Issue #19851: Fixed a regression in reloading sub-modules.
 
 - ssl.create_default_context() sets OP_NO_COMPRESSION to prevent CRIME.

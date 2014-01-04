@@ -16,6 +16,21 @@ __all__ = [
     'ImpImporter', 'ImpLoader', 'read_code', 'extend_path',
 ]
 
+
+def _get_spec(finder, name):
+    """Return the finder-specific module spec."""
+    # Works with legacy finders.
+    try:
+        find_spec = finder.find_spec
+    except AttributeError:
+        loader = finder.find_module(name)
+        if loader is None:
+            return None
+        return importlib.util.spec_from_loader(name, loader)
+    else:
+        return find_spec(name)
+
+
 def read_code(stream):
     # This helper is needed in order for the PEP 302 emulation to
     # correctly handle compiled files
@@ -326,9 +341,10 @@ class ImpLoader:
                 self.source = self._get_delegate().get_source()
         return self.source
 
-
     def _get_delegate(self):
-        return ImpImporter(self.filename).find_module('__init__')
+        finder = ImpImporter(self.filename)
+        spec = _get_spec(finder, '__init__')
+        return spec.loader
 
     def get_filename(self, fullname=None):
         fullname = self._fix_name(fullname)
