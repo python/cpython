@@ -400,19 +400,13 @@ PyDoc_STRVAR({c_basename}__doc__,
     {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
 """.replace('{methoddef_flags}', flags)
 
-    def meth_noargs_pyobject_template(self, methoddef_flags=""):
-        return self.template_base("METH_NOARGS", methoddef_flags) + """
-static PyObject *
-{c_basename}({impl_parameters})
-"""
-
     def meth_noargs_template(self, methoddef_flags=""):
         return self.template_base("METH_NOARGS", methoddef_flags) + """
 static {impl_return_type}
 {impl_prototype};
 
 static PyObject *
-{c_basename}({self_type}{self_name})
+{c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
 {{
     PyObject *return_value = NULL;
     {declarations}
@@ -713,10 +707,7 @@ static {impl_return_type}
             f.return_converter.type == 'PyObject *')
 
         if not parameters:
-            if default_return_converter:
-                template = self.meth_noargs_pyobject_template(f.methoddef_flags)
-            else:
-                template = self.meth_noargs_template(f.methoddef_flags)
+            template = self.meth_noargs_template(f.methoddef_flags)
         elif (len(parameters) == 1 and
               parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
               not converters[0].is_optional() and
