@@ -6,6 +6,7 @@ Tools directory of a Python checkout or tarball, such as reindent.py.
 
 import os
 import sys
+import importlib._bootstrap
 import importlib.machinery
 import unittest
 from unittest import mock
@@ -405,8 +406,8 @@ class PdepsTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         path = os.path.join(scriptsdir, 'pdeps.py')
-        loader = importlib.machinery.SourceFileLoader('pdeps', path)
-        self.pdeps = loader.load_module()
+        spec = importlib.util.spec_from_file_location('pdeps', path)
+        self.pdeps = importlib._bootstrap._SpecMethods(spec).load()
 
     @classmethod
     def tearDownClass(self):
@@ -430,8 +431,8 @@ class Gprof2htmlTests(unittest.TestCase):
 
     def setUp(self):
         path = os.path.join(scriptsdir, 'gprof2html.py')
-        loader = importlib.machinery.SourceFileLoader('gprof2html', path)
-        self.gprof = loader.load_module()
+        spec = importlib.util.spec_from_file_location('gprof2html', path)
+        self.gprof = importlib._bootstrap._SpecMethods(spec).load()
         oldargv = sys.argv
         def fixup():
             sys.argv = oldargv

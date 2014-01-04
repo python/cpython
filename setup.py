@@ -3,6 +3,8 @@
 
 import sys, os, importlib.machinery, re, optparse
 from glob import glob
+import importlib._bootstrap
+import importlib.util
 import sysconfig
 
 from distutils import log
@@ -327,8 +329,10 @@ class PyBuildExt(build_ext):
             return
 
         loader = importlib.machinery.ExtensionFileLoader(ext.name, ext_filename)
+        spec = importlib.util.spec_from_file_location(ext.name, ext_filename,
+                                                      loader=loader)
         try:
-            loader.load_module()
+            importlib._bootstrap._SpecMethods(spec).load()
         except ImportError as why:
             self.failed.append(ext.name)
             self.announce('*** WARNING: renaming "%s" since importing it'
