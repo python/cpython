@@ -847,6 +847,9 @@ pprint
 The :mod:`pprint` module now supports *compact* mode for formatting long
 sequences (:issue:`19132`).
 
+Long strings are now wrapped using Python's normal line continuation
+syntax (Contributed by Antoine Pitrou in :issue:`17150`.)
+
 
 pty
 ---
@@ -1258,6 +1261,10 @@ Significant Optimizations
 
 * :func:`random.getrandbits` is 20%-40% faster for small integers (the most
   common use case).  (Contributed by Serhiy Storchaka in :issue:`16674`).
+
+* By taking advantage of the new storage format for strings, pickling of
+  strings is now significantly faster.  (Contributed by Victor Stinner and
+  Antoine Pitrou in :issue:`15596`.)
 
 
 
