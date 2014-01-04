@@ -10,6 +10,8 @@ What's New in Python 3.3.4 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #17432: Drop UCS2 from names of Unicode functions in python3.def.
+
 - Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
   argument is not in range [0; 255].
 
