@@ -312,9 +312,6 @@ class uint_converter(CConverter):
     type = 'unsigned int'
     converter = 'uint_converter'
 
-class compobject_converter(self_converter):
-    type = "compobject *"
-
 [python]*/
 /*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
@@ -750,7 +747,7 @@ save_unconsumed_input(compobject *self, int err)
 
 zlib.Decompress.decompress
 
-    self: compobject
+    self: self(type="compobject *")
 
     data: Py_buffer
         The binary data to decompress.
@@ -1032,7 +1029,7 @@ PyZlib_flush(compobject *self, PyObject *args)
 /*[clinic]
 zlib.Compress.copy
 
-    self: compobject
+    self: self(type="compobject *")
 
 Return a copy of the compression object.
 [clinic]*/
