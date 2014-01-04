@@ -10,8 +10,6 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
-- Issue #15027: Rewrite the UTF-32 encoder.  It is now 1.6x to 3.5x faster.
-
 - Issue #17432: Drop UCS2 from names of Unicode functions in python3.def.
 
 - Issue #19526: Exclude all new API from the stable ABI. Exceptions can be
