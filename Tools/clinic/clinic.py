@@ -1296,11 +1296,13 @@ class CConverter(metaclass=CConverterAutoRegister):
     must be keyword-only.
     """
 
+    # The C type to use for this variable.
+    # 'type' should be a Python string specifying the type, e.g. "int".
+    # If this is a pointer type, the type string should end with ' *'.
     type = None
-    format_unit = 'O&'
 
     # The Python default value for this parameter, as a Python value.
-    # Or "unspecified" if there is no default.
+    # Or the magic value "unspecified" if there is no default.
     default = unspecified
 
     # "default" as it should appear in the documentation, as a string.
@@ -1330,9 +1332,32 @@ class CConverter(metaclass=CConverterAutoRegister):
     # (If this is not None, format_unit must be 'O&'.)
     converter = None
 
-    encoding = None
+    # Should Argument Clinic add a '&' before the name of
+    # the variable when passing it into the _impl function?
     impl_by_reference = False
+
+    # Should Argument Clinic add a '&' before the name of
+    # the variable when passing it into PyArg_ParseTuple (AndKeywords)?
     parse_by_reference = True
+
+    #############################################################
+    #############################################################
+    ## You shouldn't need to read anything below this point to ##
+    ## write your own converter functions.                     ##
+    #############################################################
+    #############################################################
+
+    # The "format unit" to specify for this variable when
+    # parsing arguments using PyArg_ParseTuple (AndKeywords).
+    # Custom converters should always use the default value of 'O&'.
+    format_unit = 'O&'
+
+    # What encoding do we want for this variable?  Only used
+    # by format units starting with 'e'.
+    encoding = None
+
+    # Do we want an adjacent '_length' variable for this variable?
+    # Only used by format units ending with '#'.
     length = False
 
     def __init__(self, name, function, default=unspecified, *, doc_default=None, required=False, annotation=unspecified, **kwargs):
@@ -1751,7 +1776,7 @@ class self_converter(CConverter):
     this is the default converter used for "self".
     """
     type = "PyObject *"
-    def converter_init(self):
+    def converter_init(self, *, type=None):
         f = self.function
         if f.kind == CALLABLE:
             if f.cls:
@@ -1765,6 +1790,9 @@ class self_converter(CConverter):
         elif f.kind == CLASS_METHOD:
             self.name = "cls"
             self.type = "PyTypeObject *"
+
+        if type:
+            self.type = type
 
     def render(self, parameter, data):
         fail("render() should never be called on self_converter instances")
@@ -1787,7 +1815,13 @@ class CReturnConverterAutoRegister(type):
 
 class CReturnConverter(metaclass=CReturnConverterAutoRegister):
 
+    # The C type to use for this variable.
+    # 'type' should be a Python string specifying the type, e.g. "int".
+    # If this is a pointer type, the type string should end with ' *'.
     type = 'PyObject *'
+
+    # The Python default value for this parameter, as a Python value.
+    # Or the magic value "unspecified" if there is no default.
     default = None
 
     def __init__(self, *, doc_default=None, **kwargs):
@@ -1825,6 +1859,16 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         pass
 
 add_c_return_converter(CReturnConverter, 'object')
+
+class NoneType_return_converter(CReturnConverter):
+    def render(self, function, data):
+        self.declare(data)
+        data.return_conversion.append('''
+if (_return_value != Py_None)
+    goto exit;
+return_value = Py_None;
+Py_INCREF(Py_None);
+'''.strip())
 
 class int_return_converter(CReturnConverter):
     type = 'int'
@@ -2680,7 +2724,7 @@ def main(argv):
 
                 # print("   ", short_name + "".join(parameters))
             print()
-        print("All converters also accept (doc_default=None, required=False).")
+        print("All converters also accept (doc_default=None, required=False, annotation=None).")
         print("All return converters also accept (doc_default=None).")
         sys.exit(0)
 

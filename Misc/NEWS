@@ -345,6 +345,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #19659: Added documentation for Argument Clinic.
+
 - Issue #19976: Argument Clinic METH_NOARGS functions now always
   take two parameters.
 
