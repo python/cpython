@@ -1045,8 +1045,21 @@ PyDoc_STRVAR(zlib_Compress_copy__doc__,
     {"copy", (PyCFunction)zlib_Compress_copy, METH_NOARGS, zlib_Compress_copy__doc__},
 
 static PyObject *
-zlib_Compress_copy(compobject *self)
-/*[clinic checksum: 0b37c07f8f27deb7d4769951fbecf600a1006ef8]*/
+zlib_Compress_copy_impl(compobject *self);
+
+static PyObject *
+zlib_Compress_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = zlib_Compress_copy_impl((compobject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+zlib_Compress_copy_impl(compobject *self)
+/*[clinic checksum: 2f454ee15be3bc53cfb4e845c3f891f68be4c8e4]*/
 {
     compobject *retval = NULL;
     int err;

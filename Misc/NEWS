@@ -342,6 +342,11 @@ Documentation
 
 - Issue #19795: Improved markup of True/False constants.
 
+Tools/Demos
+-----------
+
+- Issue #19976: Argument Clinic METH_NOARGS functions now always
+  take two parameters.
 
 What's New in Python 3.4.0 Beta 1?
 ==================================
