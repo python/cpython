@@ -10,6 +10,8 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
+- Issue #17432: Drop UCS2 from names of Unicode functions in python3.def.
+
 - Issue #19526: Exclude all new API from the stable ABI. Exceptions can be
   made if a need is demonstrated.
 
