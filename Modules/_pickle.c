@@ -3901,8 +3901,21 @@ PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
     {"clear_memo", (PyCFunction)_pickle_Pickler_clear_memo, METH_NOARGS, _pickle_Pickler_clear_memo__doc__},
 
 static PyObject *
-_pickle_Pickler_clear_memo(PicklerObject *self)
-/*[clinic checksum: 9c32be7e7a17ff82a81aae409d0d4f469033a5b2]*/
+_pickle_Pickler_clear_memo_impl(PicklerObject *self);
+
+static PyObject *
+_pickle_Pickler_clear_memo(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_Pickler_clear_memo_impl((PicklerObject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_Pickler_clear_memo_impl(PicklerObject *self)
+/*[clinic checksum: 0574593b102fffb8e781d7bb9b536ceffc525ac1]*/
 {
     if (self->memo)
         PyMemoTable_Clear(self->memo);
@@ -4176,8 +4189,21 @@ PyDoc_STRVAR(_pickle_PicklerMemoProxy_clear__doc__,
     {"clear", (PyCFunction)_pickle_PicklerMemoProxy_clear, METH_NOARGS, _pickle_PicklerMemoProxy_clear__doc__},
 
 static PyObject *
-_pickle_PicklerMemoProxy_clear(PicklerMemoProxyObject *self)
-/*[clinic checksum: 507f13938721992e175a3e58b5ad02620045a1cc]*/
+_pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self);
+
+static PyObject *
+_pickle_PicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_PicklerMemoProxy_clear_impl((PicklerMemoProxyObject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self)
+/*[clinic checksum: c6ca252530ccb3ea2f4b33507b51b183f23b24c7]*/
 {
     if (self->pickler->memo)
         PyMemoTable_Clear(self->pickler->memo);
@@ -4200,8 +4226,21 @@ PyDoc_STRVAR(_pickle_PicklerMemoProxy_copy__doc__,
     {"copy", (PyCFunction)_pickle_PicklerMemoProxy_copy, METH_NOARGS, _pickle_PicklerMemoProxy_copy__doc__},
 
 static PyObject *
-_pickle_PicklerMemoProxy_copy(PicklerMemoProxyObject *self)
-/*[clinic checksum: 73a5117ab354290ebdbe07bd0bf7232d0936a69d]*/
+_pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self);
+
+static PyObject *
+_pickle_PicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_PicklerMemoProxy_copy_impl((PicklerMemoProxyObject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
+/*[clinic checksum: 808c4d5a37359ed5fb2efe81dbe5ff480719f470]*/
 {
     Py_ssize_t i;
     PyMemoTable *memo;
@@ -4254,11 +4293,24 @@ PyDoc_STRVAR(_pickle_PicklerMemoProxy___reduce____doc__,
     {"__reduce__", (PyCFunction)_pickle_PicklerMemoProxy___reduce__, METH_NOARGS, _pickle_PicklerMemoProxy___reduce____doc__},
 
 static PyObject *
-_pickle_PicklerMemoProxy___reduce__(PicklerMemoProxyObject *self)
-/*[clinic checksum: 40f0bf7a9b161e77130674f0481bda0a0184dcce]*/
+_pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self);
+
+static PyObject *
+_pickle_PicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_PicklerMemoProxy___reduce___impl((PicklerMemoProxyObject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
+/*[clinic checksum: 2293152bdf53951a012d430767b608f5fb4213b5]*/
 {
     PyObject *reduce_value, *dict_args;
-    PyObject *contents = _pickle_PicklerMemoProxy_copy(self);
+    PyObject *contents = _pickle_PicklerMemoProxy_copy_impl(self);
     if (contents == NULL)
         return NULL;
 
@@ -6288,8 +6340,21 @@ PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
     {"load", (PyCFunction)_pickle_Unpickler_load, METH_NOARGS, _pickle_Unpickler_load__doc__},
 
 static PyObject *
-_pickle_Unpickler_load(PyObject *self)
-/*[clinic checksum: c2ae1263f0dd000f34ccf0fe59d7c544464babc4]*/
+_pickle_Unpickler_load_impl(PyObject *self);
+
+static PyObject *
+_pickle_Unpickler_load(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_Unpickler_load_impl(self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_Unpickler_load_impl(PyObject *self)
+/*[clinic checksum: 55f35fcaf034817e75c355ec50b7878577355899]*/
 {
     UnpicklerObject *unpickler = (UnpicklerObject*)self;
 
@@ -6688,8 +6753,21 @@ PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_clear__doc__,
     {"clear", (PyCFunction)_pickle_UnpicklerMemoProxy_clear, METH_NOARGS, _pickle_UnpicklerMemoProxy_clear__doc__},
 
 static PyObject *
-_pickle_UnpicklerMemoProxy_clear(UnpicklerMemoProxyObject *self)
-/*[clinic checksum: 46fecf4e33c0c873124f845edf6cc3a2e9864bd5]*/
+_pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self);
+
+static PyObject *
+_pickle_UnpicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_UnpicklerMemoProxy_clear_impl((UnpicklerMemoProxyObject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
+/*[clinic checksum: e0f99c26d48444a3f58f598bec3190c66595fce7]*/
 {
     _Unpickler_MemoCleanup(self->unpickler);
     self->unpickler->memo = _Unpickler_NewMemo(self->unpickler->memo_size);
@@ -6714,8 +6792,21 @@ PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_copy__doc__,
     {"copy", (PyCFunction)_pickle_UnpicklerMemoProxy_copy, METH_NOARGS, _pickle_UnpicklerMemoProxy_copy__doc__},
 
 static PyObject *
-_pickle_UnpicklerMemoProxy_copy(UnpicklerMemoProxyObject *self)
-/*[clinic checksum: f8856c4e8a33540886dfbb245f286af3008fa0ad]*/
+_pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self);
+
+static PyObject *
+_pickle_UnpicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_UnpicklerMemoProxy_copy_impl((UnpicklerMemoProxyObject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
+/*[clinic checksum: 8c0ab91c0b694ea71a1774650898a760d1ab4765]*/
 {
     Py_ssize_t i;
     PyObject *new_memo = PyDict_New();
@@ -6761,12 +6852,25 @@ PyDoc_STRVAR(_pickle_UnpicklerMemoProxy___reduce____doc__,
     {"__reduce__", (PyCFunction)_pickle_UnpicklerMemoProxy___reduce__, METH_NOARGS, _pickle_UnpicklerMemoProxy___reduce____doc__},
 
 static PyObject *
-_pickle_UnpicklerMemoProxy___reduce__(UnpicklerMemoProxyObject *self)
-/*[clinic checksum: ab5516a77659144e1191c7dd70a0c6c7455660bc]*/
+_pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self);
+
+static PyObject *
+_pickle_UnpicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_UnpicklerMemoProxy___reduce___impl((UnpicklerMemoProxyObject *)self);
+
+    return return_value;
+}
+
+static PyObject *
+_pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
+/*[clinic checksum: 4ee76a65511291f0de2e9e63db395d2e5d6d8df6]*/
 {
     PyObject *reduce_value;
     PyObject *constructor_args;
-    PyObject *contents = _pickle_UnpicklerMemoProxy_copy(self);
+    PyObject *contents = _pickle_UnpicklerMemoProxy_copy_impl(self);
     if (contents == NULL)
         return NULL;
 
