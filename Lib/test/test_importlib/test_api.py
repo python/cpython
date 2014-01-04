@@ -288,8 +288,7 @@ class FindSpecTests:
             self.assertNotIn(name, sorted(sys.modules))
             # Ensure successive calls behave the same.
             spec_again = self.init.find_spec(fullname, [pkg_dir])
-            # XXX Once #19927 is resolved, uncomment this line.
-            #self.assertEqual(spec_again, spec)
+            self.assertEqual(spec_again, spec)
 
     def test_find_submodule_missing_path(self):
         name = 'spam'

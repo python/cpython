@@ -1559,6 +1559,13 @@ class FileLoader:
         self.name = fullname
         self.path = path
 
+    def __eq__(self, other):
+        return (self.__class__ == other.__class__ and
+                self.__dict__ == other.__dict__)
+
+    def __hash__(self):
+        return hash(self.name) ^ hash(self.path)
+
     @_check_name
     def load_module(self, fullname):
         """Load a module from a file."""
@@ -1652,6 +1659,13 @@ class ExtensionFileLoader:
     def __init__(self, name, path):
         self.name = name
         self.path = path
+
+    def __eq__(self, other):
+        return (self.__class__ == other.__class__ and
+                self.__dict__ == other.__dict__)
+
+    def __hash__(self):
+        return hash(self.name) ^ hash(self.path)
 
     @_check_name
     def load_module(self, fullname):
