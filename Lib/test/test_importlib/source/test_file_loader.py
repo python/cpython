@@ -27,6 +27,11 @@ class SimpleTest(abc.LoaderTests):
 
     """
 
+    def setUp(self):
+        self.name = 'spam'
+        self.filepath = os.path.join('ham', self.name + '.py')
+        self.loader = self.machinery.SourceFileLoader(self.name, self.filepath)
+
     def test_load_module_API(self):
         class Tester(self.abc.FileLoader):
             def get_source(self, _): return 'attr = 42'
@@ -52,6 +57,14 @@ class SimpleTest(abc.LoaderTests):
         self.assertEqual(path, loader.get_filename(None))
         with self.assertRaises(ImportError):
             loader.get_filename(name + 'XXX')
+
+    def test_equality(self):
+        other = self.machinery.SourceFileLoader(self.name, self.filepath)
+        self.assertEqual(self.loader, other)
+
+    def test_inequality(self):
+        other = self.machinery.SourceFileLoader('_' + self.name, self.filepath)
+        self.assertNotEqual(self.loader, other)
 
     # [basic]
     def test_module(self):

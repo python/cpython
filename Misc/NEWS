@@ -203,6 +203,8 @@ Library
   no exception detail exists (no colon following the exception's name, or
   a colon does follow but no text follows the colon).
 
+- Issue #19927: Add __eq__ to path-based loaders in importlib.
+
 - Issue #19827: On UNIX, setblocking() and settimeout() methods of
   socket.socket can now avoid a second syscall if the ioctl() function can be
   used, or if the non-blocking flag of the socket is unchanged.
