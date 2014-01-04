@@ -2243,10 +2243,10 @@ Library
   calls.
 
 - Issue #17566: Make importlib.abc.Loader.module_repr() optional instead of an
-  abstractmethod and raising NotImplementedError so as to be ignored by default.
+  abstractmethod; now it raises NotImplementedError so as to be ignored by default.
 
-- Issue #17678: Remove the use of deprecated method in http/cookiejar.py.
-  Changing the usage of get_origin_req_host() to origin_req_host.
+- Issue #17678: Remove the use of deprecated method in http/cookiejar.py by
+  changing the call to get_origin_req_host() to origin_req_host.
 
 - Issue #17666: Fix reading gzip files with an extra field.
 
