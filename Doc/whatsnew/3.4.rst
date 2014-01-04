@@ -730,6 +730,14 @@ metaclasses (Contributed by Ethan Furman in :issue:`18929` and
 :issue:`19030`)
 
 
+logging
+-------
+
+The :class:`~logging.handlers.TimedRotatingFileHandler` has a new *atTime*
+parameter that can be used to specify the time of day when rollover should
+happen.  (Contributed by Ronald Oussoren in :issue:`9556`.)
+
+
 .. _whatsnew-marshal-3:
 
 marshal
