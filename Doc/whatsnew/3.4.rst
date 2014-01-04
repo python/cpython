@@ -1213,7 +1213,9 @@ Other Improvements
 Significant Optimizations
 =========================
 
-* The UTF-32 decoder is now 3x to 4x faster.
+* The UTF-32 decoder is now 3x to 4x faster.  The UTF-32 encoder is now 1.6x
+  to 3.5x faster.  (Contributed by Serhiy Storchaka in :issue:`14625` and
+  :issue:`15027`.)
 
 * The cost of hash collisions for sets is now reduced.  Each hash table
   probe now checks a series of consecutive, adjacent key/hash pairs before
