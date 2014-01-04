@@ -759,6 +759,9 @@ matching calls, which means an argument can now be matched by either position
 or name, instead of only by position.  (Contributed by Antoine Pitrou in
 :issue:`17015`.)
 
+:func:`~mock.mock_open` objects now have ``readline`` and ``readlines``
+methods. (Contributed by Toshio Kuratomi in :issue:`17467`.)
+
 
 multiprocessing
 ---------------
@@ -1010,11 +1013,26 @@ in :issue:`16423`.)
 unittest
 --------
 
-Support for easy dynamically-generated subtests using the
-:meth:`~unittest.TestCase.subTest` context manager.
-(Contributed by Antoine Pitrou in :issue:`16997`.)
+The :class:`~unittest.TestCase` class has a new method,
+:meth:`~unittest.TestCase.subTest`, that produces a context manager whose
+:keyword:`with` block becomes a "sub-test".  This context manager allows a test
+method to dynamically generate subtests  by, say, calling the ``subTest``
+context manager inside a loop.  A single test method can thereby produce an
+indefinite number of separately-identified and separately-counted tests, all of
+which will run even if one or more of them fail.  For example::
 
-:func:`unittest.main` now also accepts an iterable of test names for
+    class NumbersTest(unittest.TestCase):
+        def test_even(self):
+            for i in range(6):
+                with self.subTest(i=1):
+                    self.assertEqual(i % 2, 0)
+
+will result in six subtests, each identified in the unittest verbose output
+with a label consisting of the variable name ``i`` and a particular value for
+that variable (``i=0``, ``i=1``, etc).  See :ref:`subtests` for the full
+version of this example.  (Contributed by Antoine Pitrou in :issue:`16997`.)
+
+:func:`unittest.main` now accepts an iterable of test names for
 *defaultTest*, where previously it only accepted a single test name as a
 string.  (Contributed by Jyrki Pulliainen in :issue:`15132`.)
 
