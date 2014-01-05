@@ -225,34 +225,34 @@ def synopsis(filename, cache={}):
     mtime = os.stat(filename).st_mtime
     lastupdate, result = cache.get(filename, (None, None))
     if lastupdate is None or lastupdate < mtime:
-        try:
-            file = tokenize.open(filename)
-        except OSError:
-            # module can't be opened, so skip it
-            return None
-        binary_suffixes = importlib.machinery.BYTECODE_SUFFIXES[:]
-        binary_suffixes += importlib.machinery.EXTENSION_SUFFIXES[:]
-        if any(filename.endswith(x) for x in binary_suffixes):
-            # binary modules have to be imported
-            file.close()
-            if any(filename.endswith(x) for x in
-                    importlib.machinery.BYTECODE_SUFFIXES):
-                loader = importlib.machinery.SourcelessFileLoader('__temp__',
-                                                                  filename)
-            else:
-                loader = importlib.machinery.ExtensionFileLoader('__temp__',
-                                                                 filename)
+        # Look for binary suffixes first, falling back to source.
+        if filename.endswith(tuple(importlib.machinery.BYTECODE_SUFFIXES)):
+            loader_cls = importlib.machinery.SourcelessFileLoader
+        elif filename.endswith(tuple(importlib.machinery.EXTENSION_SUFFIXES)):
+            loader_cls = importlib.machinery.ExtensionFileLoader
+        else:
+            loader_cls = None
+        # Now handle the choice.
+        if loader_cls is None:
+            # Must be a source file.
+            try:
+                file = tokenize.open(filename)
+            except OSError:
+                # module can't be opened, so skip it
+                return None
+            # text modules can be directly examined
+            with file:
+                result = source_synopsis(file)
+        else:
+            # Must be a binary module, which has to be imported.
+            loader = loader_cls('__temp__', filename)
             try:
                 module = loader.load_module('__temp__')
             except:
                 return None
-            result = (module.__doc__ or '').splitlines()[0]
             del sys.modules['__temp__']
-        else:
-            # text modules can be directly examined
-            result = source_synopsis(file)
-            file.close()
-
+            result = (module.__doc__ or '').splitlines()[0]
+        # Cache the result.
         cache[filename] = (mtime, result)
     return result
 
