@@ -196,7 +196,7 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # A 0o200 byte indicates a positive number, a 0o377 byte a negative
     # number.
     if 0 <= n < 8 ** (digits - 1):
-        s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
+        s = bytes("%0*o" % (digits - 1, int(n)), "ascii") + NUL
     elif format == GNU_FORMAT and -256 ** (digits - 1) <= n < 256 ** (digits - 1):
         if n >= 0:
             s = bytearray([0o200])
