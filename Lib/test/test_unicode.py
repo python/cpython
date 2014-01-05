@@ -1126,6 +1126,35 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%.1s' % "a\xe9\u20ac", 'a')
         self.assertEqual('%.2s' % "a\xe9\u20ac", 'a\xe9')
 
+        #issue 19995
+        class PsuedoInt:
+            def __init__(self, value):
+                self.value = int(value)
+            def __int__(self):
+                return self.value
+            def __index__(self):
+                return self.value
+        class PsuedoFloat:
+            def __init__(self, value):
+                self.value = float(value)
+            def __int__(self):
+                return int(self.value)
+        pi = PsuedoFloat(3.1415)
+        letter_m = PsuedoInt(109)
+        self.assertEquals('%x' % 42, '2a')
+        self.assertEquals('%X' % 15, 'F')
+        self.assertEquals('%o' % 9, '11')
+        self.assertEquals('%c' % 109, 'm')
+        self.assertEquals('%x' % letter_m, '6d')
+        self.assertEquals('%X' % letter_m, '6D')
+        self.assertEquals('%o' % letter_m, '155')
+        self.assertEquals('%c' % letter_m, 'm')
+        self.assertRaises(TypeError, '%x'.__mod__, pi)
+        self.assertRaises(TypeError, '%x'.__mod__, 3.14)
+        self.assertRaises(TypeError, '%X'.__mod__, 2.11)
+        self.assertRaises(TypeError, '%o'.__mod__, 1.79)
+        self.assertRaises(TypeError, '%c'.__mod__, pi)
+
     def test_formatting_with_enum(self):
         # issue18780
         import enum
