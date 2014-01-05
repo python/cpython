@@ -635,12 +635,12 @@ class PydocImportTest(PydocBaseTest):
         self.assertIn(expected, result)
 
     def test_modules_search_builtin(self):
-        expected = 'gc - '
+        expected = '_imp - '
 
         output = StringIO()
         helper = pydoc.Helper(output=output)
         with captured_stdout() as help_io:
-            helper('modules garbage')
+            helper('modules low-level')
         result = help_io.getvalue()
 
         self.assertTrue(result.startswith(expected))
