@@ -105,12 +105,15 @@ Children are nested, and we can access specific child nodes by index::
    >>> root[0][1].text
    '2008'
 
+
+.. _elementtree-pull-parsing:
+
 Pull API for non-blocking parsing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Most parsing functions provided by this module require to read the whole
-document at once before returning any result.  It is possible to use a
-:class:`XMLParser` and feed data into it incrementally, but it's a push API that
+Most parsing functions provided by this module require the whole document
+to be read at once before returning any result.  It is possible to use an
+:class:`XMLParser` and feed data into it incrementally, but it is a push API that
 calls methods on a callback target, which is too low-level and inconvenient for
 most needs.  Sometimes what the user really wants is to be able to parse XML
 incrementally, without blocking operations, while enjoying the convenience of
@@ -119,7 +122,7 @@ fully constructed :class:`Element` objects.
 The most powerful tool for doing this is :class:`XMLPullParser`.  It does not
 require a blocking read to obtain the XML data, and is instead fed with data
 incrementally with :meth:`XMLPullParser.feed` calls.  To get the parsed XML
-elements, call :meth:`XMLPullParser.read_events`.  Here's an example::
+elements, call :meth:`XMLPullParser.read_events`.  Here is an example::
 
    >>> parser = ET.XMLPullParser(['start', 'end'])
    >>> parser.feed('<mytag>sometext')
@@ -1038,15 +1041,17 @@ XMLPullParser Objects
 
    .. method:: read_events()
 
-      Iterate over the events which have been encountered in the data fed to the
-      parser.  This method yields ``(event, elem)`` pairs, where *event* is a
+      Return an iterator over the events which have been encountered in the
+      data fed to the
+      parser.  The iterator yields ``(event, elem)`` pairs, where *event* is a
       string representing the type of event (e.g. ``"end"``) and *elem* is the
       encountered :class:`Element` object.
 
       Events provided in a previous call to :meth:`read_events` will not be
-      yielded again. As events are consumed from the internal queue only as
-      they are retrieved from the iterator, multiple readers calling
-      :meth:`read_events` in parallel will have unpredictable results.
+      yielded again.  Events are consumed from the internal queue only when
+      they are retrieved from the iterator, so multiple readers iterating in
+      parallel over iterators obtained from :meth:`read_events` will have
+      unpredictable results.
 
    .. note::
 
