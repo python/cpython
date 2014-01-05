@@ -2080,9 +2080,17 @@ left undefined.
 
 .. method:: object.__index__(self)
 
-   Called to implement :func:`operator.index`.  Also called whenever Python needs
-   an integer object (such as in slicing, or in the built-in :func:`bin`,
-   :func:`hex` and :func:`oct` functions). Must return an integer.
+   Called to implement :func:`operator.index`, and whenever Python needs to
+   losslessly convert the numeric object to an integer object (such as in
+   slicing, or in the built-in :func:`bin`, :func:`hex` and :func:`oct`
+   functions). Presence of this method indicates that the numeric object is
+   an integer type.  Must return an integer.
+
+   .. note::
+
+      When :meth:`__index__` is defined, :meth:`__int__` should also be defined,
+      and both shuld return the same value, in order to have a coherent integer
+      type class.
 
 
 .. _context-managers:
