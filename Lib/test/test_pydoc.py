@@ -10,6 +10,7 @@ import keyword
 import pkgutil
 import unittest
 import xml.etree
+import types
 import test.test_support
 from collections import namedtuple
 from test.script_helper import assert_python_ok
@@ -428,6 +429,95 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn('_asdict', helptext)
 
 
+@unittest.skipUnless(test.test_support.have_unicode,
+                     "test requires unicode support")
+class TestUnicode(unittest.TestCase):
+
+    def setUp(self):
+        # Better not to use unicode escapes in literals, lest the
+        # parser choke on it if Python has been built without
+        # unicode support.
+        self.Q  = types.ModuleType(
+            'Q', 'Rational numbers: \xe2\x84\x9a'.decode('utf8'))
+        self.Q.__version__ = '\xe2\x84\x9a'.decode('utf8')
+        self.Q.__date__ = '\xe2\x84\x9a'.decode('utf8')
+        self.Q.__author__ = '\xe2\x84\x9a'.decode('utf8')
+        self.Q.__credits__ = '\xe2\x84\x9a'.decode('utf8')
+
+        self.assertIsInstance(self.Q.__doc__, unicode)
+
+    def test_render_doc(self):
+        # render_doc is robust against unicode in docstrings
+        doc = pydoc.render_doc(self.Q)
+        self.assertIsInstance(doc, str)
+
+    def test_encode(self):
+        # _encode is robust against characters out the specified encoding
+        self.assertEqual(pydoc._encode(self.Q.__doc__, 'ascii'), 'Rational numbers: &#8474;')
+
+    def test_pipepager(self):
+        # pipepager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+
+        saved, os.popen = os.popen, open
+        try:
+            with test.test_support.temp_cwd():
+                pydoc.pipepager(doc, 'pipe')
+                self.assertEqual(open('pipe').read(), pydoc._encode(doc))
+        finally:
+            os.popen = saved
+
+    def test_tempfilepager(self):
+        # tempfilepager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+
+        output = {}
+        def mock_system(cmd):
+            import ast
+            output['content'] = open(ast.literal_eval(cmd.strip())).read()
+        saved, os.system = os.system, mock_system
+        try:
+            pydoc.tempfilepager(doc, '')
+            self.assertEqual(output['content'], pydoc._encode(doc))
+        finally:
+            os.system = saved
+
+    def test_plainpager(self):
+        # plainpager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+
+        # Note: captured_stdout is too permissive when it comes to
+        # unicode, and using it here would make the test always
+        # pass.
+        with test.test_support.temp_cwd():
+            with open('output', 'w') as f:
+                saved, sys.stdout = sys.stdout, f
+                try:
+                    pydoc.plainpager(doc)
+                finally:
+                    sys.stdout = saved
+            self.assertIn('Rational numbers:', open('output').read())
+
+    def test_ttypager(self):
+        # ttypager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+        # Test ttypager
+        with test.test_support.temp_cwd(), test.test_support.captured_stdin():
+            with open('output', 'w') as f:
+                saved, sys.stdout = sys.stdout, f
+                try:
+                    pydoc.ttypager(doc)
+                finally:
+                    sys.stdout = saved
+            self.assertIn('Rational numbers:', open('output').read())
+
+    def test_htmlpage(self):
+        # html.page does not choke on unicode
+        with test.test_support.temp_cwd():
+            with captured_stdout() as output:
+                pydoc.writedoc(self.Q)
+        self.assertEqual(output.getvalue(), 'wrote Q.html\n')
+
 class TestHelper(unittest.TestCase):
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
@@ -456,6 +546,7 @@ def test_main():
         test.test_support.run_unittest(PydocDocTest,
                                        PydocImportTest,
                                        TestDescriptions,
+                                       TestUnicode,
                                        TestHelper)
     finally:
         reap_children()

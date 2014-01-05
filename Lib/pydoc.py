@@ -81,6 +81,7 @@ def pathdirs():
 def getdoc(object):
     """Get the doc string or comments for an object."""
     result = inspect.getdoc(object) or inspect.getcomments(object)
+    result = _encode(result)
     return result and re.sub('^ *\n', '', rstrip(result)) or ''
 
 def splitdoc(doc):
@@ -181,6 +182,34 @@ def classify_class_attrs(object):
             kind = 'data descriptor'
         return name, kind, cls, value
     return map(fixup, inspect.classify_class_attrs(object))
+
+# ----------------------------------------------------- Unicode support helpers
+
+try:
+    _unicode = unicode
+except NameError:
+    # If Python is built without Unicode support, the unicode type
+    # will not exist. Fake one that nothing will match, and make
+    # the _encode function that do nothing.
+    class _unicode(object):
+        pass
+    _encoding = 'ascii'
+    def _encode(text, encoding='ascii'):
+        return text
+else:
+    import locale
+    _encoding = locale.getpreferredencoding()
+
+    def _encode(text, encoding=None):
+        if isinstance(text, unicode):
+            return text.encode(encoding or _encoding, 'xmlcharrefreplace')
+        else:
+            return text
+
+def _binstr(obj):
+    # Ensure that we have an encoded (binary) string representation of obj,
+    # even if it is a unicode string.
+    return obj.encode(_encoding) if isinstance(obj, _unicode) else str(obj)
 
 # ----------------------------------------------------- module manipulation
 
@@ -424,12 +453,13 @@ class HTMLDoc(Doc):
 
     def page(self, title, contents):
         """Format an HTML page."""
-        return '''
+        return _encode('''
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: %s</title>
+<meta charset="utf-8">
 </head><body bgcolor="#f0f0f8">
 %s
-</body></html>''' % (title, contents)
+</body></html>''' % (title, contents), 'ascii')
 
     def heading(self, title, fgcol, bgcol, extras=''):
         """Format a page heading."""
@@ -606,12 +636,12 @@ class HTMLDoc(Doc):
             filelink = '(built-in)'
         info = []
         if hasattr(object, '__version__'):
-            version = str(object.__version__)
+            version = _binstr(object.__version__)
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = strip(version[11:-1])
             info.append('version %s' % self.escape(version))
         if hasattr(object, '__date__'):
-            info.append(self.escape(str(object.__date__)))
+            info.append(self.escape(_binstr(object.__date__)))
         if info:
             head = head + ' (%s)' % join(info, ', ')
         docloc = self.getdocloc(object)
@@ -694,11 +724,11 @@ class HTMLDoc(Doc):
             result = result + self.bigsection(
                 'Data', '#ffffff', '#55aa55', join(contents, '<br>\n'))
         if hasattr(object, '__author__'):
-            contents = self.markup(str(object.__author__), self.preformat)
+            contents = self.markup(_binstr(object.__author__), self.preformat)
             result = result + self.bigsection(
                 'Author', '#ffffff', '#7799ee', contents)
         if hasattr(object, '__credits__'):
-            contents = self.markup(str(object.__credits__), self.preformat)
+            contents = self.markup(_binstr(object.__credits__), self.preformat)
             result = result + self.bigsection(
                 'Credits', '#ffffff', '#7799ee', contents)
 
@@ -1116,16 +1146,16 @@ class TextDoc(Doc):
             result = result + self.section('DATA', join(contents, '\n'))
 
         if hasattr(object, '__version__'):
-            version = str(object.__version__)
+            version = _binstr(object.__version__)
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = strip(version[11:-1])
             result = result + self.section('VERSION', version)
         if hasattr(object, '__date__'):
-            result = result + self.section('DATE', str(object.__date__))
+            result = result + self.section('DATE', _binstr(object.__date__))
         if hasattr(object, '__author__'):
-            result = result + self.section('AUTHOR', str(object.__author__))
+            result = result + self.section('AUTHOR', _binstr(object.__author__))
         if hasattr(object, '__credits__'):
-            result = result + self.section('CREDITS', str(object.__credits__))
+            result = result + self.section('CREDITS', _binstr(object.__credits__))
         return result
 
     def docclass(self, object, name=None, mod=None, *ignored):
@@ -1375,7 +1405,7 @@ def pipepager(text, cmd):
     """Page through text by feeding it to another program."""
     pipe = os.popen(cmd, 'w')
     try:
-        pipe.write(text)
+        pipe.write(_encode(text))
         pipe.close()
     except IOError:
         pass # Ignore broken pipes caused by quitting the pager program.
@@ -1385,7 +1415,7 @@ def tempfilepager(text, cmd):
     import tempfile
     filename = tempfile.mktemp()
     file = open(filename, 'w')
-    file.write(text)
+    file.write(_encode(text))
     file.close()
     try:
         os.system(cmd + ' "' + filename + '"')
@@ -1394,7 +1424,7 @@ def tempfilepager(text, cmd):
 
 def ttypager(text):
     """Page through text on a text terminal."""
-    lines = split(plain(text), '\n')
+    lines = plain(_encode(plain(text), getattr(sys.stdout, 'encoding', _encoding))).split('\n')
     try:
         import tty
         fd = sys.stdin.fileno()
@@ -1432,7 +1462,7 @@ def ttypager(text):
 
 def plainpager(text):
     """Simply print unformatted text.  This is the ultimate fallback."""
-    sys.stdout.write(plain(text))
+    sys.stdout.write(_encode(plain(text), getattr(sys.stdout, 'encoding', _encoding)))
 
 def describe(thing):
     """Produce a short description of the given thing."""
