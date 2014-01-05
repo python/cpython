@@ -487,6 +487,13 @@ class PydocDocTest(unittest.TestCase):
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
 
+    def test_synopsis_sourceless(self):
+        expected = os.__doc__.splitlines()[0]
+        filename = os.__cached__
+        synopsis = pydoc.synopsis(filename)
+
+        self.assertEqual(synopsis, expected)
+
     def test_splitdoc_with_description(self):
         example_string = "I Am A Doc\n\n\nHere is my description"
         self.assertEqual(pydoc.splitdoc(example_string),
@@ -599,6 +606,50 @@ class PydocImportTest(PydocBaseTest):
         # No result, no error
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
+
+    def test_modules(self):
+        # See Helper.listmodules().
+        num_header_lines = 2
+        num_module_lines_min = 5  # Playing it safe.
+        num_footer_lines = 3
+        expected = num_header_lines + num_module_lines_min + num_footer_lines
+
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        helper('modules')
+        result = output.getvalue().strip()
+        num_lines = len(result.splitlines())
+
+        self.assertGreaterEqual(num_lines, expected)
+
+    def test_modules_search(self):
+        # See Helper.listmodules().
+        expected = 'pydoc - '
+
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        with captured_stdout() as help_io:
+            helper('modules pydoc')
+        result = help_io.getvalue()
+
+        self.assertIn(expected, result)
+
+    def test_modules_search_builtin(self):
+        expected = 'gc - '
+
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        with captured_stdout() as help_io:
+            helper('modules garbage')
+        result = help_io.getvalue()
+
+        self.assertTrue(result.startswith(expected))
+
+    def test_importfile(self):
+        loaded_pydoc = pydoc.importfile(pydoc.__file__)
+
+        self.assertEqual(loaded_pydoc.__name__, 'pydoc')
+        self.assertEqual(loaded_pydoc.__file__, pydoc.__file__)
 
 
 class TestDescriptions(unittest.TestCase):
@@ -826,6 +877,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
+
 
 @reap_threads
 def test_main():
