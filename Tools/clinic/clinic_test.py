@@ -296,9 +296,9 @@ os.stat as os_stat_fn
 
 Perform a stat system call on the given path.""")
         self.assertEqual("""
+stat(path)
 Perform a stat system call on the given path.
 
-os.stat(path)
   path
     Path to be examined
 """.strip(), function.docstring)
@@ -316,9 +316,9 @@ This is the documentation for foo.
 Okay, we're done here.
 """)
         self.assertEqual("""
+bar(x, y)
 This is the documentation for foo.
 
-foo.bar(x, y)
   x
     Documentation for x.
 
@@ -356,7 +356,7 @@ This/used to break Clinic!
     def test_left_group(self):
         function = self.parse_function("""
 module curses
-curses.window.addch
+curses.addch
    [
    y: int
      Y-coordinate.
@@ -380,7 +380,9 @@ curses.window.addch
             self.assertEqual(p.group, group)
             self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
         self.assertEqual(function.docstring.strip(), """
-curses.window.addch([y, x,] ch, [attr])
+addch([y, x,] ch, [attr])
+
+
   y
     Y-coordinate.
   x
@@ -394,7 +396,7 @@ curses.window.addch([y, x,] ch, [attr])
     def test_nested_groups(self):
         function = self.parse_function("""
 module curses
-curses.window.imaginary
+curses.imaginary
    [
    [
    y1: int
@@ -439,7 +441,9 @@ curses.window.imaginary
             self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
         self.assertEqual(function.docstring.strip(), """
-curses.window.imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5, attr6]])
+imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5, attr6]])
+
+
   y1
     Y-coordinate.
   y2
@@ -557,7 +561,7 @@ foo.bar
 Docstring
 
 """)
-        self.assertEqual("Docstring\n\nfoo.bar()", function.docstring)
+        self.assertEqual("bar()\nDocstring", function.docstring)
         self.assertEqual(0, len(function.parameters))
 
     def test_illegal_module_line(self):
@@ -652,9 +656,9 @@ foo.bar
   Not at column 0!
 """)
         self.assertEqual("""
+bar(x, *, y)
 Not at column 0!
 
-foo.bar(x, *, y)
   x
     Nested docstring here, goeth.
 """.strip(), function.docstring)
@@ -666,7 +670,7 @@ os.stat
     path: str
 This/used to break Clinic!
 """)
-        self.assertEqual("This/used to break Clinic!\n\nos.stat(path)", function.docstring)
+        self.assertEqual("stat(path)\nThis/used to break Clinic!", function.docstring)
 
     def test_directive(self):
         c = FakeClinic()
@@ -692,7 +696,7 @@ This/used to break Clinic!
     def parse_function(self, text):
         block = self.parse(text)
         s = block.signatures
-        assert len(s) == 2
+        self.assertEqual(len(s), 2)
         assert isinstance(s[0], clinic.Module)
         assert isinstance(s[1], clinic.Function)
         return s[1]

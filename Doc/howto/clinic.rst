@@ -14,21 +14,20 @@ Argument Clinic How-To
   function to work with Argument Clinic, and then introduces
   some advanced topics on Argument Clinic usage.
 
-  Argument Clinic is currently considered an internal
-  tool for the CPython code tree.  Its use is not supported
-  for files outside the CPython code tree, and no guarantees
-  are made regarding backwards compatibility for future
-  versions.  In other words: if you maintain an external C
-  extension for CPython, you're welcome to experiment with
-  Argument Clinic in your own code.  But the version of Argument
-  Clinic that ships with CPython 3.5 *could* be totally
-  incompatible and break all your code.
+  Currently Argument Clinic is considered internal-only
+  for CPython.  Its use is not supported for files outside
+  CPython, and no guarantees are made regarding backwards
+  compatibility for future versions.  In other words: if you
+  maintain an external C extension for CPython, you're welcome
+  to experiment with Argument Clinic in your own code.  But the
+  version of Argument Clinic that ships with CPython 3.5 *could*
+  be totally incompatible and break all your code.
 
 ========================
 Basic Concepts And Usage
 ========================
 
-Argument Clinic ships with CPython.  You can find it in ``Tools/clinic/clinic.py``.
+Argument Clinic ships with CPython; you'll find it in ``Tools/clinic/clinic.py``.
 If you run that script, specifying a C file as an argument::
 
     % python3 Tools/clinic/clinic.py foo.c
@@ -45,13 +44,12 @@ like this::
 
 Everything in between these two lines is input for Argument Clinic.
 All of these lines, including the beginning and ending comment
-lines, are collectively called an Argument Clinic "input block",
-or "block" for short.
+lines, are collectively called an Argument Clinic "block".
 
 When Argument Clinic parses one of these blocks, it
 generates output.  This output is rewritten into the C file
 immediately after the block, followed by a comment containing a checksum.
-The resulting Argument Clinic block looks like this::
+The Argument Clinic block now looks like this::
 
     /*[clinic]
     ... clinic input goes here ...
@@ -65,7 +63,8 @@ line.  However, if the input hasn't changed, the output won't change either.
 
 You should never modify the output portion of an Argument Clinic block.  Instead,
 change the input until it produces the output you want.  (That's the purpose of the
-checksum--to detect and warn you in case someone accidentally modifies the output.)
+checksum--to detect if someone changed the output, as these edits would be lost
+the next time Argument Clinic writes out fresh output.)
 
 For the sake of clarity, here's the terminology we'll use with Argument Clinic:
 
@@ -87,10 +86,12 @@ Converting Your First Function
 The best way to get a sense of how Argument Clinic works is to
 convert a function to work with it.  Let's dive in!
 
-0. Make sure you're working with a freshly updated trunk.
+0. Make sure you're working with a freshly updated checkout
+   of the CPython trunk.
 
-1. Find a Python builtin that calls either ``PyArg_ParseTuple()``
-   or ``PyArg_ParseTupleAndKeywords()``, and hasn't been converted yet.
+1. Find a Python builtin that calls either :c:func:`PyArg_ParseTuple`
+   or :c:func:`PyArg_ParseTupleAndKeywords`, and hasn't been converted
+   to work with Argument Clinic yet.
    For my example I'm using ``pickle.Pickler.dump()``.
 
 2. If the call to the ``PyArg_Parse`` function uses any of the
@@ -103,7 +104,7 @@ convert a function to work with it.  Let's dive in!
        et
        et#
 
-   or if it has multiple calls to ``PyArg_ParseTuple()``,
+   or if it has multiple calls to :c:func:`PyArg_ParseTuple`,
    you should choose a different function.  Argument Clinic *does*
    support all of these scenarios.  But these are advanced
    topics--let's do something simpler for your first function.
@@ -130,7 +131,7 @@ convert a function to work with it.  Let's dive in!
    be a paragraph consisting of a single 80-column line
    at the beginning of the docstring.
 
-   (Our docstring consists solely of the summary line, so the sample
+   (Our example docstring consists solely of a summary line, so the sample
    code doesn't have to change for this step.)
 
 6. Above the docstring, enter the name of the function, followed
@@ -198,7 +199,8 @@ convert a function to work with it.  Let's dive in!
    string.  ("format unit" is the formal name for the one-to-three
    character substring of the ``format`` parameter that tells
    the argument parsing function what the type of the variable
-   is and how to convert it.)
+   is and how to convert it.  For more on format units please
+   see :ref:`arg-parsing`.)
 
    For multicharacter format units like ``z#``, use the
    entire two-or-three character string.
@@ -231,13 +233,17 @@ convert a function to work with it.  Let's dive in!
    (``pickle.Pickler.dump`` has neither, so our sample is unchanged.)
 
 
-10. If the existing C function uses ``PyArg_ParseTuple()``
-    (instead of ``PyArg_ParseTupleAndKeywords()``), then all its
+10. If the existing C function calls :c:func:`PyArg_ParseTuple`
+    (as opposed to :c:func:`PyArg_ParseTupleAndKeywords`), then all its
     arguments are positional-only.
 
     To mark all parameters as positional-only in Argument Clinic,
     add a ``/`` on a line by itself after the last parameter,
     indented the same as the parameter lines.
+
+    Currently this is all-or-nothing; either all parameters are
+    positional-only, or none of them are.  (In the future Argument
+    Clinic may relax this restriction.)
 
     Sample::
 
@@ -255,16 +261,16 @@ convert a function to work with it.  Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic]*/
 
-11. It's helpful to write a per-parameter docstring, indented
-    another level past the parameter declaration.  But per-parameter
-    docstrings are optional; you can skip this step if you prefer.
+11. It's helpful to write a per-parameter docstring for each parameter.
+    But per-parameter docstrings are optional; you can skip this step
+    if you prefer.
 
-    Here's how per-parameter docstrings work.  The first line
+    Here's how to add a per-parameter docstring.  The first line
     of the per-parameter docstring must be indented further than the
-    parameter definition.  This left margin establishes the left margin
-    for the whole per-parameter docstring; all the text you write will
-    be outdented by this amount.  You can write as much as you like,
-    across multiple lines if you wish.
+    parameter definition.  The left margin of this first line establishes
+    the left margin for the whole per-parameter docstring; all the text
+    you write will be outdented by this amount.  You can write as much
+    text as you like, across multiple lines if you wish.
 
     Sample::
 
@@ -311,28 +317,47 @@ convert a function to work with it.  Let's dive in!
        pickle_Pickler_dump_impl(PyObject *self, PyObject *obj)
        /*[clinic checksum: 3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
 
+    Obviously, if Argument Clinic didn't produce any output, it's because
+    it found an error in your input.  Keep fixing your errors and retrying
+    until Argument Clinic processes your file without complaint.
+
 13. Double-check that the argument-parsing code Argument Clinic generated
     looks basically the same as the existing code.
 
     First, ensure both places use the same argument-parsing function.
     The existing code must call either
-    ``PyArg_ParseTuple()`` or ``PyArg_ParseTupleAndKeywords()``;
+    :c:func:`PyArg_ParseTuple` or :c:func:`PyArg_ParseTupleAndKeywords`;
     ensure that the code generated by Argument Clinic calls the
-    same function.
+    *exact* same function.
 
-    Second, the format string passed in to ``PyArg_ParseTuple()`` or
-    ``PyArg_ParseTupleAndKeywords()`` should be *exactly* the same
-    as the hand-written one in the existing function.
+    Second, the format string passed in to :c:func:`PyArg_ParseTuple` or
+    :c:func:`PyArg_ParseTupleAndKeywords` should be *exactly* the same
+    as the hand-written one in the existing function, up to the colon
+    or semi-colon.
 
-    Well, there's one way that Argument Clinic's output is permitted
-    to be different.  Argument Clinic always generates a format string
-    ending with ``:`` followed by the name of the function.  If the
-    format string originally ended with ``;`` (to specify usage help),
-    this is harmless--don't worry about this difference.
+    (Argument Clinic always generates its format strings
+    with a ``:`` followed by the name of the function.  If the
+    existing code's format string ends with ``;``, to provide
+    usage help, this change is harmless--don't worry about it.)
 
-    Apart from that, if either of these things differ in *any way*,
-    fix your input to Argument Clinic and rerun ``Tools/clinic/clinic.py``
-    until they are the same.
+    Third, for parameters whose format units require two arguments
+    (like a length variable, or an encoding string, or a pointer
+    to a conversion function), ensure that the second argument is
+    *exactly* the same between the two invocations.
+
+    Fourth, inside the output portion of the block you'll find a preprocessor
+    macro defining the appropriate static :c:type:`PyMethodDef` structure for
+    this builtin::
+
+        #define _PICKLE_PICKLER_DUMP_METHODDEF    \
+        {"dump", (PyCFunction)_pickle_Pickler_dump, METH_O, _pickle_Pickler_dump__doc__},
+
+    This static structure should be *exactly* the same as the existing static
+    :c:type:`PyMethodDef` structure for this builtin.
+
+    If any of these items differ in *any way*,
+    adjust your Argument Clinic function specification and rerun
+    ``Tools/clinic/clinic.py`` until they *are* the same.
 
 
 14. Notice that the last line of its output is the declaration
@@ -342,8 +367,19 @@ convert a function to work with it.  Let's dive in!
     declarations of all the variables it dumps the arguments into.
     Notice how the Python arguments are now arguments to this impl function;
     if the implementation used different names for these variables, fix it.
-    The result should be a function that handles just the implementation
-    of the Python function without any argument-parsing code.
+
+    Let's reiterate, just because it's kind of weird.  Your code should now
+    look like this::
+
+        static return_type
+        your_function_impl(...)
+        /*[clinic checksum: ...]*/
+        {
+        ...
+
+    Argument Clinic generated the checksum line and the function prototype just
+    above it.  You should write the opening (and closing) curly braces for the
+    function, and the implementation inside.
 
     Sample::
 
@@ -386,7 +422,27 @@ convert a function to work with it.  Let's dive in!
 
             ...
 
-15. Compile and run the relevant portions of the regression-test suite.
+15. Remember the macro with the :c:type:`PyMethodDef` structure for this
+    function?  Find the existing :c:type:`PyMethodDef` structure for this
+    function and replace it with a reference to the macro.  (If the builtin
+    is at module scope, this will probably be very near the end of the file;
+    if the builtin is a class method, this will probably be below but relatively
+    near to the implementation.)
+
+    Note that the body of the macro contains a trailing comma.  So when you
+    replace the existing static :c:type:`PyMethodDef` structure with the macro,
+    *don't* add a comma to the end.
+
+    Sample::
+
+        static struct PyMethodDef Pickler_methods[] = {
+            _PICKLE_PICKLER_DUMP_METHODDEF
+            _PICKLE_PICKLER_CLEAR_MEMO_METHODDEF
+            {NULL, NULL}                /* sentinel */
+        };
+
+
+16. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
     and there should be no externally-visible change to Python's behavior.
 
@@ -405,11 +461,11 @@ Renaming the C functions generated by Argument Clinic
 
 Argument Clinic automatically names the functions it generates for you.
 Occasionally this may cause a problem, if the generated name collides with
-the name of an existing C function.  There's an easy solution: you can explicitly
-specify the base name to use for the C functions.  Just add the keyword ``"as"``
+the name of an existing C function.  There's an easy solution: override the names
+used for the C functions.  Just add the keyword ``"as"``
 to your function declaration line, followed by the function name you wish to use.
-Argument Clinic will use the function name you use for the base (generated) function,
-and then add ``"_impl"`` to the end for the name of the impl function.
+Argument Clinic will use that function name for the base (generated) function,
+then add ``"_impl"`` to the end and use that for the name of the impl function.
 
 For example, if we wanted to rename the C function names generated for
 ``pickle.Pickler.dump``, it'd look like this::
@@ -420,7 +476,7 @@ For example, if we wanted to rename the C function names generated for
     ...
 
 The base function would now be named ``pickler_dumper()``,
-and the impl function would be named ``pickler_dumper_impl()``.
+and the impl function would now be named ``pickler_dumper_impl()``.
 
 
 Optional Groups
@@ -428,15 +484,15 @@ Optional Groups
 
 Some legacy functions have a tricky approach to parsing their arguments:
 they count the number of positional arguments, then use a ``switch`` statement
-to call one of several different ``PyArg_ParseTuple()`` calls depending on
+to call one of several different :c:func:`PyArg_ParseTuple` calls depending on
 how many positional arguments there are.  (These functions cannot accept
 keyword-only arguments.)  This approach was used to simulate optional
-arguments back before ``PyArg_ParseTupleAndKeywords()`` was created.
+arguments back before :c:func:`PyArg_ParseTupleAndKeywords` was created.
 
-Functions using this approach can often be converted to
-use ``PyArg_ParseTupleAndKeywords()``, optional arguments, and default values.
-But it's not always possible, because some of these legacy functions have
-behaviors ``PyArg_ParseTupleAndKeywords()`` can't directly support.
+While functions using this approach can often be converted to
+use :c:func:`PyArg_ParseTupleAndKeywords`, optional arguments, and default values,
+it's not always possible.  Some of these legacy functions have
+behaviors :c:func:`PyArg_ParseTupleAndKeywords` doesn't directly support.
 The most obvious example is the builtin function ``range()``, which has
 an optional argument on the *left* side of its required argument!
 Another example is ``curses.window.addch()``, which has a group of two
@@ -445,16 +501,17 @@ called ``x`` and ``y``; if you call the function passing in ``x``,
 you must also pass in ``y``--and if you don't pass in ``x`` you may not
 pass in ``y`` either.)
 
-For the sake of backwards compatibility, Argument Clinic supports this
-alternate approach to parsing, using what are called *optional groups*.
-Optional groups are groups of arguments that can only be specified together.
+In any case, the goal of Argument Clinic is to support argument parsing
+for all existing CPython builtins without changing their semantics.
+Therefore Argument Clinic supports
+this alternate approach to parsing, using what are called *optional groups*.
+Optional groups are groups of arguments that must all be passed in together.
 They can be to the left or the right of the required arguments.  They
 can *only* be used with positional-only parameters.
 
 To specify an optional group, add a ``[`` on a line by itself before
-the parameters you wish to be
-in a group together, and a ``]`` on a line by itself after the
-parameters.  As an example, here's how ``curses.window.addch``
+the parameters you wish to group together, and a ``]`` on a line by itself
+after these parameters.  As an example, here's how ``curses.window.addch``
 uses optional groups to make the first two parameters and the last
 parameter optional::
 
@@ -484,8 +541,8 @@ parameter optional::
 Notes:
 
 * For every optional group, one additional parameter will be passed into the
-  impl function representing the group.  The parameter will be an int, and it will
-  be named ``group_{direction}_{number}``,
+  impl function representing the group.  The parameter will be an int named
+  ``group_{direction}_{number}``,
   where ``{direction}`` is either ``right`` or ``left`` depending on whether the group
   is before or after the required parameters, and ``{number}`` is a monotonically
   increasing number (starting at 1) indicating how far away the group is from
@@ -495,10 +552,12 @@ Notes:
   in this invocation.)
 
 * If there are no required arguments, the optional groups will behave
-  as if they are to the right of the required arguments.
+  as if they're to the right of the required arguments.
 
 * In the case of ambiguity, the argument parsing code
   favors parameters on the left (before the required parameters).
+
+* Optional groups can only contain positional-only parameters.
 
 * Optional groups are *only* intended for legacy code.  Please do not
   use optional groups for new code.
@@ -509,7 +568,7 @@ Using real Argument Clinic converters, instead of "legacy converters"
 
 To save time, and to minimize how much you need to learn
 to achieve your first port to Argument Clinic, the walkthrough above tells
-you to use the "legacy converters".  "Legacy converters" are a convenience,
+you to use "legacy converters".  "Legacy converters" are a convenience,
 designed explicitly to make porting existing code to Argument Clinic
 easier.  And to be clear, their use is entirely acceptable when porting
 code for Python 3.4.
@@ -523,18 +582,19 @@ reasons:
   because they require arguments, and the legacy converter syntax doesn't
   support specifying arguments.
 * In the future we may have a new argument parsing library that isn't
-  restricted to what ``PyArg_ParseTuple()`` supports.
+  restricted to what :c:func:`PyArg_ParseTuple` supports; this flexibility
+  won't be available to parameters using legacy converters.
 
-So if you want
-to go that extra effort, you should consider using normal
-converters instead of the legacy converters.
+Therefore, if you don't mind a little extra effort, you should consider
+using normal converters instead of legacy converters.
 
 In a nutshell, the syntax for Argument Clinic (non-legacy) converters
 looks like a Python function call.  However, if there are no explicit
 arguments to the function (all functions take their default values),
 you may omit the parentheses.  Thus ``bool`` and ``bool()`` are exactly
-the same.  All parameters to Argument Clinic converters are keyword-only.
+the same converters.
 
+All arguments to Argument Clinic converters are keyword-only.
 All Argument Clinic converters accept the following arguments:
 
 ``doc_default``
@@ -643,11 +703,11 @@ the text, and add more entries to the dict mapping types to strings just above i
 
 Note also that this approach takes away some possible flexibility for the format
 units starting with ``e``.  It used to be possible to decide at runtime what
-encoding string to pass in to ``PyArg_ParseTuple()``.   But now this string must
+encoding string to pass in to :c:func:`PyArg_ParseTuple`.   But now this string must
 be hard-coded at compile-time.  This limitation is deliberate; it made supporting
 this format unit much easier, and may allow for future compile-time optimizations.
 This restriction does not seem unreasonable; CPython itself always passes in static
-hard-coded strings when using format units starting with ``e``.
+hard-coded encoding strings for parameters whose format units start with ``e``.
 
 
 Using a return converter
@@ -692,12 +752,17 @@ None of these take parameters.  For the first three, return -1 to indicate
 error.  For ``DecodeFSDefault``, the return type is ``char *``; return a NULL
 pointer to indicate an error.
 
+To see all the return converters Argument Clinic supports, along with
+their parameters (if any),
+just run ``Tools/clinic/clinic.py --converters`` for the full list.
+
+
 Calling Python code
 -------------------
 
 The rest of the advanced topics require you to write Python code
-which lives inside your C file and modifies Argument Clinic at
-runtime.  This is simple; you simply define a Python block.
+which lives inside your C file and modifies Argument Clinic's
+runtime state.  This is simple: you simply define a Python block.
 
 A Python block uses different delimiter lines than an Argument
 Clinic function block.  It looks like this::
@@ -778,13 +843,13 @@ As we hinted at in the previous section... you can write your own converters!
 A converter is simply a Python class that inherits from ``CConverter``.
 The main purpose of a custom converter is if you have a parameter using
 the ``O&`` format unit--parsing this parameter means calling
-a ``PyArg_ParseTuple()`` "converter function".
+a :c:func:`PyArg_ParseTuple` "converter function".
 
 Your converter class should be named ``*something*_converter``.
 If the name follows this convention, then your converter class
 will be automatically registered with Argument Clinic; its name
 will be the name of your class with the ``_converter`` suffix
-stripped off.  (This is done automatically for you with a metaclass.)
+stripped off.  (This is accomplished with a metaclass.)
 
 You shouldn't subclass ``CConverter.__init__``.  Instead, you should
 write a ``converter_init()`` function.  ``converter_init()``
@@ -825,12 +890,13 @@ to specify in your subclass.  Here's the current list:
 ``c_ignored_default``
     The default value used to initialize the C variable when
     there is no default, but not specifying a default may
-    result in an "uninitialized variable" warning.  This is
+    result in an "uninitialized variable" warning.  This can
     easily happen when using option groups--although
-    properly-written code won't actually use the variable,
-    the variable does get passed in to the _impl, and the
-    C compiler will complain about the "use" of the uninitialized
-    value.  This value should be a string.
+    properly-written code will never actually use this value,
+    the variable does get passed in to the impl, and the
+    C compiler will complain about the "use" of the
+    uninitialized value.  This value should always be a
+    non-empty string.
 
 ``converter``
     The name of the C converter function, as a string.
@@ -843,7 +909,7 @@ to specify in your subclass.  Here's the current list:
 ``parse_by_reference``
     A boolean value.  If true,
     Argument Clinic will add a ``&`` in front of the name of
-    the variable when passing it into ``PyArg_ParseTuple()``.
+    the variable when passing it into :c:func:`PyArg_ParseTuple`.
 
 
 Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``::
@@ -857,9 +923,10 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
     [python]*/
     /*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-This block adds a ``uint`` converter to Argument Clinic.  Parameters
+This block adds a converter to Argument Clinic named ``uint``.  Parameters
 declared as ``uint`` will be declared as type ``unsigned int``, and will
-be parsed by calling the ``uint_converter`` converter function in C.
+be parsed by the ``'O&'`` format unit, which will call the ``uint_converter``
+converter function.
 ``uint`` variables automatically support default values.
 
 More sophisticated custom converters can insert custom C code to
@@ -871,7 +938,7 @@ Writing a custom return converter
 ---------------------------------
 
 Writing a custom return converter is much like writing
-a custom converter.  Except it's much simpler, because return
+a custom converter.  Except it's somewhat simpler, because return
 converters are themselves much simpler.
 
 Return converters must subclass ``CReturnConverter``.
