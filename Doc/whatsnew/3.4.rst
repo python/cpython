@@ -1373,6 +1373,9 @@ removed:
   ``get_selector``, ``set_proxy``, ``get_origin_req_host``, and
   ``is_unverifiable`` have been removed (use direct attribute access instead).
 
+* Support for loading the deprecated ``TYPE_INT64`` has been removed from
+  :mod:`marshal`.  (Contributed by Dan Riti in :issue:`15480`.)
+
 
 
 Porting to Python 3.4
