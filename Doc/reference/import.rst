@@ -440,7 +440,7 @@ import machinery will create the new module itself.
 
    For compatibility with existing loaders, the import machinery will use
    the ``load_module()`` method of loaders if it exists and the loader does
-   not also implement ``exec_module().  However, ``load_module()`` has been
+   not also implement ``exec_module()``.  However, ``load_module()`` has been
    deprecated and loaders should implement ``exec_module()`` instead.
 
    The ``load_module()`` method must implement all the boilerplate loading
