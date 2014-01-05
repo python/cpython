@@ -2187,8 +2187,8 @@ Library
 - Issue #11182: remove the unused and undocumented pydoc.Scanner class.
   Patch by Martin Morrison.
 
-- Issue #17741: Add ElementTree.IncrementalParser, an event-driven parser
-  for non-blocking applications.
+- Issue #17741: Add ElementTree.XMLPullParser, an event-driven parser for
+  non-blocking applications.
 
 - Issue #17555: Fix ForkAwareThreadLock so that size of after fork
   registry does not grow exponentially with generation of process.
