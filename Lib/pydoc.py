@@ -209,7 +209,9 @@ else:
 def _binstr(obj):
     # Ensure that we have an encoded (binary) string representation of obj,
     # even if it is a unicode string.
-    return obj.encode(_encoding) if isinstance(obj, _unicode) else str(obj)
+    if isinstance(obj, _unicode):
+        return obj.encode(_encoding, 'xmlcharrefreplace')
+    return str(obj)
 
 # ----------------------------------------------------- module manipulation
 
