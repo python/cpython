@@ -1088,9 +1088,10 @@ Richard Oudkerk in :issue:`15528`)
 xml.etree
 ---------
 
-Add an event-driven parser for non-blocking applications,
-:class:`~xml.etree.ElementTree.XMLPullParser`.
-(Contributed by Antoine Pitrou in :issue:`17741`.)
+A new parser, :class:`~xml.etree.ElementTree.XMLPullParser`, allows a
+non-blocking applications to parse XML documents.  An example can be
+seen at :ref:`elementtree-pull-parsing`.  (Contributed by Antoine
+Pitrou in :issue:`17741`.)
 
 The :mod:`xml.etree.ElementTree` :func:`~xml.etree.ElementTree.tostring` and
 :func:`~xml.etree.ElementTree.tostringlist` functions, and the

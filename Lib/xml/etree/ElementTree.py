@@ -1251,7 +1251,7 @@ class XMLPullParser:
         self._close_and_return_root()
 
     def read_events(self):
-        """Iterate over currently available (event, elem) pairs.
+        """Return an iterator over currently available (event, elem) pairs.
 
         Events are consumed from the internal event queue as they are
         retrieved from the iterator.
