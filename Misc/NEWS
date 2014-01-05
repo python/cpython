@@ -2218,7 +2218,7 @@ Library
 - Issue #15480: Remove the deprecated and unused TYPE_INT64 code from marshal.
   Initial patch by Daniel Riti.
 
-- Issue #2118: SMTPException is now a subclass of IOError.
+- Issue #2118: SMTPException is now a subclass of OSError.
 
 - Issue #17016: Get rid of possible pointer wraparounds and integer overflows
   in the re module.  Patch by Nickolai Zeldovich.
