@@ -997,7 +997,8 @@ class BlockPrinter:
 # "languages" maps the name of the language ("C", "Python").
 # "extensions" maps the file extension ("c", "py").
 languages = { 'C': CLanguage, 'Python': PythonLanguage }
-extensions = { 'c': CLanguage, 'h': CLanguage, 'py': PythonLanguage }
+extensions = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
+extensions['py'] = PythonLanguage
 
 
 # maps strings to callables.
@@ -2430,9 +2431,6 @@ class DSLParser:
 
     # the final stanza of the DSL is the docstring.
     def state_function_docstring(self, line):
-        if not self.function.self_converter:
-            self.function.self_converter = self_converter("self", self.function)
-
         if self.group:
             fail("Function " + self.function.name + " has a ] without a matching [.")
 
@@ -2603,6 +2601,9 @@ class DSLParser:
 
         if not self.function:
             return
+
+        if not self.function.self_converter:
+            self.function.self_converter = self_converter("self", self.function)
 
         if self.keyword_only:
             values = self.function.parameters.values()
