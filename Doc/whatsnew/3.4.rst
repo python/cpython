@@ -794,6 +794,14 @@ and explicit relative imports could cause obscure failures in child
 processes. (Contributed by Nick Coghlan in :issue:`19946`)
 
 
+operator
+--------
+
+There is now a pure-python version of the :mod:`operator` module available for
+reference and for use by alternate implementations of Python.  (Contributed by
+Zachary Ware in :issue:`16694`.)
+
+
 os
 --
 
@@ -981,8 +989,19 @@ The module supports new file types: door, event port and whiteout.
 struct
 ------
 
-Streaming struct unpacking using :func:`struct.iter_unpack`.
-(Contributed by Antoine Pitrou in :issue:`17804`.)
+:mod:`struct` now supports the streamed unpacking of a buffer containing
+repeated instances of a given format of data.  Both a module level
+:mod:`~struct.iter_unpack` function and a :meth:`struct.Struct.iter_unpack`
+method on compiled formats have been added.  (Contributed by Antoine Pitrou in
+:issue:`17804`.)
+
+
+subprocess
+----------
+
+:func:`~subprocess.check_output` now accepts an *input* argument that can
+be used to provide the contents of ``stdin`` for the command that is run.
+(Contributed by Zack Weinberg in :issue:`16624`.)
 
 
 sunau
@@ -1376,6 +1395,13 @@ removed:
 
 * Support for loading the deprecated ``TYPE_INT64`` has been removed from
   :mod:`marshal`.  (Contributed by Dan Riti in :issue:`15480`.)
+
+
+Code Cleanups
+-------------
+
+* The unused and undocumented internal ``Scanner`` class has been removed from
+  the :mod:`pydoc` module.
 
 
 
