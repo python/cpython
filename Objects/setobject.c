@@ -738,6 +738,17 @@ set_traverse(PySetObject *so, visitproc visit, void *arg)
 static Py_hash_t
 frozenset_hash(PyObject *self)
 {
+    /* Most of the constants in this hash algorithm are randomly choosen
+       large primes with "interesting bit patterns" and that passed
+       tests for good collision statistics on a variety of problematic
+       datasets such as:
+
+          ps = []
+          for r in range(21):
+              ps += itertools.combinations(range(20), r)
+          num_distinct_hashes = len({hash(frozenset(s)) for s in ps})
+
+    */
     PySetObject *so = (PySetObject *)self;
     Py_uhash_t h, hash = 1927868237UL;
     setentry *entry;
@@ -754,8 +765,10 @@ frozenset_hash(PyObject *self)
            hashes so that many distinct combinations collapse to only
            a handful of distinct hash values. */
         h = entry->hash;
-        hash ^= (h ^ (h << 16) ^ 89869747UL)  * 3644798167UL;
+        hash ^= ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
     }
+    /* Make the final result spread-out in a different pattern
+       than the algorithem for tuples or other python objects. */
     hash = hash * 69069U + 907133923UL;
     if (hash == -1)
         hash = 590923713UL;
