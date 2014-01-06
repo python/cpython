@@ -123,15 +123,6 @@ Extension types can easily be made to support weak references; see
       weakref.  If there is no callback or if the referent of the weakref is
       no longer alive then this attribute will have value ``None``.
 
-   .. note::
-
-      Like :meth:`__del__` methods, weak reference callbacks can be
-      called during interpreter shutdown when module globals have been
-      overwritten with :const:`None`.  This can make writing robust
-      weak reference callbacks a challenge.  Callbacks registered
-      using :class:`finalize` do not have to worry about this issue
-      because they will not be run after module teardown has begun.
-
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
 
@@ -247,7 +238,7 @@ These method have the same issues as the and :meth:`keyrefs` method of
 .. class:: finalize(obj, func, *args, **kwargs)
 
    Return a callable finalizer object which will be called when *obj*
-   is garbage collected. Unlike an ordinary weak reference, a finalizer is
+   is garbage collected. Unlike an ordinary weak reference, a finalizer
    will always survive until the reference object is collected, greatly
    simplifying lifecycle management.
 
