@@ -70,11 +70,11 @@ def _write_zip_package(zipname, files,
     if data_to_prepend:
         # Prepend data to the start of the zipfile
         with open(zipname, "rb") as f:
-          zip_data = f.read()
+            zip_data = f.read()
 
         with open(zipname, "wb") as f:
-          f.write(data_to_prepend)
-          f.write(zip_data)
+            f.write(data_to_prepend)
+            f.write(zip_data)
 
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
