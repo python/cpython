@@ -13988,7 +13988,7 @@ formatlong(PyObject *val, struct unicode_format_arg_t *arg)
     return result;
 }
 
-/* Format an integer.
+/* Format an integer or a float as an integer.
  * Return 1 if the number has been formatted into the writer,
  *        0 if the number has been formatted into *p_output
  *       -1 and raise an exception on error */
@@ -14005,11 +14005,19 @@ mainformatlong(PyObject *v,
         goto wrongtype;
 
     if (!PyLong_Check(v)) {
-        iobj = PyNumber_Long(v);
-        if (iobj == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                goto wrongtype;
-            return -1;
+        if (type == 'o' || type == 'x' || type == 'X') {
+            iobj = PyNumber_Index(v);
+            if (iobj == NULL) {
+                return -1;
+            }
+        }
+        else {
+            iobj = PyNumber_Long(v);
+            if (iobj == NULL ) {
+                if (PyErr_ExceptionMatches(PyExc_TypeError))
+                    goto wrongtype;
+                return -1;
+            }
         }
         assert(PyLong_Check(iobj));
     }
@@ -14079,8 +14087,18 @@ formatchar(PyObject *v)
         goto onError;
     }
     else {
-        /* Integer input truncated to a character */
+        PyObject *iobj;
         long x;
+        /* make sure number is a type of integer */
+        if (!PyLong_Check(v)) {
+            iobj = PyNumber_Index(v);
+            if (iobj == NULL) {
+                goto onError;
+            }
+            v = iobj;
+            Py_DECREF(iobj);
+        }
+        /* Integer input truncated to a character */
         x = PyLong_AsLong(v);
         if (x == -1 && PyErr_Occurred())
             goto onError;
@@ -14282,7 +14300,8 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
 /* Format one argument. Supported conversion specifiers:
 
    - "s", "r", "a": any type
-   - "i", "d", "u", "o", "x", "X": int
+   - "i", "d", "u": int or float
+   - "o", "x", "X": int
    - "e", "E", "f", "F", "g", "G": float
    - "c": int or str (1 character)
 
