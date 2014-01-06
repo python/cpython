@@ -1488,7 +1488,12 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append('\nPy_ssize_clean_t ')
             declaration.append(self.length_name())
             declaration.append(';')
-        return "".join(declaration)
+        s = "".join(declaration)
+        # double up curly-braces, this string will be used
+        # as part of a format_map() template later
+        s = s.replace("{", "{{")
+        s = s.replace("}", "}}")
+        return s
 
     def initialize(self):
         """
@@ -1742,6 +1747,9 @@ class Py_buffer_converter(CConverter):
     c_ignored_default = "{NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL}"
 
     def converter_init(self, *, types='bytes bytearray buffer', nullable=False):
+        if self.default != unspecified:
+            fail("There is no legal default value for Py_buffer ")
+        self.c_default = self.c_ignored_default
         types = set(types.strip().split())
         bytes_type = set(('bytes',))
         bytearray_type = set(('bytearray',))
