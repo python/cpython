@@ -943,8 +943,9 @@ class BlockParser:
                     fail("Checksum mismatch!\nExpected: {}\nComputed: {}".format(checksum, computed))
         else:
             # put back output
-            self.input.extend(reversed(output.splitlines(keepends=True)))
-            self.line_number -= len(output)
+            output_lines = output.splitlines(keepends=True)
+            self.line_number -= len(output_lines)
+            self.input.extend(reversed(output_lines))
             output = None
 
         return Block(input_output(), dsl_name, output=output)
