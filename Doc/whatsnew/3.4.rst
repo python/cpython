@@ -657,9 +657,9 @@ available for other implementations to use.  (Contributed by Brian Thorne in
 gc
 --
 
-New :func:`~gc.get_stats` returns a list of three per-generation dictionaries
-containing the collections statistics since interpreter startup.  (Contributed
-by Antoine Pitrou in :issue:`16351`.)
+New function :func:`~gc.get_stats` returns a list of three per-generation
+dictionaries containing the collections statistics since interpreter startup.
+(Contributed by Antoine Pitrou in :issue:`16351`.)
 
 
 hashlib
@@ -1103,6 +1103,10 @@ to be invoked when an object is garbage collected, without needing to
 carefully manage the lifecycle of the weak reference itself. (Contributed by
 Richard Oudkerk in :issue:`15528`)
 
+The callback, if any, associated with a :class:`~weakref.ref` is now
+exposed via the :attr:`~weakref.ref.__callback__` attribute.  (Contributed
+by Mark Dickinson in :issue:`17643`.)
+
 
 xml.etree
 ---------
@@ -1481,6 +1485,12 @@ Changes in the Python API
   interstitial string would sometimes be ignored.  This brings CPython into
   compliance with the language spec; Jython and PyPy already were.
   (:issue:`17434`).
+
+* :meth:`ssl.SSLSocket.getpeercert` and :meth:`ssl.SSLSocket.do_handshake`
+  now raise an :exc:`OSError` with ``ENOTCONN`` when the ``SSLSocket`` is not
+  connected, instead of the previous behavior of raising an
+  :exc:`AttributError`.  In addition, :meth:`~ssl.SSLSocket.getpeercert`
+  will raise a :exc:`ValueError` if the handshake has not yet been done.
 
 
 Changes in the C API
