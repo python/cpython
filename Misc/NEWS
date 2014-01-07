@@ -25,7 +25,7 @@ Library
 Tools/Demos
 -----------
 
-- Issue #19273: The marker comments Argument Clinic uses have been changed
+- Issue #19723: The marker comments Argument Clinic uses have been changed
   to improve readability.
 
 - Issue #20157: When Argument Clinic renames a parameter because its name
