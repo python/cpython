@@ -287,6 +287,8 @@ Library
 
 - Issue #19708: Update pkgutil to use the new importer APIs.
 
+- Issue #19703: Update pydoc to use the new importer APIs.
+
 - Issue #19851: Fixed a regression in reloading sub-modules.
 
 - ssl.create_default_context() sets OP_NO_COMPRESSION to prevent CRIME.

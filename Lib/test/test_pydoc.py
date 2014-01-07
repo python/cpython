@@ -649,8 +649,10 @@ class PydocImportTest(PydocBaseTest):
     def test_importfile(self):
         loaded_pydoc = pydoc.importfile(pydoc.__file__)
 
+        self.assertIsNot(loaded_pydoc, pydoc)
         self.assertEqual(loaded_pydoc.__name__, 'pydoc')
         self.assertEqual(loaded_pydoc.__file__, pydoc.__file__)
+        self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
 
 
 class TestDescriptions(unittest.TestCase):
