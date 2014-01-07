@@ -1885,8 +1885,22 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
                                         sizeof(cmsgh->cmsg_len));
 
     /* Note that POSIX allows msg_controllen to be of signed type. */
-    if (cmsgh == NULL || msg->msg_control == NULL || msg->msg_controllen < 0)
+    if (cmsgh == NULL || msg->msg_control == NULL)
         return 0;
+    /* Note that POSIX allows msg_controllen to be of a signed type. This is
+       annoying under OS X as it's unsigned there and so it triggers a
+       tautological comparison warning under Clang when compared against 0.
+       Since the check is valid on other platforms, silence the warning under
+       Clang. */
+    #ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wtautological-compare"
+    #endif
+    if (msg->msg_controllen < 0)
+        return 0;
+    #ifdef __clang__
+    #pragma clang diagnostic pop
+    #endif
     if (space < cmsg_len_end)
         space = cmsg_len_end;
     cmsg_offset = (char *)cmsgh - (char *)msg->msg_control;
