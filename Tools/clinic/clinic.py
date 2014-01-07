@@ -8,7 +8,6 @@
 import abc
 import ast
 import atexit
-import clinic
 import collections
 import contextlib
 import functools
@@ -898,13 +897,21 @@ class BlockParser:
     def parse_clinic_block(self, dsl_name):
         input_add, input_output = text_accumulator()
         self.block_start_line_number = self.line_number + 1
-        stop_line = self.language.stop_line.format(dsl_name=dsl_name) + '\n'
+        stop_line = self.language.stop_line.format(dsl_name=dsl_name)
         body_prefix = self.language.body_prefix.format(dsl_name=dsl_name)
+
+        def is_stop_line(line):
+            # make sure to recognize stop line even if it
+            # doesn't end with EOL (it could be the very end of the file)
+            if not line.startswith(stop_line):
+                return False
+            remainder = line[len(stop_line):]
+            return (not remainder) or remainder.isspace()
 
         # consume body of program
         while self.input:
             line = self._line()
-            if line == stop_line or self.is_start_line(line):
+            if is_stop_line(line) or self.is_start_line(line):
                 break
             if body_prefix:
                 line = line.lstrip()
@@ -1396,7 +1403,8 @@ class CConverter(metaclass=CConverterAutoRegister):
         data is a CRenderData instance.
         """
         self.parameter = parameter
-        name = ensure_legal_c_identifier(self.name)
+        original_name = self.name
+        name = ensure_legal_c_identifier(original_name)
 
         # declarations
         d = self.declaration()
@@ -1414,7 +1422,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.impl_arguments.append(self.length_name())
 
         # keywords
-        data.keywords.append(name)
+        data.keywords.append(original_name)
 
         # format_units
         if self.is_optional() and '|' not in data.format_units:

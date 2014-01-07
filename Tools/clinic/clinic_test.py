@@ -54,6 +54,25 @@ class FakeClinic:
 
     _module_and_class = clinic.Clinic._module_and_class
 
+class ClinicWholeFileTest(TestCase):
+    def test_eol(self):
+        # regression test:
+        # clinic's block parser didn't recognize
+        # the "end line" for the block if it
+        # didn't end in "\n" (as in, the last)
+        # byte of the file was '/'.
+        # so it woudl spit out an end line for you.
+        # and since you really already had one,
+        # the last line of the block got corrupted.
+        c = clinic.Clinic(clinic.CLanguage())
+        raw = "/*[clinic]\nfoo\n[clinic]*/"
+        cooked = c.parse(raw).splitlines()
+        end_line = cooked[2].rstrip()
+        # this test is redundant, it's just here explicitly to catch
+        # the regression test so we don't forget what it looked like
+        self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
+        self.assertEqual(end_line, "[clinic]*/")
+
 
 
 class ClinicGroupPermuterTest(TestCase):
