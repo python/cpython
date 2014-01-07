@@ -35,12 +35,12 @@ If you run that script, specifying a C file as an argument::
 Argument Clinic will scan over the file looking for lines that
 look exactly like this::
 
-    /*[clinic]
+    /*[clinic input]
 
 When it finds one, it reads everything up to a line that looks
-like this::
+exactly like this::
 
-    [clinic]*/
+    [clinic start generated code]*/
 
 Everything in between these two lines is input for Argument Clinic.
 All of these lines, including the beginning and ending comment
@@ -51,11 +51,11 @@ generates output.  This output is rewritten into the C file
 immediately after the block, followed by a comment containing a checksum.
 The Argument Clinic block now looks like this::
 
-    /*[clinic]
+    /*[clinic input]
     ... clinic input goes here ...
-    [clinic]*/
+    [clinic start generated code]*/
     ... clinic output goes here ...
-    /*[clinic checksum:...]*/
+    /*[clinic end generated code: checksum=...]*/
 
 If you run Argument Clinic on the same file a second time, Argument Clinic
 will discard the old output and write out the new output with a fresh checksum
@@ -68,9 +68,9 @@ the next time Argument Clinic writes out fresh output.)
 
 For the sake of clarity, here's the terminology we'll use with Argument Clinic:
 
-* The first line of the comment (``/*[clinic]``) is the *start line*.
-* The last line of the initial comment (``[clinic]*/``) is the *end line*.
-* The last line (``/*[clinic checksum:...]*/``) is the *checksum line*.
+* The first line of the comment (``/*[clinic input]``) is the *start line*.
+* The last line of the initial comment (``[clinic start generated code]*/``) is the *end line*.
+* The last line (``/*[clinic end generated code: checksum=...]*/``) is the *checksum line*.
 * In between the start line and the end line is the *input*.
 * In between the end line and the checksum line is the *output*.
 * All the text collectively, from the start line to the checksum line inclusively,
@@ -111,8 +111,8 @@ convert a function to work with it.  Let's dive in!
 
 3. Add the following boilerplate above the function, creating our block::
 
-    /*[clinic]
-    [clinic]*/
+    /*[clinic input]
+    [clinic start generated code]*/
 
 4. Cut the docstring and paste it in between the ``[clinic]`` lines,
    removing all the junk that makes it a properly quoted C string.
@@ -122,9 +122,9 @@ convert a function to work with it.  Let's dive in!
 
    Sample::
 
-    /*[clinic]
+    /*[clinic input]
     Write a pickled representation of obj to the open file.
-    [clinic]*/
+    [clinic start generated code]*/
 
 5. If your docstring doesn't have a "summary" line, Argument Clinic will
    complain.  So let's make sure it has one.  The "summary" line should
@@ -143,11 +143,11 @@ convert a function to work with it.  Let's dive in!
 
    Sample::
 
-    /*[clinic]
+    /*[clinic input]
     pickle.Pickler.dump
 
     Write a pickled representation of obj to the open file.
-    [clinic]*/
+    [clinic start generated code]*/
 
 7. If this is the first time that module or class has been used with Argument
    Clinic in this C file,
@@ -159,16 +159,16 @@ convert a function to work with it.  Let's dive in!
 
    Sample::
 
-    /*[clinic]
+    /*[clinic input]
     module pickle
     class pickle.Pickler
-    [clinic]*/
+    [clinic start generated code]*/
 
-    /*[clinic]
+    /*[clinic input]
     pickle.Pickler.dump
 
     Write a pickled representation of obj to the open file.
-    [clinic]*/
+    [clinic start generated code]*/
 
 
 8. Declare each of the parameters to the function.  Each parameter
@@ -207,18 +207,18 @@ convert a function to work with it.  Let's dive in!
 
    Sample::
 
-       /*[clinic]
+       /*[clinic input]
        module pickle
        class pickle.Pickler
-       [clinic]*/
+       [clinic start generated code]*/
 
-       /*[clinic]
+       /*[clinic input]
        pickle.Pickler.dump
 
            obj: 'O'
 
        Write a pickled representation of obj to the open file.
-       [clinic]*/
+       [clinic start generated code]*/
 
 9. If your function has ``|`` in the format string, meaning some
    parameters have default values, you can ignore it.  Argument
@@ -247,19 +247,19 @@ convert a function to work with it.  Let's dive in!
 
     Sample::
 
-        /*[clinic]
+        /*[clinic input]
         module pickle
         class pickle.Pickler
-        [clinic]*/
+        [clinic start generated code]*/
 
-        /*[clinic]
+        /*[clinic input]
         pickle.Pickler.dump
 
             obj: 'O'
             /
 
         Write a pickled representation of obj to the open file.
-        [clinic]*/
+        [clinic start generated code]*/
 
 11. It's helpful to write a per-parameter docstring for each parameter.
     But per-parameter docstrings are optional; you can skip this step
@@ -274,12 +274,12 @@ convert a function to work with it.  Let's dive in!
 
     Sample::
 
-        /*[clinic]
+        /*[clinic input]
         module pickle
         class pickle.Pickler
-        [clinic]*/
+        [clinic start generated code]*/
 
-        /*[clinic]
+        /*[clinic input]
         pickle.Pickler.dump
 
             obj: 'O'
@@ -287,19 +287,19 @@ convert a function to work with it.  Let's dive in!
             /
 
         Write a pickled representation of obj to the open file.
-        [clinic]*/
+        [clinic start generated code]*/
 
 12. Save and close the file, then run ``Tools/clinic/clinic.py`` on it.
     With luck everything worked and your block now has output!  Reopen
     the file in your text editor to see::
 
-       /*[clinic]
+       /*[clinic input]
        module pickle
        class pickle.Pickler
-       [clinic]*/
-       /*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+       [clinic start generated code]*/
+       /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-       /*[clinic]
+       /*[clinic input]
        pickle.Pickler.dump
 
            obj: 'O'
@@ -307,7 +307,7 @@ convert a function to work with it.  Let's dive in!
            /
 
        Write a pickled representation of obj to the open file.
-       [clinic]*/
+       [clinic start generated code]*/
 
        PyDoc_STRVAR(pickle_Pickler_dump__doc__,
        "Write a pickled representation of obj to the open file.\n"
@@ -315,7 +315,7 @@ convert a function to work with it.  Let's dive in!
        ...
        static PyObject *
        pickle_Pickler_dump_impl(PyObject *self, PyObject *obj)
-       /*[clinic checksum: 3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
+       /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
 
     Obviously, if Argument Clinic didn't produce any output, it's because
     it found an error in your input.  Keep fixing your errors and retrying
@@ -373,7 +373,7 @@ convert a function to work with it.  Let's dive in!
 
         static return_type
         your_function_impl(...)
-        /*[clinic checksum: ...]*/
+        /*[clinic end generated code: checksum=...]*/
         {
         ...
 
@@ -383,13 +383,13 @@ convert a function to work with it.  Let's dive in!
 
     Sample::
 
-        /*[clinic]
+        /*[clinic input]
         module pickle
         class pickle.Pickler
-        [clinic]*/
-        /*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+        [clinic start generated code]*/
+        /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-        /*[clinic]
+        /*[clinic input]
         pickle.Pickler.dump
 
             obj: 'O'
@@ -397,7 +397,7 @@ convert a function to work with it.  Let's dive in!
             /
 
         Write a pickled representation of obj to the open file.
-        [clinic]*/
+        [clinic start generated code]*/
 
         PyDoc_STRVAR(pickle_Pickler_dump__doc__,
         "Write a pickled representation of obj to the open file.\n"
@@ -405,7 +405,7 @@ convert a function to work with it.  Let's dive in!
         ...
         static PyObject *
         pickle_Pickler_dump_impl(PyObject *self, PyObject *obj)
-        /*[clinic checksum: 3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
+        /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
         {
             /* Check whether the Pickler was initialized correctly (issue3664).
                Developers often forget to call __init__() in their subclasses, which
@@ -470,7 +470,7 @@ then add ``"_impl"`` to the end and use that for the name of the impl function.
 For example, if we wanted to rename the C function names generated for
 ``pickle.Pickler.dump``, it'd look like this::
 
-    /*[clinic]
+    /*[clinic input]
     pickle.Pickler.dump as pickler_dumper
 
     ...
@@ -515,7 +515,7 @@ after these parameters.  As an example, here's how ``curses.window.addch``
 uses optional groups to make the first two parameters and the last
 parameter optional::
 
-    /*[clinic]
+    /*[clinic input]
 
     curses.window.addch
 
@@ -666,7 +666,7 @@ on the right is the text you'd replace it with.
 As an example, here's our sample ``pickle.Pickler.dump`` using the proper
 converter::
 
-    /*[clinic]
+    /*[clinic input]
     pickle.Pickler.dump
 
         obj: object
@@ -674,7 +674,7 @@ converter::
         /
 
     Write a pickled representation of obj to the open file.
-    [clinic]*/
+    [clinic start generated code]*/
 
 Argument Clinic will show you all the converters it has
 available.  For each converter it'll show you all the parameters
@@ -769,9 +769,9 @@ runtime state.  This is simple: you simply define a Python block.
 A Python block uses different delimiter lines than an Argument
 Clinic function block.  It looks like this::
 
-    /*[python]
+    /*[python input]
     # python code goes here
-    [python]*/
+    [python start generated code]*/
 
 All the code inside the Python block is executed at the
 time it's parsed.  All text written to stdout inside the block
@@ -780,9 +780,9 @@ is redirected into the "output" after the block.
 As an example, here's a Python block that adds a static integer
 variable to the C code::
 
-    /*[python]
+    /*[python input]
     print('static int __ignored_unused_variable__ = 0;')
-    [python]*/
+    [python start generated code]*/
     static int __ignored_unused_variable__ = 0;
     /*[python checksum:...]*/
 
@@ -806,7 +806,7 @@ If you only have one or two functions with the same type for ``self``,
 you can directly use Argument Clinic's existing ``self`` converter,
 passing in the type you want to use as the ``type`` parameter::
 
-    /*[clinic]
+    /*[clinic input]
 
     _pickle.Pickler.dump
 
@@ -815,18 +815,18 @@ passing in the type you want to use as the ``type`` parameter::
       /
 
     Write a pickled representation of the given object to the open file.
-    [clinic]*/
+    [clinic start generated code]*/
 
 On the other hand, if you have a lot of functions that will use the same
 type for ``self``, it's best to create your own converter, subclassing
 ``self_converter`` but overwriting the ``type`` member::
 
-    /*[clinic]
+    /*[clinic input]
     class PicklerObject_converter(self_converter):
         type = "PicklerObject *"
-    [clinic]*/
+    [clinic start generated code]*/
 
-    /*[clinic]
+    /*[clinic input]
 
     _pickle.Pickler.dump
 
@@ -835,7 +835,7 @@ type for ``self``, it's best to create your own converter, subclassing
       /
 
     Write a pickled representation of the given object to the open file.
-    [clinic]*/
+    [clinic start generated code]*/
 
 
 
@@ -917,14 +917,14 @@ to specify in your subclass.  Here's the current list:
 
 Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``::
 
-    /*[python]
+    /*[python input]
 
     class uint_converter(CConverter):
         type = 'unsigned int'
         converter = 'uint_converter'
 
-    [python]*/
-    /*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+    [python start generated code]*/
+    /*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 This block adds a converter to Argument Clinic named ``uint``.  Parameters
 declared as ``uint`` will be declared as type ``unsigned int``, and will
@@ -963,8 +963,8 @@ to run Python blocks lets you use Python as a Python preprocessor!
 Since Python comments are different from C comments, Argument Clinic
 blocks embedded in Python files look slightly different.  They look like this::
 
-    #/*[python]
+    #/*[python input]
     #print("def foo(): pass")
-    #[python]*/
+    #[python start generated code]*/
     def foo(): pass
     #/*[python checksum:...]*/

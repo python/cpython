@@ -28,11 +28,11 @@ static char *which_dbm = "Berkeley DB";
 #error "No ndbm.h available!"
 #endif
 
-/*[clinic]
+/*[clinic input]
 module dbm
 class dbm.dbm
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 typedef struct {
     PyObject_HEAD
@@ -49,13 +49,13 @@ static PyTypeObject Dbmtype;
 
 static PyObject *DbmError;
 
-/*[python]
+/*[python input]
 class dbmobject_converter(self_converter):
     type = "dbmobject *"
     def converter_init(self):
         self.name = 'dp'
-[python]*/
-/*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[python start generated code]*/
+/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 static PyObject *
 newdbmobject(const char *file, int flags, int mode)
@@ -263,7 +263,7 @@ static PySequenceMethods dbm_as_sequence = {
     0,                          /* sq_inplace_repeat */
 };
 
-/*[clinic]
+/*[clinic input]
 
 dbm.dbm.get
 
@@ -276,7 +276,7 @@ dbm.dbm.get
     /
 
 Return the value for key if present, otherwise default.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(dbm_dbm_get__doc__,
 "get(key, [default])\n"
@@ -318,7 +318,7 @@ dbm_dbm_get(PyObject *self, PyObject *args)
 
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
-/*[clinic checksum: 28cf8928811bde51e535d67ae98ea039d79df717]*/
+/*[clinic end generated code: checksum=28cf8928811bde51e535d67ae98ea039d79df717]*/
 {
     datum dbm_key, val;
 
@@ -440,7 +440,7 @@ static PyTypeObject Dbmtype = {
 
 /* ----------------------------------------------------------------- */
 
-/*[clinic]
+/*[clinic input]
 
 dbm.open as dbmopen
 
@@ -458,7 +458,7 @@ dbm.open as dbmopen
 
 Return a database object.
 
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(dbmopen__doc__,
 "open(filename, flags=\'r\', mode=0o666)\n"
@@ -498,7 +498,7 @@ exit:
 
 static PyObject *
 dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode)
-/*[clinic checksum: fb265f75641553ccd963f84c143b35c11f9121fc]*/
+/*[clinic end generated code: checksum=fb265f75641553ccd963f84c143b35c11f9121fc]*/
 {
     int iflags;
 

@@ -47,10 +47,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
-/*[clinic]
+/*[clinic input]
 class str
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /* --- Globals ------------------------------------------------------------
 
@@ -12860,7 +12860,7 @@ unicode_swapcase(PyObject *self)
     return case_operation(self, do_swapcase);
 }
 
-/*[clinic]
+/*[clinic input]
 
 @staticmethod
 str.maketrans as unicode_maketrans
@@ -12882,7 +12882,7 @@ If there are two arguments, they must be strings of equal length, and
 in the resulting dictionary, each character in x will be mapped to the
 character at the same position in y. If there is a third argument, it
 must be a string, whose characters will be mapped to None in the result.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
 "maketrans(x, y=None, z=None)\n"
@@ -12922,7 +12922,7 @@ exit:
 
 static PyObject *
 unicode_maketrans_impl(void *null, PyObject *x, PyObject *y, PyObject *z)
-/*[clinic checksum: 7f76f414a0dfd0c614e0d4717872eeb520516da7]*/
+/*[clinic end generated code: checksum=7f76f414a0dfd0c614e0d4717872eeb520516da7]*/
 {
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;
