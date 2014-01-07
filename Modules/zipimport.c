@@ -1429,9 +1429,10 @@ initzipimport(void)
          * live within a zipped up standard library.  Import the posix or nt
          * builtin that provides the fstat() function we want instead. */
         PyObject *os_like_module;
-        Py_XDECREF(fstat_function);  /* Avoid embedded interpreter leaks. */
+        Py_CLEAR(fstat_function);  /* Avoid embedded interpreter leaks. */
         os_like_module = PyImport_ImportModule("posix");
         if (os_like_module == NULL) {
+            PyErr_Clear();
             os_like_module = PyImport_ImportModule("nt");
         }
         if (os_like_module != NULL) {
@@ -1440,6 +1441,8 @@ initzipimport(void)
         }
         if (fstat_function == NULL) {
             PyErr_Clear();  /* non-fatal, we'll go on without it. */
+            if (Py_VerboseFlag)
+                PySys_WriteStderr("# zipimport unable to use os.fstat().\n");
         }
     }
 }
