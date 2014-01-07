@@ -140,13 +140,14 @@ def _readmodule(module, path, inpackage=None):
         search_path = path
     else:
         search_path = path + sys.path
-    loader = importlib.find_loader(fullmodule, search_path)
-    fname = loader.get_filename(fullmodule)
+    # XXX This will change once issue19944 lands.
+    spec = importlib.find_spec(fullmodule, search_path)
+    fname = spec.loader.get_filename(fullmodule)
     _modules[fullmodule] = dict
-    if loader.is_package(fullmodule):
+    if spec.loader.is_package(fullmodule):
         dict['__path__'] = [os.path.dirname(fname)]
     try:
-        source = loader.get_source(fullmodule)
+        source = spec.loader.get_source(fullmodule)
         if source is None:
             return dict
     except (AttributeError, ImportError):
