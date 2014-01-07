@@ -21,6 +21,9 @@ Library
 Tools/Demos
 -----------
 
+- Issue #20157: When Argument Clinic renames a parameter because its name
+  collides with a C keyword, it no longer exposes that rename to PyArg_Parse.
+
 - Issue #20141: Improved Argument Clinic's support for the PyArg_Parse "O!"
   format unit.
 
