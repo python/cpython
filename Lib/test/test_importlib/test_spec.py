@@ -437,18 +437,6 @@ class ModuleSpecMethodsTests:
                 loaded = self.bootstrap._SpecMethods(self.spec).load()
             self.assertNotIn(self.spec.name, sys.modules)
 
-    def test_load_existing(self):
-        existing = type(sys)('ham')
-        existing.count = 5
-        self.spec.loader = NewLoader()
-        with CleanImport(self.name):
-            sys.modules[self.name] = existing
-            assert self.spec.name == self.name
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
-
-        self.assertEqual(loaded.eggs, 1)
-        self.assertFalse(hasattr(loaded, 'ham'))
-
     def test_load_legacy(self):
         self.spec.loader = LegacyLoader()
         with CleanImport(self.spec.name):
