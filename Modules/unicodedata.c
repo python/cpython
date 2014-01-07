@@ -117,7 +117,7 @@ static Py_UCS4 getuchar(PyUnicodeObject *obj)
 
 unicodedata.UCD.decimal
 
-    unichr: object(type='str')
+    unichr: object(type='PyUnicodeObject *', subclass_of='&PyUnicode_Type')
     default: object=NULL
     /
 
@@ -140,13 +140,13 @@ PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
     {"decimal", (PyCFunction)unicodedata_UCD_decimal, METH_VARARGS, unicodedata_UCD_decimal__doc__},
 
 static PyObject *
-unicodedata_UCD_decimal_impl(PyObject *self, PyObject *unichr, PyObject *default_value);
+unicodedata_UCD_decimal_impl(PyObject *self, PyUnicodeObject *unichr, PyObject *default_value);
 
 static PyObject *
 unicodedata_UCD_decimal(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyObject *unichr;
+    PyUnicodeObject *unichr;
     PyObject *default_value = NULL;
 
     if (!PyArg_ParseTuple(args,
@@ -160,8 +160,8 @@ exit:
 }
 
 static PyObject *
-unicodedata_UCD_decimal_impl(PyObject *self, PyObject *unichr, PyObject *default_value)
-/*[clinic checksum: 9576fa55f4ea0be82968af39dc9d0283e634beeb]*/
+unicodedata_UCD_decimal_impl(PyObject *self, PyUnicodeObject *unichr, PyObject *default_value)
+/*[clinic checksum: 73edde0e9cd5913ea174c4fa81504369761b7426]*/
 {
     PyUnicodeObject *v = (PyUnicodeObject *)unichr;
     int have_old = 0;

@@ -21,6 +21,9 @@ Library
 Tools/Demos
 -----------
 
+- Issue #20141: Improved Argument Clinic's support for the PyArg_Parse "O!"
+  format unit.
+
 - Issue #20144: Argument Clinic now supports simple symbolic constants
   as parameter default values.
 

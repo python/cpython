@@ -1358,6 +1358,12 @@ class CConverter(metaclass=CConverterAutoRegister):
     # by format units starting with 'e'.
     encoding = None
 
+    # Should this object be required to be a subclass of a specific type?
+    # If not None, should be a string representing a pointer to a
+    # PyTypeObject (e.g. "&PyUnicode_Type").
+    # Only used by the 'O!' format unit (and the "object" converter).
+    subclass_of = None
+
     # Do we want an adjacent '_length' variable for this variable?
     # Only used by format units ending with '#'.
     length = False
@@ -1446,7 +1452,9 @@ class CConverter(metaclass=CConverterAutoRegister):
             list.append(self.converter)
 
         if self.encoding:
-            list.append(self.encoding)
+            list.append(c_repr(self.encoding))
+        elif self.subclass_of:
+            list.append(self.subclass_of)
 
         legal_name = ensure_legal_c_identifier(self.name)
         s = ("&" if self.parse_by_reference else "") + legal_name
@@ -1627,20 +1635,12 @@ class object_converter(CConverter):
     type = 'PyObject *'
     format_unit = 'O'
 
-    def converter_init(self, *, type=None):
-        if type:
-            assert isinstance(type, str)
-            assert type.isidentifier()
-            try:
-                type = eval(type)
-                # need more of these!
-                type = {
-                    str: '&PyUnicode_Type',
-                    }[type]
-            except NameError:
-                type = type
+    def converter_init(self, *, type=None, subclass_of=None):
+        if subclass_of:
             self.format_unit = 'O!'
-            self.encoding = type
+            self.subclass_of = subclass_of
+        if type is not None:
+            self.type = type
 
 
 @add_legacy_c_converter('s#', length=True)
