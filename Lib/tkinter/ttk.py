@@ -293,6 +293,9 @@ def _list_from_layouttuple(ltuple):
             indx += 2
 
             if opt == 'children':
+                if (tkinter._default_root and
+                    not tkinter._default_root.wantobjects()):
+                    val = tkinter._default_root.splitlist(val)
                 val = _list_from_layouttuple(val)
 
             opts[opt] = val
@@ -313,6 +316,8 @@ def _val_or_dict(options, func, *args):
     if len(options) % 2: # option specified without a value, return its value
         return res
 
+    if tkinter._default_root:
+        res = tkinter._default_root.splitlist(res)
     return _dict_from_tcltuple(res)
 
 def _convert_stringval(value):
@@ -324,6 +329,14 @@ def _convert_stringval(value):
         pass
 
     return value
+
+def _to_number(x):
+    if isinstance(x, str):
+        if '.' in x:
+            x = float(x)
+        else:
+            x = int(x)
+    return x
 
 def tclobjs_to_py(adict):
     """Returns adict with its values converted from Tcl objects to Python
@@ -395,8 +408,8 @@ class Style(object):
         or something else of your preference. A statespec is compound of
         one or more states and then a value."""
         if query_opt is not None:
-            return _list_from_statespec(
-                self.tk.call(self._name, "map", style, '-%s' % query_opt))
+            return _list_from_statespec(self.tk.splitlist(
+                self.tk.call(self._name, "map", style, '-%s' % query_opt)))
 
         return _dict_from_tcltuple(
             self.tk.call(self._name, "map", style, *(_format_mapdict(kw))))
@@ -453,8 +466,8 @@ class Style(object):
             lspec = "null" # could be any other word, but this may make sense
                            # when calling layout(style) later
 
-        return _list_from_layouttuple(
-            self.tk.call(self._name, "layout", style, lspec))
+        return _list_from_layouttuple(self.tk.splitlist(
+            self.tk.call(self._name, "layout", style, lspec)))
 
 
     def element_create(self, elementname, etype, *args, **kw):
@@ -466,12 +479,12 @@ class Style(object):
 
     def element_names(self):
         """Returns the list of elements defined in the current theme."""
-        return self.tk.call(self._name, "element", "names")
+        return self.tk.splitlist(self.tk.call(self._name, "element", "names"))
 
 
     def element_options(self, elementname):
         """Return the list of elementname's options."""
-        return self.tk.call(self._name, "element", "options", elementname)
+        return self.tk.splitlist(self.tk.call(self._name, "element", "options", elementname))
 
 
     def theme_create(self, themename, parent=None, settings=None):
@@ -505,7 +518,7 @@ class Style(object):
 
     def theme_names(self):
         """Returns a list of all known themes."""
-        return self.tk.call(self._name, "theme", "names")
+        return self.tk.splitlist(self.tk.call(self._name, "theme", "names"))
 
 
     def theme_use(self, themename=None):
@@ -568,7 +581,8 @@ class Widget(tkinter.Widget):
         matches statespec and False otherwise. If callback is specified,
         then it will be invoked with *args, **kw if the widget state
         matches statespec. statespec is expected to be a sequence."""
-        ret = self.tk.call(self._w, "instate", ' '.join(statespec))
+        ret = self.tk.getboolean(
+                self.tk.call(self._w, "instate", ' '.join(statespec)))
         if ret and callback:
             return callback(*args, **kw)
 
@@ -667,7 +681,7 @@ class Entry(Widget, tkinter.Entry):
     def bbox(self, index):
         """Return a tuple of (x, y, width, height) which describes the
         bounding box of the character given by index."""
-        return self.tk.call(self._w, "bbox", index)
+        return self._getints(self.tk.call(self._w, "bbox", index))
 
 
     def identify(self, x, y):
@@ -680,7 +694,7 @@ class Entry(Widget, tkinter.Entry):
         """Force revalidation, independent of the conditions specified
         by the validate option. Returns False if validation fails, True
         if it succeeds. Sets or clears the invalid state accordingly."""
-        return bool(self.tk.call(self._w, "validate"))
+        return bool(self.tk.getboolean(self.tk.call(self._w, "validate")))
 
 
 class Combobox(Entry):
@@ -707,6 +721,8 @@ class Combobox(Entry):
         element at position newindex in the list of values. Otherwise,
         returns the index of the current value in the list of values
         or -1 if the current value does not appear in the list."""
+        if newindex is None:
+            return self.tk.getint(self.tk.call(self._w, "current"))
         return self.tk.call(self._w, "current", newindex)
 
 
@@ -861,7 +877,7 @@ class Notebook(Widget):
     def index(self, tab_id):
         """Returns the numeric index of the tab specified by tab_id, or
         the total number of tabs if tab_id is the string "end"."""
-        return self.tk.call(self._w, "index", tab_id)
+        return self.tk.getint(self.tk.call(self._w, "index", tab_id))
 
 
     def insert(self, pos, child, **kw):
@@ -896,7 +912,7 @@ class Notebook(Widget):
 
     def tabs(self):
         """Returns a list of windows managed by the notebook."""
-        return self.tk.call(self._w, "tabs") or ()
+        return self.tk.splitlist(self.tk.call(self._w, "tabs") or ())
 
 
     def enable_traversal(self):
@@ -979,7 +995,7 @@ class Panedwindow(Widget, tkinter.PanedWindow):
         constrained to be between 0 and the total size of the widget.
 
         Returns the new position of sash number index."""
-        return self.tk.call(self._w, "sashpos", index, newpos)
+        return self.tk.getint(self.tk.call(self._w, "sashpos", index, newpos))
 
 PanedWindow = Panedwindow # tkinter name compatibility
 
@@ -1179,14 +1195,15 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         If column is specified, returns the bounding box of that cell.
         If the item is not visible (i.e., if it is a descendant of a
         closed item or is scrolled offscreen), returns an empty string."""
-        return self.tk.call(self._w, "bbox", item, column)
+        return self._getints(self.tk.call(self._w, "bbox", item, column)) or ''
 
 
     def get_children(self, item=None):
         """Returns a tuple of children belonging to item.
 
         If item is not specified, returns root children."""
-        return self.tk.call(self._w, "children", item or '') or ()
+        return self.tk.splitlist(
+                self.tk.call(self._w, "children", item or '') or ())
 
 
     def set_children(self, item, *newchildren):
@@ -1227,7 +1244,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
     def exists(self, item):
         """Returns True if the specified item is present in the tree,
         False otherwise."""
-        return bool(self.tk.call(self._w, "exists", item))
+        return bool(self.tk.getboolean(self.tk.call(self._w, "exists", item)))
 
 
     def focus(self, item=None):
@@ -1309,7 +1326,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
     def index(self, item):
         """Returns the integer index of item within its parent's list
         of children."""
-        return self.tk.call(self._w, "index", item)
+        return self.tk.getint(self.tk.call(self._w, "index", item))
 
 
     def insert(self, parent, index, iid=None, **kw):
@@ -1418,7 +1435,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         value of given column in given item to the specified value."""
         res = self.tk.call(self._w, "set", item, column, value)
         if column is None and value is None:
-            return _dict_from_tcltuple(res, False)
+            return _dict_from_tcltuple(self.tk.splitlist(res), False)
         else:
             return res
 
@@ -1449,7 +1466,8 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         all items which have the specified tag.
 
         * Availability: Tk 8.6"""
-        return self.tk.call(self._w, "tag", "has", tagname, item)
+        return self.tk.getboolean(
+                self.tk.call(self._w, "tag", "has", tagname, item))
 
 
 # Extensions
@@ -1521,7 +1539,8 @@ class LabeledScale(Frame):
 
             self.label.place_configure(x=x, y=y)
 
-        from_, to = self.scale['from'], self.scale['to']
+        from_ = _to_number(self.scale['from'])
+        to = _to_number(self.scale['to'])
         if to < from_:
             from_, to = to, from_
         newval = self._variable.get()
