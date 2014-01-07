@@ -50,7 +50,7 @@ class LegacyLoader(TestLoader):
     HAM = -1
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", PendingDeprecationWarning)
+        warnings.simplefilter("ignore", DeprecationWarning)
 
         @frozen_util.module_for_loader
         def load_module(self, module):

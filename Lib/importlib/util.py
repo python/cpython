@@ -55,11 +55,16 @@ def _module_to_load(name):
         module.__initializing__ = False
 
 
-# XXX deprecate
 def set_package(fxn):
-    """Set __package__ on the returned module."""
+    """Set __package__ on the returned module.
+
+    This function is deprecated.
+
+    """
     @functools.wraps(fxn)
     def set_package_wrapper(*args, **kwargs):
+        warnings.warn('The import system now takes care of this automatically.',
+                      DeprecationWarning, stacklevel=2)
         module = fxn(*args, **kwargs)
         if getattr(module, '__package__', None) is None:
             module.__package__ = module.__name__
@@ -69,11 +74,16 @@ def set_package(fxn):
     return set_package_wrapper
 
 
-# XXX deprecate
 def set_loader(fxn):
-    """Set __loader__ on the returned module."""
+    """Set __loader__ on the returned module.
+
+    This function is deprecated.
+
+    """
     @functools.wraps(fxn)
     def set_loader_wrapper(self, *args, **kwargs):
+        warnings.warn('The import system now takes care of this automatically.',
+                      DeprecationWarning, stacklevel=2)
         module = fxn(self, *args, **kwargs)
         if getattr(module, '__loader__', None) is None:
             module.__loader__ = self
@@ -100,7 +110,7 @@ def module_for_loader(fxn):
 
     """
     warnings.warn('The import system now takes care of this automatically.',
-                  PendingDeprecationWarning, stacklevel=2)
+                  DeprecationWarning, stacklevel=2)
     @functools.wraps(fxn)
     def module_for_loader_wrapper(self, fullname, *args, **kwargs):
         with _module_to_load(fullname) as module:

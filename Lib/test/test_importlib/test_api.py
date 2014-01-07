@@ -10,6 +10,7 @@ import sys
 from test import support
 import types
 import unittest
+import warnings
 
 
 @contextmanager
@@ -143,7 +144,9 @@ class FindLoaderTests:
             loader = 'a loader!'
             module.__loader__ = loader
             sys.modules[name] = module
-            found = self.init.find_loader(name)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                found = self.init.find_loader(name)
             self.assertEqual(loader, found)
 
     def test_sys_modules_loader_is_None(self):
@@ -154,7 +157,9 @@ class FindLoaderTests:
             module.__loader__ = None
             sys.modules[name] = module
             with self.assertRaises(ValueError):
-                self.init.find_loader(name)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    self.init.find_loader(name)
 
     def test_sys_modules_loader_is_not_set(self):
         # Should raise ValueError
@@ -168,14 +173,18 @@ class FindLoaderTests:
                 pass
             sys.modules[name] = module
             with self.assertRaises(ValueError):
-                self.init.find_loader(name)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    self.init.find_loader(name)
 
     def test_success(self):
         # Return the loader found on sys.meta_path.
         name = 'some_mod'
         with util.uncache(name):
             with util.import_state(meta_path=[self.FakeMetaFinder]):
-                self.assertEqual((name, None), self.init.find_loader(name))
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    self.assertEqual((name, None), self.init.find_loader(name))
 
     def test_success_path(self):
         # Searching on a path should work.
@@ -183,12 +192,16 @@ class FindLoaderTests:
         path = 'path to some place'
         with util.uncache(name):
             with util.import_state(meta_path=[self.FakeMetaFinder]):
-                self.assertEqual((name, path),
-                                 self.init.find_loader(name, path))
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    self.assertEqual((name, path),
+                                     self.init.find_loader(name, path))
 
     def test_nothing(self):
         # None is returned upon failure to find a loader.
-        self.assertIsNone(self.init.find_loader('nevergoingtofindthismodule'))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertIsNone(self.init.find_loader('nevergoingtofindthismodule'))
 
 class Frozen_FindLoaderTests(FindLoaderTests, unittest.TestCase):
     init = frozen_init
