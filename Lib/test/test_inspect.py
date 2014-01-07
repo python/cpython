@@ -15,6 +15,7 @@ try:
     from concurrent.futures import ThreadPoolExecutor
 except ImportError:
     ThreadPoolExecutor = None
+import _testcapi
 
 from test.support import run_unittest, TESTFN, DirsOnSysPath
 from test.support import MISSING_C_DOCSTRINGS
@@ -1593,9 +1594,19 @@ class TestSignatureObject(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_builtins(self):
+        # min doesn't have a signature (yet)
         self.assertEqual(inspect.signature(min), None)
-        signature = inspect.signature(os.stat)
+
+        signature = inspect.signature(_testcapi.docstring_with_signature_with_defaults)
         self.assertTrue(isinstance(signature, inspect.Signature))
+        def p(name): return signature.parameters[name].default
+        self.assertEqual(p('s'), 'avocado')
+        self.assertEqual(p('d'), 3.14)
+        self.assertEqual(p('i'), 35)
+        self.assertEqual(p('c'), sys.maxsize)
+        self.assertEqual(p('n'), None)
+        self.assertEqual(p('t'), True)
+        self.assertEqual(p('f'), False)
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
