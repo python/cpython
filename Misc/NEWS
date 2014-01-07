@@ -35,6 +35,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20072: Fixed multiple errors in tkinter with wantobjects is False.
+
 - Issue #1065986: pydoc can now handle unicode strings.
 
 - Issue #16039: CVE-2013-1752: Change use of readline in imaplib module to

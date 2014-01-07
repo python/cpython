@@ -76,9 +76,9 @@ def _stringify(value):
         else:
             value = '{%s}' % _join(value)
     else:
-        if isinstance(value, basestring):
-            value = unicode(value)
-        else:
+        if isinstance(value, str):
+            value = unicode(value, 'utf-8')
+        elif not isinstance(value, unicode):
             value = str(value)
         if not value:
             value = '{}'
@@ -1456,11 +1456,11 @@ class Misc:
 
     def image_names(self):
         """Return a list of all existing image names."""
-        return self.tk.call('image', 'names')
+        return self.tk.splitlist(self.tk.call('image', 'names'))
 
     def image_types(self):
         """Return a list of all available image types (e.g. phote bitmap)."""
-        return self.tk.call('image', 'types')
+        return self.tk.splitlist(self.tk.call('image', 'types'))
 
 
 class CallWrapper:
@@ -1574,7 +1574,10 @@ class Wm:
         if len(wlist) > 1:
             wlist = (wlist,) # Tk needs a list of windows here
         args = ('wm', 'colormapwindows', self._w) + wlist
-        return map(self._nametowidget, self.tk.call(args))
+        if wlist:
+            self.tk.call(args)
+        else:
+            return map(self._nametowidget, self.tk.splitlist(self.tk.call(args)))
     colormapwindows = wm_colormapwindows
     def wm_command(self, value=None):
         """Store VALUE in WM_COMMAND property. It is the command
@@ -3374,8 +3377,11 @@ class BitmapImage(Image):
         Valid resource names: background, data, file, foreground, maskdata, maskfile."""
         Image.__init__(self, 'bitmap', name, cnf, master, **kw)
 
-def image_names(): return _default_root.tk.call('image', 'names')
-def image_types(): return _default_root.tk.call('image', 'types')
+def image_names():
+    return _default_root.tk.splitlist(_default_root.tk.call('image', 'names'))
+
+def image_types():
+    return _default_root.tk.splitlist(_default_root.tk.call('image', 'types'))
 
 
 class Spinbox(Widget, XView):
@@ -3744,7 +3750,7 @@ class PanedWindow(Widget):
 
     def panes(self):
         """Returns an ordered list of the child panes."""
-        return self.tk.call(self._w, 'panes')
+        return self.tk.splitlist(self.tk.call(self._w, 'panes'))
 
 ######################################################################
 # Extensions:

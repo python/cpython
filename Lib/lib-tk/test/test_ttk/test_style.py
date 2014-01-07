@@ -25,7 +25,8 @@ class StyleTest(unittest.TestCase):
         style = self.style
         style.map('TButton', background=[('active', 'background', 'blue')])
         self.assertEqual(style.map('TButton', 'background'),
-            [('active', 'background', 'blue')])
+            [('active', 'background', 'blue')] if style.tk.wantobjects() else
+            [('active background', 'blue')])
         self.assertIsInstance(style.map('TButton'), dict)
 
 
