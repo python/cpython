@@ -1974,18 +1974,60 @@ class Signature:
 
         parameters = []
         empty = Parameter.empty
+        invalid = object()
+
+        def parse_attribute(node):
+            if not isinstance(node.ctx, ast.Load):
+                return None
+
+            value = node.value
+            o = parse_node(value)
+            if o is invalid:
+                return invalid
+
+            if isinstance(value, ast.Name):
+                name = o
+                if name not in sys.modules:
+                    return invalid
+                o = sys.modules[name]
+
+            return getattr(o, node.attr, invalid)
+
+        def parse_node(node):
+            if isinstance(node, ast.arg):
+                if node.annotation != None:
+                    raise ValueError("Annotations are not currently supported")
+                return node.arg
+            if isinstance(node, ast.Num):
+                return node.n
+            if isinstance(node, ast.Str):
+                return node.s
+            if isinstance(node, ast.NameConstant):
+                return node.value
+            if isinstance(node, ast.Attribute):
+                return parse_attribute(node)
+            if isinstance(node, ast.Name):
+                if not isinstance(node.ctx, ast.Load):
+                    return invalid
+                return node.id
+            return invalid
 
         def p(name_node, default_node, default=empty):
-            name = name_node.arg
-
-            if isinstance(default_node, ast.Num):
-                default = default.n
-            elif isinstance(default_node, ast.NameConstant):
-                default = default_node.value
+            name = parse_node(name_node)
+            if name is invalid:
+                return None
+            if default_node:
+                o = parse_node(default_node)
+                if o is invalid:
+                    return None
+                default = o if o is not invalid else default
             parameters.append(Parameter(name, kind, default=default, annotation=empty))
 
         # non-keyword-only parameters
-        for name, default in reversed(list(itertools.zip_longest(reversed(f.args.args), reversed(f.args.defaults), fillvalue=None))):
+        args = reversed(f.args.args)
+        defaults = reversed(f.args.defaults)
+        iter = itertools.zip_longest(args, defaults, fillvalue=None)
+        for name, default in reversed(list(iter)):
             p(name, default)
 
         # *args

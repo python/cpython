@@ -1362,15 +1362,15 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only used by format units ending with '#'.
     length = False
 
-    def __init__(self, name, function, default=unspecified, *, doc_default=None, required=False, annotation=unspecified, **kwargs):
+    def __init__(self, name, function, default=unspecified, *, doc_default=None, c_default=None, py_default=None, required=False, annotation=unspecified, **kwargs):
         self.function = function
         self.name = name
 
         if default is not unspecified:
             self.default = default
-            self.py_default = py_repr(default)
+            self.py_default = py_default if py_default is not None else py_repr(default)
             self.doc_default = doc_default if doc_default is not None else self.py_default
-            self.c_default = c_repr(default)
+            self.c_default = c_default if c_default is not None else c_repr(default)
         elif doc_default is not None:
             fail(function.fullname + " argument " + name + " specified a 'doc_default' without having a 'default'")
         if annotation != unspecified:
@@ -2315,18 +2315,36 @@ class DSLParser:
         function_args = module.body[0].args
         parameter = function_args.args[0]
 
+        py_default = None
+
+        parameter_name = parameter.arg
+        name, legacy, kwargs = self.parse_converter(parameter.annotation)
+
         if function_args.defaults:
             expr = function_args.defaults[0]
             # mild hack: explicitly support NULL as a default value
             if isinstance(expr, ast.Name) and expr.id == 'NULL':
                 value = NULL
+            elif isinstance(expr, ast.Attribute):
+                a = []
+                n = expr
+                while isinstance(n, ast.Attribute):
+                    a.append(n.attr)
+                    n = n.value
+                if not isinstance(n, ast.Name):
+                    fail("Malformed default value (looked like a Python constant)")
+                a.append(n.id)
+                py_default = ".".join(reversed(a))
+                value = None
+                c_default = kwargs.get("c_default")
+                if not (isinstance(c_default, str) and c_default):
+                    fail("When you specify a named constant (" + repr(py_default) + ") as your default value,\nyou MUST specify a valid c_default.")
+                kwargs["py_default"] = py_default
             else:
                 value = ast.literal_eval(expr)
         else:
             value = unspecified
 
-        parameter_name = parameter.arg
-        name, legacy, kwargs = self.parse_converter(parameter.annotation)
         dict = legacy_converters if legacy else converters
         legacy_str = "legacy " if legacy else ""
         if name not in dict:

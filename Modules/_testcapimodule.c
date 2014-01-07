@@ -2869,6 +2869,15 @@ PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
 "This docstring has a valid signature and some extra newlines."
 );
 
+PyDoc_STRVAR(docstring_with_signature_with_defaults,
+"docstring_with_signature_with_defaults(s='avocado', d=3.14, i=35, c=sys.maxsize, n=None, t=True, f=False)\n"
+"\n"
+"\n"
+"\n"
+"This docstring has a valid signature with parameters,\n"
+"and the parameters take defaults of varying types."
+);
+
 #ifdef WITH_THREAD
 typedef struct {
     PyThread_type_lock start_event;
@@ -3087,6 +3096,9 @@ static PyMethodDef TestMethods[] = {
     {"docstring_with_signature_and_extra_newlines",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature_and_extra_newlines},
+    {"docstring_with_signature_with_defaults",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_with_signature_with_defaults},
 #ifdef WITH_THREAD
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
