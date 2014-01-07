@@ -220,6 +220,7 @@ class StreamReader:
         if loop is None:
             loop = events.get_event_loop()
         self._loop = loop
+        # TODO: Use a bytearray for a buffer, like the transport.
         self._buffer = collections.deque()  # Deque of bytes objects.
         self._byte_count = 0  # Bytes in buffer.
         self._eof = False  # Whether we're done.
@@ -384,15 +385,23 @@ class StreamReader:
         if self._exception is not None:
             raise self._exception
 
-        if n <= 0:
-            return b''
+        # There used to be "optimized" code here.  It created its own
+        # Future and waited until self._buffer had at least the n
+        # bytes, then called read(n).  Unfortunately, this could pause
+        # the transport if the argument was larger than the pause
+        # limit (which is twice self._limit).  So now we just read()
+        # into a local buffer.
 
-        while self._byte_count < n and not self._eof:
-            assert not self._waiter
-            self._waiter = futures.Future(loop=self._loop)
-            try:
-                yield from self._waiter
-            finally:
-                self._waiter = None
+        blocks = []
+        while n > 0:
+            block = yield from self.read(n)
+            if not block:
+                break
+            blocks.append(block)
+            n -= len(block)
 
-        return (yield from self.read(n))
+        # TODO: Raise EOFError if we break before n == 0?  (That would
+        # be a change in specification, but I've always had to add an
+        # explicit size check to the caller.)
+
+        return b''.join(blocks)
