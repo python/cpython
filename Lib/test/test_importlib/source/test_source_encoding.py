@@ -12,6 +12,7 @@ import types
 # imported for the parser to use.
 import unicodedata
 import unittest
+import warnings
 
 
 CODING_RE = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
@@ -102,7 +103,9 @@ Frozen_EncodingTestPEP451, Source_EncodingTestPEP451 = util.test_both(
 class EncodingTestPEP302(EncodingTest):
 
     def load(self, loader):
-        return loader.load_module(self.module_name)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            return loader.load_module(self.module_name)
 
 Frozen_EncodingTestPEP302, Source_EncodingTestPEP302 = util.test_both(
         EncodingTestPEP302, machinery=machinery)
@@ -121,8 +124,8 @@ class LineEndingTest:
             with open(mapping[module_name], 'wb') as file:
                 file.write(source)
             loader = self.machinery.SourceFileLoader(module_name,
-                                                 mapping[module_name])
-            return loader.load_module(module_name)
+                                                     mapping[module_name])
+            return self.load(loader, module_name)
 
     # [cr]
     def test_cr(self):
@@ -138,9 +141,9 @@ class LineEndingTest:
 
 class LineEndingTestPEP451(LineEndingTest):
 
-    def load(self, loader):
-        module = types.ModuleType(self.module_name)
-        module.__spec__ = importlib.util.spec_from_loader(self.module_name, loader)
+    def load(self, loader, module_name):
+        module = types.ModuleType(module_name)
+        module.__spec__ = importlib.util.spec_from_loader(module_name, loader)
         loader.exec_module(module)
         return module
 
@@ -149,8 +152,10 @@ Frozen_LineEndingTestPEP451, Source_LineEndingTestPEP451 = util.test_both(
 
 class LineEndingTestPEP302(LineEndingTest):
 
-    def load(self, loader):
-        return loader.load_module(self.module_name)
+    def load(self, loader, module_name):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            return loader.load_module(module_name)
 
 Frozen_LineEndingTestPEP302, Source_LineEndingTestPEP302 = util.test_both(
         LineEndingTestPEP302, machinery=machinery)
