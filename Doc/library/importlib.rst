@@ -275,9 +275,13 @@ ABC hierarchy::
       will be the value of :attr:`__path__` from the parent
       package. If a loader cannot be found, ``None`` is returned.
 
+      If :meth:`find_spec` is defined, backwards-compatible functionality is
+      provided.
+
       .. versionchanged:: 3.4
          Returns ``None`` when called instead of raising
-         :exc:`NotImplementedError`.
+         :exc:`NotImplementedError`. Can use :meth:`find_spec` to provide
+         functionality.
 
       .. deprecated:: 3.4
          Use :meth:`find_spec` instead.
@@ -325,8 +329,12 @@ ABC hierarchy::
       ``portion`` is the empty list then no loader or location for a namespace
       package were found (i.e. failure to find anything for the module).
 
+      If :meth:`find_spec` is defined then backwards-compatible functionality is
+      provided.
+
       .. versionchanged:: 3.4
          Returns ``(None, [])`` instead of raising :exc:`NotImplementedError`.
+         Uses :meth:`find_spec` when available to provide functionality.
 
       .. deprecated:: 3.4
          Use :meth:`find_spec` instead.
@@ -413,9 +421,13 @@ ABC hierarchy::
             :func:`importlib.util.module_for_loader` decorator can handle the
             details for :attr:`__package__`.
 
+        When :meth:`exec_module` is available then backwards-compatible
+        functionality is provided.
+
         .. versionchanged:: 3.4
            Raise :exc:`ImportError` when called instead of
-           :exc:`NotImplementedError`.
+           :exc:`NotImplementedError`. Functionality provided when
+           :meth:`exec_module` is available.
 
         .. deprecated:: 3.4
            The recommended API for loading a module is :meth:`exec_module`

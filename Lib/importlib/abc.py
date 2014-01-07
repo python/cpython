@@ -49,10 +49,15 @@ class MetaPathFinder(Finder):
         If no module is found, return None.  The fullname is a str and
         the path is a list of strings or None.
 
-        This method is deprecated in favor of finder.find_spec().
+        This method is deprecated in favor of finder.find_spec(). If find_spec()
+        exists then backwards-compatible functionality is provided for this
+        method.
 
         """
-        return None
+        if not hasattr(self, 'find_spec'):
+            return None
+        found = self.find_spec(fullname, path)
+        return found.loader if found is not None else None
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
@@ -81,10 +86,21 @@ class PathEntryFinder(Finder):
         The portion will be discarded if another path entry finder
         locates the module as a normal module or package.
 
-        This method is deprecated in favor of finder.find_spec().
+        This method is deprecated in favor of finder.find_spec(). If find_spec()
+        is provided than backwards-compatible functionality is provided.
 
         """
-        return None, []
+        if not hasattr(self, 'find_spec'):
+            return None, []
+        found = self.find_spec(fullname)
+        if found is not None:
+            if not found.submodule_search_locations:
+                portions = []
+            else:
+                portions = found.submodule_search_locations
+            return found.loader, portions
+        else:
+            return None, []
 
     find_module = _bootstrap._find_module_shim
 
@@ -124,10 +140,14 @@ class Loader(metaclass=abc.ABCMeta):
 
         ImportError is raised on failure.
 
-        This method is deprecated in favor of loader.exec_module().
+        This method is deprecated in favor of loader.exec_module(). If
+        exec_module() exists then it is used to provide a backwards-compatible
+        functionality for this method.
 
         """
-        raise ImportError
+        if not hasattr(self, 'exec_module'):
+            raise ImportError
+        return _bootstrap._load_module_shim(self, fullname)
 
     def module_repr(self, module):
         """Return a module's repr.
