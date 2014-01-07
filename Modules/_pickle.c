@@ -4,16 +4,16 @@
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
 
-/*[clinic]
+/*[clinic input]
 module _pickle
 class _pickle.Pickler
 class _pickle.PicklerMemoProxy
 class _pickle.Unpickler
 class _pickle.UnpicklerMemoProxy
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-/*[python]
+/*[python input]
 class PicklerObject_converter(self_converter):
     type = "PicklerObject *"
 
@@ -25,8 +25,8 @@ class UnpicklerObject_converter(self_converter):
 
 class UnpicklerMemoProxyObject_converter(self_converter):
     type = "UnpicklerMemoProxyObject *"
-[python]*/
-/*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[python start generated code]*/
+/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /* Bump this when new opcodes are added to the pickle protocol. */
 enum {
@@ -140,7 +140,7 @@ typedef struct {
     PyObject *PickleError;
     PyObject *PicklingError;
     PyObject *UnpicklingError;
-    
+
     /* copyreg.dispatch_table, {type_object: pickling_function} */
     PyObject *dispatch_table;
 
@@ -1770,7 +1770,7 @@ save_long(PicklerObject *self, PyObject *obj)
     else if (self->bin &&
              (sizeof(long) <= 4 ||
               (val <= 0x7fffffffL && val >= (-0x7fffffffL - 1)))) {
-        /* result fits in a signed 4-byte integer. 
+        /* result fits in a signed 4-byte integer.
 
            Note: we can't use -0x80000000L in the above condition because some
            compilers (e.g., MSVC) will promote 0x80000000L to an unsigned type
@@ -3492,21 +3492,21 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
         cls = PyTuple_GET_ITEM(argtup, 0);
         if (!PyType_Check(cls)) {
-            PyErr_Format(st->PicklingError, 
+            PyErr_Format(st->PicklingError,
                          "first item from NEWOBJ_EX argument tuple must "
                          "be a class, not %.200s", Py_TYPE(cls)->tp_name);
             return -1;
         }
         args = PyTuple_GET_ITEM(argtup, 1);
         if (!PyTuple_Check(args)) {
-            PyErr_Format(st->PicklingError, 
+            PyErr_Format(st->PicklingError,
                          "second item from NEWOBJ_EX argument tuple must "
                          "be a tuple, not %.200s", Py_TYPE(args)->tp_name);
             return -1;
         }
         kwargs = PyTuple_GET_ITEM(argtup, 2);
         if (!PyDict_Check(kwargs)) {
-            PyErr_Format(st->PicklingError, 
+            PyErr_Format(st->PicklingError,
                          "third item from NEWOBJ_EX argument tuple must "
                          "be a dict, not %.200s", Py_TYPE(kwargs)->tp_name);
             return -1;
@@ -3874,7 +3874,7 @@ dump(PicklerObject *self, PyObject *obj)
     return 0;
 }
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.Pickler.clear_memo
 
@@ -3886,7 +3886,7 @@ The memo is the data structure that remembers which objects the
 pickler has already seen, so that shared or recursive objects are
 pickled by reference and not by value.  This method is useful when
 re-using picklers.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
 "clear_memo()\n"
@@ -3915,7 +3915,7 @@ _pickle_Pickler_clear_memo(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 _pickle_Pickler_clear_memo_impl(PicklerObject *self)
-/*[clinic checksum: 0574593b102fffb8e781d7bb9b536ceffc525ac1]*/
+/*[clinic end generated code: checksum=0574593b102fffb8e781d7bb9b536ceffc525ac1]*/
 {
     if (self->memo)
         PyMemoTable_Clear(self->memo);
@@ -3923,7 +3923,7 @@ _pickle_Pickler_clear_memo_impl(PicklerObject *self)
     Py_RETURN_NONE;
 }
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.Pickler.dump
 
@@ -3932,7 +3932,7 @@ _pickle.Pickler.dump
   /
 
 Write a pickled representation of the given object to the open file.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
 "dump(obj)\n"
@@ -3943,7 +3943,7 @@ PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
 
 static PyObject *
 _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
-/*[clinic checksum: b72a69ec98737fabf66dae7c5a3210178bdbd3e6]*/
+/*[clinic end generated code: checksum=b72a69ec98737fabf66dae7c5a3210178bdbd3e6]*/
 {
     /* Check whether the Pickler was initialized correctly (issue3664).
        Developers often forget to call __init__() in their subclasses, which
@@ -4018,7 +4018,7 @@ Pickler_clear(PicklerObject *self)
 }
 
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.Pickler.__init__
 
@@ -4045,7 +4045,7 @@ this interface.
 If *fix_imports* is True and protocol is less than 3, pickle will try
 to map the new Python 3 names to the old module names used in Python
 2, so that the pickle data stream is readable with Python 2.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "__init__(file, protocol=None, fix_imports=True)\n"
@@ -4095,7 +4095,7 @@ exit:
 
 static PyObject *
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic checksum: 2b5ce6452544600478cf9f4b701ab9d9b5efbab9]*/
+/*[clinic end generated code: checksum=2b5ce6452544600478cf9f4b701ab9d9b5efbab9]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -4173,13 +4173,13 @@ typedef struct {
     PicklerObject *pickler; /* Pickler whose memo table we're proxying. */
 } PicklerMemoProxyObject;
 
-/*[clinic]
+/*[clinic input]
 _pickle.PicklerMemoProxy.clear
 
   self: PicklerMemoProxyObject
 
 Remove all items from memo.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy_clear__doc__,
 "clear()\n"
@@ -4203,20 +4203,20 @@ _pickle_PicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self)
-/*[clinic checksum: c6ca252530ccb3ea2f4b33507b51b183f23b24c7]*/
+/*[clinic end generated code: checksum=c6ca252530ccb3ea2f4b33507b51b183f23b24c7]*/
 {
     if (self->pickler->memo)
         PyMemoTable_Clear(self->pickler->memo);
     Py_RETURN_NONE;
 }
 
-/*[clinic]
+/*[clinic input]
 _pickle.PicklerMemoProxy.copy
 
   self: PicklerMemoProxyObject
 
 Copy the memo to a new object.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy_copy__doc__,
 "copy()\n"
@@ -4240,7 +4240,7 @@ _pickle_PicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
-/*[clinic checksum: 808c4d5a37359ed5fb2efe81dbe5ff480719f470]*/
+/*[clinic end generated code: checksum=808c4d5a37359ed5fb2efe81dbe5ff480719f470]*/
 {
     Py_ssize_t i;
     PyMemoTable *memo;
@@ -4277,13 +4277,13 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
     return NULL;
 }
 
-/*[clinic]
+/*[clinic input]
 _pickle.PicklerMemoProxy.__reduce__
 
   self: PicklerMemoProxyObject
 
 Implement pickle support.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy___reduce____doc__,
 "__reduce__()\n"
@@ -4307,7 +4307,7 @@ _pickle_PicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored)
 
 static PyObject *
 _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
-/*[clinic checksum: 2293152bdf53951a012d430767b608f5fb4213b5]*/
+/*[clinic end generated code: checksum=2293152bdf53951a012d430767b608f5fb4213b5]*/
 {
     PyObject *reduce_value, *dict_args;
     PyObject *contents = _pickle_PicklerMemoProxy_copy_impl(self);
@@ -5348,12 +5348,12 @@ load_newobj_ex(UnpicklerObject *self)
         Py_DECREF(args);
         return -1;
     }
-    
+
     if (!PyType_Check(cls)) {
         Py_DECREF(kwargs);
         Py_DECREF(args);
         Py_DECREF(cls);
-        PyErr_Format(st->UnpicklingError, 
+        PyErr_Format(st->UnpicklingError,
                      "NEWOBJ_EX class argument must be a type, not %.200s",
                      Py_TYPE(cls)->tp_name);
         return -1;
@@ -6317,7 +6317,7 @@ load(UnpicklerObject *self)
     return value;
 }
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.Unpickler.load
 
@@ -6326,7 +6326,7 @@ Load a pickle.
 Read a pickled object representation from the open file object given
 in the constructor, and return the reconstituted object hierarchy
 specified therein.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
 "load()\n"
@@ -6354,7 +6354,7 @@ _pickle_Unpickler_load(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 _pickle_Unpickler_load_impl(PyObject *self)
-/*[clinic checksum: 55f35fcaf034817e75c355ec50b7878577355899]*/
+/*[clinic end generated code: checksum=55f35fcaf034817e75c355ec50b7878577355899]*/
 {
     UnpicklerObject *unpickler = (UnpicklerObject*)self;
 
@@ -6377,7 +6377,7 @@ _pickle_Unpickler_load_impl(PyObject *self)
    function is used for loading any global (i.e., functions), not just
    classes. The name is kept only for backward compatibility. */
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.Unpickler.find_class
 
@@ -6394,7 +6394,7 @@ functions).
 
 This method is called whenever a class or a function object is
 needed.  Both arguments passed are str objects.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
 "find_class(module_name, global_name)\n"
@@ -6432,7 +6432,7 @@ exit:
 
 static PyObject *
 _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
-/*[clinic checksum: 1f353d13a32c9d94feb1466b3c2d0529a7e5650e]*/
+/*[clinic end generated code: checksum=1f353d13a32c9d94feb1466b3c2d0529a7e5650e]*/
 {
     PyObject *global;
     PyObject *modules_dict;
@@ -6581,7 +6581,7 @@ Unpickler_clear(UnpicklerObject *self)
     return 0;
 }
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.Unpickler.__init__
 
@@ -6612,7 +6612,7 @@ map the old Python 2 names to the new names used in Python 3.  The
 instances pickled by Python 2; these default to 'ASCII' and 'strict',
 respectively.  The *encoding* can be 'bytes' to read these 8-bit
 string instances as bytes objects.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "__init__(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
@@ -6665,7 +6665,7 @@ exit:
 
 static PyObject *
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic checksum: 9ce6783224e220573d42a94fe1bb7199d6f1c5a6]*/
+/*[clinic end generated code: checksum=9ce6783224e220573d42a94fe1bb7199d6f1c5a6]*/
 {
     _Py_IDENTIFIER(persistent_load);
 
@@ -6737,13 +6737,13 @@ typedef struct {
     UnpicklerObject *unpickler;
 } UnpicklerMemoProxyObject;
 
-/*[clinic]
+/*[clinic input]
 _pickle.UnpicklerMemoProxy.clear
 
   self: UnpicklerMemoProxyObject
 
 Remove all items from memo.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_clear__doc__,
 "clear()\n"
@@ -6767,7 +6767,7 @@ _pickle_UnpicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
-/*[clinic checksum: e0f99c26d48444a3f58f598bec3190c66595fce7]*/
+/*[clinic end generated code: checksum=e0f99c26d48444a3f58f598bec3190c66595fce7]*/
 {
     _Unpickler_MemoCleanup(self->unpickler);
     self->unpickler->memo = _Unpickler_NewMemo(self->unpickler->memo_size);
@@ -6776,13 +6776,13 @@ _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
     Py_RETURN_NONE;
 }
 
-/*[clinic]
+/*[clinic input]
 _pickle.UnpicklerMemoProxy.copy
 
   self: UnpicklerMemoProxyObject
 
 Copy the memo to a new object.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_copy__doc__,
 "copy()\n"
@@ -6806,7 +6806,7 @@ _pickle_UnpicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
-/*[clinic checksum: 8c0ab91c0b694ea71a1774650898a760d1ab4765]*/
+/*[clinic end generated code: checksum=8c0ab91c0b694ea71a1774650898a760d1ab4765]*/
 {
     Py_ssize_t i;
     PyObject *new_memo = PyDict_New();
@@ -6836,13 +6836,13 @@ error:
     return NULL;
 }
 
-/*[clinic]
+/*[clinic input]
 _pickle.UnpicklerMemoProxy.__reduce__
 
   self: UnpicklerMemoProxyObject
 
 Implement pickling support.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy___reduce____doc__,
 "__reduce__()\n"
@@ -6866,7 +6866,7 @@ _pickle_UnpicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignore
 
 static PyObject *
 _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
-/*[clinic checksum: 4ee76a65511291f0de2e9e63db395d2e5d6d8df6]*/
+/*[clinic end generated code: checksum=4ee76a65511291f0de2e9e63db395d2e5d6d8df6]*/
 {
     PyObject *reduce_value;
     PyObject *constructor_args;
@@ -7141,7 +7141,7 @@ static PyTypeObject Unpickler_Type = {
     0,                                  /*tp_is_gc*/
 };
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.dump
 
@@ -7172,7 +7172,7 @@ this interface.
 If *fix_imports* is True and protocol is less than 3, pickle will try
 to map the new Python 3 names to the old module names used in Python
 2, so that the pickle data stream is readable with Python 2.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_dump__doc__,
 "dump(obj, file, protocol=None, *, fix_imports=True)\n"
@@ -7226,7 +7226,7 @@ exit:
 
 static PyObject *
 _pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic checksum: eb5c23e64da34477178230b704d2cc9c6b6650ea]*/
+/*[clinic end generated code: checksum=eb5c23e64da34477178230b704d2cc9c6b6650ea]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7253,7 +7253,7 @@ _pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file, PyObject *
     return NULL;
 }
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.dumps
 
@@ -7275,7 +7275,7 @@ version of Python needed to read the pickle produced.
 If *fix_imports* is True and *protocol* is less than 3, pickle will
 try to map the new Python 3 names to the old module names used in
 Python 2, so that the pickle data stream is readable with Python 2.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_dumps__doc__,
 "dumps(obj, protocol=None, *, fix_imports=True)\n"
@@ -7320,7 +7320,7 @@ exit:
 
 static PyObject *
 _pickle_dumps_impl(PyModuleDef *module, PyObject *obj, PyObject *protocol, int fix_imports)
-/*[clinic checksum: e9b915d61202a9692cb6c6718db74fe54fc9c4d1]*/
+/*[clinic end generated code: checksum=e9b915d61202a9692cb6c6718db74fe54fc9c4d1]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();
@@ -7343,7 +7343,7 @@ _pickle_dumps_impl(PyModuleDef *module, PyObject *obj, PyObject *protocol, int f
     return NULL;
 }
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.load
 
@@ -7376,7 +7376,7 @@ map the old Python 2 names to the new names used in Python 3.  The
 instances pickled by Python 2; these default to 'ASCII' and 'strict',
 respectively.  The *encoding* can be 'bytes' to read these 8-bit
 string instances as bytes objects.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_load__doc__,
 "load(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
@@ -7432,7 +7432,7 @@ exit:
 
 static PyObject *
 _pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic checksum: b41f06970e57acf2fd602e4b7f88e3f3e1e53087]*/
+/*[clinic end generated code: checksum=b41f06970e57acf2fd602e4b7f88e3f3e1e53087]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();
@@ -7457,7 +7457,7 @@ _pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports, const ch
     return NULL;
 }
 
-/*[clinic]
+/*[clinic input]
 
 _pickle.loads
 
@@ -7481,7 +7481,7 @@ map the old Python 2 names to the new names used in Python 3.  The
 instances pickled by Python 2; these default to 'ASCII' and 'strict',
 respectively.  The *encoding* can be 'bytes' to read these 8-bit
 string instances as bytes objects.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_loads__doc__,
 "loads(data, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
@@ -7528,7 +7528,7 @@ exit:
 
 static PyObject *
 _pickle_loads_impl(PyModuleDef *module, PyObject *data, int fix_imports, const char *encoding, const char *errors)
-/*[clinic checksum: 0663de43aca6c21508a777e29d98c9c3a6e7f72d]*/
+/*[clinic end generated code: checksum=0663de43aca6c21508a777e29d98c9c3a6e7f72d]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();
