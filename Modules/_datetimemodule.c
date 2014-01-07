@@ -16,11 +16,11 @@
 #include "datetime.h"
 #undef Py_BUILD_CORE
 
-/*[clinic]
+/*[clinic input]
 module datetime
 class datetime.datetime
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -4145,7 +4145,7 @@ datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
                                       tzinfo);
 }
 
-/*[clinic]
+/*[clinic input]
 
 @classmethod
 datetime.datetime.now
@@ -4156,7 +4156,7 @@ datetime.datetime.now
 Returns new datetime object representing current time local to tz.
 
 If no tz is specified, uses local timezone.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(datetime_datetime_now__doc__,
 "now(tz=None)\n"
@@ -4192,7 +4192,7 @@ exit:
 
 static PyObject *
 datetime_datetime_now_impl(PyTypeObject *cls, PyObject *tz)
-/*[clinic checksum: ca3d26a423b3f633b260c7622e303f0915a96f7c]*/
+/*[clinic end generated code: checksum=ca3d26a423b3f633b260c7622e303f0915a96f7c]*/
 {
     PyObject *self;
 

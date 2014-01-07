@@ -81,12 +81,12 @@ zlib_error(z_stream zst, int err, char *msg)
         PyErr_Format(ZlibError, "Error %d %s: %.200s", err, msg, zmsg);
 }
 
-/*[clinic]
+/*[clinic input]
 module zlib
 class zlib.Compress
 class zlib.Decompress
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 PyDoc_STRVAR(compressobj__doc__,
 "compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8,\n"
@@ -164,7 +164,7 @@ PyZlib_Free(voidpf ctx, void *ptr)
     PyMem_RawFree(ptr);
 }
 
-/*[clinic]
+/*[clinic input]
 
 zlib.compress
     bytes: Py_buffer
@@ -177,7 +177,7 @@ zlib.compress
 
 Returns compressed string.
 
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_compress__doc__,
 "compress(bytes, [level])\n"
@@ -227,7 +227,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
-/*[clinic checksum: 9f055a396620bc1a8a13d74c3496249528b32b0d]*/
+/*[clinic end generated code: checksum=9f055a396620bc1a8a13d74c3496249528b32b0d]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
@@ -306,14 +306,14 @@ zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int
     return ReturnVal;
 }
 
-/*[python]
+/*[python input]
 
 class uint_converter(CConverter):
     type = 'unsigned int'
     converter = 'uint_converter'
 
-[python]*/
-/*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[python start generated code]*/
+/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 static int
 uint_converter(PyObject *obj, void *ptr)
@@ -743,7 +743,7 @@ save_unconsumed_input(compobject *self, int err)
     return 0;
 }
 
-/*[clinic]
+/*[clinic input]
 
 zlib.Decompress.decompress
 
@@ -762,7 +762,7 @@ Return a string containing the decompressed version of the data.
 After calling this function, some of the input data may still be stored in
 internal buffers for later processing.
 Call the flush() method to clear these buffers.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "decompress(data, max_length=0)\n"
@@ -808,7 +808,7 @@ exit:
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length)
-/*[clinic checksum: 5b1e4f9f1ef8eca55fff78356f9df0c81232ed3b]*/
+/*[clinic end generated code: checksum=5b1e4f9f1ef8eca55fff78356f9df0c81232ed3b]*/
 {
     int err;
     unsigned int old_length, length = DEFAULTALLOC;
@@ -1026,13 +1026,13 @@ PyZlib_flush(compobject *self, PyObject *args)
 
 #ifdef HAVE_ZLIB_COPY
 
-/*[clinic]
+/*[clinic input]
 zlib.Compress.copy
 
     self: self(type="compobject *")
 
 Return a copy of the compression object.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_Compress_copy__doc__,
 "copy()\n"
@@ -1056,7 +1056,7 @@ zlib_Compress_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 zlib_Compress_copy_impl(compobject *self)
-/*[clinic checksum: 2f454ee15be3bc53cfb4e845c3f891f68be4c8e4]*/
+/*[clinic end generated code: checksum=2f454ee15be3bc53cfb4e845c3f891f68be4c8e4]*/
 {
     compobject *retval = NULL;
     int err;

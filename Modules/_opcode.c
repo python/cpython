@@ -1,12 +1,12 @@
 #include "Python.h"
 #include "opcode.h"
 
-/*[clinic]
+/*[clinic input]
 module _opcode
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-/*[clinic]
+/*[clinic input]
 
 _opcode.stack_effect -> int
 
@@ -18,7 +18,7 @@ _opcode.stack_effect -> int
   /
 
 Compute the stack effect of the opcode.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(_opcode_stack_effect__doc__,
 "stack_effect(opcode, [oparg])\n"
@@ -64,10 +64,10 @@ exit:
 
 static int
 _opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg)
-/*[clinic checksum: e880e62dc7b0de73403026eaf4f8074aa106358b]*/
+/*[clinic end generated code: checksum=e880e62dc7b0de73403026eaf4f8074aa106358b]*/
 {
     int effect;
-    if (HAS_ARG(opcode)) {        
+    if (HAS_ARG(opcode)) {
         if (!group_right_1) {
             PyErr_SetString(PyExc_ValueError,
                     "stack_effect: opcode requires oparg but oparg was not specified");

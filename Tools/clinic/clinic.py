@@ -291,10 +291,10 @@ class Language(metaclass=abc.ABCMeta):
 class PythonLanguage(Language):
 
     language      = 'Python'
-    start_line    = "#/*[{dsl_name}]"
+    start_line    = "#/*[{dsl_name} input]"
     body_prefix   = "#"
-    stop_line     = "#[{dsl_name}]*/"
-    checksum_line = "#/*[{dsl_name} checksum: {checksum}]*/"
+    stop_line     = "#[{dsl_name} start generated code]*/"
+    checksum_line = "#/*[{dsl_name} end generated code: checksum={checksum}]*/"
 
 
 def permute_left_option_groups(l):
@@ -359,11 +359,12 @@ def permute_optional_groups(left, required, right):
 
 class CLanguage(Language):
 
+    body_prefix   = "#"
     language      = 'C'
-    start_line    = "/*[{dsl_name}]"
+    start_line    = "/*[{dsl_name} input]"
     body_prefix   = ""
-    stop_line     = "[{dsl_name}]*/"
-    checksum_line = "/*[{dsl_name} checksum: {checksum}]*/"
+    stop_line     = "[{dsl_name} start generated code]*/"
+    checksum_line = "/*[{dsl_name} end generated code: checksum={checksum}]*/"
 
     def render(self, signatures):
         function = None

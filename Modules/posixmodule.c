@@ -181,10 +181,10 @@ corresponding Unix manual entries for more information on calls.");
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 
-/*[clinic]
+/*[clinic input]
 module os
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 #ifndef _MSC_VER
 
@@ -2355,7 +2355,7 @@ posix_do_stat(char *function_name, path_t *path,
 #endif
 
 
-/*[python]
+/*[python input]
 
 class path_t_converter(CConverter):
 
@@ -2396,10 +2396,10 @@ class dir_fd_converter(CConverter):
             self.c_default = 'DEFAULT_DIR_FD'
 
 
-[python]*/
-/*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[python start generated code]*/
+/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-/*[clinic]
+/*[clinic input]
 
 os.stat -> object(doc_default='stat_result')
 
@@ -2427,7 +2427,7 @@ dir_fd and follow_symlinks may not be implemented
 It's an error to use dir_fd or follow_symlinks when specifying path as
   an open file descriptor.
 
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(os_stat__doc__,
 "stat(path, *, dir_fd=None, follow_symlinks=True)\n"
@@ -2481,7 +2481,7 @@ exit:
 
 static PyObject *
 os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic checksum: 85a71ad602e89f8e280118da976f70cd2f9abdf1]*/
+/*[clinic end generated code: checksum=85a71ad602e89f8e280118da976f70cd2f9abdf1]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2522,7 +2522,7 @@ posix_lstat(PyObject *self, PyObject *args, PyObject *kwargs)
 #else
     #define OS_ACCESS_DIR_FD_CONVERTER dir_fd_unavailable
 #endif
-/*[clinic]
+/*[clinic input]
 os.access -> object(doc_default='True if granted, False otherwise')
 
     path: path_t(allow_fd=True)
@@ -2559,7 +2559,7 @@ Note that most operations will use the effective uid/gid, therefore this
   routine can be used in a suid/sgid environment to test if the invoking user
   has the specified access to the path.
 
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(os_access__doc__,
 "access(path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)\n"
@@ -2622,7 +2622,7 @@ exit:
 
 static PyObject *
 os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic checksum: 636e835c36562a2fc11acab75314634127fdf769]*/
+/*[clinic end generated code: checksum=636e835c36562a2fc11acab75314634127fdf769]*/
 {
     PyObject *return_value = NULL;
 
@@ -2706,7 +2706,7 @@ exit:
 
 #ifdef HAVE_TTYNAME
 
-/*[clinic]
+/*[clinic input]
 os.ttyname -> DecodeFSDefault
 
     fd: int
@@ -2715,7 +2715,7 @@ os.ttyname -> DecodeFSDefault
     /
 
 Return the name of the terminal device connected to 'fd'.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(os_ttyname__doc__,
 "ttyname(fd)\n"
@@ -2752,7 +2752,7 @@ exit:
 
 static char *
 os_ttyname_impl(PyModuleDef *module, int fd)
-/*[clinic checksum: 0f368134dc0a7f21f25185e2e6bacf7675fb473a]*/
+/*[clinic end generated code: checksum=0f368134dc0a7f21f25185e2e6bacf7675fb473a]*/
 {
     char *ret;
 

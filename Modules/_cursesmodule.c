@@ -134,11 +134,11 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-/*[clinic]
+/*[clinic input]
 module curses
 class curses.window
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /* Definition of exception curses.error */
 
@@ -555,7 +555,7 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 
 /* Addch, Addstr, Addnstr */
 
-/*[clinic]
+/*[clinic input]
 
 curses.window.addch
 
@@ -581,7 +581,7 @@ Paint character ch at (y, x) with attributes attr,
 overwriting any character previously painted at that location.
 By default, the character position and attributes are the
 current settings for the window object.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(curses_window_addch__doc__,
 "addch([x, y,] ch, [attr])\n"
@@ -650,7 +650,7 @@ curses_window_addch(PyObject *self, PyObject *args)
 
 static PyObject *
 curses_window_addch_impl(PyObject *self, int group_left_1, int x, int y, PyObject *ch, int group_right_1, long attr)
-/*[clinic checksum: 44ed958b891cde91205e584c766e048f3999714f]*/
+/*[clinic end generated code: checksum=44ed958b891cde91205e584c766e048f3999714f]*/
 {
     PyCursesWindowObject *cwself = (PyCursesWindowObject *)self;
     int coordinates_group = group_left_1;

@@ -17,11 +17,11 @@
 #include "ucnhash.h"
 #include "structmember.h"
 
-/*[clinic]
+/*[clinic input]
 module unicodedata
 class unicodedata.UCD
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /* character properties */
 
@@ -113,7 +113,7 @@ static Py_UCS4 getuchar(PyUnicodeObject *obj)
 
 /* --- Module API --------------------------------------------------------- */
 
-/*[clinic]
+/*[clinic input]
 
 unicodedata.UCD.decimal
 
@@ -126,7 +126,7 @@ Converts a Unicode character into its equivalent decimal value.
 Returns the decimal value assigned to the Unicode character unichr
 as integer. If no such value is defined, default is returned, or, if
 not given, ValueError is raised.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
 "decimal(unichr, default=None)\n"
@@ -161,7 +161,7 @@ exit:
 
 static PyObject *
 unicodedata_UCD_decimal_impl(PyObject *self, PyUnicodeObject *unichr, PyObject *default_value)
-/*[clinic checksum: 73edde0e9cd5913ea174c4fa81504369761b7426]*/
+/*[clinic end generated code: checksum=73edde0e9cd5913ea174c4fa81504369761b7426]*/
 {
     PyUnicodeObject *v = (PyUnicodeObject *)unichr;
     int have_old = 0;
