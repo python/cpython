@@ -75,6 +75,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20154: Deadlock in asyncio.StreamReader.readexactly().
+
 - Issue #16113: Remove sha3 module again.
 
 - Issue #20111: pathlib.Path.with_suffix() now sanity checks the given suffix.
