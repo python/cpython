@@ -1183,15 +1183,6 @@ class _SpecMethods:
                 pass
         return module
 
-    # XXX If we don't end up using this for pythonrun.c/runpy, we should
-    #     get rid of it.
-    def _load_existing(self, module):
-        """Exec the spec'ed module into an existing module's namespace."""
-        # For use by runpy.
-        with _installed_safely(module):
-            loaded = self.exec(module)
-        return loaded
-
     def _load_unlocked(self):
         # A helper for direct use by the import system.
         if self.spec.loader is not None:
@@ -1389,7 +1380,6 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        # XXX untested! Need a Windows person to write tests (otherwise mock out appropriately)
         filepath = cls._search_registry(fullname)
         if filepath is None:
             return None
