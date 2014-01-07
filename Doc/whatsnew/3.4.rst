@@ -558,15 +558,57 @@ differences between single use, reusable and reentrant context managers.
 dis
 ---
 
-The :mod:`dis` module is now built around an :class:`~dis.Instruction` class
-that provides details of individual bytecode operations and a
-:func:`~dis.get_instructions` iterator that emits the Instruction stream for a
-given piece of Python code. The various display tools in the :mod:`dis`
-module have been updated to be based on these new components.
+Functions :func:`~dis.show_code`, :func:`~dis.dis`, :func:`~dis.distb`, and
+:func:`~dis.disassemble` now accept a keyword-only *file* argument that
+controls where they write their output.
 
-The new :class:`dis.Bytecode` class provides an object-oriented API for
-inspecting bytecode, both in human-readable form and for iterating over
-instructions.
+The :mod:`dis` module is now built around an :class:`~dis.Instruction` class
+that provides object oriented access to the details of each individual bytecode
+operation.
+
+A new method, :func:`~dis.get_instructions`, provides an iterator that emits
+the Instruction stream for a given piece of Python code.  Thus it is now
+possible to write a program that inspects and manipulates a bytecode
+object in ways different from those provided by the :mod:`~dis` module
+itself.  For example::
+
+    >>> import dis
+    >>> for instr in dis.get_instructions(lambda x: x + 1):
+    ...     print(instr.opname)
+    LOAD_FAST
+    LOAD_CONST
+    BINARY_ADD
+    RETURN_VALUE
+
+The various display tools in the :mod:`dis` module have been rewritten to use
+these new components.
+
+In addition, a new application-friendly class :class:`~dis.Bytecode` provides
+an object-oriented API for inspecting bytecode in both in human-readable form
+and for iterating over instructions.  The :class:`~dis.Bytecode` constructor
+takes the same arguments that :func:`~dis.get_instruction` does (plus an
+optional *current_offset*), and the resulting object can be iterated to produce
+:class:`~dis.Instruction` objects.  But it also has a :mod:`~dis.Bytecode.dis`
+method, equivalent to calling :mod:`~dis.dis` on the constructor argument, but
+returned as a multi-line string::
+
+    >>> bytecode = dis.Bytecode(lambda x: x +1, current_offset=3)
+    >>> for instr in bytecode:
+    ...     print('{} ({})'.format(instr.opname, instr.opcode))
+    LOAD_FAST (124)
+    LOAD_CONST (100)
+    BINARY_ADD (23)
+    RETURN_VALUE (83)
+    >>> bytecode.dis().splitlines()       # doctest: +NORMALIZE_WHITESPACE
+    ['  1           0 LOAD_FAST                0 (x)',
+     '      -->     3 LOAD_CONST               1 (1)',
+     '              6 BINARY_ADD',
+     '              7 RETURN_VALUE']
+
+:class:`~dis.Bytecode` also has a class method,
+:meth:`~dis.Bytecode.from_traceback`, that provides the ability to manipulate a
+traceback (that is, ``print(Bytecode.from_traceback(tb).dis())`` is equivalent
+to ``distb(tb)``).
 
 (Contributed by Nick Coghlan, Ryan Kelly and Thomas Kluyver in :issue:`11816`
 and Claudiu Popa in :issue:`17916`)
