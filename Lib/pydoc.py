@@ -246,8 +246,12 @@ def synopsis(filename, cache={}):
         else:
             # Must be a binary module, which has to be imported.
             loader = loader_cls('__temp__', filename)
+            # XXX We probably don't need to pass in the loader here.
+            spec = importlib.util.spec_from_file_location('__temp__', filename,
+                                                          loader=loader)
+            _spec = importlib._bootstrap._SpecMethods(spec)
             try:
-                module = loader.load_module('__temp__')
+                module = _spec.load()
             except:
                 return None
             del sys.modules['__temp__']
@@ -277,8 +281,11 @@ def importfile(path):
         loader = importlib._bootstrap.SourcelessFileLoader(name, path)
     else:
         loader = importlib._bootstrap.SourceFileLoader(name, path)
+    # XXX We probably don't need to pass in the loader here.
+    spec = importlib.util.spec_from_file_location(name, path, loader=loader)
+    _spec = importlib._bootstrap._SpecMethods(spec)
     try:
-        return loader.load_module(name)
+        return _spec.load()
     except:
         raise ErrorDuringImport(path, sys.exc_info())
 
@@ -2008,10 +2015,11 @@ class ModuleScanner:
                 callback(None, modname, '')
             else:
                 try:
-                    loader = importer.find_module(modname)
+                    spec = pkgutil._get_spec(importer, modname)
                 except SyntaxError:
                     # raised by tests for bad coding cookies or BOM
                     continue
+                loader = spec.loader
                 if hasattr(loader, 'get_source'):
                     try:
                         source = loader.get_source(modname)
@@ -2025,8 +2033,9 @@ class ModuleScanner:
                     else:
                         path = None
                 else:
+                    _spec = importlib._bootstrap._SpecMethods(spec)
                     try:
-                        module = loader.load_module(modname)
+                        module = _spec.load()
                     except ImportError:
                         if onerror:
                             onerror(modname)
