@@ -554,13 +554,14 @@ def extend_path(path, name):
 
         finder = get_importer(dir)
         if finder is not None:
+            portions = []
+            if hasattr(finder, 'find_spec'):
+                spec = finder.find_spec(final_name)
+                if spec is not None:
+                    portions = spec.submodule_search_locations or []
             # Is this finder PEP 420 compliant?
-            if hasattr(finder, 'find_loader'):
-                loader, portions = finder.find_loader(final_name)
-            else:
-                # No, no need to call it
-                loader = None
-                portions = []
+            elif hasattr(finder, 'find_loader'):
+                _, portions = finder.find_loader(final_name)
 
             for portion in portions:
                 # XXX This may still add duplicate entries to path on
