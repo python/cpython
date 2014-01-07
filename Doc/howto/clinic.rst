@@ -640,7 +640,7 @@ on the right is the text you'd replace it with.
 ``'K'``     ``unsigned_PY_LONG_LONG``
 ``'L'``     ``PY_LONG_LONG``
 ``'n'``     ``Py_ssize_t``
-``'O!'``    ``object(type='name_of_Python_type')``
+``'O!'``    ``object(subclass_of='&PySomething_Type')``
 ``'O&'``    ``object(converter='name_of_c_function')``
 ``'O'``     ``object``
 ``'p'``     ``bool``
@@ -693,20 +693,22 @@ conversion functions, or types, or strings specifying an encoding.
 (But "legacy converters" don't support arguments.  That's why we
 skipped them for your first function.)  The argument you specified
 to the format unit is now an argument to the converter; this
-argument is either ``converter`` (for ``O&``), ``type`` (for ``O!``),
+argument is either ``converter`` (for ``O&``), ``subclass_of`` (for ``O!``),
 or ``encoding`` (for all the format units that start with ``e``).
 
-Note that ``object()`` must explicitly support each Python type you specify
-for the ``type`` argument.  Currently it only supports ``str``.  It should be
-easy to add more, just edit ``Tools/clinic/clinic.py``, search for ``O!`` in
-the text, and add more entries to the dict mapping types to strings just above it.
+When using ``subclass_of``, you may also want to use the other
+custom argument for ``object()``: ``type``, which lets you set the type
+actually used for the parameter.  For example, if you want to ensure
+that the object is a subclass of ``PyUnicode_Type``, you probably want
+to use the converter ``object(type='PyUnicodeObject *', subclass_of='&PyUnicode_Type')``.
 
-Note also that this approach takes away some possible flexibility for the format
-units starting with ``e``.  It used to be possible to decide at runtime what
+One possible problem with using Argument Clinic: it takes away some possible
+flexibility for the format units starting with ``e``.  When writing a
+``PyArg_Parse`` call by hand, you could theoretically decide at runtime what
 encoding string to pass in to :c:func:`PyArg_ParseTuple`.   But now this string must
-be hard-coded at compile-time.  This limitation is deliberate; it made supporting
-this format unit much easier, and may allow for future compile-time optimizations.
-This restriction does not seem unreasonable; CPython itself always passes in static
+be hard-coded at Argument-Clinic-preprocessing-time.  This limitation is deliberate;
+it made supporting this format unit much easier, and may allow for future optimizations.
+This restriction doesn't seem unreasonable; CPython itself always passes in static
 hard-coded encoding strings for parameters whose format units start with ``e``.
 
 
@@ -796,7 +798,8 @@ block, and ensure that its converter is an instance of
 ``self_converter`` or a subclass thereof.
 
 What's the point?  This lets you automatically cast ``self``
-from ``PyObject *`` to a custom type.
+from ``PyObject *`` to a custom type, just like ``object()``
+does with its ``type`` parameter.
 
 How do you specify the custom type you want to cast ``self`` to?
 If you only have one or two functions with the same type for ``self``,
