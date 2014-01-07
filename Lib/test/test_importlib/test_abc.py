@@ -14,6 +14,7 @@ from . import util
 
 frozen_init, source_init = util.import_importlib('importlib')
 frozen_abc, source_abc = util.import_importlib('importlib.abc')
+machinery = util.import_importlib('importlib.machinery')
 frozen_util, source_util = util.import_importlib('importlib.util')
 
 ##### Inheritance ##############################################################
@@ -284,6 +285,137 @@ class ExecutionLoaderDefaultsTests:
 
 tests = make_return_value_tests(ExecutionLoader, InspectLoaderDefaultsTests)
 Frozen_ELDefaultTests, Source_ELDefaultsTests = tests
+
+##### MetaPathFinder concrete methods ##########################################
+
+class MetaPathFinderFindModuleTests:
+
+    @classmethod
+    def finder(cls, spec):
+        class MetaPathSpecFinder(cls.abc.MetaPathFinder):
+
+            def find_spec(self, fullname, path, target=None):
+                self.called_for = fullname, path
+                return spec
+
+        return MetaPathSpecFinder()
+
+    def test_no_spec(self):
+        finder = self.finder(None)
+        path = ['a', 'b', 'c']
+        name = 'blah'
+        found = finder.find_module(name, path)
+        self.assertIsNone(found)
+        self.assertEqual(name, finder.called_for[0])
+        self.assertEqual(path, finder.called_for[1])
+
+    def test_spec(self):
+        loader = object()
+        spec = self.util.spec_from_loader('blah', loader)
+        finder = self.finder(spec)
+        found = finder.find_module('blah', None)
+        self.assertIs(found, spec.loader)
+
+
+Frozen_MPFFindModuleTests, Source_MPFFindModuleTests = util.test_both(
+        MetaPathFinderFindModuleTests,
+        abc=(frozen_abc, source_abc),
+        util=(frozen_util, source_util))
+
+##### PathEntryFinder concrete methods #########################################
+
+class PathEntryFinderFindLoaderTests:
+
+    @classmethod
+    def finder(cls, spec):
+        class PathEntrySpecFinder(cls.abc.PathEntryFinder):
+
+            def find_spec(self, fullname, target=None):
+                self.called_for = fullname
+                return spec
+
+        return PathEntrySpecFinder()
+
+    def test_no_spec(self):
+        finder = self.finder(None)
+        name = 'blah'
+        found = finder.find_loader(name)
+        self.assertIsNone(found[0])
+        self.assertEqual([], found[1])
+        self.assertEqual(name, finder.called_for)
+
+    def test_spec_with_loader(self):
+        loader = object()
+        spec = self.util.spec_from_loader('blah', loader)
+        finder = self.finder(spec)
+        found = finder.find_loader('blah')
+        self.assertIs(found[0], spec.loader)
+
+    def test_spec_with_portions(self):
+        spec = self.machinery.ModuleSpec('blah', None)
+        paths = ['a', 'b', 'c']
+        spec.submodule_search_locations = paths
+        finder = self.finder(spec)
+        found = finder.find_loader('blah')
+        self.assertIsNone(found[0])
+        self.assertEqual(paths, found[1])
+
+
+Frozen_PEFFindLoaderTests, Source_PEFFindLoaderTests = util.test_both(
+        PathEntryFinderFindLoaderTests,
+        abc=(frozen_abc, source_abc),
+        machinery=machinery,
+        util=(frozen_util, source_util))
+
+
+##### Loader concrete methods ##################################################
+class LoaderLoadModuleTests:
+
+    def loader(self):
+        class SpecLoader(self.abc.Loader):
+            found = None
+            def exec_module(self, module):
+                self.found = module
+
+            def is_package(self, fullname):
+                """Force some non-default module state to be set."""
+                return True
+
+        return SpecLoader()
+
+    def test_fresh(self):
+        loader = self.loader()
+        name = 'blah'
+        with util.uncache(name):
+            loader.load_module(name)
+            module = loader.found
+            self.assertIs(sys.modules[name], module)
+        self.assertEqual(loader, module.__loader__)
+        self.assertEqual(loader, module.__spec__.loader)
+        self.assertEqual(name, module.__name__)
+        self.assertEqual(name, module.__spec__.name)
+        self.assertIsNotNone(module.__path__)
+        self.assertIsNotNone(module.__path__,
+                             module.__spec__.submodule_search_locations)
+
+    def test_reload(self):
+        name = 'blah'
+        loader = self.loader()
+        module = types.ModuleType(name)
+        module.__spec__ = self.util.spec_from_loader(name, loader)
+        module.__loader__ = loader
+        with util.uncache(name):
+            sys.modules[name] = module
+            loader.load_module(name)
+            found = loader.found
+            self.assertIs(found, sys.modules[name])
+            self.assertIs(module, sys.modules[name])
+
+
+Frozen_LoaderLoadModuleTests, Source_LoaderLoadModuleTests = util.test_both(
+        LoaderLoadModuleTests,
+        abc=(frozen_abc, source_abc),
+        util=(frozen_util, source_util))
 
 
 ##### InspectLoader concrete methods ###########################################
