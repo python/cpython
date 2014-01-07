@@ -526,7 +526,7 @@ sre_search(SRE_STATE* state, SRE_CODE* pattern)
     return sre_ucs4_search(state, pattern);
 }
 
-/*[clinic]
+/*[clinic input]
 module _sre
 class _sre.SRE_Pattern
 
@@ -538,7 +538,7 @@ _sre.SRE_Pattern.match as pattern_match
     endpos: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
 
 Matches zero or more characters at the beginning of the string.
-[clinic]*/
+[clinic start generated code]*/
 
 PyDoc_STRVAR(pattern_match__doc__,
 "match(pattern, pos=0, endpos=sys.maxsize)\n"
@@ -571,7 +571,7 @@ exit:
 
 static PyObject *
 pattern_match_impl(PatternObject *self, PyObject *pattern, Py_ssize_t pos, Py_ssize_t endpos)
-/*[clinic checksum: 63e59c5f3019efe6c1f3acdec42b2d3595e14a09]*/
+/*[clinic end generated code: checksum=63e59c5f3019efe6c1f3acdec42b2d3595e14a09]*/
 {
     SRE_STATE state;
     Py_ssize_t status;
