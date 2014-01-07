@@ -330,15 +330,16 @@ class HashDistributionTestCase(unittest.TestCase):
         base = "abcdefghabcdefg"
         for i in range(1, len(base)):
             prefix = base[:i]
-            s15 = set()
-            s255 = set()
-            for c in range(256):
-                h = hash(prefix + chr(c))
-                s15.add(h & 0xf)
-                s255.add(h & 0xff)
-            # SipHash24 distribution depends on key, usually > 60%
-            self.assertGreater(len(s15), 8, prefix)
-            self.assertGreater(len(s255), 128, prefix)
+            with self.subTest(prefix=prefix):
+                s15 = set()
+                s255 = set()
+                for c in range(256):
+                    h = hash(prefix + chr(c))
+                    s15.add(h & 0xf)
+                    s255.add(h & 0xff)
+                # SipHash24 distribution depends on key, usually > 60%
+                self.assertGreater(len(s15), 8, prefix)
+                self.assertGreater(len(s255), 128, prefix)
 
 if __name__ == "__main__":
     unittest.main()
