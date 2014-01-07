@@ -31,6 +31,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20072: Fixed multiple errors in tkinter with wantobjects is False.
+
 - Issue #20108: Avoid parameter name clash in inspect.getcallargs().
 
 - Issue #12692: Backport the fix for ResourceWarning in test_urllib2net. This

@@ -393,8 +393,10 @@ class InternalFunctionsTest(unittest.TestCase):
             ('name', 'no_minus', 'value'))
         self.assertRaises(ValueError, ttk._list_from_layouttuple,
             ('something', '-children')) # no children
-        self.assertRaises(ValueError, ttk._list_from_layouttuple,
-            ('something', '-children', 'value')) # invalid children
+        import tkinter
+        if not tkinter._default_root or tkinter._default_root.wantobjects():
+            self.assertRaises(ValueError, ttk._list_from_layouttuple,
+                ('something', '-children', 'value')) # invalid children
 
 
     def test_val_or_dict(self):
