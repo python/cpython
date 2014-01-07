@@ -526,21 +526,58 @@ sre_search(SRE_STATE* state, SRE_CODE* pattern)
     return sre_ucs4_search(state, pattern);
 }
 
-static PyObject*
-pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
+/*[clinic]
+module _sre
+class _sre.SRE_Pattern
+
+_sre.SRE_Pattern.match as pattern_match
+
+    self: self(type="PatternObject *")
+    pattern: object
+    pos: Py_ssize_t = 0
+    endpos: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
+
+Matches zero or more characters at the beginning of the string.
+[clinic]*/
+
+PyDoc_STRVAR(pattern_match__doc__,
+"match(pattern, pos=0, endpos=sys.maxsize)\n"
+"Matches zero or more characters at the beginning of the string.");
+
+#define PATTERN_MATCH_METHODDEF    \
+    {"match", (PyCFunction)pattern_match, METH_VARARGS|METH_KEYWORDS, pattern_match__doc__},
+
+static PyObject *
+pattern_match_impl(PatternObject *self, PyObject *pattern, Py_ssize_t pos, Py_ssize_t endpos);
+
+static PyObject *
+pattern_match(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"pattern", "pos", "endpos", NULL};
+    PyObject *pattern;
+    Py_ssize_t pos = 0;
+    Py_ssize_t endpos = PY_SSIZE_T_MAX;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "O|nn:match", _keywords,
+        &pattern, &pos, &endpos))
+        goto exit;
+    return_value = pattern_match_impl((PatternObject *)self, pattern, pos, endpos);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+pattern_match_impl(PatternObject *self, PyObject *pattern, Py_ssize_t pos, Py_ssize_t endpos)
+/*[clinic checksum: 63e59c5f3019efe6c1f3acdec42b2d3595e14a09]*/
 {
     SRE_STATE state;
     Py_ssize_t status;
+    PyObject *string;
 
-    PyObject* string;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
-    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:match", kwlist,
-                                     &string, &start, &end))
-        return NULL;
-
-    string = state_init(&state, self, string, start, end);
+    string = state_init(&state, (PatternObject *)self, pattern, pos, endpos);
     if (!string)
         return NULL;
 
@@ -556,7 +593,7 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
 
     state_fini(&state);
 
-    return pattern_new_match(self, &state, status);
+    return (PyObject *)pattern_new_match(self, &state, status);
 }
 
 static PyObject*
@@ -1254,10 +1291,6 @@ done:
     return result;
 }
 
-PyDoc_STRVAR(pattern_match_doc,
-"match(string[, pos[, endpos]]) -> match object or None.\n\
-    Matches zero or more characters at the beginning of the string");
-
 PyDoc_STRVAR(pattern_fullmatch_doc,
 "fullmatch(string[, pos[, endpos]]) -> match object or None.\n\
     Matches against all of the string");
@@ -1295,8 +1328,7 @@ PyDoc_STRVAR(pattern_subn_doc,
 PyDoc_STRVAR(pattern_doc, "Compiled regular expression objects");
 
 static PyMethodDef pattern_methods[] = {
-    {"match", (PyCFunction) pattern_match, METH_VARARGS|METH_KEYWORDS,
-        pattern_match_doc},
+    PATTERN_MATCH_METHODDEF
     {"fullmatch", (PyCFunction) pattern_fullmatch, METH_VARARGS|METH_KEYWORDS,
         pattern_fullmatch_doc},
     {"search", (PyCFunction) pattern_search, METH_VARARGS|METH_KEYWORDS,
