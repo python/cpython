@@ -8,6 +8,7 @@ import sys
 from test.support import captured_stdout
 import types
 import unittest
+import warnings
 
 
 class ExecModuleTests(abc.LoaderTests):
@@ -60,8 +61,16 @@ class ExecModuleTests(abc.LoaderTests):
                                  expected=value))
             self.assertEqual(output, 'Hello world!\n')
 
-
     def test_module_repr(self):
+        name = '__hello__'
+        module, output = self.exec_module(name)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            repr_str = self.machinery.FrozenImporter.module_repr(module)
+        self.assertEqual(repr_str,
+                         "<module '__hello__' (frozen)>")
+
+    def test_module_repr_indirect(self):
         name = '__hello__'
         module, output = self.exec_module(name)
         self.assertEqual(repr(module),
@@ -84,7 +93,9 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
         with util.uncache('__hello__'), captured_stdout() as stdout:
-            module = self.machinery.FrozenImporter.load_module('__hello__')
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                module = self.machinery.FrozenImporter.load_module('__hello__')
             check = {'__name__': '__hello__',
                     '__package__': '',
                     '__loader__': self.machinery.FrozenImporter,
@@ -96,7 +107,9 @@ class LoaderTests(abc.LoaderTests):
 
     def test_package(self):
         with util.uncache('__phello__'),  captured_stdout() as stdout:
-            module = self.machinery.FrozenImporter.load_module('__phello__')
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                module = self.machinery.FrozenImporter.load_module('__phello__')
             check = {'__name__': '__phello__',
                      '__package__': '__phello__',
                      '__path__': [],
@@ -113,7 +126,9 @@ class LoaderTests(abc.LoaderTests):
     def test_lacking_parent(self):
         with util.uncache('__phello__', '__phello__.spam'), \
              captured_stdout() as stdout:
-            module = self.machinery.FrozenImporter.load_module('__phello__.spam')
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                module = self.machinery.FrozenImporter.load_module('__phello__.spam')
             check = {'__name__': '__phello__.spam',
                     '__package__': '__phello__',
                     '__loader__': self.machinery.FrozenImporter,
@@ -128,17 +143,28 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module_reuse(self):
         with util.uncache('__hello__'), captured_stdout() as stdout:
-            module1 = self.machinery.FrozenImporter.load_module('__hello__')
-            module2 = self.machinery.FrozenImporter.load_module('__hello__')
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                module1 = self.machinery.FrozenImporter.load_module('__hello__')
+                module2 = self.machinery.FrozenImporter.load_module('__hello__')
             self.assertIs(module1, module2)
             self.assertEqual(stdout.getvalue(),
                              'Hello world!\nHello world!\n')
 
     def test_module_repr(self):
         with util.uncache('__hello__'), captured_stdout():
-            module = self.machinery.FrozenImporter.load_module('__hello__')
-            self.assertEqual(repr(module),
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                module = self.machinery.FrozenImporter.load_module('__hello__')
+                repr_str = self.machinery.FrozenImporter.module_repr(module)
+            self.assertEqual(repr_str,
                              "<module '__hello__' (frozen)>")
+
+    def test_module_repr_indirect(self):
+        with util.uncache('__hello__'), captured_stdout():
+            module = self.machinery.FrozenImporter.load_module('__hello__')
+        self.assertEqual(repr(module),
+                         "<module '__hello__' (frozen)>")
 
     # No way to trigger an error in a frozen module.
     test_state_after_failure = None

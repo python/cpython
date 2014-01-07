@@ -12,6 +12,7 @@ __all__ = ['__import__', 'import_module', 'invalidate_caches', 'reload']
 import _imp  # Just the builtin component, NOT the full Python module
 import sys
 import types
+import warnings
 
 try:
     import _frozen_importlib as _bootstrap
@@ -77,13 +78,16 @@ def find_spec(name, path=None):
             return spec
 
 
-# XXX Deprecate...
 def find_loader(name, path=None):
     """Return the loader for the specified module.
 
     This is a backward-compatible wrapper around find_spec().
 
+    This function is deprecated in favor of importlib.find_spec().
+
     """
+    warnings.warn('Use importlib.find_spec() instead.', DeprecationWarning,
+                  stacklevel=2)
     try:
         loader = sys.modules[name].__loader__
         if loader is None:

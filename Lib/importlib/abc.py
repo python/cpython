@@ -43,12 +43,13 @@ class MetaPathFinder(Finder):
     # We don't define find_spec() here since that would break
     # hasattr checks we do to support backward compatibility.
 
-    # XXX Deprecate
     def find_module(self, fullname, path):
         """Return a loader for the module.
 
         If no module is found, return None.  The fullname is a str and
         the path is a list of strings or None.
+
+        This method is deprecated in favor of finder.find_spec().
 
         """
         return None
@@ -69,7 +70,6 @@ class PathEntryFinder(Finder):
     # We don't define find_spec() here since that would break
     # hasattr checks we do to support backward compatibility.
 
-    # XXX Deprecate.
     def find_loader(self, fullname):
         """Return (loader, namespace portion) for the path entry.
 
@@ -81,10 +81,11 @@ class PathEntryFinder(Finder):
         The portion will be discarded if another path entry finder
         locates the module as a normal module or package.
 
+        This method is deprecated in favor of finder.find_spec().
+
         """
         return None, []
 
-    # XXX Deprecate.
     find_module = _bootstrap._find_module_shim
 
     def invalidate_caches(self):
@@ -115,7 +116,6 @@ class Loader(metaclass=abc.ABCMeta):
     # We don't define exec_module() here since that would break
     # hasattr checks we do to support backward compatibility.
 
-    # XXX Deprecate.
     def load_module(self, fullname):
         """Return the loaded module.
 
@@ -124,15 +124,18 @@ class Loader(metaclass=abc.ABCMeta):
 
         ImportError is raised on failure.
 
+        This method is deprecated in favor of loader.exec_module().
+
         """
         raise ImportError
 
-    # XXX Deprecate.
     def module_repr(self, module):
         """Return a module's repr.
 
         Used by the module type when the method does not raise
         NotImplementedError.
+
+        This method is deprecated.
 
         """
         # The exception will cause ModuleType.__repr__ to ignore this method.

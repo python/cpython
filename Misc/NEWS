@@ -283,7 +283,8 @@ Library
 - Issue #6477: Added support for pickling the types of built-in singletons
   (i.e., Ellipsis, NotImplemented, None).
 
-- Issue #19713: Move away from using find_module/load_module.
+- Issue #19713: Add remaining PEP 451-related deprecations and move away
+  from using find_module/find_loaer/load_module.
 
 - Issue #19708: Update pkgutil to use the new importer APIs.
 

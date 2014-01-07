@@ -5,6 +5,7 @@ from . import util
 machinery = test_util.import_importlib('importlib.machinery')
 
 import unittest
+import warnings
 
 # XXX find_spec tests
 
@@ -16,7 +17,9 @@ class FinderTests(abc.FinderTests):
         importer = self.machinery.FileFinder(util.PATH,
                                             (self.machinery.ExtensionFileLoader,
                                              self.machinery.EXTENSION_SUFFIXES))
-        return importer.find_module(fullname)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            return importer.find_module(fullname)
 
     def test_module(self):
         self.assertTrue(self.find_module(util.NAME))

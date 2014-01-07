@@ -41,14 +41,14 @@ class ModuleForLoaderTests:
     @classmethod
     def module_for_loader(cls, func):
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', PendingDeprecationWarning)
+            warnings.simplefilter('ignore', DeprecationWarning)
             return cls.util.module_for_loader(func)
 
     def test_warning(self):
         # Should raise a PendingDeprecationWarning when used.
         with warnings.catch_warnings():
-            warnings.simplefilter('error', PendingDeprecationWarning)
-            with self.assertRaises(PendingDeprecationWarning):
+            warnings.simplefilter('error', DeprecationWarning)
+            with self.assertRaises(DeprecationWarning):
                 func = self.util.module_for_loader(lambda x: x)
 
     def return_module(self, name):
@@ -172,7 +172,9 @@ class SetPackageTests:
         passing through set_package."""
         fxn = lambda: module
         wrapped = self.util.set_package(fxn)
-        wrapped()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            wrapped()
         self.assertTrue(hasattr(module, '__package__'))
         self.assertEqual(expect, module.__package__)
 
@@ -212,7 +214,9 @@ class SetPackageTests:
 
     def test_decorator_attrs(self):
         def fxn(module): pass
-        wrapped = self.util.set_package(fxn)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            wrapped = self.util.set_package(fxn)
         self.assertEqual(wrapped.__name__, fxn.__name__)
         self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
@@ -236,19 +240,25 @@ class SetLoaderTests:
             del loader.module.__loader__
         except AttributeError:
             pass
-        self.assertEqual(loader, loader.load_module('blah').__loader__)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertEqual(loader, loader.load_module('blah').__loader__)
 
     def test_attribute_is_None(self):
         loader = self.DummyLoader()
         loader.module = types.ModuleType('blah')
         loader.module.__loader__ = None
-        self.assertEqual(loader, loader.load_module('blah').__loader__)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertEqual(loader, loader.load_module('blah').__loader__)
 
     def test_not_reset(self):
         loader = self.DummyLoader()
         loader.module = types.ModuleType('blah')
         loader.module.__loader__ = 42
-        self.assertEqual(42, loader.load_module('blah').__loader__)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertEqual(42, loader.load_module('blah').__loader__)
 
 class Frozen_SetLoaderTests(SetLoaderTests, unittest.TestCase):
     class DummyLoader:

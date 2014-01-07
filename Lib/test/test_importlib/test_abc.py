@@ -8,6 +8,7 @@ from test import support
 import types
 import unittest
 from unittest import mock
+import warnings
 
 from . import util
 
@@ -388,7 +389,9 @@ class InspectLoaderLoadModuleTests:
             mocked_get_code.side_effect = ImportError
             with self.assertRaises(ImportError):
                 loader = self.InspectLoaderSubclass()
-                loader.load_module(self.module_name)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    loader.load_module(self.module_name)
 
     def test_get_code_None(self):
         # If get_code() returns None, raise ImportError.
@@ -631,7 +634,9 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         # __path__ (for packages), __file__, and __cached__.
         # The module should also be put into sys.modules.
         with util.uncache(self.name):
-            module = self.loader.load_module(self.name)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                module = self.loader.load_module(self.name)
             self.verify_module(module)
             self.assertEqual(module.__path__, [os.path.dirname(self.path)])
             self.assertIn(self.name, sys.modules)
@@ -642,7 +647,9 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         # Testing the values for a package are covered by test_load_module.
         self.setUp(is_package=False)
         with util.uncache(self.name):
-            module = self.loader.load_module(self.name)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                module = self.loader.load_module(self.name)
             self.verify_module(module)
             self.assertTrue(not hasattr(module, '__path__'))
 
