@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19719: Make importlib.abc.MetaPathFinder.find_module(),
+  PathEntryFinder.find_loader(), and Loader.load_module() use PEP 451 APIs to
+  help with backwards-compatibility.
+
 - Issue #20144: inspect.Signature now supports parsing simple symbolic
   constants as parameter default values in __text_signature__.
 
