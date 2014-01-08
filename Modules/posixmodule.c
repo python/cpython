@@ -8050,14 +8050,14 @@ iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, int cnt, int type)
     *iov = PyMem_New(struct iovec, cnt);
     if (*iov == NULL) {
         PyErr_NoMemory();
-        return total;
+        return -1;
     }
 
     *buf = PyMem_New(Py_buffer, cnt);
     if (*buf == NULL) {
         PyMem_Del(*iov);
         PyErr_NoMemory();
-        return total;
+        return -1;
     }
 
     for (i = 0; i < cnt; i++) {
@@ -8082,7 +8082,7 @@ fail:
         PyBuffer_Release(&(*buf)[j]);
     }
     PyMem_Del(*buf);
-    return 0;
+    return -1;
 }
 
 static void
@@ -8122,7 +8122,7 @@ posix_readv(PyObject *self, PyObject *args)
     }
     cnt = PySequence_Size(seq);
 
-    if (!iov_setup(&iov, &buf, seq, cnt, PyBUF_WRITABLE))
+    if (iov_setup(&iov, &buf, seq, cnt, PyBUF_WRITABLE) < 0)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
@@ -8130,6 +8130,9 @@ posix_readv(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
 
     iov_cleanup(iov, buf, cnt);
+    if (n < 0)
+        return posix_error();
+
     return PyLong_FromSsize_t(n);
 }
 #endif
@@ -8254,8 +8257,8 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
             Py_ssize_t i = 0; /* Avoid uninitialized warning */
             sf.hdr_cnt = PySequence_Size(headers);
             if (sf.hdr_cnt > 0 &&
-                !(i = iov_setup(&(sf.headers), &hbuf,
-                                headers, sf.hdr_cnt, PyBUF_SIMPLE)))
+                (i = iov_setup(&(sf.headers), &hbuf,
+                                headers, sf.hdr_cnt, PyBUF_SIMPLE)) < 0)
                 return NULL;
 #ifdef __APPLE__
             sbytes += i;
@@ -8271,8 +8274,8 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
             Py_ssize_t i = 0; /* Avoid uninitialized warning */
             sf.trl_cnt = PySequence_Size(trailers);
             if (sf.trl_cnt > 0 &&
-                !(i = iov_setup(&(sf.trailers), &tbuf,
-                                trailers, sf.trl_cnt, PyBUF_SIMPLE)))
+                (i = iov_setup(&(sf.trailers), &tbuf,
+                                trailers, sf.trl_cnt, PyBUF_SIMPLE)) < 0)
                 return NULL;
 #ifdef __APPLE__
             sbytes += i;
@@ -8483,7 +8486,7 @@ posix_writev(PyObject *self, PyObject *args)
     }
     cnt = PySequence_Size(seq);
 
-    if (!iov_setup(&iov, &buf, seq, cnt, PyBUF_SIMPLE)) {
+    if (iov_setup(&iov, &buf, seq, cnt, PyBUF_SIMPLE) < 0) {
         return NULL;
     }
 
@@ -8492,6 +8495,9 @@ posix_writev(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
 
     iov_cleanup(iov, buf, cnt);
+    if (res < 0)
+        return posix_error();
+
     return PyLong_FromSsize_t(res);
 }
 #endif
