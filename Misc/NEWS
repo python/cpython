@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20113: os.readv() and os.writev() now raise an OSError exception on
+  error instead of returning -1.
+
 - Issue #19719: Make importlib.abc.MetaPathFinder.find_module(),
   PathEntryFinder.find_loader(), and Loader.load_module() use PEP 451 APIs to
   help with backwards-compatibility.
