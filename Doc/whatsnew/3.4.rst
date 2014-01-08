@@ -750,6 +750,11 @@ data and a path and returns a code object.  The default implementation
 is equivalent to ``compile(data, path, 'exec', dont_inherit=True)``.
 (Contributed by Eric Snow and Brett Cannon in :issue:`15627`.)
 
+:class:`~importlib.abc.InspectLoader` also now has a default implementation
+for the :meth:`~importlib.abc.InspectLoader.get_code` method.  However,
+it will normally be desirable to override the default implementation
+for performance reasons.  (Contributed by Brett Cannon in :issue:`18072`.)
+
 
 inspect
 -------
@@ -1545,6 +1550,13 @@ Changes in the Python API
   connected, instead of the previous behavior of raising an
   :exc:`AttributError`.  In addition, :meth:`~ssl.SSLSocket.getpeercert`
   will raise a :exc:`ValueError` if the handshake has not yet been done.
+
+* :func:`base64.b32decode` now raises a :exc:`binascii.Error` when the
+  input string contains non-b32-alphabet characters, instead of a
+  :exc:`TypeError`.  This particular :exc:`TypeError` was missed when the other
+  :exc:`TypeError`\ s were converted.  (Contributed by Serhiy Storchaka in
+  :issue:`18011`.)  Note: this change was also inadvertently applied in Python
+  3.3.3.
 
 
 Changes in the C API

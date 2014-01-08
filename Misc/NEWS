@@ -2144,8 +2144,8 @@ Library
 - Issue #17269: Workaround for socket.getaddrinfo crash on MacOS X
   with port None or "0" and flags AI_NUMERICSERV.
 
-- Issue #16986: ElementTree now correctly parses a string input not only when
-  an internal XML encoding is UTF-8 or US-ASCII.
+- Issue #16986: ElementTree now correctly works with string input when the
+  internal XML encoding is not UTF-8 or US-ASCII.
 
 - Issue #17996: socket module now exposes AF_LINK constant on BSD and OSX.
 

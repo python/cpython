@@ -478,10 +478,10 @@ ABC hierarchy::
 
     .. method:: get_code(fullname)
 
-        Return the code object for a module.
-        ``None`` should be returned if the module does not have a code object
-        (e.g. built-in module).  :exc:`ImportError` is raised if loader cannot
-        find the requested module.
+        Return the code object for a module, or ``None`` if the module does not
+        have a code object (as would be the case, for example, for a built-in
+        module).  Raise an :exc:`ImportError` if loader cannot find the
+        requested module.
 
         .. note::
            While the method has a default implementation, it is suggested that
