@@ -710,9 +710,9 @@ Library
 - Issue #18025: Fixed a segfault in io.BufferedIOBase.readinto() when raw
   stream's read() returns more bytes than requested.
 
-- Issue #18011: base64.b32decode() now raises a binascii.Error if there are
-  non-alphabet characters present in the input string to conform a docstring.
-  Updated the module documentation.
+- Issue #18011: As was originally intended, base64.b32decode() now raises a
+  binascii.Error if there are non-b32-alphabet characters present in the input
+  string, instead of a TypeError.
 
 - Issue #13772: Restored directory detection of targets in ``os.symlink`` on
   Windows, which was temporarily removed in Python 3.2.3 due to an incomplete
