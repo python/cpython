@@ -853,6 +853,11 @@ descriptors or a Windows handle:
 * :func:`os.get_inheritable`, :func:`os.set_inheritable`
 * :func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`
 
+The :mod:`os` module now provides a :func:`~os.cpu_count` function, analogous to
+the :func:`multiprocessing.cpu_count` function (which is now implemented in
+terms of the new :mod:`os` function).  (Contributed by Trent Nelson, Yogesh
+Chaudhari, Victor Stinner, and Charles-François Natali in :issue:`17914`.)
+
 
 pdb
 ---
@@ -984,6 +989,8 @@ Socket objects have new methods to get or set their :ref:`inheritable flag
 The ``socket.AF_*`` and ``socket.SOCK_*`` constants are now enumeration values
 using the new :mod:`enum` module.  This allows meaningful names to be printed
 during debugging, instead of integer "magic numbers".
+
+The :data:`~socket.AF_LINK` constant is now available on BSD and OSX.
 
 
 sqlite3
@@ -1340,6 +1347,11 @@ Significant Optimizations
 * By taking advantage of the new storage format for strings, pickling of
   strings is now significantly faster.  (Contributed by Victor Stinner and
   Antoine Pitrou in :issue:`15596`.)
+
+* A performance issue in :meth:`io.FileIO.readall` has been solved.  This
+  particularly affects Windows, and significantly speeds up the case of piping
+  significant amounts of data through :mod:`subprocess`.  (Contributed
+  by Richard Oudkerk in :issue:`15758`.)
 
 
 
