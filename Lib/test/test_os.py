@@ -1267,6 +1267,11 @@ class TestInvalidFD(unittest.TestCase):
     def test_read(self):
         self.check(os.read, 1)
 
+    @unittest.skipUnless(hasattr(os, 'readv'), 'test needs os.readv()')
+    def test_readv(self):
+        buf = bytearray(10)
+        self.check(os.readv, [buf])
+
     @unittest.skipUnless(hasattr(os, 'tcsetpgrp'), 'test needs os.tcsetpgrp()')
     def test_tcsetpgrpt(self):
         self.check(os.tcsetpgrp, 0)
@@ -1274,6 +1279,10 @@ class TestInvalidFD(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'write'), 'test needs os.write()')
     def test_write(self):
         self.check(os.write, b" ")
+
+    @unittest.skipUnless(hasattr(os, 'writev'), 'test needs os.writev()')
+    def test_writev(self):
+        self.check(os.writev, [b'abc'])
 
 
 class LinkTests(unittest.TestCase):
