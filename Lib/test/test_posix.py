@@ -290,7 +290,14 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(b'test1tt2t3', posix.read(fd, 10))
 
             # Issue #20113: empty list of buffers should not crash
-            self.assertEqual(posix.writev(fd, []), 0)
+            try:
+                size = posix.writev(fd, [])
+            except OSError:
+                # writev(fd, []) raises OSError(22, "Invalid argument")
+                # on OpenIndiana
+                pass
+            else:
+                self.assertEqual(size, 0)
         finally:
             os.close(fd)
 
@@ -305,7 +312,14 @@ class PosixTester(unittest.TestCase):
             self.assertEqual([b'test1', b'tt2', b't3'], [bytes(i) for i in buf])
 
             # Issue #20113: empty list of buffers should not crash
-            self.assertEqual(posix.readv(fd, []), 0)
+            try:
+                size = posix.readv(fd, [])
+            except OSError:
+                # readv(fd, []) raises OSError(22, "Invalid argument")
+                # on OpenIndiana
+                pass
+            else:
+                self.assertEqual(size, 0)
         finally:
             os.close(fd)
 
