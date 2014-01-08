@@ -1292,6 +1292,8 @@ get_module_code(ZipImporter *self, char *fullname,
     char *subname, path[MAXPATHLEN + 1];
     int len;
     struct st_zip_searchorder *zso;
+    FILE *fp;
+    char *archive;
 
     subname = get_subname(fullname);
 
@@ -1299,20 +1301,18 @@ get_module_code(ZipImporter *self, char *fullname,
     if (len < 0)
         return NULL;
 
+    fp = safely_reopen_archive(self, &archive);
+    if (fp == NULL)
+        return NULL;
+
     for (zso = zip_searchorder; *zso->suffix; zso++) {
         PyObject *code = NULL;
-        FILE *fp;
-        char *archive;
 
         strcpy(path + len, zso->suffix);
         if (Py_VerboseFlag > 1)
             PySys_WriteStderr("# trying %s%c%s\n",
                               PyString_AsString(self->archive),
                               SEP, path);
-
-        fp = safely_reopen_archive(self, &archive);
-        if (fp == NULL)
-            return NULL;
 
         toc_entry = PyDict_GetItemString(self->files, path);
         if (toc_entry != NULL) {
@@ -1327,7 +1327,6 @@ get_module_code(ZipImporter *self, char *fullname,
             code = get_code_from_data(archive, fp, ispackage,
                                       isbytecode, mtime,
                                       toc_entry);
-            fclose(fp);
             if (code == Py_None) {
                 /* bad magic number or non-matching mtime
                    in byte code, try next */
@@ -1337,11 +1336,12 @@ get_module_code(ZipImporter *self, char *fullname,
             if (code != NULL && p_modpath != NULL)
                 *p_modpath = PyString_AsString(
                     PyTuple_GetItem(toc_entry, 0));
+            fclose(fp);
             return code;
         }
-        fclose(fp);
     }
     PyErr_Format(ZipImportError, "can't find module '%.200s'", fullname);
+    fclose(fp);
     return NULL;
 }
 
