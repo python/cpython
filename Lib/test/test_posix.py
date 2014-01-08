@@ -283,9 +283,14 @@ class PosixTester(unittest.TestCase):
     def test_writev(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
         try:
-            os.writev(fd, (b'test1', b'tt2', b't3'))
+            n = os.writev(fd, (b'test1', b'tt2', b't3'))
+            self.assertEqual(n, 10)
+
             os.lseek(fd, 0, os.SEEK_SET)
             self.assertEqual(b'test1tt2t3', posix.read(fd, 10))
+
+            # Issue #20113: empty list of buffers should not crash
+            self.assertEqual(posix.writev(fd, []), 0)
         finally:
             os.close(fd)
 
@@ -298,6 +303,9 @@ class PosixTester(unittest.TestCase):
             buf = [bytearray(i) for i in [5, 3, 2]]
             self.assertEqual(posix.readv(fd, buf), 10)
             self.assertEqual([b'test1', b'tt2', b't3'], [bytes(i) for i in buf])
+
+            # Issue #20113: empty list of buffers should not crash
+            self.assertEqual(posix.readv(fd, []), 0)
         finally:
             os.close(fd)
 
