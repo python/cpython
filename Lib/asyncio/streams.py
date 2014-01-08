@@ -199,7 +199,7 @@ class StreamWriter:
         drained and the protocol is resumed.
         """
         if self._reader._exception is not None:
-            raise self._writer._exception
+            raise self._reader._exception
         if self._transport._conn_lost:  # Uses private variable.
             raise ConnectionResetError('Connection lost')
         if not self._protocol._paused:
