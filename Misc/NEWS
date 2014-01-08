@@ -2163,9 +2163,11 @@ Library
 
 - Issue #15758: Fix FileIO.readall() so it no longer has O(n**2) complexity.
 
-- Issue #14596: The struct.Struct() objects now use more compact implementation.
+- Issue #14596: The struct.Struct() objects now use a more compact
+  implementation.
 
-- Issue #17981: Closed socket on error in SysLogHandler.
+- Issue #17981: logging's SysLogHandler now closes the socket when it catches
+  socket OSErrors.
 
 - Issue #17964: Fix os.sysconf(): the return type of the C sysconf() function
   is long, not int.
@@ -2186,8 +2188,8 @@ Library
 - Issue #17915: Fix interoperability of xml.sax with file objects returned by
   codecs.open().
 
-- Issue #16601: Restarting iteration over tarfile no more continues from where
-  it left off.  Patch by Michael Birtwell.
+- Issue #16601: Restarting iteration over tarfile really restarts rather
+  than continuing from where it left off.  Patch by Michael Birtwell.
 
 - Issue #17289: The readline module now plays nicer with external modules
   or applications changing the rl_completer_word_break_characters global
