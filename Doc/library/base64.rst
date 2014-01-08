@@ -93,7 +93,7 @@ The modern interface, which was introduced in Python 2.4, provides:
    digit 0 is always mapped to the letter O).  For security purposes the default is
    ``None``, so that 0 and 1 are not allowed in the input.
 
-   The decoded string is returned.  A :exc:`TypeError` is raised if *s* were
+   The decoded string is returned.  A :exc:`TypeError` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    string.
 
