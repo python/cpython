@@ -994,24 +994,10 @@ class _SpecMethods:
     """Convenience wrapper around spec objects to provide spec-specific
     methods."""
 
+    # The various spec_from_* functions could be made factory methods here.
+
     def __init__(self, spec):
         self.spec = spec
-
-    @classmethod
-    def from_module(cls, module):
-        """Create a spec from a module's attributes."""
-        try:
-            spec = module.__spec__
-        except AttributeError:
-            try:
-                loader = spec.__loader__
-            except AttributeError:
-                spec = _find_spec(module.__name__)
-                if spec is None:
-                    spec = spec_from_loader(module.__name__, loader)
-            else:
-                spec = spec_from_loader(module.__name__, loader)
-        return cls(spec)
 
     def module_repr(self):
         """Return the repr to use for the module."""
@@ -1171,14 +1157,8 @@ class _SpecMethods:
         # have exec_module() implemented, we can add a deprecation
         # warning here.
         spec = self.spec
-        # The module must be in sys.modules!
-        try:
-            _warnings
-        except NameError:
-            # We must be importing builtins in setup().
-            spec.loader.load_module(spec.name)
-        else:
-            spec.loader.load_module(spec.name)
+        spec.loader.load_module(spec.name)
+        # The module must be in sys.modules at this point!
         module = sys.modules[spec.name]
         if getattr(module, '__loader__', None) is None:
             try:
