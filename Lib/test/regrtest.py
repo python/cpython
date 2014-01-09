@@ -1373,9 +1373,10 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     try:
         import zipimport
     except ImportError:
-        zdc = None # Run unmodified on platforms without zipimport support
+        zsc = zdc = None # Run unmodified on platforms without zipimport support
     else:
         zdc = zipimport._zip_directory_cache.copy()
+        zsc = zipimport._zip_stat_cache.copy()
     abcs = {}
     for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):
@@ -1394,7 +1395,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     sys.stderr.flush()
     for i in range(repcount):
         indirect_test()
-        alloc_after, rc_after = dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        alloc_after, rc_after = dash_R_cleanup(fs, ps, pic, zdc, zsc, abcs)
         sys.stderr.write('.')
         sys.stderr.flush()
         if i >= nwarmup:
@@ -1428,7 +1429,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             failed = True
     return failed
 
-def dash_R_cleanup(fs, ps, pic, zdc, abcs):
+def dash_R_cleanup(fs, ps, pic, zdc, zsc, abcs):
     import gc, copyreg
     import _strptime, linecache
     import urllib.parse, urllib.request, mimetypes, doctest
@@ -1454,6 +1455,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     else:
         zipimport._zip_directory_cache.clear()
         zipimport._zip_directory_cache.update(zdc)
+        zipimport._zip_stat_cache.clear()
+        zipimport._zip_stat_cache.update(zsc)
 
     # clear type cache
     sys._clear_type_cache()
