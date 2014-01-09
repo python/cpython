@@ -209,7 +209,6 @@ class HelpFormatter:
                  short_first):
         self.parser = None
         self.indent_increment = indent_increment
-        self.help_position = self.max_help_position = max_help_position
         if width is None:
             try:
                 width = int(os.environ['COLUMNS'])
@@ -217,6 +216,8 @@ class HelpFormatter:
                 width = 80
             width -= 2
         self.width = width
+        self.help_position = self.max_help_position = \
+                min(max_help_position, max(width - 20, indent_increment * 2))
         self.current_indent = 0
         self.level = 0
         self.help_width = None          # computed later
@@ -261,7 +262,7 @@ class HelpFormatter:
         Format a paragraph of free-form text for inclusion in the
         help output at the current indentation level.
         """
-        text_width = self.width - self.current_indent
+        text_width = max(self.width - self.current_indent, 11)
         indent = " "*self.current_indent
         return textwrap.fill(text,
                              text_width,
@@ -342,7 +343,7 @@ class HelpFormatter:
         self.dedent()
         self.dedent()
         self.help_position = min(max_len + 2, self.max_help_position)
-        self.help_width = self.width - self.help_position
+        self.help_width = max(self.width - self.help_position, 11)
 
     def format_option_strings(self, option):
         """Return a comma-separated list of option strings & metavariables."""
