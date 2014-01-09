@@ -297,6 +297,36 @@ class AbstractTestsWithSourceFile:
                     buf = fp.read(test_size)
                     self.assertEqual(len(buf), test_size)
 
+    def test_truncated_zipfile(self):
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode='w') as zipf:
+            zipf.writestr('strfile', self.data, compress_type=self.compression)
+            end_offset = fp.tell()
+        zipfiledata = fp.getvalue()
+
+        fp = io.BytesIO(zipfiledata)
+        with zipfile.ZipFile(fp) as zipf:
+            with zipf.open('strfile') as zipopen:
+                fp.truncate(end_offset - 20)
+                with self.assertRaises(EOFError):
+                    zipopen.read()
+
+        fp = io.BytesIO(zipfiledata)
+        with zipfile.ZipFile(fp) as zipf:
+            with zipf.open('strfile') as zipopen:
+                fp.truncate(end_offset - 20)
+                with self.assertRaises(EOFError):
+                    while zipopen.read(100):
+                        pass
+
+        fp = io.BytesIO(zipfiledata)
+        with zipfile.ZipFile(fp) as zipf:
+            with zipf.open('strfile') as zipopen:
+                fp.truncate(end_offset - 20)
+                with self.assertRaises(EOFError):
+                    while zipopen.read1(100):
+                        pass
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
@@ -392,6 +422,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         os.utime(TESTFN, (0, 0))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
+
 
 @requires_zlib
 class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,

@@ -862,6 +862,8 @@ class ZipExtFile(io.BufferedIOBase):
 
         data = self._fileobj.read(n)
         self._compress_left -= len(data)
+        if not data:
+            raise EOFError
 
         if self._decrypter is not None:
             data = bytes(map(self._decrypter, data))
