@@ -273,6 +273,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
     char *errstr = NULL;
     int ret;
     int verification_mode;
+    long options;
 
     self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
     if (self == NULL)
@@ -372,8 +373,10 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
     }
 
     /* ssl compatibility */
-    SSL_CTX_set_options(self->ctx,
-                        SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
+    options = SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
+    if (proto_version != PY_SSL_VERSION_SSL2)
+        options |= SSL_OP_NO_SSLv2;
+    SSL_CTX_set_options(self->ctx, options);
 
     verification_mode = SSL_VERIFY_NONE;
     if (certreq == PY_SSL_CERT_OPTIONAL)
