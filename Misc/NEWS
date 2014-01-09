@@ -10,6 +10,13 @@ What's New in Python 3.3.4 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #18960: The first line of Python script could be executed twice when
+  the source encoding was specified on the second line.  Now the source encoding
+  declaration on the second line isn't effective if the first line contains
+  anything except a comment.  'python -x' works now again with files with the
+  source encoding declarations, and can be used to make Python batch files
+  on Windows.
+
 - Issue #19081: When a zipimport .zip file in sys.path being imported from
   is modified during the lifetime of the Python process after zipimport has
   already cached the zip's table of contents we detect this and recover
@@ -35,6 +42,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #18960: The tokenize module now ignore the source encoding declaration
+  on the second line if the first line contains anything except a comment.
 
 - Issue #20078: Reading malformed zipfiles no longer hangs with 100% CPU
   consumption.
@@ -204,6 +214,9 @@ Library
 IDLE
 ----
 
+- Issue #18960: IDLE now ignores the source encoding declaration on the second
+  line if the first line contains anything except a comment.
+
 - Issue #20058: sys.stdin.readline() in IDLE now always returns only one line.
 
 - Issue #19481: print() of string subclass instance in IDLE no longer hangs.
@@ -280,6 +293,13 @@ Build
 
 - Add workaround for VS 2010 nmake clean issue. VS 2010 doesn't set up PATH
   for nmake.exe correctly.
+
+Tools/Demos
+-----------
+
+- Issue #18960: 2to3 and the findnocoding.py script now ignore the source
+  encoding declaration on the second line if the first line contains anything
+  except a comment.
 
 
 What's New in Python 3.3.3?
