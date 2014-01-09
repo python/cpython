@@ -134,9 +134,7 @@ enum py_ssl_cert_requirements {
 };
 
 enum py_ssl_version {
-#ifndef OPENSSL_NO_SSL2
     PY_SSL_VERSION_SSL2,
-#endif
     PY_SSL_VERSION_SSL3=1,
     PY_SSL_VERSION_SSL23,
 #if HAVE_TLSv1_2
@@ -1999,6 +1997,7 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     char *kwlist[] = {"protocol", NULL};
     PySSLContext *self;
     int proto_version = PY_SSL_VERSION_SSL23;
+    long options;
     SSL_CTX *ctx = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(
@@ -2055,8 +2054,10 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->check_hostname = 0;
     /* Defaults */
     SSL_CTX_set_verify(self->ctx, SSL_VERIFY_NONE, NULL);
-    SSL_CTX_set_options(self->ctx,
-                        SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
+    options = SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
+    if (proto_version != PY_SSL_VERSION_SSL2)
+        options |= SSL_OP_NO_SSLv2;
+    SSL_CTX_set_options(self->ctx, options);
 
 #define SID_CTX "Python"
     SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,

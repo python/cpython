@@ -670,9 +670,7 @@ class ContextTests(unittest.TestCase):
     @skip_if_broken_ubuntu_ssl
     def test_options(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        # OP_ALL is the default value
-        self.assertEqual(ssl.OP_ALL, ctx.options)
-        ctx.options |= ssl.OP_NO_SSLv2
+        # OP_ALL | OP_NO_SSLv2 is the default value
         self.assertEqual(ssl.OP_ALL | ssl.OP_NO_SSLv2,
                          ctx.options)
         ctx.options |= ssl.OP_NO_SSLv3
@@ -2095,7 +2093,7 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True, ssl.CERT_OPTIONAL)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True, ssl.CERT_REQUIRED)
-            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, True)
+            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLSv1, False)
             # SSLv23 client with specific SSL options
@@ -2103,9 +2101,9 @@ else:
                 # No SSLv2 => client will use an SSLv3 hello on recent OpenSSLs
                 try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, False,
                                    client_options=ssl.OP_NO_SSLv2)
-            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, True,
+            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, False,
                                client_options=ssl.OP_NO_SSLv3)
-            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, True,
+            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, False,
                                client_options=ssl.OP_NO_TLSv1)
 
         @skip_if_broken_ubuntu_ssl
