@@ -70,9 +70,7 @@ enum py_ssl_cert_requirements {
 };
 
 enum py_ssl_version {
-#ifndef OPENSSL_NO_SSL2
     PY_SSL_VERSION_SSL2,
-#endif
     PY_SSL_VERSION_SSL3=1,
     PY_SSL_VERSION_SSL23,
     PY_SSL_VERSION_TLS1
