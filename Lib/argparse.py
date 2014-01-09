@@ -165,6 +165,8 @@ class HelpFormatter(object):
         self._prog = prog
         self._indent_increment = indent_increment
         self._max_help_position = max_help_position
+        self._max_help_position = min(max_help_position,
+                                      max(width - 20, indent_increment * 2))
         self._width = width
 
         self._current_indent = 0
@@ -336,7 +338,7 @@ class HelpFormatter(object):
                     else:
                         line_len = len(indent) - 1
                     for part in parts:
-                        if line_len + 1 + len(part) > text_width:
+                        if line_len + 1 + len(part) > text_width and line:
                             lines.append(indent + ' '.join(line))
                             line = []
                             line_len = len(indent) - 1
@@ -476,7 +478,7 @@ class HelpFormatter(object):
     def _format_text(self, text):
         if '%(prog)' in text:
             text = text % dict(prog=self._prog)
-        text_width = self._width - self._current_indent
+        text_width = max(self._width - self._current_indent, 11)
         indent = ' ' * self._current_indent
         return self._fill_text(text, text_width, indent) + '\n\n'
 
@@ -484,7 +486,7 @@ class HelpFormatter(object):
         # determine the required width and the entry label
         help_position = min(self._action_max_length + 2,
                             self._max_help_position)
-        help_width = self._width - help_position
+        help_width = max(self._width - help_position, 11)
         action_width = help_position - self._current_indent - 2
         action_header = self._format_action_invocation(action)
 
