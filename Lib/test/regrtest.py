@@ -1318,9 +1318,10 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     try:
         import zipimport
     except ImportError:
-        zdc = None # Run unmodified on platforms without zipimport support
+        zsc = zdc = None # Run unmodified on platforms without zipimport support
     else:
         zdc = zipimport._zip_directory_cache.copy()
+        zsc = zipimport._zip_stat_cache.copy()
     abcs = {}
     for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):
@@ -1343,13 +1344,13 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     print("beginning", repcount, "repetitions", file=sys.stderr)
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
     sys.stderr.flush()
-    dash_R_cleanup(fs, ps, pic, zdc, abcs)
+    dash_R_cleanup(fs, ps, pic, zdc, zsc, abcs)
     for i in range(repcount):
         rc_before = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
         sys.stderr.flush()
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        dash_R_cleanup(fs, ps, pic, zdc, zsc, abcs)
         rc_after = sys.gettotalrefcount()
         if i >= nwarmup:
             deltas.append(rc_after - rc_before)
@@ -1364,7 +1365,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         return True
     return False
 
-def dash_R_cleanup(fs, ps, pic, zdc, abcs):
+def dash_R_cleanup(fs, ps, pic, zdc, zsc, abcs):
     import gc, copyreg
     import _strptime, linecache
     import urllib.parse, urllib.request, mimetypes, doctest
@@ -1390,6 +1391,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     else:
         zipimport._zip_directory_cache.clear()
         zipimport._zip_directory_cache.update(zdc)
+        zipimport._zip_stat_cache.clear()
+        zipimport._zip_stat_cache.update(zsc)
 
     # clear type cache
     sys._clear_type_cache()
