@@ -958,10 +958,8 @@ safely_reopen_archive(ZipImporter *self)
             }
             Py_XDECREF(self->files);  /* free the old value. */
             self->files = files;
-        } else {
-            /* No problem, discard the new stat data. */
-            Py_DECREF(stat_now);
         }
+        Py_DECREF(stat_now);
     }  /* stat succeeded */
 
     return fp;
