@@ -1440,9 +1440,9 @@ else:
                               ssl.get_protocol_name(server_protocol),
                               certtype))
         client_context = ssl.SSLContext(client_protocol)
-        client_context.options = ssl.OP_ALL | client_options
+        client_context.options |= client_options
         server_context = ssl.SSLContext(server_protocol)
-        server_context.options = ssl.OP_ALL | server_options
+        server_context.options |= server_options
         for ctx in (client_context, server_context):
             ctx.verify_mode = certsreqs
             # NOTE: we must enable "ALL" ciphers, otherwise an SSLv23 client
