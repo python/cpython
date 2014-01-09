@@ -885,6 +885,39 @@ class TestDetectEncoding(TestCase):
         readline = self.get_readline(lines)
         self.assertRaises(SyntaxError, detect_encoding, readline)
 
+    def test_cookie_second_line_noncommented_first_line(self):
+        lines = (
+            b"print('\xc2\xa3')\n",
+            b'# vim: set fileencoding=iso8859-15 :\n',
+            b"print('\xe2\x82\xac')\n"
+        )
+        encoding, consumed_lines = detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'utf-8')
+        expected = [b"print('\xc2\xa3')\n"]
+        self.assertEqual(consumed_lines, expected)
+
+    def test_cookie_second_line_commented_first_line(self):
+        lines = (
+            b"#print('\xc2\xa3')\n",
+            b'# vim: set fileencoding=iso8859-15 :\n',
+            b"print('\xe2\x82\xac')\n"
+        )
+        encoding, consumed_lines = detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        expected = [b"#print('\xc2\xa3')\n", b'# vim: set fileencoding=iso8859-15 :\n']
+        self.assertEqual(consumed_lines, expected)
+
+    def test_cookie_second_line_empty_first_line(self):
+        lines = (
+            b'\n',
+            b'# vim: set fileencoding=iso8859-15 :\n',
+            b"print('\xe2\x82\xac')\n"
+        )
+        encoding, consumed_lines = detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        expected = [b'\n', b'# vim: set fileencoding=iso8859-15 :\n']
+        self.assertEqual(consumed_lines, expected)
+
     def test_latin1_normalization(self):
         # See get_normal_name() in tokenizer.c.
         encodings = ("latin-1", "iso-8859-1", "iso-latin-1", "latin-1-unix",

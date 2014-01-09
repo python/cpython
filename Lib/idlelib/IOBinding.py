@@ -64,6 +64,7 @@ encoding = locale_encoding  ### KBK 07Sep07  This is used all over IDLE, check!
                             ### 'encoding' is used below in encode(), check!
 
 coding_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
+blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 def coding_spec(data):
     """Return the encoding declaration according to PEP 263.
@@ -93,6 +94,8 @@ def coding_spec(data):
         match = coding_re.match(line)
         if match is not None:
             break
+        if not blank_re.match(line):
+            return None
     else:
         return None
     name = match.group(1)
