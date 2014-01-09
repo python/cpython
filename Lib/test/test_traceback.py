@@ -146,6 +146,10 @@ class SyntaxTracebackCases(unittest.TestCase):
                     text, charset, 4)
             do_test("#!shebang\n# coding: {0}\n".format(charset),
                     text, charset, 5)
+            do_test(" \t\f\n# coding: {0}\n".format(charset),
+                    text, charset, 5)
+        # Issue #18960: coding spec should has no effect
+        do_test("0\n# coding: GBK\n", "h\xe9 ho", 'utf-8', 5)
 
 
 class TracebackFormatTests(unittest.TestCase):

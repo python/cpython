@@ -514,14 +514,6 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     readline = _PyObject_GetAttrId(stream, &PyId_readline);
     tok->decoding_readline = readline;
 
-    /* The file has been reopened; parsing will restart from
-     * the beginning of the file, we have to reset the line number.
-     * But this function has been called from inside tok_nextc() which
-     * will increment lineno before it returns. So we set it -1 so that
-     * the next call to tok_nextc() will start with tok->lineno == 0.
-     */
-    tok->lineno = -1;
-
   cleanup:
     Py_XDECREF(stream);
     Py_XDECREF(io);
