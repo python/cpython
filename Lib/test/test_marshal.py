@@ -288,19 +288,19 @@ class LargeValuesTestCase(unittest.TestCase):
     def check_unmarshallable(self, data):
         self.assertRaises(ValueError, marshal.dump, data, NullWriter())
 
-    @support.bigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
+    @support.bigmemtest(size=LARGE_SIZE, memuse=2, dry_run=False)
     def test_bytes(self, size):
         self.check_unmarshallable(b'x' * size)
 
-    @support.bigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
+    @support.bigmemtest(size=LARGE_SIZE, memuse=2, dry_run=False)
     def test_str(self, size):
         self.check_unmarshallable('x' * size)
 
-    @support.bigmemtest(size=LARGE_SIZE, memuse=pointer_size, dry_run=False)
+    @support.bigmemtest(size=LARGE_SIZE, memuse=pointer_size + 1, dry_run=False)
     def test_tuple(self, size):
         self.check_unmarshallable((None,) * size)
 
-    @support.bigmemtest(size=LARGE_SIZE, memuse=pointer_size, dry_run=False)
+    @support.bigmemtest(size=LARGE_SIZE, memuse=pointer_size + 1, dry_run=False)
     def test_list(self, size):
         self.check_unmarshallable([None] * size)
 
@@ -316,7 +316,7 @@ class LargeValuesTestCase(unittest.TestCase):
     def test_frozenset(self, size):
         self.check_unmarshallable(frozenset(range(size)))
 
-    @support.bigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
+    @support.bigmemtest(size=LARGE_SIZE, memuse=2, dry_run=False)
     def test_bytearray(self, size):
         self.check_unmarshallable(bytearray(size))
 
