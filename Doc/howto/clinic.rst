@@ -821,10 +821,10 @@ On the other hand, if you have a lot of functions that will use the same
 type for ``self``, it's best to create your own converter, subclassing
 ``self_converter`` but overwriting the ``type`` member::
 
-    /*[clinic input]
+    /*[python input]
     class PicklerObject_converter(self_converter):
         type = "PicklerObject *"
-    [clinic start generated code]*/
+    [python start generated code]*/
 
     /*[clinic input]
 
