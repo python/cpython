@@ -975,7 +975,7 @@ _imp__fix_co_filename_impl(PyModuleDef *module, PyCodeObject *code, PyObject *pa
 /*[clinic end generated code: checksum=4f55bad308072b30ad1921068fc4ce85bd2b39bf]*/
 
 {
-    update_compiled_module((PyCodeObject*)code, path);
+    update_compiled_module(code, path);
 
     Py_RETURN_NONE;
 }
