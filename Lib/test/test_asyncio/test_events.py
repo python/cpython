@@ -132,6 +132,8 @@ class MyReadPipeProto(protocols.Protocol):
         self.state.append('EOF')
 
     def connection_lost(self, exc):
+        if 'EOF' not in self.state:
+            self.state.append('EOF')  # It is okay if EOF is missed.
         assert self.state == ['INITIAL', 'CONNECTED', 'EOF'], self.state
         self.state.append('CLOSED')
         if self.done:
@@ -947,6 +949,46 @@ class EventLoopTestsMixin:
         self.assertEqual(5, proto.nbytes)
 
         os.close(wpipe)
+        self.loop.run_until_complete(proto.done)
+        self.assertEqual(
+            ['INITIAL', 'CONNECTED', 'EOF', 'CLOSED'], proto.state)
+        # extra info is available
+        self.assertIsNotNone(proto.transport.get_extra_info('pipe'))
+
+    @unittest.skipUnless(sys.platform != 'win32',
+                         "Don't support pipes for Windows")
+    def test_read_pty_output(self):
+        proto = None
+
+        def factory():
+            nonlocal proto
+            proto = MyReadPipeProto(loop=self.loop)
+            return proto
+
+        master, slave = os.openpty()
+        master_read_obj = io.open(master, 'rb', 0)
+
+        @tasks.coroutine
+        def connect():
+            t, p = yield from self.loop.connect_read_pipe(factory,
+                                                          master_read_obj)
+            self.assertIs(p, proto)
+            self.assertIs(t, proto.transport)
+            self.assertEqual(['INITIAL', 'CONNECTED'], proto.state)
+            self.assertEqual(0, proto.nbytes)
+
+        self.loop.run_until_complete(connect())
+
+        os.write(slave, b'1')
+        test_utils.run_until(self.loop, lambda: proto.nbytes)
+        self.assertEqual(1, proto.nbytes)
+
+        os.write(slave, b'2345')
+        test_utils.run_until(self.loop, lambda: proto.nbytes >= 5)
+        self.assertEqual(['INITIAL', 'CONNECTED'], proto.state)
+        self.assertEqual(5, proto.nbytes)
+
+        os.close(slave)
         self.loop.run_until_complete(proto.done)
         self.assertEqual(
             ['INITIAL', 'CONNECTED', 'EOF', 'CLOSED'], proto.state)

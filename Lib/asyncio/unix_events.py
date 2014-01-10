@@ -190,7 +190,9 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         self._pipe = pipe
         self._fileno = pipe.fileno()
         mode = os.fstat(self._fileno).st_mode
-        if not (stat.S_ISFIFO(mode) or stat.S_ISSOCK(mode)):
+        if not (stat.S_ISFIFO(mode) or
+                stat.S_ISSOCK(mode) or
+                stat.S_ISCHR(mode)):
             raise ValueError("Pipe transport is for pipes/sockets only.")
         _set_nonblocking(self._fileno)
         self._protocol = protocol
@@ -228,7 +230,8 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
     def _fatal_error(self, exc):
         # should be called by exception handler only
-        logger.exception('Fatal error for %s', self)
+        if not (isinstance(exc, OSError) and exc.errno == errno.EIO):
+            logger.exception('Fatal error for %s', self)
         self._close(exc)
 
     def _close(self, exc):
