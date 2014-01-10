@@ -168,9 +168,6 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         self.call_soon(loop)
         return [server]
 
-    def _stop_serving(self, server):
-        server.close()
-
     @tasks.coroutine
     def _make_subprocess_transport(self, protocol, args, shell,
                                    stdin, stdout, stderr, bufsize,
@@ -260,7 +257,19 @@ class IocpProactor:
             conn.settimeout(listener.gettimeout())
             return conn, conn.getpeername()
 
-        return self._register(ov, listener, finish_accept)
+        @tasks.coroutine
+        def accept_coro(future, conn):
+            # Coroutine closing the accept socket if the future is cancelled
+            try:
+                yield from future
+            except futures.CancelledError:
+                conn.close()
+                raise
+
+        future = self._register(ov, listener, finish_accept)
+        coro = accept_coro(future, conn)
+        tasks.async(coro, loop=self._loop)
+        return future
 
     def connect(self, conn, address):
         self._register_with_iocp(conn)
