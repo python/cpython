@@ -3,6 +3,7 @@ from test import support
 import builtins
 import io
 import os
+import shutil
 import uuid
 
 def importable(name):
@@ -368,6 +369,11 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
         def mock_popen(cmd):
             return io.StringIO(data)
+
+        if shutil.which('ifconfig') is None:
+            path = os.pathsep.join(('/sbin', '/usr/sbin'))
+            if shutil.which('ifconfig', path=path) is None:
+                self.skipTest('requires ifconfig')
 
         with support.swap_attr(os, 'popen', mock_popen):
             mac = uuid._find_mac(
