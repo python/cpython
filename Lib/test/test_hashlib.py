@@ -235,21 +235,15 @@ class HashLibTestCase(unittest.TestCase):
                    b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
                    'd174ab98d277d9f5a5611c2c9f419d9f')
 
-    @bigmemtest(size=_4G + 5, memuse=1)
+    @unittest.skipIf(sys.maxsize < _4G + 5, 'test cannot run on 32-bit systems')
+    @bigmemtest(size=_4G + 5, memuse=1, dry_run=False)
     def test_case_md5_huge(self, size):
-        if size == _4G + 5:
-            try:
-                self.check('md5', b'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
-            except OverflowError:
-                pass # 32-bit arch
+        self.check('md5', b'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
 
-    @bigmemtest(size=_4G - 1, memuse=1)
+    @unittest.skipIf(sys.maxsize < _4G - 1, 'test cannot run on 32-bit systems')
+    @bigmemtest(size=_4G - 1, memuse=1, dry_run=False)
     def test_case_md5_uintmax(self, size):
-        if size == _4G - 1:
-            try:
-                self.check('md5', b'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
-            except OverflowError:
-                pass # 32-bit arch
+        self.check('md5', b'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
 
     # use the three examples from Federal Information Processing Standards
     # Publication 180-1, Secure Hash Standard,  1995 April 17
