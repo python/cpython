@@ -49,6 +49,7 @@ class ProactorTests(unittest.TestCase):
         trans.close()
         self.loop.run_until_complete(f)
         self.assertEqual(f.result(), b'')
+        b.close()
 
     def test_double_bind(self):
         ADDRESS = r'\\.\pipe\test_double_bind-%s' % os.getpid()
