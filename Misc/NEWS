@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20217: Fix build in SCHED_SPORADIC is defined.
+
 - Issue #13107: argparse and optparse no longer raises an exception when output
   a help on environment with too small COLUMNS.  Based on patch by
   Elazar Gershuni.
