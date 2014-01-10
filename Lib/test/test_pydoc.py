@@ -473,8 +473,9 @@ class TestUnicode(unittest.TestCase):
 
         output = {}
         def mock_system(cmd):
-            import ast
-            output['content'] = open(ast.literal_eval(cmd.strip())).read()
+            filename = cmd.strip()[1:-1]
+            self.assertEqual('"' + filename + '"', cmd.strip())
+            output['content'] = open(filename).read()
         saved, os.system = os.system, mock_system
         try:
             pydoc.tempfilepager(doc, '')
