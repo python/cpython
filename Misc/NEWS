@@ -58,6 +58,11 @@ IDLE
 - Issue #18960: IDLE now ignores the source encoding declaration on the second
   line if the first line contains anything except a comment.
 
+Tests
+-----
+
+- Issue #19886: Use better estimated memory requirements for bigmem tests.
+
 Tools/Demos
 -----------
 

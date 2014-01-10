@@ -13,10 +13,8 @@ cET_alias = import_fresh_module('xml.etree.cElementTree',
 
 class MiscTests(unittest.TestCase):
     # Issue #8651.
-    @support.bigmemtest(size=support._2G + 100, memuse=1)
+    @support.bigmemtest(size=support._2G + 100, memuse=1, dry_run=False)
     def test_length_overflow(self, size):
-        if size < support._2G + 100:
-            self.skipTest("not enough free memory, need at least 2 GB")
         data = b'x' * size
         parser = cET.XMLParser()
         try:

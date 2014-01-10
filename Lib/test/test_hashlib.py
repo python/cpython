@@ -256,21 +256,15 @@ class HashLibTestCase(unittest.TestCase):
                    b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
                    'd174ab98d277d9f5a5611c2c9f419d9f')
 
-    @bigmemtest(size=_4G + 5, memuse=1)
+    @unittest.skipIf(sys.maxsize < _4G + 5, 'test cannot run on 32-bit systems')
+    @bigmemtest(size=_4G + 5, memuse=1, dry_run=False)
     def test_case_md5_huge(self, size):
-        if size == _4G + 5:
-            try:
-                self.check('md5', b'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
-            except OverflowError:
-                pass # 32-bit arch
+        self.check('md5', b'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
 
-    @bigmemtest(size=_4G - 1, memuse=1)
+    @unittest.skipIf(sys.maxsize < _4G - 1, 'test cannot run on 32-bit systems')
+    @bigmemtest(size=_4G - 1, memuse=1, dry_run=False)
     def test_case_md5_uintmax(self, size):
-        if size == _4G - 1:
-            try:
-                self.check('md5', b'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
-            except OverflowError:
-                pass # 32-bit arch
+        self.check('md5', b'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
 
     # use the three examples from Federal Information Processing Standards
     # Publication 180-1, Secure Hash Standard,  1995 April 17
@@ -379,14 +373,11 @@ class HashLibTestCase(unittest.TestCase):
           "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"+
           "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b")
 
-    @bigmemtest(size=_4G + 5, memuse=1)
+    @unittest.skipIf(sys.maxsize < _4G + 5, 'test cannot run on 32-bit systems')
+    @bigmemtest(size=_4G + 5, memuse=1, dry_run=False)
     def test_case_sha3_224_huge(self, size):
-        if size == _4G + 5:
-            try:
-                self.check('sha3_224', b'A'*size,
-                           '58ef60057c9dddb6a87477e9ace5a26f0d9db01881cf9b10a9f8c224')
-            except OverflowError:
-                pass # 32-bit arch
+        self.check('sha3_224', b'A'*size,
+                   '58ef60057c9dddb6a87477e9ace5a26f0d9db01881cf9b10a9f8c224')
 
     def test_gil(self):
         # Check things work fine with an input larger than the size required
