@@ -6,7 +6,7 @@ import sys
 
 import tkinter.test.support as support
 from tkinter.test.test_ttk.test_functions import MockTclObj
-from tkinter.test.support import tcl_version
+from tkinter.test.support import tcl_version, get_tk_patchlevel
 from tkinter.test.widget_tests import (add_standard_options, noconv,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
@@ -20,7 +20,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget = self.create()
         self.assertEqual(widget['class'], '')
         errmsg='attempt to change read-only option'
-        if tcl_version < (8, 6):
+        if get_tk_patchlevel() < (8, 6, 0): # actually this was changed in 8.6b3
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'class', 'Foo', errmsg=errmsg)
         widget2 = self.create(class_='Foo')
@@ -576,7 +576,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(str(widget['orient']), 'vertical')
         errmsg='attempt to change read-only option'
-        if tcl_version < (8, 6):
+        if get_tk_patchlevel() < (8, 6, 0): # actually this was changen in 8.6b3
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
