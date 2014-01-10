@@ -477,7 +477,12 @@ class TestMiscellaneous(unittest.TestCase):
             # Unsupported locale on this system
             self.skipTest('test needs Turkish locale')
         loc = locale.getlocale()
-        locale.setlocale(locale.LC_CTYPE, loc)
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+        except Exception as e:
+            self.fail("Failed to set locale %r (default locale is %r): %r" %
+                      (loc, oldlocale, e))
+        print("set locale %r (default locale is %r)" % (loc, oldlocale))
         self.assertEqual(loc, locale.getlocale())
 
     def test_normalize_issue12752(self):
