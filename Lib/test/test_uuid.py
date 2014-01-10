@@ -358,6 +358,17 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         def mock_popen(cmd):
             return io.BytesIO(data)
 
+        path = os.environ.get("PATH", os.defpath).split(os.pathsep)
+        path.extend(('/sbin', '/usr/sbin'))
+        for dir in path:
+            executable = os.path.join(dir, 'ifconfig')
+            if (os.path.exists(executable) and
+                os.access(executable, os.F_OK | os.X_OK) and
+                not os.path.isdir(executable)):
+                break
+        else:
+            self.skipTest('requires ifconfig')
+
         with test_support.swap_attr(os, 'popen', mock_popen):
             mac = uuid._find_mac(
                 command='ifconfig',
