@@ -234,6 +234,8 @@ IDLE
 Tests
 -----
 
+- Issue #19886: Use better estimated memory requirements for bigmem tests.
+
 - Issue #20055: Fix test_shutil under Windows with symlink privileges held.
   Patch by Vajrasky Kok.
 

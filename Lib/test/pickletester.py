@@ -19,8 +19,6 @@ from pickle import bytes_types
 # kind of outer loop.
 protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
-ascii_char_size = 1
-
 
 # Return True if opcode code appears in the pickle, else False.
 def opcode_in_pickle(code, pickle):
@@ -1331,7 +1329,7 @@ class BigmemPickleTests(unittest.TestCase):
 
     # Binary protocols can serialize longs of up to 2GB-1
 
-    @bigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
+    @bigmemtest(size=_2G, memuse=3.6, dry_run=False)
     def test_huge_long_32b(self, size):
         data = 1 << (8 * size)
         try:
@@ -1347,7 +1345,7 @@ class BigmemPickleTests(unittest.TestCase):
     # (older protocols don't have a dedicated opcode for bytes and are
     # too inefficient)
 
-    @bigmemtest(size=_2G, memuse=1 + 1, dry_run=False)
+    @bigmemtest(size=_2G, memuse=2.5, dry_run=False)
     def test_huge_bytes_32b(self, size):
         data = b"abcd" * (size // 4)
         try:
@@ -1363,7 +1361,7 @@ class BigmemPickleTests(unittest.TestCase):
         finally:
             data = None
 
-    @bigmemtest(size=_4G, memuse=1 + 1, dry_run=False)
+    @bigmemtest(size=_4G, memuse=2.5, dry_run=False)
     def test_huge_bytes_64b(self, size):
         data = b"a" * size
         try:
@@ -1378,7 +1376,7 @@ class BigmemPickleTests(unittest.TestCase):
     # All protocols use 1-byte per printable ASCII character; we add another
     # byte because the encoded form has to be copied into the internal buffer.
 
-    @bigmemtest(size=_2G, memuse=2 + ascii_char_size, dry_run=False)
+    @bigmemtest(size=_2G, memuse=8, dry_run=False)
     def test_huge_str_32b(self, size):
         data = "abcd" * (size // 4)
         try:
@@ -1395,7 +1393,7 @@ class BigmemPickleTests(unittest.TestCase):
     # BINUNICODE (protocols 1, 2 and 3) cannot carry more than
     # 2**32 - 1 bytes of utf-8 encoded unicode.
 
-    @bigmemtest(size=_4G, memuse=1 + ascii_char_size, dry_run=False)
+    @bigmemtest(size=_4G, memuse=8, dry_run=False)
     def test_huge_str_64b(self, size):
         data = "a" * size
         try:
