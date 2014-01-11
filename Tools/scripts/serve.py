@@ -22,7 +22,7 @@ def app(environ, respond):
         return util.FileWrapper(open(fn, "rb"))
     else:
         respond('404 Not Found', [('Content-Type', 'text/plain')])
-        return ['not found']
+        return [b'not found']
 
 if __name__ == '__main__':
     path = sys.argv[1]
