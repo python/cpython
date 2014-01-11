@@ -43,7 +43,6 @@ Table of content:
 
 .. toctree::
    :maxdepth: 3
-   :numbered:
 
    asyncio-eventloop.rst
    asyncio-task.rst
