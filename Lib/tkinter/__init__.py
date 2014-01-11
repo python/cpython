@@ -3002,7 +3002,7 @@ class Text(Widget, XView, YView):
         """Turn on the internal consistency checks of the B-Tree inside the text
         widget according to BOOLEAN."""
         if boolean is None:
-            return self.tk.call(self._w, 'debug')
+            return self.tk.getboolean(self.tk.call(self._w, 'debug'))
         self.tk.call(self._w, 'debug', boolean)
     def delete(self, index1, index2=None):
         """Delete the characters between INDEX1 and INDEX2 (not included)."""
