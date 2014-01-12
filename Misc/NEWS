@@ -72,6 +72,10 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20196: Fixed a bug where Argument Clinic did not generate correct
+  parsing code for functions with positional-only parameters where all arguments
+  are optional.
+
 - Issue #18960: 2to3 and the findnocoding.py script now ignore the source
   encoding declaration on the second line if the first line contains anything
   except a comment.
