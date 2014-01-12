@@ -753,9 +753,10 @@ Py_buffer
 ---------
 
 When using the ``Py_buffer`` converter
-(or the ``'s*'``, ``'w*'``, ``'*y'``, or ``'z*'`` legacy converters)
-note that the code Argument Clinic generates for you will automatically
-call :c:func:`PyBuffer_Release` on the buffer for you.
+(or the ``'s*'``, ``'w*'``, ``'*y'``, or ``'z*'`` legacy converters),
+you *must* not call :c:func:`PyBuffer_Release` on the provided buffer.
+Argument Clinic generates code that does it for you (in the parsing function).
+
 
 
 Advanced converters
