@@ -137,6 +137,13 @@ class CgiTests(unittest.TestCase):
         fs.list.append(namedtuple('MockFieldStorage', 'name')('fieldvalue'))
         self.assertTrue(fs)
 
+    def test_fieldstorage_invalid(self):
+        self.assertRaises(TypeError, cgi.FieldStorage, "not-a-file-obj",
+                                                            environ={"REQUEST_METHOD":"PUT"})
+        self.assertRaises(TypeError, cgi.FieldStorage, "foo", "bar")
+        fs = cgi.FieldStorage(headers={'content-type':'text/plain'})
+        self.assertRaises(TypeError, bool, fs)
+
     def test_escape(self):
         # cgi.escape() is deprecated.
         with warnings.catch_warnings():
