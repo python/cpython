@@ -117,8 +117,8 @@ Core and Builtins
 - Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
   argument is not in range [0; 255].
 
-- Issue #19995: %c, %o, %x, and %X now raise TypeError on non-integer input;
-  reworded docs to clarify that an integer type should define both __int__
+- Issue #19995: %c, %o, %x, and %X now issue a DeprecationWarning on non-integer
+  input; reworded docs to clarify that an integer type should define both __int__
   and __index__.
 
 - Issue #19787: PyThread_set_key_value() now always set the value. In Python
