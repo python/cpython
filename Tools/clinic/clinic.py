@@ -591,6 +591,12 @@ static {impl_return_type}
             count_min = min(count_min, count)
             count_max = max(count_max, count)
 
+            if count == 0:
+                add("""    case 0:
+        break;
+""")
+                continue
+
             group_ids = {p.group for p in subset}  # eliminate duplicates
             d = {}
             d['count'] = count
