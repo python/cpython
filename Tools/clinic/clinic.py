@@ -38,6 +38,7 @@ version = '1'
 _empty = inspect._empty
 _void = inspect._void
 
+NoneType = type(None)
 
 class Unspecified:
     def __repr__(self):
@@ -678,8 +679,8 @@ static {impl_return_type}
                 c.render(p, data)
 
             positional = parameters[-1].kind == inspect.Parameter.POSITIONAL_ONLY
-            if has_option_groups:
-                assert positional
+            if has_option_groups and (not positional):
+                fail("You cannot use optional groups ('[' and ']')\nunless all parameters are positional-only ('/').")
 
         # now insert our "self" (or whatever) parameters
         # (we deliberately don't call render on self converters)
@@ -1321,6 +1322,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unspecified" if there is no default.
     default = unspecified
 
+    # If not None, default must be isinstance() of this type.
+    # (You can also specify a tuple of types.)
+    default_type = None
+
     # "default" as it should appear in the documentation, as a string.
     # Or None if there is no default.
     doc_default = None
@@ -1387,12 +1392,21 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.name = name
 
         if default is not unspecified:
+            if self.default_type and not isinstance(default, self.default_type):
+                if isinstance(self.default_type, type):
+                    types_str = self.default_type.__name__
+                else:
+                    types_str = ', '.join((cls.__name__ for cls in self.default_type))
+                fail("{}: default value {!r} for field {} is not of type {}".format(
+                    self.__class__.__name__, default, name, types_str))
             self.default = default
             self.py_default = py_default if py_default is not None else py_repr(default)
             self.doc_default = doc_default if doc_default is not None else self.py_default
             self.c_default = c_default if c_default is not None else c_repr(default)
-        elif doc_default is not None:
-            fail(function.fullname + " argument " + name + " specified a 'doc_default' without having a 'default'")
+        else:
+            self.py_default = py_default
+            self.doc_default = doc_default
+            self.c_default = c_default
         if annotation != unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
         self.required = required
@@ -1538,6 +1552,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
 class bool_converter(CConverter):
     type = 'int'
+    default_type = bool
     format_unit = 'p'
     c_ignored_default = '0'
 
@@ -1547,12 +1562,19 @@ class bool_converter(CConverter):
 
 class char_converter(CConverter):
     type = 'char'
+    default_type = str
     format_unit = 'c'
     c_ignored_default = "'\0'"
+
+    def converter_init(self):
+        if len(self.default) != 1:
+            fail("char_converter: illegal default value " + repr(self.default))
+
 
 @add_legacy_c_converter('B', bitwise=True)
 class byte_converter(CConverter):
     type = 'byte'
+    default_type = int
     format_unit = 'b'
     c_ignored_default = "'\0'"
 
@@ -1562,11 +1584,13 @@ class byte_converter(CConverter):
 
 class short_converter(CConverter):
     type = 'short'
+    default_type = int
     format_unit = 'h'
     c_ignored_default = "0"
 
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
+    default_type = int
     format_unit = 'H'
     c_ignored_default = "0"
 
@@ -1577,6 +1601,7 @@ class unsigned_short_converter(CConverter):
 @add_legacy_c_converter('C', types='str')
 class int_converter(CConverter):
     type = 'int'
+    default_type = int
     format_unit = 'i'
     c_ignored_default = "0"
 
@@ -1588,6 +1613,7 @@ class int_converter(CConverter):
 
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
+    default_type = int
     format_unit = 'I'
     c_ignored_default = "0"
 
@@ -1597,11 +1623,13 @@ class unsigned_int_converter(CConverter):
 
 class long_converter(CConverter):
     type = 'long'
+    default_type = int
     format_unit = 'l'
     c_ignored_default = "0"
 
 class unsigned_long_converter(CConverter):
     type = 'unsigned long'
+    default_type = int
     format_unit = 'k'
     c_ignored_default = "0"
 
@@ -1611,11 +1639,13 @@ class unsigned_long_converter(CConverter):
 
 class PY_LONG_LONG_converter(CConverter):
     type = 'PY_LONG_LONG'
+    default_type = int
     format_unit = 'L'
     c_ignored_default = "0"
 
 class unsigned_PY_LONG_LONG_converter(CConverter):
     type = 'unsigned PY_LONG_LONG'
+    default_type = int
     format_unit = 'K'
     c_ignored_default = "0"
 
@@ -1625,23 +1655,27 @@ class unsigned_PY_LONG_LONG_converter(CConverter):
 
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
+    default_type = int
     format_unit = 'n'
     c_ignored_default = "0"
 
 
 class float_converter(CConverter):
     type = 'float'
+    default_type = float
     format_unit = 'f'
     c_ignored_default = "0.0"
 
 class double_converter(CConverter):
     type = 'double'
+    default_type = float
     format_unit = 'd'
     c_ignored_default = "0.0"
 
 
 class Py_complex_converter(CConverter):
     type = 'Py_complex'
+    default_type = complex
     format_unit = 'D'
     c_ignored_default = "{0.0, 0.0}"
 
@@ -1650,10 +1684,16 @@ class object_converter(CConverter):
     type = 'PyObject *'
     format_unit = 'O'
 
-    def converter_init(self, *, type=None, subclass_of=None):
-        if subclass_of:
+    def converter_init(self, *, converter=None, type=None, subclass_of=None):
+        if converter:
+            if subclass_of:
+                fail("object: Cannot pass in both 'converter' and 'subclass_of'")
+            self.format_unit = 'O&'
+            self.converter = converter
+        elif subclass_of:
             self.format_unit = 'O!'
             self.subclass_of = subclass_of
+
         if type is not None:
             self.type = type
 
@@ -1665,6 +1705,7 @@ class object_converter(CConverter):
 @add_legacy_c_converter('z#', nullable=True, length=True)
 class str_converter(CConverter):
     type = 'const char *'
+    default_type = (str, Null, NoneType)
     format_unit = 's'
 
     def converter_init(self, *, encoding=None, types="str",
@@ -1731,6 +1772,7 @@ class PyByteArrayObject_converter(CConverter):
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
+    default_type = (str, Null, NoneType)
     format_unit = 'U'
 
 @add_legacy_c_converter('u#', length=True)
@@ -1738,6 +1780,7 @@ class unicode_converter(CConverter):
 @add_legacy_c_converter('Z#', nullable=True, length=True)
 class Py_UNICODE_converter(CConverter):
     type = 'Py_UNICODE *'
+    default_type = (str, Null, NoneType)
     format_unit = 'u'
 
     def converter_init(self, *, nullable=False, length=False):
@@ -1760,11 +1803,11 @@ class Py_buffer_converter(CConverter):
     type = 'Py_buffer'
     format_unit = 'y*'
     impl_by_reference = True
-    c_ignored_default = "{NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL}"
+    c_ignored_default = "{NULL, NULL}"
 
     def converter_init(self, *, types='bytes bytearray buffer', nullable=False):
-        if self.default != unspecified:
-            fail("There is no legal default value for Py_buffer ")
+        if self.default not in (unspecified, None):
+            fail("The only legal default value for Py_buffer is None.")
         self.c_default = self.c_ignored_default
         types = set(types.strip().split())
         bytes_type = set(('bytes',))
@@ -1783,7 +1826,7 @@ class Py_buffer_converter(CConverter):
                 fail('Py_buffer_converter: illegal combination of arguments (nullable=True)')
             elif types == (bytes_bytearray_buffer_type):
                 format_unit = 'y*'
-            elif types == (bytearray_type | rwuffer_type):
+            elif types == (bytearray_type | rwbuffer_type):
                 format_unit = 'w*'
         if not format_unit:
             fail("Py_buffer_converter: illegal combination of arguments")
@@ -1792,7 +1835,7 @@ class Py_buffer_converter(CConverter):
 
     def cleanup(self):
         name = ensure_legal_c_identifier(self.name)
-        return "".join(["if (", name, ".buf)\n   PyBuffer_Release(&", name, ");\n"])
+        return "".join(["if (", name, ".obj)\n   PyBuffer_Release(&", name, ");\n"])
 
 
 class self_converter(CConverter):
@@ -1895,34 +1938,59 @@ return_value = Py_None;
 Py_INCREF(Py_None);
 '''.strip())
 
-class int_return_converter(CReturnConverter):
+class bool_return_converter(CReturnConverter):
     type = 'int'
 
     def render(self, function, data):
         self.declare(data)
         self.err_occurred_if("_return_value == -1", data)
-        data.return_conversion.append(
-            'return_value = PyLong_FromLong((long)_return_value);\n')
-
+        data.return_conversion.append('return_value = PyBool_FromLong((long)_return_value);\n')
 
 class long_return_converter(CReturnConverter):
     type = 'long'
+    conversion_fn = 'PyLong_FromLong'
+    cast = ''
 
     def render(self, function, data):
         self.declare(data)
         self.err_occurred_if("_return_value == -1", data)
         data.return_conversion.append(
-            'return_value = PyLong_FromLong(_return_value);\n')
+            ''.join(('return_value = ', self.conversion_fn, '(', self.cast, '_return_value);\n')))
 
+class int_return_converter(long_return_converter):
+    type = 'int'
+    cast = '(long)'
 
-class Py_ssize_t_return_converter(CReturnConverter):
+class unsigned_long_return_converter(long_return_converter):
+    type = 'unsigned long'
+    conversion_fn = 'PyLong_FromUnsignedLong'
+
+class unsigned_int_return_converter(unsigned_long_return_converter):
+    type = 'unsigned int'
+    cast = '(unsigned long)'
+
+class Py_ssize_t_return_converter(long_return_converter):
     type = 'Py_ssize_t'
+    conversion_fn = 'PyLong_FromSsize_t'
+
+class size_t_return_converter(long_return_converter):
+    type = 'size_t'
+    conversion_fn = 'PyLong_FromSize_t'
+
+
+class double_return_converter(CReturnConverter):
+    type = 'double'
+    cast = ''
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1", data)
+        self.err_occurred_if("_return_value == -1.0", data)
         data.return_conversion.append(
-            'return_value = PyLong_FromSsize_t(_return_value);\n')
+            'return_value = PyFloat_FromDouble(' + self.cast + '_return_value);\n')
+
+class float_return_converter(double_return_converter):
+    type = 'float'
+    cast = '(double)'
 
 
 class DecodeFSDefault_return_converter(CReturnConverter):
@@ -2341,6 +2409,10 @@ class DSLParser:
             if isinstance(expr, ast.Name) and expr.id == 'NULL':
                 value = NULL
             elif isinstance(expr, ast.Attribute):
+                c_default = kwargs.get("c_default")
+                if not (isinstance(c_default, str) and c_default):
+                    fail("When you specify a named constant (" + repr(py_default) + ") as your default value,\nyou MUST specify a valid c_default.")
+
                 a = []
                 n = expr
                 while isinstance(n, ast.Attribute):
@@ -2350,11 +2422,8 @@ class DSLParser:
                     fail("Malformed default value (looked like a Python constant)")
                 a.append(n.id)
                 py_default = ".".join(reversed(a))
-                value = None
-                c_default = kwargs.get("c_default")
-                if not (isinstance(c_default, str) and c_default):
-                    fail("When you specify a named constant (" + repr(py_default) + ") as your default value,\nyou MUST specify a valid c_default.")
                 kwargs["py_default"] = py_default
+                value = eval(py_default)
             else:
                 value = ast.literal_eval(expr)
         else:
@@ -2388,7 +2457,8 @@ class DSLParser:
         if isinstance(annotation, ast.Name):
             return annotation.id, False, {}
 
-        assert isinstance(annotation, ast.Call)
+        if not isinstance(annotation, ast.Call):
+            fail("Annotations must be either a name, a function call, or a string.")
 
         name = annotation.func.id
         kwargs = {node.arg: ast.literal_eval(node.value) for node in annotation.keywords}

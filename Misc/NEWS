@@ -72,6 +72,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20214: Fixed a number of small issues and documentation errors in
+  Argument Clinic (see issue for details).
+
 - Issue #20196: Fixed a bug where Argument Clinic did not generate correct
   parsing code for functions with positional-only parameters where all arguments
   are optional.
