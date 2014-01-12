@@ -198,7 +198,7 @@ static PyObject *
 zlib_compress(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer bytes = {NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL};
+    Py_buffer bytes = {NULL, NULL};
     int group_right_1 = 0;
     int level = 0;
 
@@ -219,7 +219,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
     return_value = zlib_compress_impl(module, &bytes, group_right_1, level);
 
     /* Cleanup for bytes */
-    if (bytes.buf)
+    if (bytes.obj)
        PyBuffer_Release(&bytes);
 
     return return_value;
@@ -227,7 +227,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
-/*[clinic end generated code: checksum=9f055a396620bc1a8a13d74c3496249528b32b0d]*/
+/*[clinic end generated code: checksum=2c59af563a4595c5ecea4011701f482ae350aa5f]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
@@ -789,7 +789,7 @@ static PyObject *
 zlib_Decompress_decompress(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL};
+    Py_buffer data = {NULL, NULL};
     unsigned int max_length = 0;
 
     if (!PyArg_ParseTuple(args,
@@ -800,7 +800,7 @@ zlib_Decompress_decompress(PyObject *self, PyObject *args)
 
 exit:
     /* Cleanup for data */
-    if (data.buf)
+    if (data.obj)
        PyBuffer_Release(&data);
 
     return return_value;
@@ -808,7 +808,7 @@ exit:
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length)
-/*[clinic end generated code: checksum=5b1e4f9f1ef8eca55fff78356f9df0c81232ed3b]*/
+/*[clinic end generated code: checksum=e0058024c4a97b411d2e2197791b89fde175f76f]*/
 {
     int err;
     unsigned int old_length, length = DEFAULTALLOC;
