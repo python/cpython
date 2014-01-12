@@ -5,6 +5,8 @@ import sys
 import tempfile
 import unittest
 
+from collections import namedtuple
+
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
     # will completely confuse the test of the cgi module
@@ -231,6 +233,14 @@ class CgiTests(unittest.TestCase):
         # (by read_binary); if we are chunking properly, it will be called 5 times
         # as long as the chunksize is 1 << 16.
         self.assertTrue(f.numcalls > 2)
+
+    def test_fieldstorage_invalid(self):
+        fs = cgi.FieldStorage()
+        self.assertFalse(fs)
+        self.assertRaises(TypeError, bool(fs))
+        self.assertEqual(list(fs), list(fs.keys()))
+        fs.list.append(namedtuple('MockFieldStorage', 'name')('fieldvalue'))
+        self.assertTrue(fs)
 
     def test_fieldstorage_multipart(self):
         #Test basic FieldStorage multipart parsing
