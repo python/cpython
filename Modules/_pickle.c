@@ -4068,9 +4068,6 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "to map the new Python 3 names to the old module names used in Python\n"
 "2, so that the pickle data stream is readable with Python 2.");
 
-#define _PICKLE_PICKLER___INIT___METHODDEF    \
-    {"__init__", (PyCFunction)_pickle_Pickler___init__, METH_VARARGS|METH_KEYWORDS, _pickle_Pickler___init____doc__},
-
 static PyObject *
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports);
 
@@ -4095,7 +4092,7 @@ exit:
 
 static PyObject *
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic end generated code: checksum=2b5ce6452544600478cf9f4b701ab9d9b5efbab9]*/
+/*[clinic end generated code: checksum=defa3d9e9f8b51fb257d4fdfca99db503db0e6df]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -6637,9 +6634,6 @@ PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "respectively.  The *encoding* can be \'bytes\' to read these 8-bit\n"
 "string instances as bytes objects.");
 
-#define _PICKLE_UNPICKLER___INIT___METHODDEF    \
-    {"__init__", (PyCFunction)_pickle_Unpickler___init__, METH_VARARGS|METH_KEYWORDS, _pickle_Unpickler___init____doc__},
-
 static PyObject *
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors);
 
@@ -6665,7 +6659,7 @@ exit:
 
 static PyObject *
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic end generated code: checksum=9ce6783224e220573d42a94fe1bb7199d6f1c5a6]*/
+/*[clinic end generated code: checksum=26c1d4a06841a8e51d29a0c244ba7f4607ff358a]*/
 {
     _Py_IDENTIFIER(persistent_load);
 

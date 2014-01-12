@@ -111,13 +111,16 @@ is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 def is_legal_py_identifier(s):
     return all(is_legal_c_identifier(field) for field in s.split('.'))
 
-# added "module", "self", "cls", and "null" just to be safe
-# (clinic will generate variables with these names)
+# though it's called c_keywords, really it's a list of parameter names
+# that are okay in Python but aren't a good idea in C.  so if they're used
+# Argument Clinic will add "_value" to the end of the name in C.
+# (We added "args", "type", "module", "self", "cls", and "null"
+#  just to be safe, even though they're not C keywords.)
 c_keywords = set("""
-asm auto break case char cls const continue default do double
+args asm auto break case char cls const continue default do double
 else enum extern float for goto if inline int long module null
 register return self short signed sizeof static struct switch
-typedef typeof union unsigned void volatile while
+type typedef typeof union unsigned void volatile while
 """.strip().split())
 
 def ensure_legal_c_identifier(s):
@@ -392,11 +395,17 @@ class CLanguage(Language):
 
     @staticmethod
     def template_base(*args):
-        flags = '|'.join(f for f in args if f)
-        return """
+        # HACK suppress methoddef define for METHOD_NEW and METHOD_INIT
+        base = """
 PyDoc_STRVAR({c_basename}__doc__,
 {docstring});
+"""
 
+        if args[-1] == None:
+            return base
+
+        flags = '|'.join(f for f in args if f)
+        return base + """
 #define {methoddef_name}    \\
     {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
 """.replace('{methoddef_flags}', flags)
@@ -650,7 +659,13 @@ static {impl_return_type}
         name = full_name.rpartition('.')[2]
         template_dict['name'] = name
 
-        c_basename = f.c_basename or full_name.replace(".", "_")
+        if f.c_basename:
+            c_basename = f.c_basename
+        else:
+            fields = full_name.split(".")
+            if fields[-1] == '__new__':
+                fields.pop()
+            c_basename = "_".join(fields)
         template_dict['c_basename'] = c_basename
 
         methoddef_name = "{}_METHODDEF".format(c_basename.upper())
@@ -1171,8 +1186,81 @@ class Class:
     def __repr__(self):
         return "<clinic.Class " + repr(self.name) + " at " + str(id(self)) + ">"
 
+unsupported_special_methods = set("""
 
-DATA, CALLABLE, METHOD, STATIC_METHOD, CLASS_METHOD = range(5)
+__abs__
+__add__
+__and__
+__bytes__
+__call__
+__complex__
+__delitem__
+__divmod__
+__eq__
+__float__
+__floordiv__
+__ge__
+__getattr__
+__getattribute__
+__getitem__
+__gt__
+__hash__
+__iadd__
+__iand__
+__idivmod__
+__ifloordiv__
+__ilshift__
+__imod__
+__imul__
+__index__
+__int__
+__invert__
+__ior__
+__ipow__
+__irshift__
+__isub__
+__iter__
+__itruediv__
+__ixor__
+__le__
+__len__
+__lshift__
+__lt__
+__mod__
+__mul__
+__neg__
+__new__
+__next__
+__or__
+__pos__
+__pow__
+__radd__
+__rand__
+__rdivmod__
+__repr__
+__rfloordiv__
+__rlshift__
+__rmod__
+__rmul__
+__ror__
+__round__
+__rpow__
+__rrshift__
+__rshift__
+__rsub__
+__rtruediv__
+__rxor__
+__setattr__
+__setitem__
+__str__
+__sub__
+__truediv__
+__xor__
+
+""".strip().split())
+
+
+INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = range(6)
 
 class Function:
     """
@@ -1207,6 +1295,8 @@ class Function:
 
     @property
     def methoddef_flags(self):
+        if self.kind in (METHOD_INIT, METHOD_NEW):
+            return None
         flags = []
         if self.kind == CLASS_METHOD:
             flags.append('METH_CLASS')
@@ -1846,7 +1936,7 @@ class self_converter(CConverter):
     type = "PyObject *"
     def converter_init(self, *, type=None):
         f = self.function
-        if f.kind == CALLABLE:
+        if f.kind in (CALLABLE, METHOD_INIT):
             if f.cls:
                 self.name = "self"
             else:
@@ -1857,6 +1947,9 @@ class self_converter(CConverter):
             self.type = "void *"
         elif f.kind == CLASS_METHOD:
             self.name = "cls"
+            self.type = "PyTypeObject *"
+        elif f.kind == METHOD_NEW:
+            self.name = "type"
             self.type = "PyTypeObject *"
 
         if type:
@@ -2257,6 +2350,18 @@ class DSLParser:
         fields = [x.strip() for x in full_name.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
+
+        fields = full_name.split('.')
+        if fields[-1] == '__new__':
+            if (self.kind != CLASS_METHOD) or (not cls):
+                fail("__new__ must be a class method!")
+            self.kind = METHOD_NEW
+        elif fields[-1] == '__init__':
+            if (self.kind != CALLABLE) or (not cls):
+                fail("__init__ must be a normal method, not a class or static method!")
+            self.kind = METHOD_INIT
+        elif fields[-1] in unsupported_special_methods:
+            fail(fields[-1] + " should not be converted to Argument Clinic!  (Yet.)")
 
         if not module:
             fail("Undefined module used in declaration of " + repr(full_name.strip()) + ".")
