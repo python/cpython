@@ -14005,7 +14005,7 @@ mainformatlong(PyObject *v,
         goto wrongtype;
 
     /* make sure number is a type of integer */
-    /* if not, issue depracation warning for now */
+    /* if not, issue deprecation warning for now */
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
             iobj = PyNumber_Index(v);
@@ -14103,7 +14103,7 @@ formatchar(PyObject *v)
         PyObject *iobj;
         long x;
         /* make sure number is a type of integer */
-        /* if not, issue depracation warning for now */
+        /* if not, issue deprecation warning for now */
         if (!PyLong_Check(v)) {
             iobj = PyNumber_Index(v);
             if (iobj == NULL) {
