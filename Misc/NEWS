@@ -72,6 +72,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20228: Argument Clinic now has special support for class special
+  methods.
+
 - Issue #20214: Fixed a number of small issues and documentation errors in
   Argument Clinic (see issue for details).
 
