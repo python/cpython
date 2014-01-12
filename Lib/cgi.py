@@ -32,10 +32,12 @@ __version__ = "2.6"
 # =======
 
 from io import StringIO, BytesIO, TextIOWrapper
+from collections import Mapping
 import sys
 import os
 import urllib.parse
 from email.parser import FeedParser
+from email.message import Message
 from warnings import warn
 import html
 import locale
@@ -472,18 +474,24 @@ class FieldStorage:
                 self.qs_on_post = environ['QUERY_STRING']
             if 'CONTENT_LENGTH' in environ:
                 headers['content-length'] = environ['CONTENT_LENGTH']
+        else:
+            if not (isinstance(headers, (Mapping, Message))):
+                raise TypeError("headers must be mapping or an instance of "
+                                "email.message.Message")
+        self.headers = headers
         if fp is None:
             self.fp = sys.stdin.buffer
         # self.fp.read() must return bytes
         elif isinstance(fp, TextIOWrapper):
             self.fp = fp.buffer
         else:
+            if not (hasattr(fp, 'read') and hasattr(fp, 'readline')):
+                raise TypeError("fp must be file pointer")
             self.fp = fp
 
         self.encoding = encoding
         self.errors = errors
 
-        self.headers = headers
         if not isinstance(outerboundary, bytes):
             raise TypeError('outerboundary must be bytes, not %s'
                             % type(outerboundary).__name__)
@@ -642,7 +650,9 @@ class FieldStorage:
         """Dictionary style len(x) support."""
         return len(self.keys())
 
-    def __nonzero__(self):
+    def __bool__(self):
+        if self.list is None:
+            raise TypeError("Cannot be converted to bool.")
         return bool(self.list)
 
     def read_urlencoded(self):
