@@ -1139,13 +1139,6 @@ class UnicodeTest(string_tests.CommonTest,
                 self.value = float(value)
             def __int__(self):
                 return int(self.value)
-        def check_depr(modifier, value):
-            with support.check_warnings(
-                    ("", DeprecationWarning),
-                    quiet=False,
-                    ):
-                warnings.simplefilter('always')
-                modifier % value
         pi = PsuedoFloat(3.1415)
         letter_m = PsuedoInt(109)
         self.assertEqual('%x' % 42, '2a')
@@ -1156,14 +1149,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%X' % letter_m, '6D')
         self.assertEqual('%o' % letter_m, '155')
         self.assertEqual('%c' % letter_m, 'm')
-        for mod, value in (
-                ('%x', pi),
-                ('%x', 3.14),
-                ('%X', 2.11),
-                ('%o', 1.79),
-                ('%c', pi),
-                ):
-            check_depr(mod, value)
+        self.assertWarns(DeprecationWarning, '%x'.__mod__, pi),
+        self.assertWarns(DeprecationWarning, '%x'.__mod__, 3.14),
+        self.assertWarns(DeprecationWarning, '%X'.__mod__, 2.11),
+        self.assertWarns(DeprecationWarning, '%o'.__mod__, 1.79),
+        self.assertWarns(DeprecationWarning, '%c'.__mod__, pi),
 
     def test_formatting_with_enum(self):
         # issue18780
