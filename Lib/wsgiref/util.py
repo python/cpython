@@ -57,14 +57,14 @@ def application_uri(environ):
             if environ['SERVER_PORT'] != '80':
                 url += ':' + environ['SERVER_PORT']
 
-    url += quote(environ.get('SCRIPT_NAME') or '/')
+    url += quote(environ.get('SCRIPT_NAME') or '/', encoding='latin1')
     return url
 
 def request_uri(environ, include_query=True):
     """Return the full request URI, optionally including the query string"""
     url = application_uri(environ)
     from urllib.parse import quote
-    path_info = quote(environ.get('PATH_INFO',''),safe='/;=,')
+    path_info = quote(environ.get('PATH_INFO',''), safe='/;=,', encoding='latin1')
     if not environ.get('SCRIPT_NAME'):
         url += path_info[1:]
     else:
