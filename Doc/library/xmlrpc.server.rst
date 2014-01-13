@@ -184,6 +184,70 @@ server::
    # Print list of available methods
    print(s.system.listMethods())
 
+The following example included in `Lib/xmlrpc/server.py` module shows a server
+allowing dotted names and registering a multicall function.
+
+.. warning::
+
+  Enabling the *allow_dotted_names* option allows intruders to access your
+  module's global variables and may allow intruders to execute arbitrary code on
+  your machine.  Only use this example only within a secure, closed network.
+
+::
+
+    import datetime
+
+    class ExampleService:
+        def getData(self):
+            return '42'
+
+        class currentTime:
+            @staticmethod
+            def getCurrentTime():
+                return datetime.datetime.now()
+
+    server = SimpleXMLRPCServer(("localhost", 8000))
+    server.register_function(pow)
+    server.register_function(lambda x,y: x+y, 'add')
+    server.register_instance(ExampleService(), allow_dotted_names=True)
+    server.register_multicall_functions()
+    print('Serving XML-RPC on localhost port 8000')
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt received, exiting.")
+        server.server_close()
+        sys.exit(0)
+
+This ExampleService demo can be invoked from the command line::
+
+    python -m xmlrpc.server
+
+
+The client that interacts with the above server is included in
+`Lib/xmlrpc/client.py`::
+
+    server = ServerProxy("http://localhost:8000")
+
+    try:
+        print(server.currentTime.getCurrentTime())
+    except Error as v:
+        print("ERROR", v)
+
+    multi = MultiCall(server)
+    multi.getData()
+    multi.pow(2,9)
+    multi.add(1,2)
+    try:
+        for response in multi():
+            print(response)
+    except Error as v:
+        print("ERROR", v)
+
+This client which interacts with the demo XMLRPC server can be invoked as::
+
+    python -m xmlrpc.client
+
 
 CGIXMLRPCRequestHandler
 -----------------------
