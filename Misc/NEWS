@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20242: Fixed basicConfig() format strings for the alternative
+  formatting styles. Thanks to kespindler for the bug report and patch.
+
 - Issues #20206 and #5803: Fix edge case in email.quoprimime.encode where it
   truncated lines ending in a character needing encoding but no newline by
   using a more efficient algorithm that doesn't have the bug.
