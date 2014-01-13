@@ -234,6 +234,12 @@ class CommonReadTest(ReadTest):
         finally:
             tar.close()
 
+    def test_non_existent_tarfile(self):
+        # Test for issue11513: prevent non-existent gzipped tarfiles raising
+        # multiple exceptions.
+        with self.assertRaisesRegex(FileNotFoundError, "xxx"):
+            tarfile.open("xxx", self.mode)
+
     def test_null_tarfile(self):
         # Test for issue6123: Allow opening empty archives.
         # This test guarantees that tarfile.open() does not treat an empty
@@ -446,11 +452,7 @@ class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
 
 class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase):
-    def test_non_existent_targz_file(self):
-        # Test for issue11513: prevent non-existent gzipped tarfiles raising
-        # multiple exceptions.
-        with self.assertRaisesRegex(FileNotFoundError, "xxx"):
-            tarfile.open("xxx", self.mode)
+    pass
 
 class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
     def test_no_name_argument(self):
