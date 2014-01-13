@@ -576,7 +576,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(str(widget['orient']), 'vertical')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0): # actually this was changen in 8.6b3
+        if get_tk_patchlevel() < (8, 6, 0): # actually this was changed in 8.6b3
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
