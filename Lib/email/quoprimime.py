@@ -53,8 +53,9 @@ EMPTYSTRING = ''
 # space-wise.  Remember that headers and bodies have different sets of safe
 # characters.  Initialize both maps with the full expansion, and then override
 # the safe bytes with the more compact form.
-_QUOPRI_HEADER_MAP = dict((c, '=%02X' % c) for c in range(256))
-_QUOPRI_BODY_MAP = _QUOPRI_HEADER_MAP.copy()
+_QUOPRI_MAP = ['=%02X' % c for c in range(256)]
+_QUOPRI_HEADER_MAP = _QUOPRI_MAP[:]
+_QUOPRI_BODY_MAP = _QUOPRI_MAP[:]
 
 # Safe header bytes which need no encoding.
 for c in b'-!*+/' + ascii_letters.encode('ascii') + digits.encode('ascii'):
@@ -121,8 +122,7 @@ def unquote(s):
 
 
 def quote(c):
-    return '=%02X' % ord(c)
-
+    return _QUOPRI_MAP[ord(c)]
 
 
 def header_encode(header_bytes, charset='iso-8859-1'):
@@ -140,67 +140,15 @@ def header_encode(header_bytes, charset='iso-8859-1'):
     if not header_bytes:
         return ''
     # Iterate over every byte, encoding if necessary.
-    encoded = []
-    for octet in header_bytes:
-        encoded.append(_QUOPRI_HEADER_MAP[octet])
+    encoded = header_bytes.decode('latin1').translate(_QUOPRI_HEADER_MAP)
     # Now add the RFC chrome to each encoded chunk and glue the chunks
     # together.
-    return '=?%s?q?%s?=' % (charset, EMPTYSTRING.join(encoded))
+    return '=?%s?q?%s?=' % (charset, encoded)
 
 
-class _body_accumulator(io.StringIO):
-
-    def __init__(self, maxlinelen, eol, *args, **kw):
-        super().__init__(*args, **kw)
-        self.eol = eol
-        self.maxlinelen = self.room = maxlinelen
-
-    def write_str(self, s):
-        """Add string s to the accumulated body."""
-        self.write(s)
-        self.room -= len(s)
-
-    def newline(self):
-        """Write eol, then start new line."""
-        self.write_str(self.eol)
-        self.room = self.maxlinelen
-
-    def write_soft_break(self):
-        """Write a soft break, then start a new line."""
-        self.write_str('=')
-        self.newline()
-
-    def write_wrapped(self, s, extra_room=0):
-        """Add a soft line break if needed, then write s."""
-        if self.room < len(s) + extra_room:
-            self.write_soft_break()
-        self.write_str(s)
-
-    def write_char(self, c, is_last_char):
-        if not is_last_char:
-            # Another character follows on this line, so we must leave
-            # extra room, either for it or a soft break, and whitespace
-            # need not be quoted.
-            self.write_wrapped(c, extra_room=1)
-        elif c not in ' \t':
-            # For this and remaining cases, no more characters follow,
-            # so there is no need to reserve extra room (since a hard
-            # break will immediately follow).
-            self.write_wrapped(c)
-        elif self.room >= 3:
-            # It's a whitespace character at end-of-line, and we have room
-            # for the three-character quoted encoding.
-            self.write(quote(c))
-        elif self.room == 2:
-            # There's room for the whitespace character and a soft break.
-            self.write(c)
-            self.write_soft_break()
-        else:
-            # There's room only for a soft break.  The quoted whitespace
-            # will be the only content on the subsequent line.
-            self.write_soft_break()
-            self.write(quote(c))
-
+_QUOPRI_BODY_ENCODE_MAP = _QUOPRI_BODY_MAP[:]
+for c in b'\r\n':
+    _QUOPRI_BODY_ENCODE_MAP[c] = chr(c)
 
 def body_encode(body, maxlinelen=76, eol=NL):
     """Encode with quoted-printable, wrapping at maxlinelen characters.
@@ -226,26 +174,56 @@ def body_encode(body, maxlinelen=76, eol=NL):
     if not body:
         return body
 
-    # The last line may or may not end in eol, but all other lines do.
-    last_has_eol = (body[-1] in '\r\n')
+    # quote speacial characters
+    body = body.translate(_QUOPRI_BODY_ENCODE_MAP)
 
-    # This accumulator will make it easier to build the encoded body.
-    encoded_body = _body_accumulator(maxlinelen, eol)
+    soft_break = '=' + eol
+    # leave space for the '=' at the end of a line
+    maxlinelen1 = maxlinelen - 1
 
-    lines = body.splitlines()
-    last_line_no = len(lines) - 1
-    for line_no, line in enumerate(lines):
-        last_char_index = len(line) - 1
-        for i, c in enumerate(line):
-            if body_check(ord(c)):
-                c = quote(c)
-            encoded_body.write_char(c, i==last_char_index)
-        # Add an eol if input line had eol.  All input lines have eol except
-        # possibly the last one.
-        if line_no < last_line_no or last_has_eol:
-            encoded_body.newline()
+    encoded_body = []
+    append = encoded_body.append
 
-    return encoded_body.getvalue()
+    for line in body.splitlines():
+        # break up the line into pieces no longer than maxlinelen - 1
+        start = 0
+        laststart = len(line) - 1 - maxlinelen
+        while start <= laststart:
+            stop = start + maxlinelen1
+            # make sure we don't break up an escape sequence
+            if line[stop - 2] == '=':
+                append(line[start:stop - 1])
+                start = stop - 2
+            elif line[stop - 1] == '=':
+                append(line[start:stop])
+                start = stop - 1
+            else:
+                append(line[start:stop] + '=')
+                start = stop
+
+        # handle rest of line, special case if line ends in whitespace
+        if line and line[-1] in ' \t':
+            room = start - laststart
+            if room >= 3:
+                # It's a whitespace character at end-of-line, and we have room
+                # for the three-character quoted encoding.
+                q = quote(line[-1])
+            elif room == 2:
+                # There's room for the whitespace character and a soft break.
+                q = line[-1] + soft_break
+            else:
+                # There's room only for a soft break.  The quoted whitespace
+                # will be the only content on the subsequent line.
+                q = soft_break + quote(line[-1])
+            append(line[start:-1] + q)
+        else:
+            append(line[start:])
+
+    # add back final newline if present
+    if body[-1] in CRLF:
+        append('')
+
+    return eol.join(encoded_body)
 
 
 
