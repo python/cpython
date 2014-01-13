@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19082: Working xmlrpc.server and xmlrpc.client examples. Both in
+  modules and in documentation. Initial patch contributed by Vajrasky Kok.
+
 - Issue #20138: The wsgiref.application_uri() and wsgiref.request_uri()
   functions now conform to PEP 3333 when handle non-ASCII URLs.
 
