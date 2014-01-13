@@ -65,6 +65,8 @@ Library
 
 - Issue #20072: Fixed multiple errors in tkinter with wantobjects is False.
 
+- Issue #20229: Avoid plistlib deprecation warning in platform.mac_ver().
+
 IDLE
 ----
 
