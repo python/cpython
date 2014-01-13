@@ -388,10 +388,12 @@ class StringTemplateStyle(PercentStyle):
     def format(self, record):
         return self._tpl.substitute(**record.__dict__)
 
+BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
+
 _STYLES = {
-    '%': PercentStyle,
-    '{': StrFormatStyle,
-    '$': StringTemplateStyle
+    '%': (PercentStyle, BASIC_FORMAT),
+    '{': (StrFormatStyle, '{levelname}:{name}:{message}'),
+    '$': (StringTemplateStyle, '${levelname}:${name}:${message}'),
 }
 
 class Formatter(object):
@@ -456,7 +458,7 @@ class Formatter(object):
         if style not in _STYLES:
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
-        self._style = _STYLES[style](fmt)
+        self._style = _STYLES[style][0](fmt)
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
@@ -1629,8 +1631,6 @@ Logger.manager = Manager(Logger.root)
 # Configuration classes and functions
 #---------------------------------------------------------------------------
 
-BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
-
 def basicConfig(**kwargs):
     """
     Do basic configuration for the logging system.
@@ -1704,9 +1704,12 @@ def basicConfig(**kwargs):
                     stream = kwargs.get("stream")
                     h = StreamHandler(stream)
                 handlers = [h]
-            fs = kwargs.get("format", BASIC_FORMAT)
             dfs = kwargs.get("datefmt", None)
             style = kwargs.get("style", '%')
+            if style not in _STYLES:
+                raise ValueError('Style must be one of: %s' % ','.join(
+                                 _STYLES.keys()))
+            fs = kwargs.get("format", _STYLES[style][1])
             fmt = Formatter(fs, dfs, style)
             for h in handlers:
                 if h.formatter is None:
