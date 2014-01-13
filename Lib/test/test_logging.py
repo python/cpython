@@ -3517,6 +3517,22 @@ class BasicConfigTest(unittest.TestCase):
         # level is not explicitly set
         self.assertEqual(logging.root.level, self.original_logging_level)
 
+    def test_strformatstyle(self):
+        with captured_stdout() as output:
+            logging.basicConfig(stream=sys.stdout, style="{")
+            logging.error("Log an error")
+            sys.stdout.seek(0)
+            self.assertEqual(output.getvalue().strip(),
+                "ERROR:root:Log an error")
+
+    def test_stringtemplatestyle(self):
+        with captured_stdout() as output:
+            logging.basicConfig(stream=sys.stdout, style="$")
+            logging.error("Log an error")
+            sys.stdout.seek(0)
+            self.assertEqual(output.getvalue().strip(),
+                "ERROR:root:Log an error")
+
     def test_filename(self):
 
         def cleanup(h1, h2, fn):
