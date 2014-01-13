@@ -95,7 +95,7 @@ external entity expansion
   content into the XML document.
 
 DTD retrieval
-  Some XML libraries like Python's mod:'xml.dom.pulldom' retrieve document type
+  Some XML libraries like Python's :mod:`xml.dom.pulldom` retrieve document type
   definitions from remote or local locations. The feature has similar
   implications as the external entity expansion issue.
 
