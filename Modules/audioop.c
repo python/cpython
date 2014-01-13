@@ -1505,7 +1505,7 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
     Py_ssize_t i;
     int size, step, valpred, delta,
         index, sign, vpdiff, diff;
-    PyObject *rv = NULL, *state, *str;
+    PyObject *rv = NULL, *state, *str = NULL;
     int outputbuffer = 0, bufferstep;
 
     if (!PyArg_ParseTuple(args, "y*iO:lin2adpcm",
@@ -1605,8 +1605,8 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
         bufferstep = !bufferstep;
     }
     rv = Py_BuildValue("(O(ii))", str, valpred, index);
-    Py_DECREF(str);
   exit:
+    Py_XDECREF(str);
     PyBuffer_Release(&view);
     return rv;
 }
