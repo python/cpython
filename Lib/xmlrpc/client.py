@@ -1460,18 +1460,18 @@ if __name__ == "__main__":
 
     # simple test program (from the XML-RPC specification)
 
-    # server = ServerProxy("http://localhost:8000") # local server
-    server = ServerProxy("http://time.xmlrpc.com/RPC2")
+    # local server, available from Lib/xmlrpc/server.py
+    server = ServerProxy("http://localhost:8000")
 
     try:
         print(server.currentTime.getCurrentTime())
     except Error as v:
         print("ERROR", v)
 
-    # The server at xmlrpc.com doesn't seem to support multicall anymore.
     multi = MultiCall(server)
-    multi.currentTime.getCurrentTime()
-    multi.currentTime.getCurrentTime()
+    multi.getData()
+    multi.pow(2,9)
+    multi.add(1,2)
     try:
         for response in multi():
             print(response)
