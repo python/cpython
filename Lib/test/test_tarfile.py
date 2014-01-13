@@ -181,6 +181,14 @@ class CommonReadTest(ReadTest):
         self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, self.mode)
         self.assertRaises(tarfile.ReadError, tarfile.open, tmpname)
 
+    def test_non_existent_tarfile(self):
+        # Test for issue11513: prevent non-existent gzipped tarfiles raising
+        # multiple exceptions.
+        exctype = OSError if '|' in self.mode else IOError
+        with self.assertRaisesRegexp(exctype, "xxx") as ex:
+            tarfile.open("xxx", self.mode)
+        self.assertEqual(ex.exception.errno, errno.ENOENT)
+
     def test_ignore_zeros(self):
         # Test TarFile's ignore_zeros option.
         if self.mode.endswith(":gz"):
