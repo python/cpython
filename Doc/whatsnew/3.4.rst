@@ -733,7 +733,7 @@ http
 ----
 
 :meth:`~http.server.BaseHTTPRequestHandler.send_error` now accepts an
-optional additional *exaplain* parameter which can be used to provide an
+optional additional *explain* parameter which can be used to provide an
 extended error description, overriding the hardcoded default if there is one.
 This extended error description will be formatted using the
 :attr:`~http.server.HTTP.error_message_format` attribute and sent as the body
