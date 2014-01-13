@@ -197,6 +197,38 @@ server::
    # Print list of available methods
    print s.system.listMethods()
 
+The following :class:`SimpleXMLRPCServer` example is included in the module
+`Lib/SimpleXMLRPCServer.py`::
+
+    server = SimpleXMLRPCServer(("localhost", 8000))
+    server.register_function(pow)
+    server.register_function(lambda x,y: x+y, 'add')
+    server.register_multicall_functions()
+    server.serve_forever()
+
+This demo server can be run from the command line as::
+
+    python -m SimpleXMLRPCServer
+
+Example client code which talks to the above server is included with
+`Lib/xmlrpclib.py`::
+
+    server = ServerProxy("http://localhost:8000")
+    print server
+    multi = MultiCall(server)
+    multi.pow(2, 9)
+    multi.add(5, 1)
+    multi.add(24, 11)
+    try:
+        for response in multi():
+            print response
+    except Error, v:
+        print "ERROR", v
+
+And the client can be invoked directly using the following command::
+
+    python -m xmlrpclib
+
 
 CGIXMLRPCRequestHandler
 -----------------------

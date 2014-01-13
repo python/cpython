@@ -1617,21 +1617,14 @@ Server = ServerProxy
 
 if __name__ == "__main__":
 
-    # simple test program (from the XML-RPC specification)
-
-    # server = ServerProxy("http://localhost:8000") # local server
-    server = ServerProxy("http://time.xmlrpc.com/RPC2")
+    server = ServerProxy("http://localhost:8000")
 
     print server
 
-    try:
-        print server.currentTime.getCurrentTime()
-    except Error, v:
-        print "ERROR", v
-
     multi = MultiCall(server)
-    multi.currentTime.getCurrentTime()
-    multi.currentTime.getCurrentTime()
+    multi.pow(2, 9)
+    multi.add(5, 1)
+    multi.add(24, 11)
     try:
         for response in multi():
             print response
