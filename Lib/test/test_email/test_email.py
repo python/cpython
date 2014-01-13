@@ -4246,6 +4246,11 @@ class TestQuopri(unittest.TestCase):
     def test_encode_one_line_eol(self):
         self._test_encode('hello\n', 'hello\r\n', eol='\r\n')
 
+    def test_encode_one_line_eol_after_non_ascii(self):
+        # issue 20206; see changeset 0cf700464177 for why the encode/decode.
+        self._test_encode('hello\u03c5\n'.encode('utf-8').decode('latin1'),
+                          'hello=CF=85\r\n', eol='\r\n')
+
     def test_encode_one_space(self):
         self._test_encode(' ', '=20')
 
