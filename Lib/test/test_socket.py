@@ -1424,6 +1424,14 @@ class BufferIOTest(SocketConnectedTest):
         buf = bytes(MSG)
         self.serv_conn.send(buf)
 
+    def testRecvFromIntoSmallBuffer(self):
+        # See issue #20246.
+        buf = bytearray(8)
+        self.assertRaises(ValueError, self.cli_conn.recvfrom_into, buf, 1024)
+
+    def _testRecvFromIntoSmallBuffer(self):
+        self.serv_conn.send(MSG*2048)
+
 
 TIPC_STYPE = 2000
 TIPC_LOWER = 200

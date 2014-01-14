@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20246: Fix buffer overflow in socket.recvfrom_into.
+
 - Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
 
 - Issue #14984: On POSIX systems, when netrc is called without a filename
