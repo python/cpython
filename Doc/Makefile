@@ -49,7 +49,7 @@ checkout:
 	fi
 	@if [ ! -d tools/jinja2 ]; then \
 	  echo "Checking out Jinja..."; \
-	  svn checkout $(SVNROOT)/external/Jinja2-2.7.2/jinja2 tools/jinja2; \
+	  svn checkout $(SVNROOT)/external/Jinja-2.3.1/jinja2 tools/jinja2; \
 	fi
 	@if [ ! -d tools/pygments ]; then \
 	  echo "Checking out Pygments..."; \
