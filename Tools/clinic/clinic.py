@@ -970,7 +970,10 @@ class BlockParser:
             if self.verify:
                 computed = compute_checksum(output)
                 if checksum != computed:
-                    fail("Checksum mismatch!\nExpected: {}\nComputed: {}".format(checksum, computed))
+                    fail("Checksum mismatch!\nExpected: {}\nComputed: {}\n"
+                         "Suggested fix: remove all generated code including "
+                         "the end marker, or use the '-f' option."
+                        .format(checksum, computed))
         else:
             # put back output
             output_lines = output.splitlines(keepends=True)
