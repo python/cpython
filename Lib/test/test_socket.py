@@ -1630,6 +1630,13 @@ class BufferIOTest(SocketConnectedTest):
             buf = buffer(MSG*2048)
         self.serv_conn.send(buf)
 
+    def testRecvFromIntoEmptyBuffer(self):
+        buf = bytearray()
+        self.cli_conn.recvfrom_into(buf)
+        self.cli_conn.recvfrom_into(buf, 0)
+
+    _testRecvFromIntoEmptyBuffer = _testRecvFromIntoArray
+
 
 TIPC_STYPE = 2000
 TIPC_LOWER = 200
