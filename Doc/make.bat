@@ -36,7 +36,7 @@ goto end
 :checkout
 svn co %SVNROOT%/external/Sphinx-1.2/sphinx tools/sphinx
 svn co %SVNROOT%/external/docutils-0.11/docutils tools/docutils
-svn co %SVNROOT%/external/Jinja2-2.7.2/jinja2 tools/jinja2
+svn co %SVNROOT%/external/Jinja-2.3.1/jinja2 tools/jinja2
 svn co %SVNROOT%/external/Pygments-1.6/pygments tools/pygments
 goto end
 
