@@ -10,6 +10,8 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #20246: Fix buffer overflow in socket.recvfrom_into.
+
 - Issue #12226: HTTPS is now used by default when connecting to PyPI.
 
 - Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
