@@ -2924,7 +2924,6 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
         return NULL;
     buf = pbuf.buf;
     buflen = pbuf.len;
-    assert(buf != 0 && buflen > 0);
 
     if (recvlen < 0) {
         PyBuffer_Release(&pbuf);
