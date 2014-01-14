@@ -74,7 +74,7 @@ operator; to calculate the remainder you can use ``%``::
    >>> 5 * 3 + 2  # result * divisor + remainder
    17
 
-With Python is possible to use the ``**`` operator to calculate powers [#]_::
+With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
 
    >>> 5 ** 2  # 5 squared
    25
