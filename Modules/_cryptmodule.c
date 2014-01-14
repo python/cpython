@@ -7,31 +7,72 @@
 
 /* Module crypt */
 
+/*[clinic input]
+module crypt
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-static PyObject *crypt_crypt(PyObject *self, PyObject *args)
+
+/*[clinic input]
+crypt.crypt
+
+    word: 's'
+    salt: 's'
+    /
+
+Hash a *word* with the given *salt* and return the hashed password.
+
+*word* will usually be a user's password.  *salt* (either a random 2 or 16
+character string, possibly prefixed with $digit$ to indicate the method)
+will be used to perturb the encryption algorithm and produce distinct
+results for a given *word*.
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(crypt_crypt__doc__,
+"crypt(word, salt)\n"
+"Hash a *word* with the given *salt* and return the hashed password.\n"
+"\n"
+"*word* will usually be a user\'s password.  *salt* (either a random 2 or 16\n"
+"character string, possibly prefixed with $digit$ to indicate the method)\n"
+"will be used to perturb the encryption algorithm and produce distinct\n"
+"results for a given *word*.");
+
+#define CRYPT_CRYPT_METHODDEF    \
+    {"crypt", (PyCFunction)crypt_crypt, METH_VARARGS, crypt_crypt__doc__},
+
+static PyObject *
+crypt_crypt_impl(PyModuleDef *module, const char *word, const char *salt);
+
+static PyObject *
+crypt_crypt(PyModuleDef *module, PyObject *args)
 {
-    char *word, *salt;
+    PyObject *return_value = NULL;
+    const char *word;
+    const char *salt;
 
-    if (!PyArg_ParseTuple(args, "ss:crypt", &word, &salt)) {
-        return NULL;
-    }
+    if (!PyArg_ParseTuple(args,
+        "ss:crypt",
+        &word, &salt))
+        goto exit;
+    return_value = crypt_crypt_impl(module, word, salt);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+crypt_crypt_impl(PyModuleDef *module, const char *word, const char *salt)
+/*[clinic end generated code: checksum=a137540bf6862f9935fc112b8bb1d62d6dd1ad02]*/
+{
     /* On some platforms (AtheOS) crypt returns NULL for an invalid
        salt. Return None in that case. XXX Maybe raise an exception?  */
     return Py_BuildValue("s", crypt(word, salt));
-
 }
-
-PyDoc_STRVAR(crypt_crypt__doc__,
-"crypt(word, salt) -> string\n\
-word will usually be a user's password. salt is a 2-character string\n\
-which will be used to select one of 4096 variations of DES. The characters\n\
-in salt must be either \".\", \"/\", or an alphanumeric character. Returns\n\
-the hashed password as a string, which will be composed of characters from\n\
-the same alphabet as the salt.");
 
 
 static PyMethodDef crypt_methods[] = {
-    {"crypt",           crypt_crypt, METH_VARARGS, crypt_crypt__doc__},
+    CRYPT_CRYPT_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
