@@ -1085,7 +1085,7 @@ to work with because the underlying list is accessible as an attribute.
         A real :class:`list` object used to store the contents of the
         :class:`UserList` class.
 
-**Subclassing requirements:** Subclasses of :class:`UserList` are expect to
+**Subclassing requirements:** Subclasses of :class:`UserList` are expected to
 offer a constructor which can be called with either no arguments or one
 argument.  List operations which return a new sequence attempt to create an
 instance of the actual implementation class.  To do so, it assumes that the
