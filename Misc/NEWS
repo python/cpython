@@ -302,6 +302,9 @@ Tests
 Documentation
 -------------
 
+- Issue #20253: Fixed a typo in the ipaddress docs that advertised an
+  illegal attribute name.  Found by INADA Naoki.
+
 - Issue #19963: Document that importlib.import_module() no longer requires
   importing parent packages separately.
 
