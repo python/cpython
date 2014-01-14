@@ -475,6 +475,9 @@ Build
 Documentation
 -------------
 
+- Issue #20253: Fixed a typo in the ipaddress docs that advertised an
+  illegal attribute name.  Found by INADA Naoki.
+
 - Issue #18840: Introduce the json module in the tutorial, and deemphasize
   the pickle module.
 
