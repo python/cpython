@@ -313,7 +313,7 @@ Edge and Level Trigger Polling (epoll) Objects
 
 .. method:: epoll.modify(fd, eventmask)
 
-   Modify a register file descriptor.
+   Modify a registered file descriptor.
 
 
 .. method:: epoll.unregister(fd)
