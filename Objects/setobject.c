@@ -768,7 +768,7 @@ frozenset_hash(PyObject *self)
         hash ^= ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
     }
     /* Make the final result spread-out in a different pattern
-       than the algorithem for tuples or other python objects. */
+       than the algorithm for tuples or other python objects. */
     hash = hash * 69069U + 907133923UL;
     if (hash == -1)
         hash = 590923713UL;
