@@ -2343,9 +2343,11 @@ class DSLParser:
                 fail("Badly-formed annotation for " + full_name + ": " + returns)
             try:
                 name, legacy, kwargs = self.parse_converter(module.body[0].returns)
-                assert not legacy
+                if legacy:
+                    fail("Legacy converter {!r} not allowed as a return converter"
+                         .format(name))
                 if name not in return_converters:
-                    fail("Error: No available return converter called " + repr(name))
+                    fail("No available return converter called " + repr(name))
                 return_converter = return_converters[name](**kwargs)
             except ValueError:
                 fail("Badly-formed annotation for " + full_name + ": " + returns)
