@@ -2742,6 +2742,10 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
     if (recvlen == 0) {
         /* If nbytes was not specified, use the buffer's length */
         recvlen = buflen;
+    } else if (recvlen > buflen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "nbytes is greater than the length of the buffer");
+        goto error;
     }
 
     readlen = sock_recvfrom_guts(s, buf.buf, recvlen, flags, &addr);
