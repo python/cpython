@@ -2172,19 +2172,19 @@ dict.__contains__
   key: object
   /
 
-True if D has a key k, else False"
+True if D has a key k, else False.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dict___contains____doc__,
 "__contains__(key)\n"
-"True if D has a key k, else False\"");
+"True if D has a key k, else False.");
 
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
 
 static PyObject *
 dict___contains__(PyObject *self, PyObject *key)
-/*[clinic end generated code: checksum=3bbac5ce898ae630d9668fa1c8b3afb645ff22e8]*/
+/*[clinic end generated code: checksum=402ddb624ba1e4db764bfdfbbee6c1c59d1a11fa]*/
 {
     register PyDictObject *mp = (PyDictObject *)self;
     Py_hash_t hash;
