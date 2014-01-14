@@ -7,14 +7,15 @@ These documents are generated from `reStructuredText`_ sources by `Sphinx`_, a
 document processor specifically written for the Python documentation.
 
 .. _reStructuredText: http://docutils.sf.net/rst.html
-.. _Sphinx: http://sphinx.pocoo.org/
+.. _Sphinx: http://sphinx-doc.org/
 
 .. In the online version of these documents, you can submit comments and suggest
    changes directly on the documentation pages.
 
-Development of the documentation and its toolchain takes place on the
-docs@python.org mailing list.  We're always looking for volunteers wanting
-to help with the docs, so feel free to send a mail there!
+Development of the documentation and its toolchain is an entirely volunteer
+effort, just like Python itself.  If you want to contribute, please take a
+look at the :ref:`reporting-bugs` page for information on how to do so.  New
+volunteers are always welcome!
 
 Many thanks go to:
 
@@ -25,9 +26,6 @@ Many thanks go to:
 * Fredrik Lundh for his `Alternative Python Reference
   <http://effbot.org/zone/pyref.htm>`_ project from which Sphinx got many good
   ideas.
-
-See :ref:`reporting-bugs` for information how to report bugs in this
-documentation, or Python itself.
 
 
 Contributors to the Python Documentation
