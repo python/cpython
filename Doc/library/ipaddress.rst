@@ -414,7 +414,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
       The broadcast address for the network. Packets sent to the broadcast
       address should be received by every host on the network.
 
-   .. attribute:: host mask
+   .. attribute:: hostmask
 
       The host mask, as a string.
 
@@ -570,7 +570,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: is_link_local
    .. attribute:: network_address
    .. attribute:: broadcast_address
-   .. attribute:: host mask
+   .. attribute:: hostmask
    .. attribute:: with_prefixlen
    .. attribute:: compressed
    .. attribute:: exploded
