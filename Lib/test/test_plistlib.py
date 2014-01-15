@@ -7,6 +7,7 @@ import datetime
 import codecs
 import binascii
 import collections
+import struct
 from test import support
 from io import BytesIO
 
@@ -19,68 +20,74 @@ TESTDATA={
         PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCFET0NU
         WVBFIHBsaXN0IFBVQkxJQyAiLS8vQXBwbGUvL0RURCBQTElTVCAxLjAvL0VO
         IiAiaHR0cDovL3d3dy5hcHBsZS5jb20vRFREcy9Qcm9wZXJ0eUxpc3QtMS4w
-        LmR0ZCI+CjxwbGlzdCB2ZXJzaW9uPSIxLjAiPgo8ZGljdD4KCTxrZXk+YURh
-        dGU8L2tleT4KCTxkYXRlPjIwMDQtMTAtMjZUMTA6MzM6MzNaPC9kYXRlPgoJ
-        PGtleT5hRGljdDwva2V5PgoJPGRpY3Q+CgkJPGtleT5hRmFsc2VWYWx1ZTwv
-        a2V5PgoJCTxmYWxzZS8+CgkJPGtleT5hVHJ1ZVZhbHVlPC9rZXk+CgkJPHRy
-        dWUvPgoJCTxrZXk+YVVuaWNvZGVWYWx1ZTwva2V5PgoJCTxzdHJpbmc+TcOk
-        c3NpZywgTWHDnzwvc3RyaW5nPgoJCTxrZXk+YW5vdGhlclN0cmluZzwva2V5
-        PgoJCTxzdHJpbmc+Jmx0O2hlbGxvICZhbXA7ICdoaScgdGhlcmUhJmd0Ozwv
-        c3RyaW5nPgoJCTxrZXk+ZGVlcGVyRGljdDwva2V5PgoJCTxkaWN0PgoJCQk8
-        a2V5PmE8L2tleT4KCQkJPGludGVnZXI+MTc8L2ludGVnZXI+CgkJCTxrZXk+
-        Yjwva2V5PgoJCQk8cmVhbD4zMi41PC9yZWFsPgoJCQk8a2V5PmM8L2tleT4K
-        CQkJPGFycmF5PgoJCQkJPGludGVnZXI+MTwvaW50ZWdlcj4KCQkJCTxpbnRl
-        Z2VyPjI8L2ludGVnZXI+CgkJCQk8c3RyaW5nPnRleHQ8L3N0cmluZz4KCQkJ
-        PC9hcnJheT4KCQk8L2RpY3Q+Cgk8L2RpY3Q+Cgk8a2V5PmFGbG9hdDwva2V5
-        PgoJPHJlYWw+MC41PC9yZWFsPgoJPGtleT5hTGlzdDwva2V5PgoJPGFycmF5
-        PgoJCTxzdHJpbmc+QTwvc3RyaW5nPgoJCTxzdHJpbmc+Qjwvc3RyaW5nPgoJ
-        CTxpbnRlZ2VyPjEyPC9pbnRlZ2VyPgoJCTxyZWFsPjMyLjU8L3JlYWw+CgkJ
-        PGFycmF5PgoJCQk8aW50ZWdlcj4xPC9pbnRlZ2VyPgoJCQk8aW50ZWdlcj4y
-        PC9pbnRlZ2VyPgoJCQk8aW50ZWdlcj4zPC9pbnRlZ2VyPgoJCTwvYXJyYXk+
-        Cgk8L2FycmF5PgoJPGtleT5hU3RyaW5nPC9rZXk+Cgk8c3RyaW5nPkRvb2Rh
-        aDwvc3RyaW5nPgoJPGtleT5hbkVtcHR5RGljdDwva2V5PgoJPGRpY3QvPgoJ
-        PGtleT5hbkVtcHR5TGlzdDwva2V5PgoJPGFycmF5Lz4KCTxrZXk+YW5JbnQ8
-        L2tleT4KCTxpbnRlZ2VyPjcyODwvaW50ZWdlcj4KCTxrZXk+bmVzdGVkRGF0
-        YTwva2V5PgoJPGFycmF5PgoJCTxkYXRhPgoJCVBHeHZkSE1nYjJZZ1ltbHVZ
-        WEo1SUdkMWJtcytBQUVDQXp4c2IzUnpJRzltSUdKcGJtRnllU0JuZFc1cgoJ
-        CVBnQUJBZ004Ykc5MGN5QnZaaUJpYVc1aGNua2daM1Z1YXo0QUFRSURQR3h2
-        ZEhNZ2IyWWdZbWx1WVhKNQoJCUlHZDFibXMrQUFFQ0F6eHNiM1J6SUc5bUlH
-        SnBibUZ5ZVNCbmRXNXJQZ0FCQWdNOGJHOTBjeUJ2WmlCaQoJCWFXNWhjbmtn
-        WjNWdWF6NEFBUUlEUEd4dmRITWdiMllnWW1sdVlYSjVJR2QxYm1zK0FBRUNB
-        enhzYjNSegoJCUlHOW1JR0pwYm1GeWVTQm5kVzVyUGdBQkFnTThiRzkwY3lC
-        dlppQmlhVzVoY25rZ1ozVnVhejRBQVFJRAoJCVBHeHZkSE1nYjJZZ1ltbHVZ
-        WEo1SUdkMWJtcytBQUVDQXc9PQoJCTwvZGF0YT4KCTwvYXJyYXk+Cgk8a2V5
-        PnNvbWVEYXRhPC9rZXk+Cgk8ZGF0YT4KCVBHSnBibUZ5ZVNCbmRXNXJQZz09
-        Cgk8L2RhdGE+Cgk8a2V5PnNvbWVNb3JlRGF0YTwva2V5PgoJPGRhdGE+CglQ
-        R3h2ZEhNZ2IyWWdZbWx1WVhKNUlHZDFibXMrQUFFQ0F6eHNiM1J6SUc5bUlH
-        SnBibUZ5ZVNCbmRXNXJQZ0FCQWdNOAoJYkc5MGN5QnZaaUJpYVc1aGNua2da
-        M1Z1YXo0QUFRSURQR3h2ZEhNZ2IyWWdZbWx1WVhKNUlHZDFibXMrQUFFQ0F6
-        eHMKCWIzUnpJRzltSUdKcGJtRnllU0JuZFc1clBnQUJBZ004Ykc5MGN5QnZa
-        aUJpYVc1aGNua2daM1Z1YXo0QUFRSURQR3h2CglkSE1nYjJZZ1ltbHVZWEo1
-        SUdkMWJtcytBQUVDQXp4c2IzUnpJRzltSUdKcGJtRnllU0JuZFc1clBnQUJB
-        Z004Ykc5MAoJY3lCdlppQmlhVzVoY25rZ1ozVnVhejRBQVFJRFBHeHZkSE1n
-        YjJZZ1ltbHVZWEo1SUdkMWJtcytBQUVDQXc9PQoJPC9kYXRhPgoJPGtleT7D
-        hWJlbnJhYTwva2V5PgoJPHN0cmluZz5UaGF0IHdhcyBhIHVuaWNvZGUga2V5
-        Ljwvc3RyaW5nPgo8L2RpY3Q+CjwvcGxpc3Q+Cg=='''),
+        LmR0ZCI+CjxwbGlzdCB2ZXJzaW9uPSIxLjAiPgo8ZGljdD4KCTxrZXk+YUJp
+        Z0ludDwva2V5PgoJPGludGVnZXI+OTIyMzM3MjAzNjg1NDc3NTc2NDwvaW50
+        ZWdlcj4KCTxrZXk+YURhdGU8L2tleT4KCTxkYXRlPjIwMDQtMTAtMjZUMTA6
+        MzM6MzNaPC9kYXRlPgoJPGtleT5hRGljdDwva2V5PgoJPGRpY3Q+CgkJPGtl
+        eT5hRmFsc2VWYWx1ZTwva2V5PgoJCTxmYWxzZS8+CgkJPGtleT5hVHJ1ZVZh
+        bHVlPC9rZXk+CgkJPHRydWUvPgoJCTxrZXk+YVVuaWNvZGVWYWx1ZTwva2V5
+        PgoJCTxzdHJpbmc+TcOkc3NpZywgTWHDnzwvc3RyaW5nPgoJCTxrZXk+YW5v
+        dGhlclN0cmluZzwva2V5PgoJCTxzdHJpbmc+Jmx0O2hlbGxvICZhbXA7ICdo
+        aScgdGhlcmUhJmd0Ozwvc3RyaW5nPgoJCTxrZXk+ZGVlcGVyRGljdDwva2V5
+        PgoJCTxkaWN0PgoJCQk8a2V5PmE8L2tleT4KCQkJPGludGVnZXI+MTc8L2lu
+        dGVnZXI+CgkJCTxrZXk+Yjwva2V5PgoJCQk8cmVhbD4zMi41PC9yZWFsPgoJ
+        CQk8a2V5PmM8L2tleT4KCQkJPGFycmF5PgoJCQkJPGludGVnZXI+MTwvaW50
+        ZWdlcj4KCQkJCTxpbnRlZ2VyPjI8L2ludGVnZXI+CgkJCQk8c3RyaW5nPnRl
+        eHQ8L3N0cmluZz4KCQkJPC9hcnJheT4KCQk8L2RpY3Q+Cgk8L2RpY3Q+Cgk8
+        a2V5PmFGbG9hdDwva2V5PgoJPHJlYWw+MC41PC9yZWFsPgoJPGtleT5hTGlz
+        dDwva2V5PgoJPGFycmF5PgoJCTxzdHJpbmc+QTwvc3RyaW5nPgoJCTxzdHJp
+        bmc+Qjwvc3RyaW5nPgoJCTxpbnRlZ2VyPjEyPC9pbnRlZ2VyPgoJCTxyZWFs
+        PjMyLjU8L3JlYWw+CgkJPGFycmF5PgoJCQk8aW50ZWdlcj4xPC9pbnRlZ2Vy
+        PgoJCQk8aW50ZWdlcj4yPC9pbnRlZ2VyPgoJCQk8aW50ZWdlcj4zPC9pbnRl
+        Z2VyPgoJCTwvYXJyYXk+Cgk8L2FycmF5PgoJPGtleT5hTmVnYXRpdmVCaWdJ
+        bnQ8L2tleT4KCTxpbnRlZ2VyPi04MDAwMDAwMDAwMDwvaW50ZWdlcj4KCTxr
+        ZXk+YU5lZ2F0aXZlSW50PC9rZXk+Cgk8aW50ZWdlcj4tNTwvaW50ZWdlcj4K
+        CTxrZXk+YVN0cmluZzwva2V5PgoJPHN0cmluZz5Eb29kYWg8L3N0cmluZz4K
+        CTxrZXk+YW5FbXB0eURpY3Q8L2tleT4KCTxkaWN0Lz4KCTxrZXk+YW5FbXB0
+        eUxpc3Q8L2tleT4KCTxhcnJheS8+Cgk8a2V5PmFuSW50PC9rZXk+Cgk8aW50
+        ZWdlcj43Mjg8L2ludGVnZXI+Cgk8a2V5Pm5lc3RlZERhdGE8L2tleT4KCTxh
+        cnJheT4KCQk8ZGF0YT4KCQlQR3h2ZEhNZ2IyWWdZbWx1WVhKNUlHZDFibXMr
+        QUFFQ0F6eHNiM1J6SUc5bUlHSnBibUZ5ZVNCbmRXNXIKCQlQZ0FCQWdNOGJH
+        OTBjeUJ2WmlCaWFXNWhjbmtnWjNWdWF6NEFBUUlEUEd4dmRITWdiMllnWW1s
+        dVlYSjUKCQlJR2QxYm1zK0FBRUNBenhzYjNSeklHOW1JR0pwYm1GeWVTQm5k
+        VzVyUGdBQkFnTThiRzkwY3lCdlppQmkKCQlhVzVoY25rZ1ozVnVhejRBQVFJ
+        RFBHeHZkSE1nYjJZZ1ltbHVZWEo1SUdkMWJtcytBQUVDQXp4c2IzUnoKCQlJ
+        RzltSUdKcGJtRnllU0JuZFc1clBnQUJBZ004Ykc5MGN5QnZaaUJpYVc1aGNu
+        a2daM1Z1YXo0QUFRSUQKCQlQR3h2ZEhNZ2IyWWdZbWx1WVhKNUlHZDFibXMr
+        QUFFQ0F3PT0KCQk8L2RhdGE+Cgk8L2FycmF5PgoJPGtleT5zb21lRGF0YTwv
+        a2V5PgoJPGRhdGE+CglQR0pwYm1GeWVTQm5kVzVyUGc9PQoJPC9kYXRhPgoJ
+        PGtleT5zb21lTW9yZURhdGE8L2tleT4KCTxkYXRhPgoJUEd4dmRITWdiMlln
+        WW1sdVlYSjVJR2QxYm1zK0FBRUNBenhzYjNSeklHOW1JR0pwYm1GeWVTQm5k
+        VzVyUGdBQkFnTTgKCWJHOTBjeUJ2WmlCaWFXNWhjbmtnWjNWdWF6NEFBUUlE
+        UEd4dmRITWdiMllnWW1sdVlYSjVJR2QxYm1zK0FBRUNBenhzCgliM1J6SUc5
+        bUlHSnBibUZ5ZVNCbmRXNXJQZ0FCQWdNOGJHOTBjeUJ2WmlCaWFXNWhjbmtn
+        WjNWdWF6NEFBUUlEUEd4dgoJZEhNZ2IyWWdZbWx1WVhKNUlHZDFibXMrQUFF
+        Q0F6eHNiM1J6SUc5bUlHSnBibUZ5ZVNCbmRXNXJQZ0FCQWdNOGJHOTAKCWN5
+        QnZaaUJpYVc1aGNua2daM1Z1YXo0QUFRSURQR3h2ZEhNZ2IyWWdZbWx1WVhK
+        NUlHZDFibXMrQUFFQ0F3PT0KCTwvZGF0YT4KCTxrZXk+w4ViZW5yYWE8L2tl
+        eT4KCTxzdHJpbmc+VGhhdCB3YXMgYSB1bmljb2RlIGtleS48L3N0cmluZz4K
+        PC9kaWN0Pgo8L3BsaXN0Pgo='''),
     plistlib.FMT_BINARY: binascii.a2b_base64(b'''
-        YnBsaXN0MDDcAQIDBAUGBwgJCgsMDQ4iIykqKywtLy4wVWFEYXRlVWFEaWN0
-        VmFGbG9hdFVhTGlzdFdhU3RyaW5nW2FuRW1wdHlEaWN0W2FuRW1wdHlMaXN0
-        VWFuSW50Wm5lc3RlZERhdGFYc29tZURhdGFcc29tZU1vcmVEYXRhZwDFAGIA
-        ZQBuAHIAYQBhM0GcuX30AAAA1Q8QERITFBUWFxhbYUZhbHNlVmFsdWVaYVRy
-        dWVWYWx1ZV1hVW5pY29kZVZhbHVlXWFub3RoZXJTdHJpbmdaZGVlcGVyRGlj
-        dAgJawBNAOQAcwBzAGkAZwAsACAATQBhAN9fEBU8aGVsbG8gJiAnaGknIHRo
-        ZXJlIT7TGRobHB0eUWFRYlFjEBEjQEBAAAAAAACjHyAhEAEQAlR0ZXh0Iz/g
-        AAAAAAAApSQlJh0nUUFRQhAMox8gKBADVkRvb2RhaNCgEQLYoS5PEPo8bG90
-        cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2YgYmluYXJ5IGd1bms+AAEC
-        Azxsb3RzIG9mIGJpbmFyeSBndW5rPgABAgM8bG90cyBvZiBiaW5hcnkgZ3Vu
-        az4AAQIDPGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAzxsb3RzIG9mIGJpbmFy
-        eSBndW5rPgABAgM8bG90cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2Yg
-        YmluYXJ5IGd1bms+AAECAzxsb3RzIG9mIGJpbmFyeSBndW5rPgABAgM8bG90
-        cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDTTxiaW5hcnkgZ3Vuaz5fEBdUaGF0IHdh
-        cyBhIHVuaWNvZGUga2V5LgAIACEAJwAtADQAOgBCAE4AWgBgAGsAdACBAJAA
-        mQCkALAAuwDJANcA4gDjAOQA+wETARoBHAEeASABIgErAS8BMQEzATgBQQFH
-        AUkBSwFNAVEBUwFaAVsBXAFfAWECXgJsAAAAAAAAAgEAAAAAAAAAMQAAAAAA
-        AAAAAAAAAAAAAoY='''),
+        YnBsaXN0MDDfEA8BAgMEBQYHCAkKCwwNDg8QERImJy0uLzAxMjM1NDZXYUJp
+        Z0ludFVhRGF0ZVVhRGljdFZhRmxvYXRVYUxpc3RfEA9hTmVnYXRpdmVCaWdJ
+        bnRcYU5lZ2F0aXZlSW50V2FTdHJpbmdbYW5FbXB0eURpY3RbYW5FbXB0eUxp
+        c3RVYW5JbnRabmVzdGVkRGF0YVhzb21lRGF0YVxzb21lTW9yZURhdGFnAMUA
+        YgBlAG4AcgBhAGETf////////9QzQZy5ffQAAADVExQVFhcYGRobHFthRmFs
+        c2VWYWx1ZVphVHJ1ZVZhbHVlXWFVbmljb2RlVmFsdWVdYW5vdGhlclN0cmlu
+        Z1pkZWVwZXJEaWN0CAlrAE0A5ABzAHMAaQBnACwAIABNAGEA318QFTxoZWxs
+        byAmICdoaScgdGhlcmUhPtMdHh8gISJRYVFiUWMQESNAQEAAAAAAAKMjJCUQ
+        ARACVHRleHQjP+AAAAAAAAClKCkqIStRQVFCEAyjIyQsEAMT////7V+g4AAT
+        //////////tWRG9vZGFo0KARAtihNE8Q+jxsb3RzIG9mIGJpbmFyeSBndW5r
+        PgABAgM8bG90cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2YgYmluYXJ5
+        IGd1bms+AAECAzxsb3RzIG9mIGJpbmFyeSBndW5rPgABAgM8bG90cyBvZiBi
+        aW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAzxsb3Rz
+        IG9mIGJpbmFyeSBndW5rPgABAgM8bG90cyBvZiBiaW5hcnkgZ3Vuaz4AAQID
+        PGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAzxsb3RzIG9mIGJpbmFyeSBndW5r
+        PgABAgNNPGJpbmFyeSBndW5rPl8QF1RoYXQgd2FzIGEgdW5pY29kZSBrZXku
+        AAgAKQAxADcAPQBEAEoAXABpAHEAfQCJAI8AmgCjALAAvwDIANEA3ADoAPMB
+        AQEPARoBGwEcATMBSwFSAVQBVgFYAVoBYwFnAWkBawFwAXkBfwGBAYMBhQGJ
+        AYsBlAGdAaQBpQGmAakBqwKoArYAAAAAAAACAQAAAAAAAAA3AAAAAAAAAAAA
+        AAAAAAAC0A=='''),
 }
 
 
@@ -98,6 +105,9 @@ class TestPlistlib(unittest.TestCase):
             aList=["A", "B", 12, 32.5, [1, 2, 3]],
             aFloat = 0.5,
             anInt = 728,
+            aBigInt = 2 ** 63 - 44,
+            aNegativeInt = -5,
+            aNegativeBigInt = -80000000000,
             aDict=dict(
                 anotherString="<hello & 'hi' there!>",
                 aUnicodeValue='M\xe4ssig, Ma\xdf',
@@ -133,6 +143,30 @@ class TestPlistlib(unittest.TestCase):
         self.assertRaises(AttributeError, plistlib.dump, pl, 'filename')
         self.assertRaises(AttributeError, plistlib.load, 'filename')
 
+    def test_invalid_type(self):
+        pl = [ object() ]
+
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                self.assertRaises(TypeError, plistlib.dumps, pl, fmt=fmt)
+
+    def test_int(self):
+        for pl in [0, 2**8-1, 2**8, 2**16-1, 2**16, 2**32-1, 2**32,
+                   2**63-1, 1, -2**63]:
+            for fmt in ALL_FORMATS:
+                with self.subTest(pl=pl, fmt=fmt):
+                    data = plistlib.dumps(pl, fmt=fmt)
+                    pl2 = plistlib.loads(data)
+                    self.assertIsInstance(pl2, int)
+                    self.assertEqual(pl, pl2)
+                    data2 = plistlib.dumps(pl2, fmt=fmt)
+                    self.assertEqual(data, data2)
+
+        for fmt in ALL_FORMATS:
+            for pl in (2 ** 64 + 1, 2 ** 127-1, -2**64, -2 ** 127):
+                with self.subTest(pl=pl, fmt=fmt):
+                    self.assertRaises(OverflowError, plistlib.dumps,
+                                      pl, fmt=fmt)
 
     def test_bytes(self):
         pl = self._create()

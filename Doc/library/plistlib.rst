@@ -79,6 +79,8 @@ This module defines the following functions:
    Load a plist from a bytes object. See :func:`load` for an explanation of
    the keyword arguments.
 
+   .. versionadded:: 3.4
+
 
 .. function:: dump(value, fp, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
@@ -102,8 +104,17 @@ This module defines the following functions:
    A :exc:`TypeError` will be raised if the object is of an unsupported type or
    a container that contains objects of unsupported types.
 
-   .. versionchanged:: 3.4
-      Added the *fmt*, *sort_keys* and *skipkeys* arguments.
+   An :exc:`OverflowError` will be raised for integer values that cannot
+   be represented in (binary) plist files.
+
+   .. warning::
+
+      For compatibility with Apple's libraries it is possible to write
+      an integer in the range from 2 ** 63 upto (and including) 2 ** 64
+      to binary plists, even though these will be read back as negative
+      values.
+
+   .. versionadded: 3.4
 
 
 .. function:: dumps(value, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
@@ -112,6 +123,7 @@ This module defines the following functions:
    the documentation for :func:`dump` for an explanation of the keyword
    arguments of this function.
 
+   .. versionadded: 3.4
 
 The following functions are deprecated:
 
@@ -161,9 +173,6 @@ The following functions are deprecated:
    Return *rootObject* as an XML plist-formatted bytes object.
 
    .. deprecated:: 3.4 Use :func:`dumps` instead.
-
-   .. versionchanged:: 3.4
-      Added the *fmt*, *sort_keys* and *skipkeys* arguments.
 
 
 The following classes are available:
