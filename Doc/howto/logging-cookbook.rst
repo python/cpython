@@ -1827,3 +1827,94 @@ Of course, the approach could also be extended to types of handler other than a
 :class:`~logging.FileHandler` - for example, one of the rotating file handlers,
 or a different type of handler altogether.
 
+
+.. currentmodule:: logging
+
+.. _formatting-styles:
+
+Using particular formatting styles throughout your application
+--------------------------------------------------------------
+
+In Python 3.2, the :class:`~logging.Formatter` gained a ``style`` keyword
+parameter which, while defaulting to ``%`` for backward compatibility, allowed
+the specification of ``{`` or ``$`` to support the formatting approaches
+supported by :meth:`str.format` and :class:`string.Template`. Note that this
+governs the formatting of logging messages for final output to logs, and is
+completely orthogonal to how an individual logging message is constructed.
+
+Logging calls (:meth:`~Logger.debug`, :meth:`~Logger.info` etc.) only take
+positional parameters for the actual logging message itself, with keyword
+parameters used only for determining options for how to handle the logging call
+(e.g. the ``exc_info`` keyword parameter to indicate that traceback information
+should be logged, or the ``extra`` keyword parameter to indicate additional
+contextual information to be added to the log). So you cannot directly make
+logging calls using :meth:`str.format` or :class:`string.Template` syntax,
+because internally the logging package uses %-formatting to merge the format
+string and the variable arguments. There would no changing this while preserving
+backward compatibility, since all logging calls which are out there in existing
+code will be using %-format strings.
+
+There have been suggestions to associate format styles with specific loggers,
+but that approach also runs into backward compatibility problems because any
+existing code could be using a given logger name and using %-formatting.
+
+For logging to work interoperably between any third-party libraries and your
+code, decisions about formatting need to be made at the level of the
+individual logging call. This opens up a couple of ways in which alternative
+formatting styles can be accommodated.
+
+
+Using LogRecord factories
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Python 3.2, along with the :class:`~logging.Formatter` changes mentioned
+above, the logging package gained the ability to allow users to set their own
+:class:`LogRecord` subclasses, using the :func:`setLogRecordFactory` function.
+You can use this to set your own subclass of :class:`LogRecord`, which does the
+Right Thing by overriding the :meth:`~LogRecord.getMessage` method. The base
+class implementation of this method is where the ``msg % args`` formatting
+happens, and where you can substitute your alternate formatting; however, you
+should be careful to support all formatting styles and allow %-formatting as
+the default, to ensure interoperability with other code. Care should also be
+taken to call ``str(self.msg)``, just as the base implementation does.
+
+Refer to the reference documentation on :func:`setLogRecordFactory` and
+:class:`LogRecord` for more information.
+
+
+Using custom message objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There is another, perhaps simpler way that you can use {}- and $- formatting to
+construct your individual log messages. You may recall (from
+:ref:`arbitrary-object-messages`) that when logging you can use an arbitrary
+object as a message format string, and that the logging package will call
+:func:`str` on that object to get the actual format string. Consider the
+following two classes::
+
+    class BraceMessage(object):
+        def __init__(self, fmt, *args, **kwargs):
+            self.fmt = fmt
+            self.args = args
+            self.kwargs = kwargs
+
+        def __str__(self):
+            return self.fmt.format(*self.args, **self.kwargs)
+
+    class DollarMessage(object):
+        def __init__(self, fmt, **kwargs):
+            self.fmt = fmt
+            self.kwargs = kwargs
+
+        def __str__(self):
+            from string import Template
+            return Template(self.fmt).substitute(**self.kwargs)
+
+Either of these can be used in place of a format string, to allow {}- or
+$-formatting to be used to build the actual "message" part which appears in the
+formatted log output in place of “%(message)s” or “{message}” or “$message”.
+If you find it a little unwieldy to use the class names whenever you want to log
+something, you can make it more palatable if you use an alias such as ``M`` or
+``_`` for the message (or perhaps ``__``, if you are using ``_`` for
+localization).
+
