@@ -132,6 +132,8 @@ Significantly Improved Library Modules:
   a new :mod:`~email.message.Message` subclass
   (:class:`~email.contentmanager.EmailMessage`) that :ref:`simplify MIME
   handling <whatsnew_email_contentmanager>` (:issue:`18891`).
+* :mod:`plistlib` has a cleaned up interface and support for binary
+  plist files (:issue:`14455`)
 
 CPython implementation improvements:
 

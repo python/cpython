@@ -478,7 +478,10 @@ class _PlistWriter(_DumbXMLWriter):
             self.simple_element("false")
 
         elif isinstance(value, int):
-            self.simple_element("integer", "%d" % value)
+            if -1 << 63 <= value < 1 << 64:
+                self.simple_element("integer", "%d" % value)
+            else:
+                raise OverflowError(value)
 
         elif isinstance(value, float):
             self.simple_element("real", repr(value))
@@ -665,7 +668,8 @@ class _BinaryPlistParser:
             return b''
 
         elif tokenH == 0x10:  # int
-            return int.from_bytes(self._fp.read(1 << tokenL), 'big')
+            return int.from_bytes(self._fp.read(1 << tokenL),
+                                  'big', signed=tokenL >= 3)
 
         elif token == 0x22: # real
             return struct.unpack('>f', self._fp.read(4))[0]
@@ -871,14 +875,22 @@ class _BinaryPlistWriter (object):
             self._fp.write(b'\x09')
 
         elif isinstance(value, int):
-            if value < 1 << 8:
+            if value < 0:
+                try:
+                    self._fp.write(struct.pack('>Bq', 0x13, value))
+                except struct.error:
+                    raise OverflowError(value)
+            elif value < 1 << 8:
                 self._fp.write(struct.pack('>BB', 0x10, value))
             elif value < 1 << 16:
                 self._fp.write(struct.pack('>BH', 0x11, value))
             elif value < 1 << 32:
                 self._fp.write(struct.pack('>BL', 0x12, value))
             else:
-                self._fp.write(struct.pack('>BQ', 0x13, value))
+                try:
+                    self._fp.write(struct.pack('>BQ', 0x13, value))
+                except struct.error:
+                    raise OverflowError(value)
 
         elif isinstance(value, float):
             self._fp.write(struct.pack('>Bd', 0x23, value))
@@ -933,7 +945,7 @@ class _BinaryPlistWriter (object):
             self._fp.write(struct.pack('>' + self._ref_format * s, *valRefs))
 
         else:
-            raise InvalidFileException()
+            raise TypeError(value)
 
 
 def _is_fmt_binary(header):
