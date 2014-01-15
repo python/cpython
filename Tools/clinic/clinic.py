@@ -2301,6 +2301,12 @@ class DSLParser:
         #     modulename.fnname [as c_basename] [-> return annotation]
         # square brackets denote optional syntax.
         #
+        # alternatively:
+        #     modulename.fnname [as c_basename] = modulename.existing_fn_name
+        # clones the parameters and return converter from that
+        # function.  you can't modify them.  you must enter a
+        # new docstring.
+        #
         # (but we might find a directive first!)
         #
         # this line is permitted to start with whitespace.
@@ -2318,6 +2324,45 @@ class DSLParser:
         if directive:
             directive(*fields[1:])
             return
+
+        # are we cloning?
+        before, equals, existing = line.rpartition('=')
+        if equals:
+            full_name, _, c_basename = before.partition(' as ')
+            full_name = full_name.strip()
+            c_basename = c_basename.strip()
+            existing = existing.strip()
+            if (is_legal_py_identifier(full_name) and
+                (not c_basename or is_legal_c_identifier(c_basename)) and
+                is_legal_py_identifier(existing)):
+                # we're cloning!
+                fields = [x.strip() for x in existing.split('.')]
+                function_name = fields.pop()
+                module, cls = self.clinic._module_and_class(fields)
+
+                for existing_function in (cls or module).functions:
+                    if existing_function.name == function_name:
+                        break
+                else:
+                    existing_function = None
+                if not existing_function:
+                    fail("Couldn't find existing function " + repr(existing) + "!")
+
+                fields = [x.strip() for x in full_name.split('.')]
+                function_name = fields.pop()
+                module, cls = self.clinic._module_and_class(fields)
+
+                if not (existing_function.kind == self.kind and existing_function.coexist == self.coexist):
+                    fail("'kind' of function and cloned function don't match!  (@classmethod/@staticmethod/@coexist)")
+                self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
+                                 return_converter=existing_function.return_converter, kind=existing_function.kind, coexist=existing_function.coexist)
+
+                self.function.parameters = existing_function.parameters.copy()
+
+                self.block.signatures.append(self.function)
+                (cls or module).functions.append(self.function)
+                self.next(self.state_function_docstring)
+                return
 
         line, _, returns = line.partition('->')
 
@@ -2373,6 +2418,7 @@ class DSLParser:
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist)
         self.block.signatures.append(self.function)
+        (cls or module).functions.append(self.function)
         self.next(self.state_parameters_start)
 
     # Now entering the parameters section.  The rules, formally stated:
