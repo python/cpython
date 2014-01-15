@@ -72,6 +72,8 @@ Library
 
 - Issue #20229: Avoid plistlib deprecation warning in platform.mac_ver().
 
+- Issue #14455: Fix some problems with the new binary plist support in plistlib.
+
 IDLE
 ----
 
