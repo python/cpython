@@ -86,6 +86,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20268: Argument Clinic now supports cloning the parameters and
+  return converter of existing functions.
+
 - Issue #20228: Argument Clinic now has special support for class special
   methods.
 

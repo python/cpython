@@ -847,6 +847,49 @@ their parameters (if any),
 just run ``Tools/clinic/clinic.py --converters`` for the full list.
 
 
+Cloning existing functions
+--------------------------
+
+If you have a number of functions that look similar, you may be able to
+use Clinic's "clone" feature.  When you clone an existing function,
+you reuse:
+
+* its parameters, including
+
+  * their names,
+
+  * their converters, with all parameters,
+
+  * their default values,
+
+  * their per-parameter docstrings,
+
+  * their *kind* (whether they're positional only,
+    positional or keyword, or keyword only), and
+
+* its return converter.
+
+The only thing not copied from the original function is its docstring;
+the syntax allows you to specify a new docstring.
+
+Here's the syntax for cloning a function::
+
+    /*[clinic input]
+    module.class.new_function [as c_basename] = module.class.existing_function
+
+    Docstring for new_function goes here.
+    [clinic start generated code]*/
+
+(The functions can be in different modules or classes.  I wrote
+``module.class`` in the sample just to illustrate that you must
+use the full path to *both* functions.)
+
+Sorry, there's no syntax for partially-cloning a function, or cloning a function
+then modifying it.  Cloning is an all-or nothing proposition.
+
+Also, the function you are cloning from must have been previously defined
+in the current file.
+
 Calling Python code
 -------------------
 
