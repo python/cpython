@@ -320,19 +320,19 @@ StreamReader
 
       XXX
 
-      This method returns a :ref:`coroutine <coroutine>`.
+      This method returns a :ref:`coroutine object <coroutine>`.
 
    .. method:: readline()
 
       XXX
 
-      This method returns a :ref:`coroutine <coroutine>`.
+      This method returns a :ref:`coroutine object <coroutine>`.
 
    .. method:: readexactly(n)
 
       XXX
 
-      This method returns a :ref:`coroutine <coroutine>`.
+      This method returns a :ref:`coroutine object <coroutine>`.
 
 
 
@@ -550,7 +550,7 @@ Network functions
    :class:`StreamReaderProtocol` classes, just copy the code -- there's really
    nothing special here except some convenience.)
 
-   This function returns a :ref:`coroutine <coroutine>`.
+   This function returns a :ref:`coroutine object <coroutine>`.
 
 .. function:: start_server(client_connected_cb, host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
 
@@ -560,8 +560,8 @@ Network functions
    *client_reader*, *client_writer*.  *client_reader* is a
    :class:`StreamReader` object, while *client_writer* is a
    :class:`StreamWriter` object.  This parameter can either be a plain callback
-   function or a :ref:`coroutine <coroutine>`; if it is a coroutine, it will be
-   automatically converted into a :class:`Task`.
+   function or a :ref:`coroutine function <coroutine>`; if it is a coroutine
+   function, it will be automatically converted into a :class:`Task`.
 
    The rest of the arguments are all the usual arguments to
    :meth:`~BaseEventLoop.create_server()` except *protocol_factory*; most
@@ -576,7 +576,7 @@ Network functions
    The return value is the same as :meth:`~BaseEventLoop.create_server()`, i.e.
    a :class:`AbstractServer` object which can be used to stop the service.
 
-   This function returns a :ref:`coroutine <coroutine>`.
+   This function returns a :ref:`coroutine object <coroutine>`.
 
 
 Protocol example: TCP echo server and client
