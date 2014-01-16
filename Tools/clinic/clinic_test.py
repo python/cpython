@@ -9,6 +9,7 @@ from clinic import DSLParser
 import collections
 import inspect
 from test import support
+import sys
 import unittest
 from unittest import TestCase
 
@@ -276,6 +277,20 @@ class ClinicParserTest(TestCase):
         function = self.parse_function("module os\nos.access\n    follow_symlinks: bool = True")
         p = function.parameters['follow_symlinks']
         self.assertEqual(True, p.default)
+
+    def test_param_with_continuations(self):
+        function = self.parse_function("module os\nos.access\n    follow_symlinks: \\\n   bool \\\n   =\\\n    True")
+        p = function.parameters['follow_symlinks']
+        self.assertEqual(True, p.default)
+
+    def test_param_default_expression(self):
+        function = self.parse_function("module os\nos.access\n    follow_symlinks: int(c_default='MAXSIZE') = sys.maxsize")
+        p = function.parameters['follow_symlinks']
+        self.assertEqual(sys.maxsize, p.default)
+        self.assertEqual("MAXSIZE", p.converter.c_default)
+
+        s = self.parse_function_should_fail("module os\nos.access\n    follow_symlinks: int = sys.maxsize")
+        self.assertEqual(s, "Error on line 0:\nWhen you specify a named constant ('sys.maxsize') as your default value,\nyou MUST specify a valid c_default.\n")
 
     def test_param_no_docstring(self):
         function = self.parse_function("""
