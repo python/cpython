@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #
 # Copyright (C) 2001-2012 Python Software Foundation. All Rights Reserved.
 # Modified and extended by Stefan Krah.
