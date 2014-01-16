@@ -202,7 +202,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
     int group_right_1 = 0;
     int level = 0;
 
-    switch (PyTuple_Size(args)) {
+    switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "y*:compress", &bytes))
                 return NULL;
@@ -227,7 +227,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
-/*[clinic end generated code: checksum=2c59af563a4595c5ecea4011701f482ae350aa5f]*/
+/*[clinic end generated code: checksum=66c4d16d0b8b9dd423648d9ef00d6a89d3363665]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;

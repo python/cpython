@@ -2870,7 +2870,7 @@ PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
 );
 
 PyDoc_STRVAR(docstring_with_signature_with_defaults,
-"docstring_with_signature_with_defaults(s='avocado', d=3.14, i=35, c=sys.maxsize, n=None, t=True, f=False)\n"
+"docstring_with_signature_with_defaults(s='avocado', b=b'bytes', d=3.14, i=35, n=None, t=True, f=False, local=the_number_three, sys=sys.maxsize, exp=sys.maxsize - 1)\n"
 "\n"
 "\n"
 "\n"
@@ -3316,6 +3316,8 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "SIZEOF_PYGC_HEAD", PyLong_FromSsize_t(sizeof(PyGC_Head)));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
+
+    PyModule_AddIntConstant(m, "the_number_three", 3);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);

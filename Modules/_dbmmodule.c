@@ -297,7 +297,7 @@ dbm_dbm_get(PyObject *self, PyObject *args)
     int group_right_1 = 0;
     PyObject *default_value = NULL;
 
-    switch (PyTuple_Size(args)) {
+    switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "s#:get", &key, &key_length))
                 return NULL;
@@ -318,7 +318,7 @@ dbm_dbm_get(PyObject *self, PyObject *args)
 
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
-/*[clinic end generated code: checksum=28cf8928811bde51e535d67ae98ea039d79df717]*/
+/*[clinic end generated code: checksum=2c3209571267017f1b9abbd19e1b521849fd5d4a]*/
 {
     datum dbm_key, val;
 
@@ -450,7 +450,7 @@ dbm.open as dbmopen
     flags: str="r"
         How to open the file.  "r" for reading, "w" for writing, etc.
 
-    mode: int(doc_default="0o666") = 0o666
+    mode: int(py_default="0o666") = 0o666
         If creating a new file, the mode bits for the new file
         (e.g. os.O_RDWR).
 
