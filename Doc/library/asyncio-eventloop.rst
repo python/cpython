@@ -158,7 +158,7 @@ Creating connections
    *port*.  *protocol_factory* must be a callable returning a
    :ref:`protocol <protocol>` instance.
 
-   This method returns a :ref:`coroutine <coroutine>` which will try to
+   This method returns a :ref:`coroutine object <coroutine>` which will try to
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
@@ -219,7 +219,7 @@ Creating listening connections
 
 .. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
-   A :ref:`coroutine <coroutine>` which creates a TCP server bound to host and
+   A :ref:`coroutine function <coroutine>` which creates a TCP server bound to host and
    port.
 
    The return value is a :class:`AbstractServer` object which can be used to stop
@@ -249,13 +249,13 @@ Creating listening connections
    expire. If not specified will automatically be set to True on
    UNIX.
 
-   This method returns a :ref:`coroutine <coroutine>`.
+   This method returns a :ref:`coroutine object <coroutine>`.
 
 .. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
 
    Create datagram connection.
 
-   This method returns a :ref:`coroutine <coroutine>`.
+   This method returns a :ref:`coroutine object <coroutine>`.
 
 
 
@@ -280,7 +280,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    XXX
 
-   This method returns a :ref:`coroutine <coroutine>`.
+   This method returns a :ref:`coroutine object <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
@@ -288,7 +288,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    XXX
 
-   This method returns a :ref:`coroutine <coroutine>`.
+   This method returns a :ref:`coroutine object <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
@@ -301,7 +301,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    Return pair (transport, protocol), where transport support
    :class:`ReadTransport` interface.
 
-   This method returns a :ref:`coroutine <coroutine>`.
+   This method returns a :ref:`coroutine object <coroutine>`.
 
 .. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
 
@@ -312,7 +312,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    Return pair (transport, protocol), where transport support
    :class:`WriteTransport` interface.
 
-   This method returns a :ref:`coroutine <coroutine>`.
+   This method returns a :ref:`coroutine object <coroutine>`.
 
 
 Executor

@@ -19,7 +19,7 @@ The word "coroutine", like the word "generator", is used for two
 different (though related) concepts:
 
 - The function that defines a coroutine (a function definition
-  decorated with ``asyncio.coroutine``).  If disambiguation is needed
+  decorated with ``@asyncio.coroutine``).  If disambiguation is needed
   we will call this a *coroutine function*.
 
 - The object obtained by calling a coroutine function.  This object
@@ -117,7 +117,7 @@ Sequence diagram of the example:
    :align: center
 
 The "Task" is created by the :meth:`BaseEventLoop.run_until_complete` method
-when it gets a coroutine instead of a task.
+when it gets a coroutine object instead of a task.
 
 The diagram shows the control flow, it does not describe exactly how things
 work internally. For example, the sleep coroutine creates an internal future
@@ -219,7 +219,8 @@ Future
 Example: Future with run_until_complete()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Example combining a :class:`Future` and a :ref:`coroutine <coroutine>`::
+Example combining a :class:`Future` and a :ref:`coroutine function
+<coroutine>`::
 
     import asyncio
 
@@ -234,8 +235,8 @@ Example combining a :class:`Future` and a :ref:`coroutine <coroutine>`::
     loop.run_until_complete(future)
     print(future.result())
 
-The coroutine is responsible of the computation (which takes 1 second) and
-it stores the result into the future. The
+The coroutine function is responsible of the computation (which takes 1 second)
+and it stores the result into the future. The
 :meth:`~BaseEventLoop.run_until_complete` method waits for the completion of
 the future.
 
@@ -273,9 +274,9 @@ In this example, the future is responsible to display the result and to stop
 the loop.
 
 .. note::
-   The coroutine is only executed when the event loop starts running, so it is
-   possible to add a "done callback" to the future after creating the task
-   scheduling the coroutine.
+   The "slow_operation" coroutine object is only executed when the event loop
+   starts running, so it is possible to add a "done callback" to the future
+   after creating the task scheduling the coroutine object.
 
 
 
@@ -284,7 +285,7 @@ Task
 
 .. class:: Task(coro, \*, loop=None)
 
-   A coroutine wrapped in a :class:`Future`. Subclass of :class:`Future`.
+   A coroutine object wrapped in a :class:`Future`. Subclass of :class:`Future`.
 
    .. classmethod:: all_tasks(loop=None)
 
@@ -392,13 +393,14 @@ Task functions
 
 .. function:: async(coro_or_future, \*, loop=None)
 
-   Wrap a :ref:`coroutine <coroutine>` in a future.
+   Wrap a :ref:`coroutine object <coroutine>` in a future.
 
    If the argument is a :class:`Future`, it is returned directly.
 
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 
-   Return a future aggregating results from the given coroutines or futures.
+   Return a future aggregating results from the given coroutine objects or
+   futures.
 
    All futures must share the same event loop.  If all the tasks are done
    successfully, the returned future's result is the list of results (in the
@@ -416,8 +418,8 @@ Task functions
 
 .. function:: sleep(delay, result=None, \*, loop=None)
 
-   Create a :ref:`coroutine <coroutine>` that completes after a given time
-   (in seconds).
+   Create a :ref:`coroutine object <coroutine>` that completes after a given
+   time (in seconds).
 
 .. function:: shield(arg, \*, loop=None)
 
@@ -448,8 +450,8 @@ Task functions
 
 .. function:: wait(futures, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
 
-   Wait for the Futures and coroutines given by the sequence *futures* to
-   complete.  Coroutines will be wrapped in Tasks. Returns two sets of
+   Wait for the Futures and coroutine objects given by the sequence *futures*
+   to complete.  Coroutines will be wrapped in Tasks. Returns two sets of
    :class:`Future`: (done, pending).
 
    *timeout* can be used to control the maximum number of seconds to wait before
@@ -477,7 +479,7 @@ Task functions
    |                             | futures finish or are cancelled.       |
    +-----------------------------+----------------------------------------+
 
-   This function returns a :ref:`coroutine <coroutine>`.
+   This function returns a :ref:`coroutine object <coroutine>`.
 
    Usage::
 
