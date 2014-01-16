@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 from test import support
 import unittest
 import urllib.parse

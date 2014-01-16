@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """Read/write support for Maildir, mbox, MH, Babyl, and MMDF mailboxes."""
 
 # Notes for authors of new mailbox subclasses:

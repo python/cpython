@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """Test script for the dbm.open function based on testdumbdbm.py"""
 
 import os

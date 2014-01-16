@@ -334,6 +334,12 @@ Build
 Tools/Demos
 -----------
 
+- Issue #19936: Added executable bits or shebang lines to Python scripts which
+  requires them.  Disable executable bits and shebang lines in test and
+  benchmark files in order to prevent using a random system python, and in
+  source files of modules which don't provide command line interface.  Fixed
+  shebang line to use python3 executable in the unittestgui script.
+
 - Issue #18960: 2to3 and the findnocoding.py script now ignore the source
   encoding declaration on the second line if the first line contains anything
   except a comment.

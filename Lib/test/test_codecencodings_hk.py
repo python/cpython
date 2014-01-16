@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 # test_codecencodings_hk.py
 #   Codec encoding tests for HongKong encodings.
