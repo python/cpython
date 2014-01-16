@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # test_codecmaps_kr.py
 #   Codec mapping tests for ROK encodings

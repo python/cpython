@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 """
 Module difflib -- helpers for computing deltas between objects.
 

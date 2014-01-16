@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import unittest
 from test import test_support
 import smtplib

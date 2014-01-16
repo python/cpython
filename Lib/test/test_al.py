@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Whimpy test script for the al module
    Roger E. Masse
 """

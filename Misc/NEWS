@@ -152,6 +152,14 @@ Library
 - Issue #19286: Directories in ``package_data`` are no longer added to
   the filelist, preventing failure outlined in the ticket.
 
+Tools/Demos
+-----------
+
+- Issue #19936: Added executable bits or shebang lines to Python scripts which
+  requires them.  Disable executable bits and shebang lines in test and
+  benchmark files in order to prevent using a random system python, and in
+  source files of modules which don't provide command line interface.
+
 IDLE
 ----
 

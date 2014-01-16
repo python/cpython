@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test script for the gzip module.
 """
 

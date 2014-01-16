@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test the errno module
    Roger E. Masse
 """

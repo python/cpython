@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # test_codecencodings_jp.py
 #   Codec encoding tests for Japanese encodings.

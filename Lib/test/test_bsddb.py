@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test script for the bsddb C module by Roger E. Masse
    Adapted to unittest format and expanded scope by Raymond Hettinger
 """

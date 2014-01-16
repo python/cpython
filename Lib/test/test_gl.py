@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Very simple test script for the SGI gl library extension module
     taken mostly from the documentation.
     Roger E. Masse

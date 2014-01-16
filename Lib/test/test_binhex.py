@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test script for the binhex C module
 
    Uses the mechanism of the python binhex module

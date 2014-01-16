@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 """Test script for the imageop module.  This has the side
    effect of partially testing the imgfile module as well.
    Roger E. Masse

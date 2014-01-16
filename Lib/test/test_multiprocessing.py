@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #
 # Unit tests for the multiprocessing package
 #

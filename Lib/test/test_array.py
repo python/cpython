@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test the arraymodule.
    Roger E. Masse
 """

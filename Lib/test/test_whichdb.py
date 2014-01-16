@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test script for the whichdb module
    based on test_anydbm.py
 """

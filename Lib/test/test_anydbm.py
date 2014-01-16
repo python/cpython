@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test script for the anydbm module
    based on testdumbdbm.py
 """

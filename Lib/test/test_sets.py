@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import unittest, operator, copy, pickle, random
 from test import test_support
 

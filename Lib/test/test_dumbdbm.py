@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Test script for the dumbdbm module
    Original by Roger E. Masse
 """

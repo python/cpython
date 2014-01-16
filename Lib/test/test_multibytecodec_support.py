@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # test_multibytecodec_support.py
 #   Common Unittest Routines for CJK codecs
 #
