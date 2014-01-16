@@ -55,6 +55,13 @@ class Null:
 NULL = Null()
 
 
+class Unknown:
+    def __repr__(self):
+        return '<Unknown>'
+
+unknown = Unknown()
+
+
 def _text_accumulator():
     text = []
     def output():
@@ -197,7 +204,7 @@ def version_splitter(s):
     accumulator = []
     def flush():
         if not accumulator:
-            raise ValueError('Malformed version string: ' + repr(s))
+            raise ValueError('Unsupported version string: ' + repr(s))
         version.append(int(''.join(accumulator)))
         accumulator.clear()
 
@@ -596,7 +603,7 @@ static {impl_return_type}
         count_min = sys.maxsize
         count_max = -1
 
-        add("switch (PyTuple_Size(args)) {{\n")
+        add("switch (PyTuple_GET_SIZE(args)) {{\n")
         for subset in permute_optional_groups(left, required, right):
             count = len(subset)
             count_min = min(count_min, count)
@@ -1069,6 +1076,7 @@ class Clinic:
         self.filename = filename
         self.modules = collections.OrderedDict()
         self.classes = collections.OrderedDict()
+        self.functions = []
 
         global clinic
         clinic = self
@@ -1343,29 +1351,7 @@ class Parameter:
     def is_keyword_only(self):
         return self.kind == inspect.Parameter.KEYWORD_ONLY
 
-py_special_values = {
-    NULL: "None",
-}
 
-def py_repr(o):
-    special = py_special_values.get(o)
-    if special:
-        return special
-    return repr(o)
-
-
-c_special_values = {
-    NULL: "NULL",
-    None: "Py_None",
-}
-
-def c_repr(o):
-    special = c_special_values.get(o)
-    if special:
-        return special
-    if isinstance(o, str):
-        return '"' + quoted_for_c_string(o) + '"'
-    return repr(o)
 
 def add_c_converter(f, name=None):
     if not name:
@@ -1407,8 +1393,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     """
     For the init function, self, name, function, and default
     must be keyword-or-positional parameters.  All other
-    parameters (including "required" and "doc_default")
-    must be keyword-only.
+    parameters must be keyword-only.
     """
 
     # The C type to use for this variable.
@@ -1418,22 +1403,22 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
+    # Or the magic value "unknown" if this value is a cannot be evaluated
+    # at Argument-Clinic-preprocessing time (but is presumed to be valid
+    # at runtime).
     default = unspecified
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
     default_type = None
 
-    # "default" as it should appear in the documentation, as a string.
-    # Or None if there is no default.
-    doc_default = None
-
-    # "default" converted into a str for rendering into Python code.
-    py_default = None
-
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
     c_default = None
+
+    # "default" converted into a Python value, as a string.
+    # Or None if there is no default.
+    py_default = None
 
     # The default value used to initialize the C variable when
     # there is no default, but not specifying a default may
@@ -1485,12 +1470,12 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only used by format units ending with '#'.
     length = False
 
-    def __init__(self, name, function, default=unspecified, *, doc_default=None, c_default=None, py_default=None, required=False, annotation=unspecified, **kwargs):
+    def __init__(self, name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
         self.function = function
         self.name = name
 
         if default is not unspecified:
-            if self.default_type and not isinstance(default, self.default_type):
+            if self.default_type and not isinstance(default, (self.default_type, Unknown)):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
                 else:
@@ -1498,23 +1483,19 @@ class CConverter(metaclass=CConverterAutoRegister):
                 fail("{}: default value {!r} for field {} is not of type {}".format(
                     self.__class__.__name__, default, name, types_str))
             self.default = default
-            self.py_default = py_default if py_default is not None else py_repr(default)
-            self.doc_default = doc_default if doc_default is not None else self.py_default
-            self.c_default = c_default if c_default is not None else c_repr(default)
-        else:
-            self.py_default = py_default
-            self.doc_default = doc_default
-            self.c_default = c_default
+
+        self.c_default = c_default
+        self.py_default = py_default
+
         if annotation != unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
-        self.required = required
         self.converter_init(**kwargs)
 
     def converter_init(self):
         pass
 
     def is_optional(self):
-        return (self.default is not unspecified) and (not self.required)
+        return (self.default is not unspecified)
 
     def render(self, parameter, data):
         """
@@ -1655,8 +1636,9 @@ class bool_converter(CConverter):
     c_ignored_default = '0'
 
     def converter_init(self):
-        self.default = bool(self.default)
-        self.c_default = str(int(self.default))
+        if self.default is not unspecified:
+            self.default = bool(self.default)
+            self.c_default = str(int(self.default))
 
 class char_converter(CConverter):
     type = 'char'
@@ -1665,7 +1647,7 @@ class char_converter(CConverter):
     c_ignored_default = "'\0'"
 
     def converter_init(self):
-        if len(self.default) != 1:
+        if isinstance(self.default, str) and (len(self.default) != 1):
             fail("char_converter: illegal default value " + repr(self.default))
 
 
@@ -1797,8 +1779,8 @@ class object_converter(CConverter):
 
 
 @add_legacy_c_converter('s#', length=True)
-@add_legacy_c_converter('y', type="bytes")
-@add_legacy_c_converter('y#', type="bytes", length=True)
+@add_legacy_c_converter('y', types="bytes")
+@add_legacy_c_converter('y#', types="bytes", length=True)
 @add_legacy_c_converter('z', nullable=True)
 @add_legacy_c_converter('z#', nullable=True, length=True)
 class str_converter(CConverter):
@@ -1993,8 +1975,8 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     # Or the magic value "unspecified" if there is no default.
     default = None
 
-    def __init__(self, *, doc_default=None, **kwargs):
-        self.doc_default = doc_default
+    def __init__(self, *, py_default=None, **kwargs):
+        self.py_default = py_default
         try:
             self.return_converter_init(**kwargs)
         except TypeError as e:
@@ -2212,6 +2194,7 @@ class DSLParser:
         self.indent = IndentStack()
         self.kind = CALLABLE
         self.coexist = False
+        self.parameter_continuation = ''
 
     def directive_version(self, required):
         global version
@@ -2244,15 +2227,18 @@ class DSLParser:
         self.block.signatures.append(c)
 
     def at_classmethod(self):
-        assert self.kind is CALLABLE
+        if self.kind is not CALLABLE:
+            fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
     def at_staticmethod(self):
-        assert self.kind is CALLABLE
+        if self.kind is not CALLABLE:
+            fail("Can't set @staticmethod, function is not a normal callable")
         self.kind = STATIC_METHOD
 
     def at_coexist(self):
-        assert self.coexist == False
+        if self.coexist:
+            fail("Called @coexist twice!")
         self.coexist = True
 
 
@@ -2503,6 +2489,7 @@ class DSLParser:
         if not self.indent.infer(line):
             return self.next(self.state_function_docstring, line)
 
+        self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
 
 
@@ -2516,6 +2503,10 @@ class DSLParser:
                 p.group = -p.group
 
     def state_parameter(self, line):
+        if self.parameter_continuation:
+            line = self.parameter_continuation + ' ' + line.lstrip()
+            self.parameter_continuation = ''
+
         if self.ignore_line(line):
             return
 
@@ -2528,6 +2519,11 @@ class DSLParser:
         if indent == 1:
             # we indented, must be to new parameter docstring column
             return self.next(self.state_parameter_docstring_start, line)
+
+        line = line.rstrip()
+        if line.endswith('\\'):
+            self.parameter_continuation = line[:-1]
+            return
 
         line = line.lstrip()
 
@@ -2547,48 +2543,123 @@ class DSLParser:
         else:
             fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ")")
 
-        ast_input = "def x({}): pass".format(line)
+        base, equals, default = line.rpartition('=')
+        if not equals:
+            base = default
+            default = None
         module = None
         try:
+            ast_input = "def x({}): pass".format(base)
             module = ast.parse(ast_input)
         except SyntaxError:
-            pass
+            try:
+                default = None
+                ast_input = "def x({}): pass".format(line)
+                module = ast.parse(ast_input)
+            except SyntaxError:
+                pass
         if not module:
             fail("Function " + self.function.name + " has an invalid parameter declaration:\n\t" + line)
 
         function_args = module.body[0].args
         parameter = function_args.args[0]
 
-        py_default = None
-
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
 
-        if function_args.defaults:
-            expr = function_args.defaults[0]
-            # mild hack: explicitly support NULL as a default value
-            if isinstance(expr, ast.Name) and expr.id == 'NULL':
-                value = NULL
-            elif isinstance(expr, ast.Attribute):
+        if not default:
+            value = unspecified
+            if 'py_default' in kwargs:
+                fail("You can't specify py_default without specifying a default value!")
+        else:
+            default = default.strip()
+            ast_input = "x = {}".format(default)
+            try:
+                module = ast.parse(ast_input)
+
+                # blacklist of disallowed ast nodes
+                class DetectBadNodes(ast.NodeVisitor):
+                    bad = False
+                    def bad_node(self, node):
+                        self.bad = True
+
+                    # inline function call
+                    visit_Call = bad_node
+                    # inline if statement ("x = 3 if y else z")
+                    visit_IfExp = bad_node
+
+                    # comprehensions and generator expressions
+                    visit_ListComp = visit_SetComp = bad_node
+                    visit_DictComp = visit_GeneratorExp = bad_node
+
+                    # literals for advanced types
+                    visit_Dict = visit_Set = bad_node
+                    visit_List = visit_Tuple = bad_node
+
+                    # "starred": "a = [1, 2, 3]; *a"
+                    visit_Starred = bad_node
+
+                    # allow ellipsis, for now
+                    # visit_Ellipsis = bad_node
+
+                blacklist = DetectBadNodes()
+                blacklist.visit(module)
+                if blacklist.bad:
+                    fail("Unsupported expression as default value: " + repr(default))
+
+                expr = module.body[0].value
+                # mild hack: explicitly support NULL as a default value
+                if isinstance(expr, ast.Name) and expr.id == 'NULL':
+                    value = NULL
+                    py_default = 'None'
+                    c_default = "NULL"
+                elif (isinstance(expr, ast.BinOp) or
+                    (isinstance(expr, ast.UnaryOp) and not isinstance(expr.operand, ast.Num))):
+                    c_default = kwargs.get("c_default")
+                    if not (isinstance(c_default, str) and c_default):
+                        fail("When you specify an expression (" + repr(default) + ") as your default value,\nyou MUST specify a valid c_default.")
+                    py_default = default
+                    value = unknown
+                elif isinstance(expr, ast.Attribute):
+                    a = []
+                    n = expr
+                    while isinstance(n, ast.Attribute):
+                        a.append(n.attr)
+                        n = n.value
+                    if not isinstance(n, ast.Name):
+                        fail("Unsupported default value " + repr(default) + " (looked like a Python constant)")
+                    a.append(n.id)
+                    py_default = ".".join(reversed(a))
+
+                    c_default = kwargs.get("c_default")
+                    if not (isinstance(c_default, str) and c_default):
+                        fail("When you specify a named constant (" + repr(py_default) + ") as your default value,\nyou MUST specify a valid c_default.")
+
+                    try:
+                        value = eval(py_default)
+                    except NameError:
+                        value = unknown
+                else:
+                    value = ast.literal_eval(expr)
+                    py_default = repr(value)
+                    if isinstance(value, (bool, None.__class__)):
+                        c_default = "Py_" + py_default
+                    elif isinstance(value, str):
+                        c_default = '"' + quoted_for_c_string(value) + '"'
+                    else:
+                        c_default = py_default
+
+            except SyntaxError as e:
+                fail("Syntax error: " + repr(e.text))
+            except (ValueError, AttributeError):
+                value = unknown
                 c_default = kwargs.get("c_default")
+                py_default = default
                 if not (isinstance(c_default, str) and c_default):
                     fail("When you specify a named constant (" + repr(py_default) + ") as your default value,\nyou MUST specify a valid c_default.")
 
-                a = []
-                n = expr
-                while isinstance(n, ast.Attribute):
-                    a.append(n.attr)
-                    n = n.value
-                if not isinstance(n, ast.Name):
-                    fail("Malformed default value (looked like a Python constant)")
-                a.append(n.id)
-                py_default = ".".join(reversed(a))
-                kwargs["py_default"] = py_default
-                value = eval(py_default)
-            else:
-                value = ast.literal_eval(expr)
-        else:
-            value = unspecified
+            kwargs.setdefault('c_default', c_default)
+            kwargs.setdefault('py_default', py_default)
 
         dict = legacy_converters if legacy else converters
         legacy_str = "legacy " if legacy else ""
@@ -2777,7 +2848,7 @@ class DSLParser:
             if p.converter.is_optional():
                 a.append('=')
                 value = p.converter.default
-                a.append(p.converter.doc_default)
+                a.append(p.converter.py_default)
             s = fix_right_bracket_count(p.right_bracket_count)
             s += "".join(a)
             if add_comma:
@@ -2788,9 +2859,18 @@ class DSLParser:
         add(fix_right_bracket_count(0))
         add(')')
 
-        # if f.return_converter.doc_default:
+        # PEP 8 says:
+        #
+        #     The Python standard library will not use function annotations
+        #     as that would result in a premature commitment to a particular
+        #     annotation style. Instead, the annotations are left for users
+        #     to discover and experiment with useful annotation styles.
+        #
+        # therefore this is commented out:
+        #
+        # if f.return_converter.py_default:
         #     add(' -> ')
-        #     add(f.return_converter.doc_default)
+        #     add(f.return_converter.py_default)
 
         docstring_first_line = output()
 
@@ -2998,8 +3078,8 @@ def main(argv):
 
                 # print("   ", short_name + "".join(parameters))
             print()
-        print("All converters also accept (doc_default=None, required=False, annotation=None).")
-        print("All return converters also accept (doc_default=None).")
+        print("All converters also accept (c_default=None, py_default=None, annotation=None).")
+        print("All return converters also accept (py_default=None).")
         sys.exit(0)
 
     if ns.make:

@@ -1601,12 +1601,15 @@ class TestSignatureObject(unittest.TestCase):
         self.assertTrue(isinstance(signature, inspect.Signature))
         def p(name): return signature.parameters[name].default
         self.assertEqual(p('s'), 'avocado')
+        self.assertEqual(p('b'), b'bytes')
         self.assertEqual(p('d'), 3.14)
         self.assertEqual(p('i'), 35)
-        self.assertEqual(p('c'), sys.maxsize)
         self.assertEqual(p('n'), None)
         self.assertEqual(p('t'), True)
         self.assertEqual(p('f'), False)
+        self.assertEqual(p('local'), 3)
+        self.assertEqual(p('sys'), sys.maxsize)
+        self.assertEqual(p('exp'), sys.maxsize - 1)
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):

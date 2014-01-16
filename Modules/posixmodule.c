@@ -2401,7 +2401,7 @@ class dir_fd_converter(CConverter):
 
 /*[clinic input]
 
-os.stat -> object(doc_default='stat_result')
+os.stat
 
     path : path_t(allow_fd=True)
         Path to be examined; can be string, bytes, or open-file-descriptor int.
@@ -2523,7 +2523,7 @@ posix_lstat(PyObject *self, PyObject *args, PyObject *kwargs)
     #define OS_ACCESS_DIR_FD_CONVERTER dir_fd_unavailable
 #endif
 /*[clinic input]
-os.access -> object(doc_default='True if granted, False otherwise')
+os.access
 
     path: path_t(allow_fd=True)
         Path to be tested; can be string, bytes, or open-file-descriptor int.

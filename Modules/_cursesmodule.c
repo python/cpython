@@ -618,7 +618,7 @@ curses_window_addch(PyObject *self, PyObject *args)
     int group_right_1 = 0;
     long attr = 0;
 
-    switch (PyTuple_Size(args)) {
+    switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "O:addch", &ch))
                 return NULL;
@@ -650,7 +650,7 @@ curses_window_addch(PyObject *self, PyObject *args)
 
 static PyObject *
 curses_window_addch_impl(PyObject *self, int group_left_1, int x, int y, PyObject *ch, int group_right_1, long attr)
-/*[clinic end generated code: checksum=44ed958b891cde91205e584c766e048f3999714f]*/
+/*[clinic end generated code: checksum=b073327add8197b6ba7fb96c87062422c8312954]*/
 {
     PyCursesWindowObject *cwself = (PyCursesWindowObject *)self;
     int coordinates_group = group_left_1;
