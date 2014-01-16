@@ -88,6 +88,12 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #19936: Added executable bits or shebang lines to Python scripts which
+  requires them.  Disable executable bits and shebang lines in test and
+  benchmark files in order to prevent using a random system python, and in
+  source files of modules which don't provide command line interface.  Fixed
+  shebang lines in the unittestgui and checkpip scripts.
+
 - Issue #20268: Argument Clinic now supports cloning the parameters and
   return converter of existing functions.
 

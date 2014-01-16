@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Unit tests for the keyword only argument specified in PEP 3102."""
 
 __author__ = "Jiwon Seo"
