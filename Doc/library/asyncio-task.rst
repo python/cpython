@@ -55,6 +55,14 @@ it running: call ``yield from coroutine`` from another coroutine
 
 Coroutines (and tasks) can only run when the event loop is running.
 
+.. decorator:: coroutine
+
+    Decorator to mark coroutines.
+
+    If the coroutine is not yielded from before it is destroyed, an error
+    message is logged. See :ref:`Detect coroutines never scheduled
+    <asyncio-coroutine-not-scheduled>`.
+
 
 .. _asyncio-hello-world-coroutine:
 
