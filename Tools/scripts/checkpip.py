@@ -1,4 +1,4 @@
-#/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Checks that the version of the projects bundled in ensurepip are the latest
 versions available.

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import unittest
 import unittest.mock
 import random
