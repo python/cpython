@@ -689,6 +689,11 @@ class TestDescriptions(unittest.TestCase):
             self.assertIsNone(pydoc.locate(name))
             self.assertRaises(ImportError, pydoc.render_doc, name)
 
+        # test producing signatures from builtins
+        stat_sig = pydoc.render_doc(os.stat)
+        self.assertEqual(pydoc.plain(stat_sig).splitlines()[2],
+            'stat(path, *, dir_fd=None, follow_symlinks=True)')
+
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class PydocServerTest(unittest.TestCase):
