@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Codec encoding tests for ISO 2022 encodings.
 
 from test import support

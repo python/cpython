@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """test script for a few new invalid token catches"""
 
 import unittest

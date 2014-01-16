@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from test import support
 from test.support import TESTFN, bigmemtest, _4G
 

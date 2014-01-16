@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import email
 import urllib.parse
