@@ -468,7 +468,7 @@ analyze_cells(PyObject *scope, PyObject *free)
          */
         if (PyDict_SetItem(scope, name, w) < 0)
             goto error;
-        if (!PyDict_DelItem(free, name) < 0)
+        if (PyDict_DelItem(free, name) < 0)
             goto error;
     }
     success = 1;
