@@ -48,6 +48,7 @@ Table of content:
    asyncio-task.rst
    asyncio-protocol.rst
    asyncio-sync.rst
+   asyncio-dev.rst
 
 .. seealso::
 
