@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #
 # Copyright (c) 2008-2012 Stefan Krah. All rights reserved.
 #
