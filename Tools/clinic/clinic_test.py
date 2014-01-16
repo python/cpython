@@ -231,20 +231,20 @@ xyz
         self._test_clinic("""
     verbatim text here
     lah dee dah
-/*[copy]
+/*[copy input]
 def
-[copy]*/
+[copy start generated code]*/
 abc
-/*[copy checksum: 03cfd743661f07975fa2f1220c5194cbaff48451]*/
+/*[copy end generated code: checksum=03cfd743661f07975fa2f1220c5194cbaff48451]*/
 xyz
 """, """
     verbatim text here
     lah dee dah
-/*[copy]
+/*[copy input]
 def
-[copy]*/
+[copy start generated code]*/
 def
-/*[copy checksum: 7b18d017f89f61cf17d47f92749ea6930a3f1deb]*/
+/*[copy end generated code: checksum=7b18d017f89f61cf17d47f92749ea6930a3f1deb]*/
 xyz
 """)
 
@@ -291,17 +291,6 @@ os.access
         function = self.parse_function("module os\nos.access\n    path: path_t(allow_fd=1)")
         p = function.parameters['path']
         self.assertEqual(1, p.converter.args['allow_fd'])
-
-    def test_param_docstring(self):
-        function = self.parse_function("""
-module os
-os.stat as os_stat_fn -> object(doc_default='stat_result')
-
-   path: str
-       Path to be examined""")
-        p = function.parameters['path']
-        self.assertEqual("Path to be examined", p.docstring)
-        self.assertEqual(function.return_converter.doc_default, 'stat_result')
 
     def test_function_docstring(self):
         function = self.parse_function("""

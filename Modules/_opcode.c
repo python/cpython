@@ -39,7 +39,7 @@ _opcode_stack_effect(PyModuleDef *module, PyObject *args)
     int oparg = 0;
     int _return_value;
 
-    switch (PyTuple_Size(args)) {
+    switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "i:stack_effect", &opcode))
                 return NULL;
@@ -64,7 +64,7 @@ exit:
 
 static int
 _opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg)
-/*[clinic end generated code: checksum=e880e62dc7b0de73403026eaf4f8074aa106358b]*/
+/*[clinic end generated code: checksum=47e76ec27523da4ab192713642d32482cd743aa4]*/
 {
     int effect;
     if (HAS_ARG(opcode)) {

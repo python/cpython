@@ -127,6 +127,12 @@ convert a function to work with it.  Let's dive in!
    margin, with no line wider than 80 characters.
    (Argument Clinic will preserve indents inside the docstring.)
 
+   If the old docstring had a first line that looked like a function
+   signature, throw that line away.  (The docstring doesn't need it
+   anymore--when you use ``help()`` on your builtin in the future,
+   the first line will be built automatically based on the function's
+   signature.)
+
    Sample::
 
     /*[clinic input]
@@ -195,6 +201,10 @@ convert a function to work with it.  Let's dive in!
    converter::
 
        name_of_parameter: converter = default_value
+
+   Argument Clinic's support for "default values" is quite sophisticated;
+   please see :ref:`the section below on default values <default_values>`
+   for more information.
 
    Add a blank line below the parameters.
 
@@ -513,16 +523,6 @@ The base function would now be named ``pickler_dumper()``,
 and the impl function would now be named ``pickler_dumper_impl()``.
 
 
-The NULL default value
-----------------------
-
-For string and object parameters, you can set them to ``None`` to indicate
-that there is no default.  However, that means the C variable will be
-initialized to ``Py_None``.  For convenience's sakes, there's a special
-value called ``NULL`` for just this case: from Python's perspective it
-behaves like a default value of ``None``, but the C variable is initialized
-with ``NULL``.
-
 
 Converting functions using PyArg_UnpackTuple
 --------------------------------------------
@@ -654,35 +654,70 @@ the same converters.
 All arguments to Argument Clinic converters are keyword-only.
 All Argument Clinic converters accept the following arguments:
 
-``py_default``
-  The default value for this parameter when defined in Python.
-  Specifically, the value that will be used in the ``inspect.Signature``
-  string.
-  If a default value is specified for the parameter, defaults to
-  ``repr(default)``, else defaults to ``None``.
-  Specified as a string.
+  ``c_default``
+    The default value for this parameter when defined in C.
+    Specifically, this will be the initializer for the variable declared
+    in the "parse function".  See :ref:`the section on default values <default_values>`
+    for how to use this.
+    Specified as a string.
 
-``c_default``
-  The default value for this parameter when defined in C.
-  Specifically, this will be the initializer for the variable declared
-  in the "parse function".
-  Specified as a string.
+  ``annotation``
+    The annotation value for this parameter.  Not currently supported,
+    because PEP 8 mandates that the Python library may not use
+    annotations.
 
-``required``
-  If a parameter takes a default value, Argument Clinic infers that the
-  parameter is optional.  However, you may want a parameter to take a
-  default value in C, but not behave in Python as if the parameter is
-  optional.  Passing in ``required=True`` to a converter tells Argument
-  Clinic that this parameter is not optional, even if it has a default
-  value.
+In addition, some converters accept additional arguments.  Here is a list
+of these arguments, along with their meanings:
 
-  (The need for ``required`` may be obviated by ``c_default``, which is
-  newer but arguably a better solution.)
+  ``bitwise``
+    Only supported for unsigned integers.  The native integer value of this
+    Python argument will be written to the parameter without any range checking,
+    even for negative values.
 
-``annotation``
-  The annotation value for this parameter.  Not currently supported,
-  because PEP 8 mandates that the Python library may not use
-  annotations.
+  ``converter``
+    Only supported by the ``object`` converter.  Specifies the name of a
+    :ref:`C "converter function" <o_ampersand>`
+    to use to convert this object to a native type.
+
+  ``encoding``
+    Only supported for strings.  Specifies the encoding to use when converting
+    this string from a Python str (Unicode) value into a C ``char *`` value.
+
+  ``length``
+    Only supported for strings.  If true, requests that the length of the
+    string be passed in to the impl function, just after the string parameter,
+    in a parameter named ``<parameter_name>_length``.
+
+  ``nullable``
+    Only supported for strings.  If true, this parameter may also be set to
+    ``None``, in which case the C parameter will be set to ``NULL``.
+
+  ``subclass_of``
+    Only supported for the ``object`` converter.  Requires that the Python
+    value be a subclass of a Python type, as expressed in C.
+
+  ``types``
+    Only supported for the ``object`` (and ``self``) converter.  Specifies
+    the C type that will be used to declare the variable.  Default value is
+    ``"PyObject *"``.
+
+  ``types``
+    A string containing a list of Python types (and possibly pseudo-types);
+    this restricts the allowable Python argument to values of these types.
+    (This is not a general-purpose facility; as a rule it only supports
+    specific lists of types as shown in the legacy converter table.)
+
+  ``zeroes``
+    Only supported for strings.  If true, embedded NUL bytes (``'\\0'``) are
+    permitted inside the value.
+
+Please note, not every possible combination of arguments will work.
+Often these arguments are implemented internally by specific ``PyArg_ParseTuple``
+*format units*, with specific behavior.  For example, currently you cannot
+call ``str`` and pass in ``zeroes=True`` without also specifying an ``encoding``;
+although it's perfectly reasonable to think this would work, these semantics don't
+map to any existing format unit.  So Argument Clinic doesn't support it.  (Or, at
+least, not yet.)
 
 Below is a table showing the mapping of legacy converters into real
 Argument Clinic converters.  On the left is the legacy converter,
@@ -720,9 +755,9 @@ on the right is the text you'd replace it with.
 ``'u'``     ``Py_UNICODE``
 ``'U'``     ``unicode``
 ``'w*'``    ``Py_buffer(types='bytearray rwbuffer')``
-``'y#'``    ``str(type='bytes', length=True)``
+``'y#'``    ``str(types='bytes', length=True)``
 ``'Y'``     ``PyByteArrayObject``
-``'y'``     ``str(type='bytes')``
+``'y'``     ``str(types='bytes')``
 ``'y*'``    ``Py_buffer``
 ``'Z#'``    ``Py_UNICODE(nullable=True, length=True)``
 ``'z#'``    ``str(nullable=True, length=True)``
@@ -787,6 +822,90 @@ be hard-coded at Argument-Clinic-preprocessing-time.  This limitation is deliber
 it made supporting this format unit much easier, and may allow for future optimizations.
 This restriction doesn't seem unreasonable; CPython itself always passes in static
 hard-coded encoding strings for parameters whose format units start with ``e``.
+
+
+.. _default_values:
+
+Parameter default values
+------------------------
+
+Default values for parameters can be any of a number of values.
+At their simplest, they can be string, int, or float literals::
+
+    foo: str = "abc"
+    bar: int = 123
+    bat: float = 45.6
+
+They can also use any of Python's built-in constants::
+
+    yep:  bool = True
+    nope: bool = False
+    nada: object = None
+
+There's also special support for a default value of ``NULL``, and
+for simple expressions, documented in the following sections.
+
+
+The ``NULL`` default value
+--------------------------
+
+For string and object parameters, you can set them to ``None`` to indicate
+that there's no default.  However, that means the C variable will be
+initialized to ``Py_None``.  For convenience's sakes, there's a special
+value called ``NULL`` for just this reason: from Python's perspective it
+behaves like a default value of ``None``, but the C variable is initialized
+with ``NULL``.
+
+Expressions specified as default values
+---------------------------------------
+
+The default value for a parameter can be more than just a literal value.
+It can be an entire expression, using math operators and looking up attributes
+on objects.  However, this support isn't exactly simple, because of some
+non-obvious semantics.
+
+Consider the following example::
+
+    foo: Py_ssize_t = sys.maxsize - 1
+
+``sys.maxsize`` can have different values on different platforms.  Therefore
+Argument Clinic can't simply evaluate that expression locally and hard-code it
+in C.  So it stores the default in such a way that it will get evaluated at
+runtime, when the user asks for the function's signature.
+
+What namespace is available when the expression is evaluated?  It's evaluated
+in the context of the module the builtin came from.  So, if your module has an
+attribute called "``max_widgets``", you may simply use it::
+
+    foo: Py_ssize_t = max_widgets
+
+If the symbol isn't found in the current module, it fails over to looking in
+``sys.modules``.  That's how it can find ``sys.maxsize`` for example.  (Since you
+don't know in advance what modules the user will load into their interpreter,
+it's best to restrict yourself to modules that are preloaded by Python itself.)
+
+Evaluating default values only at runtime means Argument Clinic can't compute
+the correct equivalent C default value.  So you need to tell it explicitly.
+When you use an expression, you must also specify the equivalent expression
+in C, using the ``c_default`` parameter to the converter::
+
+    foo: Py_ssize_t(c_default="PY_SSIZE_T_MAX - 1") = sys.maxsize - 1
+
+Another complication: Argument Clinic can't know in advance whether or not the
+expression you supply is valid.  It parses it to make sure it looks legal, but
+it can't *actually* know.  You must be very careful when using expressions to
+specify values that are guaranteed to be valid at runtime!
+
+Finally, because expressions must be representable as static C values, there
+are many restrictions on legal expressions.  Here's a list of Python features
+you're not permitted to use:
+
+* Function calls.
+* Inline if statements (``3 if foo else 5``).
+* Automatic sequence unpacking (``*[1, 2, 3]``).
+* List/set/dict comprehensions and generator expressions.
+* Tuple/list/set/dict literals.
+
 
 
 Using a return converter
@@ -1096,7 +1215,73 @@ any arguments.
 You can still use a self converter, a return converter, and specify
 a ``type`` argument to the object converter for ``METH_O``.
 
-Using Argument Clinic in Python files
+The #ifdef trick
+----------------------------------------------
+
+If you're converting a function that isn't available on all platforms,
+there's a trick you can use to make life a little easier.  The existing
+code probably looks like this::
+
+    #ifdef HAVE_FUNCTIONNAME
+    static module_functionname(...)
+    {
+    ...
+    }
+    #endif /* HAVE_FUNCTIONNAME */
+
+And then in the ``PyMethodDef`` structure at the bottom you'll have::
+
+    #ifdef HAVE_FUNCTIONNAME
+    {'functionname', ... },
+    #endif /* HAVE_FUNCTIONNAME */
+
+In this scenario, you should change the code to look like the following::
+
+    #ifdef HAVE_FUNCTIONNAME
+    /*[clinic input]
+    module.functionname
+    ...
+    [clinic start generated code]*/
+    static module_functionname(...)
+    {
+    ...
+    }
+    #endif /* HAVE_FUNCTIONNAME */
+
+Run Argument Clinic on the code in this state, then refresh the file in
+your editor.  Now you'll have the generated code, including the #define
+for the ``PyMethodDef``, like so::
+
+    #ifdef HAVE_FUNCTIONNAME
+    /*[clinic input]
+    ...
+    [clinic start generated code]*/
+    ...
+    #define MODULE_FUNCTIONNAME \
+        {'functionname', ... },
+    ...
+    /*[clinic end generated code: checksum=...]*/
+    static module_functionname(...)
+    {
+    ...
+    }
+    #endif /* HAVE_FUNCTIONNAME */
+
+Change the #endif at the bottom as follows::
+
+    #else
+    #define MODULE_FUNCTIONNAME
+    #endif /* HAVE_FUNCTIONNAME */
+
+Now you can remove the #ifdefs around the ``PyMethodDef`` structure
+at the end, and replace those three lines with ``MODULE_FUNCTIONNAME``.
+If the function is available, the macro turns into the ``PyMethodDef``
+static value, including the trailing comma; if the function isn't
+available, the macro turns into nothing.  Perfect!
+
+(This is the preferred approach for optional functions; in the future,
+Argument Clinic may generate the entire ``PyMethodDef`` structure.)
+
 -------------------------------------
 
 It's actually possible to use Argument Clinic to preprocess Python files.

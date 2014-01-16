@@ -294,6 +294,8 @@ Other objects
    the object pointer is stored.  If the Python object does not have the required
    type, :exc:`TypeError` is raised.
 
+.. _o_ampersand:
+
 ``O&`` (object) [*converter*, *anything*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C

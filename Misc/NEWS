@@ -88,6 +88,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20226: Argument Clinic now permits simple expressions
+  (e.g. "sys.maxsize - 1") as default values for parameters.
+
 - Issue #19936: Added executable bits or shebang lines to Python scripts which
   requires them.  Disable executable bits and shebang lines in test and
   benchmark files in order to prevent using a random system python, and in

@@ -1954,6 +1954,8 @@ class Signature:
         if not s:
             return None
 
+        Parameter = cls._parameter_cls
+
         if s.endswith("/)"):
             kind = Parameter.POSITIONAL_ONLY
             s = s[:-2] + ')'
@@ -1969,55 +1971,74 @@ class Signature:
         if not isinstance(module, ast.Module):
             return None
 
-        # ast.FunctionDef
         f = module.body[0]
 
         parameters = []
         empty = Parameter.empty
         invalid = object()
 
-        def parse_attribute(node):
-            if not isinstance(node.ctx, ast.Load):
-                return None
+        module = None
+        module_dict = {}
+        module_name = getattr(func, '__module__', None)
+        if module_name:
+            module = sys.modules.get(module_name, None)
+            if module:
+                module_dict = module.__dict__
+        sys_module_dict = sys.modules
 
-            value = node.value
-            o = parse_node(value)
-            if o is invalid:
-                return invalid
+        def parse_name(node):
+            assert isinstance(node, ast.arg)
+            if node.annotation != None:
+                raise ValueError("Annotations are not currently supported")
+            return node.arg
 
-            if isinstance(value, ast.Name):
-                name = o
-                if name not in sys.modules:
-                    return invalid
-                o = sys.modules[name]
+        def wrap_value(s):
+            try:
+                value = eval(s, module_dict)
+            except NameError:
+                try:
+                    value = eval(s, sys_module_dict)
+                except NameError:
+                    raise RuntimeError()
 
-            return getattr(o, node.attr, invalid)
+            if isinstance(value, str):
+                return ast.Str(value)
+            if isinstance(value, (int, float)):
+                return ast.Num(value)
+            if isinstance(value, bytes):
+                return ast.Bytes(value)
+            if value in (True, False, None):
+                return ast.NameConstant(value)
+            raise RuntimeError()
 
-        def parse_node(node):
-            if isinstance(node, ast.arg):
-                if node.annotation != None:
-                    raise ValueError("Annotations are not currently supported")
-                return node.arg
-            if isinstance(node, ast.Num):
-                return node.n
-            if isinstance(node, ast.Str):
-                return node.s
-            if isinstance(node, ast.NameConstant):
-                return node.value
-            if isinstance(node, ast.Attribute):
-                return parse_attribute(node)
-            if isinstance(node, ast.Name):
+        class RewriteSymbolics(ast.NodeTransformer):
+            def visit_Attribute(self, node):
+                a = []
+                n = node
+                while isinstance(n, ast.Attribute):
+                    a.append(n.attr)
+                    n = n.value
+                if not isinstance(n, ast.Name):
+                    raise RuntimeError()
+                a.append(n.id)
+                value = ".".join(reversed(a))
+                return wrap_value(value)
+
+            def visit_Name(self, node):
                 if not isinstance(node.ctx, ast.Load):
-                    return invalid
-                return node.id
-            return invalid
+                    raise ValueError()
+                return wrap_value(node.id)
 
         def p(name_node, default_node, default=empty):
-            name = parse_node(name_node)
+            name = parse_name(name_node)
             if name is invalid:
                 return None
             if default_node:
-                o = parse_node(default_node)
+                try:
+                    default_node = RewriteSymbolics().visit(default_node)
+                    o = ast.literal_eval(default_node)
+                except ValueError:
+                    o = invalid
                 if o is invalid:
                     return None
                 default = o if o is not invalid else default
