@@ -21,6 +21,7 @@ import shlex
 import sys
 import tempfile
 import textwrap
+import traceback
 
 # TODO:
 #
@@ -1082,7 +1083,11 @@ class Clinic:
                     assert dsl_name in parsers, "No parser to handle {!r} block.".format(dsl_name)
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
-                parser.parse(block)
+                try:
+                    parser.parse(block)
+                except Exception:
+                    fail('Exception raised during parsing:\n' +
+                         traceback.format_exc().rstrip())
             printer.print_block(block)
         return printer.f.getvalue()
 
