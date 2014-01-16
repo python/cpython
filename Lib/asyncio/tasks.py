@@ -32,6 +32,8 @@ _DEBUG = False
 
 
 class CoroWrapper:
+    # Wrapper for coroutine in _DEBUG mode.
+
     __slots__ = ['gen', 'func', '__name__', '__doc__']
 
     def __init__(self, gen, func):
