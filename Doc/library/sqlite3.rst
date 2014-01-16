@@ -91,7 +91,7 @@ This example uses the iterator form::
 
 .. seealso::
 
-   http://code.google.com/p/pysqlite/
+   https://github.com/ghaering/pysqlite
       The pysqlite web page -- sqlite3 is developed externally under the name
       "pysqlite".
 
