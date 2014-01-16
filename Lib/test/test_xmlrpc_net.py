@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import collections.abc
 import errno
 import socket

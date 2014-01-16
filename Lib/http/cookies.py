@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-#
-
 ####
 # Copyright 2000 by Timothy O'Malley <timo@alum.mit.edu>
 #

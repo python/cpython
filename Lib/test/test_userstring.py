@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # UserString is a wrapper around the native builtin string type.
 # UserString instances should behave similar to builtin string objects.
 

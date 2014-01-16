@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import queue
 import sched
 import time

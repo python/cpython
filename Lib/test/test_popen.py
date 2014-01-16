@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """Basic tests for os.popen()
 
   Particularly useful for platforms that fake popen.
