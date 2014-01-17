@@ -142,9 +142,11 @@ If a field represents an uploaded file, accessing the value via the
 method reads the entire file in memory as bytes.  This may not be what you
 want.  You can test for an uploaded file by testing either the
 :attr:`~FieldStorage.filename` attribute or the :attr:`~FieldStorage.file`
-attribute.  You can then read the data at leisure from the :attr:`!file`
-attribute (the :func:`~io.RawIOBase.read` and :func:`~io.IOBase.readline`
-methods will return bytes)::
+attribute.  You can then read the data from the :attr:`!file`
+attribute before it is automatically closed as part of the garbage collection of
+the :class:`FieldStorage` instance
+(the :func:`~io.RawIOBase.read` and :func:`~io.IOBase.readline` methods will
+return bytes)::
 
    fileitem = form["userfile"]
    if fileitem.file:
@@ -175,6 +177,11 @@ actually be instances of the class :class:`MiniFieldStorage`.  In this case, the
 
 A form submitted via POST that also has a query string will contain both
 :class:`FieldStorage` and :class:`MiniFieldStorage` items.
+
+.. versionchanged:: 3.4
+   The :attr:`~FieldStorage.file` attribute is automatically closed upon the
+   garbage collection of the creating :class:`FieldStorage` instance.
+
 
 Higher Level Interface
 ----------------------
