@@ -24,10 +24,6 @@ With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
-* Up to 2.5, Python was still compatible with Windows 95, 98 and ME (but already
-  raised a deprecation warning on installation).  For Python 2.6 (and all
-  following releases), this support was dropped and new releases are just
-  expected to work on the Windows NT family.
 * `Windows CE <http://pythonce.sourceforge.net/>`_ is still supported.
 * The `Cygwin <http://cygwin.com/>`_ installer offers to install the `Python
   interpreter <http://cygwin.com/packages/python>`_ as well; it is located under
@@ -36,8 +32,8 @@ Check :pep:`11` for details on all unsupported platforms.
   release/python>`_, `Maintainer releases
   <http://www.tishler.net/jason/software/python/>`_)
 
-See `Python for Windows (and DOS) <http://www.python.org/download/windows/>`_
-for detailed information about platforms with precompiled installers.
+See `Python for Windows <http://www.python.org/download/windows/>`_
+for detailed information about platforms with pre-compiled installers.
 
 .. seealso::
 
@@ -64,7 +60,7 @@ Besides the standard CPython distribution, there are modified packages including
 additional functionality.  The following is a list of popular versions and their
 key features:
 
-`ActivePython <http://www.activestate.com/Products/activepython/>`_
+`ActivePython <http://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
 `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
@@ -527,13 +523,14 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
       by David and Paul Boddie
 
 
-Py2exe
-------
+cx_Freeze
+---------
 
-`Py2exe <http://www.py2exe.org/>`_ is a :mod:`distutils` extension (see
-:ref:`extending-distutils`) which wraps Python scripts into executable Windows
-programs (:file:`{*}.exe` files).  When you have done this, you can distribute
-your application without requiring your users to install Python.
+`cx_Freeze <http://cx-freeze.sourceforge.net/>`_ is a :mod:`distutils`
+extension (see :ref:`extending-distutils`) which wraps Python scripts into
+executable Windows programs (:file:`{*}.exe` files).  When you have done this,
+you can distribute your application without requiring your users to install
+Python.
 
 
 WConio
