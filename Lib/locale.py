@@ -379,7 +379,7 @@ def normalize(localename):
     # Normalize the locale name and extract the encoding and modifier
     if isinstance(localename, _unicode):
         localename = localename.encode('ascii')
-    code = localename.lower()
+    code = localename.translate(_ascii_lower_map)
     if ':' in code:
         # ':' is sometimes used as encoding delimiter.
         code = code.replace(':', '.')
@@ -414,7 +414,7 @@ def normalize(localename):
             #print('lookup without modifier succeeded')
             if '@' not in code:
                 return code + '@' + modifier
-            if code.split('@', 1)[1].lower() == modifier:
+            if code.split('@', 1)[1].translate(_ascii_lower_map) == modifier:
                 return code
         #print('second lookup failed')
 
@@ -439,7 +439,7 @@ def normalize(localename):
                 if '@' not in code:
                     return _replace_encoding(code, encoding) + '@' + modifier
                 code, defmod = code.split('@', 1)
-                if defmod.lower() == modifier:
+                if defmod.translate(_ascii_lower_map) == modifier:
                     return _replace_encoding(code, encoding) + '@' + defmod
 
     return localename

@@ -471,9 +471,13 @@ class TestMiscellaneous(unittest.TestCase):
         # Issue #1813: setting and getting the locale under a Turkish locale
         oldlocale = locale.getlocale()
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
-        try:
-            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
-        except locale.Error:
+        for loc in ('tr_TR', 'tr_TR.UTF-8', 'tr_TR.ISO8859-9'):
+            try:
+                locale.setlocale(locale.LC_CTYPE, loc)
+                break
+            except locale.Error:
+                continue
+        else:
             # Unsupported locale on this system
             self.skipTest('test needs Turkish locale')
         loc = locale.getlocale()
@@ -482,7 +486,6 @@ class TestMiscellaneous(unittest.TestCase):
         except Exception as e:
             self.fail("Failed to set locale %r (default locale is %r): %r" %
                       (loc, oldlocale, e))
-        print("set locale %r (default locale is %r)" % (loc, oldlocale))
         self.assertEqual(loc, locale.getlocale())
 
     def test_normalize_issue12752(self):

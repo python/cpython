@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20086: Restored the use of locale-independing mapping instead of
+  locale-depending str.lower() in locale.normalize().
+
 - Issue #20246: Fix buffer overflow in socket.recvfrom_into.
 
 - Issue #19082: Working SimpleXMLRPCServer and xmlrpclib examples, both in
