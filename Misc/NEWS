@@ -59,7 +59,7 @@ Library
   functions now conform to PEP 3333 when handle non-ASCII URLs.
 
 - Issue #19097: Raise the correct Exception when cgi.FieldStorage is given an
-  Invalid fileobj.
+  invalid fileobj.
 
 - Issue #20217: Fix build in SCHED_SPORADIC is defined.
 
@@ -269,7 +269,7 @@ Tests
 
 - Issue #19683: Removed empty tests from test_minidom.  Patch by Ajitesh Gupta.
 
-- Issue #19919: Fix flacky SSL test. connect_ex() sometimes returns
+- Issue #19919: Fix flaky SSL test. connect_ex() sometimes returns
   EWOULDBLOCK on Windows or VMs hosted on Windows.
 
 - Issue #19912: Added tests for ntpath.splitunc().
@@ -312,7 +312,7 @@ Documentation
 - Issue #19963: Document that importlib.import_module() no longer requires
   importing parent packages separately.
 
-- Issue #18840: Introduce the json module in the tutorial, and deemphasize
+- Issue #18840: Introduce the json module in the tutorial, and de-emphasize
   the pickle module.
 
 - Issue #19845: Updated the Compiling Python on Windows section.
