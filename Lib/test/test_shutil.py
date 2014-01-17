@@ -431,7 +431,7 @@ class TestShutil(unittest.TestCase):
         os.setxattr(src, 'user.foo', b'42')
         os.setxattr(src, 'user.bar', b'43')
         shutil._copyxattr(src, dst)
-        self.assertEqual(os.listxattr(src), os.listxattr(dst))
+        self.assertEqual(sorted(os.listxattr(src)), sorted(os.listxattr(dst)))
         self.assertEqual(
                 os.getxattr(src, 'user.foo'),
                 os.getxattr(dst, 'user.foo'))
