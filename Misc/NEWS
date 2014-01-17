@@ -489,7 +489,9 @@ Build
 Documentation
 -------------
 
-- Issue #20255: Update the about and bugs pages.
+- Issue #20266: Updated some parts of the Windows FAQ.
+
+- Issue #20255: Updated the about and bugs pages.
 
 - Issue #20253: Fixed a typo in the ipaddress docs that advertised an
   illegal attribute name.  Found by INADA Naoki.
