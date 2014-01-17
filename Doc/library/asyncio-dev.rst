@@ -47,8 +47,8 @@ with the traceback where the coroutine function was called. See the
 :ref:`asyncio logger <asyncio-logger>`.
 
 The debug flag changes the behaviour of the :func:`coroutine` decorator. The
-debug flag value is only when then coroutine function is defined, not when it
-is called.  Coroutine functions defined before the debug flag is set to
+debug flag value is only used when then coroutine function is defined, not when
+it is called.  Coroutine functions defined before the debug flag is set to
 ``True`` will not be tracked. For example, it is not possible to debug
 coroutines defined in the :mod:`asyncio` module, because the module must be
 imported before the flag value can be changed.
