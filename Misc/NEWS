@@ -35,8 +35,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #20086: Restored the use of locale-independing mapping instead of
-  locale-depending str.lower() in locale.normalize().
+- Issue #20086: Restored the use of locale-independent mapping instead of
+  locale-dependent str.lower() in locale.normalize().
 
 - Issue #20246: Fix buffer overflow in socket.recvfrom_into.
 
@@ -212,7 +212,7 @@ Documentation
 
 - Issue #20255: Update the about and bugs pages.
 
-- Issue #18840: Introduce the json module in the tutorial, and deemphasize
+- Issue #18840: Introduce the json module in the tutorial, and de-emphasize
   the pickle module.
 
 - Issue #19795: Improved markup of True/False constants.
