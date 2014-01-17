@@ -1,12 +1,12 @@
 :mod:`imp` --- Access the :ref:`import <importsystem>` internals
 ================================================================
 
-.. deprecated:: 3.4
-   The :mod:`imp` package is pending deprecation in favor of :mod:`importlib`.
-
 .. module:: imp
    :synopsis: Access the implementation of the import statement.
+   :deprecated:
 
+.. deprecated:: 3.4
+   The :mod:`imp` package is pending deprecation in favor of :mod:`importlib`.
 
 .. index:: statement: import
 
