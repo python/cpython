@@ -170,18 +170,20 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-See http://www.py2exe.org/ for a distutils extension that allows you
+See http://cx-freeze.sourceforge.net/ for a distutils extension that allows you
 to create console and GUI executables from Python code.
+`py2exe <http://www.py2exe.org/>`_, the most popular extension for building
+Python 2.x-based executables, does not yet support Python 3 but a version that
+does is in development.
+
 
 Is a ``*.pyd`` file the same as a DLL?
 --------------------------------------
 
-.. XXX update for py3k (PyInit_foo)
-
 Yes, .pyd files are dll's, but there are a few differences.  If you have a DLL
-named ``foo.pyd``, then it must have a function ``initfoo()``.  You can then
+named ``foo.pyd``, then it must have a function ``PyInit_foo()``.  You can then
 write Python "import foo", and Python will search for foo.pyd (as well as
-foo.py, foo.pyc) and if it finds it, will attempt to call ``initfoo()`` to
+foo.py, foo.pyc) and if it finds it, will attempt to call ``PyInit_foo()`` to
 initialize it.  You do not link your .exe with foo.lib, as that would cause
 Windows to require the DLL to be present.
 
