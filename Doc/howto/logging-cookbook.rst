@@ -1920,3 +1920,31 @@ something, you can make it more palatable if you use an alias such as ``M`` or
 ``_`` for the message (or perhaps ``__``, if you are using ``_`` for
 localization).
 
+Examples of this approach are given below. Firstly, formatting with
+:meth:`str.format`::
+
+    >>> __ = BraceMessage
+    >>> print(__('Message with {0} {1}', 2, 'placeholders'))
+    Message with 2 placeholders
+    >>> class Point: pass
+    ...
+    >>> p = Point()
+    >>> p.x = 0.5
+    >>> p.y = 0.5
+    >>> print(__('Message with coordinates: ({point.x:.2f}, {point.y:.2f})', point=p))
+    Message with coordinates: (0.50, 0.50)
+
+Secondly, formatting with :class:`string.Template`::
+
+    >>> __ = DollarMessage
+    >>> print(__('Message with $num $what', num=2, what='placeholders'))
+    Message with 2 placeholders
+    >>>
+
+One thing to note is that you pay no significant performance penalty with this
+approach: the actual formatting happens not when you make the logging call, but
+when (and if) the logged message is actually about to be output to a log by a
+handler. So the only slightly unusual thing which might trip you up is that the
+parentheses go around the format string and the arguments, not just the format
+string. That’s because the __ notation is just syntax sugar for a constructor
+call to one of the ``XXXMessage`` classes shown above.
