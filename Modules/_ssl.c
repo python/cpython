@@ -1381,7 +1381,7 @@ static PyObject *PySSL_cipher (PySSLSocket *self) {
             goto fail0;
         PyTuple_SET_ITEM(retval, 0, v);
     }
-    cipher_protocol = SSL_CIPHER_get_version(current);
+    cipher_protocol = (char *) SSL_CIPHER_get_version(current);
     if (cipher_protocol == NULL) {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(retval, 1, Py_None);
