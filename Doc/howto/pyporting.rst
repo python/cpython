@@ -151,15 +151,17 @@ older).
 ``from __future__ import unicode_literals``
 '''''''''''''''''''''''''''''''''''''''''''
 
-If you choose not to use this future statement you should then mark all of your
+If you choose to use this future statement then all string literals in
+Python 2 will be assumed to be Unicode (as is already the case in Python 3).
+If you choose not to use this future statement then you should mark all of your
 text strings with a ``u`` prefix and only support Python 3.3 or newer. But you
 are **strongly** advised to do one or the other (six_ provides a function in
 case you don't want to use the future statement **and** you want to support
 Python 3.2 or older).
 
 
-Bytes literals
-''''''''''''''
+Bytes/string literals
+'''''''''''''''''''''
 
 This is a **very** important one. Prefix Python 2 strings that
 are meant to contain bytes with a ``b`` prefix to very clearly delineate
@@ -504,12 +506,13 @@ your time and effort to port your tests to :mod:`unittest`.
 Update ``map`` for imbalanced input sequences
 '''''''''''''''''''''''''''''''''''''''''''''
 
-With Python 2, ``map`` would pad input sequences of unequal length with
-`None` values, returning a sequence as long as the longest input sequence.
+With Python 2, when ``map`` was given more than one input sequence it would pad
+the shorter sequences with `None` values, returning a sequence as long as the
+longest input sequence.
 
 With Python 3, if the input sequences to ``map`` are of unequal length, ``map``
 will stop at the termination of the shortest of the sequences. For full
-compatibility with ``map`` from Python 2.x, also wrap the sequences in
+compatibility with ``map`` from Python 2.x, wrap the sequence arguments in
 :func:`itertools.zip_longest`, e.g. ``map(func, *sequences)`` becomes
 ``list(map(func, itertools.zip_longest(*sequences)))``.
 
@@ -518,9 +521,8 @@ Eliminate ``-3`` Warnings
 
 When you run your application's test suite, run it using the ``-3`` flag passed
 to Python. This will cause various warnings to be raised during execution about
-things that 2to3 cannot handle automatically (e.g., modules that have been
-removed). Try to eliminate those warnings to make your code even more portable
-to Python 3.
+things that are semantic changes between Python 2 and 3. Try to eliminate those
+warnings to make your code even more portable to Python 3.
 
 
 Alternative Approaches
