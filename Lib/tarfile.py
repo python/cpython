@@ -1604,19 +1604,22 @@ class TarFile(object):
         except (ImportError, AttributeError):
             raise CompressionError("gzip module is not available")
 
-        extfileobj = fileobj is not None
         try:
             fileobj = gzip.GzipFile(name, mode + "b", compresslevel, fileobj)
+        except OSError:
+            if fileobj is not None and mode == 'r':
+                raise ReadError("not a gzip file")
+            raise
+
+        try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
         except OSError:
-            if not extfileobj and fileobj is not None:
-                fileobj.close()
-            if fileobj is None:
-                raise
-            raise ReadError("not a gzip file")
+            fileobj.close()
+            if mode == 'r':
+                raise ReadError("not a gzip file")
+            raise
         except:
-            if not extfileobj and fileobj is not None:
-                fileobj.close()
+            fileobj.close()
             raise
         t._extfileobj = False
         return t
@@ -1641,7 +1644,9 @@ class TarFile(object):
             t = cls.taropen(name, mode, fileobj, **kwargs)
         except (OSError, EOFError):
             fileobj.close()
-            raise ReadError("not a bzip2 file")
+            if mode == 'r':
+                raise ReadError("not a bzip2 file")
+            raise
         t._extfileobj = False
         return t
 
@@ -1664,7 +1669,9 @@ class TarFile(object):
             t = cls.taropen(name, mode, fileobj, **kwargs)
         except (lzma.LZMAError, EOFError):
             fileobj.close()
-            raise ReadError("not an lzma file")
+            if mode == 'r':
+                raise ReadError("not an lzma file")
+            raise
         t._extfileobj = False
         return t
 
