@@ -1642,7 +1642,7 @@ class TarFile(object):
             if not extfileobj and fileobj is not None:
                 fileobj.close()
             raise
-        t._extfileobj = extfileobj
+        t._extfileobj = False
         return t
 
     @classmethod

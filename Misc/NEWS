@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20238: TarFile opened with external fileobj and "w:gz" mode didn't
+  write complete output on close.
+
 - Issue #20245: The open functions in the tarfile module now correctly handle
   empty mode.
 
