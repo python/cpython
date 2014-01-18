@@ -126,6 +126,10 @@ def quoted_for_c_string(s):
         s = s.replace(old, new)
     return s
 
+def c_repr(s):
+    return '"' + s + '"'
+
+
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
 def is_legal_py_identifier(s):
@@ -3129,7 +3133,7 @@ class DSLParser:
                     if isinstance(value, (bool, None.__class__)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
-                        c_default = '"' + quoted_for_c_string(value) + '"'
+                        c_default = c_repr(value)
                     else:
                         c_default = py_default
 
