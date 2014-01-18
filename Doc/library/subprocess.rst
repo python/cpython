@@ -715,21 +715,29 @@ The following attributes are also available:
 
 .. attribute:: Popen.stdin
 
-   If the *stdin* argument was :data:`PIPE`, this attribute is a :term:`file
-   object` that provides input to the child process.  Otherwise, it is ``None``.
+   If the *stdin* argument was :data:`PIPE`, this attribute is a writeable
+   stream object as returned by :func:`open`. If the *universal_newlines*
+   argument was ``True``, the stream is a text stream, otherwise it is a byte
+   stream. If the *stdin* argument was not :data:`PIPE`, this attribute is
+   ``None``.
 
 
 .. attribute:: Popen.stdout
 
-   If the *stdout* argument was :data:`PIPE`, this attribute is a :term:`file
-   object` that provides output from the child process.  Otherwise, it is ``None``.
-
+   If the *stdout* argument was :data:`PIPE`, this attribute is a readable
+   stream object as returned by :func:`open`. Reading from the stream provides
+   output from the child process. If the *universal_newlines* argument was
+   ``True``, the stream is a text stream, otherwise it is a byte stream. If the
+   *stdout* argument was not :data:`PIPE`, this attribute is ``None``.
+               
 
 .. attribute:: Popen.stderr
 
-   If the *stderr* argument was :data:`PIPE`, this attribute is a :term:`file
-   object` that provides error output from the child process.  Otherwise, it is
-   ``None``.
+   If the *stderr* argument was :data:`PIPE`, this attribute is a readable
+   stream object as returned by :func:`open`. Reading from the stream provides
+   error output from the child process. If the *universal_newlines* argument was
+   ``True``, the stream is a text stream, otherwise it is a byte stream. If the
+   *stderr* argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.pid
