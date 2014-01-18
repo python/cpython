@@ -321,9 +321,10 @@ def _find_mac(command, args, hw_identifiers, get_index):
             return None
 
     try:
-        # LC_MESSAGES to get English output, 2>/dev/null to
-        # prevent output on stderr
-        cmd = 'LC_MESSAGES=C %s %s 2>/dev/null' % (executable, args)
+        # LC_ALL to ensure English output, 2>/dev/null to prevent output on
+        # stderr (Note: we don't have an example where the words we search for
+        # are actually localized, but in theory some system could do so.)
+        cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
         with os.popen(cmd) as pipe:
             for line in pipe:
                 words = line.lower().split()
