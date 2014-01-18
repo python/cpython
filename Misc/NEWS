@@ -35,6 +35,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20270: urllib and urlparse now support empty ports.
+
 - Issue #20243: TarFile no longer raise ReadError when opened in write mode.
 
 - Issue #20245: The open functions in the tarfile module now correctly handle

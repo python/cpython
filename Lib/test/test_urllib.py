@@ -789,6 +789,26 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(('user 2', 'ab'),urllib.splitpasswd('user 2:ab'))
         self.assertEqual(('user+1', 'a+b'),urllib.splitpasswd('user+1:a+b'))
 
+    def test_splitport(self):
+        splitport = urllib.splitport
+        self.assertEqual(splitport('parrot:88'), ('parrot', '88'))
+        self.assertEqual(splitport('parrot'), ('parrot', None))
+        self.assertEqual(splitport('parrot:'), ('parrot', None))
+        self.assertEqual(splitport('127.0.0.1'), ('127.0.0.1', None))
+        self.assertEqual(splitport('parrot:cheese'), ('parrot:cheese', None))
+
+    def test_splitnport(self):
+        splitnport = urllib.splitnport
+        self.assertEqual(splitnport('parrot:88'), ('parrot', 88))
+        self.assertEqual(splitnport('parrot'), ('parrot', -1))
+        self.assertEqual(splitnport('parrot', 55), ('parrot', 55))
+        self.assertEqual(splitnport('parrot:'), ('parrot', -1))
+        self.assertEqual(splitnport('parrot:', 55), ('parrot', 55))
+        self.assertEqual(splitnport('127.0.0.1'), ('127.0.0.1', -1))
+        self.assertEqual(splitnport('127.0.0.1', 55), ('127.0.0.1', 55))
+        self.assertEqual(splitnport('parrot:cheese'), ('parrot', None))
+        self.assertEqual(splitnport('parrot:cheese', 55), ('parrot', None))
+
 
 class URLopener_Tests(unittest.TestCase):
     """Testcase to test the open method of URLopener class."""
