@@ -2062,7 +2062,7 @@ class char_converter(CConverter):
 
 @add_legacy_c_converter('B', bitwise=True)
 class byte_converter(CConverter):
-    type = 'byte'
+    type = 'unsigned char'
     default_type = int
     format_unit = 'b'
     c_ignored_default = "'\0'"
