@@ -21,7 +21,7 @@ from test.script_helper import assert_python_ok
 from test.support import (
     TESTFN, rmtree,
     reap_children, reap_threads, captured_output, captured_stdout,
-    captured_stderr, unlink
+    captured_stderr, unlink, requires_docstrings
 )
 from test import pydoc_mod
 
@@ -689,6 +689,8 @@ class TestDescriptions(unittest.TestCase):
             self.assertIsNone(pydoc.locate(name))
             self.assertRaises(ImportError, pydoc.render_doc, name)
 
+    @requires_docstrings
+    def test_builtin_signatures(self):
         # test producing signatures from builtins
         stat_sig = pydoc.render_doc(os.stat)
         self.assertEqual(pydoc.plain(stat_sig).splitlines()[2],
