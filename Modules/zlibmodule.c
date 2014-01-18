@@ -1047,16 +1047,12 @@ zlib_Compress_copy_impl(compobject *self);
 static PyObject *
 zlib_Compress_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = zlib_Compress_copy_impl((compobject *)self);
-
-    return return_value;
+    return zlib_Compress_copy_impl((compobject *)self);
 }
 
 static PyObject *
 zlib_Compress_copy_impl(compobject *self)
-/*[clinic end generated code: checksum=2f454ee15be3bc53cfb4e845c3f891f68be4c8e4]*/
+/*[clinic end generated code: checksum=d57a7911deb7940e85a8d7e65af20b6e2df69000]*/
 {
     compobject *retval = NULL;
     int err;

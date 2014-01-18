@@ -16,12 +16,14 @@ import inspect
 import io
 import itertools
 import os
+import pprint
 import re
 import shlex
 import sys
 import tempfile
 import textwrap
 import traceback
+import uuid
 
 # TODO:
 #
@@ -86,10 +88,13 @@ def text_accumulator():
     return append, output
 
 
-def fail(*args, filename=None, line_number=None):
+def warn_or_fail(fail=False, *args, filename=None, line_number=None):
     joined = " ".join([str(a) for a in args])
     add, output = text_accumulator()
-    add("Error")
+    if fail:
+        add("Error")
+    else:
+        add("Warning")
     if clinic:
         if filename is None:
             filename = clinic.filename
@@ -102,8 +107,15 @@ def fail(*args, filename=None, line_number=None):
     add(':\n')
     add(joined)
     print(output())
-    sys.exit(-1)
+    if fail:
+        sys.exit(-1)
 
+
+def warn(*args, filename=None, line_number=None):
+    return warn_or_fail(False, *args, filename=filename, line_number=line_number)
+
+def fail(*args, filename=None, line_number=None):
+    return warn_or_fail(True, *args, filename=filename, line_number=line_number)
 
 
 def quoted_for_c_string(s):
@@ -119,16 +131,14 @@ is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 def is_legal_py_identifier(s):
     return all(is_legal_c_identifier(field) for field in s.split('.'))
 
-# though it's called c_keywords, really it's a list of parameter names
-# that are okay in Python but aren't a good idea in C.  so if they're used
-# Argument Clinic will add "_value" to the end of the name in C.
-# (We added "args", "type", "module", "self", "cls", and "null"
-#  just to be safe, even though they're not C keywords.)
+# identifiers that are okay in Python but aren't a good idea in C.
+# so if they're used Argument Clinic will add "_value" to the end
+# of the name in C.
 c_keywords = set("""
-args asm auto break case char cls const continue default do double
+asm auto break case char cls const continue default do double
 else enum extern float for goto if inline int long module null
 register return self short signed sizeof static struct switch
-type typedef typeof union unsigned void volatile while
+typedef typeof union unsigned void volatile while
 """.strip().split())
 
 def ensure_legal_c_identifier(s):
@@ -189,6 +199,47 @@ def linear_format(s, **kwargs):
         add('\n')
 
     return output()[:-1]
+
+def indent_all_lines(s, prefix):
+    """
+    Returns 's', with 'prefix' prepended to all lines.
+
+    If the last line is empty, prefix is not prepended
+    to it.  (If s is blank, returns s unchanged.)
+
+    (textwrap.indent only adds to non-blank lines.)
+    """
+    split = s.split('\n')
+    last = split.pop()
+    final = []
+    for line in split:
+        final.append(prefix)
+        final.append(line)
+        final.append('\n')
+    if last:
+        final.append(prefix)
+        final.append(last)
+    return ''.join(final)
+
+def suffix_all_lines(s, suffix):
+    """
+    Returns 's', with 'suffix' appended to all lines.
+
+    If the last line is empty, suffix is not appended
+    to it.  (If s is blank, returns s unchanged.)
+    """
+    split = s.split('\n')
+    last = split.pop()
+    final = []
+    for line in split:
+        final.append(line)
+        final.append(suffix)
+        final.append('\n')
+    if last:
+        final.append(last)
+        final.append(suffix)
+    return ''.join(final)
+
 
 def version_splitter(s):
     """Splits a version string into a tuple of integers.
@@ -281,7 +332,7 @@ class Language(metaclass=abc.ABCMeta):
     checksum_line = ""
 
     @abc.abstractmethod
-    def render(self, block):
+    def render(self, clinic, signatures):
         pass
 
     def validate(self):
@@ -378,14 +429,14 @@ class CLanguage(Language):
     stop_line     = "[{dsl_name} start generated code]*/"
     checksum_line = "/*[{dsl_name} end generated code: checksum={checksum}]*/"
 
-    def render(self, signatures):
+    def render(self, clinic, signatures):
         function = None
         for o in signatures:
             if isinstance(o, Function):
                 if function:
                     fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
                 function = o
-        return self.render_function(function)
+        return self.render_function(clinic, function)
 
     def docstring_for_c_string(self, f):
         text, add, output = _text_accumulator()
@@ -399,32 +450,91 @@ class CLanguage(Language):
         add('"')
         return ''.join(text)
 
-    impl_prototype_template = "{c_basename}_impl({impl_parameters})"
 
-    @staticmethod
-    def template_base(*args):
-        # HACK suppress methoddef define for METHOD_NEW and METHOD_INIT
-        base = """
+    def output_templates(self, f):
+        parameters = list(f.parameters.values())
+        converters = [p.converter for p in parameters]
+
+        has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
+        default_return_converter = (not f.return_converter or
+            f.return_converter.type == 'PyObject *')
+
+        positional = parameters and (parameters[-1].kind == inspect.Parameter.POSITIONAL_ONLY)
+        all_boring_objects = False # yes, this will be false if there are 0 parameters, it's fine
+        first_optional = len(parameters)
+        for i, p in enumerate(parameters):
+            c = p.converter
+            if type(c) != object_converter:
+                break
+            if c.format_unit != 'O':
+                break
+            if p.default is not unspecified:
+                first_optional = min(first_optional, i)
+        else:
+            all_boring_objects = True
+
+        meth_o = (len(parameters) == 1 and
+              parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
+              not converters[0].is_optional() and
+              isinstance(converters[0], object_converter) and
+              converters[0].format_unit == 'O')
+
+
+        # we have to set seven things before we're done:
+        #
+        # docstring_prototype
+        # docstring_definition
+        # impl_prototype
+        # methoddef_define
+        # parser_prototype
+        # parser_definition
+        # impl_definition
+        #
+        # since impl_prototype is always just impl_definition + ';'
+        # we just define impl_definition at the top
+
+        docstring_prototype = "PyDoc_VAR({c_basename}__doc__);"
+
+        docstring_definition = """
 PyDoc_STRVAR({c_basename}__doc__,
 {docstring});
-"""
+""".strip()
 
-        if args[-1] == None:
-            return base
-
-        flags = '|'.join(f for f in args if f)
-        return base + """
-#define {methoddef_name}    \\
-    {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
-""".replace('{methoddef_flags}', flags)
-
-    def meth_noargs_template(self, methoddef_flags=""):
-        return self.template_base("METH_NOARGS", methoddef_flags) + """
+        impl_definition = """
 static {impl_return_type}
-{impl_prototype};
+{c_basename}_impl({impl_parameters})""".strip()
 
+        impl_prototype = parser_prototype = parser_definition = None
+
+        def meth_varargs():
+            nonlocal flags
+            nonlocal parser_prototype
+
+            flags = "METH_VARARGS"
+
+            parser_prototype = """
+static PyObject *
+{c_basename}({self_type}{self_name}, PyObject *args)
+""".strip()
+
+        if not parameters:
+            # no parameters, METH_NOARGS
+
+            flags = "METH_NOARGS"
+
+            parser_prototype = """
 static PyObject *
 {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
+""".strip()
+
+            if default_return_converter:
+                parser_definition = parser_prototype + """
+{{
+    return {c_basename}_impl({impl_arguments});
+}}
+""".rstrip()
+            else:
+                parser_definition = parser_prototype + """
 {{
     PyObject *return_value = NULL;
     {declarations}
@@ -437,28 +547,43 @@ static PyObject *
     {cleanup}
     return return_value;
 }}
+""".rstrip()
 
-static {impl_return_type}
-{impl_prototype}
-"""
+        elif meth_o:
+            if default_return_converter:
+                # maps perfectly to METH_O, doesn't need a return converter,
+                # so we skip the parse function and call
+                # directly into the impl function
 
-    def meth_o_template(self, methoddef_flags=""):
-        return self.template_base("METH_O", methoddef_flags) + """
+                # SLIGHT HACK
+                # METH_O uses {impl_parameters} for the parser.
+
+                flags = "METH_O"
+
+                impl_definition = """
 static PyObject *
 {c_basename}({impl_parameters})
-"""
+""".strip()
 
-    def meth_o_return_converter_template(self, methoddef_flags=""):
-        return self.template_base("METH_O", methoddef_flags) + """
-static {impl_return_type}
-{impl_prototype};
+                impl_prototype = parser_prototype = parser_definition = ''
 
+            else:
+                # SLIGHT HACK
+                # METH_O uses {impl_parameters} for the parser.
+
+                flags = "METH_O"
+
+                parser_prototype = """
 static PyObject *
 {c_basename}({impl_parameters})
+""".strip()
+
+                parser_definition = parser_prototype + """
 {{
     PyObject *return_value = NULL;
     {declarations}
     {initializers}
+
     _return_value = {c_basename}_impl({impl_arguments});
     {return_conversion}
 
@@ -466,18 +591,16 @@ static PyObject *
     {cleanup}
     return return_value;
 }}
+""".rstrip()
 
-static {impl_return_type}
-{impl_prototype}
-"""
+        elif has_option_groups:
+            # positional parameters with option groups
+            # (we have to generate lots of PyArg_ParseTuple calls
+            #  in a big switch statement)
 
-    def option_group_template(self, methoddef_flags=""):
-        return self.template_base("METH_VARARGS", methoddef_flags) + """
-static {impl_return_type}
-{impl_prototype};
+            meth_varargs()
 
-static PyObject *
-{c_basename}({self_type}{self_name}, PyObject *args)
+            parser_definition = parser_prototype + """
 {{
     PyObject *return_value = NULL;
     {declarations}
@@ -491,18 +614,79 @@ static PyObject *
     {cleanup}
     return return_value;
 }}
+""".rstrip()
 
-static {impl_return_type}
-{impl_prototype}
-"""
+        elif positional and all_boring_objects:
+            # positional-only, but no option groups,
+            # and nothing but normal objects:
+            # PyArg_UnpackTuple!
 
-    def keywords_template(self, methoddef_flags=""):
-        return self.template_base("METH_VARARGS|METH_KEYWORDS", methoddef_flags) + """
-static {impl_return_type}
-{impl_prototype};
+            meth_varargs()
 
+            # substitute in the min and max by hand right here
+            assert parameters
+            min_o = first_optional
+            max_o = len(parameters)
+            if isinstance(parameters[0].converter, self_converter):
+                min_o -= 1
+                max_o -= 1
+            min_o = str(min_o)
+            max_o = str(max_o)
+
+            parser_definition = parser_prototype + """
+{{
+    PyObject *return_value = NULL;
+    {declarations}
+    {initializers}
+
+    if (!PyArg_UnpackTuple(args, "{name}",
+        {min}, {max},
+        {parse_arguments}))
+        goto exit;
+    {return_value} = {c_basename}_impl({impl_arguments});
+    {return_conversion}
+
+exit:
+    {cleanup}
+    return return_value;
+}}
+""".rstrip().replace('{min}', min_o).replace('{max}', max_o)
+
+        elif positional:
+            # positional-only, but no option groups
+            # we only need one call to PyArg_ParseTuple
+
+            meth_varargs()
+
+            parser_definition = parser_prototype + """
+{{
+    PyObject *return_value = NULL;
+    {declarations}
+    {initializers}
+
+    if (!PyArg_ParseTuple(args,
+        "{format_units}:{name}",
+        {parse_arguments}))
+        goto exit;
+    {return_value} = {c_basename}_impl({impl_arguments});
+    {return_conversion}
+
+exit:
+    {cleanup}
+    return return_value;
+}}
+""".rstrip()
+
+        else:
+            # positional-or-keyword arguments
+            flags = "METH_VARARGS|METH_KEYWORDS"
+
+            parser_prototype = """
 static PyObject *
 {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
+""".strip()
+
+            parser_definition = parser_prototype + """
 {{
     PyObject *return_value = NULL;
     static char *_keywords[] = {{{keywords}, NULL}};
@@ -516,42 +700,52 @@ static PyObject *
     {return_value} = {c_basename}_impl({impl_arguments});
     {return_conversion}
 
-{exit_label}
+exit:
     {cleanup}
     return return_value;
 }}
+""".rstrip()
 
-static {impl_return_type}
-{impl_prototype}
-"""
+        if f.methoddef_flags:
+            assert flags
+            flags += '|' + f.methoddef_flags
 
-    def positional_only_template(self, methoddef_flags=""):
-        return self.template_base("METH_VARARGS", methoddef_flags) + """
-static {impl_return_type}
-{impl_prototype};
+        methoddef_define = """
+#define {methoddef_name}    \\
+    {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
+""".strip().replace('{methoddef_flags}', flags)
 
-static PyObject *
-{c_basename}({self_type}{self_name}, PyObject *args)
-{{
-    PyObject *return_value = NULL;
-    {declarations}
-    {initializers}
+        # parser_prototype mustn't be None, but it could be an empty string.
+        assert parser_prototype is not None
+        assert not parser_prototype.endswith(';')
 
-    if (!PyArg_ParseTuple(args,
-        "{format_units}:{name}",
-        {parse_arguments}))
-        goto exit;
-    {return_value} = {c_basename}_impl({impl_arguments});
-    {return_conversion}
+        if parser_prototype:
+            parser_prototype += ';'
 
-{exit_label}
-    {cleanup}
-    return return_value;
-}}
+        assert impl_definition
+        if impl_prototype is None:
+            impl_prototype = impl_definition + ";"
 
-static {impl_return_type}
-{impl_prototype}
-"""
+        # __new__ and __init__ don't need methoddefs
+        if f.kind in (METHOD_NEW, METHOD_INIT):
+            methoddef_define = ''
+
+        d = {
+            "docstring_prototype" : docstring_prototype,
+            "docstring_definition" : docstring_definition,
+            "impl_prototype" : impl_prototype,
+            "methoddef_define" : methoddef_define,
+            "parser_prototype" : parser_prototype,
+            "parser_definition" : parser_definition,
+            "impl_definition" : impl_definition,
+        }
+
+        d2 = {}
+        for name, value in d.items():
+            if value:
+                value = '\n' + value + '\n'
+            d2[name] = value
+        return d2
 
     @staticmethod
     def group_to_variable_name(group):
@@ -649,7 +843,7 @@ static {impl_return_type}
         add("}}")
         template_dict['option_group_parsing'] = output()
 
-    def render_function(self, f):
+    def render_function(self, clinic, f):
         if not f:
             return ""
 
@@ -705,6 +899,27 @@ static {impl_return_type}
             if has_option_groups and (not positional):
                 fail("You cannot use optional groups ('[' and ']')\nunless all parameters are positional-only ('/').")
 
+        # HACK
+        # when we're METH_O, but have a custom
+        # return converter, we use
+        # "impl_parameters" for the parsing
+        # function because that works better.
+        # but that means we must supress actually
+        # declaring the impl's parameters as variables
+        # in the parsing function.  but since it's
+        # METH_O, we only have one anyway, so we don't
+        # have any problem finding it.
+        default_return_converter = (not f.return_converter or
+            f.return_converter.type == 'PyObject *')
+        if (len(parameters) == 1 and
+              parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
+              not converters[0].is_optional() and
+              isinstance(converters[0], object_converter) and
+              converters[0].format_unit == 'O' and
+              not default_return_converter):
+
+            data.declarations.pop(0)
+
         # now insert our "self" (or whatever) parameters
         # (we deliberately don't call render on self converters)
         stock_self = self_converter('self', f)
@@ -731,63 +946,41 @@ static {impl_return_type}
         template_dict['cleanup'] = "".join(data.cleanup)
         template_dict['return_value'] = data.return_value
 
-        template_dict['impl_prototype'] = self.impl_prototype_template.format_map(template_dict)
-
-        default_return_converter = (not f.return_converter or
-            f.return_converter.type == 'PyObject *')
-
-        if not parameters:
-            template = self.meth_noargs_template(f.methoddef_flags)
-        elif (len(parameters) == 1 and
-              parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
-              not converters[0].is_optional() and
-              isinstance(converters[0], object_converter) and
-              converters[0].format_unit == 'O'):
-            if default_return_converter:
-                template = self.meth_o_template(f.methoddef_flags)
-            else:
-                # HACK
-                # we're using "impl_parameters" for the
-                # non-impl function, because that works
-                # better for METH_O.  but that means we
-                # must supress actually declaring the
-                # impl's parameters as variables in the
-                # non-impl.  but since it's METH_O, we
-                # only have one anyway, so
-                # we don't have any problem finding it.
-                declarations_copy = list(data.declarations)
-                before, pyobject, after = declarations_copy[0].partition('PyObject *')
-                assert not before, "hack failed, see comment"
-                assert pyobject, "hack failed, see comment"
-                assert after and after[0].isalpha(), "hack failed, see comment"
-                del declarations_copy[0]
-                template_dict['declarations'] = "\n".join(declarations_copy)
-                template = self.meth_o_return_converter_template(f.methoddef_flags)
-        elif has_option_groups:
+        if has_option_groups:
             self.render_option_group_parsing(f, template_dict)
-            template = self.option_group_template(f.methoddef_flags)
+
+        templates = self.output_templates(f)
+
+        for name, destination in clinic.field_destinations.items():
+            template = templates[name]
+            if has_option_groups:
+                template = linear_format(template,
+                        option_group_parsing=template_dict['option_group_parsing'])
             template = linear_format(template,
-                option_group_parsing=template_dict['option_group_parsing'])
-        elif positional:
-            template = self.positional_only_template(f.methoddef_flags)
-        else:
-            template = self.keywords_template(f.methoddef_flags)
+                declarations=template_dict['declarations'],
+                return_conversion=template_dict['return_conversion'],
+                initializers=template_dict['initializers'],
+                cleanup=template_dict['cleanup'],
+                )
 
-        template = linear_format(template,
-            declarations=template_dict['declarations'],
-            return_conversion=template_dict['return_conversion'],
-            initializers=template_dict['initializers'],
-            cleanup=template_dict['cleanup'],
-            )
+            # Only generate the "exit:" label
+            # if we have any gotos
+            need_exit_label = "goto exit;" in template
+            template = linear_format(template,
+                exit_label="exit:" if need_exit_label else ''
+                )
 
-        # Only generate the "exit:" label
-        # if we have any gotos
-        need_exit_label = "goto exit;" in template
-        template = linear_format(template,
-            exit_label="exit:" if need_exit_label else ''
-            )
+            s = template.format_map(template_dict)
 
-        return template.format_map(template_dict)
+            if clinic.line_prefix:
+                s = indent_all_lines(s, clinic.line_prefix)
+            if clinic.line_suffix:
+                s = suffix_all_lines(s, clinic.line_suffix)
+
+            destination.append(s)
+
+        return clinic.get_destination('block').dump()
+
 
 
 @contextlib.contextmanager
@@ -889,19 +1082,27 @@ class BlockParser:
         self.last_checksum_re = None
         self.last_dsl_name = None
         self.dsl_name = None
+        self.first_block = True
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if not self.input:
-            raise StopIteration
+        while True:
+            if not self.input:
+                raise StopIteration
 
-        if self.dsl_name:
-            return_value = self.parse_clinic_block(self.dsl_name)
-            self.dsl_name = None
-            return return_value
-        return self.parse_verbatim_block()
+            if self.dsl_name:
+                return_value = self.parse_clinic_block(self.dsl_name)
+                self.dsl_name = None
+                self.first_block = False
+                return return_value
+            block = self.parse_verbatim_block()
+            if self.first_block and not block.input:
+                continue
+            self.first_block = False
+            return block
+
 
     def is_start_line(self, line):
         match = self.start_re.match(line.lstrip())
@@ -980,7 +1181,8 @@ class BlockParser:
                 if checksum != computed:
                     fail("Checksum mismatch!\nExpected: {}\nComputed: {}\n"
                          "Suggested fix: remove all generated code including "
-                         "the end marker, or use the '-f' option."
+                         "the end marker,\n"
+                         "or use the '-f' option."
                         .format(checksum, computed))
         else:
             # put back output
@@ -1025,14 +1227,61 @@ class BlockPrinter:
         write(self.language.stop_line.format(dsl_name=dsl_name))
         write("\n")
 
-        output = block.output
+        output = ''.join(block.output)
         if output:
-            write(output)
             if not output.endswith('\n'):
-                write('\n')
+                output += '\n'
+            write(output)
 
         write(self.language.checksum_line.format(dsl_name=dsl_name, checksum=compute_checksum(output)))
         write("\n")
+
+    def write(self, text):
+        self.f.write(text)
+
+
+class Destination:
+    def __init__(self, name, type, clinic, *args):
+        self.name = name
+        self.type = type
+        self.clinic = clinic
+        valid_types = ('buffer', 'file', 'suppress', 'two-pass')
+        if type not in valid_types:
+            fail("Invalid destination type " + repr(type) + " for " + name + " , must be " + ', '.join(valid_types))
+        extra_arguments = 1 if type == "file" else 0
+        if len(args) < extra_arguments:
+            fail("Not enough arguments for destination " + name + " new " + type)
+        if len(args) > extra_arguments:
+            fail("Too many arguments for destination " + name + " new " + type)
+        if type =='file':
+            d = {}
+            d['filename'] = filename = clinic.filename
+            d['basename'], d['extension'] = os.path.splitext(filename)
+            self.filename = args[0].format_map(d)
+        if type == 'two-pass':
+            self.id = None
+
+        self.text, self.append, self._dump = _text_accumulator()
+
+    def __repr__(self):
+        if self.type == 'file':
+            file_repr = " " + repr(self.filename)
+        else:
+            file_repr = ''
+        return "".join(("<Destination ", self.name, " ", self.type, file_repr, ">"))
+
+    def clear(self):
+        if self.type != 'buffer':
+            fail("Can't clear destination" + self.name + " , it's not of type buffer")
+        self.text.clear()
+
+    def dump(self):
+        if self.type == 'two-pass':
+            if self.id is None:
+                self.id = str(uuid.uuid4())
+                return self.id
+            fail("You can only dump a two-pass buffer exactly once!")
+        return self._dump()
 
 
 # maps strings to Language objects.
@@ -1066,11 +1315,51 @@ legacy_converters = {}
 return_converters = {}
 
 class Clinic:
+
+    presets_text = """
+preset original
+everything block
+docstring_prototype suppress
+parser_prototype suppress
+
+preset file
+everything file
+docstring_prototype suppress
+parser_prototype suppress
+impl_definition block
+
+preset buffer
+everything buffer
+docstring_prototype suppress
+impl_prototype suppress
+parser_prototype suppress
+impl_definition block
+
+preset partial-buffer
+everything buffer
+docstring_prototype block
+impl_prototype suppress
+methoddef_define block
+parser_prototype block
+impl_definition block
+
+preset two-pass
+everything buffer
+docstring_prototype two-pass
+impl_prototype suppress
+methoddef_define two-pass
+parser_prototype two-pass
+impl_definition block
+
+"""
+
     def __init__(self, language, printer=None, *, verify=True, filename=None):
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
         self.parsers = {}
         self.language = language
+        if printer:
+            fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
         self.filename = filename
@@ -1078,8 +1367,65 @@ class Clinic:
         self.classes = collections.OrderedDict()
         self.functions = []
 
+        self.line_prefix = self.line_suffix = ''
+
+        self.destinations = {}
+        self.add_destination("block", "buffer")
+        self.add_destination("suppress", "suppress")
+        self.add_destination("buffer", "buffer")
+        self.add_destination("two-pass", "two-pass")
+        if filename:
+            self.add_destination("file", "file", "{basename}.clinic{extension}")
+
+        d = self.destinations.get
+        self.field_destinations = collections.OrderedDict((
+            ('docstring_prototype', d('suppress')),
+            ('docstring_definition', d('block')),
+            ('methoddef_define', d('block')),
+            ('impl_prototype', d('block')),
+            ('parser_prototype', d('suppress')),
+            ('parser_definition', d('block')),
+            ('impl_definition', d('block')),
+        ))
+
+        self.field_destinations_stack = []
+
+        self.presets = {}
+        preset = None
+        for line in self.presets_text.strip().split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            name, value = line.split()
+            if name == 'preset':
+                self.presets[value] = preset = collections.OrderedDict()
+                continue
+
+            destination = self.get_destination(value)
+
+            if name == 'everything':
+                for name in self.field_destinations:
+                    preset[name] = destination
+                continue
+
+            assert name in self.field_destinations
+            preset[name] = destination
+
         global clinic
         clinic = self
+
+    def get_destination(self, name, default=unspecified):
+        d = self.destinations.get(name)
+        if not d:
+            if default is not unspecified:
+                return default
+            fail("Destination does not exist: " + repr(name))
+        return d
+
+    def add_destination(self, name, type, *args):
+        if name in self.destinations:
+            fail("Destination already exists: " + repr(name))
+        self.destinations[name] = Destination(name, type, self, *args)
 
     def parse(self, input):
         printer = self.printer
@@ -1097,7 +1443,66 @@ class Clinic:
                     fail('Exception raised during parsing:\n' +
                          traceback.format_exc().rstrip())
             printer.print_block(block)
-        return printer.f.getvalue()
+
+        second_pass_replacements = {}
+
+        for name, destination in self.destinations.items():
+            if destination.type == 'suppress':
+                continue
+            output = destination._dump()
+
+            if destination.type == 'two-pass':
+                if destination.id:
+                    second_pass_replacements[destination.id] = output
+                elif output:
+                    fail("Two-pass buffer " + repr(name) + " not empty at end of file!")
+                continue
+
+            if output:
+
+                block = Block("", dsl_name="clinic", output=output)
+
+                if destination.type == 'buffer':
+                    block.input = "dump " + name + "\n"
+                    warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
+                    printer.write("\n")
+                    printer.print_block(block)
+                    continue
+
+                if destination.type == 'file':
+                    try:
+                        with open(destination.filename, "rt") as f:
+                            parser_2 = BlockParser(f.read(), language=self.language)
+                            blocks = list(parser_2)
+                            if (len(blocks) != 1) or (blocks[0].input != 'preserve\n'):
+                                fail("Modified destination file " + repr(destination.filename) + ", not overwriting!")
+                    except FileNotFoundError:
+                        pass
+
+                    block.input = 'preserve\n'
+                    printer_2 = BlockPrinter(self.language)
+                    printer_2.print_block(block)
+                    with open(destination.filename, "wt") as f:
+                        f.write(printer_2.f.getvalue())
+                    continue
+        text = printer.f.getvalue()
+
+        if second_pass_replacements:
+            printer_2 = BlockPrinter(self.language)
+            parser_2 = BlockParser(text, self.language)
+            changed = False
+            for block in parser_2:
+                if block.dsl_name:
+                    for id, replacement in second_pass_replacements.items():
+                        if id in block.output:
+                            changed = True
+                            block.output = block.output.replace(id, replacement)
+                printer_2.print_block(block)
+            if changed:
+                text = printer_2.f.getvalue()
+
+        return text
+
 
     def _module_and_class(self, fields):
         """
@@ -2195,6 +2600,7 @@ class DSLParser:
         self.kind = CALLABLE
         self.coexist = False
         self.parameter_continuation = ''
+        self.preserve_output = False
 
     def directive_version(self, required):
         global version
@@ -2226,6 +2632,77 @@ class DSLParser:
             module.classes[name] = c
         self.block.signatures.append(c)
 
+    def directive_set(self, name, value):
+        if name not in ("line_prefix", "line_suffix"):
+            fail("unknown variable", repr(name))
+
+        value = value.format_map({
+            'block comment start': '/*',
+            'block comment end': '*/',
+            })
+
+        self.clinic.__dict__[name] = value
+
+    def directive_destination(self, name, command, *args):
+        if command is 'new':
+            self.clinic.add_destination(name, command, *args)
+            return
+
+        if command is 'clear':
+            self.clinic.get_destination(name).clear()
+        fail("unknown destination command", repr(command))
+
+
+    def directive_output(self, field, destination=''):
+        fd = self.clinic.field_destinations
+
+        if field == "preset":
+            preset = self.clinic.presets.get(destination)
+            if not preset:
+                fail("Unknown preset " + repr(destination) + "!")
+            fd.update(preset)
+            return
+
+        if field == "push":
+            self.clinic.field_destinations_stack.append(fd.copy())
+            return
+
+        if field == "pop":
+            if not self.clinic.field_destinations_stack:
+                fail("Can't 'output pop', stack is empty!")
+            previous_fd = self.clinic.field_destinations_stack.pop()
+            fd.update(previous_fd)
+            return
+
+        # secret command for debugging!
+        if field == "print":
+            self.block.output.append(pprint.pformat(fd))
+            self.block.output.append('\n')
+            return
+
+        d = self.clinic.get_destination(destination)
+
+        if field == "everything":
+            for name in list(fd):
+                fd[name] = d
+            return
+
+        if field not in fd:
+            fail("Invalid field " + repr(field) + ", must be one of:\n  " + ", ".join(valid_fields))
+        fd[field] = d
+
+    def directive_dump(self, name):
+        self.block.output.append(self.clinic.get_destination(name).dump())
+
+    def directive_print(self, *args):
+        self.block.output.append(' '.join(args))
+        self.block.output.append('\n')
+
+    def directive_preserve(self):
+        if self.preserve_output:
+            fail("Can't have preserve twice in one block!")
+        self.preserve_output = True
+
     def at_classmethod(self):
         if self.kind is not CALLABLE:
             fail("Can't set @classmethod, function is not a normal callable")
@@ -2241,10 +2718,11 @@ class DSLParser:
             fail("Called @coexist twice!")
         self.coexist = True
 
-
     def parse(self, block):
         self.reset()
         self.block = block
+        self.saved_output = self.block.output
+        block.output = []
         block_start = self.clinic.block_parser.line_number
         lines = block.input.split('\n')
         for line_number, line in enumerate(lines, self.clinic.block_parser.block_start_line_number):
@@ -2255,7 +2733,12 @@ class DSLParser:
         self.next(self.state_terminal)
         self.state(None)
 
-        block.output = self.clinic.language.render(block.signatures)
+        block.output.extend(self.clinic.language.render(clinic, block.signatures))
+
+        if self.preserve_output:
+            if block.output:
+                fail("'preserve' only works for blocks that don't produce any output!")
+            block.output = self.saved_output
 
     @staticmethod
     def ignore_line(line):
@@ -2313,7 +2796,10 @@ class DSLParser:
         directive_name = fields[0]
         directive = self.directives.get(directive_name, None)
         if directive:
-            directive(*fields[1:])
+            try:
+                directive(*fields[1:])
+            except TypeError as e:
+                fail(str(e))
             return
 
         # are we cloning?
@@ -2438,8 +2924,6 @@ class DSLParser:
     #       * It's illegal to have any line in the parameters section starting
     #         with X spaces such that F < X < P.  (As before, F is the indent
     #         of the function declaration.)
-    #
-    ##############
     #
     # Also, currently Argument Clinic places the following restrictions on groups:
     #   * Each group must contain at least one parameter.
@@ -2680,6 +3164,9 @@ class DSLParser:
 
         kind = inspect.Parameter.KEYWORD_ONLY if self.keyword_only else inspect.Parameter.POSITIONAL_OR_KEYWORD
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
+
+        if parameter_name in self.function.parameters:
+            fail("You can't have two parameters named " + repr(parameter_name) + "!")
         self.function.parameters[parameter_name] = p
 
     def parse_converter(self, annotation):
@@ -3063,20 +3550,6 @@ def main(argv):
                             s = parameter_name
                         parameters.append(s)
                 print('    {}({})'.format(short_name, ', '.join(parameters)))
-                # add_comma = False
-                # for parameter_name, parameter in signature.parameters.items():
-                #     if parameter.kind == inspect.Parameter.KEYWORD_ONLY:
-                #         if add_comma:
-                #             parameters.append(', ')
-                #         else:
-                #             add_comma = True
-                #         s = parameter_name
-                #         if parameter.default != inspect.Parameter.empty:
-                #             s += '=' + repr(parameter.default)
-                #         parameters.append(s)
-                # parameters.append(')')
-
-                # print("   ", short_name + "".join(parameters))
             print()
         print("All converters also accept (c_default=None, py_default=None, annotation=None).")
         print("All return converters also accept (py_default=None).")

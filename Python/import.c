@@ -246,16 +246,12 @@ _imp_lock_held_impl(PyModuleDef *module);
 static PyObject *
 _imp_lock_held(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _imp_lock_held_impl(module);
-
-    return return_value;
+    return _imp_lock_held_impl(module);
 }
 
 static PyObject *
 _imp_lock_held_impl(PyModuleDef *module)
-/*[clinic end generated code: checksum=c5858b257881f94dee95526229a8d1a57ccff158]*/
+/*[clinic end generated code: checksum=ede1cafb78eb22e3009602f684c8b780e2b82d62]*/
 {
 #ifdef WITH_THREAD
     return PyBool_FromLong(import_lock_thread != -1);
@@ -289,16 +285,12 @@ _imp_acquire_lock_impl(PyModuleDef *module);
 static PyObject *
 _imp_acquire_lock(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _imp_acquire_lock_impl(module);
-
-    return return_value;
+    return _imp_acquire_lock_impl(module);
 }
 
 static PyObject *
 _imp_acquire_lock_impl(PyModuleDef *module)
-/*[clinic end generated code: checksum=badb56ed0079a6b902c9616fe068d572765b1863]*/
+/*[clinic end generated code: checksum=5b520b2416c5954a7cf0ed30955d68abe20b5868]*/
 {
 #ifdef WITH_THREAD
     _PyImport_AcquireLock();
@@ -330,16 +322,12 @@ _imp_release_lock_impl(PyModuleDef *module);
 static PyObject *
 _imp_release_lock(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _imp_release_lock_impl(module);
-
-    return return_value;
+    return _imp_release_lock_impl(module);
 }
 
 static PyObject *
 _imp_release_lock_impl(PyModuleDef *module)
-/*[clinic end generated code: checksum=f1c2a75e3136a113184e0af2a676d5f0b5b685b4]*/
+/*[clinic end generated code: checksum=efcd9d2923294c04371596e7f6d66a706d43fcac]*/
 {
 #ifdef WITH_THREAD
     if (_PyImport_ReleaseLock() < 0) {
@@ -1847,16 +1835,12 @@ _imp_extension_suffixes_impl(PyModuleDef *module);
 static PyObject *
 _imp_extension_suffixes(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _imp_extension_suffixes_impl(module);
-
-    return return_value;
+    return _imp_extension_suffixes_impl(module);
 }
 
 static PyObject *
 _imp_extension_suffixes_impl(PyModuleDef *module)
-/*[clinic end generated code: checksum=835921e67fd698e22e101eea64839d1ad62b6451]*/
+/*[clinic end generated code: checksum=82fb35d8429a429a4dc80c84b45b1aad73ff1de7]*/
 {
     PyObject *list;
     const char *suffix;

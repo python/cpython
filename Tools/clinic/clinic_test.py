@@ -34,6 +34,9 @@ class FakeConvertersDict:
     def get(self, name, default):
         return self.used_converters.setdefault(name, FakeConverterFactory(name))
 
+clinic.Clinic.presets_text = ''
+c = clinic.Clinic(language='C')
+
 class FakeClinic:
     def __init__(self):
         self.converters = FakeConvertersDict()
@@ -44,6 +47,32 @@ class FakeClinic:
         self.modules = collections.OrderedDict()
         clinic.clinic = self
         self.name = "FakeClinic"
+        self.line_prefix = self.line_suffix = ''
+        self.destinations = {}
+        self.add_destination("block", "buffer")
+        self.add_destination("file", "buffer")
+        self.add_destination("suppress", "suppress")
+        d = self.destinations.get
+        self.field_destinations = collections.OrderedDict((
+            ('docstring_prototype', d('suppress')),
+            ('docstring_definition', d('block')),
+            ('methoddef_define', d('block')),
+            ('impl_prototype', d('block')),
+            ('parser_prototype', d('suppress')),
+            ('parser_definition', d('block')),
+            ('impl_definition', d('block')),
+        ))
+
+    def get_destination(self, name):
+        d = self.destinations.get(name)
+        if not d:
+            sys.exit("Destination does not exist: " + repr(name))
+        return d
+
+    def add_destination(self, name, type, *args):
+        if name in self.destinations:
+            sys.exit("Destination already exists: " + repr(name))
+        self.destinations[name] = clinic.Destination(name, type, self, *args)
 
     def is_directive(self, name):
         return name == "module"
