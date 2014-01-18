@@ -719,7 +719,7 @@ The following attributes are also available:
    output from the child process. If the *universal_newlines* argument was
    ``True``, the stream is a text stream, otherwise it is a byte stream. If the
    *stdout* argument was not :data:`PIPE`, this attribute is ``None``.
-               
+
 
 .. attribute:: Popen.stderr
 
