@@ -434,12 +434,12 @@ functions.
       untrusted input.  See the warning under :ref:`frequently-used-arguments`
       for details.
 
-   *bufsize* will be supplied as the corresponding argument to the :meth:`io.open`
-   function when creating the stdin/stdout/stderr pipe file objects:
-   :const:`0` means unbuffered (read and write are one system call and can return short),
-   :const:`1` means line buffered, any other positive value means use a buffer of
-   approximately that size.  A negative bufsize (the default) means
-   the system default of io.DEFAULT_BUFFER_SIZE will be used.
+   *bufsize* will be supplied as the corresponding argument to the :func:`open`
+   function when creating the stdin/stdout/stderr pipe file objects: :const:`0`
+   means unbuffered (read and write are one system call and can return short),
+   :const:`1` means line buffered, any other positive value means use a buffer
+   of approximately that size.  A negative bufsize (the default) means the
+   system default of io.DEFAULT_BUFFER_SIZE will be used.
 
    .. versionchanged:: 3.3.1
       *bufsize* now defaults to -1 to enable buffering by default to match the
