@@ -182,10 +182,10 @@ class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
         _, have_open_br, bracketed = hostinfo.partition('[')
         if have_open_br:
             hostname, _, port = bracketed.partition(']')
-            _, have_port, port = port.partition(':')
+            _, _, port = port.partition(':')
         else:
-            hostname, have_port, port = hostinfo.partition(':')
-        if not have_port:
+            hostname, _, port = hostinfo.partition(':')
+        if not port:
             port = None
         return hostname, port
 
@@ -212,10 +212,10 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         _, have_open_br, bracketed = hostinfo.partition(b'[')
         if have_open_br:
             hostname, _, port = bracketed.partition(b']')
-            _, have_port, port = port.partition(b':')
+            _, _, port = port.partition(b':')
         else:
-            hostname, have_port, port = hostinfo.partition(b':')
-        if not have_port:
+            hostname, _, port = hostinfo.partition(b':')
+        if not port:
             port = None
         return hostname, port
 
@@ -903,10 +903,13 @@ def splitport(host):
     global _portprog
     if _portprog is None:
         import re
-        _portprog = re.compile('^(.*):([0-9]+)$')
+        _portprog = re.compile('^(.*):([0-9]*)$')
 
     match = _portprog.match(host)
-    if match: return match.group(1, 2)
+    if match:
+        host, port = match.groups()
+        if port:
+            return host, port
     return host, None
 
 _nportprog = None
@@ -923,12 +926,12 @@ def splitnport(host, defport=-1):
     match = _nportprog.match(host)
     if match:
         host, port = match.group(1, 2)
-        try:
-            if not port: raise ValueError("no digits")
-            nport = int(port)
-        except ValueError:
-            nport = None
-        return host, nport
+        if port:
+            try:
+                nport = int(port)
+            except ValueError:
+                nport = None
+            return host, nport
     return host, defport
 
 _queryprog = None
