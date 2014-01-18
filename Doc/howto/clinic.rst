@@ -44,16 +44,16 @@ redundant information in a surprising number of places.
 When you use Argument Clinic, you don't have to repeat yourself.
 
 Obviously, no one would want to use Argument Clinic unless
-it's solving a their problem without creating problems of
+it's solving their problem--and without creating new problems of
 its own.
-So Argument Clinic should generate correct code, and its
-code should preferably be slower, and definitely should
-not introduce a major speed regression.  (Eventually Argument
-Clinic should enable a major speedup--we should be able
-to rewrite its code generator so it produces tailor-made
-parsing code, rather than using the general-purpose functions
-from the CPython code base, which would make for the fastest
-argument parsing possible.)
+So it's paramount that Argument Clinic generate correct code.
+It'd be nice if the code was faster, too, but at the very least
+it should not introduce a major speed regression.  (Eventually Argument
+Clinic *should* make a major speedup possible--we could
+rewrite its code generator to produce tailor-made argument
+parsing code, rather than calling the general-purpose CPython
+argument parsing library.  That would make for the fastest
+argument parsing possible!)
 
 Additionally, Argument Clinic must be flexible enough to
 work with any approach to argument parsing.  Python has
