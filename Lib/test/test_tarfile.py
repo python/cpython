@@ -41,6 +41,7 @@ class TarTest:
     tarname = tarname
     suffix = ''
     open = io.FileIO
+    taropen = tarfile.TarFile.taropen
 
     @property
     def mode(self):
@@ -51,18 +52,21 @@ class GzipTest:
     tarname = gzipname
     suffix = 'gz'
     open = gzip.GzipFile if gzip else None
+    taropen = tarfile.TarFile.gzopen
 
 @support.requires_bz2
 class Bz2Test:
     tarname = bz2name
     suffix = 'bz2'
     open = bz2.BZ2File if bz2 else None
+    taropen = tarfile.TarFile.bz2open
 
 @support.requires_lzma
 class LzmaTest:
     tarname = xzname
     suffix = 'xz'
     open = lzma.LZMAFile if lzma else None
+    taropen = tarfile.TarFile.xzopen
 
 
 class ReadTest(TarTest):
@@ -286,6 +290,16 @@ class MiscReadTestBase(CommonReadTest):
         fobj.name = ""
         with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
             self.assertEqual(tar.name, None)
+
+    def test_illegal_mode_arg(self):
+        with open(tmpname, 'wb'):
+            pass
+        with self.assertRaisesRegex(ValueError, 'mode must be '):
+            tar = self.taropen(tmpname, 'q')
+        with self.assertRaisesRegex(ValueError, 'mode must be '):
+            tar = self.taropen(tmpname, 'rw')
+        with self.assertRaisesRegex(ValueError, 'mode must be '):
+            tar = self.taropen(tmpname, '')
 
     def test_fileobj_with_offset(self):
         # Skip the first member and store values from the second member
