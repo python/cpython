@@ -1726,7 +1726,9 @@ class TarFile(object):
                 gzip.GzipFile(name, mode, compresslevel, fileobj),
                 **kwargs)
         except IOError:
-            raise ReadError("not a gzip file")
+            if mode == 'r':
+                raise ReadError("not a gzip file")
+            raise
         t._extfileobj = False
         return t
 
@@ -1751,7 +1753,9 @@ class TarFile(object):
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
         except (IOError, EOFError):
-            raise ReadError("not a bzip2 file")
+            if mode == 'r':
+                raise ReadError("not a bzip2 file")
+            raise
         t._extfileobj = False
         return t
 

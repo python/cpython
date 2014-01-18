@@ -979,6 +979,22 @@ class WriteTest(WriteTestBase):
             os.unlink(temparchive)
             shutil.rmtree(tempdir)
 
+    def test_open_nonwritable_fileobj(self):
+        for exctype in IOError, EOFError, RuntimeError:
+            class BadFile(StringIO.StringIO):
+                first = True
+                def write(self, data):
+                    if self.first:
+                        self.first = False
+                        raise exctype
+
+            f = BadFile()
+            with self.assertRaises(exctype):
+                tar = tarfile.open(tmpname, self.mode, fileobj=f,
+                                   format=tarfile.PAX_FORMAT,
+                                   pax_headers={'non': 'empty'})
+            self.assertFalse(f.closed)
+
 class StreamWriteTest(WriteTestBase):
 
     mode = "w|"
