@@ -213,6 +213,7 @@ class CommonReadTest(ReadTest):
 
 
 class MiscReadTest(CommonReadTest):
+    taropen = tarfile.TarFile.taropen
 
     def test_no_name_argument(self):
         fobj = open(self.tarname, "rb")
@@ -232,6 +233,17 @@ class MiscReadTest(CommonReadTest):
         fobj.name = ""
         tar = tarfile.open(fileobj=fobj, mode=self.mode)
         self.assertEqual(tar.name, None)
+
+    def test_illegal_mode_arg(self):
+        with open(tmpname, 'wb'):
+            pass
+        self.addCleanup(os.unlink, tmpname)
+        with self.assertRaisesRegexp(ValueError, 'mode must be '):
+            tar = self.taropen(tmpname, 'q')
+        with self.assertRaisesRegexp(ValueError, 'mode must be '):
+            tar = self.taropen(tmpname, 'rw')
+        with self.assertRaisesRegexp(ValueError, 'mode must be '):
+            tar = self.taropen(tmpname, '')
 
     def test_fileobj_with_offset(self):
         # Skip the first member and store values from the second member
@@ -1543,6 +1555,7 @@ class LinkEmulationTest(ReadTest):
 class GzipMiscReadTest(MiscReadTest):
     tarname = gzipname
     mode = "r:gz"
+    taropen = tarfile.TarFile.gzopen
 class GzipUstarReadTest(UstarReadTest):
     tarname = gzipname
     mode = "r:gz"
@@ -1558,6 +1571,7 @@ class GzipStreamWriteTest(StreamWriteTest):
 class Bz2MiscReadTest(MiscReadTest):
     tarname = bz2name
     mode = "r:bz2"
+    taropen = tarfile.TarFile.bz2open
 class Bz2UstarReadTest(UstarReadTest):
     tarname = bz2name
     mode = "r:bz2"

@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20245: The open functions in the tarfile module now correctly handle
+  empty mode.
+
 - Issue #20086: Restored the use of locale-independent mapping instead of
   locale-dependent str.lower() in locale.normalize().
 
