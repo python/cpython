@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20270: urllib.urlparse now supports empty ports.
+
 - Issue #20243: TarFile no longer raise ReadError when opened in write mode.
 
 - Issue #20238: TarFile opened with external fileobj and "w:gz" mode didn't
