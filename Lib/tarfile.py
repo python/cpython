@@ -1671,6 +1671,9 @@ class TarFile(object):
             if mode == 'r':
                 raise ReadError("not a bzip2 file")
             raise
+        except:
+            fileobj.close()
+            raise
         t._extfileobj = False
         return t
 
@@ -1695,6 +1698,9 @@ class TarFile(object):
             fileobj.close()
             if mode == 'r':
                 raise ReadError("not an lzma file")
+            raise
+        except:
+            fileobj.close()
             raise
         t._extfileobj = False
         return t
