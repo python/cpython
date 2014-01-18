@@ -1157,6 +1157,22 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         finally:
             os.chdir(cwd)
 
+    def test_open_nonwritable_fileobj(self):
+        for exctype in OSError, EOFError, RuntimeError:
+            class BadFile(io.BytesIO):
+                first = True
+                def write(self, data):
+                    if self.first:
+                        self.first = False
+                        raise exctype
+
+            f = BadFile()
+            with self.assertRaises(exctype):
+                tar = tarfile.open(tmpname, self.mode, fileobj=f,
+                                   format=tarfile.PAX_FORMAT,
+                                   pax_headers={'non': 'empty'})
+            self.assertFalse(f.closed)
+
 class GzipWriteTest(GzipTest, WriteTest):
     pass
 
