@@ -657,6 +657,12 @@ class WriteTestBase(unittest.TestCase):
         tar.addfile(tarfile.TarInfo("foo"))
         tar.close()
         self.assertTrue(fobj.closed is False, "external fileobjs must never closed")
+        # Issue #20238: Incomplete gzip output with mode="w:gz"
+        data = fobj.getvalue()
+        del tar
+        test_support.gc_collect()
+        self.assertFalse(fobj.closed)
+        self.assertEqual(data, fobj.getvalue())
 
 
 class WriteTest(WriteTestBase):
