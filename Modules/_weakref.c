@@ -34,6 +34,7 @@ _weakref_getweakrefcount(PyModuleDef *module, PyObject *object)
 {
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
+
     _return_value = _weakref_getweakrefcount_impl(module, object);
     if ((_return_value == -1) && PyErr_Occurred())
         goto exit;
@@ -45,7 +46,7 @@ exit:
 
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyModuleDef *module, PyObject *object)
-/*[clinic end generated code: checksum=436e8fbe0297434375f039d8c2d9fc3a9bbe773c]*/
+/*[clinic end generated code: checksum=744fa73ba68c0ee89567e9cb9bea11863270d516]*/
 {
     PyWeakReference **list;
 

@@ -3906,16 +3906,12 @@ _pickle_Pickler_clear_memo_impl(PicklerObject *self);
 static PyObject *
 _pickle_Pickler_clear_memo(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_Pickler_clear_memo_impl((PicklerObject *)self);
-
-    return return_value;
+    return _pickle_Pickler_clear_memo_impl((PicklerObject *)self);
 }
 
 static PyObject *
 _pickle_Pickler_clear_memo_impl(PicklerObject *self)
-/*[clinic end generated code: checksum=0574593b102fffb8e781d7bb9b536ceffc525ac1]*/
+/*[clinic end generated code: checksum=015cc3c5befea86cb08b9396938477bebbea4157]*/
 {
     if (self->memo)
         PyMemoTable_Clear(self->memo);
@@ -4191,16 +4187,12 @@ _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self);
 static PyObject *
 _pickle_PicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_PicklerMemoProxy_clear_impl((PicklerMemoProxyObject *)self);
-
-    return return_value;
+    return _pickle_PicklerMemoProxy_clear_impl((PicklerMemoProxyObject *)self);
 }
 
 static PyObject *
 _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self)
-/*[clinic end generated code: checksum=c6ca252530ccb3ea2f4b33507b51b183f23b24c7]*/
+/*[clinic end generated code: checksum=bf8dd8c8688d0c0f7a2e59a804c47375b740f2f0]*/
 {
     if (self->pickler->memo)
         PyMemoTable_Clear(self->pickler->memo);
@@ -4228,16 +4220,12 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self);
 static PyObject *
 _pickle_PicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_PicklerMemoProxy_copy_impl((PicklerMemoProxyObject *)self);
-
-    return return_value;
+    return _pickle_PicklerMemoProxy_copy_impl((PicklerMemoProxyObject *)self);
 }
 
 static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
-/*[clinic end generated code: checksum=808c4d5a37359ed5fb2efe81dbe5ff480719f470]*/
+/*[clinic end generated code: checksum=72d46879dc658adbd3d28b5c82dd8dcfa6b9b124]*/
 {
     Py_ssize_t i;
     PyMemoTable *memo;
@@ -4295,16 +4283,12 @@ _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self);
 static PyObject *
 _pickle_PicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_PicklerMemoProxy___reduce___impl((PicklerMemoProxyObject *)self);
-
-    return return_value;
+    return _pickle_PicklerMemoProxy___reduce___impl((PicklerMemoProxyObject *)self);
 }
 
 static PyObject *
 _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
-/*[clinic end generated code: checksum=2293152bdf53951a012d430767b608f5fb4213b5]*/
+/*[clinic end generated code: checksum=aad71c4d81d1ed8bf0d32362dd80a29b9f3b0d03]*/
 {
     PyObject *reduce_value, *dict_args;
     PyObject *contents = _pickle_PicklerMemoProxy_copy_impl(self);
@@ -6342,16 +6326,12 @@ _pickle_Unpickler_load_impl(PyObject *self);
 static PyObject *
 _pickle_Unpickler_load(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_Unpickler_load_impl(self);
-
-    return return_value;
+    return _pickle_Unpickler_load_impl(self);
 }
 
 static PyObject *
 _pickle_Unpickler_load_impl(PyObject *self)
-/*[clinic end generated code: checksum=55f35fcaf034817e75c355ec50b7878577355899]*/
+/*[clinic end generated code: checksum=9477099fe6a90748c13ff1a6dd92ba7ab7a89602]*/
 {
     UnpicklerObject *unpickler = (UnpicklerObject*)self;
 
@@ -6417,8 +6397,8 @@ _pickle_Unpickler_find_class(PyObject *self, PyObject *args)
     PyObject *module_name;
     PyObject *global_name;
 
-    if (!PyArg_ParseTuple(args,
-        "OO:find_class",
+    if (!PyArg_UnpackTuple(args, "find_class",
+        2, 2,
         &module_name, &global_name))
         goto exit;
     return_value = _pickle_Unpickler_find_class_impl((UnpicklerObject *)self, module_name, global_name);
@@ -6429,7 +6409,7 @@ exit:
 
 static PyObject *
 _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
-/*[clinic end generated code: checksum=1f353d13a32c9d94feb1466b3c2d0529a7e5650e]*/
+/*[clinic end generated code: checksum=15ed4836fd5860425fff9ea7855d4f1f4413c170]*/
 {
     PyObject *global;
     PyObject *modules_dict;
@@ -6752,16 +6732,12 @@ _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self);
 static PyObject *
 _pickle_UnpicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_UnpicklerMemoProxy_clear_impl((UnpicklerMemoProxyObject *)self);
-
-    return return_value;
+    return _pickle_UnpicklerMemoProxy_clear_impl((UnpicklerMemoProxyObject *)self);
 }
 
 static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
-/*[clinic end generated code: checksum=e0f99c26d48444a3f58f598bec3190c66595fce7]*/
+/*[clinic end generated code: checksum=07adecee2181e5e268b2ff184360b1d88ad947f2]*/
 {
     _Unpickler_MemoCleanup(self->unpickler);
     self->unpickler->memo = _Unpickler_NewMemo(self->unpickler->memo_size);
@@ -6791,16 +6767,12 @@ _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self);
 static PyObject *
 _pickle_UnpicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_UnpicklerMemoProxy_copy_impl((UnpicklerMemoProxyObject *)self);
-
-    return return_value;
+    return _pickle_UnpicklerMemoProxy_copy_impl((UnpicklerMemoProxyObject *)self);
 }
 
 static PyObject *
 _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
-/*[clinic end generated code: checksum=8c0ab91c0b694ea71a1774650898a760d1ab4765]*/
+/*[clinic end generated code: checksum=47b9f0cc12c5a54004252e1b4916822cdfa8a881]*/
 {
     Py_ssize_t i;
     PyObject *new_memo = PyDict_New();
@@ -6851,16 +6823,12 @@ _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self);
 static PyObject *
 _pickle_UnpicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _pickle_UnpicklerMemoProxy___reduce___impl((UnpicklerMemoProxyObject *)self);
-
-    return return_value;
+    return _pickle_UnpicklerMemoProxy___reduce___impl((UnpicklerMemoProxyObject *)self);
 }
 
 static PyObject *
 _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
-/*[clinic end generated code: checksum=4ee76a65511291f0de2e9e63db395d2e5d6d8df6]*/
+/*[clinic end generated code: checksum=2f061bb9ecd9ee8500184c135148a131c46a3b88]*/
 {
     PyObject *reduce_value;
     PyObject *constructor_args;
