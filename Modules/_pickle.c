@@ -4064,13 +4064,13 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "to map the new Python 3 names to the old module names used in Python\n"
 "2, so that the pickle data stream is readable with Python 2.");
 
-static PyObject *
+static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports);
 
-static PyObject *
+static int
 _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *return_value = NULL;
+    int return_value = -1;
     static char *_keywords[] = {"file", "protocol", "fix_imports", NULL};
     PyObject *file;
     PyObject *protocol = NULL;
@@ -4086,9 +4086,9 @@ exit:
     return return_value;
 }
 
-static PyObject *
+static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic end generated code: checksum=defa3d9e9f8b51fb257d4fdfca99db503db0e6df]*/
+/*[clinic end generated code: checksum=10c8ea05194d08108471163d8202cf5e12975544]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -4098,16 +4098,16 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *pro
         (void)Pickler_clear(self);
 
     if (_Pickler_SetProtocol(self, protocol, fix_imports) < 0)
-        return NULL;
+        return -1;
 
     if (_Pickler_SetOutputStream(self, file) < 0)
-        return NULL;
+        return -1;
 
     /* memo and output_buffer may have already been created in _Pickler_New */
     if (self->memo == NULL) {
         self->memo = PyMemoTable_New();
         if (self->memo == NULL)
-            return NULL;
+            return -1;
     }
     self->output_len = 0;
     if (self->output_buffer == NULL) {
@@ -4115,7 +4115,7 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *pro
         self->output_buffer = PyBytes_FromStringAndSize(NULL,
                                                         self->max_output_len);
         if (self->output_buffer == NULL)
-            return NULL;
+            return -1;
     }
 
     self->fast = 0;
@@ -4126,30 +4126,19 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *pro
         self->pers_func = _PyObject_GetAttrId((PyObject *)self,
                                               &PyId_persistent_id);
         if (self->pers_func == NULL)
-            return NULL;
+            return -1;
     }
     self->dispatch_table = NULL;
     if (_PyObject_HasAttrId((PyObject *)self, &PyId_dispatch_table)) {
         self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
                                                    &PyId_dispatch_table);
         if (self->dispatch_table == NULL)
-            return NULL;
+            return -1;
     }
 
-    Py_RETURN_NONE;
-}
-
-/* Wrap the Clinic generated signature to slot it in tp_init. */
-static int
-Pickler_init(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    PyObject *result = _pickle_Pickler___init__(self, args, kwargs);
-    if (result == NULL) {
-        return -1;
-    }
-    Py_DECREF(result);
     return 0;
 }
+
 
 /* Define a proxy object for the Pickler's internal memo object. This is to
  * avoid breaking code like:
@@ -4543,7 +4532,7 @@ static PyTypeObject Pickler_Type = {
     0,                                  /*tp_descr_get*/
     0,                                  /*tp_descr_set*/
     0,                                  /*tp_dictoffset*/
-    Pickler_init,                       /*tp_init*/
+    _pickle_Pickler___init__,           /*tp_init*/
     PyType_GenericAlloc,                /*tp_alloc*/
     PyType_GenericNew,                  /*tp_new*/
     PyObject_GC_Del,                    /*tp_free*/
@@ -6614,13 +6603,13 @@ PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "respectively.  The *encoding* can be \'bytes\' to read these 8-bit\n"
 "string instances as bytes objects.");
 
-static PyObject *
+static int
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors);
 
-static PyObject *
+static int
 _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *return_value = NULL;
+    int return_value = -1;
     static char *_keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
     PyObject *file;
     int fix_imports = 1;
@@ -6637,9 +6626,9 @@ exit:
     return return_value;
 }
 
-static PyObject *
+static int
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic end generated code: checksum=26c1d4a06841a8e51d29a0c244ba7f4607ff358a]*/
+/*[clinic end generated code: checksum=6936e9188104e45b1b15e1c11fe77b3965409471]*/
 {
     _Py_IDENTIFIER(persistent_load);
 
@@ -6648,20 +6637,20 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_i
         (void)Unpickler_clear(self);
 
     if (_Unpickler_SetInputStream(self, file) < 0)
-        return NULL;
+        return -1;
 
     if (_Unpickler_SetInputEncoding(self, encoding, errors) < 0)
-        return NULL;
+        return -1;
 
     self->fix_imports = fix_imports;
     if (self->fix_imports == -1)
-        return NULL;
+        return -1;
 
     if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
         self->pers_func = _PyObject_GetAttrId((PyObject *)self,
                                               &PyId_persistent_load);
         if (self->pers_func == NULL)
-            return NULL;
+            return 1;
     }
     else {
         self->pers_func = NULL;
@@ -6669,29 +6658,18 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_i
 
     self->stack = (Pdata *)Pdata_New();
     if (self->stack == NULL)
-        return NULL;
+        return 1;
 
     self->memo_size = 32;
     self->memo = _Unpickler_NewMemo(self->memo_size);
     if (self->memo == NULL)
-        return NULL;
+        return -1;
 
     self->proto = 0;
 
-    Py_RETURN_NONE;
-}
-
-/* Wrap the Clinic generated signature to slot it in tp_init. */
-static int
-Unpickler_init(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    PyObject *result = _pickle_Unpickler___init__(self, args, kwargs);
-    if (result == NULL) {
-        return -1;
-    }
-    Py_DECREF(result);
     return 0;
 }
+
 
 /* Define a proxy object for the Unpickler's internal memo object. This is to
  * avoid breaking code like:
@@ -7096,7 +7074,7 @@ static PyTypeObject Unpickler_Type = {
     0,                                  /*tp_descr_get*/
     0,                                  /*tp_descr_set*/
     0,                                  /*tp_dictoffset*/
-    Unpickler_init,                     /*tp_init*/
+    _pickle_Unpickler___init__,         /*tp_init*/
     PyType_GenericAlloc,                /*tp_alloc*/
     PyType_GenericNew,                  /*tp_new*/
     PyObject_GC_Del,                    /*tp_free*/
