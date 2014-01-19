@@ -355,7 +355,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         """
         self.send_response_only(100)
-        self.flush_headers()
+        self.end_headers()
         return True
 
     def handle_one_request(self):
