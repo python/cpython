@@ -3446,8 +3446,10 @@ class DSLParser:
             a = [p.name]
             if p.converter.is_optional():
                 a.append('=')
-                value = p.converter.default
-                a.append(p.converter.py_default)
+                value = p.converter.py_default
+                if not value:
+                    value = str(p.converter.default)
+                a.append(value)
             s = fix_right_bracket_count(p.right_bracket_count)
             s += "".join(a)
             if add_comma:
