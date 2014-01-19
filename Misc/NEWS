@@ -101,6 +101,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20294: Argument Clinic now supports argument parsing for __new__ and
+  __init__ functions.
+
 - Issue #20299: Argument Clinic custom converters may now change the default
   value of c_default and py_default with a class member.
 

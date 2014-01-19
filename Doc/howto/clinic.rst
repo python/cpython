@@ -784,8 +784,8 @@ Argument Clinic converters.  On the left is the legacy converter,
 on the right is the text you'd replace it with.
 
 =========   =================================================================================
-``'B'``     ``byte(bitwise=True)``
-``'b'``     ``byte``
+``'B'``     ``unsigned_char(bitwise=True)``
+``'b'``     ``unsigned_char``
 ``'c'``     ``char``
 ``'C'``     ``int(types='str')``
 ``'d'``     ``double``
@@ -1274,6 +1274,25 @@ any arguments.
 
 You can still use a self converter, a return converter, and specify
 a ``type`` argument to the object converter for ``METH_O``.
+
+tp_new and tp_init functions
+----------------------------------------------
+
+You can convert ``tp_new`` and ``tp_init``
+functions.  Just name them ``__new__`` or
+``__init__`` as appropriate.  Notes:
+
+* The function name generated for ``__new__`` doesn't end in ``__new__``
+  like it would by default.  It's just the name of the class, converted
+  into a valid C identifier.
+
+* No ``PyMethodDef`` ``#define`` is generated for these functions.
+
+* ``__init__`` functions return ``int``, not ``PyObject *``.
+
+* Argument Clinic supports any signature for these functions, even though
+  the parsing function is required to always take ``args`` and ``kwargs``
+  objects.
 
 The #ifdef trick
 ----------------------------------------------
