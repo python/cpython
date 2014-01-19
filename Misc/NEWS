@@ -101,6 +101,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20299: Argument Clinic custom converters may now change the default
+  value of c_default and py_default with a class member.
+
 - Issue #20287: Argument Clinic's output is now configurable, allowing
   delaying its output or even redirecting it to a separate file.
 

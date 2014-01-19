@@ -1893,8 +1893,10 @@ class CConverter(metaclass=CConverterAutoRegister):
                     self.__class__.__name__, default, name, types_str))
             self.default = default
 
-        self.c_default = c_default
-        self.py_default = py_default
+        if c_default:
+            self.c_default = c_default
+        if py_default:
+            self.py_default = py_default
 
         if annotation != unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
