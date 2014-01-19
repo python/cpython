@@ -584,7 +584,8 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
     def test_with_continue_1_1(self):
         result = self.send_typical_request(b'GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n')
         self.assertEqual(result[0], b'HTTP/1.1 100 Continue\r\n')
-        self.assertEqual(result[1], b'HTTP/1.1 200 OK\r\n')
+        self.assertEqual(result[1], b'\r\n')
+        self.assertEqual(result[2], b'HTTP/1.1 200 OK\r\n')
         self.verify_expected_headers(result[2:-1])
         self.verify_get_called()
         self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
@@ -652,7 +653,8 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertNotEqual(_readAndReseek(output), b'')
         result = _readAndReseek(output).split(b'\r\n')
         self.assertEqual(result[0], b'HTTP/1.1 100 Continue')
-        self.assertEqual(result[1], b'HTTP/1.1 200 OK')
+        self.assertEqual(result[1], b'')
+        self.assertEqual(result[2], b'HTTP/1.1 200 OK')
 
     def test_with_continue_rejected(self):
         usual_handler = self.handler        # Save to avoid breaking any subsequent tests.
