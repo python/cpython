@@ -3448,7 +3448,7 @@ class DSLParser:
                 a.append('=')
                 value = p.converter.py_default
                 if not value:
-                    value = str(p.converter.default)
+                    value = repr(p.converter.default)
                 a.append(value)
             s = fix_right_bracket_count(p.right_bracket_count)
             s += "".join(a)
