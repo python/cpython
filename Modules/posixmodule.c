@@ -8061,9 +8061,12 @@ iov_cleanup(struct iovec *iov, Py_buffer *buf, int cnt)
 #ifdef HAVE_READV
 PyDoc_STRVAR(posix_readv__doc__,
 "readv(fd, buffers) -> bytesread\n\n\
-Read from a file descriptor into a number of writable buffers. buffers\n\
-is an arbitrary sequence of writable buffers.\n\
-Returns the total number of bytes read.");
+Read from a file descriptor fd into a number of mutable, bytes-like\n\
+objects (\"buffers\").  readv will transfer data into each buffer\n\
+until it is full and then move on to the next buffer in the sequence\n\
+to hold the rest of the data.\n\n\
+readv returns the total number of bytes read (which may be less than\n\
+the total capacity of all the buffers.");
 
 static PyObject *
 posix_readv(PyObject *self, PyObject *args)
@@ -8457,9 +8460,10 @@ posix_pipe2(PyObject *self, PyObject *arg)
 #ifdef HAVE_WRITEV
 PyDoc_STRVAR(posix_writev__doc__,
 "writev(fd, buffers) -> byteswritten\n\n\
-Write the contents of buffers to a file descriptor, where buffers is an\n\
-arbitrary sequence of buffers.\n\
-Returns the total bytes written.");
+Write the contents of *buffers* to file descriptor *fd*. *buffers*\n\
+must be a sequence of bytes-like objects.\n\n\
+writev writes the contents of each object to the file descriptor\n\
+and returns the total number of bytes written.");
 
 static PyObject *
 posix_writev(PyObject *self, PyObject *args)
