@@ -1103,9 +1103,12 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 
 .. function:: readv(fd, buffers)
 
-   Read from a file descriptor into a number of writable buffers. *buffers* is
-   an arbitrary sequence of writable buffers. Returns the total number of bytes
-   read.
+   Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
+   objects <bytes-like object>` *buffers*. :func:`~os.readv` will transfer data
+   into each buffer until it is full and then move on to the next buffer in the
+   sequence to hold the rest of the data. :func:`~os.readv` returns the total
+   number of bytes read (which may be less than the total capacity of all the
+   objects).
 
    Availability: Unix.
 
@@ -1155,9 +1158,10 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 
 .. function:: writev(fd, buffers)
 
-   Write the contents of *buffers* to file descriptor *fd*, where *buffers*
-   is an arbitrary sequence of buffers.
-   Returns the total number of bytes written.
+   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be a
+   sequence of :term:`bytes-like objects <bytes-like object>`.
+   :func:`~os.writev` writes the contents of each object to the file descriptor
+   and returns the total number of bytes written.
 
    Availability: Unix.
 
