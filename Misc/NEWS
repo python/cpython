@@ -43,8 +43,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #18574: Fixed handling of 100-continue reply from server in
-  http.client.HTTPConnection. Patch by Nikolaus Rath.
+- Issue #18574: Added missing newline in 100-Continue reply from
+  http.server.BaseHTTPRequestHandler. Patch by Nikolaus Rath.
 
 - Issue #20270: urllib.urlparse now supports empty ports.
 
