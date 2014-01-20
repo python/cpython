@@ -374,6 +374,12 @@ loop stops when all tasks are done.
 Task functions
 --------------
 
+.. note::
+
+   In the functions below, the optional *loop* argument allows to explicitly set
+   the event loop object used by the underlying task or coroutine.  If it's
+   not provided, the default event loop is used.
+
 .. function:: as_completed(fs, \*, loop=None, timeout=None)
 
    Return an iterator whose values, when waited for, are :class:`Future`
