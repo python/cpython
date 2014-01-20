@@ -695,9 +695,6 @@ class _TestQueue(BaseTestCase):
     def test_task_done(self):
         queue = self.JoinableQueue()
 
-        if sys.version_info < (2, 5) and not hasattr(queue, 'task_done'):
-            self.skipTest("requires 'queue.task_done()' method")
-
         workers = [self.Process(target=self._test_task_done, args=(queue,))
                    for i in range(4)]
 

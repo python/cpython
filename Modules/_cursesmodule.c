@@ -2087,8 +2087,6 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"nodelay",         (PyCFunction)PyCursesWindow_nodelay, METH_VARARGS},
     {"notimeout",       (PyCFunction)PyCursesWindow_notimeout, METH_VARARGS},
     {"noutrefresh",     (PyCFunction)PyCursesWindow_NoOutRefresh, METH_VARARGS},
-    /* Backward compatibility alias -- remove in Python 2.3 */
-    {"nooutrefresh",    (PyCFunction)PyCursesWindow_NoOutRefresh, METH_VARARGS},
     {"overlay",         (PyCFunction)PyCursesWindow_Overlay, METH_VARARGS},
     {"overwrite",       (PyCFunction)PyCursesWindow_Overwrite,
      METH_VARARGS},
