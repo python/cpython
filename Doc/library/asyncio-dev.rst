@@ -4,7 +4,7 @@ Develop with asyncio
 ====================
 
 Asynchronous programming is different than classical "sequential" programming.
-This page lists common traps and explain how to avoid them.
+This page lists common traps and explains how to avoid them.
 
 
 Handle correctly blocking functions
@@ -131,14 +131,15 @@ function::
 See also the :meth:`Future.exception` method.
 
 
-Chain correctly coroutines
+Chain coroutines correctly
 --------------------------
 
 When a coroutine function calls other coroutine functions and tasks, they
-should chained explicitly with ``yield from``. Otherwise, the execution is no
-more guaranteed to be sequential.
+should be chained explicitly with ``yield from``. Otherwise, the execution is
+not guaranteed to be sequential.
 
-Example with different bugs using sleep to simulate slow operations::
+Example with different bugs using :func:`asyncio.sleep` to simulate slow
+operations::
 
     import asyncio
 
