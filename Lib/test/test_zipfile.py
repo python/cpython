@@ -844,7 +844,9 @@ class OtherTests(unittest.TestCase):
         # Create the ZIP archive
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
             zipfp.writestr("name", "foo")
-            zipfp.writestr("name", "bar")
+            with self.assertWarns(UserWarning):
+                zipfp.writestr("name", "bar")
+            self.assertEqual(zipfp.namelist(), ["name"] * 2)
 
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
             infos = zipfp.infolist()
@@ -1150,7 +1152,8 @@ class OtherTests(unittest.TestCase):
 
         # check a comment that is too long is truncated
         with zipfile.ZipFile(TESTFN, mode="w") as zipf:
-            zipf.comment = comment2 + b'oops'
+            with self.assertWarns(UserWarning):
+                zipf.comment = comment2 + b'oops'
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
         with zipfile.ZipFile(TESTFN, mode="r") as zipfr:
             self.assertEqual(zipfr.comment, comment2)
