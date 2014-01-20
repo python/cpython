@@ -532,10 +532,11 @@ Network functions
 
 .. function:: open_connection(host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
 
-   A wrapper for create_connection() returning a (reader, writer) pair.
+   A wrapper for :meth:`~BaseEventLoop.create_connection()` returning a (reader,
+   writer) pair.
 
-   The reader returned is a StreamReader instance; the writer is a
-   :class:`Transport`.
+   The reader returned is a :class:`StreamReader` instance; the writer is a
+   transport.
 
    The arguments are all the usual arguments to
    :meth:`BaseEventLoop.create_connection` except *protocol_factory*; most
