@@ -1549,7 +1549,7 @@ class _BasePathTest(object):
         self.assertTrue(p.is_dir())
         if os.name != 'nt':
             # the directory's permissions follow the mode argument
-            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o555 & mode)
+            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o7555 & mode)
         # the parent's permissions follow the default process settings
         self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), mode)
 
