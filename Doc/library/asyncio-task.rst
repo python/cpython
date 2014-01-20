@@ -419,7 +419,8 @@ Task functions
 .. function:: sleep(delay, result=None, \*, loop=None)
 
    Create a :ref:`coroutine object <coroutine>` that completes after a given
-   time (in seconds).
+   time (in seconds).  If *result* is provided, it is produced to the caller
+   when the coroutine completes.
 
 .. function:: shield(arg, \*, loop=None)
 
