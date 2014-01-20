@@ -1534,13 +1534,6 @@ PyObject_GC_Track(void *op)
     _PyObject_GC_TRACK(op);
 }
 
-/* for binary compatibility with 2.2 */
-void
-_PyObject_GC_Track(PyObject *op)
-{
-    PyObject_GC_Track(op);
-}
-
 void
 PyObject_GC_UnTrack(void *op)
 {
@@ -1549,13 +1542,6 @@ PyObject_GC_UnTrack(void *op)
      */
     if (IS_TRACKED(op))
         _PyObject_GC_UNTRACK(op);
-}
-
-/* for binary compatibility with 2.2 */
-void
-_PyObject_GC_UnTrack(PyObject *op)
-{
-    PyObject_GC_UnTrack(op);
 }
 
 PyObject *
