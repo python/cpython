@@ -1772,6 +1772,10 @@ Loading and running tests
       Return ``True`` if all tests run so far have passed, otherwise returns
       ``False``.
 
+      .. versionchanged:: 3.4
+         Returns ``False`` if there were any :attr:`unexpectedSuccesses`
+         from tests marked with the :func:`expectedFailure` decorator.
+
 
    .. method:: stop()
 
