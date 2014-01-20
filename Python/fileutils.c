@@ -1,11 +1,12 @@
 #include "Python.h"
 #include "osdefs.h"
+#include <locale.h>
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #endif
 
 #ifdef HAVE_LANGINFO_H
-#include <locale.h>
 #include <langinfo.h>
 #endif
 
