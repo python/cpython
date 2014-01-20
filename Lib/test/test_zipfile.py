@@ -19,7 +19,7 @@ from random import randint, random
 from unittest import skipUnless
 
 from test.test_support import TESTFN, TESTFN_UNICODE, TESTFN_ENCODING, \
-                              run_unittest, findfile, unlink
+                              run_unittest, findfile, unlink, check_warnings
 try:
     TESTFN_UNICODE.encode(TESTFN_ENCODING)
 except (UnicodeError, TypeError):
@@ -148,7 +148,9 @@ class TestsWithSourceFile(unittest.TestCase):
         # Create the ZIP archive
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
             zipfp.writestr("name", "foo")
-            zipfp.writestr("name", "bar")
+            with check_warnings(('', UserWarning)):
+                zipfp.writestr("name", "bar")
+            self.assertEqual(zipfp.namelist(), ["name"] * 2)
 
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
             infos = zipfp.infolist()
@@ -1035,7 +1037,8 @@ class OtherTests(unittest.TestCase):
 
         # check a comment that is too long is truncated
         with zipfile.ZipFile(TESTFN, mode="w") as zipf:
-            zipf.comment = comment2 + 'oops'
+            with check_warnings(('', UserWarning)):
+                zipf.comment = comment2 + 'oops'
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
         with zipfile.ZipFile(TESTFN, mode="r") as zipf:
             self.assertEqual(zipf.comment, comment2)

@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20262: Warnings are raised now when duplicate names are added in the
+  ZIP file or too long ZIP file comment is truncated.
+
 - Issue #20270: urllib and urlparse now support empty ports.
 
 - Issue #20243: TarFile no longer raise ReadError when opened in write mode.

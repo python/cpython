@@ -922,10 +922,10 @@ class ZipFile(object):
     @comment.setter
     def comment(self, comment):
         # check for valid comment length
-        if len(comment) >= ZIP_MAX_COMMENT:
-            if self.debug:
-                print('Archive comment is too long; truncating to %d bytes'
-                        % ZIP_MAX_COMMENT)
+        if len(comment) > ZIP_MAX_COMMENT:
+            import warnings
+            warnings.warn('Archive comment is too long; truncating to %d bytes'
+                          % ZIP_MAX_COMMENT, stacklevel=2)
             comment = comment[:ZIP_MAX_COMMENT]
         self._comment = comment
         self._didModify = True
@@ -1088,8 +1088,8 @@ class ZipFile(object):
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
         if zinfo.filename in self.NameToInfo:
-            if self.debug:      # Warning for duplicate names
-                print "Duplicate name:", zinfo.filename
+            import warnings
+            warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
         if self.mode not in ("w", "a"):
             raise RuntimeError, 'write() requires mode "w" or "a"'
         if not self.fp:
