@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20165: The unittest module no longer considers tests marked with
+  @expectedFailure successful if they pass.
+
 - Issue #18574: Added missing newline in 100-Continue reply from
   http.server.BaseHTTPRequestHandler. Patch by Nikolaus Rath.
 
