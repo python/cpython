@@ -33,20 +33,6 @@ Copyright (C) 1994 Steen Lumholt.
 #include <windows.h>
 #endif
 
-/* Allow using this code in Python 2.[12] */
-#ifndef PyDoc_STRVAR
-#define PyDoc_STRVAR(name,str) static char name[] = str
-#endif
-
-#ifndef PyMODINIT_FUNC
-#define PyMODINIT_FUNC void
-#endif
-
-#ifndef PyBool_Check
-#define PyBool_Check(o)       0
-#define PyBool_FromLong       PyLong_FromLong
-#endif
-
 #define CHECK_SIZE(size, elemsize) \
     ((size_t)(size) <= Py_MAX((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
 
