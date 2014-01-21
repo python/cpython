@@ -148,6 +148,19 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
 
+    def testSyntaxErrorOffset(self):
+        def check(src, lineno, offset):
+            with self.assertRaises(SyntaxError) as cm:
+                compile(src, '<fragment>', 'exec')
+            self.assertEqual(cm.exception.lineno, lineno)
+            self.assertEqual(cm.exception.offset, offset)
+
+        check('def fact(x):\n\treturn x!\n', 2, 10)
+        check('1 +\n', 1, 4)
+        check('def spam():\n  print(1)\n print(2)', 3, 10)
+        check('Python = "Python" +', 1, 20)
+        check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
+
     @cpython_only
     def testSettingException(self):
         # test that setting an exception at the C level works even if the
