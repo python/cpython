@@ -5,7 +5,7 @@
 
     Sphinx extension with Python doc-specific markup.
 
-    :copyright: 2008-2013 by Georg Brandl.
+    :copyright: 2008-2014 by Georg Brandl.
     :license: Python license.
 """
 
@@ -145,8 +145,6 @@ class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
 from sphinx.locale import versionlabels
 from sphinx.util.compat import Directive
 
-versionlabels['deprecated-removed'] = \
-    'Deprecated since version %s, will be removed in version %s'
 
 class DeprecatedRemoved(Directive):
     has_content = True
@@ -155,24 +153,40 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
+    _label = 'Deprecated since version %s, will be removed in version %s'
+
     def run(self):
         node = addnodes.versionmodified()
         node.document = self.state.document
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
+        text = self._label % version
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
                                                       self.lineno+1)
-            node.extend(inodes)
-            if self.content:
-                self.state.nested_parse(self.content, self.content_offset, node)
-            ret = [node] + messages
+            para = nodes.paragraph(self.arguments[2], '', *inodes)
+            node.append(para)
         else:
-            ret = [node]
+            messages = []
+        if self.content:
+            self.state.nested_parse(self.content, self.content_offset, node)
+        if len(node):
+            if isinstance(node[0], nodes.paragraph) and node[0].rawsource:
+                content = nodes.inline(node[0].rawsource, translatable=True)
+                content.source = node[0].source
+                content.line = node[0].line
+                content += node[0].children
+                node[0].replace_self(nodes.paragraph('', '', content))
+            node[0].insert(0, nodes.inline('', '%s: ' % text,
+                                           classes=['versionmodified']))
+        else:
+            para = nodes.paragraph('', '',
+                nodes.inline('', '%s.' % text, classes=['versionmodified']))
+            node.append(para)
         env = self.state.document.settings.env
         env.note_versionchange('deprecated', version[0], node, self.lineno)
-        return ret
+        return [node] + messages
 
 
 # Support for including Misc/NEWS
