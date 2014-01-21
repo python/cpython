@@ -33,8 +33,16 @@ tc = TC()
 
 signature = ct.get_argspec  # 2.7 and 3.x use different functions
 class Get_signatureTest(unittest.TestCase):
+    # The signature function must return a string, even if blank.
+    # Test a variety of objects to be sure that none cause it to raise
+    # (quite aside from getting as correct an answer as possible).
+    # The tests of builtins may break if inspect or the docstrings change,
+    # but a red buildbot is better than a user crash (as has happened).
+    # For a simple mismatch, change the expected output to the actual.
 
     def test_builtins(self):
+        # These test will break if
+
         # Python class that inherits builtin methods
         class List(list): "List() doc"
         # Simulate builtin with no docstring for default argspec test
