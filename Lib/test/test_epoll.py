@@ -260,9 +260,9 @@ class TestEPoll(unittest.TestCase):
         epoll = select.epoll()
         self.addCleanup(epoll.close)
         for timeout in (1e-2, 1e-3, 1e-4):
-            t0 = time.perf_counter()
+            t0 = time.monotonic()
             epoll.poll(timeout)
-            dt = time.perf_counter() - t0
+            dt = time.monotonic() - t0
             self.assertGreaterEqual(dt, timeout)
 
 
