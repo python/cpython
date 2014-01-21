@@ -462,7 +462,7 @@ the `backend` attribute on a `Something` instance. In this particular case
 we are only interested in the return value from the final call to
 `start_call` so we don't have much configuration to do. Let's assume the
 object it returns is 'file-like', so we'll ensure that our response object
-uses the builtin `file` as its `spec`.
+uses the builtin `open` as its `spec`.
 
 To do this we create a mock instance as our mock backend and create a mock
 response object for it. To set the response as the return value for that final
@@ -474,7 +474,7 @@ We can do that in a slightly nicer way using the :meth:`~Mock.configure_mock`
 method to directly set the return value for us:
 
     >>> something = Something()
-    >>> mock_response = Mock(spec=file)
+    >>> mock_response = Mock(spec=open)
     >>> mock_backend = Mock()
     >>> config = {'get_endpoint.return_value.create_call.return_value.start_call.return_value': mock_response}
     >>> mock_backend.configure_mock(**config)
