@@ -88,7 +88,7 @@ class Get_signatureTest(unittest.TestCase):
                             (TC.cm, "(a)"),):
             self.assertEqual(signature(meth), mtip + "\ndoc")
         self.assertEqual(signature(tc), "(ci)\ndoc")
-        
+
     def test_no_docstring(self):
         def nd(s): pass
         TC.nd = nd
