@@ -2,6 +2,7 @@ import unittest
 import idlelib.CallTips as ct
 import types
 
+default_tip = ct._default_callable_argspec
 
 # Test Class TC is used in multiple get_argspec test methods
 class TC():
@@ -63,7 +64,7 @@ class Get_signatureTest(unittest.TestCase):
         gtest(List.append, append_doc)
 
         gtest(types.MethodType, "method(function, instance)")
-        gtest(SB(), ct._default_callable_argspec)
+        gtest(SB(), default_tip)
 
     def test_functions(self):
         def t1(): 'doc'
@@ -88,13 +89,13 @@ class Get_signatureTest(unittest.TestCase):
 
     def test_bound_methods(self):
         # test that first parameter is correctly removed from argspec
-        # using _first_param re to calculate expected masks re errors
         for meth, mtip  in ((tc.t1, "()"), (tc.t4, "(*args)"), (tc.t6, "(self)"),
-                            (TC.cm, "(a)"),):
+                            (tc.__call__, '(ci)'), (tc, '(ci)'), (TC.cm, "(a)"),):
             self.assertEqual(signature(meth), mtip + "\ndoc")
-        self.assertEqual(signature(tc), "(ci)\ndoc")
-        # directly test that re works to delete first parameter even when it
-        # non-ascii chars, such as various forms of A.
+
+    def test_non_ascii_name(self):
+        # test that re works to delete a first parameter name that
+        # includes non-ascii chars, such as various forms of A.
         uni = "(A\u0391\u0410\u05d0\u0627\u0905\u1e00\u3042, a)"
         assert ct._first_param.sub('', uni) == '(a)'
 
@@ -104,6 +105,17 @@ class Get_signatureTest(unittest.TestCase):
         self.assertEqual(signature(nd), "(s)")
         self.assertEqual(signature(TC.nd), "(s)")
         self.assertEqual(signature(tc.nd), "()")
+
+    def test_attribute_exception(self):
+        class NoCall:
+            def __getattr__(self, name):
+                raise BaseException
+        class Call(NoCall):
+            def __call__(self, ci):
+                pass
+        for meth, mtip  in ((NoCall, default_tip), (Call, default_tip),
+                            (NoCall(), ''), (Call(), '(ci)')):
+            self.assertEqual(signature(meth), mtip)
 
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):
