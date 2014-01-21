@@ -1625,7 +1625,7 @@ class BufferIOTest(SocketConnectedTest):
 
     def _testRecvFromIntoSmallBuffer(self):
         with test_support.check_py3k_warnings():
-            buf = buffer(MSG*2048)
+            buf = buffer(MSG)
         self.serv_conn.send(buf)
 
     def testRecvFromIntoEmptyBuffer(self):
