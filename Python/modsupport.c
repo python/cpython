@@ -161,7 +161,17 @@ do_mktuple(const char **p_format, va_list *p_va, int endchar, int n, int flags)
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
     for (i = 0; i < n; i++) {
-        PyObject *w = do_mkvalue(p_format, p_va, flags);
+        PyObject *w;
+
+        if (itemfailed) {
+            PyObject *exception, *value, *tb;
+            PyErr_Fetch(&exception, &value, &tb);
+            w = do_mkvalue(p_format, p_va, flags);
+            PyErr_Restore(exception, value, tb);
+        }
+        else {
+            w = do_mkvalue(p_format, p_va, flags);
+        }
         if (w == NULL) {
             itemfailed = 1;
             Py_INCREF(Py_None);
