@@ -143,10 +143,15 @@ def get_arg_text(ob):
                 fob = lambda: None
             else:
                 arg_offset = 1
-        elif type(ob)==types.MethodType:
+        elif type(ob) == types.MethodType:
             # bit of a hack for methods - turn it into a function
-            # but we drop the "self" param.
+            # and drop the "self" param for bound methods
             fob = ob.im_func
+            if ob.im_self:
+                arg_offset = 1
+        elif type(ob.__call__) == types.MethodType:
+            # a callable class instance
+            fob = ob.__call__.im_func
             arg_offset = 1
         else:
             fob = ob
@@ -159,13 +164,16 @@ def get_arg_text(ob):
             defaults = [""] * (len(real_args) - len(defaults)) + defaults
             items = map(lambda arg, dflt: arg + dflt, real_args, defaults)
             if fob.func_code.co_flags & 0x4:
-                items.append("...")
+                items.append("*args")
             if fob.func_code.co_flags & 0x8:
-                items.append("***")
+                items.append("**kwds")
             arg_text = ", ".join(items)
             arg_text = "(%s)" % re.sub("(?<!\d)\.\d+", "<tuple>", arg_text)
         # See if we can use the docstring
-        doc = getattr(ob, "__doc__", "")
+        if isinstance(ob.__call__, types.MethodType):
+            doc = ob.__call__.__doc__
+        else:
+            doc = getattr(ob, "__doc__", "")
         if doc:
             doc = doc.lstrip()
             pos = doc.find("\n")
@@ -176,53 +184,6 @@ def get_arg_text(ob):
             arg_text += doc[:pos]
     return arg_text
 
-#################################################
-#
-# Test code
-#
-if __name__=='__main__':
-
-    def t1(): "()"
-    def t2(a, b=None): "(a, b=None)"
-    def t3(a, *args): "(a, ...)"
-    def t4(*args): "(...)"
-    def t5(a, *args): "(a, ...)"
-    def t6(a, b=None, *args, **kw): "(a, b=None, ..., ***)"
-    def t7((a, b), c, (d, e)): "(<tuple>, c, <tuple>)"
-
-    class TC(object):
-        "(ai=None, ...)"
-        def __init__(self, ai=None, *b): "(ai=None, ...)"
-        def t1(self): "()"
-        def t2(self, ai, b=None): "(ai, b=None)"
-        def t3(self, ai, *args): "(ai, ...)"
-        def t4(self, *args): "(...)"
-        def t5(self, ai, *args): "(ai, ...)"
-        def t6(self, ai, b=None, *args, **kw): "(ai, b=None, ..., ***)"
-        def t7(self, (ai, b), c, (d, e)): "(<tuple>, c, <tuple>)"
-
-    def test(tests):
-        ct = CallTips()
-        failed=[]
-        for t in tests:
-            expected = t.__doc__ + "\n" + t.__doc__
-            name = t.__name__
-            # exercise fetch_tip(), not just get_arg_text()
-            try:
-                qualified_name = "%s.%s" % (t.im_class.__name__, name)
-            except AttributeError:
-                qualified_name = name
-            arg_text = ct.fetch_tip(qualified_name)
-            if arg_text != expected:
-                failed.append(t)
-                fmt = "%s - expected %s, but got %s"
-                print  fmt % (t.__name__, expected, get_arg_text(t))
-        print "%d of %d tests failed" % (len(failed), len(tests))
-
-    tc = TC()
-    tests = (t1, t2, t3, t4, t5, t6, t7,
-             TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6, tc.t7)
-
-    # test(tests)
+if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
