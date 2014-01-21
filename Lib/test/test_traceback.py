@@ -32,6 +32,9 @@ class SyntaxTracebackCases(unittest.TestCase):
     def syntax_error_bad_indentation(self):
         compile("def spam():\n  print(1)\n print(2)", "?", "exec")
 
+    def syntax_error_with_caret_non_ascii(self):
+        compile('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', "?", "exec")
+
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
@@ -41,6 +44,12 @@ class SyntaxTracebackCases(unittest.TestCase):
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
 
         err = self.get_exception_format(self.syntax_error_with_caret_2,
+                                        SyntaxError)
+        self.assertIn("^", err[2]) # third line has caret
+        self.assertTrue(err[2].count('\n') == 1) # and no additional newline
+        self.assertTrue(err[1].find("+") == err[2].find("^")) # in the right place
+
+        err = self.get_exception_format(self.syntax_error_with_caret_non_ascii,
                                         SyntaxError)
         self.assertIn("^", err[2]) # third line has caret
         self.assertTrue(err[2].count('\n') == 1) # and no additional newline

@@ -2226,6 +2226,7 @@ err_input(perrdetail *err)
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
     char *msg = NULL;
+    int offset = err->offset;
 
     errtype = PyExc_SyntaxError;
     switch (err->error) {
@@ -2310,11 +2311,20 @@ err_input(perrdetail *err)
         errtext = Py_None;
         Py_INCREF(Py_None);
     } else {
-        errtext = PyUnicode_DecodeUTF8(err->text, strlen(err->text),
+        errtext = PyUnicode_DecodeUTF8(err->text, err->offset,
                                        "replace");
+        if (errtext != NULL) {
+            Py_ssize_t len = strlen(err->text);
+            offset = (int)PyUnicode_GET_LENGTH(errtext);
+            if (len != err->offset) {
+                Py_DECREF(errtext);
+                errtext = PyUnicode_DecodeUTF8(err->text, len,
+                                               "replace");
+            }
+        }
     }
     v = Py_BuildValue("(OiiN)", err->filename,
-                      err->lineno, err->offset, errtext);
+                      err->lineno, offset, errtext);
     if (v != NULL) {
         if (msg_obj)
             w = Py_BuildValue("(OO)", msg_obj, v);
