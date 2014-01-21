@@ -3,6 +3,7 @@ import idlelib.CallTips as ct
 CTi = ct.CallTips()  # needed for get_entity test in 2.7
 import types
 
+default_tip = ''
 
 # Test Class TC is used in multiple get_argspec test methods
 class TC(object):
@@ -41,7 +42,6 @@ class Get_signatureTest(unittest.TestCase):
     # but a red buildbot is better than a user crash (as has happened).
     # For a simple mismatch, change the expected output to the actual.
 
-
     def test_builtins(self):
         # 2.7 puts '()\n' where 3.x does not, other minor differences
 
@@ -65,8 +65,7 @@ class Get_signatureTest(unittest.TestCase):
         gtest(List.append, append_doc)
 
         gtest(types.MethodType, '()\ninstancemethod(function, instance, class)')
-        gtest(SB(), '')
-
+        gtest(SB(), default_tip)
 
     def test_functions(self):
         def t1(): 'doc'
@@ -92,9 +91,8 @@ class Get_signatureTest(unittest.TestCase):
     def test_bound_methods(self):
         # test that first parameter is correctly removed from argspec
         for meth, mtip  in ((tc.t1, "()"), (tc.t4, "(*args)"), (tc.t6, "(self)"),
-                            (TC.cm, "(a)"),):
+                            (tc.__call__, '(ci)'), (tc, '(ci)'), (TC.cm, "(a)"),):
             self.assertEqual(signature(meth), mtip + "\ndoc")
-        self.assertEqual(signature(tc), "(ci)\ndoc")
 
     def test_no_docstring(self):
         def nd(s): pass
@@ -102,6 +100,17 @@ class Get_signatureTest(unittest.TestCase):
         self.assertEqual(signature(nd), "(s)")
         self.assertEqual(signature(TC.nd), "(s)")
         self.assertEqual(signature(tc.nd), "()")
+
+    def test_attribute_exception(self):
+        class NoCall(object):
+            def __getattr__(self, name):
+                raise BaseException
+        class Call(NoCall):
+            def __call__(self, ci):
+                pass
+        for meth, mtip  in ((NoCall, '()'), (Call, '()'),
+                            (NoCall(), ''), (Call(), '(ci)')):
+            self.assertEqual(signature(meth), mtip)
 
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):

@@ -134,56 +134,60 @@ def get_arg_text(ob):
     """Get a string describing the arguments for the given object,
        only if it is callable."""
     arg_text = ""
-    if ob is not None and hasattr(ob, '__call__'):
-        arg_offset = 0
-        if type(ob) in (types.ClassType, types.TypeType):
-            # Look for the highest __init__ in the class chain.
-            fob = _find_constructor(ob)
-            if fob is None:
-                fob = lambda: None
-            else:
-                arg_offset = 1
-        elif type(ob) == types.MethodType:
-            # bit of a hack for methods - turn it into a function
-            # and drop the "self" param for bound methods
-            fob = ob.im_func
-            if ob.im_self:
-                arg_offset = 1
-        elif type(ob.__call__) == types.MethodType:
-            # a callable class instance
-            fob = ob.__call__.im_func
+    try:
+        ob_call = ob.__call__
+    except BaseException:
+        return arg_text
+
+    arg_offset = 0
+    if type(ob) in (types.ClassType, types.TypeType):
+        # Look for the highest __init__ in the class chain.
+        fob = _find_constructor(ob)
+        if fob is None:
+            fob = lambda: None
+        else:
             arg_offset = 1
-        else:
-            fob = ob
-        # Try to build one for Python defined functions
-        if type(fob) in [types.FunctionType, types.LambdaType]:
-            argcount = fob.func_code.co_argcount
-            real_args = fob.func_code.co_varnames[arg_offset:argcount]
-            defaults = fob.func_defaults or []
-            defaults = list(map(lambda name: "=%s" % repr(name), defaults))
-            defaults = [""] * (len(real_args) - len(defaults)) + defaults
-            items = map(lambda arg, dflt: arg + dflt, real_args, defaults)
-            if fob.func_code.co_flags & 0x4:
-                items.append("*args")
-            if fob.func_code.co_flags & 0x8:
-                items.append("**kwds")
-            arg_text = ", ".join(items)
-            arg_text = "(%s)" % re.sub("(?<!\d)\.\d+", "<tuple>", arg_text)
-        # See if we can use the docstring
-        if isinstance(ob.__call__, types.MethodType):
-            doc = ob.__call__.__doc__
-        else:
-            doc = getattr(ob, "__doc__", "")
-        if doc:
-            doc = doc.lstrip()
-            pos = doc.find("\n")
-            if pos < 0 or pos > 70:
-                pos = 70
-            if arg_text:
-                arg_text += "\n"
-            arg_text += doc[:pos]
+    elif type(ob) == types.MethodType:
+        # bit of a hack for methods - turn it into a function
+        # and drop the "self" param for bound methods
+        fob = ob.im_func
+        if ob.im_self:
+            arg_offset = 1
+    elif type(ob_call) == types.MethodType:
+        # a callable class instance
+        fob = ob_call.im_func
+        arg_offset = 1
+    else:
+        fob = ob
+    # Try to build one for Python defined functions
+    if type(fob) in [types.FunctionType, types.LambdaType]:
+        argcount = fob.func_code.co_argcount
+        real_args = fob.func_code.co_varnames[arg_offset:argcount]
+        defaults = fob.func_defaults or []
+        defaults = list(map(lambda name: "=%s" % repr(name), defaults))
+        defaults = [""] * (len(real_args) - len(defaults)) + defaults
+        items = map(lambda arg, dflt: arg + dflt, real_args, defaults)
+        if fob.func_code.co_flags & 0x4:
+            items.append("*args")
+        if fob.func_code.co_flags & 0x8:
+            items.append("**kwds")
+        arg_text = ", ".join(items)
+        arg_text = "(%s)" % re.sub("(?<!\d)\.\d+", "<tuple>", arg_text)
+    # See if we can use the docstring
+    if isinstance(ob_call, types.MethodType):
+        doc = ob_call.__doc__
+    else:
+        doc = getattr(ob, "__doc__", "")
+    if doc:
+        doc = doc.lstrip()
+        pos = doc.find("\n")
+        if pos < 0 or pos > 70:
+            pos = 70
+        if arg_text:
+            arg_text += "\n"
+        arg_text += doc[:pos]
     return arg_text
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_calltips', verbosity=2)
