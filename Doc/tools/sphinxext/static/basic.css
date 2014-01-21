@@ -342,7 +342,7 @@ dl.glossary dt {
     padding: 7px;
 }
 
-div.deprecated p {
+div.deprecated p, div.deprecated-removed p {
     margin-bottom: 0;
 }
 
