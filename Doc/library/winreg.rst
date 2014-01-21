@@ -146,7 +146,7 @@ This module offers the following functions:
    *reserved* is a reserved integer, and must be zero. The default is zero.
 
    *access* is an integer that specifies an access mask that describes the desired
-   security access for the key.  Default is :const:`KEY_ALL_ACCESS`.  See
+   security access for the key.  Default is :const:`KEY_WOW64_64KEY`.  See
    :ref:`Access Rights <access-rights>` for other allowed values.
 
    *This method can not delete keys with subkeys.*
