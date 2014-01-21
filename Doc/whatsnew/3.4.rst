@@ -974,6 +974,16 @@ and will be automatically closed at the end of the :keyword:`with` block.
 (Contributed by Filip Gruszczyński in :issue:`13896`.)
 
 
+smtpd
+-----
+
+The :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
+accept a *map* keyword argument, which if specified is passed in to
+:class:`asynchat.async_chat` as its *map* argument.  This allows an application
+to avoid affecting the global socket map.  (Contributed by Vinay Sajip in
+:issue:`11959`.)
+
+
 smtplib
 -------
 
@@ -1019,10 +1029,19 @@ TLSv1.2 support) have been added; support for these protocols is only available 
 Python is linked with OpenSSL 1.0.1 or later.  (Contributed by Michele Orrù and
 Antoine Pitrou in :issue:`16692`)
 
-New diagnostic functions :func:`~ssl.get_default_verify_paths`,
-:meth:`~ssl.SSLContext.cert_store_stats` and
-:meth:`~ssl.SSLContext.get_ca_certs` (Contributed by Christian Heimes
-in :issue:`18143` and :issue:`18147`)
+New function :func:`~ssl.get_default_verify_paths` returns
+a named tuple of the paths and environment variables that the
+:meth:`~ssl.SSLContext.set_default_verify_paths` method uses to set
+OpenSSL's default ``cafile`` and ``capath``.  This can be an aid in
+debugging default verification issues.  (Contributed by Christian Heimes
+in :issue:`18143`.)
+
+:class:`~ssl.SSLContext` has a new method,
+:meth:`~ssl.SSLContext.cert_store_stats`, that reports the number of loaded
+``X.509`` certs, ``X.509 CA`` certs, and certificate revocation lists (``crl``\
+s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that returns a
+list of the loaded ``CA`` certificates.  (Contributed by Christian Heimes in
+and :issue:`18147`.)
 
 Add :func:`ssl.enum_cert_store` to retrieve certificates and CRL from Windows'
 cert store.  (Contributed by Christian Heimes in :issue:`17134`.)
