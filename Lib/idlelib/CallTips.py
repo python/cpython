@@ -118,47 +118,49 @@ def get_entity(expression):
 
 # The following are used in both get_argspec and tests
 _first_param = re.compile('(?<=\()\w*\,?\s*')
-_default_callable_argspec = "No docstring, see docs."
+_default_callable_argspec = "See source or doc"
 
 def get_argspec(ob):
-    '''Return a string describing the arguments and return of a callable object.
+    '''Return a string describing the signature of a callable object, or ''.
 
     For Python-coded functions and methods, the first line is introspected.
     Delete 'self' parameter for classes (.__init__) and bound methods.
     The last line is the first line of the doc string.  For builtins, this typically
     includes the arguments in addition to the return value.
-
     '''
     argspec = ""
-    if hasattr(ob, '__call__'):
-        if isinstance(ob, type):
-            fob = getattr(ob, '__init__', None)
-        elif isinstance(ob.__call__, types.MethodType):
-            fob = ob.__call__
-        else:
-            fob = ob
-        if isinstance(fob, (types.FunctionType, types.MethodType)):
-            argspec = inspect.formatargspec(*inspect.getfullargspec(fob))
-            if (isinstance(ob, (type, types.MethodType)) or
-                    isinstance(ob.__call__, types.MethodType)):
-                argspec = _first_param.sub("", argspec)
+    try:
+        ob_call = ob.__call__
+    except BaseException:
+        return argspec
+    if isinstance(ob, type):
+        fob = ob.__init__
+    elif isinstance(ob_call, types.MethodType):
+        fob = ob_call
+    else:
+        fob = ob
+    if isinstance(fob, (types.FunctionType, types.MethodType)):
+        argspec = inspect.formatargspec(*inspect.getfullargspec(fob))
+        if (isinstance(ob, (type, types.MethodType)) or
+                isinstance(ob_call, types.MethodType)):
+            argspec = _first_param.sub("", argspec)
 
-        if isinstance(ob.__call__, types.MethodType):
-            doc = ob.__call__.__doc__
-        else:
-            doc = getattr(ob, "__doc__", "")
-        if doc:
-            doc = doc.lstrip()
-            pos = doc.find("\n")
-            if pos < 0 or pos > 70:
-                pos = 70
-            if argspec:
-                argspec += "\n"
-            argspec += doc[:pos]
-        if not argspec:
-            argspec = _default_callable_argspec
+    if isinstance(ob_call, types.MethodType):
+        doc = ob_call.__doc__
+    else:
+        doc = getattr(ob, "__doc__", "")
+    if doc:
+        doc = doc.lstrip()
+        pos = doc.find("\n")
+        if pos < 0 or pos > 70:
+            pos = 70
+        if argspec:
+            argspec += "\n"
+        argspec += doc[:pos]
+    if not argspec:
+        argspec = _default_callable_argspec
     return argspec
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_calltips', verbosity=2)
