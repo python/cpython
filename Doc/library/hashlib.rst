@@ -110,7 +110,6 @@ A hash object has the following methods:
    m.update(b)`` is equivalent to ``m.update(a+b)``.
 
    .. versionchanged:: 2.7
-
       The Python GIL is released to allow other threads to run while
       hash updates on data larger than 2048 bytes is taking place when
       using hash algorithms supplied by OpenSSL.
