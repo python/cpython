@@ -354,10 +354,12 @@ if hasattr(select, 'poll'):
         def select(self, timeout=None):
             if timeout is None:
                 timeout = None
-            elif timeout < 0:
+            elif timeout <= 0:
                 timeout = 0
             else:
-                timeout = int(math.ceil(timeout * 1000.0))
+                # poll() has a resolution of 1 millisecond, round away from
+                # zero to wait *at least* timeout seconds.
+                timeout = int(math.ceil(timeout * 1e3))
             ready = []
             try:
                 fd_event_list = self._poll.poll(timeout)
