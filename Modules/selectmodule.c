@@ -1458,7 +1458,9 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     else {
-        timeout = (int)(dtimeout * 1000.0);
+        /* epoll_wait() has a resolution of 1 millisecond, round away from zero
+           to wait *at least* dtimeout seconds. */
+        timeout = (int)ceil(dtimeout * 1000.0);
     }
 
     if (maxevents == -1) {
