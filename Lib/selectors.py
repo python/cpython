@@ -8,6 +8,7 @@ This module allows high-level and efficient I/O multiplexing, built upon the
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, Mapping
 import functools
+import math
 import select
 import sys
 
@@ -351,7 +352,12 @@ if hasattr(select, 'poll'):
             return key
 
         def select(self, timeout=None):
-            timeout = None if timeout is None else max(int(1000 * timeout), 0)
+            if timeout is None:
+                timeout = None
+            elif timeout < 0:
+                timeout = 0
+            else:
+                timeout = int(math.ceil(timeout * 1000.0))
             ready = []
             try:
                 fd_event_list = self._poll.poll(timeout)
