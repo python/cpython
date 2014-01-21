@@ -1974,7 +1974,7 @@ class BufferIOTest(SocketConnectedTest):
         self.assertRaises(ValueError, self.cli_conn.recvfrom_into, buf, 1024)
 
     def _testRecvFromIntoSmallBuffer(self):
-        self.serv_conn.send(MSG*2048)
+        self.serv_conn.send(MSG)
 
 
 TIPC_STYPE = 2000
