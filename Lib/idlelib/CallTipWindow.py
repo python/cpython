@@ -48,13 +48,7 @@ class CallTip:
     def showtip(self, text, parenleft, parenright):
         """Show the calltip, bind events which will close it and reposition it.
         """
-        # truncate overly long calltip
-        if len(text) >= 79:
-            textlines = text.splitlines()
-            for i, line in enumerate(textlines):
-                if len(line) > 79:
-                    textlines[i] = line[:75] + ' ...'
-            text = '\n'.join(textlines)
+        # Only called in CallTips, where lines are truncated
         self.text = text
         if self.tipwindow or not self.text:
             return
