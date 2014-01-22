@@ -130,14 +130,24 @@ def _find_constructor(class_ob):
             if rc is not None: return rc
     return None
 
+# The following are used in get_arg_text
+_MAX_COLS = 79
+_MAX_LINES = 5  # enough for bytes
+
 def get_arg_text(ob):
-    """Get a string describing the arguments for the given object,
-       only if it is callable."""
-    arg_text = ""
+    '''Return a string describing the signature of a callable object, or ''.
+
+    For Python-coded functions and methods, the first line is introspected.
+    Delete 'self' parameter for classes (.__init__) and bound methods.
+    The next lines are the first lines of the doc string up to the first
+    empty line or _MAX_LINES.    For builtins, this typically includes
+    the arguments in addition to the return value.
+    '''
+    argspec = ""
     try:
         ob_call = ob.__call__
     except BaseException:
-        return arg_text
+        return argspec
 
     arg_offset = 0
     if type(ob) in (types.ClassType, types.TypeType):
@@ -171,22 +181,24 @@ def get_arg_text(ob):
             items.append("*args")
         if fob.func_code.co_flags & 0x8:
             items.append("**kwds")
-        arg_text = ", ".join(items)
-        arg_text = "(%s)" % re.sub("(?<!\d)\.\d+", "<tuple>", arg_text)
+        argspec = ", ".join(items)
+        argspec = "(%s)" % re.sub("(?<!\d)\.\d+", "<tuple>", argspec)
     # See if we can use the docstring
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
     else:
         doc = getattr(ob, "__doc__", "")
     if doc:
-        doc = doc.lstrip()
-        pos = doc.find("\n")
-        if pos < 0 or pos > 70:
-            pos = 70
-        if arg_text:
-            arg_text += "\n"
-        arg_text += doc[:pos]
-    return arg_text
+        lines = [argspec] if argspec else []
+        for line in doc.split('\n', 5)[:_MAX_LINES]:
+            line = line.strip()
+            if not line:
+                break
+            if len(line) > _MAX_COLS:
+                line = line[: _MAX_COLS - 3] + '...'
+            lines.append(line)
+        argspec = '\n'.join(lines)
+    return argspec
 
 if __name__ == '__main__':
     from unittest import main

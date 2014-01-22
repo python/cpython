@@ -53,7 +53,6 @@ class Get_signatureTest(unittest.TestCase):
         def gtest(obj, out):
             self.assertEqual(signature(obj), out)
 
-        gtest(list, "()\nlist() -> new empty list")
         gtest(List, '()\n' + List.__doc__)
         gtest(list.__new__,
                'T.__new__(S, ...) -> a new object with type S, a subtype of T')
@@ -66,6 +65,20 @@ class Get_signatureTest(unittest.TestCase):
 
         gtest(types.MethodType, '()\ninstancemethod(function, instance, class)')
         gtest(SB(), default_tip)
+
+    def test_multiline_docstring(self):
+        # Test fewer lines than max.
+        self.assertEqual(signature(list),
+                "()\nlist() -> new empty list\n"
+                "list(iterable) -> new list initialized from iterable's items")
+
+        # Test max lines and line (currently) too long.
+        def f():
+            pass
+        s = 'a\nb\nc\nd\n'
+        f.__doc__ = s + 300 * 'e' + 'f'
+        self.assertEqual(signature(f),
+                         '()\n' + s + (ct._MAX_COLS - 3) * 'e' + '...')
 
     def test_functions(self):
         def t1(): 'doc'
