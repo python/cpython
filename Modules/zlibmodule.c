@@ -205,19 +205,20 @@ zlib_compress(PyModuleDef *module, PyObject *args)
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "y*:compress", &bytes))
-                return NULL;
+                goto exit;
             break;
         case 2:
             if (!PyArg_ParseTuple(args, "y*i:compress", &bytes, &level))
-                return NULL;
+                goto exit;
             group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "zlib.compress requires 1 to 2 arguments");
-            return NULL;
+            goto exit;
     }
     return_value = zlib_compress_impl(module, &bytes, group_right_1, level);
 
+exit:
     /* Cleanup for bytes */
     if (bytes.obj)
        PyBuffer_Release(&bytes);
@@ -227,7 +228,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
-/*[clinic end generated code: checksum=66c4d16d0b8b9dd423648d9ef00d6a89d3363665]*/
+/*[clinic end generated code: checksum=74648f97e6b9d3cc9cd568d47262d462bded7ed0]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;

@@ -913,7 +913,7 @@ __________________________________________________
             s = """
     case {count}:
         if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments}))
-            return NULL;
+            goto exit;
         {group_booleans}
         break;
 """[1:]
@@ -924,7 +924,7 @@ __________________________________________________
         add("    default:\n")
         s = '        PyErr_SetString(PyExc_TypeError, "{} requires {} to {} arguments");\n'
         add(s.format(f.full_name, count_min, count_max))
-        add('        return NULL;\n')
+        add('        goto exit;\n')
         add("}}")
         template_dict['option_group_parsing'] = output()
 
@@ -3401,7 +3401,11 @@ class DSLParser:
         ## docstring first line
         ##
 
-        add(f.name)
+        if f.kind in (METHOD_NEW, METHOD_INIT):
+            assert f.cls
+            add(f.cls.name)
+        else:
+            add(f.name)
         add('(')
 
         # populate "right_bracket_count" field for every parameter

@@ -4044,7 +4044,7 @@ to map the new Python 3 names to the old module names used in Python
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Pickler___init____doc__,
-"__init__(file, protocol=None, fix_imports=True)\n"
+"Pickler(file, protocol=None, fix_imports=True)\n"
 "This takes a binary file for writing a pickle data stream.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
@@ -4088,7 +4088,7 @@ exit:
 
 static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic end generated code: checksum=10c8ea05194d08108471163d8202cf5e12975544]*/
+/*[clinic end generated code: checksum=d10dfb463511430b4faad9fca07627041a35b96e]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -6581,7 +6581,7 @@ string instances as bytes objects.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
-"__init__(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
+"Unpickler(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
 "This takes a binary file for reading a pickle data stream.\n"
 "\n"
 "The protocol version of the pickle is detected automatically, so no\n"
@@ -6628,7 +6628,7 @@ exit:
 
 static int
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic end generated code: checksum=6936e9188104e45b1b15e1c11fe77b3965409471]*/
+/*[clinic end generated code: checksum=eb1a2cfc7b6f97c33980cff3d3b97d184a382f02]*/
 {
     _Py_IDENTIFIER(persistent_load);
 
