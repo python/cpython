@@ -614,12 +614,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             t0 = self.time()
             event_list = self._selector.select(timeout)
             t1 = self.time()
-            argstr = '' if timeout is None else ' {:.3f}'.format(timeout)
             if t1-t0 >= 1:
                 level = logging.INFO
             else:
                 level = logging.DEBUG
-            logger.log(level, 'poll%s took %.3f seconds', argstr, t1-t0)
+            if timeout is not None:
+                logger.log(level, 'poll %.3f took %.3f seconds',
+                           timeout, t1-t0)
+            else:
+                logger.log(level, 'poll took %.3f seconds', t1-t0)
         else:
             event_list = self._selector.select(timeout)
         self._process_events(event_list)
