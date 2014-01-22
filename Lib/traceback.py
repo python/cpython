@@ -227,11 +227,12 @@ def format_exception_only(etype, value):
     if badline is not None:
         lines.append('    %s\n' % badline.strip())
         if offset is not None:
-            caretspace = badline.rstrip('\n')[:offset].lstrip()
+            caretspace = badline.rstrip('\n')
+            offset = min(len(caretspace), offset) - 1
+            caretspace = caretspace[:offset].lstrip()
             # non-space whitespace (likes tabs) must be kept for alignment
             caretspace = ((c.isspace() and c or ' ') for c in caretspace)
-            # only three spaces to account for offset1 == pos 0
-            lines.append('   %s^\n' % ''.join(caretspace))
+            lines.append('    %s^\n' % ''.join(caretspace))
     msg = value.msg or "<no detail available>"
     lines.append("%s: %s\n" % (stype, msg))
     return lines
