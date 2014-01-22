@@ -35,6 +35,9 @@ class SyntaxTracebackCases(unittest.TestCase):
     def syntax_error_with_caret_non_ascii(self):
         compile('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', "?", "exec")
 
+    def syntax_error_bad_indentation2(self):
+        compile(" print(2)", "?", "exec")
+
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
@@ -46,14 +49,14 @@ class SyntaxTracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_with_caret_2,
                                         SyntaxError)
         self.assertIn("^", err[2]) # third line has caret
-        self.assertTrue(err[2].count('\n') == 1) # and no additional newline
-        self.assertTrue(err[1].find("+") == err[2].find("^")) # in the right place
+        self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
+        self.assertEqual(err[1].find("+"), err[2].find("^"))  # in the right place
 
         err = self.get_exception_format(self.syntax_error_with_caret_non_ascii,
                                         SyntaxError)
         self.assertIn("^", err[2]) # third line has caret
-        self.assertTrue(err[2].count('\n') == 1) # and no additional newline
-        self.assertTrue(err[1].find("+") == err[2].find("^")) # in the right place
+        self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
+        self.assertEqual(err[1].find("+"), err[2].find("^"))  # in the right place
 
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
@@ -68,6 +71,13 @@ class SyntaxTracebackCases(unittest.TestCase):
         self.assertEqual(err[1].strip(), "print(2)")
         self.assertIn("^", err[2])
         self.assertEqual(err[1].find(")"), err[2].find("^"))
+
+        err = self.get_exception_format(self.syntax_error_bad_indentation2,
+                                        IndentationError)
+        self.assertEqual(len(err), 4)
+        self.assertEqual(err[1].strip(), "print(2)")
+        self.assertIn("^", err[2])
+        self.assertEqual(err[1].find("p"), err[2].find("^"))
 
     def test_base_exception(self):
         # Test that exceptions derived from BaseException are formatted right
