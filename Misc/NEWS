@@ -37,6 +37,12 @@ Library
   microsecond is now rounded to one millisecond, instead of being rounded to
   zero.
 
+- Issue #20317: ExitStack.__exit__ could create a self-referential loop if an
+  exception raised by a cleanup operation already had its context set
+  correctly (for example, by the @contextmanager decorator). The infinite
+  loop this caused is now avoided by checking if the expected context is
+  already set before trying to fix it.
+
 - Issue #20311: select.epoll.poll() now rounds the timeout away from zero,
   instead of rounding towards zero. For example, a timeout of one microsecond
   is now rounded to one millisecond, instead of being rounded to zero.
