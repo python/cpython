@@ -35,6 +35,9 @@ class TracebackCases(unittest.TestCase):
     def syntax_error_bad_indentation(self):
         compile("def spam():\n  print 1\n print 2", "?", "exec")
 
+    def syntax_error_bad_indentation2(self):
+        compile(" print(2)", "?", "exec")
+
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
@@ -110,6 +113,13 @@ def test():
             for f in os.listdir(testdir):
                 os.unlink(os.path.join(testdir, f))
             os.rmdir(testdir)
+
+        err = self.get_exception_format(self.syntax_error_bad_indentation2,
+                                        IndentationError)
+        self.assertEqual(len(err), 4)
+        self.assertEqual(err[1].strip(), "print(2)")
+        self.assertIn("^", err[2])
+        self.assertEqual(err[1].find("p"), err[2].find("^"))
 
     def test_base_exception(self):
         # Test that exceptions derived from BaseException are formatted right

@@ -9,6 +9,9 @@ What's New in Python 2.7.7?
 Core and Builtins
 -----------------
 
+- Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
+  IndentationError.
+
 - Issue #19081: When a zipimport .zip file in sys.path being imported from
   is modified during the lifetime of the Python process after zipimport has
   already cached the zip's table of contents we detect this and recover
