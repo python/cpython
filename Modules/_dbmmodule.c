@@ -300,25 +300,26 @@ dbm_dbm_get(PyObject *self, PyObject *args)
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "s#:get", &key, &key_length))
-                return NULL;
+                goto exit;
             break;
         case 2:
             if (!PyArg_ParseTuple(args, "s#O:get", &key, &key_length, &default_value))
-                return NULL;
+                goto exit;
             group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "dbm.dbm.get requires 1 to 2 arguments");
-            return NULL;
+            goto exit;
     }
     return_value = dbm_dbm_get_impl((dbmobject *)self, key, key_length, group_right_1, default_value);
 
+exit:
     return return_value;
 }
 
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
-/*[clinic end generated code: checksum=2c3209571267017f1b9abbd19e1b521849fd5d4a]*/
+/*[clinic end generated code: checksum=ca8bf63ec226e71d3cf390749777f7d5b7361478]*/
 {
     datum dbm_key, val;
 

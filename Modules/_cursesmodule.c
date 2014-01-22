@@ -621,36 +621,37 @@ curses_window_addch(PyObject *self, PyObject *args)
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "O:addch", &ch))
-                return NULL;
+                goto exit;
             break;
         case 2:
             if (!PyArg_ParseTuple(args, "Ol:addch", &ch, &attr))
-                return NULL;
+                goto exit;
             group_right_1 = 1;
             break;
         case 3:
             if (!PyArg_ParseTuple(args, "iiO:addch", &x, &y, &ch))
-                return NULL;
+                goto exit;
             group_left_1 = 1;
             break;
         case 4:
             if (!PyArg_ParseTuple(args, "iiOl:addch", &x, &y, &ch, &attr))
-                return NULL;
+                goto exit;
             group_right_1 = 1;
             group_left_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "curses.window.addch requires 1 to 4 arguments");
-            return NULL;
+            goto exit;
     }
     return_value = curses_window_addch_impl(self, group_left_1, x, y, ch, group_right_1, attr);
 
+exit:
     return return_value;
 }
 
 static PyObject *
 curses_window_addch_impl(PyObject *self, int group_left_1, int x, int y, PyObject *ch, int group_right_1, long attr)
-/*[clinic end generated code: checksum=b073327add8197b6ba7fb96c87062422c8312954]*/
+/*[clinic end generated code: checksum=53d44d79791b30950972b3256bdd464f7426bf82]*/
 {
     PyCursesWindowObject *cwself = (PyCursesWindowObject *)self;
     int coordinates_group = group_left_1;
