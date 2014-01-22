@@ -42,16 +42,16 @@ _opcode_stack_effect(PyModuleDef *module, PyObject *args)
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
             if (!PyArg_ParseTuple(args, "i:stack_effect", &opcode))
-                return NULL;
+                goto exit;
             break;
         case 2:
             if (!PyArg_ParseTuple(args, "ii:stack_effect", &opcode, &oparg))
-                return NULL;
+                goto exit;
             group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_opcode.stack_effect requires 1 to 2 arguments");
-            return NULL;
+            goto exit;
     }
     _return_value = _opcode_stack_effect_impl(module, opcode, group_right_1, oparg);
     if ((_return_value == -1) && PyErr_Occurred())
@@ -64,7 +64,7 @@ exit:
 
 static int
 _opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg)
-/*[clinic end generated code: checksum=47e76ec27523da4ab192713642d32482cd743aa4]*/
+/*[clinic end generated code: checksum=58fb4f1b174fc92f783dc945ca712fb752a6c283]*/
 {
     int effect;
     if (HAS_ARG(opcode)) {
