@@ -626,6 +626,29 @@ class TestExitStack(unittest.TestCase):
         else:
             self.fail("Expected KeyError, but no exception was raised")
 
+    def test_exit_exception_with_correct_context(self):
+        # http://bugs.python.org/issue20317
+        @contextmanager
+        def gets_the_context_right():
+            try:
+                yield 6
+            finally:
+                1 / 0
+
+        # The contextmanager already fixes the context, so prior to the
+        # fix, ExitStack would try to fix it *again* and get into an
+        # infinite self-referential loop
+        try:
+            with ExitStack() as stack:
+                stack.enter_context(gets_the_context_right())
+                stack.enter_context(gets_the_context_right())
+                stack.enter_context(gets_the_context_right())
+        except ZeroDivisionError as exc:
+            self.assertIsInstance(exc.__context__, ZeroDivisionError)
+            self.assertIsInstance(exc.__context__.__context__, ZeroDivisionError)
+            self.assertIsNone(exc.__context__.__context__.__context__)
+
+
     def test_body_exception_suppress(self):
         def suppress_exc(*exc_details):
             return True
