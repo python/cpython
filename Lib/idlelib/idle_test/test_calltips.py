@@ -42,17 +42,15 @@ class Get_signatureTest(unittest.TestCase):
     # For a simple mismatch, change the expected output to the actual.
 
     def test_builtins(self):
-        # These test will break if
 
         # Python class that inherits builtin methods
         class List(list): "List() doc"
-        # Simulate builtin with no docstring for default argspec test
+        # Simulate builtin with no docstring for default tip test
         class SB:  __call__ = None
 
         def gtest(obj, out):
             self.assertEqual(signature(obj), out)
 
-        gtest(list, "list() -> new empty list")
         gtest(List, List.__doc__)
         gtest(list.__new__,
                'T.__new__(S, ...) -> a new object with type S, a subtype of T')
@@ -65,6 +63,21 @@ class Get_signatureTest(unittest.TestCase):
 
         gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
+
+    def test_multiline_docstring(self):
+        # Test fewer lines than max.
+        self.assertEqual(signature(list),
+                "list() -> new empty list\n"
+                "list(iterable) -> new list initialized from iterable's items")
+
+        # Test max lines and line (currently) too long.
+        self.assertEqual(signature(bytes),
+"bytes(iterable_of_ints) -> bytes\n"
+"bytes(string, encoding[, errors]) -> bytes\n"
+"bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer\n"
+#bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+"bytes(int) -> bytes object of size given by the parameter initialized with n...\n"
+"bytes() -> empty bytes object")
 
     def test_functions(self):
         def t1(): 'doc'
@@ -100,7 +113,8 @@ class Get_signatureTest(unittest.TestCase):
         assert ct._first_param.sub('', uni) == '(a)'
 
     def test_no_docstring(self):
-        def nd(s): pass
+        def nd(s):
+            pass
         TC.nd = nd
         self.assertEqual(signature(nd), "(s)")
         self.assertEqual(signature(TC.nd), "(s)")
