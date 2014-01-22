@@ -10,6 +10,9 @@ What's New in Python 3.3.4 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
+  IndentationError.
+
 - Issue #2382: SyntaxError cursor "^" is now written at correct position in most
   cases when multibyte characters are in line (before "^").  This still not
   works correctly with wide East Asian characters.
