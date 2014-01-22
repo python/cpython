@@ -1,7 +1,13 @@
 import socket
-import threading
 import nntplib
 import time
+import unittest
+
+try:
+    import threading
+except ImportError:
+    threading = None
+
 
 from unittest import TestCase
 from test import test_support
@@ -41,6 +47,7 @@ class BaseServerTest(TestCase):
         self.evt.wait()
 
 
+@unittest.skipUnless(threading, 'threading required')
 class ServerTests(BaseServerTest):
     evil = False
 
@@ -49,6 +56,7 @@ class ServerTests(BaseServerTest):
         nntp.sock.close()
 
 
+@unittest.skipUnless(threading, 'threading required')
 class EvilServerTests(BaseServerTest):
     evil = True
 
