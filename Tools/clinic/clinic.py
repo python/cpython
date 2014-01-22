@@ -2752,11 +2752,11 @@ class DSLParser:
         self.clinic.__dict__[name] = value
 
     def directive_destination(self, name, command, *args):
-        if command is 'new':
-            self.clinic.add_destination(name, command, *args)
+        if command == 'new':
+            self.clinic.add_destination(name, *args)
             return
 
-        if command is 'clear':
+        if command == 'clear':
             self.clinic.get_destination(name).clear()
         fail("unknown destination command", repr(command))
 
