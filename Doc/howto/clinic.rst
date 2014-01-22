@@ -626,6 +626,15 @@ Optional groups are groups of arguments that must all be passed in together.
 They can be to the left or the right of the required arguments.  They
 can *only* be used with positional-only parameters.
 
+.. note:: Optional groups are *only* intended for use when converting
+          functions that make multiple calls to :c:func:`PyArg_ParseTuple`!
+          Functions that use *any* other approach for parsing arguments
+          should *almost never* be converted to Argument Clinic using
+          optional groups.  Functions using optional groups currently
+          cannot have accurate sigantures in Python, because Python just
+          doesn't understand the concept.  Please avoid using optional
+          groups wherever possible.
+
 To specify an optional group, add a ``[`` on a line by itself before
 the parameters you wish to group together, and a ``]`` on a line by itself
 after these parameters.  As an example, here's how ``curses.window.addch``
@@ -1278,9 +1287,8 @@ a ``type`` argument to the object converter for ``METH_O``.
 tp_new and tp_init functions
 ----------------------------------------------
 
-You can convert ``tp_new`` and ``tp_init``
-functions.  Just name them ``__new__`` or
-``__init__`` as appropriate.  Notes:
+You can convert ``tp_new`` and ``tp_init`` functions.  Just name
+them ``__new__`` or ``__init__`` as appropriate.  Notes:
 
 * The function name generated for ``__new__`` doesn't end in ``__new__``
   like it would by default.  It's just the name of the class, converted
@@ -1290,9 +1298,13 @@ functions.  Just name them ``__new__`` or
 
 * ``__init__`` functions return ``int``, not ``PyObject *``.
 
-* Argument Clinic supports any signature for these functions, even though
-  the parsing function is required to always take ``args`` and ``kwargs``
-  objects.
+* Use the docstring as the class docstring.
+
+* Although ``__new__`` and ``__init__`` functions must always
+  accept both the ``args`` and ``kwargs`` objects, when converting
+  you may specify any signature for these functions that you like.
+  (If your function doesn't support keywords, the parsing function
+  generated will throw an exception if it receives any.)
 
 The #ifdef trick
 ----------------------------------------------
