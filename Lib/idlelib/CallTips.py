@@ -116,17 +116,21 @@ def get_entity(expression):
             # exception, especially if user classes are involved.
             return None
 
-# The following are used in both get_argspec and tests
+# The following are used in get_argspec and some in tests
+_MAX_COLS = 79
+_MAX_LINES = 5  # enough for bytes
 _first_param = re.compile('(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
+
 
 def get_argspec(ob):
     '''Return a string describing the signature of a callable object, or ''.
 
     For Python-coded functions and methods, the first line is introspected.
     Delete 'self' parameter for classes (.__init__) and bound methods.
-    The last line is the first line of the doc string.  For builtins, this typically
-    includes the arguments in addition to the return value.
+    The next lines are the first lines of the doc string up to the first
+    empty line or _MAX_LINES.    For builtins, this typically includes
+    the arguments in addition to the return value.
     '''
     argspec = ""
     try:
@@ -150,13 +154,15 @@ def get_argspec(ob):
     else:
         doc = getattr(ob, "__doc__", "")
     if doc:
-        doc = doc.lstrip()
-        pos = doc.find("\n")
-        if pos < 0 or pos > 70:
-            pos = 70
-        if argspec:
-            argspec += "\n"
-        argspec += doc[:pos]
+        lines = [argspec] if argspec else []
+        for line in doc.split('\n', 5)[:_MAX_LINES]:
+            line = line.strip()
+            if not line:
+                break
+            if len(line) > _MAX_COLS:
+                line = line[: _MAX_COLS - 3] + '...'
+            lines.append(line)
+        argspec = '\n'.join(lines)
     if not argspec:
         argspec = _default_callable_argspec
     return argspec
