@@ -382,8 +382,9 @@ def wait_for(fut, timeout, *, loop=None):
 
     Coroutine will be wrapped in Task.
 
-    Returns result of the Future or coroutine.  Raises TimeoutError when
-    timeout occurs.
+    Returns result of the Future or coroutine.  When a timeout occurs,
+    it cancels the task and raises TimeoutError.  To avoid the task
+    cancellation, wrap it in shield().
 
     Usage:
 
@@ -405,6 +406,7 @@ def wait_for(fut, timeout, *, loop=None):
             return fut.result()
         else:
             fut.remove_done_callback(cb)
+            fut.cancel()
             raise futures.TimeoutError()
     finally:
         timeout_handle.cancel()

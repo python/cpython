@@ -355,30 +355,32 @@ class TaskTests(unittest.TestCase):
             when = yield 0
             self.assertAlmostEqual(0.1, when)
             when = yield 0.1
-            self.assertAlmostEqual(0.4, when)
-            yield 0.1
 
         loop = test_utils.TestLoop(gen)
         self.addCleanup(loop.close)
 
+        foo_running = None
+
         @tasks.coroutine
         def foo():
-            yield from tasks.sleep(0.2, loop=loop)
+            nonlocal foo_running
+            foo_running = True
+            try:
+                yield from tasks.sleep(0.2, loop=loop)
+            finally:
+                foo_running = False
             return 'done'
 
         fut = tasks.Task(foo(), loop=loop)
 
         with self.assertRaises(futures.TimeoutError):
             loop.run_until_complete(tasks.wait_for(fut, 0.1, loop=loop))
-
-        self.assertFalse(fut.done())
+        self.assertTrue(fut.done())
+        # it should have been cancelled due to the timeout
+        self.assertTrue(fut.cancelled())
         self.assertAlmostEqual(0.1, loop.time())
+        self.assertEqual(foo_running, False)
 
-        # wait for result
-        res = loop.run_until_complete(
-            tasks.wait_for(fut, 0.3, loop=loop))
-        self.assertEqual(res, 'done')
-        self.assertAlmostEqual(0.2, loop.time())
 
     def test_wait_for_with_global_loop(self):
 
@@ -406,11 +408,8 @@ class TaskTests(unittest.TestCase):
             events.set_event_loop(None)
 
         self.assertAlmostEqual(0.01, loop.time())
-        self.assertFalse(fut.done())
-
-        # move forward to close generator
-        loop.advance_time(10)
-        loop.run_until_complete(fut)
+        self.assertTrue(fut.done())
+        self.assertTrue(fut.cancelled())
 
     def test_wait(self):
 
