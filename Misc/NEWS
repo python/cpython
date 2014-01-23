@@ -183,6 +183,9 @@ Tools/Demos
 IDLE
 ----
 
+- Issue #17390: Add Python version to Idle editor window title bar.
+  Original patches by Edmond Burnett and Kent Johnson.
+
 - Issue #20058: sys.stdin.readline() in IDLE now always returns only one line.
 
 - Issue #19481: print() of unicode, str or bytearray subclass instance in IDLE
