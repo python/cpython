@@ -213,6 +213,11 @@ Creating connections
      to bind the socket to locally.  The *local_host* and *local_port*
      are looked up using getaddrinfo(), similarly to *host* and *port*.
 
+   .. seealso::
+
+      The :func:`open_connection` function can be used to get a pair of
+      (:class:`StreamReader`, :class:`StreamWriter`) instead of a protocol.
+
 
 Creating listening connections
 ------------------------------
@@ -250,6 +255,11 @@ Creating listening connections
    UNIX.
 
    This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. seealso::
+
+      The function :func:`start_server` creates a (:class:`StreamReader`,
+      :class:`StreamWriter`) pair and calls back a function with this pair.
 
 .. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
 
