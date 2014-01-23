@@ -1,6 +1,7 @@
 import importlib
 import importlib.abc
 import os
+from platform import python_version
 import re
 import string
 import sys
@@ -955,11 +956,14 @@ class EditorWindow(object):
         self.undo.reset_undo()
 
     def short_title(self):
+        pyversion = "Python " + python_version() + ": "
         filename = self.io.filename
         if filename:
             filename = os.path.basename(filename)
+        else:
+            filename = "Untitled"
         # return unicode string to display non-ASCII chars correctly
-        return self._filename_to_unicode(filename)
+        return pyversion + self._filename_to_unicode(filename)
 
     def long_title(self):
         # return unicode string to display non-ASCII chars correctly
