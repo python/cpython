@@ -1,8 +1,8 @@
 .. currentmodule:: asyncio
 
-++++++++++++++++++++++++
-Transports and protocols
-++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++
+Transports, streams and protocols
++++++++++++++++++++++++++++++++++
 
 .. _transport:
 
@@ -228,6 +228,53 @@ BaseSubprocessTransport
       stop the subprocess.
 
 
+Streams
+=======
+
+StreamReader
+------------
+
+.. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
+
+   .. method:: exception()
+
+      Get the exception.
+
+   .. method:: feed_eof()
+
+      XXX
+
+   .. method:: feed_data(data)
+
+      XXX
+
+   .. method:: set_exception(exc)
+
+      Set the exception.
+
+   .. method:: set_transport(transport)
+
+      Set the transport.
+
+   .. method:: read(n=-1)
+
+      XXX
+
+      This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. method:: readline()
+
+      XXX
+
+      This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. method:: readexactly(n)
+
+      XXX
+
+      This method returns a :ref:`coroutine object <coroutine>`.
+
+
 StreamWriter
 ------------
 
@@ -291,48 +338,46 @@ StreamWriter
       see :meth:`WriteTransport.write_eof`.
 
 
-StreamReader
-------------
+StreamReaderProtocol
+--------------------
 
-.. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
+.. class:: StreamReaderProtocol(stream_reader, client_connected_cb=None, loop=None)
 
-   .. method:: exception()
+    Trivial helper class to adapt between :class:`Protocol` and
+    :class:`StreamReader`. Sublclass of :class:`Protocol`.
 
-      Get the exception.
+    *stream_reader* is a :class:`StreamReader` instance, *client_connected_cb*
+    is an optional function called with (stream_reader, stream_writer) when a
+    connection is made, *loop* is the event loop instance to use.
 
-   .. method:: feed_eof()
+    (This is a helper class instead of making :class:`StreamReader` itself a
+    :class:`Protocol` subclass, because the :class:`StreamReader` has other
+    potential uses, and to prevent the user of the :class:`StreamReader` to
+    accidentally call inappropriate methods of the protocol.)
 
-      XXX
+    .. method:: connection_made(transport)
 
-   .. method:: feed_data(data)
+       XXX
 
-      XXX
+    .. method:: connection_lost(exc)
 
-   .. method:: set_exception(exc)
+       XXX
 
-      Set the exception.
+    .. method:: data_received(data)
 
-   .. method:: set_transport(transport)
+       XXX
 
-      Set the transport.
+    .. method:: eof_received()
 
-   .. method:: read(n=-1)
+       XXX
 
-      XXX
+    .. method:: pause_writing()
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+       XXX
 
-   .. method:: readline()
+    .. method:: resume_writing()
 
-      XXX
-
-      This method returns a :ref:`coroutine object <coroutine>`.
-
-   .. method:: readexactly(n)
-
-      XXX
-
-      This method returns a :ref:`coroutine object <coroutine>`.
+       XXX
 
 
 
