@@ -957,6 +957,9 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
+    # kqueue doesn't support character devices (PTY) on Mac OS X older
+    # than 10.9 (Maverick)
+    @support.requires_mac_ver(10, 9)
     def test_read_pty_output(self):
         proto = None
 
