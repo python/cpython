@@ -47,6 +47,7 @@ Table of content:
    asyncio-eventloop.rst
    asyncio-task.rst
    asyncio-protocol.rst
+   asyncio-stream.rst
    asyncio-sync.rst
    asyncio-dev.rst
 
