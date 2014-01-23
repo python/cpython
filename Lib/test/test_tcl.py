@@ -210,10 +210,14 @@ class TclTest(unittest.TestCase):
             result.append(arg)
             return arg
         self.interp.createcommand('testfunc', testfunc)
-        def check(value, expected):
+        def check(value, expected, conv=lambda x: x):
             del result[:]
-            self.assertEqual(self.interp.call('testfunc', value), expected)
-            self.assertEqual(result, [expected])
+            r = self.interp.call('testfunc', value)
+            self.assertEqual(len(result), 1)
+            self.assertIsInstance(result[0], str)
+            self.assertEqual(conv(result[0]), expected)
+            self.assertIsInstance(r, str)
+            self.assertEqual(conv(r), expected)
 
         check(True, '1')
         check(False, '0')
@@ -225,10 +229,10 @@ class TclTest(unittest.TestCase):
         for f in (0.0, 1.0, -1.0, 1/3,
                   sys.float_info.min, sys.float_info.max,
                   -sys.float_info.min, -sys.float_info.max):
-            check(f, repr(f))
+            check(f, f, conv=float)
+        check(float('inf'), float('inf'), conv=float)
+        check(-float('inf'), -float('inf'), conv=float)
         check(float('nan'), 'NaN')
-        check(float('inf'), 'Inf')
-        check(-float('inf'), '-Inf')
         check((), '')
         check((1, (2,), (3, 4), '5 6', ()), '1 2 {3 4} {5 6} {}')
 
