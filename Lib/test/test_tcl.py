@@ -219,7 +219,9 @@ class TclTest(unittest.TestCase):
             self.assertIsInstance(r, str)
             eq(r, expected)
         def float_eq(actual, expected):
-            self.assertAlmostEqual(float(actual), float(expected))
+            expected = float(expected)
+            self.assertAlmostEqual(float(actual), expected,
+                                   delta=abs(expected) * 1e-10)
         def nan_eq(actual, expected):
             actual = float(actual)
             self.assertNotEqual(actual, actual)
