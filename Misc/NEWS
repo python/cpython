@@ -118,6 +118,9 @@ Library
 IDLE
 ----
 
+--Issue #17390: Add Python version to Idle editor window title bar.
+  Original patches by Edmond Burnett and Kent Johnson.
+  
 - Issue #18960: IDLE now ignores the source encoding declaration on the second
   line if the first line contains anything except a comment.
 
