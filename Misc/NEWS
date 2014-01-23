@@ -38,6 +38,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14548: Make multiprocessing finalizers check pid before
+  running to cope with possibility of gc running just after fork.
+  (Backport from 3.x.)
+
 - Issue #20262: Warnings are raised now when duplicate names are added in the
   ZIP file or too long ZIP file comment is truncated.
 
