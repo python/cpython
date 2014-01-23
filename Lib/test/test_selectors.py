@@ -5,7 +5,7 @@ import selectors
 import signal
 import socket
 from test import support
-from time import sleep, perf_counter
+from time import sleep, perf_counter, get_clock_info
 import unittest
 import unittest.mock
 try:
@@ -377,7 +377,10 @@ class BaseSelectorTestCase(unittest.TestCase):
             t0 = perf_counter()
             s.select(timeout)
             dt = perf_counter() - t0
-            self.assertGreaterEqual(dt, timeout)
+            clock = get_clock_info('perf_counter')
+            self.assertGreaterEqual(dt, timeout,
+                                    "%.30f < %.30f ; clock=%s"
+                                    % (dt, timeout, clock))
 
 
 class ScalableSelectorMixIn:
