@@ -21,7 +21,7 @@ def open_connection(host=None, port=None, *,
     """A wrapper for create_connection() returning a (reader, writer) pair.
 
     The reader returned is a StreamReader instance; the writer is a
-    Transport.
+    StreamWriter.
 
     The arguments are all the usual arguments to create_connection()
     except protocol_factory; most common are positional host and port,

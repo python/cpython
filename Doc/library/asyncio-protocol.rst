@@ -535,8 +535,8 @@ Network functions
    A wrapper for :meth:`~BaseEventLoop.create_connection()` returning a (reader,
    writer) pair.
 
-   The reader returned is a :class:`StreamReader` instance; the writer is a
-   transport.
+   The reader returned is a :class:`StreamReader` instance; the writer is
+   a :class:`StreamWriter` instance.
 
    The arguments are all the usual arguments to
    :meth:`BaseEventLoop.create_connection` except *protocol_factory*; most
@@ -545,7 +545,7 @@ Network functions
 
    Additional optional keyword arguments are *loop* (to set the event loop
    instance to use) and *limit* (to set the buffer limit passed to the
-   StreamReader).
+   :class:`StreamReader`).
 
    (If you want to customize the :class:`StreamReader` and/or
    :class:`StreamReaderProtocol` classes, just copy the code -- there's really
