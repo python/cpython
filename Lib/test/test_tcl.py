@@ -192,6 +192,34 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue((1, '2', (3.4,))),
                          (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
 
+    def test_user_command(self):
+        result = None
+        def testfunc(arg):
+            nonlocal result
+            result = arg
+            return arg
+        self.interp.createcommand('testfunc', testfunc)
+        def check(value, expected):
+            self.assertEqual(self.interp.call('testfunc', value), expected)
+            self.assertEqual(result, expected)
+
+        check(True, '1')
+        check(False, '0')
+        check('string', 'string')
+        check('string\xbd', 'string\xbd')
+        check('string\u20ac', 'string\u20ac')
+        for i in (0, 1, -1, 2**31-1, -2**31):
+            check(i, str(i))
+        for f in (0.0, 1.0, -1.0, 1/3,
+                  sys.float_info.min, sys.float_info.max,
+                  -sys.float_info.min, -sys.float_info.max):
+            check(f, str(f))
+        check(float('nan'), 'NaN')
+        check(float('inf'), 'Inf')
+        check(-float('inf'), '-Inf')
+        check((), '')
+        check((1, (2,), (3, 4), '5 6', ()), '1 2 {3 4} {5 6} {}')
+
     def test_splitlist(self):
         splitlist = self.interp.tk.splitlist
         call = self.interp.tk.call
