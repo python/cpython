@@ -21,7 +21,7 @@ def open_connection(host=None, port=None, *,
     """A wrapper for create_connection() returning a (reader, writer) pair.
 
     The reader returned is a StreamReader instance; the writer is a
-    StreamWriter.
+    StreamWriter instance.
 
     The arguments are all the usual arguments to create_connection()
     except protocol_factory; most common are positional host and port,
@@ -284,6 +284,16 @@ class StreamReader:
             else:
                 self._paused = True
 
+    def _create_waiter(self, func_name):
+        # StreamReader uses a future to link the protocol feed_data() method
+        # to a read coroutine. Running two read coroutines at the same time
+        # would have an unexpected behaviour. It would not possible to know
+        # which coroutine would get the next data.
+        if self._waiter is not None:
+            raise RuntimeError('%s() called while another coroutine is '
+                               'already waiting for incoming data' % func_name)
+        return futures.Future(loop=self._loop)
+
     @tasks.coroutine
     def readline(self):
         if self._exception is not None:
@@ -318,8 +328,7 @@ class StreamReader:
                 break
 
             if not_enough:
-                assert self._waiter is None
-                self._waiter = futures.Future(loop=self._loop)
+                self._waiter = self._create_waiter('readline')
                 try:
                     yield from self._waiter
                 finally:
@@ -341,16 +350,14 @@ class StreamReader:
 
         if n < 0:
             while not self._eof:
-                assert not self._waiter
-                self._waiter = futures.Future(loop=self._loop)
+                self._waiter = self._create_waiter('read')
                 try:
                     yield from self._waiter
                 finally:
                     self._waiter = None
         else:
             if not self._byte_count and not self._eof:
-                assert not self._waiter
-                self._waiter = futures.Future(loop=self._loop)
+                self._waiter = self._create_waiter('read')
                 try:
                     yield from self._waiter
                 finally:
