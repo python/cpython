@@ -126,9 +126,9 @@ StreamWriter
 
    .. method:: drain()
 
-      This method has an unusual return value.
+      Wait until the write buffer of the underlying transport is flushed.
 
-      The intended use is to write::
+      This method has an unusual return value. The intended use is to write::
 
           w.write(data)
           yield from w.drain()
