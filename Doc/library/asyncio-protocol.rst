@@ -415,22 +415,6 @@ coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
 coroutine can be used to wait until the write buffer is flushed.
 
 
-Server
-------
-
-.. class:: AbstractServer
-
-   Abstract server returned by :func:`BaseEventLoop.create_server`.
-
-   .. method:: close()
-
-      Stop serving.  This leaves existing connections open.
-
-   .. method:: wait_closed()
-
-      Coroutine to wait until service is closed.
-
-
 Protocol example: TCP echo server and client
 ============================================
 
