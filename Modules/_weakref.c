@@ -20,7 +20,7 @@ Return the number of weak references to 'object'.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
-"getweakrefcount(object)\n"
+"getweakrefcount(module, object)\n"
 "Return the number of weak references to \'object\'.");
 
 #define _WEAKREF_GETWEAKREFCOUNT_METHODDEF    \
@@ -46,7 +46,7 @@ exit:
 
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyModuleDef *module, PyObject *object)
-/*[clinic end generated code: checksum=744fa73ba68c0ee89567e9cb9bea11863270d516]*/
+/*[clinic end generated code: checksum=dd8ba0730babf263d3db78d260ea7eacf6eb3735]*/
 {
     PyWeakReference **list;
 

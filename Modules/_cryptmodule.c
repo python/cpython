@@ -30,7 +30,7 @@ results for a given *word*.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(crypt_crypt__doc__,
-"crypt(word, salt)\n"
+"crypt(module, word, salt)\n"
 "Hash a *word* with the given *salt* and return the hashed password.\n"
 "\n"
 "*word* will usually be a user\'s password.  *salt* (either a random 2 or 16\n"
@@ -63,7 +63,7 @@ exit:
 
 static PyObject *
 crypt_crypt_impl(PyModuleDef *module, const char *word, const char *salt)
-/*[clinic end generated code: checksum=a137540bf6862f9935fc112b8bb1d62d6dd1ad02]*/
+/*[clinic end generated code: checksum=dbfe26a21eb335abefe6a0bbd0a682ea22b9adc0]*/
 {
     /* On some platforms (AtheOS) crypt returns NULL for an invalid
        salt. Return None in that case. XXX Maybe raise an exception?  */

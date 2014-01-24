@@ -129,7 +129,7 @@ not given, ValueError is raised.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
-"decimal(unichr, default=None)\n"
+"decimal(self, unichr, default=None)\n"
 "Converts a Unicode character into its equivalent decimal value.\n"
 "\n"
 "Returns the decimal value assigned to the Unicode character unichr\n"
@@ -161,7 +161,7 @@ exit:
 
 static PyObject *
 unicodedata_UCD_decimal_impl(PyObject *self, PyUnicodeObject *unichr, PyObject *default_value)
-/*[clinic end generated code: checksum=73edde0e9cd5913ea174c4fa81504369761b7426]*/
+/*[clinic end generated code: checksum=01826b179d497d8fd3842c56679ecbd4faddaa95]*/
 {
     PyUnicodeObject *v = (PyUnicodeObject *)unichr;
     int have_old = 0;

@@ -925,7 +925,10 @@ class HTMLDoc(Doc):
                 anchor, name, reallink)
         argspec = None
         if inspect.isfunction(object) or inspect.isbuiltin(object):
-            signature = inspect.signature(object)
+            try:
+                signature = inspect.signature(object)
+            except (ValueError, TypeError):
+                signature = None
             if signature:
                 argspec = str(signature)
                 if realname == '<lambda>':
@@ -1319,8 +1322,12 @@ location listed above.
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
         argspec = None
-        if inspect.isfunction(object) or inspect.isbuiltin(object):
-            signature = inspect.signature(object)
+
+        if inspect.isroutine(object):
+            try:
+                signature = inspect.signature(object)
+            except (ValueError, TypeError):
+                signature = None
             if signature:
                 argspec = str(signature)
                 if realname == '<lambda>':
