@@ -243,7 +243,7 @@ class CommonReadTest(ReadTest):
         if sys.platform == 'win32' and '|' in self.mode:
             # Issue #20384: On Windows os.open() error message doesn't
             # contain file name.
-            text = ''
+            test = ''
         with self.assertRaisesRegex(FileNotFoundError, test):
             tarfile.open("xxx", self.mode)
 
