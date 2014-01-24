@@ -239,7 +239,12 @@ class CommonReadTest(ReadTest):
     def test_non_existent_tarfile(self):
         # Test for issue11513: prevent non-existent gzipped tarfiles raising
         # multiple exceptions.
-        with self.assertRaisesRegex(FileNotFoundError, "xxx"):
+        test = 'xxx'
+        if sys.platform == 'win32' and '|' in self.mode:
+            # Issue #20384: On Windows os.open() error message doesn't
+            # contain file name.
+            text = ''
+        with self.assertRaisesRegex(FileNotFoundError, test):
             tarfile.open("xxx", self.mode)
 
     def test_null_tarfile(self):
