@@ -344,6 +344,22 @@ pool of processes). By default, an event loop uses a thread pool executor
    Set the default executor used by :meth:`run_in_executor`.
 
 
+Server
+------
+
+.. class:: AbstractServer
+
+   Abstract server returned by :func:`BaseEventLoop.create_server`.
+
+   .. method:: close()
+
+      Stop serving.  This leaves existing connections open.
+
+   .. method:: wait_closed()
+
+      Coroutine to wait until service is closed.
+
+
 .. _asyncio-hello-world-callback:
 
 Example: Hello World (callback)
