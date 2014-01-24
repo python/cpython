@@ -541,7 +541,7 @@ Matches zero or more characters at the beginning of the string.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(pattern_match__doc__,
-"match(pattern, pos=0, endpos=sys.maxsize)\n"
+"match(self, pattern, pos=0, endpos=sys.maxsize)\n"
 "Matches zero or more characters at the beginning of the string.");
 
 #define PATTERN_MATCH_METHODDEF    \
@@ -551,7 +551,7 @@ static PyObject *
 pattern_match_impl(PatternObject *self, PyObject *pattern, Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
-pattern_match(PyObject *self, PyObject *args, PyObject *kwargs)
+pattern_match(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"pattern", "pos", "endpos", NULL};
@@ -563,7 +563,7 @@ pattern_match(PyObject *self, PyObject *args, PyObject *kwargs)
         "O|nn:match", _keywords,
         &pattern, &pos, &endpos))
         goto exit;
-    return_value = pattern_match_impl((PatternObject *)self, pattern, pos, endpos);
+    return_value = pattern_match_impl(self, pattern, pos, endpos);
 
 exit:
     return return_value;
@@ -571,7 +571,7 @@ exit:
 
 static PyObject *
 pattern_match_impl(PatternObject *self, PyObject *pattern, Py_ssize_t pos, Py_ssize_t endpos)
-/*[clinic end generated code: checksum=63e59c5f3019efe6c1f3acdec42b2d3595e14a09]*/
+/*[clinic end generated code: checksum=4a3865d13638cb7c13dcae1fe58c1a9c35071998]*/
 {
     SRE_STATE state;
     Py_ssize_t status;

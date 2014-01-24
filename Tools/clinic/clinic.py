@@ -139,9 +139,9 @@ def is_legal_py_identifier(s):
 # so if they're used Argument Clinic will add "_value" to the end
 # of the name in C.
 c_keywords = set("""
-asm auto break case char cls const continue default do double
-else enum extern float for goto if inline int long module null
-register return self short signed sizeof static struct switch
+asm auto break case char const continue default do double
+else enum extern float for goto if inline int long
+register return short signed sizeof static struct switch
 typedef typeof union unsigned void volatile while
 """.strip().split())
 
@@ -635,6 +635,9 @@ __________________________________________________
 
     def output_templates(self, f):
         parameters = list(f.parameters.values())
+        assert parameters
+        assert isinstance(parameters[0].converter, self_converter)
+        del parameters[0]
         converters = [p.converter for p in parameters]
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
@@ -679,8 +682,11 @@ __________________________________________________
         return_value_declaration = "PyObject *return_value = NULL;"
 
         methoddef_define = templates['methoddef_define']
-        docstring_prototype = templates['docstring_prototype']
-        docstring_definition = templates['docstring_definition']
+        if new_or_init and not f.docstring:
+            docstring_prototype = docstring_definition = ''
+        else:
+            docstring_prototype = templates['docstring_prototype']
+            docstring_definition = templates['docstring_definition']
         impl_definition = templates['impl_definition']
         impl_prototype = parser_prototype = parser_definition = None
 
@@ -858,6 +864,8 @@ __________________________________________________
 
         add, output = text_accumulator()
         parameters = list(f.parameters.values())
+        if isinstance(parameters[0].converter, self_converter):
+            del parameters[0]
 
         groups = []
         group = None
@@ -936,14 +944,69 @@ __________________________________________________
         data = CRenderData()
 
         parameters = list(f.parameters.values())
+        assert parameters, "We should always have a 'self' at this point!"
+
         converters = [p.converter for p in parameters]
+
+        templates = self.output_templates(f)
+
+        f_self = parameters[0]
+        selfless = parameters[1:]
+        assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
+
+        last_group = 0
+        first_optional = len(selfless)
+        positional = selfless and selfless[-1].kind == inspect.Parameter.POSITIONAL_ONLY
+        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        default_return_converter = (not f.return_converter or
+            f.return_converter.type == 'PyObject *')
+        has_option_groups = False
+
+        # offset i by -1 because first_optional needs to ignore self
+        for i, p in enumerate(parameters, -1):
+            c = p.converter
+
+            if (i != -1) and (p.default is not unspecified):
+                first_optional = min(first_optional, i)
+
+            # insert group variable
+            group = p.group
+            if last_group != group:
+                last_group = group
+                if group:
+                    group_name = self.group_to_variable_name(group)
+                    data.impl_arguments.append(group_name)
+                    data.declarations.append("int " + group_name + " = 0;")
+                    data.impl_parameters.append("int " + group_name)
+                    has_option_groups = True
+
+            c.render(p, data)
+
+        if has_option_groups and (not positional):
+            fail("You cannot use optional groups ('[' and ']')\nunless all parameters are positional-only ('/').")
+
+        # HACK
+        # when we're METH_O, but have a custom return converter,
+        # we use "impl_parameters" for the parsing function
+        # because that works better.  but that means we must
+        # supress actually declaring the impl's parameters
+        # as variables in the parsing function.  but since it's
+        # METH_O, we have exactly one anyway, so we know exactly
+        # where it is.
+        if ("METH_O" in templates['methoddef_define'] and
+            not default_return_converter):
+            data.declarations.pop(0)
 
         template_dict = {}
 
         full_name = f.full_name
         template_dict['full_name'] = full_name
 
-        name = full_name.rpartition('.')[2]
+        if new_or_init:
+            name = f.cls.name
+        else:
+            name = f.name
+
         template_dict['name'] = name
 
         if f.c_basename:
@@ -953,6 +1016,7 @@ __________________________________________________
             if fields[-1] == '__new__':
                 fields.pop()
             c_basename = "_".join(fields)
+
         template_dict['c_basename'] = c_basename
 
         methoddef_name = "{}_METHODDEF".format(c_basename.upper())
@@ -960,67 +1024,7 @@ __________________________________________________
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
-        positional = has_option_groups =  False
-
-        first_optional = len(parameters)
-
-        if parameters:
-            last_group = 0
-
-            for i, p in enumerate(parameters):
-                c = p.converter
-
-                if p.default is not unspecified:
-                    first_optional = min(first_optional, i)
-
-                # insert group variable
-                group = p.group
-                if last_group != group:
-                    last_group = group
-                    if group:
-                        group_name = self.group_to_variable_name(group)
-                        data.impl_arguments.append(group_name)
-                        data.declarations.append("int " + group_name + " = 0;")
-                        data.impl_parameters.append("int " + group_name)
-                        has_option_groups = True
-                c.render(p, data)
-
-            positional = parameters[-1].kind == inspect.Parameter.POSITIONAL_ONLY
-            if has_option_groups and (not positional):
-                fail("You cannot use optional groups ('[' and ']')\nunless all parameters are positional-only ('/').")
-
-        # HACK
-        # when we're METH_O, but have a custom
-        # return converter, we use
-        # "impl_parameters" for the parsing
-        # function because that works better.
-        # but that means we must supress actually
-        # declaring the impl's parameters as variables
-        # in the parsing function.  but since it's
-        # METH_O, we only have one anyway, so we don't
-        # have any problem finding it.
-        default_return_converter = (not f.return_converter or
-            f.return_converter.type == 'PyObject *')
-        if (len(parameters) == 1 and
-              parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
-              not converters[0].is_optional() and
-              isinstance(converters[0], object_converter) and
-              converters[0].format_unit == 'O' and
-              not default_return_converter):
-
-            data.declarations.pop(0)
-
-        # now insert our "self" (or whatever) parameters
-        # (we deliberately don't call render on self converters)
-        stock_self = self_converter('self', f)
-        template_dict['self_name'] = stock_self.name
-        template_dict['self_type'] = stock_self.type
-        data.impl_parameters.insert(0, f.self_converter.type + ("" if f.self_converter.type.endswith('*') else " ") + f.self_converter.name)
-        if f.self_converter.type != stock_self.type:
-            self_cast = '(' + f.self_converter.type + ')'
-        else:
-            self_cast = ''
-        data.impl_arguments.insert(0, self_cast + stock_self.name)
+        f_self.converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
@@ -1036,14 +1040,15 @@ __________________________________________________
         template_dict['cleanup'] = "".join(data.cleanup)
         template_dict['return_value'] = data.return_value
 
-        # used by unpack tuple
-        template_dict['unpack_min'] = str(first_optional)
-        template_dict['unpack_max'] = str(len(parameters))
+        # used by unpack tuple code generator
+        ignore_self = -1 if isinstance(converters[0], self_converter) else 0
+        unpack_min = first_optional
+        unpack_max = len(selfless)
+        template_dict['unpack_min'] = str(unpack_min)
+        template_dict['unpack_max'] = str(unpack_max)
 
         if has_option_groups:
             self.render_option_group_parsing(f, template_dict)
-
-        templates = self.output_templates(f)
 
         for name, destination in clinic.field_destinations.items():
             template = templates[name]
@@ -1074,6 +1079,7 @@ __________________________________________________
             destination.append(s)
 
         return clinic.get_destination('block').dump()
+
 
 
 
@@ -1775,7 +1781,9 @@ __xor__
 """.strip().split())
 
 
-INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = range(6)
+INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = """
+INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
+""".replace(",", "").strip().split()
 
 class Function:
     """
@@ -1969,6 +1977,19 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only used by format units ending with '#'.
     length = False
 
+    # Should we show this parameter in the generated
+    # __text_signature__? This is *almost* always True.
+    show_in_signature = True
+
+    # Overrides the name used in a text signature.
+    # The name used for a "self" parameter must be one of
+    # self, type, or module; however users can set their own.
+    # This lets the self_converter overrule the user-settable
+    # name, *just* for the text signature.
+    # Only set by self_converter.
+    signature_name = None
+
+    # keep in sync with self_converter.__init__!
     def __init__(self, name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
         self.function = function
         self.name = name
@@ -1998,11 +2019,23 @@ class CConverter(metaclass=CConverterAutoRegister):
     def is_optional(self):
         return (self.default is not unspecified)
 
-    def render(self, parameter, data):
-        """
-        parameter is a clinic.Parameter instance.
-        data is a CRenderData instance.
-        """
+    def _render_self(self, parameter, data):
+        self.parameter = parameter
+        original_name = self.name
+        name = ensure_legal_c_identifier(original_name)
+
+        # impl_arguments
+        s = ("&" if self.impl_by_reference else "") + name
+        data.impl_arguments.append(s)
+        if self.length:
+            data.impl_arguments.append(self.length_name())
+
+        # impl_parameters
+        data.impl_parameters.append(self.simple_declaration(by_reference=self.impl_by_reference))
+        if self.length:
+            data.impl_parameters.append("Py_ssize_clean_t " + self.length_name())
+
+    def _render_non_self(self, parameter, data):
         self.parameter = parameter
         original_name = self.name
         name = ensure_legal_c_identifier(original_name)
@@ -2015,12 +2048,6 @@ class CConverter(metaclass=CConverterAutoRegister):
         initializers = self.initialize()
         if initializers:
             data.initializers.append('/* initializers for ' + name + ' */\n' + initializers.rstrip())
-
-        # impl_arguments
-        s = ("&" if self.impl_by_reference else "") + name
-        data.impl_arguments.append(s)
-        if self.length:
-            data.impl_arguments.append(self.length_name())
 
         # keywords
         data.keywords.append(original_name)
@@ -2035,15 +2062,18 @@ class CConverter(metaclass=CConverterAutoRegister):
         # parse_arguments
         self.parse_argument(data.parse_arguments)
 
-        # impl_parameters
-        data.impl_parameters.append(self.simple_declaration(by_reference=self.impl_by_reference))
-        if self.length:
-            data.impl_parameters.append("Py_ssize_clean_t " + self.length_name())
-
         # cleanup
         cleanup = self.cleanup()
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
+
+    def render(self, parameter, data):
+        """
+        parameter is a clinic.Parameter instance.
+        data is a CRenderData instance.
+        """
+        self._render_self(parameter, data)
+        self._render_non_self(parameter, data)
 
     def length_name(self):
         """Computes the name of the associated "length" variable."""
@@ -2318,7 +2348,7 @@ class str_converter(CConverter):
                 format_unit = 'et#'
 
             if format_unit.endswith('#'):
-                print("Warning: code using format unit ", repr(format_unit), "probably doesn't work properly.")
+                fail("Sorry: code using format unit ", repr(format_unit), "probably doesn't work properly yet.\nGive Larry your test case and he'll it.")
                 # TODO set pointer to NULL
                 # TODO add cleanup for buffer
                 pass
@@ -2421,35 +2451,108 @@ class Py_buffer_converter(CConverter):
         return "".join(["if (", name, ".obj)\n   PyBuffer_Release(&", name, ");\n"])
 
 
+def correct_name_for_self(f):
+    if f.kind in (CALLABLE, METHOD_INIT):
+        if f.cls:
+            return "PyObject *", "self"
+        return "PyModuleDef *", "module"
+    if f.kind == STATIC_METHOD:
+        return "void *", "null"
+    if f.kind in (CLASS_METHOD, METHOD_NEW):
+        return "PyTypeObject *", "type"
+    raise RuntimeError("Unhandled type of function f: " + repr(f.kind))
+
+
 class self_converter(CConverter):
     """
     A special-case converter:
     this is the default converter used for "self".
     """
-    type = "PyObject *"
+    type = None
+    format_unit = ''
+
+
     def converter_init(self, *, type=None):
         f = self.function
-        if f.kind in (CALLABLE, METHOD_INIT):
-            if f.cls:
-                self.name = "self"
-            else:
-                self.name = "module"
-                self.type = "PyModuleDef *"
-        elif f.kind == STATIC_METHOD:
-            self.name = "null"
-            self.type = "void *"
-        elif f.kind == CLASS_METHOD:
-            self.name = "cls"
-            self.type = "PyTypeObject *"
-        elif f.kind == METHOD_NEW:
-            self.name = "type"
-            self.type = "PyTypeObject *"
+        default_type, default_name = correct_name_for_self(f)
+        self.signature_name = default_name
+        self.type = type or self.type or default_type
 
-        if type:
-            self.type = type
+        kind = self.function.kind
+        new_or_init = kind in (METHOD_NEW, METHOD_INIT)
+
+        if (kind == STATIC_METHOD) or new_or_init:
+            self.show_in_signature = False
+
+    # tp_new (METHOD_NEW) functions are of type newfunc:
+    #     typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
+    # PyTypeObject is a typedef for struct _typeobject.
+    #
+    # tp_init (METHOD_INIT) functions are of type initproc:
+    #     typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
+    #
+    # All other functions generated by Argument Clinic are stored in
+    # PyMethodDef structures, in the ml_meth slot, which is of type PyCFunction:
+    #     typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
+    # However!  We habitually cast these functions to PyCFunction,
+    # since functions that accept keyword arguments don't fit this signature
+    # but are stored there anyway.  So strict type equality isn't important
+    # for these functions.
+    #
+    # So:
+    #
+    # * The name of the first parameter to the impl and the parsing function will always
+    #   be self.name.
+    #
+    # * The type of the first parameter to the impl will always be of self.type.
+    #
+    # * If the function is neither tp_new (METHOD_NEW) nor tp_init (METHOD_INIT):
+    #   * The type of the first parameter to the parsing function is also self.type.
+    #     This means that if you step into the parsing function, your "self" parameter
+    #     is of the correct type, which may make debugging more pleasant.
+    #
+    # * Else if the function is tp_new (METHOD_NEW):
+    #   * The type of the first parameter to the parsing function is "PyTypeObject *",
+    #     so the type signature of the function call is an exact match.
+    #   * If self.type != "PyTypeObject *", we cast the first parameter to self.type
+    #     in the impl call.
+    #
+    # * Else if the function is tp_init (METHOD_INIT):
+    #   * The type of the first parameter to the parsing function is "PyObject *",
+    #     so the type signature of the function call is an exact match.
+    #   * If self.type != "PyObject *", we cast the first parameter to self.type
+    #     in the impl call.
+
+    @property
+    def parser_type(self):
+        kind = self.function.kind
+        if kind == METHOD_NEW:
+            return "PyTypeObject *"
+        if kind == METHOD_INIT:
+            return "PyObject *"
+        return self.type
 
     def render(self, parameter, data):
-        fail("render() should never be called on self_converter instances")
+        """
+        parameter is a clinic.Parameter instance.
+        data is a CRenderData instance.
+        """
+        if self.function.kind == STATIC_METHOD:
+            return
+
+        self._render_self(parameter, data)
+
+        if self.type != self.parser_type:
+            # insert cast to impl_argument[0], aka self.
+            # we know we're in the first slot in all the CRenderData lists,
+            # because we render parameters in order, and self is always first.
+            assert len(data.impl_arguments) == 1
+            assert data.impl_arguments[0] == self.name
+            data.impl_arguments[0] = '(' + self.type + ")" + data.impl_arguments[0]
+
+    def set_template_dict(self, template_dict):
+        template_dict['self_name'] = self.name
+        template_dict['self_type'] = self.parser_type
 
 
 
@@ -2997,7 +3100,7 @@ class DSLParser:
             if not return_converter:
                 return_converter = init_return_converter()
         elif fields[-1] in unsupported_special_methods:
-            fail(fields[-1] + " should not be converted to Argument Clinic!  (Yet.)")
+            fail(fields[-1] + " is a special method and cannot be converted to Argument Clinic!  (Yet.)")
 
         if not return_converter:
             return_converter = CReturnConverter()
@@ -3007,6 +3110,13 @@ class DSLParser:
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist)
         self.block.signatures.append(self.function)
+
+        # insert a self converter automatically
+        _, name = correct_name_for_self(self.function)
+        sc = self.function.self_converter = self_converter(name, self.function)
+        p_self = Parameter(sc.name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
+        self.function.parameters[sc.name] = p_self
+
         (cls or module).functions.append(self.function)
         self.next(self.state_parameters_start)
 
@@ -3173,34 +3283,43 @@ class DSLParser:
             try:
                 module = ast.parse(ast_input)
 
-                # blacklist of disallowed ast nodes
-                class DetectBadNodes(ast.NodeVisitor):
-                    bad = False
-                    def bad_node(self, node):
-                        self.bad = True
+                bad = False
+                if 'c_default' not in kwargs:
+                    # we can only represent very simple data values in C.
+                    # detect whether default is okay, via a blacklist
+                    # of disallowed ast nodes.
+                    class DetectBadNodes(ast.NodeVisitor):
+                        bad = False
+                        def bad_node(self, node):
+                            self.bad = True
 
-                    # inline function call
-                    visit_Call = bad_node
-                    # inline if statement ("x = 3 if y else z")
-                    visit_IfExp = bad_node
+                        # inline function call
+                        visit_Call = bad_node
+                        # inline if statement ("x = 3 if y else z")
+                        visit_IfExp = bad_node
 
-                    # comprehensions and generator expressions
-                    visit_ListComp = visit_SetComp = bad_node
-                    visit_DictComp = visit_GeneratorExp = bad_node
+                        # comprehensions and generator expressions
+                        visit_ListComp = visit_SetComp = bad_node
+                        visit_DictComp = visit_GeneratorExp = bad_node
 
-                    # literals for advanced types
-                    visit_Dict = visit_Set = bad_node
-                    visit_List = visit_Tuple = bad_node
+                        # literals for advanced types
+                        visit_Dict = visit_Set = bad_node
+                        visit_List = visit_Tuple = bad_node
 
-                    # "starred": "a = [1, 2, 3]; *a"
-                    visit_Starred = bad_node
+                        # "starred": "a = [1, 2, 3]; *a"
+                        visit_Starred = bad_node
 
-                    # allow ellipsis, for now
-                    # visit_Ellipsis = bad_node
+                        # allow ellipsis, for now
+                        # visit_Ellipsis = bad_node
 
-                blacklist = DetectBadNodes()
-                blacklist.visit(module)
-                if blacklist.bad:
+                    blacklist = DetectBadNodes()
+                    blacklist.visit(module)
+                    bad = blacklist.bad
+                else:
+                    # if they specify a c_default, we can be more lenient about the default value.
+                    # but at least ensure that we can turn it into text and reconstitute it correctly.
+                    bad = default != repr(eval(default))
+                if bad:
                     fail("Unsupported expression as default value: " + repr(default))
 
                 expr = module.body[0].value
@@ -3263,18 +3382,22 @@ class DSLParser:
             fail('{} is not a valid {}converter'.format(name, legacy_str))
         converter = dict[name](parameter_name, self.function, value, **kwargs)
 
-        # special case: if it's the self converter,
-        # don't actually add it to the parameter list
-        if isinstance(converter, self_converter):
-            if self.function.parameters or (self.parameter_state != self.ps_required):
-                fail("The 'self' parameter, if specified, must be the very first thing in the parameter block.")
-            if self.function.self_converter:
-                fail("You can't specify the 'self' parameter more than once.")
-            self.function.self_converter = converter
-            self.parameter_state = self.ps_start
-            return
-
         kind = inspect.Parameter.KEYWORD_ONLY if self.keyword_only else inspect.Parameter.POSITIONAL_OR_KEYWORD
+
+        if isinstance(converter, self_converter):
+            if len(self.function.parameters) == 1:
+                if (self.parameter_state != self.ps_required):
+                    fail("A 'self' parameter cannot be marked optional.")
+                if value is not unspecified:
+                    fail("A 'self' parameter cannot have a default value.")
+                if self.group:
+                    fail("A 'self' parameter cannot be in an optional group.")
+                kind = inspect.Parameter.POSITIONAL_ONLY
+                self.parameter_state = self.ps_start
+                self.function.parameters.clear()
+            else:
+                fail("A 'self' parameter, if specified, must be the very first thing in the parameter block.")
+
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
         if parameter_name in self.function.parameters:
@@ -3333,7 +3456,7 @@ class DSLParser:
             self.parameter_state = self.ps_seen_slash
             # fixup preceeding parameters
             for p in self.function.parameters.values():
-                if p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and not isinstance(p.converter, self_converter)):
                     fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
                 p.kind = inspect.Parameter.POSITIONAL_ONLY
 
@@ -3394,6 +3517,11 @@ class DSLParser:
     def format_docstring(self):
         f = self.function
 
+        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        if new_or_init and not f.docstring:
+            # don't render a docstring at all, no signature, nothing.
+            return f.docstring
+
         add, output = text_accumulator()
         parameters = list(f.parameters.values())
 
@@ -3401,7 +3529,7 @@ class DSLParser:
         ## docstring first line
         ##
 
-        if f.kind in (METHOD_NEW, METHOD_INIT):
+        if new_or_init:
             assert f.cls
             add(f.cls.name)
         else:
@@ -3409,17 +3537,24 @@ class DSLParser:
         add('(')
 
         # populate "right_bracket_count" field for every parameter
-        if parameters:
+        assert parameters, "We should always have a self parameter. " + repr(f)
+        assert isinstance(parameters[0].converter, self_converter)
+        parameters[0].right_bracket_count = 0
+        parameters_after_self = parameters[1:]
+        if parameters_after_self:
             # for now, the only way Clinic supports positional-only parameters
-            # is if all of them are positional-only.
-            positional_only_parameters = [p.kind == inspect.Parameter.POSITIONAL_ONLY for p in parameters]
-            if parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY:
+            # is if all of them are positional-only...
+            #
+            # ... except for self!  self is always positional-only.
+
+            positional_only_parameters = [p.kind == inspect.Parameter.POSITIONAL_ONLY for p in parameters_after_self]
+            if parameters_after_self[0].kind == inspect.Parameter.POSITIONAL_ONLY:
                 assert all(positional_only_parameters)
                 for p in parameters:
                     p.right_bracket_count = abs(p.group)
             else:
                 # don't put any right brackets around non-positional-only parameters, ever.
-                for p in parameters:
+                for p in parameters_after_self:
                     p.right_bracket_count = 0
 
         right_bracket_count = 0
@@ -3439,6 +3574,9 @@ class DSLParser:
         add_comma = False
 
         for p in parameters:
+            if not p.converter.show_in_signature:
+                continue
+
             assert p.name
 
             if p.is_keyword_only() and not added_star:
@@ -3446,8 +3584,10 @@ class DSLParser:
                 if add_comma:
                     add(', ')
                 add('*')
+                add_comma = True
 
-            a = [p.name]
+            name = p.converter.signature_name or p.name
+            a = [name]
             if p.converter.is_optional():
                 a.append('=')
                 value = p.converter.py_default
@@ -3560,9 +3700,6 @@ class DSLParser:
         if not self.function:
             return
 
-        if not self.function.self_converter:
-            self.function.self_converter = self_converter("self", self.function)
-
         if self.keyword_only:
             values = self.function.parameters.values()
             if not values:
@@ -3580,6 +3717,8 @@ class DSLParser:
             value.docstring = value.docstring.rstrip()
 
         self.function.docstring = self.format_docstring()
+
+
 
 
 # maps strings to callables.
@@ -3607,6 +3746,7 @@ def main(argv):
     cmdline = argparse.ArgumentParser()
     cmdline.add_argument("-f", "--force", action='store_true')
     cmdline.add_argument("-o", "--output", type=str)
+    cmdline.add_argument("-v", "--verbose", action='store_true')
     cmdline.add_argument("--converters", action='store_true')
     cmdline.add_argument("--make", action='store_true')
     cmdline.add_argument("filename", type=str, nargs="*")
@@ -3680,13 +3820,15 @@ def main(argv):
             cmdline.print_usage()
             sys.exit(-1)
         for root, dirs, files in os.walk('.'):
-            for rcs_dir in ('.svn', '.git', '.hg'):
+            for rcs_dir in ('.svn', '.git', '.hg', 'build'):
                 if rcs_dir in dirs:
                     dirs.remove(rcs_dir)
             for filename in files:
-                if not filename.endswith('.c'):
+                if not (filename.endswith('.c') or filename.endswith('.h')):
                     continue
                 path = os.path.join(root, filename)
+                if ns.verbose:
+                    print(path)
                 parse_file(path, verify=not ns.force)
         return
 
@@ -3701,6 +3843,8 @@ def main(argv):
         sys.exit(-1)
 
     for filename in ns.filename:
+        if ns.verbose:
+            print(filename)
         parse_file(filename, output=ns.output, verify=not ns.force)
 
 

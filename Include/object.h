@@ -492,6 +492,9 @@ PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
 PyAPI_FUNC(void) PyType_Modified(PyTypeObject *);
 
+PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *name, const char *internal_doc);
+PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_doc);
+
 /* Generic operations on objects */
 struct _Py_Identifier;
 #ifndef Py_LIMITED_API

@@ -222,8 +222,8 @@ Check that generator attributes are present
     True
 
     >>> from test.support import HAVE_DOCSTRINGS
-    >>> print(g.__next__.__doc__ if HAVE_DOCSTRINGS else 'x.__next__() <==> next(x)')
-    x.__next__() <==> next(x)
+    >>> print(g.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implements next(self).')
+    Implements next(self).
     >>> import types
     >>> isinstance(g, types.GeneratorType)
     True

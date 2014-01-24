@@ -1419,9 +1419,11 @@ def getgeneratorlocals(generator):
 
 _WrapperDescriptor = type(type.__call__)
 _MethodWrapper = type(all.__call__)
+_ClassMethodWrapper = type(int.__dict__['from_bytes'])
 
 _NonUserDefinedCallables = (_WrapperDescriptor,
                             _MethodWrapper,
+                            _ClassMethodWrapper,
                             types.BuiltinFunctionType)
 
 
@@ -1443,6 +1445,13 @@ def signature(obj):
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
 
+    if (isinstance(obj, _NonUserDefinedCallables) or
+       ismethoddescriptor(obj) or
+       isinstance(obj, type)):
+        sig = Signature.from_builtin(obj)
+        if sig:
+            return sig
+
     if isinstance(obj, types.MethodType):
         # In this case we skip the first parameter of the underlying
         # function (usually `self` or `cls`).
@@ -1460,12 +1469,8 @@ def signature(obj):
         if sig is not None:
             return sig
 
-
     if isinstance(obj, types.FunctionType):
         return Signature.from_function(obj)
-
-    if isinstance(obj, types.BuiltinFunctionType):
-        return Signature.from_builtin(obj)
 
     if isinstance(obj, functools.partial):
         sig = signature(obj.func)
@@ -2033,7 +2038,7 @@ class Signature:
             name = parse_name(name_node)
             if name is invalid:
                 return None
-            if default_node:
+            if default_node and default_node is not _empty:
                 try:
                     default_node = RewriteSymbolics().visit(default_node)
                     o = ast.literal_eval(default_node)
@@ -2065,6 +2070,23 @@ class Signature:
         if f.args.kwarg:
             kind = Parameter.VAR_KEYWORD
             p(f.args.kwarg, empty)
+
+        if parameters and (hasattr(func, '__self__') or
+            isinstance(func, _WrapperDescriptor,) or
+            ismethoddescriptor(func)
+            ):
+            name = parameters[0].name
+            if name not in ('self', 'module', 'type'):
+                pass
+            elif getattr(func, '__self__', None):
+                # strip off self (it's already been bound)
+                p = parameters.pop(0)
+                if not p.name in ('self', 'module', 'type'):
+                    raise ValueError('Unexpected name ' + repr(p.name) + ', expected self/module/cls/type')
+            else:
+                # for builtins, self parameter is always positional-only!
+                p = parameters[0].replace(kind=Parameter.POSITIONAL_ONLY)
+                parameters[0] = p
 
         return cls(parameters, return_annotation=cls.empty)
 

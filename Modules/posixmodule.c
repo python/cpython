@@ -2430,7 +2430,7 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 [clinic start generated code]*/
 
 PyDoc_STRVAR(os_stat__doc__,
-"stat(path, *, dir_fd=None, follow_symlinks=True)\n"
+"stat(module, path, *, dir_fd=None, follow_symlinks=True)\n"
 "Perform a stat system call on the given path.\n"
 "\n"
 "  path\n"
@@ -2481,7 +2481,7 @@ exit:
 
 static PyObject *
 os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: checksum=85a71ad602e89f8e280118da976f70cd2f9abdf1]*/
+/*[clinic end generated code: checksum=09cc91b4947f9e3b9335c8be998bb7c56f7f8b40]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2562,7 +2562,7 @@ Note that most operations will use the effective uid/gid, therefore this
 [clinic start generated code]*/
 
 PyDoc_STRVAR(os_access__doc__,
-"access(path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)\n"
+"access(module, path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)\n"
 "Use the real uid/gid to test for access to a path.\n"
 "\n"
 "  path\n"
@@ -2622,7 +2622,7 @@ exit:
 
 static PyObject *
 os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic end generated code: checksum=636e835c36562a2fc11acab75314634127fdf769]*/
+/*[clinic end generated code: checksum=6483a51e1fee83da4f8e41cbc8054a701cfed1c5]*/
 {
     PyObject *return_value = NULL;
 
@@ -2718,7 +2718,7 @@ Return the name of the terminal device connected to 'fd'.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(os_ttyname__doc__,
-"ttyname(fd)\n"
+"ttyname(module, fd)\n"
 "Return the name of the terminal device connected to \'fd\'.\n"
 "\n"
 "  fd\n"
@@ -2752,7 +2752,7 @@ exit:
 
 static char *
 os_ttyname_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: checksum=0f368134dc0a7f21f25185e2e6bacf7675fb473a]*/
+/*[clinic end generated code: checksum=11bbb8b7969155f54bb8a1ec35ac1ebdfd4b0fec]*/
 {
     char *ret;
 

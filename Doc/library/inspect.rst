@@ -429,6 +429,9 @@ function.
    Accepts a wide range of python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   Raises :exc:`ValueError` if no signature can be provided, and
+   :exc:`TypeError` if that type of object is not supported.
+
    .. note::
 
       Some callables may not be introspectable in certain implementations of

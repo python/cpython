@@ -279,7 +279,7 @@ Return the value for key if present, otherwise default.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dbm_dbm_get__doc__,
-"get(key, [default])\n"
+"get(self, key, [default])\n"
 "Return the value for key if present, otherwise default.");
 
 #define DBM_DBM_GET_METHODDEF    \
@@ -289,7 +289,7 @@ static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value);
 
 static PyObject *
-dbm_dbm_get(PyObject *self, PyObject *args)
+dbm_dbm_get(dbmobject *dp, PyObject *args)
 {
     PyObject *return_value = NULL;
     const char *key;
@@ -311,7 +311,7 @@ dbm_dbm_get(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "dbm.dbm.get requires 1 to 2 arguments");
             goto exit;
     }
-    return_value = dbm_dbm_get_impl((dbmobject *)self, key, key_length, group_right_1, default_value);
+    return_value = dbm_dbm_get_impl(dp, key, key_length, group_right_1, default_value);
 
 exit:
     return return_value;
@@ -319,7 +319,7 @@ exit:
 
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
-/*[clinic end generated code: checksum=ca8bf63ec226e71d3cf390749777f7d5b7361478]*/
+/*[clinic end generated code: checksum=31d5180d6b36f1eafea78ec4391adf3559916379]*/
 {
     datum dbm_key, val;
 
@@ -462,7 +462,7 @@ Return a database object.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dbmopen__doc__,
-"open(filename, flags=\'r\', mode=0o666)\n"
+"open(module, filename, flags=\'r\', mode=0o666)\n"
 "Return a database object.\n"
 "\n"
 "  filename\n"
@@ -499,7 +499,7 @@ exit:
 
 static PyObject *
 dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode)
-/*[clinic end generated code: checksum=fb265f75641553ccd963f84c143b35c11f9121fc]*/
+/*[clinic end generated code: checksum=9efae7d3c3b67a365011bf4e463e918901ba6c79]*/
 {
     int iflags;
 

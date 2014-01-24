@@ -54,6 +54,83 @@ _Py_IDENTIFIER(builtins);
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
+/*
+ * finds the docstring's introspection signature.
+ * if present, returns a pointer pointing to the first '('.
+ * otherwise returns NULL.
+ */
+static const char *
+find_signature(const char *name, const char *doc)
+{
+    size_t length;
+    if (!doc || !name)
+        return NULL;
+    length = strlen(name);
+    if (strncmp(doc, name, length))
+        return NULL;
+    doc += length;
+    if (*doc != '(')
+        return NULL;
+    return doc;
+}
+
+/*
+ * skips to the end of the docstring's instrospection signature.
+ */
+static const char *
+skip_signature(const char *doc)
+{
+    while (*doc && *doc != '\n')
+        doc++;
+    return doc;
+}
+
+static const char *
+skip_eols(const char *trace)
+{
+    while (*trace == '\n')
+        trace++;
+    return trace;
+}
+
+static const char *
+_PyType_DocWithoutSignature(const char *name, const char *internal_doc)
+{
+    const char *signature = find_signature(name, internal_doc);
+
+    if (signature)
+        return skip_eols(skip_signature(signature));
+    return internal_doc;
+}
+
+PyObject *
+_PyType_GetDocFromInternalDoc(const char *name, const char *internal_doc)
+{
+    const char *doc = _PyType_DocWithoutSignature(name, internal_doc);
+
+    if (!doc) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    return PyUnicode_FromString(doc);
+}
+
+PyObject *
+_PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_doc)
+{
+    const char *signature = find_signature(name, internal_doc);
+    const char *doc;
+
+    if (!signature) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    doc = skip_signature(signature);
+    return PyUnicode_FromStringAndSize(signature, doc - signature);
+}
+
 unsigned int
 PyType_ClearCache(void)
 {
@@ -628,8 +705,11 @@ static PyObject *
 type_get_doc(PyTypeObject *type, void *context)
 {
     PyObject *result;
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL)
-        return PyUnicode_FromString(type->tp_doc);
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL) {
+        const char *name = type->tp_name;
+        const char *doc = type->tp_doc;
+        return _PyType_GetDocFromInternalDoc(name, doc);
+    }
     result = _PyDict_GetItemId(type->tp_dict, &PyId___doc__);
     if (result == NULL) {
         result = Py_None;
@@ -643,6 +723,14 @@ type_get_doc(PyTypeObject *type, void *context)
         Py_INCREF(result);
     }
     return result;
+}
+
+static PyObject *
+type_get_text_signature(PyTypeObject *type, void *context)
+{
+    const char *name = type->tp_name;
+    const char *doc = type->tp_doc;
+    return _PyType_GetTextSignatureFromInternalDoc(name, doc);
 }
 
 static int
@@ -691,6 +779,7 @@ static PyGetSetDef type_getsets[] = {
      (setter)type_set_abstractmethods, NULL},
     {"__dict__",  (getter)type_dict,  NULL, NULL},
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
+    {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
     {0}
 };
 
@@ -2519,13 +2608,14 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         /* need to make a copy of the docstring slot, which usually
            points to a static string literal */
         if (slot->slot == Py_tp_doc) {
-            size_t len = strlen(slot->pfunc)+1;
+            const char *old_doc = _PyType_DocWithoutSignature(spec->name, slot->pfunc);
+            size_t len = strlen(old_doc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL) {
                 PyErr_NoMemory();
                 goto fail;
             }
-            memcpy(tp_doc, slot->pfunc, len);
+            memcpy(tp_doc, old_doc, len);
             type->tp_doc = tp_doc;
         }
     }
@@ -2909,6 +2999,8 @@ static PyMethodDef type_methods[] = {
 };
 
 PyDoc_STRVAR(type_doc,
+/* this text signature cannot be accurate yet.  will fix.  --larry */
+"type(object_or_name, bases, dict)\n"
 "type(object) -> the object's type\n"
 "type(name, bases, dict) -> a new type");
 
@@ -3480,7 +3572,7 @@ _PyObject_GetState(PyObject *obj)
         {
             PyObject **dict;
             dict = _PyObject_GetDictPtr(obj);
-            /* It is possible that the object's dict is not initialized 
+            /* It is possible that the object's dict is not initialized
                yet. In this case, we will return None for the state.
                We also return None if the dict is empty to make the behavior
                consistent regardless whether the dict was initialized or not.
@@ -3788,7 +3880,7 @@ reduce_4(PyObject *obj)
     Py_DECREF(state);
     Py_DECREF(listitems);
     Py_DECREF(dictitems);
-    return result;    
+    return result;
 }
 
 static PyObject *
@@ -3813,7 +3905,7 @@ reduce_2(PyObject *obj)
     }
     else if (kwargs != NULL) {
         if (PyDict_Size(kwargs) > 0) {
-            PyErr_SetString(PyExc_ValueError, 
+            PyErr_SetString(PyExc_ValueError,
                             "must use protocol 4 or greater to copy this "
                             "object; since __getnewargs_ex__ returned "
                             "keyword arguments.");
@@ -4103,8 +4195,8 @@ PyTypeObject PyBaseObject_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("The most base type"),            /* tp_doc */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    PyDoc_STR("object()\nThe most base type"),  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     object_richcompare,                         /* tp_richcompare */
@@ -4571,7 +4663,8 @@ PyType_Ready(PyTypeObject *type)
      */
     if (_PyDict_GetItemId(type->tp_dict, &PyId___doc__) == NULL) {
         if (type->tp_doc != NULL) {
-            PyObject *doc = PyUnicode_FromString(type->tp_doc);
+            const char *old_doc = _PyType_DocWithoutSignature(type->tp_name, type->tp_doc);
+            PyObject *doc = PyUnicode_FromString(old_doc);
             if (doc == NULL)
                 goto error;
             if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, doc) < 0) {
@@ -6005,22 +6098,22 @@ typedef struct wrapperbase slotdef;
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, DOC)
 #define UNSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           "x." NAME "() <==> " DOC)
+           NAME "(self)\n" DOC)
 #define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           "x." NAME "(y) <==> x" DOC "y")
+           NAME "(self, value)\nReturns self" DOC "value.")
 #define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
-           "x." NAME "(y) <==> x" DOC "y")
+           NAME "(self, value)\nReturns self" DOC "value.")
 #define RBINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
-           "x." NAME "(y) <==> y" DOC "x")
+           NAME "(self, value)\nReturns value" DOC "self.")
 #define BINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
-           "x." NAME "(y) <==> " DOC)
+           NAME "(self, value)\n" DOC)
 #define RBINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
-           "x." NAME "(y) <==> " DOC)
+           NAME "(self, value)\n" DOC)
 
 static slotdef slotdefs[] = {
     TPSLOT("__getattribute__", tp_getattr, NULL, NULL, ""),
@@ -6028,80 +6121,85 @@ static slotdef slotdefs[] = {
     TPSLOT("__setattr__", tp_setattr, NULL, NULL, ""),
     TPSLOT("__delattr__", tp_setattr, NULL, NULL, ""),
     TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc,
-           "x.__repr__() <==> repr(x)"),
+           "__repr__(self)\nReturns repr(self)."),
     TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
-           "x.__hash__() <==> hash(x)"),
+           "__hash__(self)\nReturns hash(self)."),
     FLSLOT("__call__", tp_call, slot_tp_call, (wrapperfunc)wrap_call,
-           "x.__call__(...) <==> x(...)", PyWrapperFlag_KEYWORDS),
+           "__call__(self, *args, **kwargs)\nCalls self as a function.",
+           PyWrapperFlag_KEYWORDS),
     TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
-           "x.__str__() <==> str(x)"),
+           "__str__(self)\nReturns str(self)."),
     TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
-           wrap_binaryfunc, "x.__getattribute__('name') <==> x.name"),
+           wrap_binaryfunc,
+           "__getattribute__(self, name)\nReturns getattr(self, name)."),
     TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL, ""),
     TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr,
-           "x.__setattr__('name', value) <==> x.name = value"),
+           "__setattr__(self, name, value)\nImplements setattr(self, name, value)."),
     TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr,
-           "x.__delattr__('name') <==> del x.name"),
+           "__delattr__(self, name)\nImplements delattr(self, name)."),
     TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare, richcmp_lt,
-           "x.__lt__(y) <==> x<y"),
+           "__lt__(self, value)\nReturns self<value."),
     TPSLOT("__le__", tp_richcompare, slot_tp_richcompare, richcmp_le,
-           "x.__le__(y) <==> x<=y"),
+           "__le__(self, value)\nReturns self<=value."),
     TPSLOT("__eq__", tp_richcompare, slot_tp_richcompare, richcmp_eq,
-           "x.__eq__(y) <==> x==y"),
+           "__eq__(self, value)\nReturns self==value."),
     TPSLOT("__ne__", tp_richcompare, slot_tp_richcompare, richcmp_ne,
-           "x.__ne__(y) <==> x!=y"),
+           "__ne__(self, value)\nReturns self!=value."),
     TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare, richcmp_gt,
-           "x.__gt__(y) <==> x>y"),
+           "__gt__(self, value)\nReturns self>value."),
     TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare, richcmp_ge,
-           "x.__ge__(y) <==> x>=y"),
+           "__ge__(self, value)\nReturns self>=value."),
     TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc,
-           "x.__iter__() <==> iter(x)"),
+           "__iter__(self)\nImplements iter(self)."),
     TPSLOT("__next__", tp_iternext, slot_tp_iternext, wrap_next,
-           "x.__next__() <==> next(x)"),
+           "__next__(self)\nImplements next(self)."),
     TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get,
-           "descr.__get__(obj[, type]) -> value"),
+           "__get__(self, instance, owner)\nCalled to get an attribute of instance, which is of type owner."),
     TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,
-           "descr.__set__(obj, value)"),
+           "__set__(self, instance, value)\nSets an attribute of instance to value."),
     TPSLOT("__delete__", tp_descr_set, slot_tp_descr_set,
-           wrap_descr_delete, "descr.__delete__(obj)"),
+           wrap_descr_delete,
+           "__delete__(instance)\nDeletes an attribute of instance."),
     FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
-           "x.__init__(...) initializes x; "
-           "see help(type(x)) for signature",
+           "__init__(self, *args, **kwargs)\n"
+           "Initializes self.  See help(type(self)) for accurate signature.",
            PyWrapperFlag_KEYWORDS),
-    TPSLOT("__new__", tp_new, slot_tp_new, NULL, ""),
+    TPSLOT("__new__", tp_new, slot_tp_new, NULL,
+           "__new__(cls, *args, **kwargs)\n"
+           "Creates new object.  See help(cls) for accurate signature."),
     TPSLOT("__del__", tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
 
     BINSLOT("__add__", nb_add, slot_nb_add,
-        "+"),
+           "+"),
     RBINSLOT("__radd__", nb_add, slot_nb_add,
-             "+"),
+           "+"),
     BINSLOT("__sub__", nb_subtract, slot_nb_subtract,
-        "-"),
+           "-"),
     RBINSLOT("__rsub__", nb_subtract, slot_nb_subtract,
-             "-"),
+           "-"),
     BINSLOT("__mul__", nb_multiply, slot_nb_multiply,
-        "*"),
+           "*"),
     RBINSLOT("__rmul__", nb_multiply, slot_nb_multiply,
-             "*"),
+           "*"),
     BINSLOT("__mod__", nb_remainder, slot_nb_remainder,
-        "%"),
+           "%"),
     RBINSLOT("__rmod__", nb_remainder, slot_nb_remainder,
-             "%"),
+           "%"),
     BINSLOTNOTINFIX("__divmod__", nb_divmod, slot_nb_divmod,
-        "divmod(x, y)"),
+           "__divmod__(self, value)\nReturns divmod(self, value)."),
     RBINSLOTNOTINFIX("__rdivmod__", nb_divmod, slot_nb_divmod,
-             "divmod(y, x)"),
+           "__rdivmod__(self, value)\nReturns divmod(value, self)."),
     NBSLOT("__pow__", nb_power, slot_nb_power, wrap_ternaryfunc,
-           "x.__pow__(y[, z]) <==> pow(x, y[, z])"),
+           "__pow__(self, value, mod=None)\nReturns pow(self, value, mod)."),
     NBSLOT("__rpow__", nb_power, slot_nb_power, wrap_ternaryfunc_r,
-           "y.__rpow__(x[, z]) <==> pow(x, y[, z])"),
-    UNSLOT("__neg__", nb_negative, slot_nb_negative, wrap_unaryfunc, "-x"),
-    UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+x"),
+           "__rpow__(self, value, mod=None)\nReturns pow(value, self, mod)."),
+    UNSLOT("__neg__", nb_negative, slot_nb_negative, wrap_unaryfunc, "-self"),
+    UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+self"),
     UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
-           "abs(x)"),
+           "abs(self)"),
     UNSLOT("__bool__", nb_bool, slot_nb_bool, wrap_inquirypred,
-           "x != 0"),
-    UNSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc, "~x"),
+           "self != 0"),
+    UNSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc, "~self"),
     BINSLOT("__lshift__", nb_lshift, slot_nb_lshift, "<<"),
     RBINSLOT("__rlshift__", nb_lshift, slot_nb_lshift, "<<"),
     BINSLOT("__rshift__", nb_rshift, slot_nb_rshift, ">>"),
@@ -6113,9 +6211,9 @@ static slotdef slotdefs[] = {
     BINSLOT("__or__", nb_or, slot_nb_or, "|"),
     RBINSLOT("__ror__", nb_or, slot_nb_or, "|"),
     UNSLOT("__int__", nb_int, slot_nb_int, wrap_unaryfunc,
-           "int(x)"),
+           "int(self)"),
     UNSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc,
-           "float(x)"),
+           "float(self)"),
     IBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add,
            wrap_binaryfunc, "+="),
     IBSLOT("__isub__", nb_inplace_subtract, slot_nb_inplace_subtract,
@@ -6145,45 +6243,48 @@ static slotdef slotdefs[] = {
     IBSLOT("__itruediv__", nb_inplace_true_divide,
            slot_nb_inplace_true_divide, wrap_binaryfunc, "/"),
     NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc,
-           "x[y:z] <==> x[y.__index__():z.__index__()]"),
-
+           "__index__(self)\n"
+           "Returns self converted to an integer, if self is suitable"
+           "for use as an index into a list."),
     MPSLOT("__len__", mp_length, slot_mp_length, wrap_lenfunc,
-           "x.__len__() <==> len(x)"),
+           "__len__(self)\nReturns len(self)."),
     MPSLOT("__getitem__", mp_subscript, slot_mp_subscript,
            wrap_binaryfunc,
-           "x.__getitem__(y) <==> x[y]"),
+           "__getitem__(self, key)\nReturns self[key]."),
     MPSLOT("__setitem__", mp_ass_subscript, slot_mp_ass_subscript,
            wrap_objobjargproc,
-           "x.__setitem__(i, y) <==> x[i]=y"),
+           "__setitem__(self, key, value)\nSets self[key] to value."),
     MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript,
            wrap_delitem,
-           "x.__delitem__(y) <==> del x[y]"),
+           "__delitem__(key)\nDeletes self[key]."),
 
     SQSLOT("__len__", sq_length, slot_sq_length, wrap_lenfunc,
-           "x.__len__() <==> len(x)"),
+           "__len__(self)\nReturns len(self)."),
     /* Heap types defining __add__/__mul__ have sq_concat/sq_repeat == NULL.
        The logic in abstract.c always falls back to nb_add/nb_multiply in
        this case.  Defining both the nb_* and the sq_* slots to call the
        user-defined methods has unexpected side-effects, as shown by
        test_descr.notimplemented() */
     SQSLOT("__add__", sq_concat, NULL, wrap_binaryfunc,
-      "x.__add__(y) <==> x+y"),
+           "__add__(self, value)\nReturns self+value."),
     SQSLOT("__mul__", sq_repeat, NULL, wrap_indexargfunc,
-      "x.__mul__(n) <==> x*n"),
+           "__mul__(self, value)\nReturns self*value.n"),
     SQSLOT("__rmul__", sq_repeat, NULL, wrap_indexargfunc,
-      "x.__rmul__(n) <==> n*x"),
+           "__rmul__(self, value)\nReturns self*value."),
     SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
-           "x.__getitem__(y) <==> x[y]"),
+           "__getitem__(self, key)\nReturns self[key]."),
     SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem,
-           "x.__setitem__(i, y) <==> x[i]=y"),
+           "__setitem__(self, key, value)\nSets self[key] to value."),
     SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem,
-           "x.__delitem__(y) <==> del x[y]"),
+           "__delitem__(self, key)\nDeletes self[key]."),
     SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc,
-           "x.__contains__(y) <==> y in x"),
+           "__contains__(self, key)\nReturns key in self."),
     SQSLOT("__iadd__", sq_inplace_concat, NULL,
-      wrap_binaryfunc, "x.__iadd__(y) <==> x+=y"),
+           wrap_binaryfunc,
+           "__iadd__(self, value)\nImplements self+=value."),
     SQSLOT("__imul__", sq_inplace_repeat, NULL,
-      wrap_indexargfunc, "x.__imul__(y) <==> x*=y"),
+           wrap_indexargfunc,
+           "__imul__(self, value)\nImplements self*=value."),
 
     {NULL}
 };

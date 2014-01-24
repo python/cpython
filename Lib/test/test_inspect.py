@@ -1,21 +1,25 @@
-import re
-import sys
-import types
-import unittest
-import inspect
-import linecache
-import datetime
+import _testcapi
 import collections
-import os
-import shutil
+import datetime
 import functools
 import importlib
+import inspect
+import io
+import linecache
+import os
 from os.path import normcase
+import _pickle
+import re
+import shutil
+import sys
+import types
+import unicodedata
+import unittest
+
 try:
     from concurrent.futures import ThreadPoolExecutor
 except ImportError:
     ThreadPoolExecutor = None
-import _testcapi
 
 from test.support import run_unittest, TESTFN, DirsOnSysPath
 from test.support import MISSING_C_DOCSTRINGS
@@ -23,8 +27,6 @@ from test.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
 
-# C module for test_findsource_binary
-import unicodedata
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
@@ -1582,23 +1584,30 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_unsupported_builtins(self):
-        with self.assertRaisesRegex(ValueError, 'not supported by signature'):
-            inspect.signature(type)
-        with self.assertRaisesRegex(ValueError, 'not supported by signature'):
-            # support for 'wrapper_descriptor'
-            inspect.signature(type.__call__)
-        with self.assertRaisesRegex(ValueError, 'not supported by signature'):
-            # support for 'method-wrapper'
-            inspect.signature(min.__call__)
+        with self.assertRaisesRegex(ValueError, 'no signature found'):
+            # min simply doesn't have a signature (yet)
+            inspect.signature(min)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_builtins(self):
-        # min doesn't have a signature (yet)
-        self.assertEqual(inspect.signature(min), None)
 
-        signature = inspect.signature(_testcapi.docstring_with_signature_with_defaults)
-        self.assertTrue(isinstance(signature, inspect.Signature))
+        def test_unbound_method(o):
+            """Use this to test unbound methods (things that should have a self)"""
+            signature = inspect.signature(o)
+            self.assertTrue(isinstance(signature, inspect.Signature))
+            self.assertEqual(list(signature.parameters.values())[0].name, 'self')
+            return signature
+
+        def test_callable(o):
+            """Use this to test bound methods or normal callables (things that don't expect self)"""
+            signature = inspect.signature(o)
+            self.assertTrue(isinstance(signature, inspect.Signature))
+            if signature.parameters:
+                self.assertNotEqual(list(signature.parameters.values())[0].name, 'self')
+            return signature
+
+        signature = test_callable(_testcapi.docstring_with_signature_with_defaults)
         def p(name): return signature.parameters[name].default
         self.assertEqual(p('s'), 'avocado')
         self.assertEqual(p('b'), b'bytes')
@@ -1610,6 +1619,41 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(p('local'), 3)
         self.assertEqual(p('sys'), sys.maxsize)
         self.assertEqual(p('exp'), sys.maxsize - 1)
+
+        test_callable(type)
+        test_callable(object)
+
+        # normal method
+        # (PyMethodDescr_Type, "method_descriptor")
+        test_unbound_method(_pickle.Pickler.dump)
+        d = _pickle.Pickler(io.StringIO())
+        test_callable(d.dump)
+
+        # static method
+        test_callable(str.maketrans)
+        test_callable('abc'.maketrans)
+
+        # class method
+        test_callable(dict.fromkeys)
+        test_callable({}.fromkeys)
+
+        # wrapper around slot (PyWrapperDescr_Type, "wrapper_descriptor")
+        test_unbound_method(type.__call__)
+        test_unbound_method(int.__add__)
+        test_callable((3).__add__)
+
+        # _PyMethodWrapper_Type
+        # support for 'method-wrapper'
+        test_callable(min.__call__)
+
+        class ThisWorksNow:
+            __call__ = type
+        test_callable(ThisWorksNow())
+
+
+    def test_signature_on_builtins_no_signature(self):
+        with self.assertRaisesRegex(ValueError, 'no signature found for builtin'):
+            inspect.signature(_testcapi.docstring_no_signature)
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
@@ -1984,12 +2028,6 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(Bar()),
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
-
-        class ToFail:
-            __call__ = type
-        with self.assertRaisesRegex(ValueError, "not supported by signature"):
-            inspect.signature(ToFail())
-
 
         class Wrapped:
             pass

@@ -125,7 +125,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.docstring_no_signature.__text_signature__, None)
 
         self.assertEqual(_testcapi.docstring_with_invalid_signature.__doc__,
-            "docstring_with_invalid_signature (boo)\n"
+            "docstring_with_invalid_signature (module, boo)\n"
             "\n"
             "This docstring has an invalid signature."
             )
@@ -133,12 +133,12 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(_testcapi.docstring_with_signature.__doc__,
             "This docstring has a valid signature.")
-        self.assertEqual(_testcapi.docstring_with_signature.__text_signature__, "(sig)")
+        self.assertEqual(_testcapi.docstring_with_signature.__text_signature__, "(module, sig)")
 
         self.assertEqual(_testcapi.docstring_with_signature_and_extra_newlines.__doc__,
             "This docstring has a valid signature and some extra newlines.")
         self.assertEqual(_testcapi.docstring_with_signature_and_extra_newlines.__text_signature__,
-            "(parameter)")
+            "(module, parameter)")
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
