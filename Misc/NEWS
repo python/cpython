@@ -38,6 +38,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20374: Fix build with GNU readline >= 6.3.
+
 - Issue #14548: Make multiprocessing finalizers check pid before
   running to cope with possibility of gc running just after fork.
   (Backport from 3.x.)
