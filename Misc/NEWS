@@ -10,6 +10,10 @@ Release date: 2014-01-19
 Core and Builtins
 -----------------
 
+- Issue #20189: Four additional builtin types (PyTypeObject,
+  PyMethodDescr_Type, _PyMethodWrapper_Type, and PyWrapperDescr_Type)
+  have been modified to provide introspection information for builtins.
+
 - Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
   IndentationError.
 
@@ -31,6 +35,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #20189: unittest.mock now no longer assumes that any object for
+  which it could get an inspect.Signature is a callable written in Python.
+  Fix courtesy of Michael Foord.
 
 - Issue #20311: selector.PollSelector.select() now rounds the timeout away from
   zero, instead of rounding towards zero. For example, a timeout of one
@@ -122,7 +130,7 @@ IDLE
 
 --Issue #17390: Add Python version to Idle editor window title bar.
   Original patches by Edmond Burnett and Kent Johnson.
-  
+
 - Issue #18960: IDLE now ignores the source encoding declaration on the second
   line if the first line contains anything except a comment.
 
@@ -133,6 +141,16 @@ Tests
 
 Tools/Demos
 -----------
+- Issue #20189: Argument Clinic now ensures that parser functions for
+  __new__ are always of type newfunc, the type of the tp_new slot.
+  Similarly, parser functions for __init__ are now always of type initproc,
+  the type of tp_init.
+
+- Issue #20189: Argument Clinic now suppresses the docstring for __new__
+  and __init__ functions if no docstring is provided in the input.
+
+- Issue #20189: Argument Clinic now suppresses the "self" parameter in the
+  impl for @staticmethod functions.
 
 - Issue #20294: Argument Clinic now supports argument parsing for __new__ and
   __init__ functions.

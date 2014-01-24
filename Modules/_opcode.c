@@ -21,7 +21,7 @@ Compute the stack effect of the opcode.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_opcode_stack_effect__doc__,
-"stack_effect(opcode, [oparg])\n"
+"stack_effect(module, opcode, [oparg])\n"
 "Compute the stack effect of the opcode.");
 
 #define _OPCODE_STACK_EFFECT_METHODDEF    \
@@ -64,7 +64,7 @@ exit:
 
 static int
 _opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg)
-/*[clinic end generated code: checksum=58fb4f1b174fc92f783dc945ca712fb752a6c283]*/
+/*[clinic end generated code: checksum=4689140ffda2494a123ea2593fb63445fb039774]*/
 {
     int effect;
     if (HAS_ARG(opcode)) {

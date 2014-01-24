@@ -179,75 +179,20 @@ static PyMethodDef meth_methods[] = {
     {NULL, NULL}
 };
 
-/*
- * finds the docstring's introspection signature.
- * if present, returns a pointer pointing to the first '('.
- * otherwise returns NULL.
- */
-static const char *find_signature(PyCFunctionObject *m)
-{
-    const char *trace = m->m_ml->ml_doc;
-    const char *name = m->m_ml->ml_name;
-    size_t length;
-    if (!trace || !name)
-        return NULL;
-    length = strlen(name);
-    if (strncmp(trace, name, length))
-        return NULL;
-    trace += length;
-    if (*trace != '(')
-        return NULL;
-    return trace;
-}
-
-/*
- * skips to the end of the docstring's instrospection signature.
- */
-static const char *skip_signature(const char *trace)
-{
-    while (*trace && *trace != '\n')
-        trace++;
-    return trace;
-}
-
-static const char *skip_eols(const char *trace)
-{
-    while (*trace == '\n')
-        trace++;
-    return trace;
-}
-
 static PyObject *
 meth_get__text_signature__(PyCFunctionObject *m, void *closure)
 {
-    const char *start = find_signature(m);
-    const char *trace;
-
-    if (!start) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-
-    trace = skip_signature(start);
-    return PyUnicode_FromStringAndSize(start, trace - start);
+    const char *name = m->m_ml->ml_name;
+    const char *doc = m->m_ml->ml_doc;
+    return _PyType_GetTextSignatureFromInternalDoc(name, doc);
 }
 
 static PyObject *
 meth_get__doc__(PyCFunctionObject *m, void *closure)
 {
-    const char *doc = find_signature(m);
-
-    if (doc)
-        doc = skip_eols(skip_signature(doc));
-    else
-        doc = m->m_ml->ml_doc;
-    
-    if (!doc) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-
-    return PyUnicode_FromString(doc);
+    const char *name = m->m_ml->ml_name;
+    const char *doc = m->m_ml->ml_doc;
+    return _PyType_GetDocFromInternalDoc(name, doc);
 }
 
 static PyObject *

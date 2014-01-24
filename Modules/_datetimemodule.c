@@ -4159,7 +4159,7 @@ If no tz is specified, uses local timezone.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(datetime_datetime_now__doc__,
-"now(tz=None)\n"
+"now(type, tz=None)\n"
 "Returns new datetime object representing current time local to tz.\n"
 "\n"
 "  tz\n"
@@ -4171,10 +4171,10 @@ PyDoc_STRVAR(datetime_datetime_now__doc__,
     {"now", (PyCFunction)datetime_datetime_now, METH_VARARGS|METH_KEYWORDS|METH_CLASS, datetime_datetime_now__doc__},
 
 static PyObject *
-datetime_datetime_now_impl(PyTypeObject *cls, PyObject *tz);
+datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz);
 
 static PyObject *
-datetime_datetime_now(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+datetime_datetime_now(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"tz", NULL};
@@ -4184,15 +4184,15 @@ datetime_datetime_now(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
         "|O:now", _keywords,
         &tz))
         goto exit;
-    return_value = datetime_datetime_now_impl(cls, tz);
+    return_value = datetime_datetime_now_impl(type, tz);
 
 exit:
     return return_value;
 }
 
 static PyObject *
-datetime_datetime_now_impl(PyTypeObject *cls, PyObject *tz)
-/*[clinic end generated code: checksum=ca3d26a423b3f633b260c7622e303f0915a96f7c]*/
+datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
+/*[clinic end generated code: checksum=a6d3ad2c0ab6389075289af3467f7b8eb13f5f5c]*/
 {
     PyObject *self;
 
@@ -4202,7 +4202,7 @@ datetime_datetime_now_impl(PyTypeObject *cls, PyObject *tz)
     if (check_tzinfo_subclass(tz) < 0)
         return NULL;
 
-    self = datetime_best_possible((PyObject *)cls,
+    self = datetime_best_possible((PyObject *)type,
                                   tz == Py_None ? localtime : gmtime,
                                   tz);
     if (self != NULL && tz != Py_None) {

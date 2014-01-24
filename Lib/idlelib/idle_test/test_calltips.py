@@ -55,24 +55,27 @@ class Get_signatureTest(unittest.TestCase):
         gtest(list.__new__,
                'T.__new__(S, ...) -> a new object with type S, a subtype of T')
         gtest(list.__init__,
-               'x.__init__(...) initializes x; see help(type(x)) for signature')
+               'Initializes self.  See help(type(self)) for accurate signature.')
         append_doc =  "L.append(object) -> None -- append object to end"
         gtest(list.append, append_doc)
         gtest([].append, append_doc)
         gtest(List.append, append_doc)
 
-        gtest(types.MethodType, "method(function, instance)")
+        gtest(types.MethodType, "Create a bound instance method object.")
         gtest(SB(), default_tip)
 
     def test_multiline_docstring(self):
         # Test fewer lines than max.
-        self.assertEqual(signature(list),
-                "list() -> new empty list\n"
-                "list(iterable) -> new list initialized from iterable's items")
+        self.assertEqual(signature(dict),
+                "dict(mapping) -> new dictionary initialized from a mapping object's\n"
+                "(key, value) pairs\n"
+                "dict(iterable) -> new dictionary initialized as if via:\n"
+                "d = {}\n"
+                "for k, v in iterable:"
+                )
 
         # Test max lines and line (currently) too long.
         self.assertEqual(signature(bytes),
-"bytes(iterable_of_ints) -> bytes\n"
 "bytes(string, encoding[, errors]) -> bytes\n"
 "bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer\n"
 #bytes(int) -> bytes object of size given by the parameter initialized with null bytes

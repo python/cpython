@@ -436,8 +436,8 @@ From the Iterators list, about the types of these things.
 >>> [s for s in dir(i) if not s.startswith('_')]
 ['close', 'gi_code', 'gi_frame', 'gi_running', 'send', 'throw']
 >>> from test.support import HAVE_DOCSTRINGS
->>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'x.__next__() <==> next(x)')
-x.__next__() <==> next(x)
+>>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implements next(self).')
+Implements next(self).
 >>> iter(i) is i
 True
 >>> import types

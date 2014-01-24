@@ -353,11 +353,17 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
 static PyObject *
 method_get_doc(PyMethodDescrObject *descr, void *closure)
 {
-    if (descr->d_method->ml_doc == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    return PyUnicode_FromString(descr->d_method->ml_doc);
+    const char *name = descr->d_method->ml_name;
+    const char *doc = descr->d_method->ml_doc;
+    return _PyType_GetDocFromInternalDoc(name, doc);
+}
+
+static PyObject *
+method_get_text_signature(PyMethodDescrObject *descr, void *closure)
+{
+    const char *name = descr->d_method->ml_name;
+    const char *doc = descr->d_method->ml_doc;
+    return _PyType_GetTextSignatureFromInternalDoc(name, doc);
 }
 
 static PyObject *
@@ -425,6 +431,7 @@ static PyMemberDef descr_members[] = {
 static PyGetSetDef method_getset[] = {
     {"__doc__", (getter)method_get_doc},
     {"__qualname__", (getter)descr_get_qualname},
+    {"__text_signature__", (getter)method_get_text_signature},
     {0}
 };
 
@@ -463,16 +470,23 @@ static PyGetSetDef getset_getset[] = {
 static PyObject *
 wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
 {
-    if (descr->d_base->doc == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    return PyUnicode_FromString(descr->d_base->doc);
+    const char *name = descr->d_base->name;
+    const char *doc = descr->d_base->doc;
+    return _PyType_GetDocFromInternalDoc(name, doc);
+}
+
+static PyObject *
+wrapperdescr_get_text_signature(PyWrapperDescrObject *descr, void *closure)
+{
+    const char *name = descr->d_base->name;
+    const char *doc = descr->d_base->doc;
+    return _PyType_GetTextSignatureFromInternalDoc(name, doc);
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
     {"__doc__", (getter)wrapperdescr_get_doc},
     {"__qualname__", (getter)descr_get_qualname},
+    {"__text_signature__", (getter)wrapperdescr_get_text_signature},
     {0}
 };
 
@@ -1143,17 +1157,19 @@ wrapper_name(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_doc(wrapperobject *wp)
+wrapper_doc(wrapperobject *wp, void *closure)
 {
-    const char *s = wp->descr->d_base->doc;
+    const char *name = wp->descr->d_base->name;
+    const char *doc = wp->descr->d_base->doc;
+    return _PyType_GetDocFromInternalDoc(name, doc);
+}
 
-    if (s == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    else {
-        return PyUnicode_FromString(s);
-    }
+static PyObject *
+wrapper_text_signature(wrapperobject *wp, void *closure)
+{
+    const char *name = wp->descr->d_base->name;
+    const char *doc = wp->descr->d_base->doc;
+    return _PyType_GetTextSignatureFromInternalDoc(name, doc);
 }
 
 static PyObject *
@@ -1167,6 +1183,7 @@ static PyGetSetDef wrapper_getsets[] = {
     {"__name__", (getter)wrapper_name},
     {"__qualname__", (getter)wrapper_qualname},
     {"__doc__", (getter)wrapper_doc},
+    {"__text_signature__", (getter)wrapper_text_signature},
     {0}
 };
 

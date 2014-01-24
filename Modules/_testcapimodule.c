@@ -2851,18 +2851,18 @@ PyDoc_STRVAR(docstring_no_signature,
 );
 
 PyDoc_STRVAR(docstring_with_invalid_signature,
-"docstring_with_invalid_signature (boo)\n"
+"docstring_with_invalid_signature (module, boo)\n"
 "\n"
 "This docstring has an invalid signature."
 );
 
 PyDoc_STRVAR(docstring_with_signature,
-"docstring_with_signature(sig)\n"
+"docstring_with_signature(module, sig)\n"
 "This docstring has a valid signature."
 );
 
 PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
-"docstring_with_signature_and_extra_newlines(parameter)\n"
+"docstring_with_signature_and_extra_newlines(module, parameter)\n"
 "\n"
 "\n"
 "\n"
@@ -2870,7 +2870,7 @@ PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
 );
 
 PyDoc_STRVAR(docstring_with_signature_with_defaults,
-"docstring_with_signature_with_defaults(s='avocado', b=b'bytes', d=3.14, i=35, n=None, t=True, f=False, local=the_number_three, sys=sys.maxsize, exp=sys.maxsize - 1)\n"
+"docstring_with_signature_with_defaults(module, s='avocado', b=b'bytes', d=3.14, i=35, n=None, t=True, f=False, local=the_number_three, sys=sys.maxsize, exp=sys.maxsize - 1)\n"
 "\n"
 "\n"
 "\n"

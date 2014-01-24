@@ -180,7 +180,7 @@ Returns compressed string.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_compress__doc__,
-"compress(bytes, [level])\n"
+"compress(module, bytes, [level])\n"
 "Returns compressed string.\n"
 "\n"
 "  bytes\n"
@@ -228,7 +228,7 @@ exit:
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
-/*[clinic end generated code: checksum=74648f97e6b9d3cc9cd568d47262d462bded7ed0]*/
+/*[clinic end generated code: checksum=ce8d4c0a17ecd79c3ffcc032dcdf8ac6830ded1e]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
@@ -766,7 +766,7 @@ Call the flush() method to clear these buffers.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
-"decompress(data, max_length=0)\n"
+"decompress(self, data, max_length=0)\n"
 "Return a string containing the decompressed version of the data.\n"
 "\n"
 "  data\n"
@@ -787,7 +787,7 @@ static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length);
 
 static PyObject *
-zlib_Decompress_decompress(PyObject *self, PyObject *args)
+zlib_Decompress_decompress(compobject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -797,7 +797,7 @@ zlib_Decompress_decompress(PyObject *self, PyObject *args)
         "y*|O&:decompress",
         &data, uint_converter, &max_length))
         goto exit;
-    return_value = zlib_Decompress_decompress_impl((compobject *)self, &data, max_length);
+    return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -809,7 +809,7 @@ exit:
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length)
-/*[clinic end generated code: checksum=e0058024c4a97b411d2e2197791b89fde175f76f]*/
+/*[clinic end generated code: checksum=b7fd2e3b23430f57f5a84817189575bc46464901]*/
 {
     int err;
     unsigned int old_length, length = DEFAULTALLOC;
@@ -1036,7 +1036,7 @@ Return a copy of the compression object.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_Compress_copy__doc__,
-"copy()\n"
+"copy(self)\n"
 "Return a copy of the compression object.");
 
 #define ZLIB_COMPRESS_COPY_METHODDEF    \
@@ -1046,14 +1046,14 @@ static PyObject *
 zlib_Compress_copy_impl(compobject *self);
 
 static PyObject *
-zlib_Compress_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+zlib_Compress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 {
-    return zlib_Compress_copy_impl((compobject *)self);
+    return zlib_Compress_copy_impl(self);
 }
 
 static PyObject *
 zlib_Compress_copy_impl(compobject *self)
-/*[clinic end generated code: checksum=d57a7911deb7940e85a8d7e65af20b6e2df69000]*/
+/*[clinic end generated code: checksum=7aa841ad51297eb83250f511a76872e88fdc737e]*/
 {
     compobject *retval = NULL;
     int err;
