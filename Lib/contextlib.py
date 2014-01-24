@@ -298,7 +298,7 @@ class ExitStack(object):
         # we were actually nesting multiple with statements
         frame_exc = sys.exc_info()[1]
         def _fix_exception_context(new_exc, old_exc):
-            # Context isn't what we want, so find the end of the chain
+            # Context may not be correct, so find the end of the chain
             while 1:
                 exc_context = new_exc.__context__
                 if exc_context is old_exc:
@@ -306,8 +306,6 @@ class ExitStack(object):
                     return
                 if exc_context is None or exc_context is frame_exc:
                     break
-                details = id(new_exc), id(old_exc), id(exc_context)
-                raise Exception(str(details))
                 new_exc = exc_context
             # Change the end of the chain to point to the exception
             # we expect it to reference
