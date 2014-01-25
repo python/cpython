@@ -183,6 +183,22 @@ static unsigned short crctab_hqx[256] = {
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
 };
 
+/*[clinic input]
+output preset file
+module binascii
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
+/*[python input]
+
+class ascii_buffer_converter(CConverter):
+    type = 'Py_buffer'
+    converter = 'ascii_buffer_converter'
+    impl_by_reference = True
+
+[python start generated code]*/
+/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 static int
 ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
 {
@@ -220,13 +236,21 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
     return Py_CLEANUP_SUPPORTED;
 }
 
+#include "binascii.clinic.c"
 
-PyDoc_STRVAR(doc_a2b_uu, "(ascii) -> bin. Decode a line of uuencoded data");
+/*[clinic input]
+binascii.a2b_uu
+
+    ascii: ascii_buffer
+    /
+
+Decode a line of uuencoded data.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_uu(PyObject *self, PyObject *args)
+binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *ascii)
+/*[clinic end generated code: checksum=3252d1dbb682979eee03fb2c0c48a4d98a229df4]*/
 {
-    Py_buffer pascii;
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
@@ -234,10 +258,8 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
     PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
 
-    if ( !PyArg_ParseTuple(args, "O&:a2b_uu", ascii_buffer_converter, &pascii) )
-        return NULL;
-    ascii_data = pascii.buf;
-    ascii_len = pascii.len;
+    ascii_data = ascii->buf;
+    ascii_len = ascii->len;
 
     assert(ascii_len >= 0);
 
@@ -246,10 +268,8 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
     ascii_len--;
 
     /* Allocate the buffer */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL ) {
-        PyBuffer_Release(&pascii);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL )
         return NULL;
-    }
     bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; bin_len > 0 ; ascii_len--, ascii_data++ ) {
@@ -269,7 +289,6 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
             */
             if ( this_ch < ' ' || this_ch > (' ' + 64)) {
                 PyErr_SetString(Error, "Illegal char");
-                PyBuffer_Release(&pascii);
                 Py_DECREF(rv);
                 return NULL;
             }
@@ -298,21 +317,26 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
         if ( this_ch != ' ' && this_ch != ' '+64 &&
              this_ch != '\n' && this_ch != '\r' ) {
             PyErr_SetString(Error, "Trailing garbage");
-            PyBuffer_Release(&pascii);
             Py_DECREF(rv);
             return NULL;
         }
     }
-    PyBuffer_Release(&pascii);
     return rv;
 }
 
-PyDoc_STRVAR(doc_b2a_uu, "(bin) -> ascii. Uuencode line of data");
+/*[clinic input]
+binascii.b2a_uu
+
+    data: Py_buffer
+    /
+
+Uuencode line of data.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_uu(PyObject *self, PyObject *args)
+binascii_b2a_uu_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=181021b69bb9a4149fffa98aa3ed57b59ffa38cb]*/
 {
-    Py_buffer pbin;
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
@@ -320,22 +344,17 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
     PyObject *rv;
     Py_ssize_t bin_len;
 
-    if ( !PyArg_ParseTuple(args, "y*:b2a_uu", &pbin) )
-        return NULL;
-    bin_data = pbin.buf;
-    bin_len = pbin.len;
+    bin_data = data->buf;
+    bin_len = data->len;
     if ( bin_len > 45 ) {
         /* The 45 is a limit that appears in all uuencode's */
         PyErr_SetString(Error, "At most 45 bytes at once");
-        PyBuffer_Release(&pbin);
         return NULL;
     }
 
     /* We're lazy and allocate to much (fixed up later) */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, 2 + (bin_len+2)/3*4)) == NULL ) {
-        PyBuffer_Release(&pbin);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, 2 + (bin_len+2)/3*4)) == NULL )
         return NULL;
-    }
     ascii_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     /* Store the length */
@@ -363,7 +382,6 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
                         (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
         Py_CLEAR(rv);
     }
-    PyBuffer_Release(&pbin);
     return rv;
 }
 
@@ -393,12 +411,19 @@ binascii_find_valid(unsigned char *s, Py_ssize_t slen, int num)
     return ret;
 }
 
-PyDoc_STRVAR(doc_a2b_base64, "(ascii) -> bin. Decode a line of base64 data");
+/*[clinic input]
+binascii.a2b_base64
+
+    ascii: ascii_buffer
+    /
+
+Decode a line of base64 data.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_base64(PyObject *self, PyObject *args)
+binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *ascii)
+/*[clinic end generated code: checksum=73c265f87068c1f3e4bc01834ae6ac5a974143b4]*/
 {
-    Py_buffer pascii;
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
@@ -407,25 +432,19 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
     Py_ssize_t ascii_len, bin_len;
     int quad_pos = 0;
 
-    if ( !PyArg_ParseTuple(args, "O&:a2b_base64", ascii_buffer_converter, &pascii) )
-        return NULL;
-    ascii_data = pascii.buf;
-    ascii_len = pascii.len;
+    ascii_data = ascii->buf;
+    ascii_len = ascii->len;
 
     assert(ascii_len >= 0);
 
-    if (ascii_len > PY_SSIZE_T_MAX - 3) {
-        PyBuffer_Release(&pascii);
+    if (ascii_len > PY_SSIZE_T_MAX - 3)
         return PyErr_NoMemory();
-    }
 
     bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
 
     /* Allocate the buffer */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL ) {
-        PyBuffer_Release(&pascii);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL )
         return NULL;
-    }
     bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
     bin_len = 0;
 
@@ -478,7 +497,6 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
     }
 
     if (leftbits != 0) {
-        PyBuffer_Release(&pascii);
         PyErr_SetString(Error, "Incorrect padding");
         Py_DECREF(rv);
         return NULL;
@@ -497,16 +515,23 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
         Py_DECREF(rv);
         rv = PyBytes_FromStringAndSize("", 0);
     }
-    PyBuffer_Release(&pascii);
     return rv;
 }
 
-PyDoc_STRVAR(doc_b2a_base64, "(bin) -> ascii. Base64-code line of data");
+
+/*[clinic input]
+binascii.b2a_base64
+
+    data: Py_buffer
+    /
+
+Base64-code line of data.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_base64(PyObject *self, PyObject *args)
+binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=3cd61fbee2913285e253bc5415c9d052b0c5dd96]*/
 {
-    Py_buffer pbuf;
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
@@ -514,26 +539,21 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
     PyObject *rv;
     Py_ssize_t bin_len;
 
-    if ( !PyArg_ParseTuple(args, "y*:b2a_base64", &pbuf) )
-        return NULL;
-    bin_data = pbuf.buf;
-    bin_len = pbuf.len;
+    bin_data = data->buf;
+    bin_len = data->len;
 
     assert(bin_len >= 0);
 
     if ( bin_len > BASE64_MAXBIN ) {
         PyErr_SetString(Error, "Too much data for base64 line");
-        PyBuffer_Release(&pbuf);
         return NULL;
     }
 
     /* We're lazy and allocate too much (fixed up later).
        "+3" leaves room for up to two pad characters and a trailing
        newline.  Note that 'b' gets encoded as 'Yg==\n' (1 in, 5 out). */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len*2 + 3)) == NULL ) {
-        PyBuffer_Release(&pbuf);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len*2 + 3)) == NULL )
         return NULL;
-    }
     ascii_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; bin_len > 0 ; bin_len--, bin_data++ ) {
@@ -563,16 +583,22 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
                         (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
         Py_CLEAR(rv);
     }
-    PyBuffer_Release(&pbuf);
     return rv;
 }
 
-PyDoc_STRVAR(doc_a2b_hqx, "ascii -> bin, done. Decode .hqx coding");
+/*[clinic input]
+binascii.a2b_hqx
+
+    ascii: ascii_buffer
+    /
+
+Decode .hqx coding.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_hqx(PyObject *self, PyObject *args)
+binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *ascii)
+/*[clinic end generated code: checksum=48075dc4017b66f93086386d5b5848f1e6af260c]*/
 {
-    Py_buffer pascii;
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
@@ -581,25 +607,19 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
     Py_ssize_t len;
     int done = 0;
 
-    if ( !PyArg_ParseTuple(args, "O&:a2b_hqx", ascii_buffer_converter, &pascii) )
-        return NULL;
-    ascii_data = pascii.buf;
-    len = pascii.len;
+    ascii_data = ascii->buf;
+    len = ascii->len;
 
     assert(len >= 0);
 
-    if (len > PY_SSIZE_T_MAX - 2) {
-        PyBuffer_Release(&pascii);
+    if (len > PY_SSIZE_T_MAX - 2)
         return PyErr_NoMemory();
-    }
 
     /* Allocate a string that is too big (fixed later)
        Add two to the initial length to prevent interning which
        would preclude subsequent resizing.  */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, len+2)) == NULL ) {
-        PyBuffer_Release(&pascii);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, len+2)) == NULL )
         return NULL;
-    }
     bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; len > 0 ; len--, ascii_data++ ) {
@@ -609,7 +629,6 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
             continue;
         if ( this_ch == FAIL ) {
             PyErr_SetString(Error, "Illegal char");
-            PyBuffer_Release(&pascii);
             Py_DECREF(rv);
             return NULL;
         }
@@ -632,7 +651,6 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
     if ( leftbits && !done ) {
         PyErr_SetString(Incomplete,
                         "String has incomplete number of bytes");
-        PyBuffer_Release(&pascii);
         Py_DECREF(rv);
         return NULL;
     }
@@ -643,43 +661,43 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
     }
     if (rv) {
         PyObject *rrv = Py_BuildValue("Oi", rv, done);
-        PyBuffer_Release(&pascii);
         Py_DECREF(rv);
         return rrv;
     }
 
-    PyBuffer_Release(&pascii);
     return NULL;
 }
 
-PyDoc_STRVAR(doc_rlecode_hqx, "Binhex RLE-code binary data");
+
+/*[clinic input]
+binascii.rlecode_hqx
+
+    data: Py_buffer
+    /
+
+Binhex RLE-code binary data.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_rlecode_hqx(PyObject *self, PyObject *args)
+binascii_rlecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=0905da344dbf064855925c3a0fb83ec11ca33e8b]*/
 {
-    Py_buffer pbuf;
     unsigned char *in_data, *out_data;
     PyObject *rv;
     unsigned char ch;
     Py_ssize_t in, inend, len;
 
-    if ( !PyArg_ParseTuple(args, "y*:rlecode_hqx", &pbuf) )
-        return NULL;
-    in_data = pbuf.buf;
-    len = pbuf.len;
+    in_data = data->buf;
+    len = data->len;
 
     assert(len >= 0);
 
-    if (len > PY_SSIZE_T_MAX / 2 - 2) {
-        PyBuffer_Release(&pbuf);
+    if (len > PY_SSIZE_T_MAX / 2 - 2)
         return PyErr_NoMemory();
-    }
 
     /* Worst case: output is twice as big as input (fixed later) */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL ) {
-        PyBuffer_Release(&pbuf);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL )
         return NULL;
-    }
     out_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( in=0; in<len; in++) {
@@ -711,16 +729,23 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
                         (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
         Py_CLEAR(rv);
     }
-    PyBuffer_Release(&pbuf);
     return rv;
 }
 
-PyDoc_STRVAR(doc_b2a_hqx, "Encode .hqx data");
+
+/*[clinic input]
+binascii.b2a_hqx
+
+    data: Py_buffer
+    /
+
+Encode .hqx data.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_hqx(PyObject *self, PyObject *args)
+binascii_b2a_hqx_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=5a987810d5e3cdbb0eb415eba8907c022342fe15]*/
 {
-    Py_buffer pbin;
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
@@ -728,23 +753,17 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
     PyObject *rv;
     Py_ssize_t len;
 
-    if ( !PyArg_ParseTuple(args, "y*:b2a_hqx", &pbin) )
-        return NULL;
-    bin_data = pbin.buf;
-    len = pbin.len;
+    bin_data = data->buf;
+    len = data->len;
 
     assert(len >= 0);
 
-    if (len > PY_SSIZE_T_MAX / 2 - 2) {
-        PyBuffer_Release(&pbin);
+    if (len > PY_SSIZE_T_MAX / 2 - 2)
         return PyErr_NoMemory();
-    }
 
     /* Allocate a buffer that is at least large enough */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL ) {
-        PyBuffer_Release(&pbin);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL )
         return NULL;
-    }
     ascii_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; len > 0 ; len--, bin_data++ ) {
@@ -767,44 +786,43 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
                         (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
         Py_CLEAR(rv);
     }
-    PyBuffer_Release(&pbin);
     return rv;
 }
 
-PyDoc_STRVAR(doc_rledecode_hqx, "Decode hexbin RLE-coded string");
+
+/*[clinic input]
+binascii.rledecode_hqx
+
+    data: Py_buffer
+    /
+
+Decode hexbin RLE-coded string.
+[clinic start generated code]*/
 
 static PyObject *
-binascii_rledecode_hqx(PyObject *self, PyObject *args)
+binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=f7afd89b789946ab50e31d595c695d5cad7e27e3]*/
 {
-    Py_buffer pin;
     unsigned char *in_data, *out_data;
     unsigned char in_byte, in_repeat;
     PyObject *rv;
     Py_ssize_t in_len, out_len, out_len_left;
 
-    if ( !PyArg_ParseTuple(args, "y*:rledecode_hqx", &pin) )
-        return NULL;
-    in_data = pin.buf;
-    in_len = pin.len;
+    in_data = data->buf;
+    in_len = data->len;
 
     assert(in_len >= 0);
 
     /* Empty string is a special case */
-    if ( in_len == 0 ) {
-        PyBuffer_Release(&pin);
+    if ( in_len == 0 )
         return PyBytes_FromStringAndSize("", 0);
-    }
-    else if (in_len > PY_SSIZE_T_MAX / 2) {
-        PyBuffer_Release(&pin);
+    else if (in_len > PY_SSIZE_T_MAX / 2)
         return PyErr_NoMemory();
-    }
 
     /* Allocate a buffer of reasonable size. Resized when needed */
     out_len = in_len*2;
-    if ( (rv=PyBytes_FromStringAndSize(NULL, out_len)) == NULL ) {
-        PyBuffer_Release(&pin);
+    if ( (rv=PyBytes_FromStringAndSize(NULL, out_len)) == NULL )
         return NULL;
-    }
     out_len_left = out_len;
     out_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
@@ -817,7 +835,6 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
              if ( --in_len < 0 ) { \
                        PyErr_SetString(Incomplete, ""); \
                        Py_DECREF(rv); \
-                       PyBuffer_Release(&pin); \
                        return NULL; \
              } \
              b = *in_data++; \
@@ -828,7 +845,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
              if ( --out_len_left < 0 ) { \
                       if ( out_len > PY_SSIZE_T_MAX / 2) return PyErr_NoMemory(); \
                       if (_PyBytes_Resize(&rv, 2*out_len) < 0) \
-                        { Py_XDECREF(rv); PyBuffer_Release(&pin); return NULL; } \
+                        { Py_XDECREF(rv); return NULL; } \
                       out_data = (unsigned char *)PyBytes_AS_STRING(rv) \
                                                              + out_len; \
                       out_len_left = out_len-1; \
@@ -850,7 +867,6 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
             ** of the string only). This is a programmer error.
             */
             PyErr_SetString(Error, "Orphaned RLE code at start");
-            PyBuffer_Release(&pin);
             Py_DECREF(rv);
             return NULL;
         }
@@ -883,57 +899,39 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
                         (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
         Py_CLEAR(rv);
     }
-    PyBuffer_Release(&pin);
     return rv;
 }
 
-PyDoc_STRVAR(doc_crc_hqx,
-"(data, oldcrc) -> newcrc. Compute hqx CRC incrementally");
 
-static PyObject *
-binascii_crc_hqx(PyObject *self, PyObject *args)
+/*[clinic input]
+binascii.crc_hqx -> int
+
+    data: Py_buffer
+    crc: int
+    /
+
+Compute hqx CRC incrementally.
+[clinic start generated code]*/
+
+static int
+binascii_crc_hqx_impl(PyModuleDef *module, Py_buffer *data, int crc)
+/*[clinic end generated code: checksum=634dac18dfa863d738833b5a0886eca93c034c0c]*/
 {
-    Py_buffer pin;
     unsigned char *bin_data;
-    unsigned int crc;
+    unsigned int ucrc = (unsigned int)crc;
     Py_ssize_t len;
 
-    if ( !PyArg_ParseTuple(args, "y*i:crc_hqx", &pin, &crc) )
-        return NULL;
-    bin_data = pin.buf;
-    len = pin.len;
+    bin_data = data->buf;
+    len = data->len;
 
     while(len-- > 0) {
-        crc=((crc<<8)&0xff00)^crctab_hqx[((crc>>8)&0xff)^*bin_data++];
+        ucrc=((ucrc<<8)&0xff00)^crctab_hqx[((ucrc>>8)&0xff)^*bin_data++];
     }
 
-    PyBuffer_Release(&pin);
-    return Py_BuildValue("i", crc);
+    return (int)ucrc;
 }
 
-PyDoc_STRVAR(doc_crc32,
-"(data, oldcrc = 0) -> newcrc. Compute CRC-32 incrementally");
-
-#ifdef USE_ZLIB_CRC32
-/* This was taken from zlibmodule.c PyZlib_crc32 (but is PY_SSIZE_T_CLEAN) */
-static PyObject *
-binascii_crc32(PyObject *self, PyObject *args)
-{
-    unsigned int crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
-    Py_buffer pbuf;
-    Byte *buf;
-    Py_ssize_t len;
-    int signed_val;
-
-    if (!PyArg_ParseTuple(args, "y*|I:crc32", &pbuf, &crc32val))
-    return NULL;
-    buf = (Byte*)pbuf.buf;
-    len = pbuf.len;
-    signed_val = crc32(crc32val, buf, len);
-    PyBuffer_Release(&pbuf);
-    return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
-}
-#else  /* USE_ZLIB_CRC32 */
+#ifndef USE_ZLIB_CRC32
 /*  Crc - 32 BIT ANSI X3.66 CRC checksum files
     Also known as: ISO 3307
 **********************************************************************|
@@ -1051,20 +1049,42 @@ static unsigned int crc_32_tab[256] = {
 0x5d681b02U, 0x2a6f2b94U, 0xb40bbe37U, 0xc30c8ea1U, 0x5a05df1bU,
 0x2d02ef8dU
 };
+#endif  /* USE_ZLIB_CRC32 */
 
-static PyObject *
-binascii_crc32(PyObject *self, PyObject *args)
+/*[clinic input]
+binascii.crc32 -> unsigned_int
+
+    data: Py_buffer
+    crc: unsigned_int(bitwise=True) = 0
+    /
+
+Compute CRC-32 incrementally.
+[clinic start generated code]*/
+
+static unsigned int
+binascii_crc32_impl(PyModuleDef *module, Py_buffer *data, unsigned int crc)
+/*[clinic end generated code: checksum=620a961643393c4f2a1fb273fda2acb43970c3f5]*/
+
+#ifdef USE_ZLIB_CRC32
+/* This was taken from zlibmodule.c PyZlib_crc32 (but is PY_SSIZE_T_CLEAN) */
+{
+    Byte *buf;
+    Py_ssize_t len;
+    int signed_val;
+
+    buf = (Byte*)data->buf;
+    len = data->len;
+    signed_val = crc32(crc, buf, len);
+    return (unsigned int)signed_val & 0xffffffffU;
+}
+#else  /* USE_ZLIB_CRC32 */
 { /* By Jim Ahlstrom; All rights transferred to CNRI */
-    Py_buffer pbin;
     unsigned char *bin_data;
-    unsigned int crc = 0;       /* initial value of CRC */
     Py_ssize_t len;
     unsigned int result;
 
-    if ( !PyArg_ParseTuple(args, "y*|I:crc32", &pbin, &crc) )
-        return NULL;
-    bin_data = pbin.buf;
-    len = pbin.len;
+    bin_data = data->buf;
+    len = data->len;
 
     crc = ~ crc;
     while (len-- > 0) {
@@ -1073,38 +1093,42 @@ binascii_crc32(PyObject *self, PyObject *args)
     }
 
     result = (crc ^ 0xFFFFFFFF);
-    PyBuffer_Release(&pbin);
-    return PyLong_FromUnsignedLong(result & 0xffffffff);
+    return result & 0xffffffff;
 }
 #endif  /* USE_ZLIB_CRC32 */
 
+/*[clinic input]
+binascii.b2a_hex
+
+    data: Py_buffer
+    /
+
+Hexadecimal representation of binary data.
+
+The return value is a bytes object.  This function is also
+available as "hexlify()".
+[clinic start generated code]*/
 
 static PyObject *
-binascii_hexlify(PyObject *self, PyObject *args)
+binascii_b2a_hex_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=179318922c2f8fdaee0d4d3283758aec8e8741a5]*/
 {
-    Py_buffer parg;
     char* argbuf;
     Py_ssize_t arglen;
     PyObject *retval;
     char* retbuf;
     Py_ssize_t i, j;
 
-    if (!PyArg_ParseTuple(args, "y*:b2a_hex", &parg))
-        return NULL;
-    argbuf = parg.buf;
-    arglen = parg.len;
+    argbuf = data->buf;
+    arglen = data->len;
 
     assert(arglen >= 0);
-    if (arglen > PY_SSIZE_T_MAX / 2) {
-        PyBuffer_Release(&parg);
+    if (arglen > PY_SSIZE_T_MAX / 2)
         return PyErr_NoMemory();
-    }
 
     retval = PyBytes_FromStringAndSize(NULL, arglen*2);
-    if (!retval) {
-        PyBuffer_Release(&parg);
+    if (!retval)
         return NULL;
-    }
     retbuf = PyBytes_AS_STRING(retval);
 
     /* make hex version of string, taken from shamodule.c */
@@ -1115,15 +1139,8 @@ binascii_hexlify(PyObject *self, PyObject *args)
         c = argbuf[i] & 0xf;
         retbuf[j++] = Py_hexdigits[c];
     }
-    PyBuffer_Release(&parg);
     return retval;
 }
-
-PyDoc_STRVAR(doc_hexlify,
-"b2a_hex(data) -> s; Hexadecimal representation of binary data.\n\
-\n\
-The return value is a bytes object.  This function is also\n\
-available as \"hexlify()\".");
 
 
 static int
@@ -1141,20 +1158,30 @@ to_int(int c)
 }
 
 
+/*[clinic input]
+binascii.a2b_hex
+
+    hexstr: ascii_buffer
+    /
+
+Binary data of hexadecimal representation.
+
+hexstr must contain an even number of hex digits (upper or lower case).
+This function is also available as "unhexlify()".
+[clinic start generated code]*/
+
 static PyObject *
-binascii_unhexlify(PyObject *self, PyObject *args)
+binascii_a2b_hex_impl(PyModuleDef *module, Py_buffer *hexstr)
+/*[clinic end generated code: checksum=d61da452b5c6d2903c32c3e90e6a97221b25989b]*/
 {
-    Py_buffer parg;
     char* argbuf;
     Py_ssize_t arglen;
     PyObject *retval;
     char* retbuf;
     Py_ssize_t i, j;
 
-    if (!PyArg_ParseTuple(args, "O&:a2b_hex", ascii_buffer_converter, &parg))
-        return NULL;
-    argbuf = parg.buf;
-    arglen = parg.len;
+    argbuf = hexstr->buf;
+    arglen = hexstr->len;
 
     assert(arglen >= 0);
 
@@ -1163,16 +1190,13 @@ binascii_unhexlify(PyObject *self, PyObject *args)
      * raise an exception.
      */
     if (arglen % 2) {
-        PyBuffer_Release(&parg);
         PyErr_SetString(Error, "Odd-length string");
         return NULL;
     }
 
     retval = PyBytes_FromStringAndSize(NULL, (arglen/2));
-    if (!retval) {
-        PyBuffer_Release(&parg);
+    if (!retval)
         return NULL;
-    }
     retbuf = PyBytes_AS_STRING(retval);
 
     for (i=j=0; i < arglen; i += 2) {
@@ -1185,20 +1209,12 @@ binascii_unhexlify(PyObject *self, PyObject *args)
         }
         retbuf[j++] = (top << 4) + bot;
     }
-    PyBuffer_Release(&parg);
     return retval;
 
   finally:
-    PyBuffer_Release(&parg);
     Py_DECREF(retval);
     return NULL;
 }
-
-PyDoc_STRVAR(doc_unhexlify,
-"a2b_hex(hexstr) -> s; Binary data of hexadecimal representation.\n\
-\n\
-hexstr must contain an even number of hex digits (upper or lower case).\n\
-This function is also available as \"unhexlify()\"");
 
 static int table_hex[128] = {
   -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
@@ -1215,25 +1231,29 @@ static int table_hex[128] = {
 
 #define MAXLINESIZE 76
 
-PyDoc_STRVAR(doc_a2b_qp, "Decode a string of qp-encoded data");
 
-static PyObject*
-binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
+/*[clinic input]
+binascii.a2b_qp
+
+    ascii: ascii_buffer
+    header: int(c_default="0") = False
+    /
+
+Decode a string of qp-encoded data.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *ascii, int header)
+/*[clinic end generated code: checksum=33910d5b347bf9f33203769e649f35ea41694b71]*/
 {
     Py_ssize_t in, out;
     char ch;
-    Py_buffer pdata;
     unsigned char *data, *odata;
     Py_ssize_t datalen = 0;
     PyObject *rv;
-    static char *kwlist[] = {"data", "header", NULL};
-    int header = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|i:a2b_qp", kwlist,
-                                     ascii_buffer_converter, &pdata, &header))
-        return NULL;
-    data = pdata.buf;
-    datalen = pdata.len;
+    data = ascii->buf;
+    datalen = ascii->len;
 
     /* We allocate the output same size as input, this is overkill.
      * The previous implementation used calloc() so we'll zero out the
@@ -1241,7 +1261,6 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
      */
     odata = (unsigned char *) PyMem_Malloc(datalen);
     if (odata == NULL) {
-        PyBuffer_Release(&pdata);
         PyErr_NoMemory();
         return NULL;
     }
@@ -1292,11 +1311,9 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if ((rv = PyBytes_FromStringAndSize((char *)odata, out)) == NULL) {
-        PyBuffer_Release(&pdata);
         PyMem_Free(odata);
         return NULL;
     }
-    PyBuffer_Release(&pdata);
     PyMem_Free(odata);
     return rv;
 }
@@ -1312,62 +1329,62 @@ to_hex (unsigned char ch, unsigned char *s)
     return 0;
 }
 
-PyDoc_STRVAR(doc_b2a_qp,
-"b2a_qp(data, quotetabs=0, istext=1, header=0) -> s; \n\
- Encode a string using quoted-printable encoding. \n\
-\n\
-On encoding, when istext is set, newlines are not encoded, and white \n\
-space at end of lines is.  When istext is not set, \\r and \\n (CR/LF) are \n\
-both encoded.  When quotetabs is set, space and tabs are encoded.");
-
 /* XXX: This is ridiculously complicated to be backward compatible
  * (mostly) with the quopri module.  It doesn't re-create the quopri
  * module bug where text ending in CRLF has the CR encoded */
-static PyObject*
-binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
+
+/*[clinic input]
+binascii.b2a_qp
+
+    data: Py_buffer
+    quotetabs: int(c_default="0") = False
+    istext: int(c_default="1") = True
+    header: int(c_default="0") = False
+
+Encode a string using quoted-printable encoding.
+
+On encoding, when istext is set, newlines are not encoded, and white
+space at end of lines is.  When istext is not set, \r and \n (CR/LF)
+are both encoded.  When quotetabs is set, space and tabs are encoded.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs, int istext, int header)
+/*[clinic end generated code: checksum=ff2991ba640fff3e67ac63205801c7173a0366cd]*/
 {
     Py_ssize_t in, out;
-    Py_buffer pdata;
-    unsigned char *data, *odata;
+    unsigned char *databuf, *odata;
     Py_ssize_t datalen = 0, odatalen = 0;
     PyObject *rv;
     unsigned int linelen = 0;
-    static char *kwlist[] = {"data", "quotetabs", "istext",
-                                   "header", NULL};
-    int istext = 1;
-    int quotetabs = 0;
-    int header = 0;
     unsigned char ch;
     int crlf = 0;
     unsigned char *p;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|iii", kwlist, &pdata,
-          &quotetabs, &istext, &header))
-        return NULL;
-    data = pdata.buf;
-    datalen = pdata.len;
+    databuf = data->buf;
+    datalen = data->len;
 
     /* See if this string is using CRLF line ends */
     /* XXX: this function has the side effect of converting all of
      * the end of lines to be the same depending on this detection
      * here */
-    p = (unsigned char *) memchr(data, '\n', datalen);
-    if ((p != NULL) && (p > data) && (*(p-1) == '\r'))
+    p = (unsigned char *) memchr(databuf, '\n', datalen);
+    if ((p != NULL) && (p > databuf) && (*(p-1) == '\r'))
         crlf = 1;
 
     /* First, scan to see how many characters need to be encoded */
     in = 0;
     while (in < datalen) {
-        if ((data[in] > 126) ||
-            (data[in] == '=') ||
-            (header && data[in] == '_') ||
-            ((data[in] == '.') && (linelen == 0) &&
-             (data[in+1] == '\n' || data[in+1] == '\r' || data[in+1] == 0)) ||
-            (!istext && ((data[in] == '\r') || (data[in] == '\n'))) ||
-            ((data[in] == '\t' || data[in] == ' ') && (in + 1 == datalen)) ||
-            ((data[in] < 33) &&
-             (data[in] != '\r') && (data[in] != '\n') &&
-             (quotetabs || ((data[in] != '\t') && (data[in] != ' ')))))
+        if ((databuf[in] > 126) ||
+            (databuf[in] == '=') ||
+            (header && databuf[in] == '_') ||
+            ((databuf[in] == '.') && (linelen == 0) &&
+             (databuf[in+1] == '\n' || databuf[in+1] == '\r' || databuf[in+1] == 0)) ||
+            (!istext && ((databuf[in] == '\r') || (databuf[in] == '\n'))) ||
+            ((databuf[in] == '\t' || databuf[in] == ' ') && (in + 1 == datalen)) ||
+            ((databuf[in] < 33) &&
+             (databuf[in] != '\r') && (databuf[in] != '\n') &&
+             (quotetabs || ((databuf[in] != '\t') && (databuf[in] != ' ')))))
         {
             if ((linelen + 3) >= MAXLINESIZE) {
                 linelen = 0;
@@ -1382,26 +1399,26 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
         }
         else {
             if (istext &&
-                ((data[in] == '\n') ||
-                 ((in+1 < datalen) && (data[in] == '\r') &&
-                 (data[in+1] == '\n'))))
+                ((databuf[in] == '\n') ||
+                 ((in+1 < datalen) && (databuf[in] == '\r') &&
+                 (databuf[in+1] == '\n'))))
             {
                 linelen = 0;
                 /* Protect against whitespace on end of line */
-                if (in && ((data[in-1] == ' ') || (data[in-1] == '\t')))
+                if (in && ((databuf[in-1] == ' ') || (databuf[in-1] == '\t')))
                     odatalen += 2;
                 if (crlf)
                     odatalen += 2;
                 else
                     odatalen += 1;
-                if (data[in] == '\r')
+                if (databuf[in] == '\r')
                     in += 2;
                 else
                     in++;
             }
             else {
                 if ((in + 1 != datalen) &&
-                    (data[in+1] != '\n') &&
+                    (databuf[in+1] != '\n') &&
                     (linelen + 1) >= MAXLINESIZE) {
                     linelen = 0;
                     if (crlf)
@@ -1422,7 +1439,6 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
      */
     odata = (unsigned char *) PyMem_Malloc(odatalen);
     if (odata == NULL) {
-        PyBuffer_Release(&pdata);
         PyErr_NoMemory();
         return NULL;
     }
@@ -1430,17 +1446,17 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 
     in = out = linelen = 0;
     while (in < datalen) {
-        if ((data[in] > 126) ||
-            (data[in] == '=') ||
-            (header && data[in] == '_') ||
-            ((data[in] == '.') && (linelen == 0) &&
-             (data[in+1] == '\n' || data[in+1] == '\r' || data[in+1] == 0)) ||
-            (!istext && ((data[in] == '\r') || (data[in] == '\n'))) ||
-            ((data[in] == '\t' || data[in] == ' ') && (in + 1 == datalen)) ||
-            ((data[in] < 33) &&
-             (data[in] != '\r') && (data[in] != '\n') &&
+        if ((databuf[in] > 126) ||
+            (databuf[in] == '=') ||
+            (header && databuf[in] == '_') ||
+            ((databuf[in] == '.') && (linelen == 0) &&
+             (databuf[in+1] == '\n' || databuf[in+1] == '\r' || databuf[in+1] == 0)) ||
+            (!istext && ((databuf[in] == '\r') || (databuf[in] == '\n'))) ||
+            ((databuf[in] == '\t' || databuf[in] == ' ') && (in + 1 == datalen)) ||
+            ((databuf[in] < 33) &&
+             (databuf[in] != '\r') && (databuf[in] != '\n') &&
              (quotetabs ||
-            (!quotetabs && ((data[in] != '\t') && (data[in] != ' '))))))
+            (!quotetabs && ((databuf[in] != '\t') && (databuf[in] != ' '))))))
         {
             if ((linelen + 3 )>= MAXLINESIZE) {
                 odata[out++] = '=';
@@ -1449,16 +1465,16 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
                 linelen = 0;
             }
             odata[out++] = '=';
-            to_hex(data[in], &odata[out]);
+            to_hex(databuf[in], &odata[out]);
             out += 2;
             in++;
             linelen += 3;
         }
         else {
             if (istext &&
-                ((data[in] == '\n') ||
-                 ((in+1 < datalen) && (data[in] == '\r') &&
-                 (data[in+1] == '\n'))))
+                ((databuf[in] == '\n') ||
+                 ((in+1 < datalen) && (databuf[in] == '\r') &&
+                 (databuf[in+1] == '\n'))))
             {
                 linelen = 0;
                 /* Protect against whitespace on end of line */
@@ -1471,14 +1487,14 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 
                 if (crlf) odata[out++] = '\r';
                 odata[out++] = '\n';
-                if (data[in] == '\r')
+                if (databuf[in] == '\r')
                     in += 2;
                 else
                     in++;
             }
             else {
                 if ((in + 1 != datalen) &&
-                    (data[in+1] != '\n') &&
+                    (databuf[in+1] != '\n') &&
                     (linelen + 1) >= MAXLINESIZE) {
                     odata[out++] = '=';
                     if (crlf) odata[out++] = '\r';
@@ -1486,22 +1502,20 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
                     linelen = 0;
                 }
                 linelen++;
-                if (header && data[in] == ' ') {
+                if (header && databuf[in] == ' ') {
                     odata[out++] = '_';
                     in++;
                 }
                 else {
-                    odata[out++] = data[in++];
+                    odata[out++] = databuf[in++];
                 }
             }
         }
     }
     if ((rv = PyBytes_FromStringAndSize((char *)odata, out)) == NULL) {
-        PyBuffer_Release(&pdata);
         PyMem_Free(odata);
         return NULL;
     }
-    PyBuffer_Release(&pdata);
     PyMem_Free(odata);
     return rv;
 }
@@ -1509,25 +1523,24 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 /* List of functions defined in the module */
 
 static struct PyMethodDef binascii_module_methods[] = {
-    {"a2b_uu",     binascii_a2b_uu,     METH_VARARGS, doc_a2b_uu},
-    {"b2a_uu",     binascii_b2a_uu,     METH_VARARGS, doc_b2a_uu},
-    {"a2b_base64", binascii_a2b_base64, METH_VARARGS, doc_a2b_base64},
-    {"b2a_base64", binascii_b2a_base64, METH_VARARGS, doc_b2a_base64},
-    {"a2b_hqx",    binascii_a2b_hqx,    METH_VARARGS, doc_a2b_hqx},
-    {"b2a_hqx",    binascii_b2a_hqx,    METH_VARARGS, doc_b2a_hqx},
-    {"b2a_hex",    binascii_hexlify,    METH_VARARGS, doc_hexlify},
-    {"a2b_hex",    binascii_unhexlify,  METH_VARARGS, doc_unhexlify},
-    {"hexlify",    binascii_hexlify,    METH_VARARGS, doc_hexlify},
-    {"unhexlify",  binascii_unhexlify,  METH_VARARGS, doc_unhexlify},
-    {"rlecode_hqx",   binascii_rlecode_hqx, METH_VARARGS, doc_rlecode_hqx},
-    {"rledecode_hqx", binascii_rledecode_hqx, METH_VARARGS,
-     doc_rledecode_hqx},
-    {"crc_hqx",    binascii_crc_hqx,    METH_VARARGS, doc_crc_hqx},
-    {"crc32",      binascii_crc32,      METH_VARARGS, doc_crc32},
-    {"a2b_qp", (PyCFunction)binascii_a2b_qp, METH_VARARGS | METH_KEYWORDS,
-      doc_a2b_qp},
-    {"b2a_qp", (PyCFunction)binascii_b2a_qp, METH_VARARGS | METH_KEYWORDS,
-      doc_b2a_qp},
+    BINASCII_A2B_UU_METHODDEF
+    BINASCII_B2A_UU_METHODDEF
+    BINASCII_A2B_BASE64_METHODDEF
+    BINASCII_B2A_BASE64_METHODDEF
+    BINASCII_A2B_HQX_METHODDEF
+    BINASCII_B2A_HQX_METHODDEF
+    BINASCII_A2B_HEX_METHODDEF
+    BINASCII_B2A_HEX_METHODDEF
+    {"unhexlify", (PyCFunction)binascii_a2b_hex, METH_VARARGS,
+        binascii_a2b_hex__doc__},
+    {"hexlify", (PyCFunction)binascii_b2a_hex, METH_VARARGS,
+        binascii_b2a_hex__doc__},
+    BINASCII_RLECODE_HQX_METHODDEF
+    BINASCII_RLEDECODE_HQX_METHODDEF
+    BINASCII_CRC_HQX_METHODDEF
+    BINASCII_CRC32_METHODDEF
+    BINASCII_A2B_QP_METHODDEF
+    BINASCII_B2A_QP_METHODDEF
     {NULL, NULL}                             /* sentinel */
 };
 
