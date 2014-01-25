@@ -181,8 +181,8 @@ at http://docs.python.org/.  PDF, plain text, and downloadable HTML versions are
 also available at http://docs.python.org/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <http://sphinx.pocoo.org/>`__.  The reStructuredText source
-for the documentation is part of the Python source distribution.
+documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for
+the documentation is part of the Python source distribution.
 
 
 I've never programmed before. Is there a Python tutorial?
