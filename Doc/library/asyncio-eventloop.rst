@@ -144,12 +144,6 @@ a different clock than :func:`time.time`.
    Return the current time, as a :class:`float` value, according to the
    event loop's internal clock.
 
-.. attribute:: BaseEventLoop.granularity
-
-   Granularity of the time: maximum between the resolution of the
-   :meth:`BaseEventLoop.time` method and the resolution of the selector (see
-   :attr:`selectors.BaseSelector.resolution`).
-
 .. seealso::
 
    The :func:`asyncio.sleep` function.

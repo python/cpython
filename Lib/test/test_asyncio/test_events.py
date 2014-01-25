@@ -1170,9 +1170,9 @@ class EventLoopTestsMixin:
         def wait():
             loop = self.loop
             calls.append(loop._run_once_counter)
-            yield from asyncio.sleep(loop.granularity * 10, loop=loop)
+            yield from asyncio.sleep(loop._granularity * 10, loop=loop)
             calls.append(loop._run_once_counter)
-            yield from asyncio.sleep(loop.granularity / 10, loop=loop)
+            yield from asyncio.sleep(loop._granularity / 10, loop=loop)
             calls.append(loop._run_once_counter)
 
         self.loop.run_until_complete(wait())

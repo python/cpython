@@ -18,7 +18,6 @@ import collections
 import concurrent.futures
 import heapq
 import logging
-import math
 import socket
 import subprocess
 import time
@@ -97,7 +96,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._default_executor = None
         self._internal_fds = 0
         self._running = False
-        self.granularity = time.get_clock_info('monotonic').resolution
+        self._granularity = time.get_clock_info('monotonic').resolution
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
@@ -605,8 +604,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         elif self._scheduled:
             # Compute the desired timeout.
             when = self._scheduled[0]._when
-            # round deadline aways from zero
-            when = math.ceil(when / self.granularity) * self.granularity
             deadline = max(0, when - self.time())
             if timeout is None:
                 timeout = deadline
@@ -632,9 +629,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._process_events(event_list)
 
         # Handle 'later' callbacks that are ready.
-        now = self.time()
-        # round current time aways from zero
-        now = math.ceil(now / self.granularity) * self.granularity
+        now = self.time() + self._granularity
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when > now:
