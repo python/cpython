@@ -363,6 +363,11 @@ class BaseSelectorTestCase(unittest.TestCase):
         self.assertFalse(s.select(2))
         self.assertLess(time() - t, 2.5)
 
+    def test_resolution(self):
+        s = self.SELECTOR()
+        self.assertIsInstance(s.resolution, (int, float))
+        self.assertGreater(s.resolution, 0.0)
+
 
 class ScalableSelectorMixIn:
 
