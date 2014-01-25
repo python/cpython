@@ -141,6 +141,11 @@ Tests
 
 Tools/Demos
 -----------
+
+- Issue #20381: Argument Clinic now sanity checks the default argument when
+  c_default is also specified, providing a nice failure message for
+  disallowed values.
+
 - Issue #20189: Argument Clinic now ensures that parser functions for
   __new__ are always of type newfunc, the type of the tp_new slot.
   Similarly, parser functions for __init__ are now always of type initproc,
