@@ -116,6 +116,10 @@ class MockSelector(selectors.BaseSelector):
     def __init__(self):
         self.keys = {}
 
+    @property
+    def resolution(self):
+        return 1e-3
+
     def register(self, fileobj, events, data=None):
         key = selectors.SelectorKey(fileobj, 0, events, data)
         self.keys[fileobj] = key
