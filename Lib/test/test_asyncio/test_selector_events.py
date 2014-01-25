@@ -39,7 +39,9 @@ def list_to_buffer(l=()):
 class BaseSelectorEventLoopTests(unittest.TestCase):
 
     def setUp(self):
-        self.loop = TestBaseSelectorEventLoop(unittest.mock.Mock())
+        selector = unittest.mock.Mock()
+        selector.resolution = 1e-3
+        self.loop = TestBaseSelectorEventLoop(selector)
 
     def test_make_socket_transport(self):
         m = unittest.mock.Mock()

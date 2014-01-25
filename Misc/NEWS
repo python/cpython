@@ -36,6 +36,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #20311: asyncio: Add a granularity attribute to BaseEventLoop: maximum
+  between the resolution of the BaseEventLoop.time() method and the resolution
+  of the selector. The granuarility is used in the scheduler to round time and
+  deadline.
+
 - Issue #20311: selectors: Add a resolution attribute to BaseSelector.
 
 - Issue #20189: unittest.mock now no longer assumes that any object for

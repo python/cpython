@@ -1116,6 +1116,29 @@ class EventLoopTestsMixin:
         r.close()
         w.close()
 
+    def test_timeout_rounding(self):
+        def _run_once():
+            self.loop._run_once_counter += 1
+            orig_run_once()
+
+        orig_run_once = self.loop._run_once
+        self.loop._run_once_counter = 0
+        self.loop._run_once = _run_once
+        calls = []
+
+        @tasks.coroutine
+        def wait():
+            loop = self.loop
+            calls.append(loop._run_once_counter)
+            yield from tasks.sleep(loop.granularity * 10, loop=loop)
+            calls.append(loop._run_once_counter)
+            yield from tasks.sleep(loop.granularity / 10, loop=loop)
+            calls.append(loop._run_once_counter)
+
+        self.loop.run_until_complete(wait())
+        calls.append(self.loop._run_once_counter)
+        self.assertEqual(calls, [1, 3, 5, 6])
+
 
 class SubprocessTestsMixin:
 
