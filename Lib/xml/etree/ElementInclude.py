@@ -75,14 +75,13 @@ class FatalIncludeError(SyntaxError):
 # @throws IOError If the loader fails to load the resource.
 
 def default_loader(href, parse, encoding=None):
-    file = open(href)
-    if parse == "xml":
-        data = ElementTree.parse(file).getroot()
-    else:
-        data = file.read()
-        if encoding:
-            data = data.decode(encoding)
-    file.close()
+    with open(href) as file:
+        if parse == "xml":
+            data = ElementTree.parse(file).getroot()
+        else:
+            data = file.read()
+            if encoding:
+                data = data.decode(encoding)
     return data
 
 ##

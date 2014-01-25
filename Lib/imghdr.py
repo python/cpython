@@ -7,18 +7,16 @@ __all__ = ["what"]
 #-------------------------#
 
 def what(file, h=None):
-    if h is None:
-        if isinstance(file, basestring):
-            f = open(file, 'rb')
-            h = f.read(32)
-        else:
-            location = file.tell()
-            h = file.read(32)
-            file.seek(location)
-            f = None
-    else:
-        f = None
+    f = None
     try:
+        if h is None:
+            if isinstance(file, basestring):
+                f = open(file, 'rb')
+                h = f.read(32)
+            else:
+                location = file.tell()
+                h = file.read(32)
+                file.seek(location)
         for tf in tests:
             res = tf(h, f)
             if res:
