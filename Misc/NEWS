@@ -382,6 +382,9 @@ Library
 
 - Issue #15475: Add __sizeof__ implementations for itertools objects.
 
+- Issue #19944: Fix importlib.find_spec() so it imports parents as needed
+  and move the function to importlib.util.
+
 - Issue #19880: Fix a reference leak in unittest.TestCase. Explicitly break
   reference cycles between frames and the _Outcome instance.
 

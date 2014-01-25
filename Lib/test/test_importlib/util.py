@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from importlib import util
+from importlib import util, invalidate_caches
 import os.path
 from test import support
 import unittest
@@ -46,6 +46,13 @@ def case_insensitive_tests(test):
                             "requires a case-insensitive filesystem")(test)
 
 
+def submodule(parent, name, pkg_dir, content=''):
+    path = os.path.join(pkg_dir, name + '.py')
+    with open(path, 'w') as subfile:
+        subfile.write(content)
+    return '{}.{}'.format(parent, name), path
+
+
 @contextmanager
 def uncache(*names):
     """Uncache a module from sys.modules.
@@ -70,6 +77,31 @@ def uncache(*names):
                 del sys.modules[name]
             except KeyError:
                 pass
+
+
+@contextmanager
+def temp_module(name, content='', *, pkg=False):
+    conflicts = [n for n in sys.modules if n.partition('.')[0] == name]
+    with support.temp_cwd(None) as cwd:
+        with uncache(name, *conflicts):
+            with support.DirsOnSysPath(cwd):
+                invalidate_caches()
+
+                location = os.path.join(cwd, name)
+                if pkg:
+                    modpath = os.path.join(location, '__init__.py')
+                    os.mkdir(name)
+                else:
+                    modpath = location + '.py'
+                    if content is None:
+                        # Make sure the module file gets created.
+                        content = ''
+                if content is not None:
+                    # not a namespace package
+                    with open(modpath, 'w') as modfile:
+                        modfile.write(content)
+                yield location
+
 
 @contextmanager
 def import_state(**kwargs):

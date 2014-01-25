@@ -1,5 +1,6 @@
 import importlib
 import importlib.abc
+import importlib.util
 import os
 from platform import python_version
 import re
@@ -660,7 +661,7 @@ class EditorWindow(object):
             return
         # XXX Ought to insert current file's directory in front of path
         try:
-            spec = importlib.find_spec(name)
+            spec = importlib.util.find_spec(name)
         except (ValueError, ImportError) as msg:
             tkMessageBox.showerror("Import error", str(msg), parent=self.text)
             return
