@@ -1,6 +1,6 @@
-======================
+**********************
 Argument Clinic How-To
-======================
+**********************
 
 :author: Larry Hastings
 
@@ -23,7 +23,6 @@ Argument Clinic How-To
   version of Argument Clinic that ships with CPython 3.5 *could*
   be totally incompatible and break all your code.
 
-============================
 The Goals Of Argument Clinic
 ============================
 
@@ -75,7 +74,6 @@ and it should be able to do many interesting and smart
 things with all the information you give it.
 
 
-========================
 Basic Concepts And Usage
 ========================
 
@@ -131,7 +129,6 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
   a block.)
 
 
-==============================
 Converting Your First Function
 ==============================
 
@@ -533,7 +530,6 @@ Let's dive in!
 
     Congratulations, you've ported your first function to work with Argument Clinic!
 
-===============
 Advanced Topics
 ===============
 
