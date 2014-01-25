@@ -5,6 +5,7 @@ import unittest
 import unittest.mock
 
 import asyncio
+from asyncio.proactor_events import BaseProactorEventLoop
 from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
@@ -344,18 +345,18 @@ class BaseProactorEventLoopTests(unittest.TestCase):
 
         self.ssock, self.csock = unittest.mock.Mock(), unittest.mock.Mock()
 
-        class EventLoop(asyncio.BaseProactorEventLoop):
+        class EventLoop(BaseProactorEventLoop):
             def _socketpair(s):
                 return (self.ssock, self.csock)
 
         self.loop = EventLoop(self.proactor)
 
-    @unittest.mock.patch.object(asyncio.BaseProactorEventLoop, 'call_soon')
-    @unittest.mock.patch.object(asyncio.BaseProactorEventLoop, '_socketpair')
+    @unittest.mock.patch.object(BaseProactorEventLoop, 'call_soon')
+    @unittest.mock.patch.object(BaseProactorEventLoop, '_socketpair')
     def test_ctor(self, socketpair, call_soon):
         ssock, csock = socketpair.return_value = (
             unittest.mock.Mock(), unittest.mock.Mock())
-        loop = asyncio.BaseProactorEventLoop(self.proactor)
+        loop = BaseProactorEventLoop(self.proactor)
         self.assertIs(loop._ssock, ssock)
         self.assertIs(loop._csock, csock)
         self.assertEqual(loop._internal_fds, 1)
@@ -398,7 +399,7 @@ class BaseProactorEventLoopTests(unittest.TestCase):
 
     def test_socketpair(self):
         self.assertRaises(
-            NotImplementedError, asyncio.BaseProactorEventLoop, self.proactor)
+            NotImplementedError, BaseProactorEventLoop, self.proactor)
 
     def test_make_socket_transport(self):
         tr = self.loop._make_socket_transport(self.sock, unittest.mock.Mock())
