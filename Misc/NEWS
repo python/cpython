@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20311: selectors: Add a resolution attribute to BaseSelector.
+
 - Issue #20189: unittest.mock now no longer assumes that any object for
   which it could get an inspect.Signature is a callable written in Python.
   Fix courtesy of Michael Foord.

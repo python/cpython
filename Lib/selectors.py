@@ -5,7 +5,7 @@ This module allows high-level and efficient I/O multiplexing, built upon the
 """
 
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple, Mapping
 import functools
 import select
@@ -81,6 +81,11 @@ class BaseSelector(metaclass=ABCMeta):
     depending on the platform. The default `Selector` class uses the most
     performant implementation on the current platform.
     """
+
+    @abstractproperty
+    def resolution(self):
+        """Resolution of the selector in seconds"""
+        return None
 
     @abstractmethod
     def register(self, fileobj, events, data=None):
@@ -283,6 +288,10 @@ class SelectSelector(_BaseSelectorImpl):
         self._readers = set()
         self._writers = set()
 
+    @property
+    def resolution(self):
+        return 1e-6
+
     def register(self, fileobj, events, data=None):
         key = super().register(fileobj, events, data)
         if events & EVENT_READ:
@@ -335,6 +344,10 @@ if hasattr(select, 'poll'):
             super().__init__()
             self._poll = select.poll()
 
+        @property
+        def resolution(self):
+            return 1e-3
+
         def register(self, fileobj, events, data=None):
             key = super().register(fileobj, events, data)
             poll_events = 0
@@ -384,6 +397,10 @@ if hasattr(select, 'epoll'):
         def __init__(self):
             super().__init__()
             self._epoll = select.epoll()
+
+        @property
+        def resolution(self):
+            return 1e-3
 
         def fileno(self):
             return self._epoll.fileno()
@@ -444,6 +461,10 @@ if hasattr(select, 'kqueue'):
         def __init__(self):
             super().__init__()
             self._kqueue = select.kqueue()
+
+        @property
+        def resolution(self):
+            return 1e-9
 
         def fileno(self):
             return self._kqueue.fileno()
