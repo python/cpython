@@ -120,6 +120,7 @@ def fail(*args, filename=None, line_number=None):
 
 def quoted_for_c_string(s):
     for old, new in (
+        ('\\', '\\\\'), # must be first!
         ('"', '\\"'),
         ("'", "\\'"),
         ):
