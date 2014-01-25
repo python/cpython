@@ -259,9 +259,11 @@ class _UnixWritePipeTransport(transports.WriteTransport):
         self._fileno = pipe.fileno()
         mode = os.fstat(self._fileno).st_mode
         is_socket = stat.S_ISSOCK(mode)
-        is_pipe = stat.S_ISFIFO(mode)
-        if not (is_socket or is_pipe):
-            raise ValueError("Pipe transport is for pipes/sockets only.")
+        if not (is_socket or
+                stat.S_ISFIFO(mode) or
+                stat.S_ISCHR(mode)):
+            raise ValueError("Pipe transport is only for "
+                             "pipes, sockets and character devices")
         _set_nonblocking(self._fileno)
         self._protocol = protocol
         self._buffer = []
