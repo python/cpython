@@ -5,7 +5,7 @@ import selectors
 import signal
 import socket
 from test import support
-from time import sleep, perf_counter, get_clock_info
+from time import sleep
 import unittest
 import unittest.mock
 try:
