@@ -196,44 +196,61 @@ error:
     return NULL;
 }
 
-PyDoc_STRVAR(BZ2Compressor_compress__doc__,
-"compress(data) -> bytes\n"
-"\n"
-"Provide data to the compressor object. Returns a chunk of\n"
-"compressed data if possible, or b'' otherwise.\n"
-"\n"
-"When you have finished providing data to the compressor, call the\n"
-"flush() method to finish the compression process.\n");
+/*[clinic input]
+output preset file
+module _bz2
+class _bz2.BZ2Compressor
+class _bz2.BZ2Decompressor
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
+#include "_bz2module.clinic.c"
+
+/*[clinic input]
+_bz2.BZ2Compressor.compress
+
+    self: self(type="BZ2Compressor *")
+    data: Py_buffer
+    /
+
+Provide data to the compressor object.
+
+Returns a chunk of compressed data if possible, or b'' otherwise.
+
+When you have finished providing data to the compressor, call the
+flush() method to finish the compression process.
+[clinic start generated code]*/
 
 static PyObject *
-BZ2Compressor_compress(BZ2Compressor *self, PyObject *args)
+_bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data)
+/*[clinic end generated code: checksum=59365426e941fbcc4c7a4d0eef85ca7e19196eaa]*/
 {
-    Py_buffer buffer;
     PyObject *result = NULL;
-
-    if (!PyArg_ParseTuple(args, "y*:compress", &buffer))
-        return NULL;
 
     ACQUIRE_LOCK(self);
     if (self->flushed)
         PyErr_SetString(PyExc_ValueError, "Compressor has been flushed");
     else
-        result = compress(self, buffer.buf, buffer.len, BZ_RUN);
+        result = compress(self, data->buf, data->len, BZ_RUN);
     RELEASE_LOCK(self);
-    PyBuffer_Release(&buffer);
     return result;
 }
 
-PyDoc_STRVAR(BZ2Compressor_flush__doc__,
-"flush() -> bytes\n"
-"\n"
-"Finish the compression process. Returns the compressed data left\n"
-"in internal buffers.\n"
-"\n"
-"The compressor object may not be used after this method is called.\n");
+/*[clinic input]
+_bz2.BZ2Compressor.flush
+
+    self: self(type="BZ2Compressor *")
+
+Finish the compression process.
+
+Returns the compressed data left in internal buffers.
+
+The compressor object may not be used after this method is called.
+[clinic start generated code]*/
 
 static PyObject *
-BZ2Compressor_flush(BZ2Compressor *self, PyObject *noargs)
+_bz2_BZ2Compressor_flush_impl(BZ2Compressor *self)
+/*[clinic end generated code: checksum=3ef03fc1b092a701b382b97096c7fd50db87190b]*/
 {
     PyObject *result = NULL;
 
@@ -274,14 +291,25 @@ BZ2_Free(void* ctx, void *ptr)
     PyMem_RawFree(ptr);
 }
 
+/*[clinic input]
+_bz2.BZ2Compressor.__init__
+
+    self: self(type="BZ2Compressor *")
+    compresslevel: int = 9
+        Compression level, as a number between 1 and 9.
+    /
+
+Create a compressor object for compressing data incrementally.
+
+For one-shot compression, use the compress() function instead.
+[clinic start generated code]*/
+
 static int
-BZ2Compressor_init(BZ2Compressor *self, PyObject *args, PyObject *kwargs)
+_bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
+/*[clinic end generated code: checksum=c4e6adfd02963827075a1cc9309dc6df184b1246]*/
 {
-    int compresslevel = 9;
     int bzerror;
 
-    if (!PyArg_ParseTuple(args, "|i:BZ2Compressor", &compresslevel))
-        return -1;
     if (!(1 <= compresslevel && compresslevel <= 9)) {
         PyErr_SetString(PyExc_ValueError,
                         "compresslevel must be between 1 and 9");
@@ -325,22 +353,12 @@ BZ2Compressor_dealloc(BZ2Compressor *self)
 }
 
 static PyMethodDef BZ2Compressor_methods[] = {
-    {"compress",     (PyCFunction)BZ2Compressor_compress, METH_VARARGS,
-     BZ2Compressor_compress__doc__},
-    {"flush",        (PyCFunction)BZ2Compressor_flush,    METH_NOARGS,
-     BZ2Compressor_flush__doc__},
+    _BZ2_BZ2COMPRESSOR_COMPRESS_METHODDEF
+    _BZ2_BZ2COMPRESSOR_FLUSH_METHODDEF
     {"__getstate__", (PyCFunction)BZ2Compressor_getstate, METH_NOARGS},
     {NULL}
 };
 
-PyDoc_STRVAR(BZ2Compressor__doc__,
-"BZ2Compressor(compresslevel=9)\n"
-"\n"
-"Create a compressor object for compressing data incrementally.\n"
-"\n"
-"compresslevel, if given, must be a number between 1 and 9.\n"
-"\n"
-"For one-shot compression, use the compress() function instead.\n");
 
 static PyTypeObject BZ2Compressor_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -363,7 +381,7 @@ static PyTypeObject BZ2Compressor_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    BZ2Compressor__doc__,               /* tp_doc */
+    _bz2_BZ2Compressor___init____doc__,  /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -378,7 +396,7 @@ static PyTypeObject BZ2Compressor_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)BZ2Compressor_init,       /* tp_init */
+    _bz2_BZ2Compressor___init__,        /* tp_init */
     0,                                  /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
 };
@@ -451,32 +469,34 @@ error:
     return NULL;
 }
 
-PyDoc_STRVAR(BZ2Decompressor_decompress__doc__,
-"decompress(data) -> bytes\n"
-"\n"
-"Provide data to the decompressor object. Returns a chunk of\n"
-"decompressed data if possible, or b'' otherwise.\n"
-"\n"
-"Attempting to decompress data after the end of stream is reached\n"
-"raises an EOFError. Any data found after the end of the stream\n"
-"is ignored and saved in the unused_data attribute.\n");
+/*[clinic input]
+_bz2.BZ2Decompressor.decompress
+
+    self: self(type="BZ2Decompressor *")
+    data: Py_buffer
+    /
+
+Provide data to the decompressor object.
+
+Returns a chunk of decompressed data if possible, or b'' otherwise.
+
+Attempting to decompress data after the end of stream is reached
+raises an EOFError.  Any data found after the end of the stream
+is ignored and saved in the unused_data attribute.
+[clinic start generated code]*/
 
 static PyObject *
-BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *args)
+_bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data)
+/*[clinic end generated code: checksum=086e4b99e60cb3f67c0481959591eae0735320bc]*/
 {
-    Py_buffer buffer;
     PyObject *result = NULL;
-
-    if (!PyArg_ParseTuple(args, "y*:decompress", &buffer))
-        return NULL;
 
     ACQUIRE_LOCK(self);
     if (self->eof)
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
     else
-        result = decompress(self, buffer.buf, buffer.len);
+        result = decompress(self, data->buf, data->len);
     RELEASE_LOCK(self);
-    PyBuffer_Release(&buffer);
     return result;
 }
 
@@ -488,13 +508,21 @@ BZ2Decompressor_getstate(BZ2Decompressor *self, PyObject *noargs)
     return NULL;
 }
 
+/*[clinic input]
+_bz2.BZ2Decompressor.__init__
+
+    self: self(type="BZ2Decompressor *")
+
+Create a decompressor object for decompressing data incrementally.
+
+For one-shot decompression, use the decompress() function instead.
+[clinic start generated code]*/
+
 static int
-BZ2Decompressor_init(BZ2Decompressor *self, PyObject *args, PyObject *kwargs)
+_bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
+/*[clinic end generated code: checksum=e4d2b9bb866ab8f1f4a8bb786ddb5b614ce323c0]*/
 {
     int bzerror;
-
-    if (!PyArg_ParseTuple(args, ":BZ2Decompressor"))
-        return -1;
 
 #ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
@@ -536,8 +564,7 @@ BZ2Decompressor_dealloc(BZ2Decompressor *self)
 }
 
 static PyMethodDef BZ2Decompressor_methods[] = {
-    {"decompress", (PyCFunction)BZ2Decompressor_decompress, METH_VARARGS,
-     BZ2Decompressor_decompress__doc__},
+    _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF
     {"__getstate__", (PyCFunction)BZ2Decompressor_getstate, METH_NOARGS},
     {NULL}
 };
@@ -555,13 +582,6 @@ static PyMemberDef BZ2Decompressor_members[] = {
      READONLY, BZ2Decompressor_unused_data__doc__},
     {NULL}
 };
-
-PyDoc_STRVAR(BZ2Decompressor__doc__,
-"BZ2Decompressor()\n"
-"\n"
-"Create a decompressor object for decompressing data incrementally.\n"
-"\n"
-"For one-shot decompression, use the decompress() function instead.\n");
 
 static PyTypeObject BZ2Decompressor_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -584,7 +604,7 @@ static PyTypeObject BZ2Decompressor_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    BZ2Decompressor__doc__,             /* tp_doc */
+    _bz2_BZ2Decompressor___init____doc__,  /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -599,7 +619,7 @@ static PyTypeObject BZ2Decompressor_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)BZ2Decompressor_init,     /* tp_init */
+    _bz2_BZ2Decompressor___init__,      /* tp_init */
     0,                                  /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
 };
