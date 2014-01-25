@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16042: CVE-2013-1752: smtplib: Limit amount of data read by
+  limiting the call to readline().  Original patch by Christian Heimes.
+
 - Issue #20317: ExitStack.__exit__ could create a self-referential loop if an
   exception raised by a cleanup operation already had its context set
   correctly (for example, by the @contextmanager decorator). The infinite
