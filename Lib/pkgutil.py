@@ -611,7 +611,7 @@ def get_data(package, resource):
     which does not support get_data(), then None is returned.
     """
 
-    spec = importlib.find_spec(package)
+    spec = importlib.util.find_spec(package)
     if spec is None:
         return None
     loader = spec.loader

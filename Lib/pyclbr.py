@@ -42,7 +42,7 @@ Instances of this class have the following instance variables:
 import io
 import os
 import sys
-import importlib
+import importlib.util
 import tokenize
 from token import NAME, DEDENT, OP
 from operator import itemgetter
@@ -141,7 +141,7 @@ def _readmodule(module, path, inpackage=None):
     else:
         search_path = path + sys.path
     # XXX This will change once issue19944 lands.
-    spec = importlib.find_spec(fullmodule, search_path)
+    spec = importlib.util._find_spec_from_path(fullmodule, search_path)
     fname = spec.loader.get_filename(fullmodule)
     _modules[fullmodule] = dict
     if spec.loader.is_package(fullmodule):

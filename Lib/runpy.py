@@ -13,9 +13,8 @@ importers when locating support scripts as well as when importing modules.
 import os
 import sys
 import importlib.machinery # importlib first so we can test #15386 via -m
+import importlib.util
 import types
-from importlib import find_spec
-from importlib.util import spec_from_loader
 from pkgutil import read_code, get_importer
 
 __all__ = [
@@ -100,33 +99,16 @@ def _run_module_code(code, init_globals=None,
     # may be cleared when the temporary module goes away
     return mod_globals.copy()
 
-
-def _fixed_find_spec(mod_name):
-    # find_spec has the same annoying behaviour as find_loader did (it
-    # fails to work properly for dotted names), so this is a fixed version
-    # ala pkgutil.get_loader
-    if mod_name.startswith('.'):
-        msg = "Relative module name {!r} not supported".format(mod_name)
-        raise ImportError(msg)
-    path = None
-    pkg_name = mod_name.rpartition(".")[0]
-    if pkg_name:
-        pkg = importlib.import_module(pkg_name)
-        path = getattr(pkg, "__path__", None)
-        if path is None:
-            return None
+# Helper to get the loader, code and filename for a module
+def _get_module_details(mod_name):
     try:
-        return importlib.find_spec(mod_name, path)
+        spec = importlib.util.find_spec(mod_name)
     except (ImportError, AttributeError, TypeError, ValueError) as ex:
         # This hack fixes an impedance mismatch between pkgutil and
         # importlib, where the latter raises other errors for cases where
         # pkgutil previously raised ImportError
         msg = "Error while finding spec for {!r} ({}: {})"
         raise ImportError(msg.format(mod_name, type(ex), ex)) from ex
-
-# Helper to get the loader, code and filename for a module
-def _get_module_details(mod_name):
-    spec = _fixed_find_spec(mod_name)
     if spec is None:
         raise ImportError("No module named %s" % mod_name)
     if spec.submodule_search_locations is not None:
