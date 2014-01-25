@@ -1767,7 +1767,7 @@ sched
 select
 ------
 
-Solaris and derivatives platforms have a new class :class:`select.devpoll`
+Solaris and derivative platforms have a new class :class:`select.devpoll`
 for high performance asynchronous sockets via :file:`/dev/poll`.
 (Contributed by Jesús Cea Avión in :issue:`6397`.)
 
