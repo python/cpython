@@ -217,17 +217,6 @@ class TestEPoll(unittest.TestCase):
         server.close()
         ep.unregister(fd)
 
-    def test_timeout_rounding(self):
-        # epoll_wait() has a resolution of 1 millisecond, check if the timeout
-        # is correctly rounded to the upper bound
-        epoll = select.epoll()
-        self.addCleanup(epoll.close)
-        for timeout in (1e-2, 1e-3, 1e-4):
-            t0 = time.monotonic()
-            epoll.poll(timeout)
-            dt = time.monotonic() - t0
-            self.assertGreaterEqual(dt, timeout)
-
 
 def test_main():
     support.run_unittest(TestEPoll)
