@@ -3,17 +3,17 @@
 import unittest
 import unittest.mock
 
-from asyncio import transports
+import asyncio
 
 
 class TransportTests(unittest.TestCase):
 
     def test_ctor_extra_is_none(self):
-        transport = transports.Transport()
+        transport = asyncio.Transport()
         self.assertEqual(transport._extra, {})
 
     def test_get_extra_info(self):
-        transport = transports.Transport({'extra': 'info'})
+        transport = asyncio.Transport({'extra': 'info'})
         self.assertEqual('info', transport.get_extra_info('extra'))
         self.assertIsNone(transport.get_extra_info('unknown'))
 
@@ -21,7 +21,7 @@ class TransportTests(unittest.TestCase):
         self.assertIs(default, transport.get_extra_info('unknown', default))
 
     def test_writelines(self):
-        transport = transports.Transport()
+        transport = asyncio.Transport()
         transport.write = unittest.mock.Mock()
 
         transport.writelines([b'line1',
@@ -31,7 +31,7 @@ class TransportTests(unittest.TestCase):
         transport.write.assert_called_with(b'line1line2line3')
 
     def test_not_implemented(self):
-        transport = transports.Transport()
+        transport = asyncio.Transport()
 
         self.assertRaises(NotImplementedError,
                           transport.set_write_buffer_limits)
@@ -45,13 +45,13 @@ class TransportTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, transport.abort)
 
     def test_dgram_not_implemented(self):
-        transport = transports.DatagramTransport()
+        transport = asyncio.DatagramTransport()
 
         self.assertRaises(NotImplementedError, transport.sendto, 'data')
         self.assertRaises(NotImplementedError, transport.abort)
 
     def test_subprocess_transport_not_implemented(self):
-        transport = transports.SubprocessTransport()
+        transport = asyncio.SubprocessTransport()
 
         self.assertRaises(NotImplementedError, transport.get_pid)
         self.assertRaises(NotImplementedError, transport.get_returncode)

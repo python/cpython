@@ -4,6 +4,8 @@ A selector is a "notify-when-ready" multiplexer.  For a subclass which
 also includes support for signal handling, see the unix_events sub-module.
 """
 
+__all__ = ['BaseSelectorEventLoop']
+
 import collections
 import errno
 import socket

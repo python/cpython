@@ -8,17 +8,12 @@ if sys.platform != 'win32':
 import _winapi
 
 import asyncio
-
-from asyncio import windows_events
-from asyncio import futures
-from asyncio import protocols
-from asyncio import streams
-from asyncio import transports
 from asyncio import test_utils
 from asyncio import _overlapped
+from asyncio import windows_events
 
 
-class UpperProto(protocols.Protocol):
+class UpperProto(asyncio.Protocol):
     def __init__(self):
         self.buf = []
 
@@ -35,7 +30,7 @@ class UpperProto(protocols.Protocol):
 class ProactorTests(unittest.TestCase):
 
     def setUp(self):
-        self.loop = windows_events.ProactorEventLoop()
+        self.loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(None)
 
     def tearDown(self):
@@ -44,7 +39,7 @@ class ProactorTests(unittest.TestCase):
 
     def test_close(self):
         a, b = self.loop._socketpair()
-        trans = self.loop._make_socket_transport(a, protocols.Protocol())
+        trans = self.loop._make_socket_transport(a, asyncio.Protocol())
         f = asyncio.async(self.loop.sock_recv(b, 100))
         trans.close()
         self.loop.run_until_complete(f)
@@ -67,7 +62,7 @@ class ProactorTests(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             yield from self.loop.create_pipe_connection(
-                protocols.Protocol, ADDRESS)
+                asyncio.Protocol, ADDRESS)
 
         [server] = yield from self.loop.start_serving_pipe(
             UpperProto, ADDRESS)
@@ -75,11 +70,11 @@ class ProactorTests(unittest.TestCase):
 
         clients = []
         for i in range(5):
-            stream_reader = streams.StreamReader(loop=self.loop)
-            protocol = streams.StreamReaderProtocol(stream_reader)
+            stream_reader = asyncio.StreamReader(loop=self.loop)
+            protocol = asyncio.StreamReaderProtocol(stream_reader)
             trans, proto = yield from self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
-            self.assertIsInstance(trans, transports.Transport)
+            self.assertIsInstance(trans, asyncio.Transport)
             self.assertEqual(protocol, proto)
             clients.append((stream_reader, trans))
 
@@ -95,7 +90,7 @@ class ProactorTests(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             yield from self.loop.create_pipe_connection(
-                protocols.Protocol, ADDRESS)
+                asyncio.Protocol, ADDRESS)
 
         return 'done'
 
@@ -130,7 +125,7 @@ class ProactorTests(unittest.TestCase):
         f = self.loop._proactor.wait_for_handle(event, 10)
         f.cancel()
         start = self.loop.time()
-        with self.assertRaises(futures.CancelledError):
+        with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(f)
         elapsed = self.loop.time() - start
         self.assertTrue(0 <= elapsed < 0.1, elapsed)
