@@ -142,6 +142,8 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20376: Argument Clinic now escapes backslashes in docstrings.
+
 - Issue #20381: Argument Clinic now sanity checks the default argument when
   c_default is also specified, providing a nice failure message for
   disallowed values.
