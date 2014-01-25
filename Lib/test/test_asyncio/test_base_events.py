@@ -9,6 +9,7 @@ import unittest.mock
 from test.support import find_unused_port, IPV6_ENABLED
 
 import asyncio
+from asyncio import base_events
 from asyncio import constants
 from asyncio import test_utils
 
@@ -16,7 +17,7 @@ from asyncio import test_utils
 class BaseEventLoopTests(unittest.TestCase):
 
     def setUp(self):
-        self.loop = asyncio.BaseEventLoop()
+        self.loop = base_events.BaseEventLoop()
         self.loop._selector = unittest.mock.Mock()
         asyncio.set_event_loop(None)
 
