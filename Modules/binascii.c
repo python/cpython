@@ -241,15 +241,15 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
 /*[clinic input]
 binascii.a2b_uu
 
-    ascii: ascii_buffer
+    data: ascii_buffer
     /
 
 Decode a line of uuencoded data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *ascii)
-/*[clinic end generated code: checksum=3252d1dbb682979eee03fb2c0c48a4d98a229df4]*/
+binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=5779f39b0b48459ff0f7a365d7e69b57422e2a4a]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -258,8 +258,8 @@ binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *ascii)
     PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
 
-    ascii_data = ascii->buf;
-    ascii_len = ascii->len;
+    ascii_data = data->buf;
+    ascii_len = data->len;
 
     assert(ascii_len >= 0);
 
@@ -414,15 +414,15 @@ binascii_find_valid(unsigned char *s, Py_ssize_t slen, int num)
 /*[clinic input]
 binascii.a2b_base64
 
-    ascii: ascii_buffer
+    data: ascii_buffer
     /
 
 Decode a line of base64 data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *ascii)
-/*[clinic end generated code: checksum=73c265f87068c1f3e4bc01834ae6ac5a974143b4]*/
+binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=3e351b702bed56d249caa4aa0f1bb3fae7546025]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -432,8 +432,8 @@ binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *ascii)
     Py_ssize_t ascii_len, bin_len;
     int quad_pos = 0;
 
-    ascii_data = ascii->buf;
-    ascii_len = ascii->len;
+    ascii_data = data->buf;
+    ascii_len = data->len;
 
     assert(ascii_len >= 0);
 
@@ -589,15 +589,15 @@ binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data)
 /*[clinic input]
 binascii.a2b_hqx
 
-    ascii: ascii_buffer
+    data: ascii_buffer
     /
 
 Decode .hqx coding.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *ascii)
-/*[clinic end generated code: checksum=48075dc4017b66f93086386d5b5848f1e6af260c]*/
+binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: checksum=60bcdbbd28b105cd7091d98e70a6e458f8039e9e]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -607,8 +607,8 @@ binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *ascii)
     Py_ssize_t len;
     int done = 0;
 
-    ascii_data = ascii->buf;
-    len = ascii->len;
+    ascii_data = data->buf;
+    len = data->len;
 
     assert(len >= 0);
 
@@ -1235,25 +1235,24 @@ static int table_hex[128] = {
 /*[clinic input]
 binascii.a2b_qp
 
-    ascii: ascii_buffer
+    data: ascii_buffer
     header: int(c_default="0") = False
-    /
 
 Decode a string of qp-encoded data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *ascii, int header)
-/*[clinic end generated code: checksum=33910d5b347bf9f33203769e649f35ea41694b71]*/
+binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *data, int header)
+/*[clinic end generated code: checksum=a44ef8827035211431d0906a76dbfe97e59a5079]*/
 {
     Py_ssize_t in, out;
     char ch;
-    unsigned char *data, *odata;
+    unsigned char *ascii_data, *odata;
     Py_ssize_t datalen = 0;
     PyObject *rv;
 
-    data = ascii->buf;
-    datalen = ascii->len;
+    ascii_data = data->buf;
+    datalen = data->len;
 
     /* We allocate the output same size as input, this is overkill.
      * The previous implementation used calloc() so we'll zero out the
@@ -1268,31 +1267,31 @@ binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *ascii, int header)
 
     in = out = 0;
     while (in < datalen) {
-        if (data[in] == '=') {
+        if (ascii_data[in] == '=') {
             in++;
             if (in >= datalen) break;
             /* Soft line breaks */
-            if ((data[in] == '\n') || (data[in] == '\r')) {
-                if (data[in] != '\n') {
-                    while (in < datalen && data[in] != '\n') in++;
+            if ((ascii_data[in] == '\n') || (ascii_data[in] == '\r')) {
+                if (ascii_data[in] != '\n') {
+                    while (in < datalen && ascii_data[in] != '\n') in++;
                 }
                 if (in < datalen) in++;
             }
-            else if (data[in] == '=') {
+            else if (ascii_data[in] == '=') {
                 /* broken case from broken python qp */
                 odata[out++] = '=';
                 in++;
             }
-            else if (((data[in] >= 'A' && data[in] <= 'F') ||
-                      (data[in] >= 'a' && data[in] <= 'f') ||
-                      (data[in] >= '0' && data[in] <= '9')) &&
-                     ((data[in+1] >= 'A' && data[in+1] <= 'F') ||
-                      (data[in+1] >= 'a' && data[in+1] <= 'f') ||
-                      (data[in+1] >= '0' && data[in+1] <= '9'))) {
+            else if (((ascii_data[in] >= 'A' && ascii_data[in] <= 'F') ||
+                      (ascii_data[in] >= 'a' && ascii_data[in] <= 'f') ||
+                      (ascii_data[in] >= '0' && ascii_data[in] <= '9')) &&
+                     ((ascii_data[in+1] >= 'A' && ascii_data[in+1] <= 'F') ||
+                      (ascii_data[in+1] >= 'a' && ascii_data[in+1] <= 'f') ||
+                      (ascii_data[in+1] >= '0' && ascii_data[in+1] <= '9'))) {
                 /* hexval */
-                ch = hexval(data[in]) << 4;
+                ch = hexval(ascii_data[in]) << 4;
                 in++;
-                ch |= hexval(data[in]);
+                ch |= hexval(ascii_data[in]);
                 in++;
                 odata[out++] = ch;
             }
@@ -1300,12 +1299,12 @@ binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *ascii, int header)
               odata[out++] = '=';
             }
         }
-        else if (header && data[in] == '_') {
+        else if (header && ascii_data[in] == '_') {
             odata[out++] = ' ';
             in++;
         }
         else {
-            odata[out] = data[in];
+            odata[out] = ascii_data[in];
             in++;
             out++;
         }
