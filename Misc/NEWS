@@ -5,7 +5,7 @@ Python News
 What's New in Python 3.3.4 release candidate 1?
 ===============================================
 
-*Not yet released, see sections below for changes released in 3.3.3*
+*Release date: 26-Jan-2014*
 
 Core and Builtins
 -----------------
@@ -275,7 +275,7 @@ Library
 IDLE
 ----
 
---Issue #17390: Add Python version to Idle editor window title bar.
+- Issue #17390: Add Python version to Idle editor window title bar.
   Original patches by Edmond Burnett and Kent Johnson.
   
 - Issue #18960: IDLE now ignores the source encoding declaration on the second
