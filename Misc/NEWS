@@ -53,10 +53,6 @@ Library
 
 - Issue #20374: Fix build with GNU readline >= 6.3.
 
-- Issue #20311: select.epoll.poll() now rounds the timeout away from zero,
-  instead of rounding towards zero. For example, a timeout of one microsecond
-  is now rounded to one millisecond, instead of being rounded to zero.
-
 - Issue #20262: Warnings are raised now when duplicate names are added in the
   ZIP file or too long ZIP file comment is truncated.
 
