@@ -3,26 +3,26 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(binascii_a2b_uu__doc__,
-"a2b_uu(module, ascii)\n"
+"a2b_uu(module, data)\n"
 "Decode a line of uuencoded data.");
 
 #define BINASCII_A2B_UU_METHODDEF    \
     {"a2b_uu", (PyCFunction)binascii_a2b_uu, METH_VARARGS, binascii_a2b_uu__doc__},
 
 static PyObject *
-binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *ascii);
+binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
 binascii_a2b_uu(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer ascii;
+    Py_buffer data;
 
     if (!PyArg_ParseTuple(args,
         "O&:a2b_uu",
-        ascii_buffer_converter, &ascii))
+        ascii_buffer_converter, &data))
         goto exit;
-    return_value = binascii_a2b_uu_impl(module, &ascii);
+    return_value = binascii_a2b_uu_impl(module, &data);
 
 exit:
     return return_value;
@@ -59,26 +59,26 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base64__doc__,
-"a2b_base64(module, ascii)\n"
+"a2b_base64(module, data)\n"
 "Decode a line of base64 data.");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
     {"a2b_base64", (PyCFunction)binascii_a2b_base64, METH_VARARGS, binascii_a2b_base64__doc__},
 
 static PyObject *
-binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *ascii);
+binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
 binascii_a2b_base64(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer ascii;
+    Py_buffer data;
 
     if (!PyArg_ParseTuple(args,
         "O&:a2b_base64",
-        ascii_buffer_converter, &ascii))
+        ascii_buffer_converter, &data))
         goto exit;
-    return_value = binascii_a2b_base64_impl(module, &ascii);
+    return_value = binascii_a2b_base64_impl(module, &data);
 
 exit:
     return return_value;
@@ -115,26 +115,26 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_hqx__doc__,
-"a2b_hqx(module, ascii)\n"
+"a2b_hqx(module, data)\n"
 "Decode .hqx coding.");
 
 #define BINASCII_A2B_HQX_METHODDEF    \
     {"a2b_hqx", (PyCFunction)binascii_a2b_hqx, METH_VARARGS, binascii_a2b_hqx__doc__},
 
 static PyObject *
-binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *ascii);
+binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
 binascii_a2b_hqx(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer ascii;
+    Py_buffer data;
 
     if (!PyArg_ParseTuple(args,
         "O&:a2b_hqx",
-        ascii_buffer_converter, &ascii))
+        ascii_buffer_converter, &data))
         goto exit;
-    return_value = binascii_a2b_hqx_impl(module, &ascii);
+    return_value = binascii_a2b_hqx_impl(module, &data);
 
 exit:
     return return_value;
@@ -363,27 +363,28 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_qp__doc__,
-"a2b_qp(module, ascii, header=False)\n"
+"a2b_qp(module, data, header=False)\n"
 "Decode a string of qp-encoded data.");
 
 #define BINASCII_A2B_QP_METHODDEF    \
-    {"a2b_qp", (PyCFunction)binascii_a2b_qp, METH_VARARGS, binascii_a2b_qp__doc__},
+    {"a2b_qp", (PyCFunction)binascii_a2b_qp, METH_VARARGS|METH_KEYWORDS, binascii_a2b_qp__doc__},
 
 static PyObject *
-binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *ascii, int header);
+binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *data, int header);
 
 static PyObject *
-binascii_a2b_qp(PyModuleDef *module, PyObject *args)
+binascii_a2b_qp(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer ascii;
+    static char *_keywords[] = {"data", "header", NULL};
+    Py_buffer data;
     int header = 0;
 
-    if (!PyArg_ParseTuple(args,
-        "O&|i:a2b_qp",
-        ascii_buffer_converter, &ascii, &header))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "O&|i:a2b_qp", _keywords,
+        ascii_buffer_converter, &data, &header))
         goto exit;
-    return_value = binascii_a2b_qp_impl(module, &ascii, header);
+    return_value = binascii_a2b_qp_impl(module, &data, header);
 
 exit:
     return return_value;
@@ -426,4 +427,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: checksum=bd769a1cd1169bfa0b73a0ee3081b0748fc39e2c]*/
+/*[clinic end generated code: checksum=abe48ca8020fa3ec25e13bd9fa7414f6b3ee2946]*/
