@@ -3279,11 +3279,11 @@ class DSLParser:
                 fail("You can't specify py_default without specifying a default value!")
         else:
             default = default.strip()
+            bad = False
             ast_input = "x = {}".format(default)
             try:
                 module = ast.parse(ast_input)
 
-                bad = False
                 if 'c_default' not in kwargs:
                     # we can only represent very simple data values in C.
                     # detect whether default is okay, via a blacklist
@@ -3317,8 +3317,16 @@ class DSLParser:
                     bad = blacklist.bad
                 else:
                     # if they specify a c_default, we can be more lenient about the default value.
-                    # but at least ensure that we can turn it into text and reconstitute it correctly.
-                    bad = default != repr(eval(default))
+                    # but at least make an attempt at ensuring it's a valid expression.
+                    try:
+                        value = eval(default)
+                        if value == unspecified:
+                            fail("'unspecified' is not a legal default value!")
+                    except NameError:
+                        pass # probably a named constant
+                    except Exception as e:
+                        fail("Malformed expression given as default value\n"
+                             "{!r} caused {!r}".format(default, e))
                 if bad:
                     fail("Unsupported expression as default value: " + repr(default))
 
