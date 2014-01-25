@@ -76,14 +76,13 @@ class FatalIncludeError(SyntaxError):
 
 def default_loader(href, parse, encoding=None):
     if parse == "xml":
-        file = open(href, 'rb')
-        data = ElementTree.parse(file).getroot()
+        with open(href, 'rb') as file:
+            data = ElementTree.parse(file).getroot()
     else:
         if not encoding:
             encoding = 'UTF-8'
-        file = open(href, 'r', encoding=encoding)
-        data = file.read()
-    file.close()
+        with open(href, 'r', encoding=encoding) as file:
+            data = file.read()
     return data
 
 ##
