@@ -89,22 +89,6 @@ Functions
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
-.. function:: find_spec(name, path=None)
-
-   Find the :term:`spec <module spec>` for a module, optionally within the
-   specified *path*. If the module is in :attr:`sys.modules`, then
-   ``sys.modules[name].__spec__`` is returned (unless the spec would be
-   ``None`` or is not set, in which case :exc:`ValueError` is raised).
-   Otherwise a search using :attr:`sys.meta_path` is done. ``None`` is
-   returned if no spec is found.
-
-   A dotted name does not have its parent implicitly imported as that requires
-   loading them and that may not be desired. To properly import a submodule you
-   will need to import all parent packages of the submodule and use the correct
-   argument to *path*.
-
-   .. versionadded:: 3.4
-
 .. function:: find_loader(name, path=None)
 
    Find the loader for a module, optionally within the specified *path*. If the
@@ -125,7 +109,7 @@ Functions
       attribute is set to ``None``.
 
    .. deprecated:: 3.4
-      Use :func:`find_spec` instead.
+      Use :func:`importlib.util.find_spec` instead.
 
 .. function:: invalidate_caches()
 
@@ -1110,6 +1094,22 @@ an :term:`importer`.
    package (e.g. requesting ``..bacon`` from within the ``spam`` package).
 
    .. versionadded:: 3.3
+
+.. function:: find_spec(name, package=None)
+
+   Find the :term:`spec <module spec>` for a module, optionally relative to
+   the specified **package** name. If the module is in :attr:`sys.modules`,
+   then ``sys.modules[name].__spec__`` is returned (unless the spec would be
+   ``None`` or is not set, in which case :exc:`ValueError` is raised).
+   Otherwise a search using :attr:`sys.meta_path` is done. ``None`` is
+   returned if no spec is found.
+
+   If **name** is for a submodule (contains a dot), the parent module is
+   automatically imported.
+
+   **name** and **package** work the same as for :func:`import_module`.
+
+   .. versionadded:: 3.4
 
 .. decorator:: module_for_loader
 

@@ -11,8 +11,6 @@ __all__ = ['__import__', 'import_module', 'invalidate_caches', 'reload']
 # initialised below if the frozen one is not available).
 import _imp  # Just the builtin component, NOT the full Python module
 import sys
-import types
-import warnings
 
 try:
     import _frozen_importlib as _bootstrap
@@ -34,6 +32,10 @@ _r_long = _bootstrap._r_long
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)
 
+import types
+import warnings
+
+
 # Public API #########################################################
 
 from ._bootstrap import __import__
@@ -47,47 +49,16 @@ def invalidate_caches():
             finder.invalidate_caches()
 
 
-def find_spec(name, path=None):
-    """Return the spec for the specified module.
-
-    First, sys.modules is checked to see if the module was already imported. If
-    so, then sys.modules[name].__spec__ is returned. If that happens to be
-    set to None, then ValueError is raised. If the module is not in
-    sys.modules, then sys.meta_path is searched for a suitable spec with the
-    value of 'path' given to the finders. None is returned if no spec could
-    be found.
-
-    Dotted names do not have their parent packages implicitly imported. You will
-    most likely need to explicitly import all parent packages in the proper
-    order for a submodule to get the correct spec.
-
-    """
-    if name not in sys.modules:
-        return _bootstrap._find_spec(name, path)
-    else:
-        module = sys.modules[name]
-        if module is None:
-            return None
-        try:
-            spec = module.__spec__
-        except AttributeError:
-            raise ValueError('{}.__spec__ is not set'.format(name))
-        else:
-            if spec is None:
-                raise ValueError('{}.__spec__ is None'.format(name))
-            return spec
-
-
 def find_loader(name, path=None):
     """Return the loader for the specified module.
 
     This is a backward-compatible wrapper around find_spec().
 
-    This function is deprecated in favor of importlib.find_spec().
+    This function is deprecated in favor of importlib.util.find_spec().
 
     """
-    warnings.warn('Use importlib.find_spec() instead.', DeprecationWarning,
-                  stacklevel=2)
+    warnings.warn('Use importlib.util.find_spec() instead.',
+                  DeprecationWarning, stacklevel=2)
     try:
         loader = sys.modules[name].__loader__
         if loader is None:
@@ -167,7 +138,8 @@ def reload(module):
                 pkgpath = parent.__path__
         else:
             pkgpath = None
-        spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, module)
+        target = module
+        spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, target)
         methods = _bootstrap._SpecMethods(spec)
         methods.exec(module)
         # The module may have replaced itself in sys.modules!
