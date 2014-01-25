@@ -18,14 +18,11 @@ if sys.platform == 'win32':
         import _overlapped  # Will also be exported.
 
 # This relies on each of the submodules having an __all__ variable.
-from .base_events import *
 from .events import *
 from .futures import *
 from .locks import *
-from .proactor_events import *
 from .protocols import *
 from .queues import *
-from .selector_events import *
 from .streams import *
 from .tasks import *
 from .transports import *
@@ -36,14 +33,11 @@ else:
     from .unix_events import *  # pragma: no cover
 
 
-__all__ = (base_events.__all__ +
-           events.__all__ +
+__all__ = (events.__all__ +
            futures.__all__ +
            locks.__all__ +
-           proactor_events.__all__ +
            protocols.__all__ +
            queues.__all__ +
-           selector_events.__all__ +
            streams.__all__ +
            tasks.__all__ +
            transports.__all__)

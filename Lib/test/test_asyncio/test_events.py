@@ -25,6 +25,7 @@ from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
 
 import asyncio
 from asyncio import events
+from asyncio import selector_events
 from asyncio import test_utils
 
 
@@ -902,7 +903,7 @@ class EventLoopTestsMixin:
 
     def test_internal_fds(self):
         loop = self.create_event_loop()
-        if not isinstance(loop, asyncio.BaseSelectorEventLoop):
+        if not isinstance(loop, selector_events.BaseSelectorEventLoop):
             self.skipTest('loop is not a BaseSelectorEventLoop')
 
         self.assertEqual(1, loop._internal_fds)
