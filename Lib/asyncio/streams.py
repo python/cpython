@@ -1,7 +1,7 @@
 """Stream-related things."""
 
 __all__ = ['StreamReader', 'StreamWriter', 'StreamReaderProtocol',
-           'open_connection', 'start_server',
+           'open_connection', 'start_server', 'IncompleteReadError',
            ]
 
 import collections
@@ -13,6 +13,19 @@ from . import tasks
 
 
 _DEFAULT_LIMIT = 2**16
+
+class IncompleteReadError(EOFError):
+    """
+    Incomplete read error. Attributes:
+
+    - partial: read bytes string before the end of stream was reached
+    - expected: total number of expected bytes
+    """
+    def __init__(self, partial, expected):
+        EOFError.__init__(self, "%s bytes read on a total of %s expected bytes"
+                                % (len(partial), expected))
+        self.partial = partial
+        self.expected = expected
 
 
 @tasks.coroutine
@@ -403,12 +416,9 @@ class StreamReader:
         while n > 0:
             block = yield from self.read(n)
             if not block:
-                break
+                partial = b''.join(blocks)
+                raise IncompleteReadError(partial, len(partial) + n)
             blocks.append(block)
             n -= len(block)
-
-        # TODO: Raise EOFError if we break before n == 0?  (That would
-        # be a change in specification, but I've always had to add an
-        # explicit size check to the caller.)
 
         return b''.join(blocks)

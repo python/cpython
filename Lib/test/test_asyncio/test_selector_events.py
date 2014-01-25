@@ -13,18 +13,16 @@ try:
 except ImportError:
     ssl = None
 
-from asyncio import futures
+import asyncio
 from asyncio import selectors
 from asyncio import test_utils
-from asyncio.protocols import DatagramProtocol, Protocol
-from asyncio.selector_events import BaseSelectorEventLoop
 from asyncio.selector_events import _SelectorTransport
 from asyncio.selector_events import _SelectorSslTransport
 from asyncio.selector_events import _SelectorSocketTransport
 from asyncio.selector_events import _SelectorDatagramTransport
 
 
-class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
+class TestBaseSelectorEventLoop(asyncio.BaseSelectorEventLoop):
 
     def _make_self_pipe(self):
         self._ssock = unittest.mock.Mock()
@@ -127,13 +125,13 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop._sock_recv = unittest.mock.Mock()
 
         f = self.loop.sock_recv(sock, 1024)
-        self.assertIsInstance(f, futures.Future)
+        self.assertIsInstance(f, asyncio.Future)
         self.loop._sock_recv.assert_called_with(f, False, sock, 1024)
 
     def test__sock_recv_canceled_fut(self):
         sock = unittest.mock.Mock()
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop._sock_recv(f, False, sock, 1024)
@@ -143,7 +141,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop.remove_reader = unittest.mock.Mock()
@@ -151,7 +149,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertEqual((10,), self.loop.remove_reader.call_args[0])
 
     def test__sock_recv_tryagain(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         sock.recv.side_effect = BlockingIOError
@@ -162,7 +160,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
                          self.loop.add_reader.call_args[0])
 
     def test__sock_recv_exception(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         err = sock.recv.side_effect = OSError()
@@ -175,7 +173,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop._sock_sendall = unittest.mock.Mock()
 
         f = self.loop.sock_sendall(sock, b'data')
-        self.assertIsInstance(f, futures.Future)
+        self.assertIsInstance(f, asyncio.Future)
         self.assertEqual(
             (f, False, sock, b'data'),
             self.loop._sock_sendall.call_args[0])
@@ -185,7 +183,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop._sock_sendall = unittest.mock.Mock()
 
         f = self.loop.sock_sendall(sock, b'')
-        self.assertIsInstance(f, futures.Future)
+        self.assertIsInstance(f, asyncio.Future)
         self.assertTrue(f.done())
         self.assertIsNone(f.result())
         self.assertFalse(self.loop._sock_sendall.called)
@@ -193,7 +191,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
     def test__sock_sendall_canceled_fut(self):
         sock = unittest.mock.Mock()
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop._sock_sendall(f, False, sock, b'data')
@@ -203,7 +201,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop.remove_writer = unittest.mock.Mock()
@@ -211,7 +209,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertEqual((10,), self.loop.remove_writer.call_args[0])
 
     def test__sock_sendall_tryagain(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         sock.send.side_effect = BlockingIOError
@@ -223,7 +221,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
             self.loop.add_writer.call_args[0])
 
     def test__sock_sendall_interrupted(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         sock.send.side_effect = InterruptedError
@@ -235,7 +233,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
             self.loop.add_writer.call_args[0])
 
     def test__sock_sendall_exception(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         err = sock.send.side_effect = OSError()
@@ -246,7 +244,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
     def test__sock_sendall(self):
         sock = unittest.mock.Mock()
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock.fileno.return_value = 10
         sock.send.return_value = 4
 
@@ -257,7 +255,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
     def test__sock_sendall_partial(self):
         sock = unittest.mock.Mock()
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock.fileno.return_value = 10
         sock.send.return_value = 2
 
@@ -271,7 +269,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
     def test__sock_sendall_none(self):
         sock = unittest.mock.Mock()
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock.fileno.return_value = 10
         sock.send.return_value = 0
 
@@ -287,13 +285,13 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop._sock_connect = unittest.mock.Mock()
 
         f = self.loop.sock_connect(sock, ('127.0.0.1', 8080))
-        self.assertIsInstance(f, futures.Future)
+        self.assertIsInstance(f, asyncio.Future)
         self.assertEqual(
             (f, False, sock, ('127.0.0.1', 8080)),
             self.loop._sock_connect.call_args[0])
 
     def test__sock_connect(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
 
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
@@ -306,7 +304,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
     def test__sock_connect_canceled_fut(self):
         sock = unittest.mock.Mock()
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop._sock_connect(f, False, sock, ('127.0.0.1', 8080))
@@ -316,7 +314,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop.remove_writer = unittest.mock.Mock()
@@ -324,7 +322,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertEqual((10,), self.loop.remove_writer.call_args[0])
 
     def test__sock_connect_tryagain(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         sock.getsockopt.return_value = errno.EAGAIN
@@ -339,7 +337,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
             self.loop.add_writer.call_args[0])
 
     def test__sock_connect_exception(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         sock.getsockopt.return_value = errno.ENOTCONN
@@ -353,12 +351,12 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop._sock_accept = unittest.mock.Mock()
 
         f = self.loop.sock_accept(sock)
-        self.assertIsInstance(f, futures.Future)
+        self.assertIsInstance(f, asyncio.Future)
         self.assertEqual(
             (f, False, sock), self.loop._sock_accept.call_args[0])
 
     def test__sock_accept(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
 
         conn = unittest.mock.Mock()
 
@@ -374,7 +372,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
     def test__sock_accept_canceled_fut(self):
         sock = unittest.mock.Mock()
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop._sock_accept(f, False, sock)
@@ -384,7 +382,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
 
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         f.cancel()
 
         self.loop.remove_reader = unittest.mock.Mock()
@@ -392,7 +390,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertEqual((10,), self.loop.remove_reader.call_args[0])
 
     def test__sock_accept_tryagain(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         sock.accept.side_effect = BlockingIOError
@@ -404,7 +402,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
             self.loop.add_reader.call_args[0])
 
     def test__sock_accept_exception(self):
-        f = futures.Future(loop=self.loop)
+        f = asyncio.Future(loop=self.loop)
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
         err = sock.accept.side_effect = OSError()
@@ -587,7 +585,7 @@ class SelectorTransportTests(unittest.TestCase):
 
     def setUp(self):
         self.loop = test_utils.TestLoop()
-        self.protocol = test_utils.make_test_protocol(Protocol)
+        self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = unittest.mock.Mock(socket.socket)
         self.sock.fileno.return_value = 7
 
@@ -674,7 +672,7 @@ class SelectorSocketTransportTests(unittest.TestCase):
 
     def setUp(self):
         self.loop = test_utils.TestLoop()
-        self.protocol = test_utils.make_test_protocol(Protocol)
+        self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = unittest.mock.Mock(socket.socket)
         self.sock_fd = self.sock.fileno.return_value = 7
 
@@ -686,7 +684,7 @@ class SelectorSocketTransportTests(unittest.TestCase):
         self.protocol.connection_made.assert_called_with(tr)
 
     def test_ctor_with_waiter(self):
-        fut = futures.Future(loop=self.loop)
+        fut = asyncio.Future(loop=self.loop)
 
         _SelectorSocketTransport(
             self.loop, self.sock, self.protocol, fut)
@@ -1039,7 +1037,7 @@ class SelectorSslTransportTests(unittest.TestCase):
 
     def setUp(self):
         self.loop = test_utils.TestLoop()
-        self.protocol = test_utils.make_test_protocol(Protocol)
+        self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = unittest.mock.Mock(socket.socket)
         self.sock.fileno.return_value = 7
         self.sslsock = unittest.mock.Mock()
@@ -1057,7 +1055,7 @@ class SelectorSslTransportTests(unittest.TestCase):
         return transport
 
     def test_on_handshake(self):
-        waiter = futures.Future(loop=self.loop)
+        waiter = asyncio.Future(loop=self.loop)
         tr = _SelectorSslTransport(
             self.loop, self.sock, self.protocol, self.sslcontext,
             waiter=waiter)
@@ -1085,7 +1083,7 @@ class SelectorSslTransportTests(unittest.TestCase):
         self.sslsock.do_handshake.side_effect = exc
         transport = _SelectorSslTransport(
             self.loop, self.sock, self.protocol, self.sslcontext)
-        transport._waiter = futures.Future(loop=self.loop)
+        transport._waiter = asyncio.Future(loop=self.loop)
         transport._on_handshake()
         self.assertTrue(self.sslsock.close.called)
         self.assertTrue(transport._waiter.done())
@@ -1094,7 +1092,7 @@ class SelectorSslTransportTests(unittest.TestCase):
     def test_on_handshake_base_exc(self):
         transport = _SelectorSslTransport(
             self.loop, self.sock, self.protocol, self.sslcontext)
-        transport._waiter = futures.Future(loop=self.loop)
+        transport._waiter = asyncio.Future(loop=self.loop)
         exc = BaseException()
         self.sslsock.do_handshake.side_effect = exc
         self.assertRaises(BaseException, transport._on_handshake)
@@ -1368,7 +1366,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
 
     def setUp(self):
         self.loop = test_utils.TestLoop()
-        self.protocol = test_utils.make_test_protocol(DatagramProtocol)
+        self.protocol = test_utils.make_test_protocol(asyncio.DatagramProtocol)
         self.sock = unittest.mock.Mock(spec_set=socket.socket)
         self.sock.fileno.return_value = 7
 
