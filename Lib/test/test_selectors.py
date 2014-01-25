@@ -363,25 +363,6 @@ class BaseSelectorTestCase(unittest.TestCase):
         self.assertFalse(s.select(2))
         self.assertLess(time() - t, 2.5)
 
-    def test_timeout_rounding(self):
-        # Issue #20311: Timeout must be rounded away from zero to wait *at
-        # least* timeout seconds. For example, epoll_wait() has a resolution of
-        # 1 ms (10^-3), epoll.select(0.0001) must wait 1 ms, not 0 ms.
-        s = self.SELECTOR()
-        self.addCleanup(s.close)
-
-        rd, wr = self.make_socketpair()
-        s.register(rd, selectors.EVENT_READ)
-
-        for timeout in (1e-2, 1e-3, 1e-4):
-            t0 = perf_counter()
-            s.select(timeout)
-            dt = perf_counter() - t0
-            clock = get_clock_info('perf_counter')
-            self.assertGreaterEqual(dt, timeout,
-                                    "%.30f < %.30f ; clock=%s"
-                                    % (dt, timeout, clock))
-
 
 class ScalableSelectorMixIn:
 
