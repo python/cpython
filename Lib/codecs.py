@@ -463,14 +463,11 @@ class StreamReader(Codec):
         # read until we get the required number of characters (if available)
         while True:
             # can the request be satisfied from the character buffer?
-            if chars < 0:
-                if size < 0:
-                    if self.charbuffer:
-                        break
-                elif len(self.charbuffer) >= size:
-                    break
-            else:
+            if chars >= 0:
                 if len(self.charbuffer) >= chars:
+                    break
+            elif size >= 0:
+                if len(self.charbuffer) >= size:
                     break
             # we need more data
             if size < 0:
@@ -479,6 +476,8 @@ class StreamReader(Codec):
                 newdata = self.stream.read(size)
             # decode bytes (those remaining from the last call included)
             data = self.bytebuffer + newdata
+            if not data:
+                break
             try:
                 newchars, decodedbytes = self.decode(data, self.errors)
             except UnicodeDecodeError as exc:
