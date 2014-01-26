@@ -36,6 +36,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8260: The read(), readline() and readlines() methods of
+  codecs.StreamReader returned incomplete data when were called after
+  readline() or read(size).  Based on patch by Amaury Forgeot d'Arc.
+
 - Issue #20105: the codec exception chaining now correctly sets the
   traceback of the original exception as its __traceback__ attribute.
 
