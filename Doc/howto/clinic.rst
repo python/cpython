@@ -149,7 +149,7 @@ Let's dive in!
 1. Find a Python builtin that calls either :c:func:`PyArg_ParseTuple`
    or :c:func:`PyArg_ParseTupleAndKeywords`, and hasn't been converted
    to work with Argument Clinic yet.
-   For my example I'm using ``pickle.Pickler.dump()``.
+   For my example I'm using ``_pickle.Pickler.dump()``.
 
 2. If the call to the ``PyArg_Parse`` function uses any of the
    following format units::
@@ -214,7 +214,7 @@ Let's dive in!
    Sample::
 
     /*[clinic input]
-    pickle.Pickler.dump
+    _pickle.Pickler.dump
 
     Write a pickled representation of obj to the open file.
     [clinic start generated code]*/
@@ -227,22 +227,27 @@ Let's dive in!
    the top.  (In our sample code we'll just show the two blocks next to
    each other.)
 
-   Sample::
-
-    /*[clinic input]
-    module pickle
-    class pickle.Pickler
-    [clinic start generated code]*/
-
-    /*[clinic input]
-    pickle.Pickler.dump
-
-    Write a pickled representation of obj to the open file.
-    [clinic start generated code]*/
-
    The name of the class and module should be the same as the one
    seen by Python.  Check the name defined in the :c:type:`PyModuleDef`
    or :c:type:`PyTypeObject` as appropriate.
+
+   When you declare a class, you must also specify two aspects of its type
+   in C: the type declaration you'd use for a pointer to an instance of
+   this class, and a pointer to the :c:type:`PyTypeObject` for this class.
+
+   Sample::
+
+       /*[clinic input]
+       module _pickle
+       class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
+       [clinic start generated code]*/
+
+       /*[clinic input]
+       _pickle.Pickler.dump
+
+       Write a pickled representation of obj to the open file.
+       [clinic start generated code]*/
+
 
 
 
@@ -286,13 +291,13 @@ Let's dive in!
 
    Sample::
 
-       /*[clinic input]
-       module pickle
-       class pickle.Pickler
-       [clinic start generated code]*/
+        /*[clinic input]
+        module _pickle
+        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
+        [clinic start generated code]*/
 
-       /*[clinic input]
-       pickle.Pickler.dump
+        /*[clinic input]
+        _pickle.Pickler.dump
 
            obj: 'O'
 
@@ -309,7 +314,7 @@ Let's dive in!
    itself before the first keyword-only argument, indented the
    same as the parameter lines.
 
-   (``pickle.Pickler.dump`` has neither, so our sample is unchanged.)
+   (``_pickle.Pickler.dump`` has neither, so our sample is unchanged.)
 
 
 10. If the existing C function calls :c:func:`PyArg_ParseTuple`
@@ -327,12 +332,12 @@ Let's dive in!
     Sample::
 
         /*[clinic input]
-        module pickle
-        class pickle.Pickler
+        module _pickle
+        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
         [clinic start generated code]*/
 
         /*[clinic input]
-        pickle.Pickler.dump
+        _pickle.Pickler.dump
 
             obj: 'O'
             /
@@ -354,12 +359,12 @@ Let's dive in!
     Sample::
 
         /*[clinic input]
-        module pickle
-        class pickle.Pickler
+        module _pickle
+        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
         [clinic start generated code]*/
 
         /*[clinic input]
-        pickle.Pickler.dump
+        _pickle.Pickler.dump
 
             obj: 'O'
                 The object to be pickled.
@@ -373,13 +378,13 @@ Let's dive in!
     the file in your text editor to see::
 
        /*[clinic input]
-       module pickle
-       class pickle.Pickler
+       module _pickle
+       class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
        [clinic start generated code]*/
        /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
        /*[clinic input]
-       pickle.Pickler.dump
+       _pickle.Pickler.dump
 
            obj: 'O'
                The object to be pickled.
@@ -388,12 +393,12 @@ Let's dive in!
        Write a pickled representation of obj to the open file.
        [clinic start generated code]*/
 
-       PyDoc_STRVAR(pickle_Pickler_dump__doc__,
+       PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
        "Write a pickled representation of obj to the open file.\n"
        "\n"
        ...
        static PyObject *
-       pickle_Pickler_dump_impl(PyObject *self, PyObject *obj)
+       _pickle_Pickler_dump_impl(PicklerObject *self, PyObject *obj)
        /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
 
     Obviously, if Argument Clinic didn't produce any output, it's because
@@ -428,8 +433,8 @@ Let's dive in!
     macro defining the appropriate static :c:type:`PyMethodDef` structure for
     this builtin::
 
-        #define _PICKLE_PICKLER_DUMP_METHODDEF    \
-        {"dump", (PyCFunction)_pickle_Pickler_dump, METH_O, _pickle_Pickler_dump__doc__},
+        #define __PICKLE_PICKLER_DUMP_METHODDEF    \
+        {"dump", (PyCFunction)__pickle_Pickler_dump, METH_O, __pickle_Pickler_dump__doc__},
 
     This static structure should be *exactly* the same as the existing static
     :c:type:`PyMethodDef` structure for this builtin.
@@ -463,13 +468,13 @@ Let's dive in!
     Sample::
 
         /*[clinic input]
-        module pickle
-        class pickle.Pickler
+        module _pickle
+        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
         [clinic start generated code]*/
         /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
         /*[clinic input]
-        pickle.Pickler.dump
+        _pickle.Pickler.dump
 
             obj: 'O'
                 The object to be pickled.
@@ -478,12 +483,12 @@ Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic start generated code]*/
 
-        PyDoc_STRVAR(pickle_Pickler_dump__doc__,
+        PyDoc_STRVAR(__pickle_Pickler_dump__doc__,
         "Write a pickled representation of obj to the open file.\n"
         "\n"
         ...
         static PyObject *
-        pickle_Pickler_dump_impl(PyObject *self, PyObject *obj)
+        _pickle_Pickler_dump_impl(PicklerObject *self, PyObject *obj)
         /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
         {
             /* Check whether the Pickler was initialized correctly (issue3664).
@@ -515,8 +520,8 @@ Let's dive in!
     Sample::
 
         static struct PyMethodDef Pickler_methods[] = {
-            _PICKLE_PICKLER_DUMP_METHODDEF
-            _PICKLE_PICKLER_CLEAR_MEMO_METHODDEF
+            __PICKLE_PICKLER_DUMP_METHODDEF
+            __PICKLE_PICKLER_CLEAR_MEMO_METHODDEF
             {NULL, NULL}                /* sentinel */
         };
 
@@ -1106,15 +1111,16 @@ Using a "self converter"
 ------------------------
 
 Argument Clinic automatically adds a "self" parameter for you
-using a default converter.  However, you can override
+using a default converter.  It automatically sets the ``type``
+of this parameter to the "pointer to an instance" you specified
+when you declared the type.  However, you can override
 Argument Clinic's converter and specify one yourself.
 Just add your own ``self`` parameter as the first parameter in a
 block, and ensure that its converter is an instance of
 ``self_converter`` or a subclass thereof.
 
-What's the point?  This lets you automatically cast ``self``
-from ``PyObject *`` to a custom type, just like ``object()``
-does with its ``type`` parameter.
+What's the point?  This lets you override the type of ``self``,
+or give it a different default name.
 
 How do you specify the custom type you want to cast ``self`` to?
 If you only have one or two functions with the same type for ``self``,
@@ -1502,6 +1508,8 @@ preset configurations, as follows:
     and ``docstring_prototype``, write the ``impl_definition`` to
     ``block``, and write everything else to ``file``.
 
+    The default filename is ``"{dirname}/clinic/{basename}.h"``.
+
   ``buffer``
     Save up all most of the output from Clinic, to be written into
     your file near the end.  For Python files implementing modules
@@ -1554,7 +1562,7 @@ The ``new`` subcommand works like this::
 
 This creates a new destination with name ``<name>`` and type ``<type>``.
 
-There are five destination types::
+There are five destination types:
 
     ``suppress``
         Throws the text away.
@@ -1575,12 +1583,18 @@ There are five destination types::
         The template can use three strings internally that will be replaced
         by bits of the filename:
 
-            {filename}
-                The full filename.
+            {path}
+                The full path to the file, including directory and full filename.
+            {dirname}
+                The name of the directory the file is in.
             {basename}
-                Everything up to but not including the last '.'.
-            {extension}
-                The last '.' and everything after it.
+                Just the name of the file, not including the directory.
+            {basename_root}
+                Basename with the extension clipped off
+                (everything up to but not including the last '.').
+            {basename_extension}
+                The last '.' and everything after it.  If the basename
+                does not contain a period, this will be the empty string.
 
         If there are no periods in the filename, {basename} and {filename}
         are the same, and {extension} is empty.  "{basename}{extension}"
