@@ -42,7 +42,6 @@ class TestUntestedModules(unittest.TestCase):
             import encodings
             import formatter
             import html.entities
-            import imghdr
             import keyword
             import mailcap
             import nturl2path

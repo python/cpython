@@ -292,6 +292,9 @@ IDLE
 Tests
 -----
 
+- Issue #19990: Added tests for the imghdr module.  Based on patch by
+  Claudiu Popa.
+
 - Issue #19804: The test_find_mac test in test_uuid is now skipped if the
   ifconfig executable is not available.
 
