@@ -371,7 +371,8 @@ Module Functions
 
    Returns an iterator over the :class:`Future` instances (possibly created by
    different :class:`Executor` instances) given by *fs* that yields futures as
-   they complete (finished or were cancelled).  Any futures that completed
+   they complete (finished or were cancelled). Any futures given by *fs* that
+   are duplicated will be returned once. Any futures that completed
    before :func:`as_completed` is called will be yielded first.  The returned
    iterator raises a :exc:`TimeoutError` if :meth:`~iterator.__next__` is
    called and the result isn't available after *timeout* seconds from the
