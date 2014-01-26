@@ -79,9 +79,8 @@ howto/logging,,:Started,INFO:root:Started
 howto/logging,,:This,DEBUG:root:This message should go to the log file
 howto/logging,,:This,DEBUG:This message should appear on the console
 howto/logging,,:Watch,WARNING:root:Watch out!
-howto/pyporting,75,::,# make sure to use :: Python *and* :: Python :: 3 so
-howto/pyporting,75,::,"'Programming Language :: Python',"
-howto/pyporting,75,::,'Programming Language :: Python :: 3'
+howto/pyporting,,::,Programming Language :: Python :: 2
+howto/pyporting,,::,Programming Language :: Python :: 3
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:example,"for example ""joe@password:example.com"""
@@ -278,6 +277,7 @@ whatsnew/3.2,,:gz,">>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') a
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/changelog,,:platform,:platform:
+whatsnew/changelog,,:gz,": TarFile opened with external fileobj and ""w:gz"" mode didn't"
 whatsnew/changelog,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused"
 whatsnew/changelog,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
