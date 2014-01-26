@@ -1608,7 +1608,7 @@ audioop_lin2adpcm_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyOb
     Py_ssize_t i;
     int step, valpred, delta,
         index, sign, vpdiff, diff;
-    PyObject *rv, *str;
+    PyObject *rv = NULL, *str;
     int outputbuffer = 0, bufferstep;
 
     if (!audioop_check_parameters(fragment->len, width))
@@ -1626,9 +1626,10 @@ audioop_lin2adpcm_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyOb
         index = 0;
     } else if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
-        return NULL;
-    } else if (!PyArg_ParseTuple(state, "ii", &valpred, &index))
-        return NULL;
+        goto exit;
+    } else if (!PyArg_ParseTuple(state, "ii", &valpred, &index)) {
+        goto exit;
+    }
 
     step = stepsizeTable[index];
     bufferstep = 1;
@@ -1704,6 +1705,8 @@ audioop_lin2adpcm_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyOb
         bufferstep = !bufferstep;
     }
     rv = Py_BuildValue("(O(ii))", str, valpred, index);
+
+  exit:
     Py_DECREF(str);
     return rv;
 }
