@@ -236,7 +236,7 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
     return Py_CLEANUP_SUPPORTED;
 }
 
-#include "binascii.clinic.c"
+#include "clinic/binascii.c.h"
 
 /*[clinic input]
 binascii.a2b_uu
