@@ -142,6 +142,9 @@ IDLE
 Tests
 -----
 
+- Issue #20358: Tests for curses.window.overlay and curses.window.overwrite
+  no longer specify min{row,col} > max{row,col}.
+
 - Issue #19886: Use better estimated memory requirements for bigmem tests.
 
 Tools/Demos
