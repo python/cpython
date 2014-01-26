@@ -28,10 +28,9 @@
 #else
 #  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
 #endif
-#define DEF_WBITS MAX_WBITS
 
-/* The output buffer will be increased in chunks of DEFAULTALLOC bytes. */
-#define DEFAULTALLOC (16*1024)
+/* Initial buffer size. */
+#define DEF_BUF_SIZE (16*1024)
 
 static PyTypeObject Comptype;
 static PyTypeObject Decomptype;
@@ -82,41 +81,12 @@ zlib_error(z_stream zst, int err, char *msg)
 }
 
 /*[clinic input]
+output preset file
 module zlib
 class zlib.Compress "compobject *" "&Comptype"
 class zlib.Decompress "compobject *" "&Decomptype"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
-
-PyDoc_STRVAR(compressobj__doc__,
-"compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8,\n"
-"            strategy=Z_DEFAULT_STRATEGY[, zdict])\n"
-" -- Return a compressor object.\n"
-"\n"
-"level is the compression level (an integer in the range 0-9; default is 6).\n"
-"Higher compression levels are slower, but produce smaller results.\n"
-"\n"
-"method is the compression algorithm. If given, this must be DEFLATED.\n"
-"\n"
-"wbits is the base two logarithm of the window size (range: 8..15).\n"
-"\n"
-"memlevel controls the amount of memory used for internal compression state.\n"
-"Valid values range from 1 to 9. Higher values result in higher memory usage,\n"
-"faster compression, and smaller output.\n"
-"\n"
-"strategy is used to tune the compression algorithm. Possible values are\n"
-"Z_DEFAULT_STRATEGY, Z_FILTERED, and Z_HUFFMAN_ONLY.\n"
-"\n"
-"zdict is the predefined compression dictionary - a sequence of bytes\n"
-"containing subsequences that are likely to occur in the input data.");
-
-PyDoc_STRVAR(decompressobj__doc__,
-"decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
-"\n"
-"Optional arg wbits is the window buffer size.\n"
-"\n"
-"Optional arg zdict is the predefined compression dictionary. This must be\n"
-"the same dictionary as used by the compressor that produced the input data.");
 
 static compobject *
 newcompobject(PyTypeObject *type)
@@ -165,79 +135,26 @@ PyZlib_Free(voidpf ctx, void *ptr)
 }
 
 /*[clinic input]
-
 zlib.compress
+
     bytes: Py_buffer
         Binary data to be compressed.
-    [
-    level: int
+    level: int(c_default="Z_DEFAULT_COMPRESSION") = Z_DEFAULT_COMPRESSION
         Compression level, in 0-9.
-    ]
     /
 
-Returns compressed string.
-
+Returns a bytes object containing compressed data.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(zlib_compress__doc__,
-"compress(module, bytes, [level])\n"
-"Returns compressed string.\n"
-"\n"
-"  bytes\n"
-"    Binary data to be compressed.\n"
-"  level\n"
-"    Compression level, in 0-9.");
-
-#define ZLIB_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)zlib_compress, METH_VARARGS, zlib_compress__doc__},
-
 static PyObject *
-zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level);
-
-static PyObject *
-zlib_compress(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    Py_buffer bytes = {NULL, NULL};
-    int group_right_1 = 0;
-    int level = 0;
-
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "y*:compress", &bytes))
-                goto exit;
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "y*i:compress", &bytes, &level))
-                goto exit;
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "zlib.compress requires 1 to 2 arguments");
-            goto exit;
-    }
-    return_value = zlib_compress_impl(module, &bytes, group_right_1, level);
-
-exit:
-    /* Cleanup for bytes */
-    if (bytes.obj)
-       PyBuffer_Release(&bytes);
-
-    return return_value;
-}
-
-static PyObject *
-zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
-/*[clinic end generated code: checksum=ce8d4c0a17ecd79c3ffcc032dcdf8ac6830ded1e]*/
+zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int level)
+/*[clinic end generated code: checksum=5d7dd4588788efd3516e5f4225050d6413632601]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
     unsigned int length;
     int err;
     z_stream zst;
-
-    if (!group_right_1)
-        level = Z_DEFAULT_COMPRESSION;
 
     if ((size_t)bytes->len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
@@ -312,6 +229,7 @@ zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int
 class uint_converter(CConverter):
     type = 'unsigned int'
     converter = 'uint_converter'
+    c_ignored_default = "0"
 
 [python start generated code]*/
 /*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
@@ -347,35 +265,38 @@ uint_converter(PyObject *obj, void *ptr)
     return 1;
 }
 
-PyDoc_STRVAR(decompress__doc__,
-"decompress(string[, wbits[, bufsize]]) -- Return decompressed string.\n"
-"\n"
-"Optional arg wbits is the window buffer size.  Optional arg bufsize is\n"
-"the initial output buffer size.");
+/*[clinic input]
+zlib.decompress
+
+    data: Py_buffer
+        Compressed data.
+    wbits: int(c_default="MAX_WBITS") = MAX_WBITS
+        The window buffer size.
+    bufsize: uint(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
+        The initial output buffer size.
+    /
+
+Returns a bytes object containing the uncompressed data.
+[clinic start generated code]*/
 
 static PyObject *
-PyZlib_decompress(PyObject *self, PyObject *args)
+zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits, unsigned int bufsize)
+/*[clinic end generated code: checksum=9e5464e72df9cb5fee73df662dbcaed867e01d32]*/
 {
     PyObject *result_str = NULL;
-    Py_buffer pinput;
     Byte *input;
     unsigned int length;
     int err;
-    int wsize=DEF_WBITS;
-    unsigned int bufsize = DEFAULTALLOC, new_bufsize;
+    unsigned int new_bufsize;
     z_stream zst;
 
-    if (!PyArg_ParseTuple(args, "y*|iO&:decompress",
-                          &pinput, &wsize, uint_converter, &bufsize))
-        return NULL;
-
-    if ((size_t)pinput.len > UINT_MAX) {
+    if ((size_t)data->len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "Size does not fit in an unsigned int");
         goto error;
     }
-    input = pinput.buf;
-    length = (unsigned int)pinput.len;
+    input = data->buf;
+    length = (unsigned int)data->len;
 
     if (bufsize == 0)
         bufsize = 1;
@@ -391,7 +312,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     zst.zfree = PyZlib_Free;
     zst.next_out = (Byte *)PyBytes_AS_STRING(result_str);
     zst.next_in = (Byte *)input;
-    err = inflateInit2(&zst, wsize);
+    err = inflateInit2(&zst, wbits);
 
     switch(err) {
     case(Z_OK):
@@ -457,32 +378,45 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     if (_PyBytes_Resize(&result_str, zst.total_out) < 0)
         goto error;
 
-    PyBuffer_Release(&pinput);
     return result_str;
 
  error:
-    PyBuffer_Release(&pinput);
     Py_XDECREF(result_str);
     return NULL;
 }
 
+/*[clinic input]
+zlib.compressobj
+
+    level: int(c_default="Z_DEFAULT_COMPRESSION") = Z_DEFAULT_COMPRESSION
+        The compression level (an integer in the range 0-9; default is 6).
+        Higher compression levels are slower, but produce smaller results.
+    method: int(c_default="DEFLATED") = DEFLATED
+        The compression algorithm.  If given, this must be DEFLATED.
+    wbits: int(c_default="MAX_WBITS") = MAX_WBITS
+        The base two logarithm of the window size (range: 8..15).
+    memLevel: int(c_default="DEF_MEM_LEVEL") = DEF_MEM_LEVEL
+        Controls the amount of memory used for internal compression state.
+        Valid values range from 1 to 9.  Higher values result in higher memory
+        usage, faster compression, and smaller output.
+    strategy: int(c_default="Z_DEFAULT_STRATEGY") = Z_DEFAULT_STRATEGY
+        Used to tune the compression algorithm.  Possible values are
+        Z_DEFAULT_STRATEGY, Z_FILTERED, and Z_HUFFMAN_ONLY.
+    zdict: Py_buffer = None
+        The predefined compression dictionary - a sequence of bytes
+        containing subsequences that are likely to occur in the input data.
+
+Return a compressor object.
+[clinic start generated code]*/
+
 static PyObject *
-PyZlib_compressobj(PyObject *selfptr, PyObject *args, PyObject *kwargs)
+zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits, int memLevel, int strategy, Py_buffer *zdict)
+/*[clinic end generated code: checksum=89e5a6c1449caa9ed76f1baad066600e985151a9]*/
 {
     compobject *self = NULL;
-    int level=Z_DEFAULT_COMPRESSION, method=DEFLATED;
-    int wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=0, err;
-    Py_buffer zdict;
-    static char *kwlist[] = {"level", "method", "wbits",
-                             "memLevel", "strategy", "zdict", NULL};
+    int err;
 
-    zdict.buf = NULL; /* Sentinel, so we can tell whether zdict was supplied. */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iiiiiy*:compressobj",
-                                     kwlist, &level, &method, &wbits,
-                                     &memLevel, &strategy, &zdict))
-        return NULL;
-
-    if (zdict.buf != NULL && (size_t)zdict.len > UINT_MAX) {
+    if (zdict->buf != NULL && (size_t)zdict->len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "zdict length does not fit in an unsigned int");
         goto error;
@@ -500,11 +434,11 @@ PyZlib_compressobj(PyObject *selfptr, PyObject *args, PyObject *kwargs)
     switch(err) {
     case (Z_OK):
         self->is_initialised = 1;
-        if (zdict.buf == NULL) {
+        if (zdict->buf == NULL) {
             goto success;
         } else {
             err = deflateSetDictionary(&self->zst,
-                                       zdict.buf, (unsigned int)zdict.len);
+                                       zdict->buf, (unsigned int)zdict->len);
             switch (err) {
             case (Z_OK):
                 goto success;
@@ -532,22 +466,28 @@ PyZlib_compressobj(PyObject *selfptr, PyObject *args, PyObject *kwargs)
     Py_XDECREF(self);
     self = NULL;
  success:
-    if (zdict.buf != NULL)
-        PyBuffer_Release(&zdict);
     return (PyObject*)self;
 }
 
-static PyObject *
-PyZlib_decompressobj(PyObject *selfptr, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {"wbits", "zdict", NULL};
-    int wbits=DEF_WBITS, err;
-    compobject *self;
-    PyObject *zdict=NULL;
+/*[clinic input]
+zlib.decompressobj
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO:decompressobj",
-                                     kwlist, &wbits, &zdict))
-        return NULL;
+    wbits: int(c_default="MAX_WBITS") = MAX_WBITS
+        The window buffer size.
+    zdict: object(c_default="NULL") = b''
+        The predefined compression dictionary.  This must be the same
+        dictionary as used by the compressor that produced the input data.
+
+Return a decompressor object.
+[clinic start generated code]*/
+
+static PyObject *
+zlib_decompressobj_impl(PyModuleDef *module, int wbits, PyObject *zdict)
+/*[clinic end generated code: checksum=8ccd583fbd631798566d415933cd44440c8a74b5]*/
+{
+    int err;
+    compobject *self;
+
     if (zdict != NULL && !PyObject_CheckBuffer(zdict)) {
         PyErr_SetString(PyExc_TypeError,
                         "zdict argument must support the buffer protocol");
@@ -615,37 +555,41 @@ Decomp_dealloc(compobject *self)
     Dealloc(self);
 }
 
-PyDoc_STRVAR(comp_compress__doc__,
-"compress(data) -- Return a string containing data compressed.\n"
-"\n"
-"After calling this function, some of the input data may still\n"
-"be stored in internal buffers for later processing.\n"
-"Call the flush() method to clear these buffers.");
+/*[clinic input]
+zlib.Compress.compress
 
+    data: Py_buffer
+        Binary data to be compressed.
+    /
+
+Returns a bytes object containing compressed data.
+
+After calling this function, some of the input data may still
+be stored in internal buffers for later processing.
+Call the flush() method to clear these buffers.
+[clinic start generated code]*/
 
 static PyObject *
-PyZlib_objcompress(compobject *self, PyObject *args)
+zlib_Compress_compress_impl(compobject *self, Py_buffer *data)
+/*[clinic end generated code: checksum=5d5cd791cbc6a7f4b6de4ec12c085c88d4d3e31c]*/
 {
     int err;
     unsigned int inplen;
-    unsigned int length = DEFAULTALLOC, new_length;
-    PyObject *RetVal = NULL;
-    Py_buffer pinput;
+    unsigned int length = DEF_BUF_SIZE, new_length;
+    PyObject *RetVal;
     Byte *input;
     unsigned long start_total_out;
 
-    if (!PyArg_ParseTuple(args, "y*:compress", &pinput))
-        return NULL;
-    if ((size_t)pinput.len > UINT_MAX) {
+    if ((size_t)data->len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "Size does not fit in an unsigned int");
-        goto error_outer;
+        return NULL;
     }
-    input = pinput.buf;
-    inplen = (unsigned int)pinput.len;
+    input = data->buf;
+    inplen = (unsigned int)data->len;
 
     if (!(RetVal = PyBytes_FromStringAndSize(NULL, length)))
-        goto error_outer;
+        return NULL;
 
     ENTER_ZLIB(self);
 
@@ -668,7 +612,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
             new_length = UINT_MAX;
         if (_PyBytes_Resize(&RetVal, new_length) < 0) {
             Py_CLEAR(RetVal);
-            goto error;
+            goto done;
         }
         self->zst.next_out =
             (unsigned char *)PyBytes_AS_STRING(RetVal) + length;
@@ -686,18 +630,15 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 
     if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(self->zst, err, "while compressing data");
-        Py_DECREF(RetVal);
-        RetVal = NULL;
-        goto error;
+        Py_CLEAR(RetVal);
+        goto done;
     }
     if (_PyBytes_Resize(&RetVal, self->zst.total_out - start_total_out) < 0) {
         Py_CLEAR(RetVal);
     }
 
- error:
+ done:
     LEAVE_ZLIB(self);
- error_outer:
-    PyBuffer_Release(&pinput);
     return RetVal;
 }
 
@@ -745,7 +686,6 @@ save_unconsumed_input(compobject *self, int err)
 }
 
 /*[clinic input]
-
 zlib.Decompress.decompress
 
     data: Py_buffer
@@ -756,61 +696,19 @@ zlib.Decompress.decompress
         the unconsumed_tail attribute.
     /
 
-Return a string containing the decompressed version of the data.
+Return a bytes object containing the decompressed version of the data.
 
 After calling this function, some of the input data may still be stored in
 internal buffers for later processing.
 Call the flush() method to clear these buffers.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
-"decompress(self, data, max_length=0)\n"
-"Return a string containing the decompressed version of the data.\n"
-"\n"
-"  data\n"
-"    The binary data to decompress.\n"
-"  max_length\n"
-"    The maximum allowable length of the decompressed data.\n"
-"    Unconsumed input data will be stored in\n"
-"    the unconsumed_tail attribute.\n"
-"\n"
-"After calling this function, some of the input data may still be stored in\n"
-"internal buffers for later processing.\n"
-"Call the flush() method to clear these buffers.");
-
-#define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)zlib_Decompress_decompress, METH_VARARGS, zlib_Decompress_decompress__doc__},
-
-static PyObject *
-zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length);
-
-static PyObject *
-zlib_Decompress_decompress(compobject *self, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
-    unsigned int max_length = 0;
-
-    if (!PyArg_ParseTuple(args,
-        "y*|O&:decompress",
-        &data, uint_converter, &max_length))
-        goto exit;
-    return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj)
-       PyBuffer_Release(&data);
-
-    return return_value;
-}
-
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length)
-/*[clinic end generated code: checksum=b7fd2e3b23430f57f5a84817189575bc46464901]*/
+/*[clinic end generated code: checksum=755cccc9087bfe55486b7e15fa7e2ab60b4c86d6]*/
 {
     int err;
-    unsigned int old_length, length = DEFAULTALLOC;
+    unsigned int old_length, length = DEF_BUF_SIZE;
     PyObject *RetVal = NULL;
     unsigned long start_total_out;
 
@@ -927,29 +825,31 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int 
     return RetVal;
 }
 
-PyDoc_STRVAR(comp_flush__doc__,
-"flush( [mode] ) -- Return a string containing any remaining compressed data.\n"
-"\n"
-"mode can be one of the constants Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH; the\n"
-"default value used when mode is not specified is Z_FINISH.\n"
-"If mode == Z_FINISH, the compressor object can no longer be used after\n"
-"calling the flush() method.  Otherwise, more data can still be compressed.");
+/*[clinic input]
+zlib.Compress.flush
+
+    mode: int(c_default="Z_FINISH") = Z_FINISH
+        One of the constants Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH.
+        If mode == Z_FINISH, the compressor object can no longer be
+        used after calling the flush() method.  Otherwise, more data
+        can still be compressed.
+    /
+
+Return a bytes object containing any remaining compressed data.
+[clinic start generated code]*/
 
 static PyObject *
-PyZlib_flush(compobject *self, PyObject *args)
+zlib_Compress_flush_impl(compobject *self, int mode)
+/*[clinic end generated code: checksum=a203f4cefc9de727aa1d2ea39d11c0a16c32041a]*/
 {
     int err;
-    unsigned int length = DEFAULTALLOC, new_length;
+    unsigned int length = DEF_BUF_SIZE, new_length;
     PyObject *RetVal;
-    int flushmode = Z_FINISH;
     unsigned long start_total_out;
-
-    if (!PyArg_ParseTuple(args, "|i:flush", &flushmode))
-        return NULL;
 
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
        doing any work at all; just return an empty string. */
-    if (flushmode == Z_NO_FLUSH) {
+    if (mode == Z_NO_FLUSH) {
         return PyBytes_FromStringAndSize(NULL, 0);
     }
 
@@ -964,7 +864,7 @@ PyZlib_flush(compobject *self, PyObject *args)
     self->zst.next_out = (unsigned char *)PyBytes_AS_STRING(RetVal);
 
     Py_BEGIN_ALLOW_THREADS
-    err = deflate(&(self->zst), flushmode);
+    err = deflate(&(self->zst), mode);
     Py_END_ALLOW_THREADS
 
     /* while Z_OK and the output buffer is full, there might be more output,
@@ -984,14 +884,14 @@ PyZlib_flush(compobject *self, PyObject *args)
         length = new_length;
 
         Py_BEGIN_ALLOW_THREADS
-        err = deflate(&(self->zst), flushmode);
+        err = deflate(&(self->zst), mode);
         Py_END_ALLOW_THREADS
     }
 
-    /* If flushmode is Z_FINISH, we also have to call deflateEnd() to free
+    /* If mode is Z_FINISH, we also have to call deflateEnd() to free
        various data structures. Note we should only get Z_STREAM_END when
-       flushmode is Z_FINISH, but checking both for safety*/
-    if (err == Z_STREAM_END && flushmode == Z_FINISH) {
+       mode is Z_FINISH, but checking both for safety*/
+    if (err == Z_STREAM_END && mode == Z_FINISH) {
         err = deflateEnd(&(self->zst));
         if (err != Z_OK) {
             zlib_error(self->zst, err, "while finishing compression");
@@ -1031,25 +931,9 @@ zlib.Compress.copy
 Return a copy of the compression object.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(zlib_Compress_copy__doc__,
-"copy(self)\n"
-"Return a copy of the compression object.");
-
-#define ZLIB_COMPRESS_COPY_METHODDEF    \
-    {"copy", (PyCFunction)zlib_Compress_copy, METH_NOARGS, zlib_Compress_copy__doc__},
-
-static PyObject *
-zlib_Compress_copy_impl(compobject *self);
-
-static PyObject *
-zlib_Compress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
-{
-    return zlib_Compress_copy_impl(self);
-}
-
 static PyObject *
 zlib_Compress_copy_impl(compobject *self)
-/*[clinic end generated code: checksum=7aa841ad51297eb83250f511a76872e88fdc737e]*/
+/*[clinic end generated code: checksum=5144aa153c21e805afa5c19e5b48cf8e6480b5da]*/
 {
     compobject *retval = NULL;
     int err;
@@ -1099,11 +983,15 @@ error:
     return NULL;
 }
 
-PyDoc_STRVAR(decomp_copy__doc__,
-"copy() -- Return a copy of the decompression object.");
+/*[clinic input]
+zlib.Decompress.copy
+
+Return a copy of the decompression object.
+[clinic start generated code]*/
 
 static PyObject *
-PyZlib_uncopy(compobject *self)
+zlib_Decompress_copy_impl(compobject *self)
+/*[clinic end generated code: checksum=02a883a2a510c8ccfeef3f89e317a275bfe8c094]*/
 {
     compobject *retval = NULL;
     int err;
@@ -1155,24 +1043,26 @@ error:
 }
 #endif
 
-PyDoc_STRVAR(decomp_flush__doc__,
-"flush( [length] ) -- Return a string containing any remaining\n"
-"decompressed data. length, if given, is the initial size of the\n"
-"output buffer.\n"
-"\n"
-"The decompressor object can no longer be used after this call.");
+/*[clinic input]
+zlib.Decompress.flush
+
+    length: uint(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
+        the initial size of the output buffer.
+    /
+
+Return a bytes object containing any remaining decompressed data.
+[clinic start generated code]*/
 
 static PyObject *
-PyZlib_unflush(compobject *self, PyObject *args)
+zlib_Decompress_flush_impl(compobject *self, unsigned int length)
+/*[clinic end generated code: checksum=db6fb753ab698e22afe3957c9da9e5e77f4bfc08]*/
 {
     int err;
-    unsigned int length = DEFAULTALLOC, new_length;
+    unsigned int new_length;
     PyObject * retval = NULL;
     unsigned long start_total_out;
     Py_ssize_t size;
 
-    if (!PyArg_ParseTuple(args, "|O&:flush", uint_converter, &length))
-        return NULL;
     if (length == 0) {
         PyErr_SetString(PyExc_ValueError, "length must be greater than zero");
         return NULL;
@@ -1248,12 +1138,12 @@ error:
     return retval;
 }
 
+#include "zlibmodule.clinic.c"
+
 static PyMethodDef comp_methods[] =
 {
-    {"compress", (binaryfunc)PyZlib_objcompress, METH_VARARGS,
-                 comp_compress__doc__},
-    {"flush", (binaryfunc)PyZlib_flush, METH_VARARGS,
-              comp_flush__doc__},
+    ZLIB_COMPRESS_COMPRESS_METHODDEF
+    ZLIB_COMPRESS_FLUSH_METHODDEF
 #ifdef HAVE_ZLIB_COPY
     ZLIB_COMPRESS_COPY_METHODDEF
 #endif
@@ -1263,11 +1153,9 @@ static PyMethodDef comp_methods[] =
 static PyMethodDef Decomp_methods[] =
 {
     ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
-    {"flush", (binaryfunc)PyZlib_unflush, METH_VARARGS,
-              decomp_flush__doc__},
+    ZLIB_DECOMPRESS_FLUSH_METHODDEF
 #ifdef HAVE_ZLIB_COPY
-    {"copy",  (PyCFunction)PyZlib_uncopy, METH_NOARGS,
-              decomp_copy__doc__},
+    ZLIB_DECOMPRESS_COPY_METHODDEF
 #endif
     {NULL, NULL}
 };
@@ -1280,95 +1168,95 @@ static PyMemberDef Decomp_members[] = {
     {NULL},
 };
 
-PyDoc_STRVAR(adler32__doc__,
-"adler32(string[, start]) -- Compute an Adler-32 checksum of string.\n"
-"\n"
-"An optional starting value can be specified.  The returned checksum is\n"
-"an integer.");
+/*[clinic input]
+zlib.adler32
+
+    data: Py_buffer
+    value: unsigned_int(bitwise=True) = 1
+        Starting value of the checksum.
+    /
+
+Compute an Adler-32 checksum of data.
+
+The returned checksum is an integer.
+[clinic start generated code]*/
 
 static PyObject *
-PyZlib_adler32(PyObject *self, PyObject *args)
+zlib_adler32_impl(PyModuleDef *module, Py_buffer *data, unsigned int value)
+/*[clinic end generated code: checksum=51d6d75ee655c78af8c968fdb4c11d97e62c67d5]*/
 {
-    unsigned int adler32val = 1;  /* adler32(0L, Z_NULL, 0) */
-    Py_buffer pbuf;
-
-    if (!PyArg_ParseTuple(args, "y*|I:adler32", &pbuf, &adler32val))
-        return NULL;
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
-    if (pbuf.len > 1024*5) {
-        unsigned char *buf = pbuf.buf;
-        Py_ssize_t len = pbuf.len;
+    if (data->len > 1024*5) {
+        unsigned char *buf = data->buf;
+        Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. adler32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
-            adler32val = adler32(adler32val, buf, UINT_MAX);
+            value = adler32(value, buf, UINT_MAX);
             buf += (size_t) UINT_MAX;
             len -= (size_t) UINT_MAX;
         }
-        adler32val = adler32(adler32val, buf, (unsigned int)len);
+        value = adler32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        adler32val = adler32(adler32val, pbuf.buf, (unsigned int)pbuf.len);
+        value = adler32(value, data->buf, (unsigned int)data->len);
     }
-    PyBuffer_Release(&pbuf);
-    return PyLong_FromUnsignedLong(adler32val & 0xffffffffU);
+    return PyLong_FromUnsignedLong(value & 0xffffffffU);
 }
 
-PyDoc_STRVAR(crc32__doc__,
-"crc32(string[, start]) -- Compute a CRC-32 checksum of string.\n"
-"\n"
-"An optional starting value can be specified.  The returned checksum is\n"
-"an integer.");
+/*[clinic input]
+zlib.crc32
+
+    data: Py_buffer
+    value: unsigned_int(bitwise=True) = 0
+        Starting value of the checksum.
+    /
+
+Compute a CRC-32 checksum of data.
+
+The returned checksum is an integer.
+[clinic start generated code]*/
 
 static PyObject *
-PyZlib_crc32(PyObject *self, PyObject *args)
+zlib_crc32_impl(PyModuleDef *module, Py_buffer *data, unsigned int value)
+/*[clinic end generated code: checksum=c1e986e74fe7b62369998a71a81ebeb9b73e8d4c]*/
 {
-    unsigned int crc32val = 0;  /* crc32(0L, Z_NULL, 0) */
-    Py_buffer pbuf;
     int signed_val;
 
-    if (!PyArg_ParseTuple(args, "y*|I:crc32", &pbuf, &crc32val))
-        return NULL;
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
-    if (pbuf.len > 1024*5) {
-        unsigned char *buf = pbuf.buf;
-        Py_ssize_t len = pbuf.len;
+    if (data->len > 1024*5) {
+        unsigned char *buf = data->buf;
+        Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. crc32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
-            crc32val = crc32(crc32val, buf, UINT_MAX);
+            value = crc32(value, buf, UINT_MAX);
             buf += (size_t) UINT_MAX;
             len -= (size_t) UINT_MAX;
         }
-        signed_val = crc32(crc32val, buf, (unsigned int)len);
+        signed_val = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        signed_val = crc32(crc32val, pbuf.buf, (unsigned int)pbuf.len);
+        signed_val = crc32(value, data->buf, (unsigned int)data->len);
     }
-    PyBuffer_Release(&pbuf);
     return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
 }
 
 
 static PyMethodDef zlib_methods[] =
 {
-    {"adler32", (PyCFunction)PyZlib_adler32, METH_VARARGS,
-                adler32__doc__},
+    ZLIB_ADLER32_METHODDEF
     ZLIB_COMPRESS_METHODDEF
-    {"compressobj", (PyCFunction)PyZlib_compressobj, METH_VARARGS|METH_KEYWORDS,
-                    compressobj__doc__},
-    {"crc32", (PyCFunction)PyZlib_crc32, METH_VARARGS,
-              crc32__doc__},
-    {"decompress", (PyCFunction)PyZlib_decompress, METH_VARARGS,
-                   decompress__doc__},
-    {"decompressobj", (PyCFunction)PyZlib_decompressobj, METH_VARARGS|METH_KEYWORDS,
-                   decompressobj__doc__},
+    ZLIB_COMPRESSOBJ_METHODDEF
+    ZLIB_CRC32_METHODDEF
+    ZLIB_DECOMPRESS_METHODDEF
+    ZLIB_DECOMPRESSOBJ_METHODDEF
     {NULL, NULL}
 };
 
@@ -1482,6 +1370,7 @@ PyInit_zlib(void)
     PyModule_AddIntMacro(m, MAX_WBITS);
     PyModule_AddIntMacro(m, DEFLATED);
     PyModule_AddIntMacro(m, DEF_MEM_LEVEL);
+    PyModule_AddIntMacro(m, DEF_BUF_SIZE);
     PyModule_AddIntMacro(m, Z_BEST_SPEED);
     PyModule_AddIntMacro(m, Z_BEST_COMPRESSION);
     PyModule_AddIntMacro(m, Z_DEFAULT_COMPRESSION);
