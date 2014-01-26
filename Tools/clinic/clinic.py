@@ -2593,7 +2593,11 @@ class self_converter(CConverter):
     def set_template_dict(self, template_dict):
         template_dict['self_name'] = self.name
         template_dict['self_type'] = self.parser_type
-        template_dict['self_type_check'] = '({self_name} == {self_type_object}) &&\n        '
+        if ((self.function.kind == METHOD_NEW) and
+            self.function.cls and
+            self.function.cls.typedef):
+            template_dict['self_type_object'] = self.function.cls.type_object
+            template_dict['self_type_check'] = '({self_name} == {self_type_object}) &&\n        '.format_map(template_dict)
 
 
 

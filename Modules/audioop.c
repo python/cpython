@@ -1812,7 +1812,7 @@ audioop_adpcm2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyOb
     return rv;
 }
 
-#include "audioop.clinic.c"
+#include "clinic/audioop.c.h"
 
 static PyMethodDef audioop_methods[] = {
     AUDIOOP_MAX_METHODDEF
