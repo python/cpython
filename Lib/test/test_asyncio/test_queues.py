@@ -230,7 +230,7 @@ class QueueGetTests(_QueueTestBase):
 
     def test_nonblocking_get_exception(self):
         q = asyncio.Queue(loop=self.loop)
-        self.assertRaises(asyncio.Empty, q.get_nowait)
+        self.assertRaises(asyncio.QueueEmpty, q.get_nowait)
 
     def test_get_cancelled(self):
 
@@ -337,7 +337,7 @@ class QueuePutTests(_QueueTestBase):
     def test_nonblocking_put_exception(self):
         q = asyncio.Queue(maxsize=1, loop=self.loop)
         q.put_nowait(1)
-        self.assertRaises(asyncio.Full, q.put_nowait, 2)
+        self.assertRaises(asyncio.QueueFull, q.put_nowait, 2)
 
     def test_put_cancelled(self):
         q = asyncio.Queue(loop=self.loop)
