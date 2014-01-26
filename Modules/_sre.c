@@ -528,11 +528,10 @@ sre_search(SRE_STATE* state, SRE_CODE* pattern)
 
 /*[clinic input]
 module _sre
-class _sre.SRE_Pattern
+class _sre.SRE_Pattern "PatternObject *" "&Pattern_Type"
 
 _sre.SRE_Pattern.match as pattern_match
 
-    self: self(type="PatternObject *")
     pattern: object
     pos: Py_ssize_t = 0
     endpos: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize

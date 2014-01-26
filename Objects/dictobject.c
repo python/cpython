@@ -70,7 +70,7 @@ to the combined-table form.
 #include "stringlib/eq.h"
 
 /*[clinic input]
-class dict
+class dict "PyDictObject *" "&PyDict_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
@@ -1694,7 +1694,6 @@ dict_items(PyDictObject *mp)
 /*[clinic input]
 @classmethod
 dict.fromkeys
-
     iterable: object
     value: object=None
     /
@@ -2217,10 +2216,10 @@ PyDoc_STRVAR(dict___contains____doc__,
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
 
 static PyObject *
-dict___contains__(PyObject *self, PyObject *key)
-/*[clinic end generated code: checksum=c4f85a39baac4776c4275ad5f072f7732c5f0806]*/
+dict___contains__(PyDictObject *self, PyObject *key)
+/*[clinic end generated code: checksum=744ca54369dda9815a596304087f1b37fafa5960]*/
 {
-    register PyDictObject *mp = (PyDictObject *)self;
+    register PyDictObject *mp = self;
     Py_hash_t hash;
     PyDictKeyEntry *ep;
     PyObject **value_addr;

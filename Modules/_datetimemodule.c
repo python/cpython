@@ -18,7 +18,7 @@
 
 /*[clinic input]
 module datetime
-class datetime.datetime
+class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
