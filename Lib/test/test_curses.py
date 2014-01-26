@@ -115,8 +115,8 @@ def window_funcs(stdscr):
     stdscr.notimeout(1)
     win2.overlay(win)
     win2.overwrite(win)
-    win2.overlay(win, 1, 2, 3, 3, 2, 1)
-    win2.overwrite(win, 1, 2, 3, 3, 2, 1)
+    win2.overlay(win, 1, 2, 2, 1, 3, 3)
+    win2.overwrite(win, 1, 2, 2, 1, 3, 3)
     stdscr.redrawln(1,2)
 
     stdscr.scrollok(1)
