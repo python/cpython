@@ -114,7 +114,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         assert returncode is not None, returncode
         assert self._returncode is None, self._returncode
         self._returncode = returncode
-        self._loop._subprocess_closed(self)
         self._call(self._protocol.process_exited)
         self._try_finish()
 
