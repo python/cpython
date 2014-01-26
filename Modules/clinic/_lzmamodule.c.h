@@ -472,8 +472,8 @@ error:
 /*[clinic input]
 output preset file
 module _lzma
-class _lzma.LZMACompressor
-class _lzma.LZMADecompressor
+class _lzma.LZMACompressor "Compressor *" "&Compressor_type"
+class _lzma.LZMADecompressor "Decompressor *" "&Decompressor_type"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 

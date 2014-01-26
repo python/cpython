@@ -2,10 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.4.0 Release Candidate 1?
-===============================================
+What's New in Python 3.4.0 Beta 3?
+==================================
 
-Release date: 2014-01-19
+Release date: 2014-01-25
 
 Core and Builtins
 -----------------
@@ -146,6 +146,23 @@ Tests
 
 Tools/Demos
 -----------
+
+- Issue #20390: Argument Clinic's "file" output preset now defaults to
+  "{dirname}/clinic/{basename}.h".
+
+- Issue #20390: Argument Clinic's "class" directive syntax has been extended
+  with two new required  arguments: "typedef" and "type_object".
+
+- Issue #20390: Argument Clinic: If __new__ or __init__ functions didn't use
+  kwargs (or args), the PyArg_NoKeywords (or PyArg_NoPositional) calls
+  generated are only run when the type object is an exact match.
+
+- Issue #20390: Argument Clinic now fails if you have required parameters after
+  optional parameters.
+
+- Issue #20390: Argument Clinic converters now have a new template they can
+  inject code into: "modifiers".  Code put there is run in the parsing
+  function after argument parsing but before the call to the impl.
 
 - Issue #20376: Argument Clinic now escapes backslashes in docstrings.
 

@@ -6,27 +6,12 @@ PyDoc_STRVAR(pickle_module_doc,
 
 /*[clinic input]
 module _pickle
-class _pickle.Pickler
-class _pickle.PicklerMemoProxy
-class _pickle.Unpickler
-class _pickle.UnpicklerMemoProxy
+class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
+class _pickle.PicklerMemoProxy "PicklerMemoProxyObject *" "&PicklerMemoProxyType"
+class _pickle.Unpickler "UnpicklerObject *" "&Unpickler_Type"
+class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" "&UnpicklerMemoProxyType"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
-
-/*[python input]
-class PicklerObject_converter(self_converter):
-    type = "PicklerObject *"
-
-class PicklerMemoProxyObject_converter(self_converter):
-    type = "PicklerMemoProxyObject *"
-
-class UnpicklerObject_converter(self_converter):
-    type = "UnpicklerObject *"
-
-class UnpicklerMemoProxyObject_converter(self_converter):
-    type = "UnpicklerMemoProxyObject *"
-[python start generated code]*/
-/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /* Bump this when new opcodes are added to the pickle protocol. */
 enum {
@@ -3878,8 +3863,6 @@ dump(PicklerObject *self, PyObject *obj)
 
 _pickle.Pickler.clear_memo
 
-  self: PicklerObject
-
 Clears the pickler's "memo".
 
 The memo is the data structure that remembers which objects the
@@ -3923,7 +3906,6 @@ _pickle_Pickler_clear_memo_impl(PicklerObject *self)
 
 _pickle.Pickler.dump
 
-  self: PicklerObject
   obj: object
   /
 
@@ -4018,7 +4000,6 @@ Pickler_clear(PicklerObject *self)
 
 _pickle.Pickler.__init__
 
-  self: PicklerObject
   file: object
   protocol: object = NULL
   fix_imports: bool = True
@@ -4158,8 +4139,6 @@ typedef struct {
 /*[clinic input]
 _pickle.PicklerMemoProxy.clear
 
-  self: PicklerMemoProxyObject
-
 Remove all items from memo.
 [clinic start generated code]*/
 
@@ -4190,8 +4169,6 @@ _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self)
 
 /*[clinic input]
 _pickle.PicklerMemoProxy.copy
-
-  self: PicklerMemoProxyObject
 
 Copy the memo to a new object.
 [clinic start generated code]*/
@@ -4253,8 +4230,6 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
 
 /*[clinic input]
 _pickle.PicklerMemoProxy.__reduce__
-
-  self: PicklerMemoProxyObject
 
 Implement pickle support.
 [clinic start generated code]*/
@@ -6310,17 +6285,17 @@ PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
     {"load", (PyCFunction)_pickle_Unpickler_load, METH_NOARGS, _pickle_Unpickler_load__doc__},
 
 static PyObject *
-_pickle_Unpickler_load_impl(PyObject *self);
+_pickle_Unpickler_load_impl(UnpicklerObject *self);
 
 static PyObject *
-_pickle_Unpickler_load(PyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Unpickler_load(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _pickle_Unpickler_load_impl(self);
 }
 
 static PyObject *
-_pickle_Unpickler_load_impl(PyObject *self)
-/*[clinic end generated code: checksum=fb1119422c5e03045d690d1cd6c457f1ca4c585d]*/
+_pickle_Unpickler_load_impl(UnpicklerObject *self)
+/*[clinic end generated code: checksum=5ccece694e9898856d916e0a87f0133d4537ebb9]*/
 {
     UnpicklerObject *unpickler = (UnpicklerObject*)self;
 
@@ -6347,7 +6322,6 @@ _pickle_Unpickler_load_impl(PyObject *self)
 
 _pickle.Unpickler.find_class
 
-  self: UnpicklerObject
   module_name: object
   global_name: object
   /
@@ -6551,7 +6525,6 @@ Unpickler_clear(UnpicklerObject *self)
 
 _pickle.Unpickler.__init__
 
-  self: UnpicklerObject
   file: object
   *
   fix_imports: bool = True
@@ -6692,8 +6665,6 @@ typedef struct {
 /*[clinic input]
 _pickle.UnpicklerMemoProxy.clear
 
-  self: UnpicklerMemoProxyObject
-
 Remove all items from memo.
 [clinic start generated code]*/
 
@@ -6726,8 +6697,6 @@ _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
 
 /*[clinic input]
 _pickle.UnpicklerMemoProxy.copy
-
-  self: UnpicklerMemoProxyObject
 
 Copy the memo to a new object.
 [clinic start generated code]*/
@@ -6782,8 +6751,6 @@ error:
 
 /*[clinic input]
 _pickle.UnpicklerMemoProxy.__reduce__
-
-  self: UnpicklerMemoProxyObject
 
 Implement pickling support.
 [clinic start generated code]*/

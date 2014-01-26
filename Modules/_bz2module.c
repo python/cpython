@@ -199,8 +199,8 @@ error:
 /*[clinic input]
 output preset file
 module _bz2
-class _bz2.BZ2Compressor
-class _bz2.BZ2Decompressor
+class _bz2.BZ2Compressor "BZ2Compressor *" "&BZ2Compressor_Type"
+class _bz2.BZ2Decompressor "BZ2Decompressor *" "&BZ2Decompressor_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
@@ -209,7 +209,6 @@ class _bz2.BZ2Decompressor
 /*[clinic input]
 _bz2.BZ2Compressor.compress
 
-    self: self(type="BZ2Compressor *")
     data: Py_buffer
     /
 
@@ -238,8 +237,6 @@ _bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data)
 
 /*[clinic input]
 _bz2.BZ2Compressor.flush
-
-    self: self(type="BZ2Compressor *")
 
 Finish the compression process.
 
@@ -294,7 +291,6 @@ BZ2_Free(void* ctx, void *ptr)
 /*[clinic input]
 _bz2.BZ2Compressor.__init__
 
-    self: self(type="BZ2Compressor *")
     compresslevel: int = 9
         Compression level, as a number between 1 and 9.
     /
@@ -472,7 +468,6 @@ error:
 /*[clinic input]
 _bz2.BZ2Decompressor.decompress
 
-    self: self(type="BZ2Decompressor *")
     data: Py_buffer
     /
 
@@ -510,8 +505,6 @@ BZ2Decompressor_getstate(BZ2Decompressor *self, PyObject *noargs)
 
 /*[clinic input]
 _bz2.BZ2Decompressor.__init__
-
-    self: self(type="BZ2Decompressor *")
 
 Create a decompressor object for decompressing data incrementally.
 

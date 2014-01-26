@@ -300,6 +300,10 @@ class CRenderData:
         # Should be full lines with \n eol characters.
         self.initializers = []
 
+        # The C statements needed to dynamically modify the values
+        # parsed by the parse call, before calling the impl.
+        self.modifications = []
+
         # The entries for the "keywords" array for PyArg_ParseTuple.
         # Should be individual strings representing the names.
         self.keywords = []
@@ -541,6 +545,7 @@ __________________________________________________
 
 parser_definition_impl_call
 
+    {modifications}
     {return_value} = {c_basename}_impl({impl_arguments});
 __________________________________________________
 
@@ -575,14 +580,14 @@ __________________________________________________
 
 parser_definition_no_positional
 
-    if (!_PyArg_NoPositional("{name}", args))
+    if ({self_type_check}!_PyArg_NoPositional("{name}", args))
         goto exit;
 
 __________________________________________________
 
 parser_definition_no_keywords
 
-    if (!_PyArg_NoKeywords("{name}", kwargs))
+    if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs))
         goto exit;
 
 __________________________________________________
@@ -691,7 +696,7 @@ __________________________________________________
         impl_definition = templates['impl_definition']
         impl_prototype = parser_prototype = parser_definition = None
 
-        parser_body_fields = None
+        parser_body_fields = ()
         def parser_body(prototype, *fields):
             nonlocal parser_body_fields
             add, output = text_accumulator()
@@ -1025,6 +1030,7 @@ __________________________________________________
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
+        template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
         f_self.converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
@@ -1032,6 +1038,7 @@ __________________________________________________
 
         template_dict['declarations'] = "\n".join(data.declarations)
         template_dict['initializers'] = "\n\n".join(data.initializers)
+        template_dict['modifications'] = '\n\n'.join(data.modifications)
         template_dict['keywords'] = '"' + '", "'.join(data.keywords) + '"'
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
@@ -1060,6 +1067,7 @@ __________________________________________________
                 declarations=template_dict['declarations'],
                 return_conversion=template_dict['return_conversion'],
                 initializers=template_dict['initializers'],
+                modifications=template_dict['modifications'],
                 cleanup=template_dict['cleanup'],
                 )
 
@@ -1356,8 +1364,14 @@ class Destination:
             fail("Too many arguments for destination " + name + " new " + type)
         if type =='file':
             d = {}
-            d['filename'] = filename = clinic.filename
-            d['basename'], d['extension'] = os.path.splitext(filename)
+            filename = clinic.filename
+            d['path'] = filename
+            dirname, basename = os.path.split(filename)
+            if not dirname:
+                dirname = '.'
+            d['dirname'] = dirname
+            d['basename'] = basename
+            d['basename_root'], d['basename_extension'] = os.path.splitext(filename)
             self.filename = args[0].format_map(d)
         if type == 'two-pass':
             self.id = None
@@ -1476,7 +1490,7 @@ impl_definition block
         self.add_destination("buffer", "buffer")
         self.add_destination("two-pass", "two-pass")
         if filename:
-            self.add_destination("file", "file", "{basename}.clinic{extension}")
+            self.add_destination("file", "file", "{dirname}/clinic/{basename}.h")
 
         d = self.destinations.get
         self.field_destinations = collections.OrderedDict((
@@ -1572,6 +1586,14 @@ impl_definition block
 
                 if destination.type == 'file':
                     try:
+                        dirname = os.path.dirname(destination.filename)
+                        try:
+                            os.makedirs(dirname)
+                        except FileExistsError:
+                            if not os.path.isdir(dirname):
+                                fail("Can't write to destination {}, "
+                                     "can't make directory {}!".format(
+                                        destination.filename, dirname))
                         with open(destination.filename, "rt") as f:
                             parser_2 = BlockParser(f.read(), language=self.language)
                             blocks = list(parser_2)
@@ -1696,10 +1718,12 @@ class Module:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
 class Class:
-    def __init__(self, name, module=None, cls=None):
+    def __init__(self, name, module=None, cls=None, typedef=None, type_object=None):
         self.name = name
         self.module = module
         self.cls = cls
+        self.typedef = typedef
+        self.type_object = type_object
         self.parent = cls or module
 
         self.classes = collections.OrderedDict()
@@ -1980,6 +2004,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # Should we show this parameter in the generated
     # __text_signature__? This is *almost* always True.
+    # (It's only False for __new__, __init__, and METH_STATIC functions.)
     show_in_signature = True
 
     # Overrides the name used in a text signature.
@@ -2049,6 +2074,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         initializers = self.initialize()
         if initializers:
             data.initializers.append('/* initializers for ' + name + ' */\n' + initializers.rstrip())
+
+        # modifications
+        modifications = self.modify()
+        if modifications:
+            data.modifications.append('/* modifications for ' + name + ' */\n' + modifications.rstrip())
 
         # keywords
         data.keywords.append(original_name)
@@ -2147,6 +2177,14 @@ class CConverter(metaclass=CConverterAutoRegister):
     def initialize(self):
         """
         The C statements required to set up this variable before parsing.
+        Returns a string containing this code indented at column 0.
+        If no initialization is necessary, returns an empty string.
+        """
+        return ""
+
+    def modify(self):
+        """
+        The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
         If no initialization is necessary, returns an empty string.
         """
@@ -2463,6 +2501,12 @@ def correct_name_for_self(f):
         return "PyTypeObject *", "type"
     raise RuntimeError("Unhandled type of function f: " + repr(f.kind))
 
+def required_type_for_self_for_parser(f):
+    type, _ = correct_name_for_self(f)
+    if f.kind in (METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD):
+        return type
+    return None
+
 
 class self_converter(CConverter):
     """
@@ -2526,12 +2570,7 @@ class self_converter(CConverter):
 
     @property
     def parser_type(self):
-        kind = self.function.kind
-        if kind == METHOD_NEW:
-            return "PyTypeObject *"
-        if kind == METHOD_INIT:
-            return "PyObject *"
-        return self.type
+        return required_type_for_self_for_parser(self.function) or self.type
 
     def render(self, parameter, data):
         """
@@ -2554,6 +2593,7 @@ class self_converter(CConverter):
     def set_template_dict(self, template_dict):
         template_dict['self_name'] = self.name
         template_dict['self_type'] = self.parser_type
+        template_dict['self_type_check'] = '({self_name} == {self_type_object}) &&\n        '
 
 
 
@@ -2808,6 +2848,7 @@ class DSLParser:
         self.keyword_only = False
         self.group = 0
         self.parameter_state = self.ps_start
+        self.seen_positional_with_default = False
         self.indent = IndentStack()
         self.kind = CALLABLE
         self.coexist = False
@@ -2825,11 +2866,15 @@ class DSLParser:
         module, cls = self.clinic._module_and_class(fields)
         if cls:
             fail("Can't nest a module inside a class!")
+
+        if name in module.classes:
+            fail("Already defined module " + repr(name) + "!")
+
         m = Module(name, module)
         module.modules[name] = m
         self.block.signatures.append(m)
 
-    def directive_class(self, name):
+    def directive_class(self, name, typedef, type_object):
         fields = name.split('.')
         in_classes = False
         parent = self
@@ -2837,11 +2882,12 @@ class DSLParser:
         so_far = []
         module, cls = self.clinic._module_and_class(fields)
 
-        c = Class(name, module, cls)
-        if cls:
-            cls.classes[name] = c
-        else:
-            module.classes[name] = c
+        parent = cls or module
+        if name in parent.classes:
+            fail("Already defined class " + repr(name) + "!")
+
+        c = Class(name, module, cls, typedef, type_object)
+        parent.classes[name] = c
         self.block.signatures.append(c)
 
     def directive_set(self, name, value):
@@ -3035,6 +3081,8 @@ class DSLParser:
                 else:
                     existing_function = None
                 if not existing_function:
+                    print("class", cls, "module", module, "exsiting", existing)
+                    print("cls. functions", cls.functions)
                     fail("Couldn't find existing function " + repr(existing) + "!")
 
                 fields = [x.strip() for x in full_name.split('.')]
@@ -3113,8 +3161,11 @@ class DSLParser:
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically
-        _, name = correct_name_for_self(self.function)
-        sc = self.function.self_converter = self_converter(name, self.function)
+        type, name = correct_name_for_self(self.function)
+        kwargs = {}
+        if cls and type == "PyObject *":
+            kwargs['type'] = cls.typedef
+        sc = self.function.self_converter = self_converter(name, self.function, **kwargs)
         p_self = Parameter(sc.name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
         self.function.parameters[sc.name] = p_self
 
@@ -3175,18 +3226,21 @@ class DSLParser:
     # "parameter_state".  (Previously the code was a miasma of ifs and
     # separate boolean state variables.)  The states are:
     #
-    #  [ [ a, b, ] c, ] d, e, f, [ g, h, [ i ] ] /   <- line
-    # 01   2          3          4           5   6   <- state transitions
+    #  [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ] /   <- line
+    # 01   2          3       4    5           6   7   <- state transitions
     #
     # 0: ps_start.  before we've seen anything.  legal transitions are to 1 or 3.
     # 1: ps_left_square_before.  left square brackets before required parameters.
     # 2: ps_group_before.  in a group, before required parameters.
-    # 3: ps_required.  required parameters.  (renumber left groups!)
-    # 4: ps_group_after.  in a group, after required parameters.
-    # 5: ps_right_square_after.  right square brackets after required parameters.
-    # 6: ps_seen_slash.  seen slash.
+    # 3: ps_required.  required parameters, positional-or-keyword or positional-only
+    #     (we don't know yet).  (renumber left groups!)
+    # 4: ps_optional.  positional-or-keyword or positional-only parameters that
+    #    now must have default values.
+    # 5: ps_group_after.  in a group, after required parameters.
+    # 6: ps_right_square_after.  right square brackets after required parameters.
+    # 7: ps_seen_slash.  seen slash.
     ps_start, ps_left_square_before, ps_group_before, ps_required, \
-    ps_group_after, ps_right_square_after, ps_seen_slash = range(7)
+    ps_optional, ps_group_after, ps_right_square_after, ps_seen_slash = range(8)
 
     def state_parameters_start(self, line):
         if self.ignore_line(line):
@@ -3245,21 +3299,25 @@ class DSLParser:
         elif self.parameter_state == self.ps_group_before:
             if not self.group:
                 self.to_required()
-        elif self.parameter_state == self.ps_group_after:
+        elif self.parameter_state in (self.ps_group_after, self.ps_optional):
             pass
         else:
-            fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ")")
+            fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".a)")
 
         base, equals, default = line.rpartition('=')
         if not equals:
             base = default
             default = None
+
         module = None
         try:
             ast_input = "def x({}): pass".format(base)
             module = ast.parse(ast_input)
         except SyntaxError:
             try:
+                # the last = was probably inside a function call, like
+                #   i: int(nullable=True)
+                # so assume there was no actual default value.
                 default = None
                 ast_input = "def x({}): pass".format(line)
                 module = ast.parse(ast_input)
@@ -3275,13 +3333,18 @@ class DSLParser:
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
 
         if not default:
+            if self.parameter_state == self.ps_optional:
+                fail("Can't have a parameter without a default (" + repr(parameter_name) + ")\nafter a parameter with a default!")
             value = unspecified
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")
         else:
+            if self.parameter_state == self.ps_required:
+                self.parameter_state = self.ps_optional
             default = default.strip()
             bad = False
             ast_input = "x = {}".format(default)
+            bad = False
             try:
                 module = ast.parse(ast_input)
 
@@ -3441,7 +3504,7 @@ class DSLParser:
             elif self.parameter_state in (self.ps_required, self.ps_group_after):
                 self.parameter_state = self.ps_group_after
             else:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ")")
+                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".b)")
             self.group += 1
         elif symbol == ']':
             if not self.group:
@@ -3454,12 +3517,12 @@ class DSLParser:
             elif self.parameter_state in (self.ps_group_after, self.ps_right_square_after):
                 self.parameter_state = self.ps_right_square_after
             else:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ")")
+                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".c)")
         elif symbol == '/':
-            # ps_required is allowed here, that allows positional-only without option groups
+            # ps_required and ps_optional are allowed here, that allows positional-only without option groups
             # to work (and have default values!)
-            if (self.parameter_state not in (self.ps_required, self.ps_right_square_after, self.ps_group_before)) or self.group:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ")")
+            if (self.parameter_state not in (self.ps_required, self.ps_optional, self.ps_right_square_after, self.ps_group_before)) or self.group:
+                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".d)")
             if self.keyword_only:
                 fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
             self.parameter_state = self.ps_seen_slash
