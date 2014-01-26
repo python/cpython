@@ -208,6 +208,24 @@ class LockTests(unittest.TestCase):
 
         self.assertFalse(lock.locked())
 
+    def test_context_manager_cant_reuse(self):
+        lock = asyncio.Lock(loop=self.loop)
+
+        @asyncio.coroutine
+        def acquire_lock():
+            return (yield from lock)
+
+        # This spells "yield from lock" outside a generator.
+        cm = self.loop.run_until_complete(acquire_lock())
+        with cm:
+            self.assertTrue(lock.locked())
+
+        self.assertFalse(lock.locked())
+
+        with self.assertRaises(AttributeError):
+            with cm:
+                pass
+
     def test_context_manager_no_yield(self):
         lock = asyncio.Lock(loop=self.loop)
 
@@ -218,6 +236,8 @@ class LockTests(unittest.TestCase):
             self.assertEqual(
                 str(err),
                 '"yield from" should be used as context manager expression')
+
+        self.assertFalse(lock.locked())
 
 
 class EventTests(unittest.TestCase):
@@ -655,6 +675,8 @@ class ConditionTests(unittest.TestCase):
                 str(err),
                 '"yield from" should be used as context manager expression')
 
+        self.assertFalse(cond.locked())
+
 
 class SemaphoreTests(unittest.TestCase):
 
@@ -827,6 +849,19 @@ class SemaphoreTests(unittest.TestCase):
 
             with self.loop.run_until_complete(acquire_lock()):
                 self.assertTrue(sem.locked())
+
+        self.assertEqual(2, sem._value)
+
+    def test_context_manager_no_yield(self):
+        sem = asyncio.Semaphore(2, loop=self.loop)
+
+        try:
+            with sem:
+                self.fail('RuntimeError is not raised in with expression')
+        except RuntimeError as err:
+            self.assertEqual(
+                str(err),
+                '"yield from" should be used as context manager expression')
 
         self.assertEqual(2, sem._value)
 
