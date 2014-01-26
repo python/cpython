@@ -195,6 +195,11 @@ class ascii_buffer_converter(CConverter):
     type = 'Py_buffer'
     converter = 'ascii_buffer_converter'
     impl_by_reference = True
+    c_default = "{NULL, NULL}"
+
+    def cleanup(self):
+        name = self.name
+        return "".join(["if (", name, ".obj)\n   PyBuffer_Release(&", name, ");\n"])
 
 [python start generated code]*/
 /*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
