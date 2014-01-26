@@ -30,7 +30,7 @@ static char *which_dbm = "Berkeley DB";
 
 /*[clinic input]
 module dbm
-class dbm.dbm
+class dbm.dbm "dbmobject *" "&Dbmtype"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 

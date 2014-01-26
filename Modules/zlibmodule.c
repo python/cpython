@@ -83,8 +83,8 @@ zlib_error(z_stream zst, int err, char *msg)
 
 /*[clinic input]
 module zlib
-class zlib.Compress
-class zlib.Decompress
+class zlib.Compress "compobject *" "&Comptype"
+class zlib.Decompress "compobject *" "&Decomptype"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
@@ -748,8 +748,6 @@ save_unconsumed_input(compobject *self, int err)
 
 zlib.Decompress.decompress
 
-    self: self(type="compobject *")
-
     data: Py_buffer
         The binary data to decompress.
     max_length: uint = 0
@@ -1029,8 +1027,6 @@ PyZlib_flush(compobject *self, PyObject *args)
 
 /*[clinic input]
 zlib.Compress.copy
-
-    self: self(type="compobject *")
 
 Return a copy of the compression object.
 [clinic start generated code]*/

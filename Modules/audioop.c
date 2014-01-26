@@ -393,7 +393,6 @@ audioop_check_parameters(Py_ssize_t len, int size)
 /*[clinic input]
 output preset file
 module audioop
-class audioop.error
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
