@@ -2522,6 +2522,7 @@ class ExceptionChainingTest(unittest.TestCase):
         with self.assertRaisesRegex(exc_type, full_msg) as caught:
             yield caught
         self.assertIsInstance(caught.exception.__cause__, exc_type)
+        self.assertIsNotNone(caught.exception.__cause__.__traceback__)
 
     def raise_obj(self, *args, **kwds):
         # Helper to dynamically change the object raised by a test codec
