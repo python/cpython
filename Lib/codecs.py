@@ -470,8 +470,6 @@ class StreamReader(Codec):
                 newdata = self.stream.read(size)
             # decode bytes (those remaining from the last call included)
             data = self.bytebuffer + newdata
-            if not data:
-                break
             try:
                 newchars, decodedbytes = self.decode(data, self.errors)
             except UnicodeDecodeError, exc:
