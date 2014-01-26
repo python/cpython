@@ -286,7 +286,7 @@ Queue
       Remove and return an item from the queue.
 
       Return an item if one is immediately available, else raise
-      :exc:`~queue.Empty`.
+      :exc:`QueueEmpty`.
 
    .. method:: put(item)
 
@@ -301,7 +301,7 @@ Queue
 
       Put an item into the queue without blocking.
 
-      If no free slot is immediately available, raise :exc:`~queue.Full`.
+      If no free slot is immediately available, raise :exc:`QueueFull`.
 
    .. method:: qsize()
 
@@ -367,3 +367,19 @@ JoinableQueue
       Raises :exc:`ValueError` if called more times than there were items
       placed in the queue.
 
+
+Exceptions
+^^^^^^^^^^
+
+.. exception:: QueueEmpty
+
+   Exception raised when non-blocking :meth:`~Queue.get` (or
+   :meth:`~Queue.get_nowait`) is called
+   on a :class:`Queue` object which is empty.
+
+
+.. exception:: QueueFull
+
+   Exception raised when non-blocking :meth:`~Queue.put` (or
+   :meth:`~Queue.put_nowait`) is called
+   on a :class:`Queue` object which is full.
