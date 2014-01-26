@@ -13,5 +13,5 @@ used from a setup script as
 # Updated automatically by the Python release process.
 #
 #--start constants--
-__version__ = "3.4.0b2"
+__version__ = "3.4.0b3"
 #--end constants--
