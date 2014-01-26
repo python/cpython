@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20105: the codec exception chaining now correctly sets the
+  traceback of the original exception as its __traceback__ attribute.
+
 - asyncio: Various improvements and small changes not all covered by
   issues listed below.  E.g. wait_for() now cancels the inner task if
   the timeout occcurs; tweaked the set of exported symbols; renamed
