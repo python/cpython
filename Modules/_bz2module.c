@@ -56,6 +56,8 @@ typedef struct {
 #endif
 } BZ2Decompressor;
 
+static PyTypeObject BZ2Compressor_Type;
+static PyTypeObject BZ2Decompressor_Type;
 
 /* Helper functions. */
 
@@ -204,7 +206,7 @@ class _bz2.BZ2Decompressor "BZ2Decompressor *" "&BZ2Decompressor_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
-#include "_bz2module.clinic.c"
+#include "clinic/_bz2module.c.h"
 
 /*[clinic input]
 _bz2.BZ2Compressor.compress
