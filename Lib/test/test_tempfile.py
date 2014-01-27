@@ -11,7 +11,7 @@ import contextlib
 import weakref
 
 import unittest
-from test import support
+from test import support, script_helper
 
 
 if hasattr(os, 'stat'):
@@ -1073,7 +1073,8 @@ class TestTemporaryDirectory(BaseTestCase):
         self.nameCheck(tmp.name, dir, pre, suf)
         # Create a subdirectory and some files
         if recurse:
-            self.do_create(tmp.name, pre, suf, recurse-1)
+            d1 = self.do_create(tmp.name, pre, suf, recurse-1)
+            d1.name = None
         with open(os.path.join(tmp.name, "test.txt"), "wb") as f:
             f.write(b"Hello world!")
         return tmp
@@ -1105,7 +1106,7 @@ class TestTemporaryDirectory(BaseTestCase):
     def test_cleanup_with_symlink_to_a_directory(self):
         # cleanup() should not follow symlinks to directories (issue #12464)
         d1 = self.do_create()
-        d2 = self.do_create()
+        d2 = self.do_create(recurse=0)
 
         # Symlink d1/foo -> d2
         os.symlink(d2.name, os.path.join(d1.name, "foo"))
@@ -1135,60 +1136,49 @@ class TestTemporaryDirectory(BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @unittest.expectedFailure # See issue #10188
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
-        # Make sure it works with the relevant modules nulled out
         with self.do_create() as dir:
-            d = self.do_create(dir=dir)
-            # Mimic the nulling out of modules that
-            # occurs during system shutdown
-            modules = [os, os.path]
-            if has_stat:
-                modules.append(stat)
-            # Currently broken, so suppress the warning
-            # that is otherwise emitted on stdout
-            with support.captured_stderr() as err:
-                with NulledModules(*modules):
-                    d.cleanup()
-            # Currently broken, so stop spurious exception by
-            # indicating the object has already been closed
-            d._closed = True
-            # And this assert will fail, as expected by the
-            # unittest decorator...
-            self.assertFalse(os.path.exists(d.name),
-                        "TemporaryDirectory %s exists after cleanup" % d.name)
+            for mod in ('os', 'shutil', 'sys', 'tempfile', 'warnings'):
+                code = """if True:
+                    import os
+                    import shutil
+                    import sys
+                    import tempfile
+                    import warnings
+
+                    tmp = tempfile.TemporaryDirectory(dir={dir!r})
+                    sys.stdout.buffer.write(tmp.name.encode())
+
+                    tmp2 = os.path.join(tmp.name, 'test_dir')
+                    os.mkdir(tmp2)
+                    with open(os.path.join(tmp2, "test.txt"), "w") as f:
+                        f.write("Hello world!")
+
+                    {mod}.tmp = tmp
+
+                    warnings.filterwarnings("always", category=ResourceWarning)
+                    """.format(dir=dir, mod=mod)
+                rc, out, err = script_helper.assert_python_ok("-c", code)
+                tmp_name = out.decode().strip()
+                self.assertFalse(os.path.exists(tmp_name),
+                            "TemporaryDirectory %s exists after cleanup" % tmp_name)
+                err = err.decode('utf-8', 'backslashreplace')
+                self.assertNotIn("Exception ", err)
 
     def test_warnings_on_cleanup(self):
-        # Two kinds of warning on shutdown
-        #   Issue 10888: may write to stderr if modules are nulled out
-        #   ResourceWarning will be triggered by __del__
+        # ResourceWarning will be triggered by __del__
         with self.do_create() as dir:
-            if os.sep != '\\':
-                # Embed a backslash in order to make sure string escaping
-                # in the displayed error message is dealt with correctly
-                suffix = '\\check_backslash_handling'
-            else:
-                suffix = ''
-            d = self.do_create(dir=dir, suf=suffix)
-
-            #Check for the Issue 10888 message
-            modules = [os, os.path]
-            if has_stat:
-                modules.append(stat)
-            with support.captured_stderr() as err:
-                with NulledModules(*modules):
-                    d.cleanup()
-            message = err.getvalue().replace('\\\\', '\\')
-            self.assertIn("while cleaning up",  message)
-            self.assertIn(d.name,  message)
+            d = self.do_create(dir=dir, recurse=3)
+            name = d.name
 
             # Check for the resource warning
             with support.check_warnings(('Implicitly', ResourceWarning), quiet=False):
                 warnings.filterwarnings("always", category=ResourceWarning)
-                d.__del__()
-            self.assertFalse(os.path.exists(d.name),
-                        "TemporaryDirectory %s exists after __del__" % d.name)
+                del d
+                support.gc_collect()
+            self.assertFalse(os.path.exists(name),
+                        "TemporaryDirectory %s exists after __del__" % name)
 
     def test_multiple_close(self):
         # Can be cleaned-up many times without error
