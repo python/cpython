@@ -216,7 +216,7 @@ IncompleteReadError
 
 .. exception:: IncompleteReadError
 
-    Incomplete read error.
+    Incomplete read error, subclass of :exc:`EOFError`.
 
    .. attribute:: expected
 
