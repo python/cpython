@@ -1,5 +1,6 @@
 import unittest
 import idlelib.CallTips as ct
+import textwrap
 import types
 
 default_tip = ct._default_callable_argspec
@@ -64,20 +65,37 @@ class Get_signatureTest(unittest.TestCase):
         gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
 
+    def test_signature_wrap(self):
+        #print(signature(textwrap.TextWrapper))
+        self.assertEqual(signature(textwrap.TextWrapper), '''\
+(width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
+    replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
+    drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
+    placeholder=' [...]')''')
+
+    def test_docline_truncation(self):
+        def f(): pass
+        f.__doc__ = 'a'*300
+        self.assertEqual(signature(f), '()\n' + 'a' * (ct._MAX_COLS-3) + '...')
+
     def test_multiline_docstring(self):
         # Test fewer lines than max.
         self.assertEqual(signature(list),
                 "list() -> new empty list\n"
                 "list(iterable) -> new list initialized from iterable's items")
 
-        # Test max lines and line (currently) too long.
-        self.assertEqual(signature(bytes),
-"bytes(iterable_of_ints) -> bytes\n"
-"bytes(string, encoding[, errors]) -> bytes\n"
-"bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer\n"
-#bytes(int) -> bytes object of size given by the parameter initialized with null bytes
-"bytes(int) -> bytes object of size given by the parameter initialized with n...\n"
-"bytes() -> empty bytes object")
+        # Test max lines
+        self.assertEqual(signature(bytes), '''\
+bytes(iterable_of_ints) -> bytes
+bytes(string, encoding[, errors]) -> bytes
+bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+bytes() -> empty bytes object''')
+
+        # Test more than max lines
+        def f(): pass
+        f.__doc__ = 'a\n' * 15
+        self.assertEqual(signature(f), '()' + '\na' * ct._MAX_LINES)
 
     def test_functions(self):
         def t1(): 'doc'
