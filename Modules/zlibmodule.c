@@ -1138,7 +1138,7 @@ error:
     return retval;
 }
 
-#include "zlibmodule.clinic.c"
+#include "clinic/zlibmodule.c.h"
 
 static PyMethodDef comp_methods[] =
 {
