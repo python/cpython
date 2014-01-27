@@ -445,53 +445,26 @@ The :keyword:`yield` statement
 .. productionlist::
    yield_stmt: `yield_expression`
 
-The :keyword:`yield` statement is only used when defining a generator function,
-and is only used in the body of the generator function. Using a :keyword:`yield`
-statement in a function definition is sufficient to cause that definition to
-create a generator function instead of a normal function.
+A :keyword:`yield` statement is semantically equivalent to a :ref:`yield
+expression <yieldexpr>`. The yield statement can be used to omit the parentheses
+that would otherwise be required in the equivalent yield expression
+statement. For example, the yield statements ::
 
-When a generator function is called, it returns an iterator known as a generator
-iterator, or more commonly, a generator.  The body of the generator function is
-executed by calling the :func:`next` function on the generator repeatedly until
-it raises an exception.
+  yield <expr>
+  yield from <expr>
 
-When a :keyword:`yield` statement is executed, the state of the generator is
-frozen and the value of :token:`expression_list` is returned to :meth:`next`'s
-caller.  By "frozen" we mean that all local state is retained, including the
-current bindings of local variables, the instruction pointer, and the internal
-evaluation stack: enough information is saved so that the next time :func:`next`
-is invoked, the function can proceed exactly as if the :keyword:`yield`
-statement were just another external call.
+are equivalent to the yield expression statements ::
 
-The :keyword:`yield` statement is allowed in the :keyword:`try` clause of a
-:keyword:`try` ...  :keyword:`finally` construct.  If the generator is not
-resumed before it is finalized (by reaching a zero reference count or by being
-garbage collected), the generator-iterator's :meth:`close` method will be
-called, allowing any pending :keyword:`finally` clauses to execute.
+  (yield <expr>)
+  (yield from <expr>)
 
-When ``yield from <expr>`` is used, it treats the supplied expression as
-a subiterator, producing values from it until the underlying iterator is
-exhausted.
+Yield expressions and statements are only used when defining a :term:`generator`
+function, and are only used in the body of the generator function.  Using yield
+in a function definition is sufficient to cause that definition to create a
+generator function instead of a normal function.
 
-   .. versionchanged:: 3.3
-      Added ``yield from <expr>`` to delegate control flow to a subiterator
-
-For full details of :keyword:`yield` semantics, refer to the :ref:`yieldexpr`
-section.
-
-.. seealso::
-
-   :pep:`0255` - Simple Generators
-      The proposal for adding generators and the :keyword:`yield` statement to Python.
-
-   :pep:`0342` - Coroutines via Enhanced Generators
-      The proposal to enhance the API and syntax of generators, making them
-      usable as simple coroutines.
-
-   :pep:`0380` - Syntax for Delegating to a Subgenerator
-      The proposal to introduce the :token:`yield_from` syntax, making delegation
-      to sub-generators easy.
-
+For full details of :keyword:`yield` semantics, refer to the
+:ref:`yieldexpr` section.
 
 .. _raise:
 

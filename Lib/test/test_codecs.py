@@ -175,6 +175,40 @@ class ReadTest(MixInCheckStateHandling):
                         size*"a",
                     )
 
+    def test_mixed_readline_and_read(self):
+        lines = ["Humpty Dumpty sat on a wall,\n",
+                 "Humpty Dumpty had a great fall.\r\n",
+                 "All the king's horses and all the king's men\r",
+                 "Couldn't put Humpty together again."]
+        data = ''.join(lines)
+        def getreader():
+            stream = io.BytesIO(data.encode(self.encoding))
+            return codecs.getreader(self.encoding)(stream)
+
+        # Issue #8260: Test readline() followed by read()
+        f = getreader()
+        self.assertEqual(f.readline(), lines[0])
+        self.assertEqual(f.read(), ''.join(lines[1:]))
+        self.assertEqual(f.read(), '')
+
+        # Issue #16636: Test readline() followed by readlines()
+        f = getreader()
+        self.assertEqual(f.readline(), lines[0])
+        self.assertEqual(f.readlines(), lines[1:])
+        self.assertEqual(f.read(), '')
+
+        # Test read() followed by read()
+        f = getreader()
+        self.assertEqual(f.read(size=40, chars=5), data[:5])
+        self.assertEqual(f.read(), data[5:])
+        self.assertEqual(f.read(), '')
+
+        # Issue #12446: Test read() followed by readlines()
+        f = getreader()
+        self.assertEqual(f.read(size=40, chars=5), data[:5])
+        self.assertEqual(f.readlines(), [lines[0][5:]] + lines[1:])
+        self.assertEqual(f.read(), '')
+
     def test_bug1175396(self):
         s = [
             '<%!--===================================================\r\n',
@@ -2370,8 +2404,6 @@ class TransformCodecTest(unittest.TestCase):
 
     def test_readline(self):
         for encoding in bytes_transform_encodings:
-            if encoding in ['uu_codec', 'zlib_codec']:
-                continue
             with self.subTest(encoding=encoding):
                 sin = codecs.encode(b"\x80", encoding)
                 reader = codecs.getreader(encoding)(io.BytesIO(sin))
@@ -2522,6 +2554,7 @@ class ExceptionChainingTest(unittest.TestCase):
         with self.assertRaisesRegex(exc_type, full_msg) as caught:
             yield caught
         self.assertIsInstance(caught.exception.__cause__, exc_type)
+        self.assertIsNotNone(caught.exception.__cause__.__traceback__)
 
     def raise_obj(self, *args, **kwds):
         # Helper to dynamically change the object raised by a test codec
