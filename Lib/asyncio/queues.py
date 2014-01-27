@@ -22,12 +22,6 @@ class QueueFull(Exception):
     pass
 
 
-# Un-exported aliases for temporary backward compatibility.
-# Will disappear soon.
-Full = QueueFull
-Empty = QueueEmpty
-
-
 class Queue:
     """A queue, useful for coordinating producer and consumer coroutines.
 
