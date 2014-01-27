@@ -325,6 +325,29 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    This method returns a :ref:`coroutine object <coroutine>`.
 
 
+UNIX signals
+------------
+
+Availability: UNIX only.
+
+.. method:: BaseEventLoop.add_signal_handler(signum, callback, \*args)
+
+   Add a handler for a signal.
+
+   Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
+   Raise :exc:`RuntimeError` if there is a problem setting up the handler.
+
+.. method:: BaseEventLoop.remove_signal_handler(sig)
+
+   Remove a handler for a signal.
+
+   Return ``True`` if a signal handler was removed, ``False`` if not.
+
+.. seealso::
+
+   The :mod:`signal` module.
+
+
 Executor
 --------
 
@@ -380,4 +403,28 @@ Print ``Hello World`` every two seconds, using a callback::
 .. seealso::
 
    :ref:`Hello World example using a coroutine <asyncio-hello-world-coroutine>`.
+
+
+Example: Set signal handlers for SIGINT and SIGTERM
+---------------------------------------------------
+
+Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`::
+
+    import asyncio
+    import functools
+    import os
+    import signal
+
+    def ask_exit(signame):
+        print("got signal %s: exit" % signame)
+        loop.stop()
+
+    loop = asyncio.get_event_loop()
+    for signame in ('SIGINT', 'SIGTERM'):
+        loop.add_signal_handler(getattr(signal, signame),
+                                functools.partial(ask_exit, signame))
+
+    print("Event loop running forever, press CTRL+c to interrupt.")
+    print("pid %s: send SIGINT or SIGTERM to exit." % os.getpid())
+    loop.run_forever()
 
