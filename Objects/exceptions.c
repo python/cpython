@@ -2689,8 +2689,11 @@ _PyErr_TrySetFromCause(const char *format, ...)
      * types as well, but that's quite a bit trickier due to the extra
      * state potentially stored on OSError instances.
      */
-
-    Py_XDECREF(tb);
+    /* Ensure the traceback is set correctly on the existing exception */
+    if (tb != NULL) {
+        PyException_SetTraceback(val, tb);
+        Py_DECREF(tb);
+    }
 
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);

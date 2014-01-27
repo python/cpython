@@ -5,15 +5,15 @@ parameter and docstring information when you type an opening parenthesis, and
 which disappear when you type a closing parenthesis.
 
 """
+import __main__
+import inspect
 import re
 import sys
+import textwrap
 import types
-import inspect
 
 from idlelib import CallTipWindow
 from idlelib.HyperParser import HyperParser
-
-import __main__
 
 class CallTips:
 
@@ -117,8 +117,9 @@ def get_entity(expression):
             return None
 
 # The following are used in get_argspec and some in tests
-_MAX_COLS = 79
+_MAX_COLS = 85
 _MAX_LINES = 5  # enough for bytes
+_INDENT = ' '*4  # for wrapped signatures
 _first_param = re.compile('(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
 
@@ -149,13 +150,15 @@ def get_argspec(ob):
                 isinstance(ob_call, types.MethodType)):
             argspec = _first_param.sub("", argspec)
 
+    lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
+            if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
     else:
         doc = getattr(ob, "__doc__", "")
     if doc:
-        lines = [argspec] if argspec else []
-        for line in doc.split('\n', 5)[:_MAX_LINES]:
+        for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES]:
             line = line.strip()
             if not line:
                 break

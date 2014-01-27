@@ -90,6 +90,16 @@ in various ways.  There is a separate error indicator for each thread.
    the class in that case.  If the values are already normalized, nothing happens.
    The delayed normalization is implemented to improve performance.
 
+   .. note::
+
+      This function *does not* implicitly set the ``__traceback__``
+      attribute on the exception value. If setting the traceback
+      appropriately is desired, the following additional snippet is needed::
+
+         if (tb != NULL) {
+           PyException_SetTraceback(val, tb);
+         }
+
 
 .. c:function:: void PyErr_Clear()
 

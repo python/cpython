@@ -16,7 +16,7 @@ static PyObject *
 binascii_a2b_uu(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer data;
+    Py_buffer data = {NULL, NULL};
 
     if (!PyArg_ParseTuple(args,
         "O&:a2b_uu",
@@ -25,6 +25,10 @@ binascii_a2b_uu(PyModuleDef *module, PyObject *args)
     return_value = binascii_a2b_uu_impl(module, &data);
 
 exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
     return return_value;
 }
 
@@ -72,7 +76,7 @@ static PyObject *
 binascii_a2b_base64(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer data;
+    Py_buffer data = {NULL, NULL};
 
     if (!PyArg_ParseTuple(args,
         "O&:a2b_base64",
@@ -81,6 +85,10 @@ binascii_a2b_base64(PyModuleDef *module, PyObject *args)
     return_value = binascii_a2b_base64_impl(module, &data);
 
 exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
     return return_value;
 }
 
@@ -128,7 +136,7 @@ static PyObject *
 binascii_a2b_hqx(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer data;
+    Py_buffer data = {NULL, NULL};
 
     if (!PyArg_ParseTuple(args,
         "O&:a2b_hqx",
@@ -137,6 +145,10 @@ binascii_a2b_hqx(PyModuleDef *module, PyObject *args)
     return_value = binascii_a2b_hqx_impl(module, &data);
 
 exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
     return return_value;
 }
 
@@ -350,7 +362,7 @@ static PyObject *
 binascii_a2b_hex(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_buffer hexstr;
+    Py_buffer hexstr = {NULL, NULL};
 
     if (!PyArg_ParseTuple(args,
         "O&:a2b_hex",
@@ -359,6 +371,10 @@ binascii_a2b_hex(PyModuleDef *module, PyObject *args)
     return_value = binascii_a2b_hex_impl(module, &hexstr);
 
 exit:
+    /* Cleanup for hexstr */
+    if (hexstr.obj)
+       PyBuffer_Release(&hexstr);
+
     return return_value;
 }
 
@@ -377,7 +393,7 @@ binascii_a2b_qp(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"data", "header", NULL};
-    Py_buffer data;
+    Py_buffer data = {NULL, NULL};
     int header = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
@@ -387,6 +403,10 @@ binascii_a2b_qp(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     return_value = binascii_a2b_qp_impl(module, &data, header);
 
 exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
     return return_value;
 }
 
@@ -427,4 +447,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: checksum=abe48ca8020fa3ec25e13bd9fa7414f6b3ee2946]*/
+/*[clinic end generated code: checksum=8180e5be47a110ae8c89263a7c12a91d80754f60]*/

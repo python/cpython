@@ -1,5 +1,6 @@
 import unittest
 import idlelib.CallTips as ct
+import textwrap
 import types
 
 default_tip = ct._default_callable_argspec
@@ -55,32 +56,45 @@ class Get_signatureTest(unittest.TestCase):
         gtest(list.__new__,
                'T.__new__(S, ...) -> a new object with type S, a subtype of T')
         gtest(list.__init__,
-               'Initializes self.  See help(type(self)) for accurate signature.')
+               'x.__init__(...) initializes x; see help(type(x)) for signature')
         append_doc =  "L.append(object) -> None -- append object to end"
         gtest(list.append, append_doc)
         gtest([].append, append_doc)
         gtest(List.append, append_doc)
 
-        gtest(types.MethodType, "Create a bound instance method object.")
+        gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
+
+    def test_signature_wrap(self):
+        self.assertEqual(signature(textwrap.TextWrapper), '''\
+(width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
+    replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
+    drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
+    placeholder=' [...]')''')
+
+    def test_docline_truncation(self):
+        def f(): pass
+        f.__doc__ = 'a'*300
+        self.assertEqual(signature(f), '()\n' + 'a' * (ct._MAX_COLS-3) + '...')
 
     def test_multiline_docstring(self):
         # Test fewer lines than max.
-        self.assertEqual(signature(dict),
-                "dict(mapping) -> new dictionary initialized from a mapping object's\n"
-                "(key, value) pairs\n"
-                "dict(iterable) -> new dictionary initialized as if via:\n"
-                "d = {}\n"
-                "for k, v in iterable:"
-                )
+        self.assertEqual(signature(list),
+                "list() -> new empty list\n"
+                "list(iterable) -> new list initialized from iterable's items")
 
-        # Test max lines and line (currently) too long.
-        self.assertEqual(signature(bytes),
-"bytes(string, encoding[, errors]) -> bytes\n"
-"bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer\n"
-#bytes(int) -> bytes object of size given by the parameter initialized with null bytes
-"bytes(int) -> bytes object of size given by the parameter initialized with n...\n"
-"bytes() -> empty bytes object")
+        # Test max lines
+        self.assertEqual(signature(bytes), '''\
+bytes(iterable_of_ints) -> bytes
+bytes(string, encoding[, errors]) -> bytes
+bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+bytes() -> empty bytes object''')
+
+        # Test more than max lines
+        def f(): pass
+        f.__doc__ = 'a\n' * 15
+        self.assertEqual(signature(f), '()' + '\na' * ct._MAX_LINES)
 
     def test_functions(self):
         def t1(): 'doc'
@@ -108,6 +122,16 @@ class Get_signatureTest(unittest.TestCase):
         for meth, mtip  in ((tc.t1, "()"), (tc.t4, "(*args)"), (tc.t6, "(self)"),
                             (tc.__call__, '(ci)'), (tc, '(ci)'), (TC.cm, "(a)"),):
             self.assertEqual(signature(meth), mtip + "\ndoc")
+
+    def test_starred_parameter(self):
+        # test that starred first parameter is *not* removed from argspec
+        class C:
+            def m1(*args): pass
+            def m2(**kwds): pass
+        c = C()
+        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),
+                                      (C.m2, "(**kwds)"), (c.m2, "(**kwds)"),):
+            self.assertEqual(signature(meth), mtip)
 
     def test_non_ascii_name(self):
         # test that re works to delete a first parameter name that

@@ -48,6 +48,16 @@ Core and Builtins
 Library
 -------
 
+- Issue #20367: Fix behavior of concurrent.futures.as_completed() for
+  duplicate arguments.  Patch by Glenn Langford.
+
+- Issue #8260: The read(), readline() and readlines() methods of
+  codecs.StreamReader returned incomplete data when were called after
+  readline() or read(size).  Based on patch by Amaury Forgeot d'Arc.
+
+- Issue #20105: the codec exception chaining now correctly sets the
+  traceback of the original exception as its __traceback__ attribute.
+
 - asyncio: Various improvements and small changes not all covered by
   issues listed below.  E.g. wait_for() now cancels the inner task if
   the timeout occcurs; tweaked the set of exported symbols; renamed
@@ -145,6 +155,9 @@ Library
 IDLE
 ----
 
+- Issue #17721: Remove non-functional configuration dialog help button until we
+  make it actually gives some help when clicked. Patch by Guilherme Simões.
+
 - Issue #17390: Add Python version to Idle editor window title bar.
   Original patches by Edmond Burnett and Kent Johnson.
 
@@ -154,8 +167,14 @@ IDLE
 Tests
 -----
 
+- Issue #19990: Added tests for the imghdr module.  Based on patch by
+  Claudiu Popa.
+
 - Issue #20358: Tests for curses.window.overlay and curses.window.overwrite
   no longer specify min{row,col} > max{row,col}.
+
+- Issue #19804: The test_find_mac test in test_uuid is now skipped if the
+  ifconfig executable is not available.
 
 - Issue #19886: Use better estimated memory requirements for bigmem tests.
 
@@ -552,9 +571,6 @@ IDLE
 
 Tests
 -----
-
-- Issue #19804: The test_find_mac test in test_uuid is now skipped if the
-  ifconfig executable is not available.
 
 - Issue #20055: Fix test_shutil under Windows with symlink privileges held.
   Patch by Vajrasky Kok.
