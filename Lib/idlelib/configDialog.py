@@ -78,9 +78,10 @@ class ConfigDialog(Toplevel):
         else:
             paddingArgs={'padx':6, 'pady':3}
 
-        self.buttonHelp = Button(frameActionButtons,text='Help',
-                command=self.Help,takefocus=FALSE,
-                **paddingArgs)
+# Comment out button creation and packing until implement self.Help
+##        self.buttonHelp = Button(frameActionButtons,text='Help',
+##                command=self.Help,takefocus=FALSE,
+##                **paddingArgs)
         self.buttonOk = Button(frameActionButtons,text='Ok',
                 command=self.Ok,takefocus=FALSE,
                 **paddingArgs)
@@ -94,7 +95,7 @@ class ConfigDialog(Toplevel):
         self.CreatePageHighlight()
         self.CreatePageKeys()
         self.CreatePageGeneral()
-        self.buttonHelp.pack(side=RIGHT,padx=5)
+##        self.buttonHelp.pack(side=RIGHT,padx=5)
         self.buttonOk.pack(side=LEFT,padx=5)
         self.buttonApply.pack(side=LEFT,padx=5)
         self.buttonCancel.pack(side=LEFT,padx=5)
