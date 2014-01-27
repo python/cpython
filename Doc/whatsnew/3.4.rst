@@ -264,6 +264,9 @@ name of the codec responsible for producing the error::
     >>> import codecs
 
     >>> codecs.decode(b"abcdefgh", "hex")
+    Traceback (most recent call last):
+      File "/usr/lib/python3.4/encodings/hex_codec.py", line 20, in hex_decode
+        return (binascii.a2b_hex(input), len(input))
     binascii.Error: Non-hexadecimal digit found
 
     The above exception was the direct cause of the following exception:
@@ -273,6 +276,11 @@ name of the codec responsible for producing the error::
     binascii.Error: decoding with 'hex' codec failed (Error: Non-hexadecimal digit found)
 
     >>> codecs.encode("hello", "bz2")
+    Traceback (most recent call last):
+      File "/usr/lib/python3.4/encodings/bz2_codec.py", line 17, in bz2_encode
+        return (bz2.compress(input), len(input))
+      File "/usr/lib/python3.4/bz2.py", line 498, in compress
+        return comp.compress(data) + comp.flush()
     TypeError: 'str' does not support the buffer interface
 
     The above exception was the direct cause of the following exception:

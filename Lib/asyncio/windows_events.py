@@ -178,9 +178,6 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         yield from transp._post_init()
         return transp
 
-    def _subprocess_closed(self, transport):
-        pass
-
 
 class IocpProactor:
     """Proactor implementation using IOCP."""
