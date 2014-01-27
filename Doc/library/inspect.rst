@@ -69,7 +69,12 @@ attributes:
 |           |                 | :term:`bytecode`          |
 +-----------+-----------------+---------------------------+
 |           | __defaults__    | tuple of any default      |
-|           |                 | values for arguments      |
+|           |                 | values for positional or  |
+|           |                 | keyword parameters        |
++-----------+-----------------+---------------------------+
+|           | __kwdefaults__  | mapping of any default    |
+|           |                 | values for keyword-only   |
+|           |                 | parameters                |
 +-----------+-----------------+---------------------------+
 |           | __globals__     | global namespace in which |
 |           |                 | this function was defined |
