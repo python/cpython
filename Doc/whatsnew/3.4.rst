@@ -1488,6 +1488,9 @@ removed:
 * Support for loading the deprecated ``TYPE_INT64`` has been removed from
   :mod:`marshal`.  (Contributed by Dan Riti in :issue:`15480`.)
 
+* :class:`inspect.Signature`: positional-only parameters are now required
+  to have a valid name.
+
 
 Code Cleanups
 -------------
