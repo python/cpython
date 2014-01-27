@@ -98,7 +98,10 @@ StreamReader
 
    .. method:: readexactly(n)
 
-      XXX
+      Read exactly *n* bytes. Raise an :exc:`IncompleteReadError` if the end of
+      the stream is reached before *n* can be read, the
+      :attr:`IncompleteReadError.partial` attribute of the exception contains
+      the partial read bytes.
 
       This method returns a :ref:`coroutine object <coroutine>`.
 
@@ -206,6 +209,22 @@ StreamReaderProtocol
     .. method:: resume_writing()
 
        XXX
+
+
+IncompleteReadError
+===================
+
+.. exception:: IncompleteReadError
+
+    Incomplete read error.
+
+   .. attribute:: expected
+
+      Total number of expected bytes (:class:`int`).
+
+   .. attribute:: partial
+
+      Read bytes string before the end of stream was reached (:class:`bytes`).
 
 
 Example
