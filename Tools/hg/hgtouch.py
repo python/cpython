@@ -36,12 +36,16 @@ def parse_config(repo):
                     result[o] = inputs
     return result
 
-def check_rule(ui, repo, modified, output, inputs):
+def check_rule(ui, repo, modified, basedir, output, inputs):
     """Verify that the output is newer than any of the inputs.
     Return (status, stamp), where status is True if the update succeeded,
     and stamp is the newest time stamp assigned  to any file (might be in
-    the future)."""
-    f_output = repo.wjoin(output)
+    the future).
+
+    If basedir is nonempty, it gives a directory in which the tree is to
+    be checked.
+    """
+    f_output = repo.wjoin(os.path.join(basedir, output))
     try:
         o_time = os.stat(f_output).st_mtime
     except OSError:
@@ -51,7 +55,7 @@ def check_rule(ui, repo, modified, output, inputs):
     backdate = None
     backdate_source = None
     for i in inputs:
-        f_i = repo.wjoin(i)
+        f_i = repo.wjoin(os.path.join(basedir, i))
         try:
             i_time = os.stat(f_i).st_mtime
         except OSError:
@@ -79,8 +83,14 @@ def check_rule(ui, repo, modified, output, inputs):
         # Nothing to update
         return True, 0
 
-def do_touch(ui, repo):
-    modified = repo.status()[0]
+def do_touch(ui, repo, basedir):
+    if basedir:
+        if not os.path.isdir(repo.wjoin(basedir)):
+            ui.warn("Abort: basedir %r does not exist\n" % basedir)
+            return
+        modified = []
+    else:
+        modified = repo.status()[0]
     dependencies = parse_config(repo)
     success = True
     tstamp = 0       # newest time stamp assigned
@@ -93,8 +103,8 @@ def do_touch(ui, repo):
             if i in dependencies:
                 hold_back[output] = inputs
                 continue
-        _success, _tstamp = check_rule(ui, repo, modified, output, inputs)
-        sucess = success and _success
+        _success, _tstamp = check_rule(ui, repo, modified, basedir, output, inputs)
+        success = success and _success
         tstamp = max(tstamp, _tstamp)
         # put back held back rules
         dependencies.update(hold_back)
@@ -109,11 +119,12 @@ def do_touch(ui, repo):
         return False
     return success
 
-def touch(ui, repo):
+def touch(ui, repo, basedir):
     "touch generated files that are older than their sources after an update."
-    do_touch(ui, repo)
+    do_touch(ui, repo, basedir)
 
 cmdtable = {
-    "touch": (touch, [],
-              "touch generated files according to the .hgtouch configuration")
+    "touch": (touch,
+              [('b', 'basedir', '', 'base dir of the tree to apply touching', 'BASEDIR')],
+              "hg touch [-b BASEDIR]")
 }
