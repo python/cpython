@@ -101,82 +101,36 @@ def isabs(s):
 
 
 # Join two (or more) paths.
-
-def join(a, *p):
-    """Join two or more pathname components, inserting "\\" as needed.
-    If any component is an absolute path, all previous path components
-    will be discarded."""
-    sep = _get_sep(a)
-    seps = _get_bothseps(a)
-    colon = _get_colon(a)
-    path = a
-    for b in p:
-        b_wins = 0  # set to 1 iff b makes path irrelevant
-        if not path:
-            b_wins = 1
-
-        elif isabs(b):
-            # This probably wipes out path so far.  However, it's more
-            # complicated if path begins with a drive letter.  You get a+b
-            # (minus redundant slashes) in these four cases:
-            #     1. join('c:', '/a') == 'c:/a'
-            #     2. join('//computer/share', '/a') == '//computer/share/a'
-            #     3. join('c:/', '/a') == 'c:/a'
-            #     4. join('//computer/share/', '/a') == '//computer/share/a'
-            # But b wins in all of these cases:
-            #     5. join('c:/a', '/b') == '/b'
-            #     6. join('//computer/share/a', '/b') == '/b'
-            #     7. join('c:', 'd:/') == 'd:/'
-            #     8. join('c:', '//computer/share/') == '//computer/share/'
-            #     9. join('//computer/share', 'd:/') == 'd:/'
-            #    10. join('//computer/share', '//computer/share/') == '//computer/share/'
-            #    11. join('c:/', 'd:/') == 'd:/'
-            #    12. join('c:/', '//computer/share/') == '//computer/share/'
-            #    13. join('//computer/share/', 'd:/') == 'd:/'
-            #    14. join('//computer/share/', '//computer/share/') == '//computer/share/'
-            b_prefix, b_rest = splitdrive(b)
-
-            # if b has a prefix, it always wins.
-            if b_prefix:
-                b_wins = 1
-            else:
-                # b doesn't have a prefix.
-                # but isabs(b) returned true.
-                # and therefore b_rest[0] must be a slash.
-                # (but let's check that.)
-                assert(b_rest and b_rest[0] in seps)
-
-                # so, b still wins if path has a rest that's more than a sep.
-                # you get a+b if path_rest is empty or only has a sep.
-                # (see cases 1-4 for times when b loses.)
-                path_rest = splitdrive(path)[1]
-                b_wins = path_rest and path_rest not in seps
-
-        if b_wins:
-            path = b
-        else:
-            # Join, and ensure there's a separator.
-            assert len(path) > 0
-            if path[-1:] in seps:
-                if b and b[:1] in seps:
-                    path += b[1:]
-                else:
-                    path += b
-            elif path[-1:] == colon:
-                path += b
-            elif b:
-                if b[:1] in seps:
-                    path += b
-                else:
-                    path += sep + b
-            else:
-                # path is not empty and does not end with a backslash,
-                # but b is empty; since, e.g., split('a/') produces
-                # ('a', ''), it's best if join() adds a backslash in
-                # this case.
-                path += sep
-
-    return path
+def join(path, *paths):
+    sep = _get_sep(path)
+    seps = _get_bothseps(path)
+    colon = _get_colon(path)
+    result_drive, result_path = splitdrive(path)
+    for p in paths:
+        p_drive, p_path = splitdrive(p)
+        if p_path and p_path[0] in seps:
+            # Second path is absolute
+            if p_drive or not result_drive:
+                result_drive = p_drive
+            result_path = p_path
+            continue
+        elif p_drive and p_drive != result_drive:
+            if p_drive.lower() != result_drive.lower():
+                # Different drives => ignore the first path entirely
+                result_drive = p_drive
+                result_path = p_path
+                continue
+            # Same drive in different case
+            result_drive = p_drive
+        # Second path is relative to the first
+        if result_path and result_path[-1] not in seps:
+            result_path = result_path + sep
+        result_path = result_path + p_path
+    ## add separator between UNC and non-absolute path
+    if (result_path and result_path[0] not in seps and
+        result_drive and result_drive[-1:] != colon):
+        return result_drive + sep + result_path
+    return result_drive + result_path
 
 
 # Split a path in a drive specification (a drive letter followed by a
