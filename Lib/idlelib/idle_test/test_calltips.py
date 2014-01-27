@@ -69,12 +69,8 @@ class Get_signatureTest(unittest.TestCase):
         self.assertEqual(signature(textwrap.TextWrapper), '''\
 (width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
     replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
-<<<<<<< local
     drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
     placeholder=' [...]')''')
-=======
-    drop_whitespace=True, break_on_hyphens=True, tabsize=8)''')
->>>>>>> other
 
     def test_docline_truncation(self):
         def f(): pass
