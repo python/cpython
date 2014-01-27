@@ -66,30 +66,34 @@ static PyObject *get_module_code(ZipImporter *self, char *fullname,
 static int
 zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 {
-    char *path, *p, *prefix, buf[MAXPATHLEN+2];
+    char *path_arg, *path, *p, *prefix, *path_buf;
     size_t len;
 
     if (!_PyArg_NoKeywords("zipimporter()", kwds))
         return -1;
 
-    if (!PyArg_ParseTuple(args, "s:zipimporter",
-                          &path))
+    if (!PyArg_ParseTuple(args, "s:zipimporter", &path_arg))
         return -1;
 
-    len = strlen(path);
+    len = strlen(path_arg);
     if (len == 0) {
         PyErr_SetString(ZipImportError, "archive path is empty");
         return -1;
     }
     if (len >= MAXPATHLEN) {
-        PyErr_SetString(ZipImportError,
-                        "archive path too long");
+        PyErr_SetString(ZipImportError, "archive path too long");
         return -1;
     }
-    strcpy(buf, path);
+    /* Room for the trailing \0 and room for an extra SEP if needed. */
+    path_buf = (char *)PyMem_Malloc(len + 2);
+    if (path_buf == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "unable to malloc path buffer");
+        return -1;
+    }
+    strcpy(path_buf, path_arg);
 
 #ifdef ALTSEP
-    for (p = buf; *p; p++) {
+    for (p = path_buf; *p; p++) {
         if (*p == ALTSEP)
             *p = SEP;
     }
@@ -102,25 +106,25 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
         struct stat statbuf;
         int rv;
 
-        rv = stat(buf, &statbuf);
+        rv = stat(path_buf, &statbuf);
         if (rv == 0) {
             /* it exists */
             if (S_ISREG(statbuf.st_mode))
                 /* it's a file */
-                path = buf;
+                path = path_buf;
             break;
         }
 #else
-        if (object_exists(buf)) {
+        if (object_exists(path_buf)) {
             /* it exists */
-            if (isfile(buf))
+            if (isfile(path_buf))
                 /* it's a file */
-                path = buf;
+                path = path_buf;
             break;
         }
 #endif
         /* back up one path element */
-        p = strrchr(buf, SEP);
+        p = strrchr(path_buf, SEP);
         if (prefix != NULL)
             *prefix = SEP;
         if (p == NULL)
@@ -130,48 +134,52 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
     }
     if (path != NULL) {
         PyObject *files;
+        if (Py_VerboseFlag && prefix && prefix[0] != '\0')
+            PySys_WriteStderr("# zipimport: prefix=%s constructing a "
+                              "zipimporter for %s\n", prefix, path);
+        /* NOTE(gps): test_zipimport.py never exercises a case where
+         * prefix is non-empty.  When would that ever be possible?
+         * Are we missing coverage or is prefix simply never needed?
+         */
         files = PyDict_GetItemString(zip_directory_cache, path);
         if (files == NULL) {
             PyObject *zip_stat = NULL;
-            FILE *fp = fopen_rb_and_stat(buf, &zip_stat);
+            FILE *fp = fopen_rb_and_stat(path, &zip_stat);
             if (fp == NULL) {
                 PyErr_Format(ZipImportError, "can't open Zip file: "
-                             "'%.200s'", buf);
+                             "'%.200s'", path);
                 Py_XDECREF(zip_stat);
-                return -1;
+                goto error;
             }
 
             if (Py_VerboseFlag)
                 PySys_WriteStderr("# zipimport: %s not cached, "
                                   "reading TOC.\n", path);
 
-            files = read_directory(fp, buf);
+            files = read_directory(fp, path);
             fclose(fp);
             if (files == NULL) {
                 Py_XDECREF(zip_stat);
-                return -1;
+                goto error;
             }
             if (PyDict_SetItemString(zip_directory_cache, path,
                                      files) != 0) {
                 Py_DECREF(files);
                 Py_XDECREF(zip_stat);
-                return -1;
+                goto error;
             }
             if (zip_stat && PyDict_SetItemString(zip_stat_cache, path,
                                                  zip_stat) != 0) {
                 Py_DECREF(files);
                 Py_DECREF(zip_stat);
-                return -1;
+                goto error;
             }
             Py_XDECREF(zip_stat);
         }
-        else
-            Py_INCREF(files);
-        self->files = files;
     }
     else {
         PyErr_SetString(ZipImportError, "not a Zip file");
-        return -1;
+        goto error;
     }
 
     if (prefix == NULL)
@@ -186,33 +194,26 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
         }
     }
 
-    self->archive = PyString_FromString(buf);
+    self->archive = PyString_FromString(path);
     if (self->archive == NULL)
-        return -1;
+        goto error;
 
     self->prefix = PyString_FromString(prefix);
     if (self->prefix == NULL)
-        return -1;
+        goto error;
 
+    PyMem_Free(path_buf);
     return 0;
-}
-
-/* GC support. */
-static int
-zipimporter_traverse(PyObject *obj, visitproc visit, void *arg)
-{
-    ZipImporter *self = (ZipImporter *)obj;
-    Py_VISIT(self->files);
-    return 0;
+error:
+    PyMem_Free(path_buf);
+    return -1;
 }
 
 static void
 zipimporter_dealloc(ZipImporter *self)
 {
-    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->archive);
     Py_XDECREF(self->prefix);
-    Py_XDECREF(self->files);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -292,6 +293,7 @@ get_module_info(ZipImporter *self, char *fullname)
     char *subname, path[MAXPATHLEN + 1];
     int len;
     struct st_zip_searchorder *zso;
+    PyObject *files;
 
     subname = get_subname(fullname);
 
@@ -299,9 +301,23 @@ get_module_info(ZipImporter *self, char *fullname)
     if (len < 0)
         return MI_ERROR;
 
+    files = PyDict_GetItem(zip_directory_cache, self->archive);
+    if (files == NULL) {
+        /* Some scoundrel has cleared zip_directory_cache out from
+         * beneath us.  Try repopulating it once before giving up. */
+        char *unused_archive_name;
+        FILE *fp = safely_reopen_archive(self, &unused_archive_name);
+        if (fp == NULL)
+            return MI_ERROR;
+        fclose(fp);
+        files = PyDict_GetItem(zip_directory_cache, self->archive);
+        if (files == NULL)
+            return MI_ERROR;
+    }
+
     for (zso = zip_searchorder; *zso->suffix; zso++) {
         strcpy(path + len, zso->suffix);
-        if (PyDict_GetItemString(self->files, path) != NULL) {
+        if (PyDict_GetItemString(files, path) != NULL) {
             if (zso->type & IS_PACKAGE)
                 return MI_PACKAGE;
             else
@@ -456,7 +472,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 #ifdef ALTSEP
     char *p, buf[MAXPATHLEN + 1];
 #endif
-    PyObject *toc_entry, *data;
+    PyObject *toc_entry, *data, *files;
     Py_ssize_t len;
 
     if (!PyArg_ParseTuple(args, "s:zipimporter.get_data", &path))
@@ -485,7 +501,13 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
     if (fp == NULL)
         return NULL;
 
-    toc_entry = PyDict_GetItemString(self->files, path);
+    files = PyDict_GetItem(zip_directory_cache, self->archive);
+    if (files == NULL) {
+        /* This should never happen as safely_reopen_archive() should
+         * have repopulated zip_directory_cache if needed. */
+        return NULL;
+    }
+    toc_entry = PyDict_GetItemString(files, path);
     if (toc_entry == NULL) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
         fclose(fp);
@@ -512,7 +534,7 @@ static PyObject *
 zipimporter_get_source(PyObject *obj, PyObject *args)
 {
     ZipImporter *self = (ZipImporter *)obj;
-    PyObject *toc_entry;
+    PyObject *toc_entry, *files;
     FILE *fp;
     char *fullname, *subname, path[MAXPATHLEN+1], *archive;
     int len;
@@ -546,7 +568,13 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
     if (fp == NULL)
         return NULL;
 
-    toc_entry = PyDict_GetItemString(self->files, path);
+    files = PyDict_GetItem(zip_directory_cache, self->archive);
+    if (files == NULL) {
+        /* This should never happen as safely_reopen_archive() should
+         * have repopulated zip_directory_cache if needed. */
+        return NULL;
+    }
+    toc_entry = PyDict_GetItemString(files, path);
     if (toc_entry != NULL) {
         PyObject *data = get_data(fp, archive, toc_entry);
         fclose(fp);
@@ -666,10 +694,9 @@ static PyTypeObject ZipImporter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_HAVE_GC,                     /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
     zipimporter_doc,                            /* tp_doc */
-    zipimporter_traverse,                       /* tp_traverse */
+    0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -686,7 +713,7 @@ static PyTypeObject ZipImporter_Type = {
     (initproc)zipimporter_init,                 /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
-    PyObject_GC_Del,                            /* tp_free */
+    0,                                          /* tp_free */
 };
 
 
@@ -830,11 +857,13 @@ safely_reopen_archive(ZipImporter *self, char **archive_p)
                 fclose(fp);
                 return NULL;
             }
-            Py_XDECREF(self->files);  /* free the old value. */
-            self->files = files;
         }
         Py_DECREF(stat_now);
-    }  /* stat succeeded */
+    } else {
+        if (Py_VerboseFlag)
+            PySys_WriteStderr("# zipimport: os.fstat failed on the "
+                              "open %s file.\n", archive);
+    }
 
     return fp;
 }
@@ -1236,12 +1265,18 @@ parse_dostime(int dostime, int dosdate)
 static time_t
 get_mtime_of_source(ZipImporter *self, char *path)
 {
-    PyObject *toc_entry;
+    PyObject *toc_entry, *files;
     time_t mtime = 0;
     Py_ssize_t lastchar = strlen(path) - 1;
     char savechar = path[lastchar];
     path[lastchar] = '\0';  /* strip 'c' or 'o' from *.py[co] */
-    toc_entry = PyDict_GetItemString(self->files, path);
+    files = PyDict_GetItem(zip_directory_cache, self->archive);
+    if (files == NULL) {
+        /* This should never happen as safely_reopen_archive() from
+         * our only caller repopulated zip_directory_cache if needed. */
+        return 0;
+    }
+    toc_entry = PyDict_GetItemString(files, path);
     if (toc_entry != NULL && PyTuple_Check(toc_entry) &&
         PyTuple_Size(toc_entry) == 8) {
         /* fetch the time stamp of the .py file for comparison
@@ -1304,7 +1339,7 @@ get_module_code(ZipImporter *self, char *fullname,
         return NULL;
 
     for (zso = zip_searchorder; *zso->suffix; zso++) {
-        PyObject *code = NULL;
+        PyObject *code = NULL, *files;
 
         strcpy(path + len, zso->suffix);
         if (Py_VerboseFlag > 1)
@@ -1312,7 +1347,14 @@ get_module_code(ZipImporter *self, char *fullname,
                               PyString_AsString(self->archive),
                               SEP, path);
 
-        toc_entry = PyDict_GetItemString(self->files, path);
+        files = PyDict_GetItem(zip_directory_cache, self->archive);
+        if (files == NULL) {
+            /* This should never happen as safely_reopen_archive() should
+             * have repopulated zip_directory_cache if needed; and the GIL
+             * is being held. */
+            return NULL;
+        }
+        toc_entry = PyDict_GetItemString(files, path);
         if (toc_entry != NULL) {
             time_t mtime = 0;
             int ispackage = zso->type & IS_PACKAGE;
