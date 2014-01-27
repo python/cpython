@@ -2122,6 +2122,7 @@ class TestSignatureObject(unittest.TestCase):
 
     def test_signature_str_positional_only(self):
         P = inspect.Parameter
+        S = inspect.Signature
 
         def test(a_po, *, b, **kwargs):
             return a_po, kwargs
@@ -2132,14 +2133,20 @@ class TestSignatureObject(unittest.TestCase):
         test.__signature__ = sig.replace(parameters=new_params)
 
         self.assertEqual(str(inspect.signature(test)),
-                         '(<a_po>, *, b, **kwargs)')
+                         '(a_po, /, *, b, **kwargs)')
 
-        sig = inspect.signature(test)
-        new_params = list(sig.parameters.values())
-        new_params[0] = new_params[0].replace(name=None)
-        test.__signature__ = sig.replace(parameters=new_params)
-        self.assertEqual(str(inspect.signature(test)),
-                         '(<0>, *, b, **kwargs)')
+        self.assertEqual(str(S(parameters=[P('foo', P.POSITIONAL_ONLY)])),
+                         '(foo, /)')
+
+        self.assertEqual(str(S(parameters=[
+                                P('foo', P.POSITIONAL_ONLY),
+                                P('bar', P.VAR_KEYWORD)])),
+                         '(foo, /, **bar)')
+
+        self.assertEqual(str(S(parameters=[
+                                P('foo', P.POSITIONAL_ONLY),
+                                P('bar', P.VAR_POSITIONAL)])),
+                         '(foo, /, *bar)')
 
     def test_signature_replace_anno(self):
         def test() -> 42:
@@ -2178,9 +2185,12 @@ class TestParameterObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
             inspect.Parameter('1', kind=inspect.Parameter.VAR_KEYWORD)
 
-        with self.assertRaisesRegex(ValueError,
-                                     'non-positional-only parameter'):
+        with self.assertRaisesRegex(TypeError, 'name must be a str'):
             inspect.Parameter(None, kind=inspect.Parameter.VAR_KEYWORD)
+
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.Parameter('$', kind=inspect.Parameter.VAR_KEYWORD)
 
         with self.assertRaisesRegex(ValueError, 'cannot have default values'):
             inspect.Parameter('a', default=42,
@@ -2230,7 +2240,8 @@ class TestParameterObject(unittest.TestCase):
         self.assertEqual(p2.name, 'bar')
         self.assertNotEqual(p2, p)
 
-        with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
+        with self.assertRaisesRegex(ValueError,
+                                    'name is a required attribute'):
             p2 = p2.replace(name=p2.empty)
 
         p2 = p2.replace(name='foo', default=None)
@@ -2252,14 +2263,11 @@ class TestParameterObject(unittest.TestCase):
         self.assertEqual(p2, p)
 
     def test_signature_parameter_positional_only(self):
-        p = inspect.Parameter(None, kind=inspect.Parameter.POSITIONAL_ONLY)
-        self.assertEqual(str(p), '<>')
-
-        p = p.replace(name='1')
-        self.assertEqual(str(p), '<1>')
+        with self.assertRaisesRegex(TypeError, 'name must be a str'):
+            inspect.Parameter(None, kind=inspect.Parameter.POSITIONAL_ONLY)
 
     def test_signature_parameter_immutability(self):
-        p = inspect.Parameter(None, kind=inspect.Parameter.POSITIONAL_ONLY)
+        p = inspect.Parameter('spam', kind=inspect.Parameter.KEYWORD_ONLY)
 
         with self.assertRaises(AttributeError):
             p.foo = 'bar'
