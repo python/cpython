@@ -692,4 +692,3 @@ class TemporaryDirectory(object):
         if self.name is not None and not self._closed:
             _shutil.rmtree(self.name)
             self._closed = True
-
