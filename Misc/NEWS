@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19456: ntpath.join() now joins relative paths correctly when a drive
+  is present.
+
 - Issue #19077: tempfile.TemporaryDirectory cleanup is now most likely
   successful when called during nulling out of modules during shutdown.
   Misleading exception no longer raised when resource warning is emitted
