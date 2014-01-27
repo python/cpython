@@ -120,6 +120,16 @@ class Get_signatureTest(unittest.TestCase):
                             (tc.__call__, '(ci)'), (tc, '(ci)'), (TC.cm, "(a)"),):
             self.assertEqual(signature(meth), mtip + "\ndoc")
 
+    def test_starred_parameter(self):
+        # test that starred first parameter is *not* removed from argspec
+        class C:
+            def m1(*args): pass
+            def m2(**kwds): pass
+        c = C()
+        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),
+                                      (C.m2, "(**kwds)"), (c.m2, "(**kwds)"),):
+            self.assertEqual(signature(meth), mtip)
+
     def test_no_docstring(self):
         def nd(s): pass
         TC.nd = nd
