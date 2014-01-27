@@ -29,11 +29,12 @@ __all__ = [
 
 import functools as _functools
 import warnings as _warnings
-import sys as _sys
 import io as _io
 import os as _os
+import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
+import weakref as _weakref
 
 try:
     import _thread
@@ -335,10 +336,12 @@ class _TemporaryFileCloser:
     underlying file object, without adding a __del__ method to the
     temporary file."""
 
+    file = None  # Set here since __del__ checks it
+    close_called = False
+
     def __init__(self, file, name, delete=True):
         self.file = file
         self.name = name
-        self.close_called = False
         self.delete = delete
 
     # NT provides delete-on-close as a primitive, so we don't need
@@ -350,14 +353,13 @@ class _TemporaryFileCloser:
         # that this must be referenced as self.unlink, because the
         # name TemporaryFileWrapper may also get None'd out before
         # __del__ is called.
-        unlink = _os.unlink
 
-        def close(self):
-            if not self.close_called:
+        def close(self, unlink=_os.unlink):
+            if not self.close_called and self.file is not None:
                 self.close_called = True
                 self.file.close()
                 if self.delete:
-                    self.unlink(self.name)
+                    unlink(self.name)
 
         # Need to ensure the file is deleted on __del__
         def __del__(self):
@@ -657,10 +659,23 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
+    # Handle mkdtemp raising an exception
+    name = None
+    _finalizer = None
+    _closed = False
+
     def __init__(self, suffix="", prefix=template, dir=None):
-        self._closed = False
-        self.name = None # Handle mkdtemp raising an exception
         self.name = mkdtemp(suffix, prefix, dir)
+        self._finalizer = _weakref.finalize(
+            self, self._cleanup, self.name,
+            warn_message="Implicitly cleaning up {!r}".format(self))
+
+    @classmethod
+    def _cleanup(cls, name, warn_message=None):
+        _shutil.rmtree(name)
+        if warn_message is not None:
+            _warnings.warn(warn_message, ResourceWarning)
+
 
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
@@ -668,60 +683,13 @@ class TemporaryDirectory(object):
     def __enter__(self):
         return self.name
 
-    def cleanup(self, _warn=False):
-        if self.name and not self._closed:
-            try:
-                self._rmtree(self.name)
-            except (TypeError, AttributeError) as ex:
-                # Issue #10188: Emit a warning on stderr
-                # if the directory could not be cleaned
-                # up due to missing globals
-                if "None" not in str(ex):
-                    raise
-                print("ERROR: {!r} while cleaning up {!r}".format(ex, self,),
-                      file=_sys.stderr)
-                return
-            self._closed = True
-            if _warn:
-                self._warn("Implicitly cleaning up {!r}".format(self),
-                           ResourceWarning)
-
     def __exit__(self, exc, value, tb):
         self.cleanup()
 
-    def __del__(self):
-        # Issue a ResourceWarning if implicit cleanup needed
-        self.cleanup(_warn=True)
+    def cleanup(self):
+        if self._finalizer is not None:
+            self._finalizer.detach()
+        if self.name is not None and not self._closed:
+            _shutil.rmtree(self.name)
+            self._closed = True
 
-    # XXX (ncoghlan): The following code attempts to make
-    # this class tolerant of the module nulling out process
-    # that happens during CPython interpreter shutdown
-    # Alas, it doesn't actually manage it. See issue #10188
-    _listdir = staticmethod(_os.listdir)
-    _path_join = staticmethod(_os.path.join)
-    _isdir = staticmethod(_os.path.isdir)
-    _islink = staticmethod(_os.path.islink)
-    _remove = staticmethod(_os.remove)
-    _rmdir = staticmethod(_os.rmdir)
-    _warn = _warnings.warn
-
-    def _rmtree(self, path):
-        # Essentially a stripped down version of shutil.rmtree.  We can't
-        # use globals because they may be None'ed out at shutdown.
-        for name in self._listdir(path):
-            fullname = self._path_join(path, name)
-            try:
-                isdir = self._isdir(fullname) and not self._islink(fullname)
-            except OSError:
-                isdir = False
-            if isdir:
-                self._rmtree(fullname)
-            else:
-                try:
-                    self._remove(fullname)
-                except OSError:
-                    pass
-        try:
-            self._rmdir(path)
-        except OSError:
-            pass
