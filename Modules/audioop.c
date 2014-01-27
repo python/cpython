@@ -1304,6 +1304,7 @@ audioop_ratecv_impl(PyModuleDef *module, Py_buffer *fragment, int width, int nch
             "weightA should be >= 1, weightB should be >= 0");
         return NULL;
     }
+    assert(fragment->len >= 0);
     if (fragment->len % bytes_per_frame != 0) {
         PyErr_SetString(AudioopError, "not a whole number of frames");
         return NULL;
@@ -1370,7 +1371,7 @@ audioop_ratecv_impl(PyModuleDef *module, Py_buffer *fragment, int width, int nch
            case ceiling(len/inrate) * outrate. */
 
         /* compute ceiling(len/inrate) without overflow */
-        Py_ssize_t q = len > 0 ? 1 + (len - 1) / inrate : 0;
+        Py_ssize_t q = 1 + (len - 1) / inrate;
         if (outrate > PY_SSIZE_T_MAX / q / bytes_per_frame)
             str = NULL;
         else
