@@ -319,6 +319,16 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
 
+    def test_getfile_class_without_module(self):
+        class CM(type):
+            @property
+            def __module__(cls):
+                raise AttributeError
+        class C(metaclass=CM):
+            pass
+        with self.assertRaises(TypeError):
+            inspect.getfile(C)
+
     def test_getmodule_recursion(self):
         from types import ModuleType
         name = '__inspect_dummy'

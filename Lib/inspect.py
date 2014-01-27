@@ -516,9 +516,10 @@ def getfile(object):
             return object.__file__
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
-        object = sys.modules.get(object.__module__)
-        if hasattr(object, '__file__'):
-            return object.__file__
+        if hasattr(object, '__module__'):
+            object = sys.modules.get(object.__module__)
+            if hasattr(object, '__file__'):
+                return object.__file__
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__
