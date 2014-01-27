@@ -290,6 +290,7 @@ class partialmethod(object):
             call_args = (cls_or_self,) + self.args + tuple(rest)
             return self.func(*call_args, **call_keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
+        _method._partialmethod = self
         return _method
 
     def __get__(self, obj, cls):
