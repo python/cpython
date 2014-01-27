@@ -1629,17 +1629,16 @@ class Parameter:
         self._default = default
         self._annotation = annotation
 
-        if name is None:
-            if kind != _POSITIONAL_ONLY:
-                raise ValueError("None is not a valid name for a "
-                                 "non-positional-only parameter")
-            self._name = name
-        else:
-            name = str(name)
-            if kind != _POSITIONAL_ONLY and not name.isidentifier():
-                msg = '{!r} is not a valid parameter name'.format(name)
-                raise ValueError(msg)
-            self._name = name
+        if name is _empty:
+            raise ValueError('name is a required attribute for Parameter')
+
+        if not isinstance(name, str):
+            raise TypeError("name must be a str, not a {!r}".format(name))
+
+        if not name.isidentifier():
+            raise ValueError('{!r} is not a valid parameter name'.format(name))
+
+        self._name = name
 
         self._partial_kwarg = _partial_kwarg
 
@@ -1683,12 +1682,7 @@ class Parameter:
 
     def __str__(self):
         kind = self.kind
-
         formatted = self._name
-        if kind == _POSITIONAL_ONLY:
-            if formatted is None:
-                formatted = ''
-            formatted = '<{}>'.format(formatted)
 
         # Add annotation and default value
         if self._annotation is not _empty:
@@ -1858,21 +1852,19 @@ class Signature:
 
                 for idx, param in enumerate(parameters):
                     kind = param.kind
+                    name = param.name
+
                     if kind < top_kind:
                         msg = 'wrong parameter order: {} before {}'
-                        msg = msg.format(top_kind, param.kind)
+                        msg = msg.format(top_kind, kind)
                         raise ValueError(msg)
                     else:
                         top_kind = kind
 
-                    name = param.name
-                    if name is None:
-                        name = str(idx)
-                        param = param.replace(name=name)
-
                     if name in params:
                         msg = 'duplicate parameter name: {!r}'.format(name)
                         raise ValueError(msg)
+
                     params[name] = param
             else:
                 params = OrderedDict(((param.name, param)
@@ -2292,11 +2284,21 @@ class Signature:
 
     def __str__(self):
         result = []
+        render_pos_only_separator = False
         render_kw_only_separator = True
-        for idx, param in enumerate(self.parameters.values()):
+        for param in self.parameters.values():
             formatted = str(param)
 
             kind = param.kind
+
+            if kind == _POSITIONAL_ONLY:
+                render_pos_only_separator = True
+            elif render_pos_only_separator:
+                # It's not a positional-only parameter, and the flag
+                # is set to 'True' (there were pos-only params before.)
+                result.append('/')
+                render_pos_only_separator = False
+
             if kind == _VAR_POSITIONAL:
                 # OK, we have an '*args'-like parameter, so we won't need
                 # a '*' to separate keyword-only arguments
@@ -2311,6 +2313,11 @@ class Signature:
                 render_kw_only_separator = False
 
             result.append(formatted)
+
+        if render_pos_only_separator:
+            # There were only positional-only parameters, hence the
+            # flag was not reset to 'False'
+            result.append('/')
 
         rendered = '({})'.format(', '.join(result))
 
