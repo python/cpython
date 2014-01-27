@@ -6149,7 +6149,7 @@ static PyObject *
 load(UnpicklerObject *self)
 {
     PyObject *value = NULL;
-    char *s;
+    char *s = NULL;
 
     self->num_marks = 0;
     self->proto = 0;
