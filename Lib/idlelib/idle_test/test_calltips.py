@@ -1,6 +1,7 @@
 import unittest
 import idlelib.CallTips as ct
 CTi = ct.CallTips()  # needed for get_entity test in 2.7
+import textwrap
 import types
 
 default_tip = ''
@@ -65,6 +66,18 @@ class Get_signatureTest(unittest.TestCase):
 
         gtest(types.MethodType, '()\ninstancemethod(function, instance, class)')
         gtest(SB(), default_tip)
+
+    def test_signature_wrap(self):
+        # This is also a test of an old-style class
+        self.assertEqual(signature(textwrap.TextWrapper), '''\
+(width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
+    replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
+    drop_whitespace=True, break_on_hyphens=True)''')
+
+    def test_docline_truncation(self):
+        def f(): pass
+        f.__doc__ = 'a'*300
+        self.assertEqual(signature(f), '()\n' + 'a' * (ct._MAX_COLS-3) + '...')
 
     def test_multiline_docstring(self):
         # Test fewer lines than max.

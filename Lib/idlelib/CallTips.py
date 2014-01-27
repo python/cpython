@@ -5,14 +5,15 @@ parameter and docstring information when you type an opening parenthesis, and
 which disappear when you type a closing parenthesis.
 
 """
+import __main__
 import re
 import sys
+import textwrap
 import types
 
 from idlelib import CallTipWindow
 from idlelib.HyperParser import HyperParser
 
-import __main__
 
 class CallTips:
 
@@ -131,8 +132,9 @@ def _find_constructor(class_ob):
     return None
 
 # The following are used in get_arg_text
-_MAX_COLS = 79
+_MAX_COLS = 85
 _MAX_LINES = 5  # enough for bytes
+_INDENT = ' '*4  # for wrapped signatures
 
 def get_arg_text(ob):
     '''Return a string describing the signature of a callable object, or ''.
@@ -147,11 +149,15 @@ def get_arg_text(ob):
     try:
         ob_call = ob.__call__
     except BaseException:
-        return argspec
+        if type(ob) is types.ClassType:  # old-style
+            ob_call = ob
+        else:
+            return argspec
 
     arg_offset = 0
     if type(ob) in (types.ClassType, types.TypeType):
-        # Look for the highest __init__ in the class chain.
+        # Look for the first __init__ in the class chain with .im_func.
+        # Slot wrappers (builtins, classes defined in funcs) do not.
         fob = _find_constructor(ob)
         if fob is None:
             fob = lambda: None
@@ -183,14 +189,16 @@ def get_arg_text(ob):
             items.append("**kwds")
         argspec = ", ".join(items)
         argspec = "(%s)" % re.sub("(?<!\d)\.\d+", "<tuple>", argspec)
-    # See if we can use the docstring
+
+    lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
+            if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
     else:
         doc = getattr(ob, "__doc__", "")
     if doc:
-        lines = [argspec] if argspec else []
-        for line in doc.split('\n', 5)[:_MAX_LINES]:
+        for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES]:
             line = line.strip()
             if not line:
                 break
