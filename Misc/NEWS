@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19456: ntpath.join() now joins relative paths correctly when a drive
+  is present.
+
 - Issue #19077: tempfile.TemporaryDirectory cleanup no longer fails when
   called during shutdown.  Emitting resource warning in __del__ no longer fails.
   Original patch by Antoine Pitrou.
