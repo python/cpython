@@ -319,27 +319,25 @@ Yield expressions
    yield_atom: "(" `yield_expression` ")"
    yield_expression: "yield" [`expression_list` | "from" `expression`]
 
-The :keyword:`yield` expression is only used when defining a :term:`generator`
-function,
-and can only be used in the body of a function definition.  Using a
-:keyword:`yield` expression in a function definition is sufficient to cause that
-definition to create a generator function instead of a normal function.
+The yield expression is only used when defining a :term:`generator` function and
+thus can only be used in the body of a function definition.  Using a yield
+expression in a function's body causes that function to be a generator.
 
 When a generator function is called, it returns an iterator known as a
 generator.  That generator then controls the execution of a generator function.
 The execution starts when one of the generator's methods is called.  At that
-time, the execution proceeds to the first :keyword:`yield` expression, where it
-is suspended again, returning the value of :token:`expression_list` to
-generator's caller.  By suspended we mean that all local state is retained,
-including the current bindings of local variables, the instruction pointer, and
-the internal evaluation stack.  When the execution is resumed by calling one of
-the generator's methods, the function can proceed exactly as if the
-:keyword:`yield` expression was just another external call.  The value of the
-:keyword:`yield` expression after resuming depends on the method which resumed
-the execution. If :meth:`~generator.__next__` is used (typically via either a
-:keyword:`for` or the :func:`next` builtin) then the result is :const:`None`,
-otherwise, if :meth:`~generator.send` is used, then the result will be the
-value passed in to that method.
+time, the execution proceeds to the first yield expression, where it is
+suspended again, returning the value of :token:`expression_list` to generator's
+caller.  By suspended, we mean that all local state is retained, including the
+current bindings of local variables, the instruction pointer, and the internal
+evaluation stack.  When the execution is resumed by calling one of the
+generator's methods, the function can proceed exactly as if the yield expression
+was just another external call.  The value of the yield expression after
+resuming depends on the method which resumed the execution.  If
+:meth:`~generator.__next__` is used (typically via either a :keyword:`for` or
+the :func:`next` builtin) then the result is :const:`None`.  Otherwise, if
+:meth:`~generator.send` is used, then the result will be the value passed in to
+that method.
 
 .. index:: single: coroutine
 
@@ -349,11 +347,11 @@ suspended.  The only difference is that a generator function cannot control
 where should the execution continue after it yields; the control is always
 transferred to the generator's caller.
 
-:keyword:`yield` expressions are allowed in the :keyword:`try` clause of a
-:keyword:`try` ...  :keyword:`finally` construct.  If the generator is not
-resumed before it is finalized (by reaching a zero reference count or by being
-garbage collected), the generator-iterator's :meth:`~generator.close` method
-will be called, allowing any pending :keyword:`finally` clauses to execute.
+yield expressions are allowed in the :keyword:`try` clause of a :keyword:`try`
+...  :keyword:`finally` construct.  If the generator is not resumed before it is
+finalized (by reaching a zero reference count or by being garbage collected),
+the generator-iterator's :meth:`~generator.close` method will be called,
+allowing any pending :keyword:`finally` clauses to execute.
 
 When ``yield from <expr>`` is used, it treats the supplied expression as
 a subiterator. All values produced by that subiterator are passed directly
@@ -373,11 +371,23 @@ the yield expression. It can be either set explicitly when raising
    .. versionchanged:: 3.3
       Added ``yield from <expr>`` to delegate control flow to a subiterator
 
-The parentheses can be omitted when the :keyword:`yield` expression is the
-sole expression on the right hand side of an assignment statement.
+The parentheses may be omitted when the yield expression is the sole expression
+on the right hand side of an assignment statement.
+
+.. seealso::
+
+   :pep:`0255` - Simple Generators
+      The proposal for adding generators and the :keyword:`yield` statement to Python.
+
+   :pep:`0342` - Coroutines via Enhanced Generators
+      The proposal to enhance the API and syntax of generators, making them
+      usable as simple coroutines.
+
+   :pep:`0380` - Syntax for Delegating to a Subgenerator
+      The proposal to introduce the :token:`yield_from` syntax, making delegation
+      to sub-generators easy.
 
 .. index:: object: generator
-
 
 Generator-iterator methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -395,13 +405,12 @@ is already executing raises a :exc:`ValueError` exception.
 .. method:: generator.__next__()
 
    Starts the execution of a generator function or resumes it at the last
-   executed :keyword:`yield` expression.  When a generator function is resumed
-   with a :meth:`~generator.__next__` method, the current :keyword:`yield`
-   expression always evaluates to :const:`None`.  The execution then continues
-   to the next :keyword:`yield` expression, where the generator is suspended
-   again, and the value of the :token:`expression_list` is returned to
-   :meth:`next`'s caller.
-   If the generator exits without yielding another value, a :exc:`StopIteration`
+   executed yield expression.  When a generator function is resumed with a
+   :meth:`~generator.__next__` method, the current yield expression always
+   evaluates to :const:`None`.  The execution then continues to the next yield
+   expression, where the generator is suspended again, and the value of the
+   :token:`expression_list` is returned to :meth:`next`'s caller.  If the
+   generator exits without yielding another value, a :exc:`StopIteration`
    exception is raised.
 
    This method is normally called implicitly, e.g. by a :keyword:`for` loop, or
@@ -411,12 +420,12 @@ is already executing raises a :exc:`ValueError` exception.
 .. method:: generator.send(value)
 
    Resumes the execution and "sends" a value into the generator function.  The
-   ``value`` argument becomes the result of the current :keyword:`yield`
-   expression.  The :meth:`send` method returns the next value yielded by the
-   generator, or raises :exc:`StopIteration` if the generator exits without
-   yielding another value.  When :meth:`send` is called to start the generator,
-   it must be called with :const:`None` as the argument, because there is no
-   :keyword:`yield` expression that could receive the value.
+   *value* argument becomes the result of the current yield expression.  The
+   :meth:`send` method returns the next value yielded by the generator, or
+   raises :exc:`StopIteration` if the generator exits without yielding another
+   value.  When :meth:`send` is called to start the generator, it must be called
+   with :const:`None` as the argument, because there is no yield expression that
+   could receive the value.
 
 
 .. method:: generator.throw(type[, value[, traceback]])
@@ -476,20 +485,6 @@ generator functions::
 
 For examples using ``yield from``, see :ref:`pep-380` in "What's New in
 Python."
-
-
-.. seealso::
-
-   :pep:`0255` - Simple Generators
-      The proposal for adding generators and the :keyword:`yield` statement to Python.
-
-   :pep:`0342` - Coroutines via Enhanced Generators
-      The proposal to enhance the API and syntax of generators, making them
-      usable as simple coroutines.
-
-   :pep:`0380` - Syntax for Delegating to a Subgenerator
-      The proposal to introduce the :token:`yield_from` syntax, making delegation
-      to sub-generators easy.
 
 
 .. _primaries:
