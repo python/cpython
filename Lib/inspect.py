@@ -1440,6 +1440,51 @@ def _get_user_defined_method(cls, method_name):
             return meth
 
 
+def _get_partial_signature(wrapped_sig, partial, extra_args=()):
+    new_params = OrderedDict(wrapped_sig.parameters.items())
+
+    partial_args = partial.args or ()
+    partial_keywords = partial.keywords or {}
+
+    if extra_args:
+        partial_args = extra_args + partial_args
+
+    try:
+        ba = wrapped_sig.bind_partial(*partial_args, **partial_keywords)
+    except TypeError as ex:
+        msg = 'partial object {!r} has incorrect arguments'.format(partial)
+        raise ValueError(msg) from ex
+
+    for arg_name, arg_value in ba.arguments.items():
+        param = new_params[arg_name]
+        if arg_name in partial_keywords:
+            # We set a new default value, because the following code
+            # is correct:
+            #
+            #   >>> def foo(a): print(a)
+            #   >>> print(partial(partial(foo, a=10), a=20)())
+            #   20
+            #   >>> print(partial(partial(foo, a=10), a=20)(a=30))
+            #   30
+            #
+            # So, with 'partial' objects, passing a keyword argument is
+            # like setting a new default value for the corresponding
+            # parameter
+            #
+            # We also mark this parameter with '_partial_kwarg'
+            # flag.  Later, in '_bind', the 'default' value of this
+            # parameter will be added to 'kwargs', to simulate
+            # the 'functools.partial' real call.
+            new_params[arg_name] = param.replace(default=arg_value,
+                                                 _partial_kwarg=True)
+
+        elif (param.kind not in (_VAR_KEYWORD, _VAR_POSITIONAL) and
+                        not param._partial_kwarg):
+            new_params.pop(arg_name)
+
+    return wrapped_sig.replace(parameters=new_params.values())
+
+
 def signature(obj):
     '''Get a signature object for the passed callable.'''
 
@@ -1470,50 +1515,32 @@ def signature(obj):
         if sig is not None:
             return sig
 
+    try:
+        partialmethod = obj._partialmethod
+    except AttributeError:
+        pass
+    else:
+        # Unbound partialmethod (see functools.partialmethod)
+        # This means, that we need to calculate the signature
+        # as if it's a regular partial object, but taking into
+        # account that the first positional argument
+        # (usually `self`, or `cls`) will not be passed
+        # automatically (as for boundmethods)
+
+        wrapped_sig = signature(partialmethod.func)
+        sig = _get_partial_signature(wrapped_sig, partialmethod, (None,))
+
+        first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
+        new_params = (first_wrapped_param,) + tuple(sig.parameters.values())
+
+        return sig.replace(parameters=new_params)
+
     if isinstance(obj, types.FunctionType):
         return Signature.from_function(obj)
 
     if isinstance(obj, functools.partial):
-        sig = signature(obj.func)
-
-        new_params = OrderedDict(sig.parameters.items())
-
-        partial_args = obj.args or ()
-        partial_keywords = obj.keywords or {}
-        try:
-            ba = sig.bind_partial(*partial_args, **partial_keywords)
-        except TypeError as ex:
-            msg = 'partial object {!r} has incorrect arguments'.format(obj)
-            raise ValueError(msg) from ex
-
-        for arg_name, arg_value in ba.arguments.items():
-            param = new_params[arg_name]
-            if arg_name in partial_keywords:
-                # We set a new default value, because the following code
-                # is correct:
-                #
-                #   >>> def foo(a): print(a)
-                #   >>> print(partial(partial(foo, a=10), a=20)())
-                #   20
-                #   >>> print(partial(partial(foo, a=10), a=20)(a=30))
-                #   30
-                #
-                # So, with 'partial' objects, passing a keyword argument is
-                # like setting a new default value for the corresponding
-                # parameter
-                #
-                # We also mark this parameter with '_partial_kwarg'
-                # flag.  Later, in '_bind', the 'default' value of this
-                # parameter will be added to 'kwargs', to simulate
-                # the 'functools.partial' real call.
-                new_params[arg_name] = param.replace(default=arg_value,
-                                                     _partial_kwarg=True)
-
-            elif (param.kind not in (_VAR_KEYWORD, _VAR_POSITIONAL) and
-                            not param._partial_kwarg):
-                new_params.pop(arg_name)
-
-        return sig.replace(parameters=new_params.values())
+        wrapped_sig = signature(obj.func)
+        return _get_partial_signature(wrapped_sig, obj)
 
     sig = None
     if isinstance(obj, type):

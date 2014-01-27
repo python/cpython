@@ -1877,6 +1877,33 @@ class TestSignatureObject(unittest.TestCase):
         ba = inspect.signature(_foo).bind(12, 14)
         self.assertEqual(_foo(*ba.args, **ba.kwargs), (12, 14, 13))
 
+    def test_signature_on_partialmethod(self):
+        from functools import partialmethod
+
+        class Spam:
+            def test():
+                pass
+            ham = partialmethod(test)
+
+        with self.assertRaisesRegex(ValueError, "has incorrect arguments"):
+            inspect.signature(Spam.ham)
+
+        class Spam:
+            def test(it, a, *, c) -> 'spam':
+                pass
+            ham = partialmethod(test, c=1)
+
+        self.assertEqual(self.signature(Spam.ham),
+                         ((('it', ..., ..., 'positional_or_keyword'),
+                           ('a', ..., ..., 'positional_or_keyword'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+
+        self.assertEqual(self.signature(Spam().ham),
+                         ((('a', ..., ..., 'positional_or_keyword'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+
     def test_signature_on_decorated(self):
         import functools
 
