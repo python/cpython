@@ -294,6 +294,8 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
+   Availability: Unix.
+
 .. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=True, bufsize=0, \*\*kwargs)
 
    XXX
@@ -301,6 +303,8 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    This method returns a :ref:`coroutine object <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
+
+   Availability: Unix.
 
 .. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
