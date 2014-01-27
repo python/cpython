@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20367: Fix behavior of concurrent.futures.as_completed() for
+  duplicate arguments.  Patch by Glenn Langford.
+
 - Issue #8260: The read(), readline() and readlines() methods of
   codecs.StreamReader returned incomplete data when were called after
   readline() or read(size).  Based on patch by Amaury Forgeot d'Arc.

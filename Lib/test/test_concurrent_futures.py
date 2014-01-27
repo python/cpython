@@ -344,6 +344,13 @@ class AsCompletedTests:
                               SUCCESSFUL_FUTURE]),
                          completed_futures)
 
+    def test_duplicate_futures(self):
+        # Issue 20367. Duplicate futures should not raise exceptions or give
+        # duplicate responses.
+        future1 = self.executor.submit(time.sleep, 2)
+        completed = [f for f in futures.as_completed([future1,future1])]
+        self.assertEqual(len(completed), 1)
+
 
 class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, unittest.TestCase):
     pass
