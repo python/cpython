@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19456: ntpath.join() now joins relative paths correctly when a drive
+  is present.
+
 - Issue #8260: The read(), readline() and readlines() methods of
   codecs.StreamReader returned incomplete data when were called after
   readline() or read(size).  Based on patch by Amaury Forgeot d'Arc.
