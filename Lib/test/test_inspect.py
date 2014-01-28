@@ -1669,15 +1669,30 @@ class TestSignatureObject(unittest.TestCase):
 
     def test_signature_on_method(self):
         class Test:
-            def foo(self, arg1, arg2=1) -> int:
+            def __init__(*args):
+                pass
+            def m1(self, arg1, arg2=1) -> int:
+                pass
+            def m2(*args):
+                pass
+            def __call__(*, a):
                 pass
 
-        meth = Test().foo
-
-        self.assertEqual(self.signature(meth),
+        self.assertEqual(self.signature(Test().m1),
                          ((('arg1', ..., ..., "positional_or_keyword"),
                            ('arg2', 1, ..., "positional_or_keyword")),
                           int))
+
+        self.assertEqual(self.signature(Test().m2),
+                         ((('args', ..., ..., "var_positional"),),
+                          ...))
+
+        self.assertEqual(self.signature(Test),
+                         ((('args', ..., ..., "var_positional"),),
+                          ...))
+
+        with self.assertRaisesRegex(ValueError, 'invalid method signature'):
+            self.signature(Test())
 
     def test_signature_on_classmethod(self):
         class Test:

@@ -1440,7 +1440,11 @@ def _get_user_defined_method(cls, method_name):
             return meth
 
 
-def _get_partial_signature(wrapped_sig, partial, extra_args=()):
+def _signature_get_partial(wrapped_sig, partial, extra_args=()):
+    # Internal helper to calculate how 'wrapped_sig' signature will
+    # look like after applying a 'functools.partial' object (or alike)
+    # on it.
+
     new_params = OrderedDict(wrapped_sig.parameters.items())
 
     partial_args = partial.args or ()
@@ -1485,6 +1489,31 @@ def _get_partial_signature(wrapped_sig, partial, extra_args=()):
     return wrapped_sig.replace(parameters=new_params.values())
 
 
+def _signature_bound_method(sig):
+    # Internal helper to transform signatures for unbound
+    # functions to bound methods
+
+    params = tuple(sig.parameters.values())
+
+    if not params or params[0].kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
+        raise ValueError('invalid method signature')
+
+    kind = params[0].kind
+    if kind in (_POSITIONAL_OR_KEYWORD, _POSITIONAL_ONLY):
+        # Drop first parameter:
+        # '(p1, p2[, ...])' -> '(p2[, ...])'
+        params = params[1:]
+    else:
+        if kind is not _VAR_POSITIONAL:
+            # Unless we add a new parameter type we never
+            # get here
+            raise ValueError('invalid argument type')
+        # It's a var-positional parameter.
+        # Do nothing. '(*args[, ...])' -> '(*args[, ...])'
+
+    return sig.replace(parameters=params)
+
+
 def signature(obj):
     '''Get a signature object for the passed callable.'''
 
@@ -1502,7 +1531,7 @@ def signature(obj):
         # In this case we skip the first parameter of the underlying
         # function (usually `self` or `cls`).
         sig = signature(obj.__func__)
-        return sig.replace(parameters=tuple(sig.parameters.values())[1:])
+        return _signature_bound_method(sig)
 
     # Was this function wrapped by a decorator?
     obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
@@ -1528,7 +1557,7 @@ def signature(obj):
         # automatically (as for boundmethods)
 
         wrapped_sig = signature(partialmethod.func)
-        sig = _get_partial_signature(wrapped_sig, partialmethod, (None,))
+        sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
 
         first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
         new_params = (first_wrapped_param,) + tuple(sig.parameters.values())
@@ -1540,7 +1569,7 @@ def signature(obj):
 
     if isinstance(obj, functools.partial):
         wrapped_sig = signature(obj.func)
-        return _get_partial_signature(wrapped_sig, obj)
+        return _signature_get_partial(wrapped_sig, obj)
 
     sig = None
     if isinstance(obj, type):
@@ -1584,7 +1613,7 @@ def signature(obj):
     if sig is not None:
         # For classes and objects we skip the first parameter of their
         # __call__, __new__, or __init__ methods
-        return sig.replace(parameters=tuple(sig.parameters.values())[1:])
+        return _signature_bound_method(sig)
 
     if isinstance(obj, types.BuiltinFunctionType):
         # Raise a nicer error message for builtins
