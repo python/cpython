@@ -394,7 +394,7 @@ audioop_check_parameters(Py_ssize_t len, int size)
 output preset file
 module audioop
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5619f935f269199a]*/
 
 /*[clinic input]
 audioop.getsample
@@ -409,7 +409,7 @@ Return the value of sample index from the fragment.
 
 static PyObject *
 audioop_getsample_impl(PyModuleDef *module, Py_buffer *fragment, int width, Py_ssize_t index)
-/*[clinic end generated code: checksum=f4482497e6f6e78fe88451c19a288837099d6eef]*/
+/*[clinic end generated code: output=f4482497e6f6e78f input=88edbe2871393549]*/
 {
     int val;
 
@@ -435,7 +435,7 @@ Return the maximum of the absolute value of all samples in a fragment.
 
 static PyObject *
 audioop_max_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=85047ee1001f230518386b16148955ba9be4874f]*/
+/*[clinic end generated code: output=85047ee1001f2305 input=32bea5ea0ac8c223]*/
 {
     Py_ssize_t i;
     unsigned int absval, max = 0;
@@ -463,7 +463,7 @@ Return the minimum and maximum values of all samples in the sound fragment.
 
 static PyObject *
 audioop_minmax_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=ae8f5513c64fd569849adbbcc5fcd4d8f399da1b]*/
+/*[clinic end generated code: output=ae8f5513c64fd569 input=89848e9b927a0696]*/
 {
     Py_ssize_t i;
     /* -1 trick below is needed on Windows to support -0x80000000 without
@@ -492,7 +492,7 @@ Return the average over all samples in the fragment.
 
 static PyObject *
 audioop_avg_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=7fccd645c95f4860899f6b3aaab269e3e58806e1]*/
+/*[clinic end generated code: output=7fccd645c95f4860 input=1114493c7611334d]*/
 {
     Py_ssize_t i;
     int avg;
@@ -521,7 +521,7 @@ Return the root-mean-square of the fragment, i.e. sqrt(sum(S_i^2)/n).
 
 static PyObject *
 audioop_rms_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=7b398702c81b709d87aba3f0635eeb3fc1b0a1a4]*/
+/*[clinic end generated code: output=7b398702c81b709d input=4cc57c6c94219d78]*/
 {
     Py_ssize_t i;
     unsigned int res;
@@ -595,7 +595,7 @@ Try to match reference as well as possible to a portion of fragment.
 
 static PyObject *
 audioop_findfit_impl(PyModuleDef *module, Py_buffer *fragment, Py_buffer *reference)
-/*[clinic end generated code: checksum=505fd04d4244db31044abb5c114a5e8f9c45b171]*/
+/*[clinic end generated code: output=505fd04d4244db31 input=62c305605e183c9a]*/
 {
     const short *cp1, *cp2;
     Py_ssize_t len1, len2;
@@ -663,7 +663,7 @@ Return a factor F such that rms(add(fragment, mul(reference, -F))) is minimal.
 
 static PyObject *
 audioop_findfactor_impl(PyModuleDef *module, Py_buffer *fragment, Py_buffer *reference)
-/*[clinic end generated code: checksum=ddf35a1e57575ce4acbc000104810d9fdde8eba5]*/
+/*[clinic end generated code: output=ddf35a1e57575ce4 input=816680301d012b21]*/
 {
     const short *cp1, *cp2;
     Py_ssize_t len;
@@ -704,7 +704,7 @@ Search fragment for a slice of specified number of samples with maximum energy.
 
 static PyObject *
 audioop_findmax_impl(PyModuleDef *module, Py_buffer *fragment, Py_ssize_t length)
-/*[clinic end generated code: checksum=21d0c2a1e5655134f7460b7fd49ee4ba1e5fdb13]*/
+/*[clinic end generated code: output=21d0c2a1e5655134 input=2f304801ed42383c]*/
 {
     const short *cp1;
     Py_ssize_t len1;
@@ -757,7 +757,7 @@ Return the average peak-peak value over all samples in the fragment.
 
 static PyObject *
 audioop_avgpp_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=06c8380fd6e34207f4b58d6c3d4b5ebc7afe138d]*/
+/*[clinic end generated code: output=06c8380fd6e34207 input=0b3cceeae420a7d9]*/
 {
     Py_ssize_t i;
     int prevval, prevextremevalid = 0, prevextreme = 0;
@@ -814,7 +814,7 @@ Return the maximum peak-peak value in the sound fragment.
 
 static PyObject *
 audioop_maxpp_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=c300c0bd7e8535c07e128bbaac211c69744f750b]*/
+/*[clinic end generated code: output=c300c0bd7e8535c0 input=671a13e1518f80a1]*/
 {
     Py_ssize_t i;
     int prevval, prevextremevalid = 0, prevextreme = 0;
@@ -867,7 +867,7 @@ Return the number of zero crossings in the fragment passed as an argument.
 
 static PyObject *
 audioop_cross_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=99e6572d7d7cdbf1b5372090308201c62d518a43]*/
+/*[clinic end generated code: output=99e6572d7d7cdbf1 input=b1b3f15b83f6b41a]*/
 {
     Py_ssize_t i;
     int prevval;
@@ -898,7 +898,7 @@ Return a fragment that has all samples in the original fragment multiplied by th
 
 static PyObject *
 audioop_mul_impl(PyModuleDef *module, Py_buffer *fragment, int width, double factor)
-/*[clinic end generated code: checksum=a697ebbd5852d38f941d52127a5b38e4f8cd5540]*/
+/*[clinic end generated code: output=a697ebbd5852d38f input=c726667baa157d3c]*/
 {
     signed char *ncp;
     Py_ssize_t i;
@@ -939,7 +939,7 @@ Convert a stereo fragment to a mono fragment.
 
 static PyObject *
 audioop_tomono_impl(PyModuleDef *module, Py_buffer *fragment, int width, double lfactor, double rfactor)
-/*[clinic end generated code: checksum=436e7710521661dd541ec177ee53e6b0ee340182]*/
+/*[clinic end generated code: output=436e7710521661dd input=c4ec949b3f4dddfa]*/
 {
     signed char *cp, *ncp;
     Py_ssize_t len, i;
@@ -987,7 +987,7 @@ Generate a stereo fragment from a mono fragment.
 
 static PyObject *
 audioop_tostereo_impl(PyModuleDef *module, Py_buffer *fragment, int width, double lfactor, double rfactor)
-/*[clinic end generated code: checksum=6ff50681c87f4c1cbe4c394c4186ae8ae91b5c0d]*/
+/*[clinic end generated code: output=6ff50681c87f4c1c input=27b6395ebfdff37a]*/
 {
     signed char *ncp;
     Py_ssize_t i;
@@ -1034,7 +1034,7 @@ Return a fragment which is the addition of the two samples passed as parameters.
 
 static PyObject *
 audioop_add_impl(PyModuleDef *module, Py_buffer *fragment1, Py_buffer *fragment2, int width)
-/*[clinic end generated code: checksum=f9218bf9ea75c3f1e4b2ed5ffdfd631354e8fdfe]*/
+/*[clinic end generated code: output=f9218bf9ea75c3f1 input=4a8d4bae4c1605c7]*/
 {
     signed char *ncp;
     Py_ssize_t i;
@@ -1092,7 +1092,7 @@ Return a fragment that is the original fragment with a bias added to each sample
 
 static PyObject *
 audioop_bias_impl(PyModuleDef *module, Py_buffer *fragment, int width, int bias)
-/*[clinic end generated code: checksum=8ec80b3f5d510a51a85e89e8c0a73070697f2ab4]*/
+/*[clinic end generated code: output=8ec80b3f5d510a51 input=2b5cce5c3bb4838c]*/
 {
     signed char *ncp;
     Py_ssize_t i;
@@ -1151,7 +1151,7 @@ Reverse the samples in a fragment and returns the modified fragment.
 
 static PyObject *
 audioop_reverse_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=6ec3c91337f5925eaf17a7b8b907120102b6fb72]*/
+/*[clinic end generated code: output=6ec3c91337f5925e input=668f890cf9f9d225]*/
 {
     unsigned char *ncp;
     Py_ssize_t i;
@@ -1184,7 +1184,7 @@ Convert big-endian samples to little-endian and vice versa.
 
 static PyObject *
 audioop_byteswap_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=bfe4aa584b7a3f5bd818cf79f83fa73e612cc9b8]*/
+/*[clinic end generated code: output=bfe4aa584b7a3f5b input=fae7611ceffa5c82]*/
 {
     unsigned char *ncp;
     Py_ssize_t i;
@@ -1219,7 +1219,7 @@ Convert samples between 1-, 2-, 3- and 4-byte formats.
 
 static PyObject *
 audioop_lin2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width, int newwidth)
-/*[clinic end generated code: checksum=3f9468a74472a93e2054a9da0ea1bbc39fe23e84]*/
+/*[clinic end generated code: output=3f9468a74472a93e input=5ce08c8aa2f24d96]*/
 {
     unsigned char *ncp;
     Py_ssize_t i, j;
@@ -1276,7 +1276,7 @@ Convert the frame rate of the input fragment.
 
 static PyObject *
 audioop_ratecv_impl(PyModuleDef *module, Py_buffer *fragment, int width, int nchannels, int inrate, int outrate, PyObject *state, int weightA, int weightB)
-/*[clinic end generated code: checksum=5585dddc4b5ff2363877076f4c6616df8d3e6f14]*/
+/*[clinic end generated code: output=5585dddc4b5ff236 input=aff3acdc94476191]*/
 {
     char *cp, *ncp;
     Py_ssize_t len;
@@ -1455,7 +1455,7 @@ Convert samples in the audio fragment to u-LAW encoding.
 
 static PyObject *
 audioop_lin2ulaw_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=26263cc877c5e1bc84fede972fb59499a82d949c]*/
+/*[clinic end generated code: output=26263cc877c5e1bc input=2450d1b870b6bac2]*/
 {
     unsigned char *ncp;
     Py_ssize_t i;
@@ -1488,7 +1488,7 @@ Convert sound fragments in u-LAW encoding to linearly encoded sound fragments.
 
 static PyObject *
 audioop_ulaw2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=9864cb34e3a1d87689f830d4c95cdcaae9a44561]*/
+/*[clinic end generated code: output=9864cb34e3a1d876 input=45d53ddce5be7d06]*/
 {
     unsigned char *cp;
     signed char *ncp;
@@ -1528,7 +1528,7 @@ Convert samples in the audio fragment to a-LAW encoding.
 
 static PyObject *
 audioop_lin2alaw_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=d5bf14bd0fe6fdcd4b0d604ccdf257097eb2419e]*/
+/*[clinic end generated code: output=d5bf14bd0fe6fdcd input=ffb1ef8bb39da945]*/
 {
     unsigned char *ncp;
     Py_ssize_t i;
@@ -1561,7 +1561,7 @@ Convert sound fragments in a-LAW encoding to linearly encoded sound fragments.
 
 static PyObject *
 audioop_alaw2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width)
-/*[clinic end generated code: checksum=d2b604ddd036e1cd4bb95b5553626b44302db48a]*/
+/*[clinic end generated code: output=d2b604ddd036e1cd input=4140626046cd1772]*/
 {
     unsigned char *cp;
     signed char *ncp;
@@ -1603,7 +1603,7 @@ Convert samples to 4 bit Intel/DVI ADPCM encoding.
 
 static PyObject *
 audioop_lin2adpcm_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyObject *state)
-/*[clinic end generated code: checksum=4654c29d2731fafe35e7aa1e3d261361dbbbcc3b]*/
+/*[clinic end generated code: output=4654c29d2731fafe input=12919d549b90c90a]*/
 {
     signed char *ncp;
     Py_ssize_t i;
@@ -1725,7 +1725,7 @@ Decode an Intel/DVI ADPCM coded fragment to a linear fragment.
 
 static PyObject *
 audioop_adpcm2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyObject *state)
-/*[clinic end generated code: checksum=371965cdcc0aa69ba970e8bc5662b30d45bcc38d]*/
+/*[clinic end generated code: output=371965cdcc0aa69b input=f5221144f5ca9ef0]*/
 {
     signed char *cp;
     signed char *ncp;

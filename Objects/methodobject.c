@@ -182,17 +182,13 @@ static PyMethodDef meth_methods[] = {
 static PyObject *
 meth_get__text_signature__(PyCFunctionObject *m, void *closure)
 {
-    const char *name = m->m_ml->ml_name;
-    const char *doc = m->m_ml->ml_doc;
-    return _PyType_GetTextSignatureFromInternalDoc(name, doc);
+    return _PyType_GetTextSignatureFromInternalDoc(m->m_ml->ml_doc);
 }
 
 static PyObject *
 meth_get__doc__(PyCFunctionObject *m, void *closure)
 {
-    const char *name = m->m_ml->ml_name;
-    const char *doc = m->m_ml->ml_doc;
-    return _PyType_GetDocFromInternalDoc(name, doc);
+    return _PyType_GetDocFromInternalDoc(m->m_ml->ml_doc);
 }
 
 static PyObject *

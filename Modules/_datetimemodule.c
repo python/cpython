@@ -20,7 +20,7 @@
 module datetime
 class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=78142cb64b9e98bc]*/
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -4159,7 +4159,7 @@ If no tz is specified, uses local timezone.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(datetime_datetime_now__doc__,
-"now(type, tz=None)\n"
+"sig=($type, tz=None)\n"
 "Returns new datetime object representing current time local to tz.\n"
 "\n"
 "  tz\n"
@@ -4192,7 +4192,7 @@ exit:
 
 static PyObject *
 datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
-/*[clinic end generated code: checksum=a6d3ad2c0ab6389075289af3467f7b8eb13f5f5c]*/
+/*[clinic end generated code: output=c8a47308483e579a input=80d09869c5267d00]*/
 {
     PyObject *self;
 

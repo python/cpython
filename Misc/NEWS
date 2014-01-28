@@ -203,6 +203,15 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20326: Argument Clinic now uses a simple, unique signature to
+  annotate text signatures in docstrings, resulting in fewer false
+  positives.  "self" parameters are also explicitly marked, allowing
+  inspect.Signature() to authoritatively detect (and skip) said parameters.
+
+- Issue #20326: Argument Clinic now generates separate checksums for the
+  input and output sections of the block, allowing external tools to verify
+  that the input has not changed (and thus the output is not out-of-date).
+
 - Issue #20390: Argument Clinic's "file" output preset now defaults to
   "{dirname}/clinic/{basename}.h".
 
