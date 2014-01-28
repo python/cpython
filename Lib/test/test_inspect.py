@@ -1593,11 +1593,6 @@ class TestSignatureObject(unittest.TestCase):
                            ('kwargs', ..., int, "var_keyword")),
                           ...))
 
-    def test_signature_on_unsupported_builtins(self):
-        with self.assertRaisesRegex(ValueError, 'no signature found'):
-            # min simply doesn't have a signature (yet)
-            inspect.signature(min)
-
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_builtins(self):
