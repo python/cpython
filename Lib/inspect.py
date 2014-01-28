@@ -1660,10 +1660,12 @@ class Parameter:
         The name of the parameter as a string.
     * default : object
         The default value for the parameter if specified.  If the
-        parameter has no default value, this attribute is not set.
+        parameter has no default value, this attribute is set to
+        `Parameter.empty`.
     * annotation
         The annotation for the parameter if specified.  If the
-        parameter has no annotation, this attribute is not set.
+        parameter has no annotation, this attribute is set to
+        `Parameter.empty`.
     * kind : str
         Describes how argument values are bound to the parameter.
         Possible values: `Parameter.POSITIONAL_ONLY`,
@@ -1888,7 +1890,7 @@ class Signature:
     * return_annotation : object
         The annotation for the return type of the function if specified.
         If the function has no annotation for its return type, this
-        attribute is not set.
+        attribute is set to `Signature.empty`.
     * bind(*args, **kwargs) -> BoundArguments
         Creates a mapping from positional and keyword arguments to
         parameters.
