@@ -538,7 +538,7 @@ class build_ext(Command):
             library_dirs=ext.library_dirs,
             runtime_library_dirs=ext.runtime_library_dirs,
             extra_postargs=extra_args,
-            export_symbols=ext.export_symbols,
+            export_symbols=self.get_export_symbols(ext),
             debug=self.debug,
             build_temp=self.build_temp,
             target_lang=language)
