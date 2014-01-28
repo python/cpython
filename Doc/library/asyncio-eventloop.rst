@@ -294,7 +294,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
 .. note::
 
-   On Mac OS X older than Maverick (10.9), :class:`selectors.KqueueSelector`
+   On Mac OS X older than 10.9 (Mavericks), :class:`selectors.KqueueSelector`
    does not support character devices like PTY, whereas it is used by the
    default event loop. The :class:`SelectorEventLoop` can be used with
    :class:`SelectSelector` to handle character devices.
