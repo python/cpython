@@ -2516,6 +2516,15 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, 4, 5, bar=6),
                          (1, 2, 4, 5, 6, {}))
 
+        self.assertEqual(self.call(test, 1, 2),
+                         (1, 2, 3, 42, 50, {}))
+
+        self.assertEqual(self.call(test, 1, 2, foo=4, bar=5),
+                         (1, 2, 3, 4, 5, {}))
+
+        with self.assertRaisesRegex(TypeError, "but was passed as a keyword"):
+            self.call(test, 1, 2, foo=4, bar=5, c_po=10)
+
         with self.assertRaisesRegex(TypeError, "parameter is positional only"):
             self.call(test, 1, 2, c_po=4)
 
@@ -2531,6 +2540,22 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(ba.args, (1, 2, 3))
         ba = sig.bind(1, self=2, b=3)
         self.assertEqual(ba.args, (1, 2, 3))
+
+    def test_signature_bind_vararg_name(self):
+        def test(a, *args):
+            return a, args
+        sig = inspect.signature(test)
+
+        with self.assertRaisesRegex(TypeError, "too many keyword arguments"):
+            sig.bind(a=0, args=1)
+
+        def test(*args, **kwargs):
+            return args, kwargs
+        self.assertEqual(self.call(test, args=1), ((), {'args': 1}))
+
+        sig = inspect.signature(test)
+        ba = sig.bind(args=1)
+        self.assertEqual(ba.arguments, {'kwargs': {'args': 1}})
 
 
 class TestBoundArguments(unittest.TestCase):
