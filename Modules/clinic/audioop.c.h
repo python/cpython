@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(audioop_getsample__doc__,
-"getsample(module, fragment, width, index)\n"
+"sig=($module, fragment, width, index)\n"
 "Return the value of sample index from the fragment.");
 
 #define AUDIOOP_GETSAMPLE_METHODDEF    \
@@ -35,7 +35,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_max__doc__,
-"max(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Return the maximum of the absolute value of all samples in a fragment.");
 
 #define AUDIOOP_MAX_METHODDEF    \
@@ -66,7 +66,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_minmax__doc__,
-"minmax(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Return the minimum and maximum values of all samples in the sound fragment.");
 
 #define AUDIOOP_MINMAX_METHODDEF    \
@@ -97,7 +97,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_avg__doc__,
-"avg(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Return the average over all samples in the fragment.");
 
 #define AUDIOOP_AVG_METHODDEF    \
@@ -128,7 +128,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_rms__doc__,
-"rms(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Return the root-mean-square of the fragment, i.e. sqrt(sum(S_i^2)/n).");
 
 #define AUDIOOP_RMS_METHODDEF    \
@@ -159,7 +159,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_findfit__doc__,
-"findfit(module, fragment, reference)\n"
+"sig=($module, fragment, reference)\n"
 "Try to match reference as well as possible to a portion of fragment.");
 
 #define AUDIOOP_FINDFIT_METHODDEF    \
@@ -193,7 +193,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_findfactor__doc__,
-"findfactor(module, fragment, reference)\n"
+"sig=($module, fragment, reference)\n"
 "Return a factor F such that rms(add(fragment, mul(reference, -F))) is minimal.");
 
 #define AUDIOOP_FINDFACTOR_METHODDEF    \
@@ -227,7 +227,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_findmax__doc__,
-"findmax(module, fragment, length)\n"
+"sig=($module, fragment, length)\n"
 "Search fragment for a slice of specified number of samples with maximum energy.");
 
 #define AUDIOOP_FINDMAX_METHODDEF    \
@@ -258,7 +258,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_avgpp__doc__,
-"avgpp(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Return the average peak-peak value over all samples in the fragment.");
 
 #define AUDIOOP_AVGPP_METHODDEF    \
@@ -289,7 +289,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_maxpp__doc__,
-"maxpp(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Return the maximum peak-peak value in the sound fragment.");
 
 #define AUDIOOP_MAXPP_METHODDEF    \
@@ -320,7 +320,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_cross__doc__,
-"cross(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Return the number of zero crossings in the fragment passed as an argument.");
 
 #define AUDIOOP_CROSS_METHODDEF    \
@@ -351,7 +351,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_mul__doc__,
-"mul(module, fragment, width, factor)\n"
+"sig=($module, fragment, width, factor)\n"
 "Return a fragment that has all samples in the original fragment multiplied by the floating-point value factor.");
 
 #define AUDIOOP_MUL_METHODDEF    \
@@ -383,7 +383,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_tomono__doc__,
-"tomono(module, fragment, width, lfactor, rfactor)\n"
+"sig=($module, fragment, width, lfactor, rfactor)\n"
 "Convert a stereo fragment to a mono fragment.");
 
 #define AUDIOOP_TOMONO_METHODDEF    \
@@ -416,7 +416,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_tostereo__doc__,
-"tostereo(module, fragment, width, lfactor, rfactor)\n"
+"sig=($module, fragment, width, lfactor, rfactor)\n"
 "Generate a stereo fragment from a mono fragment.");
 
 #define AUDIOOP_TOSTEREO_METHODDEF    \
@@ -449,7 +449,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_add__doc__,
-"add(module, fragment1, fragment2, width)\n"
+"sig=($module, fragment1, fragment2, width)\n"
 "Return a fragment which is the addition of the two samples passed as parameters.");
 
 #define AUDIOOP_ADD_METHODDEF    \
@@ -484,7 +484,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_bias__doc__,
-"bias(module, fragment, width, bias)\n"
+"sig=($module, fragment, width, bias)\n"
 "Return a fragment that is the original fragment with a bias added to each sample.");
 
 #define AUDIOOP_BIAS_METHODDEF    \
@@ -516,7 +516,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_reverse__doc__,
-"reverse(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Reverse the samples in a fragment and returns the modified fragment.");
 
 #define AUDIOOP_REVERSE_METHODDEF    \
@@ -547,7 +547,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_byteswap__doc__,
-"byteswap(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Convert big-endian samples to little-endian and vice versa.");
 
 #define AUDIOOP_BYTESWAP_METHODDEF    \
@@ -578,7 +578,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_lin2lin__doc__,
-"lin2lin(module, fragment, width, newwidth)\n"
+"sig=($module, fragment, width, newwidth)\n"
 "Convert samples between 1-, 2-, 3- and 4-byte formats.");
 
 #define AUDIOOP_LIN2LIN_METHODDEF    \
@@ -610,7 +610,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_ratecv__doc__,
-"ratecv(module, fragment, width, nchannels, inrate, outrate, state, weightA=1, weightB=0)\n"
+"sig=($module, fragment, width, nchannels, inrate, outrate, state, weightA=1, weightB=0)\n"
 "Convert the frame rate of the input fragment.");
 
 #define AUDIOOP_RATECV_METHODDEF    \
@@ -647,7 +647,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_lin2ulaw__doc__,
-"lin2ulaw(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Convert samples in the audio fragment to u-LAW encoding.");
 
 #define AUDIOOP_LIN2ULAW_METHODDEF    \
@@ -678,7 +678,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_ulaw2lin__doc__,
-"ulaw2lin(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Convert sound fragments in u-LAW encoding to linearly encoded sound fragments.");
 
 #define AUDIOOP_ULAW2LIN_METHODDEF    \
@@ -709,7 +709,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_lin2alaw__doc__,
-"lin2alaw(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Convert samples in the audio fragment to a-LAW encoding.");
 
 #define AUDIOOP_LIN2ALAW_METHODDEF    \
@@ -740,7 +740,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_alaw2lin__doc__,
-"alaw2lin(module, fragment, width)\n"
+"sig=($module, fragment, width)\n"
 "Convert sound fragments in a-LAW encoding to linearly encoded sound fragments.");
 
 #define AUDIOOP_ALAW2LIN_METHODDEF    \
@@ -771,7 +771,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_lin2adpcm__doc__,
-"lin2adpcm(module, fragment, width, state)\n"
+"sig=($module, fragment, width, state)\n"
 "Convert samples to 4 bit Intel/DVI ADPCM encoding.");
 
 #define AUDIOOP_LIN2ADPCM_METHODDEF    \
@@ -803,7 +803,7 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_adpcm2lin__doc__,
-"adpcm2lin(module, fragment, width, state)\n"
+"sig=($module, fragment, width, state)\n"
 "Decode an Intel/DVI ADPCM coded fragment to a linear fragment.");
 
 #define AUDIOOP_ADPCM2LIN_METHODDEF    \
@@ -833,4 +833,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: checksum=0d9fa2c5719e996b169f808350016cd622799562]*/
+/*[clinic end generated code: output=ee7e58cfd3d0d5a6 input=a9049054013a1b77]*/

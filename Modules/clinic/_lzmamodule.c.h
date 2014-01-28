@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_lzma_LZMACompressor_compress__doc__,
-"compress(self, data)\n"
+"sig=($self, data)\n"
 "Provide data to the compressor object.\n"
 "\n"
 "Returns a chunk of compressed data if possible, or b\'\' otherwise.\n"
@@ -38,7 +38,7 @@ exit:
 }
 
 PyDoc_STRVAR(_lzma_LZMACompressor_flush__doc__,
-"flush(self)\n"
+"sig=($self)\n"
 "Finish the compression process.\n"
 "\n"
 "Returns the compressed data left in internal buffers.\n"
@@ -58,7 +58,7 @@ _lzma_LZMACompressor_flush(Compressor *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
-"decompress(self, data)\n"
+"sig=($self, data)\n"
 "Provide data to the decompressor object.\n"
 "\n"
 "Returns a chunk of decompressed data if possible, or b\'\' otherwise.\n"
@@ -94,7 +94,7 @@ exit:
 }
 
 PyDoc_STRVAR(_lzma_LZMADecompressor___init____doc__,
-"LZMADecompressor(format=FORMAT_AUTO, memlimit=None, filters=None)\n"
+"sig=(format=FORMAT_AUTO, memlimit=None, filters=None)\n"
 "Create a decompressor object for decompressing data incrementally.\n"
 "\n"
 "  format\n"
@@ -137,7 +137,7 @@ exit:
 }
 
 PyDoc_STRVAR(_lzma_is_check_supported__doc__,
-"is_check_supported(module, check_id)\n"
+"sig=($module, check_id)\n"
 "Test whether the given integrity check is supported.\n"
 "\n"
 "Always returns True for CHECK_NONE and CHECK_CRC32.");
@@ -165,7 +165,7 @@ exit:
 }
 
 PyDoc_STRVAR(_lzma__encode_filter_properties__doc__,
-"_encode_filter_properties(module, filter)\n"
+"sig=($module, filter)\n"
 "Return a bytes object encoding the options (properties) of the filter specified by *filter* (a dict).\n"
 "\n"
 "The result does not include the filter ID itself, only the options.");
@@ -197,7 +197,7 @@ exit:
 }
 
 PyDoc_STRVAR(_lzma__decode_filter_properties__doc__,
-"_decode_filter_properties(module, filter_id, encoded_props)\n"
+"sig=($module, filter_id, encoded_props)\n"
 "Return a bytes object encoding the options (properties) of the filter specified by *filter* (a dict).\n"
 "\n"
 "The result does not include the filter ID itself, only the options.");
@@ -228,4 +228,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: checksum=b4b90dcbd0c9c349c3a94e26a7eecf71aab179a0]*/
+/*[clinic end generated code: output=fe63bc798a5c5c55 input=a9049054013a1b77]*/

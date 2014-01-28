@@ -475,7 +475,7 @@ module _lzma
 class _lzma.LZMACompressor "Compressor *" "&Compressor_type"
 class _lzma.LZMADecompressor "Decompressor *" "&Decompressor_type"
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f17afc786525d6c2]*/
 
 #include "clinic/_lzmamodule.c.h"
 
@@ -496,7 +496,7 @@ class lzma_filter_converter(CConverter):
                 '   PyMem_Free(%(name)s.options);\n') % {'name': name}
 
 [python start generated code]*/
-/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=74fe7631ce377a94]*/
 
 
 /* LZMACompressor class. */
@@ -560,7 +560,7 @@ flush() method to finish the compression process.
 
 static PyObject *
 _lzma_LZMACompressor_compress_impl(Compressor *self, Py_buffer *data)
-/*[clinic end generated code: checksum=31f615136963e00f26f8be33440ec1e3604565ba]*/
+/*[clinic end generated code: output=31f615136963e00f input=8b60cb13e0ce6420]*/
 {
     PyObject *result = NULL;
 
@@ -587,7 +587,7 @@ The compressor object may not be used after this method is called.
 
 static PyObject *
 _lzma_LZMACompressor_flush_impl(Compressor *self)
-/*[clinic end generated code: checksum=fec21f3e22504f500606ba60e1ba70d79eb22188]*/
+/*[clinic end generated code: output=fec21f3e22504f50 input=3060fb26f9b4042c]*/
 {
     PyObject *result = NULL;
 
@@ -959,7 +959,7 @@ is ignored and saved in the unused_data attribute.
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data)
-/*[clinic end generated code: checksum=d86e78da7ff0ff219d511275b16b79476da8922e]*/
+/*[clinic end generated code: output=d86e78da7ff0ff21 input=50c4768b821bf0ef]*/
 {
     PyObject *result = NULL;
 
@@ -1024,7 +1024,7 @@ For one-shot decompression, use the decompress() function instead.
 
 static int
 _lzma_LZMADecompressor___init___impl(Decompressor *self, int format, PyObject *memlimit, PyObject *filters)
-/*[clinic end generated code: checksum=9b119f6f2cc2d7a8e5be41c164a6c080ee82d0c2]*/
+/*[clinic end generated code: output=9b119f6f2cc2d7a8 input=458ca6132ef29801]*/
 {
     const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
     uint64_t memlimit_ = UINT64_MAX;
@@ -1203,7 +1203,7 @@ Always returns True for CHECK_NONE and CHECK_CRC32.
 
 static PyObject *
 _lzma_is_check_supported_impl(PyModuleDef *module, int check_id)
-/*[clinic end generated code: checksum=bb828e90e00ad96ed61f66719c2fca7fde637418]*/
+/*[clinic end generated code: output=bb828e90e00ad96e input=5518297b97b2318f]*/
 {
     return PyBool_FromLong(lzma_check_is_supported(check_id));
 }
@@ -1221,7 +1221,7 @@ The result does not include the filter ID itself, only the options.
 
 static PyObject *
 _lzma__encode_filter_properties_impl(PyModuleDef *module, lzma_filter filter)
-/*[clinic end generated code: checksum=b5fe690acd6b61d1abfc32f522ada5bdcf9b13da]*/
+/*[clinic end generated code: output=b5fe690acd6b61d1 input=d4c64f1b557c77d4]*/
 {
     lzma_ret lzret;
     uint32_t encoded_size;
@@ -1261,7 +1261,7 @@ The result does not include the filter ID itself, only the options.
 
 static PyObject *
 _lzma__decode_filter_properties_impl(PyModuleDef *module, lzma_vli filter_id, Py_buffer *encoded_props)
-/*[clinic end generated code: checksum=235f7f5345d48744dcd21f781dafbbf05a717538]*/
+/*[clinic end generated code: output=235f7f5345d48744 input=246410800782160c]*/
 {
     lzma_filter filter;
     lzma_ret lzret;

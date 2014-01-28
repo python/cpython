@@ -72,7 +72,7 @@ to the combined-table form.
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f157a5a0ce9589d6]*/
 
 typedef struct {
     /* Cached hash code of me_key. */
@@ -1702,7 +1702,7 @@ Returns a new dict with keys from iterable and values equal to value.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dict_fromkeys__doc__,
-"fromkeys(type, iterable, value=None)\n"
+"sig=($type, iterable, value=None)\n"
 "Returns a new dict with keys from iterable and values equal to value.");
 
 #define DICT_FROMKEYS_METHODDEF    \
@@ -1730,7 +1730,7 @@ exit:
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: checksum=008269e1774a379b356841548c04061fd78a9542]*/
+/*[clinic end generated code: output=aff6e583703dbeba input=b85a667f9bf4669d]*/
 {
     PyObject *it;       /* iter(seq) */
     PyObject *key;
@@ -2209,7 +2209,7 @@ True if D has a key k, else False.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dict___contains____doc__,
-"__contains__(self, key)\n"
+"sig=($self, key)\n"
 "True if D has a key k, else False.");
 
 #define DICT___CONTAINS___METHODDEF    \
@@ -2217,7 +2217,7 @@ PyDoc_STRVAR(dict___contains____doc__,
 
 static PyObject *
 dict___contains__(PyDictObject *self, PyObject *key)
-/*[clinic end generated code: checksum=744ca54369dda9815a596304087f1b37fafa5960]*/
+/*[clinic end generated code: output=c654684a6d880281 input=b852b2a19b51ab24]*/
 {
     register PyDictObject *mp = self;
     Py_hash_t hash;

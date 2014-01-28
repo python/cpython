@@ -540,7 +540,7 @@ Matches zero or more characters at the beginning of the string.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(pattern_match__doc__,
-"match(self, pattern, pos=0, endpos=sys.maxsize)\n"
+"sig=($self, pattern, pos=0, endpos=sys.maxsize)\n"
 "Matches zero or more characters at the beginning of the string.");
 
 #define PATTERN_MATCH_METHODDEF    \
@@ -570,7 +570,7 @@ exit:
 
 static PyObject *
 pattern_match_impl(PatternObject *self, PyObject *pattern, Py_ssize_t pos, Py_ssize_t endpos)
-/*[clinic end generated code: checksum=4a3865d13638cb7c13dcae1fe58c1a9c35071998]*/
+/*[clinic end generated code: output=9f5b785661677848 input=26f9fd31befe46b9]*/
 {
     SRE_STATE state;
     Py_ssize_t status;

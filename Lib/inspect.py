@@ -1998,6 +1998,10 @@ class Signature:
         else:
             kind = Parameter.POSITIONAL_OR_KEYWORD
 
+        first_parameter_is_self = s.startswith("($")
+        if first_parameter_is_self:
+            s = '(' + s[2:]
+
         s = "def foo" + s + ": pass"
 
         try:
@@ -2102,18 +2106,11 @@ class Signature:
             kind = Parameter.VAR_KEYWORD
             p(f.args.kwarg, empty)
 
-        if parameters and (hasattr(func, '__self__') or
-            isinstance(func, _WrapperDescriptor,) or
-            ismethoddescriptor(func)
-            ):
-            name = parameters[0].name
-            if name not in ('self', 'module', 'type'):
-                pass
-            elif getattr(func, '__self__', None):
-                # strip off self (it's already been bound)
-                p = parameters.pop(0)
-                if not p.name in ('self', 'module', 'type'):
-                    raise ValueError('Unexpected name ' + repr(p.name) + ', expected self/module/cls/type')
+        if first_parameter_is_self:
+            assert parameters
+            if getattr(func, '__self__', None):
+                # strip off self, it's already been bound
+                parameters.pop(0)
             else:
                 # for builtins, self parameter is always positional-only!
                 p = parameters[0].replace(kind=Parameter.POSITIONAL_ONLY)

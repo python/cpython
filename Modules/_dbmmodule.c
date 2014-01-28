@@ -32,7 +32,7 @@ static char *which_dbm = "Berkeley DB";
 module dbm
 class dbm.dbm "dbmobject *" "&Dbmtype"
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=92450564684a69a3]*/
 
 typedef struct {
     PyObject_HEAD
@@ -55,7 +55,7 @@ class dbmobject_converter(self_converter):
     def converter_init(self):
         self.name = 'dp'
 [python start generated code]*/
-/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=8a69ac1827811128]*/
 
 static PyObject *
 newdbmobject(const char *file, int flags, int mode)
@@ -319,7 +319,7 @@ exit:
 
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
-/*[clinic end generated code: checksum=31d5180d6b36f1eafea78ec4391adf3559916379]*/
+/*[clinic end generated code: output=31d5180d6b36f1ea input=43a561dc2bd1db3b]*/
 {
     datum dbm_key, val;
 
@@ -462,7 +462,7 @@ Return a database object.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dbmopen__doc__,
-"open(module, filename, flags=\'r\', mode=0o666)\n"
+"sig=($module, filename, flags=\'r\', mode=0o666)\n"
 "Return a database object.\n"
 "\n"
 "  filename\n"
@@ -499,7 +499,7 @@ exit:
 
 static PyObject *
 dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode)
-/*[clinic end generated code: checksum=9efae7d3c3b67a365011bf4e463e918901ba6c79]*/
+/*[clinic end generated code: output=a1da6a481d9d332b input=6499ab0fab1333ac]*/
 {
     int iflags;
 
