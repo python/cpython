@@ -1561,6 +1561,17 @@ def signature(obj):
                 init = _get_user_defined_method(obj, '__init__')
                 if init is not None:
                     sig = signature(init)
+
+        if sig is None:
+            if type in obj.__mro__:
+                # 'obj' is a metaclass without user-defined __init__
+                # or __new__. Return a signature of 'type' builtin.
+                return signature(type)
+            else:
+                # We have a class (not metaclass), but no user-defined
+                # __init__ or __new__ for it
+                return signature(object)
+
     elif not isinstance(obj, _NonUserDefinedCallables):
         # An object with __call__
         # We also check that the 'obj' is not an instance of

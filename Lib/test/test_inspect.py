@@ -2045,6 +2045,20 @@ class TestSignatureObject(unittest.TestCase):
                            ('bar', 2, ..., "keyword_only")),
                           ...))
 
+        # Test classes without user-defined __init__ or __new__
+        class C: pass
+        self.assertEqual(str(inspect.signature(C)), '()')
+        class D(C): pass
+        self.assertEqual(str(inspect.signature(D)), '()')
+
+        # Test meta-classes without user-defined __init__ or __new__
+        class C(type): pass
+        self.assertEqual(str(inspect.signature(C)),
+                         '(object_or_name, bases, dict)')
+        class D(C): pass
+        self.assertEqual(str(inspect.signature(D)),
+                         '(object_or_name, bases, dict)')
+
     def test_signature_on_callable_objects(self):
         class Foo:
             def __call__(self, a):
