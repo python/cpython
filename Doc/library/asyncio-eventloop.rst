@@ -286,6 +286,19 @@ Running subprocesses
 
 Run subprocesses asynchronously using the :mod:`subprocess` module.
 
+.. note::
+
+   On Windows, the default event loop uses
+   :class:`selectors.SelectSelector` which only supports sockets. The
+   :class:`ProactorEventLoop` should be used instead.
+
+.. note::
+
+   On Mac OS X older than Maverick (10.9), :class:`selectors.KqueueSelector`
+   does not support character devices like PTY, whereas it is used by the
+   default event loop. The :class:`SelectorEventLoop` can be used with
+   :class:`SelectSelector` to handle character devices.
+
 .. method:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=False, bufsize=0, \*\*kwargs)
 
    XXX
@@ -294,8 +307,6 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
-   Availability: Unix.
-
 .. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=True, bufsize=0, \*\*kwargs)
 
    XXX
@@ -303,8 +314,6 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    This method returns a :ref:`coroutine object <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
-
-   Availability: Unix.
 
 .. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
