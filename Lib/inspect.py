@@ -2258,6 +2258,8 @@ class Signature:
                         parameters_ex = (param,)
                         break
                     else:
+                        # No default, not VAR_KEYWORD, not VAR_POSITIONAL,
+                        # not in `kwargs`
                         if partial:
                             parameters_ex = (param,)
                             break
@@ -2296,17 +2298,15 @@ class Signature:
         # keyword arguments
         kwargs_param = None
         for param in itertools.chain(parameters_ex, parameters):
-            if param.kind == _POSITIONAL_ONLY:
-                # This should never happen in case of a properly built
-                # Signature object (but let's have this check here
-                # to ensure correct behaviour just in case)
-                raise TypeError('{arg!r} parameter is positional only, '
-                                'but was passed as a keyword'. \
-                                format(arg=param.name))
-
             if param.kind == _VAR_KEYWORD:
                 # Memorize that we have a '**kwargs'-like parameter
                 kwargs_param = param
+                continue
+
+            if param.kind == _VAR_POSITIONAL:
+                # Named arguments don't refer to '*args'-like parameters.
+                # We only arrive here if the positional arguments ended
+                # before reaching the last parameter before *args.
                 continue
 
             param_name = param.name
