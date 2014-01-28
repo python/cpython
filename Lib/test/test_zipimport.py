@@ -456,8 +456,7 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         # Now that the zipfile has been replaced, import something else from it
         # which should fail as the file contents are now garbage.
         with self.assertRaises(ImportError):
-            ziptest_a = __import__("ziptest_a", globals(), locals(),
-                                   ["test_value"])
+            ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
         # The code path used by the __import__ call is different than
         # that used by import statements.  Try these as well.  Some of
         # these may create new zipimporter instances.  We need to
@@ -486,9 +485,9 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         exec("from {} import {}".format(TESTPACK, TESTMOD), test_ns)
         self.assertEqual(test_ns[TESTMOD].test_value, 38)
 
-        ziptest_a = __import__("ziptest_a", globals(), locals(), ["test_value"])
+        ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
         self.assertEqual(ziptest_a.test_value, 23)
-        ziptest_c = __import__("ziptest_c", globals(), locals(), ["test_value"])
+        ziptest_c = __import__("ziptest_c", {}, {}, ["test_value"])
         self.assertEqual(ziptest_c.test_value, 1337)
 
     def testZipFileSubpackageImport(self):
@@ -497,7 +496,7 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         # Put a subdirectory within the zip file into the import path.
         sys.path.insert(0, self.zipfile_path + os.sep + TESTPACK)
 
-        testmod = __import__(TESTMOD, globals(), locals(), ["test_value"])
+        testmod = __import__(TESTMOD, {}, {}, ["test_value"])
         self.assertEqual(testmod.test_value, 38)
         del sys.modules[TESTMOD]
         test_ns = {}
@@ -507,7 +506,7 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
 
         # Confirm that imports from the top level of the zip file
         # (already in sys.path from the setup call above) still work.
-        ziptest_a = __import__("ziptest_a", globals(), locals(), ["test_value"])
+        ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
         self.assertEqual(ziptest_a.test_value, 23)
         del sys.modules["ziptest_a"]
         import ziptest_c
@@ -517,7 +516,7 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         self.truncateAndFillZipWithNonZipGarbage()
         # Imports should now fail.
         with self.assertRaises(ImportError):
-            testmod = __import__(TESTMOD, globals(), locals(), ["test_value"])
+            testmod = __import__(TESTMOD, {}, {}, ["test_value"])
         with self.assertRaises(ImportError):
             exec("from {} import test_value".format(TESTMOD), {})
         with self.assertRaises(ImportError):
@@ -525,14 +524,14 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
 
         self.restoreZipFileWithDifferentHeaderOffsets()
         # Imports should work again, the central directory TOC will be re-read.
-        testmod = __import__(TESTMOD, globals(), locals(), ["test_value"])
+        testmod = __import__(TESTMOD, {}, {}, ["test_value"])
         self.assertEqual(testmod.test_value, 38)
         del sys.modules[TESTMOD]
         test_ns = {}
         exec("from {} import test_value".format(TESTMOD), test_ns)
         self.assertEqual(test_ns['test_value'], 38)
 
-        ziptest_a = __import__("ziptest_a", globals(), locals(), ["test_value"])
+        ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
         self.assertEqual(ziptest_a.test_value, 23)
         import ziptest_c
         self.assertEqual(ziptest_c.test_value, 1337)
