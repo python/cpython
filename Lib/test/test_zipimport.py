@@ -469,7 +469,7 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         with self.assertRaises(ImportError):
             from ziptest_a import test_value
         with self.assertRaises(ImportError):
-            exec("from {} import {}".format(TESTPACK, TESTMOD))
+            exec("from {} import {}".format(TESTPACK, TESTMOD), {})
 
         # Alters all of the offsets within the file
         self.restoreZipFileWithDifferentHeaderOffsets()
@@ -479,10 +479,12 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         # new file's end of file central index and be able to import again.
 
         # Importing a submodule triggers a different import code path.
-        exec("import " + self.testpack_testmod)
-        self.assertEqual(getattr(locals()[TESTPACK], TESTMOD).test_value, 38)
-        exec("from {} import {}".format(TESTPACK, TESTMOD))
-        self.assertEqual(locals()[TESTMOD].test_value, 38)
+        test_ns = {}
+        exec("import " + self.testpack_testmod, test_ns)
+        self.assertEqual(getattr(test_ns[TESTPACK], TESTMOD).test_value, 38)
+        test_ns = {}
+        exec("from {} import {}".format(TESTPACK, TESTMOD), test_ns)
+        self.assertEqual(test_ns[TESTMOD].test_value, 38)
 
         ziptest_a = __import__("ziptest_a", globals(), locals(), ["test_value"])
         self.assertEqual(ziptest_a.test_value, 23)
@@ -498,8 +500,9 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         testmod = __import__(TESTMOD, globals(), locals(), ["test_value"])
         self.assertEqual(testmod.test_value, 38)
         del sys.modules[TESTMOD]
-        exec("from {} import test_value".format(TESTMOD))
-        self.assertEqual(test_value, 38)
+        test_ns = {}
+        exec("from {} import test_value".format(TESTMOD), test_ns)
+        self.assertEqual(test_ns["test_value"], 38)
         del sys.modules[TESTMOD]
 
         # Confirm that imports from the top level of the zip file
@@ -516,7 +519,7 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         with self.assertRaises(ImportError):
             testmod = __import__(TESTMOD, globals(), locals(), ["test_value"])
         with self.assertRaises(ImportError):
-            exec("from {} import test_value".format(TESTMOD))
+            exec("from {} import test_value".format(TESTMOD), {})
         with self.assertRaises(ImportError):
             import ziptest_a
 
@@ -525,8 +528,9 @@ class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
         testmod = __import__(TESTMOD, globals(), locals(), ["test_value"])
         self.assertEqual(testmod.test_value, 38)
         del sys.modules[TESTMOD]
-        exec("from {} import test_value".format(TESTMOD))
-        self.assertEqual(test_value, 38)
+        test_ns = {}
+        exec("from {} import test_value".format(TESTMOD), test_ns)
+        self.assertEqual(test_ns['test_value'], 38)
 
         ziptest_a = __import__("ziptest_a", globals(), locals(), ["test_value"])
         self.assertEqual(ziptest_a.test_value, 23)
