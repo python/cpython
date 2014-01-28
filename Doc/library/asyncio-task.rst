@@ -107,6 +107,7 @@ Example chaining coroutines::
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(print_sum(1, 2))
+    loop.close()
 
 ``compute()`` is chained to ``print_sum()``: ``print_sum()`` coroutine waits
 until ``compute()`` is completed before returing its result.
@@ -234,6 +235,7 @@ Example combining a :class:`Future` and a :ref:`coroutine function
     asyncio.Task(slow_operation(future))
     loop.run_until_complete(future)
     print(future.result())
+    loop.close()
 
 The coroutine function is responsible of the computation (which takes 1 second)
 and it stores the result into the future. The
@@ -354,6 +356,7 @@ Example executing 3 tasks (A, B, C) in parallel::
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.wait(tasks))
+    loop.close()
 
 Output::
 
