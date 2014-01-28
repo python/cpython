@@ -21,7 +21,7 @@
 module unicodedata
 class unicodedata.UCD 'PreviousDBVersion *' '&UCD_Type'
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6dac153082d150bc]*/
 
 /* character properties */
 
@@ -129,7 +129,7 @@ not given, ValueError is raised.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
-"decimal(self, unichr, default=None)\n"
+"sig=($self, unichr, default=None)\n"
 "Converts a Unicode character into its equivalent decimal value.\n"
 "\n"
 "Returns the decimal value assigned to the Unicode character unichr\n"
@@ -161,7 +161,7 @@ exit:
 
 static PyObject *
 unicodedata_UCD_decimal_impl(PreviousDBVersion *self, PyUnicodeObject *unichr, PyObject *default_value)
-/*[clinic end generated code: checksum=e1371a1a016e19fdd3cd2c1af1d1832df095f50b]*/
+/*[clinic end generated code: output=a3ad5de9393acb2f input=c25c9d2b4de076b1]*/
 {
     int have_old = 0;
     long rc;

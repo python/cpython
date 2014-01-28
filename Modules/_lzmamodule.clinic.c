@@ -228,4 +228,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: checksum=b4b90dcbd0c9c349c3a94e26a7eecf71aab179a0]*/
+/*[clinic end generated code: output=b4b90dcbd0c9c349 input=a9049054013a1b77]*/

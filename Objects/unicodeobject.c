@@ -50,7 +50,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /*[clinic input]
 class str "PyUnicodeObject *" "&PyUnicode_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=604e916854800fa8]*/
 
 /* --- Globals ------------------------------------------------------------
 
@@ -12885,7 +12885,7 @@ must be a string, whose characters will be mapped to None in the result.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
-"maketrans(x, y=None, z=None)\n"
+"sig=(x, y=None, z=None)\n"
 "Return a translation table usable for str.translate().\n"
 "\n"
 "If there is only one argument, it must be a dictionary mapping Unicode\n"
@@ -12922,7 +12922,7 @@ exit:
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
-/*[clinic end generated code: checksum=90a3de8c494b304687e1e0d7e5fa8ba78eac6533]*/
+/*[clinic end generated code: output=ca001ac83ed32269 input=7bfbf529a293c6c5]*/
 {
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;

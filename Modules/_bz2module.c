@@ -204,7 +204,7 @@ module _bz2
 class _bz2.BZ2Compressor "BZ2Compressor *" "&BZ2Compressor_Type"
 class _bz2.BZ2Decompressor "BZ2Decompressor *" "&BZ2Decompressor_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3b139924f5e18cc]*/
 
 #include "clinic/_bz2module.c.h"
 
@@ -224,7 +224,7 @@ flush() method to finish the compression process.
 
 static PyObject *
 _bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data)
-/*[clinic end generated code: checksum=59365426e941fbcc4c7a4d0eef85ca7e19196eaa]*/
+/*[clinic end generated code: output=59365426e941fbcc input=85c963218070fc4c]*/
 {
     PyObject *result = NULL;
 
@@ -249,7 +249,7 @@ The compressor object may not be used after this method is called.
 
 static PyObject *
 _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self)
-/*[clinic end generated code: checksum=3ef03fc1b092a701b382b97096c7fd50db87190b]*/
+/*[clinic end generated code: output=3ef03fc1b092a701 input=d64405d3c6f76691]*/
 {
     PyObject *result = NULL;
 
@@ -304,7 +304,7 @@ For one-shot compression, use the compress() function instead.
 
 static int
 _bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
-/*[clinic end generated code: checksum=c4e6adfd02963827075a1cc9309dc6df184b1246]*/
+/*[clinic end generated code: output=c4e6adfd02963827 input=4e1ff7b8394b6e9a]*/
 {
     int bzerror;
 
@@ -484,7 +484,7 @@ is ignored and saved in the unused_data attribute.
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data)
-/*[clinic end generated code: checksum=086e4b99e60cb3f67c0481959591eae0735320bc]*/
+/*[clinic end generated code: output=086e4b99e60cb3f6 input=616c2a6db5269961]*/
 {
     PyObject *result = NULL;
 
@@ -515,7 +515,7 @@ For one-shot decompression, use the decompress() function instead.
 
 static int
 _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
-/*[clinic end generated code: checksum=e4d2b9bb866ab8f1f4a8bb786ddb5b614ce323c0]*/
+/*[clinic end generated code: output=e4d2b9bb866ab8f1 input=95f6500dcda60088]*/
 {
     int bzerror;
 

@@ -138,7 +138,7 @@ typedef chtype attr_t;           /* No attr_t type is available */
 module curses
 class curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=88c860abdbb50e0c]*/
 
 /* Definition of exception curses.error */
 
@@ -651,7 +651,7 @@ exit:
 
 static PyObject *
 curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int x, int y, PyObject *ch, int group_right_1, long attr)
-/*[clinic end generated code: checksum=e1cdbd4f4e42fc6b36fd4755d7e4bd5b58751ea1]*/
+/*[clinic end generated code: output=e1cdbd4f4e42fc6b input=fe7e3711d5bbf1f6]*/
 {
     PyCursesWindowObject *cwself = (PyCursesWindowObject *)self;
     int coordinates_group = group_left_1;

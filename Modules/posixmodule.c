@@ -184,7 +184,7 @@ corresponding Unix manual entries for more information on calls.");
 /*[clinic input]
 module os
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8cff096d1133288f]*/
 
 #ifndef _MSC_VER
 
@@ -2397,7 +2397,7 @@ class dir_fd_converter(CConverter):
 
 
 [python start generated code]*/
-/*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d702d58a8469cc7d]*/
 
 /*[clinic input]
 
@@ -2430,7 +2430,7 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 [clinic start generated code]*/
 
 PyDoc_STRVAR(os_stat__doc__,
-"stat(module, path, *, dir_fd=None, follow_symlinks=True)\n"
+"sig=($module, path, *, dir_fd=None, follow_symlinks=True)\n"
 "Perform a stat system call on the given path.\n"
 "\n"
 "  path\n"
@@ -2481,7 +2481,7 @@ exit:
 
 static PyObject *
 os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: checksum=09cc91b4947f9e3b9335c8be998bb7c56f7f8b40]*/
+/*[clinic end generated code: output=33b6ee92cd1b98de input=5ae155bd475fd20a]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2562,7 +2562,7 @@ Note that most operations will use the effective uid/gid, therefore this
 [clinic start generated code]*/
 
 PyDoc_STRVAR(os_access__doc__,
-"access(module, path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)\n"
+"sig=($module, path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)\n"
 "Use the real uid/gid to test for access to a path.\n"
 "\n"
 "  path\n"
@@ -2622,7 +2622,7 @@ exit:
 
 static PyObject *
 os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic end generated code: checksum=6483a51e1fee83da4f8e41cbc8054a701cfed1c5]*/
+/*[clinic end generated code: output=33b3fafc61e778e1 input=2e2e7594371f5b7e]*/
 {
     PyObject *return_value = NULL;
 
@@ -2718,7 +2718,7 @@ Return the name of the terminal device connected to 'fd'.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(os_ttyname__doc__,
-"ttyname(module, fd)\n"
+"sig=($module, fd)\n"
 "Return the name of the terminal device connected to \'fd\'.\n"
 "\n"
 "  fd\n"
@@ -2752,7 +2752,7 @@ exit:
 
 static char *
 os_ttyname_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: checksum=11bbb8b7969155f54bb8a1ec35ac1ebdfd4b0fec]*/
+/*[clinic end generated code: output=c3083e665d4d11b9 input=5f72ca83e76b3b45]*/
 {
     char *ret;
 

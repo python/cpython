@@ -4,7 +4,7 @@
 /*[clinic input]
 module _opcode
 [clinic start generated code]*/
-/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=117442e66eb376e6]*/
 
 /*[clinic input]
 
@@ -64,7 +64,7 @@ exit:
 
 static int
 _opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg)
-/*[clinic end generated code: checksum=4689140ffda2494a123ea2593fb63445fb039774]*/
+/*[clinic end generated code: output=4689140ffda2494a input=056816407c3d4284]*/
 {
     int effect;
     if (HAS_ARG(opcode)) {
