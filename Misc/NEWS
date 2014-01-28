@@ -16,6 +16,16 @@ Library
 - Issue #20308: inspect.signature now works on classes without user-defined
   __init__ or __new__ methods.
 
+- Issue #20372: inspect.getfile (and a bunch of other inspect functions that
+  use it) doesn't crash with unexpected AttributeError on classes defined in C
+  without __module__.
+
+- Issue #20356: inspect.signature formatting uses '/' to separate
+  positional-only parameters from others.
+
+- Issue #20223: inspect.signature now supports methods defined with
+  functools.partialmethods.
+
 
 What's New in Python 3.4.0 Beta 3?
 ==================================
