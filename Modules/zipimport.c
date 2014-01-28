@@ -134,13 +134,6 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
     }
     if (path != NULL) {
         PyObject *files;
-        if (Py_VerboseFlag && prefix && prefix[0] != '\0')
-            PySys_WriteStderr("# zipimport: prefix=%s constructing a "
-                              "zipimporter for %s\n", prefix, path);
-        /* NOTE(gps): test_zipimport.py never exercises a case where
-         * prefix is non-empty.  When would that ever be possible?
-         * Are we missing coverage or is prefix simply never needed?
-         */
         files = PyDict_GetItemString(zip_directory_cache, path);
         if (files == NULL) {
             PyObject *zip_stat = NULL;
