@@ -169,6 +169,7 @@ operations::
     asyncio.async(test())
     loop.run_forever()
     print("Pending tasks at exit: %s" % asyncio.Task.all_tasks(loop))
+    loop.close()
 
 Expected output::
 
