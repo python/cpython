@@ -552,9 +552,14 @@ class BaseEventLoop(events.AbstractEventLoop):
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          universal_newlines=False, shell=True, bufsize=0,
                          **kwargs):
-        assert not universal_newlines, "universal_newlines must be False"
-        assert shell, "shell must be True"
-        assert isinstance(cmd, str), cmd
+        if not isinstance(cmd, str):
+            raise ValueError("cmd must be a string")
+        if universal_newlines:
+            raise ValueError("universal_newlines must be False")
+        if not shell:
+            raise ValueError("shell must be False")
+        if bufsize != 0:
+            raise ValueError("bufsize must be 0")
         protocol = protocol_factory()
         transport = yield from self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
@@ -565,8 +570,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                         universal_newlines=False, shell=False, bufsize=0,
                         **kwargs):
-        assert not universal_newlines, "universal_newlines must be False"
-        assert not shell, "shell must be False"
+        if universal_newlines:
+            raise ValueError("universal_newlines must be False")
+        if shell:
+            raise ValueError("shell must be False")
+        if bufsize != 0:
+            raise ValueError("bufsize must be 0")
         protocol = protocol_factory()
         transport = yield from self._make_subprocess_transport(
             protocol, args, False, stdin, stdout, stderr, bufsize, **kwargs)
