@@ -1651,20 +1651,21 @@ def signature(obj):
     except AttributeError:
         pass
     else:
-        # Unbound partialmethod (see functools.partialmethod)
-        # This means, that we need to calculate the signature
-        # as if it's a regular partial object, but taking into
-        # account that the first positional argument
-        # (usually `self`, or `cls`) will not be passed
-        # automatically (as for boundmethods)
+        if isinstance(partialmethod, functools.partialmethod):
+            # Unbound partialmethod (see functools.partialmethod)
+            # This means, that we need to calculate the signature
+            # as if it's a regular partial object, but taking into
+            # account that the first positional argument
+            # (usually `self`, or `cls`) will not be passed
+            # automatically (as for boundmethods)
 
-        wrapped_sig = signature(partialmethod.func)
-        sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
+            wrapped_sig = signature(partialmethod.func)
+            sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
 
-        first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
-        new_params = (first_wrapped_param,) + tuple(sig.parameters.values())
+            first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
+            new_params = (first_wrapped_param,) + tuple(sig.parameters.values())
 
-        return sig.replace(parameters=new_params)
+            return sig.replace(parameters=new_params)
 
     if _signature_is_builtin(obj):
         return Signature.from_builtin(obj)
