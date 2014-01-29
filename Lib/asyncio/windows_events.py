@@ -174,7 +174,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                                    extra=None, **kwargs):
         transp = _WindowsSubprocessTransport(self, protocol, args, shell,
                                              stdin, stdout, stderr, bufsize,
-                                             extra=None, **kwargs)
+                                             extra=extra, **kwargs)
         yield from transp._post_init()
         return transp
 
