@@ -246,7 +246,8 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             self._loop = None
 
 
-class _UnixWritePipeTransport(transports.WriteTransport):
+class _UnixWritePipeTransport(selector_events._FlowControlMixin,
+                              transports.WriteTransport):
 
     def __init__(self, loop, pipe, protocol, waiter=None, extra=None):
         super().__init__(extra)
@@ -277,12 +278,17 @@ class _UnixWritePipeTransport(transports.WriteTransport):
         if waiter is not None:
             self._loop.call_soon(waiter.set_result, None)
 
+    def get_write_buffer_size(self):
+        return sum(len(data) for data in self._buffer)
+
     def _read_ready(self):
         # Pipe was closed by peer.
         self._close()
 
     def write(self, data):
-        assert isinstance(data, bytes), repr(data)
+        assert isinstance(data, (bytes, bytearray, memoryview)), repr(data)
+        if isinstance(data, bytearray):
+            data = memoryview(data)
         if not data:
             return
 
@@ -310,6 +316,7 @@ class _UnixWritePipeTransport(transports.WriteTransport):
             self._loop.add_writer(self._fileno, self._write_ready)
 
         self._buffer.append(data)
+        self._maybe_pause_protocol()
 
     def _write_ready(self):
         data = b''.join(self._buffer)
@@ -329,7 +336,8 @@ class _UnixWritePipeTransport(transports.WriteTransport):
         else:
             if n == len(data):
                 self._loop.remove_writer(self._fileno)
-                if self._closing:
+                self._maybe_resume_protocol()  # May append to buffer.
+                if not self._buffer and self._closing:
                     self._loop.remove_reader(self._fileno)
                     self._call_connection_lost(None)
                 return
