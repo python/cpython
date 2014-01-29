@@ -1514,18 +1514,24 @@ def _signature_bound_method(sig):
     return sig.replace(parameters=params)
 
 
+def _signature_is_builtin(obj):
+    # Internal helper to test if `obj` is a callable that might
+    # support Argument Clinic's __text_signature__ protocol.
+    return (isinstance(obj, _NonUserDefinedCallables) or
+            ismethoddescriptor(obj) or
+            # Can't test 'isinstance(type)' here, as it would
+            # also be True for regular python classes
+            obj in (type, object))
+
+
 def signature(obj):
     '''Get a signature object for the passed callable.'''
 
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
 
-    if (isinstance(obj, _NonUserDefinedCallables) or
-       ismethoddescriptor(obj) or
-       isinstance(obj, type)):
-        sig = Signature.from_builtin(obj)
-        if sig:
-            return sig
+    if _signature_is_builtin(obj):
+        return Signature.from_builtin(obj)
 
     if isinstance(obj, types.MethodType):
         # In this case we skip the first parameter of the underlying
@@ -2017,9 +2023,13 @@ class Signature:
 
     @classmethod
     def from_builtin(cls, func):
+        if not _signature_is_builtin(func):
+            raise TypeError("{!r} is not a Python builtin "
+                            "function".format(func))
+
         s = getattr(func, "__text_signature__", None)
         if not s:
-            return None
+            raise ValueError("no signature found for builtin {!r}".format(func))
 
         Parameter = cls._parameter_cls
 
@@ -2038,9 +2048,10 @@ class Signature:
         try:
             module = ast.parse(s)
         except SyntaxError:
-            return None
+            module = None
+
         if not isinstance(module, ast.Module):
-            return None
+            raise ValueError("{!r} builtin has invalid signature".format(func))
 
         f = module.body[0]
 
@@ -2148,7 +2159,6 @@ class Signature:
                 parameters[0] = p
 
         return cls(parameters, return_annotation=cls.empty)
-
 
     @property
     def parameters(self):
