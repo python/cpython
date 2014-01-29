@@ -786,6 +786,13 @@ As part of the implementation of the new :mod:`enum` module, the
 metaclasses (Contributed by Ethan Furman in :issue:`18929` and
 :issue:`19030`)
 
+:func:`~inspect.getfullargspec` and :func:`~inspect.getargspec`
+now use the :func:`~inspect.signature` API. This allows them to
+support much broader range of functions, including some builtins and
+callables that follow ``__signature__`` protocol. It is still
+recommended to update your code to use :func:`~inspect.signature`
+directly. (Contributed by Yury Selivanov in :issue:`17481`)
+
 
 logging
 -------

@@ -934,7 +934,7 @@ FullArgSpec = namedtuple('FullArgSpec',
     'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
 
 def getfullargspec(func):
-    """Get the names and default values of a function's arguments.
+    """Get the names and default values of a callable object's arguments.
 
     A tuple of seven things is returned:
     (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults annotations).
@@ -948,13 +948,90 @@ def getfullargspec(func):
     The first four items in the tuple correspond to getargspec().
     """
 
+    builtin_method_param = None
+
     if ismethod(func):
+        # There is a notable difference in behaviour between getfullargspec
+        # and Signature: the former always returns 'self' parameter for bound
+        # methods, whereas the Signature always shows the actual calling
+        # signature of the passed object.
+        #
+        # To simulate this behaviour, we "unbind" bound methods, to trick
+        # inspect.signature to always return their first parameter ("self",
+        # usually)
         func = func.__func__
-    if not isfunction(func):
-        raise TypeError('{!r} is not a Python function'.format(func))
-    args, varargs, kwonlyargs, varkw = _getfullargs(func.__code__)
-    return FullArgSpec(args, varargs, varkw, func.__defaults__,
-            kwonlyargs, func.__kwdefaults__, func.__annotations__)
+
+    elif isbuiltin(func):
+        # We have a builtin function or method. For that, we check the
+        # special '__text_signature__' attribute, provided by the
+        # Argument Clinic. If it's a method, we'll need to make sure
+        # that its first parameter (usually "self") is always returned
+        # (see the previous comment).
+        text_signature = getattr(func, '__text_signature__', None)
+        if text_signature and text_signature.startswith('($'):
+            builtin_method_param = _signature_get_bound_param(text_signature)
+
+    try:
+        sig = signature(func)
+    except Exception as ex:
+        # Most of the times 'signature' will raise ValueError.
+        # But, it can also raise AttributeError, and, maybe something
+        # else. So to be fully backwards compatible, we catch all
+        # possible exceptions here, and reraise a TypeError.
+        raise TypeError('unsupported callable') from ex
+
+    args = []
+    varargs = None
+    varkw = None
+    kwonlyargs = []
+    defaults = ()
+    annotations = {}
+    defaults = ()
+    kwdefaults = {}
+
+    if sig.return_annotation is not sig.empty:
+        annotations['return'] = sig.return_annotation
+
+    for param in sig.parameters.values():
+        kind = param.kind
+        name = param.name
+
+        if kind is _POSITIONAL_ONLY:
+            args.append(name)
+        elif kind is _POSITIONAL_OR_KEYWORD:
+            args.append(name)
+            if param.default is not param.empty:
+                defaults += (param.default,)
+        elif kind is _VAR_POSITIONAL:
+            varargs = name
+        elif kind is _KEYWORD_ONLY:
+            kwonlyargs.append(name)
+            if param.default is not param.empty:
+                kwdefaults[name] = param.default
+        elif kind is _VAR_KEYWORD:
+            varkw = name
+
+        if param.annotation is not param.empty:
+            annotations[name] = param.annotation
+
+    if not kwdefaults:
+        # compatibility with 'func.__kwdefaults__'
+        kwdefaults = None
+
+    if not defaults:
+        # compatibility with 'func.__defaults__'
+        defaults = None
+
+    if builtin_method_param and (not args or args[0] != builtin_method_param):
+        # `func` is a method, and we always need to return its
+        # first parameter -- usually "self" (to be backwards
+        # compatible with the previous implementation of
+        # getfullargspec)
+        args.insert(0, builtin_method_param)
+
+    return FullArgSpec(args, varargs, varkw, defaults,
+                       kwonlyargs, kwdefaults, annotations)
+
 
 ArgInfo = namedtuple('ArgInfo', 'args varargs keywords locals')
 
@@ -1522,6 +1599,28 @@ def _signature_is_builtin(obj):
             # Can't test 'isinstance(type)' here, as it would
             # also be True for regular python classes
             obj in (type, object))
+
+
+def _signature_get_bound_param(spec):
+    # Internal helper to get first parameter name from a
+    # __text_signature__ of a builtin method, which should
+    # be in the following format: '($param1, ...)'.
+    # Assumptions are that the first argument won't have
+    # a default value or an annotation.
+
+    assert spec.startswith('($')
+
+    pos = spec.find(',')
+    if pos == -1:
+        pos = spec.find(')')
+
+    cpos = spec.find(':')
+    assert cpos == -1 or cpos > pos
+
+    cpos = spec.find('=')
+    assert cpos == -1 or cpos > pos
+
+    return spec[2:pos]
 
 
 def signature(obj):
