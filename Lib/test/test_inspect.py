@@ -586,6 +586,15 @@ class TestClassesAndFunctions(unittest.TestCase):
 
         self.assertFullArgSpecEquals(test, args_e=['spam'], formatted='(spam)')
 
+    def test_getfullargspec_signature_annos(self):
+        def test(a:'spam') -> 'ham': pass
+        spec = inspect.getfullargspec(test)
+        self.assertEqual(test.__annotations__, spec.annotations)
+
+        def test(): pass
+        spec = inspect.getfullargspec(test)
+        self.assertEqual(test.__annotations__, spec.annotations)
+
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_methods(self):
