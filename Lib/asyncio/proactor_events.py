@@ -54,7 +54,8 @@ class _ProactorBasePipeTransport(transports.BaseTransport):
             self._read_fut.cancel()
 
     def _fatal_error(self, exc):
-        logger.exception('Fatal error for %s', self)
+        if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
+            logger.exception('Fatal error for %s', self)
         self._force_close(exc)
 
     def _force_close(self, exc):
