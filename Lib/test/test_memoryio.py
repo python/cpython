@@ -609,6 +609,15 @@ class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin,
     UnsupportedOperation = pyio.UnsupportedOperation
     EOF = ""
 
+    def test_lone_surrogates(self):
+        # Issue #20424
+        memio = self.ioclass('\ud800')
+        self.assertEqual(memio.read(), '\ud800')
+
+        memio = self.ioclass()
+        memio.write('\ud800')
+        self.assertEqual(memio.getvalue(), '\ud800')
+
 
 class PyStringIOPickleTest(TextIOTestMixin, unittest.TestCase):
     """Test if pickle restores properly the internal state of StringIO.
