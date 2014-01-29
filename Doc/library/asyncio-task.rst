@@ -20,12 +20,13 @@ different (though related) concepts:
 
 - The function that defines a coroutine (a function definition
   decorated with ``@asyncio.coroutine``).  If disambiguation is needed
-  we will call this a *coroutine function*.
+  we will call this a *coroutine function* (:func:`iscoroutinefunction`
+  returns ``True``).
 
 - The object obtained by calling a coroutine function.  This object
   represents a computation or an I/O operation (usually a combination)
   that will complete eventually.  If disambiguation is needed we will
-  call it a *coroutine object*.
+  call it a *coroutine object* (:func:`iscoroutine` returns ``True``).
 
 Things a coroutine can do:
 
@@ -425,6 +426,15 @@ Task functions
    outer Future is *not* cancelled in this case.  (This is to prevent the
    cancellation of one child to cause other children to be cancelled.)
 
+.. function:: iscoroutine(obj)
+
+   Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
+
+.. function:: iscoroutinefunction(obj)
+
+   Return ``True`` if *func* is a decorated :ref:`coroutine function
+   <coroutine>`.
+
 .. function:: sleep(delay, result=None, \*, loop=None)
 
    Create a :ref:`coroutine object <coroutine>` that completes after a given
@@ -500,4 +510,20 @@ Task functions
       This does not raise :exc:`TimeoutError`! Futures that aren't done when
       the timeout occurs are returned in the second set.
 
+
+.. function:: wait_for(fut, timeout, \*, loop=None)
+
+   Wait for the single :class:`Future` or :ref:`coroutine object <coroutine>`
+   to complete, with timeout. If *timeout* is ``None``, block until the future
+   completes.
+
+   Coroutine will be wrapped in :class:`Task`.
+
+   Returns result of the Future or coroutine.  When a timeout occurs, it
+   cancels the task and raises :exc:`TimeoutError`. To avoid the task
+   cancellation, wrap it in :func:`shield`.
+
+   Usage::
+
+        result = yield from asyncio.wait_for(fut, 60.0)
 
