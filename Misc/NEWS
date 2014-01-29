@@ -13,6 +13,11 @@ Core and Builtins
 Library
 -------
 
+- asyncio: Some refactoring; add write flow control to unix pipes;
+  support wait_for(f, None); don't log broken/disconnected pipes; use
+  ValueError instead of assert for forbidden subprocess_{shell,exec}
+  arguments.  (More to follow -- a convenience API for subprocesses.)
+
 - Issue #20424: Python implementation of io.StringIO now supports lone surrogates.
 
 - Issue #20308: inspect.signature now works on classes without user-defined
