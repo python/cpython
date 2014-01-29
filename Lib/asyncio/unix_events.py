@@ -159,7 +159,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         with events.get_child_watcher() as watcher:
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
                                               stdin, stdout, stderr, bufsize,
-                                              extra=None, **kwargs)
+                                              extra=extra, **kwargs)
             yield from transp._post_init()
             watcher.add_child_handler(transp.get_pid(),
                                       self._child_watcher_callback, transp)
