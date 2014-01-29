@@ -2323,6 +2323,14 @@ class Signature:
                                     format(arg=param_name)) from None
 
             else:
+                if param.kind == _POSITIONAL_ONLY:
+                    # This should never happen in case of a properly built
+                    # Signature object (but let's have this check here
+                    # to ensure correct behaviour just in case)
+                    raise TypeError('{arg!r} parameter is positional only, '
+                                    'but was passed as a keyword'. \
+                                    format(arg=param.name))
+
                 arguments[param_name] = arg_val
 
         if kwargs:
