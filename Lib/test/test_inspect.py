@@ -1655,6 +1655,21 @@ class TestSignatureObject(unittest.TestCase):
             __call__ = type
         test_callable(ThisWorksNow())
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_on_decorated_builtins(self):
+        func = _testcapi.docstring_with_signature_with_defaults
+
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs) -> int:
+                return func(*args, **kwargs)
+            return wrapper
+
+        decorated_func = decorator(func)
+
+        self.assertEqual(inspect.signature(func),
+                         inspect.signature(decorated_func))
 
     def test_signature_on_builtins_no_signature(self):
         with self.assertRaisesRegex(ValueError, 'no signature found for builtin'):

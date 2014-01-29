@@ -1530,9 +1530,6 @@ def signature(obj):
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
 
-    if _signature_is_builtin(obj):
-        return Signature.from_builtin(obj)
-
     if isinstance(obj, types.MethodType):
         # In this case we skip the first parameter of the underlying
         # function (usually `self` or `cls`).
@@ -1569,6 +1566,9 @@ def signature(obj):
         new_params = (first_wrapped_param,) + tuple(sig.parameters.values())
 
         return sig.replace(parameters=new_params)
+
+    if _signature_is_builtin(obj):
+        return Signature.from_builtin(obj)
 
     if isinstance(obj, types.FunctionType):
         return Signature.from_function(obj)
