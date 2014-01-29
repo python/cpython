@@ -2052,7 +2052,7 @@ class StringIO(TextIOWrapper):
     def __init__(self, initial_value="", newline="\n"):
         super(StringIO, self).__init__(BytesIO(),
                                        encoding="utf-8",
-                                       errors="strict",
+                                       errors="surrogatepass",
                                        newline=newline)
         # Issue #5645: make universal newlines semantics the same as in the
         # C version, even under Windows.
