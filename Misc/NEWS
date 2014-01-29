@@ -26,6 +26,49 @@ Library
 - Issue #20223: inspect.signature now supports methods defined with
   functools.partialmethods.
 
+- Issue #19456: ntpath.join() now joins relative paths correctly when a drive
+  is present.
+
+- Issue #19077: tempfile.TemporaryDirectory cleanup no longer fails when
+  called during shutdown.  Emitting resource warning in __del__ no longer fails.
+  Original patch by Antoine Pitrou.
+
+- Issue #20394: Silence Coverity warning in audioop module.
+
+- Issue #20367: Fix behavior of concurrent.futures.as_completed() for
+  duplicate arguments.  Patch by Glenn Langford.
+
+- Issue #8260: The read(), readline() and readlines() methods of
+  codecs.StreamReader returned incomplete data when were called after
+  readline() or read(size).  Based on patch by Amaury Forgeot d'Arc.
+
+- Issue #20105: the codec exception chaining now correctly sets the
+  traceback of the original exception as its __traceback__ attribute.
+
+IDLE
+----
+
+- Issue #17721: Remove non-functional configuration dialog help button until we
+  make it actually gives some help when clicked. Patch by Guilherme Simões.
+
+Tests
+-----
+
+- Issue #19990: Added tests for the imghdr module.  Based on patch by
+  Claudiu Popa.
+
+Tools/Demos
+-----------
+
+- Issue #20326: Argument Clinic now uses a simple, unique signature to
+  annotate text signatures in docstrings, resulting in fewer false
+  positives.  "self" parameters are also explicitly marked, allowing
+  inspect.Signature() to authoritatively detect (and skip) said parameters.
+
+- Issue #20326: Argument Clinic now generates separate checksums for the
+  input and output sections of the block, allowing external tools to verify
+  that the input has not changed (and thus the output is not out-of-date).
+
 
 What's New in Python 3.4.0 Beta 3?
 ==================================
@@ -60,25 +103,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #19456: ntpath.join() now joins relative paths correctly when a drive
-  is present.
-
-- Issue #19077: tempfile.TemporaryDirectory cleanup no longer fails when
-  called during shutdown.  Emitting resource warning in __del__ no longer fails.
-  Original patch by Antoine Pitrou.
-
-- Issue #20394: Silence Coverity warning in audioop module.
-
-- Issue #20367: Fix behavior of concurrent.futures.as_completed() for
-  duplicate arguments.  Patch by Glenn Langford.
-
-- Issue #8260: The read(), readline() and readlines() methods of
-  codecs.StreamReader returned incomplete data when were called after
-  readline() or read(size).  Based on patch by Amaury Forgeot d'Arc.
-
-- Issue #20105: the codec exception chaining now correctly sets the
-  traceback of the original exception as its __traceback__ attribute.
 
 - asyncio: Various improvements and small changes not all covered by
   issues listed below.  E.g. wait_for() now cancels the inner task if
@@ -177,9 +201,6 @@ Library
 IDLE
 ----
 
-- Issue #17721: Remove non-functional configuration dialog help button until we
-  make it actually gives some help when clicked. Patch by Guilherme Simões.
-
 - Issue #17390: Add Python version to Idle editor window title bar.
   Original patches by Edmond Burnett and Kent Johnson.
 
@@ -188,9 +209,6 @@ IDLE
 
 Tests
 -----
-
-- Issue #19990: Added tests for the imghdr module.  Based on patch by
-  Claudiu Popa.
 
 - Issue #20358: Tests for curses.window.overlay and curses.window.overwrite
   no longer specify min{row,col} > max{row,col}.
@@ -202,15 +220,6 @@ Tests
 
 Tools/Demos
 -----------
-
-- Issue #20326: Argument Clinic now uses a simple, unique signature to
-  annotate text signatures in docstrings, resulting in fewer false
-  positives.  "self" parameters are also explicitly marked, allowing
-  inspect.Signature() to authoritatively detect (and skip) said parameters.
-
-- Issue #20326: Argument Clinic now generates separate checksums for the
-  input and output sections of the block, allowing external tools to verify
-  that the input has not changed (and thus the output is not out-of-date).
 
 - Issue #20390: Argument Clinic's "file" output preset now defaults to
   "{dirname}/clinic/{basename}.h".
