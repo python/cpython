@@ -2109,7 +2109,7 @@ class Signature:
                                         default=defaults[offset]))
 
         # *args
-        if func_code.co_flags & 0x04:
+        if func_code.co_flags & CO_VARARGS:
             name = arg_names[pos_count + keyword_only_count]
             annotation = annotations.get(name, _empty)
             parameters.append(Parameter(name, annotation=annotation,
@@ -2126,9 +2126,9 @@ class Signature:
                                         kind=_KEYWORD_ONLY,
                                         default=default))
         # **kwargs
-        if func_code.co_flags & 0x08:
+        if func_code.co_flags & CO_VARKEYWORDS:
             index = pos_count + keyword_only_count
-            if func_code.co_flags & 0x04:
+            if func_code.co_flags & CO_VARARGS:
                 index += 1
 
             name = arg_names[index]
