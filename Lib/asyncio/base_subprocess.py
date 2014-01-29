@@ -150,8 +150,11 @@ class WriteSubprocessPipeProto(protocols.BaseProtocol):
         self.disconnected = True
         self.proc._pipe_connection_lost(self.fd, exc)
 
-    def eof_received(self):
-        pass
+    def pause_writing(self):
+        self.proc._protocol.pause_writing()
+
+    def resume_writing(self):
+        self.proc._protocol.resume_writing()
 
 
 class ReadSubprocessPipeProto(WriteSubprocessPipeProto,
