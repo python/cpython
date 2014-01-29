@@ -1667,6 +1667,10 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'is not a Python function'):
             inspect.Signature.from_function(42)
 
+    def test_signature_from_builtin_errors(self):
+        with self.assertRaisesRegex(TypeError, 'is not a Python builtin'):
+            inspect.Signature.from_builtin(42)
+
     def test_signature_on_method(self):
         class Test:
             def __init__(*args):
