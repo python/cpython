@@ -2470,19 +2470,19 @@ class Signature:
 
         return self._bound_arguments_cls(self, arguments)
 
-    def bind(__bind_self, *args, **kwargs):
+    def bind(*args, **kwargs):
         '''Get a BoundArguments object, that maps the passed `args`
         and `kwargs` to the function's signature.  Raises `TypeError`
         if the passed arguments can not be bound.
         '''
-        return __bind_self._bind(args, kwargs)
+        return args[0]._bind(args[1:], kwargs)
 
-    def bind_partial(__bind_self, *args, **kwargs):
+    def bind_partial(*args, **kwargs):
         '''Get a BoundArguments object, that partially maps the
         passed `args` and `kwargs` to the function's signature.
         Raises `TypeError` if the passed arguments can not be bound.
         '''
-        return __bind_self._bind(args, kwargs, partial=True)
+        return args[0]._bind(args[1:], kwargs, partial=True)
 
     def __str__(self):
         result = []
