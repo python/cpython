@@ -380,6 +380,17 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(foo_running, False)
 
 
+    def test_wait_for_blocking(self):
+        loop = test_utils.TestLoop()
+        self.addCleanup(loop.close)
+
+        @asyncio.coroutine
+        def coro():
+            return 'done'
+
+        res = loop.run_until_complete(asyncio.wait_for(coro(), timeout=None, loop=loop))
+        self.assertEqual(res, 'done')
+
     def test_wait_for_with_global_loop(self):
 
         def gen():
