@@ -75,33 +75,33 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         proc = self._proc
         loop = self._loop
         if proc.stdin is not None:
-            transp, proto = yield from loop.connect_write_pipe(
+            _, pipe = yield from loop.connect_write_pipe(
                 lambda: WriteSubprocessPipeProto(self, STDIN),
                 proc.stdin)
+            self._pipes[STDIN] = pipe
         if proc.stdout is not None:
-            transp, proto = yield from loop.connect_read_pipe(
+            _, pipe = yield from loop.connect_read_pipe(
                 lambda: ReadSubprocessPipeProto(self, STDOUT),
                 proc.stdout)
+            self._pipes[STDOUT] = pipe
         if proc.stderr is not None:
-            transp, proto = yield from loop.connect_read_pipe(
+            _, pipe = yield from loop.connect_read_pipe(
                 lambda: ReadSubprocessPipeProto(self, STDERR),
                 proc.stderr)
-        if not self._pipes:
-            self._try_connected()
+            self._pipes[STDERR] = pipe
+
+        assert self._pending_calls is not None
+
+        self._loop.call_soon(self._protocol.connection_made, self)
+        for callback, data in self._pending_calls:
+            self._loop.call_soon(callback, *data)
+        self._pending_calls = None
 
     def _call(self, cb, *data):
         if self._pending_calls is not None:
             self._pending_calls.append((cb, data))
         else:
             self._loop.call_soon(cb, *data)
-
-    def _try_connected(self):
-        assert self._pending_calls is not None
-        if all(p is not None and p.connected for p in self._pipes.values()):
-            self._loop.call_soon(self._protocol.connection_made, self)
-            for callback, data in self._pending_calls:
-                self._loop.call_soon(callback, *data)
-            self._pending_calls = None
 
     def _pipe_connection_lost(self, fd, exc):
         self._call(self._protocol.pipe_connection_lost, fd, exc)
@@ -136,19 +136,15 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
 
 class WriteSubprocessPipeProto(protocols.BaseProtocol):
-    pipe = None
 
     def __init__(self, proc, fd):
         self.proc = proc
         self.fd = fd
-        self.connected = False
+        self.pipe = None
         self.disconnected = False
-        proc._pipes[fd] = self
 
     def connection_made(self, transport):
-        self.connected = True
         self.pipe = transport
-        self.proc._try_connected()
 
     def connection_lost(self, exc):
         self.disconnected = True
