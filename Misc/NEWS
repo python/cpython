@@ -47,6 +47,8 @@ Library
 - Issue #20105: the codec exception chaining now correctly sets the
   traceback of the original exception as its __traceback__ attribute.
 
+- Issue #17481: inspect.getfullargspec() now uses inspect.signature() API.
+
 IDLE
 ----
 
