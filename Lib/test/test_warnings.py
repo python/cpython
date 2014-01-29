@@ -4,7 +4,6 @@ import os
 from io import StringIO
 import sys
 import unittest
-import subprocess
 from test import support
 from test.script_helper import assert_python_ok
 
@@ -719,47 +718,34 @@ class PyCatchWarningTests(CatchWarningTests, unittest.TestCase):
 class EnvironmentVariableTests(BaseTest):
 
     def test_single_warning(self):
-        newenv = os.environ.copy()
-        newenv["PYTHONWARNINGS"] = "ignore::DeprecationWarning"
-        p = subprocess.Popen([sys.executable,
-                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
-                stdout=subprocess.PIPE, env=newenv)
-        self.assertEqual(p.communicate()[0], b"['ignore::DeprecationWarning']")
-        self.assertEqual(p.wait(), 0)
+        rc, stdout, stderr = assert_python_ok("-c",
+            "import sys; sys.stdout.write(str(sys.warnoptions))",
+            PYTHONWARNINGS="ignore::DeprecationWarning")
+        self.assertEqual(stdout, b"['ignore::DeprecationWarning']")
 
     def test_comma_separated_warnings(self):
-        newenv = os.environ.copy()
-        newenv["PYTHONWARNINGS"] = ("ignore::DeprecationWarning,"
-                                    "ignore::UnicodeWarning")
-        p = subprocess.Popen([sys.executable,
-                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
-                stdout=subprocess.PIPE, env=newenv)
-        self.assertEqual(p.communicate()[0],
-                b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
-        self.assertEqual(p.wait(), 0)
+        rc, stdout, stderr = assert_python_ok("-c",
+            "import sys; sys.stdout.write(str(sys.warnoptions))",
+            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning")
+        self.assertEqual(stdout,
+            b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
     def test_envvar_and_command_line(self):
-        newenv = os.environ.copy()
-        newenv["PYTHONWARNINGS"] = "ignore::DeprecationWarning"
-        p = subprocess.Popen([sys.executable, "-W" "ignore::UnicodeWarning",
-                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
-                stdout=subprocess.PIPE, env=newenv)
-        self.assertEqual(p.communicate()[0],
-                b"['ignore::UnicodeWarning', 'ignore::DeprecationWarning']")
-        self.assertEqual(p.wait(), 0)
+        rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
+            "import sys; sys.stdout.write(str(sys.warnoptions))",
+            PYTHONWARNINGS="ignore::DeprecationWarning")
+        self.assertEqual(stdout,
+            b"['ignore::UnicodeWarning', 'ignore::DeprecationWarning']")
 
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
                          'requires non-ascii filesystemencoding')
     def test_nonascii(self):
-        newenv = os.environ.copy()
-        newenv["PYTHONWARNINGS"] = "ignore:DeprecaciónWarning"
-        newenv["PYTHONIOENCODING"] = "utf-8"
-        p = subprocess.Popen([sys.executable,
-                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
-                stdout=subprocess.PIPE, env=newenv)
-        self.assertEqual(p.communicate()[0],
-                "['ignore:DeprecaciónWarning']".encode('utf-8'))
-        self.assertEqual(p.wait(), 0)
+        rc, stdout, stderr = assert_python_ok("-c",
+            "import sys; sys.stdout.write(str(sys.warnoptions))",
+            PYTHONIOENCODING="utf-8",
+            PYTHONWARNINGS="ignore:DeprecaciónWarning")
+        self.assertEqual(stdout,
+            "['ignore:DeprecaciónWarning']".encode('utf-8'))
 
 class CEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = c_warnings
@@ -774,18 +760,11 @@ class BootstrapTest(unittest.TestCase):
         # or not completely loaded (warnings imports indirectly encodings by
         # importing linecache) yet
         with support.temp_cwd() as cwd, support.temp_cwd('encodings'):
-            env = os.environ.copy()
-            env['PYTHONPATH'] = cwd
-
             # encodings loaded by initfsencoding()
-            retcode = subprocess.call([sys.executable, '-c', 'pass'], env=env)
-            self.assertEqual(retcode, 0)
+            assert_python_ok('-c', 'pass', PYTHONPATH=cwd)
 
             # Use -W to load warnings module at startup
-            retcode = subprocess.call(
-                [sys.executable, '-c', 'pass', '-W', 'always'],
-                env=env)
-            self.assertEqual(retcode, 0)
+            assert_python_ok('-c', 'pass', '-W', 'always', PYTHONPATH=cwd)
 
 
 def setUpModule():
