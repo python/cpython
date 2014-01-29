@@ -1983,6 +1983,11 @@ class TestSignatureObject(unittest.TestCase):
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
+    def test_signature_on_fake_partialmethod(self):
+        def foo(a): pass
+        foo._partialmethod = 'spam'
+        self.assertEqual(str(inspect.signature(foo)), '(a)')
+
     def test_signature_on_decorated(self):
         import functools
 
