@@ -1491,6 +1491,38 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(7, proto.returncode)
 
+    def test_subprocess_exec_invalid_args(self):
+        @asyncio.coroutine
+        def connect(**kwds):
+            yield from self.loop.subprocess_exec(
+                asyncio.SubprocessProtocol,
+                'pwd', **kwds)
+
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(connect(universal_newlines=True))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(connect(bufsize=4096))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(connect(shell=True))
+
+    def test_subprocess_shell_invalid_args(self):
+        @asyncio.coroutine
+        def connect(cmd=None, **kwds):
+            if not cmd:
+                cmd = 'pwd'
+            yield from self.loop.subprocess_shell(
+                asyncio.SubprocessProtocol,
+                cmd, **kwds)
+
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(connect(['ls', '-l']))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(connect(universal_newlines=True))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(connect(bufsize=4096))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(connect(shell=False))
+
 
 if sys.platform == 'win32':
 
