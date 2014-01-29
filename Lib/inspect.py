@@ -1505,7 +1505,7 @@ _NonUserDefinedCallables = (_WrapperDescriptor,
                             types.BuiltinFunctionType)
 
 
-def _get_user_defined_method(cls, method_name):
+def _signature_get_user_defined_method(cls, method_name):
     try:
         meth = getattr(cls, method_name)
     except AttributeError:
@@ -1682,17 +1682,17 @@ def signature(obj):
 
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
-        call = _get_user_defined_method(type(obj), '__call__')
+        call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
             sig = signature(call)
         else:
             # Now we check if the 'obj' class has a '__new__' method
-            new = _get_user_defined_method(obj, '__new__')
+            new = _signature_get_user_defined_method(obj, '__new__')
             if new is not None:
                 sig = signature(new)
             else:
                 # Finally, we should have at least __init__ implemented
-                init = _get_user_defined_method(obj, '__init__')
+                init = _signature_get_user_defined_method(obj, '__init__')
                 if init is not None:
                     sig = signature(init)
 
@@ -1711,7 +1711,7 @@ def signature(obj):
         # We also check that the 'obj' is not an instance of
         # _WrapperDescriptor or _MethodWrapper to avoid
         # infinite recursion (and even potential segfault)
-        call = _get_user_defined_method(type(obj), '__call__')
+        call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
             sig = signature(call)
 
