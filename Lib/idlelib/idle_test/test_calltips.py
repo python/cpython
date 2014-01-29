@@ -3,6 +3,7 @@ import idlelib.CallTips as ct
 CTi = ct.CallTips()  # needed for get_entity test in 2.7
 import textwrap
 import types
+import warnings
 
 default_tip = ''
 
@@ -162,8 +163,11 @@ class Get_entityTest(unittest.TestCase):
 
 class Py2Test(unittest.TestCase):
     def test_paramtuple_float(self):
-        # 18539: (a,b) becomes '.0' in code object; change that but not float
-        def f((a,b), c=0.0): pass
+        # 18539: (a,b) becomes '.0' in code object; change that but not 0.0
+        with warnings.catch_warnings():
+            # Suppess message of py3 deprecation of parameter unpacking
+            warnings.simplefilter("ignore")
+            def f((a,b), c=0.0): pass
         self.assertEqual(signature(f), '(<tuple>, c=0.0)')
 
 if __name__ == '__main__':
