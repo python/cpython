@@ -83,11 +83,9 @@ class SearchEngine:
         try:
             prog = re.compile(pat, flags)
         except re.error as what:
-            try:
-                msg, col = what
-            except:
-                msg = str(what)
-                col = -1
+            args = what.args
+            msg = args[0]
+            col = arg[1] if len(args) >= 2 else -1
             self.report_error(pat, msg, col)
             return None
         return prog
