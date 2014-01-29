@@ -253,8 +253,8 @@ class Debugger:
         if self.vsource.get():
             self.sync_source_line()
 
-    def show_frame(self, (frame, lineno)):
-        self.frame = frame
+    def show_frame(self, stackitem):
+        self.frame = stackitem[0]  # lineno is stackitem[1]
         self.show_variables()
 
     localsviewer = None
