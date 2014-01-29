@@ -1924,6 +1924,7 @@ class Signature:
             if __validate_parameters__:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
+                kind_defaults = False
 
                 for idx, param in enumerate(parameters):
                     kind = param.kind
@@ -1933,8 +1934,26 @@ class Signature:
                         msg = 'wrong parameter order: {} before {}'
                         msg = msg.format(top_kind, kind)
                         raise ValueError(msg)
-                    else:
+                    elif kind > top_kind:
+                        kind_defaults = False
                         top_kind = kind
+
+                    if (kind in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD) and
+                                                     not param._partial_kwarg):
+                        # If we have a positional-only or positional-or-keyword
+                        # parameter, that does not have its default value set
+                        # by 'functools.partial' or other "partial" signature:
+                        if param.default is _empty:
+                            if kind_defaults:
+                                # No default for this parameter, but the
+                                # previous parameter of the same kind had
+                                # a default
+                                msg = 'non-default argument follows default ' \
+                                      'argument'
+                                raise ValueError(msg)
+                        else:
+                            # There is a default for this parameter.
+                            kind_defaults = True
 
                     if name in params:
                         msg = 'duplicate parameter name: {!r}'.format(name)

@@ -1522,11 +1522,13 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(str(S()), '()')
 
-        def test(po, pk, *args, ko, **kwargs):
+        def test(po, pk, pod=42, pkd=100, *args, ko, **kwargs):
             pass
         sig = inspect.signature(test)
         po = sig.parameters['po'].replace(kind=P.POSITIONAL_ONLY)
+        pod = sig.parameters['pod'].replace(kind=P.POSITIONAL_ONLY)
         pk = sig.parameters['pk']
+        pkd = sig.parameters['pkd']
         args = sig.parameters['args']
         ko = sig.parameters['ko']
         kwargs = sig.parameters['kwargs']
@@ -1548,6 +1550,15 @@ class TestSignatureObject(unittest.TestCase):
         kwargs2 = kwargs.replace(name='args')
         with self.assertRaisesRegex(ValueError, 'duplicate parameter name'):
             S((po, pk, args, kwargs2, ko))
+
+        with self.assertRaisesRegex(ValueError, 'follows default argument'):
+            S((pod, po))
+
+        with self.assertRaisesRegex(ValueError, 'follows default argument'):
+            S((po, pkd, pk))
+
+        with self.assertRaisesRegex(ValueError, 'follows default argument'):
+            S((pkd, pk))
 
     def test_signature_immutability(self):
         def test(a):
