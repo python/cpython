@@ -224,7 +224,7 @@ class Au_read:
         if self._data_size == AUDIO_UNKNOWN_SIZE:
             return AUDIO_UNKNOWN_SIZE
         if self._encoding in _simple_encodings:
-            return self._data_size / self._framesize
+            return self._data_size // self._framesize
         return 0                # XXX--must do some arithmetic here
 
     def getcomptype(self):
