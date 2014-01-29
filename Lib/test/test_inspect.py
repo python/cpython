@@ -578,6 +578,36 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      kwonlyargs_e=['arg'],
                                      formatted='(*, arg)')
 
+    def test_getfullargspec_signature_attr(self):
+        def test():
+            pass
+        spam_param = inspect.Parameter('spam', inspect.Parameter.POSITIONAL_ONLY)
+        test.__signature__ = inspect.Signature(parameters=(spam_param,))
+
+        self.assertFullArgSpecEquals(test, args_e=['spam'], formatted='(spam)')
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_getfullargspec_builtin_methods(self):
+        self.assertFullArgSpecEquals(_pickle.Pickler.dump,
+                                     args_e=['self', 'obj'], formatted='(self, obj)')
+
+        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump,
+                                     args_e=['self', 'obj'], formatted='(self, obj)')
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_getfullagrspec_builtin_func(self):
+        builtin = _testcapi.docstring_with_signature_with_defaults
+        spec = inspect.getfullargspec(builtin)
+        self.assertEqual(spec.defaults[0], 'avocado')
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_getfullagrspec_builtin_func_no_signature(self):
+        builtin = _testcapi.docstring_no_signature
+        with self.assertRaises(TypeError):
+            inspect.getfullargspec(builtin)
 
     def test_getargspec_method(self):
         class A(object):
@@ -2614,6 +2644,15 @@ class TestBoundArguments(unittest.TestCase):
         self.assertNotEqual(ba, ba4)
 
 
+class TestSignaturePrivateHelpers(unittest.TestCase):
+    def test_signature_get_bound_param(self):
+        getter = inspect._signature_get_bound_param
+
+        self.assertEqual(getter('($self)'), 'self')
+        self.assertEqual(getter('($self, obj)'), 'self')
+        self.assertEqual(getter('($cls, /, obj)'), 'cls')
+
+
 class TestUnwrap(unittest.TestCase):
 
     def test_unwrap_one(self):
@@ -2719,7 +2758,8 @@ def test_main():
         TestGetcallargsFunctions, TestGetcallargsMethods,
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
-        TestBoundArguments, TestGetClosureVars, TestUnwrap, TestMain
+        TestBoundArguments, TestSignaturePrivateHelpers, TestGetClosureVars,
+        TestUnwrap, TestMain
     )
 
 if __name__ == "__main__":
