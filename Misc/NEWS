@@ -24,11 +24,6 @@ Core and Builtins
   source encoding declarations, and can be used to make Python batch files
   on Windows.
 
-- Issue #19081: When a zipimport .zip file in sys.path being imported from
-  is modified during the lifetime of the Python process after zipimport has
-  already cached the zip's table of contents we detect this and recover
-  rather than read bad data from the .zip (causing odd import errors).
-
 - Issue #17432: Drop UCS2 from names of Unicode functions in python3.def.
 
 - Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
