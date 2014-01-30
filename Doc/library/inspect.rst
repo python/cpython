@@ -440,8 +440,8 @@ function.
    .. note::
 
       Some callables may not be introspectable in certain implementations of
-      Python.  For example, in CPython, built-in functions defined in C provide
-      no metadata about their arguments.
+      Python.  For example, in CPython, some built-in functions defined in
+      C provide no metadata about their arguments.
 
 
 .. class:: Signature(parameters=None, \*, return_annotation=Signature.empty)
