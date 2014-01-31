@@ -1740,6 +1740,66 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'is not a Python builtin'):
             inspect.Signature.from_builtin(42)
 
+    def test_signature_from_functionlike_object(self):
+        def func(a,b, *args, kwonly=True, kwonlyreq, **kwargs):
+            pass
+
+        class funclike:
+            # Has to be callable, and have correct
+            # __code__, __annotations__, __defaults__, __name__,
+            # and __kwdefaults__ attributes
+
+            def __init__(self, func):
+                self.__name__ = func.__name__
+                self.__code__ = func.__code__
+                self.__annotations__ = func.__annotations__
+                self.__defaults__ = func.__defaults__
+                self.__kwdefaults__ = func.__kwdefaults__
+                self.func = func
+
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+        sig_func = inspect.Signature.from_function(func)
+
+        sig_funclike = inspect.Signature.from_function(funclike(func))
+        self.assertEqual(sig_funclike, sig_func)
+
+        sig_funclike = inspect.signature(funclike(func))
+        self.assertEqual(sig_funclike, sig_func)
+
+        # If object is not a duck type of function, then
+        # signature will try to get a signature for its '__call__'
+        # method
+        fl = funclike(func)
+        del fl.__defaults__
+        self.assertEqual(self.signature(fl),
+                         ((('args', ..., ..., "var_positional"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                           ...))
+
+    def test_signature_functionlike_class(self):
+        # We only want to duck type function-like objects,
+        # not classes.
+
+        def func(a,b, *args, kwonly=True, kwonlyreq, **kwargs):
+            pass
+
+        class funclike:
+            def __init__(self, marker):
+                pass
+
+            __name__ = func.__name__
+            __code__ = func.__code__
+            __annotations__ = func.__annotations__
+            __defaults__ = func.__defaults__
+            __kwdefaults__ = func.__kwdefaults__
+
+        with self.assertRaisesRegex(TypeError, 'is not a Python function'):
+            inspect.Signature.from_function(funclike)
+
+        self.assertEqual(str(inspect.signature(funclike)), '(marker)')
+
     def test_signature_on_method(self):
         class Test:
             def __init__(*args):

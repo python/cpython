@@ -793,6 +793,10 @@ callables that follow ``__signature__`` protocol. It is still
 recommended to update your code to use :func:`~inspect.signature`
 directly. (Contributed by Yury Selivanov in :issue:`17481`)
 
+:func:`~inspect.signature` now supports duck types of CPython functions,
+which adds support for functions compiled with Cython. (Contributed
+by Stefan Behnel and Yury Selivanov in :issue:`17159`)
+
 
 logging
 -------
