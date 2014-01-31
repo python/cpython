@@ -557,7 +557,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if universal_newlines:
             raise ValueError("universal_newlines must be False")
         if not shell:
-            raise ValueError("shell must be False")
+            raise ValueError("shell must be True")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
         protocol = protocol_factory()
