@@ -2097,10 +2097,14 @@ class Signature:
     def from_function(cls, func):
         '''Constructs Signature for the given python function'''
 
-        if not (isfunction(func) or _signature_is_functionlike(func)):
-            # If it's not a pure Python function, and not a duck type
-            # of pure function:
-            raise TypeError('{!r} is not a Python function'.format(func))
+        is_duck_function = False
+        if not isfunction(func):
+            if _signature_is_functionlike(func):
+                is_duck_function = True
+            else:
+                # If it's not a pure Python function, and not a duck type
+                # of pure function:
+                raise TypeError('{!r} is not a Python function'.format(func))
 
         Parameter = cls._parameter_cls
 
@@ -2164,9 +2168,11 @@ class Signature:
             parameters.append(Parameter(name, annotation=annotation,
                                         kind=_VAR_KEYWORD))
 
+        # Is 'func' is a pure Python function - don't validate the
+        # parameters list (for correct order and defaults), it should be OK.
         return cls(parameters,
                    return_annotation=annotations.get('return', _empty),
-                   __validate_parameters__=False)
+                   __validate_parameters__=is_duck_function)
 
     @classmethod
     def from_builtin(cls, func):
