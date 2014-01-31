@@ -29,6 +29,7 @@ definition of the Python bindings for the DOM and SAX interfaces.
 The XML handling submodules are:
 
 * :mod:`xml.etree.ElementTree`: the ElementTree API, a simple and lightweight
+  XML processor
 
 ..
 
