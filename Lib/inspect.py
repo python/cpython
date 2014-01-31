@@ -412,7 +412,7 @@ def classify_class_attrs(cls):
         elif isinstance(dict_obj, property):
             kind = "property"
             obj = dict_obj
-        elif isfunction(obj) or ismethoddescriptor(obj):
+        elif isroutine(obj):
             kind = "method"
         else:
             kind = "data"
