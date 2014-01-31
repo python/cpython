@@ -678,7 +678,7 @@ handling).
 functools
 ---------
 
-The new :func:`~functools.partialmethod` descriptor bring partial argument
+The new :func:`~functools.partialmethod` descriptor brings partial argument
 application to descriptors, just as :func:`~functools.partial` provides
 for normal callables. The new descriptor also makes it easier to get
 arbitrary callables (including :func:`~functools.partial` instances)
@@ -1624,4 +1624,3 @@ Changes in the C API
 * The ``f_tstate`` (thread state) field of the :c:type:`PyFrameObject`
   structure has been removed to fix a bug: see :issue:`14432` for the
   rationale.
-
