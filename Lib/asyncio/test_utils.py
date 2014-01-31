@@ -196,6 +196,7 @@ class TestLoop(base_events.BaseEventLoop):
         next(self._gen)
         self._time = 0
         self._timers = []
+        self._granularity = 1e-9
         self._selector = TestSelector()
 
         self.readers = {}
