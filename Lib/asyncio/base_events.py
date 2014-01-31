@@ -627,16 +627,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             t1 = self.time()
             # FIXME: remove these debug info (issue #20452)
             dt = t1-t0
-            if timeout is not None:
-                if dt < timeout and not event_list:
-                    print("WARNING: selector.select(timeout=%.20f) took dt=%.20f sec (dt-timeout=%+.20f)"
-                          % (timeout, dt, dt-timeout), file=sys.__stdout__)
-                    print("WARNING: dt+%.20f > timeout? %s"
-                          % (self._granularity, (dt + self._granularity) > timeout), file=sys.__stdout__)
-            else:
-                if not event_list:
-                    print("WARNING: selector.select(timeout=%r) took dt=%.20f sec"
-                          % (timeout, dt), file=sys.__stdout__)
+            if timeout is not None and dt < timeout and not event_list:
+                print("WARNING: selector.select(timeout=%.20f) took dt=%.20f sec (dt-timeout=%+.20f)"
+                      % (timeout, dt, dt-timeout), file=sys.__stdout__)
+                print("WARNING: dt+%.20f > timeout? %s"
+                      % (self._granularity, (dt + self._granularity) > timeout), file=sys.__stdout__)
             if t1-t0 >= 1:
                 level = logging.INFO
             else:
