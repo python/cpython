@@ -646,6 +646,10 @@ class TestClassesAndFunctions(unittest.TestCase):
             md = _BrokenMethodDescriptor()
 
         attrs = attrs_wo_objs(A)
+
+        self.assertIn(('__new__', 'method', object), attrs, 'missing __new__')
+        self.assertIn(('__init__', 'method', object), attrs, 'missing __init__')
+
         self.assertIn(('s', 'static method', A), attrs, 'missing static method')
         self.assertIn(('c', 'class method', A), attrs, 'missing class method')
         self.assertIn(('p', 'property', A), attrs, 'missing property')
