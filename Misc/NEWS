@@ -13,6 +13,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #20311, #20452: poll and epoll now round the timeout away from zero,
+  instead of rounding towards zero, in select and selectors modules:
+  select.epoll.poll(), selectors.PollSelector.poll() and
+  selectors.EpollSelector.poll(). For example, a timeout of one microsecond
+  (1e-6) is now rounded to one millisecondi (1e-3), instead of being rounded to
+  zero.
+
 - asyncio: Some refactoring; add write flow control to unix pipes;
   support wait_for(f, None); don't log broken/disconnected pipes; use
   ValueError instead of assert for forbidden subprocess_{shell,exec}
