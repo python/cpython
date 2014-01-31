@@ -513,7 +513,7 @@ Building values
       ``None`` is returned.
 
    ``y`` (:class:`bytes`) [char \*]
-      This converts a C string to a Python :func:`bytes` object.  If the C
+      This converts a C string to a Python :class:`bytes` object.  If the C
       string pointer is *NULL*, ``None`` is returned.
 
    ``y#`` (:class:`bytes`) [char \*, int]
