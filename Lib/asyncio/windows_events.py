@@ -1,11 +1,12 @@
 """Selector and proactor eventloops for Windows."""
 
+import _winapi
 import errno
+import math
 import socket
+import struct
 import subprocess
 import weakref
-import struct
-import _winapi
 
 from . import events
 from . import base_subprocess
@@ -325,7 +326,9 @@ class IocpProactor:
         if timeout is None:
             ms = _winapi.INFINITE
         else:
-            ms = int(timeout * 1000 + 0.5)
+            # RegisterWaitForSingleObject() has a resolution of 1 millisecond,
+            # round away from zero to wait *at least* timeout seconds.
+            ms = math.ceil(timeout * 1e3)
 
         # We only create ov so we can use ov.address as a key for the cache.
         ov = _overlapped.Overlapped(NULL)
@@ -396,7 +399,9 @@ class IocpProactor:
         elif timeout < 0:
             raise ValueError("negative timeout")
         else:
-            ms = int(timeout * 1000 + 0.5)
+            # GetQueuedCompletionStatus() has a resolution of 1 millisecond,
+            # round away from zero to wait *at least* timeout seconds.
+            ms = math.ceil(timeout * 1e3)
             if ms >= INFINITE:
                 raise ValueError("timeout too big")
         while True:
