@@ -1601,6 +1601,30 @@ def _signature_is_builtin(obj):
             obj in (type, object))
 
 
+def _signature_is_functionlike(obj):
+    # Internal helper to test if `obj` is a duck type of FunctionType.
+    # A good example of such objects are functions compiled with
+    # Cython, which have all attributes that a pure Python function
+    # would have, but have their code statically compiled.
+
+    if not callable(obj) or isclass(obj):
+        # All function-like objects are obviously callables,
+        # and not classes.
+        return False
+
+    name = getattr(obj, '__name__', None)
+    code = getattr(obj, '__code__', None)
+    defaults = getattr(obj, '__defaults__', _void) # Important to use _void ...
+    kwdefaults = getattr(obj, '__kwdefaults__', _void) # ... and not None here
+    annotations = getattr(obj, '__annotations__', None)
+
+    return (isinstance(code, types.CodeType) and
+            isinstance(name, str) and
+            (defaults is None or isinstance(defaults, tuple)) and
+            (kwdefaults is None or isinstance(kwdefaults, dict)) and
+            isinstance(annotations, dict))
+
+
 def _signature_get_bound_param(spec):
     # Internal helper to get first parameter name from a
     # __text_signature__ of a builtin method, which should
@@ -1670,7 +1694,9 @@ def signature(obj):
     if _signature_is_builtin(obj):
         return Signature.from_builtin(obj)
 
-    if isinstance(obj, types.FunctionType):
+    if isfunction(obj) or _signature_is_functionlike(obj):
+        # If it's a pure Python function, or an object that is duck type
+        # of a Python function (Cython functions, for instance), then:
         return Signature.from_function(obj)
 
     if isinstance(obj, functools.partial):
@@ -2071,7 +2097,9 @@ class Signature:
     def from_function(cls, func):
         '''Constructs Signature for the given python function'''
 
-        if not isinstance(func, types.FunctionType):
+        if not (isfunction(func) or _signature_is_functionlike(func)):
+            # If it's not a pure Python function, and not a duck type
+            # of pure function:
             raise TypeError('{!r} is not a Python function'.format(func))
 
         Parameter = cls._parameter_cls
