@@ -17,6 +17,7 @@ class ProactorSocketTransportTests(unittest.TestCase):
     def setUp(self):
         self.loop = test_utils.TestLoop()
         self.proactor = unittest.mock.Mock()
+        self.proactor.resolution = 1e-3
         self.loop._proactor = self.proactor
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = unittest.mock.Mock(socket.socket)
@@ -342,6 +343,7 @@ class BaseProactorEventLoopTests(unittest.TestCase):
     def setUp(self):
         self.sock = unittest.mock.Mock(socket.socket)
         self.proactor = unittest.mock.Mock()
+        self.proactor.resolution = 1e-3
 
         self.ssock, self.csock = unittest.mock.Mock(), unittest.mock.Mock()
 
