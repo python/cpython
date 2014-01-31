@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18801: Fix inspect.classify_class_attrs to correctly classify
+  object.__new__ and object.__init__.
+
 - Fixed cmath.isinf's name in its argument parsing code.
 
 - Issue #20311, #20452: poll and epoll now round the timeout away from zero,
