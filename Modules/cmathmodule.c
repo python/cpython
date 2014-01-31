@@ -1060,7 +1060,7 @@ static PyObject *
 cmath_isinf(PyObject *self, PyObject *args)
 {
     Py_complex z;
-    if (!PyArg_ParseTuple(args, "D:isnan", &z))
+    if (!PyArg_ParseTuple(args, "D:isinf", &z))
         return NULL;
     return PyBool_FromLong(Py_IS_INFINITY(z.real) ||
                            Py_IS_INFINITY(z.imag));
