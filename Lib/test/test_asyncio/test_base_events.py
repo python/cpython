@@ -120,8 +120,13 @@ class BaseEventLoopTests(unittest.TestCase):
         self.loop.call_at(when, cb)
         t0 = self.loop.time()
         self.loop.run_forever()
-        t1 = self.loop.time()
-        self.assertTrue(0.09 <= t1-t0 <= 0.9, t1-t0)
+        dt = self.loop.time() - t0
+        self.assertTrue(0.09 <= dt <= 0.9,
+                        # Issue #20452: add more info in case of failure,
+                        # to try to investigate the bug
+                        (dt,
+                         self.loop._granularity,
+                         time.get_clock_info('monotonic')))
 
     def test_run_once_in_executor_handle(self):
         def cb():
