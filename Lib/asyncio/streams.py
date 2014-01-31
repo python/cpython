@@ -14,6 +14,7 @@ from . import tasks
 
 _DEFAULT_LIMIT = 2**16
 
+
 class IncompleteReadError(EOFError):
     """
     Incomplete read error. Attributes:
