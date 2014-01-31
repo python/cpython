@@ -379,7 +379,6 @@ class TaskTests(unittest.TestCase):
         self.assertAlmostEqual(0.1, loop.time())
         self.assertEqual(foo_running, False)
 
-
     def test_wait_for_blocking(self):
         loop = test_utils.TestLoop()
         self.addCleanup(loop.close)
@@ -388,7 +387,9 @@ class TaskTests(unittest.TestCase):
         def coro():
             return 'done'
 
-        res = loop.run_until_complete(asyncio.wait_for(coro(), timeout=None, loop=loop))
+        res = loop.run_until_complete(asyncio.wait_for(coro(),
+                                                       timeout=None,
+                                                       loop=loop))
         self.assertEqual(res, 'done')
 
     def test_wait_for_with_global_loop(self):
@@ -490,7 +491,7 @@ class TaskTests(unittest.TestCase):
         self.assertRaises(
             ValueError, self.loop.run_until_complete,
             asyncio.wait([asyncio.sleep(10.0, loop=self.loop)],
-                       return_when=-1, loop=self.loop))
+                         return_when=-1, loop=self.loop))
 
     def test_wait_first_completed(self):
 
@@ -508,7 +509,7 @@ class TaskTests(unittest.TestCase):
         b = asyncio.Task(asyncio.sleep(0.1, loop=loop), loop=loop)
         task = asyncio.Task(
             asyncio.wait([b, a], return_when=asyncio.FIRST_COMPLETED,
-                       loop=loop),
+                         loop=loop),
             loop=loop)
 
         done, pending = loop.run_until_complete(task)
@@ -540,7 +541,7 @@ class TaskTests(unittest.TestCase):
         b = asyncio.Task(coro2(), loop=self.loop)
         task = asyncio.Task(
             asyncio.wait([b, a], return_when=asyncio.FIRST_COMPLETED,
-                       loop=self.loop),
+                         loop=self.loop),
             loop=self.loop)
 
         done, pending = self.loop.run_until_complete(task)
@@ -570,7 +571,7 @@ class TaskTests(unittest.TestCase):
         b = asyncio.Task(exc(), loop=loop)
         task = asyncio.Task(
             asyncio.wait([b, a], return_when=asyncio.FIRST_EXCEPTION,
-                       loop=loop),
+                         loop=loop),
             loop=loop)
 
         done, pending = loop.run_until_complete(task)
@@ -604,7 +605,7 @@ class TaskTests(unittest.TestCase):
 
         b = asyncio.Task(exc(), loop=loop)
         task = asyncio.wait([b, a], return_when=asyncio.FIRST_EXCEPTION,
-                          loop=loop)
+                            loop=loop)
 
         done, pending = loop.run_until_complete(task)
         self.assertEqual({b}, done)
@@ -670,7 +671,7 @@ class TaskTests(unittest.TestCase):
         @asyncio.coroutine
         def foo():
             done, pending = yield from asyncio.wait([b, a], timeout=0.11,
-                                                  loop=loop)
+                                                    loop=loop)
             self.assertEqual(done, set([a]))
             self.assertEqual(pending, set([b]))
 
@@ -874,7 +875,7 @@ class TaskTests(unittest.TestCase):
         self.addCleanup(loop.close)
 
         t = asyncio.Task(asyncio.sleep(10.0, 'yeah', loop=loop),
-                       loop=loop)
+                         loop=loop)
 
         handle = None
         orig_call_later = loop.call_later
@@ -1156,7 +1157,7 @@ class TaskTests(unittest.TestCase):
         task2 = asyncio.Task(coro2(self.loop), loop=self.loop)
 
         self.loop.run_until_complete(asyncio.wait((task1, task2),
-                                                loop=self.loop))
+                                                  loop=self.loop))
         self.assertIsNone(asyncio.Task.current_task(loop=self.loop))
 
     # Some thorough tests for cancellation propagation through
@@ -1367,7 +1368,7 @@ class GatherTestsBase:
     def test_return_exceptions(self):
         a, b, c, d = [asyncio.Future(loop=self.one_loop) for i in range(4)]
         fut = asyncio.gather(*self.wrap_futures(a, b, c, d),
-                           return_exceptions=True)
+                             return_exceptions=True)
         cb = Mock()
         fut.add_done_callback(cb)
         exc = ZeroDivisionError()

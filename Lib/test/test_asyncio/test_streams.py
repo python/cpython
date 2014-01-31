@@ -415,7 +415,7 @@ class StreamReaderTests(unittest.TestCase):
         server = MyServer(self.loop)
         server.start()
         msg = self.loop.run_until_complete(asyncio.Task(client(),
-                                                      loop=self.loop))
+                                                        loop=self.loop))
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
@@ -423,7 +423,7 @@ class StreamReaderTests(unittest.TestCase):
         server = MyServer(self.loop)
         server.start_callback()
         msg = self.loop.run_until_complete(asyncio.Task(client(),
-                                                      loop=self.loop))
+                                                        loop=self.loop))
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
