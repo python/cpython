@@ -1157,6 +1157,10 @@ class EventLoopTestsMixin:
         w.close()
 
     def test_timeout_rounding(self):
+        # FIXME: remove this imports, used for debug purpose (issue #20452)
+        import time
+        import platform
+
         def _run_once():
             self.loop._run_once_counter += 1
             orig_run_once()
@@ -1177,7 +1181,12 @@ class EventLoopTestsMixin:
 
         self.loop.run_until_complete(wait())
         calls.append(self.loop._run_once_counter)
-        self.assertEqual(calls, [1, 3, 5, 6])
+        self.assertEqual(calls, [1, 3, 5, 6],
+                         # FIXME: remove these info, used for debug purpose (issue #20452)
+                         (self.loop._granularity,
+                          self.loop._selector.resolution,
+                          time.get_clock_info('monotonic'),
+                          platform.platform()))
 
 
 class SubprocessTestsMixin:
