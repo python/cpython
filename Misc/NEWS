@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17159: inspect.signature now accepts duck types of functions,
+  which adds support for Cython functions. Initial patch by Stefan Behnel.
+
 - Issue #18801: Fix inspect.classify_class_attrs to correctly classify
   object.__new__ and object.__init__.
 
