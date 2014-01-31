@@ -620,18 +620,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                 timeout = min(timeout, deadline)
 
         # TODO: Instrumentation only in debug mode?
-        # FIXME: don't force log (issue #20452)
-        if True: #logger.isEnabledFor(logging.INFO):
+        if logger.isEnabledFor(logging.INFO):
             t0 = self.time()
             event_list = self._selector.select(timeout)
             t1 = self.time()
-            # FIXME: remove these debug info (issue #20452)
-            dt = t1-t0
-            if timeout is not None and dt < timeout and not event_list:
-                print("WARNING: selector.select(timeout=%.20f) took dt=%.20f sec (dt-timeout=%+.20f)"
-                      % (timeout, dt, dt-timeout), file=sys.__stdout__)
-                print("WARNING: dt+%.20f > timeout? %s"
-                      % (self._granularity, (dt + self._granularity) > timeout), file=sys.__stdout__)
             if t1-t0 >= 1:
                 level = logging.INFO
             else:
