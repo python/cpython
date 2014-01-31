@@ -1905,6 +1905,17 @@ class Parameter:
                                            id(self), self.name)
 
     def __eq__(self, other):
+        # NB: We deliberately do not compare '_partial_kwarg' attributes
+        # here. Imagine we have a following situation:
+        #
+        #    def foo(a, b=1): pass
+        #    def bar(a, b): pass
+        #    bar2 = functools.partial(bar, b=1)
+        #
+        # For the above scenario, signatures for `foo` and `bar2` should
+        # be equal.  '_partial_kwarg' attribute is an internal flag, to
+        # distinguish between keyword parameters with defaults and
+        # keyword parameters which got their defaults from functools.partial
         return (issubclass(other.__class__, Parameter) and
                 self._name == other._name and
                 self._kind == other._kind and
