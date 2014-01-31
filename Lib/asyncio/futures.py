@@ -301,6 +301,8 @@ class Future:
         """
         if self._state != _PENDING:
             raise InvalidStateError('{}: {!r}'.format(self._state, self))
+        if isinstance(exception, type):
+            exception = exception()
         self._exception = exception
         self._state = _FINISHED
         self._schedule_callbacks()
