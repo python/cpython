@@ -167,7 +167,7 @@ class Py2Test(unittest.TestCase):
         with warnings.catch_warnings():
             # Suppess message of py3 deprecation of parameter unpacking
             warnings.simplefilter("ignore")
-            def f((a,b), c=0.0): pass
+            exec "def f((a,b), c=0.0): pass"
         self.assertEqual(signature(f), '(<tuple>, c=0.0)')
 
 if __name__ == '__main__':
