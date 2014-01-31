@@ -28,6 +28,15 @@ from asyncio import events
 from asyncio import selector_events
 from asyncio import test_utils
 
+# FIXME: remove these info, used for debug purpose (issue #20452)
+print("time.monotonic() info: %r" % (time.get_clock_info('monotonic'),))
+try:
+    SC_CLK_TCK = os.sysconf('SC_CLK_TCK')
+    print("os.sysconf('SC_CLK_TCK') = %s" % SC_CLK_TCK)
+except Exception:
+    pass
+# FIXME: remove these info, used for debug purpose (issue #20452)
+
 
 def data_file(filename):
     if hasattr(support, 'TEST_HOME_DIR'):
@@ -1157,11 +1166,6 @@ class EventLoopTestsMixin:
         w.close()
 
     def test_timeout_rounding(self):
-        # FIXME: remove this imports, used for debug purpose (issue #20452)
-        import time
-        import platform
-        import os
-
         def _run_once():
             self.loop._run_once_counter += 1
             orig_run_once()
@@ -1182,17 +1186,10 @@ class EventLoopTestsMixin:
 
         self.loop.run_until_complete(wait())
         calls.append(self.loop._run_once_counter)
-        try:
-            SC_CLK_TCK = os.sysconf('SC_CLK_TCK')
-        except Exception:
-            SC_CLK_TCK = None
         self.assertEqual(calls, [1, 3, 5, 6],
                          # FIXME: remove these info, used for debug purpose (issue #20452)
                          (self.loop._granularity,
-                          self.loop._selector.resolution,
-                          time.get_clock_info('monotonic'),
-                          SC_CLK_TCK,
-                          platform.platform()))
+                          self.loop._selector.resolution))
 
 
 class SubprocessTestsMixin:
