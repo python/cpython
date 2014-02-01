@@ -765,6 +765,10 @@ for the :meth:`~importlib.abc.InspectLoader.get_code` method.  However,
 it will normally be desirable to override the default implementation
 for performance reasons.  (Contributed by Brett Cannon in :issue:`18072`.)
 
+The :func:`~importlib.reload` function has been moved from :mod:`imp`
+to :mod:`importlib`.  The :func:`mod.reload` name is retained for
+backward compatibility, but is deprecated.
+
 
 inspect
 -------
@@ -1062,8 +1066,10 @@ s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that returns a
 list of the loaded ``CA`` certificates.  (Contributed by Christian Heimes in
 and :issue:`18147`.)
 
-Add :func:`ssl.enum_cert_store` to retrieve certificates and CRL from Windows'
-cert store.  (Contributed by Christian Heimes in :issue:`17134`.)
+Two new windows-only functions, :func:`~ssl.enum_certificates` and
+:func:`~ssl.enum_crls` provide the ability to retrieve certificates,
+certificate information, and CRLs from the Windows cert store.  (Contributed
+by Christian Heimes in :issue:`17134`.)
 
 Support for server-side SNI using the new
 :meth:`ssl.SSLContext.set_servername_callback` method.
