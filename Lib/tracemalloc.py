@@ -182,8 +182,10 @@ class Traceback(Sequence):
         return len(self._frames)
 
     def __getitem__(self, index):
-        trace = self._frames[index]
-        return Frame(trace)
+        if isinstance(index, slice):
+            return tuple(Frame(trace) for trace in self._frames[index])
+        else:
+            return Frame(self._frames[index])
 
     def __contains__(self, frame):
         return frame._frame in self._frames
@@ -259,8 +261,10 @@ class _Traces(Sequence):
         return len(self._traces)
 
     def __getitem__(self, index):
-        trace = self._traces[index]
-        return Trace(trace)
+        if isinstance(index, slice):
+            return tuple(Trace(trace) for trace in self._traces[index])
+        else:
+            return Trace(self._traces[index])
 
     def __contains__(self, trace):
         return trace._trace in self._traces

@@ -123,7 +123,6 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertEqual(len(traceback), 1)
         self.assertEqual(traceback, obj_traceback)
 
-
     def find_trace(self, traces, traceback):
         for trace in traces:
             if trace[1] == traceback._frames:
@@ -146,7 +145,6 @@ class TestTracemallocEnabled(unittest.TestCase):
 
         tracemalloc.stop()
         self.assertEqual(tracemalloc._get_traces(), [])
-
 
     def test_get_traces_intern_traceback(self):
         # dummy wrappers to get more useful and identical frames in the traceback
@@ -503,6 +501,14 @@ class TestSnapshot(unittest.TestCase):
         self.assertEqual(str(stat),
                          'a.py:5: size=5002 B (+5000 B), count=2 (+1), average=2501 B')
 
+    def test_slices(self):
+        snapshot, snapshot2 = create_snapshots()
+        self.assertEqual(snapshot.traces[:2],
+                         (snapshot.traces[0], snapshot.traces[1]))
+
+        traceback = snapshot.traces[0].traceback
+        self.assertEqual(traceback[:2],
+                         (traceback[0], traceback[1]))
 
 
 class TestFilters(unittest.TestCase):
