@@ -441,6 +441,9 @@ Task functions
    time (in seconds).  If *result* is provided, it is produced to the caller
    when the coroutine completes.
 
+   The resolution of the sleep depends on the :ref:`granularity of the event
+   loop <asyncio-delayed-calls>`.
+
 .. function:: shield(arg, \*, loop=None)
 
    Wait for a future, shielding it from cancellation.
