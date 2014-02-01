@@ -108,6 +108,8 @@ Calls
    Like :meth:`call_soon`, but thread safe.
 
 
+.. _asyncio-delayed-calls:
+
 Delayed calls
 -------------
 
@@ -115,6 +117,20 @@ The event loop has its own internal clock for computing timeouts.
 Which clock is used depends on the (platform-specific) event loop
 implementation; ideally it is a monotonic clock.  This will generally be
 a different clock than :func:`time.time`.
+
+The granularity of the event loop depends on the resolution of the
+:meth:`~BaseEventLoop.time` method and the resolution of the selector. It is
+usually between 1 ms and 16 ms. For example, a granularity of 1 ms means that
+in the best case, the difference between the expected delay and the real
+elapsed time is between -1 ms and +1 ms: a call scheduled in 1 nanosecond may
+be called in 1 ms, and a call scheduled in 100 ms may be called in 99 ms.
+
+The granularity is the best difference in theory. In practice, it depends on
+the system load and the the time taken by tasks executed by the event loop.
+For example, if a task blocks the event loop for 1 second, all tasks scheduled
+in this second will be delayed. The :ref:`Handle correctly blocking functions
+<asyncio-handle-blocking>` section explains how to avoid such issue.
+
 
 .. method:: BaseEventLoop.call_later(delay, callback, *args)
 
@@ -290,7 +306,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    On Windows, the default event loop uses
    :class:`selectors.SelectSelector` which only supports sockets. The
-   :class:`ProactorEventLoop` should be used instead.
+   :class:`ProactorEventLoop` should be used to support subprocesses.
 
 .. note::
 

@@ -7,6 +7,8 @@ Asynchronous programming is different than classical "sequential" programming.
 This page lists common traps and explains how to avoid them.
 
 
+.. _asyncio-handle-blocking:
+
 Handle correctly blocking functions
 -----------------------------------
 
@@ -21,17 +23,20 @@ An executor can be used to run a task in a different thread or even in a
 different process, to not block the thread of the event loop. See the
 :func:`BaseEventLoop.run_in_executor` function.
 
+.. seealso::
+
+   The :ref:`Delayed calls <asyncio-delayed-calls>` section details how the
+   event loop handles time.
+
 
 .. _asyncio-logger:
 
-Logger
-------
+Logging
+-------
 
-.. data:: asyncio.logger.log
+The :mod:`asyncio` module logs information with the :mod:`logging` module in
+the logger ``'asyncio'``.
 
-   :class:`logging.Logger` instance used by :mod:`asyncio` to log messages.
-
-The logger name is ``'asyncio'``.
 
 .. _asyncio-coroutine-not-scheduled:
 
