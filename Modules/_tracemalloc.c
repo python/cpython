@@ -61,10 +61,11 @@ static PyThread_type_lock tables_lock;
    architectures: 12 bytes instead of 16. This optimization might produce
    SIGBUS on architectures not supporting unaligned memory accesses (64-bit
    IPS CPU?): on such architecture, the structure must not be packed. */
-#pragma pack(4)
 typedef struct
 #ifdef __GNUC__
 __attribute__((packed))
+#elif defined(_MSC_VER)
+_declspec(align(4))
 #endif
 {
     PyObject *filename;
