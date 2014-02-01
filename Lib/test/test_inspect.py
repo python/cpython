@@ -2193,6 +2193,9 @@ class TestSignatureObject(unittest.TestCase):
                            ('bar', 2, ..., "keyword_only")),
                           ...))
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_on_class_without_init(self):
         # Test classes without user-defined __init__ or __new__
         class C: pass
         self.assertEqual(str(inspect.signature(C)), '()')
