@@ -116,18 +116,17 @@ class BaseEventLoopTests(unittest.TestCase):
             self.loop.stop()
 
         self.loop._process_events = unittest.mock.Mock()
-        delay = 0.1
-
-        when = self.loop.time() + delay
+        when = self.loop.time() + 0.1
         self.loop.call_at(when, cb)
         t0 = self.loop.time()
         self.loop.run_forever()
         dt = self.loop.time() - t0
-
-        self.assertGreaterEqual(dt, delay - self.loop._granularity, dt)
-        # tolerate a difference of +800 ms because some Python buildbots
-        # are really slow
-        self.assertLessEqual(dt, 0.9, dt)
+        self.assertTrue(0.09 <= dt <= 0.9,
+                        # Issue #20452: add more info in case of failure,
+                        # to try to investigate the bug
+                        (dt,
+                         self.loop._granularity,
+                         time.get_clock_info('monotonic')))
 
     def test_run_once_in_executor_handle(self):
         def cb():
