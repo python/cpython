@@ -394,6 +394,12 @@ text
             ("data", "&#bad;"),
             ("endtag", "p"),
         ])
+        # add the [] as a workaround to avoid buffering (see #20288)
+        self._run_check(["<div>&#bad;</div>"], [
+            ("starttag", "div", []),
+            ("data", "&#bad;"),
+            ("endtag", "div"),
+        ])
 
     def test_unescape_function(self):
         parser = HTMLParser.HTMLParser()
