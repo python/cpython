@@ -1,5 +1,5 @@
 .. currentmodule:: asyncio
-.. _sync:
+.. _asyncio-sync:
 
 Synchronization primitives
 ==========================
