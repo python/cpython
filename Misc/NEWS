@@ -45,6 +45,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20288: fix handling of invalid numeric charrefs in HTMLParser.
+
 - Issue #20424: Python implementation of io.StringIO now supports lone surrogates.
 
 - Issue #19456: ntpath.join() now joins relative paths correctly when a drive
