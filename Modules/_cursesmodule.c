@@ -584,7 +584,7 @@ current settings for the window object.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(curses_window_addch__doc__,
-"addch(self, [x, y,] ch, [attr])\n"
+"addch([x, y,] ch, [attr])\n"
 "Paint character ch at (y, x) with attributes attr.\n"
 "\n"
 "  x\n"
@@ -651,7 +651,7 @@ exit:
 
 static PyObject *
 curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int x, int y, PyObject *ch, int group_right_1, long attr)
-/*[clinic end generated code: output=e1cdbd4f4e42fc6b input=fe7e3711d5bbf1f6]*/
+/*[clinic end generated code: output=43acb91a5c98f615 input=fe7e3711d5bbf1f6]*/
 {
     PyCursesWindowObject *cwself = (PyCursesWindowObject *)self;
     int coordinates_group = group_left_1;

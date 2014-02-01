@@ -2215,6 +2215,15 @@ _imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path, PyOb
 
 #endif /* HAVE_DYNAMIC_LOADING */
 
+/*[clinic input]
+dump buffer
+[clinic start generated code]*/
+
+#ifndef _IMP_LOAD_DYNAMIC_METHODDEF
+    #define _IMP_LOAD_DYNAMIC_METHODDEF
+#endif /* !defined(_IMP_LOAD_DYNAMIC_METHODDEF) */
+/*[clinic end generated code: output=d07c1d4a343a9579 input=524ce2e021e4eba6]*/
+
 
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib and imp.");
@@ -2230,9 +2239,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_INIT_FROZEN_METHODDEF
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
-#ifdef HAVE_DYNAMIC_LOADING
     _IMP_LOAD_DYNAMIC_METHODDEF
-#endif
     _IMP__FIX_CO_FILENAME_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
@@ -2324,3 +2331,4 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 #ifdef __cplusplus
 }
 #endif
+
