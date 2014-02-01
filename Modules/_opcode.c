@@ -11,49 +11,35 @@ module _opcode
 _opcode.stack_effect -> int
 
   opcode: int
-
-  [
-  oparg: int
-  ]
+  oparg: object = None
   /
 
 Compute the stack effect of the opcode.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_opcode_stack_effect__doc__,
-"stack_effect(module, opcode, [oparg])\n"
+"sig=($module, opcode, oparg=None)\n"
 "Compute the stack effect of the opcode.");
 
 #define _OPCODE_STACK_EFFECT_METHODDEF    \
     {"stack_effect", (PyCFunction)_opcode_stack_effect, METH_VARARGS, _opcode_stack_effect__doc__},
 
 static int
-_opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg);
+_opcode_stack_effect_impl(PyModuleDef *module, int opcode, PyObject *oparg);
 
 static PyObject *
 _opcode_stack_effect(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int opcode;
-    int group_right_1 = 0;
-    int oparg = 0;
+    PyObject *oparg = Py_None;
     int _return_value;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "i:stack_effect", &opcode))
-                goto exit;
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "ii:stack_effect", &opcode, &oparg))
-                goto exit;
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "_opcode.stack_effect requires 1 to 2 arguments");
-            goto exit;
-    }
-    _return_value = _opcode_stack_effect_impl(module, opcode, group_right_1, oparg);
+    if (!PyArg_ParseTuple(args,
+        "i|O:stack_effect",
+        &opcode, &oparg))
+        goto exit;
+    _return_value = _opcode_stack_effect_impl(module, opcode, oparg);
     if ((_return_value == -1) && PyErr_Occurred())
         goto exit;
     return_value = PyLong_FromLong((long)_return_value);
@@ -63,23 +49,31 @@ exit:
 }
 
 static int
-_opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg)
-/*[clinic end generated code: output=4689140ffda2494a input=056816407c3d4284]*/
+_opcode_stack_effect_impl(PyModuleDef *module, int opcode, PyObject *oparg)
+/*[clinic end generated code: output=4fe636f5db87c0a9 input=2d0a9ee53c0418f5]*/
 {
     int effect;
+    int oparg_int = 0;
     if (HAS_ARG(opcode)) {
-        if (!group_right_1) {
+        PyObject *i_object;
+        if (oparg == Py_None) {
             PyErr_SetString(PyExc_ValueError,
                     "stack_effect: opcode requires oparg but oparg was not specified");
             return -1;
         }
+        i_object = PyNumber_Index(oparg);
+        if (!i_object)
+            return -1;
+        oparg_int = (int)PyLong_AsLong(oparg);
+        if ((oparg_int == -1) && PyErr_Occurred())
+            return -1;
     }
-    else if (group_right_1) {
+    else if (oparg != Py_None) {
         PyErr_SetString(PyExc_ValueError,
                 "stack_effect: opcode does not permit oparg but oparg was specified");
         return -1;
     }
-    effect = PyCompile_OpcodeStackEffect(opcode, oparg);
+    effect = PyCompile_OpcodeStackEffect(opcode, oparg_int);
     if (effect == PY_INVALID_STACK_EFFECT) {
             PyErr_SetString(PyExc_ValueError,
                     "invalid opcode or oparg");

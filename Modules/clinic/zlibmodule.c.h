@@ -276,6 +276,8 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_ZLIB_COPY)
+
 PyDoc_STRVAR(zlib_Compress_copy__doc__,
 "sig=($self)\n"
 "Return a copy of the compression object.");
@@ -292,6 +294,14 @@ zlib_Compress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
     return zlib_Compress_copy_impl(self);
 }
 
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#ifndef ZLIB_COMPRESS_COPY_METHODDEF
+    #define ZLIB_COMPRESS_COPY_METHODDEF
+#endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
+
+#if defined(HAVE_ZLIB_COPY)
+
 PyDoc_STRVAR(zlib_Decompress_copy__doc__,
 "sig=($self)\n"
 "Return a copy of the decompression object.");
@@ -307,6 +317,12 @@ zlib_Decompress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 {
     return zlib_Decompress_copy_impl(self);
 }
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#ifndef ZLIB_DECOMPRESS_COPY_METHODDEF
+    #define ZLIB_DECOMPRESS_COPY_METHODDEF
+#endif /* !defined(ZLIB_DECOMPRESS_COPY_METHODDEF) */
 
 PyDoc_STRVAR(zlib_Decompress_flush__doc__,
 "sig=($self, length=DEF_BUF_SIZE)\n"
@@ -408,4 +424,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ad23316b49faf7e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21556008559f839c input=a9049054013a1b77]*/
