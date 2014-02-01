@@ -6,11 +6,6 @@ from . import tasks
 from . import transports
 
 
-STDIN = 0
-STDOUT = 1
-STDERR = 2
-
-
 class BaseSubprocessTransport(transports.SubprocessTransport):
 
     def __init__(self, loop, protocol, args, shell,
@@ -22,11 +17,11 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
         self._pipes = {}
         if stdin == subprocess.PIPE:
-            self._pipes[STDIN] = None
+            self._pipes[0] = None
         if stdout == subprocess.PIPE:
-            self._pipes[STDOUT] = None
+            self._pipes[1] = None
         if stderr == subprocess.PIPE:
-            self._pipes[STDERR] = None
+            self._pipes[2] = None
         self._pending_calls = collections.deque()
         self._finished = False
         self._returncode = None
@@ -76,19 +71,19 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         loop = self._loop
         if proc.stdin is not None:
             _, pipe = yield from loop.connect_write_pipe(
-                lambda: WriteSubprocessPipeProto(self, STDIN),
+                lambda: WriteSubprocessPipeProto(self, 0),
                 proc.stdin)
-            self._pipes[STDIN] = pipe
+            self._pipes[0] = pipe
         if proc.stdout is not None:
             _, pipe = yield from loop.connect_read_pipe(
-                lambda: ReadSubprocessPipeProto(self, STDOUT),
+                lambda: ReadSubprocessPipeProto(self, 1),
                 proc.stdout)
-            self._pipes[STDOUT] = pipe
+            self._pipes[1] = pipe
         if proc.stderr is not None:
             _, pipe = yield from loop.connect_read_pipe(
-                lambda: ReadSubprocessPipeProto(self, STDERR),
+                lambda: ReadSubprocessPipeProto(self, 2),
                 proc.stderr)
-            self._pipes[STDERR] = pipe
+            self._pipes[2] = pipe
 
         assert self._pending_calls is not None
 
