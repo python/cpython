@@ -7,6 +7,32 @@ Asynchronous programming is different than classical "sequential" programming.
 This page lists common traps and explains how to avoid them.
 
 
+.. _asyncio-multithreading:
+
+Concurrency and multithreading
+------------------------------
+
+An event loop runs in a thread and executes all callbacks and tasks in the same
+thread.  If a callback should be scheduled from a different thread, the
+:meth:`BaseEventLoop.call_soon_threadsafe` method should be used.
+
+While a task in running in the event loop, no other task is running in the same
+thread. But when the task uses ``yield from``, the task is suspended and the
+event loop executes the next task.
+
+To handle signals and to execute subprocesses, the event loop must be run in
+the main thread.
+
+The :meth:`BaseEventLoop.run_in_executor` method can be used with a thread pool
+executor to execute a callback in different thread to not block the thread of
+the event loop.
+
+.. seealso::
+
+   See the :ref:`Synchronization primitives <asyncio-sync>` section to
+   synchronize tasks.
+
+
 .. _asyncio-handle-blocking:
 
 Handle correctly blocking functions
@@ -21,7 +47,7 @@ APIs like :ref:`protocols <protocol>`.
 
 An executor can be used to run a task in a different thread or even in a
 different process, to not block the thread of the event loop. See the
-:func:`BaseEventLoop.run_in_executor` function.
+:meth:`BaseEventLoop.run_in_executor` method.
 
 .. seealso::
 
@@ -212,6 +238,4 @@ Or without ``asyncio.async()``::
         yield from close()
         yield from asyncio.sleep(2.0)
         loop.stop()
-
-.. XXX: Document "poll xxx" log message?
 
