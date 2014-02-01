@@ -10,6 +10,8 @@ import ast
 import atexit
 import collections
 import contextlib
+import copy
+import cpp
 import functools
 import hashlib
 import inspect
@@ -359,8 +361,14 @@ class Language(metaclass=abc.ABCMeta):
     stop_line = ""
     checksum_line = ""
 
+    def __init__(self, filename):
+        pass
+
     @abc.abstractmethod
     def render(self, clinic, signatures):
+        pass
+
+    def parse_line(self, line):
         pass
 
     def validate(self):
@@ -489,6 +497,30 @@ def permute_optional_groups(left, required, right):
     return tuple(accumulator)
 
 
+def strip_leading_and_trailing_blank_lines(s):
+    lines = s.rstrip().split('\n')
+    while lines:
+        line = lines[0]
+        if line.strip():
+            break
+        del lines[0]
+    return '\n'.join(lines)
+
+@functools.lru_cache()
+def normalize_snippet(s, *, indent=0):
+    """
+    Reformats s:
+        * removes leading and trailing blank lines
+        * ensures that it does not end with a newline
+        * dedents so the first nonwhite character on any line is at column "indent"
+    """
+    s = strip_leading_and_trailing_blank_lines(s)
+    s = textwrap.dedent(s)
+    if indent:
+        s = textwrap.indent(s, ' ' * indent)
+    return s
+
+
 class CLanguage(Language):
 
     body_prefix   = "#"
@@ -497,6 +529,14 @@ class CLanguage(Language):
     body_prefix   = ""
     stop_line     = "[{dsl_name} start generated code]*/"
     checksum_line = "/*[{dsl_name} end generated code: {arguments}]*/"
+
+    def __init__(self, filename):
+        super().__init__(filename)
+        self.cpp = cpp.Monitor(filename)
+        self.cpp.fail = fail
+
+    def parse_line(self, line):
+        self.cpp.writeline(line)
 
     def render(self, clinic, signatures):
         function = None
@@ -518,184 +558,6 @@ class CLanguage(Language):
         text.pop()
         add('"')
         return ''.join(text)
-
-    _templates = {}
-    # the templates will be run through str.format(),
-    # so actual curly-braces need to be doubled up.
-    templates_source = """
-__________________________________________________
-
-docstring_prototype
-
-PyDoc_VAR({c_basename}__doc__);
-__________________________________________________
-
-docstring_definition
-
-PyDoc_STRVAR({c_basename}__doc__,
-{docstring});
-__________________________________________________
-
-impl_definition
-
-static {impl_return_type}
-{c_basename}_impl({impl_parameters})
-__________________________________________________
-
-parser_prototype_noargs
-
-static PyObject *
-{c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
-__________________________________________________
-
-parser_prototype_meth_o
-
-# SLIGHT HACK
-# METH_O uses {impl_parameters} for the parser!
-
-static PyObject *
-{c_basename}({impl_parameters})
-__________________________________________________
-
-parser_prototype_varargs
-
-static PyObject *
-{c_basename}({self_type}{self_name}, PyObject *args)
-__________________________________________________
-
-parser_prototype_keyword
-
-static PyObject *
-{c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
-__________________________________________________
-
-parser_prototype_init
-
-static int
-{c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
-__________________________________________________
-
-parser_definition_simple_no_parsing
-
-{{
-    return {c_basename}_impl({impl_arguments});
-}}
-__________________________________________________
-
-parser_definition_start
-
-{{
-    {return_value_declaration}
-    {declarations}
-    {initializers}
-{empty line}
-__________________________________________________
-
-parser_definition_end
-
-    {return_conversion}
-
-{exit_label}
-    {cleanup}
-    return return_value;
-}}
-__________________________________________________
-
-parser_definition_impl_call
-
-    {modifications}
-    {return_value} = {c_basename}_impl({impl_arguments});
-__________________________________________________
-
-parser_definition_unpack_tuple
-
-    if (!PyArg_UnpackTuple(args, "{name}",
-        {unpack_min}, {unpack_max},
-        {parse_arguments}))
-        goto exit;
-__________________________________________________
-
-parser_definition_parse_tuple
-
-    if (!PyArg_ParseTuple(args,
-        "{format_units}:{name}",
-        {parse_arguments}))
-        goto exit;
-__________________________________________________
-
-parser_definition_option_groups
-    {option_group_parsing}
-
-__________________________________________________
-
-parser_definition_parse_tuple_and_keywords
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "{format_units}:{name}", _keywords,
-        {parse_arguments}))
-        goto exit;
-__________________________________________________
-
-parser_definition_no_positional
-
-    if ({self_type_check}!_PyArg_NoPositional("{name}", args))
-        goto exit;
-
-__________________________________________________
-
-parser_definition_no_keywords
-
-    if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs))
-        goto exit;
-
-__________________________________________________
-
-methoddef_define
-
-#define {methoddef_name}    \\
-    {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
-__________________________________________________
-""".rstrip()
-
-    title = ''
-    buffer = []
-    line = None
-    for line in templates_source.split('\n'):
-        line = line.rstrip()
-        if line.startswith('# '):
-            # comment
-            continue
-        if line.startswith("_____"):
-            if not buffer:
-                continue
-            assert title not in _templates, "defined template twice: " + repr(title)
-            buffer = '\n'.join(buffer).rstrip()
-            buffer = buffer.replace('{empty line}', '')
-            _templates[title] = buffer
-            buffer = []
-            title = ''
-            continue
-        if not title:
-            if not line:
-                continue
-            title = line
-            continue
-        if not (line or buffer):
-            # throw away leading blank lines
-            continue
-        buffer.append(line)
-
-    assert not title, 'ensure templates_source ends with ______ (still adding to ' + repr(title) + ")"
-
-    del templates_source
-    del title
-    del buffer
-    del line
-
-    # for name, value in _templates.items():
-    #     print(name + ":")
-    #     pprint.pprint(value)
-    #     print()
 
     def output_templates(self, f):
         parameters = list(f.parameters.values())
@@ -731,7 +593,7 @@ __________________________________________________
               converters[0].format_unit == 'O' and
               not new_or_init)
 
-        # we have to set seven things before we're done:
+        # we have to set these things before we're done:
         #
         # docstring_prototype
         # docstring_definition
@@ -740,33 +602,72 @@ __________________________________________________
         # parser_prototype
         # parser_definition
         # impl_definition
-
-        templates = self._templates
+        # cpp_if
+        # cpp_endif
+        # methoddef_ifndef
 
         return_value_declaration = "PyObject *return_value = NULL;"
 
-        methoddef_define = templates['methoddef_define']
+        methoddef_define = normalize_snippet("""
+            #define {methoddef_name}    \\
+                {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
+            """)
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
         else:
-            docstring_prototype = templates['docstring_prototype']
-            docstring_definition = templates['docstring_definition']
-        impl_definition = templates['impl_definition']
+            docstring_prototype = normalize_snippet("""
+                PyDoc_VAR({c_basename}__doc__);
+                """)
+            docstring_definition = normalize_snippet("""
+                PyDoc_STRVAR({c_basename}__doc__,
+                {docstring});
+                """)
+        impl_definition = normalize_snippet("""
+            static {impl_return_type}
+            {c_basename}_impl({impl_parameters})
+            """)
         impl_prototype = parser_prototype = parser_definition = None
 
+        parser_prototype_keyword = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
+            """)
+
+        parser_prototype_varargs = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyObject *args)
+            """)
+
+        # parser_body_fields remembers the fields passed in to the
+        # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
         def parser_body(prototype, *fields):
             nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
+
             fields = list(fields)
-            fields.insert(0, 'parser_definition_start')
-            fields.append('parser_definition_impl_call')
-            fields.append('parser_definition_end')
+            fields.insert(0, normalize_snippet("""
+                {{
+                    {return_value_declaration}
+                    {declarations}
+                    {initializers}
+                """) + "\n")
+            # just imagine--your code is here in the middle
+            fields.append(normalize_snippet("""
+                    {modifications}
+                    {return_value} = {c_basename}_impl({impl_arguments});
+                    {return_conversion}
+
+                {exit_label}
+                    {cleanup}
+                    return return_value;
+                }}
+                """))
             for field in fields:
                 add('\n')
-                add(templates[field])
+                add(field)
             return output()
 
         def insert_keywords(s):
@@ -777,26 +678,39 @@ __________________________________________________
 
             flags = "METH_NOARGS"
 
-            parser_prototype = templates['parser_prototype_noargs']
+            parser_prototype = normalize_snippet("""
+                static PyObject *
+                {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
+                """)
             parser_definition = parser_prototype
 
             if default_return_converter:
-                parser_definition = parser_prototype + '\n' + templates['parser_definition_simple_no_parsing']
+                parser_definition = parser_prototype + '\n' + normalize_snippet("""
+                    {{
+                        return {c_basename}_impl({impl_arguments});
+                    }}
+                    """)
             else:
                 parser_definition = parser_body(parser_prototype)
 
         elif meth_o:
             flags = "METH_O"
-            # impl_definition = templates['parser_prototype_meth_o']
+
+            meth_o_prototype = normalize_snippet("""
+                static PyObject *
+                {c_basename}({impl_parameters})
+                """)
 
             if default_return_converter:
                 # maps perfectly to METH_O, doesn't need a return converter.
                 # so we skip making a parse function
                 # and call directly into the impl function.
                 impl_prototype = parser_prototype = parser_definition = ''
-                impl_definition = templates['parser_prototype_meth_o']
+                impl_definition = meth_o_prototype
             else:
-                parser_prototype = templates['parser_prototype_meth_o']
+                # SLIGHT HACK
+                # use impl_parameters for the parser here!
+                parser_prototype = meth_o_prototype
                 parser_definition = parser_body(parser_prototype)
 
         elif has_option_groups:
@@ -805,9 +719,9 @@ __________________________________________________
             #  in a big switch statement)
 
             flags = "METH_VARARGS"
-            parser_prototype = templates['parser_prototype_varargs']
+            parser_prototype = parser_prototype_varargs
 
-            parser_definition = parser_body(parser_prototype, 'parser_definition_option_groups')
+            parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
         elif positional and all_boring_objects:
             # positional-only, but no option groups,
@@ -815,26 +729,47 @@ __________________________________________________
             # PyArg_UnpackTuple!
 
             flags = "METH_VARARGS"
-            parser_prototype = templates['parser_prototype_varargs']
+            parser_prototype = parser_prototype_varargs
 
-            parser_definition = parser_body(parser_prototype, 'parser_definition_unpack_tuple')
+            parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                if (!PyArg_UnpackTuple(args, "{name}",
+                    {unpack_min}, {unpack_max},
+                    {parse_arguments}))
+                    goto exit;
+                """, indent=4))
 
         elif positional:
             # positional-only, but no option groups
             # we only need one call to PyArg_ParseTuple
 
             flags = "METH_VARARGS"
-            parser_prototype = templates['parser_prototype_varargs']
+            parser_prototype = parser_prototype_varargs
 
-            parser_definition = parser_body(parser_prototype, 'parser_definition_parse_tuple')
+            parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                if (!PyArg_ParseTuple(args,
+                    "{format_units}:{name}",
+                    {parse_arguments}))
+                    goto exit;
+                """, indent=4))
 
         else:
             # positional-or-keyword arguments
             flags = "METH_VARARGS|METH_KEYWORDS"
 
-            parser_prototype = templates['parser_prototype_keyword']
+            parser_prototype = parser_prototype_keyword
 
-            parser_definition = parser_body(parser_prototype, 'parser_definition_parse_tuple_and_keywords')
+            body = normalize_snippet("""
+                if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "{format_units}:{name}", _keywords,
+                    {parse_arguments}))
+                    goto exit;
+            """, indent=4)
+            parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "{format_units}:{name}", _keywords,
+                    {parse_arguments}))
+                    goto exit;
+                """, indent=4))
             parser_definition = insert_keywords(parser_definition)
 
 
@@ -842,10 +777,13 @@ __________________________________________________
             methoddef_define = ''
 
             if f.kind == METHOD_NEW:
-                parser_prototype = templates['parser_prototype_keyword']
+                parser_prototype = parser_prototype_keyword
             else:
                 return_value_declaration = "int return_value = -1;"
-                parser_prototype = templates['parser_prototype_init']
+                parser_prototype = normalize_snippet("""
+                    static int
+                    {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
+                    """)
 
             fields = list(parser_body_fields)
             parses_positional = 'METH_NOARGS' not in flags
@@ -854,9 +792,15 @@ __________________________________________________
                 assert parses_positional
 
             if not parses_keywords:
-                fields.insert(0, 'parser_definition_no_keywords')
+                fields.insert(0, normalize_snippet("""
+                    if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs))
+                        goto exit;
+                    """, indent=4))
                 if not parses_positional:
-                    fields.insert(0, 'parser_definition_no_positional')
+                    fields.insert(0, normalize_snippet("""
+                        if ({self_type_check}!_PyArg_NoPositional("{name}", args))
+                            goto exit;
+                        """, indent=4))
 
             parser_definition = parser_body(parser_prototype, *fields)
             if parses_keywords:
@@ -867,6 +811,22 @@ __________________________________________________
             flags += '|' + f.methoddef_flags
 
         methoddef_define = methoddef_define.replace('{methoddef_flags}', flags)
+
+        methoddef_ifndef = ''
+        conditional = self.cpp.condition()
+        if not conditional:
+            cpp_if = cpp_endif = ''
+        else:
+            cpp_if = "#if " + conditional
+            cpp_endif = "#endif /* " + conditional + " */"
+
+            if methoddef_define:
+                methoddef_ifndef = normalize_snippet("""
+                    #ifndef {methoddef_name}
+                        #define {methoddef_name}
+                    #endif /* !defined({methoddef_name}) */
+                    """)
+
 
         # add ';' to the end of parser_prototype and impl_prototype
         # (they mustn't be None, but they could be an empty string.)
@@ -890,6 +850,9 @@ __________________________________________________
             "parser_prototype" : parser_prototype,
             "parser_definition" : parser_definition,
             "impl_definition" : impl_definition,
+            "cpp_if" : cpp_if,
+            "cpp_endif" : cpp_endif,
+            "methoddef_ifndef" : methoddef_ifndef,
         }
 
         # make sure we didn't forget to assign something,
@@ -1007,9 +970,8 @@ __________________________________________________
         add, output = text_accumulator()
         data = CRenderData()
 
-        parameters = list(f.parameters.values())
-        assert parameters, "We should always have a 'self' at this point!"
-
+        assert f.parameters, "We should always have a 'self' at this point!"
+        parameters = f.render_parameters
         converters = [p.converter for p in parameters]
 
         templates = self.output_templates(f)
@@ -1289,7 +1251,9 @@ class BlockParser:
 
     def _line(self):
         self.line_number += 1
-        return self.input.pop()
+        line = self.input.pop()
+        self.language.parse_line(line)
+        return line
 
     def parse_verbatim_block(self):
         add, output = text_accumulator()
@@ -1515,13 +1479,25 @@ legacy_converters = {}
 # The callable should not call builtins.print.
 return_converters = {}
 
+clinic = None
 class Clinic:
 
     presets_text = """
+preset block
+everything block
+docstring_prototype suppress
+parser_prototype suppress
+cpp_if suppress
+cpp_endif suppress
+methoddef_ifndef buffer
+
 preset original
 everything block
 docstring_prototype suppress
 parser_prototype suppress
+cpp_if suppress
+cpp_endif suppress
+methoddef_ifndef buffer
 
 preset file
 everything file
@@ -1581,12 +1557,15 @@ impl_definition block
 
         d = self.destinations.get
         self.field_destinations = collections.OrderedDict((
+            ('cpp_if', d('suppress')),
             ('docstring_prototype', d('suppress')),
             ('docstring_definition', d('block')),
             ('methoddef_define', d('block')),
             ('impl_prototype', d('block')),
             ('parser_prototype', d('suppress')),
             ('parser_definition', d('block')),
+            ('cpp_endif', d('suppress')),
+            ('methoddef_ifndef', d('buffer')),
             ('impl_definition', d('block')),
         ))
 
@@ -1752,7 +1731,7 @@ def parse_file(filename, *, force=False, verify=True, output=None, encoding='utf
         fail("Can't extract file type for file " + repr(filename))
 
     try:
-        language = extensions[extension]()
+        language = extensions[extension](filename)
     except KeyError:
         fail("Can't identify file type for file " + repr(filename))
 
@@ -1934,6 +1913,19 @@ class Function:
         self.self_converter = None
         self.suppress_signature = suppress_signature
 
+        self.rendered_parameters = None
+
+    __render_parameters__ = None
+    @property
+    def render_parameters(self):
+        if not self.__render_parameters__:
+            self.__render_parameters__ = l = []
+            for p in self.parameters.values():
+                p = p.copy()
+                p.converter.pre_render()
+                l.append(p)
+        return self.__render_parameters__
+
     @property
     def methoddef_flags(self):
         if self.kind in (METHOD_INIT, METHOD_NEW):
@@ -1951,6 +1943,25 @@ class Function:
 
     def __repr__(self):
         return '<clinic.Function ' + self.name + '>'
+
+    def copy(self, **overrides):
+        kwargs = {
+            'name': self.name, 'module': self.module, 'parameters': self.parameters,
+            'cls': self.cls, 'c_basename': self.c_basename,
+            'full_name': self.full_name,
+            'return_converter': self.return_converter, 'return_annotation': self.return_annotation,
+            'docstring': self.docstring, 'kind': self.kind, 'coexist': self.coexist,
+            'suppress_signature': self.suppress_signature,
+            }
+        kwargs.update(overrides)
+        f = Function(**kwargs)
+
+        parameters = collections.OrderedDict()
+        for name, value in f.parameters.items():
+            value = value.copy(function=f)
+            parameters[name] = value
+        f.parameters = parameters
+        return f
 
 
 class Parameter:
@@ -1976,6 +1987,34 @@ class Parameter:
     def is_keyword_only(self):
         return self.kind == inspect.Parameter.KEYWORD_ONLY
 
+    def copy(self, **overrides):
+        kwargs = {
+            'name': self.name, 'kind': self.kind, 'default':self.default,
+                 'function': self.function, 'converter': self.converter, 'annotation': self.annotation,
+                 'docstring': self.docstring, 'group': self.group,
+            }
+        kwargs.update(overrides)
+        if 'converter' not in overrides:
+            converter = copy.copy(self.converter)
+            converter.function = kwargs['function']
+            kwargs['converter'] = converter
+        return Parameter(**kwargs)
+
+
+
+class LandMine:
+    # try to access any
+    def __init__(self, message):
+        self.__message__ = message
+
+    def __repr__(self):
+        return '<LandMine ' + repr(self.__message__) + ">"
+
+    def __getattribute__(self, name):
+        if name in ('__repr__', '__message__'):
+            return super().__getattribute__(name)
+        # raise RuntimeError(repr(name))
+        fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
 
 
 def add_c_converter(f, name=None):
@@ -1994,6 +2033,8 @@ def add_default_legacy_c_converter(cls):
     if ((cls.format_unit != 'O&') and
         (cls.format_unit not in legacy_converters)):
         legacy_converters[cls.format_unit] = cls
+        if cls.format_unit:
+            legacy_converters[cls.format_unit] = cls
     return cls
 
 def add_legacy_c_converter(format_unit, **kwargs):
@@ -2005,7 +2046,8 @@ def add_legacy_c_converter(format_unit, **kwargs):
             added_f = f
         else:
             added_f = functools.partial(f, **kwargs)
-        legacy_converters[format_unit] = added_f
+        if format_unit:
+            legacy_converters[format_unit] = added_f
         return f
     return closure
 
@@ -2020,6 +2062,12 @@ class CConverter(metaclass=CConverterAutoRegister):
     must be keyword-or-positional parameters.  All other
     parameters must be keyword-only.
     """
+
+    # The C name to use for this variable.
+    name = None
+
+    # The Python name to use for this variable.
+    py_name = None
 
     # The C type to use for this variable.
     # 'type' should be a Python string specifying the type, e.g. "int".
@@ -2109,9 +2157,9 @@ class CConverter(metaclass=CConverterAutoRegister):
     signature_name = None
 
     # keep in sync with self_converter.__init__!
-    def __init__(self, name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
-        self.function = function
+    def __init__(self, name, py_name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
         self.name = name
+        self.py_name = py_name
 
         if default is not unspecified:
             if self.default_type and not isinstance(default, (self.default_type, Unknown)):
@@ -2130,7 +2178,14 @@ class CConverter(metaclass=CConverterAutoRegister):
 
         if annotation != unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
+
+        # this is deliberate, to prevent you from caching information
+        # about the function in the init.
+        # (that breaks if we get cloned.)
+        # so after this change we will noisily fail.
+        self.function = LandMine("Don't access members of self.function inside converter_init!")
         self.converter_init(**kwargs)
+        self.function = function
 
     def converter_init(self):
         pass
@@ -2174,7 +2229,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.modifications.append('/* modifications for ' + name + ' */\n' + modifications.rstrip())
 
         # keywords
-        data.keywords.append(original_name)
+        data.keywords.append(parameter.name)
 
         # format_units
         if self.is_optional() and '|' not in data.format_units:
@@ -2290,6 +2345,14 @@ class CConverter(metaclass=CConverterAutoRegister):
         If no cleanup is necessary, returns an empty string.
         """
         return ""
+
+    def pre_render(self):
+        """
+        A second initialization function, like converter_init,
+        called just before rendering.
+        You are permitted to examine self.function here.
+        """
+        pass
 
 
 class bool_converter(CConverter):
@@ -2609,12 +2672,14 @@ class self_converter(CConverter):
     type = None
     format_unit = ''
 
-
     def converter_init(self, *, type=None):
+        self.specified_type = type
+
+    def pre_render(self):
         f = self.function
         default_type, default_name = correct_name_for_self(f)
         self.signature_name = default_name
-        self.type = type or self.type or default_type
+        self.type = self.specified_type or self.type or default_type
 
         kind = self.function.kind
         new_or_init = kind in (METHOD_NEW, METHOD_INIT)
@@ -3053,7 +3118,7 @@ class DSLParser:
             return
 
         if field not in fd:
-            fail("Invalid field " + repr(field) + ", must be one of:\n  " + ", ".join(valid_fields))
+            fail("Invalid field " + repr(field) + ", must be one of:\n  preset push pop print everything " + " ".join(fd))
         fd[field] = d
 
     def directive_dump(self, name):
@@ -3132,6 +3197,18 @@ class DSLParser:
         # self.block = self.ClinicOutputBlock(self)
         if self.ignore_line(line):
             return
+
+        # is it a directive?
+        fields = shlex.split(line)
+        directive_name = fields[0]
+        directive = self.directives.get(directive_name, None)
+        if directive:
+            try:
+                directive(*fields[1:])
+            except TypeError as e:
+                fail(str(e))
+            return
+
         self.next(self.state_modulename_name, line)
 
     def state_modulename_name(self, line):
@@ -3156,17 +3233,6 @@ class DSLParser:
 
         self.indent.infer(line)
 
-        # is it a directive?
-        fields = shlex.split(line)
-        directive_name = fields[0]
-        directive = self.directives.get(directive_name, None)
-        if directive:
-            try:
-                directive(*fields[1:])
-            except TypeError as e:
-                fail(str(e))
-            return
-
         # are we cloning?
         before, equals, existing = line.rpartition('=')
         if equals:
@@ -3188,7 +3254,7 @@ class DSLParser:
                 else:
                     existing_function = None
                 if not existing_function:
-                    print("class", cls, "module", module, "exsiting", existing)
+                    print("class", cls, "module", module, "existing", existing)
                     print("cls. functions", cls.functions)
                     fail("Couldn't find existing function " + repr(existing) + "!")
 
@@ -3198,10 +3264,7 @@ class DSLParser:
 
                 if not (existing_function.kind == self.kind and existing_function.coexist == self.coexist):
                     fail("'kind' of function and cloned function don't match!  (@classmethod/@staticmethod/@coexist)")
-                self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
-                                 return_converter=existing_function.return_converter, kind=existing_function.kind, coexist=existing_function.coexist)
-
-                self.function.parameters = existing_function.parameters.copy()
+                self.function = existing_function.copy(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename, docstring='')
 
                 self.block.signatures.append(self.function)
                 (cls or module).functions.append(self.function)
@@ -3272,7 +3335,7 @@ class DSLParser:
         kwargs = {}
         if cls and type == "PyObject *":
             kwargs['type'] = cls.typedef
-        sc = self.function.self_converter = self_converter(name, self.function, **kwargs)
+        sc = self.function.self_converter = self_converter(name, name, self.function, **kwargs)
         p_self = Parameter(sc.name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
         self.function.parameters[sc.name] = p_self
 
@@ -3410,6 +3473,22 @@ class DSLParser:
             pass
         else:
             fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".a)")
+
+        # handle "as" for  parameters too
+        c_name = None
+        name, have_as_token, trailing = line.partition(' as ')
+        if have_as_token:
+            name = name.strip()
+            if ' ' not in name:
+                fields = trailing.strip().split(' ')
+                if not fields:
+                    fail("Invalid 'as' clause!")
+                c_name = fields[0]
+                if c_name.endswith(':'):
+                    name += ':'
+                    c_name = c_name[:-1]
+                fields[0] = name
+                line = ' '.join(fields)
 
         base, equals, default = line.rpartition('=')
         if not equals:
@@ -3559,7 +3638,9 @@ class DSLParser:
         legacy_str = "legacy " if legacy else ""
         if name not in dict:
             fail('{} is not a valid {}converter'.format(name, legacy_str))
-        converter = dict[name](parameter_name, self.function, value, **kwargs)
+        # if you use a c_name for the parameter, we just give that name to the converter
+        # but the parameter object gets the python name
+        converter = dict[name](c_name or parameter_name, parameter_name, self.function, value, **kwargs)
 
         kind = inspect.Parameter.KEYWORD_ONLY if self.keyword_only else inspect.Parameter.POSITIONAL_OR_KEYWORD
 
@@ -3703,7 +3784,7 @@ class DSLParser:
             return f.docstring
 
         add, output = text_accumulator()
-        parameters = list(f.parameters.values())
+        parameters = f.render_parameters
 
         ##
         ## docstring first line
@@ -3772,15 +3853,20 @@ class DSLParser:
             name = p.converter.signature_name or p.name
 
             a = []
-            if isinstance(p.converter, self_converter) and not f.suppress_signature:
-                # annotate first parameter as being a "self".
-                #
-                # if inspect.Signature gets this function, and it's already bound,
-                # the self parameter will be stripped off.
-                #
-                # if it's not bound, it should be marked as positional-only.
-                a.append('$')
-            a.append(name)
+            if isinstance(p.converter, self_converter):
+                if f.suppress_signature:
+                    continue
+                else:
+                    # annotate first parameter as being a "self".
+                    #
+                    # if inspect.Signature gets this function, and it's already bound,
+                    # the self parameter will be stripped off.
+                    #
+                    # if it's not bound, it should be marked as positional-only.
+                    a.append('$')
+                    a.append(name)
+            else:
+                a.append(name)
             if p.converter.is_optional():
                 a.append('=')
                 value = p.converter.py_default

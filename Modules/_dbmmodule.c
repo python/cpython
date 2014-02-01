@@ -52,10 +52,11 @@ static PyObject *DbmError;
 /*[python input]
 class dbmobject_converter(self_converter):
     type = "dbmobject *"
-    def converter_init(self):
+    def pre_render(self):
+        super().pre_render()
         self.name = 'dp'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=8a69ac1827811128]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=6ad536357913879a]*/
 
 static PyObject *
 newdbmobject(const char *file, int flags, int mode)
@@ -270,23 +271,21 @@ dbm.dbm.get
     self: dbmobject
 
     key: str(length=True)
-    [
-    default: object
-    ]
+    default: object = None
     /
 
 Return the value for key if present, otherwise default.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dbm_dbm_get__doc__,
-"get(self, key, [default])\n"
+"sig=($self, key, default=None)\n"
 "Return the value for key if present, otherwise default.");
 
 #define DBM_DBM_GET_METHODDEF    \
     {"get", (PyCFunction)dbm_dbm_get, METH_VARARGS, dbm_dbm_get__doc__},
 
 static PyObject *
-dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value);
+dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, PyObject *default_value);
 
 static PyObject *
 dbm_dbm_get(dbmobject *dp, PyObject *args)
@@ -294,37 +293,24 @@ dbm_dbm_get(dbmobject *dp, PyObject *args)
     PyObject *return_value = NULL;
     const char *key;
     Py_ssize_clean_t key_length;
-    int group_right_1 = 0;
-    PyObject *default_value = NULL;
+    PyObject *default_value = Py_None;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "s#:get", &key, &key_length))
-                goto exit;
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "s#O:get", &key, &key_length, &default_value))
-                goto exit;
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "dbm.dbm.get requires 1 to 2 arguments");
-            goto exit;
-    }
-    return_value = dbm_dbm_get_impl(dp, key, key_length, group_right_1, default_value);
+    if (!PyArg_ParseTuple(args,
+        "s#|O:get",
+        &key, &key_length, &default_value))
+        goto exit;
+    return_value = dbm_dbm_get_impl(dp, key, key_length, default_value);
 
 exit:
     return return_value;
 }
 
 static PyObject *
-dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
-/*[clinic end generated code: output=31d5180d6b36f1ea input=43a561dc2bd1db3b]*/
+dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, PyObject *default_value)
+/*[clinic end generated code: output=2bbaf9a187f9b6bf input=aecf5efd2f2b1a3b]*/
 {
     datum dbm_key, val;
 
-    if (!group_right_1)
-        default_value = Py_None;
     dbm_key.dptr = (char *)key;
     dbm_key.dsize = key_length;
     check_dbmobject_open(dp);

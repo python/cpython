@@ -13,6 +13,7 @@ import sys
 import unittest
 from unittest import TestCase
 
+
 class FakeConverter:
     def __init__(self, name, args):
         self.name = name
@@ -41,10 +42,11 @@ class FakeClinic:
     def __init__(self):
         self.converters = FakeConvertersDict()
         self.legacy_converters = FakeConvertersDict()
-        self.language = clinic.CLanguage()
+        self.language = clinic.CLanguage(None)
         self.filename = None
         self.block_parser = clinic.BlockParser('', self.language)
         self.modules = collections.OrderedDict()
+        self.classes = collections.OrderedDict()
         clinic.clinic = self
         self.name = "FakeClinic"
         self.line_prefix = self.line_suffix = ''
@@ -92,7 +94,7 @@ class ClinicWholeFileTest(TestCase):
         # so it woudl spit out an end line for you.
         # and since you really already had one,
         # the last line of the block got corrupted.
-        c = clinic.Clinic(clinic.CLanguage())
+        c = clinic.Clinic(clinic.CLanguage(None))
         raw = "/*[clinic]\nfoo\n[clinic]*/"
         cooked = c.parse(raw).splitlines()
         end_line = cooked[2].rstrip()
@@ -220,7 +222,7 @@ class CopyParser:
 
 class ClinicBlockParserTest(TestCase):
     def _test(self, input, output):
-        language = clinic.CLanguage()
+        language = clinic.CLanguage(None)
 
         blocks = list(clinic.BlockParser(input, language))
         writer = clinic.BlockPrinter(language)
@@ -250,7 +252,7 @@ xyz
 """)
 
     def _test_clinic(self, input, output):
-        language = clinic.CLanguage()
+        language = clinic.CLanguage(None)
         c = clinic.Clinic(language)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
@@ -265,7 +267,7 @@ xyz
 def
 [copy start generated code]*/
 abc
-/*[copy end generated code: checksum=03cfd743661f07975fa2f1220c5194cbaff48451]*/
+/*[copy end generated code: output=03cfd743661f0797 input=7b18d017f89f61cf]*/
 xyz
 """, """
     verbatim text here
@@ -274,7 +276,7 @@ xyz
 def
 [copy start generated code]*/
 def
-/*[copy end generated code: checksum=7b18d017f89f61cf17d47f92749ea6930a3f1deb]*/
+/*[copy end generated code: output=7b18d017f89f61cf input=7b18d017f89f61cf]*/
 xyz
 """)
 
@@ -297,7 +299,7 @@ class ClinicParserTest(TestCase):
     def test_param(self):
         function = self.parse_function("module os\nos.access\n   path: int")
         self.assertEqual("access", function.name)
-        self.assertEqual(1, len(function.parameters))
+        self.assertEqual(2, len(function.parameters))
         p = function.parameters['path']
         self.assertEqual('path', p.name)
         self.assertIsInstance(p.converter, clinic.int_converter)
@@ -326,10 +328,21 @@ class ClinicParserTest(TestCase):
 module os
 os.access
     follow_symlinks: bool = True
-    something_else: str""")
+    something_else: str = ''""")
         p = function.parameters['follow_symlinks']
-        self.assertEqual(2, len(function.parameters))
+        self.assertEqual(3, len(function.parameters))
         self.assertIsInstance(function.parameters['something_else'].converter, clinic.str_converter)
+
+    def test_param_default_parameters_out_of_order(self):
+        s = self.parse_function_should_fail("""
+module os
+os.access
+    follow_symlinks: bool = True
+    something_else: str""")
+        self.assertEqual(s, """Error on line 0:
+Can't have a parameter without a default ('something_else')
+after a parameter with a default!
+""")
 
     def disabled_test_converter_arguments(self):
         function = self.parse_function("module os\nos.access\n    path: path_t(allow_fd=1)")
@@ -346,7 +359,7 @@ os.stat as os_stat_fn
 
 Perform a stat system call on the given path.""")
         self.assertEqual("""
-stat(path)
+sig=($module, path)
 Perform a stat system call on the given path.
 
   path
@@ -366,7 +379,7 @@ This is the documentation for foo.
 Okay, we're done here.
 """)
         self.assertEqual("""
-bar(x, y)
+sig=($module, x, y)
 This is the documentation for foo.
 
   x
@@ -382,7 +395,7 @@ os.stat
     path: str
 This/used to break Clinic!
 """)
-        self.assertEqual("os.stat(path)\n\nThis/used to break Clinic!", function.docstring)
+        self.assertEqual("sig=($module, path)\n\nThis/used to break Clinic!", function.docstring)
 
     def test_c_name(self):
         function = self.parse_function("module os\nos.stat as os_stat_fn")
@@ -538,7 +551,7 @@ foo.two_top_groups_on_left
             """)
         self.assertEqual(s,
             ('Error on line 0:\n'
-            'Function two_top_groups_on_left has an unsupported group configuration. (Unexpected state 2)\n'))
+            'Function two_top_groups_on_left has an unsupported group configuration. (Unexpected state 2.b)\n'))
 
     def test_disallowed_grouping__two_top_groups_on_right(self):
         self.parse_function_should_fail("""
@@ -611,8 +624,8 @@ foo.bar
 Docstring
 
 """)
-        self.assertEqual("bar()\nDocstring", function.docstring)
-        self.assertEqual(0, len(function.parameters))
+        self.assertEqual("sig=($module)\nDocstring", function.docstring)
+        self.assertEqual(1, len(function.parameters)) # self!
 
     def test_illegal_module_line(self):
         self.parse_function_should_fail("""
@@ -706,7 +719,7 @@ foo.bar
   Not at column 0!
 """)
         self.assertEqual("""
-bar(x, *, y)
+sig=($module, x, *, y)
 Not at column 0!
 
   x
@@ -720,7 +733,7 @@ os.stat
     path: str
 This/used to break Clinic!
 """)
-        self.assertEqual("stat(path)\nThis/used to break Clinic!", function.docstring)
+        self.assertEqual("sig=($module, path)\nThis/used to break Clinic!", function.docstring)
 
     def test_directive(self):
         c = FakeClinic()

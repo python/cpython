@@ -95,6 +95,20 @@ Tests
 Tools/Demos
 -----------
 
+- #Issue 20456: Argument Clinic now observes the C preprocessor conditional
+  compilation statements of the C files it parses.  When a Clinic block is
+  inside a conditional code, it adjusts its output to match, including
+  automatically generating an empty methoddef macro.
+
+- #Issue 20456: Cloned functions in Argument Clinic now use the correct
+  name, not the name of the function they were cloned from, for text
+  strings inside generated code.
+
+- #Issue 20456: Fixed Argument Clinic's test suite and "--converters" feature.
+
+- #Issue 20456: Argument Clinic now allows specifying different names
+  for a parameter in Python and C, using "as" on the parameter line.
+
 - Issue #20326: Argument Clinic now uses a simple, unique signature to
   annotate text signatures in docstrings, resulting in fewer false
   positives.  "self" parameters are also explicitly marked, allowing

@@ -2366,21 +2366,26 @@ class path_t_converter(CConverter):
     converter = 'path_converter'
 
     def converter_init(self, *, allow_fd=False, nullable=False):
-        def strify(value):
-            return str(int(bool(value)))
-
         # right now path_t doesn't support default values.
         # to support a default value, you'll need to override initialize().
+        if self.default is not unspecified:
+            fail("Can't specify a default to the path_t converter!")
 
-        assert self.default is unspecified
+        if self.c_default is not None:
+            fail("Can't specify a c_default to the path_t converter!")
 
         self.nullable = nullable
         self.allow_fd = allow_fd
 
+    def pre_render(self):
+        def strify(value):
+            return str(int(bool(value)))
+
+        # add self.py_name here when merging with posixmodule conversion
         self.c_default = 'PATH_T_INITIALIZE("{}", {}, {})'.format(
             self.function.name,
-            strify(nullable),
-            strify(allow_fd),
+            strify(self.nullable),
+            strify(self.allow_fd),
             )
 
     def cleanup(self):
@@ -2397,7 +2402,7 @@ class dir_fd_converter(CConverter):
 
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d702d58a8469cc7d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=5c9f456f53244fc3]*/
 
 /*[clinic input]
 
@@ -11121,6 +11126,15 @@ posix_set_handle_inheritable(PyObject *self, PyObject *args)
 }
 #endif   /* MS_WINDOWS */
 
+
+/*[clinic input]
+dump buffer
+[clinic start generated code]*/
+
+#ifndef OS_TTYNAME_METHODDEF
+    #define OS_TTYNAME_METHODDEF
+#endif /* !defined(OS_TTYNAME_METHODDEF) */
+/*[clinic end generated code: output=5d071bbc8f49ea12 input=524ce2e021e4eba6]*/
 
 
 static PyMethodDef posix_methods[] = {
