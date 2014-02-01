@@ -399,7 +399,7 @@ siphash24(const void *src, Py_ssize_t src_sz) {
         case 7: pt[6] = m[6];
         case 6: pt[5] = m[5];
         case 5: pt[4] = m[4];
-        case 4: *((PY_UINT32_T*)&pt[0]) = *((PY_UINT32_T*)&m[0]); break;
+        case 4: Py_MEMCPY(pt, m, sizeof(PY_UINT32_T)); break;
         case 3: pt[2] = m[2];
         case 2: pt[1] = m[1];
         case 1: pt[0] = m[0];

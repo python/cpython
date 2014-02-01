@@ -10,6 +10,9 @@ Release date: 2014-02-09
 Core and Builtins
 -----------------
 
+- Issue #20162: Fix an alignment issue in the siphash24() hash function which
+  caused a crash on PowerPC 64-bit (ppc64).
+
 Library
 -------
 
