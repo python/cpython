@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20354: Fix an alignment issue in the tracemalloc module on 64-bit
+  platforms. Bug seen on 64-bit Linux when using "make profile-opt".
+
 - Issue #17159: inspect.signature now accepts duck types of functions,
   which adds support for Cython functions. Initial patch by Stefan Behnel.
 
