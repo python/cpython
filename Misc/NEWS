@@ -72,9 +72,6 @@ Library
 - Issue #15304: concurrent.futures.wait() can block forever even if
   Futures have completed. Patch by Glenn Langford.
 
-Fix warning message when `os.chdir()` fails inside
-  `test.support.temp_cwd()`.  Patch by Chris Jerdonek.
-
 IDLE
 ----
 
