@@ -9,7 +9,7 @@ Streams (high-level API)
 Stream functions
 ================
 
-.. function:: open_connection(host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+.. function:: open_connection(host=None, port=None, \*, loop=None, limit=None, **kwds)
 
    A wrapper for :meth:`~BaseEventLoop.create_connection()` returning a (reader,
    writer) pair.
@@ -32,7 +32,7 @@ Stream functions
 
    This function returns a :ref:`coroutine object <coroutine>`.
 
-.. function:: start_server(client_connected_cb, host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+.. function:: start_server(client_connected_cb, host=None, port=None, \*, loop=None, limit=None, **kwds)
 
    Start a socket server, call back for each client connected.
 
@@ -62,7 +62,7 @@ Stream functions
 StreamReader
 ============
 
-.. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
+.. class:: StreamReader(limit=None, loop=None)
 
    .. method:: exception()
 
