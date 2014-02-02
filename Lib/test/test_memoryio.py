@@ -551,6 +551,7 @@ class TextIOTestMixin:
         self.assertEqual(3, memio.write("c\rd"))
         memio.seek(0)
         self.assertEqual(memio.read(), "a\nb\nc\nd")
+        self.assertEqual(memio.getvalue(), "a\nb\nc\nd")
         memio = self.ioclass("a\r\nb", newline=None)
         self.assertEqual(memio.read(3), "a\nb")
 
@@ -562,6 +563,7 @@ class TextIOTestMixin:
         self.assertEqual(memio.read(4), "a\nb\r")
         self.assertEqual(memio.read(2), "\nc")
         self.assertEqual(memio.read(1), "\r")
+        self.assertEqual(memio.getvalue(), "a\nb\r\nc\rd")
         memio = self.ioclass(newline="")
         self.assertEqual(2, memio.write("a\n"))
         self.assertEqual(2, memio.write("b\r"))
@@ -581,6 +583,9 @@ class TextIOTestMixin:
         self.assertEqual(memio.read(), "a\rb\r\rc\rd")
         memio.seek(0)
         self.assertEqual(list(memio), ["a\r", "b\r", "\r", "c\r", "d"])
+        memio.seek(0)
+        self.assertEqual(memio.readlines(), ["a\r", "b\r", "\r", "c\r", "d"])
+        self.assertEqual(memio.getvalue(), "a\rb\r\rc\rd")
 
     def test_newline_crlf(self):
         # newline="\r\n"
@@ -588,11 +593,15 @@ class TextIOTestMixin:
         self.assertEqual(memio.read(), "a\r\nb\r\r\nc\rd")
         memio.seek(0)
         self.assertEqual(list(memio), ["a\r\n", "b\r\r\n", "c\rd"])
+        memio.seek(0)
+        self.assertEqual(memio.readlines(), ["a\r\n", "b\r\r\n", "c\rd"])
+        self.assertEqual(memio.getvalue(), "a\r\nb\r\r\nc\rd")
 
     def test_issue5265(self):
         # StringIO can duplicate newlines in universal newlines mode
         memio = self.ioclass("a\r\nb\r\n", newline=None)
         self.assertEqual(memio.read(5), "a\nb\n")
+        self.assertEqual(memio.getvalue(), "a\nb\n")
 
     def test_newline_argument(self):
         self.assertRaises(TypeError, self.ioclass, newline=b"\n")
