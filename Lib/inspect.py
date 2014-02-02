@@ -1594,8 +1594,9 @@ def _signature_bound_method(sig):
 def _signature_is_builtin(obj):
     # Internal helper to test if `obj` is a callable that might
     # support Argument Clinic's __text_signature__ protocol.
-    return (isinstance(obj, _NonUserDefinedCallables) or
+    return (isbuiltin(obj) or
             ismethoddescriptor(obj) or
+            isinstance(obj, _NonUserDefinedCallables) or
             # Can't test 'isinstance(type)' here, as it would
             # also be True for regular python classes
             obj in (type, object))
