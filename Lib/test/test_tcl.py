@@ -19,6 +19,21 @@ except ValueError:
     pass
 tcl_version = tuple(tcl_version)
 
+_tk_patchlevel = None
+def get_tk_patchlevel():
+    global _tk_patchlevel
+    if _tk_patchlevel is None:
+        tcl = Tcl()
+        patchlevel = []
+        for x in tcl.call('info', 'patchlevel').split('.'):
+            try:
+                x = int(x, 10)
+            except ValueError:
+                x = -1
+            patchlevel.append(x)
+        _tk_patchlevel = tuple(patchlevel)
+    return _tk_patchlevel
+
 
 class TkinterTest(unittest.TestCase):
 
@@ -272,10 +287,16 @@ class TclTest(unittest.TestCase):
                 ('1', '2', '3.4')),
         ]
         if tcl_version >= (8, 5):
+            if not self.wantobjects:
+                expected = ('12', '\xe2\x82\xac', '\xe2\x82\xac', '3.4')
+            elif get_tk_patchlevel() < (8, 5, 5):
+                # Before 8.5.5 dicts were converted to lists through string
+                expected = ('12', u'\u20ac', u'\u20ac', '3.4')
+            else:
+                expected = (12, u'\u20ac', u'\u20ac', (3.4,))
             testcases += [
-                (call('dict', 'create', 1, u'\u20ac', '\xe2\x82\xac', (3.4,)),
-                    (1, u'\u20ac', u'\u20ac', (3.4,)) if self.wantobjects else
-                    ('1', '\xe2\x82\xac', '\xe2\x82\xac', '3.4')),
+                (call('dict', 'create', 12, u'\u20ac', '\xe2\x82\xac', (3.4,)),
+                    expected),
             ]
         for arg, res in testcases:
             self.assertEqual(splitlist(arg), res)
@@ -312,10 +333,16 @@ class TclTest(unittest.TestCase):
                 ('1', '2', '3.4')),
         ]
         if tcl_version >= (8, 5):
+            if not self.wantobjects:
+                expected = ('12', '\xe2\x82\xac', '\xe2\x82\xac', '3.4')
+            elif get_tk_patchlevel() < (8, 5, 5):
+                # Before 8.5.5 dicts were converted to lists through string
+                expected = ('12', u'\u20ac', u'\u20ac', '3.4')
+            else:
+                expected = (12, u'\u20ac', u'\u20ac', (3.4,))
             testcases += [
                 (call('dict', 'create', 12, u'\u20ac', '\xe2\x82\xac', (3.4,)),
-                    (12, u'\u20ac', u'\u20ac', (3.4,)) if self.wantobjects else
-                    ('12', '\xe2\x82\xac', '\xe2\x82\xac', '3.4')),
+                    expected),
             ]
         for arg, res in testcases:
             self.assertEqual(split(arg), res)
