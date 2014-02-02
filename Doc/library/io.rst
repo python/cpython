@@ -849,13 +849,14 @@ Text I/O
       Whether line buffering is enabled.
 
 
-.. class:: StringIO(initial_value='', newline=None)
+.. class:: StringIO(initial_value='', newline='\\n')
 
    An in-memory stream for text I/O.
 
    The initial value of the buffer (an empty string by default) can be set by
    providing *initial_value*.  The *newline* argument works like that of
-   :class:`TextIOWrapper`.  The default is to do no newline translation.
+   :class:`TextIOWrapper`.  The default is to consider only ``\n`` characters
+   as end of lines and to do no newline translation.
 
    :class:`StringIO` provides this method in addition to those from
    :class:`TextIOBase` and its parents:
