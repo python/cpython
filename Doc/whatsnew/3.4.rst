@@ -765,9 +765,9 @@ for the :meth:`~importlib.abc.InspectLoader.get_code` method.  However,
 it will normally be desirable to override the default implementation
 for performance reasons.  (Contributed by Brett Cannon in :issue:`18072`.)
 
-The :func:`~importlib.reload` function has been moved from :mod:`imp`
-to :mod:`importlib`.  The :func:`mod.reload` name is retained for
-backward compatibility, but is deprecated.
+The :func:`~importlib.reload` function has been moved from :mod:`imp` to
+:mod:`importlib` as part of the :mod:`imp` module deprecation.  (Contributed by
+Berker Peksag in :issue:`18193`.)
 
 
 inspect
