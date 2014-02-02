@@ -353,6 +353,11 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    This method returns a :ref:`coroutine object <coroutine>`.
 
+.. seealso::
+
+   The :func:`create_subprocess_exec` and :func:`create_subprocess_shell`
+   functions.
+
 
 UNIX signals
 ------------
