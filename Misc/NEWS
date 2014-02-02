@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20435: Fix _pyio.StringIO.getvalue() to take into account newline
+  translation settings.
+
 - tracemalloc: Fix slicing traces and fix slicing a traceback.
 
 - Issue #20354: Fix an alignment issue in the tracemalloc module on 64-bit
