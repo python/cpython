@@ -761,7 +761,6 @@ This extended error description will be formatted using the
 of the error response.  (Contributed by Karl Cow in :issue:`12921`.)
 
 
-
 importlib
 ---------
 
@@ -780,10 +779,19 @@ The :func:`~importlib.reload` function has been moved from :mod:`imp` to
 :mod:`importlib` as part of the :mod:`imp` module deprecation.  (Contributed by
 Berker Peksag in :issue:`18193`.)
 
+:mod:`importlib.util` now has a :data:`~importlib.util.MAGIC_NUMBER` attribute
+providing access to the bytecode version number.  This replaces the
+:func:`~imp.get_magic` function in the deprecated :mod:`imp` module.
+(Contributed by Brett Cannon in :issue:`18192`.)
+
+New :mod:`importlib.util` functions :func:`~importlib.util.cache_from_source`
+and :func:`~importlib.util.source_from_cache` replace the same-named functions
+in the deprecated :mod:`imp` module.  (Contributed by Brett Cannon in
+:issue:`18194`.)
+
 
 inspect
 -------
-
 
 The inspect module now offers a basic :ref:`command line interface
 <inspect-module-cli>` to quickly display source code and other
