@@ -2346,7 +2346,7 @@ Library
 - Issue #18339: Negative ints keys in unpickler.memo dict no longer cause a
   segfault inside the _pickle C extension.
 
-- Issue 18240: The HMAC module is no longer restricted to bytes and accepts
+- Issue #18240: The HMAC module is no longer restricted to bytes and accepts
   any bytes-like object, e.g. memoryview. Original patch by Jonas Borgström.
 
 - Issue #18224: Removed pydoc script from created venv, as it causes problems
