@@ -1116,6 +1116,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/audiodata \
 		test/capath test/data \
 		test/cjkencodings test/decimaltestdata test/xmltestdata \
+		test/imghdrdata \
 		test/subprocessdata test/sndhdrdata test/support \
 		test/tracedmodules test/encoded_modules \
 		test/namespace_pkgs \
