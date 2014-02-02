@@ -43,7 +43,7 @@ blocks for 1 second, other tasks are delayed by 1 second which can have an
 important impact on reactivity.
 
 For networking and subprocesses, the :mod:`asyncio` module provides high-level
-APIs like :ref:`protocols <protocol>`.
+APIs like :ref:`protocols <asyncio-protocol>`.
 
 An executor can be used to run a task in a different thread or even in a
 different process, to not block the thread of the event loop. See the
