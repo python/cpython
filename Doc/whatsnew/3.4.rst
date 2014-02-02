@@ -675,6 +675,17 @@ handling).
 (Contributed by R. David Murray in :issue:`18891`.)
 
 
+filecmp
+-------
+
+A new :func:`~filecmp.clear_cache` function provides the ability to clear the
+:mod:`filecmp` comparison cache, which uses :func:`os.stat` information to
+determine if the file has changed since the last compare.  This can be used,
+for example, if the file might have been changed and re-checked in less time
+than the resolution of a particular filesystem's file modification time field.
+(Contributed by Mark Levitt in :issue:`18149`.)
+
+
 functools
 ---------
 
