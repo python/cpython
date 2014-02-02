@@ -81,7 +81,8 @@ source.
    the implementation may not always enforce this (e.g. it may allow you to
    use a name that includes a hyphen).
 
-   Package names are also permitted. When a package name is supplied instead
+   Package names (including namespace packages) are also permitted. When a
+   package name is supplied instead
    of a normal module, the interpreter will execute ``<pkg>.__main__`` as
    the main module. This behaviour is deliberately similar to the handling
    of directories and zipfiles that are passed to the interpreter as the
@@ -114,6 +115,9 @@ source.
 
    .. versionchanged:: 3.1
       Supply the package name to run a ``__main__`` submodule.
+
+   .. versionchanged:: 3.4
+      namespace packages are also supported
 
 
 .. describe:: -

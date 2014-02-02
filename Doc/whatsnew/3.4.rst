@@ -789,6 +789,11 @@ and :func:`~importlib.util.source_from_cache` replace the same-named functions
 in the deprecated :mod:`imp` module.  (Contributed by Brett Cannon in
 :issue:`18194`.)
 
+The :mod:`importlib` bootstrap :class:`.NamespaceLoader` now conforms to
+the :class:`.InspectLoader` ABC, which means that ``runpy`` and
+``python -m`` can now be used with namespace packages.  (Contributed
+by Brett Cannon in :issue:`18058`.)
+
 
 inspect
 -------
@@ -1379,6 +1384,8 @@ Other Improvements
   also checks for memory allocation leaks, using
   :func:`sys.getallocatedblocks()`.  (Contributed by Antoine Pitrou in
   :issue:`13390`).
+
+* ``python -m`` now works with namespace packages.
 
 
 
