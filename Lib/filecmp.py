@@ -43,8 +43,8 @@ def cmp(f1, f2, shallow=True):
     True if the files are the same, False otherwise.
 
     This function uses a cache for past comparisons and the results,
-    with a cache invalidation mechanism relying on stale signatures
-    or by explicitly calling clear_cache().
+    with cache entries invalidated if their stat information
+    changes.  The cache may be cleared by calling clear_cache().
 
     """
 
