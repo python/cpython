@@ -286,6 +286,9 @@ Library
 IDLE
 ----
 
+- Update the python.gif icon for the Idle classbrowser and pathbowser
+  from the old green snake to the new new blue and yellow snakes.
+
 - Issue #17721: Remove non-functional configuration dialog help button until we
   make it actually gives some help when clicked. Patch by Guilherme Simões.
 
