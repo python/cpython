@@ -791,14 +791,14 @@ Text I/O
       Whether line buffering is enabled.
 
 
-.. class:: StringIO(initial_value=u'', newline=None)
+.. class:: StringIO(initial_value=u'', newline=u'\\n')
 
    An in-memory stream for unicode text.  It inherits :class:`TextIOWrapper`.
 
    The initial value of the buffer (an empty unicode string by default) can
    be set by providing *initial_value*.  The *newline* argument works like
-   that of :class:`TextIOWrapper`.  The default is to do no newline
-   translation.
+   that of :class:`TextIOWrapper`.  The default is to consider only ``\n``
+   characters as end of lines and to do no newline translation.
 
    :class:`StringIO` provides this method in addition to those from
    :class:`TextIOWrapper` and its parents:
