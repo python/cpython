@@ -15,10 +15,10 @@ code using coroutines, multiplexing I/O access over sockets and other
 resources, running network clients and servers, and other related primitives.
 Here is a more detailed list of the package contents:
 
-* a pluggable :ref:`event loop <event-loop>` with various system-specific
+* a pluggable :ref:`event loop <asyncio-event-loop>` with various system-specific
   implementations;
 
-* :ref:`transport <transport>` and :ref:`protocol <protocol>` abstractions
+* :ref:`transport <asyncio-transport>` and :ref:`protocol <asyncio-protocol>` abstractions
   (similar to those in `Twisted <http://twistedmatrix.com/>`_);
 
 * concrete support for TCP, UDP, SSL, subprocess pipes, delayed calls, and
@@ -32,7 +32,7 @@ Here is a more detailed list of the package contents:
 
 * cancellation support for Futures and coroutines;
 
-* :ref:`synchronization primitives <sync>` for use between coroutines in
+* :ref:`synchronization primitives <asyncio-sync>` for use between coroutines in
   a single thread, mimicking those in the :mod:`threading` module;
 
 * an interface for passing work off to a threadpool, for times when

@@ -4,7 +4,7 @@
 Transports  and protocols (low-level API)
 +++++++++++++++++++++++++++++++++++++++++
 
-.. _transport:
+.. _asyncio-transport:
 
 Transports
 ==========
@@ -16,7 +16,7 @@ which will create the transport and try to initiate the underlying
 communication channel, calling you back when it succeeds.
 
 Once the communication channel is established, a transport is always
-paired with a :ref:`protocol <protocol>` instance.  The protocol can
+paired with a :ref:`protocol <asyncio-protocol>` instance.  The protocol can
 then call the transport's methods for various purposes.
 
 :mod:`asyncio` currently implements transports for TCP, UDP, SSL, and
@@ -228,14 +228,14 @@ BaseSubprocessTransport
       stop the subprocess.
 
 
-.. _protocol:
+.. _asyncio-protocol:
 
 Protocols
 =========
 
 :mod:`asyncio` provides base classes that you can subclass to implement
 your network protocols.  Those classes are used in conjunction with
-:ref:`transports <transport>` (see below): the protocol parses incoming
+:ref:`transports <asyncio-transport>` (see below): the protocol parses incoming
 data and asks for the writing of outgoing data, while the transport is
 responsible for the actual I/O and buffering.
 
@@ -410,7 +410,7 @@ Coroutines can be scheduled in a protocol method using :func:`async`, but there
 is not guarantee on the execution order. Protocols are not aware of coroutines
 created in protocol methods and so will not wait for them.
 
-To have a reliable execution order, use :ref:`stream objects <streams>` in a
+To have a reliable execution order, use :ref:`stream objects <asyncio-streams>` in a
 coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
 coroutine can be used to wait until the write buffer is flushed.
 
