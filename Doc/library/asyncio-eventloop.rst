@@ -1,6 +1,6 @@
 .. currentmodule:: asyncio
 
-.. _event-loop:
+.. _asyncio-event-loop:
 
 Event loops
 ===========
@@ -10,10 +10,10 @@ It provides multiple facilities, amongst which:
 
 * Registering, executing and cancelling delayed calls (timeouts)
 
-* Creating client and server :ref:`transports <transport>` for various
+* Creating client and server :ref:`transports <asyncio-transport>` for various
   kinds of communication
 
-* Launching subprocesses and the associated :ref:`transports <transport>`
+* Launching subprocesses and the associated :ref:`transports <asyncio-transport>`
   for communication with an external program
 
 * Delegating costly function calls to a pool of threads
@@ -172,7 +172,7 @@ Creating connections
 
    Create a streaming transport connection to a given Internet *host* and
    *port*.  *protocol_factory* must be a callable returning a
-   :ref:`protocol <protocol>` instance.
+   :ref:`protocol <asyncio-protocol>` instance.
 
    This method returns a :ref:`coroutine object <coroutine>` which will try to
    establish the connection in the background.  When successful, the
@@ -180,11 +180,11 @@ Creating connections
 
    The chronological synopsis of the underlying operation is as follows:
 
-   #. The connection is established, and a :ref:`transport <transport>`
+   #. The connection is established, and a :ref:`transport <asyncio-transport>`
       is created to represent it.
 
    #. *protocol_factory* is called without arguments and must return a
-      :ref:`protocol <protocol>` instance.
+      :ref:`protocol <asyncio-protocol>` instance.
 
    #. The protocol instance is tied to the transport, and its
       :meth:`connection_made` method is called.

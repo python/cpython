@@ -1,6 +1,6 @@
 .. currentmodule:: asyncio
 
-.. _streams:
+.. _asyncio-streams:
 
 ++++++++++++++++++++++++
 Streams (high-level API)
