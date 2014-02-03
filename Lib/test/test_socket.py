@@ -3635,12 +3635,12 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
         self.assertNotIsInstance(cm.exception, socket.timeout)
         self.assertEqual(cm.exception.errno, errno.EINTR)
 
-    # Issue #12958: The following tests have problems on Mac OS X
-    @support.anticipate_failure(sys.platform == "darwin")
+    # Issue #12958: The following tests have problems on OS X prior to 10.7
+    @support.requires_mac_ver(10, 7)
     def testInterruptedSendTimeout(self):
         self.checkInterruptedSend(self.serv_conn.send, b"a"*512)
 
-    @support.anticipate_failure(sys.platform == "darwin")
+    @support.requires_mac_ver(10, 7)
     def testInterruptedSendtoTimeout(self):
         # Passing an actual address here as Python's wrapper for
         # sendto() doesn't allow passing a zero-length one; POSIX
@@ -3649,7 +3649,7 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
         self.checkInterruptedSend(self.serv_conn.sendto, b"a"*512,
                                   self.serv_addr)
 
-    @support.anticipate_failure(sys.platform == "darwin")
+    @support.requires_mac_ver(10, 7)
     @requireAttrs(socket.socket, "sendmsg")
     def testInterruptedSendmsgTimeout(self):
         self.checkInterruptedSend(self.serv_conn.sendmsg, [b"a"*512])
