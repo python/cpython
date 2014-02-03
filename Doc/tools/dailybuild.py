@@ -43,7 +43,7 @@ def build_one(checkout, target, isdev, quick):
     print 'Doc autobuild started in %s' % checkout
     os.chdir(checkout)
     print 'Running hg pull --update'
-    os.system('/usr/local/bin/hg pull --update')
+    os.system('hg pull --update')
     print 'Running make autobuild'
     maketarget = 'autobuild-' + ('html' if quick else
                                  ('dev' if isdev else 'stable'))
