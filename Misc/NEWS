@@ -365,6 +365,8 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
+- Issue #20474: Fix test_socket "unexpected success" failures on OS X 10.7+.
+
 Documentation
 -------------
 
