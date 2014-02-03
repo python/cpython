@@ -329,10 +329,11 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.checkColorParam(widget, 'disabledbackground')
 
     def test_insertborderwidth(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'insertborderwidth', 0, 1.3, -2)
-        self.checkParam(widget, 'insertborderwidth', 2, expected=1)
-        self.checkParam(widget, 'insertborderwidth', '10p', expected=1)
+        widget = self.create(insertwidth=100)
+        self.checkPixelsParam(widget, 'insertborderwidth',
+                              0, 1.3, 2.6, 6, -2, '10p')
+        # insertborderwidth is bounded above by a half of insertwidth.
+        self.checkParam(widget, 'insertborderwidth', 60, expected=100//2)
 
     def test_insertwidth(self):
         widget = self.create()
