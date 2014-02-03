@@ -57,6 +57,21 @@ Process
 
 .. class:: asyncio.subprocess.Process
 
+   .. attribute:: pid
+
+      The identifier of the process.
+
+      Note that if you set the *shell* argument to ``True``, this is the
+      process identifier of the spawned shell.
+
+   .. attribute:: returncode
+
+      Return code of the process when it exited.  A ``None`` value indicates
+      that the process has not terminated yet.
+
+      A negative value ``-N`` indicates that the child was terminated by signal
+      ``N`` (Unix only).
+
    .. attribute:: stdin
 
       Standard input stream (write), ``None`` if the process was created with
@@ -72,20 +87,9 @@ Process
       Standard error stream (read), ``None`` if the process was created with
       ``stderr=None``.
 
-   .. attribute:: pid
+   .. attribute:: subprocess
 
-      The identifier of the process.
-
-      Note that if you set the *shell* argument to ``True``, this is the
-      process identifier of the spawned shell.
-
-   .. attribute:: returncode
-
-      Return code of the process when it exited.  A ``None`` value indicates
-      that the process has not terminated yet.
-
-      A negative value ``-N`` indicates that the child was terminated by signal
-      ``N`` (Unix only).
+      Underlying :class:`subprocess.Popen` object.
 
    .. method:: communicate(input=None)
 
@@ -106,10 +110,6 @@ Process
 
          The data read is buffered in memory, so do not use this method if the
          data size is large or unlimited.
-
-   .. method:: get_subprocess()
-
-      Get the underlying :class:`subprocess.Popen` object.
 
    .. method:: kill()
 

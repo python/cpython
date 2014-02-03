@@ -119,7 +119,7 @@ class SubprocessMixin:
         returncode = self.loop.run_until_complete(proc.wait())
         self.assertEqual(-signal.SIGHUP, returncode)
 
-    def test_get_subprocess(self):
+    def test_subprocess(self):
         args = PROGRAM_EXIT_FAST
 
         @asyncio.coroutine
@@ -127,14 +127,14 @@ class SubprocessMixin:
             proc = yield from asyncio.create_subprocess_exec(*args,
                                                              loop=self.loop)
             yield from proc.wait()
+            # need to poll subprocess.Popen, otherwise the returncode
+            # attribute is not set
+            proc.subprocess.wait()
+            return proc
 
-            popen = proc.get_subprocess()
-            popen.wait()
-            return (proc, popen)
-
-        proc, popen = self.loop.run_until_complete(run())
-        self.assertEqual(popen.returncode, proc.returncode)
-        self.assertEqual(popen.pid, proc.pid)
+        proc = self.loop.run_until_complete(run())
+        self.assertEqual(proc.subprocess.returncode, proc.returncode)
+        self.assertEqual(proc.subprocess.pid, proc.pid)
 
     def test_broken_pipe(self):
         large_data = b'x' * support.PIPE_MAX_SIZE
