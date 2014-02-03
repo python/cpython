@@ -1448,6 +1448,8 @@ Significant Optimizations
   significant amounts of data through :mod:`subprocess`.  (Contributed
   by Richard Oudkerk in :issue:`15758`.)
 
+* :func:`html.escape` is now 10x faster.  (Contributed by Matt Bryant in
+  :issue:`18020`.)
 
 
 Deprecated
@@ -1559,6 +1561,11 @@ Code Cleanups
 * The unused and undocumented internal ``Scanner`` class has been removed from
   the :mod:`pydoc` module.
 
+* The private and effectively unused ``_gestalt`` module has been removed,
+  along with the private :mod:`platform` functions ``_mac_ver_lookup``,
+  ``_mac_ver_gstalt``, and ``_bcd2str``, which would only have ever been called
+  on badly broken OSX systems (see :issue:`18393`).
+
 
 
 Porting to Python 3.4
@@ -1608,7 +1615,7 @@ Changes in the Python API
   exceptions now.
 
 * :func:`functools.update_wrapper` and :func:`functools.wraps` now correctly
-  set the ``__wrapped__`` attribute to the function being wrapper, even if
+  set the ``__wrapped__`` attribute to the function being wrapped, even if
   that function also had its ``__wrapped__`` attribute set. This means
   ``__wrapped__`` attributes now correctly link a stack of decorated
   functions rather than every ``__wrapped__`` attribute in the chain
