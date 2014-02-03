@@ -106,7 +106,8 @@ class Process:
         yield from waiter
         return waiter.result()
 
-    def get_subprocess(self):
+    @property
+    def subprocess(self):
         return self._transport.get_extra_info('subprocess')
 
     def _check_alive(self):
