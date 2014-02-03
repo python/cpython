@@ -834,3 +834,223 @@ When the above script is run, it prints::
 
 Note that the order of items might be different according to the version of
 Python used.
+
+
+.. _custom-handlers:
+
+.. currentmodule:: logging.config
+
+Customizing handlers with :func:`dictConfig`
+--------------------------------------------
+
+There are times when you want to customize logging handlers in particular ways,
+and if you use :func:`dictConfig` you may be able to do this without
+subclassing. As an example, consider that you may want to set the ownership of a
+log file. On POSIX, this is easily done using :func:`shutil.chown`, but the file
+handlers in the stdlib don't offer built-in support. You can customize handler
+creation using a plain function such as::
+
+    def owned_file_handler(filename, mode='a', encoding=None, owner=None):
+        if owner:
+            if not os.path.exists(filename):
+                open(filename, 'a').close()
+            shutil.chown(filename, *owner)
+        return logging.FileHandler(filename, mode, encoding)
+
+You can then specify, in a logging configuration passed to :func:`dictConfig`,
+that a logging handler be created by calling this function::
+
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'default': {
+                'format': '%(asctime)s %(levelname)s %(name)s %(message)s'
+            },
+        },
+        'handlers': {
+            'file':{
+                # The values below are popped from this dictionary and
+                # used to create the handler, set the handler's level and
+                # its formatter.
+                '()': owned_file_handler,
+                'level':'DEBUG',
+                'formatter': 'default',
+                # The values below are passed to the handler creator callable
+                # as keyword arguments.
+                'owner': ['pulse', 'pulse'],
+                'filename': 'chowntest.log',
+                'mode': 'w',
+                'encoding': 'utf-8',
+            },
+        },
+        'root': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+
+In this example I am setting the ownership using the ``pulse`` user and group,
+just for the purposes of illustration. Putting it together into a working
+script, ``chowntest.py``::
+
+    import logging, logging.config, os, shutil
+
+    def owned_file_handler(filename, mode='a', encoding=None, owner=None):
+        if owner:
+            if not os.path.exists(filename):
+                open(filename, 'a').close()
+            shutil.chown(filename, *owner)
+        return logging.FileHandler(filename, mode, encoding)
+
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'default': {
+                'format': '%(asctime)s %(levelname)s %(name)s %(message)s'
+            },
+        },
+        'handlers': {
+            'file':{
+                # The values below are popped from this dictionary and
+                # used to create the handler, set the handler's level and
+                # its formatter.
+                '()': owned_file_handler,
+                'level':'DEBUG',
+                'formatter': 'default',
+                # The values below are passed to the handler creator callable
+                # as keyword arguments.
+                'owner': ['pulse', 'pulse'],
+                'filename': 'chowntest.log',
+                'mode': 'w',
+                'encoding': 'utf-8',
+            },
+        },
+        'root': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger('mylogger')
+    logger.debug('A debug message')
+
+To run this, you will probably need to run as ``root``::
+
+    $ sudo python3.3 chowntest.py
+    $ cat chowntest.log
+    2013-11-05 09:34:51,128 DEBUG mylogger A debug message
+    $ ls -l chowntest.log
+    -rw-r--r-- 1 pulse pulse 55 2013-11-05 09:34 chowntest.log
+
+Note that this example uses Python 3.3 because that's where :func:`shutil.chown`
+makes an appearance. This approach should work with any Python version that
+supports :func:`dictConfig` - namely, Python 2.7, 3.2 or later. With pre-3.3
+versions, you would need to implement the actual ownership change using e.g.
+:func:`os.chown`.
+
+In practice, the handler-creating function may be in a utility module somewhere
+in your project. Instead of the line in the configuration::
+
+    '()': owned_file_handler,
+
+you could use e.g.::
+
+    '()': 'ext://project.util.owned_file_handler',
+
+where ``project.util`` can be replaced with the actual name of the package
+where the function resides. In the above working script, using
+``'ext://__main__.owned_file_handler'`` should work. Here, the actual callable
+is resolved by :func:`dictConfig` from the ``ext://`` specification.
+
+This example hopefully also points the way to how you could implement other
+types of file change - e.g. setting specific POSIX permission bits - in the
+same way, using :func:`os.chmod`.
+
+Of course, the approach could also be extended to types of handler other than a
+:class:`~logging.FileHandler` - for example, one of the rotating file handlers,
+or a different type of handler altogether.
+
+
+.. _filters-dictconfig:
+
+Configuring filters with :func:`dictConfig`
+-------------------------------------------
+
+You *can* configure filters using :func:`~logging.config.dictConfig`, though it
+might not be obvious at first glance how to do it (hence this recipe). Since
+:class:`~logging.Filter` is the only filter class included in the standard
+library, and it is unlikely to cater to many requirements (it's only there as a
+base class), you will typically need to define your own :class:`~logging.Filter`
+subclass with an overridden :meth:`~logging.Filter.filter` method. To do this,
+specify the ``()`` key in the configuration dictionary for the filter,
+specifying a callable which will be used to create the filter (a class is the
+most obvious, but you can provide any callable which returns a
+:class:`~logging.Filter` instance). Here is a complete example::
+
+    import logging
+    import logging.config
+    import sys
+
+    class MyFilter(logging.Filter):
+        def __init__(self, param=None):
+            self.param = param
+
+        def filter(self, record):
+            if self.param is None:
+                allow = True
+            else:
+                allow = self.param not in record.msg
+            if allow:
+                record.msg = 'changed: ' + record.msg
+            return allow
+
+    LOGGING = {
+        'version': 1,
+        'filters': {
+            'myfilter': {
+                '()': MyFilter,
+                'param': 'noshow',
+            }
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'filters': ['myfilter']
+            }
+        },
+        'root': {
+            'level': 'DEBUG',
+            'handlers': ['console']
+        },
+    }
+
+    if __name__ == '__main__':
+        logging.config.dictConfig(LOGGING)
+        logging.debug('hello')
+        logging.debug('hello - noshow')
+
+This example shows how you can pass configuration data to the callable which
+constructs the instance, in the form of keyword parameters. When run, the above
+script will print::
+
+    changed: hello
+
+which shows that the filter is working as configured.
+
+A couple of extra points to note:
+
+* If you can't refer to the callable directly in the configuration (e.g. if it
+  lives in a different module, and you can't import it directly where the
+  configuration dictionary is), you can use the form ``ext://...`` as described
+  in :ref:`logging-config-dict-externalobj`. For example, you could have used
+  the text ``'ext://__main__.MyFilter'`` instead of ``MyFilter`` in the above
+  example.
+
+* As well as for filters, this technique can also be used to configure custom
+  handlers and formatters. See :ref:`logging-config-dict-userdef` for more
+  information on how logging supports using user-defined objects in its
+  configuration, and see the other cookbook recipe :ref:`custom-handlers` above.
+
