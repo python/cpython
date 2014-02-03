@@ -543,6 +543,7 @@ colorsys
 The number of digits in the coefficients for the RGB --- YIQ conversions have
 been expanded so that they match the FCC NTSC versions.  The change in
 results should be less than 1% and may better match results found elsewhere.
+(Contributed by Brian Landers and Serhiy Storchaka in :issue:`14323`.)
 
 
 contextlib
@@ -694,7 +695,6 @@ application to descriptors, just as :func:`~functools.partial` provides
 for normal callables. The new descriptor also makes it easier to get
 arbitrary callables (including :func:`~functools.partial` instances)
 to behave like normal instance methods when included in a class definition.
-
 (Contributed by Alon Horev and Nick Coghlan in :issue:`4331`)
 
 .. _whatsnew-singledispatch:
@@ -1664,6 +1664,10 @@ Changes in the Python API
   instance and not keeping the instance alive, then you should either store the
   entire :class:`cgi.FieldStorage` instance or read the contents of the file
   before the :class:`cgi.FieldStorage` instance is garbage collected.
+
+* Calling ``read`` or ``write`` on a closed SSL socket now raises an
+  informative :exc:`ValueError` rather than the previous more mysterious
+  :exc:`AttributeError` (:issue:`9177`).
 
 
 Changes in the C API
