@@ -8,7 +8,7 @@ Create a subproces
 
 .. function:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
-   Run the shell command *cmd* (:class:`str`)`. Return a :class:`Process`
+   Run the shell command *cmd* given as a string. Return a :class:`Process`
    instance.
 
    This function returns a :ref:`coroutine object <coroutine>`.
