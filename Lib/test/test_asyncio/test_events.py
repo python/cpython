@@ -1185,6 +1185,14 @@ class EventLoopTestsMixin:
         calls.append(self.loop._run_once_counter)
         self.assertEqual(calls, [1, 3, 5, 6])
 
+    def test_granularity(self):
+        granularity = self.loop._granularity
+        self.assertGreater(granularity, 0.0)
+        # Worst expected granularity: 1 ms on Linux (limited by poll/epoll
+        # resolution), 15.6 ms on Windows (limited by time.monotonic
+        # resolution)
+        self.assertLess(granularity, 0.050)
+
 
 class SubprocessTestsMixin:
 

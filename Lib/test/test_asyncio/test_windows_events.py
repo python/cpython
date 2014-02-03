@@ -105,7 +105,7 @@ class ProactorTests(unittest.TestCase):
         self.loop.run_until_complete(f)
         elapsed = self.loop.time() - start
         self.assertFalse(f.result())
-        self.assertTrue(0.18 < elapsed < 0.5, elapsed)
+        self.assertTrue(0.18 < elapsed < 0.9, elapsed)
 
         _overlapped.SetEvent(event)
 
