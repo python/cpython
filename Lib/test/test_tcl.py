@@ -205,7 +205,6 @@ class TclTest(unittest.TestCase):
         self.assertRaises(TclError, tcl.exprstring, 'spam')
         check('', '0')
         check('8.2 + 6', '14.2')
-        check('2**64', str(2**64))
         check('3.1 + $a', '6.1')
         check('2 + "$a.$b"', '5.6')
         check('4*[llength "6 2"]', '8')
@@ -223,6 +222,8 @@ class TclTest(unittest.TestCase):
         check('"a\xbd\u20ac"', 'a\xbd\u20ac')
         check(r'"a\xbd\u20ac"', 'a\xbd\u20ac')
         check(r'"a\0b"', 'a\x00b')
+        if tcl_version >= (8, 5):
+            check('2**64', str(2**64))
 
     def test_exprdouble(self):
         tcl = self.interp
@@ -239,7 +240,6 @@ class TclTest(unittest.TestCase):
         self.assertRaises(TclError, tcl.exprdouble, 'spam')
         check('', 0.0)
         check('8.2 + 6', 14.2)
-        check('2**64', float(2**64))
         check('3.1 + $a', 6.1)
         check('2 + "$a.$b"', 5.6)
         check('4*[llength "6 2"]', 8.0)
@@ -254,6 +254,8 @@ class TclTest(unittest.TestCase):
         check('[string length "a\xbd\u20ac"]', 3.0)
         check(r'[string length "a\xbd\u20ac"]', 3.0)
         self.assertRaises(TclError, tcl.exprdouble, '"abc"')
+        if tcl_version >= (8, 5):
+            check('2**64', float(2**64))
 
     def test_exprlong(self):
         tcl = self.interp
@@ -270,7 +272,6 @@ class TclTest(unittest.TestCase):
         self.assertRaises(TclError, tcl.exprlong, 'spam')
         check('', 0)
         check('8.2 + 6', 14)
-        self.assertRaises(TclError, tcl.exprlong, '2**64')
         check('3.1 + $a', 6)
         check('2 + "$a.$b"', 5)
         check('4*[llength "6 2"]', 8)
@@ -285,6 +286,8 @@ class TclTest(unittest.TestCase):
         check('[string length "a\xbd\u20ac"]', 3)
         check(r'[string length "a\xbd\u20ac"]', 3)
         self.assertRaises(TclError, tcl.exprlong, '"abc"')
+        if tcl_version >= (8, 5):
+            self.assertRaises(TclError, tcl.exprlong, '2**64')
 
     def test_exprboolean(self):
         tcl = self.interp
@@ -310,7 +313,6 @@ class TclTest(unittest.TestCase):
             check('"%s"' % value, True)
             check('{%s}' % value, True)
         check('8.2 + 6', True)
-        check('2**64', True)
         check('3.1 + $a', True)
         check('2 + "$a.$b"', True)
         check('4*[llength "6 2"]', True)
@@ -325,6 +327,8 @@ class TclTest(unittest.TestCase):
         check('[string length "a\xbd\u20ac"]', True)
         check(r'[string length "a\xbd\u20ac"]', True)
         self.assertRaises(TclError, tcl.exprboolean, '"abc"')
+        if tcl_version >= (8, 5):
+            check('2**64', True)
 
     def test_passing_values(self):
         def passValue(value):
