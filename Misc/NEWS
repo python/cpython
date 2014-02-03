@@ -106,6 +106,8 @@ Tests
 - Issue #19990: Added tests for the imghdr module.  Based on patch by
   Claudiu Popa.
 
+- Issue #20474: Fix test_socket "unexpected success" failures on OS X 10.7+.
+
 Tools/Demos
 -----------
 
