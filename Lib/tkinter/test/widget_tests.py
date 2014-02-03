@@ -6,6 +6,7 @@ import tkinter
 from tkinter.ttk import setup_master, Scale
 from tkinter.test.support import (tcl_version, requires_tcl, get_tk_patchlevel,
                                   pixels_conv, tcl_obj_eq)
+import test.support
 
 
 noconv = False
@@ -234,8 +235,14 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkParam(widget, 'bitmap', 'questhead')
         self.checkParam(widget, 'bitmap', 'gray50')
-        self.checkInvalidParam(widget, 'bitmap', 'spam',
-                errmsg='bitmap "spam" not defined')
+        filename = test.support.findfile('python.xbm', subdir='imghdrdata')
+        self.checkParam(widget, 'bitmap', '@' + filename)
+        # Cocoa Tk widgets don't detect invalid -bitmap values
+        # See https://core.tcl.tk/tk/info/31cd33dbf0
+        if not ('aqua' in self.root.tk.call('tk', 'windowingsystem') and
+                'AppKit' in self.root.winfo_server()):
+            self.checkInvalidParam(widget, 'bitmap', 'spam',
+                    errmsg='bitmap "spam" not defined')
 
     def test_borderwidth(self):
         widget = self.create()
@@ -495,7 +502,6 @@ def add_standard_options(*source_classes):
     return decorator
 
 def setUpModule():
-    import test.support
     if test.support.verbose:
         tcl = tkinter.Tcl()
         print('patchlevel =', tcl.call('info', 'patchlevel'))
