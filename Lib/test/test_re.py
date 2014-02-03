@@ -1,5 +1,6 @@
 from test.test_support import verbose, run_unittest, import_module
 from test.test_support import precisionbigmemtest, _2G, cpython_only
+from test.test_support import captured_stdout
 import re
 from re import Scanner
 import sre_constants
@@ -919,6 +920,19 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(0), "xyy")
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
+
+    def test_debug_flag(self):
+        with captured_stdout() as out:
+            re.compile('foo', re.DEBUG)
+        self.assertEqual(out.getvalue().splitlines(),
+                         ['literal 102', 'literal 111', 'literal 111'])
+        # Debug output is output again even a second time (bypassing
+        # the cache -- issue #20426).
+        with captured_stdout() as out:
+            re.compile('foo', re.DEBUG)
+        self.assertEqual(out.getvalue().splitlines(),
+                         ['literal 102', 'literal 111', 'literal 111'])
+
 
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
