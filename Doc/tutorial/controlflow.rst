@@ -370,7 +370,7 @@ defined to allow.  For example::
                return False
            retries = retries - 1
            if retries < 0:
-               raise IOError('refusenik user')
+               raise IOError('uncooperative user')
            print(complaint)
 
 This function can be called in several ways:
@@ -756,4 +756,3 @@ extracted for you:
 .. [#] Actually, *call by object reference* would be a better description,
    since if a mutable object is passed, the caller will see any changes the
    callee makes to it (items inserted into a list).
-
