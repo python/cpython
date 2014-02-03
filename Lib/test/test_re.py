@@ -1,5 +1,5 @@
 from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
-        cpython_only
+        cpython_only, captured_stdout
 import io
 import re
 from re import Scanner
@@ -1063,6 +1063,19 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(0), "xyy")
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
+
+    def test_debug_flag(self):
+        with captured_stdout() as out:
+            re.compile('foo', re.DEBUG)
+        self.assertEqual(out.getvalue().splitlines(),
+                         ['literal 102 ', 'literal 111 ', 'literal 111 '])
+        # Debug output is output again even a second time (bypassing
+        # the cache -- issue #20426).
+        with captured_stdout() as out:
+            re.compile('foo', re.DEBUG)
+        self.assertEqual(out.getvalue().splitlines(),
+                         ['literal 102 ', 'literal 111 ', 'literal 111 '])
+
 
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
