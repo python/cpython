@@ -2210,6 +2210,32 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(str(inspect.signature(D)),
                          '(object_or_name, bases, dict)')
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_on_builtin_class(self):
+        self.assertEqual(str(inspect.signature(_pickle.Pickler)),
+                         '(file, protocol=None, fix_imports=True)')
+
+        class P(_pickle.Pickler): pass
+        class EmptyTrait: pass
+        class P2(EmptyTrait, P): pass
+        self.assertEqual(str(inspect.signature(P)),
+                         '(file, protocol=None, fix_imports=True)')
+        self.assertEqual(str(inspect.signature(P2)),
+                         '(file, protocol=None, fix_imports=True)')
+
+        class P3(P2):
+            def __init__(self, spam):
+                pass
+        self.assertEqual(str(inspect.signature(P3)), '(spam)')
+
+        class MetaP(type):
+            def __call__(cls, foo, bar):
+                pass
+        class P4(P2, metaclass=MetaP):
+            pass
+        self.assertEqual(str(inspect.signature(P4)), '(foo, bar)')
+
     def test_signature_on_callable_objects(self):
         class Foo:
             def __call__(self, a):
