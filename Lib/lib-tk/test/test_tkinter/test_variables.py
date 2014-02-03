@@ -58,6 +58,14 @@ class TestVariable(TestBase):
         with self.assertRaises(TypeError):
             Variable(self.root, name=123)
 
+    def test_null_in_name(self):
+        with self.assertRaises(ValueError):
+            Variable(self.root, name='var\x00name')
+        with self.assertRaises(ValueError):
+            self.root.globalsetvar('var\x00name', "value")
+        with self.assertRaises(ValueError):
+            self.root.setvar('var\x00name', "value")
+
 
 class TestStringVar(TestBase):
 
@@ -70,6 +78,12 @@ class TestStringVar(TestBase):
         self.assertEqual("abc", v.get())
         self.root.globalsetvar("name", "value")
         self.assertEqual("value", v.get())
+
+    def test_get_null(self):
+        v = StringVar(self.root, "abc\x00def", "name")
+        self.assertEqual("abc\x00def", v.get())
+        self.root.globalsetvar("name", "val\x00ue")
+        self.assertEqual("val\x00ue", v.get())
 
 
 class TestIntVar(TestBase):

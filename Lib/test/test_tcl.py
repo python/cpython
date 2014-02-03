@@ -139,6 +139,18 @@ class TclTest(unittest.TestCase):
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
+    def test_evalfile_null_in_result(self):
+        tcl = self.interp
+        with open(test_support.TESTFN, 'wb') as f:
+            self.addCleanup(test_support.unlink, test_support.TESTFN)
+            f.write("""
+            set a "a\0b"
+            set b "a\\0b"
+            """)
+        tcl.evalfile(test_support.TESTFN)
+        self.assertEqual(tcl.eval('set a'), 'a\xc0\x80b')
+        self.assertEqual(tcl.eval('set b'), 'a\xc0\x80b')
+
     def testEvalFileException(self):
         tcl = self.interp
         filename = "doesnotexists"
@@ -220,6 +232,7 @@ class TclTest(unittest.TestCase):
         check('"abc"', 'abc')
         check('"a\xc2\xbd\xe2\x82\xac"', 'a\xc2\xbd\xe2\x82\xac')
         check(r'"a\xbd\u20ac"', 'a\xc2\xbd\xe2\x82\xac')
+        check(r'"a\0b"', 'a\xc0\x80b')
 
     def test_exprdouble(self):
         tcl = self.interp
@@ -326,8 +339,17 @@ class TclTest(unittest.TestCase):
 
         self.assertEqual(passValue(True), True if self.wantobjects else '1')
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
+        self.assertEqual(passValue('string'), 'string')
+        self.assertEqual(passValue('string\xbd'), 'string\xbd')
+        self.assertEqual(passValue('string\xe2\x82\xac'), u'string\u20ac')
         self.assertEqual(passValue(u'string'), u'string')
+        self.assertEqual(passValue(u'string\xbd'), u'string\xbd')
         self.assertEqual(passValue(u'string\u20ac'), u'string\u20ac')
+        self.assertEqual(passValue('str\x00ing'), 'str\x00ing')
+        self.assertEqual(passValue('str\xc0\x80ing'), 'str\x00ing')
+        self.assertEqual(passValue(u'str\x00ing'), u'str\x00ing')
+        self.assertEqual(passValue(u'str\x00ing\xbd'), u'str\x00ing\xbd')
+        self.assertEqual(passValue(u'str\x00ing\u20ac'), u'str\x00ing\u20ac')
         for i in (0, 1, -1, int(2**31-1), int(-2**31)):
             self.assertEqual(passValue(i), i if self.wantobjects else str(i))
         for f in (0.0, 1.0, -1.0, 1//3, 1/3.0,
@@ -356,14 +378,16 @@ class TclTest(unittest.TestCase):
             result.append(arg)
             return arg
         self.interp.createcommand('testfunc', testfunc)
-        def check(value, expected, eq=self.assertEqual):
+        def check(value, expected, expected2=None, eq=self.assertEqual):
+            if expected2 is None:
+                expected2 = expected
             del result[:]
             r = self.interp.call('testfunc', value)
             self.assertEqual(len(result), 1)
-            self.assertIsInstance(result[0], str)
-            eq(result[0], expected)
-            self.assertIsInstance(r, str)
-            eq(r, expected)
+            self.assertIsInstance(result[0], (str, unicode))
+            eq(result[0], expected2)
+            self.assertIsInstance(r, (str, unicode))
+            eq(r, expected2)
         def float_eq(actual, expected):
             expected = float(expected)
             self.assertAlmostEqual(float(actual), expected,
@@ -376,7 +400,15 @@ class TclTest(unittest.TestCase):
         check(False, '0')
         check('string', 'string')
         check('string\xbd', 'string\xbd')
-        check('string\u20ac', 'string\u20ac')
+        check('string\xe2\x82\xac', 'string\xe2\x82\xac', u'string\u20ac')
+        check(u'string', u'string')
+        check(u'string\xbd', 'string\xc2\xbd', u'string\xbd')
+        check(u'string\u20ac', 'string\xe2\x82\xac', u'string\u20ac')
+        check('str\xc0\x80ing', 'str\xc0\x80ing', u'str\x00ing')
+        check('str\xc0\x80ing\xe2\x82\xac', 'str\xc0\x80ing\xe2\x82\xac', u'str\x00ing\u20ac')
+        check(u'str\x00ing', 'str\xc0\x80ing', u'str\x00ing')
+        check(u'str\x00ing\xbd', 'str\xc0\x80ing\xc2\xbd', u'str\x00ing\xbd')
+        check(u'str\x00ing\u20ac', 'str\xc0\x80ing\xe2\x82\xac', u'str\x00ing\u20ac')
         for i in (0, 1, -1, 2**31-1, -2**31):
             check(i, str(i))
         for f in (0.0, 1.0, -1.0):
@@ -405,6 +437,7 @@ class TclTest(unittest.TestCase):
             (u'a\n b\t\r c\n ', ('a', 'b', 'c')),
             ('a \xe2\x82\xac', ('a', '\xe2\x82\xac')),
             (u'a \u20ac', ('a', '\xe2\x82\xac')),
+            ('a\xc0\x80b c\xc0\x80d', ('a\xc0\x80b', 'c\xc0\x80d')),
             ('a {b c}', ('a', 'b c')),
             (r'a b\ c', ('a', 'b c')),
             (('a', 'b c'), ('a', 'b c')),
@@ -449,6 +482,8 @@ class TclTest(unittest.TestCase):
             (u'a\n b\t\r c\n ', ('a', 'b', 'c')),
             ('a \xe2\x82\xac', ('a', '\xe2\x82\xac')),
             (u'a \u20ac', ('a', '\xe2\x82\xac')),
+            ('a\xc0\x80b', 'a\xc0\x80b'),
+            ('a\xc0\x80b c\xc0\x80d', ('a\xc0\x80b', 'c\xc0\x80d')),
             ('a {b c}', ('a', ('b', 'c'))),
             (r'a b\ c', ('a', ('b', 'c'))),
             (('a', 'b c'), ('a', ('b', 'c'))),
