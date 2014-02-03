@@ -55,15 +55,11 @@ _opcode_stack_effect_impl(PyModuleDef *module, int opcode, PyObject *oparg)
     int effect;
     int oparg_int = 0;
     if (HAS_ARG(opcode)) {
-        PyObject *i_object;
         if (oparg == Py_None) {
             PyErr_SetString(PyExc_ValueError,
                     "stack_effect: opcode requires oparg but oparg was not specified");
             return -1;
         }
-        i_object = PyNumber_Index(oparg);
-        if (!i_object)
-            return -1;
         oparg_int = (int)PyLong_AsLong(oparg);
         if ((oparg_int == -1) && PyErr_Occurred())
             return -1;
