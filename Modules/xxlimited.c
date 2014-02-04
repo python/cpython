@@ -44,7 +44,7 @@ static void
 Xxo_dealloc(XxoObject *self)
 {
     Py_XDECREF(self->x_attr);
-    PyObject_Del(self);
+    ((freefunc)PyType_GetSlot(Py_TYPE(self), Py_tp_free))(self);
 }
 
 static PyObject *
