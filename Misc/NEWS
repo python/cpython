@@ -10,6 +10,12 @@ Release date: 2014-02-09
 Core and Builtins
 -----------------
 
+- Issue #20404: io.TextIOWrapper (and hence the open() builtin) now uses the
+  internal codec marking system added for issue #19619 to throw LookupError
+  for known non-text encodings at stream construction time. The existing
+  output type checks remain in place to deal with unmarked third party
+  codecs.
+
 - Issue #17162: Add PyType_GetSlot.
 
 - Issue #20162: Fix an alignment issue in the siphash24() hash function which
