@@ -1539,7 +1539,7 @@ class PyBuildExt(build_ext):
 
         if 'd' not in sys.abiflags:
             ext = Extension('xxlimited', ['xxlimited.c'],
-                            define_macros=[('Py_LIMITED_API', 1)])
+                            define_macros=[('Py_LIMITED_API', '0x03040000')])
             self.extensions.append(ext)
 
         return missing
