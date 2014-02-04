@@ -7,6 +7,10 @@
 
 /* External API definitions */
 
+/* Namespace external symbols to allow multiple libexpat version to
+   co-exist. */
+#include "pyexpatns.h"
+
 #if defined(_MSC_EXTENSIONS) && !defined(__BEOS__) && !defined(__CYGWIN__)
 #define XML_USE_MSC_EXTENSIONS 1
 #endif

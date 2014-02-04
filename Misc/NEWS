@@ -45,6 +45,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19186: Restore namespacing of expat symbols inside the pyexpat module.
+
 - Issue #20426: When passing the re.DEBUG flag, re.compile() displays the
   debug output every time it is called, regardless of the compilation cache.
 
