@@ -2644,7 +2644,7 @@ PyType_FromSpec(PyType_Spec *spec)
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
-    if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+    if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         PyErr_BadInternalCall();
         return NULL;
     }
