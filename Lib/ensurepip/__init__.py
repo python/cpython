@@ -47,13 +47,16 @@ def version():
     """
     return _PIP_VERSION
 
-def _clear_pip_environment_variables():
+def _disable_pip_configuration_settings():
     # We deliberately ignore all pip environment variables
     # when invoking pip
     # See http://bugs.python.org/issue19734 for details
     keys_to_remove = [k for k in os.environ if k.startswith("PIP_")]
     for k in keys_to_remove:
         del os.environ[k]
+    # We also ignore the settings in the default pip configuration file
+    # See http://bugs.python.org/issue20053 for details
+    os.environ['PIP_CONFIG_FILE'] = os.devnull
 
 
 def bootstrap(*, root=None, upgrade=False, user=False,
@@ -69,7 +72,7 @@ def bootstrap(*, root=None, upgrade=False, user=False,
         raise ValueError("Cannot use altinstall and default_pip together")
 
     _require_ssl_for_pip()
-    _clear_pip_environment_variables()
+    _disable_pip_configuration_settings()
 
     # By default, installing pip and setuptools installs all of the
     # following scripts (X.Y == running Python version):
@@ -130,7 +133,7 @@ def _uninstall_helper(*, verbosity=0):
         raise RuntimeError(msg.format(pip.__version__, _PIP_VERSION))
 
     _require_ssl_for_pip()
-    _clear_pip_environment_variables()
+    _disable_pip_configuration_settings()
 
     # Construct the arguments to be passed to the pip command
     args = ["uninstall", "-y"]
