@@ -36,9 +36,11 @@ class EnsurepipMixin:
         self.addCleanup(run_pip_patch.stop)
 
         # Avoid side effects on the actual os module
+        real_devnull = os.devnull
         os_patch = unittest.mock.patch("ensurepip.os")
         patched_os = os_patch.start()
         self.addCleanup(os_patch.stop)
+        patched_os.devnull = real_devnull
         patched_os.path = os.path
         self.os_environ = patched_os.environ = os.environ.copy()
 
@@ -161,6 +163,12 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         ensurepip.bootstrap()
         self.assertNotIn("PIP_THIS_SHOULD_GO_AWAY", self.os_environ)
 
+    @requires_usable_pip
+    def test_pip_config_file_disabled(self):
+        # ensurepip deliberately ignores the pip config file
+        # See http://bugs.python.org/issue20053 for details
+        ensurepip.bootstrap()
+        self.assertEqual(self.os_environ["PIP_CONFIG_FILE"], os.devnull)
 
 @contextlib.contextmanager
 def fake_pip(version=ensurepip._PIP_VERSION):
@@ -239,6 +247,14 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
         with fake_pip():
             ensurepip._uninstall_helper()
         self.assertNotIn("PIP_THIS_SHOULD_GO_AWAY", self.os_environ)
+
+    @requires_usable_pip
+    def test_pip_config_file_disabled(self):
+        # ensurepip deliberately ignores the pip config file
+        # See http://bugs.python.org/issue20053 for details
+        with fake_pip():
+            ensurepip._uninstall_helper()
+        self.assertEqual(self.os_environ["PIP_CONFIG_FILE"], os.devnull)
 
 
 class TestMissingSSL(EnsurepipMixin, unittest.TestCase):

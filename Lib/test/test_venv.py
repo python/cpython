@@ -301,16 +301,35 @@ class EnsurePipTest(BaseTest):
             # that we want to ensure it ignores the normal pip environment
             # variable settings. We set PIP_NO_INSTALL here specifically
             # to check that ensurepip (and hence venv) ignores it.
-            # See http://bugs.python.org/issue19734 for details
+            # See http://bugs.python.org/issue19734
             envvars["PIP_NO_INSTALL"] = "1"
-            try:
-                self.run_with_capture(venv.create, self.env_dir, with_pip=True)
-            except subprocess.CalledProcessError as exc:
-                # The output this produces can be a little hard to read, but
-                # least it has all the details
-                details = exc.output.decode(errors="replace")
-                msg = "{}\n\n**Subprocess Output**\n{}".format(exc, details)
-                self.fail(msg)
+            # Also check that we ignore the pip configuration file
+            # See http://bugs.python.org/issue20053
+            with tempfile.TemporaryDirectory() as home_dir:
+                envvars["HOME"] = home_dir
+                bad_config = "[global]\nno-install=1"
+                # Write to both config file names on all platforms to reduce
+                # cross-platform variation in test code behaviour
+                win_location = ("pip", "pip.ini")
+                posix_location = (".pip", "pip.conf")
+                for dirname, fname in (win_location, posix_location):
+                    dirpath = os.path.join(home_dir, dirname)
+                    os.mkdir(dirpath)
+                    fpath = os.path.join(dirpath, fname)
+                    with open(fpath, 'w') as f:
+                        f.write(bad_config)
+
+                # Actually run the create command with all that unhelpful
+                # config in place to ensure we ignore it
+                try:
+                    self.run_with_capture(venv.create, self.env_dir,
+                                          with_pip=True)
+                except subprocess.CalledProcessError as exc:
+                    # The output this produces can be a little hard to read,
+                    # but at least it has all the details
+                    details = exc.output.decode(errors="replace")
+                    msg = "{}\n\n**Subprocess Output**\n{}"
+                    self.fail(msg.format(exc, details))
         # Ensure pip is available in the virtual environment
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         cmd = [envpy, '-Im', 'pip', '--version']
