@@ -2641,6 +2641,19 @@ PyType_FromSpec(PyType_Spec *spec)
     return PyType_FromSpecWithBases(spec, NULL);
 }
 
+void *
+PyType_GetSlot(PyTypeObject *type, int slot)
+{
+    if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (slot >= Py_ARRAY_LENGTH(slotoffsets)) {
+        /* Extension module requesting slot from a future version */
+        return NULL;
+    }
+    return  *(void**)(((char*)type) + slotoffsets[slot]);
+}
 
 /* Internal API to look for a name through the MRO.
    This returns a borrowed reference, and doesn't set an exception! */
