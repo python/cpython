@@ -19,7 +19,7 @@ and the event loop executes the next task.
 
 To schedule a callback from a different thread, the
 :meth:`BaseEventLoop.call_soon_threadsafe` method should be used. Example to
-schedule a coroutine from a different::
+schedule a coroutine from a different thread::
 
     loop.call_soon_threadsafe(asyncio.async, coro_func())
 
