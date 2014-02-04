@@ -13,12 +13,15 @@ Concurrency and multithreading
 ------------------------------
 
 An event loop runs in a thread and executes all callbacks and tasks in the same
-thread.  If a callback should be scheduled from a different thread, the
-:meth:`BaseEventLoop.call_soon_threadsafe` method should be used.
+thread. While a task in running in the event loop, no other task is running in
+the same thread. But when the task uses ``yield from``, the task is suspended
+and the event loop executes the next task.
 
-While a task in running in the event loop, no other task is running in the same
-thread. But when the task uses ``yield from``, the task is suspended and the
-event loop executes the next task.
+To schedule a callback from a different thread, the
+:meth:`BaseEventLoop.call_soon_threadsafe` method should be used. Example to
+schedule a coroutine from a different::
+
+    loop.call_soon_threadsafe(asyncio.async, coro_func())
 
 To handle signals and to execute subprocesses, the event loop must be run in
 the main thread.
