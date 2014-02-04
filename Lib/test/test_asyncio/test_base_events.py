@@ -190,7 +190,7 @@ class BaseEventLoopTests(unittest.TestCase):
 
     @unittest.mock.patch('asyncio.base_events.time')
     @unittest.mock.patch('asyncio.base_events.logger')
-    def test__run_once_logging(self, m_logging, m_time):
+    def test__run_once_logging(self, m_logger, m_time):
         # Log to INFO level if timeout > 1.0 sec.
         idx = -1
         data = [10.0, 10.0, 12.0, 13.0]
@@ -201,20 +201,18 @@ class BaseEventLoopTests(unittest.TestCase):
             return data[idx]
 
         m_time.monotonic = monotonic
-        m_logging.INFO = logging.INFO
-        m_logging.DEBUG = logging.DEBUG
 
         self.loop._scheduled.append(
             asyncio.TimerHandle(11.0, lambda: True, ()))
         self.loop._process_events = unittest.mock.Mock()
         self.loop._run_once()
-        self.assertEqual(logging.INFO, m_logging.log.call_args[0][0])
+        self.assertEqual(logging.INFO, m_logger.log.call_args[0][0])
 
         idx = -1
         data = [10.0, 10.0, 10.3, 13.0]
         self.loop._scheduled = [asyncio.TimerHandle(11.0, lambda:True, ())]
         self.loop._run_once()
-        self.assertEqual(logging.DEBUG, m_logging.log.call_args[0][0])
+        self.assertEqual(logging.DEBUG, m_logger.log.call_args[0][0])
 
     def test__run_once_schedule_handle(self):
         handle = None
