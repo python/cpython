@@ -304,9 +304,12 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
         if fut.cancelled():
             # the transport has been closed
             return
+        assert fut.result() == b''
+        if self._closing:
+            assert self._read_fut is None
+            return
         assert fut is self._read_fut, (fut, self._read_fut)
         self._read_fut = None
-        assert fut.result() == b''
         if self._write_fut is not None:
             self._force_close(exc)
         else:
