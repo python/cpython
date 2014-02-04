@@ -1397,6 +1397,9 @@ varname_converter(PyObject *in, void *_out)
     if (PyUnicode_Check(in)) {
         Py_ssize_t size;
         s = PyUnicode_AsUTF8AndSize(in, &size);
+        if (s == NULL) {
+            return 0;
+        }
         if (size > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return 0;
