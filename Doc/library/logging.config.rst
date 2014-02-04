@@ -81,8 +81,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 .. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
 
    Reads the logging configuration from a :mod:`configparser`\-format file
-   named *fname*. This function can be called several times from an
-   application, allowing an end user to select from various pre-canned
+   named *fname*. The format of the file should be as described in
+   :ref:`logging-config-fileformat`. This function can be called several times
+   from an application, allowing an end user to select from various pre-canned
    configurations (if the developer provides a mechanism to present the choices
    and load the chosen configuration).
 
