@@ -475,6 +475,9 @@
 /* Define to 1 if you have the `mktime' function. */
 #undef HAVE_MKTIME
 
+/* Define to 1 if you have the `mmap' function. */
+#undef HAVE_MMAP
+
 /* Define to 1 if you have the `mremap' function. */
 #undef HAVE_MREMAP
 

@@ -9,6 +9,10 @@ What's New in Python 2.7.7?
 Core and Builtins
 -----------------
 
+- Issue #20494: Ensure that free()d memory arenas are really released on POSIX
+  systems supporting anonymous memory mappings.  Patch by Charles-François
+  Natali.
+
 - Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
   IndentationError.
 

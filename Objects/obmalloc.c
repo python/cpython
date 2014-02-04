@@ -2,6 +2,13 @@
 
 #ifdef WITH_PYMALLOC
 
+#ifdef HAVE_MMAP
+ #include <sys/mman.h>
+ #ifdef MAP_ANONYMOUS
+  #define ARENAS_USE_MMAP
+ #endif
+#endif
+
 #ifdef WITH_VALGRIND
 #include <valgrind/valgrind.h>
 
@@ -75,7 +82,8 @@ static int running_on_valgrind = -1;
  * Allocation strategy abstract:
  *
  * For small requests, the allocator sub-allocates <Big> blocks of memory.
- * Requests greater than 256 bytes are routed to the system's allocator.
+ * Requests greater than SMALL_REQUEST_THRESHOLD bytes are routed to the
+ * system's allocator. 
  *
  * Small requests are grouped in size classes spaced 8 bytes apart, due
  * to the required valid alignment of the returned address. Requests of
@@ -107,10 +115,11 @@ static int running_on_valgrind = -1;
  *       57-64                   64                       7
  *       65-72                   72                       8
  *        ...                   ...                     ...
- *      241-248                 248                      30
- *      249-256                 256                      31
+ *      497-504                 504                      62
+ *      505-512                 512                      63 
  *
- *      0, 257 and up: routed to the underlying allocator.
+ *      0, SMALL_REQUEST_THRESHOLD + 1 and up: routed to the underlying
+ *      allocator.
  */
 
 /*==========================================================================*/
@@ -143,10 +152,13 @@ static int running_on_valgrind = -1;
  *      1) ALIGNMENT <= SMALL_REQUEST_THRESHOLD <= 256
  *      2) SMALL_REQUEST_THRESHOLD is evenly divisible by ALIGNMENT
  *
+ * Note: a size threshold of 512 guarantees that newly created dictionaries
+ * will be allocated from preallocated memory pools on 64-bit.
+ *
  * Although not required, for better performance and space efficiency,
  * it is recommended that SMALL_REQUEST_THRESHOLD is set to a power of 2.
  */
-#define SMALL_REQUEST_THRESHOLD 256
+#define SMALL_REQUEST_THRESHOLD 512 
 #define NB_SMALL_SIZE_CLASSES   (SMALL_REQUEST_THRESHOLD / ALIGNMENT)
 
 /*
@@ -174,15 +186,15 @@ static int running_on_valgrind = -1;
 /*
  * The allocator sub-allocates <Big> blocks of memory (called arenas) aligned
  * on a page boundary. This is a reserved virtual address space for the
- * current process (obtained through a malloc call). In no way this means
- * that the memory arenas will be used entirely. A malloc(<Big>) is usually
- * an address range reservation for <Big> bytes, unless all pages within this
- * space are referenced subsequently. So malloc'ing big blocks and not using
- * them does not mean "wasting memory". It's an addressable range wastage...
+ * current process (obtained through a malloc()/mmap() call). In no way this
+ * means that the memory arenas will be used entirely. A malloc(<Big>) is
+ * usually an address range reservation for <Big> bytes, unless all pages within
+ * this space are referenced subsequently. So malloc'ing big blocks and not
+ * using them does not mean "wasting memory". It's an addressable range
+ * wastage... 
  *
- * Therefore, allocating arenas with malloc is not optimal, because there is
- * some address space wastage, but this is the most portable way to request
- * memory from the system across various platforms.
+ * Arenas are allocated with mmap() on systems supporting anonymous memory
+ * mappings to reduce heap fragmentation.
  */
 #define ARENA_SIZE              (256 << 10)     /* 256KB */
 
@@ -440,6 +452,9 @@ static poolp usedpools[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8] = {
     , PT(48), PT(49), PT(50), PT(51), PT(52), PT(53), PT(54), PT(55)
 #if NB_SMALL_SIZE_CLASSES > 56
     , PT(56), PT(57), PT(58), PT(59), PT(60), PT(61), PT(62), PT(63)
+#if NB_SMALL_SIZE_CLASSES > 64
+#error "NB_SMALL_SIZE_CLASSES should be less than 64"
+#endif /* NB_SMALL_SIZE_CLASSES > 64 */
 #endif /* NB_SMALL_SIZE_CLASSES > 56 */
 #endif /* NB_SMALL_SIZE_CLASSES > 48 */
 #endif /* NB_SMALL_SIZE_CLASSES > 40 */
@@ -577,7 +592,12 @@ new_arena(void)
     arenaobj = unused_arena_objects;
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
+#ifdef ARENAS_USE_MMAP
+    arenaobj->address = (uptr)mmap(NULL, ARENA_SIZE, PROT_READ|PROT_WRITE,
+                                   MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+#else
     arenaobj->address = (uptr)malloc(ARENA_SIZE);
+#endif    
     if (arenaobj->address == 0) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1054,7 +1074,11 @@ PyObject_Free(void *p)
                 unused_arena_objects = ao;
 
                 /* Free the entire arena. */
+#ifdef ARENAS_USE_MMAP
+                munmap((void *)ao->address, ARENA_SIZE);
+#else
                 free((void *)ao->address);
+#endif
                 ao->address = 0;                        /* mark unassociated */
                 --narenas_currently_allocated;
 
