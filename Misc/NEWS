@@ -224,6 +224,8 @@ IDLE
 Tests
 -----
 
+- Issue #19920: Added tests for TarFile.list().  Based on patch by Vajrasky Kok.
+
 - Issue #19990: Added tests for the imghdr module.  Based on patch by
   Claudiu Popa.
 

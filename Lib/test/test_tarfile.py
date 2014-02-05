@@ -158,6 +158,80 @@ class UstarReadTest(ReadTest):
         self._test_fileobj_link("symtype2", "ustar/regtype")
 
 
+class ListTest(ReadTest, unittest.TestCase):
+
+    # Override setUp to use default encoding (UTF-8)
+    def setUp(self):
+        self.tar = tarfile.open(self.tarname, mode=self.mode)
+
+    def test_list(self):
+        with test_support.captured_stdout() as t:
+            self.tar.list(verbose=False)
+        out = t.getvalue()
+        self.assertIn('ustar/conttype', out)
+        self.assertIn('ustar/regtype', out)
+        self.assertIn('ustar/lnktype', out)
+        self.assertIn('ustar' + ('/12345' * 40) + '67/longname', out)
+        self.assertIn('./ustar/linktest2/symtype', out)
+        self.assertIn('./ustar/linktest2/lnktype', out)
+        # Make sure it puts trailing slash for directory
+        self.assertIn('ustar/dirtype/', out)
+        self.assertIn('ustar/dirtype-with-size/', out)
+        # Make sure it is able to print non-ASCII characters
+        self.assertIn('ustar/umlauts-'
+                      '\xc4\xd6\xdc\xe4\xf6\xfc\xdf', out)
+        self.assertIn('misc/regtype-hpux-signed-chksum-'
+                      '\xc4\xd6\xdc\xe4\xf6\xfc\xdf', out)
+        self.assertIn('misc/regtype-old-v7-signed-chksum-'
+                      '\xc4\xd6\xdc\xe4\xf6\xfc\xdf', out)
+        # Make sure it prints files separated by one newline without any
+        # 'ls -l'-like accessories if verbose flag is not being used
+        # ...
+        # ustar/conttype
+        # ustar/regtype
+        # ...
+        self.assertRegexpMatches(out, r'ustar/conttype ?\r?\n'
+                                      r'ustar/regtype ?\r?\n')
+        # Make sure it does not print the source of link without verbose flag
+        self.assertNotIn('link to', out)
+        self.assertNotIn('->', out)
+
+    def test_list_verbose(self):
+        with test_support.captured_stdout() as t:
+            self.tar.list(verbose=True)
+        out = t.getvalue()
+        # Make sure it prints files separated by one newline with 'ls -l'-like
+        # accessories if verbose flag is being used
+        # ...
+        # ?rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/conttype
+        # ?rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/regtype
+        # ...
+        self.assertRegexpMatches(out, (r'-rw-r--r-- tarfile/tarfile\s+7011 '
+                                       r'\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d '
+                                       r'ustar/\w+type ?\r?\n') * 2)
+        # Make sure it prints the source of link with verbose flag
+        self.assertIn('ustar/symtype -> regtype', out)
+        self.assertIn('./ustar/linktest2/symtype -> ../linktest1/regtype', out)
+        self.assertIn('./ustar/linktest2/lnktype link to '
+                      './ustar/linktest1/regtype', out)
+        self.assertIn('gnu' + ('/123' * 125) + '/longlink link to gnu' +
+                      ('/123' * 125) + '/longname', out)
+        self.assertIn('pax' + ('/123' * 125) + '/longlink link to pax' +
+                      ('/123' * 125) + '/longname', out)
+
+
+class GzipListTest(ListTest):
+    tarname = gzipname
+    mode = "r:gz"
+    taropen = tarfile.TarFile.gzopen
+
+
+class Bz2ListTest(ListTest):
+    tarname = bz2name
+    mode = "r:bz2"
+    taropen = tarfile.TarFile.bz2open
+
+
 class CommonReadTest(ReadTest):
 
     def test_empty_tarfile(self):
@@ -1646,6 +1720,7 @@ def test_main():
         MemberReadTest,
         GNUReadTest,
         PaxReadTest,
+        ListTest,
         WriteTest,
         StreamWriteTest,
         GNUWriteTest,
@@ -1677,6 +1752,7 @@ def test_main():
             GzipMiscReadTest,
             GzipUstarReadTest,
             GzipStreamReadTest,
+            GzipListTest,
             GzipWriteTest,
             GzipStreamWriteTest,
         ]
@@ -1691,6 +1767,7 @@ def test_main():
             Bz2MiscReadTest,
             Bz2UstarReadTest,
             Bz2StreamReadTest,
+            Bz2ListTest,
             Bz2WriteTest,
             Bz2StreamWriteTest,
             Bz2PartialReadTest,
