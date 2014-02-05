@@ -97,12 +97,14 @@ The module defines the following user-callable items:
    This function creates a temporary directory using :func:`mkdtemp`
    (the supplied arguments are passed directly to the underlying function).
    The resulting object can be used as a context manager (see
-   :ref:`context-managers`).  On completion of the context (or destruction
-   of the temporary directory object), the newly created temporary directory
+   :ref:`context-managers`).  On completion of the context or destruction
+   of the temporary directory object the newly created temporary directory
    and all its contents are removed from the filesystem.
 
-   The directory name can be retrieved from the :attr:`name` attribute
-   of the returned object.
+   The directory name can be retrieved from the :attr:`name` attribute of the
+   returned object.  When the returned object is used as a context manager, the
+   :attr:`name` will be assigned to the target of the :keyword:`as` clause in
+   the :keyword:`with` statement, if there is one.
 
    The directory can be explicitly cleaned up by calling the
    :func:`cleanup` method.
