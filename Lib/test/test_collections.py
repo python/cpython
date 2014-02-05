@@ -301,7 +301,7 @@ class TestNamedTuple(unittest.TestCase):
         for module in (pickle,):
             loads = getattr(module, 'loads')
             dumps = getattr(module, 'dumps')
-            for protocol in -1, 0, 1, 2:
+            for protocol in range(-1, module.HIGHEST_PROTOCOL + 1):
                 q = loads(dumps(p, protocol))
                 self.assertEqual(p, q)
                 self.assertEqual(p._fields, q._fields)
