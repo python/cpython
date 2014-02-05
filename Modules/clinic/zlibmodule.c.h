@@ -245,7 +245,7 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_Compress_flush__doc__,
-"sig=($self, mode=Z_FINISH)\n"
+"sig=($self, mode=zlib.Z_FINISH)\n"
 "Return a bytes object containing any remaining compressed data.\n"
 "\n"
 "  mode\n"
@@ -325,7 +325,7 @@ zlib_Decompress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 #endif /* !defined(ZLIB_DECOMPRESS_COPY_METHODDEF) */
 
 PyDoc_STRVAR(zlib_Decompress_flush__doc__,
-"sig=($self, length=DEF_BUF_SIZE)\n"
+"sig=($self, length=zlib.DEF_BUF_SIZE)\n"
 "Return a bytes object containing any remaining decompressed data.\n"
 "\n"
 "  length\n"
@@ -424,4 +424,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=21556008559f839c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67d3e81eafcfb982 input=a9049054013a1b77]*/
