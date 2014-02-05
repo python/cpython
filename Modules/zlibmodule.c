@@ -828,7 +828,7 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int 
 /*[clinic input]
 zlib.Compress.flush
 
-    mode: int(c_default="Z_FINISH") = Z_FINISH
+    mode: int(c_default="Z_FINISH") = zlib.Z_FINISH
         One of the constants Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH.
         If mode == Z_FINISH, the compressor object can no longer be
         used after calling the flush() method.  Otherwise, more data
@@ -840,7 +840,7 @@ Return a bytes object containing any remaining compressed data.
 
 static PyObject *
 zlib_Compress_flush_impl(compobject *self, int mode)
-/*[clinic end generated code: output=a203f4cefc9de727 input=6982996afe0772d8]*/
+/*[clinic end generated code: output=a203f4cefc9de727 input=73ed066794bd15bc]*/
 {
     int err;
     unsigned int length = DEF_BUF_SIZE, new_length;
@@ -1046,7 +1046,7 @@ error:
 /*[clinic input]
 zlib.Decompress.flush
 
-    length: uint(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
+    length: uint(c_default="DEF_BUF_SIZE") = zlib.DEF_BUF_SIZE
         the initial size of the output buffer.
     /
 
@@ -1055,7 +1055,7 @@ Return a bytes object containing any remaining decompressed data.
 
 static PyObject *
 zlib_Decompress_flush_impl(compobject *self, unsigned int length)
-/*[clinic end generated code: output=db6fb753ab698e22 input=fe7954136712c353]*/
+/*[clinic end generated code: output=db6fb753ab698e22 input=1580956505978993]*/
 {
     int err;
     unsigned int new_length;
