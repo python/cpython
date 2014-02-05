@@ -257,6 +257,12 @@ def filemode(mode):
                   DeprecationWarning, 2)
     return stat.filemode(mode)
 
+def _safe_print(s):
+    encoding = getattr(sys.stdout, 'encoding', None)
+    if encoding is not None:
+        s = s.encode(encoding, 'backslashreplace').decode(encoding)
+    print(s, end=' ')
+
 
 class TarError(Exception):
     """Base exception."""
@@ -1846,24 +1852,24 @@ class TarFile(object):
 
         for tarinfo in self:
             if verbose:
-                print(stat.filemode(tarinfo.mode), end=' ')
-                print("%s/%s" % (tarinfo.uname or tarinfo.uid,
-                                 tarinfo.gname or tarinfo.gid), end=' ')
+                _safe_print(stat.filemode(tarinfo.mode))
+                _safe_print("%s/%s" % (tarinfo.uname or tarinfo.uid,
+                                       tarinfo.gname or tarinfo.gid))
                 if tarinfo.ischr() or tarinfo.isblk():
-                    print("%10s" % ("%d,%d" \
-                                    % (tarinfo.devmajor, tarinfo.devminor)), end=' ')
+                    _safe_print("%10s" %
+                            ("%d,%d" % (tarinfo.devmajor, tarinfo.devminor)))
                 else:
-                    print("%10d" % tarinfo.size, end=' ')
-                print("%d-%02d-%02d %02d:%02d:%02d" \
-                      % time.localtime(tarinfo.mtime)[:6], end=' ')
+                    _safe_print("%10d" % tarinfo.size)
+                _safe_print("%d-%02d-%02d %02d:%02d:%02d" \
+                            % time.localtime(tarinfo.mtime)[:6])
 
-            print(tarinfo.name + ("/" if tarinfo.isdir() else ""), end=' ')
+            _safe_print(tarinfo.name + ("/" if tarinfo.isdir() else ""))
 
             if verbose:
                 if tarinfo.issym():
-                    print("->", tarinfo.linkname, end=' ')
+                    _safe_print("-> " + tarinfo.linkname)
                 if tarinfo.islnk():
-                    print("link to", tarinfo.linkname, end=' ')
+                    _safe_print("link to " + tarinfo.linkname)
             print()
 
     def add(self, name, arcname=None, recursive=True, exclude=None, *, filter=None):

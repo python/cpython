@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19920: TarFile.list() no longer fails when outputs a listing
+  containing non-encodable characters.  Based on patch by Vajrasky Kok.
+
 - Issue #20515: Fix NULL pointer dereference introduced by issue #20368.
 
 - Issue #19186: Restore namespacing of expat symbols inside the pyexpat module.
@@ -117,6 +120,8 @@ IDLE
 
 Tests
 -----
+
+- Issue #19920: Added tests for TarFile.list().  Based on patch by Vajrasky Kok.
 
 - Issue #19990: Added tests for the imghdr module.  Based on patch by
   Claudiu Popa.
