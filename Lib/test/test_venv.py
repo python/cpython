@@ -288,6 +288,13 @@ class EnsurePipTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
         self.assert_pip_not_installed()
 
+    def test_devnull_exists_and_is_empty(self):
+        # Fix for issue #20053 uses os.devnull to force a config file to
+        # appear empty. Make sure that assumption is valid cross platform.
+        self.assertTrue(os.path.exists, os.devnull)
+        with open(os.devnull, "rb") as f:
+            self.assertEqual(f.read(), b"")
+
     # Requesting pip fails without SSL (http://bugs.python.org/issue19744)
     @unittest.skipIf(ssl is None, ensurepip._MISSING_SSL_MESSAGE)
     def test_with_pip(self):
