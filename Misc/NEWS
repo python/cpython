@@ -149,6 +149,11 @@ Tools/Demos
   input and output sections of the block, allowing external tools to verify
   that the input has not changed (and thus the output is not out-of-date).
 
+Build
+-----
+
+- Issue #20465: Update SQLite shipped with OS X installer to 3.8.3.
+
 
 What's New in Python 3.4.0 Beta 3?
 ==================================
