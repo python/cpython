@@ -379,6 +379,9 @@ Tests
 Documentation
 -------------
 
+- Issue #20488: Importlib is no longer *an* implementation of import, it's *the*
+  implementation.
+
 - Issue #20265: Updated some parts of the Using Windows document.
 
 - Issue #20266: Updated some parts of the Windows FAQ.
