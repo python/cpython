@@ -816,7 +816,11 @@ on_hook(PyObject *func)
 }
 
 static int
+#if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
+#else
+on_startup_hook()
+#endif
 {
     int r;
 #ifdef WITH_THREAD
@@ -831,7 +835,11 @@ on_startup_hook(void)
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static int
+#if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
+#else
+on_pre_input_hook()
+#endif
 {
     int r;
 #ifdef WITH_THREAD
