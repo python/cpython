@@ -172,7 +172,7 @@ class HashRandomizationTests:
     # an object to be tested
 
     def get_hash_command(self, repr_):
-        return 'print(hash(eval(%r.decode("utf-8"))))' % repr_.encode("utf-8")
+        return 'print(hash(eval(%a)))' % repr_
 
     def get_hash(self, repr_, seed=None):
         env = os.environ.copy()
