@@ -286,7 +286,7 @@ class ParsingError(Error):
             raise ValueError("Required argument `source' not given.")
         elif filename:
             source = filename
-        Error.__init__(self, 'Source contains parsing errors: %s' % source)
+        Error.__init__(self, 'Source contains parsing errors: %r' % source)
         self.source = source
         self.errors = []
         self.args = (source, )
@@ -322,7 +322,7 @@ class MissingSectionHeaderError(ParsingError):
     def __init__(self, filename, lineno, line):
         Error.__init__(
             self,
-            'File contains no section headers.\nfile: %s, line: %d\n%r' %
+            'File contains no section headers.\nfile: %r, line: %d\n%r' %
             (filename, lineno, line))
         self.source = filename
         self.lineno = lineno
