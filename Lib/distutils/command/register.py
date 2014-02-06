@@ -300,5 +300,5 @@ Your selection [default 1]: ''', log.INFO)
             result = 200, 'OK'
         if self.show_response:
             dashes = '-' * 75
-            self.announce('%s%s%s' % (dashes, data, dashes))
+            self.announce('%s%r%s' % (dashes, data, dashes))
         return result

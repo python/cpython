@@ -362,7 +362,7 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     if adobe:
         if not (b.startswith(_A85START) and b.endswith(_A85END)):
             raise ValueError("Ascii85 encoded byte sequences must be bracketed "
-                             "by {} and {}".format(_A85START, _A85END))
+                             "by {!r} and {!r}".format(_A85START, _A85END))
         b = b[2:-2] # Strip off start/end markers
     #
     # We have to go through this stepwise, so as to ignore spaces and handle
