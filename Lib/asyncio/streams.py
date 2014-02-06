@@ -293,6 +293,10 @@ class StreamReader:
             if not waiter.cancelled():
                 waiter.set_result(True)
 
+    def at_eof(self):
+        """Return True if the buffer is empty and 'feed_eof' was called."""
+        return self._eof and not self._buffer
+
     def feed_data(self, data):
         assert not self._eof, 'feed_data after feed_eof'
 
