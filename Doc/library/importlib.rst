@@ -1,8 +1,8 @@
-:mod:`importlib` -- An implementation of :keyword:`import`
-==========================================================
+:mod:`importlib` -- The implementation of :keyword:`import`
+===========================================================
 
 .. module:: importlib
-   :synopsis: An implementation of the import machinery.
+   :synopsis: The implementation of the import machinery.
 
 .. moduleauthor:: Brett Cannon <brett@python.org>
 .. sectionauthor:: Brett Cannon <brett@python.org>
@@ -13,17 +13,16 @@
 Introduction
 ------------
 
-The purpose of the :mod:`importlib` package is two-fold. One is to provide an
+The purpose of the :mod:`importlib` package is two-fold. One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the
 :func:`__import__` function) in Python source code. This provides an
 implementation of :keyword:`import` which is portable to any Python
-interpreter. This also provides a reference implementation which is easier to
+interpreter. This also provides an implementation which is easier to
 comprehend than one implemented in a programming language other than Python.
 
 Two, the components to implement :keyword:`import` are exposed in this
 package, making it easier for users to create their own custom objects (known
 generically as an :term:`importer`) to participate in the import process.
-Details on custom importers can be found in :pep:`302`.
 
 .. seealso::
 
@@ -52,6 +51,9 @@ Details on custom importers can be found in :pep:`302`.
 
     :pep:`366`
         Main module explicit relative imports
+
+    :pep:`451`
+        A ModuleSpec Type for the Import System
 
     :pep:`3120`
         Using UTF-8 as the Default Source Encoding
