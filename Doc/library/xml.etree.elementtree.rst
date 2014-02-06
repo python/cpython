@@ -511,7 +511,7 @@ Functions
    *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
    Returns a list of (optionally) encoded strings containing the XML data.
    It does not guarantee any specific sequence, except that
-   ``"".join(tostringlist(element)) == tostring(element)``.
+   ``b"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
 
