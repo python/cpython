@@ -165,10 +165,16 @@ a built-in module with that name. If not found, it then searches for a file
 named :file:`spam.py` in a list of directories given by the variable
 :data:`sys.path`.  :data:`sys.path` is initialized from these locations:
 
-* the directory containing the input script (or the current directory).
+* The directory containing the input script (or the current directory when no
+  file is specified).
 * :envvar:`PYTHONPATH` (a list of directory names, with the same syntax as the
   shell variable :envvar:`PATH`).
-* the installation-dependent default.
+* The installation-dependent default.
+
+.. note::
+   On file systems which support symlinks, the directory containing the input
+   script is calculated after the symlink is followed. In other words the
+   directory containing the symlink is **not** added to the module search path.
 
 After initialization, Python programs can modify :data:`sys.path`.  The
 directory containing the script being run is placed at the beginning of the

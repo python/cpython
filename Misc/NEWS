@@ -163,6 +163,13 @@ Build
 
 - Issue #20465: Update SQLite shipped with OS X installer to 3.8.3.
 
+Documentation
+-------------
+
+- Issue #6386: Clarify in the tutorial that specifying a symlink to execute
+  means the directory containing the executed script and not the symlink is
+  added to sys.path.
+
 
 What's New in Python 3.4.0 Beta 3?
 ==================================
