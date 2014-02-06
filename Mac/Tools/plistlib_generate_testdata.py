@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from Cocoa import NSMutableDictionary, NSMutableArray, NSString, NSDate
+from Cocoa import NSMutableDictionary, NSMutableArray, NSString, NSDate, NSNumber
 from Cocoa import NSPropertyListSerialization, NSPropertyListOpenStepFormat
 from Cocoa import NSPropertyListXMLFormat_v1_0, NSPropertyListBinaryFormat_v1_0
 from Cocoa import CFUUIDCreateFromString, NSNull, NSUUID, CFPropertyListCreateData
@@ -30,6 +30,7 @@ def main():
 
     seconds = datetime.datetime(2004, 10, 26, 10, 33, 33, tzinfo=datetime.timezone(datetime.timedelta(0))).timestamp()
     pl[nsstr('aBigInt')] = 2 ** 63 - 44
+    pl[nsstr('aBigInt2')] = NSNumber.numberWithUnsignedLongLong_(2 ** 63 + 44)
     pl[nsstr('aDate')] = NSDate.dateWithTimeIntervalSince1970_(seconds)
 
     pl[nsstr('aDict')] = d = OrderedDict()

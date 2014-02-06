@@ -879,18 +879,19 @@ class _BinaryPlistWriter (object):
                 try:
                     self._fp.write(struct.pack('>Bq', 0x13, value))
                 except struct.error:
-                    raise OverflowError(value)
+                    raise OverflowError(value) from None
             elif value < 1 << 8:
                 self._fp.write(struct.pack('>BB', 0x10, value))
             elif value < 1 << 16:
                 self._fp.write(struct.pack('>BH', 0x11, value))
             elif value < 1 << 32:
                 self._fp.write(struct.pack('>BL', 0x12, value))
+            elif value < 1 << 63:
+                self._fp.write(struct.pack('>BQ', 0x13, value))
+            elif value < 1 << 64:
+                self._fp.write(b'\x14' + value.to_bytes(16, 'big', signed=True))
             else:
-                try:
-                    self._fp.write(struct.pack('>BQ', 0x13, value))
-                except struct.error:
-                    raise OverflowError(value)
+                raise OverflowError(value)
 
         elif isinstance(value, float):
             self._fp.write(struct.pack('>Bd', 0x23, value))
