@@ -56,8 +56,8 @@ connection requests.
    have only one method, :meth:`more`, which should return data to be
    transmitted on the channel.
    The producer indicates exhaustion (*i.e.* that it contains no more data) by
-   having its :meth:`more` method return the empty string. At this point the
-   :class:`async_chat` object removes the producer from the fifo and starts
+   having its :meth:`more` method return the empty bytes object. At this point
+   the :class:`async_chat` object removes the producer from the fifo and starts
    using the next producer, if any. When the producer fifo is empty the
    :meth:`handle_write` method does nothing. You use the channel object's
    :meth:`set_terminator` method to describe how to recognize the end of, or
@@ -221,7 +221,7 @@ any extraneous data sent by the web client are ignored. ::
        def found_terminator(self):
            if self.reading_headers:
                self.reading_headers = False
-               self.parse_headers("".join(self.ibuffer))
+               self.parse_headers(b"".join(self.ibuffer))
                self.ibuffer = []
                if self.op.upper() == b"POST":
                    clen = self.headers.getheader("content-length")

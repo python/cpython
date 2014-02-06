@@ -197,7 +197,7 @@ Decompression objects support the following methods and attributes:
 .. attribute:: Decompress.unused_data
 
    A bytes object which contains any bytes past the end of the compressed data. That is,
-   this remains ``""`` until the last byte that contains compression data is
+   this remains ``b""`` until the last byte that contains compression data is
    available.  If the whole bytestring turned out to contain compressed data, this is
    ``b""``, an empty bytes object.
 
