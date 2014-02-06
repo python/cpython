@@ -109,6 +109,10 @@ Library
 - Issue #15304: concurrent.futures.wait() can block forever even if
   Futures have completed. Patch by Glenn Langford.
 
+- Issue #14455: plistlib: fix serializing integers integers in the range
+  of an unsigned long long but outside of the range of signed long long for
+  binary plist files.
+
 IDLE
 ----
 
