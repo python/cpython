@@ -204,6 +204,21 @@ class StreamReaderTests(unittest.TestCase):
         # expected to be empty now.
         self.assertEqual(b'', stream._buffer)
 
+    def test_at_eof(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        self.assertFalse(stream.at_eof())
+
+        stream.feed_data(b'some data\n')
+        self.assertFalse(stream.at_eof())
+
+        self.loop.run_until_complete(stream.readline())
+        self.assertFalse(stream.at_eof())
+
+        stream.feed_data(b'some data\n')
+        stream.feed_eof()
+        self.loop.run_until_complete(stream.readline())
+        self.assertTrue(stream.at_eof())
+
     def test_readline_limit(self):
         # Read one line. StreamReaders are fed with data after
         # their 'readline' methods are called.
