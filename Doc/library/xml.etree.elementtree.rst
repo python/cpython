@@ -457,7 +457,7 @@ Functions
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
    Returns a list of (optionally) encoded strings containing the XML data.
    It does not guarantee any specific sequence, except that
-   ``"".join(tostringlist(element)) == tostring(element)``.
+   ``b"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
 
