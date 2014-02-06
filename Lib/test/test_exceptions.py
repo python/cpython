@@ -8,8 +8,8 @@ import weakref
 import errno
 
 from test.support import (TESTFN, captured_output, check_impl_detail,
-                          cpython_only, gc_collect, run_unittest, no_tracing,
-                          unlink)
+                          check_warnings, cpython_only, gc_collect,
+                          no_tracing, run_unittest, unlink)
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -960,9 +960,10 @@ class ImportErrorTests(unittest.TestCase):
 
     def test_non_str_argument(self):
         # Issue #15778
-        arg = b'abc'
-        exc = ImportError(arg)
-        self.assertEqual(str(arg), str(exc))
+        with check_warnings(('', BytesWarning), quiet=True):
+            arg = b'abc'
+            exc = ImportError(arg)
+            self.assertEqual(str(arg), str(exc))
 
 
 def test_main():
