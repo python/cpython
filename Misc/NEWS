@@ -166,6 +166,9 @@ Build
 Documentation
 -------------
 
+- Issue #20488: Change wording to say importlib is *the* implementation of
+  import instead of just *an* implementation.
+
 - Issue #6386: Clarify in the tutorial that specifying a symlink to execute
   means the directory containing the executed script and not the symlink is
   added to sys.path.
