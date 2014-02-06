@@ -97,19 +97,20 @@ class ReadTest(unittest.TestCase):
         self.assertEqual(readalllines(s, True, 10), sexpected)
         self.assertEqual(readalllines(s, False, 10), sexpectednoends)
 
+        lineends = ("\n", "\r\n", "\r", u"\u2028")
         # Test long lines (multiple calls to read() in readline())
         vw = []
         vwo = []
-        for (i, lineend) in enumerate(u"\n \r\n \r \u2028".split()):
-            vw.append((i*200)*u"\3042" + lineend)
-            vwo.append((i*200)*u"\3042")
-        self.assertEqual(readalllines("".join(vw), True), "".join(vw))
-        self.assertEqual(readalllines("".join(vw), False),"".join(vwo))
+        for (i, lineend) in enumerate(lineends):
+            vw.append((i*200+200)*u"\u3042" + lineend)
+            vwo.append((i*200+200)*u"\u3042")
+        self.assertEqual(readalllines("".join(vw), True), "|".join(vw))
+        self.assertEqual(readalllines("".join(vw), False), "|".join(vwo))
 
         # Test lines where the first read might end with \r, so the
         # reader has to look ahead whether this is a lone \r or a \r\n
         for size in xrange(80):
-            for lineend in u"\n \r\n \r \u2028".split():
+            for lineend in lineends:
                 s = 10*(size*u"a" + lineend + u"xxx\n")
                 reader = getreader(s)
                 for i in xrange(10):
@@ -117,11 +118,19 @@ class ReadTest(unittest.TestCase):
                         reader.readline(keepends=True),
                         size*u"a" + lineend,
                     )
+                    self.assertEqual(
+                        reader.readline(keepends=True),
+                        "xxx\n",
+                    )
                 reader = getreader(s)
                 for i in xrange(10):
                     self.assertEqual(
                         reader.readline(keepends=False),
                         size*u"a",
+                    )
+                    self.assertEqual(
+                        reader.readline(keepends=False),
+                        "xxx",
                     )
 
     def test_mixed_readline_and_read(self):
