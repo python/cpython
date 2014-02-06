@@ -138,7 +138,7 @@ class HashRandomizationTests:
     # an object to be tested
 
     def get_hash_command(self, repr_):
-        return 'print(hash(%s))' % repr_
+        return 'print(hash(eval(%a)))' % repr_
 
     def get_hash(self, repr_, seed=None):
         env = os.environ.copy()
