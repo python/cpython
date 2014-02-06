@@ -107,13 +107,6 @@ This module defines the following functions:
    An :exc:`OverflowError` will be raised for integer values that cannot
    be represented in (binary) plist files.
 
-   .. warning::
-
-      For compatibility with Apple's libraries it is possible to write
-      an integer in the range from 2 ** 63 upto (and including) 2 ** 64
-      to binary plists, even though these will be read back as negative
-      values.
-
    .. versionadded: 3.4
 
 
