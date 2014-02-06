@@ -815,7 +815,6 @@ on_hook(PyObject *func)
     return result;
 }
 
-
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
