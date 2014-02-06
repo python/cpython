@@ -15,14 +15,31 @@
 
 ----------------
 
-An enumeration is a set of symbolic names (members) bound to unique, constant
-values.  Within an enumeration, the members can be compared by identity, and
-the enumeration itself can be iterated over.
+An enumeration is a set of symbolic names (members) bound to unique,
+constant values.  Within an enumeration, the members can be compared
+by identity, and the enumeration itself can be iterated over.
+
+
+Module Contents
+---------------
 
 This module defines two enumeration classes that can be used to define unique
 sets of names and values: :class:`Enum` and :class:`IntEnum`.  It also defines
-one decorator, :func:`unique`, that ensures only unique member values are
-present in an enumeration.
+one decorator, :func:`unique`.
+
+.. class:: Enum
+
+    Base class for creating enumerated constants.  See section
+    :ref:`Functional API` for an alternate construction syntax.
+
+.. class:: IntEnum
+
+    Base class for creating enumerated constants that are also
+    subclasses of :class:`int`.
+
+.. function:: unique
+
+    Enum class decorator that ensures only one name is bound to any one value.
 
 
 Creating an Enum
