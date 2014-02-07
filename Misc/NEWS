@@ -42,6 +42,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20013: Some imap servers disconnect if the current mailbox is
+  deleted, and imaplib did not handle that case gracefully.  Now it
+  handles the 'bye' correctly.
+
 - Issue #20426: When passing the re.DEBUG flag, re.compile() displays the
   debug output every time it is called, regardless of the compilation cache.
 
