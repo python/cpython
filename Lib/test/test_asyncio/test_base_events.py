@@ -124,7 +124,8 @@ class BaseEventLoopTests(unittest.TestCase):
         self.loop.run_forever()
         dt = self.loop.time() - t0
 
-        self.assertGreaterEqual(dt, delay - self.loop._granularity, dt)
+        # 50 ms: maximum granularity of the event loop
+        self.assertGreaterEqual(dt, delay - 0.050, dt)
         # tolerate a difference of +800 ms because some Python buildbots
         # are really slow
         self.assertLessEqual(dt, 0.9, dt)
