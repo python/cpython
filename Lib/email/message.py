@@ -301,9 +301,19 @@ class Message:
         Optional charset sets the message's default character set.  See
         set_charset() for details.
         """
-        if isinstance(payload, bytes):
-            payload = payload.decode('ascii', 'surrogateescape')
-        self._payload = payload
+        if hasattr(payload, 'encode'):
+            if charset is None:
+                # We should check for ASCII-only here, but we can't do that
+                # for backward compatibility reasons.  Fixed in 3.4.
+                self._payload = payload
+                return
+            if not isinstance(charset, Charset):
+                charset = Charset(charset)
+            payload = payload.encode(charset.output_charset)
+        if hasattr(payload, 'decode'):
+            self._payload = payload.decode('ascii', 'surrogateescape')
+        else:
+            self._payload = payload
         if charset is not None:
             self.set_charset(charset)
 
@@ -342,7 +352,15 @@ class Message:
             try:
                 cte(self)
             except TypeError:
-                self._payload = charset.body_encode(self._payload)
+                # This if is for backward compatibility and will be removed
+                # in 3.4 when the ascii check is added to set_payload.
+                payload = self._payload
+                if payload:
+                    try:
+                        payload = payload.encode('ascii', 'surrogateescape')
+                    except UnicodeError:
+                        payload = payload.encode(charset.output_charset)
+                self._payload = charset.body_encode(payload)
                 self.add_header('Content-Transfer-Encoding', cte)
 
     def get_charset(self):
