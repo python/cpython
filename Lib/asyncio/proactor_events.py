@@ -365,7 +365,6 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._selector = proactor   # convenient alias
         self._self_reading_future = None
         self._accept_futures = {}   # socket file descriptor => Future
-        self._granularity = max(proactor.resolution, self._granularity)
         proactor.set_loop(self)
         self._make_self_pipe()
 
