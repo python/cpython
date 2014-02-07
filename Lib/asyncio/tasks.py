@@ -364,7 +364,7 @@ def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     if loop is None:
         loop = events.get_event_loop()
 
-    fs = set(async(f, loop=loop) for f in fs)
+    fs = {async(f, loop=loop) for f in set(fs)}
 
     if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
         raise ValueError('Invalid return_when value: {}'.format(return_when))
@@ -476,7 +476,7 @@ def as_completed(fs, *, loop=None, timeout=None):
     """
     loop = loop if loop is not None else events.get_event_loop()
     deadline = None if timeout is None else loop.time() + timeout
-    todo = set(async(f, loop=loop) for f in fs)
+    todo = {async(f, loop=loop) for f in set(fs)}
     completed = collections.deque()
 
     @coroutine
@@ -568,7 +568,8 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     prevent the cancellation of one child to cause other children to
     be cancelled.)
     """
-    children = [async(fut, loop=loop) for fut in coros_or_futures]
+    arg_to_fut = {arg: async(arg, loop=loop) for arg in set(coros_or_futures)}
+    children = [arg_to_fut[arg] for arg in coros_or_futures]
     n = len(children)
     if n == 0:
         outer = futures.Future(loop=loop)
