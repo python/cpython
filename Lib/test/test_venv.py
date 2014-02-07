@@ -291,7 +291,7 @@ class EnsurePipTest(BaseTest):
     def test_devnull_exists_and_is_empty(self):
         # Fix for issue #20053 uses os.devnull to force a config file to
         # appear empty. Make sure that assumption is valid cross platform.
-        self.assertTrue(os.path.exists, os.devnull)
+        self.assertTrue(os.path.exists(os.devnull))
         with open(os.devnull, "rb") as f:
             self.assertEqual(f.read(), b"")
 
