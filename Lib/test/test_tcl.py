@@ -1,7 +1,6 @@
 import unittest
 import sys
 import os
-import _testcapi
 from test import support
 
 # Skip this test if the _tkinter module wasn't built.
@@ -12,6 +11,11 @@ support.import_fresh_module('tkinter')
 
 from tkinter import Tcl
 from _tkinter import TclError
+
+try:
+    from _testcapi import INT_MAX, PY_SSIZE_T_MAX
+except ImportError:
+    INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 tcl_version = _tkinter.TCL_VERSION.split('.')
 try:
@@ -539,9 +543,9 @@ class BigmemTclTest(unittest.TestCase):
     def setUp(self):
         self.interp = Tcl()
 
-    @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
-                         "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=_testcapi.INT_MAX + 1, memuse=5, dry_run=False)
+    @support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @support.bigmemtest(size=INT_MAX + 1, memuse=5, dry_run=False)
     def test_huge_string(self, size):
         value = ' ' * size
         self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)

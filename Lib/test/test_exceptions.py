@@ -832,6 +832,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn("maximum recursion depth exceeded", str(v))
 
 
+    @cpython_only
     def test_MemoryError(self):
         # PyErr_NoMemory always raises the same exception instance.
         # Check that the traceback is not doubled.
@@ -890,6 +891,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(error5.a, 1)
         self.assertEqual(error5.__doc__, "")
 
+    @cpython_only
     def test_memory_error_cleanup(self):
         # Issue #5437: preallocated MemoryError instances should not keep
         # traceback objects alive.

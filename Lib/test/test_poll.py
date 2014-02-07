@@ -3,14 +3,13 @@
 import os
 import random
 import select
-from _testcapi import USHRT_MAX, INT_MAX, UINT_MAX
 try:
     import threading
 except ImportError:
     threading = None
 import time
 import unittest
-from test.support import TESTFN, run_unittest, reap_threads
+from test.support import TESTFN, run_unittest, reap_threads, cpython_only
 
 try:
     select.poll
@@ -161,8 +160,18 @@ class PollTests(unittest.TestCase):
 
         # Issues #15989, #17919
         self.assertRaises(OverflowError, pollster.register, 0, -1)
-        self.assertRaises(OverflowError, pollster.register, 0, USHRT_MAX + 1)
+        self.assertRaises(OverflowError, pollster.register, 0, 1 << 64)
         self.assertRaises(OverflowError, pollster.modify, 1, -1)
+        self.assertRaises(OverflowError, pollster.modify, 1, 1 << 64)
+
+    @cpython_only
+    def test_poll_c_limits(self):
+        from _testcapi import USHRT_MAX, INT_MAX, UINT_MAX
+        pollster = select.poll()
+        pollster.register(1)
+
+        # Issues #15989, #17919
+        self.assertRaises(OverflowError, pollster.register, 0, USHRT_MAX + 1)
         self.assertRaises(OverflowError, pollster.modify, 1, USHRT_MAX + 1)
         self.assertRaises(OverflowError, pollster.poll, INT_MAX + 1)
         self.assertRaises(OverflowError, pollster.poll, UINT_MAX + 1)

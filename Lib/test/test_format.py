@@ -313,21 +313,31 @@ def test_main():
     support.run_unittest(FormatTest)
 
     def test_precision(self):
-        INT_MAX = 2147483647
-
         f = 1.2
         self.assertEqual(format(f, ".0f"), "1")
         self.assertEqual(format(f, ".3f"), "1.200")
         with self.assertRaises(ValueError) as cm:
-            format(f, ".%sf" % (INT_MAX + 1))
+            format(f, ".%sf" % (sys.maxsize + 1))
         self.assertEqual(str(cm.exception), "precision too big")
 
         c = complex(f)
-        self.assertEqual(format(f, ".0f"), "1")
-        self.assertEqual(format(f, ".3f"), "1.200")
+        self.assertEqual(format(c, ".0f"), "1+0j")
+        self.assertEqual(format(c, ".3f"), "1.200+0.000j")
+        with self.assertRaises(ValueError) as cm:
+            format(c, ".%sf" % (sys.maxsize + 1))
+        self.assertEqual(str(cm.exception), "precision too big")
+
+    @support.cpython_only
+    def test_precision_c_limits(self):
+        from _testcapi import INT_MAX
+
+        f = 1.2
         with self.assertRaises(ValueError) as cm:
             format(f, ".%sf" % (INT_MAX + 1))
-        self.assertEqual(str(cm.exception), "precision too big")
+
+        c = complex(f)
+        with self.assertRaises(ValueError) as cm:
+            format(c, ".%sf" % (INT_MAX + 1))
 
 
 if __name__ == "__main__":

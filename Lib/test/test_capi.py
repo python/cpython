@@ -17,7 +17,8 @@ try:
     import threading
 except ImportError:
     threading = None
-import _testcapi
+# Skip this test if the _testcapi module isn't available.
+_testcapi = support.import_module('_testcapi')
 
 
 def testfunction(self):

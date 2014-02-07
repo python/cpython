@@ -9,11 +9,15 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 
 import unittest
 import unicodedata
-import _testcapi
 
 from test import support
 from http.client import HTTPException
 from test.test_normalization import check_version
+
+try:
+    from _testcapi import INT_MAX, PY_SSIZE_T_MAX, UINT_MAX
+except ImportError:
+    INT_MAX = PY_SSIZE_T_MAX = UINT_MAX = 2**64 - 1
 
 class UnicodeNamesTest(unittest.TestCase):
 
@@ -216,15 +220,13 @@ class UnicodeNamesTest(unittest.TestCase):
             str, b"\\NSPACE", 'unicode-escape', 'strict'
         )
 
-    @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
-                         "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=_testcapi.UINT_MAX + 1,
-                        memuse=2 + 1, dry_run=False)
+    @support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @support.bigmemtest(size=UINT_MAX + 1, memuse=2 + 1, dry_run=False)
     def test_issue16335(self, size):
         # very very long bogus character name
-        x = b'\\N{SPACE' + b'x' * (_testcapi.UINT_MAX + 1) + b'}'
-        self.assertEqual(len(x), len(b'\\N{SPACE}') +
-                                    (_testcapi.UINT_MAX + 1))
+        x = b'\\N{SPACE' + b'x' * (UINT_MAX + 1) + b'}'
+        self.assertEqual(len(x), len(b'\\N{SPACE}') + (UINT_MAX + 1))
         self.assertRaisesRegex(UnicodeError,
             'unknown Unicode character name',
             x.decode, 'unicode-escape'
