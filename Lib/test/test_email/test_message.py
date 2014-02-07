@@ -1,6 +1,6 @@
 import unittest
 import textwrap
-from email import policy
+from email import policy, message_from_string
 from email.message import EmailMessage, MIMEPart
 from test.test_email import TestEmailBase, parameterize
 
@@ -19,6 +19,20 @@ class Test(TestEmailBase):
         m['To'] = 'abc@xyz'
         with self.assertRaises(ValueError):
             m['To'] = 'xyz@abc'
+
+    def test_rfc2043_auto_decoded_and_emailmessage_used(self):
+        m = message_from_string(textwrap.dedent("""\
+            Subject: Ayons asperges pour le =?utf-8?q?d=C3=A9jeuner?=
+            From: =?utf-8?q?Pep=C3=A9?= Le Pew <pepe@example.com>
+            To: "Penelope Pussycat" <"penelope@example.com">
+            MIME-Version: 1.0
+            Content-Type: text/plain; charset="utf-8"
+
+            sample text
+            """), policy=policy.default)
+        self.assertEqual(m['subject'], "Ayons asperges pour le déjeuner")
+        self.assertEqual(m['from'], "Pepé Le Pew <pepe@example.com>")
+        self.assertIsInstance(m, EmailMessage)
 
 
 @parameterize

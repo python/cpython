@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20476: If a non-compat32 policy is used with any of the email parsers,
+  EmailMessage is now used as the factory class.  The factory class should
+  really come from the policy; that will get fixed in 3.5.
+
 - Issue #19920: TarFile.list() no longer fails when outputs a listing
   containing non-encodable characters.  Based on patch by Vajrasky Kok.
 
