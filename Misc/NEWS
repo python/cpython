@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17369: get_filename was raising an exception if the filename
+  parameter's RFC2231 encoding was broken in certain ways.  This was
+  a regression relative to python2.
+
 - Issue #20013: Some imap servers disconnect if the current mailbox is
   deleted, and imaplib did not handle that case gracefully.  Now it
   handles the 'bye' correctly.
