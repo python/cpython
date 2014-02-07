@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20531: Revert 3.4 version of fix for #19063, and apply the 3.3
+  version.  That is, do *not* raise an error if unicode is passed to
+  email.message.Message.set_payload.
+
 - Issue #20476: If a non-compat32 policy is used with any of the email parsers,
   EmailMessage is now used as the factory class.  The factory class should
   really come from the policy; that will get fixed in 3.5.

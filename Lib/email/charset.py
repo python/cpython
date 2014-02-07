@@ -386,7 +386,8 @@ class Charset:
         string using the ascii codec produces the correct string version
         of the content.
         """
-        # 7bit/8bit encodings return the string unchanged (module conversions)
+        if not string:
+            return string
         if self.body_encoding is BASE64:
             if isinstance(string, str):
                 string = string.encode(self.output_charset)
@@ -398,13 +399,9 @@ class Charset:
             # character set, then, we must turn it into pseudo bytes via the
             # latin1 charset, which will encode any byte as a single code point
             # between 0 and 255, which is what body_encode is expecting.
-            #
-            # Note that this clause doesn't handle the case of a _payload that
-            # is already bytes.  It never did, and the semantics of _payload
-            # being bytes has never been nailed down, so fixing that is a
-            # longer term TODO.
             if isinstance(string, str):
-                string = string.encode(self.output_charset).decode('latin1')
+                string = string.encode(self.output_charset)
+            string = string.decode('latin1')
             return email.quoprimime.body_encode(string)
         else:
             if isinstance(string, str):
