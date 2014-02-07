@@ -634,7 +634,17 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 logger.log(level, 'poll took %.3f seconds', t1-t0)
         else:
+            t0 = self.time()
             event_list = self._selector.select(timeout)
+            dt = self.time() - t0
+            if timeout and not event_list and dt < timeout:
+                print("%s.select(%.3f ms) took %.3f ms (granularity=%.3f ms, resolution=%.3f ms)"
+                      % (self._selector.__class__.__name__,
+                         timeout * 1e3,
+                         dt * 1e3,
+                         self._granularity * 1e3,
+                         self._selector.resolution * 1e3),
+                      file=sys.__stderr__)
         self._process_events(event_list)
 
         # Handle 'later' callbacks that are ready.
