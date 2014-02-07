@@ -1,12 +1,11 @@
 """Test cases for traceback module"""
 
-from _testcapi import traceback_print, exception_print
 from io import StringIO
 import sys
 import unittest
 import re
 from test.support import run_unittest, Error, captured_output
-from test.support import TESTFN, unlink
+from test.support import TESTFN, unlink, cpython_only
 
 import traceback
 
@@ -173,7 +172,9 @@ class SyntaxTracebackCases(unittest.TestCase):
 
 class TracebackFormatTests(unittest.TestCase):
 
+    @cpython_only
     def test_traceback_format(self):
+        from _testcapi import traceback_print
         try:
             raise KeyError('blah')
         except KeyError:
@@ -360,7 +361,9 @@ class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     # This checks built-in reporting by the interpreter.
     #
 
+    @cpython_only
     def get_report(self, e):
+        from _testcapi import exception_print
         e = self.get_exception(e)
         with captured_output("stderr") as s:
             exception_print(e)

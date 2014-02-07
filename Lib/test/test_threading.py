@@ -3,7 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import verbose, strip_python_stderr, import_module
+from test.support import verbose, strip_python_stderr, import_module, cpython_only
 from test.script_helper import assert_python_ok
 
 import random
@@ -773,6 +773,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         for t in threads:
             t.join()
 
+    @cpython_only
     @unittest.skipIf(_testcapi is None, "need _testcapi module")
     def test_frame_tstate_tracing(self):
         # Issue #14432: Crash when a generator is created in a C thread that is

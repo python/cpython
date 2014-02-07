@@ -610,6 +610,7 @@ class SysModuleTest(unittest.TestCase):
         ret, out, err = assert_python_ok(*args)
         self.assertIn(b"free PyDictObjects", err)
 
+@test.support.cpython_only
 class SizeofTest(unittest.TestCase):
 
     def setUp(self):
