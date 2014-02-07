@@ -644,8 +644,13 @@ class UnicodeTest(
                 return u'\u1234'
         self.assertEqual('%s' % Wrapper(), u'\u1234')
 
-    @test_support.cpython_only
     def test_formatting_huge_precision(self):
+        format_string = u"%.{}f".format(sys.maxsize + 1)
+        with self.assertRaises(ValueError):
+            result = format_string % 2.34
+
+    @test_support.cpython_only
+    def test_formatting_huge_precision_c_limits(self):
         from _testcapi import INT_MAX
         format_string = u"%.{}f".format(INT_MAX + 1)
         with self.assertRaises(ValueError):
@@ -1633,6 +1638,7 @@ class UnicodeTest(
         self.assertEqual("%s" % u, u'__unicode__ overridden')
         self.assertEqual("{}".format(u), '__unicode__ overridden')
 
+    @test_support.cpython_only
     def test_encode_decimal(self):
         from _testcapi import unicode_encodedecimal
         self.assertEqual(unicode_encodedecimal(u'123'),
@@ -1658,6 +1664,7 @@ class UnicodeTest(
         self.assertEqual(unicode_encodedecimal(u"123\u20ac\u0660", "replace"),
                          b'123?0')
 
+    @test_support.cpython_only
     def test_encode_decimal_with_surrogates(self):
         from _testcapi import unicode_encodedecimal
         tests = [(u'\U0001f49d', '&#128157;'),

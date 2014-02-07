@@ -1,11 +1,10 @@
 """Test cases for traceback module"""
 
-from _testcapi import traceback_print
 from StringIO import StringIO
 import sys
 import unittest
 from imp import reload
-from test.test_support import run_unittest, is_jython, Error
+from test.test_support import run_unittest, is_jython, Error, cpython_only
 
 import traceback
 
@@ -181,7 +180,9 @@ def test():
 
 class TracebackFormatTests(unittest.TestCase):
 
+    @cpython_only
     def test_traceback_format(self):
+        from _testcapi import traceback_print
         try:
             raise KeyError('blah')
         except KeyError:

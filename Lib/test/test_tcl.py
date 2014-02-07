@@ -1,7 +1,6 @@
 import unittest
 import sys
 import os
-import _testcapi
 from test import test_support
 from subprocess import Popen, PIPE
 
@@ -10,6 +9,11 @@ _tkinter = test_support.import_module('_tkinter')
 
 from Tkinter import Tcl
 from _tkinter import TclError
+
+try:
+    from _testcapi import INT_MAX, PY_SSIZE_T_MAX
+except ImportError:
+    INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 tcl_version = _tkinter.TCL_VERSION.split('.')
 try:
@@ -523,10 +527,9 @@ class BigmemTclTest(unittest.TestCase):
     def setUp(self):
         self.interp = Tcl()
 
-    @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
-                         "needs UINT_MAX < SIZE_MAX")
-    @test_support.precisionbigmemtest(size=_testcapi.INT_MAX + 1, memuse=5,
-                                      dry_run=False)
+    @test_support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @test_support.precisionbigmemtest(size=INT_MAX + 1, memuse=5, dry_run=False)
     def test_huge_string(self, size):
         value = ' ' * size
         self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)

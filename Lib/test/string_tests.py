@@ -5,7 +5,6 @@ Common tests shared by test_str, test_unicode, test_userstring and test_string.
 import unittest, string, sys, struct
 from test import test_support
 from UserList import UserList
-import _testcapi
 
 class Sequence:
     def __init__(self, seq='wxyz'): self.seq = seq
@@ -1114,26 +1113,30 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, '%10.*f', '__mod__', ('foo', 42.))
         self.checkraises(ValueError, '%10', '__mod__', (42,))
 
-        width = int(_testcapi.PY_SSIZE_T_MAX + 1)
-        if width <= sys.maxint:
-            self.checkraises(OverflowError, '%*s', '__mod__', (width, ''))
-        prec = int(_testcapi.INT_MAX + 1)
-        if prec <= sys.maxint:
-            self.checkraises(OverflowError, '%.*f', '__mod__', (prec, 1. / 7))
-        # Issue 15989
-        width = int(1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1))
-        if width <= sys.maxint:
-            self.checkraises(OverflowError, '%*s', '__mod__', (width, ''))
-        prec = int(_testcapi.UINT_MAX + 1)
-        if prec <= sys.maxint:
-            self.checkraises(OverflowError, '%.*f', '__mod__', (prec, 1. / 7))
-
         class X(object): pass
         self.checkraises(TypeError, 'abc', '__mod__', X())
         class X(Exception):
             def __getitem__(self, k):
                 return k
         self.checkequal('melon apple', '%(melon)s %(apple)s', '__mod__', X())
+
+    @test_support.cpython_only
+    def test_formatting_c_limits(self):
+        from _testcapi import PY_SSIZE_T_MAX, INT_MAX, UINT_MAX
+        SIZE_MAX = (1 << (PY_SSIZE_T_MAX.bit_length() + 1)) - 1
+        width = int(PY_SSIZE_T_MAX + 1)
+        if width <= sys.maxint:
+            self.checkraises(OverflowError, '%*s', '__mod__', (width, ''))
+        prec = int(INT_MAX + 1)
+        if prec <= sys.maxint:
+            self.checkraises(OverflowError, '%.*f', '__mod__', (prec, 1. / 7))
+        # Issue 15989
+        width = int(SIZE_MAX + 1)
+        if width <= sys.maxint:
+            self.checkraises(OverflowError, '%*s', '__mod__', (width, ''))
+        prec = int(UINT_MAX + 1)
+        if prec <= sys.maxint:
+            self.checkraises(OverflowError, '%.*f', '__mod__', (prec, 1. / 7))
 
     def test_floatformatting(self):
         # float formatting

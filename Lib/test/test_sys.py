@@ -489,6 +489,7 @@ class SysModuleTest(unittest.TestCase):
         p.wait()
         self.assertIn(executable, ["''", repr(sys.executable)])
 
+@test.test_support.cpython_only
 class SizeofTest(unittest.TestCase):
 
     def setUp(self):

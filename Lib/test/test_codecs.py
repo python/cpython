@@ -2,7 +2,7 @@ from test import test_support
 import unittest
 import codecs
 import locale
-import sys, StringIO, _testcapi
+import sys, StringIO
 
 def coding_checker(self, coder):
     def check(input, expect):
@@ -1539,7 +1539,7 @@ else:
 
 class BasicUnicodeTest(unittest.TestCase):
     def test_basics(self):
-        s = u"abc123" # all codecs should be able to encode these
+        s = u"abc123"  # all codecs should be able to encode these
         for encoding in all_unicode_encodings:
             name = codecs.lookup(encoding).name
             if encoding.endswith("_codec"):
@@ -1548,9 +1548,9 @@ class BasicUnicodeTest(unittest.TestCase):
                 name = "latin_1"
             self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
             (bytes, size) = codecs.getencoder(encoding)(s)
-            self.assertEqual(size, len(s), "%r != %r (encoding=%r)" % (size, len(s), encoding))
+            self.assertEqual(size, len(s), "encoding=%r" % encoding)
             (chars, size) = codecs.getdecoder(encoding)(bytes)
-            self.assertEqual(chars, s, "%r != %r (encoding=%r)" % (chars, s, encoding))
+            self.assertEqual(chars, s, "encoding=%r" % encoding)
 
             if encoding not in broken_unicode_with_streams:
                 # check stream reader/writer
@@ -1566,15 +1566,13 @@ class BasicUnicodeTest(unittest.TestCase):
                 for c in encodedresult:
                     q.write(c)
                     decodedresult += reader.read()
-                self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+                self.assertEqual(decodedresult, s, "encoding=%r" % encoding)
 
             if encoding not in broken_incremental_coders:
-                # check incremental decoder/encoder (fetched via the Python
-                # and C API) and iterencode()/iterdecode()
+                # check incremental decoder/encoder and iterencode()/iterdecode()
                 try:
                     encoder = codecs.getincrementalencoder(encoding)()
-                    cencoder = _testcapi.codec_incrementalencoder(encoding)
-                except LookupError: # no IncrementalEncoder
+                except LookupError:  # no IncrementalEncoder
                     pass
                 else:
                     # check incremental decoder/encoder
@@ -1587,45 +1585,71 @@ class BasicUnicodeTest(unittest.TestCase):
                     for c in encodedresult:
                         decodedresult += decoder.decode(c)
                     decodedresult += decoder.decode("", True)
-                    self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
-
-                    # check C API
-                    encodedresult = ""
-                    for c in s:
-                        encodedresult += cencoder.encode(c)
-                    encodedresult += cencoder.encode(u"", True)
-                    cdecoder = _testcapi.codec_incrementaldecoder(encoding)
-                    decodedresult = u""
-                    for c in encodedresult:
-                        decodedresult += cdecoder.decode(c)
-                    decodedresult += cdecoder.decode("", True)
-                    self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+                    self.assertEqual(decodedresult, s,
+                                     "encoding=%r" % encoding)
 
                     # check iterencode()/iterdecode()
-                    result = u"".join(codecs.iterdecode(codecs.iterencode(s, encoding), encoding))
-                    self.assertEqual(result, s, "%r != %r (encoding=%r)" % (result, s, encoding))
+                    result = u"".join(codecs.iterdecode(
+                            codecs.iterencode(s, encoding), encoding))
+                    self.assertEqual(result, s, "encoding=%r" % encoding)
 
                     # check iterencode()/iterdecode() with empty string
-                    result = u"".join(codecs.iterdecode(codecs.iterencode(u"", encoding), encoding))
+                    result = u"".join(codecs.iterdecode(
+                            codecs.iterencode(u"", encoding), encoding))
                     self.assertEqual(result, u"")
 
                 if encoding not in only_strict_mode:
                     # check incremental decoder/encoder with errors argument
                     try:
                         encoder = codecs.getincrementalencoder(encoding)("ignore")
-                        cencoder = _testcapi.codec_incrementalencoder(encoding, "ignore")
-                    except LookupError: # no IncrementalEncoder
+                    except LookupError:  # no IncrementalEncoder
                         pass
                     else:
                         encodedresult = "".join(encoder.encode(c) for c in s)
                         decoder = codecs.getincrementaldecoder(encoding)("ignore")
-                        decodedresult = u"".join(decoder.decode(c) for c in encodedresult)
-                        self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+                        decodedresult = u"".join(decoder.decode(c)
+                                                 for c in encodedresult)
+                        self.assertEqual(decodedresult, s,
+                                         "encoding=%r" % encoding)
 
+    @test_support.cpython_only
+    def test_basics_capi(self):
+        from _testcapi import codec_incrementalencoder, codec_incrementaldecoder
+        s = u"abc123"  # all codecs should be able to encode these
+        for encoding in all_unicode_encodings:
+            if encoding not in broken_incremental_coders:
+                # check incremental decoder/encoder and iterencode()/iterdecode()
+                try:
+                    cencoder = codec_incrementalencoder(encoding)
+                except LookupError:  # no IncrementalEncoder
+                    pass
+                else:
+                    # check C API
+                    encodedresult = ""
+                    for c in s:
+                        encodedresult += cencoder.encode(c)
+                    encodedresult += cencoder.encode(u"", True)
+                    cdecoder = codec_incrementaldecoder(encoding)
+                    decodedresult = u""
+                    for c in encodedresult:
+                        decodedresult += cdecoder.decode(c)
+                    decodedresult += cdecoder.decode("", True)
+                    self.assertEqual(decodedresult, s,
+                                     "encoding=%r" % encoding)
+
+                if encoding not in only_strict_mode:
+                    # check incremental decoder/encoder with errors argument
+                    try:
+                        cencoder = codec_incrementalencoder(encoding, "ignore")
+                    except LookupError:  # no IncrementalEncoder
+                        pass
+                    else:
                         encodedresult = "".join(cencoder.encode(c) for c in s)
-                        cdecoder = _testcapi.codec_incrementaldecoder(encoding, "ignore")
-                        decodedresult = u"".join(cdecoder.decode(c) for c in encodedresult)
-                        self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+                        cdecoder = codec_incrementaldecoder(encoding, "ignore")
+                        decodedresult = u"".join(cdecoder.decode(c)
+                                                 for c in encodedresult)
+                        self.assertEqual(decodedresult, s,
+                                         "encoding=%r" % encoding)
 
     def test_seek(self):
         # all codecs should be able to encode these

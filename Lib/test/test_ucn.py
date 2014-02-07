@@ -9,9 +9,13 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 
 import unittest
 import sys
-import _testcapi
 
 from test import test_support
+
+try:
+    from _testcapi import INT_MAX, PY_SSIZE_T_MAX, UINT_MAX
+except ImportError:
+    INT_MAX = PY_SSIZE_T_MAX = UINT_MAX = 2**64 - 1
 
 class UnicodeNamesTest(unittest.TestCase):
 
@@ -139,11 +143,10 @@ class UnicodeNamesTest(unittest.TestCase):
             unicode, "\\NSPACE", 'unicode-escape', 'strict'
         )
 
-    @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
-                         "needs UINT_MAX < SIZE_MAX")
-    @unittest.skipUnless(_testcapi.UINT_MAX < sys.maxint,
-                         "needs UINT_MAX < sys.maxint")
-    @test_support.bigmemtest(minsize=_testcapi.UINT_MAX + 1,
+    @test_support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @unittest.skipUnless(UINT_MAX < sys.maxint, "needs UINT_MAX < sys.maxint")
+    @test_support.bigmemtest(minsize=UINT_MAX + 1,
                              memuse=2 + 4 // len(u'\U00010000'))
     def test_issue16335(self, size):
         func = self.test_issue16335
@@ -151,9 +154,8 @@ class UnicodeNamesTest(unittest.TestCase):
             raise unittest.SkipTest("not enough memory: %.1fG minimum needed" %
                     (func.minsize * func.memuse / float(1024**3),))
         # very very long bogus character name
-        x = b'\\N{SPACE' + b'x' * int(_testcapi.UINT_MAX + 1) + b'}'
-        self.assertEqual(len(x), len(b'\\N{SPACE}') +
-                                    (_testcapi.UINT_MAX + 1))
+        x = b'\\N{SPACE' + b'x' * int(UINT_MAX + 1) + b'}'
+        self.assertEqual(len(x), len(b'\\N{SPACE}') + (UINT_MAX + 1))
         self.assertRaisesRegexp(UnicodeError,
             'unknown Unicode character name',
             x.decode, 'unicode-escape'

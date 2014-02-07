@@ -6,10 +6,9 @@ OS/2+EMX doesn't support the file locking operations.
 import os
 import struct
 import sys
-import _testcapi
 import unittest
 from test.test_support import (verbose, TESTFN, unlink, run_unittest,
-    import_module)
+    import_module, cpython_only)
 
 # Skip test if no fcntl module.
 fcntl = import_module('fcntl')
@@ -52,6 +51,12 @@ def get_lockdata():
 lockdata = get_lockdata()
 
 
+class BadFile:
+    def __init__(self, fn):
+        self.fn = fn
+    def fileno(self):
+        return self.fn
+
 class TestFcntl(unittest.TestCase):
 
     def setUp(self):
@@ -83,24 +88,27 @@ class TestFcntl(unittest.TestCase):
         self.f.close()
 
     def test_fcntl_bad_file(self):
-        class F:
-            def __init__(self, fn):
-                self.fn = fn
-            def fileno(self):
-                return self.fn
-        self.assertRaises(ValueError, fcntl.fcntl, -1, fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(ValueError, fcntl.fcntl, F(-1), fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(TypeError, fcntl.fcntl, 'spam', fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(TypeError, fcntl.fcntl, F('spam'), fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(-1, fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(BadFile(-1), fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(TypeError):
+            fcntl.fcntl('spam', fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(TypeError):
+            fcntl.fcntl(BadFile('spam'), fcntl.F_SETFL, os.O_NONBLOCK)
+
+    @cpython_only
+    def test_fcntl_bad_file_overflow(self):
+        from _testcapi import INT_MAX, INT_MIN
         # Issue 15989
-        self.assertRaises(ValueError, fcntl.fcntl, _testcapi.INT_MAX + 1,
-                                                   fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(ValueError, fcntl.fcntl, F(_testcapi.INT_MAX + 1),
-                                                   fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(ValueError, fcntl.fcntl, _testcapi.INT_MIN - 1,
-                                                   fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(ValueError, fcntl.fcntl, F(_testcapi.INT_MIN - 1),
-                                                   fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(INT_MAX + 1, fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(BadFile(INT_MAX + 1), fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(INT_MIN - 1, fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(BadFile(INT_MIN - 1), fcntl.F_SETFL, os.O_NONBLOCK)
 
     def test_fcntl_64_bit(self):
         # Issue #1309352: fcntl shouldn't fail when the third arg fits in a
