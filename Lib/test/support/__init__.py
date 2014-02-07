@@ -25,7 +25,6 @@ import fnmatch
 import logging.handlers
 import struct
 import tempfile
-import _testcapi
 
 try:
     import _thread, threading
@@ -1349,6 +1348,7 @@ _TPFLAGS_HAVE_GC = 1<<14
 _TPFLAGS_HEAPTYPE = 1<<9
 
 def check_sizeof(test, o, size):
+    import _testcapi
     result = sys.getsizeof(o)
     # add GC header size
     if ((type(o) == type) and (o.__flags__ & _TPFLAGS_HEAPTYPE) or\

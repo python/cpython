@@ -1,5 +1,7 @@
 import unittest
 from test import support
+# Skip this test if the _testcapi module isn't available.
+support.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
 
 """

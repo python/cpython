@@ -7,7 +7,6 @@ import io
 import socket
 import select
 import tempfile
-import _testcapi
 import time
 import traceback
 import queue
@@ -1274,7 +1273,10 @@ class GeneralModuleTests(unittest.TestCase):
             srv.listen(backlog)
             srv.close()
 
+    @support.cpython_only
+    def test_listen_backlog_overflow(self):
         # Issue 15989
+        import _testcapi
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.bind((HOST, 0))
         self.assertRaises(OverflowError, srv.listen, _testcapi.INT_MAX + 1)
@@ -1592,6 +1594,14 @@ class BasicTCPTest(SocketConnectedTest):
         self.done.wait()
 
     def _testShutdown(self):
+        self.serv_conn.send(MSG)
+        self.serv_conn.shutdown(2)
+
+    testShutdown_overflow = support.cpython_only(testShutdown)
+
+    @support.cpython_only
+    def _testShutdown_overflow(self):
+        import _testcapi
         self.serv_conn.send(MSG)
         # Issue 15989
         self.assertRaises(OverflowError, self.serv_conn.shutdown,
@@ -2361,7 +2371,12 @@ class CmsgMacroTests(unittest.TestCase):
     # code with these functions.
 
     # Match the definition in socketmodule.c
-    socklen_t_limit = min(0x7fffffff, _testcapi.INT_MAX)
+    try:
+        import _testcapi
+    except ImportError:
+        socklen_t_limit = 0x7fffffff
+    else:
+        socklen_t_limit = min(0x7fffffff, _testcapi.INT_MAX)
 
     @requireAttrs(socket, "CMSG_LEN")
     def testCMSG_LEN(self):
@@ -3586,13 +3601,22 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             pass
         end = time.time()
         self.assertTrue((end - start) < 1.0, "Error setting non-blocking mode.")
-        # Issue 15989
-        if _testcapi.UINT_MAX < _testcapi.ULONG_MAX:
-            self.serv.setblocking(_testcapi.UINT_MAX + 1)
-            self.assertIsNone(self.serv.gettimeout())
 
     def _testSetBlocking(self):
         pass
+
+    @support.cpython_only
+    def testSetBlocking_overflow(self):
+        # Issue 15989
+        import _testcapi
+        if _testcapi.UINT_MAX >= _testcapi.ULONG_MAX:
+            self.skipTest('needs UINT_MAX < ULONG_MAX')
+        self.serv.setblocking(False)
+        self.assertEqual(self.serv.gettimeout(), 0.0)
+        self.serv.setblocking(_testcapi.UINT_MAX + 1)
+        self.assertIsNone(self.serv.gettimeout())
+
+    _testSetBlocking_overflow = support.cpython_only(_testSetBlocking)
 
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'test needs socket.SOCK_NONBLOCK')
