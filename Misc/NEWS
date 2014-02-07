@@ -45,6 +45,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20013: Some imap servers disconnect if the current mailbox is
+  deleted, and imaplib did not handle that case gracefully.  Now it
+  handles the 'bye' correctly.
+
 - Issue #19920: TarFile.list() no longer fails when outputs a listing
   containing non-encodable characters.  Based on patch by Vajrasky Kok.
 
