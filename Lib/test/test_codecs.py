@@ -124,6 +124,8 @@ class ReadTest(MixInCheckStateHandling):
             "".join(codecs.iterdecode([bytes([c]) for c in encoded], self.encoding))
         )
 
+    # Temporary skip, see http://bugs.python.org/issue20542
+    @unittest.skip
     def test_readline(self):
         def getreader(input):
             stream = io.BytesIO(input.encode(self.encoding))
