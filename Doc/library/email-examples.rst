@@ -40,6 +40,34 @@ text version: [2]_
 .. literalinclude:: ../includes/email-alternative.py
 
 
+Examples using the Provision API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Here is a reworking of the last example using the provisional API.  To make
+things a bit more interesting, we include a related image in the html part, and
+we save a copy of what we are going to send to disk, as well as sending it.
+
+This example also shows how easy it is to include non-ASCII, and simplifies the
+sending of the message using the :meth:`.send_message` method of the
+:mod:`smtplib` module.
+
+.. literalinclude:: ../includes/email-alternative-new-api.py
+
+If we were instead sent the message from the last example, here is one
+way we could process it:
+
+.. literalinclude:: ../includes/email-read-alternative-new-api.py
+
+Up to the prompt, the output from the above is::
+
+    To: Penelope Pussycat <"penelope@example.com">, Fabrette Pussycat <"fabrette@example.com">
+    From: Pepé Le Pew <pepe@example.com>
+    Subject: Ayons asperges pour le déjeuner
+
+    Salut!
+
+    Cela ressemble à un excellent recipie[1] déjeuner.
+
+
 .. rubric:: Footnotes
 
 .. [1] Thanks to Matthew Dixon Cowles for the original inspiration and examples.
