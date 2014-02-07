@@ -126,7 +126,7 @@ class BufferedSubFile(object):
 class FeedParser:
     """A feed-style parser of email."""
 
-    def __init__(self, _factory=message.Message, *, policy=compat32):
+    def __init__(self, _factory=None, *, policy=compat32):
         """_factory is called with no arguments to create a new message obj
 
         The policy keyword specifies a policy object that controls a number of
@@ -134,14 +134,23 @@ class FeedParser:
         backward compatibility.
 
         """
-        self._factory = _factory
         self.policy = policy
-        try:
-            _factory(policy=self.policy)
-            self._factory_kwds = lambda: {'policy': self.policy}
-        except TypeError:
-            # Assume this is an old-style factory
-            self._factory_kwds = lambda: {}
+        self._factory_kwds = lambda: {'policy': self.policy}
+        if _factory is None:
+            # What this should be:
+            #self._factory = policy.default_message_factory
+            # but, because we are post 3.4 feature freeze, fix with temp hack:
+            if self.policy is compat32:
+                self._factory = message.Message
+            else:
+                self._factory = message.EmailMessage
+        else:
+            self._factory = _factory
+            try:
+                _factory(policy=self.policy)
+            except TypeError:
+                # Assume this is an old-style factory
+                self._factory_kwds = lambda: {}
         self._input = BufferedSubFile()
         self._msgstack = []
         self._parse = self._parsegen().__next__
