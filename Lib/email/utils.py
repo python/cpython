@@ -347,6 +347,10 @@ def collapse_rfc2231_value(value, errors='replace',
     # object.  We do not want bytes() normal utf-8 decoder, we want a straight
     # interpretation of the string as character bytes.
     charset, language, text = value
+    if charset is None:
+        # Issue 17369: if charset/lang is None, decode_rfc2231 couldn't parse
+        # the value, so use the fallback_charset.
+        charset = fallback_charset
     rawbytes = bytes(text, 'raw-unicode-escape')
     try:
         return str(rawbytes, charset, errors)
