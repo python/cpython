@@ -698,6 +698,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(c, range(b - 50, b + 50))
 
 
+@test.support.cpython_only
 class SizeofTest(unittest.TestCase):
 
     def setUp(self):

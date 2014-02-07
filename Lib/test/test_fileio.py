@@ -8,9 +8,8 @@ import unittest
 from array import array
 from weakref import proxy
 from functools import wraps
-import _testcapi
 
-from test.support import TESTFN, check_warnings, run_unittest, make_bad_fd
+from test.support import TESTFN, check_warnings, run_unittest, make_bad_fd, cpython_only
 from collections import UserList
 
 from _io import FileIO as _FileIO
@@ -362,7 +361,11 @@ class OtherFileTests(unittest.TestCase):
         if sys.platform == 'win32':
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
+
+    @cpython_only
+    def testInvalidFd_overflow(self):
         # Issue 15989
+        import _testcapi
         self.assertRaises(TypeError, _FileIO, _testcapi.INT_MAX + 1)
         self.assertRaises(TypeError, _FileIO, _testcapi.INT_MIN - 1)
 

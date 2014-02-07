@@ -7,7 +7,15 @@ import gc
 import unittest
 import weakref
 
-import _testcapi
+try:
+    from _testcapi import with_tp_del
+except ImportError:
+    def with_tp_del(cls):
+        class C(object):
+            def __new__(cls, *args, **kwargs):
+                raise TypeError('requires _testcapi.with_tp_del')
+        return C
+
 from test import support
 
 
@@ -423,11 +431,11 @@ class LegacyBase(SimpleBase):
         except Exception as e:
             self.errors.append(e)
 
-@_testcapi.with_tp_del
+@with_tp_del
 class Legacy(LegacyBase):
     pass
 
-@_testcapi.with_tp_del
+@with_tp_del
 class LegacyResurrector(LegacyBase):
 
     def side_effect(self):
@@ -436,11 +444,12 @@ class LegacyResurrector(LegacyBase):
         """
         self.survivors.append(self)
 
-@_testcapi.with_tp_del
+@with_tp_del
 class LegacySelfCycle(SelfCycleBase, LegacyBase):
     pass
 
 
+@support.cpython_only
 class LegacyFinalizationTest(TestBase, unittest.TestCase):
     """
     Test finalization of objects with a tp_del.

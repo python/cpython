@@ -125,6 +125,8 @@ IDLE
 Tests
 -----
 
+- Issue #20532: Tests which use _testcapi now are marked as CPython only.
+
 - Issue #19920: Added tests for TarFile.list().  Based on patch by Vajrasky Kok.
 
 - Issue #19990: Added tests for the imghdr module.  Based on patch by
