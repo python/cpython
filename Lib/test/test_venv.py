@@ -28,6 +28,12 @@ except ImportError:
 skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
                              'Test not appropriate in a venv')
 
+# os.path.exists('nul') is False: http://bugs.python.org/issue20541
+if os.devnull.lower() == 'nul':
+    failsOnWindows = unittest.expectedFailure
+else:
+    def failsOnWindows(f):
+        return f
 
 class BaseTest(unittest.TestCase):
     """Base class for venv tests."""
@@ -288,9 +294,12 @@ class EnsurePipTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
         self.assert_pip_not_installed()
 
+    @failsOnWindows
     def test_devnull_exists_and_is_empty(self):
         # Fix for issue #20053 uses os.devnull to force a config file to
-        # appear empty. Make sure that assumption is valid cross platform.
+        # appear empty. However http://bugs.python.org/issue20541 means
+        # that doesn't currently work properly on Windows. Once that is
+        # fixed, the "win_location" part of test_with_pip should be restored
         self.assertTrue(os.path.exists(os.devnull))
         with open(os.devnull, "rb") as f:
             self.assertEqual(f.read(), b"")
@@ -319,7 +328,8 @@ class EnsurePipTest(BaseTest):
                 # cross-platform variation in test code behaviour
                 win_location = ("pip", "pip.ini")
                 posix_location = (".pip", "pip.conf")
-                for dirname, fname in (win_location, posix_location):
+                # Skips win_location due to http://bugs.python.org/issue20541
+                for dirname, fname in (posix_location,):
                     dirpath = os.path.join(home_dir, dirname)
                     os.mkdir(dirpath)
                     fpath = os.path.join(dirpath, fname)
