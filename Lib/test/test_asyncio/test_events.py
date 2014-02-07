@@ -1170,28 +1170,19 @@ class EventLoopTestsMixin:
         orig_run_once = self.loop._run_once
         self.loop._run_once_counter = 0
         self.loop._run_once = _run_once
-        calls = []
 
         @asyncio.coroutine
         def wait():
             loop = self.loop
-            calls.append(loop._run_once_counter)
-            yield from asyncio.sleep(loop._granularity * 10, loop=loop)
-            calls.append(loop._run_once_counter)
-            yield from asyncio.sleep(loop._granularity / 10, loop=loop)
-            calls.append(loop._run_once_counter)
+            yield from asyncio.sleep(1e-2, loop=loop)
+            yield from asyncio.sleep(1e-4, loop=loop)
 
         self.loop.run_until_complete(wait())
-        calls.append(self.loop._run_once_counter)
-        self.assertEqual(calls, [1, 3, 5, 6])
-
-    def test_granularity(self):
-        granularity = self.loop._granularity
-        self.assertGreater(granularity, 0.0)
-        # Worst expected granularity: 1 ms on Linux (limited by poll/epoll
-        # resolution), 15.6 ms on Windows (limited by time.monotonic
-        # resolution)
-        self.assertLess(granularity, 0.050)
+        # The ideal number of call is 6, but on some platforms, the selector
+        # may sleep at little bit less than timeout depending on the resolution
+        # of the clock used by the kernel. Tolerate 2 useless calls on these
+        # platforms.
+        self.assertLessEqual(self.loop._run_once_counter, 8)
 
 
 class SubprocessTestsMixin:

@@ -96,7 +96,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._default_executor = None
         self._internal_fds = 0
         self._running = False
-        self._granularity = time.get_clock_info('monotonic').resolution
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
@@ -634,21 +633,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 logger.log(level, 'poll took %.3f seconds', t1-t0)
         else:
-            t0 = self.time()
             event_list = self._selector.select(timeout)
-            dt = self.time() - t0
-            if timeout and not event_list and dt < timeout:
-                print("%s.select(%.3f ms) took %.3f ms (granularity=%.3f ms, resolution=%.3f ms)"
-                      % (self._selector.__class__.__name__,
-                         timeout * 1e3,
-                         dt * 1e3,
-                         self._granularity * 1e3,
-                         self._selector.resolution * 1e3),
-                      file=sys.__stderr__)
         self._process_events(event_list)
 
         # Handle 'later' callbacks that are ready.
-        now = self.time() + self._granularity
+        now = self.time()
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when > now:

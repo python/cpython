@@ -36,7 +36,6 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             selector = selectors.DefaultSelector()
         logger.debug('Using selector: %s', selector.__class__.__name__)
         self._selector = selector
-        self._granularity = max(selector.resolution, self._granularity)
         self._make_self_pipe()
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,

@@ -98,10 +98,6 @@ below:
    :class:`BaseSelector` and its concrete implementations support the
    :term:`context manager` protocol.
 
-   .. attribute:: resolution
-
-      Resolution of the selector in seconds.
-
    .. method:: register(fileobj, events, data=None)
 
       Register a file object for selection, monitoring it for I/O events.
