@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20013: Some imap servers disconnect if the current mailbox is
+  deleted, and imaplib did not handle that case gracefully.  Now it
+  handles the 'bye' correctly.
+
 - Issue #20531: Revert 3.4 version of fix for #19063, and apply the 3.3
   version.  That is, do *not* raise an error if unicode is passed to
   email.message.Message.set_payload.
