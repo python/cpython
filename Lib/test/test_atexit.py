@@ -2,7 +2,6 @@ import sys
 import unittest
 import io
 import atexit
-import _testcapi
 from test import support
 
 ### helpers

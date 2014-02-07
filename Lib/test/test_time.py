@@ -582,6 +582,7 @@ class TestPytime(unittest.TestCase):
             -(2.0 ** 100.0), 2.0 ** 100.0,
         )
 
+    @support.cpython_only
     def test_time_t(self):
         from _testcapi import pytime_object_to_time_t
         for obj, time_t in (
@@ -597,6 +598,7 @@ class TestPytime(unittest.TestCase):
         for invalid in self.invalid_values:
             self.assertRaises(OverflowError, pytime_object_to_time_t, invalid)
 
+    @support.cpython_only
     def test_timeval(self):
         from _testcapi import pytime_object_to_timeval
         for obj, timeval in (
@@ -616,6 +618,7 @@ class TestPytime(unittest.TestCase):
         for invalid in self.invalid_values:
             self.assertRaises(OverflowError, pytime_object_to_timeval, invalid)
 
+    @support.cpython_only
     def test_timespec(self):
         from _testcapi import pytime_object_to_timespec
         for obj, timespec in (
