@@ -1063,6 +1063,11 @@ class IMAP4:
                 del self.tagged_commands[tag]
                 return result
 
+            # If we've seen a BYE at this point, the socket will be
+            # closed, so report the BYE now.
+
+            self._check_bye()
+
             # Some have reported "unexpected response" exceptions.
             # Note that ignoring them here causes loops.
             # Instead, send me details of the unexpected response and
