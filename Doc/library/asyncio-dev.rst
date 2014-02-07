@@ -23,6 +23,12 @@ schedule a coroutine from a different thread::
 
     loop.call_soon_threadsafe(asyncio.async, coro_func())
 
+Most asyncio objects are not thread safe. You should only worry if you access
+objects outside the event loop. For example, to cancel a future, don't call
+directly its :meth:`Future.cancel` method, but::
+
+    loop.call_soon_threadsafe(fut.cancel)
+
 To handle signals and to execute subprocesses, the event loop must be run in
 the main thread.
 
