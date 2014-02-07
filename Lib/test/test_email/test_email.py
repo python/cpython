@@ -92,44 +92,6 @@ class TestMessageAPI(TestEmailBase):
         msg.set_payload('This is a string payload', charset)
         self.assertEqual(msg.get_charset().input_charset, 'iso-8859-1')
 
-    def test_set_payload_with_8bit_data_and_charset(self):
-        data = b'\xd0\x90\xd0\x91\xd0\x92'
-        charset = Charset('utf-8')
-        msg = Message()
-        msg.set_payload(data, charset)
-        self.assertEqual(msg['content-transfer-encoding'], 'base64')
-        self.assertEqual(msg.get_payload(decode=True), data)
-        self.assertEqual(msg.get_payload(), '0JDQkdCS\n')
-
-    def test_set_payload_with_non_ascii_and_charset_body_encoding_none(self):
-        data = b'\xd0\x90\xd0\x91\xd0\x92'
-        charset = Charset('utf-8')
-        charset.body_encoding = None # Disable base64 encoding
-        msg = Message()
-        msg.set_payload(data.decode('utf-8'), charset)
-        self.assertEqual(msg['content-transfer-encoding'], '8bit')
-        self.assertEqual(msg.get_payload(decode=True), data)
-
-    def test_set_payload_with_8bit_data_and_charset_body_encoding_none(self):
-        data = b'\xd0\x90\xd0\x91\xd0\x92'
-        charset = Charset('utf-8')
-        charset.body_encoding = None # Disable base64 encoding
-        msg = Message()
-        msg.set_payload(data, charset)
-        self.assertEqual(msg['content-transfer-encoding'], '8bit')
-        self.assertEqual(msg.get_payload(decode=True), data)
-
-    def test_set_payload_to_list(self):
-        msg = Message()
-        msg.set_payload([])
-        self.assertEqual(msg.get_payload(), [])
-
-    def test_set_payload_with_non_ascii_and_no_charset_raises(self):
-        data = b'\xd0\x90\xd0\x91\xd0\x92'.decode('utf-8')
-        msg = Message()
-        with self.assertRaises(TypeError):
-            msg.set_payload(data)
-
     def test_get_charsets(self):
         eq = self.assertEqual
 
@@ -596,10 +558,20 @@ class TestMessageAPI(TestEmailBase):
         self.assertIsInstance(msg.defects[0],
                               errors.InvalidBase64CharactersDefect)
 
+    def test_broken_unicode_payload(self):
+        # This test improves coverage but is not a compliance test.
+        # The behavior in this situation is currently undefined by the API.
+        x = 'this is a br\xf6ken thing to do'
+        msg = Message()
+        msg['content-type'] = 'text/plain'
+        msg['content-transfer-encoding'] = '8bit'
+        msg.set_payload(x)
+        self.assertEqual(msg.get_payload(decode=True),
+                         bytes(x, 'raw-unicode-escape'))
+
     def test_questionable_bytes_payload(self):
         # This test improves coverage but is not a compliance test,
-        # since it involves poking inside the black box in a way
-        # that actually breaks the model invariants.
+        # since it involves poking inside the black box.
         x = 'this is a quéstionable thing to do'.encode('utf-8')
         msg = Message()
         msg['content-type'] = 'text/plain; charset="utf-8"'

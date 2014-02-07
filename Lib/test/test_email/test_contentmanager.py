@@ -208,11 +208,12 @@ class TestRawDataManager(TestEmailBase):
                          "Basìc tëxt.\n")
 
     def test_get_text_plain_utf8_base64_recoverable_bad_CTE_data(self):
-        m = self._bytes_msg(textwrap.dedent("""\
+        m = self._str_msg(textwrap.dedent("""\
             Content-Type: text/plain; charset="utf8"
             Content-Transfer-Encoding: base64
 
-            QmFzw6xjIHTDq3h0Lgo""").encode('ascii') + b'\xFF=\n')
+            QmFzw6xjIHTDq3h0Lgo\xFF=
+            """))
         self.assertEqual(raw_data_manager.get_content(m, errors='ignore'),
                          "Basìc tëxt.\n")
 
