@@ -378,19 +378,18 @@ class Charset:
             return None
 
     def body_encode(self, string):
-        """Body-encode a string, converting it first to bytes if needed.
+        """Body-encode a string by converting it first to bytes.
 
         The type of encoding (base64 or quoted-printable) will be based on
-        self.body_encoding.  If body_encoding is None, we perform no CTE
-        encoding (the CTE will be either 7bit or 8bit), we just encode the
-        binary representation to ascii using the surrogateescape error handler,
-        which will enable the Generators to produce the correct output.
+        self.body_encoding.  If body_encoding is None, we assume the
+        output charset is a 7bit encoding, so re-encoding the decoded
+        string using the ascii codec produces the correct string version
+        of the content.
         """
-        if not string:
-            return string
-        if isinstance(string, str):
-            string = string.encode(self.output_charset)
+        # 7bit/8bit encodings return the string unchanged (module conversions)
         if self.body_encoding is BASE64:
+            if isinstance(string, str):
+                string = string.encode(self.output_charset)
             return email.base64mime.body_encode(string)
         elif self.body_encoding is QP:
             # quopromime.body_encode takes a string, but operates on it as if
@@ -399,7 +398,15 @@ class Charset:
             # character set, then, we must turn it into pseudo bytes via the
             # latin1 charset, which will encode any byte as a single code point
             # between 0 and 255, which is what body_encode is expecting.
-            string = string.decode('latin1')
+            #
+            # Note that this clause doesn't handle the case of a _payload that
+            # is already bytes.  It never did, and the semantics of _payload
+            # being bytes has never been nailed down, so fixing that is a
+            # longer term TODO.
+            if isinstance(string, str):
+                string = string.encode(self.output_charset).decode('latin1')
             return email.quoprimime.body_encode(string)
         else:
-            return string.decode('ascii', 'surrogateescape')
+            if isinstance(string, str):
+                string = string.encode(self.output_charset).decode('ascii')
+            return string
