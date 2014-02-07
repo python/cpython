@@ -277,8 +277,6 @@ class Message:
         """
         if hasattr(payload, 'encode'):
             if charset is None:
-                # We should check for ASCII-only here, but we can't do that
-                # for backward compatibility reasons.  Fixed in 3.4.
                 self._payload = payload
                 return
             if not isinstance(charset, Charset):
@@ -326,8 +324,9 @@ class Message:
             try:
                 cte(self)
             except TypeError:
-                # This if is for backward compatibility and will be removed
-                # in 3.4 when the ascii check is added to set_payload.
+                # This 'if' is for backward compatibility, it allows unicode
+                # through even though that won't work correctly if the
+                # message is serialized.
                 payload = self._payload
                 if payload:
                     try:
