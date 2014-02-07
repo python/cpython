@@ -3,7 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import verbose, strip_python_stderr, import_module
+from test.support import verbose, strip_python_stderr, import_module, cpython_only
 from test.script_helper import assert_python_ok
 
 import random
@@ -11,7 +11,6 @@ import re
 import sys
 _thread = import_module('_thread')
 threading = import_module('threading')
-import _testcapi
 import time
 import unittest
 import weakref
@@ -662,6 +661,7 @@ class ThreadTests(BaseTestCase):
         self.assertRegex(err.rstrip(),
                          b"^sys:1: ResourceWarning: unclosed file ")
 
+    @cpython_only
     def test_frame_tstate_tracing(self):
         # Issue #14432: Crash when a generator is created in a C thread that is
         # destroyed while the generator is still used. The issue was that a
@@ -690,6 +690,7 @@ class ThreadTests(BaseTestCase):
             threading.settrace(noop_trace)
 
             # Create a generator in a C thread which exits after the call
+            import _testcapi
             _testcapi.call_in_temporary_c_thread(callback)
 
             # Call the generator in a different Python thread, check that the
@@ -928,6 +929,7 @@ class SubinterpThreadingTests(BaseTestCase):
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
 
+    @cpython_only
     def test_daemon_threads_fatal_error(self):
         subinterp_code = r"""if 1:
             import os

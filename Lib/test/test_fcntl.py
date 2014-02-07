@@ -4,9 +4,9 @@ import platform
 import os
 import struct
 import sys
-import _testcapi
 import unittest
-from test.support import verbose, TESTFN, unlink, run_unittest, import_module
+from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
+                          cpython_only)
 
 # Skip test if no fcntl module.
 fcntl = import_module('fcntl')
@@ -45,6 +45,12 @@ def get_lockdata():
 
 lockdata = get_lockdata()
 
+class BadFile:
+    def __init__(self, fn):
+        self.fn = fn
+    def fileno(self):
+        return self.fn
+
 class TestFcntl(unittest.TestCase):
 
     def setUp(self):
@@ -78,24 +84,27 @@ class TestFcntl(unittest.TestCase):
         self.f.close()
 
     def test_fcntl_bad_file(self):
-        class F:
-            def __init__(self, fn):
-                self.fn = fn
-            def fileno(self):
-                return self.fn
-        self.assertRaises(ValueError, fcntl.fcntl, -1, fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(ValueError, fcntl.fcntl, F(-1), fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(TypeError, fcntl.fcntl, 'spam', fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(TypeError, fcntl.fcntl, F('spam'), fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(-1, fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(ValueError):
+            fcntl.fcntl(BadFile(-1), fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(TypeError):
+            fcntl.fcntl('spam', fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(TypeError):
+            fcntl.fcntl(BadFile('spam'), fcntl.F_SETFL, os.O_NONBLOCK)
+
+    @cpython_only
+    def test_fcntl_bad_file_overflow(self):
+        from _testcapi import INT_MAX, INT_MIN
         # Issue 15989
-        self.assertRaises(OverflowError, fcntl.fcntl, _testcapi.INT_MAX + 1,
-                                                      fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(OverflowError, fcntl.fcntl, F(_testcapi.INT_MAX + 1),
-                                                      fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(OverflowError, fcntl.fcntl, _testcapi.INT_MIN - 1,
-                                                      fcntl.F_SETFL, os.O_NONBLOCK)
-        self.assertRaises(OverflowError, fcntl.fcntl, F(_testcapi.INT_MIN - 1),
-                                                      fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(OverflowError):
+            fcntl.fcntl(INT_MAX + 1, fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(OverflowError):
+            fcntl.fcntl(BadFile(INT_MAX + 1), fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(OverflowError):
+            fcntl.fcntl(INT_MIN - 1, fcntl.F_SETFL, os.O_NONBLOCK)
+        with self.assertRaises(OverflowError):
+            fcntl.fcntl(BadFile(INT_MIN - 1), fcntl.F_SETFL, os.O_NONBLOCK)
 
     @unittest.skipIf(
         platform.machine().startswith('arm') and platform.system() == 'Linux',
@@ -128,6 +137,10 @@ class TestFcntl(unittest.TestCase):
 
         self.assertRaises(ValueError, fcntl.flock, -1, fcntl.LOCK_SH)
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
+
+    @cpython_only
+    def test_flock_overflow(self):
+        import _testcapi
         self.assertRaises(OverflowError, fcntl.flock, _testcapi.INT_MAX+1,
                           fcntl.LOCK_SH)
 

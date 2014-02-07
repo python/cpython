@@ -32,7 +32,6 @@ import time
 import unittest
 import warnings
 import weakref
-import _testcapi
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
@@ -1997,8 +1996,10 @@ class TextIOWrapperTest(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_environ)
 
-    # Issue 15989
+    @support.cpython_only
     def test_device_encoding(self):
+        # Issue 15989
+        import _testcapi
         b = self.BytesIO()
         b.fileno = lambda: _testcapi.INT_MAX + 1
         self.assertRaises(OverflowError, self.TextIOWrapper, b)
