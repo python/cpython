@@ -5018,6 +5018,26 @@ Content-Type: application/x-foo; name*0=\"Frank's\"; name*1=\" Document\"
         self.assertNotIsInstance(param, tuple)
         self.assertEqual(param, "Frank's Document")
 
+    def test_rfc2231_missing_tick(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="'This%20is%20broken";
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(
+            msg.get_filename(),
+            "'This is broken")
+
+    def test_rfc2231_missing_tick_with_encoded_non_ascii(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="'This%20is%E2broken";
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(
+            msg.get_filename(),
+            "'This is\ufffdbroken")
+
     # test_headerregistry.TestContentTypeHeader.rfc2231_single_quote_in_value_with_charset_and_lang
     def test_rfc2231_tick_attack_extended(self):
         eq = self.assertEqual
