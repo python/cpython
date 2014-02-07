@@ -483,6 +483,21 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(res, 42)
 
+    def test_wait_duplicate_coroutines(self):
+        @asyncio.coroutine
+        def coro(s):
+            return s
+        c = coro('test')
+
+        task = asyncio.Task(
+            asyncio.wait([c, c, coro('spam')], loop=self.loop),
+            loop=self.loop)
+
+        done, pending = self.loop.run_until_complete(task)
+
+        self.assertFalse(pending)
+        self.assertEqual(set(f.result() for f in done), {'test', 'spam'})
+
     def test_wait_errors(self):
         self.assertRaises(
             ValueError, self.loop.run_until_complete,
@@ -757,14 +772,10 @@ class TaskTests(unittest.TestCase):
     def test_as_completed_with_timeout(self):
 
         def gen():
-            when = yield
-            self.assertAlmostEqual(0.12, when)
-            when = yield 0
-            self.assertAlmostEqual(0.1, when)
-            when = yield 0
-            self.assertAlmostEqual(0.15, when)
-            when = yield 0.1
-            self.assertAlmostEqual(0.12, when)
+            yield
+            yield 0
+            yield 0
+            yield 0.1
             yield 0.02
 
         loop = test_utils.TestLoop(gen)
@@ -839,6 +850,25 @@ class TaskTests(unittest.TestCase):
         waiter = asyncio.wait(futs, loop=loop)
         done, pending = loop.run_until_complete(waiter)
         self.assertEqual(set(f.result() for f in done), {'a', 'b'})
+
+    def test_as_completed_duplicate_coroutines(self):
+        @asyncio.coroutine
+        def coro(s):
+            return s
+
+        @asyncio.coroutine
+        def runner():
+            result = []
+            c = coro('ham')
+            for f in asyncio.as_completed({c, c, coro('spam')}, loop=self.loop):
+                result.append((yield from f))
+            return result
+
+        fut = asyncio.Task(runner(), loop=self.loop)
+        self.loop.run_until_complete(fut)
+        result = fut.result()
+        self.assertEqual(set(result), {'ham', 'spam'})
+        self.assertEqual(len(result), 2)
 
     def test_sleep(self):
 
@@ -1504,6 +1534,15 @@ class CoroutineGatherTests(GatherTestsBase, unittest.TestCase):
         self.assertIs(fut._loop, self.other_loop)
         gen3.close()
         gen4.close()
+
+    def test_duplicate_coroutines(self):
+        @asyncio.coroutine
+        def coro(s):
+            return s
+        c = coro('abc')
+        fut = asyncio.gather(c, c, coro('def'), c, loop=self.one_loop)
+        self._run_loop(self.one_loop)
+        self.assertEqual(fut.result(), ['abc', 'abc', 'def', 'abc'])
 
     def test_cancellation_broadcast(self):
         # Cancelling outer() cancels all children.
