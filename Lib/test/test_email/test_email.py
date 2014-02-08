@@ -1711,7 +1711,8 @@ From: bperson@dom.ain
 
 --BOUNDARY
 
---BOUNDARY--''')
+--BOUNDARY--
+''')
 
     def test_no_parts_in_a_multipart_with_empty_epilogue(self):
         outer = MIMEBase('multipart', 'mixed')
@@ -1756,7 +1757,8 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
---BOUNDARY--''')
+--BOUNDARY--
+''')
 
     def test_seq_parts_in_a_multipart_with_empty_preamble(self):
         eq = self.ndiffAssertEqual
@@ -1782,7 +1784,8 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
---BOUNDARY--''')
+--BOUNDARY--
+''')
 
 
     def test_seq_parts_in_a_multipart_with_none_preamble(self):
@@ -1808,7 +1811,8 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
---BOUNDARY--''')
+--BOUNDARY--
+''')
 
 
     def test_seq_parts_in_a_multipart_with_none_epilogue(self):
@@ -1834,7 +1838,8 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
---BOUNDARY--''')
+--BOUNDARY--
+''')
 
 
     def test_seq_parts_in_a_multipart_with_empty_epilogue(self):

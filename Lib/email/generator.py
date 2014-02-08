@@ -299,9 +299,8 @@ class Generator:
             # body-part
             self._fp.write(body_part)
         # close-delimiter transport-padding
-        self.write(self._NL + '--' + boundary + '--')
+        self.write(self._NL + '--' + boundary + '--' + self._NL)
         if msg.epilogue is not None:
-            self.write(self._NL)
             if self._mangle_from_:
                 epilogue = fcre.sub('>From ', msg.epilogue)
             else:
