@@ -536,8 +536,8 @@ class TestRawDataManager(TestEmailBase):
             From: victim@monty.org
             Subject: Help
             Content-Type: text/plain; charset="utf-8"
-            MIME-Version: 1.0
             Content-Transfer-Encoding: base64
+            MIME-Version: 1.0
 
             aidhaSB1biBwcm9ibMOobWUgZGUgcHl0aG9uLiBpbCBlc3Qgc29ydGkgZGUgc29uIHZpdmFyaXVt
             Lgo=
