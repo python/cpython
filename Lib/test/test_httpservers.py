@@ -531,7 +531,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
 
     def verify_http_server_response(self, response):
         match = self.HTTPResponseMatch.search(response)
-        self.assertTrue(match is not None)
+        self.assertIsNotNone(match)
 
     def test_http_1_1(self):
         result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
