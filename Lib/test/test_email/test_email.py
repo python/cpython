@@ -3529,7 +3529,7 @@ Here's the message body
         self.assertTrue(msg.get_payload(0).get_payload().endswith('\r\n'))
 
 
-class Test8BitBytesHandling(unittest.TestCase):
+class Test8BitBytesHandling(TestEmailBase):
     # In Python3 all input is string, but that doesn't work if the actual input
     # uses an 8bit transfer encoding.  To hack around that, in email 5.1 we
     # decode byte streams using the surrogateescape error handler, and
@@ -3781,6 +3781,16 @@ class Test8BitBytesHandling(unittest.TestCase):
         out = StringIO()
         email.generator.Generator(out).flatten(msg)
         self.assertEqual(out.getvalue(), self.non_latin_bin_msg_as7bit_wrapped)
+
+    def test_str_generator_should_not_mutate_msg_when_handling_8bit(self):
+        msg = email.message_from_bytes(self.non_latin_bin_msg)
+        out = BytesIO()
+        BytesGenerator(out).flatten(msg)
+        orig_value = out.getvalue()
+        Generator(StringIO()).flatten(msg) # Should not mutate msg!
+        out = BytesIO()
+        BytesGenerator(out).flatten(msg)
+        self.assertEqual(out.getvalue(), orig_value)
 
     def test_bytes_generator_with_unix_from(self):
         # The unixfrom contains a current date, so we can't check it
