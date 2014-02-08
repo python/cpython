@@ -4459,8 +4459,16 @@ utf7Error:
     /* return state */
     if (consumed) {
         if (inShift) {
-            writer.pos = shiftOutStart; /* back off output */
             *consumed = startinpos;
+            if (writer.pos != shiftOutStart && writer.maxchar > 127) {
+                PyObject *result = PyUnicode_FromKindAndData(
+                        writer.kind, writer.data, shiftOutStart);
+                Py_XDECREF(errorHandler);
+                Py_XDECREF(exc);
+                _PyUnicodeWriter_Dealloc(&writer);
+                return result;
+            }
+            writer.pos = shiftOutStart; /* back off output */
         }
         else {
             *consumed = s-starts;

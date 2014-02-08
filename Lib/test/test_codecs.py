@@ -124,8 +124,6 @@ class ReadTest(MixInCheckStateHandling):
             "".join(codecs.iterdecode([bytes([c]) for c in encoded], self.encoding))
         )
 
-    # Temporary skip, see http://bugs.python.org/issue20542
-    @unittest.skip
     def test_readline(self):
         def getreader(input):
             stream = io.BytesIO(input.encode(self.encoding))
@@ -899,13 +897,40 @@ class UTF7Test(ReadTest, unittest.TestCase):
 
     def test_partial(self):
         self.check_partial(
-            "a+-b",
+            'a+-b\x00c\x80d\u0100e\U00010000f',
             [
-                "a",
-                "a",
-                "a+",
-                "a+-",
-                "a+-b",
+                'a',
+                'a',
+                'a+',
+                'a+-',
+                'a+-b',
+                'a+-b',
+                'a+-b',
+                'a+-b',
+                'a+-b',
+                'a+-b\x00',
+                'a+-b\x00c',
+                'a+-b\x00c',
+                'a+-b\x00c',
+                'a+-b\x00c',
+                'a+-b\x00c',
+                'a+-b\x00c\x80',
+                'a+-b\x00c\x80d',
+                'a+-b\x00c\x80d',
+                'a+-b\x00c\x80d',
+                'a+-b\x00c\x80d',
+                'a+-b\x00c\x80d',
+                'a+-b\x00c\x80d\u0100',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e',
+                'a+-b\x00c\x80d\u0100e\U00010000',
+                'a+-b\x00c\x80d\u0100e\U00010000f',
             ]
         )
 
