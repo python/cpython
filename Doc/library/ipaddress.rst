@@ -9,13 +9,6 @@
 
 --------------
 
-.. note::
-
-   The ``ipaddress`` module has been included in the standard library on a
-   :term:`provisional basis <provisional package>`. Backwards incompatible
-   changes (up to and including removal of the package) may occur if deemed
-   necessary by the core developers.
-
 :mod:`ipaddress` provides the capabilities to create, manipulate and
 operate on IPv4 and IPv6 addresses and networks.
 
