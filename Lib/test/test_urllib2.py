@@ -603,8 +603,8 @@ class OpenerDirectorTests(unittest.TestCase):
                 self.assertIsInstance(args[0], Request)
                 # response from opener.open is None, because there's no
                 # handler that defines http_open to handle it
-                self.assertTrue(args[1] is None or
-                             isinstance(args[1], MockResponse))
+                if args[1] is not None:
+                    self.assertIsInstance(args[1], MockResponse)
 
 def sanepathname2url(path):
     try:
@@ -1018,7 +1018,8 @@ class HandlerTests(unittest.TestCase):
                            MockHeaders({"location": to_url}))
                 except urllib.error.HTTPError:
                     # 307 in response to POST requires user OK
-                    self.assertTrue(code == 307 and data is not None)
+                    self.assertEqual(code, 307)
+                    self.assertIsNotNone(data)
                 self.assertEqual(o.req.get_full_url(), to_url)
                 try:
                     self.assertEqual(o.req.get_method(), "GET")

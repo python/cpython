@@ -196,7 +196,7 @@ class UtilityTests(TestCase):
         # Check existing value
         env = {key:alt}
         util.setup_testing_defaults(env)
-        self.assertTrue(env[key] is alt)
+        self.assertIs(env[key], alt)
 
     def checkCrossDefault(self,key,value,**kw):
         util.setup_testing_defaults(kw)
@@ -343,7 +343,7 @@ class HeaderTests(TestCase):
         self.assertEqual(Headers(test[:]).keys(), ['x'])
         self.assertEqual(Headers(test[:]).values(), ['y'])
         self.assertEqual(Headers(test[:]).items(), test)
-        self.assertFalse(Headers(test).items() is test)  # must be copy!
+        self.assertIsNot(Headers(test).items(), test)  # must be copy!
 
         h=Headers([])
         del h['foo']   # should not raise an error
