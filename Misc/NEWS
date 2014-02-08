@@ -49,7 +49,7 @@ Library
 -------
 
 - Issue #18805: the netmask/hostmask parsing in ipaddress now more reliably
-  filters out illegal values
+  filters out illegal values and correctly allows any valid prefix length.
 
 - Issue #17369: get_filename was raising an exception if the filename
   parameter's RFC2231 encoding was broken in certain ways.  This was
