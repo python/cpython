@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16983: the new email header parsing code will now decode encoded words
+  that are (incorrectly) surrounded by quotes, and register a defect.
+
 - Issue #19772: email.generator no longer mutates the message object when
   doing a down-transform from 8bit to 7bit CTEs.
 
