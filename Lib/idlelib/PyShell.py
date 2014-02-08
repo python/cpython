@@ -16,7 +16,7 @@ import io
 
 import linecache
 from code import InteractiveInterpreter
-from platform import python_version
+from platform import python_version, system
 
 try:
     from tkinter import *
@@ -1523,6 +1523,18 @@ def main():
     enable_shell = enable_shell or not enable_edit
     # start editor and/or shell windows:
     root = Tk(className="Idle")
+
+    # set application icon
+    icondir = os.path.join(os.path.dirname(__file__), 'Icons')
+    if system() == 'Windows':
+        iconfile = os.path.join(icondir, 'idle.ico')
+        root.wm_iconbitmap(default=iconfile)
+    elif TkVersion >= 8.5:
+        ext = '.png' if TkVersion >= 8.6 else '.gif'
+        iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
+                     for size in (16, 32, 48)]
+        icons = [PhotoImage(file=iconfile) for iconfile in iconfiles]
+        root.wm_iconphoto(True, *icons)
 
     fixwordbreaks(root)
     root.withdraw()
