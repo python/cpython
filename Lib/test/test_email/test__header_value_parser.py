@@ -540,6 +540,15 @@ class TestParser(TestParserMixin, TestEmailBase):
         self._test_get_x(parser.get_bare_quoted_string,
             '""', '""', '', [], '')
 
+    # Issue 16983: apply postel's law to some bad encoding.
+    def test_encoded_word_inside_quotes(self):
+        self._test_get_x(parser.get_bare_quoted_string,
+            '"=?utf-8?Q?not_really_valid?="',
+            '"not really valid"',
+            'not really valid',
+            [errors.InvalidHeaderDefect],
+            '')
+
     # get_comment
 
     def test_get_comment_only(self):
