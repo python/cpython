@@ -12,6 +12,7 @@ import time
 import random
 import warnings
 
+from copy import deepcopy
 from io import StringIO, BytesIO
 from email._policybase import compat32
 from email.header import Header
@@ -173,10 +174,18 @@ class Generator:
         # necessary.
         oldfp = self._fp
         try:
+            self._munge_cte = None
             self._fp = sfp = self._new_buffer()
             self._dispatch(msg)
         finally:
             self._fp = oldfp
+            munge_cte = self._munge_cte
+            del self._munge_cte
+        # If we munged the cte, copy the message again and re-fix the CTE.
+        if munge_cte:
+            msg = deepcopy(msg)
+            msg.replace_header('content-transfer-encoding', munge_cte[0])
+            msg.replace_header('content-type', munge_cte[1])
         # Write the headers.  First we see if the message object wants to
         # handle that itself.  If not, we'll do it generically.
         meth = getattr(msg, '_write_headers', None)
@@ -225,9 +234,14 @@ class Generator:
         if _has_surrogates(msg._payload):
             charset = msg.get_param('charset')
             if charset is not None:
+                # XXX: This copy stuff is an ugly hack to avoid modifying the
+                # existing message.
+                msg = deepcopy(msg)
                 del msg['content-transfer-encoding']
                 msg.set_payload(payload, charset)
                 payload = msg.get_payload()
+                self._munge_cte = (msg['content-transfer-encoding'],
+                                   msg['content-type'])
         if self._mangle_from_:
             payload = fcre.sub('>From ', payload)
         self._write_lines(payload)

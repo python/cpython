@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19772: email.generator no longer mutates the message object when
+  doing a down-transform from 8bit to 7bit CTEs.
+
 - Issue #18805: the netmask/hostmask parsing in ipaddress now more reliably
   filters out illegal values and correctly allows any valid prefix length.
 
