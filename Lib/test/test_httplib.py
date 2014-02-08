@@ -123,7 +123,7 @@ class HeaderTests(TestCase):
         conn.sock = FakeSocket(None)
         conn.putrequest('GET','/')
         conn.putheader('Content-length',42)
-        self.assertTrue('Content-length: 42' in conn._buffer)
+        self.assertIn('Content-length: 42', conn._buffer)
 
     def test_ipv6host_header(self):
         # Default host header on IPv6 transaction should wrapped by [] if
@@ -466,7 +466,7 @@ class TimeoutTest(TestCase):
         HTTPConnection and into the socket.
         '''
         # default -- use global socket timeout
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT)
@@ -477,7 +477,7 @@ class TimeoutTest(TestCase):
         httpConn.close()
 
         # no timeout -- do not use global socket default
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT,

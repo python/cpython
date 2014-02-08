@@ -232,7 +232,7 @@ class CgiTests(unittest.TestCase):
         # if we're not chunking properly, readline is only called twice
         # (by read_binary); if we are chunking properly, it will be called 5 times
         # as long as the chunksize is 1 << 16.
-        self.assertTrue(f.numcalls > 2)
+        self.assertGreater(f.numcalls, 2)
 
     def test_fieldstorage_invalid(self):
         fs = cgi.FieldStorage()
