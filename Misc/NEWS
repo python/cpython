@@ -10,6 +10,9 @@ Release date: 2014-02-09
 Core and Builtins
 -----------------
 
+- Issue #20538: UTF-7 incremental decoder produced inconsistant string when
+  input was truncated in BASE64 section.
+
 - Issue #20404: io.TextIOWrapper (and hence the open() builtin) now uses the
   internal codec marking system added for issue #19619 to throw LookupError
   for known non-text encodings at stream construction time. The existing
