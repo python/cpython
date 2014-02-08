@@ -456,8 +456,8 @@ class _IPAddressBase(_TotalOrderingMixin):
             raise AddressValueError(msg % (address, address_len,
                                            expected_len, self._version))
 
-    def _ip_int_from_prefix(self, prefixlen=None):
-        """Turn the prefix length netmask into a int for comparison.
+    def _ip_int_from_prefix(self, prefixlen):
+        """Turn the prefix length into a bitwise netmask
 
         Args:
             prefixlen: An integer, the prefix length.
@@ -466,36 +466,92 @@ class _IPAddressBase(_TotalOrderingMixin):
             An integer.
 
         """
-        if prefixlen is None:
-            prefixlen = self._prefixlen
         return self._ALL_ONES ^ (self._ALL_ONES >> prefixlen)
 
-    def _prefix_from_ip_int(self, ip_int, mask=32):
-        """Return prefix length from the decimal netmask.
+    def _prefix_from_ip_int(self, ip_int):
+        """Return prefix length from the bitwise netmask.
 
         Args:
-            ip_int: An integer, the IP address.
-            mask: The netmask.  Defaults to 32.
+            ip_int: An integer, the netmask in axpanded bitwise format
 
         Returns:
             An integer, the prefix length.
 
+        Raises:
+            ValueError: If the input intermingles zeroes & ones
         """
-        return mask - _count_righthand_zero_bits(ip_int, mask)
+        trailing_zeroes = _count_righthand_zero_bits(ip_int,
+                                                     self._max_prefixlen)
+        prefixlen = self._max_prefixlen - trailing_zeroes
+        leading_ones = ip_int >> trailing_zeroes
+        all_ones = (1 << prefixlen) - 1
+        if leading_ones != all_ones:
+            byteslen = self._max_prefixlen // 8
+            details = ip_int.to_bytes(byteslen, 'big')
+            msg = 'Netmask pattern %r mixes zeroes & ones'
+            raise ValueError(msg % details)
+        return prefixlen
 
-    def _ip_string_from_prefix(self, prefixlen=None):
-        """Turn a prefix length into a dotted decimal string.
+    def _report_invalid_netmask(self, netmask_str):
+        msg = '%r is not a valid netmask' % netmask_str
+        raise NetmaskValueError(msg) from None
+
+    def _prefix_from_prefix_string(self, prefixlen_str):
+        """Return prefix length from a numeric string
 
         Args:
-            prefixlen: An integer, the netmask prefix length.
+            prefixlen_str: The string to be converted
 
         Returns:
-            A string, the dotted decimal netmask string.
+            An integer, the prefix length.
 
+        Raises:
+            NetmaskValueError: If the input is not a valid netmask
         """
-        if not prefixlen:
-            prefixlen = self._prefixlen
-        return self._string_from_ip_int(self._ip_int_from_prefix(prefixlen))
+        # int allows a leading +/- as well as surrounding whitespace,
+        # so we ensure that isn't the case
+        if not _BaseV4._DECIMAL_DIGITS.issuperset(prefixlen_str):
+            self._report_invalid_netmask(prefixlen_str)
+        try:
+            prefixlen = int(prefixlen_str)
+        except ValueError:
+            self._report_invalid_netmask(prefixlen_str)
+        if not (0 <= prefixlen <= self._max_prefixlen):
+            self._report_invalid_netmask(prefixlen_str)
+        return prefixlen
+
+    def _prefix_from_ip_string(self, ip_str):
+        """Turn a netmask/hostmask string into a prefix length
+
+        Args:
+            ip_str: The netmask/hostmask to be converted
+
+        Returns:
+            An integer, the prefix length.
+
+        Raises:
+            NetmaskValueError: If the input is not a valid netmask/hostmask
+        """
+        # Parse the netmask/hostmask like an IP address.
+        try:
+            ip_int = self._ip_int_from_string(ip_str)
+        except AddressValueError:
+            self._report_invalid_netmask(ip_str)
+
+        # Try matching a netmask (this would be /1*0*/ as a bitwise regexp).
+        # Note that the two ambiguous cases (all-ones and all-zeroes) are
+        # treated as netmasks.
+        try:
+            return self._prefix_from_ip_int(ip_int)
+        except ValueError:
+            pass
+
+        # Invert the bits, and try matching a /0+1+/ hostmask instead.
+        ip_int ^= self._ALL_ONES
+        try:
+            return self._prefix_from_ip_int(ip_int)
+        except ValueError:
+            self._report_invalid_netmask(ip_str)
 
 
 class _BaseAddress(_IPAddressBase):
@@ -504,7 +560,6 @@ class _BaseAddress(_IPAddressBase):
 
     This IP class contains the version independent methods which are
     used by single IP addresses.
-
     """
 
     def __init__(self, address):
@@ -873,7 +928,7 @@ class _BaseNetwork(_IPAddressBase):
             raise ValueError('prefix length diff must be > 0')
         new_prefixlen = self._prefixlen + prefixlen_diff
 
-        if not self._is_valid_netmask(str(new_prefixlen)):
+        if new_prefixlen > self._max_prefixlen:
             raise ValueError(
                 'prefix length diff %d is invalid for netblock %s' % (
                     new_prefixlen, self))
@@ -1428,33 +1483,16 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         self.network_address = IPv4Address(self._ip_int_from_string(addr[0]))
 
         if len(addr) == 2:
-            mask = addr[1].split('.')
-
-            if len(mask) == 4:
-                # We have dotted decimal netmask.
-                if self._is_valid_netmask(addr[1]):
-                    self.netmask = IPv4Address(self._ip_int_from_string(
-                            addr[1]))
-                elif self._is_hostmask(addr[1]):
-                    self.netmask = IPv4Address(
-                        self._ip_int_from_string(addr[1]) ^ self._ALL_ONES)
-                else:
-                    raise NetmaskValueError('%r is not a valid netmask'
-                                                     % addr[1])
-
-                self._prefixlen = self._prefix_from_ip_int(int(self.netmask))
-            else:
-                # We have a netmask in prefix length form.
-                if not self._is_valid_netmask(addr[1]):
-                    raise NetmaskValueError('%r is not a valid netmask'
-                                                     % addr[1])
-                self._prefixlen = int(addr[1])
-                self.netmask = IPv4Address(self._ip_int_from_prefix(
-                    self._prefixlen))
+            try:
+                # Check for a netmask in prefix length form
+                self._prefixlen = self._prefix_from_prefix_string(addr[1])
+            except NetmaskValueError:
+                # Check for a netmask or hostmask in dotted-quad form.
+                # This may raise NetmaskValueError.
+                self._prefixlen = self._prefix_from_ip_string(addr[1])
         else:
             self._prefixlen = self._max_prefixlen
-            self.netmask = IPv4Address(self._ip_int_from_prefix(
-                self._prefixlen))
+        self.netmask = IPv4Address(self._ip_int_from_prefix(self._prefixlen))
 
         if strict:
             if (IPv4Address(int(self.network_address) & int(self.netmask)) !=
@@ -2042,11 +2080,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         self.network_address = IPv6Address(self._ip_int_from_string(addr[0]))
 
         if len(addr) == 2:
-            if self._is_valid_netmask(addr[1]):
-                self._prefixlen = int(addr[1])
-            else:
-                raise NetmaskValueError('%r is not a valid netmask'
-                                                     % addr[1])
+            # This may raise NetmaskValueError
+            self._prefixlen = self._prefix_from_prefix_string(addr[1])
         else:
             self._prefixlen = self._max_prefixlen
 
@@ -2060,23 +2095,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
-
-    def _is_valid_netmask(self, prefixlen):
-        """Verify that the netmask/prefixlen is valid.
-
-        Args:
-            prefixlen: A string, the netmask in prefix length format.
-
-        Returns:
-            A boolean, True if the prefix represents a valid IPv6
-            netmask.
-
-        """
-        try:
-            prefixlen = int(prefixlen)
-        except ValueError:
-            return False
-        return 0 <= prefixlen <= self._max_prefixlen
 
     @property
     def is_site_local(self):

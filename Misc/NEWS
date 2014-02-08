@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18805: the netmask/hostmask parsing in ipaddress now more reliably
+  filters out illegal values
+
 - Issue #17369: get_filename was raising an exception if the filename
   parameter's RFC2231 encoding was broken in certain ways.  This was
   a regression relative to python2.
