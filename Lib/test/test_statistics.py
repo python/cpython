@@ -687,6 +687,26 @@ class DecimalToRatioTest(unittest.TestCase):
             self.assertRaises(ValueError, statistics._decimal_to_ratio, d)
 
 
+class CheckTypeTest(unittest.TestCase):
+    # Test _check_type private function.
+
+    def test_allowed(self):
+        # Test that a type which should be allowed is allowed.
+        allowed = set([int, float])
+        statistics._check_type(int, allowed)
+        statistics._check_type(float, allowed)
+
+    def test_not_allowed(self):
+        # Test that a type which should not be allowed raises.
+        allowed = set([int, float])
+        self.assertRaises(TypeError, statistics._check_type, Decimal, allowed)
+
+    def test_add_to_allowed(self):
+        # Test that a second type will be added to the allowed set.
+        allowed = set([int])
+        statistics._check_type(float, allowed)
+        self.assertEqual(allowed, set([int, float]))
+
 
 # === Tests for public functions ===
 
@@ -881,40 +901,11 @@ class TestSum(NumericTestCase, UnivariateCommonMixin, UnivariateTypeMixin):
         self.assertRaises(TypeError, self.func, [1, 2, 3, b'999'])
 
     def test_mixed_sum(self):
-        # Mixed sums are allowed.
-
-        # Careful here: order matters. Can't mix Fraction and Decimal directly,
-        # only after they're converted to float.
-        data = [1, 2, Fraction(1, 2), 3.0, Decimal("0.25")]
-        self.assertEqual(self.func(data), 6.75)
-
-
-class SumInternalsTest(NumericTestCase):
-    # Test internals of the sum function.
-
-    def test_ignore_instance_float_method(self):
-        # Test that __float__ methods on data instances are ignored.
-
-        # Python typically calls __dunder__ methods on the class, not the
-        # instance. The ``sum`` implementation calls __float__ directly. To
-        # better match the behaviour of Python, we call it only on the class,
-        # not the instance. This test will fail if somebody "fixes" that code.
-
-        # Create a fake __float__ method.
-        def __float__(self):
-            raise AssertionError('test fails')
-
-        # Inject it into an instance.
-        class MyNumber(Fraction):
-            pass
-        x = MyNumber(3)
-        x.__float__ = types.MethodType(__float__, x)
-
-        # Check it works as expected.
-        self.assertRaises(AssertionError, x.__float__)
-        self.assertEqual(float(x), 3.0)
-        # And now test the function.
-        self.assertEqual(statistics._sum([1.0, 2.0, x, 4.0]), 10.0)
+        # Mixed input types are not (currently) allowed.
+        # Check that mixed data types fail.
+        self.assertRaises(TypeError, self.func, [1, 2.0, Fraction(1, 2)])
+        # And so does mixed start argument.
+        self.assertRaises(TypeError, self.func, [1, 2.0], Decimal(1))
 
 
 class SumTortureTest(NumericTestCase):

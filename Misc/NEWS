@@ -24,6 +24,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #20481: For at least Python 3.4, the statistics module will require
+  that all inputs for a single operation be of a single consistent type, or
+  else a mixed of ints and a single other consistent type. This avoids
+  some interoperability issues that arose with the previous approach of
+  coercing to a suitable common type.
+
 - Issue #20478: the statistics module now treats collections.Counter inputs
   like any other iterable.
 
