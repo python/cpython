@@ -1916,13 +1916,14 @@ Loading and running tests
    applications which run test suites should provide alternate implementations.
 
    By default this runner shows :exc:`DeprecationWarning`,
-   :exc:`PendingDeprecationWarning`, and :exc:`ImportWarning` even if they are
-   :ref:`ignored by default <warning-ignored>`. Deprecation warnings caused by
-   :ref:`deprecated unittest methods <deprecated-aliases>` are also
-   special-cased and, when the warning filters are ``'default'`` or ``'always'``,
-   they will appear only once per-module, in order to avoid too many warning
-   messages.  This behavior can be overridden using the :option:`-Wd` or
-   :option:`-Wa` options and leaving *warnings* to ``None``.
+   :exc:`PendingDeprecationWarning`, :exc:`ResourceWarning` and
+   :exc:`ImportWarning` even if they are :ref:`ignored by default <warning-
+   ignored>`. Deprecation warnings caused by :ref:`deprecated unittest methods
+   <deprecated-aliases>` are also special-cased and, when the warning filters
+   are ``'default'`` or ``'always'``, they will appear only once per-module, in
+   order to avoid too many warning messages.  This behavior can be overridden
+   using the :option:`-Wd` or :option:`-Wa` options and leaving *warnings* to
+   ``None``.
 
    .. versionchanged:: 3.2
       Added the ``warnings`` argument.
