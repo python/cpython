@@ -1559,6 +1559,13 @@ def get_bare_quoted_string(value):
     while value and value[0] != '"':
         if value[0] in WSP:
             token, value = get_fws(value)
+        elif value[:2] == '=?':
+            try:
+                token, value = get_encoded_word(value)
+                bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
+                    "encoded word inside quoted string"))
+            except errors.HeaderParseError:
+                token, value = get_qcontent(value)
         else:
             token, value = get_qcontent(value)
         bare_quoted_string.append(token)
