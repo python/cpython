@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20478: the statistics module now treats collections.Counter inputs
+  like any other iterable.
+
 - Issue #17369: get_filename was raising an exception if the filename
   parameter's RFC2231 encoding was broken in certain ways.  This was
   a regression relative to python2.

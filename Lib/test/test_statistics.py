@@ -1355,6 +1355,14 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # collections.Counter, which accepts None and returns an empty dict.
         self.assertRaises(TypeError, self.func, None)
 
+    def test_counter_data(self):
+        # Test that a Counter is treated like any other iterable.
+        data = collections.Counter([1, 1, 1, 2])
+        # Since the keys of the counter are treated as data points, not the
+        # counts, this should raise.
+        self.assertRaises(statistics.StatisticsError, self.func, data)
+
+
 
 # === Tests for variances and standard deviations ===
 
