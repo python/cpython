@@ -316,6 +316,9 @@ Library
 IDLE
 ----
 
+- Issue #20406: Use Python application icons for Idle window title bars.
+  Patch mostly by Serhiy Storchaka.
+
 - Update the python.gif icon for the Idle classbrowser and pathbowser
   from the old green snake to the new new blue and yellow snakes.
 
