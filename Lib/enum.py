@@ -31,9 +31,9 @@ def _is_sunder(name):
 
 def _make_class_unpicklable(cls):
     """Make the given class un-picklable."""
-    def _break_on_call_reduce(self):
+    def _break_on_call_reduce(self, proto):
         raise TypeError('%r cannot be pickled' % self)
-    cls.__reduce__ = _break_on_call_reduce
+    cls.__reduce_ex__ = _break_on_call_reduce
     cls.__module__ = '<unknown>'
 
 
@@ -115,12 +115,13 @@ class EnumMeta(type):
         # Reverse value->name map for hashable values.
         enum_class._value2member_map_ = {}
 
-        # check for a __getnewargs__, and if not present sabotage
+        # check for a supported pickle protocols, and if not present sabotage
         # pickling, since it won't work anyway
-        if (member_type is not object and
-            member_type.__dict__.get('__getnewargs__') is None
-            ):
-            _make_class_unpicklable(enum_class)
+        if member_type is not object:
+            methods = ('__getnewargs_ex__', '__getnewargs__',
+                    '__reduce_ex__', '__reduce__')
+            if not any(map(member_type.__dict__.get, methods)):
+                _make_class_unpicklable(enum_class)
 
         # instantiate them, checking for duplicates as we go
         # we instantiate first instead of checking for duplicates first in case
@@ -166,7 +167,7 @@ class EnumMeta(type):
 
         # double check that repr and friends are not the mixin's or various
         # things break (such as pickle)
-        for name in ('__repr__', '__str__', '__format__', '__getnewargs__'):
+        for name in ('__repr__', '__str__', '__format__', '__getnewargs__', '__reduce_ex__'):
             class_method = getattr(enum_class, name)
             obj_method = getattr(member_type, name, None)
             enum_method = getattr(first_enum, name, None)
@@ -183,7 +184,7 @@ class EnumMeta(type):
             enum_class.__new__ = Enum.__new__
         return enum_class
 
-    def __call__(cls, value, names=None, *, module=None, type=None):
+    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None):
         """Either returns an existing member, or creates a new enum class.
 
         This method is used both when an enum class is given a value to match
@@ -202,7 +203,7 @@ class EnumMeta(type):
         if names is None:  # simple value lookup
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
-        return cls._create_(value, names, module=module, type=type)
+        return cls._create_(value, names, module=module, qualname=qualname, type=type)
 
     def __contains__(cls, member):
         return isinstance(member, cls) and member.name in cls._member_map_
@@ -273,7 +274,7 @@ class EnumMeta(type):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
-    def _create_(cls, class_name, names=None, *, module=None, type=None):
+    def _create_(cls, class_name, names=None, *, module=None, qualname=None, type=None):
         """Convenience method to create a new Enum class.
 
         `names` can be:
@@ -315,6 +316,8 @@ class EnumMeta(type):
             _make_class_unpicklable(enum_class)
         else:
             enum_class.__module__ = module
+        if qualname is not None:
+            enum_class.__qualname__ = qualname
 
         return enum_class
 
@@ -467,6 +470,9 @@ class Enum(metaclass=EnumMeta):
 
     def __hash__(self):
         return hash(self._name_)
+
+    def __reduce_ex__(self, proto):
+        return self.__class__, self.__getnewargs__()
 
     # DynamicClassAttribute is used to provide access to the `name` and
     # `value` properties of enum members while keeping some measure of
