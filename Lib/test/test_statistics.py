@@ -686,6 +686,38 @@ class DecimalToRatioTest(unittest.TestCase):
         for d in (Decimal('NAN'), Decimal('sNAN'), Decimal('INF')):
             self.assertRaises(ValueError, statistics._decimal_to_ratio, d)
 
+    def test_sign(self):
+        # Test sign is calculated correctly.
+        numbers = [Decimal("9.8765e12"), Decimal("9.8765e-12")]
+        for d in numbers:
+            # First test positive decimals.
+            assert d > 0
+            num, den = statistics._decimal_to_ratio(d)
+            self.assertGreaterEqual(num, 0)
+            self.assertGreater(den, 0)
+            # Then test negative decimals.
+            num, den = statistics._decimal_to_ratio(-d)
+            self.assertLessEqual(num, 0)
+            self.assertGreater(den, 0)
+
+    def test_negative_exponent(self):
+        # Test result when the exponent is negative.
+        t = statistics._decimal_to_ratio(Decimal("0.1234"))
+        self.assertEqual(t, (1234, 10000))
+
+    def test_positive_exponent(self):
+        # Test results when the exponent is positive.
+        t = statistics._decimal_to_ratio(Decimal("1.234e7"))
+        self.assertEqual(t, (12340000, 1))
+
+    def test_regression_20536(self):
+        # Regression test for issue 20536.
+        # See http://bugs.python.org/issue20536
+        t = statistics._decimal_to_ratio(Decimal("1e2"))
+        self.assertEqual(t, (100, 1))
+        t = statistics._decimal_to_ratio(Decimal("1.47e5"))
+        self.assertEqual(t, (147000, 1))
+
 
 class CheckTypeTest(unittest.TestCase):
     # Test _check_type private function.
@@ -1073,6 +1105,12 @@ class TestMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         expected = self.func(data)
         actual = self.func(data*2)
         self.assertApproxEqual(actual, expected)
+
+    def test_regression_20561(self):
+        # Regression test for issue 20561.
+        # See http://bugs.python.org/issue20561
+        d = Decimal('1e4')
+        self.assertEqual(statistics.mean([d]), d)
 
 
 class TestMedian(NumericTestCase, AverageMixin):
