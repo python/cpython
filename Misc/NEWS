@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14983: email.generator now always adds a line end after each MIME
+  boundary marker, instead of doing so only when there is an epilogue.  This
+  fixes an RFC compliance bug and solves an issue with signed MIME parts.
+
 - Issue #20540: Fix a performance regression (vs. Python 3.2) when layering
   a multiprocessing Connection over a TCP socket.  For small payloads, Nagle's
   algorithm would introduce idle delays before the entire transmission of a
