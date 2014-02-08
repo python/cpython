@@ -4474,8 +4474,16 @@ utf7Error:
     /* return state */
     if (consumed) {
         if (inShift) {
-            outpos = shiftOutStart; /* back off output */
             *consumed = startinpos;
+            if (outpos != shiftOutStart &&
+                PyUnicode_MAX_CHAR_VALUE(unicode) > 127) {
+                PyObject *result = PyUnicode_FromKindAndData(
+                        PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
+                        shiftOutStart);
+                Py_DECREF(unicode);
+                unicode = result;
+            }
+            outpos = shiftOutStart; /* back off output */
         }
         else {
             *consumed = s-starts;
