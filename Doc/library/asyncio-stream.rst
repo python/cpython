@@ -123,6 +123,11 @@ StreamWriter
 
       Transport.
 
+   .. method:: can_write_eof()
+
+      Return :const:`True` if the transport supports :meth:`write_eof`,
+      :const:`False` if not. See :meth:`WriteTransport.can_write_eof`.
+
    .. method:: close()
 
       Close the transport: see :meth:`BaseTransport.close`.
@@ -157,11 +162,6 @@ StreamWriter
 
       Write a list (or any iterable) of data bytes to the transport:
       see :meth:`WriteTransport.writelines`.
-
-   .. method:: can_write_eof()
-
-      Return :const:`True` if the transport supports :meth:`write_eof`,
-      :const:`False` if not. See :meth:`WriteTransport.can_write_eof`.
 
    .. method:: write_eof()
 
