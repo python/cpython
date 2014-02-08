@@ -27,6 +27,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #20540: Fix a performance regression (vs. Python 3.2) when layering
+  a multiprocessing Connection over a TCP socket.  For small payloads, Nagle's
+  algorithm would introduce idle delays before the entire transmission of a
+  message.
+
 - Issue #16983: the new email header parsing code will now decode encoded words
   that are (incorrectly) surrounded by quotes, and register a defect.
 
