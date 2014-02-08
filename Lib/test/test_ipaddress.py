@@ -398,18 +398,47 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
         assertBadAddress("::1.2.3.4", "Only decimal digits")
         assertBadAddress("1.2.3.256", re.escape("256 (> 255)"))
 
+    def test_valid_netmask(self):
+        self.assertEqual(str(self.factory('192.0.2.0/255.255.255.0')),
+                         '192.0.2.0/24')
+        for i in range(0, 33):
+            # Generate and re-parse the CIDR format (trivial).
+            net_str = '0.0.0.0/%d' % i
+            net = self.factory(net_str)
+            self.assertEqual(str(net), net_str)
+            # Generate and re-parse the expanded netmask.
+            self.assertEqual(
+                str(self.factory('0.0.0.0/%s' % net.netmask)), net_str)
+            # Zero prefix is treated as decimal.
+            self.assertEqual(str(self.factory('0.0.0.0/0%d' % i)), net_str)
+            # Generate and re-parse the expanded hostmask.  The ambiguous
+            # cases (/0 and /32) are treated as netmasks.
+            if i in (32, 0):
+                net_str = '0.0.0.0/%d' % (32 - i)
+            self.assertEqual(
+                str(self.factory('0.0.0.0/%s' % net.hostmask)), net_str)
+
     def test_netmask_errors(self):
         def assertBadNetmask(addr, netmask):
-            msg = "%r is not a valid netmask"
-            with self.assertNetmaskError(msg % netmask):
+            msg = "%r is not a valid netmask" % netmask
+            with self.assertNetmaskError(re.escape(msg)):
                 self.factory("%s/%s" % (addr, netmask))
 
         assertBadNetmask("1.2.3.4", "")
+        assertBadNetmask("1.2.3.4", "-1")
+        assertBadNetmask("1.2.3.4", "+1")
+        assertBadNetmask("1.2.3.4", " 1 ")
+        assertBadNetmask("1.2.3.4", "0x1")
         assertBadNetmask("1.2.3.4", "33")
         assertBadNetmask("1.2.3.4", "254.254.255.256")
+        assertBadNetmask("1.2.3.4", "1.a.2.3")
         assertBadNetmask("1.1.1.1", "254.xyz.2.3")
         assertBadNetmask("1.1.1.1", "240.255.0.0")
+        assertBadNetmask("1.1.1.1", "255.254.128.0")
+        assertBadNetmask("1.1.1.1", "0.1.127.255")
         assertBadNetmask("1.1.1.1", "pudding")
+        assertBadNetmask("1.1.1.1", "::")
+
 
 class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Interface
@@ -438,17 +467,34 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
         assertBadAddress("10/8", "At least 3 parts")
         assertBadAddress("1234:axy::b", "Only hex digits")
 
+    def test_valid_netmask(self):
+        # We only support CIDR for IPv6, because expanded netmasks are not
+        # standard notation.
+        self.assertEqual(str(self.factory('2001:db8::/32')), '2001:db8::/32')
+        for i in range(0, 129):
+            # Generate and re-parse the CIDR format (trivial).
+            net_str = '::/%d' % i
+            self.assertEqual(str(self.factory(net_str)), net_str)
+            # Zero prefix is treated as decimal.
+            self.assertEqual(str(self.factory('::/0%d' % i)), net_str)
+
     def test_netmask_errors(self):
         def assertBadNetmask(addr, netmask):
-            msg = "%r is not a valid netmask"
-            with self.assertNetmaskError(msg % netmask):
+            msg = "%r is not a valid netmask" % netmask
+            with self.assertNetmaskError(re.escape(msg)):
                 self.factory("%s/%s" % (addr, netmask))
 
         assertBadNetmask("::1", "")
         assertBadNetmask("::1", "::1")
         assertBadNetmask("::1", "1::")
+        assertBadNetmask("::1", "-1")
+        assertBadNetmask("::1", "+1")
+        assertBadNetmask("::1", " 1 ")
+        assertBadNetmask("::1", "0x1")
         assertBadNetmask("::1", "129")
+        assertBadNetmask("::1", "1.2.3.4")
         assertBadNetmask("::1", "pudding")
+        assertBadNetmask("::", "::")
 
 class InterfaceTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Interface
@@ -694,16 +740,14 @@ class IpaddrUnitTest(unittest.TestCase):
     def testZeroNetmask(self):
         ipv4_zero_netmask = ipaddress.IPv4Interface('1.2.3.4/0')
         self.assertEqual(int(ipv4_zero_netmask.network.netmask), 0)
-        self.assertTrue(ipv4_zero_netmask.network._is_valid_netmask(
-                str(0)))
+        self.assertEqual(ipv4_zero_netmask._prefix_from_prefix_string('0'), 0)
         self.assertTrue(ipv4_zero_netmask._is_valid_netmask('0'))
         self.assertTrue(ipv4_zero_netmask._is_valid_netmask('0.0.0.0'))
         self.assertFalse(ipv4_zero_netmask._is_valid_netmask('invalid'))
 
         ipv6_zero_netmask = ipaddress.IPv6Interface('::1/0')
         self.assertEqual(int(ipv6_zero_netmask.network.netmask), 0)
-        self.assertTrue(ipv6_zero_netmask.network._is_valid_netmask(
-                str(0)))
+        self.assertEqual(ipv6_zero_netmask._prefix_from_prefix_string('0'), 0)
 
     def testIPv4NetAndHostmasks(self):
         net = self.ipv4_network
@@ -719,7 +763,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(net._is_hostmask('1.2.3.4'))
 
         net = ipaddress.IPv4Network('127.0.0.0/0.0.0.255')
-        self.assertEqual(24, net.prefixlen)
+        self.assertEqual(net.prefixlen, 24)
 
     def testGetBroadcast(self):
         self.assertEqual(int(self.ipv4_network.broadcast_address), 16909311)
@@ -1271,11 +1315,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv6Interface('::1:0:0:0:0').packed,
                          b'\x00' * 6 + b'\x00\x01' + b'\x00' * 8)
 
-    def testIpStrFromPrefixlen(self):
-        ipv4 = ipaddress.IPv4Interface('1.2.3.4/24')
-        self.assertEqual(ipv4._ip_string_from_prefix(), '255.255.255.0')
-        self.assertEqual(ipv4._ip_string_from_prefix(28), '255.255.255.240')
-
     def testIpType(self):
         ipv4net = ipaddress.ip_network('1.2.3.4')
         ipv4addr = ipaddress.ip_address('1.2.3.4')
@@ -1479,14 +1518,8 @@ class IpaddrUnitTest(unittest.TestCase):
     def testIPBases(self):
         net = self.ipv4_network
         self.assertEqual('1.2.3.0/24', net.compressed)
-        self.assertEqual(
-                net._ip_int_from_prefix(24),
-                net._ip_int_from_prefix(None))
         net = self.ipv6_network
         self.assertRaises(ValueError, net._string_from_ip_int, 2**128 + 1)
-        self.assertEqual(
-                self.ipv6_address._string_from_ip_int(self.ipv6_address._ip),
-                self.ipv6_address._string_from_ip_int(None))
 
     def testIPv6NetworkHelpers(self):
         net = self.ipv6_network
