@@ -42,6 +42,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14983: email.generator now always adds a line end after each MIME
+  boundary marker, instead of doing so only when there is an epilogue.  This
+  fixes an RFC compliance bug and solves an issue with signed MIME parts.
+
 - Issue #20013: Some imap servers disconnect if the current mailbox is
   deleted, and imaplib did not handle that case gracefully.  Now it
   handles the 'bye' correctly.
