@@ -144,19 +144,31 @@ def _sum(data, start=0):
     >>> _sum(data)
     Decimal('0.6963')
 
+    Mixed types are currently treated as an error, except that int is
+    allowed.
     """
+    # We fail as soon as we reach a value that is not an int or the type of
+    # the first value which is not an int. E.g. _sum([int, int, float, int])
+    # is okay, but sum([int, int, float, Fraction]) is not.
+    allowed_types = set([int, type(start)])
     n, d = _exact_ratio(start)
-    T = type(start)
     partials = {d: n}  # map {denominator: sum of numerators}
     # Micro-optimizations.
-    coerce_types = _coerce_types
     exact_ratio = _exact_ratio
     partials_get = partials.get
-    # Add numerators for each denominator, and track the "current" type.
+    # Add numerators for each denominator.
     for x in data:
-        T = _coerce_types(T, type(x))
+        _check_type(type(x), allowed_types)
         n, d = exact_ratio(x)
         partials[d] = partials_get(d, 0) + n
+    # Find the expected result type. If allowed_types has only one item, it
+    # will be int; if it has two, use the one which isn't int.
+    assert len(allowed_types) in (1, 2)
+    if len(allowed_types) == 1:
+        assert allowed_types.pop() is int
+        T = int
+    else:
+        T = (allowed_types - set([int])).pop()
     if None in partials:
         assert issubclass(T, (float, Decimal))
         assert not math.isfinite(partials[None])
@@ -170,6 +182,15 @@ def _sum(data, start=0):
     if issubclass(T, Decimal):
         return T(total.numerator)/total.denominator
     return T(total)
+
+
+def _check_type(T, allowed):
+    if T not in allowed:
+        if len(allowed) == 1:
+            allowed.add(T)
+        else:
+            types = ', '.join([t.__name__ for t in allowed] + [T.__name__])
+            raise TypeError("unsupported mixed types: %s" % types)
 
 
 def _exact_ratio(x):
@@ -226,44 +247,6 @@ def _decimal_to_ratio(d):
         num = -num
     den = 10**-exp
     return (num, den)
-
-
-def _coerce_types(T1, T2):
-    """Coerce types T1 and T2 to a common type.
-
-    >>> _coerce_types(int, float)
-    <class 'float'>
-
-    Coercion is performed according to this table, where "N/A" means
-    that a TypeError exception is raised.
-
-    +----------+-----------+-----------+-----------+----------+
-    |          | int       | Fraction  | Decimal   | float    |
-    +----------+-----------+-----------+-----------+----------+
-    | int      | int       | Fraction  | Decimal   | float    |
-    | Fraction | Fraction  | Fraction  | N/A       | float    |
-    | Decimal  | Decimal   | N/A       | Decimal   | float    |
-    | float    | float     | float     | float     | float    |
-    +----------+-----------+-----------+-----------+----------+
-
-    Subclasses trump their parent class; two subclasses of the same
-    base class will be coerced to the second of the two.
-
-    """
-    # Get the common/fast cases out of the way first.
-    if T1 is T2: return T1
-    if T1 is int: return T2
-    if T2 is int: return T1
-    # Subclasses trump their parent class.
-    if issubclass(T2, T1): return T2
-    if issubclass(T1, T2): return T1
-    # Floats trump everything else.
-    if issubclass(T2, float): return T2
-    if issubclass(T1, float): return T1
-    # Subclasses of the same base class give priority to the second.
-    if T1.__base__ is T2.__base__: return T2
-    # Otherwise, just give up.
-    raise TypeError('cannot coerce types %r and %r' % (T1, T2))
 
 
 def _counts(data):
