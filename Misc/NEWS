@@ -28,7 +28,7 @@ Library
 -------
 
 - Issue #18805: the netmask/hostmask parsing in ipaddress now more reliably
-  filters out illegal values
+  filters out illegal values and correctly allows any valid prefix length.
 
 - Issue #20481: For at least Python 3.4, the statistics module will require
   that all inputs for a single operation be of a single consistent type, or
