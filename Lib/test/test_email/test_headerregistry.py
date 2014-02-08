@@ -1143,6 +1143,16 @@ class TestAddressHeader(TestHeaderBase):
             'example.com',
             None),
 
+        'rfc2047_atom_in_quoted_string_is_decoded':
+            ('"=?utf-8?q?=C3=89ric?=" <foo@example.com>',
+            [errors.InvalidHeaderDefect],
+            'Éric <foo@example.com>',
+            'Éric',
+            'foo@example.com',
+            'foo',
+            'example.com',
+            None),
+
         }
 
         # XXX: Need many more examples, and in particular some with names in
