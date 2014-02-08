@@ -1226,7 +1226,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 #endif
 
-#ifdef AF_CAN
+#ifdef HAVE_LINUX_CAN_H
     case AF_CAN:
     {
         struct sockaddr_can *a = (struct sockaddr_can *)addr;
@@ -1654,7 +1654,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     }
 #endif
 
-#ifdef AF_CAN
+#ifdef HAVE_LINUX_CAN_H
     case AF_CAN:
         switch (s->sock_proto) {
         case CAN_RAW:
@@ -1859,7 +1859,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
     }
 #endif
 
-#ifdef AF_CAN
+#ifdef HAVE_LINUX_CAN_H
     case AF_CAN:
     {
         *len_ret = sizeof (struct sockaddr_can);
