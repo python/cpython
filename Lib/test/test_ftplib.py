@@ -1001,7 +1001,7 @@ class TestTimeouts(TestCase):
 
     def testTimeoutDefault(self):
         # default -- use global socket timeout
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             ftp = ftplib.FTP(HOST)
@@ -1013,13 +1013,13 @@ class TestTimeouts(TestCase):
 
     def testTimeoutNone(self):
         # no timeout -- do not use global socket timeout
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             ftp = ftplib.FTP(HOST, timeout=None)
         finally:
             socket.setdefaulttimeout(None)
-        self.assertTrue(ftp.sock.gettimeout() is None)
+        self.assertIsNone(ftp.sock.gettimeout())
         self.evt.wait()
         ftp.close()
 
