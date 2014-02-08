@@ -57,6 +57,13 @@ _modifier_names = dict([(name, number)
                          for number in range(len(_modifiers))
                          for name in _modifiers[number]])
 
+# In 3.4, if no shell window is ever open, the underlying Tk widget is
+# destroyed before .__del__ methods here are called.  The following
+# is used to selectively ignore shutdown exceptions to avoid
+# 'Exception ignored' messages.  See http://bugs.python.org/issue20167
+APPLICATION_GONE = '''\
+can't invoke "bind" command:  application has been destroyed'''
+
 # A binder is a class which binds functions to one type of event. It has two
 # methods: bind and unbind, which get a function and a parsed sequence, as
 # returned by _parse_sequence(). There are two types of binders:
@@ -98,7 +105,12 @@ class _SimpleBinder:
 
     def __del__(self):
         if self.handlerid:
-            self.widget.unbind(self.widgetinst, self.sequence, self.handlerid)
+            try:
+                self.widget.unbind(self.widgetinst, self.sequence,
+                        self.handlerid)
+            except tkinter.TclError as e:
+                if e.args[0] == APPLICATION_GONE:
+                    pass
 
 # An int in range(1 << len(_modifiers)) represents a combination of modifiers
 # (if the least significent bit is on, _modifiers[0] is on, and so on).
@@ -227,7 +239,11 @@ class _ComplexBinder:
 
     def __del__(self):
         for seq, id in self.handlerids:
-            self.widget.unbind(self.widgetinst, seq, id)
+            try:
+                self.widget.unbind(self.widgetinst, seq, id)
+            except tkinter.TclError as e:
+                if e.args[0] == APPLICATION_GONE:
+                    break
 
 # define the list of event types to be handled by MultiEvent. the order is
 # compatible with the definition of event type constants.
@@ -390,8 +406,11 @@ def MultiCallCreator(widget):
                 func, triplets = self.__eventinfo[virtual]
                 if func:
                     for triplet in triplets:
-                        self.__binders[triplet[1]].unbind(triplet, func)
-
+                        try:
+                            self.__binders[triplet[1]].unbind(triplet, func)
+                        except tkinter.TclError as e:
+                            if e.args[0] == APPLICATION_GONE:
+                                break
 
     _multicall_dict[widget] = MultiCall
     return MultiCall
