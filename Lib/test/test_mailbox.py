@@ -233,7 +233,7 @@ class TestMailbox(TestBase):
         msg = self._box.get(key0)
         self.assertEqual(msg['from'], 'foo')
         self.assertEqual(msg.get_payload(), '0\n')
-        self.assertIs(self._box.get('foo'), None)
+        self.assertIsNone(self._box.get('foo'))
         self.assertIs(self._box.get('foo', False), False)
         self._box.close()
         self._box = self._factory(self._path)
@@ -760,7 +760,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
                                                                 "tmp")),
                              "File in wrong location: '%s'" % head)
             match = pattern.match(tail)
-            self.assertIsNot(match, None, "Invalid file name: '%s'" % tail)
+            self.assertIsNotNone(match, "Invalid file name: '%s'" % tail)
             groups = match.groups()
             if previous_groups is not None:
                 self.assertGreaterEqual(int(groups[0]), int(previous_groups[0]),
@@ -1394,7 +1394,7 @@ class TestMessage(TestBase, unittest.TestCase):
         self.assertIsInstance(msg, self._factory)
         self.assertEqual(msg.keys(), [])
         self.assertFalse(msg.is_multipart())
-        self.assertEqual(msg.get_payload(), None)
+        self.assertIsNone(msg.get_payload())
 
     def test_initialize_incorrectly(self):
         # Initialize with invalid argument
@@ -1405,7 +1405,7 @@ class TestMessage(TestBase, unittest.TestCase):
         eMM = email.message_from_string(_sample_message)
         msg = self._factory(_sample_message)
         for attr in eMM.__dict__:
-            self.assertTrue(attr in msg.__dict__,
+            self.assertIn(attr, msg.__dict__,
                 '{} attribute does not exist'.format(attr))
 
     def test_become_message(self):
@@ -1547,8 +1547,9 @@ class _TestMboxMMDFMessage:
         # Check contents of "From " line
         if sender is None:
             sender = "MAILER-DAEMON"
-        self.assertTrue(re.match(sender + r" \w{3} \w{3} [\d ]\d [\d ]\d:\d{2}:"
-                              r"\d{2} \d{4}", msg.get_from()) is not None)
+        self.assertIsNotNone(re.match(
+                sender + r" \w{3} \w{3} [\d ]\d [\d ]\d:\d{2}:\d{2} \d{4}",
+                msg.get_from()))
 
 
 class TestMboxMessage(_TestMboxMMDFMessage, TestMessage):
@@ -1622,19 +1623,19 @@ class TestBabylMessage(TestMessage, unittest.TestCase):
         msg = mailbox.BabylMessage(_sample_message)
         visible = msg.get_visible()
         self.assertEqual(visible.keys(), [])
-        self.assertIs(visible.get_payload(), None)
+        self.assertIsNone(visible.get_payload())
         visible['User-Agent'] = 'FooBar 1.0'
         visible['X-Whatever'] = 'Blah'
         self.assertEqual(msg.get_visible().keys(), [])
         msg.set_visible(visible)
         visible = msg.get_visible()
-        self.assertTrue(visible.keys() == ['User-Agent', 'X-Whatever'])
-        self.assertTrue(visible['User-Agent'] == 'FooBar 1.0')
+        self.assertEqual(visible.keys(), ['User-Agent', 'X-Whatever'])
+        self.assertEqual(visible['User-Agent'], 'FooBar 1.0')
         self.assertEqual(visible['X-Whatever'], 'Blah')
-        self.assertIs(visible.get_payload(), None)
+        self.assertIsNone(visible.get_payload())
         msg.update_visible()
         self.assertEqual(visible.keys(), ['User-Agent', 'X-Whatever'])
-        self.assertIs(visible.get_payload(), None)
+        self.assertIsNone(visible.get_payload())
         visible = msg.get_visible()
         self.assertEqual(visible.keys(), ['User-Agent', 'Date', 'From', 'To',
                                           'Subject'])
@@ -2156,34 +2157,34 @@ class MaildirTestCase(unittest.TestCase):
         self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assertTrue(hasattr(self.mbox, "boxes"))
         #self.assertEqual(len(self.mbox.boxes), 0)
-        self.assertIs(self.mbox.next(), None)
-        self.assertIs(self.mbox.next(), None)
+        self.assertIsNone(self.mbox.next())
+        self.assertIsNone(self.mbox.next())
 
     def test_nonempty_maildir_cur(self):
         self.createMessage("cur")
         self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
-        self.assertIsNot(self.mbox.next(), None)
-        self.assertIs(self.mbox.next(), None)
-        self.assertIs(self.mbox.next(), None)
+        self.assertIsNotNone(self.mbox.next())
+        self.assertIsNone(self.mbox.next())
+        self.assertIsNone(self.mbox.next())
 
     def test_nonempty_maildir_new(self):
         self.createMessage("new")
         self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
-        self.assertIsNot(self.mbox.next(), None)
-        self.assertIs(self.mbox.next(), None)
-        self.assertIs(self.mbox.next(), None)
+        self.assertIsNotNone(self.mbox.next())
+        self.assertIsNone(self.mbox.next())
+        self.assertIsNone(self.mbox.next())
 
     def test_nonempty_maildir_both(self):
         self.createMessage("cur")
         self.createMessage("new")
         self.mbox = mailbox.Maildir(support.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 2)
-        self.assertIsNot(self.mbox.next(), None)
-        self.assertIsNot(self.mbox.next(), None)
-        self.assertIs(self.mbox.next(), None)
-        self.assertIs(self.mbox.next(), None)
+        self.assertIsNotNone(self.mbox.next())
+        self.assertIsNotNone(self.mbox.next())
+        self.assertIsNone(self.mbox.next())
+        self.assertIsNone(self.mbox.next())
 
 ## End: tests from the original module (for backward compatibility).
 

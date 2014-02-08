@@ -96,7 +96,7 @@ class GeneralTests(unittest.TestCase):
 
     def testTimeoutDefault(self):
         mock_socket.reply_with(b"220 Hola mundo")
-        self.assertTrue(mock_socket.getdefaulttimeout() is None)
+        self.assertIsNone(mock_socket.getdefaulttimeout())
         mock_socket.setdefaulttimeout(30)
         self.assertEqual(mock_socket.getdefaulttimeout(), 30)
         try:
@@ -108,13 +108,13 @@ class GeneralTests(unittest.TestCase):
 
     def testTimeoutNone(self):
         mock_socket.reply_with(b"220 Hola mundo")
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             smtp = smtplib.SMTP(HOST, self.port, timeout=None)
         finally:
             socket.setdefaulttimeout(None)
-        self.assertTrue(smtp.sock.gettimeout() is None)
+        self.assertIsNone(smtp.sock.gettimeout())
         smtp.close()
 
     def testTimeoutValue(self):
