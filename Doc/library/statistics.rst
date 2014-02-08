@@ -20,6 +20,16 @@
 This module provides functions for calculating mathematical statistics of
 numeric (:class:`Real`-valued) data.
 
+.. note::
+
+   Unless explicitly noted otherwise, these functions support :class:`int`,
+   :class:`float`, :class:`decimal.Decimal` and :class:`fractions.Fraction`.
+   Behaviour with other types (whether in the numeric tower or not) is
+   currently unsupported.  Mixed types are also undefined and
+   implementation-dependent.  If your input data consists of mixed types,
+   you may be able to use :func:`map` to ensure a consistent result, e.g.
+   ``map(float, input_data)``.
+
 Averages and measures of central location
 -----------------------------------------
 
