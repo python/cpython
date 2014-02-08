@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20563: The ipaddress module API is now considered stable.
+
 - Issue #14983: email.generator now always adds a line end after each MIME
   boundary marker, instead of doing so only when there is an epilogue.  This
   fixes an RFC compliance bug and solves an issue with signed MIME parts.
