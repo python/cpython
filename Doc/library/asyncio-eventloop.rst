@@ -272,16 +272,98 @@ Creating listening connections
 
 
 
-Resolve name
-------------
+Watch file descriptors
+----------------------
+
+.. method:: BaseEventLoop.add_reader(fd, callback, \*args)
+
+   Start watching the file descriptor for read availability and then call the
+   *callback* with specified arguments.
+
+.. method:: BaseEventLoop.remove_reader(fd)
+
+   Stop watching the file descriptor for read availability.
+
+.. method:: BaseEventLoop.add_writer(fd, callback, \*args)
+
+   Start watching the file descriptor for write availability and then call the
+   *callback* with specified arguments.
+
+.. method:: BaseEventLoop.remove_writer(fd)
+
+   Stop watching the file descriptor for write availability.
+
+
+Low-level socket operations
+---------------------------
+
+.. method:: BaseEventLoop.sock_recv(sock, nbytes)
+
+   Receive data from the socket.  The return value is a bytes object
+   representing the data received.  The maximum amount of data to be received
+   at once is specified by *nbytes*.
+
+   This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. seealso::
+
+      The :meth:`socket.socket.recv` method.
+
+.. method:: BaseEventLoop.sock_sendall(sock, data)
+
+   Send data to the socket.  The socket must be connected to a remote socket.
+   This method continues to send data from *data* until either all data has
+   been sent or an error occurs.  ``None`` is returned on success.  On error,
+   an exception is raised, and there is no way to determine how much data, if
+   any, was successfully sent.
+
+   This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. seealso::
+
+      The :meth:`socket.socket.sendall` method.
+
+.. method:: BaseEventLoop.sock_connect(sock, address)
+
+   Connect to a remote socket at *address*.
+
+   This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. seealso::
+
+      The :meth:`BaseEventLoop.create_connection` method, the
+      :func:`open_connection` function and the :meth:`socket.socket.connect`
+      method.
+
+
+.. method:: BaseEventLoop.sock_accept(sock)
+
+   Accept a connection. The socket must be bound to an address and listening
+   for connections. The return value is a pair ``(conn, address)`` where *conn*
+   is a *new* socket object usable to send and receive data on the connection,
+   and *address* is the address bound to the socket on the other end of the
+   connection.
+
+   This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. seealso::
+
+      The :meth:`BaseEventLoop.create_server` method, the :func:`start_server`
+      function and the :meth:`socket.socket.accept` method.
+
+
+Resolve host name
+-----------------
 
 .. method:: BaseEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
 
-   XXX
+   Similar to the :meth:`socket.getaddrinfo`  function, but return a
+   :ref:`coroutine object <coroutine>`.
 
 .. method:: BaseEventLoop.getnameinfo(sockaddr, flags=0)
 
-   XXX
+   Similar to the :meth:`socket.getnameinfo`  function, but return a
+   :ref:`coroutine object <coroutine>`.
 
 
 Running subprocesses
