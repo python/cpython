@@ -369,10 +369,10 @@ The usual restrictions for pickling apply: picklable enums must be defined in
 the top level of a module, since unpickling requires them to be importable
 from that module.
 
-.. warning::
+.. note::
 
-    In order to support the singleton nature of enumeration members, pickle
-    protocol version 2 or higher must be used.
+    With pickle protocol version 4 it is possible to easily pickle enums
+    nested in other classes.
 
 
 Functional API
@@ -419,6 +419,14 @@ function in separate module, and also may not work on IronPython or Jython).
 The solution is to specify the module name explicitly as follows::
 
     >>> Animals = Enum('Animals', 'ant bee cat dog', module=__name__)
+
+The new pickle protocol 4 also, in some circumstances, relies on
+:attr:``__qualname__`` being set to the location where pickle will be able
+to find the class.  For example, if the class was made available in class
+SomeData in the global scope::
+
+    >>> Animals = Enum('Animals', 'ant bee cat dog', qualname='SomeData.Animals')
+
 
 Derived Enumerations
 --------------------
