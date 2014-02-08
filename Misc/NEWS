@@ -77,12 +77,18 @@ Library
   select.epoll.poll(), selectors.PollSelector.poll() and
   selectors.EpollSelector.poll(). For example, a timeout of one microsecond
   (1e-6) is now rounded to one millisecondi (1e-3), instead of being rounded to
-  zero.
+  zero.  However, the granularity property and asyncio's resolution feature
+  were removed again.
 
-- asyncio: Some refactoring; add write flow control to unix pipes;
-  support wait_for(f, None); don't log broken/disconnected pipes; use
+- asyncio: Some refactoring; various fixes; add write flow control to
+  unix pipes; Future.set_exception() instantiates the exception
+  argument if it is a class; improved proactor pipe transport; support
+  wait_for(f, None); don't log broken/disconnected pipes; use
   ValueError instead of assert for forbidden subprocess_{shell,exec}
-  arguments.  (More to follow -- a convenience API for subprocesses.)
+  arguments; added a convenience API for subprocess management; added
+  StreamReader.at_eof(); properly handle duplicate coroutines/futures
+  in gather(), wait(), as_completed(); use a bytearray for buffering
+  in StreamReader; and more.
 
 - Issue #20288: fix handling of invalid numeric charrefs in HTMLParser.
 
