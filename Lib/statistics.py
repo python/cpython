@@ -243,9 +243,13 @@ def _decimal_to_ratio(d):
     num = 0
     for digit in digits:
         num = num*10 + digit
+    if exp < 0:
+        den = 10**-exp
+    else:
+        num *= 10**exp
+        den = 1
     if sign:
         num = -num
-    den = 10**-exp
     return (num, den)
 
 
