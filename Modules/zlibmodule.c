@@ -392,8 +392,7 @@ PyZlib_compressobj(PyObject *selfptr, PyObject *args, PyObject *kwargs)
     }
 
  error:
-    Py_XDECREF(self);
-    self = NULL;
+    Py_CLEAR(self);
  success:
     if (zdict.buf != NULL)
         PyBuffer_Release(&zdict);

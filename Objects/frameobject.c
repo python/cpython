@@ -952,8 +952,7 @@ void
 PyFrame_Fini(void)
 {
     (void)PyFrame_ClearFreeList();
-    Py_XDECREF(builtin_object);
-    builtin_object = NULL;
+    Py_CLEAR(builtin_object);
 }
 
 /* Print summary info about the state of the optimized allocator */
