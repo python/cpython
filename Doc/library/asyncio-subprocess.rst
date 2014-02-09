@@ -87,10 +87,6 @@ Process
       Standard error stream (read), ``None`` if the process was created with
       ``stderr=None``.
 
-   .. attribute:: subprocess
-
-      Underlying :class:`subprocess.Popen` object.
-
    .. method:: communicate(input=None)
 
       Interact with process: Send data to stdin.  Read data from stdout and
@@ -102,7 +98,7 @@ Process
       :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
 
       Note that if you want to send data to the process's stdin, you need to
-      create the Popen object with ``stdin=PIPE``.  Similarly, to get anything
+      create the Process object with ``stdin=PIPE``.  Similarly, to get anything
       other than ``None`` in the result tuple, you need to give ``stdout=PIPE``
       and/or ``stderr=PIPE`` too.
 
