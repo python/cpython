@@ -170,6 +170,10 @@ Object Protocol
    Python expression ``str(o)``.  Called by the :func:`str` built-in function
    and, therefore, by the :func:`print` function.
 
+   .. versionchanged:: 3.4
+      This function now includes a debug assertion that ensures it does not
+      silently discard an active exception.
+
 .. c:function:: PyObject* PyObject_Bytes(PyObject *o)
 
    .. index:: builtin: bytes

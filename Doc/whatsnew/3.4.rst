@@ -1708,6 +1708,13 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
+* :c:func:`PyObject_Str` now includes a debug assertion that ensures it will
+  no longer silently discard currently active exceptions. In cases where
+  discarding the active exception is expected and desired (for example,
+  because it has already been saved locally with :c:func:`PyErr_Fetch`), an
+  explicit :c:func:`PyErr_Clear` call will be needed to avoid triggering the
+  assertion.
+
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned with no exception
   set.
