@@ -405,6 +405,24 @@ class CmdLineTest(unittest.TestCase):
             'stdout=%r stderr=%r' % (stdout, stderr))
         self.assertEqual(0, rc)
 
+    def test_issue20500_exit_with_exception_value(self):
+        script = textwrap.dedent("""\
+            import sys
+            error = None
+            try:
+                raise ValueError('some text')
+            except ValueError as err:
+                error = err
+
+            if error:
+                sys.exit(error)
+            """)
+        with temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = stderr.decode('ascii')
+            self.assertEqual(text, "some text")
+
 
 def test_main():
     support.run_unittest(CmdLineTest)
