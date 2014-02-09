@@ -353,13 +353,13 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
 static PyObject *
 method_get_doc(PyMethodDescrObject *descr, void *closure)
 {
-    return _PyType_GetDocFromInternalDoc(descr->d_method->ml_doc);
+    return _PyType_GetDocFromInternalDoc(descr->d_method->ml_name, descr->d_method->ml_doc);
 }
 
 static PyObject *
 method_get_text_signature(PyMethodDescrObject *descr, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(descr->d_method->ml_doc);
+    return _PyType_GetTextSignatureFromInternalDoc(descr->d_method->ml_name, descr->d_method->ml_doc);
 }
 
 static PyObject *
@@ -466,13 +466,13 @@ static PyGetSetDef getset_getset[] = {
 static PyObject *
 wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
 {
-    return _PyType_GetDocFromInternalDoc(descr->d_base->doc);
+    return _PyType_GetDocFromInternalDoc(descr->d_base->name, descr->d_base->doc);
 }
 
 static PyObject *
 wrapperdescr_get_text_signature(PyWrapperDescrObject *descr, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(descr->d_base->doc);
+    return _PyType_GetTextSignatureFromInternalDoc(descr->d_base->name, descr->d_base->doc);
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
@@ -1151,13 +1151,13 @@ wrapper_name(wrapperobject *wp)
 static PyObject *
 wrapper_doc(wrapperobject *wp, void *closure)
 {
-    return _PyType_GetDocFromInternalDoc(wp->descr->d_base->doc);
+    return _PyType_GetDocFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *
 wrapper_text_signature(wrapperobject *wp, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->doc);
+    return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
 static PyObject *

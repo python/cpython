@@ -39,6 +39,7 @@ import os
 import re
 import sys
 import tokenize
+import token
 import types
 import warnings
 import functools
@@ -1648,25 +1649,88 @@ def _signature_get_bound_param(spec):
     return spec[2:pos]
 
 
+def _signature_strip_non_python_syntax(signature):
+    """
+    Takes a signature in Argument Clinic's extended signature format.
+    Returns a tuple of three things:
+      * that signature re-rendered in standard Python syntax,
+      * the index of the "self" parameter (generally 0), or None if
+        the function does not have a "self" parameter, and
+      * the index of the last "positional only" parameter,
+        or None if the signature has no positional-only parameters.
+    """
+
+    if not signature:
+        return signature, None, None
+
+    self_parameter = None
+    last_positional_only = None
+
+    lines = [l.encode('ascii') for l in signature.split('\n')]
+    generator = iter(lines).__next__
+    token_stream = tokenize.tokenize(generator)
+
+    delayed_comma = False
+    skip_next_comma = False
+    text = []
+    add = text.append
+
+    current_parameter = 0
+    OP = token.OP
+    ERRORTOKEN = token.ERRORTOKEN
+
+    # token stream always starts with ENCODING token, skip it
+    t = next(token_stream)
+    assert t.type == tokenize.ENCODING
+
+    for t in token_stream:
+        type, string = t.type, t.string
+
+        if type == OP:
+            if string == ',':
+                if skip_next_comma:
+                    skip_next_comma = False
+                else:
+                    assert not delayed_comma
+                    delayed_comma = True
+                    current_parameter += 1
+                continue
+
+            if string == '/':
+                assert not skip_next_comma
+                assert last_positional_only is None
+                skip_next_comma = True
+                last_positional_only = current_parameter - 1
+                continue
+
+        if (type == ERRORTOKEN) and (string == '$'):
+            assert self_parameter is None
+            self_parameter = current_parameter
+            continue
+
+        if delayed_comma:
+            delayed_comma = False
+            if not ((type == OP) and (string == ')')):
+                add(', ')
+        add(string)
+        if (string == ','):
+            add(' ')
+    clean_signature = ''.join(text)
+    return clean_signature, self_parameter, last_positional_only
+
+
 def _signature_fromstr(cls, obj, s):
     # Internal helper to parse content of '__text_signature__'
     # and return a Signature based on it
     Parameter = cls._parameter_cls
 
-    if s.endswith("/)"):
-        kind = Parameter.POSITIONAL_ONLY
-        s = s[:-2] + ')'
-    else:
-        kind = Parameter.POSITIONAL_OR_KEYWORD
+    clean_signature, self_parameter, last_positional_only = \
+        _signature_strip_non_python_syntax(s)
 
-    first_parameter_is_self = s.startswith("($")
-    if first_parameter_is_self:
-        s = '(' + s[2:]
-
-    s = "def foo" + s + ": pass"
+    program = "def foo" + clean_signature + ": pass"
 
     try:
-        module = ast.parse(s)
+        module = ast.parse(program)
     except SyntaxError:
         module = None
 
@@ -1750,8 +1814,14 @@ def _signature_fromstr(cls, obj, s):
     args = reversed(f.args.args)
     defaults = reversed(f.args.defaults)
     iter = itertools.zip_longest(args, defaults, fillvalue=None)
-    for name, default in reversed(list(iter)):
+    if last_positional_only is not None:
+        kind = Parameter.POSITIONAL_ONLY
+    else:
+        kind = Parameter.POSITIONAL_OR_KEYWORD
+    for i, (name, default) in enumerate(reversed(list(iter))):
         p(name, default)
+        if i == last_positional_only:
+            kind = Parameter.POSITIONAL_OR_KEYWORD
 
     # *args
     if f.args.vararg:
@@ -1768,7 +1838,7 @@ def _signature_fromstr(cls, obj, s):
         kind = Parameter.VAR_KEYWORD
         p(f.args.kwarg, empty)
 
-    if first_parameter_is_self:
+    if self_parameter is not None:
         assert parameters
         if getattr(obj, '__self__', None):
             # strip off self, it's already been bound
@@ -1861,12 +1931,13 @@ def signature(obj):
             # At this point we know, that `obj` is a class, with no user-
             # defined '__init__', '__new__', or class-level '__call__'
 
-            for base in obj.__mro__:
+            for base in obj.__mro__[:-1]:
                 # Since '__text_signature__' is implemented as a
                 # descriptor that extracts text signature from the
                 # class docstring, if 'obj' is derived from a builtin
                 # class, its own '__text_signature__' may be 'None'.
-                # Therefore, we go through the MRO to find the first
+                # Therefore, we go through the MRO (except the last
+                # class in there, which is 'object') to find the first
                 # class with non-empty text signature.
                 try:
                     text_sig = base.__text_signature__
@@ -1881,13 +1952,7 @@ def signature(obj):
             # No '__text_signature__' was found for the 'obj' class.
             # Last option is to check if its '__init__' is
             # object.__init__ or type.__init__.
-            if type in obj.__mro__:
-                # 'obj' is a metaclass without user-defined __init__
-                # or __new__.
-                if obj.__init__ is type.__init__:
-                    # Return a signature of 'type' builtin.
-                    return signature(type)
-            else:
+            if type not in obj.__mro__:
                 # We have a class (not metaclass), but no user-defined
                 # __init__ or __new__ for it
                 if obj.__init__ is object.__init__:
@@ -1901,7 +1966,11 @@ def signature(obj):
         # infinite recursion (and even potential segfault)
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
-            sig = signature(call)
+            try:
+                sig = signature(call)
+            except ValueError as ex:
+                msg = 'no signature found for {!r}'.format(obj)
+                raise ValueError(msg) from ex
 
     if sig is not None:
         # For classes and objects we skip the first parameter of their
