@@ -10,7 +10,7 @@ to communicate.
 
 Some modules only work for two processes that are on the same machine, e.g.
 :mod:`signal` and :mod:`subprocess`.  Other modules support networking protocols
-that two or more processes can used to communicate across machines.
+that two or more processes can use to communicate across machines.
 
 The list of modules described in this chapter is:
 
