@@ -132,7 +132,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
-        handle = events.make_handle(callback, args)
+        handle = events.Handle(callback, args)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -167,7 +167,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_writer(self, fd, callback, *args):
         """Add a writer callback.."""
-        handle = events.make_handle(callback, args)
+        handle = events.Handle(callback, args)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
