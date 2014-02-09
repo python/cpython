@@ -44,7 +44,7 @@ the event loop.
 
 .. _asyncio-handle-blocking:
 
-Handle correctly blocking functions
+Handle blocking functions correctly
 -----------------------------------
 
 Blocking functions should not be called directly. For example, if a function
