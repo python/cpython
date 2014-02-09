@@ -30,7 +30,7 @@ Here is a more detailed list of the package contents:
 * coroutines and tasks based on ``yield from`` (:PEP:`380`), to help write
   concurrent code in a sequential fashion;
 
-* cancellation support for Futures and coroutines;
+* cancellation support for :class:`Future`\s and coroutines;
 
 * :ref:`synchronization primitives <asyncio-sync>` for use between coroutines in
   a single thread, mimicking those in the :mod:`threading` module;

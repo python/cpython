@@ -8,15 +8,15 @@ Event loops
 The event loop is the central execution device provided by :mod:`asyncio`.
 It provides multiple facilities, amongst which:
 
-* Registering, executing and cancelling delayed calls (timeouts)
+* Registering, executing and cancelling delayed calls (timeouts).
 
 * Creating client and server :ref:`transports <asyncio-transport>` for various
-  kinds of communication
+  kinds of communication.
 
 * Launching subprocesses and the associated :ref:`transports <asyncio-transport>`
-  for communication with an external program
+  for communication with an external program.
 
-* Delegating costly function calls to a pool of threads
+* Delegating costly function calls to a pool of threads.
 
 Event loop functions
 --------------------
