@@ -149,6 +149,9 @@ Object Protocol
    representation on success, *NULL* on failure.  This is the equivalent of the
    Python expression ``repr(o)``.  Called by the :func:`repr` built-in function.
 
+   .. versionchanged:: 3.4
+      This function now includes a debug assertion to help ensure that it
+      does not silently discard an active exception.
 
 .. c:function:: PyObject* PyObject_ASCII(PyObject *o)
 
@@ -171,8 +174,8 @@ Object Protocol
    and, therefore, by the :func:`print` function.
 
    .. versionchanged:: 3.4
-      This function now includes a debug assertion that ensures it does not
-      silently discard an active exception.
+      This function now includes a debug assertion to help ensure that it
+      does not silently discard an active exception.
 
 .. c:function:: PyObject* PyObject_Bytes(PyObject *o)
 
