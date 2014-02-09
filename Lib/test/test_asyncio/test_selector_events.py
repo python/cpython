@@ -39,7 +39,6 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
 
     def setUp(self):
         selector = unittest.mock.Mock()
-        selector.resolution = 1e-3
         self.loop = TestBaseSelectorEventLoop(selector)
 
     def test_make_socket_transport(self):
