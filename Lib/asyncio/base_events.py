@@ -240,7 +240,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
-        handle = events.make_handle(callback, args)
+        handle = events.Handle(callback, args)
         self._ready.append(handle)
         return handle
 

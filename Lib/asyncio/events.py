@@ -20,6 +20,7 @@ class Handle:
     """Object returned by callback registration methods."""
 
     def __init__(self, callback, args):
+        assert not isinstance(callback, Handle), 'A Handle is not a callback'
         self._callback = callback
         self._args = args
         self._cancelled = False
@@ -40,12 +41,6 @@ class Handle:
             logger.exception('Exception in callback %s %r',
                              self._callback, self._args)
         self = None  # Needed to break cycles when an exception occurs.
-
-
-def make_handle(callback, args):
-    # TODO: Inline this?  Or make it a private EventLoop method?
-    assert not isinstance(callback, Handle), 'A Handle is not a callback'
-    return Handle(callback, args)
 
 
 class TimerHandle(Handle):

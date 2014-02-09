@@ -1660,12 +1660,12 @@ class HandleTests(unittest.TestCase):
             '<function HandleTests.test_handle.<locals>.callback'))
         self.assertTrue(r.endswith('())<cancelled>'), r)
 
-    def test_make_handle(self):
+    def test_handle(self):
         def callback(*args):
             return args
         h1 = asyncio.Handle(callback, ())
         self.assertRaises(
-            AssertionError, asyncio.events.make_handle, h1, ())
+            AssertionError, asyncio.Handle, h1, ())
 
     @unittest.mock.patch('asyncio.events.logger')
     def test_callback_with_exception(self, log):
