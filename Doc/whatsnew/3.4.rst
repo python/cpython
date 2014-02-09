@@ -69,8 +69,9 @@ For full details, see the
 `changelog <http://docs.python.org/3.4/whatsnew/changelog.html>`_.
 
 .. note:: Prerelease users should be aware that this document is currently in
-   draft form. It will be updated substantially as Python 3.4 moves towards
-   release, so it's worth checking back even after reading earlier versions.
+   draft form. While it should be close to complete for the Python 3.4
+   release candidates, adjustments and additions to the document may be made
+   up until the final release.
 
 
 .. seealso::
@@ -132,9 +133,8 @@ Significantly Improved Library Modules:
   a new :mod:`~email.message.Message` subclass
   (:class:`~email.contentmanager.EmailMessage`) that :ref:`simplify MIME
   handling <whatsnew_email_contentmanager>` (:issue:`18891`).
-* :mod:`plistlib` has a cleaned up interface and support for binary
-  plist files (:issue:`14455`)
 * The :mod:`ipaddress` module API has been declared stable
+
 
 CPython implementation improvements:
 
@@ -163,8 +163,12 @@ PEP 453: Explicit Bootstrapping of PIP in Python Installations
 --------------------------------------------------------------
 
 The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
-cross-platform mechanism to boostrap the pip installer into Python
+cross-platform mechanism to bootstrap the pip installer into Python
 installations and virtual environments.
+
+By default, the scripts ``pipX`` and ``pipX.Y`` will be installed (where
+X.Y stands for the version of the Python installation), along with the
+``pip`` Python package and its dependencies.
 
 The :mod:`venv` module and the :command:`pyvenv` utility make use of this
 module to make ``pip`` readily available in virtual environments. When
@@ -187,12 +191,13 @@ __ http://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distr
 
 .. note::
 
-   The implementation of PEP 453 is still a work in progress. Refer to
-   :issue:`19347` for the progress on additional steps:
-
-   * Having the binary installers install ``pip`` by default
-   * Recommending the use of ``pip`` in the "Installing Python Module"
-     documentation.
+   To avoid conflicts between parallel Python 2 and Python 3 installations,
+   only the versioned ``pip3`` and ``pip3.4`` commands are bootstrapped by
+   default when ``ensurepip`` is invoked directly (including by the CPython
+   installers). ``pyvenv`` ensures that the unqualified ``pip`` command is
+   made available in virtual environments, and ``pip`` can always be
+   invoked via the ``-m`` switch rather than directly to avoid ambiguity on
+   systems with multiple Python installations.
 
 .. seealso::
 
@@ -257,6 +262,11 @@ general purpose convenience functions when appropriate::
       File "<stdin>", line 1, in <module>
     LookupError: 'rot13' is not a text encoding; use codecs.encode() to handle arbitrary codecs
 
+    >>> open("foo.txt", encoding="hex")
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    LookupError: 'hex' is not a text encoding; use codecs.open() to handle arbitrary codecs
+
 In a related change, whenever it is feasible without breaking backwards
 compatibility, exceptions raised during encoding and decoding operations
 will be wrapped in a chained exception of the same type that mentions the
@@ -307,6 +317,7 @@ in :ref:`binary-transforms` and :ref:`text-transforms`.
 
 (Contributed by Nick Coghlan in :issue:`7475`, , :issue:`17827`,
 :issue:`17828` and :issue:`19619`)
+
 
 .. _whatsnew-pep-451:
 
@@ -959,8 +970,6 @@ command did.  Worse, the Python3 ``pdb print`` command shadowed the Python3
 pickle
 ------
 
-protocol 4
-
 :mod:`pickle` now supports (but does not use by default) a new pickle protocol,
 protocol 4.  This new protocol addresses a number of issues that were present
 in previous protocols, such as the serialization of nested classes, very large
@@ -971,6 +980,14 @@ keyword-only arguments.  It also provides some efficiency improvements.
 
    :pep:`3154` -- Pickle protocol 4
       PEP written by Antoine Pitrou and implemented by Alexandre Vassalotti.
+
+
+plistlib
+--------
+
+:mod:`plistlib` now supports binary plist files, and offers the common
+``load``/``loads``/``dump``/``dumps`` API pattern for serialization formats
+(Contributed by Ronald Oussoren and others in :issue:`14455`).
 
 
 poplib
@@ -1354,6 +1371,9 @@ and can be used to simplify the process of defining and maintaining
 accurate signatures for builtins and standard library extension modules
 implemented in C.
 
+Some standard library extension modules have been converted to use Argument
+Clinic in Python 3.4, and :mod:`inspect` has been updated accordingly.
+
 .. note::
    The Argument Clinic PEP is not fully up to date with the state of the
    implementation. This has been deemed acceptable by the release manager
@@ -1368,6 +1388,10 @@ implemented in C.
 
 Other Build and C API Changes
 -----------------------------
+
+* The new :c:func:`PyType_GetSlot` function has been added to the stable ABI,
+  allowing retrieval of function pointers from named type slots when using
+  the limited API. (Contributed by Martin von Löwis in :issue:`17162`)
 
 * The new :c:func:`Py_SetStandardStreamEncoding` pre-initialization API
   allows applications embedding the CPython interpreter to reliably force
