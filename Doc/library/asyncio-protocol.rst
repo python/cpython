@@ -194,7 +194,7 @@ BaseSubprocessTransport
 
    .. method:: get_pipe_transport(fd)
 
-      Return the transport for the communication pipe correspondong to the
+      Return the transport for the communication pipe corresponding to the
       integer file descriptor *fd*.  The return value can be a readable or
       writable streaming transport, depending on the *fd*.  If *fd* doesn't
       correspond to a pipe belonging to this transport, :const:`None` is
