@@ -64,7 +64,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         except ValueError as exc:
             raise RuntimeError(str(exc))
 
-        handle = events.make_handle(callback, args)
+        handle = events.Handle(callback, args)
         self._signal_handlers[sig] = handle
 
         try:
