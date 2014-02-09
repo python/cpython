@@ -159,10 +159,8 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
         if (-1 == PyDict_DelItem(self->dict, self->key))
             /* XXX Error context */
             PyErr_WriteUnraisable(Py_None);
-        Py_DECREF(self->key);
-        self->key = NULL;
-        Py_DECREF(self->dict);
-        self->dict = NULL;
+        Py_CLEAR(self->key);
+        Py_CLEAR(self->dict);
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -2934,10 +2932,8 @@ static int
 PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob)
 {
     if (ob == NULL) {
-        Py_XDECREF(self->restype);
-        self->restype = NULL;
-        Py_XDECREF(self->checker);
-        self->checker = NULL;
+        Py_CLEAR(self->restype);
+        Py_CLEAR(self->checker);
         return 0;
     }
     if (ob != Py_None && !PyType_stgdict(ob) && !PyCallable_Check(ob)) {
@@ -2980,10 +2976,8 @@ PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob)
     PyObject *converters;
 
     if (ob == NULL || ob == Py_None) {
-        Py_XDECREF(self->converters);
-        self->converters = NULL;
-        Py_XDECREF(self->argtypes);
-        self->argtypes = NULL;
+        Py_CLEAR(self->converters);
+        Py_CLEAR(self->argtypes);
     } else {
         converters = converters_from_argtypes(ob);
         if (!converters)

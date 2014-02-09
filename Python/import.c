@@ -349,8 +349,7 @@ _imp_release_lock_impl(PyModuleDef *module)
 void
 _PyImport_Fini(void)
 {
-    Py_XDECREF(extensions);
-    extensions = NULL;
+    Py_CLEAR(extensions);
 #ifdef WITH_THREAD
     if (import_lock != NULL) {
         PyThread_free_lock(import_lock);
@@ -598,8 +597,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
             /* Somebody already imported the module,
                likely under a different name.
                XXX this should really not happen. */
-            Py_DECREF(def->m_base.m_copy);
-            def->m_base.m_copy = NULL;
+            Py_CLEAR(def->m_base.m_copy);
         }
         dict = PyModule_GetDict(mod);
         if (dict == NULL)
