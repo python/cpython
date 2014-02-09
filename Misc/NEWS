@@ -10,7 +10,10 @@ Release date: 2014-02-09
 Core and Builtins
 -----------------
 
-- Issue #20538: UTF-7 incremental decoder produced inconsistant string when
+- Issue #20500: Displaying an exception at interpreter shutdown no longer
+  risks triggering an assertion failure in PyObject_Str.
+
+- Issue #20538: UTF-7 incremental decoder produced inconsistent string when
   input was truncated in BASE64 section.
 
 - Issue #20404: io.TextIOWrapper (and hence the open() builtin) now uses the
