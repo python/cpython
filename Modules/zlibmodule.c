@@ -463,8 +463,7 @@ zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits, int
     }
 
  error:
-    Py_XDECREF(self);
-    self = NULL;
+    Py_CLEAR(self);
  success:
     return (PyObject*)self;
 }

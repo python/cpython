@@ -1305,12 +1305,9 @@ finisignal(void)
         Py_XDECREF(func);
     }
 
-    Py_XDECREF(IntHandler);
-    IntHandler = NULL;
-    Py_XDECREF(DefaultHandler);
-    DefaultHandler = NULL;
-    Py_XDECREF(IgnoreHandler);
-    IgnoreHandler = NULL;
+    Py_CLEAR(IntHandler);
+    Py_CLEAR(DefaultHandler);
+    Py_CLEAR(IgnoreHandler);
 }
 
 

@@ -780,8 +780,7 @@ typedef struct {
 static void
 path_cleanup(path_t *path) {
     if (path->cleanup) {
-        Py_DECREF(path->cleanup);
-        path->cleanup = NULL;
+        Py_CLEAR(path->cleanup);
     }
 }
 
