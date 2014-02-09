@@ -97,10 +97,8 @@ forgetgeneric(genericobject *g)
 {
     int i, n;
 
-    Py_XDECREF(g->ob_callback);
-    g->ob_callback = NULL;
-    Py_XDECREF(g->ob_callback_arg);
-    g->ob_callback_arg = NULL;
+    Py_CLEAR(g->ob_callback);
+    Py_CLEAR(g->ob_callback_arg);
     if (allgenerics == NULL)
         return; /* No objects known yet */
     n = PyList_Size(allgenerics);
@@ -132,10 +130,8 @@ releaseobjects(FL_FORM *form)
             /* The object is now unreachable for
                do_forms and check_forms, so
                delete it from the list of known objects */
-            Py_XDECREF(g->ob_callback);
-            g->ob_callback = NULL;
-            Py_XDECREF(g->ob_callback_arg);
-            g->ob_callback_arg = NULL;
+            Py_CLEAR(g->ob_callback);
+            Py_CLEAR(g->ob_callback_arg);
             PyList_SetItem(allgenerics, i, (PyObject *)NULL);
             nfreeslots++;
         }

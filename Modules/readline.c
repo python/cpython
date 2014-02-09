@@ -206,8 +206,7 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *args)
     if (!PyArg_ParseTuple(args, buf, &function))
         return NULL;
     if (function == Py_None) {
-        Py_XDECREF(*hook_var);
-        *hook_var = NULL;
+        Py_CLEAR(*hook_var);
     }
     else if (PyCallable_Check(function)) {
         PyObject *tmp = *hook_var;

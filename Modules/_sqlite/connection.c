@@ -369,8 +369,7 @@ PyObject* pysqlite_connection_close(pysqlite_Connection* self, PyObject* args)
         if (self->apsw_connection) {
             ret = PyObject_CallMethod(self->apsw_connection, "close", "");
             Py_XDECREF(ret);
-            Py_XDECREF(self->apsw_connection);
-            self->apsw_connection = NULL;
+            Py_CLEAR(self->apsw_connection);
             self->db = NULL;
         } else {
             Py_BEGIN_ALLOW_THREADS

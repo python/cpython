@@ -3520,8 +3520,7 @@ static void make_encode_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 
@@ -4826,8 +4825,7 @@ static void make_translate_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 

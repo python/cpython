@@ -279,8 +279,7 @@ capture_dealloc(captureobject *self)
             (void)svUnlockCaptureData(self->ob_svideo->ob_svideo,
                                       self->ob_capture);
         self->ob_capture = NULL;
-        Py_DECREF(self->ob_svideo);
-        self->ob_svideo = NULL;
+        Py_CLEAR(self->ob_svideo);
     }
     PyObject_Del(self);
 }

@@ -1051,8 +1051,7 @@ static PyObject *EventHandlerRef_RemoveEventHandler(EventHandlerRefObject *_self
     _err = RemoveEventHandler(_self->ob_itself);
     if (_err != noErr) return PyMac_Error(_err);
     _self->ob_itself = NULL;
-    Py_DECREF(_self->ob_callback);
-    _self->ob_callback = NULL;
+    Py_CLEAR(_self->ob_callback);
     Py_INCREF(Py_None);
     _res = Py_None;
     return _res;

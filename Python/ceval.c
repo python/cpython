@@ -3240,8 +3240,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
     if (co->co_flags & CO_GENERATOR) {
         /* Don't need to keep the reference to f_back, it will be set
          * when the generator is resumed. */
-        Py_XDECREF(f->f_back);
-        f->f_back = NULL;
+        Py_CLEAR(f->f_back);
 
         PCALL(PCALL_GENERATOR);
 
