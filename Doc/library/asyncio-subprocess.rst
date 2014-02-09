@@ -3,8 +3,8 @@
 Subprocess
 ==========
 
-Create a subproces
-------------------
+Create a subprocess
+-------------------
 
 .. function:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
@@ -116,7 +116,7 @@ Process
       Kills the child. On Posix OSs the function sends :py:data:`SIGKILL` to
       the child.  On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
-   .. method:: send_signal(signale)
+   .. method:: send_signal(signal)
 
       Sends the signal *signal* to the child process.
 

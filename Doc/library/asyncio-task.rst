@@ -111,7 +111,7 @@ Example chaining coroutines::
     loop.close()
 
 ``compute()`` is chained to ``print_sum()``: ``print_sum()`` coroutine waits
-until ``compute()`` is completed before returing its result.
+until ``compute()`` is completed before returning its result.
 
 Sequence diagram of the example:
 
@@ -315,7 +315,7 @@ Task
 
       The frames are always ordered from oldest to newest.
 
-      The optional limit gives the maximum nummber of frames to return; by
+      The optional limit gives the maximum number of frames to return; by
       default all available frames are returned.  Its meaning differs depending
       on whether a stack or a traceback is returned: the newest frames of a
       stack are returned, but the oldest frames of a traceback are returned.
