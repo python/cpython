@@ -106,10 +106,6 @@ class Process:
         yield from waiter
         return waiter.result()
 
-    @property
-    def subprocess(self):
-        return self._transport.get_extra_info('subprocess')
-
     def _check_alive(self):
         if self._transport.get_returncode() is not None:
             raise ProcessLookupError()
