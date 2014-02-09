@@ -1792,6 +1792,11 @@ handle_system_exit(void)
         exitcode = (int)PyLong_AsLong(value);
     else {
         PyObject *sys_stderr = _PySys_GetObjectId(&PyId_stderr);
+        /* We clear the exception here to avoid triggering the assertion
+         * in PyObject_Str that ensures it won't silently lose exception
+         * details.
+         */
+        PyErr_Clear();
         if (sys_stderr != NULL && sys_stderr != Py_None) {
             PyFile_WriteObject(value, sys_stderr, Py_PRINT_RAW);
         } else {
