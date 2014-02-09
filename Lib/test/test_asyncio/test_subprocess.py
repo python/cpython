@@ -7,9 +7,6 @@ from test import support
 if sys.platform != 'win32':
     from asyncio import unix_events
 
-# Program exiting quickly
-PROGRAM_EXIT_FAST = [sys.executable, '-c', 'pass']
-
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
 
@@ -118,23 +115,6 @@ class SubprocessMixin:
         proc.send_signal(signal.SIGHUP)
         returncode = self.loop.run_until_complete(proc.wait())
         self.assertEqual(-signal.SIGHUP, returncode)
-
-    def test_subprocess(self):
-        args = PROGRAM_EXIT_FAST
-
-        @asyncio.coroutine
-        def run():
-            proc = yield from asyncio.create_subprocess_exec(*args,
-                                                             loop=self.loop)
-            yield from proc.wait()
-            # need to poll subprocess.Popen, otherwise the returncode
-            # attribute is not set
-            proc.subprocess.wait()
-            return proc
-
-        proc = self.loop.run_until_complete(run())
-        self.assertEqual(proc.subprocess.returncode, proc.returncode)
-        self.assertEqual(proc.subprocess.pid, proc.pid)
 
     def test_broken_pipe(self):
         large_data = b'x' * support.PIPE_MAX_SIZE
