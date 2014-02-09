@@ -12893,7 +12893,9 @@ must be a string, whose characters will be mapped to None in the result.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
-"sig=(x, y=None, z=None)\n"
+"maketrans(x, y=None, z=None, /)\n"
+"--\n"
+"\n"
 "Return a translation table usable for str.translate().\n"
 "\n"
 "If there is only one argument, it must be a dictionary mapping Unicode\n"
@@ -12930,7 +12932,7 @@ exit:
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
-/*[clinic end generated code: output=ca001ac83ed32269 input=7bfbf529a293c6c5]*/
+/*[clinic end generated code: output=566edf630f77436a input=7bfbf529a293c6c5]*/
 {
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;

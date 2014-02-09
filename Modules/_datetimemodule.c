@@ -4159,7 +4159,9 @@ If no tz is specified, uses local timezone.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(datetime_datetime_now__doc__,
-"sig=($type, tz=None)\n"
+"now($type, /, tz=None)\n"
+"--\n"
+"\n"
 "Returns new datetime object representing current time local to tz.\n"
 "\n"
 "  tz\n"
@@ -4192,7 +4194,7 @@ exit:
 
 static PyObject *
 datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
-/*[clinic end generated code: output=c8a47308483e579a input=80d09869c5267d00]*/
+/*[clinic end generated code: output=583c5637e3c843fa input=80d09869c5267d00]*/
 {
     PyObject *self;
 

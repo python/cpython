@@ -359,7 +359,9 @@ os.stat as os_stat_fn
 
 Perform a stat system call on the given path.""")
         self.assertEqual("""
-sig=($module, path)
+stat($module, /, path)
+--
+
 Perform a stat system call on the given path.
 
   path
@@ -379,7 +381,9 @@ This is the documentation for foo.
 Okay, we're done here.
 """)
         self.assertEqual("""
-sig=($module, x, y)
+bar($module, /, x, y)
+--
+
 This is the documentation for foo.
 
   x
@@ -395,7 +399,7 @@ os.stat
     path: str
 This/used to break Clinic!
 """)
-        self.assertEqual("sig=($module, path)\n\nThis/used to break Clinic!", function.docstring)
+        self.assertEqual("stat($module, /, path)\n--\n\nThis/used to break Clinic!", function.docstring)
 
     def test_c_name(self):
         function = self.parse_function("module os\nos.stat as os_stat_fn")
@@ -504,7 +508,8 @@ curses.imaginary
             self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
         self.assertEqual(function.docstring.strip(), """
-imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5, attr6]])
+imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5,
+          attr6]])
 
 
   y1
@@ -624,8 +629,22 @@ foo.bar
 Docstring
 
 """)
-        self.assertEqual("sig=($module)\nDocstring", function.docstring)
+        self.assertEqual("bar($module, /)\n--\n\nDocstring", function.docstring)
         self.assertEqual(1, len(function.parameters)) # self!
+
+    def test_init_with_no_parameters(self):
+        function = self.parse_function("""
+module foo
+class foo.Bar "unused" "notneeded"
+foo.Bar.__init__
+
+Docstring
+
+""", signatures_in_block=3, function_index=2)
+        # self is not in the signature
+        self.assertEqual("Bar()\n--\n\nDocstring", function.docstring)
+        # but it *is* a parameter
+        self.assertEqual(1, len(function.parameters))
 
     def test_illegal_module_line(self):
         self.parse_function_should_fail("""
@@ -719,7 +738,9 @@ foo.bar
   Not at column 0!
 """)
         self.assertEqual("""
-sig=($module, x, *, y)
+bar($module, /, x, *, y)
+--
+
 Not at column 0!
 
   x
@@ -733,7 +754,7 @@ os.stat
     path: str
 This/used to break Clinic!
 """)
-        self.assertEqual("sig=($module, path)\nThis/used to break Clinic!", function.docstring)
+        self.assertEqual("stat($module, /, path)\n--\n\nThis/used to break Clinic!", function.docstring)
 
     def test_directive(self):
         c = FakeClinic()
@@ -756,13 +777,13 @@ This/used to break Clinic!
         parser.parse(block)
         return block
 
-    def parse_function(self, text):
+    def parse_function(self, text, signatures_in_block=2, function_index=1):
         block = self.parse(text)
         s = block.signatures
-        self.assertEqual(len(s), 2)
+        self.assertEqual(len(s), signatures_in_block)
         assert isinstance(s[0], clinic.Module)
-        assert isinstance(s[1], clinic.Function)
-        return s[1]
+        assert isinstance(s[function_index], clinic.Function)
+        return s[function_index]
 
     def test_scaffolding(self):
         # test repr on special values

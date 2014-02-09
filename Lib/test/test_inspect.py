@@ -1684,7 +1684,6 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(p('sys'), sys.maxsize)
         self.assertEqual(p('exp'), sys.maxsize - 1)
 
-        test_callable(type)
         test_callable(object)
 
         # normal method
@@ -1710,9 +1709,12 @@ class TestSignatureObject(unittest.TestCase):
         # support for 'method-wrapper'
         test_callable(min.__call__)
 
-        class ThisWorksNow:
-            __call__ = type
-        test_callable(ThisWorksNow())
+        # This doesn't work now.
+        # (We don't have a valid signature for "type" in 3.4)
+        with self.assertRaisesRegex(ValueError, "no signature found"):
+            class ThisWorksNow:
+                __call__ = type
+            test_callable(ThisWorksNow())
 
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
@@ -2213,11 +2215,11 @@ class TestSignatureObject(unittest.TestCase):
 
         # Test meta-classes without user-defined __init__ or __new__
         class C(type): pass
-        self.assertEqual(str(inspect.signature(C)),
-                         '(object_or_name, bases, dict)')
         class D(C): pass
-        self.assertEqual(str(inspect.signature(D)),
-                         '(object_or_name, bases, dict)')
+        with self.assertRaisesRegex(ValueError, "callable.*is not supported"):
+            self.assertEqual(inspect.signature(C), None)
+        with self.assertRaisesRegex(ValueError, "callable.*is not supported"):
+            self.assertEqual(inspect.signature(D), None)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -2767,6 +2769,61 @@ class TestSignaturePrivateHelpers(unittest.TestCase):
         self.assertEqual(getter('($self)'), 'self')
         self.assertEqual(getter('($self, obj)'), 'self')
         self.assertEqual(getter('($cls, /, obj)'), 'cls')
+
+    def _strip_non_python_syntax(self, input,
+        clean_signature, self_parameter, last_positional_only):
+        computed_clean_signature, \
+            computed_self_parameter, \
+            computed_last_positional_only = \
+            inspect._signature_strip_non_python_syntax(input)
+        self.assertEqual(computed_clean_signature, clean_signature)
+        self.assertEqual(computed_self_parameter, self_parameter)
+        self.assertEqual(computed_last_positional_only, last_positional_only)
+
+    def test_signature_strip_non_python_syntax(self):
+        self._strip_non_python_syntax(
+            "($module, /, path, mode, *, dir_fd=None, " +
+                "effective_ids=False,\n       follow_symlinks=True)",
+            "(module, path, mode, *, dir_fd=None, " +
+                "effective_ids=False, follow_symlinks=True)",
+            0,
+            0)
+
+        self._strip_non_python_syntax(
+            "($module, word, salt, /)",
+            "(module, word, salt)",
+            0,
+            2)
+
+        self._strip_non_python_syntax(
+            "(x, y=None, z=None, /)",
+            "(x, y=None, z=None)",
+            None,
+            2)
+
+        self._strip_non_python_syntax(
+            "(x, y=None, z=None)",
+            "(x, y=None, z=None)",
+            None,
+            None)
+
+        self._strip_non_python_syntax(
+            "(x,\n    y=None,\n      z = None  )",
+            "(x, y=None, z=None)",
+            None,
+            None)
+
+        self._strip_non_python_syntax(
+            "",
+            "",
+            None,
+            None)
+
+        self._strip_non_python_syntax(
+            None,
+            None,
+            None,
+            None)
 
 
 class TestUnwrap(unittest.TestCase):

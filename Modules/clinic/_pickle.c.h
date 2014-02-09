@@ -3,7 +3,9 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
-"sig=($self)\n"
+"clear_memo($self, /)\n"
+"--\n"
+"\n"
 "Clears the pickler\'s \"memo\".\n"
 "\n"
 "The memo is the data structure that remembers which objects the\n"
@@ -24,14 +26,18 @@ _pickle_Pickler_clear_memo(PicklerObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
-"sig=($self, obj)\n"
+"dump($self, obj, /)\n"
+"--\n"
+"\n"
 "Write a pickled representation of the given object to the open file.");
 
 #define _PICKLE_PICKLER_DUMP_METHODDEF    \
     {"dump", (PyCFunction)_pickle_Pickler_dump, METH_O, _pickle_Pickler_dump__doc__},
 
 PyDoc_STRVAR(_pickle_Pickler___init____doc__,
-"sig=(file, protocol=None, fix_imports=True)\n"
+"Pickler(file, protocol=None, fix_imports=True)\n"
+"--\n"
+"\n"
 "This takes a binary file for writing a pickle data stream.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
@@ -74,7 +80,9 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy_clear__doc__,
-"sig=($self)\n"
+"clear($self, /)\n"
+"--\n"
+"\n"
 "Remove all items from memo.");
 
 #define _PICKLE_PICKLERMEMOPROXY_CLEAR_METHODDEF    \
@@ -90,7 +98,9 @@ _pickle_PicklerMemoProxy_clear(PicklerMemoProxyObject *self, PyObject *Py_UNUSED
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy_copy__doc__,
-"sig=($self)\n"
+"copy($self, /)\n"
+"--\n"
+"\n"
 "Copy the memo to a new object.");
 
 #define _PICKLE_PICKLERMEMOPROXY_COPY_METHODDEF    \
@@ -106,7 +116,9 @@ _pickle_PicklerMemoProxy_copy(PicklerMemoProxyObject *self, PyObject *Py_UNUSED(
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy___reduce____doc__,
-"sig=($self)\n"
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
 "Implement pickle support.");
 
 #define _PICKLE_PICKLERMEMOPROXY___REDUCE___METHODDEF    \
@@ -122,7 +134,9 @@ _pickle_PicklerMemoProxy___reduce__(PicklerMemoProxyObject *self, PyObject *Py_U
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
-"sig=($self)\n"
+"load($self, /)\n"
+"--\n"
+"\n"
 "Load a pickle.\n"
 "\n"
 "Read a pickled object representation from the open file object given\n"
@@ -142,7 +156,9 @@ _pickle_Unpickler_load(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
-"sig=($self, module_name, global_name)\n"
+"find_class($self, module_name, global_name, /)\n"
+"--\n"
+"\n"
 "Return an object from a specified module.\n"
 "\n"
 "If necessary, the module will be imported. Subclasses may override\n"
@@ -176,7 +192,9 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
-"sig=(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
+"Unpickler(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
+"--\n"
+"\n"
 "This takes a binary file for reading a pickle data stream.\n"
 "\n"
 "The protocol version of the pickle is detected automatically, so no\n"
@@ -222,7 +240,9 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_clear__doc__,
-"sig=($self)\n"
+"clear($self, /)\n"
+"--\n"
+"\n"
 "Remove all items from memo.");
 
 #define _PICKLE_UNPICKLERMEMOPROXY_CLEAR_METHODDEF    \
@@ -238,7 +258,9 @@ _pickle_UnpicklerMemoProxy_clear(UnpicklerMemoProxyObject *self, PyObject *Py_UN
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_copy__doc__,
-"sig=($self)\n"
+"copy($self, /)\n"
+"--\n"
+"\n"
 "Copy the memo to a new object.");
 
 #define _PICKLE_UNPICKLERMEMOPROXY_COPY_METHODDEF    \
@@ -254,7 +276,9 @@ _pickle_UnpicklerMemoProxy_copy(UnpicklerMemoProxyObject *self, PyObject *Py_UNU
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy___reduce____doc__,
-"sig=($self)\n"
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
 "Implement pickling support.");
 
 #define _PICKLE_UNPICKLERMEMOPROXY___REDUCE___METHODDEF    \
@@ -270,7 +294,9 @@ _pickle_UnpicklerMemoProxy___reduce__(UnpicklerMemoProxyObject *self, PyObject *
 }
 
 PyDoc_STRVAR(_pickle_dump__doc__,
-"sig=($module, obj, file, protocol=None, *, fix_imports=True)\n"
+"dump($module, /, obj, file, protocol=None, *, fix_imports=True)\n"
+"--\n"
+"\n"
 "Write a pickled representation of obj to the open file object file.\n"
 "\n"
 "This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may\n"
@@ -320,7 +346,9 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_dumps__doc__,
-"sig=($module, obj, protocol=None, *, fix_imports=True)\n"
+"dumps($module, /, obj, protocol=None, *, fix_imports=True)\n"
+"--\n"
+"\n"
 "Return the pickled representation of the object as a bytes object.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
@@ -361,7 +389,10 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_load__doc__,
-"sig=($module, file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
+"load($module, /, file, *, fix_imports=True, encoding=\'ASCII\',\n"
+"     errors=\'strict\')\n"
+"--\n"
+"\n"
 "Read and return an object from the pickle data stored in a file.\n"
 "\n"
 "This is equivalent to ``Unpickler(file).load()``, but may be more\n"
@@ -413,7 +444,10 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_loads__doc__,
-"sig=($module, data, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
+"loads($module, /, data, *, fix_imports=True, encoding=\'ASCII\',\n"
+"      errors=\'strict\')\n"
+"--\n"
+"\n"
 "Read and return an object from the given pickle data.\n"
 "\n"
 "The protocol version of the pickle is detected automatically, so no\n"
@@ -454,4 +488,4 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c59d4dafc2646f11 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f965b6c7018c898d input=a9049054013a1b77]*/

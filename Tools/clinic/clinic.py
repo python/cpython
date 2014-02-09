@@ -1123,10 +1123,12 @@ def OverrideStdioWith(stdout):
         sys.stdout = saved_stdout
 
 
-def create_regex(before, after, word=True):
+def create_regex(before, after, word=True, whole_line=True):
     """Create an re object for matching marker lines."""
     group_re = "\w+" if word else ".+"
-    pattern = r'^{}({}){}$'
+    pattern = r'{}({}){}'
+    if whole_line:
+        pattern = '^' + pattern + '$'
     pattern = pattern.format(re.escape(before), group_re, re.escape(after))
     return re.compile(pattern)
 
@@ -1218,6 +1220,7 @@ class BlockParser:
         self.language = language
         before, _, after = language.start_line.partition('{dsl_name}')
         assert _ == '{dsl_name}'
+        self.find_start_re = create_regex(before, after, whole_line=False)
         self.start_re = create_regex(before, after)
         self.verify = verify
         self.last_checksum_re = None
@@ -1735,11 +1738,15 @@ def parse_file(filename, *, force=False, verify=True, output=None, encoding='utf
     except KeyError:
         fail("Can't identify file type for file " + repr(filename))
 
-    clinic = Clinic(language, force=force, verify=verify, filename=filename)
-
     with open(filename, 'r', encoding=encoding) as f:
         raw = f.read()
 
+    # exit quickly if there are no clinic markers in the file
+    find_start_re = BlockParser("", language).find_start_re
+    if not find_start_re.search(raw):
+        return
+
+    clinic = Clinic(language, force=force, verify=verify, filename=filename)
     cooked = clinic.parse(raw)
     if (cooked == raw) and not force:
         return
@@ -1897,7 +1904,7 @@ class Function:
                  full_name=None,
                  return_converter, return_annotation=_empty,
                  docstring=None, kind=CALLABLE, coexist=False,
-                 suppress_signature=False):
+                 docstring_only=False):
         self.parameters = parameters or collections.OrderedDict()
         self.return_annotation = return_annotation
         self.name = name
@@ -1911,7 +1918,11 @@ class Function:
         self.kind = kind
         self.coexist = coexist
         self.self_converter = None
-        self.suppress_signature = suppress_signature
+        # docstring_only means "don't generate a machine-readable
+        # signature, just a normal docstring".  it's True for
+        # functions with optional groups because we can't represent
+        # those accurately with inspect.Signature in 3.4.
+        self.docstring_only = docstring_only
 
         self.rendered_parameters = None
 
@@ -1951,7 +1962,7 @@ class Function:
             'full_name': self.full_name,
             'return_converter': self.return_converter, 'return_annotation': self.return_annotation,
             'docstring': self.docstring, 'kind': self.kind, 'coexist': self.coexist,
-            'suppress_signature': self.suppress_signature,
+            'docstring_only': self.docstring_only,
             }
         kwargs.update(overrides)
         f = Function(**kwargs)
@@ -1986,6 +1997,9 @@ class Parameter:
 
     def is_keyword_only(self):
         return self.kind == inspect.Parameter.KEYWORD_ONLY
+
+    def is_positional_only(self):
+        return self.kind == inspect.Parameter.POSITIONAL_ONLY
 
     def copy(self, **overrides):
         kwargs = {
@@ -2929,7 +2943,7 @@ class IndentStack:
         Returns the length of the line's margin.
         """
         if '\t' in line:
-            fail('Tab characters are illegal in the Clinic DSL.')
+            fail('Tab characters are illegal in the Argument Clinic DSL.')
         stripped = line.lstrip()
         if not len(stripped):
             # we can't tell anything from an empty line
@@ -3694,7 +3708,7 @@ class DSLParser:
             else:
                 fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".b)")
             self.group += 1
-            self.function.suppress_signature = True
+            self.function.docstring_only = True
         elif symbol == ']':
             if not self.group:
                 fail("Function " + self.function.name + " has a ] without a matching [.")
@@ -3783,21 +3797,20 @@ class DSLParser:
             # don't render a docstring at all, no signature, nothing.
             return f.docstring
 
-        add, output = text_accumulator()
+        text, add, output = _text_accumulator()
         parameters = f.render_parameters
 
         ##
         ## docstring first line
         ##
 
-        if not f.suppress_signature:
-            add('sig=')
+        if new_or_init:
+            # classes get *just* the name of the class
+            # not __new__, not __init__, and not module.classname
+            assert f.cls
+            add(f.cls.name)
         else:
-            if new_or_init:
-                assert f.cls
-                add(f.cls.name)
-            else:
-                add(f.name)
+            add(f.name)
         add('(')
 
         # populate "right_bracket_count" field for every parameter
@@ -3834,53 +3847,105 @@ class DSLParser:
                 right_bracket_count -= 1
             return s
 
+        need_slash = False
+        added_slash = False
+        need_a_trailing_slash = False
+
+        # we only need a trailing slash:
+        #   * if this is not a "docstring_only" signature
+        #   * and if the last *shown* parameter is
+        #     positional only
+        if not f.docstring_only:
+            for p in reversed(parameters):
+                if not p.converter.show_in_signature:
+                    continue
+                if p.is_positional_only():
+                    need_a_trailing_slash = True
+                break
+
+
         added_star = False
-        add_comma = False
+
+        first_parameter = True
+        last_p = parameters[-1]
+        line_length = len(''.join(text))
+        indent = " " * line_length
+        def add_parameter(text):
+            nonlocal line_length
+            nonlocal first_parameter
+            if first_parameter:
+                s = text
+                first_parameter = False
+            else:
+                s = ' ' + text
+                if line_length + len(s) >= 72:
+                    add('\n')
+                    add(indent)
+                    line_length = len(indent)
+                    s = text
+            line_length += len(s)
+            add(s)
 
         for p in parameters:
             if not p.converter.show_in_signature:
                 continue
-
             assert p.name
+
+            is_self = isinstance(p.converter, self_converter)
+            if is_self and f.docstring_only:
+                # this isn't a real machine-parsable signature,
+                # so let's not print the "self" parameter
+                continue
+
+            if p.is_positional_only():
+                need_slash = not f.docstring_only
+            elif need_slash and not (added_slash or p.is_positional_only()):
+                added_slash = True
+                add_parameter('/,')
 
             if p.is_keyword_only() and not added_star:
                 added_star = True
-                if add_comma:
-                    add(', ')
-                add('*')
-                add_comma = True
+                add_parameter('*,')
+
+            p_add, p_output = text_accumulator()
+            p_add(fix_right_bracket_count(p.right_bracket_count))
+
+            if isinstance(p.converter, self_converter):
+                # annotate first parameter as being a "self".
+                #
+                # if inspect.Signature gets this function,
+                # and it's already bound, the self parameter
+                # will be stripped off.
+                #
+                # if it's not bound, it should be marked
+                # as positional-only.
+                #
+                # note: we don't print "self" for __init__,
+                # because this isn't actually the signature
+                # for __init__.  (it can't be, __init__ doesn't
+                # have a docstring.)  if this is an __init__
+                # (or __new__), then this signature is for
+                # calling the class to contruct a new instance.
+                p_add('$')
 
             name = p.converter.signature_name or p.name
+            p_add(name)
 
-            a = []
-            if isinstance(p.converter, self_converter):
-                if f.suppress_signature:
-                    continue
-                else:
-                    # annotate first parameter as being a "self".
-                    #
-                    # if inspect.Signature gets this function, and it's already bound,
-                    # the self parameter will be stripped off.
-                    #
-                    # if it's not bound, it should be marked as positional-only.
-                    a.append('$')
-                    a.append(name)
-            else:
-                a.append(name)
             if p.converter.is_optional():
-                a.append('=')
+                p_add('=')
                 value = p.converter.py_default
                 if not value:
                     value = repr(p.converter.default)
-                a.append(value)
-            s = fix_right_bracket_count(p.right_bracket_count)
-            s += "".join(a)
-            if add_comma:
-                add(', ')
-            add(s)
-            add_comma = True
+                p_add(value)
+
+            if (p != last_p) or need_a_trailing_slash:
+                p_add(',')
+
+            add_parameter(p_output())
 
         add(fix_right_bracket_count(0))
+        if need_a_trailing_slash:
+            add_parameter('/')
         add(')')
 
         # PEP 8 says:
@@ -3895,6 +3960,9 @@ class DSLParser:
         # if f.return_converter.py_default:
         #     add(' -> ')
         #     add(f.return_converter.py_default)
+
+        if not f.docstring_only:
+            add("\n--\n")
 
         docstring_first_line = output()
 
