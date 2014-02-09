@@ -845,6 +845,9 @@ class CP65001Test(ReadTest, unittest.TestCase):
                          "\U00010fff\uD800")
         self.assertTrue(codecs.lookup_error("surrogatepass"))
 
+    def test_readline(self):
+        self.skipTest("issue #20571: code page 65001 codec does not "
+                      "support partial decoder yet")
 
 
 class UTF7Test(ReadTest, unittest.TestCase):
