@@ -415,7 +415,7 @@ Task functions
    All futures must share the same event loop.  If all the tasks are done
    successfully, the returned future's result is the list of results (in the
    order of the original sequence, not necessarily the order of results
-   arrival).  If *result_exception* is True, exceptions in the tasks are
+   arrival).  If *return_exceptions* is True, exceptions in the tasks are
    treated the same as successful results, and gathered in the result list;
    otherwise, the first raised exception will be immediately propagated to the
    returned future.
