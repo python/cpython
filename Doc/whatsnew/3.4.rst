@@ -1716,8 +1716,9 @@ Changes in the C API
   because it has already been saved locally with :c:func:`PyErr_Fetch` or
   is being deliberately replaced with a different exception), an explicit
   :c:func:`PyErr_Clear` call will be needed to avoid triggering the
-  assertion when running against a version of Python that is compiled with
-  assertions enabled.
+  assertion when invoking these operations (directly or indirectly) and
+  running against a version of Python that is compiled with assertions
+  enabled.
 
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned with no exception
