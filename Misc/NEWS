@@ -7,7 +7,10 @@ What's New in Python 3.3.4?
 
 *Release date: 09-Feb-2014*
 
-No changes relative to rc1.
+Library
+-------
+
+- Issue #20374: Fix build warnings of the readline module with libedit on Mac.
 
 
 What's New in Python 3.3.4 release candidate 1?
