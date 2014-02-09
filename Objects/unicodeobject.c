@@ -1846,8 +1846,7 @@ _PyUnicode_ClearStaticStrings()
 {
     _Py_Identifier *tmp, *s = static_strings;
     while (s) {
-        Py_DECREF(s->object);
-        s->object = NULL;
+        Py_CLEAR(s->object);
         tmp = s->next;
         s->next = NULL;
         s = tmp;
@@ -4082,8 +4081,7 @@ make_decode_exception(PyObject **exceptionObject,
     return;
 
 onError:
-    Py_DECREF(*exceptionObject);
-    *exceptionObject = NULL;
+    Py_CLEAR(*exceptionObject);
 }
 
 /* error handling callback helper:
@@ -6224,8 +6222,7 @@ make_encode_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 
@@ -8225,8 +8222,7 @@ make_translate_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 

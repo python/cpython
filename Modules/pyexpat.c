@@ -314,8 +314,7 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args,
     }
     else {
         if (trace_frame(tstate, f, PyTrace_RETURN, res) < 0) {
-            Py_XDECREF(res);
-            res = NULL;
+            Py_CLEAR(res);
         }
     }
 #else

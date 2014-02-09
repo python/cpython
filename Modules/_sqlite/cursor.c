@@ -230,8 +230,7 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             if (converter != Py_None) {
                 Py_DECREF(converter);
             }
-            Py_XDECREF(self->row_cast_map);
-            self->row_cast_map = NULL;
+            Py_CLEAR(self->row_cast_map);
 
             return -1;
         }
@@ -443,8 +442,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     self->locked = 1;
     self->reset = 0;
 
-    Py_XDECREF(self->next_row);
-    self->next_row = NULL;
+    Py_CLEAR(self->next_row);
 
     if (multiple) {
         /* executemany() */
@@ -860,8 +858,7 @@ PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
     if (!self->next_row) {
          if (self->statement) {
             (void)pysqlite_statement_reset(self->statement);
-            Py_DECREF(self->statement);
-            self->statement = NULL;
+            Py_CLEAR(self->statement);
         }
         return NULL;
     }

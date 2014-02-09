@@ -74,8 +74,7 @@ reap_obj(pylist fd2obj[FD_SETSIZE + 1])
 {
     int i;
     for (i = 0; i < FD_SETSIZE + 1 && fd2obj[i].sentinel >= 0; i++) {
-        Py_XDECREF(fd2obj[i].obj);
-        fd2obj[i].obj = NULL;
+        Py_CLEAR(fd2obj[i].obj);
     }
     fd2obj[0].sentinel = -1;
 }
