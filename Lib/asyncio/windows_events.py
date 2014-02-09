@@ -191,7 +191,6 @@ class IocpProactor:
         self._cache = {}
         self._registered = weakref.WeakSet()
         self._stopped_serving = weakref.WeakSet()
-        self.resolution = 1e-3
 
     def set_loop(self, loop):
         self._loop = loop
