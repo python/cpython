@@ -322,6 +322,10 @@ the same library that the Python runtime is using.
    it causes an exception to immediately be thrown; this is used for the
    :meth:`~generator.throw` methods of generator objects.
 
+   .. versionchanged:: 3.4
+      This function now includes a debug assertion to help ensure that it
+      does not silently discard an active exception.
+
 
 .. c:function:: int PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 
