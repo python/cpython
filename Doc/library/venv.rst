@@ -107,7 +107,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
       upgraded in-place (defaults to ``False``).
 
     * ``with_pip`` -- a Boolean value which, if true, ensures pip is
-      installed in the virtual environment
+      installed in the virtual environment. This uses :mod:`ensurepip` with
+      the ``--default-pip`` option.
 
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
