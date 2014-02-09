@@ -197,8 +197,7 @@ syslog_closelog(PyObject *self, PyObject *unused)
 {
     if (S_log_open) {
         closelog();
-        Py_XDECREF(S_ident_o);
-        S_ident_o = NULL;
+        Py_CLEAR(S_ident_o);
         S_log_open = 0;
     }
     Py_INCREF(Py_None);

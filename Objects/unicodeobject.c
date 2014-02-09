@@ -1902,8 +1902,7 @@ _PyUnicode_ClearStaticStrings()
 {
     _Py_Identifier *tmp, *s = static_strings;
     while (s) {
-        Py_DECREF(s->object);
-        s->object = NULL;
+        Py_CLEAR(s->object);
         tmp = s->next;
         s->next = NULL;
         s = tmp;
@@ -4005,8 +4004,7 @@ make_decode_exception(PyObject **exceptionObject,
     return;
 
 onError:
-    Py_DECREF(*exceptionObject);
-    *exceptionObject = NULL;
+    Py_CLEAR(*exceptionObject);
 }
 
 #ifdef HAVE_MBCS
@@ -6366,8 +6364,7 @@ make_encode_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 
@@ -8410,8 +8407,7 @@ make_translate_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 
@@ -13502,8 +13498,7 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
         PyObject *newbuffer;
         newbuffer = resize_compact(writer->buffer, writer->pos);
         if (newbuffer == NULL) {
-            Py_DECREF(writer->buffer);
-            writer->buffer = NULL;
+            Py_CLEAR(writer->buffer);
             return NULL;
         }
         writer->buffer = newbuffer;

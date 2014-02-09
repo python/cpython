@@ -10,6 +10,8 @@ Release date: 2014-02-09
 Core and Builtins
 -----------------
 
+- Issue #20437: Fixed 22 potential bugs when deleting objects references.
+
 - Issue #20500: Displaying an exception at interpreter shutdown no longer
   risks triggering an assertion failure in PyObject_Str.
 
