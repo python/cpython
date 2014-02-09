@@ -278,7 +278,9 @@ Return the value for key if present, otherwise default.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dbm_dbm_get__doc__,
-"sig=($self, key, default=None)\n"
+"get($self, key, default=None, /)\n"
+"--\n"
+"\n"
 "Return the value for key if present, otherwise default.");
 
 #define DBM_DBM_GET_METHODDEF    \
@@ -307,7 +309,7 @@ exit:
 
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=2bbaf9a187f9b6bf input=aecf5efd2f2b1a3b]*/
+/*[clinic end generated code: output=452ea11394e7e92d input=aecf5efd2f2b1a3b]*/
 {
     datum dbm_key, val;
 
@@ -448,7 +450,9 @@ Return a database object.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dbmopen__doc__,
-"sig=($module, filename, flags=\'r\', mode=0o666)\n"
+"open($module, filename, flags=\'r\', mode=0o666, /)\n"
+"--\n"
+"\n"
 "Return a database object.\n"
 "\n"
 "  filename\n"
@@ -485,7 +489,7 @@ exit:
 
 static PyObject *
 dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode)
-/*[clinic end generated code: output=a1da6a481d9d332b input=6499ab0fab1333ac]*/
+/*[clinic end generated code: output=9a7b725f9c4dcec2 input=6499ab0fab1333ac]*/
 {
     int iflags;
 

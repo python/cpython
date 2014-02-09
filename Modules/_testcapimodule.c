@@ -2851,26 +2851,40 @@ PyDoc_STRVAR(docstring_no_signature,
 );
 
 PyDoc_STRVAR(docstring_with_invalid_signature,
-"sig= (module, boo)\n"
+"docstring_with_invalid_signature($module, /, boo)\n"
 "\n"
 "This docstring has an invalid signature."
 );
 
+PyDoc_STRVAR(docstring_with_invalid_signature2,
+"docstring_with_invalid_signature2($module, /, boo)\n"
+"\n"
+"--\n"
+"\n"
+"This docstring also has an invalid signature."
+);
+
 PyDoc_STRVAR(docstring_with_signature,
-"sig=(module, sig)\n"
+"docstring_with_signature($module, /, sig)\n"
+"--\n"
+"\n"
 "This docstring has a valid signature."
 );
 
 PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
-"sig=(module, parameter)\n"
-"\n"
+"docstring_with_signature_and_extra_newlines($module, /, parameter)\n"
+"--\n"
 "\n"
 "\n"
 "This docstring has a valid signature and some extra newlines."
 );
 
 PyDoc_STRVAR(docstring_with_signature_with_defaults,
-"sig=(module, s='avocado', b=b'bytes', d=3.14, i=35, n=None, t=True, f=False, local=the_number_three, sys=sys.maxsize, exp=sys.maxsize - 1)\n"
+"docstring_with_signature_with_defaults(module, s='avocado',\n"
+"        b=b'bytes', d=3.14, i=35, n=None, t=True, f=False,\n"
+"        local=the_number_three, sys=sys.maxsize,\n"
+"        exp=sys.maxsize - 1)\n"
+"--\n"
 "\n"
 "\n"
 "\n"
@@ -3090,6 +3104,9 @@ static PyMethodDef TestMethods[] = {
     {"docstring_with_invalid_signature",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_invalid_signature},
+    {"docstring_with_invalid_signature2",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_with_invalid_signature2},
     {"docstring_with_signature",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature},

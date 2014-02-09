@@ -3,7 +3,9 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_bz2_BZ2Compressor_compress__doc__,
-"sig=($self, data)\n"
+"compress($self, data, /)\n"
+"--\n"
+"\n"
 "Provide data to the compressor object.\n"
 "\n"
 "Returns a chunk of compressed data if possible, or b\'\' otherwise.\n"
@@ -38,7 +40,9 @@ exit:
 }
 
 PyDoc_STRVAR(_bz2_BZ2Compressor_flush__doc__,
-"sig=($self)\n"
+"flush($self, /)\n"
+"--\n"
+"\n"
 "Finish the compression process.\n"
 "\n"
 "Returns the compressed data left in internal buffers.\n"
@@ -58,7 +62,9 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_bz2_BZ2Compressor___init____doc__,
-"sig=(compresslevel=9)\n"
+"BZ2Compressor(compresslevel=9, /)\n"
+"--\n"
+"\n"
 "Create a compressor object for compressing data incrementally.\n"
 "\n"
 "  compresslevel\n"
@@ -89,7 +95,9 @@ exit:
 }
 
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
-"sig=($self, data)\n"
+"decompress($self, data, /)\n"
+"--\n"
+"\n"
 "Provide data to the decompressor object.\n"
 "\n"
 "Returns a chunk of decompressed data if possible, or b\'\' otherwise.\n"
@@ -125,7 +133,9 @@ exit:
 }
 
 PyDoc_STRVAR(_bz2_BZ2Decompressor___init____doc__,
-"sig=()\n"
+"BZ2Decompressor()\n"
+"--\n"
+"\n"
 "Create a decompressor object for decompressing data incrementally.\n"
 "\n"
 "For one-shot decompression, use the decompress() function instead.");
@@ -149,4 +159,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=aca4f6329c1c773a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21ca4405519a0931 input=a9049054013a1b77]*/

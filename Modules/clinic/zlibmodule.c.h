@@ -3,7 +3,9 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_compress__doc__,
-"sig=($module, bytes, level=Z_DEFAULT_COMPRESSION)\n"
+"compress($module, bytes, level=Z_DEFAULT_COMPRESSION, /)\n"
+"--\n"
+"\n"
 "Returns a bytes object containing compressed data.\n"
 "\n"
 "  bytes\n"
@@ -39,7 +41,9 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_decompress__doc__,
-"sig=($module, data, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)\n"
+"decompress($module, data, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE, /)\n"
+"--\n"
+"\n"
 "Returns a bytes object containing the uncompressed data.\n"
 "\n"
 "  data\n"
@@ -78,7 +82,11 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_compressobj__doc__,
-"sig=($module, level=Z_DEFAULT_COMPRESSION, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY, zdict=None)\n"
+"compressobj($module, /, level=Z_DEFAULT_COMPRESSION, method=DEFLATED,\n"
+"            wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL,\n"
+"            strategy=Z_DEFAULT_STRATEGY, zdict=None)\n"
+"--\n"
+"\n"
 "Return a compressor object.\n"
 "\n"
 "  level\n"
@@ -132,7 +140,9 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_decompressobj__doc__,
-"sig=($module, wbits=MAX_WBITS, zdict=b\'\')\n"
+"decompressobj($module, /, wbits=MAX_WBITS, zdict=b\'\')\n"
+"--\n"
+"\n"
 "Return a decompressor object.\n"
 "\n"
 "  wbits\n"
@@ -166,7 +176,9 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_Compress_compress__doc__,
-"sig=($self, data)\n"
+"compress($self, data, /)\n"
+"--\n"
+"\n"
 "Returns a bytes object containing compressed data.\n"
 "\n"
 "  data\n"
@@ -203,7 +215,9 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
-"sig=($self, data, max_length=0)\n"
+"decompress($self, data, max_length=0, /)\n"
+"--\n"
+"\n"
 "Return a bytes object containing the decompressed version of the data.\n"
 "\n"
 "  data\n"
@@ -245,7 +259,9 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_Compress_flush__doc__,
-"sig=($self, mode=zlib.Z_FINISH)\n"
+"flush($self, mode=zlib.Z_FINISH, /)\n"
+"--\n"
+"\n"
 "Return a bytes object containing any remaining compressed data.\n"
 "\n"
 "  mode\n"
@@ -279,7 +295,9 @@ exit:
 #if defined(HAVE_ZLIB_COPY)
 
 PyDoc_STRVAR(zlib_Compress_copy__doc__,
-"sig=($self)\n"
+"copy($self, /)\n"
+"--\n"
+"\n"
 "Return a copy of the compression object.");
 
 #define ZLIB_COMPRESS_COPY_METHODDEF    \
@@ -303,7 +321,9 @@ zlib_Compress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 #if defined(HAVE_ZLIB_COPY)
 
 PyDoc_STRVAR(zlib_Decompress_copy__doc__,
-"sig=($self)\n"
+"copy($self, /)\n"
+"--\n"
+"\n"
 "Return a copy of the decompression object.");
 
 #define ZLIB_DECOMPRESS_COPY_METHODDEF    \
@@ -325,7 +345,9 @@ zlib_Decompress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 #endif /* !defined(ZLIB_DECOMPRESS_COPY_METHODDEF) */
 
 PyDoc_STRVAR(zlib_Decompress_flush__doc__,
-"sig=($self, length=zlib.DEF_BUF_SIZE)\n"
+"flush($self, length=zlib.DEF_BUF_SIZE, /)\n"
+"--\n"
+"\n"
 "Return a bytes object containing any remaining decompressed data.\n"
 "\n"
 "  length\n"
@@ -354,7 +376,9 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_adler32__doc__,
-"sig=($module, data, value=1)\n"
+"adler32($module, data, value=1, /)\n"
+"--\n"
+"\n"
 "Compute an Adler-32 checksum of data.\n"
 "\n"
 "  value\n"
@@ -390,7 +414,9 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_crc32__doc__,
-"sig=($module, data, value=0)\n"
+"crc32($module, data, value=0, /)\n"
+"--\n"
+"\n"
 "Compute a CRC-32 checksum of data.\n"
 "\n"
 "  value\n"
@@ -424,4 +450,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=67d3e81eafcfb982 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc9473721ca7c962 input=a9049054013a1b77]*/

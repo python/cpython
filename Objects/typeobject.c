@@ -55,51 +55,75 @@ static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 /*
- * finds the docstring's introspection signature.
+ * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
  * otherwise returns NULL.
+ *
+ * doesn't guarantee that the signature is valid, only that it
+ * has a valid prefix.  (the signature must also pass skip_signature.)
  */
 static const char *
-find_signature(const char *doc)
+find_signature(const char *name, const char *doc)
 {
-    if (doc && !strncmp(doc, "sig=(", 5))
-        return doc + 4;
-    return NULL;
+    const char *dot;
+    size_t length;
+
+    if (!doc)
+        return NULL;
+
+    assert(name != NULL);
+
+    /* for dotted names like classes, only use the last component */
+    dot = strrchr(name, '.');
+    if (dot)
+        name = dot + 1;
+
+    length = strlen(name);
+    if (strncmp(doc, name, length))
+        return NULL;
+    doc += length;
+    if (*doc != '(')
+        return NULL;
+    return doc;
 }
 
+#define SIGNATURE_END_MARKER         ")\n--\n\n"
+#define SIGNATURE_END_MARKER_LENGTH  6
 /*
- * skips to the end of the docstring's instrospection signature.
+ * skips past the end of the docstring's instrospection signature.
+ * (assumes doc starts with a valid signature prefix.)
  */
 static const char *
 skip_signature(const char *doc)
 {
-    while (*doc && *doc != '\n')
+    while (*doc) {
+        if ((*doc == *SIGNATURE_END_MARKER) &&
+            !strncmp(doc, SIGNATURE_END_MARKER, SIGNATURE_END_MARKER_LENGTH))
+            return doc + SIGNATURE_END_MARKER_LENGTH;
+        if ((*doc == '\n') && (doc[1] == '\n'))
+            return NULL;
         doc++;
-    return doc;
+    }
+    return NULL;
 }
 
 static const char *
-skip_eols(const char *trace)
+_PyType_DocWithoutSignature(const char *name, const char *internal_doc)
 {
-    while (*trace == '\n')
-        trace++;
-    return trace;
-}
+    const char *doc = find_signature(name, internal_doc);
 
-static const char *
-_PyType_DocWithoutSignature(const char *internal_doc)
-{
-    const char *signature = find_signature(internal_doc);
-
-    if (signature)
-        return skip_eols(skip_signature(signature));
+    if (doc) {
+        doc = skip_signature(doc);
+        if (doc)
+            return doc;
+        }
     return internal_doc;
 }
 
 PyObject *
-_PyType_GetDocFromInternalDoc(const char *internal_doc)
+_PyType_GetDocFromInternalDoc(const char *name, const char *internal_doc)
 {
-    const char *doc = _PyType_DocWithoutSignature(internal_doc);
+    const char *doc = _PyType_DocWithoutSignature(name, internal_doc);
 
     if (!doc) {
         Py_INCREF(Py_None);
@@ -110,18 +134,26 @@ _PyType_GetDocFromInternalDoc(const char *internal_doc)
 }
 
 PyObject *
-_PyType_GetTextSignatureFromInternalDoc(const char *internal_doc)
+_PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_doc)
 {
-    const char *signature = find_signature(internal_doc);
-    const char *doc;
+    const char *start = find_signature(name, internal_doc);
+    const char *end;
 
-    if (!signature) {
+    if (start)
+        end = skip_signature(start);
+    else
+        end = NULL;
+    if (!end) {
         Py_INCREF(Py_None);
         return Py_None;
     }
 
-    doc = skip_signature(signature);
-    return PyUnicode_FromStringAndSize(signature, doc - signature);
+    /* back "end" up until it points just past the final ')' */
+    end -= SIGNATURE_END_MARKER_LENGTH - 1;
+    assert((end - start) >= 2); /* should be "()" at least */
+    assert(end[-1] == ')');
+    assert(end[0] == '\n');
+    return PyUnicode_FromStringAndSize(start, end - start);
 }
 
 unsigned int
@@ -699,7 +731,7 @@ type_get_doc(PyTypeObject *type, void *context)
 {
     PyObject *result;
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL) {
-        return _PyType_GetDocFromInternalDoc(type->tp_doc);
+        return _PyType_GetDocFromInternalDoc(type->tp_name, type->tp_doc);
     }
     result = _PyDict_GetItemId(type->tp_dict, &PyId___doc__);
     if (result == NULL) {
@@ -719,7 +751,7 @@ type_get_doc(PyTypeObject *type, void *context)
 static PyObject *
 type_get_text_signature(PyTypeObject *type, void *context)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(type->tp_doc);
+    return _PyType_GetTextSignatureFromInternalDoc(type->tp_name, type->tp_doc);
 }
 
 static int
@@ -2597,7 +2629,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         /* need to make a copy of the docstring slot, which usually
            points to a static string literal */
         if (slot->slot == Py_tp_doc) {
-            const char *old_doc = _PyType_DocWithoutSignature(slot->pfunc);
+            const char *old_doc = _PyType_DocWithoutSignature(type->tp_name, slot->pfunc);
             size_t len = strlen(old_doc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL) {
@@ -3002,7 +3034,7 @@ static PyMethodDef type_methods[] = {
 
 PyDoc_STRVAR(type_doc,
 /* this text signature cannot be accurate yet.  will fix.  --larry */
-"sig=(object_or_name, bases, dict)\n"
+"type(object_or_name, bases, dict)\n"
 "type(object) -> the object's type\n"
 "type(name, bases, dict) -> a new type");
 
@@ -4198,7 +4230,7 @@ PyTypeObject PyBaseObject_Type = {
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    PyDoc_STR("sig=()\nThe most base type"),  /* tp_doc */
+    PyDoc_STR("object()\n--\n\nThe most base type"),  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     object_richcompare,                         /* tp_richcompare */
@@ -4665,7 +4697,8 @@ PyType_Ready(PyTypeObject *type)
      */
     if (_PyDict_GetItemId(type->tp_dict, &PyId___doc__) == NULL) {
         if (type->tp_doc != NULL) {
-            const char *old_doc = _PyType_DocWithoutSignature(type->tp_doc);
+            const char *old_doc = _PyType_DocWithoutSignature(type->tp_name,
+                type->tp_doc);
             PyObject *doc = PyUnicode_FromString(old_doc);
             if (doc == NULL)
                 goto error;
@@ -5327,7 +5360,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 
 static struct PyMethodDef tp_new_methoddef[] = {
     {"__new__", (PyCFunction)tp_new_wrapper, METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("sig=($type, *args, **kwargs)\n"
+     PyDoc_STR("__new__($type, *args, **kwargs)\n--\n\n"
                "Create and return a new object.  "
                "See help(type) for accurate signature.")},
     {0}
@@ -6101,22 +6134,22 @@ typedef struct wrapperbase slotdef;
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, DOC)
 #define UNSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           "sig=($self)\n" DOC)
+           NAME "($self)\n--\n\n" DOC)
 #define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           "sig=($self, value)\nReturn self" DOC "value.")
+           NAME "($self, value)\n--\n\nReturn self" DOC "value.")
 #define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
-           "sig=($self, value)\nReturn self" DOC "value.")
+           NAME "($self, value)\n--\n\nReturn self" DOC "value.")
 #define RBINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
-           "sig=($self, value)\nReturn value" DOC "self.")
+           NAME "($self, value)\n--\n\nReturn value" DOC "self.")
 #define BINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
-           "sig=($self, value)\n" DOC)
+           NAME "($self, value)\n--\n\n" DOC)
 #define RBINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
-           "sig=($self, value)\n" DOC)
+           NAME "($self, value)\n--\n\n" DOC)
 
 static slotdef slotdefs[] = {
     TPSLOT("__getattribute__", tp_getattr, NULL, NULL, ""),
@@ -6124,51 +6157,51 @@ static slotdef slotdefs[] = {
     TPSLOT("__setattr__", tp_setattr, NULL, NULL, ""),
     TPSLOT("__delattr__", tp_setattr, NULL, NULL, ""),
     TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc,
-           "sig=($self)\nReturn repr(self)."),
+           "__repr__($self)\n--\n\nReturn repr(self)."),
     TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
-           "sig=($self)\nReturn hash(self)."),
+           "__hash__($self)\n--\n\nReturn hash(self)."),
     FLSLOT("__call__", tp_call, slot_tp_call, (wrapperfunc)wrap_call,
-           "sig=($self, *args, **kwargs)\nCall self as a function.",
+           "__call__($self, *args, **kwargs)\n--\n\nCall self as a function.",
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
-           "sig=($self)\nReturn str(self)."),
+           "__str__($self)\n--\n\nReturn str(self)."),
     TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
            wrap_binaryfunc,
-           "sig=($self, name)\nReturn getattr(self, name)."),
+           "__getattribute__($self, name)\n--\n\nReturn getattr(self, name)."),
     TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL, ""),
     TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr,
-           "sig=($self, name, value)\nImplement setattr(self, name, value)."),
+           "__setattr__($self, name, value)\n--\n\nImplement setattr(self, name, value)."),
     TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr,
-           "sig=($self, name)\nImplement delattr(self, name)."),
+           "__delattr__($self, name)\n--\n\nImplement delattr(self, name)."),
     TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare, richcmp_lt,
-           "sig=($self, value)\nReturn self<value."),
+           "__lt__($self, value)\n--\n\nReturn self<value."),
     TPSLOT("__le__", tp_richcompare, slot_tp_richcompare, richcmp_le,
-           "sig=($self, value)\nReturn self<=value."),
+           "__le__($self, value)\n--\n\nReturn self<=value."),
     TPSLOT("__eq__", tp_richcompare, slot_tp_richcompare, richcmp_eq,
-           "sig=($self, value)\nReturn self==value."),
+           "__eq__($self, value)\n--\n\nReturn self==value."),
     TPSLOT("__ne__", tp_richcompare, slot_tp_richcompare, richcmp_ne,
-           "sig=($self, value)\nReturn self!=value."),
+           "__ne__($self, value)\n--\n\nReturn self!=value."),
     TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare, richcmp_gt,
-           "sig=($self, value)\nReturn self>value."),
+           "__gt__($self, value)\n--\n\nReturn self>value."),
     TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare, richcmp_ge,
-           "sig=($self, value)\nReturn self>=value."),
+           "__ge__=($self, value)\n--\n\nReturn self>=value."),
     TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc,
-           "sig=($self)\nImplement iter(self)."),
+           "__iter__($self)\n--\n\nImplement iter(self)."),
     TPSLOT("__next__", tp_iternext, slot_tp_iternext, wrap_next,
-           "sig=($self)\nImplement next(self)."),
+           "__next__($self)\n--\n\nImplement next(self)."),
     TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get,
-           "sig=($self, instance, owner)\nReturn an attribute of instance, which is of type owner."),
+           "__get__($self, instance, owner)\n--\n\nReturn an attribute of instance, which is of type owner."),
     TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,
-           "sig=($self, instance, value)\nSet an attribute of instance to value."),
+           "__set__($self, instance, value)\n--\n\nSet an attribute of instance to value."),
     TPSLOT("__delete__", tp_descr_set, slot_tp_descr_set,
            wrap_descr_delete,
-           "sig=(instance)\nDelete an attribute of instance."),
+           "__delete__(instance)\n--\n\nDelete an attribute of instance."),
     FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
-           "sig=($self, *args, **kwargs)\n"
+           "__init__($self, *args, **kwargs)\n--\n\n"
            "Initialize self.  See help(type(self)) for accurate signature.",
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__new__", tp_new, slot_tp_new, NULL,
-           "sig=(type, *args, **kwargs)\n"
+           "__new__(type, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate signature."),
     TPSLOT("__del__", tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
 
@@ -6193,9 +6226,9 @@ static slotdef slotdefs[] = {
     RBINSLOTNOTINFIX("__rdivmod__", nb_divmod, slot_nb_divmod,
            "Return divmod(value, self)."),
     NBSLOT("__pow__", nb_power, slot_nb_power, wrap_ternaryfunc,
-           "sig=($self, value, mod=None)\nReturn pow(self, value, mod)."),
+           "__pow__($self, value, mod=None)\n--\n\nReturn pow(self, value, mod)."),
     NBSLOT("__rpow__", nb_power, slot_nb_power, wrap_ternaryfunc_r,
-           "sig=($self, value, mod=None)\nReturn pow(value, self, mod)."),
+           "__rpow__($self, value, mod=None)\n--\n\nReturn pow(value, self, mod)."),
     UNSLOT("__neg__", nb_negative, slot_nb_negative, wrap_unaryfunc, "-self"),
     UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+self"),
     UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
@@ -6246,48 +6279,48 @@ static slotdef slotdefs[] = {
     IBSLOT("__itruediv__", nb_inplace_true_divide,
            slot_nb_inplace_true_divide, wrap_binaryfunc, "/"),
     NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc,
-           "sig=($self)\n"
+           "__index__($self)\n--\n\n"
            "Return self converted to an integer, if self is suitable"
            "for use as an index into a list."),
     MPSLOT("__len__", mp_length, slot_mp_length, wrap_lenfunc,
-           "sig=($self)\nReturn len(self)."),
+           "__len__($self)\n--\n\nReturn len(self)."),
     MPSLOT("__getitem__", mp_subscript, slot_mp_subscript,
            wrap_binaryfunc,
-           "sig=($self, key)\nReturn self[key]."),
+           "__getitem__($self, key)\n--\n\nReturn self[key]."),
     MPSLOT("__setitem__", mp_ass_subscript, slot_mp_ass_subscript,
            wrap_objobjargproc,
-           "sig=($self, key, value)\nSet self[key] to value."),
+           "__setitem__($self, key, value)\n--\n\nSet self[key] to value."),
     MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript,
            wrap_delitem,
-           "sig=(key)\nDelete self[key]."),
+           "__delitem__(key)\n--\n\nDelete self[key]."),
 
     SQSLOT("__len__", sq_length, slot_sq_length, wrap_lenfunc,
-           "sig=($self)\nReturn len(self)."),
+           "__len__($self)\n--\n\nReturn len(self)."),
     /* Heap types defining __add__/__mul__ have sq_concat/sq_repeat == NULL.
        The logic in abstract.c always falls back to nb_add/nb_multiply in
        this case.  Defining both the nb_* and the sq_* slots to call the
        user-defined methods has unexpected side-effects, as shown by
        test_descr.notimplemented() */
     SQSLOT("__add__", sq_concat, NULL, wrap_binaryfunc,
-           "sig=($self, value)\nReturn self+value."),
+           "__add__($self, value)\n--\n\nReturn self+value."),
     SQSLOT("__mul__", sq_repeat, NULL, wrap_indexargfunc,
-           "sig=($self, value)\nReturn self*value.n"),
+           "__mul__($self, value)\n--\n\nReturn self*value.n"),
     SQSLOT("__rmul__", sq_repeat, NULL, wrap_indexargfunc,
-           "sig=($self, value)\nReturn self*value."),
+           "__rmul__($self, value)\n--\n\nReturn self*value."),
     SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
-           "sig=($self, key)\nReturn self[key]."),
+           "__getitem__($self, key)\n--\n\nReturn self[key]."),
     SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem,
-           "sig=($self, key, value)\nSet self[key] to value."),
+           "__setitem__($self, key, value)\n--\n\nSet self[key] to value."),
     SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem,
-           "sig=($self, key)\nDelete self[key]."),
+           "__delitem__($self, key)\n--\n\nDelete self[key]."),
     SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc,
-           "sig=($self, key)\nReturn key in self."),
+           "__contains__($self, key)\n--\n\nReturn key in self."),
     SQSLOT("__iadd__", sq_inplace_concat, NULL,
            wrap_binaryfunc,
-           "sig=($self, value)\nImplement self+=value."),
+           "__iadd__($self, value)\n--\n\nImplement self+=value."),
     SQSLOT("__imul__", sq_inplace_repeat, NULL,
            wrap_indexargfunc,
-           "sig=($self, value)\nImplement self*=value."),
+           "__imul__($self, value)\n--\n\nImplement self*=value."),
 
     {NULL}
 };
