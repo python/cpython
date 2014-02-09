@@ -100,7 +100,7 @@ Type Objects
 
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
-   Return the function pointer stored int the given slot. If the
+   Return the function pointer stored in the given slot. If the
    result is *NULL*, this indicates that either the slot is *NULL*,
    or that the function was called with invalid parameters.
    Callers will typically cast the result pointer into the appropriate
