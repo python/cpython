@@ -9,8 +9,9 @@
     Python 3 to :mod:`urllib.request`, :mod:`urllib.parse`,
     and :mod:`urllib.error`. The :term:`2to3` tool will automatically adapt
     imports when converting your sources to Python 3.
-    Also note that the :func:`urllib.urlopen` function has been removed in
-    Python 3 in favor of :func:`urllib2.urlopen`.
+    Also note that the :func:`urllib.request.urlopen` function in Python 3 is
+    equivalent to :func:`urllib2.urlopen` and that :func:`urllib.urlopen` has
+    been removed.
 
 .. index::
    single: WWW
