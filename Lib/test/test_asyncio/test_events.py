@@ -1182,7 +1182,10 @@ class EventLoopTestsMixin:
         # may sleep at little bit less than timeout depending on the resolution
         # of the clock used by the kernel. Tolerate 2 useless calls on these
         # platforms.
-        self.assertLessEqual(self.loop._run_once_counter, 8)
+        self.assertLessEqual(self.loop._run_once_counter, 8,
+            {'time_info': time.get_clock_info('time'),
+             'monotonic_info': time.get_clock_info('monotonic'),
+             'selector': self.loop._selector.__class__.__name__})
 
 
 class SubprocessTestsMixin:
