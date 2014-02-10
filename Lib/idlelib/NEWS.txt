@@ -1,3 +1,65 @@
+What's New in IDLE 3.3.4?
+=========================
+
+- Issue #17390: Add Python version to Idle editor window title bar.
+  Original patches by Edmond Burnett and Kent Johnson.
+  
+- Issue #18960: IDLE now ignores the source encoding declaration on the second
+  line if the first line contains anything except a comment.
+
+- Issue #20058: sys.stdin.readline() in IDLE now always returns only one line.
+
+- Issue #19481: print() of string subclass instance in IDLE no longer hangs.
+
+- Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
+  shell window is present.
+
+
+What's New in IDLE 3.3.3?
+=========================
+
+- Issue #18873: IDLE now detects Python source code encoding only in comment
+  lines.
+
+- Issue #18988: The "Tab" key now works when a word is already autocompleted.
+
+- Issue #18489: Add tests for SearchEngine. Original patch by Phil Webster.
+
+- Issue #18429: Format / Format Paragraph, now works when comment blocks
+  are selected. As with text blocks, this works best when the selection
+  only includes complete lines.
+
+- Issue #18226: Add docstrings and unittests for FormatParagraph.py.
+  Original patches by Todd Rovito and Phil Webster.
+
+- Issue #18279: Format - Strip trailing whitespace no longer marks a file as
+  changed when it has not been changed. This fix followed the addition of a
+  test file originally written by Phil Webster (the issue's main goal).
+
+- Issue #7136: In the Idle File menu, "New Window" is renamed "New File".
+  Patch by Tal Einat, Roget Serwy, and Todd Rovito.
+
+- Remove dead imports of imp.
+
+- Issue #18196: Avoid displaying spurious SystemExit tracebacks.
+
+- Issue #5492: Avoid traceback when exiting IDLE caused by a race condition.
+
+- Issue #17511: Keep IDLE find dialog open after clicking "Find Next".
+  Original patch by Sarah K.
+
+- Issue #18055: Move IDLE off of imp and on to importlib.
+
+- Issue #15392: Create a unittest framework for IDLE.
+  Initial patch by Rajagopalasarma Jayakrishnan.
+  See Lib/idlelib/idle_test/README.txt for how to run Idle tests.
+
+- Issue #14146: Highlight source line while debugging on Windows.
+
+- Issue #17532: Always include Options menu for IDLE on OS X.
+  Patch by Guilherme Simões.
+
+
 What's New in IDLE 3.3.2?
 =========================
 
