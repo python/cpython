@@ -6134,22 +6134,22 @@ typedef struct wrapperbase slotdef;
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, DOC)
 #define UNSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           NAME "($self)\n--\n\n" DOC)
+           NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           NAME "($self, value)\n--\n\nReturn self" DOC "value.")
+           NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
 #define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
-           NAME "($self, value)\n--\n\nReturn self" DOC "value.")
+           NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
 #define RBINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
-           NAME "($self, value)\n--\n\nReturn value" DOC "self.")
+           NAME "($self, value, /)\n--\n\nReturn value" DOC "self.")
 #define BINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
-           NAME "($self, value)\n--\n\n" DOC)
+           NAME "($self, value, /)\n--\n\n" DOC)
 #define RBINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
-           NAME "($self, value)\n--\n\n" DOC)
+           NAME "($self, value, /)\n--\n\n" DOC)
 
 static slotdef slotdefs[] = {
     TPSLOT("__getattribute__", tp_getattr, NULL, NULL, ""),
@@ -6157,51 +6157,51 @@ static slotdef slotdefs[] = {
     TPSLOT("__setattr__", tp_setattr, NULL, NULL, ""),
     TPSLOT("__delattr__", tp_setattr, NULL, NULL, ""),
     TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc,
-           "__repr__($self)\n--\n\nReturn repr(self)."),
+           "__repr__($self, /)\n--\n\nReturn repr(self)."),
     TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
-           "__hash__($self)\n--\n\nReturn hash(self)."),
+           "__hash__($self, /)\n--\n\nReturn hash(self)."),
     FLSLOT("__call__", tp_call, slot_tp_call, (wrapperfunc)wrap_call,
-           "__call__($self, *args, **kwargs)\n--\n\nCall self as a function.",
+           "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function.",
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
-           "__str__($self)\n--\n\nReturn str(self)."),
+           "__str__($self, /)\n--\n\nReturn str(self)."),
     TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
            wrap_binaryfunc,
-           "__getattribute__($self, name)\n--\n\nReturn getattr(self, name)."),
+           "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, name)."),
     TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL, ""),
     TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr,
-           "__setattr__($self, name, value)\n--\n\nImplement setattr(self, name, value)."),
+           "__setattr__($self, name, value, /)\n--\n\nImplement setattr(self, name, value)."),
     TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr,
-           "__delattr__($self, name)\n--\n\nImplement delattr(self, name)."),
+           "__delattr__($self, name, /)\n--\n\nImplement delattr(self, name)."),
     TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare, richcmp_lt,
-           "__lt__($self, value)\n--\n\nReturn self<value."),
+           "__lt__($self, value, /)\n--\n\nReturn self<value."),
     TPSLOT("__le__", tp_richcompare, slot_tp_richcompare, richcmp_le,
-           "__le__($self, value)\n--\n\nReturn self<=value."),
+           "__le__($self, value, /)\n--\n\nReturn self<=value."),
     TPSLOT("__eq__", tp_richcompare, slot_tp_richcompare, richcmp_eq,
-           "__eq__($self, value)\n--\n\nReturn self==value."),
+           "__eq__($self, value, /)\n--\n\nReturn self==value."),
     TPSLOT("__ne__", tp_richcompare, slot_tp_richcompare, richcmp_ne,
-           "__ne__($self, value)\n--\n\nReturn self!=value."),
+           "__ne__($self, value, /)\n--\n\nReturn self!=value."),
     TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare, richcmp_gt,
-           "__gt__($self, value)\n--\n\nReturn self>value."),
+           "__gt__($self, value, /)\n--\n\nReturn self>value."),
     TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare, richcmp_ge,
-           "__ge__=($self, value)\n--\n\nReturn self>=value."),
+           "__ge__=($self, value, /)\n--\n\nReturn self>=value."),
     TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc,
-           "__iter__($self)\n--\n\nImplement iter(self)."),
+           "__iter__($self, /)\n--\n\nImplement iter(self)."),
     TPSLOT("__next__", tp_iternext, slot_tp_iternext, wrap_next,
-           "__next__($self)\n--\n\nImplement next(self)."),
+           "__next__($self, /)\n--\n\nImplement next(self)."),
     TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get,
-           "__get__($self, instance, owner)\n--\n\nReturn an attribute of instance, which is of type owner."),
+           "__get__($self, instance, owner, /)\n--\n\nReturn an attribute of instance, which is of type owner."),
     TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,
-           "__set__($self, instance, value)\n--\n\nSet an attribute of instance to value."),
+           "__set__($self, instance, value, /)\n--\n\nSet an attribute of instance to value."),
     TPSLOT("__delete__", tp_descr_set, slot_tp_descr_set,
            wrap_descr_delete,
-           "__delete__(instance)\n--\n\nDelete an attribute of instance."),
+           "__delete__(instance, /)\n--\n\nDelete an attribute of instance."),
     FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
-           "__init__($self, *args, **kwargs)\n--\n\n"
+           "__init__($self, /, *args, **kwargs)\n--\n\n"
            "Initialize self.  See help(type(self)) for accurate signature.",
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__new__", tp_new, slot_tp_new, NULL,
-           "__new__(type, *args, **kwargs)\n--\n\n"
+           "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate signature."),
     TPSLOT("__del__", tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
 
@@ -6226,9 +6226,9 @@ static slotdef slotdefs[] = {
     RBINSLOTNOTINFIX("__rdivmod__", nb_divmod, slot_nb_divmod,
            "Return divmod(value, self)."),
     NBSLOT("__pow__", nb_power, slot_nb_power, wrap_ternaryfunc,
-           "__pow__($self, value, mod=None)\n--\n\nReturn pow(self, value, mod)."),
+           "__pow__($self, value, mod=None, /)\n--\n\nReturn pow(self, value, mod)."),
     NBSLOT("__rpow__", nb_power, slot_nb_power, wrap_ternaryfunc_r,
-           "__rpow__($self, value, mod=None)\n--\n\nReturn pow(value, self, mod)."),
+           "__rpow__($self, value, mod=None, /)\n--\n\nReturn pow(value, self, mod)."),
     UNSLOT("__neg__", nb_negative, slot_nb_negative, wrap_unaryfunc, "-self"),
     UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+self"),
     UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
@@ -6279,48 +6279,48 @@ static slotdef slotdefs[] = {
     IBSLOT("__itruediv__", nb_inplace_true_divide,
            slot_nb_inplace_true_divide, wrap_binaryfunc, "/"),
     NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc,
-           "__index__($self)\n--\n\n"
+           "__index__($self, /)\n--\n\n"
            "Return self converted to an integer, if self is suitable"
            "for use as an index into a list."),
     MPSLOT("__len__", mp_length, slot_mp_length, wrap_lenfunc,
-           "__len__($self)\n--\n\nReturn len(self)."),
+           "__len__($self, /)\n--\n\nReturn len(self)."),
     MPSLOT("__getitem__", mp_subscript, slot_mp_subscript,
            wrap_binaryfunc,
-           "__getitem__($self, key)\n--\n\nReturn self[key]."),
+           "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
     MPSLOT("__setitem__", mp_ass_subscript, slot_mp_ass_subscript,
            wrap_objobjargproc,
-           "__setitem__($self, key, value)\n--\n\nSet self[key] to value."),
+           "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
     MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript,
            wrap_delitem,
            "__delitem__(key)\n--\n\nDelete self[key]."),
 
     SQSLOT("__len__", sq_length, slot_sq_length, wrap_lenfunc,
-           "__len__($self)\n--\n\nReturn len(self)."),
+           "__len__($self, /)\n--\n\nReturn len(self)."),
     /* Heap types defining __add__/__mul__ have sq_concat/sq_repeat == NULL.
        The logic in abstract.c always falls back to nb_add/nb_multiply in
        this case.  Defining both the nb_* and the sq_* slots to call the
        user-defined methods has unexpected side-effects, as shown by
        test_descr.notimplemented() */
     SQSLOT("__add__", sq_concat, NULL, wrap_binaryfunc,
-           "__add__($self, value)\n--\n\nReturn self+value."),
+           "__add__($self, value, /)\n--\n\nReturn self+value."),
     SQSLOT("__mul__", sq_repeat, NULL, wrap_indexargfunc,
-           "__mul__($self, value)\n--\n\nReturn self*value.n"),
+           "__mul__($self, value, /)\n--\n\nReturn self*value.n"),
     SQSLOT("__rmul__", sq_repeat, NULL, wrap_indexargfunc,
-           "__rmul__($self, value)\n--\n\nReturn self*value."),
+           "__rmul__($self, value, /)\n--\n\nReturn self*value."),
     SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
-           "__getitem__($self, key)\n--\n\nReturn self[key]."),
+           "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
     SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem,
-           "__setitem__($self, key, value)\n--\n\nSet self[key] to value."),
+           "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
     SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem,
-           "__delitem__($self, key)\n--\n\nDelete self[key]."),
+           "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
     SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc,
-           "__contains__($self, key)\n--\n\nReturn key in self."),
+           "__contains__($self, key, /)\n--\n\nReturn key in self."),
     SQSLOT("__iadd__", sq_inplace_concat, NULL,
            wrap_binaryfunc,
-           "__iadd__($self, value)\n--\n\nImplement self+=value."),
+           "__iadd__($self, value, /)\n--\n\nImplement self+=value."),
     SQSLOT("__imul__", sq_inplace_repeat, NULL,
            wrap_indexargfunc,
-           "__imul__($self, value)\n--\n\nImplement self*=value."),
+           "__imul__($self, value, /)\n--\n\nImplement self*=value."),
 
     {NULL}
 };

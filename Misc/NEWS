@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20530: The signatures for slot builtins have been updated
+  to reflect the fact that they only accept positional-only arguments.
+
 - Issue #20517: Functions in the os module that accept two filenames
   now register both filenames in the exception on failure.
 
