@@ -1313,6 +1313,19 @@ path_error(path_t *path)
 }
 
 
+static PyObject *
+path_error2(path_t *path, path_t *path2)
+{
+#ifdef MS_WINDOWS
+    return PyErr_SetExcFromWindowsErrWithFilenameObjects(PyExc_OSError,
+            0, path->object, path2->object);
+#else
+    return PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError,
+        path->object, path2->object);
+#endif
+}
+
+
 /* POSIX generic methods */
 
 static PyObject *
@@ -3518,7 +3531,7 @@ posix_link(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = path_error(&src);
+        return_value = path_error2(&src, &dst);
         goto exit;
     }
 #else
@@ -3536,7 +3549,7 @@ posix_link(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error(&src);
+        return_value = path_error2(&src, &dst);
         goto exit;
     }
 #endif
@@ -4284,7 +4297,7 @@ internal_rename(PyObject *args, PyObject *kwargs, int is_replace)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = path_error(&src);
+        return_value = path_error2(&src, &dst);
         goto exit;
     }
 
@@ -4299,7 +4312,7 @@ internal_rename(PyObject *args, PyObject *kwargs, int is_replace)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error(&src);
+        return_value = path_error2(&src, &dst);
         goto exit;
     }
 #endif
@@ -7345,7 +7358,7 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (!result) {
-        return_value = path_error(&src);
+        return_value = path_error2(&src, &dst);
         goto exit;
     }
 
@@ -7361,7 +7374,7 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_END_ALLOW_THREADS
 
     if (result) {
-        return_value = path_error(&src);
+        return_value = path_error2(&src, &dst);
         goto exit;
     }
 #endif
