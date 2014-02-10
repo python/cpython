@@ -2,10 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.3.4 release candidate 1?
+What's New in Python 3.3.5 release candidate 1?
 ===============================================
 
-*Not yet released, see sections below for changes released in 3.3.3*
+*Release date: XXXX-XX-XX*
 
 Core and Builtins
 -----------------
@@ -14,38 +14,6 @@ Core and Builtins
 
 - Issue #20538: UTF-7 incremental decoder produced inconsistant string when
   input was truncated in BASE64 section.
-
-- Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
-  IndentationError.
-
-- Issue #2382: SyntaxError cursor "^" is now written at correct position in most
-  cases when multibyte characters are in line (before "^").  This still not
-  works correctly with wide East Asian characters.
-
-- Issue #18960: The first line of Python script could be executed twice when
-  the source encoding was specified on the second line.  Now the source encoding
-  declaration on the second line isn't effective if the first line contains
-  anything except a comment.  'python -x' works now again with files with the
-  source encoding declarations, and can be used to make Python batch files
-  on Windows.
-
-- Issue #17432: Drop UCS2 from names of Unicode functions in python3.def.
-
-- Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
-  argument is not in range [0; 255].
-
-- Issue #14432: Generator now clears the borrowed reference to the thread
-  state. Fix a crash when a generator is created in a C thread that is
-  destroyed while the generator is still used. The issue was that a generator
-  contains a frame, and the frame kept a reference to the Python state of the
-  destroyed C thread. The crash occurs when a trace function is setup.
-
-- Issue #19932: Fix typo in import.h, missing whitespaces in function prototypes.
-
-- Issue #19729: In str.format(), fix recursive expansion in format spec.
-
-- Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
-  billion characters) input strings in _Py_dg_strtod.
 
 Library
 -------
@@ -110,6 +78,94 @@ Library
 - Issue #8260: The read(), readline() and readlines() methods of
   codecs.StreamReader returned incomplete data when were called after
   readline() or read(size).  Based on patch by Amaury Forgeot d'Arc.
+
+IDLE
+----
+
+- Issue #20406: Use Python application icons for Idle window title bars.
+  Patch mostly by Serhiy Storchaka.
+
+- Update the python.gif icon for the Idle classbrowser and pathbowser
+  from the old green snake to the new new blue and yellow snakes.
+
+- Issue #17721: Remove non-functional configuration dialog help button until we
+  make it actually gives some help when clicked. Patch by Guilherme Simões.
+
+Tests
+-----
+
+- Issue #20532: Tests which use _testcapi are now marked as CPython only.
+
+- Issue #19920: Added tests for TarFile.list().  Based on patch by Vajrasky Kok.
+
+- Issue #19990: Added tests for the imghdr module.  Based on patch by
+  Claudiu Popa.
+
+- Issue #20474: Fix test_socket "unexpected success" failures on OS X 10.7+.
+
+Documentation
+-------------
+
+- Issue #20488: Importlib is no longer *an* implementation of import, it's *the*
+  implementation.
+
+
+What's New in Python 3.3.4?
+===========================
+
+*Release date: 09-Feb-2014*
+
+Library
+-------
+
+- Issue #20374: Fix build warnings of the readline module with libedit on Mac.
+
+
+What's New in Python 3.3.4 release candidate 1?
+===============================================
+
+*Release date: 26-Jan-2014*
+
+Core and Builtins
+-----------------
+
+- Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
+  IndentationError.
+
+- Issue #2382: SyntaxError cursor "^" is now written at correct position in most
+  cases when multibyte characters are in line (before "^").  This still not
+  works correctly with wide East Asian characters.
+
+- Issue #18960: The first line of Python script could be executed twice when
+  the source encoding was specified on the second line.  Now the source encoding
+  declaration on the second line isn't effective if the first line contains
+  anything except a comment.  'python -x' works now again with files with the
+  source encoding declarations, and can be used to make Python batch files
+  on Windows.
+
+- Issue #17432: Drop UCS2 from names of Unicode functions in python3.def.
+
+- Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
+  argument is not in range [0; 255].
+
+- Issue #14432: Generator now clears the borrowed reference to the thread
+  state. Fix a crash when a generator is created in a C thread that is
+  destroyed while the generator is still used. The issue was that a generator
+  contains a frame, and the frame kept a reference to the Python state of the
+  destroyed C thread. The crash occurs when a trace function is setup.
+
+- Issue #19932: Fix typo in import.h, missing whitespaces in function prototypes.
+
+- Issue #19729: In str.format(), fix recursive expansion in format spec.
+
+- Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
+  billion characters) input strings in _Py_dg_strtod.
+
+Library
+-------
+
+- Issue #16042: CVE-2013-1752: smtplib: Limit amount of data read by
+  limiting the call to readline().  Original patch by Christian Heimes.
 
 - Issue #20317: ExitStack.__exit__ could create a self-referential loop if an
   exception raised by a cleanup operation already had its context set
@@ -333,15 +389,6 @@ Library
 IDLE
 ----
 
-- Issue #20406: Use Python application icons for Idle window title bars.
-  Patch mostly by Serhiy Storchaka.
-
-- Update the python.gif icon for the Idle classbrowser and pathbowser
-  from the old green snake to the new new blue and yellow snakes.
-
-- Issue #17721: Remove non-functional configuration dialog help button until we
-  make it actually gives some help when clicked. Patch by Guilherme Simões.
-
 - Issue #17390: Add Python version to Idle editor window title bar.
   Original patches by Edmond Burnett and Kent Johnson.
 
@@ -357,13 +404,6 @@ IDLE
 
 Tests
 -----
-
-- Issue #20532: Tests which use _testcapi are now marked as CPython only.
-
-- Issue #19920: Added tests for TarFile.list().  Based on patch by Vajrasky Kok.
-
-- Issue #19990: Added tests for the imghdr module.  Based on patch by
-  Claudiu Popa.
 
 - Issue #19804: The test_find_mac test in test_uuid is now skipped if the
   ifconfig executable is not available.
@@ -410,13 +450,8 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
-- Issue #20474: Fix test_socket "unexpected success" failures on OS X 10.7+.
-
 Documentation
 -------------
-
-- Issue #20488: Importlib is no longer *an* implementation of import, it's *the*
-  implementation.
 
 - Issue #20265: Updated some parts of the Using Windows document.
 
