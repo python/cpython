@@ -1121,6 +1121,23 @@ class PosixTester(unittest.TestCase):
                 # http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html
                 raise unittest.SkipTest("OSError raised!")
 
+    def test_path_error2(self):
+        """
+        Test functions that call path_error2(), providing two filenames in their exceptions.
+        """
+        for name in ("rename", "replace", "link", "symlink"):
+            function = getattr(os, name, None)
+
+            if function:
+                for dst in ("noodly2", support.TESTFN):
+                    try:
+                        function('doesnotexistfilename', dst)
+                    except OSError as e:
+                        self.assertIn("'doesnotexistfilename' -> '{}'".format(dst), str(e))
+                        break
+                else:
+                    self.fail("No valid path_error2() test for os." + name)
+
 class PosixGroupsTester(unittest.TestCase):
 
     def setUp(self):

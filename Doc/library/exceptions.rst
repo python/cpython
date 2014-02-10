@@ -253,6 +253,11 @@ The following exceptions are the exceptions that are usually raised.
    For exceptions that involve a file system path (such as :func:`open` or
    :func:`os.unlink`), the exception instance will contain an additional
    attribute, :attr:`filename`, which is the file name passed to the function.
+   For functions that involve two file system paths (such as
+   :func:`os.rename`), the exception instance will contain a second
+   :attr:`filename2` attribute corresponding to the second file name passed
+   to the function.
+
 
    .. versionchanged:: 3.3
       :exc:`EnvironmentError`, :exc:`IOError`, :exc:`WindowsError`,
@@ -263,7 +268,7 @@ The following exceptions are the exceptions that are usually raised.
 
       The :attr:`filename` attribute is now the original file name passed to
       the function, instead of the name encoded to or decoded from the
-      filesystem encoding.
+      filesystem encoding.  Also, the :attr:`filename2` attribute was added.
 
 
 .. exception:: OverflowError
