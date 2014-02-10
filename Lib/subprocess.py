@@ -707,6 +707,9 @@ _PLATFORM_DEFAULT_CLOSE_FDS = object()
 
 
 class Popen(object):
+
+    _child_created = False  # Set here since __del__ checks it
+
     def __init__(self, args, bufsize=-1, executable=None,
                  stdin=None, stdout=None, stderr=None,
                  preexec_fn=None, close_fds=_PLATFORM_DEFAULT_CLOSE_FDS,
@@ -717,7 +720,6 @@ class Popen(object):
         """Create new Popen instance."""
         _cleanup()
 
-        self._child_created = False
         self._input = None
         self._communication_started = False
         if bufsize is None:
@@ -859,11 +861,8 @@ class Popen(object):
         # Wait for the process to terminate, to avoid zombies.
         self.wait()
 
-    def __del__(self, _maxsize=sys.maxsize, _active=_active):
-        # If __init__ hasn't had a chance to execute (e.g. if it
-        # was passed an undeclared keyword argument), we don't
-        # have a _child_created attribute at all.
-        if not getattr(self, '_child_created', False):
+    def __del__(self, _maxsize=sys.maxsize):
+        if not self._child_created:
             # We didn't get to successfully create a child process.
             return
         # In case the child hasn't been waited on, check if it's done.
@@ -1446,7 +1445,7 @@ class Popen(object):
                 _WTERMSIG=os.WTERMSIG, _WIFEXITED=os.WIFEXITED,
                 _WEXITSTATUS=os.WEXITSTATUS):
             # This method is called (indirectly) by __del__, so it cannot
-            # refer to anything outside of its local scope."""
+            # refer to anything outside of its local scope.
             if _WIFSIGNALED(sts):
                 self.returncode = -_WTERMSIG(sts)
             elif _WIFEXITED(sts):
