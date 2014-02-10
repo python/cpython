@@ -518,6 +518,7 @@ PyType_FromSpecWithBases
 PyType_GenericAlloc
 PyType_GenericNew
 PyType_GetFlags
+PyType_GetSlot
 PyType_IsSubtype
 PyType_Modified
 PyType_Ready
