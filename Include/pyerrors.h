@@ -53,6 +53,7 @@ typedef struct {
     PyObject *myerrno;
     PyObject *strerror;
     PyObject *filename;
+    PyObject *filename2;
 #ifdef MS_WINDOWS
     PyObject *winerror;
 #endif
@@ -225,13 +226,23 @@ PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrno(PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilenameObject(
     PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilenameObjects(
+    PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilename(
     PyObject *exc,
     const char *filename   /* decoded from the filesystem encoding */
     );
+PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilenames(
+    PyObject *exc,
+    /* decoded from the filesystem encoding */
+    const char *filename,
+    const char *filename2
+    );
 #if defined(MS_WINDOWS) && !defined(Py_LIMITED_API)
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
     PyObject *, const Py_UNICODE *);
+PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilenames(
+    PyObject *, const Py_UNICODE *, const Py_UNICODE *);
 #endif /* MS_WINDOWS */
 
 PyAPI_FUNC(PyObject *) PyErr_Format(
@@ -245,22 +256,41 @@ PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
     int ierr,
     const char *filename        /* decoded from the filesystem encoding */
     );
+PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilenames(
+    int ierr,
+    /* decoded from the filesystem encoding */
+    const char *filename,
+    const char *filename2
+    );
 #ifndef Py_LIMITED_API
 /* XXX redeclare to use WSTRING */
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithUnicodeFilename(
     int, const Py_UNICODE *);
+PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithUnicodeFilenames(
+    int, const Py_UNICODE *, const Py_UNICODE *);
 #endif
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErr(int);
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilenameObject(
     PyObject *,int, PyObject *);
+PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilenameObjects(
+    PyObject *,int, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilename(
     PyObject *exc,
     int ierr,
     const char *filename        /* decoded from the filesystem encoding */
     );
+PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilenames(
+    PyObject *exc,
+    int ierr,
+    /* decoded from the filesystem encoding */
+    const char *filename,
+    const char *filename2
+    );
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilename(
     PyObject *,int, const Py_UNICODE *);
+PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilenames(
+    PyObject *,int, const Py_UNICODE *, const Py_UNICODE *);
 #endif
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 #endif /* MS_WINDOWS */

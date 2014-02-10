@@ -241,11 +241,28 @@ in various ways.  There is a separate error indicator for each thread.
    exception instance.
 
 
+.. c:function:: PyObject* PyErr_SetFromErrnoWithFilenameObjects(PyObject *type, PyObject *filenameObject, PyObject *filenameObject2)
+
+   Similar to :c:func:`PyErr_SetFromErrnoWithFilenameObject`, but takes a second
+   filename object, for raising errors when a function that takes two filenames
+   fails.
+
+.. versionadded:: 3.4
+
+
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilename(PyObject *type, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromErrnoWithFilenameObject`, but the filename
    is given as a C string.  *filename* is decoded from the filesystem encoding
    (:func:`os.fsdecode`).
+
+
+.. c:function:: PyObject* PyErr_SetFromErrnoWithFilenames(PyObject *type, const char *filename, const char *filename2)
+
+   Similar to :c:func:`PyErr_SetFromErrnoWithFilename`, but accepts a
+   second filename.
+
+.. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
@@ -266,18 +283,19 @@ in various ways.  There is a separate error indicator for each thread.
    specifying the exception type to be raised. Availability: Windows.
 
 
-.. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilenameObject(int ierr, PyObject *filenameObject)
-
-   Similar to :c:func:`PyErr_SetFromWindowsErr`, with the additional behavior
-   that if *filenameObject* is not *NULL*, it is passed to the constructor of
-   :exc:`WindowsError` as a third parameter.  Availability: Windows.
-
-
 .. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, but the
    filename is given as a C string.  *filename* is decoded from the filesystem
    encoding (:func:`os.fsdecode`).  Availability: Windows.
+
+
+.. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilenames(int ierr, const char *filename, const char *filename2)
+
+   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, but accepts
+   a second filename.  Availability: Windows.
+
+.. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
@@ -287,10 +305,28 @@ in various ways.  There is a separate error indicator for each thread.
    Availability: Windows.
 
 
+.. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObjects(PyObject *type, int ierr, PyObject *filename, PyObject *filename2)
+
+   Similar to :c:func:`PyErr_SetExcFromWindowsErrWithFilenameObject`,
+   but accepts a second filename object.
+   Availability: Windows.
+
+.. versionadded:: 3.4
+
+
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
    parameter specifying the exception type to be raised. Availability: Windows.
+
+
+.. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenames(PyObject *type, int ierr, const char *filename, const char *filename2)
+
+   Similar to :c:func:`PyErr_SetExcFromWindowsErrWithFilename`,
+   but accepts a second filename object.
+   Availability: Windows.
+
+.. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
