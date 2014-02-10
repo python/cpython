@@ -519,6 +519,7 @@ EXPORTS
   PyType_GenericAlloc=python34.PyType_GenericAlloc
   PyType_GenericNew=python34.PyType_GenericNew
   PyType_GetFlags=python34.PyType_GetFlags
+  PyType_GetSlot=python34.PyType_GetSlot
   PyType_IsSubtype=python34.PyType_IsSubtype
   PyType_Modified=python34.PyType_Modified
   PyType_Ready=python34.PyType_Ready
