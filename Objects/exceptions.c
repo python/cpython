@@ -726,8 +726,8 @@ ComplexExtendsException(PyExc_Exception, ImportError,
  * when it was supplied.
  *
  * (If a function has two filenames, such as rename(), symlink(),
- * or copy(), PyErr_SetFromErrnoWithFilenames() is called, which
- * allows passing in a second filename.)
+ * or copy(), PyErr_SetFromErrnoWithFilenameObjects() is called,
+ * which allows passing in a second filename.)
  */
 
 /* This function doesn't cleanup on error, the caller should */
