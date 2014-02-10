@@ -1176,13 +1176,15 @@ class EventLoopTestsMixin:
             loop = self.loop
             yield from asyncio.sleep(1e-2, loop=loop)
             yield from asyncio.sleep(1e-4, loop=loop)
+            yield from asyncio.sleep(1e-6, loop=loop)
+            yield from asyncio.sleep(1e-8, loop=loop)
 
         self.loop.run_until_complete(wait())
-        # The ideal number of call is 6, but on some platforms, the selector
+        # The ideal number of call is 10, but on some platforms, the selector
         # may sleep at little bit less than timeout depending on the resolution
-        # of the clock used by the kernel. Tolerate 2 useless calls on these
+        # of the clock used by the kernel. Tolerate 5 useless calls on these
         # platforms.
-        self.assertLessEqual(self.loop._run_once_counter, 8,
+        self.assertLessEqual(self.loop._run_once_counter, 15,
             {'time_info': time.get_clock_info('time'),
              'monotonic_info': time.get_clock_info('monotonic'),
              'selector': self.loop._selector.__class__.__name__})
