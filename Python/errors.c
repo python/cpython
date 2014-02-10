@@ -520,17 +520,6 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
     return result;
 }
 
-PyObject *
-PyErr_SetFromErrnoWithFilenames(PyObject *exc, const char *filename, const char *filename2)
-{
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
-    PyObject *name2 = filename2 ? PyUnicode_DecodeFSDefault(filename2) : NULL;
-    PyObject *result = PyErr_SetFromErrnoWithFilenameObjects(exc, name, name2);
-    Py_XDECREF(name);
-    Py_XDECREF(name2);
-    return result;
-}
-
 #ifdef MS_WINDOWS
 PyObject *
 PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, const Py_UNICODE *filename)
@@ -540,21 +529,6 @@ PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, const Py_UNICODE *filename)
              NULL;
     PyObject *result = PyErr_SetFromErrnoWithFilenameObjects(exc, name, NULL);
     Py_XDECREF(name);
-    return result;
-}
-
-PyObject *
-PyErr_SetFromErrnoWithUnicodeFilenames(PyObject *exc, const Py_UNICODE *filename, const Py_UNICODE *filename2)
-{
-    PyObject *name = filename ?
-                     PyUnicode_FromUnicode(filename, wcslen(filename)) :
-             NULL;
-    PyObject *name2 = filename2 ?
-                     PyUnicode_FromUnicode(filename2, wcslen(filename2)) :
-             NULL;
-    PyObject *result = PyErr_SetFromErrnoWithFilenameObjects(exc, name, name2);
-    Py_XDECREF(name);
-    Py_XDECREF(name2);
     return result;
 }
 #endif /* MS_WINDOWS */
@@ -654,23 +628,6 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
     return ret;
 }
 
-PyObject *PyErr_SetExcFromWindowsErrWithFilenames(
-    PyObject *exc,
-    int ierr,
-    const char *filename,
-    const char *filename2)
-{
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
-    PyObject *name2 = filename2 ? PyUnicode_DecodeFSDefault(filename2) : NULL;
-    PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObjects(exc,
-                                                                 ierr,
-                                                                 name,
-                                                                 name2);
-    Py_XDECREF(name);
-    Py_XDECREF(name2);
-    return ret;
-}
-
 PyObject *PyErr_SetExcFromWindowsErrWithUnicodeFilename(
     PyObject *exc,
     int ierr,
@@ -687,51 +644,15 @@ PyObject *PyErr_SetExcFromWindowsErrWithUnicodeFilename(
     return ret;
 }
 
-PyObject *PyErr_SetExcFromWindowsErrWithUnicodeFilenames(
-    PyObject *exc,
-    int ierr,
-    const Py_UNICODE *filename,
-    const Py_UNICODE *filename2)
-{
-    PyObject *name = filename ?
-                     PyUnicode_FromUnicode(filename, wcslen(filename)) :
-             NULL;
-    PyObject *name2 = filename2 ?
-                     PyUnicode_FromUnicode(filename2, wcslen(filename2)) :
-             NULL;
-    PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObjects(exc,
-                                                                 ierr,
-                                                                 name,
-                                                                 name2);
-    Py_XDECREF(name);
-    Py_XDECREF(name2);
-    return ret;
-}
-
 PyObject *PyErr_SetExcFromWindowsErr(PyObject *exc, int ierr)
 {
-    return PyErr_SetExcFromWindowsErrWithFilenames(exc, ierr, NULL, NULL);
+    return PyErr_SetExcFromWindowsErrWithFilename(exc, ierr, NULL);
 }
 
 PyObject *PyErr_SetFromWindowsErr(int ierr)
 {
-    return PyErr_SetExcFromWindowsErrWithFilenames(PyExc_OSError,
-                                                  ierr, NULL, NULL);
-}
-
-PyObject *PyErr_SetFromWindowsErrWithFilenames(
-    int ierr,
-    const char *filename,
-    const char *filename2)
-{
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
-    PyObject *name2 = filename2 ? PyUnicode_DecodeFSDefault(filename2) : NULL;
-    PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObjects(
-                                                  PyExc_OSError,
-                                                  ierr, name, name2);
-    Py_XDECREF(name);
-    Py_XDECREF(name2);
-    return result;
+    return PyErr_SetExcFromWindowsErrWithFilename(PyExc_OSError,
+                                                  ierr, NULL);
 }
 
 PyObject *PyErr_SetFromWindowsErrWithFilename(
@@ -757,25 +678,6 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
                                                   PyExc_OSError,
                                                   ierr, name, NULL);
     Py_XDECREF(name);
-    return result;
-}
-
-PyObject *PyErr_SetFromWindowsErrWithUnicodeFilenames(
-    int ierr,
-    const Py_UNICODE *filename,
-    const Py_UNICODE *filename2)
-{
-    PyObject *name = filename ?
-                     PyUnicode_FromUnicode(filename, wcslen(filename)) :
-             NULL;
-    PyObject *name2 = filename2 ?
-                     PyUnicode_FromUnicode(filename2, wcslen(filename2)) :
-             NULL;
-    PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObjects(
-                                                  PyExc_OSError,
-                                                  ierr, name, name2);
-    Py_XDECREF(name);
-    Py_XDECREF(name2);
     return result;
 }
 #endif /* MS_WINDOWS */

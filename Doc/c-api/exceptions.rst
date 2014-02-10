@@ -257,14 +257,6 @@ in various ways.  There is a separate error indicator for each thread.
    (:func:`os.fsdecode`).
 
 
-.. c:function:: PyObject* PyErr_SetFromErrnoWithFilenames(PyObject *type, const char *filename, const char *filename2)
-
-   Similar to :c:func:`PyErr_SetFromErrnoWithFilename`, but accepts a
-   second filename.
-
-.. versionadded:: 3.4
-
-
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
 
    This is a convenience function to raise :exc:`WindowsError`. If called with
@@ -290,14 +282,6 @@ in various ways.  There is a separate error indicator for each thread.
    encoding (:func:`os.fsdecode`).  Availability: Windows.
 
 
-.. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilenames(int ierr, const char *filename, const char *filename2)
-
-   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, but accepts
-   a second filename.  Availability: Windows.
-
-.. versionadded:: 3.4
-
-
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, with an
@@ -318,15 +302,6 @@ in various ways.  There is a separate error indicator for each thread.
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
    parameter specifying the exception type to be raised. Availability: Windows.
-
-
-.. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenames(PyObject *type, int ierr, const char *filename, const char *filename2)
-
-   Similar to :c:func:`PyErr_SetExcFromWindowsErrWithFilename`,
-   but accepts a second filename object.
-   Availability: Windows.
-
-.. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)

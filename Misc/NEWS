@@ -246,10 +246,8 @@ C-API
 -----
 
 - Issue #20517: Added new functions allowing OSError exceptions to reference
-  two filenames instead of one: PyErr_SetFromErrnoWithFilenameObjects(),
-  PyErr_SetFromErrnoWithFilenames(), PyErr_SetFromWindowsErrWithFilenames(),
-  PyErr_SetExcFromWindowsErrWithFilenameObjects(), and
-  PyErr_SetExcFromWindowsErrWithFilenames().
+  two filenames instead of one: PyErr_SetFromErrnoWithFilenameObjects() and
+  PyErr_SetExcFromWindowsErrWithFilenameObjects().
 
 Documentation
 -------------

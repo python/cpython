@@ -317,12 +317,6 @@ PyErr_SetExcFromWindowsErrWithFilename:PyObject*:type:0:
 PyErr_SetExcFromWindowsErrWithFilename:int:ierr::
 PyErr_SetExcFromWindowsErrWithFilename:const char*:filename::
 
-PyErr_SetExcFromWindowsErrWithFilenames:PyObject*::null:
-PyErr_SetExcFromWindowsErrWithFilenames:PyObject*:type:0:
-PyErr_SetExcFromWindowsErrWithFilenames:int:ierr::
-PyErr_SetExcFromWindowsErrWithFilenames:const char*:filename::
-PyErr_SetExcFromWindowsErrWithFilenames:const char*:filename2::
-
 PyErr_SetFromErrno:PyObject*::null:
 PyErr_SetFromErrno:PyObject*:type:0:
 
@@ -330,22 +324,12 @@ PyErr_SetFromErrnoWithFilename:PyObject*::null:
 PyErr_SetFromErrnoWithFilename:PyObject*:type:0:
 PyErr_SetFromErrnoWithFilename:const char*:filename::
 
-PyErr_SetFromErrnoWithFilenames:PyObject*::null:
-PyErr_SetFromErrnoWithFilenames:PyObject*:type:0:
-PyErr_SetFromErrnoWithFilenames:const char*:filename::
-PyErr_SetFromErrnoWithFilenames:const char*:filename2::
-
 PyErr_SetFromWindowsErr:PyObject*::null:
 PyErr_SetFromWindowsErr:int:ierr::
 
 PyErr_SetFromWindowsErrWithFilename:PyObject*::null:
 PyErr_SetFromWindowsErrWithFilename:int:ierr::
 PyErr_SetFromWindowsErrWithFilename:const char*:filename::
-
-PyErr_SetFromWindowsErrWithFilenames:PyObject*::null:
-PyErr_SetFromWindowsErrWithFilenames:int:ierr::
-PyErr_SetFromWindowsErrWithFilenames:const char*:filename::
-PyErr_SetFromWindowsErrWithFilenames:const char*:filename2::
 
 PyErr_SetInterrupt:void:::
 
