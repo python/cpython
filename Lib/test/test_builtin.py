@@ -16,6 +16,7 @@ import unittest
 import warnings
 from operator import neg
 from test.support import TESTFN, unlink,  run_unittest, check_warnings
+from test.script_helper import assert_python_ok
 try:
     import pty, signal
 except ImportError:
@@ -1591,6 +1592,34 @@ class TestSorted(unittest.TestCase):
     def test_baddecorator(self):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
         self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
+
+
+class ShutdownTest(unittest.TestCase):
+
+    def test_cleanup(self):
+        # Issue #19255: builtins are still available at shutdown
+        code = """if 1:
+            import builtins
+            import sys
+
+            class C:
+                def __del__(self):
+                    print("before")
+                    # Check that builtins still exist
+                    len(())
+                    print("after")
+
+            c = C()
+            # Make this module survive until builtins and sys are cleaned
+            builtins.here = sys.modules[__name__]
+            sys.here = sys.modules[__name__]
+            # Create a reference loop so that this module needs to go
+            # through a GC phase.
+            here = sys.modules[__name__]
+            """
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(["before", "after"], out.decode().splitlines())
+
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
