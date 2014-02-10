@@ -401,8 +401,6 @@ PyImport_Cleanup(void)
     PyObject *key, *value, *dict;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
-    PyObject *builtins_mod = NULL;
-    PyObject *sys_mod = NULL;
     PyObject *weaklist = NULL;
     char **p;
 
