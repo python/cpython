@@ -77,7 +77,7 @@ An event loop policy must implement the following interface:
 
    Create and return a new event loop object according to this policy's rules.
    If there's need to set this loop as the event loop of the current context,
-   :meth`set_event_loop` must be called explicitly.
+   :meth:`set_event_loop` must be called explicitly.
 
 Access to the global loop policy
 --------------------------------
