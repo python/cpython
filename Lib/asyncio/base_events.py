@@ -646,27 +646,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 logger.log(level, 'poll took %.3f seconds', t1-t0)
         else:
-            t0_monotonic = time.monotonic()
-            t0 = time.perf_counter()
             event_list = self._selector.select(timeout)
-            dt = time.perf_counter() - t0
-            dt_monotonic = time.monotonic() - t0_monotonic
-            if (not event_list and timeout
-            and (dt < timeout or dt_monotonic < timeout)):
-                selector = self._selector.__class__.__name__
-                if (selector.startswith(("Poll", "Epoll", "Iocp"))
-                or timeout > 1e-3 or dt > 1e-3):
-                    unit, factor = "ms", 1e3
-                else:
-                    unit, factor = "us", 1e6
-                print("asyncio: %s.select(%.4f %s) took %.3f %s"
-                      " (monotonic=%.3f %s, clock res=%.3f %s)"
-                      % (self._selector.__class__.__name__,
-                         timeout * factor, unit,
-                         dt * factor, unit,
-                         dt_monotonic * factor, unit,
-                         self._clock_resolution * factor, unit),
-                      file=sys.__stderr__, flush=True)
         self._process_events(event_list)
 
         # Handle 'later' callbacks that are ready.
