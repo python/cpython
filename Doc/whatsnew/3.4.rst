@@ -1600,6 +1600,15 @@ removed:
 * :class:`inspect.Signature`: positional-only parameters are now required
   to have a valid name.
 
+* :meth:`object.__format__` no longer accepts non-empty format strings, it now
+  raises a :exc:`TypeError` instead.  Using a non-empty string has been
+  deprecated since Python 3.2.  This change has been made to prevent a
+  situation where previously working (but incorrect) code would start failing
+  if an object gained a __format__ method, which means that your code may now
+  raise a :exc:`TypeError` if you are using an ``'s'`` format code with objects
+  that do not have a __format__ method that handles it.  See :issue:`7994` for
+  background.
+
 
 Code Cleanups
 -------------
