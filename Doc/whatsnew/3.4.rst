@@ -1529,6 +1529,10 @@ Deprecated Python Modules, Functions and Methods
   as deprecated in its docstring for quite some time.  It now emits a
   :exc:`DeprecationWarning` and will be removed completely in Python 3.5.
 
+* The undocumented *endtime* argument to :meth:`subprocess.Popen.wait` should
+  not have been exposed and is hopefully not in use; it is deprecated and
+  will mostly likely be removed in Python 3.5.
+
 
 Deprecated Functions and Types in the C API
 -------------------------------------------
