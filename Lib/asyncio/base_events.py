@@ -558,7 +558,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          universal_newlines=False, shell=True, bufsize=0,
                          **kwargs):
-        if not isinstance(cmd, str):
+        if not isinstance(cmd, (bytes, str)):
             raise ValueError("cmd must be a string")
         if universal_newlines:
             raise ValueError("universal_newlines must be False")
@@ -572,7 +572,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     @tasks.coroutine
-    def subprocess_exec(self, protocol_factory, *args, stdin=subprocess.PIPE,
+    def subprocess_exec(self, protocol_factory, program, *args, stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                         universal_newlines=False, shell=False, bufsize=0,
                         **kwargs):
@@ -582,9 +582,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("shell must be False")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
+        popen_args = (program,) + args
+        for arg in popen_args:
+            if not isinstance(arg, (str, bytes)):
+                raise TypeError("program arguments must be "
+                                "a bytes or text string, not %s"
+                                % type(arg).__name__)
         protocol = protocol_factory()
         transport = yield from self._make_subprocess_transport(
-            protocol, args, False, stdin, stdout, stderr, bufsize, **kwargs)
+            protocol, popen_args, False, stdin, stdout, stderr, bufsize, **kwargs)
         return transport, protocol
 
     def _add_callback(self, handle):
