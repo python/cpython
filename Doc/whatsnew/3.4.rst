@@ -1720,6 +1720,11 @@ Changes in the Python API
   informative :exc:`ValueError` rather than the previous more mysterious
   :exc:`AttributeError` (:issue:`9177`).
 
+* :meth:`slice.indices` no longer produces an :exc:`OverflowError` for huge
+  values.  As a consequence of this fix, :meth:`slice.indices` now raises a
+  :exc:`ValueError` if given a negative length; previously it returned nonsense
+  values (:issue:`14794`).
+
 
 Changes in the C API
 --------------------
