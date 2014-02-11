@@ -567,6 +567,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
 
         m_socket.getaddrinfo.return_value = [
             (2, 1, 6, '', ('127.0.0.1', 10100))]
+        m_socket.getaddrinfo._is_coroutine = False
         m_sock = m_socket.socket.return_value = unittest.mock.Mock()
         m_sock.bind.side_effect = Err
 
@@ -577,6 +578,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
     @unittest.mock.patch('asyncio.base_events.socket')
     def test_create_datagram_endpoint_no_addrinfo(self, m_socket):
         m_socket.getaddrinfo.return_value = []
+        m_socket.getaddrinfo._is_coroutine = False
 
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr=('localhost', 0))
@@ -680,6 +682,22 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
                                                 # self.loop._start_serving
                                                 unittest.mock.ANY,
                                                 MyProto, sock, None, None)
+
+    def test_call_coroutine(self):
+        @asyncio.coroutine
+        def coroutine_function():
+            pass
+
+        with self.assertRaises(TypeError):
+            self.loop.call_soon(coroutine_function)
+        with self.assertRaises(TypeError):
+            self.loop.call_soon_threadsafe(coroutine_function)
+        with self.assertRaises(TypeError):
+            self.loop.call_later(60, coroutine_function)
+        with self.assertRaises(TypeError):
+            self.loop.call_at(self.loop.time() + 60, coroutine_function)
+        with self.assertRaises(TypeError):
+            self.loop.run_in_executor(None, coroutine_function)
 
 
 if __name__ == '__main__':
