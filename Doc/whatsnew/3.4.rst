@@ -1616,14 +1616,13 @@ that may require changes to your code.
 Changes in 'python' command behavior
 ------------------------------------
 
-* In a posix shell, setting an environment variable to an empty value is
-  generally equivalent to not setting it at all.  In particular, this is true
-  for the :envvar:`PATH` environment variable.  However, setting
+* In a posix shell, setting the :envvar:`PATH` environment variable to
+  an empty value is equivalent to not setting it at all.  However, setting
   :envvar:`PYTHONPATH` to an empty value was *not* equivalent to not setting it
   at all: setting :envvar:`PYTHONPATH` to an empty value was equivalent to
   setting it to ``.``, which leads to confusion when reasoning by analogy to
-  how :envvar:`PATH` works.  The behavior now conforms to the normal posix
-  convention.
+  how :envvar:`PATH` works.  The behavior now conforms to the posix convention
+  for :envvar:`PATH`.
 
 
 Changes in the Python API
