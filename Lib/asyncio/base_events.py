@@ -227,6 +227,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def call_at(self, when, callback, *args):
         """Like call_later(), but uses an absolute time."""
+        if tasks.iscoroutinefunction(callback):
+            raise TypeError("coroutines cannot be used with call_at()")
         timer = events.TimerHandle(when, callback, args)
         heapq.heappush(self._scheduled, timer)
         return timer
@@ -241,6 +243,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
+        if tasks.iscoroutinefunction(callback):
+            raise TypeError("coroutines cannot be used with call_soon()")
         handle = events.Handle(callback, args)
         self._ready.append(handle)
         return handle
@@ -252,6 +256,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         return handle
 
     def run_in_executor(self, executor, callback, *args):
+        if tasks.iscoroutinefunction(callback):
+            raise TypeError("coroutines cannot be used with run_in_executor()")
         if isinstance(callback, events.Handle):
             assert not args
             assert not isinstance(callback, events.TimerHandle)
