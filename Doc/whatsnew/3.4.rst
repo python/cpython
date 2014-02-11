@@ -364,6 +364,9 @@ Some smaller changes made to the core Python language are:
   Contributed by Victor Stinner, Kang-Hao (Kenny) Lu and Serhiy Storchaka in
   :issue:`12892`.
 
+* :class:`bytes`.join() and :class:`bytearray`.join() now accept arbitrary
+  buffer objects as arguments.  (Contributed by Antoine Pitrou in
+  :issue:`15958`.)
 
 
 New Modules
@@ -1608,6 +1611,20 @@ Porting to Python 3.4
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+Changes in 'python' command behavior
+------------------------------------
+
+* In a posix shell, setting an environment variable to an empty value is
+  generally equivalent to not setting it at all.  In particular, this is true
+  for the :envvar:`PATH` environment variable.  However, setting
+  :envvar:`PYTHONPATH` to an empty value was *not* equivalent to not setting it
+  at all: setting :envvar:`PYTHONPATH` to an empty value was equivalent to
+  setting it to ``.``, which leads to confusion when reasoning by analogy to
+  how :envvar:`PATH` works.  The behavior now conforms to the normal posix
+  convention.
+
 
 Changes in the Python API
 -------------------------
