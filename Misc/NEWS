@@ -10,6 +10,8 @@ Release date: 2014-02-23
 Core and Builtins
 -----------------
 
+- Issue #20595: Make getargs.c C89 compliant.
+
 Library
 -------
 
