@@ -72,6 +72,7 @@ PyInterpreterState_New(void)
         interp->modules_by_index = NULL;
         interp->sysdict = NULL;
         interp->builtins = NULL;
+        interp->builtins_copy = NULL;
         interp->tstate_head = NULL;
         interp->codec_search_path = NULL;
         interp->codec_search_cache = NULL;
@@ -115,6 +116,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->modules_by_index);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
+    Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->importlib);
 }
 

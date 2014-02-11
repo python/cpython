@@ -49,9 +49,13 @@ class fs_unicode_converter(CConverter):
 void
 _PyImport_Init(void)
 {
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
     initstr = PyUnicode_InternFromString("__init__");
     if (initstr == NULL)
         Py_FatalError("Can't initialize import variables");
+    interp->builtins_copy = PyDict_Copy(interp->builtins);
+    if (interp->builtins_copy == NULL)
+        Py_FatalError("Can't backup builtins dict");
 }
 
 void
@@ -397,8 +401,8 @@ PyImport_Cleanup(void)
     PyObject *key, *value, *dict;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
-    PyObject *builtins = interp->builtins;
     PyObject *weaklist = NULL;
+    char **p;
 
     if (modules == NULL)
         return; /* Already done */
@@ -411,31 +415,22 @@ PyImport_Cleanup(void)
 
     /* XXX Perhaps these precautions are obsolete. Who knows? */
 
-    value = PyDict_GetItemString(modules, "builtins");
-    if (value != NULL && PyModule_Check(value)) {
-        dict = PyModule_GetDict(value);
+    if (Py_VerboseFlag)
+        PySys_WriteStderr("# clear builtins._\n");
+    PyDict_SetItemString(interp->builtins, "_", Py_None);
+
+    for (p = sys_deletes; *p != NULL; p++) {
         if (Py_VerboseFlag)
-            PySys_WriteStderr("# clear builtins._\n");
-        PyDict_SetItemString(dict, "_", Py_None);
+            PySys_WriteStderr("# clear sys.%s\n", *p);
+        PyDict_SetItemString(interp->sysdict, *p, Py_None);
     }
-    value = PyDict_GetItemString(modules, "sys");
-    if (value != NULL && PyModule_Check(value)) {
-        char **p;
-        PyObject *v;
-        dict = PyModule_GetDict(value);
-        for (p = sys_deletes; *p != NULL; p++) {
-            if (Py_VerboseFlag)
-                PySys_WriteStderr("# clear sys.%s\n", *p);
-            PyDict_SetItemString(dict, *p, Py_None);
-        }
-        for (p = sys_files; *p != NULL; p+=2) {
-            if (Py_VerboseFlag)
-                PySys_WriteStderr("# restore sys.%s\n", *p);
-            v = PyDict_GetItemString(dict, *(p+1));
-            if (v == NULL)
-                v = Py_None;
-            PyDict_SetItemString(dict, *p, v);
-        }
+    for (p = sys_files; *p != NULL; p+=2) {
+        if (Py_VerboseFlag)
+            PySys_WriteStderr("# restore sys.%s\n", *p);
+        value = PyDict_GetItemString(interp->sysdict, *(p+1));
+        if (value == NULL)
+            value = Py_None;
+        PyDict_SetItemString(interp->sysdict, *p, value);
     }
 
     /* We prepare a list which will receive (name, weakref) tuples of
@@ -473,11 +468,15 @@ PyImport_Cleanup(void)
 
     /* Clear the modules dict. */
     PyDict_Clear(modules);
-    /* Replace the interpreter's reference to builtins with an empty dict
-       (module globals still have a reference to the original builtins). */
-    builtins = interp->builtins;
-    interp->builtins = PyDict_New();
-    Py_DECREF(builtins);
+    /* Restore the original builtins dict, to ensure that any
+       user data gets cleared. */
+    dict = PyDict_Copy(interp->builtins);
+    if (dict == NULL)
+        PyErr_Clear();
+    PyDict_Clear(interp->builtins);
+    if (PyDict_Update(interp->builtins, interp->builtins_copy))
+        PyErr_Clear();
+    Py_XDECREF(dict);
     /* Clear module dict copies stored in the interpreter state */
     _PyState_ClearModules();
     /* Collect references */
@@ -488,7 +487,15 @@ PyImport_Cleanup(void)
 
     /* Now, if there are any modules left alive, clear their globals to
        minimize potential leaks.  All C extension modules actually end
-       up here, since they are kept alive in the interpreter state. */
+       up here, since they are kept alive in the interpreter state.
+
+       The special treatment of "builtins" here is because even
+       when it's not referenced as a module, its dictionary is
+       referenced by almost every module's __builtins__.  Since
+       deleting a module clears its dictionary (even if there are
+       references left to it), we need to delete the "builtins"
+       module last.  Likewise, we don't delete sys until the very
+       end because it is implicitly referenced (e.g. by print). */
     if (weaklist != NULL) {
         Py_ssize_t i, n;
         n = PyList_GET_SIZE(weaklist);
@@ -498,16 +505,26 @@ PyImport_Cleanup(void)
             PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
             if (mod == Py_None)
                 continue;
-            Py_INCREF(mod);
             assert(PyModule_Check(mod));
+            dict = PyModule_GetDict(mod);
+            if (dict == interp->builtins || dict == interp->sysdict)
+                continue;
+            Py_INCREF(mod);
             if (Py_VerboseFlag && PyUnicode_Check(name))
-                PySys_FormatStderr("# cleanup[3] wiping %U\n",
-                                   name, mod);
+                PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
             _PyModule_Clear(mod);
             Py_DECREF(mod);
         }
         Py_DECREF(weaklist);
     }
+
+    /* Next, delete sys and builtins (in that order) */
+    if (Py_VerboseFlag)
+        PySys_FormatStderr("# cleanup[3] wiping sys\n");
+    _PyModule_ClearDict(interp->sysdict);
+    if (Py_VerboseFlag)
+        PySys_FormatStderr("# cleanup[3] wiping builtins\n");
+    _PyModule_ClearDict(interp->builtins);
 
     /* Clear and delete the modules directory.  Actual modules will
        still be there only if imported during the execution of some

@@ -111,6 +111,8 @@ class _SimpleBinder:
             except tkinter.TclError as e:
                 if e.args[0] == APPLICATION_GONE:
                     pass
+                else:
+                    raise
 
 # An int in range(1 << len(_modifiers)) represents a combination of modifiers
 # (if the least significent bit is on, _modifiers[0] is on, and so on).
@@ -244,6 +246,8 @@ class _ComplexBinder:
             except tkinter.TclError as e:
                 if e.args[0] == APPLICATION_GONE:
                     break
+                else:
+                    raise
 
 # define the list of event types to be handled by MultiEvent. the order is
 # compatible with the definition of event type constants.
@@ -411,6 +415,8 @@ def MultiCallCreator(widget):
                         except tkinter.TclError as e:
                             if e.args[0] == APPLICATION_GONE:
                                 break
+                            else:
+                                raise
 
     _multicall_dict[widget] = MultiCall
     return MultiCall
