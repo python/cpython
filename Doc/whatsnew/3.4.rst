@@ -1443,6 +1443,10 @@ Other Improvements
   values for its constants from the C header files, instead of having the
   values hard-coded in the python module as was previously the case.
 
+* Loading multiple python modules from a single OS module (``.so``, ``.dll``)
+  now works correctly (previously it silently returned the first python
+  module in the file).  (Contributed by Václav Šmilauer in :issue:`16421`.)
+
 
 
 Significant Optimizations
@@ -1724,6 +1728,11 @@ Changes in the Python API
   values.  As a consequence of this fix, :meth:`slice.indices` now raises a
   :exc:`ValueError` if given a negative length; previously it returned nonsense
   values (:issue:`14794`).
+
+* The :class:`complex` constructor, unlike the :mod:`cmath` functions, was
+  incorrectly accepting :class:`float` values if an object's ``__complex__``
+  special method returned one.  This now raises a :exc:`TypeError`.
+  (:issue:`16290`.)
 
 
 Changes in the C API
