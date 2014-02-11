@@ -639,7 +639,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             event_list = self._selector.select(timeout)
             dt = time.perf_counter() - t0
             dt_monotonic = time.monotonic() - t0_monotonic
-            if not event_list and timeout: # and dt < timeout:
+            if not event_list and timeout and dt < timeout:
                 selector = self._selector.__class__.__name__
                 if (selector.startswith(("Poll", "Epoll", "Iocp"))
                 or timeout > 1e-3 or dt > 1e-3):
