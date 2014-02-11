@@ -540,12 +540,13 @@ are always available.  They are listed here in alphabetical order.
    A call to ``format(value, format_spec)`` is translated to
    ``type(value).__format__(format_spec)`` which bypasses the instance
    dictionary when searching for the value's :meth:`__format__` method.  A
-   :exc:`TypeError` exception is raised if the method is not found or if either
-   the *format_spec* or the return value are not strings.
+   :exc:`TypeError` exception is raised if the method search reaches
+   :mod:`object` and the *format_spec* is non-empty, or if either the
+   *format_spec* or the return value are not strings.
 
-   .. versionadded:: 3.4
+   .. versionchanged:: 3.4
       ``object().__format__(format_spec)`` raises :exc:`TypeError`
-      if *format_spec* is not empty string.
+      if *format_spec* is not an empty string.
 
 
 .. _func-frozenset:
