@@ -1226,6 +1226,10 @@ Basic customization
 
    The return value must be a string object.
 
+   .. versionchanged:: 3.4
+      The __format__ method of ``object`` itself raises a :exc:`TypeError`
+      if passed any non-empty string.
+
 
 .. _richcmpfuncs:
 .. method:: object.__lt__(self, other)
