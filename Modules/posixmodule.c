@@ -7844,8 +7844,12 @@ PyDoc_STRVAR(posix_close__doc__,
 "close(fd)\n\n\
 Close a file descriptor (for low level IO).");
 
+/*
+The underscore at end of function name avoids a name clash with the libc
+function posix_close.
+*/
 static PyObject *
-posix_close(PyObject *self, PyObject *args)
+posix_close_(PyObject *self, PyObject *args)
 {
     int fd, res;
     if (!PyArg_ParseTuple(args, "i:close", &fd))
@@ -11261,7 +11265,7 @@ static PyMethodDef posix_methods[] = {
     {"open",            (PyCFunction)posix_open,\
                         METH_VARARGS | METH_KEYWORDS,
                         posix_open__doc__},
-    {"close",           posix_close, METH_VARARGS, posix_close__doc__},
+    {"close",           posix_close_, METH_VARARGS, posix_close__doc__},
     {"closerange",      posix_closerange, METH_VARARGS, posix_closerange__doc__},
     {"device_encoding", device_encoding, METH_VARARGS, device_encoding__doc__},
     {"dup",             posix_dup, METH_VARARGS, posix_dup__doc__},

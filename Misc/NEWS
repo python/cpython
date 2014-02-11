@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20594: Avoid name clash with the libc function posix_close.
+
 - Issue #19856: shutil.move() failed to move a directory to other directory
   on Windows if source name ends with os.altsep.
 
