@@ -1729,7 +1729,7 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* :c:func:`PyEval_EvalFrameEx`, :c:func:`PyObject_Repr(), and
+* :c:func:`PyEval_EvalFrameEx`, :c:func:`PyObject_Repr`, and
   :c:func:`PyObject_Str`, along with some other internal C APIs, now include
   a debugging assertion that ensures they are not used in situations where
   they may silently discard a currently active exception. In cases where
