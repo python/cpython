@@ -135,7 +135,7 @@ def make_test_protocol(base):
         if name.startswith('__') and name.endswith('__'):
             # skip magic names
             continue
-        dct[name] = unittest.mock.Mock(return_value=None)
+        dct[name] = MockCallback(return_value=None)
     return type('TestProtocol', (base,) + base.__bases__, dct)()
 
 
@@ -274,3 +274,6 @@ class TestLoop(base_events.BaseEventLoop):
 
     def _write_to_self(self):
         pass
+
+def MockCallback(**kwargs):
+    return unittest.mock.Mock(spec=['__call__'], **kwargs)
