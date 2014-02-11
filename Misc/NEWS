@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19856: shutil.move() failed to move a directory to other directory
+  on Windows if source name ends with os.altsep.
+
 - Issue #14983: email.generator now always adds a line end after each MIME
   boundary marker, instead of doing so only when there is an epilogue.  This
   fixes an RFC compliance bug and solves an issue with signed MIME parts.
