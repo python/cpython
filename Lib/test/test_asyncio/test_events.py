@@ -956,6 +956,8 @@ class EventLoopTestsMixin:
     # select, poll and kqueue don't support character devices (PTY) on Mac OS X
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
+    # Issue #20495: The test hangs on FreeBSD 7.2 but pass on FreeBSD 9
+    @support.requires_freebsd_version(8)
     def test_read_pty_output(self):
         proto = None
 
