@@ -30,7 +30,7 @@ one decorator, :func:`unique`.
 .. class:: Enum
 
     Base class for creating enumerated constants.  See section
-    :ref:`Functional API` for an alternate construction syntax.
+    `Functional API`_ for an alternate construction syntax.
 
 .. class:: IntEnum
 
@@ -421,7 +421,7 @@ The solution is to specify the module name explicitly as follows::
     >>> Animals = Enum('Animals', 'ant bee cat dog', module=__name__)
 
 The new pickle protocol 4 also, in some circumstances, relies on
-:attr:``__qualname__`` being set to the location where pickle will be able
+:attr:`__qualname__` being set to the location where pickle will be able
 to find the class.  For example, if the class was made available in class
 SomeData in the global scope::
 
