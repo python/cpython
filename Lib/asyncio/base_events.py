@@ -639,15 +639,16 @@ class BaseEventLoop(events.AbstractEventLoop):
             event_list = self._selector.select(timeout)
             dt = time.perf_counter() - t0
             dt_monotonic = time.monotonic() - t0_monotonic
-            if not event_list and timeout and dt < timeout:
+            if (not event_list and timeout
+            and (dt < timeout or dt_monotonic < timeout)):
                 selector = self._selector.__class__.__name__
                 if (selector.startswith(("Poll", "Epoll", "Iocp"))
                 or timeout > 1e-3 or dt > 1e-3):
                     unit, factor = "ms", 1e3
                 else:
                     unit, factor = "us", 1e6
-                print("asyncio: %s.select(%.3f %s) took %.3f %s"
-                      " (monotonic: %.3f %s, clock res: %.3f %s)"
+                print("asyncio: %s.select(%.4f %s) took %.3f %s"
+                      " (monotonic=%.3f %s, clock res=%.3f %s)"
                       % (self._selector.__class__.__name__,
                          timeout * factor, unit,
                          dt * factor, unit,
