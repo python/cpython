@@ -180,7 +180,7 @@ def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
     return Process(transport, protocol, loop)
 
 @tasks.coroutine
-def create_subprocess_exec(*args, stdin=None, stdout=None, stderr=None,
+def create_subprocess_exec(program, *args, stdin=None, stdout=None, stderr=None,
                            loop=None, limit=streams._DEFAULT_LIMIT, **kwds):
     if loop is None:
         loop = events.get_event_loop()
@@ -188,7 +188,8 @@ def create_subprocess_exec(*args, stdin=None, stdout=None, stderr=None,
                                                         loop=loop)
     transport, protocol = yield from loop.subprocess_exec(
                                             protocol_factory,
-                                            *args, stdin=stdin, stdout=stdout,
+                                            program, *args,
+                                            stdin=stdin, stdout=stdout,
                                             stderr=stderr, **kwds)
     yield from protocol.waiter
     return Process(transport, protocol, loop)
