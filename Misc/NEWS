@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19856: shutil.move() failed to move a directory to other directory
+  on Windows if source name ends with os.altsep.
+
 - Issue #20530: The signatures for slot builtins have been updated
   to reflect the fact that they only accept positional-only arguments.
 
