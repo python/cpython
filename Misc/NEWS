@@ -22,6 +22,11 @@ Release date: 2014-02-10
 Core and Builtins
 -----------------
 
+- Issue #19255: The builtins module is restored to initial value before
+  cleaning other modules.  The sys and builtins modules are cleaned last.
+
+- Issue #20588: Make Python-ast.c C89 compliant.
+
 - Issue #20437: Fixed 22 potential bugs when deleting objects references.
 
 - Issue #20500: Displaying an exception at interpreter shutdown no longer

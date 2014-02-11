@@ -875,4 +875,3 @@ What's New in IDLEfork 0.9 Alpha 1?
 --------------------------------------------------------------------
 Refer to HISTORY.txt for additional information on earlier releases.
 --------------------------------------------------------------------
-

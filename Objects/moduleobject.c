@@ -299,6 +299,14 @@ PyModule_GetState(PyObject* m)
 void
 _PyModule_Clear(PyObject *m)
 {
+    PyObject *d = ((PyModuleObject *)m)->md_dict;
+    if (d != NULL)
+        _PyModule_ClearDict(d);
+}
+
+void
+_PyModule_ClearDict(PyObject *d)
+{
     /* To make the execution order of destructors for global
        objects a bit more predictable, we first zap all objects
        whose name starts with a single underscore, before we clear
@@ -308,11 +316,6 @@ _PyModule_Clear(PyObject *m)
 
     Py_ssize_t pos;
     PyObject *key, *value;
-    PyObject *d;
-
-    d = ((PyModuleObject *)m)->md_dict;
-    if (d == NULL)
-        return;
 
     /* First, clear only names starting with a single underscore */
     pos = 0;
