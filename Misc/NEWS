@@ -10,6 +10,8 @@ What's New in Python 3.3.5 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #20588: Make Python-ast.c C89 compliant.
+
 - Issue #20437: Fixed 21 potential bugs when deleting objects references.
 
 - Issue #20538: UTF-7 incremental decoder produced inconsistant string when
