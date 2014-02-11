@@ -7,6 +7,11 @@ import asyncio
 from asyncio import test_utils
 
 
+@asyncio.coroutine
+def coroutine_function():
+    pass
+
+
 class Dummy:
 
     def __repr__(self):
@@ -1338,6 +1343,27 @@ class TaskTests(unittest.TestCase):
         child2.set_result(2)
         test_utils.run_briefly(self.loop)
 
+    def test_as_completed_invalid_args(self):
+        fut = asyncio.Future(loop=self.loop)
+
+        # as_completed() expects a list of futures, not a future instance
+        self.assertRaises(TypeError, self.loop.run_until_complete,
+            asyncio.as_completed(fut, loop=self.loop))
+        self.assertRaises(TypeError, self.loop.run_until_complete,
+            asyncio.as_completed(coroutine_function(), loop=self.loop))
+
+    def test_wait_invalid_args(self):
+        fut = asyncio.Future(loop=self.loop)
+
+        # wait() expects a list of futures, not a future instance
+        self.assertRaises(TypeError, self.loop.run_until_complete,
+            asyncio.wait(fut, loop=self.loop))
+        self.assertRaises(TypeError, self.loop.run_until_complete,
+            asyncio.wait(coroutine_function(), loop=self.loop))
+
+        # wait() expects at least a future
+        self.assertRaises(ValueError, self.loop.run_until_complete,
+            asyncio.wait([], loop=self.loop))
 
 class GatherTestsBase:
 
