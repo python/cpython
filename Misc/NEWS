@@ -2262,10 +2262,10 @@ Core and Builtins
   builtins.
 
 - Issue #16455: On FreeBSD and Solaris, if the locale is C, the
-  ASCII/surrogateescape codec is now used, instead of the locale encoding, to
+  ASCII/surrogateescape codec is now used (instead of the locale encoding) to
   decode the command line arguments. This change fixes inconsistencies with
-  os.fsencode() and os.fsdecode() because these operating systems announces an
-  ASCII locale encoding, whereas the ISO-8859-1 encoding is used in practice.
+  os.fsencode() and os.fsdecode(), because these operating systems announce an
+  ASCII locale encoding, but actually use the ISO-8859-1 encoding in practice.
 
 - Issue #16562: Optimize dict equality testing.  Patch by Serhiy Storchaka.
 
