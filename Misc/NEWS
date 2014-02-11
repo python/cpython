@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20594: Avoid name clash with the libc function posix_close.
+
 
 What's New in Python 3.4.0 release candidate 1?
 ===============================================
