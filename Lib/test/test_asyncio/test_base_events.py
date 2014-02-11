@@ -3,6 +3,7 @@
 import errno
 import logging
 import socket
+import sys
 import time
 import unittest
 import unittest.mock
@@ -234,8 +235,57 @@ class BaseEventLoopTests(unittest.TestCase):
         self.assertEqual([handle], list(self.loop._ready))
 
     def test_run_until_complete_type_error(self):
-        self.assertRaises(
-            TypeError, self.loop.run_until_complete, 'blah')
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, 'blah')
+
+    def test_subprocess_exec_invalid_args(self):
+        args = [sys.executable, '-c', 'pass']
+
+        # missing program parameter (empty args)
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_exec,
+            asyncio.SubprocessProtocol)
+
+        # exepected multiple arguments, not a list
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_exec,
+            asyncio.SubprocessProtocol, args)
+
+        # program arguments must be strings, not int
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_exec,
+            asyncio.SubprocessProtocol, sys.executable, 123)
+
+        # universal_newlines, shell, bufsize must not be set
+        self.assertRaises(TypeError,
+        self.loop.run_until_complete, self.loop.subprocess_exec,
+            asyncio.SubprocessProtocol, *args, universal_newlines=True)
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_exec,
+            asyncio.SubprocessProtocol, *args, shell=True)
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_exec,
+            asyncio.SubprocessProtocol, *args, bufsize=4096)
+
+    def test_subprocess_shell_invalid_args(self):
+        # exepected a string, not an int or a list
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_shell,
+            asyncio.SubprocessProtocol, 123)
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_shell,
+            asyncio.SubprocessProtocol, [sys.executable, '-c', 'pass'])
+
+        # universal_newlines, shell, bufsize must not be set
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_shell,
+            asyncio.SubprocessProtocol, 'exit 0', universal_newlines=True)
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_shell,
+            asyncio.SubprocessProtocol, 'exit 0', shell=True)
+        self.assertRaises(TypeError,
+            self.loop.run_until_complete, self.loop.subprocess_shell,
+            asyncio.SubprocessProtocol, 'exit 0', bufsize=4096)
 
 
 class MyProto(asyncio.Protocol):
