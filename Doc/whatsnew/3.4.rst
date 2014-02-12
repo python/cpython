@@ -1455,6 +1455,10 @@ Other Improvements
   now works correctly (previously it silently returned the first python
   module in the file).  (Contributed by Václav Šmilauer in :issue:`16421`.)
 
+* A new opcode, :opcode:`LOAD_CLASSDEREF`, has been added to fix a bug in the
+  loading of free variables in class bodies that could be triggered by certain
+  uses of :ref:`__prepare__ <prepare>`.  (Contributed by Benjamin Peterson in
+  :issue:`17853`.)
 
 
 Significant Optimizations
@@ -1649,6 +1653,10 @@ Changes in 'python' command behavior
   setting it to ``.``, which leads to confusion when reasoning by analogy to
   how :envvar:`PATH` works.  The behavior now conforms to the posix convention
   for :envvar:`PATH`.
+
+* The [X refs, Y blocks] output of a debug (``--with-pydebug``) build of the
+  CPython interpreter is now off by default.  It can be re-enabled using the
+  ``-X showrefcount`` option. (Contributed by Ezio Melotti in :issue:`17323`.)
 
 
 Changes in the Python API

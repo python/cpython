@@ -1647,6 +1647,8 @@ of these candidate metaclasses. If none of the candidate metaclasses meets
 that criterion, then the class definition will fail with ``TypeError``.
 
 
+.. _prepare:
+
 Preparing the class namespace
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
