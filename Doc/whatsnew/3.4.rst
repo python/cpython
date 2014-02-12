@@ -1416,6 +1416,10 @@ Other Build and C API Changes
 * New shell version of ``python-config``; can be used even when a python
   interpreter is not available (for example, in cross compilation scenarios).
 
+* :c:func:`PyUnicode_FromFormat` now supports width and precision
+  specifications for ``%s``, ``%A``, ``%U``, ``%V``, ``%S``, and ``%R``.
+  (Contributed by Ysj Ray and Victor Stinner in :issue:`7330`.)
+
 
 
 Other Improvements
@@ -1671,7 +1675,7 @@ Changes in the Python API
 * The module type now initializes the :attr:`__package__` and :attr:`__loader__`
   attributes to ``None`` by default. To determine if these attributes were set
   in a backwards-compatible fashion, use e.g.
-  ``getattr(module, '__loader__', None) is not None``.
+  ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)
 
 * :meth:`importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
@@ -1771,6 +1775,11 @@ Changes in the Python API
 * Defaults for keyword-only arguments are now evaluated *after* defaults for
   regular keyword arguments, instead of before.  Hopefully no one wrote any
   code that depends on the previous buggy behavior (:issue:`16967`).
+
+* Stale thread states are now cleared after :func:`~os.fork`.  This may cause
+  some system resources to be released that previously were incorrectly kept
+  perpetually alive (for example, database connections kept in thread-local
+  storage).  (:issue:`17094`.)
 
 
 Changes in the C API
