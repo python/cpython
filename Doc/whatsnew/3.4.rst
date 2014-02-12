@@ -368,6 +368,10 @@ Some smaller changes made to the core Python language are:
   buffer objects as arguments.  (Contributed by Antoine Pitrou in
   :issue:`15958`.)
 
+* The :class:`int` constructor now accepts any object that has an ``__index__``
+  method for its *base* argument.  (Contributed by Mark Dickinson in
+  :issue:`16772`.)
+
 
 New Modules
 ===========
@@ -1563,6 +1567,7 @@ and build tools:
 
 * OS/2 (:issue:`16135`).
 * Windows 2000 (changeset e52df05b496a).
+* Windows systems where ``COMSPEC`` points to ``command.com`` (:issue:`14470`).
 * VMS (:issue:`16136`).
 
 
@@ -1746,6 +1751,10 @@ Changes in the Python API
   incorrectly accepting :class:`float` values if an object's ``__complex__``
   special method returned one.  This now raises a :exc:`TypeError`.
   (:issue:`16290`.)
+
+* The :class:`int` constructor in 3.2 and 3.3 erroneously accept :class:`float`
+  values for the *base* parameter.  It is unlikely anyone was doing this, but
+  if so, it will now raise a :exc:`TypeError`  (:issue:`16772`).
 
 
 Changes in the C API
