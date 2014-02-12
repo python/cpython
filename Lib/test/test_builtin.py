@@ -1604,10 +1604,10 @@ class ShutdownTest(unittest.TestCase):
 
             class C:
                 def __del__(self):
-                    print("before")
+                    print("before", flush=True)
                     # Check that builtins still exist
                     len(())
-                    print("after")
+                    print("after", flush=True)
 
             c = C()
             # Make this module survive until builtins and sys are cleaned
