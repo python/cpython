@@ -1604,10 +1604,10 @@ class ShutdownTest(unittest.TestCase):
 
             class C:
                 def __del__(self):
-                    print("before", flush=True)
+                    print("before")
                     # Check that builtins still exist
                     len(())
-                    print("after", flush=True)
+                    print("after")
 
             c = C()
             # Make this module survive until builtins and sys are cleaned
@@ -1617,7 +1617,15 @@ class ShutdownTest(unittest.TestCase):
             # through a GC phase.
             here = sys.modules[__name__]
             """
-        rc, out, err = assert_python_ok("-c", code)
+        # Issue #20599: Force ASCII encoding to get a codec implemented in C,
+        # otherwise the codec may be unloaded before C.__del__() is called, and
+        # so print("before") fails because the codec cannot be used to encode
+        # "before" to sys.stdout.encoding. For example, on Windows,
+        # sys.stdout.encoding is the OEM code page and these code pages are
+        # implemented in Python
+        rc, out, err = assert_python_ok("-c", code,
+                                        PYTHONIOENCODING="ascii",
+                                        __cleanenv=True)
         self.assertEqual(["before", "after"], out.decode().splitlines())
 
 
