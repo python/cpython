@@ -86,6 +86,13 @@ unix build. Universal builds were first supported with OS X 10.4 with Xcode 2.1
 and the 10.4u SDK.  Starting with Xcode 3 and OS X 10.5, more configurations are
 available.
 
+In general, universal builds depend on specific features provided by the
+Apple-supplied compilers and other build tools included in Apple's Xcode
+development tools.  You should install Xcode and the command line tools
+component appropriate for the OS X release you are running on.  See the
+Python Developer's Guide (http://docs.python.org/devguide/setup.html)
+for more information.
+
 2.1 Flavors of universal binaries
 .................................
 
