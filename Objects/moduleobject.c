@@ -330,7 +330,8 @@ _PyModule_ClearDict(PyObject *d)
                     else
                         PyErr_Clear();
                 }
-                PyDict_SetItem(d, key, Py_None);
+                if (PyDict_SetItem(d, key, Py_None) != 0)
+                    PyErr_Clear();
             }
         }
     }
@@ -349,7 +350,8 @@ _PyModule_ClearDict(PyObject *d)
                     else
                         PyErr_Clear();
                 }
-                PyDict_SetItem(d, key, Py_None);
+                if (PyDict_SetItem(d, key, Py_None) != 0)
+                    PyErr_Clear();
             }
         }
     }
