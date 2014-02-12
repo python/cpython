@@ -19,6 +19,8 @@ from .log import logger
 class Handle:
     """Object returned by callback registration methods."""
 
+    __slots__ = ['_callback', '_args', '_cancelled']
+
     def __init__(self, callback, args):
         assert not isinstance(callback, Handle), 'A Handle is not a callback'
         self._callback = callback
@@ -45,6 +47,8 @@ class Handle:
 
 class TimerHandle(Handle):
     """Object returned by timed callback registration methods."""
+
+    __slots__ = ['_when']
 
     def __init__(self, when, callback, args):
         assert when is not None
