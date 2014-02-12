@@ -251,7 +251,7 @@ the :mod:`glob` module.)
 .. function:: samefile(path1, path2)
 
    Return ``True`` if both pathname arguments refer to the same file or directory.
-   On Unix, this is determined by the device number and i-node number and raises an
+   This is determined by the device number and i-node number and raises an
    exception if a :func:`os.stat` call on either pathname fails.
 
    Availability: Unix, Windows.
