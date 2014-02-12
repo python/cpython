@@ -955,6 +955,10 @@ the :func:`multiprocessing.cpu_count` function (which is now implemented in
 terms of the new :mod:`os` function).  (Contributed by Trent Nelson, Yogesh
 Chaudhari, Victor Stinner, and Charles-François Natali in :issue:`17914`.)
 
+:func:`os.path.samestat` is now available on the Windows platform (and the
+:func:`os.path.samefile` implementation is now shared between Unix and
+Windows).  (Contributed by Brian Curtin in :issue:`11939`.)
+
 
 pdb
 ---
@@ -1752,9 +1756,13 @@ Changes in the Python API
   special method returned one.  This now raises a :exc:`TypeError`.
   (:issue:`16290`.)
 
-* The :class:`int` constructor in 3.2 and 3.3 erroneously accept :class:`float`
+* The :class:`int` constructor in 3.2 and 3.3 erroneously accepts :class:`float`
   values for the *base* parameter.  It is unlikely anyone was doing this, but
-  if so, it will now raise a :exc:`TypeError`  (:issue:`16772`).
+  if so, it will now raise a :exc:`TypeError` (:issue:`16772`).
+
+* Defaults for keyword-only arguments are now evaluated *after* defaults for
+  regular keyword arguments, instead of before.  Hopefully no one wrote any
+  code that depends on the previous buggy behavior (:issue:`16967`).
 
 
 Changes in the C API
