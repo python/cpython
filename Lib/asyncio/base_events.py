@@ -41,6 +41,31 @@ class _StopError(BaseException):
     """Raised to stop the event loop."""
 
 
+def _check_resolved_address(sock, address):
+    # Ensure that the address is already resolved to avoid the trap of hanging
+    # the entire event loop when the address requires doing a DNS lookup.
+    family = sock.family
+    if family not in (socket.AF_INET, socket.AF_INET6):
+        return
+
+    host, port = address
+    type_mask = 0
+    if hasattr(socket, 'SOCK_NONBLOCK'):
+        type_mask |= socket.SOCK_NONBLOCK
+    if hasattr(socket, 'SOCK_CLOEXEC'):
+        type_mask |= socket.SOCK_CLOEXEC
+    # Use getaddrinfo(AI_NUMERICHOST) to ensure that the address is
+    # already resolved.
+    try:
+        socket.getaddrinfo(host, port,
+                           family=family,
+                           type=(sock.type & ~type_mask),
+                           proto=sock.proto,
+                           flags=socket.AI_NUMERICHOST)
+    except socket.gaierror as err:
+        raise ValueError("address must be resolved (IP address), got %r: %s"
+                         % (address, err))
+
 def _raise_stop_error(*args):
     raise _StopError
 
