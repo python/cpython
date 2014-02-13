@@ -1191,6 +1191,18 @@ class EventLoopTestsMixin:
             {'clock_resolution': self.loop._clock_resolution,
              'selector': self.loop._selector.__class__.__name__})
 
+    def test_sock_connect_address(self):
+        address = ('www.python.org', 80)
+        for family in (socket.AF_INET, socket.AF_INET6):
+            for sock_type in (socket.SOCK_STREAM, socket.SOCK_DGRAM):
+                sock = socket.socket(family, sock_type)
+                with sock:
+                    connect = self.loop.sock_connect(sock, address)
+                    with self.assertRaises(ValueError) as cm:
+                        self.loop.run_until_complete(connect)
+                    self.assertIn('address must be resolved',
+                                  str(cm.exception))
+
 
 class SubprocessTestsMixin:
 
