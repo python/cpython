@@ -1624,8 +1624,7 @@ class ShutdownTest(unittest.TestCase):
         # sys.stdout.encoding is the OEM code page and these code pages are
         # implemented in Python
         rc, out, err = assert_python_ok("-c", code,
-                                        PYTHONIOENCODING="ascii",
-                                        __cleanenv=True)
+                                        PYTHONIOENCODING="ascii")
         self.assertEqual(["before", "after"], out.decode().splitlines())
 
 
