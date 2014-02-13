@@ -779,7 +779,6 @@ class TaskTests(unittest.TestCase):
             yield 0
             yield 0
             yield 0.1
-            yield 0.02
 
         loop = test_utils.TestLoop(gen)
         self.addCleanup(loop.close)
@@ -791,6 +790,8 @@ class TaskTests(unittest.TestCase):
         def foo():
             values = []
             for f in asyncio.as_completed([a, b], timeout=0.12, loop=loop):
+                if values:
+                    loop.advance_time(0.02)
                 try:
                     v = yield from f
                     values.append((1, v))
@@ -808,6 +809,26 @@ class TaskTests(unittest.TestCase):
         # move forward to close generator
         loop.advance_time(10)
         loop.run_until_complete(asyncio.wait([a, b], loop=loop))
+
+    def test_as_completed_with_unused_timeout(self):
+
+        def gen():
+            yield
+            yield 0
+            yield 0.01
+
+        loop = test_utils.TestLoop(gen)
+        self.addCleanup(loop.close)
+
+        a = asyncio.sleep(0.01, 'a', loop=loop)
+
+        @asyncio.coroutine
+        def foo():
+            for f in asyncio.as_completed([a], timeout=1, loop=loop):
+                v = yield from f
+                self.assertEqual(v, 'a')
+
+        res = loop.run_until_complete(asyncio.Task(foo(), loop=loop))
 
     def test_as_completed_reverse_wait(self):
 
