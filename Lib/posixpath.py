@@ -322,7 +322,7 @@ def expandvars(path):
             name = name[1:-1]
         try:
             if environ is None:
-                value = os.fsencode(os.environ[os.fsdecode(var)])
+                value = os.fsencode(os.environ[os.fsdecode(name)])
             else:
                 value = environ[name]
         except KeyError:
