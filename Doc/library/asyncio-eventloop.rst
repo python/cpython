@@ -366,6 +366,12 @@ Low-level socket operations
 
    Connect to a remote socket at *address*.
 
+   The *address* must be already resolved to avoid the trap of hanging the
+   entire event loop when the address requires doing a DNS lookup.  For
+   example, it must be an IP address, not an hostname, for
+   :py:data:`~socket.AF_INET` and :py:data:`~socket.AF_INET6` address families.
+   Use :meth:`getaddrinfo` to resolve the hostname asynchronously.
+
    This method returns a :ref:`coroutine object <coroutine>`.
 
    .. seealso::

@@ -208,6 +208,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return fut
 
     def _sock_recv(self, fut, registered, sock, n):
+        # _sock_recv() can add itself as an I/O callback if the operation can't
+        # be done immediatly. Don't use it directly, call sock_recv().
         fd = sock.fileno()
         if registered:
             # Remove the callback early.  It should be rare that the
@@ -260,22 +262,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def sock_connect(self, sock, address):
         """XXX"""
-        # That address better not require a lookup!  We're not calling
-        # self.getaddrinfo() for you here.  But verifying this is
-        # complicated; the socket module doesn't have a pattern for
-        # IPv6 addresses (there are too many forms, apparently).
         fut = futures.Future(loop=self)
-        self._sock_connect(fut, False, sock, address)
+        try:
+            base_events._check_resolved_address(sock, address)
+        except ValueError as err:
+            fut.set_exception(err)
+        else:
+            self._sock_connect(fut, False, sock, address)
         return fut
 
     def _sock_connect(self, fut, registered, sock, address):
-        # TODO: Use getaddrinfo() to look up the address, to avoid the
-        # trap of hanging the entire event loop when the address
-        # requires doing a DNS lookup.  (OTOH, the caller should
-        # already have done this, so it would be nice if we could
-        # easily tell whether the address needs looking up or not.  I
-        # know how to do this for IPv4, but IPv6 addresses have many
-        # syntaxes.)
         fd = sock.fileno()
         if registered:
             self.remove_writer(fd)
