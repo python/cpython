@@ -329,7 +329,6 @@ class CommonTest(GenericTest):
             self.assertEqual(expandvars("$[foo]bar"), "$[foo]bar")
             self.assertEqual(expandvars("$bar bar"), "$bar bar")
             self.assertEqual(expandvars("$?bar"), "$?bar")
-            self.assertEqual(expandvars("${foo}bar"), "barbar")
             self.assertEqual(expandvars("$foo}bar"), "bar}bar")
             self.assertEqual(expandvars("${foo"), "${foo")
             self.assertEqual(expandvars("${{foo}}"), "baz1}")
@@ -342,12 +341,39 @@ class CommonTest(GenericTest):
             self.assertEqual(expandvars(b"$[foo]bar"), b"$[foo]bar")
             self.assertEqual(expandvars(b"$bar bar"), b"$bar bar")
             self.assertEqual(expandvars(b"$?bar"), b"$?bar")
-            self.assertEqual(expandvars(b"${foo}bar"), b"barbar")
             self.assertEqual(expandvars(b"$foo}bar"), b"bar}bar")
             self.assertEqual(expandvars(b"${foo"), b"${foo")
             self.assertEqual(expandvars(b"${{foo}}"), b"baz1}")
             self.assertEqual(expandvars(b"$foo$foo"), b"barbar")
             self.assertEqual(expandvars(b"$bar$bar"), b"$bar$bar")
+
+    @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
+    def test_expandvars_nonascii(self):
+        if self.pathmodule.__name__ == 'macpath':
+            self.skipTest('macpath.expandvars is a stub')
+        expandvars = self.pathmodule.expandvars
+        def check(value, expected):
+            self.assertEqual(expandvars(value), expected)
+        with support.EnvironmentVarGuard() as env:
+            env.clear()
+            nonascii = support.FS_NONASCII
+            env['spam'] = nonascii
+            env[nonascii] = 'ham' + nonascii
+            check(nonascii, nonascii)
+            check('$spam bar', '%s bar' % nonascii)
+            check('${spam}bar', '%sbar' % nonascii)
+            check('${%s}bar' % nonascii, 'ham%sbar' % nonascii)
+            check('$bar%s bar' % nonascii, '$bar%s bar' % nonascii)
+            check('$spam}bar', '%s}bar' % nonascii)
+
+            check(os.fsencode(nonascii), os.fsencode(nonascii))
+            check(b'$spam bar', os.fsencode('%s bar' % nonascii))
+            check(b'${spam}bar', os.fsencode('%sbar' % nonascii))
+            check(os.fsencode('${%s}bar' % nonascii),
+                  os.fsencode('ham%sbar' % nonascii))
+            check(os.fsencode('$bar%s bar' % nonascii),
+                  os.fsencode('$bar%s bar' % nonascii))
+            check(b'$spam}bar', os.fsencode('%s}bar' % nonascii))
 
     def test_abspath(self):
         self.assertIn("foo", self.pathmodule.abspath("foo"))

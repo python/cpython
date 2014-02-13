@@ -377,6 +377,7 @@ def expandvars(path):
         percent = b'%'
         brace = b'{'
         dollar = b'$'
+        environ = getattr(os, 'environb', None)
     else:
         if '$' not in path and '%' not in path:
             return path
@@ -386,6 +387,7 @@ def expandvars(path):
         percent = '%'
         brace = '{'
         dollar = '$'
+        environ = os.environ
     res = path[:0]
     index = 0
     pathlen = len(path)
@@ -414,14 +416,13 @@ def expandvars(path):
                     index = pathlen - 1
                 else:
                     var = path[:index]
-                    if isinstance(path, bytes):
-                        var = var.decode('ascii')
-                    if var in os.environ:
-                        value = os.environ[var]
-                    else:
-                        value = '%' + var + '%'
-                    if isinstance(path, bytes):
-                        value = value.encode('ascii')
+                    try:
+                        if environ is None:
+                            value = os.fsencode(os.environ[os.fsdecode(var)])
+                        else:
+                            value = environ[var]
+                    except KeyError:
+                        value = percent + var + percent
                     res += value
         elif c == dollar:  # variable or '$$'
             if path[index + 1:index + 2] == dollar:
@@ -435,39 +436,40 @@ def expandvars(path):
                         index = path.index(b'}')
                     else:
                         index = path.index('}')
-                    var = path[:index]
-                    if isinstance(path, bytes):
-                        var = var.decode('ascii')
-                    if var in os.environ:
-                        value = os.environ[var]
-                    else:
-                        value = '${' + var + '}'
-                    if isinstance(path, bytes):
-                        value = value.encode('ascii')
-                    res += value
                 except ValueError:
                     if isinstance(path, bytes):
                         res += b'${' + path
                     else:
                         res += '${' + path
                     index = pathlen - 1
+                else:
+                    var = path[:index]
+                    try:
+                        if environ is None:
+                            value = os.fsencode(os.environ[os.fsdecode(var)])
+                        else:
+                            value = environ[var]
+                    except KeyError:
+                        if isinstance(path, bytes):
+                            value = b'${' + var + b'}'
+                        else:
+                            value = '${' + var + '}'
+                    res += value
             else:
-                var = ''
+                var = path[:0]
                 index += 1
                 c = path[index:index + 1]
                 while c and c in varchars:
-                    if isinstance(path, bytes):
-                        var += c.decode('ascii')
-                    else:
-                        var += c
+                    var += c
                     index += 1
                     c = path[index:index + 1]
-                if var in os.environ:
-                    value = os.environ[var]
-                else:
-                    value = '$' + var
-                if isinstance(path, bytes):
-                    value = value.encode('ascii')
+                try:
+                    if environ is None:
+                        value = os.fsencode(os.environ[os.fsdecode(var)])
+                    else:
+                        value = environ[var]
+                except KeyError:
+                    value = dollar + var
                 res += value
                 if c:
                     index -= 1

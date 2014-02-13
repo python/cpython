@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6815: os.path.expandvars() now supports non-ASCII environment
+  variables names and values.
+
 - Issue #17671: Fixed a crash when use non-initialized io.BufferedRWPair.
   Based on patch by Stephen Tu.
 
