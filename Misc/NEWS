@@ -10,6 +10,10 @@ Release date: 2014-02-23
 Core and Builtins
 -----------------
 
+- Issue #20526: Revert changes of issue #19466 which introduces a regression:
+  don't clear anymore the state of Python threads early during the Python
+  shutdown.
+
 Library
 -------
 
