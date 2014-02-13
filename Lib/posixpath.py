@@ -300,6 +300,7 @@ def expandvars(path):
         search = _varprogb.search
         start = b'{'
         end = b'}'
+        environ = getattr(os, 'environb', None)
     else:
         if '$' not in path:
             return path
@@ -309,6 +310,7 @@ def expandvars(path):
         search = _varprog.search
         start = '{'
         end = '}'
+        environ = os.environ
     i = 0
     while True:
         m = search(path, i)
@@ -318,18 +320,18 @@ def expandvars(path):
         name = m.group(1)
         if name.startswith(start) and name.endswith(end):
             name = name[1:-1]
-        if isinstance(name, bytes):
-            name = str(name, 'ASCII')
-        if name in os.environ:
+        try:
+            if environ is None:
+                value = os.fsencode(os.environ[os.fsdecode(var)])
+            else:
+                value = environ[name]
+        except KeyError:
+            i = j
+        else:
             tail = path[j:]
-            value = os.environ[name]
-            if isinstance(path, bytes):
-                value = value.encode('ASCII')
             path = path[:i] + value
             i = len(path)
             path += tail
-        else:
-            i = j
     return path
 
 
