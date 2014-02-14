@@ -144,6 +144,11 @@ def _uninstall_helper(*, verbosity=0):
 
 
 def _main(argv=None):
+    if ssl is None:
+        print("Ignoring ensurepip failure: {}".format(_MISSING_SSL_MESSAGE),
+              file=sys.stderr)
+        return
+
     import argparse
     parser = argparse.ArgumentParser(prog="python -m ensurepip")
     parser.add_argument(
