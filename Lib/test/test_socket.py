@@ -663,9 +663,15 @@ class GeneralModuleTests(unittest.TestCase):
         socket.getaddrinfo(None, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0,
                            socket.AI_PASSIVE)
 
-        # Issue 17269
+        # Issue 17269: test workaround for OS X platform bug segfault
         if hasattr(socket, 'AI_NUMERICSERV'):
-            socket.getaddrinfo("localhost", None, 0, 0, 0, socket.AI_NUMERICSERV)
+            try:
+                # The arguments here are undefined and the call may succeed
+                # or fail.  All we care here is that it doesn't segfault.
+                socket.getaddrinfo("localhost", None, 0, 0, 0,
+                                   socket.AI_NUMERICSERV)
+            except socket.gaierror:
+                pass
 
     def check_sendall_interrupted(self, with_timeout):
         # socketpair() is not stricly required, but it makes things easier.

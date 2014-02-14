@@ -282,6 +282,8 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
+- Issue #20605: Make test_socket getaddrinfo OS X segfault test more robust.
+
 Documentation
 -------------
 
