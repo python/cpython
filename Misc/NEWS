@@ -20,6 +20,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19744: the ensurepip installation step now just prints a warning to
+  stderr rather than failing outright if SSL/TLS is unavailable. This allows
+  local installation of POSIX builds without SSL/TLS support.
+
 - Issue #20594: Avoid name clash with the libc function posix_close.
 
 
