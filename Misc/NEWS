@@ -116,6 +116,8 @@ Tests
 
 - Issue #20474: Fix test_socket "unexpected success" failures on OS X 10.7+.
 
+- Issue #20605: Make test_socket getaddrinfo OS X segfault test more robust.
+
 Documentation
 -------------
 
