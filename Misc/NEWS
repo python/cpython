@@ -33,6 +33,11 @@ Library
 - Issue #19856: shutil.move() failed to move a directory to other directory
   on Windows if source name ends with os.altsep.
 
+Tests
+-----
+
+- Issue #20605: Make test_socket getaddrinfo OS X segfault test more robust.
+
 
 What's New in Python 3.4.0 release candidate 1?
 ===============================================
