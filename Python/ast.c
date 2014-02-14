@@ -1203,6 +1203,8 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                 arg = arg(argname, annotation, c->c_arena);
                 if (!arg)
                     goto error;
+                arg->lineno = LINENO(ch);
+                arg->col_offset = ch->n_col_offset;
                 asdl_seq_SET(kwonlyargs, j++, arg);
                 i += 2; /* the name and the comma */
                 break;
