@@ -9666,7 +9666,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     PyObject *last_obj;
     unsigned int kind = 0;
 
-    fseq = PySequence_Fast(seq, "");
+    fseq = PySequence_Fast(seq, "can only join an iterable");
     if (fseq == NULL) {
         return NULL;
     }
