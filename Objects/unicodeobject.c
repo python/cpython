@@ -5618,7 +5618,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     PyObject *item;
     Py_ssize_t i;
 
-    fseq = PySequence_Fast(seq, "");
+    fseq = PySequence_Fast(seq, "can only join an iterable");
     if (fseq == NULL) {
         return NULL;
     }
