@@ -783,6 +783,14 @@ Glossary
       mapping rather than a sequence because the lookups use arbitrary
       :term:`immutable` keys rather than integers.
 
+      The :class:`collections.abc.Sequence` abstract base class
+      defines a much richer interface that goes beyond just
+      :meth:`__getitem__` and :meth:`__len__`, adding :meth:`count`,
+      :meth:`index`, :meth:`__contains__`, and
+      :meth:`__reversed__`. Types that implement this expanded
+      interface can be registered explicitly using
+      :func:`~abc.register`.
+
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
       chosen based on the type of a single argument.
