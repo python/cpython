@@ -434,7 +434,7 @@ The :mod:`socket` module also offers various network-related services:
        (10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]
 
    .. versionchanged:: 3.2
-      parameters can now be passed as single keyword arguments.
+      parameters can now be passed using keyword arguments.
 
 .. function:: getfqdn([name])
 
@@ -1437,4 +1437,3 @@ the :data:`SO_REUSEADDR` flag tells the kernel to reuse a local socket in
    details of socket semantics.  For Unix, refer to the manual pages; for Windows,
    see the WinSock (or Winsock 2) specification.  For IPv6-ready APIs, readers may
    want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
-
