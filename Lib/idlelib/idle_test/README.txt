@@ -105,4 +105,4 @@ makes other tests fail (issue 18081).
 To run an individual Testcase or test method, extend the dotted name given to
 unittest on the command line. (But gui tests will not this way.)
 
-python -m unittest -v idlelib.idle_test.text_xyz.Test_case.test_meth
+python -m unittest -v idlelib.idle_test.test_xyz.Test_case.test_meth
