@@ -112,6 +112,7 @@ class RowFactoryTests(unittest.TestCase):
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         t = tuple(row)
+        self.assertEqual(t, (row['a'], row['b']))
 
     def CheckSqliteRowAsDict(self):
         """Checks if the row object can be correctly converted to a dictionary"""
