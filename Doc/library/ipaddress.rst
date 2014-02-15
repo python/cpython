@@ -167,7 +167,7 @@ write code that handles both IP versions correctly.
 
    .. attribute:: is_unspecified
 
-      ``True`` if the address is unspecified.  See :RFC:`5375` (for IPv4)
+      ``True`` if the address is unspecified.  See :RFC:`5735` (for IPv4)
       or :RFC:`2373` (for IPv6).
 
    .. attribute:: is_reserved
