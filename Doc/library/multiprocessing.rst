@@ -1306,7 +1306,7 @@ their parent process exits.  The manager classes are defined in the
 
       *exposed* is used to specify a sequence of method names which proxies for
       this typeid should be allowed to access using
-      :meth:`BaseProxy._callMethod`.  (If *exposed* is ``None`` then
+      :meth:`BaseProxy._callmethod`.  (If *exposed* is ``None`` then
       :attr:`proxytype._exposed_` is used instead if it exists.)  In the case
       where no exposed list is specified, all "public methods" of the shared
       object will be accessible.  (Here a "public method" means any attribute
