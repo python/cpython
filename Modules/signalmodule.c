@@ -799,7 +799,8 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
                           &signals, &timeout))
         return NULL;
 
-    if (_PyTime_ObjectToTimespec(timeout, &tv_sec, &tv_nsec) == -1)
+    if (_PyTime_ObjectToTimespec(timeout, &tv_sec, &tv_nsec,
+                                 _PyTime_ROUND_DOWN) == -1)
         return NULL;
     buf.tv_sec = tv_sec;
     buf.tv_nsec = tv_nsec;

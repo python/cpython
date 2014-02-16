@@ -214,7 +214,8 @@ select_select(PyObject *self, PyObject *args)
     else {
 #ifdef MS_WINDOWS
         time_t sec;
-        if (_PyTime_ObjectToTimeval(tout, &sec, &tv.tv_usec) == -1)
+        if (_PyTime_ObjectToTimeval(tout, &sec, &tv.tv_usec,
+                                    _PyTime_ROUND_UP) == -1)
             return NULL;
         assert(sizeof(tv.tv_sec) == sizeof(long));
 #if SIZEOF_TIME_T > SIZEOF_LONG
@@ -229,7 +230,8 @@ select_select(PyObject *self, PyObject *args)
         /* 64-bit OS X has struct timeval.tv_usec as an int (and thus still 4
            bytes as required), but no longer defined by a long. */
         long tv_usec;
-        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &tv_usec) == -1)
+        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &tv_usec,
+                                    _PyTime_ROUND_UP) == -1)
             return NULL;
         tv.tv_usec = tv_usec;
 #endif
@@ -2037,8 +2039,8 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
         ptimeoutspec = NULL;
     }
     else if (PyNumber_Check(otimeout)) {
-        if (_PyTime_ObjectToTimespec(otimeout,
-                                     &timeout.tv_sec, &timeout.tv_nsec) == -1)
+        if (_PyTime_ObjectToTimespec(otimeout, &timeout.tv_sec,
+                                     &timeout.tv_nsec, _PyTime_ROUND_UP) == -1)
             return NULL;
 
         if (timeout.tv_sec < 0) {
