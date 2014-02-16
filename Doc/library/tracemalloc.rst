@@ -118,7 +118,6 @@ Get the traceback of a memory block
 
 Code to display the traceback of the biggest memory block::
 
-    import linecache
     import tracemalloc
 
     # Store 25 frames
@@ -132,12 +131,8 @@ Code to display the traceback of the biggest memory block::
     # pick the biggest memory block
     stat = top_stats[0]
     print("%s memory blocks: %.1f KiB" % (stat.count, stat.size / 1024))
-    for frame in stat.traceback:
-        print('  File "%s", line %s' % (frame.filename, frame.lineno))
-        line = linecache.getline(frame.filename, frame.lineno)
-        line = line.strip()
-        if line:
-            print('    ' + line)
+    for line in stat.traceback.format():
+        print(line)
 
 Example of output of the Python test suite (traceback limited to 25 frames)::
 
@@ -602,4 +597,26 @@ Traceback
    The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
    instance.
 
+   .. method:: format(limit=None)
+
+      Format the traceback as a list of lines with newlines.  Use the
+      :mod:`linecache` module to retrieve lines from the source code.  If
+      *limit* is set, only format the *limit* most recent frames.
+
+      Similar to the :func:`traceback.format_tb` function, except that
+      :meth:`format` does not include newlines.
+
+      Example::
+
+          print("Traceback (most recent call first):")
+          for line in traceback:
+              print(line)
+
+      Output::
+
+          Traceback (most recent call first):
+            File "test.py", line 9
+              obj = Object()
+            File "test.py", line 12
+              tb = tracemalloc.get_object_traceback(f())
 

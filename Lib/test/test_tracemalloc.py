@@ -510,6 +510,26 @@ class TestSnapshot(unittest.TestCase):
         self.assertEqual(traceback[:2],
                          (traceback[0], traceback[1]))
 
+    def test_format_traceback(self):
+        snapshot, snapshot2 = create_snapshots()
+        def getline(filename, lineno):
+            return '  <%s, %s>' % (filename, lineno)
+        with unittest.mock.patch('tracemalloc.linecache.getline',
+                                 side_effect=getline):
+            tb = snapshot.traces[0].traceback
+            self.assertEqual(tb.format(),
+                             ['  File "a.py", line 2',
+                              '    <a.py, 2>',
+                              '  File "b.py", line 4',
+                              '    <b.py, 4>'])
+
+            self.assertEqual(tb.format(limit=1),
+                             ['  File "a.py", line 2',
+                              '    <a.py, 2>'])
+
+            self.assertEqual(tb.format(limit=-1),
+                             [])
+
 
 class TestFilters(unittest.TestCase):
     maxDiff = 2048
