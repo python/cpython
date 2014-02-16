@@ -40,9 +40,6 @@ Number-theoretic and representation functions
    *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
    returns *-1.0*.
 
-   If *x* is NaN, *y* is ignored and NaN is returned.  If *y* is NaN,
-   it is treated as positive: ``copysign(-1.0, NaN)`` returns 1.0.
-
 .. function:: fabs(x)
 
    Return the absolute value of *x*.
