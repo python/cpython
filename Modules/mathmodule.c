@@ -908,9 +908,7 @@ PyDoc_STRVAR(math_ceil_doc,
 FUNC2(copysign, copysign,
       "copysign(x, y)\n\nReturn a float with the magnitude (absolute value) "
       "of x but the sign \nof y. On platforms that support signed zeros, "
-      "copysign(1.0, -0.0) \nreturns -1.0.\n\n"
-      "If x is NaN, y is ignored and NaN is returned. If y is NaN, it is\n"
-      "treated as positive.")
+      "copysign(1.0, -0.0) \nreturns -1.0.\n")
 FUNC1(cos, cos, 0,
       "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh, 1,
