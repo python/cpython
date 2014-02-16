@@ -349,6 +349,11 @@ class ImportlibMigrationTests(unittest.TestCase):
 def test_main():
     run_unittest(PkgutilTests, PkgutilPEP302Tests, ExtendPathTests,
                  NestedNamespacePackageTest, ImportlibMigrationTests)
+    # this is necessary if test is run repeated (like when finding leaks)
+    import zipimport
+    import importlib
+    zipimport._zip_directory_cache.clear()
+    importlib.invalidate_caches()
 
 
 if __name__ == '__main__':
