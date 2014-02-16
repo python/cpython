@@ -18,11 +18,6 @@ Core and Builtins
 - Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
   IndentationError.
 
-- Issue #19081: When a zipimport .zip file in sys.path being imported from
-  is modified during the lifetime of the Python process after zipimport has
-  already cached the zip's table of contents we detect this and recover
-  rather than read bad data from the .zip (causing odd import errors).
-
 - Raise a better error when non-unicode codecs are used for a file's coding
   cookie.
 
