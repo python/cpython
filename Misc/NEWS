@@ -25,6 +25,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20616: Add a format() method to tracemalloc.Traceback.
+
 - Issue #19744: the ensurepip installation step now just prints a warning to
   stderr rather than failing outright if SSL/TLS is unavailable. This allows
   local installation of POSIX builds without SSL/TLS support.
