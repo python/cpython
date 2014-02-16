@@ -4701,6 +4701,20 @@ class PicklingTests(unittest.TestCase):
         for proto in protocols:
             self._check_reduce(proto, obj, listitems=list(obj))
 
+    def test_special_method_lookup(self):
+        protocols = range(pickle.HIGHEST_PROTOCOL + 1)
+        class Picky:
+            def __getstate__(self):
+                return {}
+
+            def __getattr__(self, attr):
+                if attr in ("__getnewargs__", "__getnewargs_ex__"):
+                    raise AssertionError(attr)
+                return None
+        for protocol in protocols:
+            state = {} if protocol >= 2 else None
+            self._check_reduce(protocol, Picky(), state=state)
+
     def _assert_is_copy(self, obj, objcopy, msg=None):
         """Utility method to verify if two objects are copies of each others.
         """
