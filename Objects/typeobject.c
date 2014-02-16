@@ -3719,7 +3719,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 
     /* We first attempt to fetch the arguments for __new__ by calling
        __getnewargs_ex__ on the object. */
-    getnewargs_ex = _PyObject_GetAttrId(obj, &PyId___getnewargs_ex__);
+    getnewargs_ex = _PyObject_LookupSpecial(obj, &PyId___getnewargs_ex__);
     if (getnewargs_ex != NULL) {
         PyObject *newargs = PyObject_CallObject(getnewargs_ex, NULL);
         Py_DECREF(getnewargs_ex);
@@ -3766,16 +3766,13 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
             return -1;
         }
         return 0;
-    } else {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return -1;
-        }
-        PyErr_Clear();
+    } else if (PyErr_Occurred()) {
+        return -1;
     }
 
     /* The object does not have __getnewargs_ex__ so we fallback on using
        __getnewargs__ instead. */
-    getnewargs = _PyObject_GetAttrId(obj, &PyId___getnewargs__);
+    getnewargs = _PyObject_LookupSpecial(obj, &PyId___getnewargs__);
     if (getnewargs != NULL) {
         *args = PyObject_CallObject(getnewargs, NULL);
         Py_DECREF(getnewargs);
@@ -3791,11 +3788,8 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
         }
         *kwargs = NULL;
         return 0;
-    } else {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return -1;
-        }
-        PyErr_Clear();
+    } else if (PyErr_Occurred()) {
+        return -1;
     }
 
     /* The object does not have __getnewargs_ex__ and __getnewargs__. This may

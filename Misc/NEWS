@@ -10,6 +10,9 @@ Release date: 2014-02-23
 Core and Builtins
 -----------------
 
+- Issue #20261: In pickle, lookup __getnewargs__ and __getnewargs_ex__ on the
+  type of the object.
+
 - Issue #20619: Give the AST nodes of keyword-only arguments a column and line
   number.
 
