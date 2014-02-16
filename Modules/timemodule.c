@@ -193,7 +193,7 @@ time_clock_settime(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj))
         return NULL;
 
-    if (_PyTime_ObjectToTimespec(obj, &tv_sec, &tv_nsec) == -1)
+    if (_PyTime_ObjectToTimespec(obj, &tv_sec, &tv_nsec, _PyTime_ROUND_DOWN) == -1)
         return NULL;
     tp.tv_sec = tv_sec;
     tp.tv_nsec = tv_nsec;
@@ -341,7 +341,7 @@ parse_time_t_args(PyObject *args, char *format, time_t *pwhen)
         whent = time(NULL);
     }
     else {
-        if (_PyTime_ObjectToTime_t(ot, &whent) == -1)
+        if (_PyTime_ObjectToTime_t(ot, &whent, _PyTime_ROUND_DOWN) == -1)
             return 0;
     }
     *pwhen = whent;

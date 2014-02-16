@@ -2516,14 +2516,27 @@ run_in_subinterp(PyObject *self, PyObject *args)
     return PyLong_FromLong(r);
 }
 
+static int
+check_time_rounding(int round)
+{
+    if (round != _PyTime_ROUND_DOWN && round != _PyTime_ROUND_UP) {
+        PyErr_SetString(PyExc_ValueError, "invalid rounding");
+        return -1;
+    }
+    return 0;
+}
+
 static PyObject *
 test_pytime_object_to_time_t(PyObject *self, PyObject *args)
 {
     PyObject *obj;
     time_t sec;
-    if (!PyArg_ParseTuple(args, "O:pytime_object_to_time_t", &obj))
+    int round;
+    if (!PyArg_ParseTuple(args, "Oi:pytime_object_to_time_t", &obj, &round))
         return NULL;
-    if (_PyTime_ObjectToTime_t(obj, &sec) == -1)
+    if (check_time_rounding(round) < 0)
+        return NULL;
+    if (_PyTime_ObjectToTime_t(obj, &sec, round) == -1)
         return NULL;
     return _PyLong_FromTime_t(sec);
 }
@@ -2534,9 +2547,12 @@ test_pytime_object_to_timeval(PyObject *self, PyObject *args)
     PyObject *obj;
     time_t sec;
     long usec;
-    if (!PyArg_ParseTuple(args, "O:pytime_object_to_timeval", &obj))
+    int round;
+    if (!PyArg_ParseTuple(args, "Oi:pytime_object_to_timeval", &obj, &round))
         return NULL;
-    if (_PyTime_ObjectToTimeval(obj, &sec, &usec) == -1)
+    if (check_time_rounding(round) < 0)
+        return NULL;
+    if (_PyTime_ObjectToTimeval(obj, &sec, &usec, round) == -1)
         return NULL;
     return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), usec);
 }
@@ -2547,9 +2563,12 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
     PyObject *obj;
     time_t sec;
     long nsec;
-    if (!PyArg_ParseTuple(args, "O:pytime_object_to_timespec", &obj))
+    int round;
+    if (!PyArg_ParseTuple(args, "Oi:pytime_object_to_timespec", &obj, &round))
         return NULL;
-    if (_PyTime_ObjectToTimespec(obj, &sec, &nsec) == -1)
+    if (check_time_rounding(round) < 0)
+        return NULL;
+    if (_PyTime_ObjectToTimespec(obj, &sec, &nsec, round) == -1)
         return NULL;
     return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), nsec);
 }
