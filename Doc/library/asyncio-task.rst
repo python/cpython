@@ -229,7 +229,7 @@ Example combining a :class:`Future` and a :ref:`coroutine function
     @asyncio.coroutine
     def slow_operation(future):
         yield from asyncio.sleep(1)
-        future.set_result('Future in done!')
+        future.set_result('Future is done!')
 
     loop = asyncio.get_event_loop()
     future = asyncio.Future()
@@ -261,7 +261,7 @@ flow::
     @asyncio.coroutine
     def slow_operation(future):
         yield from asyncio.sleep(1)
-        future.set_result('Future in done!')
+        future.set_result('Future is done!')
 
     def got_result(future):
         print(future.result())
@@ -271,7 +271,10 @@ flow::
     future = asyncio.Future()
     asyncio.Task(slow_operation(future))
     future.add_done_callback(got_result)
-    loop.run_forever()
+    try:
+        loop.run_forever()
+    finally:
+        loop.close()
 
 In this example, the future is responsible to display the result and to stop
 the loop.
