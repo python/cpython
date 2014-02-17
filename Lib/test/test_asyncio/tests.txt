@@ -6,6 +6,7 @@ test_asyncio.test_proactor_events
 test_asyncio.test_queues
 test_asyncio.test_selector_events
 test_asyncio.test_streams
+test_asyncio.test_subprocess
 test_asyncio.test_tasks
 test_asyncio.test_transports
 test_asyncio.test_unix_events
