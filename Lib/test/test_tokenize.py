@@ -638,7 +638,7 @@ Legacy unicode literals:
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open)
+                     open as tokenize_open, Untokenizer)
 from io import BytesIO
 from unittest import TestCase
 import os, sys, glob
@@ -1153,6 +1153,19 @@ class TestTokenize(TestCase):
         # See http://bugs.python.org/issue16152
         self.assertExactTypeEqual('@          ', token.AT)
 
+class UntokenizeTest(TestCase):
+    
+    def test_bad_input_order(self):
+        u = Untokenizer()
+        u.prev_row = 2
+        u.prev_col = 2
+        with self.assertRaises(ValueError) as cm:
+            u.add_whitespace((1,3))
+        self.assertEqual(cm.exception.args[0], 
+                'start (1,3) precedes previous end (2,2)')
+        self.assertRaises(ValueError, u.add_whitespace, (2,1))
+
+
 __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 def test_main():
@@ -1162,6 +1175,7 @@ def test_main():
     support.run_unittest(Test_Tokenize)
     support.run_unittest(TestDetectEncoding)
     support.run_unittest(TestTokenize)
+    support.run_unittest(UntokenizeTest)
 
 if __name__ == "__main__":
     test_main()
