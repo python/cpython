@@ -559,9 +559,10 @@ Pathological whitespace (http://bugs.python.org/issue16152)
 
 from test import test_support
 from tokenize import (untokenize, generate_tokens, NUMBER, NAME, OP,
-                     STRING, ENDMARKER, tok_name)
+                     STRING, ENDMARKER, tok_name, Untokenizer)
 from StringIO import StringIO
 import os
+from unittest import TestCase
 
 def dump_tokens(s):
     """Print out the tokens in s in a table format.
@@ -614,12 +615,25 @@ def decistmt(s):
     return untokenize(result)
 
 
+class UntokenizeTest(TestCase):
+
+    def test_bad_input_order(self):
+        u = Untokenizer()
+        u.prev_row = 2
+        u.prev_col = 2
+        with self.assertRaises(ValueError) as cm:
+            u.add_whitespace((1,3))
+        self.assertEqual(cm.exception.args[0],
+                'start (1,3) precedes previous end (2,2)')
+        self.assertRaises(ValueError, u.add_whitespace, (2,1))
+
 __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 
 def test_main():
     from test import test_tokenize
     test_support.run_doctest(test_tokenize, True)
+    test_support.run_unittest(UntokenizeTest)
 
 if __name__ == "__main__":
     test_main()
