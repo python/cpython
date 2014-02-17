@@ -229,7 +229,9 @@ class Untokenizer:
 
     def add_whitespace(self, start):
         row, col = start
-        assert row <= self.prev_row
+        if row < self.prev_row or row == self.prev_row and col < self.prev_col:
+            raise ValueError("start ({},{}) precedes previous end ({},{})"
+                             .format(row, col, self.prev_row, self.prev_col))
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
