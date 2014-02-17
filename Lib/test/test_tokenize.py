@@ -1154,14 +1154,14 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('@          ', token.AT)
 
 class UntokenizeTest(TestCase):
-    
+
     def test_bad_input_order(self):
         u = Untokenizer()
         u.prev_row = 2
         u.prev_col = 2
         with self.assertRaises(ValueError) as cm:
             u.add_whitespace((1,3))
-        self.assertEqual(cm.exception.args[0], 
+        self.assertEqual(cm.exception.args[0],
                 'start (1,3) precedes previous end (2,2)')
         self.assertRaises(ValueError, u.add_whitespace, (2,1))
 
