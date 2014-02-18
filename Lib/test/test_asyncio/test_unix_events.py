@@ -7,8 +7,10 @@ import io
 import os
 import pprint
 import signal
+import socket
 import stat
 import sys
+import tempfile
 import threading
 import unittest
 import unittest.mock
@@ -24,7 +26,7 @@ from asyncio import unix_events
 
 
 @unittest.skipUnless(signal, 'Signals are not supported')
-class SelectorEventLoopTests(unittest.TestCase):
+class SelectorEventLoopSignalTests(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.SelectorEventLoop()
@@ -198,6 +200,84 @@ class SelectorEventLoopTests(unittest.TestCase):
 
         self.assertEqual(len(self.loop._signal_handlers), 0)
         m_signal.set_wakeup_fd.assert_called_once_with(-1)
+
+
+@unittest.skipUnless(hasattr(socket, 'AF_UNIX'),
+                     'UNIX Sockets are not supported')
+class SelectorEventLoopUnixSocketTests(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.SelectorEventLoop()
+        asyncio.set_event_loop(None)
+
+    def tearDown(self):
+        self.loop.close()
+
+    def test_create_unix_server_existing_path_sock(self):
+        with test_utils.unix_socket_path() as path:
+            sock = socket.socket(socket.AF_UNIX)
+            sock.bind(path)
+
+            coro = self.loop.create_unix_server(lambda: None, path)
+            with self.assertRaisesRegexp(OSError,
+                                         'Address.*is already in use'):
+                self.loop.run_until_complete(coro)
+
+    def test_create_unix_server_existing_path_nonsock(self):
+        with tempfile.NamedTemporaryFile() as file:
+            coro = self.loop.create_unix_server(lambda: None, file.name)
+            with self.assertRaisesRegexp(OSError,
+                                         'Address.*is already in use'):
+                self.loop.run_until_complete(coro)
+
+    def test_create_unix_server_ssl_bool(self):
+        coro = self.loop.create_unix_server(lambda: None, path='spam',
+                                            ssl=True)
+        with self.assertRaisesRegex(TypeError,
+                                    'ssl argument must be an SSLContext'):
+            self.loop.run_until_complete(coro)
+
+    def test_create_unix_server_nopath_nosock(self):
+        coro = self.loop.create_unix_server(lambda: None, path=None)
+        with self.assertRaisesRegex(ValueError,
+                                    'path was not specified, and no sock'):
+            self.loop.run_until_complete(coro)
+
+    def test_create_unix_server_path_inetsock(self):
+        coro = self.loop.create_unix_server(lambda: None, path=None,
+                                            sock=socket.socket())
+        with self.assertRaisesRegex(ValueError,
+                                    'A UNIX Domain Socket was expected'):
+            self.loop.run_until_complete(coro)
+
+    def test_create_unix_connection_path_sock(self):
+        coro = self.loop.create_unix_connection(
+            lambda: None, '/dev/null', sock=object())
+        with self.assertRaisesRegex(ValueError, 'path and sock can not be'):
+            self.loop.run_until_complete(coro)
+
+    def test_create_unix_connection_nopath_nosock(self):
+        coro = self.loop.create_unix_connection(
+            lambda: None, None)
+        with self.assertRaisesRegex(ValueError,
+                                    'no path and sock were specified'):
+            self.loop.run_until_complete(coro)
+
+    def test_create_unix_connection_nossl_serverhost(self):
+        coro = self.loop.create_unix_connection(
+            lambda: None, '/dev/null', server_hostname='spam')
+        with self.assertRaisesRegex(ValueError,
+                                    'server_hostname is only meaningful'):
+            self.loop.run_until_complete(coro)
+
+    def test_create_unix_connection_ssl_noserverhost(self):
+        coro = self.loop.create_unix_connection(
+            lambda: None, '/dev/null', ssl=True)
+
+        with self.assertRaisesRegexp(
+            ValueError, 'you have to pass server_hostname when using ssl'):
+
+            self.loop.run_until_complete(coro)
 
 
 class UnixReadPipeTransportTests(unittest.TestCase):

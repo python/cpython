@@ -55,7 +55,8 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop.remove_reader = unittest.mock.Mock()
         self.loop.remove_writer = unittest.mock.Mock()
         waiter = asyncio.Future(loop=self.loop)
-        transport = self.loop._make_ssl_transport(m, asyncio.Protocol(), m, waiter)
+        transport = self.loop._make_ssl_transport(
+            m, asyncio.Protocol(), m, waiter)
         self.assertIsInstance(transport, _SelectorSslTransport)
 
     @unittest.mock.patch('asyncio.selector_events.ssl', None)

@@ -11,6 +11,7 @@ import sys
 import threading
 
 
+from . import base_events
 from . import base_subprocess
 from . import constants
 from . import events
@@ -31,9 +32,9 @@ if sys.platform == 'win32':  # pragma: no cover
 
 
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
-    """Unix event loop
+    """Unix event loop.
 
-    Adds signal handling to SelectorEventLoop
+    Adds signal handling and UNIX Domain Socket support to SelectorEventLoop.
     """
 
     def __init__(self, selector=None):
@@ -163,6 +164,76 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def _child_watcher_callback(self, pid, returncode, transp):
         self.call_soon_threadsafe(transp._process_exited, returncode)
+
+    @tasks.coroutine
+    def create_unix_connection(self, protocol_factory, path, *,
+                               ssl=None, sock=None,
+                               server_hostname=None):
+        assert server_hostname is None or isinstance(server_hostname, str)
+        if ssl:
+            if server_hostname is None:
+                raise ValueError(
+                    'you have to pass server_hostname when using ssl')
+        else:
+            if server_hostname is not None:
+                raise ValueError('server_hostname is only meaningful with ssl')
+
+        if path is not None:
+            if sock is not None:
+                raise ValueError(
+                    'path and sock can not be specified at the same time')
+
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
+                sock.setblocking(False)
+                yield from self.sock_connect(sock, path)
+            except OSError:
+                if sock is not None:
+                    sock.close()
+                raise
+
+        else:
+            if sock is None:
+                raise ValueError('no path and sock were specified')
+            sock.setblocking(False)
+
+        transport, protocol = yield from self._create_connection_transport(
+            sock, protocol_factory, ssl, server_hostname)
+        return transport, protocol
+
+    @tasks.coroutine
+    def create_unix_server(self, protocol_factory, path=None, *,
+                           sock=None, backlog=100, ssl=None):
+        if isinstance(ssl, bool):
+            raise TypeError('ssl argument must be an SSLContext or None')
+
+        if path is not None:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+            try:
+                sock.bind(path)
+            except OSError as exc:
+                if exc.errno == errno.EADDRINUSE:
+                    # Let's improve the error message by adding
+                    # with what exact address it occurs.
+                    msg = 'Address {!r} is already in use'.format(path)
+                    raise OSError(errno.EADDRINUSE, msg) from None
+                else:
+                    raise
+        else:
+            if sock is None:
+                raise ValueError(
+                    'path was not specified, and no sock specified')
+
+            if sock.family != socket.AF_UNIX:
+                raise ValueError(
+                    'A UNIX Domain Socket was expected, got {!r}'.format(sock))
+
+        server = base_events.Server(self, [sock])
+        sock.listen(backlog)
+        sock.setblocking(False)
+        self._start_serving(protocol_factory, sock, ssl, server)
+        return server
 
 
 def _set_nonblocking(fd):
