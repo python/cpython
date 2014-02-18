@@ -26,6 +26,7 @@ __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger')
 
+from itertools import chain
 import string, re
 from token import *
 
@@ -192,9 +193,10 @@ class Untokenizer:
             self.tokens.append(" " * col_offset)
 
     def untokenize(self, iterable):
-        for t in iterable:
+        it = iter(iterable)
+        for t in it:
             if len(t) == 2:
-                self.compat(t, iterable)
+                self.compat(t, it)
                 break
             tok_type, token, start, end, line = t
             self.add_whitespace(start)
@@ -206,16 +208,12 @@ class Untokenizer:
         return "".join(self.tokens)
 
     def compat(self, token, iterable):
-        startline = False
         indents = []
         toks_append = self.tokens.append
-        toknum, tokval = token
-        if toknum in (NAME, NUMBER):
-            tokval += ' '
-        if toknum in (NEWLINE, NL):
-            startline = True
+        startline = token[0] in (NEWLINE, NL)
         prevstring = False
-        for tok in iterable:
+        
+        for tok in chain([token], iterable):
             toknum, tokval = tok[:2]
 
             if toknum in (NAME, NUMBER):

@@ -627,8 +627,16 @@ class UntokenizeTest(TestCase):
                 'start (1,3) precedes previous end (2,2)')
         self.assertRaises(ValueError, u.add_whitespace, (2,1))
 
-__test__ = {"doctests" : doctests, 'decistmt': decistmt}
+    def test_iter_compat(self):
+        u = Untokenizer()
+        token = (NAME, 'Hello')
+        u.compat(token, iter([]))
+        self.assertEqual(u.tokens, ["Hello "])
+        u = Untokenizer()
+        self.assertEqual(u.untokenize(iter([token])), 'Hello ')
 
+
+__test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 def test_main():
     from test import test_tokenize
