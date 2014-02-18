@@ -317,7 +317,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             self._loop = None
 
 
-class _UnixWritePipeTransport(selector_events._FlowControlMixin,
+class _UnixWritePipeTransport(transports._FlowControlMixin,
                               transports.WriteTransport):
 
     def __init__(self, loop, pipe, protocol, waiter=None, extra=None):
