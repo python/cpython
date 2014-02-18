@@ -212,7 +212,7 @@ class Untokenizer:
         toks_append = self.tokens.append
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
-        
+
         for tok in chain([token], iterable):
             toknum, tokval = tok[:2]
 
