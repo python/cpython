@@ -112,7 +112,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 # Some platforms (e.g. Linux keep reporting the FD as
                 # ready, so we remove the read handler temporarily.
                 # We'll try again in a while.
-                logger.exception('Accept out of system resource (%s)', exc)
+                self.call_exception_handler({
+                    'message': 'socket.accept() out of system resource',
+                    'exception': exc,
+                    'socket': sock,
+                })
                 self.remove_reader(sock.fileno())
                 self.call_later(constants.ACCEPT_RETRY_DELAY,
                                 self._start_serving,
@@ -132,7 +136,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
-        handle = events.Handle(callback, args)
+        handle = events.Handle(callback, args, self)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -167,7 +171,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_writer(self, fd, callback, *args):
         """Add a writer callback.."""
-        handle = events.Handle(callback, args)
+        handle = events.Handle(callback, args, self)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -364,8 +368,13 @@ class _FlowControlMixin(transports.Transport):
             self._protocol_paused = True
             try:
                 self._protocol.pause_writing()
-            except Exception:
-                logger.exception('pause_writing() failed')
+            except Exception as exc:
+                self._loop.call_exception_handler({
+                    'message': 'protocol.pause_writing() failed',
+                    'exception': exc,
+                    'transport': self,
+                    'protocol': self._protocol,
+                })
 
     def _maybe_resume_protocol(self):
         if (self._protocol_paused and
@@ -373,8 +382,13 @@ class _FlowControlMixin(transports.Transport):
             self._protocol_paused = False
             try:
                 self._protocol.resume_writing()
-            except Exception:
-                logger.exception('resume_writing() failed')
+            except Exception as exc:
+                self._loop.call_exception_handler({
+                    'message': 'protocol.resume_writing() failed',
+                    'exception': exc,
+                    'transport': self,
+                    'protocol': self._protocol,
+                })
 
     def set_write_buffer_limits(self, high=None, low=None):
         if high is None:
@@ -435,7 +449,12 @@ class _SelectorTransport(_FlowControlMixin, transports.Transport):
     def _fatal_error(self, exc):
         # Should be called from exception handler only.
         if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
-            logger.exception('Fatal error for %s', self)
+            self._loop.call_exception_handler({
+                'message': 'Fatal transport error',
+                'exception': exc,
+                'transport': self,
+                'protocol': self._protocol,
+            })
         self._force_close(exc)
 
     def _force_close(self, exc):

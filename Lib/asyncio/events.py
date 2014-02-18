@@ -19,10 +19,11 @@ from .log import logger
 class Handle:
     """Object returned by callback registration methods."""
 
-    __slots__ = ['_callback', '_args', '_cancelled']
+    __slots__ = ['_callback', '_args', '_cancelled', '_loop']
 
-    def __init__(self, callback, args):
+    def __init__(self, callback, args, loop):
         assert not isinstance(callback, Handle), 'A Handle is not a callback'
+        self._loop = loop
         self._callback = callback
         self._args = args
         self._cancelled = False
@@ -39,9 +40,14 @@ class Handle:
     def _run(self):
         try:
             self._callback(*self._args)
-        except Exception:
-            logger.exception('Exception in callback %s %r',
-                             self._callback, self._args)
+        except Exception as exc:
+            msg = 'Exception in callback {}{!r}'.format(self._callback,
+                                                        self._args)
+            self._loop.call_exception_handler({
+                'message': msg,
+                'exception': exc,
+                'handle': self,
+            })
         self = None  # Needed to break cycles when an exception occurs.
 
 
@@ -50,9 +56,9 @@ class TimerHandle(Handle):
 
     __slots__ = ['_when']
 
-    def __init__(self, when, callback, args):
+    def __init__(self, when, callback, args, loop):
         assert when is not None
-        super().__init__(callback, args)
+        super().__init__(callback, args, loop)
 
         self._when = when
 
@@ -326,6 +332,17 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     def remove_signal_handler(self, sig):
+        raise NotImplementedError
+
+    # Error handlers.
+
+    def set_exception_handler(self, handler):
+        raise NotImplementedError
+
+    def default_exception_handler(self, context):
+        raise NotImplementedError
+
+    def call_exception_handler(self, context):
         raise NotImplementedError
 
 
