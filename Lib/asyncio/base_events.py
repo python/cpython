@@ -407,6 +407,13 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         sock.setblocking(False)
 
+        transport, protocol = yield from self._create_connection_transport(
+            sock, protocol_factory, ssl, server_hostname)
+        return transport, protocol
+
+    @tasks.coroutine
+    def _create_connection_transport(self, sock, protocol_factory, ssl,
+                                     server_hostname):
         protocol = protocol_factory()
         waiter = futures.Future(loop=self)
         if ssl:
