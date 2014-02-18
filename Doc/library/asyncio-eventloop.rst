@@ -157,6 +157,10 @@ Which clock is used depends on the (platform-specific) event loop
 implementation; ideally it is a monotonic clock.  This will generally be
 a different clock than :func:`time.time`.
 
+.. note::
+
+   Timeouts (relative *delay* or absolute *when*) should not exceed one day.
+
 
 .. method:: BaseEventLoop.call_later(delay, callback, *args)
 
