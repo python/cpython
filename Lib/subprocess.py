@@ -1186,7 +1186,15 @@ class Popen(object):
                     try:
                         self.stdin.write(input)
                     except OSError as e:
-                        if e.errno != errno.EPIPE:
+                        if e.errno == errno.EPIPE:
+                            # communicate() should ignore pipe full error
+                            pass
+                        elif (e.errno == errno.EINVAL
+                              and self.poll() is not None):
+                            # Issue #19612: stdin.write() fails with EINVAL
+                            # if the process already exited before the write
+                            pass
+                        else:
                             raise
                 self.stdin.close()
 
