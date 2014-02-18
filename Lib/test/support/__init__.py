@@ -78,6 +78,7 @@ __all__ = [
     "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
+    "requires_openbsd_version",
     "requires_linux_version", "requires_mac_ver", "check_syntax_error",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
@@ -466,6 +467,15 @@ def requires_freebsd_version(*min_version):
     version is less than 7.2.
     """
     return _requires_unix_version('FreeBSD', min_version)
+
+def requires_openbsd_version(*min_version):
+    """Decorator raising SkipTest if the OS is OpenBSD and the OpenBSD version
+    is less than `min_version`.
+
+    For example, @requires_freebsd_version(5, 4) raises SkipTest if the FreeBSD
+    version is less than 5.4.
+    """
+    return _requires_unix_version('OpenBSD', min_version)
 
 def requires_linux_version(*min_version):
     """Decorator raising SkipTest if the OS is Linux and the Linux version is
