@@ -122,6 +122,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._internal_fds = 0
         self._running = False
         self._clock_resolution = time.get_clock_info('monotonic').resolution
+        self._exception_handler = None
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
@@ -254,7 +255,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Like call_later(), but uses an absolute time."""
         if tasks.iscoroutinefunction(callback):
             raise TypeError("coroutines cannot be used with call_at()")
-        timer = events.TimerHandle(when, callback, args)
+        timer = events.TimerHandle(when, callback, args, self)
         heapq.heappush(self._scheduled, timer)
         return timer
 
@@ -270,7 +271,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         if tasks.iscoroutinefunction(callback):
             raise TypeError("coroutines cannot be used with call_soon()")
-        handle = events.Handle(callback, args)
+        handle = events.Handle(callback, args, self)
         self._ready.append(handle)
         return handle
 
@@ -624,6 +625,97 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport = yield from self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr, bufsize, **kwargs)
         return transport, protocol
+
+    def set_exception_handler(self, handler):
+        """Set handler as the new event loop exception handler.
+
+        If handler is None, the default exception handler will
+        be set.
+
+        If handler is a callable object, it should have a
+        matching signature to '(loop, context)', where 'loop'
+        will be a reference to the active event loop, 'context'
+        will be a dict object (see `call_exception_handler()`
+        documentation for details about context).
+        """
+        if handler is not None and not callable(handler):
+            raise TypeError('A callable object or None is expected, '
+                            'got {!r}'.format(handler))
+        self._exception_handler = handler
+
+    def default_exception_handler(self, context):
+        """Default exception handler.
+
+        This is called when an exception occurs and no exception
+        handler is set, and can be called by a custom exception
+        handler that wants to defer to the default behavior.
+
+        context parameter has the same meaning as in
+        `call_exception_handler()`.
+        """
+        message = context.get('message')
+        if not message:
+            message = 'Unhandled exception in event loop'
+
+        exception = context.get('exception')
+        if exception is not None:
+            exc_info = (type(exception), exception, exception.__traceback__)
+        else:
+            exc_info = False
+
+        log_lines = [message]
+        for key in sorted(context):
+            if key in {'message', 'exception'}:
+                continue
+            log_lines.append('{}: {!r}'.format(key, context[key]))
+
+        logger.error('\n'.join(log_lines), exc_info=exc_info)
+
+    def call_exception_handler(self, context):
+        """Call the current event loop exception handler.
+
+        context is a dict object containing the following keys
+        (new keys maybe introduced later):
+        - 'message': Error message;
+        - 'exception' (optional): Exception object;
+        - 'future' (optional): Future instance;
+        - 'handle' (optional): Handle instance;
+        - 'protocol' (optional): Protocol instance;
+        - 'transport' (optional): Transport instance;
+        - 'socket' (optional): Socket instance.
+
+        Note: this method should not be overloaded in subclassed
+        event loops.  For any custom exception handling, use
+        `set_exception_handler()` method.
+        """
+        if self._exception_handler is None:
+            try:
+                self.default_exception_handler(context)
+            except Exception:
+                # Second protection layer for unexpected errors
+                # in the default implementation, as well as for subclassed
+                # event loops with overloaded "default_exception_handler".
+                logger.error('Exception in default exception handler',
+                             exc_info=True)
+        else:
+            try:
+                self._exception_handler(self, context)
+            except Exception as exc:
+                # Exception in the user set custom exception handler.
+                try:
+                    # Let's try default handler.
+                    self.default_exception_handler({
+                        'message': 'Unhandled error in exception handler',
+                        'exception': exc,
+                        'context': context,
+                    })
+                except Exception:
+                    # Guard 'default_exception_handler' in case it's
+                    # overloaded.
+                    logger.error('Exception in default exception handler '
+                                 'while handling an unexpected error '
+                                 'in custom exception handler',
+                                 exc_info=True)
 
     def _add_callback(self, handle):
         """Add a Handle to ready or scheduled."""
