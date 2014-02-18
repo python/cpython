@@ -1788,7 +1788,7 @@ class HandleTests(unittest.TestCase):
             return args
 
         args = ()
-        h = asyncio.Handle(callback, args)
+        h = asyncio.Handle(callback, args, unittest.mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
         self.assertFalse(h._cancelled)
@@ -1808,28 +1808,37 @@ class HandleTests(unittest.TestCase):
             '<function HandleTests.test_handle.<locals>.callback'))
         self.assertTrue(r.endswith('())<cancelled>'), r)
 
-    def test_handle(self):
+    def test_handle_from_handle(self):
         def callback(*args):
             return args
-        h1 = asyncio.Handle(callback, ())
+        m_loop = object()
+        h1 = asyncio.Handle(callback, (), loop=m_loop)
         self.assertRaises(
-            AssertionError, asyncio.Handle, h1, ())
+            AssertionError, asyncio.Handle, h1, (), m_loop)
 
-    @unittest.mock.patch('asyncio.events.logger')
-    def test_callback_with_exception(self, log):
+    def test_callback_with_exception(self):
         def callback():
             raise ValueError()
 
-        h = asyncio.Handle(callback, ())
+        m_loop = unittest.mock.Mock()
+        m_loop.call_exception_handler = unittest.mock.Mock()
+
+        h = asyncio.Handle(callback, (), m_loop)
         h._run()
-        self.assertTrue(log.exception.called)
+
+        m_loop.call_exception_handler.assert_called_with({
+            'message': test_utils.MockPattern('Exception in callback.*'),
+            'exception': unittest.mock.ANY,
+            'handle': h
+        })
 
 
 class TimerTests(unittest.TestCase):
 
     def test_hash(self):
         when = time.monotonic()
-        h = asyncio.TimerHandle(when, lambda: False, ())
+        h = asyncio.TimerHandle(when, lambda: False, (),
+                                unittest.mock.Mock())
         self.assertEqual(hash(h), hash(when))
 
     def test_timer(self):
@@ -1838,7 +1847,7 @@ class TimerTests(unittest.TestCase):
 
         args = ()
         when = time.monotonic()
-        h = asyncio.TimerHandle(when, callback, args)
+        h = asyncio.TimerHandle(when, callback, args, unittest.mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
         self.assertFalse(h._cancelled)
@@ -1853,16 +1862,19 @@ class TimerTests(unittest.TestCase):
         self.assertTrue(r.endswith('())<cancelled>'), r)
 
         self.assertRaises(AssertionError,
-                          asyncio.TimerHandle, None, callback, args)
+                          asyncio.TimerHandle, None, callback, args,
+                          unittest.mock.Mock())
 
     def test_timer_comparison(self):
+        loop = unittest.mock.Mock()
+
         def callback(*args):
             return args
 
         when = time.monotonic()
 
-        h1 = asyncio.TimerHandle(when, callback, ())
-        h2 = asyncio.TimerHandle(when, callback, ())
+        h1 = asyncio.TimerHandle(when, callback, (), loop)
+        h2 = asyncio.TimerHandle(when, callback, (), loop)
         # TODO: Use assertLess etc.
         self.assertFalse(h1 < h2)
         self.assertFalse(h2 < h1)
@@ -1878,8 +1890,8 @@ class TimerTests(unittest.TestCase):
         h2.cancel()
         self.assertFalse(h1 == h2)
 
-        h1 = asyncio.TimerHandle(when, callback, ())
-        h2 = asyncio.TimerHandle(when + 10.0, callback, ())
+        h1 = asyncio.TimerHandle(when, callback, (), loop)
+        h2 = asyncio.TimerHandle(when + 10.0, callback, (), loop)
         self.assertTrue(h1 < h2)
         self.assertFalse(h2 < h1)
         self.assertTrue(h1 <= h2)
@@ -1891,7 +1903,7 @@ class TimerTests(unittest.TestCase):
         self.assertFalse(h1 == h2)
         self.assertTrue(h1 != h2)
 
-        h3 = asyncio.Handle(callback, ())
+        h3 = asyncio.Handle(callback, (), loop)
         self.assertIs(NotImplemented, h1.__eq__(h3))
         self.assertIs(NotImplemented, h1.__ne__(h3))
 

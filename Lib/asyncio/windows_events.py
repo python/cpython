@@ -156,9 +156,13 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                 if pipe is None:
                     return
                 f = self._proactor.accept_pipe(pipe)
-            except OSError:
+            except OSError as exc:
                 if pipe and pipe.fileno() != -1:
-                    logger.exception('Pipe accept failed')
+                    self.call_exception_handler({
+                        'message': 'Pipe accept failed',
+                        'exception': exc,
+                        'pipe': pipe,
+                    })
                     pipe.close()
             except futures.CancelledError:
                 if pipe:
