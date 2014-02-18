@@ -1623,8 +1623,9 @@ else:
             # than 10.9 (Maverick)
             @support.requires_mac_ver(10, 9)
             # Issue #20667: KqueueEventLoopTests.test_read_pty_output()
-            # hangs on OpenBSD 5.4
-            @support.requires_openbsd_version(5, 5)
+            # hangs on OpenBSD 5.5
+            @unittest.skipIf(sys.platform.startswith('openbsd'),
+                             'test hangs on OpenBSD')
             def test_read_pty_output(self):
                 super().test_read_pty_output()
 
