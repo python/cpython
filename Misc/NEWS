@@ -23,6 +23,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20673: Implement support for UNIX Domain Sockets in asyncio.
+  New APIs: loop.create_unix_connection(), loop.create_unix_server(),
+  streams.open_unix_connection(), and streams.start_unix_server().
+
 - Issue #20616: Add a format() method to tracemalloc.Traceback.
 
 - Issue #19744: the ensurepip installation step now just prints a warning to
