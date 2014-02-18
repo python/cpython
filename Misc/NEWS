@@ -22,6 +22,9 @@ Core and Builtins
 
 - Issue #20595: Make getargs.c C89 compliant.
 
+- Issue #20625: Parameter names in __annotations__ were not mangled properly.
+  Discovered by Jonas Wielicki, patch by Yury Selivanov.
+
 Library
 -------
 
