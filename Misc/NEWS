@@ -20,6 +20,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19612: On Windows, subprocess.Popen.communicate() now ignores
+  OSError(22, 'Invalid argument') when writing input data into stdin, whereas
+  the process already exited.
+
 - Issue #6815: os.path.expandvars() now supports non-ASCII environment
   variables names and values.
 
@@ -27,7 +31,7 @@ Library
   Based on patch by Stephen Tu.
 
 - Issue #8478: Untokenizer.compat processes first token from iterator input.
-  Patch based on lines from Georg Brandl, Eric Snow, and Gareth Rees.  
+  Patch based on lines from Georg Brandl, Eric Snow, and Gareth Rees.
 
 - Issue #20594: Avoid name clash with the libc function posix_close.
 
