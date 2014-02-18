@@ -25,12 +25,14 @@ __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
                'Michael Foord')
 import builtins
-import re
-import sys
-from token import *
 from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
+from itertools import chain
+import re
+import sys
+from token import *
+
 cookie_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
@@ -237,9 +239,10 @@ class Untokenizer:
             self.tokens.append(" " * col_offset)
 
     def untokenize(self, iterable):
-        for t in iterable:
+        it = iter(iterable)
+        for t in it:
             if len(t) == 2:
-                self.compat(t, iterable)
+                self.compat(t, it)
                 break
             tok_type, token, start, end, line = t
             if tok_type == ENCODING:
@@ -254,17 +257,12 @@ class Untokenizer:
         return "".join(self.tokens)
 
     def compat(self, token, iterable):
-        startline = False
         indents = []
         toks_append = self.tokens.append
-        toknum, tokval = token
-
-        if toknum in (NAME, NUMBER):
-            tokval += ' '
-        if toknum in (NEWLINE, NL):
-            startline = True
+        startline = token[0] in (NEWLINE, NL)
         prevstring = False
-        for tok in iterable:
+
+        for tok in chain([token], iterable):
             toknum, tokval = tok[:2]
             if toknum == ENCODING:
                 self.encoding = tokval
