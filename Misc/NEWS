@@ -40,6 +40,9 @@ Library
 - Issue #17671: Fixed a crash when use non-initialized io.BufferedRWPair.
   Based on patch by Stephen Tu.
 
+- Issue #8478: Untokenizer.compat processes first token from iterator input.
+  Patch based on lines from Georg Brandl, Eric Snow, and Gareth Rees.  
+
 - Issue #20594: Avoid name clash with the libc function posix_close.
 
 - Issue #19856: shutil.move() failed to move a directory to other directory
