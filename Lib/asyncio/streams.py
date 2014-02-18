@@ -2,11 +2,13 @@
 
 __all__ = ['StreamReader', 'StreamWriter', 'StreamReaderProtocol',
            'open_connection', 'start_server',
-           'open_unix_connection', 'start_unix_server',
            'IncompleteReadError',
            ]
 
 import socket
+
+if hasattr(socket, 'AF_UNIX'):
+    __all__.extend(['open_unix_connection', 'start_unix_server'])
 
 from . import events
 from . import futures
