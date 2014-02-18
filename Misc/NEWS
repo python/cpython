@@ -10,6 +10,9 @@ Release date: 2014-02-23
 Core and Builtins
 -----------------
 
+- Issue #20625: Parameter names in __annotations__ were not mangled properly.
+  Discovered by Jonas Wielicki, patch by Yury Selivanov.
+
 - Issue #20261: In pickle, lookup __getnewargs__ and __getnewargs_ex__ on the
   type of the object.
 
