@@ -1704,6 +1704,10 @@ Changes in the Python API
   informative :exc:`ValueError` rather than the previous more mysterious
   :exc:`AttributeError` (:issue:`9177`).
 
+* Parameter names in ``__annotations__`` dict are now mangled properly,
+  similarly to ``__kwdefaults__``. (Contributed by Yury Selivanov in
+  :issue:`20625`).
+
 
 Changes in the C API
 --------------------
