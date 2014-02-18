@@ -4,6 +4,7 @@ import collections
 import contextlib
 import io
 import os
+import re
 import socket
 import socketserver
 import sys
@@ -301,7 +302,7 @@ class TestLoop(base_events.BaseEventLoop):
                 raise AssertionError("Time generator is not finished")
 
     def add_reader(self, fd, callback, *args):
-        self.readers[fd] = events.Handle(callback, args)
+        self.readers[fd] = events.Handle(callback, args, self)
 
     def remove_reader(self, fd):
         self.remove_reader_count[fd] += 1
@@ -320,7 +321,7 @@ class TestLoop(base_events.BaseEventLoop):
             handle._args, args)
 
     def add_writer(self, fd, callback, *args):
-        self.writers[fd] = events.Handle(callback, args)
+        self.writers[fd] = events.Handle(callback, args, self)
 
     def remove_writer(self, fd):
         self.remove_writer_count[fd] += 1
@@ -362,3 +363,16 @@ class TestLoop(base_events.BaseEventLoop):
 
 def MockCallback(**kwargs):
     return unittest.mock.Mock(spec=['__call__'], **kwargs)
+
+
+class MockPattern(str):
+    """A regex based str with a fuzzy __eq__.
+
+    Use this helper with 'mock.assert_called_with', or anywhere
+    where a regexp comparison between strings is needed.
+
+    For instance:
+       mock_call.assert_called_with(MockPattern('spam.*ham'))
+    """
+    def __eq__(self, other):
+        return bool(re.search(str(self), other, re.S))

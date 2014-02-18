@@ -65,7 +65,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         except ValueError as exc:
             raise RuntimeError(str(exc))
 
-        handle = events.Handle(callback, args)
+        handle = events.Handle(callback, args, self)
         self._signal_handlers[sig] = handle
 
         try:
@@ -294,7 +294,12 @@ class _UnixReadPipeTransport(transports.ReadTransport):
     def _fatal_error(self, exc):
         # should be called by exception handler only
         if not (isinstance(exc, OSError) and exc.errno == errno.EIO):
-            logger.exception('Fatal error for %s', self)
+            self._loop.call_exception_handler({
+                'message': 'Fatal transport error',
+                'exception': exc,
+                'transport': self,
+                'protocol': self._protocol,
+            })
         self._close(exc)
 
     def _close(self, exc):
@@ -441,7 +446,12 @@ class _UnixWritePipeTransport(selector_events._FlowControlMixin,
     def _fatal_error(self, exc):
         # should be called by exception handler only
         if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
-            logger.exception('Fatal error for %s', self)
+            self._loop.call_exception_handler({
+                'message': 'Fatal transport error',
+                'exception': exc,
+                'transport': self,
+                'protocol': self._protocol,
+            })
         self._close(exc)
 
     def _close(self, exc=None):
@@ -582,8 +592,14 @@ class BaseChildWatcher(AbstractChildWatcher):
     def _sig_chld(self):
         try:
             self._do_waitpid_all()
-        except Exception:
-            logger.exception('Unknown exception in SIGCHLD handler')
+        except Exception as exc:
+            # self._loop should always be available here
+            # as '_sig_chld' is added as a signal handler
+            # in 'attach_loop'
+            self._loop.call_exception_handler({
+                'message': 'Unknown exception in SIGCHLD handler',
+                'exception': exc,
+            })
 
     def _compute_returncode(self, status):
         if os.WIFSIGNALED(status):

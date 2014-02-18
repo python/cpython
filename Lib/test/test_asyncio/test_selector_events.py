@@ -23,6 +23,9 @@ from asyncio.selector_events import _SelectorSocketTransport
 from asyncio.selector_events import _SelectorDatagramTransport
 
 
+MOCK_ANY = unittest.mock.ANY
+
+
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
 
     def _make_self_pipe(self):
@@ -643,14 +646,18 @@ class SelectorTransportTests(unittest.TestCase):
         self.assertFalse(self.loop.readers)
         self.assertEqual(1, self.loop.remove_reader_count[7])
 
-    @unittest.mock.patch('asyncio.log.logger.exception')
+    @unittest.mock.patch('asyncio.log.logger.error')
     def test_fatal_error(self, m_exc):
         exc = OSError()
         tr = _SelectorTransport(self.loop, self.sock, self.protocol, None)
         tr._force_close = unittest.mock.Mock()
         tr._fatal_error(exc)
 
-        m_exc.assert_called_with('Fatal error for %s', tr)
+        m_exc.assert_called_with(
+            test_utils.MockPattern(
+                'Fatal transport error\nprotocol:.*\ntransport:.*'),
+            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+
         tr._force_close.assert_called_with(exc)
 
     def test_connection_lost(self):
@@ -996,7 +1003,7 @@ class SelectorSocketTransportTests(unittest.TestCase):
         transport._write_ready()
         transport._fatal_error.assert_called_with(err)
 
-    @unittest.mock.patch('asyncio.selector_events.logger')
+    @unittest.mock.patch('asyncio.base_events.logger')
     def test_write_ready_exception_and_close(self, m_log):
         self.sock.send.side_effect = OSError()
         remove_writer = self.loop.remove_writer = unittest.mock.Mock()
@@ -1651,14 +1658,17 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         self.assertFalse(transport._fatal_error.called)
         self.assertTrue(self.protocol.error_received.called)
 
-    @unittest.mock.patch('asyncio.log.logger.exception')
+    @unittest.mock.patch('asyncio.base_events.logger.error')
     def test_fatal_error_connected(self, m_exc):
         transport = _SelectorDatagramTransport(
             self.loop, self.sock, self.protocol, ('0.0.0.0', 1))
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
-        m_exc.assert_called_with('Fatal error for %s', transport)
+        m_exc.assert_called_with(
+            test_utils.MockPattern(
+                'Fatal transport error\nprotocol:.*\ntransport:.*'),
+            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
 
 
 if __name__ == '__main__':

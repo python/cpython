@@ -56,7 +56,12 @@ class _ProactorBasePipeTransport(transports.BaseTransport):
 
     def _fatal_error(self, exc):
         if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
-            logger.exception('Fatal error for %s', self)
+            self._loop.call_exception_handler({
+                'message': 'Fatal transport error',
+                'exception': exc,
+                'transport': self,
+                'protocol': self._protocol,
+            })
         self._force_close(exc)
 
     def _force_close(self, exc):
@@ -103,8 +108,13 @@ class _ProactorBasePipeTransport(transports.BaseTransport):
             self._protocol_paused = True
             try:
                 self._protocol.pause_writing()
-            except Exception:
-                logger.exception('pause_writing() failed')
+            except Exception as exc:
+                self._loop.call_exception_handler({
+                    'message': 'protocol.pause_writing() failed',
+                    'exception': exc,
+                    'transport': self,
+                    'protocol': self._protocol,
+                })
 
     def _maybe_resume_protocol(self):
         if (self._protocol_paused and
@@ -112,8 +122,13 @@ class _ProactorBasePipeTransport(transports.BaseTransport):
             self._protocol_paused = False
             try:
                 self._protocol.resume_writing()
-            except Exception:
-                logger.exception('resume_writing() failed')
+            except Exception as exc:
+                self._loop.call_exception_handler({
+                    'message': 'protocol.resume_writing() failed',
+                    'exception': exc,
+                    'transport': self,
+                    'protocol': self._protocol,
+                })
 
     def set_write_buffer_limits(self, high=None, low=None):
         if high is None:
@@ -465,9 +480,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                         conn, protocol,
                         extra={'peername': addr}, server=server)
                 f = self._proactor.accept(sock)
-            except OSError:
+            except OSError as exc:
                 if sock.fileno() != -1:
-                    logger.exception('Accept failed')
+                    self.call_exception_handler({
+                        'message': 'Accept failed',
+                        'exception': exc,
+                        'socket': sock,
+                    })
                     sock.close()
             except futures.CancelledError:
                 sock.close()

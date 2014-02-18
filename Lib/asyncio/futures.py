@@ -83,9 +83,10 @@ class _TracebackLogger:
     in a discussion about closing files when they are collected.
     """
 
-    __slots__ = ['exc', 'tb']
+    __slots__ = ['exc', 'tb', 'loop']
 
-    def __init__(self, exc):
+    def __init__(self, exc, loop):
+        self.loop = loop
         self.exc = exc
         self.tb = None
 
@@ -102,8 +103,11 @@ class _TracebackLogger:
 
     def __del__(self):
         if self.tb:
-            logger.error('Future/Task exception was never retrieved:\n%s',
-                         ''.join(self.tb))
+            msg = 'Future/Task exception was never retrieved:\n{tb}'
+            context = {
+                'message': msg.format(tb=''.join(self.tb)),
+            }
+            self.loop.call_exception_handler(context)
 
 
 class Future:
@@ -173,8 +177,12 @@ class Future:
                 # has consumed the exception
                 return
             exc = self._exception
-            logger.error('Future/Task exception was never retrieved:',
-                         exc_info=(exc.__class__, exc, exc.__traceback__))
+            context = {
+                'message': 'Future/Task exception was never retrieved',
+                'exception': exc,
+                'future': self,
+            }
+            self._loop.call_exception_handler(context)
 
     def cancel(self):
         """Cancel the future and schedule callbacks.
@@ -309,7 +317,7 @@ class Future:
         if _PY34:
             self._log_traceback = True
         else:
-            self._tb_logger = _TracebackLogger(exception)
+            self._tb_logger = _TracebackLogger(exception, self._loop)
             # Arrange for the logger to be activated after all callbacks
             # have had a chance to call result() or exception().
             self._loop.call_soon(self._tb_logger.activate)
