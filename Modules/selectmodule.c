@@ -232,10 +232,11 @@ select_select(PyObject *self, PyObject *args)
             return NULL;
         }
 #endif
+        tv.tv_sec = (long)sec;
 #else
         assert(sizeof(tv.tv_sec) >= sizeof(sec));
-#endif
         tv.tv_sec = sec;
+#endif
         tv.tv_usec = usec;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
