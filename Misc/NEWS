@@ -28,6 +28,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19612: On Windows, subprocess.Popen.communicate() now ignores
+  OSError(22, 'Invalid argument') when writing input data into stdin, whereas
+  the process already exited.
+
 - Issue #20320: select.select() and select.kqueue.control() now round the
   timeout aways from zero, instead of rounding towards zero.
 
