@@ -1781,6 +1781,10 @@ Changes in the Python API
   perpetually alive (for example, database connections kept in thread-local
   storage).  (:issue:`17094`.)
 
+* Parameter names in ``__annotations__`` dict are now mangled properly,
+  similarly to ``__kwdefaults__``. (Contributed by Yury Selivanov in
+  :issue:`20625`).
+
 
 Changes in the C API
 --------------------

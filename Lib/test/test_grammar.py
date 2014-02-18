@@ -314,6 +314,13 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(f.__annotations__,
                           {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
                            'k': 11, 'return': 12})
+        # Check for issue #20625 -- annotations mangling
+        class Spam:
+            def f(self, *, __kw:1):
+                pass
+        class Ham(Spam): pass
+        self.assertEquals(Spam.f.__annotations__, {'_Spam__kw': 1})
+        self.assertEquals(Ham.f.__annotations__, {'_Spam__kw': 1})
         # Check for SF Bug #1697248 - mixing decorators and a return annotation
         def null(x): return x
         @null
