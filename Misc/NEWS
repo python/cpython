@@ -35,6 +35,12 @@ Library
 
 - Issue #20594: Avoid name clash with the libc function posix_close.
 
+Build
+-----
+
+- Issue #20609: Restored the ability to build 64-bit Windows binaries on
+  32-bit Windows, which was broken by the change in issue #19788.
+
 
 What's New in Python 3.4.0 release candidate 1?
 ===============================================
