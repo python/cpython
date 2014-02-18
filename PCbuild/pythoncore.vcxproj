@@ -182,7 +182,11 @@
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
@@ -213,7 +217,11 @@
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
@@ -244,7 +252,11 @@
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
@@ -278,7 +290,11 @@
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
@@ -307,7 +323,11 @@
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
@@ -339,7 +359,11 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
@@ -368,7 +392,11 @@
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
@@ -400,7 +428,11 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PreBuildEvent>
-      <Command>$(KillPythonExe)</Command>
+      <Command>$(KillPythonExe)
+IF %ERRORLEVEL% NEQ 0 (
+    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    exit /b 0
+)</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Killing any running $(PythonExe) instances...</Message>
