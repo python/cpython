@@ -51,6 +51,10 @@ Library
 Tests
 -----
 
+- Issue #20510: Rewrote test_exit in test_sys to match existing comments,
+  use modern unittest features, and use helpers from test.script_helper
+  instead of using subprocess directly.  Patch by Gareth Rees.
+
 - Issue #20605: Make test_socket getaddrinfo OS X segfault test more robust.
 
 
