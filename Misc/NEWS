@@ -110,6 +110,10 @@ IDLE
 Tests
 -----
 
+- Issue #20510: Rewrote test_exit in test_sys to match existing comments,
+  use modern unittest features, and use helpers from test.script_helper
+  instead of using subprocess directly.  Patch by Gareth Rees.
+
 - Issue #20532: Tests which use _testcapi are now marked as CPython only.
 
 - Issue #19920: Added tests for TarFile.list().  Based on patch by Vajrasky Kok.
