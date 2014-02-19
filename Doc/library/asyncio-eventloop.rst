@@ -201,8 +201,10 @@ Creating connections
 .. method:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
 
    Create a streaming transport connection to a given Internet *host* and
-   *port*.  *protocol_factory* must be a callable returning a
-   :ref:`protocol <asyncio-protocol>` instance.
+   *port*: socket family :py:data:`~socket.AF_INET` or
+   :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
+   socket type :py:data:`~socket.SOCK_STREAM`.  *protocol_factory* must be a
+   callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method returns a :ref:`coroutine object <coroutine>` which will try to
    establish the connection in the background.  When successful, the
@@ -265,6 +267,35 @@ Creating connections
       (:class:`StreamReader`, :class:`StreamWriter`) instead of a protocol.
 
 
+.. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
+
+   Create datagram connection: socket family :py:data:`~socket.AF_INET` or
+   :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
+   socket type :py:data:`~socket.SOCK_DGRAM`.
+
+   This method returns a :ref:`coroutine object <coroutine>` which will try to
+   establish the connection in the background.  When successful, the
+   coroutine returns a ``(transport, protocol)`` pair.
+
+   See the :meth:`BaseEventLoop.create_connection` method for parameters.
+
+
+.. method:: BaseEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
+
+   Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
+   type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
+   family is used to communicate between processes on the same machine
+   efficiently.
+
+   This method returns a :ref:`coroutine object <coroutine>` which will try to
+   establish the connection in the background.  When successful, the
+   coroutine returns a ``(transport, protocol)`` pair.
+
+   See the :meth:`BaseEventLoop.create_connection` method for parameters.
+
+   Availability: UNIX.
+
+
 Creating listening connections
 ------------------------------
 
@@ -307,11 +338,13 @@ Creating listening connections
       The function :func:`start_server` creates a (:class:`StreamReader`,
       :class:`StreamWriter`) pair and calls back a function with this pair.
 
-.. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
 
-   Create datagram connection.
+.. method:: BaseEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   Similar to :meth:`BaseEventLoop.create_server`, but specific to the
+   socket family :py:data:`~socket.AF_UNIX`.
+
+   Availability: UNIX.
 
 
 
