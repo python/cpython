@@ -377,11 +377,11 @@ class _SelectorTransport(transports._FlowControlMixin,
             self._conn_lost += 1
             self._loop.call_soon(self._call_connection_lost, None)
 
-    def _fatal_error(self, exc):
+    def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.
         if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
             self._loop.call_exception_handler({
-                'message': 'Fatal transport error',
+                'message': message,
                 'exception': exc,
                 'transport': self,
                 'protocol': self._protocol,
@@ -452,7 +452,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         except (BlockingIOError, InterruptedError):
             pass
         except Exception as exc:
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal read error on socket transport')
         else:
             if data:
                 self._protocol.data_received(data)
@@ -488,7 +488,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             except (BlockingIOError, InterruptedError):
                 pass
             except Exception as exc:
-                self._fatal_error(exc)
+                self._fatal_error(exc, 'Fatal write error on socket transport')
                 return
             else:
                 data = data[n:]
@@ -511,7 +511,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         except Exception as exc:
             self._loop.remove_writer(self._sock_fd)
             self._buffer.clear()
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal write error on socket transport')
         else:
             if n:
                 del self._buffer[:n]
@@ -678,7 +678,7 @@ class _SelectorSslTransport(_SelectorTransport):
             self._loop.remove_reader(self._sock_fd)
             self._loop.add_writer(self._sock_fd, self._write_ready)
         except Exception as exc:
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal read error on SSL transport')
         else:
             if data:
                 self._protocol.data_received(data)
@@ -712,7 +712,7 @@ class _SelectorSslTransport(_SelectorTransport):
             except Exception as exc:
                 self._loop.remove_writer(self._sock_fd)
                 self._buffer.clear()
-                self._fatal_error(exc)
+                self._fatal_error(exc, 'Fatal write error on SSL transport')
                 return
 
             if n:
@@ -770,7 +770,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
         except OSError as exc:
             self._protocol.error_received(exc)
         except Exception as exc:
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal read error on datagram transport')
         else:
             self._protocol.datagram_received(data, addr)
 
@@ -805,7 +805,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 self._protocol.error_received(exc)
                 return
             except Exception as exc:
-                self._fatal_error(exc)
+                self._fatal_error(exc,
+                                  'Fatal write error on datagram transport')
                 return
 
         # Ensure that what we buffer is immutable.
@@ -827,7 +828,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 self._protocol.error_received(exc)
                 return
             except Exception as exc:
-                self._fatal_error(exc)
+                self._fatal_error(exc,
+                                  'Fatal write error on datagram transport')
                 return
 
         self._maybe_resume_protocol()  # May append to buffer.
