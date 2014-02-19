@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
+  Tkinter widgets to work in wantobjects=True mode.
+
 - Issue #19612: On Windows, subprocess.Popen.communicate() now ignores
   OSError(22, 'Invalid argument') when writing input data into stdin, whereas
   the process already exited.
