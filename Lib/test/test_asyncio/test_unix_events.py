@@ -365,7 +365,7 @@ class UnixReadPipeTransportTests(unittest.TestCase):
         tr._close.assert_called_with(err)
         m_logexc.assert_called_with(
             test_utils.MockPattern(
-                'Fatal transport error\nprotocol:.*\ntransport:.*'),
+                'Fatal read error on pipe transport\nprotocol:.*\ntransport:.*'),
             exc_info=(OSError, MOCK_ANY, MOCK_ANY))
 
     @unittest.mock.patch('os.read')
@@ -558,7 +558,9 @@ class UnixWritePipeTransportTests(unittest.TestCase):
         m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
         self.assertEqual([], tr._buffer)
-        tr._fatal_error.assert_called_with(err)
+        tr._fatal_error.assert_called_with(
+                            err,
+                            'Fatal write error on pipe transport')
         self.assertEqual(1, tr._conn_lost)
 
         tr.write(b'data')
@@ -660,7 +662,7 @@ class UnixWritePipeTransportTests(unittest.TestCase):
         self.assertTrue(tr._closing)
         m_logexc.assert_called_with(
             test_utils.MockPattern(
-                'Fatal transport error\nprotocol:.*\ntransport:.*'),
+                'Fatal write error on pipe transport\nprotocol:.*\ntransport:.*'),
             exc_info=(OSError, MOCK_ANY, MOCK_ANY))
         self.assertEqual(1, tr._conn_lost)
         test_utils.run_briefly(self.loop)
