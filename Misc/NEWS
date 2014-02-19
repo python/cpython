@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
+  Tkinter widgets to work in wantobjects=True mode.
+
 - Issue #17671: Fixed a crash when use non-initialized io.BufferedRWPair.
   Based on patch by Stephen Tu.
 
