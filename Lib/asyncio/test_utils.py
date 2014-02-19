@@ -259,7 +259,7 @@ class TestLoop(base_events.BaseEventLoop):
             when = yield ...
             ... = yield time_advance
 
-    Value retuned by yield is absolute time of next scheduled handler.
+    Value returned by yield is absolute time of next scheduled handler.
     Value passed to yield is time advance to move loop's time forward.
     """
 
@@ -369,7 +369,7 @@ class MockPattern(str):
     """A regex based str with a fuzzy __eq__.
 
     Use this helper with 'mock.assert_called_with', or anywhere
-    where a regexp comparison between strings is needed.
+    where a regex comparison between strings is needed.
 
     For instance:
        mock_call.assert_called_with(MockPattern('spam.*ham'))

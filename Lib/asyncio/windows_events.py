@@ -1,4 +1,4 @@
-"""Selector and proactor eventloops for Windows."""
+"""Selector and proactor event loops for Windows."""
 
 import _winapi
 import errno

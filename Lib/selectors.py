@@ -80,7 +80,7 @@ class BaseSelector(metaclass=ABCMeta):
 
     A selector can use various implementations (select(), poll(), epoll()...)
     depending on the platform. The default `Selector` class uses the most
-    performant implementation on the current platform.
+    efficient implementation on the current platform.
     """
 
     @abstractmethod
