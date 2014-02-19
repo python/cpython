@@ -949,9 +949,9 @@ def getfullargspec(func):
     The first four items in the tuple correspond to getargspec().
     """
 
-    builtin_method_param = None
-
-    if ismethod(func):
+    try:
+        # Re: `skip_bound_arg=False`
+        #
         # There is a notable difference in behaviour between getfullargspec
         # and Signature: the former always returns 'self' parameter for bound
         # methods, whereas the Signature always shows the actual calling
@@ -960,20 +960,15 @@ def getfullargspec(func):
         # To simulate this behaviour, we "unbind" bound methods, to trick
         # inspect.signature to always return their first parameter ("self",
         # usually)
-        func = func.__func__
 
-    elif isbuiltin(func):
-        # We have a builtin function or method. For that, we check the
-        # special '__text_signature__' attribute, provided by the
-        # Argument Clinic. If it's a method, we'll need to make sure
-        # that its first parameter (usually "self") is always returned
-        # (see the previous comment).
-        text_signature = getattr(func, '__text_signature__', None)
-        if text_signature and text_signature.startswith('($'):
-            builtin_method_param = _signature_get_bound_param(text_signature)
+        # Re: `follow_wrapper_chains=False`
+        #
+        # getfullargspec() historically ignored __wrapped__ attributes,
+        # so we ensure that remains the case in 3.3+
 
-    try:
-        sig = signature(func)
+        sig = _signature_internal(func,
+                                  follow_wrapper_chains=False,
+                                  skip_bound_arg=False)
     except Exception as ex:
         # Most of the times 'signature' will raise ValueError.
         # But, it can also raise AttributeError, and, maybe something
@@ -1022,13 +1017,6 @@ def getfullargspec(func):
     if not defaults:
         # compatibility with 'func.__defaults__'
         defaults = None
-
-    if builtin_method_param and (not args or args[0] != builtin_method_param):
-        # `func` is a method, and we always need to return its
-        # first parameter -- usually "self" (to be backwards
-        # compatible with the previous implementation of
-        # getfullargspec)
-        args.insert(0, builtin_method_param)
 
     return FullArgSpec(args, varargs, varkw, defaults,
                        kwonlyargs, kwdefaults, annotations)
@@ -1719,7 +1707,7 @@ def _signature_strip_non_python_syntax(signature):
     return clean_signature, self_parameter, last_positional_only
 
 
-def _signature_fromstr(cls, obj, s):
+def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     # Internal helper to parse content of '__text_signature__'
     # and return a Signature based on it
     Parameter = cls._parameter_cls
@@ -1840,7 +1828,7 @@ def _signature_fromstr(cls, obj, s):
 
     if self_parameter is not None:
         assert parameters
-        if getattr(obj, '__self__', None):
+        if getattr(obj, '__self__', None) and skip_bound_arg:
             # strip off self, it's already been bound
             parameters.pop(0)
         else:
@@ -1851,8 +1839,21 @@ def _signature_fromstr(cls, obj, s):
     return cls(parameters, return_annotation=cls.empty)
 
 
-def signature(obj):
-    '''Get a signature object for the passed callable.'''
+def _signature_from_builtin(cls, func, skip_bound_arg=True):
+    # Internal helper function to get signature for
+    # builtin callables
+    if not _signature_is_builtin(func):
+        raise TypeError("{!r} is not a Python builtin "
+                        "function".format(func))
+
+    s = getattr(func, "__text_signature__", None)
+    if not s:
+        raise ValueError("no signature found for builtin {!r}".format(func))
+
+    return _signature_fromstr(cls, func, s, skip_bound_arg)
+
+
+def _signature_internal(obj, follow_wrapper_chains=True, skip_bound_arg=True):
 
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
@@ -1860,11 +1861,17 @@ def signature(obj):
     if isinstance(obj, types.MethodType):
         # In this case we skip the first parameter of the underlying
         # function (usually `self` or `cls`).
-        sig = signature(obj.__func__)
-        return _signature_bound_method(sig)
+        sig = _signature_internal(obj.__func__,
+                                  follow_wrapper_chains,
+                                  skip_bound_arg)
+        if skip_bound_arg:
+            return _signature_bound_method(sig)
+        else:
+            return sig
 
     # Was this function wrapped by a decorator?
-    obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
+    if follow_wrapper_chains:
+        obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
 
     try:
         sig = obj.__signature__
@@ -1887,7 +1894,9 @@ def signature(obj):
             # (usually `self`, or `cls`) will not be passed
             # automatically (as for boundmethods)
 
-            wrapped_sig = signature(partialmethod.func)
+            wrapped_sig = _signature_internal(partialmethod.func,
+                                              follow_wrapper_chains,
+                                              skip_bound_arg)
             sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
 
             first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
@@ -1896,7 +1905,8 @@ def signature(obj):
             return sig.replace(parameters=new_params)
 
     if _signature_is_builtin(obj):
-        return Signature.from_builtin(obj)
+        return _signature_from_builtin(Signature, obj,
+                                       skip_bound_arg=skip_bound_arg)
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
@@ -1904,7 +1914,9 @@ def signature(obj):
         return Signature.from_function(obj)
 
     if isinstance(obj, functools.partial):
-        wrapped_sig = signature(obj.func)
+        wrapped_sig = _signature_internal(obj.func,
+                                          follow_wrapper_chains,
+                                          skip_bound_arg)
         return _signature_get_partial(wrapped_sig, obj)
 
     sig = None
@@ -1915,17 +1927,23 @@ def signature(obj):
         # in its metaclass
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
-            sig = signature(call)
+            sig = _signature_internal(call,
+                                      follow_wrapper_chains,
+                                      skip_bound_arg)
         else:
             # Now we check if the 'obj' class has a '__new__' method
             new = _signature_get_user_defined_method(obj, '__new__')
             if new is not None:
-                sig = signature(new)
+                sig = _signature_internal(new,
+                                          follow_wrapper_chains,
+                                          skip_bound_arg)
             else:
                 # Finally, we should have at least __init__ implemented
                 init = _signature_get_user_defined_method(obj, '__init__')
                 if init is not None:
-                    sig = signature(init)
+                    sig = _signature_internal(init,
+                                              follow_wrapper_chains,
+                                              skip_bound_arg)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-
@@ -1967,7 +1985,9 @@ def signature(obj):
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
             try:
-                sig = signature(call)
+                sig = _signature_internal(call,
+                                          follow_wrapper_chains,
+                                          skip_bound_arg)
             except ValueError as ex:
                 msg = 'no signature found for {!r}'.format(obj)
                 raise ValueError(msg) from ex
@@ -1975,7 +1995,10 @@ def signature(obj):
     if sig is not None:
         # For classes and objects we skip the first parameter of their
         # __call__, __new__, or __init__ methods
-        return _signature_bound_method(sig)
+        if skip_bound_arg:
+            return _signature_bound_method(sig)
+        else:
+            return sig
 
     if isinstance(obj, types.BuiltinFunctionType):
         # Raise a nicer error message for builtins
@@ -1983,6 +2006,10 @@ def signature(obj):
         raise ValueError(msg)
 
     raise ValueError('callable {!r} is not supported by signature'.format(obj))
+
+def signature(obj):
+    '''Get a signature object for the passed callable.'''
+    return _signature_internal(obj)
 
 
 class _void:
@@ -2417,15 +2444,7 @@ class Signature:
 
     @classmethod
     def from_builtin(cls, func):
-        if not _signature_is_builtin(func):
-            raise TypeError("{!r} is not a Python builtin "
-                            "function".format(func))
-
-        s = getattr(func, "__text_signature__", None)
-        if not s:
-            raise ValueError("no signature found for builtin {!r}".format(func))
-
-        return _signature_fromstr(cls, func, s)
+        return _signature_from_builtin(cls, func)
 
     @property
     def parameters(self):

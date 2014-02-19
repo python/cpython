@@ -66,6 +66,10 @@ Library
   loop.set_exception_handler(), loop.default_exception_handler(), and
   loop.call_exception_handler().
 
+- Issue #20684: Fix inspect.getfullargspec() to not to follow __wrapped__
+  chains. Make its behaviour consistent with bound methods first argument.
+  Patch by Nick Coghlan and Yury Selivanov.
+
 Tests
 -----
 

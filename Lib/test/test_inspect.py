@@ -577,6 +577,46 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      kwonlyargs_e=['arg'],
                                      formatted='(*, arg)')
 
+    def test_argspec_api_ignores_wrapped(self):
+        # Issue 20684: low level introspection API must ignore __wrapped__
+        @functools.wraps(mod.spam)
+        def ham(x, y):
+            pass
+        # Basic check
+        self.assertArgSpecEquals(ham, ['x', 'y'], formatted='(x, y)')
+        self.assertFullArgSpecEquals(ham, ['x', 'y'], formatted='(x, y)')
+        self.assertFullArgSpecEquals(functools.partial(ham),
+                                     ['x', 'y'], formatted='(x, y)')
+        # Other variants
+        def check_method(f):
+            self.assertArgSpecEquals(f, ['self', 'x', 'y'],
+                                        formatted='(self, x, y)')
+        class C:
+            @functools.wraps(mod.spam)
+            def ham(self, x, y):
+                pass
+            pham = functools.partialmethod(ham)
+            @functools.wraps(mod.spam)
+            def __call__(self, x, y):
+                pass
+        check_method(C())
+        check_method(C.ham)
+        check_method(C().ham)
+        check_method(C.pham)
+        check_method(C().pham)
+
+        class C_new:
+            @functools.wraps(mod.spam)
+            def __new__(self, x, y):
+                pass
+        check_method(C_new)
+
+        class C_init:
+            @functools.wraps(mod.spam)
+            def __init__(self, x, y):
+                pass
+        check_method(C_init)
+
     def test_getfullargspec_signature_attr(self):
         def test():
             pass
