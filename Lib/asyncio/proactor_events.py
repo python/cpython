@@ -53,10 +53,10 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         if self._read_fut is not None:
             self._read_fut.cancel()
 
-    def _fatal_error(self, exc):
+    def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
             self._loop.call_exception_handler({
-                'message': 'Fatal transport error',
+                'message': message,
                 'exception': exc,
                 'transport': self,
                 'protocol': self._protocol,
@@ -151,11 +151,11 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             self._read_fut = self._loop._proactor.recv(self._sock, 4096)
         except ConnectionAbortedError as exc:
             if not self._closing:
-                self._fatal_error(exc)
+                self._fatal_error(exc, 'Fatal read error on pipe transport')
         except ConnectionResetError as exc:
             self._force_close(exc)
         except OSError as exc:
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal read error on pipe transport')
         except futures.CancelledError:
             if not self._closing:
                 raise
@@ -246,7 +246,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
         except ConnectionResetError as exc:
             self._force_close(exc)
         except OSError as exc:
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal write error on pipe transport')
 
     def can_write_eof(self):
         return True
