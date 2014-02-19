@@ -221,17 +221,17 @@ class SelectorEventLoopUnixSocketTests(unittest.TestCase):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX)
             sock.bind(path)
-
-            coro = self.loop.create_unix_server(lambda: None, path)
-            with self.assertRaisesRegexp(OSError,
-                                         'Address.*is already in use'):
-                self.loop.run_until_complete(coro)
+            with sock:
+                coro = self.loop.create_unix_server(lambda: None, path)
+                with self.assertRaisesRegex(OSError,
+                                            'Address.*is already in use'):
+                    self.loop.run_until_complete(coro)
 
     def test_create_unix_server_existing_path_nonsock(self):
         with tempfile.NamedTemporaryFile() as file:
             coro = self.loop.create_unix_server(lambda: None, file.name)
-            with self.assertRaisesRegexp(OSError,
-                                         'Address.*is already in use'):
+            with self.assertRaisesRegex(OSError,
+                                        'Address.*is already in use'):
                 self.loop.run_until_complete(coro)
 
     def test_create_unix_server_ssl_bool(self):
@@ -248,11 +248,13 @@ class SelectorEventLoopUnixSocketTests(unittest.TestCase):
             self.loop.run_until_complete(coro)
 
     def test_create_unix_server_path_inetsock(self):
-        coro = self.loop.create_unix_server(lambda: None, path=None,
-                                            sock=socket.socket())
-        with self.assertRaisesRegex(ValueError,
-                                    'A UNIX Domain Socket was expected'):
-            self.loop.run_until_complete(coro)
+        sock = socket.socket()
+        with sock:
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'A UNIX Domain Socket was expected'):
+                self.loop.run_until_complete(coro)
 
     def test_create_unix_connection_path_sock(self):
         coro = self.loop.create_unix_connection(
@@ -278,7 +280,7 @@ class SelectorEventLoopUnixSocketTests(unittest.TestCase):
         coro = self.loop.create_unix_connection(
             lambda: None, '/dev/null', ssl=True)
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, 'you have to pass server_hostname when using ssl'):
 
             self.loop.run_until_complete(coro)
