@@ -91,6 +91,10 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.exit, 42, 42)
 
         # call without argument
+        with self.assertRaises(SystemExit) as cm:
+            sys.exit()
+        self.assertIsNone(cm.exception.code)
+
         rc, out, err = assert_python_ok('-c', 'import sys; sys.exit()')
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
