@@ -418,12 +418,13 @@ def _call_with_frames_removed(f, *args, **kwds):
 #     Python 3.4a1  3280 (remove implicit class argument)
 #     Python 3.4a4  3290 (changes to __qualname__ computation)
 #     Python 3.4a4  3300 (more changes to __qualname__ computation)
+#     Python 3.4rc2 3310 (alter __qualname__ computation)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 
-MAGIC_NUMBER = (3300).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3310).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
