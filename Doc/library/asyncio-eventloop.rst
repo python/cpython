@@ -553,6 +553,22 @@ pool of processes). By default, an event loop uses a thread pool executor
    Set the default executor used by :meth:`run_in_executor`.
 
 
+Debug mode
+----------
+
+.. method:: BaseEventLoop.get_debug()
+
+   Get the debug mode (:class:`bool`) of the event loop.
+
+.. method:: BaseEventLoop.set_debug(enabled: bool)
+
+   Set the debug mode of the event loop.
+
+.. seealso::
+
+   The :ref:`Develop with asyncio <asyncio-dev>` section.
+
+
 Server
 ------
 

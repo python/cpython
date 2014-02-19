@@ -197,6 +197,12 @@ class BaseEventLoopTests(unittest.TestCase):
         self.assertEqual([h2], self.loop._scheduled)
         self.assertTrue(self.loop._process_events.called)
 
+    def test_set_debug(self):
+        self.loop.set_debug(True)
+        self.assertTrue(self.loop.get_debug())
+        self.loop.set_debug(False)
+        self.assertFalse(self.loop.get_debug())
+
     @unittest.mock.patch('asyncio.base_events.time')
     @unittest.mock.patch('asyncio.base_events.logger')
     def test__run_once_logging(self, m_logger, m_time):
