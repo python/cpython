@@ -1,5 +1,7 @@
 .. currentmodule:: asyncio
 
+.. _asyncio-dev:
+
 Develop with asyncio
 ====================
 
@@ -81,10 +83,10 @@ Detect coroutine objects never scheduled
 When a coroutine function is called but not passed to :func:`async` or to the
 :class:`Task` constructor, it is not scheduled and it is probably a bug.
 
-To detect such bug, set :data:`asyncio.tasks._DEBUG` to ``True``. When the
-coroutine object is destroyed by the garbage collector, a log will be emitted
-with the traceback where the coroutine function was called. See the
-:ref:`asyncio logger <asyncio-logger>`.
+To detect such bug, set the environment variable :envvar:`PYTHONASYNCIODEBUG`
+to ``1``. When the coroutine object is destroyed by the garbage collector, a
+log will be emitted with the traceback where the coroutine function was called.
+See the :ref:`asyncio logger <asyncio-logger>`.
 
 The debug flag changes the behaviour of the :func:`coroutine` decorator. The
 debug flag value is only used when then coroutine function is defined, not when

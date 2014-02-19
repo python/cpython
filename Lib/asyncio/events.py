@@ -345,6 +345,14 @@ class AbstractEventLoop:
     def call_exception_handler(self, context):
         raise NotImplementedError
 
+    # Debug flag management.
+
+    def get_debug(self):
+        raise NotImplementedError
+
+    def set_debug(self, enabled):
+        raise NotImplementedError
+
 
 class AbstractEventLoopPolicy:
     """Abstract policy for accessing the event loop."""
