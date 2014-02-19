@@ -965,7 +965,7 @@ class ChildWatcherTestsMixin:
         self.assertFalse(m.WEXITSTATUS.called)
         self.assertFalse(m.WTERMSIG.called)
 
-        # childen are running
+        # children are running
         self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
@@ -1069,7 +1069,7 @@ class ChildWatcherTestsMixin:
         self.assertFalse(m.WEXITSTATUS.called)
         self.assertFalse(m.WTERMSIG.called)
 
-        # childen are running
+        # children are running
         self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
@@ -1425,7 +1425,7 @@ class ChildWatcherTestsMixin:
         self.add_zombie(61, 11)
         self.add_zombie(62, -5)
 
-        # SIGCHLD was not catched
+        # SIGCHLD was not caught
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
         self.assertFalse(callback3.called)
