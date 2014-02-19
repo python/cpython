@@ -4,6 +4,7 @@ import unittest
 import unittest.mock
 
 import asyncio
+from asyncio import transports
 
 
 class TransportTests(unittest.TestCase):
@@ -59,6 +60,28 @@ class TransportTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, transport.send_signal, 1)
         self.assertRaises(NotImplementedError, transport.terminate)
         self.assertRaises(NotImplementedError, transport.kill)
+
+    def test_flowcontrol_mixin_set_write_limits(self):
+
+        class MyTransport(transports._FlowControlMixin,
+                          transports.Transport):
+
+            def get_write_buffer_size(self):
+                return 512
+
+        transport = MyTransport()
+        transport._protocol = unittest.mock.Mock()
+
+        self.assertFalse(transport._protocol_paused)
+
+        with self.assertRaisesRegex(ValueError, 'high.*must be >= low'):
+            transport.set_write_buffer_limits(high=0, low=1)
+
+        transport.set_write_buffer_limits(high=1024, low=128)
+        self.assertFalse(transport._protocol_paused)
+
+        transport.set_write_buffer_limits(high=256, low=128)
+        self.assertTrue(transport._protocol_paused)
 
 
 if __name__ == '__main__':
