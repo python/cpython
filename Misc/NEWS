@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6815: os.path.expandvars() now supports non-ASCII Unicode environment
+  variables names and values.
+
 - Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
   Tkinter widgets to work in wantobjects=True mode.
 

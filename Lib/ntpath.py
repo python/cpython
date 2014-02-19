@@ -294,6 +294,13 @@ def expandvars(path):
         return path
     import string
     varchars = string.ascii_letters + string.digits + '_-'
+    if isinstance(path, unicode):
+        encoding = sys.getfilesystemencoding()
+        def getenv(var):
+            return os.environ[var.encode(encoding)].decode(encoding)
+    else:
+        def getenv(var):
+            return os.environ[var]
     res = ''
     index = 0
     pathlen = len(path)
@@ -322,9 +329,9 @@ def expandvars(path):
                     index = pathlen - 1
                 else:
                     var = path[:index]
-                    if var in os.environ:
-                        res = res + os.environ[var]
-                    else:
+                    try:
+                        res = res + getenv(var)
+                    except KeyError:
                         res = res + '%' + var + '%'
         elif c == '$':  # variable or '$$'
             if path[index + 1:index + 2] == '$':
@@ -336,9 +343,9 @@ def expandvars(path):
                 try:
                     index = path.index('}')
                     var = path[:index]
-                    if var in os.environ:
-                        res = res + os.environ[var]
-                    else:
+                    try:
+                        res = res + getenv(var)
+                    except KeyError:
                         res = res + '${' + var + '}'
                 except ValueError:
                     res = res + '${' + path
@@ -351,9 +358,9 @@ def expandvars(path):
                     var = var + c
                     index = index + 1
                     c = path[index:index + 1]
-                if var in os.environ:
-                    res = res + os.environ[var]
-                else:
+                try:
+                    res = res + getenv(var)
+                except KeyError:
                     res = res + '$' + var
                 if c != '':
                     index = index - 1
