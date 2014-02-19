@@ -876,6 +876,7 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(set(f.result() for f in done), {'a', 'b'})
 
     def test_as_completed_duplicate_coroutines(self):
+
         @asyncio.coroutine
         def coro(s):
             return s
@@ -884,7 +885,8 @@ class TaskTests(unittest.TestCase):
         def runner():
             result = []
             c = coro('ham')
-            for f in asyncio.as_completed([c, c, coro('spam')], loop=self.loop):
+            for f in asyncio.as_completed([c, c, coro('spam')],
+                                          loop=self.loop):
                 result.append((yield from f))
             return result
 
