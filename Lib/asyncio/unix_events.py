@@ -1,4 +1,4 @@
-"""Selector eventloop for Unix with signal handling."""
+"""Selector event loop for Unix with signal handling."""
 
 import errno
 import fcntl
@@ -244,7 +244,7 @@ def _set_nonblocking(fd):
 
 class _UnixReadPipeTransport(transports.ReadTransport):
 
-    max_size = 256 * 1024  # max bytes we read in one eventloop iteration
+    max_size = 256 * 1024  # max bytes we read in one event loop iteration
 
     def __init__(self, loop, pipe, protocol, waiter=None, extra=None):
         super().__init__(extra)

@@ -38,7 +38,7 @@ class FutureTests(unittest.TestCase):
             asyncio.set_event_loop(None)
 
     def test_constructor_positional(self):
-        # Make sure Future does't accept a positional argument
+        # Make sure Future doesn't accept a positional argument
         self.assertRaises(TypeError, asyncio.Future, 42)
 
     def test_cancel(self):

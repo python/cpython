@@ -114,7 +114,7 @@ class SubprocessProtocol(BaseProtocol):
     def pipe_data_received(self, fd, data):
         """Called when the subprocess writes data into stdout/stderr pipe.
 
-        fd is int file dascriptor.
+        fd is int file descriptor.
         data is bytes object.
         """
 

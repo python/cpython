@@ -277,7 +277,7 @@ class BaseEventLoopTests(unittest.TestCase):
             asyncio.SubprocessProtocol, *args, bufsize=4096)
 
     def test_subprocess_shell_invalid_args(self):
-        # exepected a string, not an int or a list
+        # expected a string, not an int or a list
         self.assertRaises(TypeError,
             self.loop.run_until_complete, self.loop.subprocess_shell,
             asyncio.SubprocessProtocol, 123)
