@@ -241,7 +241,7 @@ class _FlowControlMixin(Transport):
     def __init__(self, extra=None):
         super().__init__(extra)
         self._protocol_paused = False
-        self.set_write_buffer_limits()
+        self._set_write_buffer_limits()
 
     def _maybe_pause_protocol(self):
         size = self.get_write_buffer_size()
@@ -273,7 +273,7 @@ class _FlowControlMixin(Transport):
                     'protocol': self._protocol,
                 })
 
-    def set_write_buffer_limits(self, high=None, low=None):
+    def _set_write_buffer_limits(self, high=None, low=None):
         if high is None:
             if low is None:
                 high = 64*1024
@@ -286,6 +286,10 @@ class _FlowControlMixin(Transport):
                              (high, low))
         self._high_water = high
         self._low_water = low
+
+    def set_write_buffer_limits(self, high=None, low=None):
+        self._set_write_buffer_limits(high=high, low=low)
+        self._maybe_pause_protocol()
 
     def get_write_buffer_size(self):
         raise NotImplementedError
