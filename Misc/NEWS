@@ -26,6 +26,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20684: Fix inspect.getfullargspec() to not to follow __wrapped__
+  chains. Make its behaviour consistent with bound methods first argument.
+  Patch by Nick Coghlan and Yury Selivanov.
+
 - Issue #20681: Add new error handling API in asyncio. New APIs:
   loop.set_exception_handler(), loop.default_exception_handler(), and
   loop.call_exception_handler().
