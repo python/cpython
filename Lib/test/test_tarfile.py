@@ -240,14 +240,16 @@ class ListTest(ReadTest, unittest.TestCase):
         self.assertIn(b'ustar/dirtype/', out)
         self.assertIn(b'ustar/dirtype-with-size/', out)
         # Make sure it is able to print unencodable characters
-        self.assertIn(br'ustar/umlauts-'
-                      br'\udcc4\udcd6\udcdc\udce4\udcf6\udcfc\udcdf', out)
-        self.assertIn(br'misc/regtype-hpux-signed-chksum-'
-                      br'\udcc4\udcd6\udcdc\udce4\udcf6\udcfc\udcdf', out)
-        self.assertIn(br'misc/regtype-old-v7-signed-chksum-'
-                      br'\udcc4\udcd6\udcdc\udce4\udcf6\udcfc\udcdf', out)
-        self.assertIn(br'pax/bad-pax-\udce4\udcf6\udcfc', out)
-        self.assertIn(br'pax/hdrcharset-\udce4\udcf6\udcfc', out)
+        def conv(b):
+            s = b.decode(self.tar.encoding, 'surrogateescape')
+            return s.encode('ascii', 'backslashreplace')
+        self.assertIn(conv(b'ustar/umlauts-\xc4\xd6\xdc\xe4\xf6\xfc\xdf'), out)
+        self.assertIn(conv(b'misc/regtype-hpux-signed-chksum-'
+                           b'\xc4\xd6\xdc\xe4\xf6\xfc\xdf'), out)
+        self.assertIn(conv(b'misc/regtype-old-v7-signed-chksum-'
+                           b'\xc4\xd6\xdc\xe4\xf6\xfc\xdf'), out)
+        self.assertIn(conv(b'pax/bad-pax-\xe4\xf6\xfc'), out)
+        self.assertIn(conv(b'pax/hdrcharset-\xe4\xf6\xfc'), out)
         # Make sure it prints files separated by one newline without any
         # 'ls -l'-like accessories if verbose flag is not being used
         # ...
