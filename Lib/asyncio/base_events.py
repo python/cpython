@@ -605,10 +605,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     @tasks.coroutine
-    def subprocess_exec(self, protocol_factory, program, *args, stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                        universal_newlines=False, shell=False, bufsize=0,
-                        **kwargs):
+    def subprocess_exec(self, protocol_factory, program, *args,
+                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, universal_newlines=False,
+                        shell=False, bufsize=0, **kwargs):
         if universal_newlines:
             raise ValueError("universal_newlines must be False")
         if shell:
@@ -623,7 +623,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                                 % type(arg).__name__)
         protocol = protocol_factory()
         transport = yield from self._make_subprocess_transport(
-            protocol, popen_args, False, stdin, stdout, stderr, bufsize, **kwargs)
+            protocol, popen_args, False, stdin, stdout, stderr,
+            bufsize, **kwargs)
         return transport, protocol
 
     def set_exception_handler(self, handler):
