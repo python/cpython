@@ -1,7 +1,9 @@
 """Tests for tasks.py."""
 
 import gc
+import os.path
 import unittest
+from test.script_helper import assert_python_ok
 
 import asyncio
 from asyncio import test_utils
@@ -1460,6 +1462,32 @@ class GatherTestsBase:
         self.assertTrue(fut.done())
         cb.assert_called_once_with(fut)
         self.assertEqual(fut.result(), [3, 1, exc, exc2])
+
+    def test_env_var_debug(self):
+        path = os.path.dirname(asyncio.__file__)
+        path = os.path.normpath(os.path.join(path, '..'))
+        code = '\n'.join((
+            'import sys',
+            'sys.path.insert(0, %r)' % path,
+            'import asyncio.tasks',
+            'print(asyncio.tasks._DEBUG)'))
+
+        # Test with -E to not fail if the unit test was run with
+        # PYTHONASYNCIODEBUG set to a non-empty string
+        sts, stdout, stderr = assert_python_ok('-E', '-c', code)
+        self.assertEqual(stdout.rstrip(), b'False')
+
+        sts, stdout, stderr = assert_python_ok('-c', code,
+                                               PYTHONASYNCIODEBUG='')
+        self.assertEqual(stdout.rstrip(), b'False')
+
+        sts, stdout, stderr = assert_python_ok('-c', code,
+                                               PYTHONASYNCIODEBUG='1')
+        self.assertEqual(stdout.rstrip(), b'True')
+
+        sts, stdout, stderr = assert_python_ok('-E', '-c', code,
+                                               PYTHONASYNCIODEBUG='1')
+        self.assertEqual(stdout.rstrip(), b'False')
 
 
 class FutureGatherTests(GatherTestsBase, unittest.TestCase):

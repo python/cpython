@@ -12,6 +12,8 @@ import concurrent.futures
 import functools
 import inspect
 import linecache
+import os
+import sys
 import traceback
 import weakref
 
@@ -28,7 +30,8 @@ from .log import logger
 # before you define your coroutines.  A downside of using this feature
 # is that tracebacks show entries for the CoroWrapper.__next__ method
 # when _DEBUG is true.
-_DEBUG = False
+_DEBUG = (not sys.flags.ignore_environment
+          and bool(os.environ.get('PYTHONASYNCIODEBUG')))
 
 
 class CoroWrapper:
