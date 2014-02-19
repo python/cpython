@@ -271,7 +271,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         except (BlockingIOError, InterruptedError):
             pass
         except OSError as exc:
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal read error on pipe transport')
         else:
             if data:
                 self._protocol.data_received(data)
@@ -291,11 +291,11 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         if not self._closing:
             self._close(None)
 
-    def _fatal_error(self, exc):
+    def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         # should be called by exception handler only
         if not (isinstance(exc, OSError) and exc.errno == errno.EIO):
             self._loop.call_exception_handler({
-                'message': 'Fatal transport error',
+                'message': message,
                 'exception': exc,
                 'transport': self,
                 'protocol': self._protocol,
@@ -381,7 +381,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                 n = 0
             except Exception as exc:
                 self._conn_lost += 1
-                self._fatal_error(exc)
+                self._fatal_error(exc, 'Fatal write error on pipe transport')
                 return
             if n == len(data):
                 return
@@ -406,7 +406,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             # Remove writer here, _fatal_error() doesn't it
             # because _buffer is empty.
             self._loop.remove_writer(self._fileno)
-            self._fatal_error(exc)
+            self._fatal_error(exc, 'Fatal write error on pipe transport')
         else:
             if n == len(data):
                 self._loop.remove_writer(self._fileno)
@@ -443,11 +443,11 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
     def abort(self):
         self._close(None)
 
-    def _fatal_error(self, exc):
+    def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         # should be called by exception handler only
         if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
             self._loop.call_exception_handler({
-                'message': 'Fatal transport error',
+                'message': message,
                 'exception': exc,
                 'transport': self,
                 'protocol': self._protocol,

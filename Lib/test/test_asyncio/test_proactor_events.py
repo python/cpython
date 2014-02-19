@@ -69,7 +69,9 @@ class ProactorSocketTransportTests(unittest.TestCase):
         tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol)
         tr._fatal_error = unittest.mock.Mock()
         tr._loop_reading()
-        tr._fatal_error.assert_called_with(err)
+        tr._fatal_error.assert_called_with(
+                            err,
+                            'Fatal read error on pipe transport')
 
     def test_loop_reading_aborted_closing(self):
         self.loop._proactor.recv.side_effect = ConnectionAbortedError()
@@ -105,7 +107,9 @@ class ProactorSocketTransportTests(unittest.TestCase):
         tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol)
         tr._fatal_error = unittest.mock.Mock()
         tr._loop_reading()
-        tr._fatal_error.assert_called_with(err)
+        tr._fatal_error.assert_called_with(
+                            err,
+                            'Fatal read error on pipe transport')
 
     def test_write(self):
         tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol)
@@ -142,7 +146,9 @@ class ProactorSocketTransportTests(unittest.TestCase):
         tr._fatal_error = unittest.mock.Mock()
         tr._buffer = [b'da', b'ta']
         tr._loop_writing()
-        tr._fatal_error.assert_called_with(err)
+        tr._fatal_error.assert_called_with(
+                            err,
+                            'Fatal write error on pipe transport')
         tr._conn_lost = 1
 
         tr.write(b'data')
