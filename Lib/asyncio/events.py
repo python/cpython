@@ -235,7 +235,7 @@ class AbstractEventLoop:
                            sock=None, backlog=100, ssl=None):
         """A coroutine which creates a UNIX Domain Socket server.
 
-        The return valud is a Server object, which can be used to stop
+        The return value is a Server object, which can be used to stop
         the service.
 
         path is a str, representing a file systsem path to bind the
@@ -260,7 +260,7 @@ class AbstractEventLoop:
     # Pipes and subprocesses.
 
     def connect_read_pipe(self, protocol_factory, pipe):
-        """Register read pipe in eventloop.
+        """Register read pipe in event loop.
 
         protocol_factory should instantiate object with Protocol interface.
         pipe is file-like object already switched to nonblocking.
@@ -273,7 +273,7 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     def connect_write_pipe(self, protocol_factory, pipe):
-        """Register write pipe in eventloop.
+        """Register write pipe in event loop.
 
         protocol_factory should instantiate object with BaseProtocol interface.
         Pipe is file-like object already switched to nonblocking.
