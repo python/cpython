@@ -183,13 +183,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
             try:
-                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
                 sock.setblocking(False)
                 yield from self.sock_connect(sock, path)
-            except OSError:
-                if sock is not None:
-                    sock.close()
+            except:
+                sock.close()
                 raise
 
         else:
@@ -213,6 +212,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             try:
                 sock.bind(path)
             except OSError as exc:
+                sock.close()
                 if exc.errno == errno.EADDRINUSE:
                     # Let's improve the error message by adding
                     # with what exact address it occurs.
