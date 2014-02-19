@@ -28,6 +28,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20654: Fixed pydoc for enums with zero value.  Patch by Vajrasky Kok.
+
 - Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
   Tkinter widgets to work in wantobjects=True mode.
 
