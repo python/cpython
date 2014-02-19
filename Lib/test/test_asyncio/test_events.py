@@ -4,6 +4,7 @@ import functools
 import gc
 import io
 import os
+import platform
 import signal
 import socket
 try:
@@ -38,6 +39,15 @@ def data_file(filename):
     if os.path.isfile(fullname):
         return fullname
     raise FileNotFoundError(filename)
+
+
+def osx_tiger():
+    """Return True if the platform is Mac OS 10.4 or older."""
+    if sys.platform != 'darwin':
+        return False
+    version = platform.mac_ver()[0]
+    version = tuple(map(int, version.split('.')))
+    return version < (10, 5)
 
 
 ONLYCERT = data_file('ssl_cert.pem')
@@ -499,10 +509,12 @@ class EventLoopTestsMixin:
         self.loop.run_forever()
         self.assertEqual(caught, 1)
 
-    def _basetest_create_connection(self, connection_fut):
+    def _basetest_create_connection(self, connection_fut, check_sockname):
         tr, pr = self.loop.run_until_complete(connection_fut)
         self.assertIsInstance(tr, asyncio.Transport)
         self.assertIsInstance(pr, asyncio.Protocol)
+        if check_sockname:
+            self.assertIsNotNone(tr.get_extra_info('sockname'))
         self.loop.run_until_complete(pr.done)
         self.assertGreater(pr.nbytes, 0)
         tr.close()
@@ -515,10 +527,14 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_connection(self):
+        # Issue #20682: On Mac OS X Tiger, getsockname() returns a
+        # zero-length address for UNIX socket.
+        check_sockname = not osx_tiger()
+
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = self.loop.create_unix_connection(
                 lambda: MyProto(loop=self.loop), httpd.address)
-            self._basetest_create_connection(conn_fut)
+            self._basetest_create_connection(conn_fut, check_sockname)
 
     def test_create_connection_sock(self):
         with test_utils.run_test_server() as httpd:
@@ -548,12 +564,14 @@ class EventLoopTestsMixin:
             self.assertGreater(pr.nbytes, 0)
             tr.close()
 
-    def _basetest_create_ssl_connection(self, connection_fut):
+    def _basetest_create_ssl_connection(self, connection_fut,
+                                        check_sockname=True):
         tr, pr = self.loop.run_until_complete(connection_fut)
         self.assertIsInstance(tr, asyncio.Transport)
         self.assertIsInstance(pr, asyncio.Protocol)
         self.assertTrue('ssl' in tr.__class__.__name__.lower())
-        self.assertIsNotNone(tr.get_extra_info('sockname'))
+        if check_sockname:
+            self.assertIsNotNone(tr.get_extra_info('sockname'))
         self.loop.run_until_complete(pr.done)
         self.assertGreater(pr.nbytes, 0)
         tr.close()
@@ -571,6 +589,10 @@ class EventLoopTestsMixin:
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_ssl_unix_connection(self):
+        # Issue #20682: On Mac OS X Tiger, getsockname() returns a
+        # zero-length address for UNIX socket.
+        check_sockname = not osx_tiger()
+
         with test_utils.run_test_unix_server(use_ssl=True) as httpd:
             conn_fut = self.loop.create_unix_connection(
                 lambda: MyProto(loop=self.loop),
@@ -578,7 +600,7 @@ class EventLoopTestsMixin:
                 ssl=test_utils.dummy_ssl_context(),
                 server_hostname='127.0.0.1')
 
-            self._basetest_create_ssl_connection(conn_fut)
+            self._basetest_create_ssl_connection(conn_fut, check_sockname)
 
     def test_create_connection_local_addr(self):
         with test_utils.run_test_server() as httpd:
