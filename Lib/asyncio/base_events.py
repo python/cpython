@@ -123,6 +123,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._running = False
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
+        self._debug = False
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
@@ -795,3 +796,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             if not handle._cancelled:
                 handle._run()
         handle = None  # Needed to break cycles when an exception occurs.
+
+    def get_debug(self):
+        return self._debug
+
+    def set_debug(self, enabled):
+        self._debug = enabled
