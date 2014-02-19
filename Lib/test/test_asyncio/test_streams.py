@@ -239,7 +239,7 @@ class StreamReaderTests(unittest.TestCase):
         # No b'\n' at the end. The 'limit' is set to 3. So before
         # waiting for the new data in buffer, 'readline' will consume
         # the entire buffer, and since the length of the consumed data
-        # is more than 3, it will raise a ValudError. The buffer is
+        # is more than 3, it will raise a ValueError. The buffer is
         # expected to be empty now.
         self.assertEqual(b'', stream._buffer)
 

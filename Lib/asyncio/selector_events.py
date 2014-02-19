@@ -213,7 +213,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _sock_recv(self, fut, registered, sock, n):
         # _sock_recv() can add itself as an I/O callback if the operation can't
-        # be done immediatly. Don't use it directly, call sock_recv().
+        # be done immediately. Don't use it directly, call sock_recv().
         fd = sock.fileno()
         if registered:
             # Remove the callback early.  It should be rare that the
