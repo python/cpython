@@ -9,11 +9,8 @@ __all__ = ['AbstractEventLoopPolicy',
            ]
 
 import subprocess
-import sys
 import threading
 import socket
-
-from .log import logger
 
 
 class Handle:
