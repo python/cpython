@@ -98,7 +98,6 @@ imported before the flag value can be changed.
 Example with the bug::
 
     import asyncio
-    asyncio.tasks._DEBUG = True
 
     @asyncio.coroutine
     def test():
