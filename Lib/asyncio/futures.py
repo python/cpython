@@ -11,7 +11,6 @@ import sys
 import traceback
 
 from . import events
-from .log import logger
 
 # States for Future.
 _PENDING = 'PENDING'

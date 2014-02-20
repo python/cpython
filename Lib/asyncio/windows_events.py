@@ -5,7 +5,6 @@ import errno
 import math
 import socket
 import struct
-import subprocess
 import weakref
 
 from . import events
