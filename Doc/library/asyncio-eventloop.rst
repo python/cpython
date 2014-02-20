@@ -142,6 +142,8 @@ Calls
    Any positional arguments after the callback will be passed to the
    callback when it is called.
 
+   An instance of :class:`asyncio.Handle` is returned.
+
 .. method:: BaseEventLoop.call_soon_threadsafe(callback, \*args)
 
    Like :meth:`call_soon`, but thread safe.
@@ -167,8 +169,7 @@ a different clock than :func:`time.time`.
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
 
-   A "handle" is returned: an opaque object with a :meth:`cancel` method
-   that can be used to cancel the call.
+   An instance of :class:`asyncio.Handle` is returned.
 
    *callback* will be called exactly once per call to :meth:`call_later`.
    If two callbacks are scheduled for exactly the same time, it is
@@ -553,6 +554,56 @@ pool of processes). By default, an event loop uses a thread pool executor
    Set the default executor used by :meth:`run_in_executor`.
 
 
+Error Handling API
+------------------
+
+Allows to customize how exceptions are handled in the event loop.
+
+.. method:: BaseEventLoop.set_exception_handler(handler)
+
+   Set *handler* as the new event loop exception handler.
+
+   If *handler* is ``None``, the default exception handler will
+   be set.
+
+   If *handler* is a callable object, it should have a
+   matching signature to ``(loop, context)``, where ``loop``
+   will be a reference to the active event loop, ``context``
+   will be a ``dict`` object (see :meth:`call_exception_handler`
+   documentation for details about context).
+
+.. method:: BaseEventLoop.default_exception_handler(context)
+
+   Default exception handler.
+
+   This is called when an exception occurs and no exception
+   handler is set, and can be called by a custom exception
+   handler that wants to defer to the default behavior.
+
+   *context* parameter has the same meaning as in
+   :meth:`call_exception_handler`.
+
+.. method:: BaseEventLoop.call_exception_handler(context)
+
+   Call the current event loop exception handler.
+
+   *context* is a ``dict`` object containing the following keys
+   (new keys may be introduced later):
+
+   * 'message': Error message;
+   * 'exception' (optional): Exception object;
+   * 'future' (optional): :class:`asyncio.Future` instance;
+   * 'handle' (optional): :class:`asyncio.Handle` instance;
+   * 'protocol' (optional): :ref:`Protocol <asyncio-protocol>` instance;
+   * 'transport' (optional): :ref:`Transport <asyncio-transport>` instance;
+   * 'socket' (optional): :class:`socket.socket` instance.
+
+   .. note::
+
+       Note: this method should not be overloaded in subclassed
+       event loops.  For any custom exception handling, use
+       :meth:`set_exception_handler()` method.
+
 Debug mode
 ----------
 
@@ -583,6 +634,20 @@ Server
    .. method:: wait_closed()
 
       Coroutine to wait until service is closed.
+
+
+Handle
+------
+
+.. class:: Handle
+
+   A callback wrapper object returned by :func:`BaseEventLoop.call_soon`,
+   :func:`BaseEventLoop.call_soon_threadsafe`, :func:`BaseEventLoop.call_later`,
+   and :func:`BaseEventLoop.call_at`.
+
+   .. method:: cancel()
+
+   Cancel the call.
 
 
 .. _asyncio-hello-world-callback:
