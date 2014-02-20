@@ -213,7 +213,11 @@ typedef int pid_t;
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
 #define copysign _copysign
+
+/* VS 2010 and above already defines hypot as _hypot */
+#if _MSC_VER < 1600
 #define hypot _hypot
+#endif
 
 /* Side by Side assemblies supported in VS 2005 and VS 2008 but not 2010*/
 #if _MSC_VER >= 1400 && _MSC_VER < 1600
