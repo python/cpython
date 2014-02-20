@@ -124,7 +124,7 @@ Event
       Otherwise, block until another coroutine calls :meth:`set` to set the
       flag to true, then return ``True``.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
 
 Condition
@@ -175,7 +175,7 @@ Condition
       condition variable in another coroutine.  Once awakened, it re-acquires
       the lock and returns ``True``.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: wait_for(predicate)
 
@@ -184,7 +184,7 @@ Condition
       The predicate should be a callable which result will be interpreted as a
       boolean value. The final predicate value is the return value.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
 
 Semaphores
@@ -217,7 +217,7 @@ Semaphore
       until some other coroutine has called :meth:`release` to make it larger
       than ``0``, and then return ``True``.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: locked()
 
@@ -279,7 +279,7 @@ Queue
 
       If you yield from :meth:`get()`, wait until a item is available.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: get_nowait()
 
@@ -295,7 +295,7 @@ Queue
       If you yield from ``put()``, wait until a free slot is available before
       adding item.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: put_nowait(item)
 
@@ -350,7 +350,7 @@ JoinableQueue
       it is complete.  When the count of unfinished tasks drops to zero,
       :meth:`join` unblocks.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: task_done()
 

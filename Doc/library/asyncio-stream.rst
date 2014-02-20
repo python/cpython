@@ -30,7 +30,7 @@ Stream functions
    :class:`StreamReaderProtocol` classes, just copy the code -- there's really
    nothing special here except some convenience.)
 
-   This function returns a :ref:`coroutine object <coroutine>`.
+   This function is a :ref:`coroutine <coroutine>`.
 
 .. function:: start_server(client_connected_cb, host=None, port=None, \*, loop=None, limit=None, **kwds)
 
@@ -56,7 +56,7 @@ Stream functions
    The return value is the same as :meth:`~BaseEventLoop.create_server()`, i.e.
    a :class:`AbstractServer` object which can be used to stop the service.
 
-   This function returns a :ref:`coroutine object <coroutine>`.
+   This function is a :ref:`coroutine <coroutine>`.
 
 .. function:: open_unix_connection(path=None, \*, loop=None, limit=None, **kwds)
 
@@ -66,7 +66,7 @@ Stream functions
    See :func:`open_connection` for information about return value and other
    details.
 
-   This function returns a :ref:`coroutine object <coroutine>`.
+   This function is a :ref:`coroutine <coroutine>`.
 
    Availability: UNIX.
 
@@ -77,7 +77,7 @@ Stream functions
    See :func:`start_server` for information about return value and other
    details.
 
-   This function returns a :ref:`coroutine object <coroutine>`.
+   This function is a :ref:`coroutine <coroutine>`.
 
    Availability: UNIX.
 
@@ -116,7 +116,7 @@ StreamReader
       If the EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: readline()
 
@@ -128,7 +128,7 @@ StreamReader
       If the EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: readexactly(n)
 
@@ -137,7 +137,7 @@ StreamReader
       :attr:`IncompleteReadError.partial` attribute of the exception contains
       the partial read bytes.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: at_eof()
 
