@@ -34,7 +34,7 @@ Stream functions
 
 .. function:: start_server(client_connected_cb, host=None, port=None, \*, loop=None, limit=None, **kwds)
 
-   Start a socket server, call back for each client connected.
+   Start a socket server, with a callback for each client connected.
 
    The first parameter, *client_connected_cb*, takes two parameters:
    *client_reader*, *client_writer*.  *client_reader* is a
@@ -58,6 +58,29 @@ Stream functions
 
    This function returns a :ref:`coroutine object <coroutine>`.
 
+.. function:: open_unix_connection(path=None, \*, loop=None, limit=None, **kwds)
+
+   A wrapper for :meth:`~BaseEventLoop.create_unix_connection()` returning
+   a (reader, writer) pair.
+
+   See :func:`open_connection` for information about return value and other
+   details.
+
+   This function returns a :ref:`coroutine object <coroutine>`.
+
+   Availability: UNIX.
+
+.. function:: start_unix_server(client_connected_cb, path=None, \*, loop=None, limit=None, **kwds)
+
+   Start a UNIX Domain Socket server, with a callback for each client connected.
+
+   See :func:`start_server` for information about return value and other
+   details.
+
+   This function returns a :ref:`coroutine object <coroutine>`.
+
+   Availability: UNIX.
+
 
 StreamReader
 ============
@@ -70,11 +93,12 @@ StreamReader
 
    .. method:: feed_eof()
 
-      XXX
+      Acknowledge the EOF.
 
    .. method:: feed_data(data)
 
-      XXX
+      Feed *data* bytes in the internal buffer.  Any operations waiting
+      for the data will be resumed.
 
    .. method:: set_exception(exc)
 
@@ -86,13 +110,23 @@ StreamReader
 
    .. method:: read(n=-1)
 
-      XXX
+      Read up to *n* bytes.  If *n* is not provided, or set to ``-1``,
+      read until EOF and return all read bytes.
+
+      If the EOF was received and the internal buffer is empty,
+      return an empty ``bytes`` object.
 
       This method returns a :ref:`coroutine object <coroutine>`.
 
    .. method:: readline()
 
-      XXX
+      Read one line, where "line" is a sequence of bytes ending with ``\n``.
+
+      If EOF is received, and ``\n`` was not found, the method will
+      return the partial read bytes.
+
+      If the EOF was received and the internal buffer is empty,
+      return an empty ``bytes`` object.
 
       This method returns a :ref:`coroutine object <coroutine>`.
 
@@ -104,6 +138,10 @@ StreamReader
       the partial read bytes.
 
       This method returns a :ref:`coroutine object <coroutine>`.
+
+   .. method:: at_eof()
+
+      Return ``True`` if the buffer is empty and :meth:`feed_eof` was called.
 
 
 StreamWriter
@@ -185,30 +223,6 @@ StreamReaderProtocol
     :class:`Protocol` subclass, because the :class:`StreamReader` has other
     potential uses, and to prevent the user of the :class:`StreamReader` to
     accidentally call inappropriate methods of the protocol.)
-
-    .. method:: connection_made(transport)
-
-       XXX
-
-    .. method:: connection_lost(exc)
-
-       XXX
-
-    .. method:: data_received(data)
-
-       XXX
-
-    .. method:: eof_received()
-
-       XXX
-
-    .. method:: pause_writing()
-
-       XXX
-
-    .. method:: resume_writing()
-
-       XXX
 
 
 IncompleteReadError
