@@ -15,7 +15,6 @@ from . import base_events
 from . import base_subprocess
 from . import constants
 from . import events
-from . import protocols
 from . import selector_events
 from . import tasks
 from . import transports
