@@ -1335,11 +1335,14 @@ class EventLoopTestsMixin:
              'selector': self.loop._selector.__class__.__name__})
 
     def test_sock_connect_address(self):
-        families = [(socket.AF_INET, ('www.python.org', 80))]
+        addresses = [(socket.AF_INET, ('www.python.org', 80))]
         if support.IPV6_ENABLED:
-            families.append((socket.AF_INET6, ('www.python.org', 80, 0, 0)))
+            addresses.extend((
+                (socket.AF_INET6, ('www.python.org', 80)),
+                (socket.AF_INET6, ('www.python.org', 80, 0, 0)),
+            ))
 
-        for family, address in families:
+        for family, address in addresses:
             for sock_type in (socket.SOCK_STREAM, socket.SOCK_DGRAM):
                 sock = socket.socket(family, sock_type)
                 with sock:

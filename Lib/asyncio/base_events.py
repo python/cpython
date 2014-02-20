@@ -48,7 +48,7 @@ def _check_resolved_address(sock, address):
     if family == socket.AF_INET:
         host, port = address
     elif family == socket.AF_INET6:
-        host, port, flow_info, scope_id = address
+        host, port = address[:2]
     else:
         return
 
