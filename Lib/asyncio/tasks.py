@@ -7,7 +7,6 @@ __all__ = ['coroutine', 'Task',
            'gather', 'shield',
            ]
 
-import collections
 import concurrent.futures
 import functools
 import inspect
@@ -486,7 +485,6 @@ def as_completed(fs, *, loop=None, timeout=None):
     if isinstance(fs, futures.Future) or iscoroutine(fs):
         raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
     loop = loop if loop is not None else events.get_event_loop()
-    deadline = None if timeout is None else loop.time() + timeout
     todo = {async(f, loop=loop) for f in set(fs)}
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue(loop=loop)
