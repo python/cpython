@@ -263,6 +263,9 @@ Tests
 Build
 -----
 
+- Issue #20221: Removed conflicting (or circular) hypot definition when
+  compiled with VS 2010 or above.  Initial patch by Tabrez Mohammed.
+
 - Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
   Jonathan Hosmer.
 
