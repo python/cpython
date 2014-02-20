@@ -558,7 +558,7 @@ Debug mode
 
 .. method:: BaseEventLoop.get_debug()
 
-   Get the debug mode (:class:`bool`) of the event loop.
+   Get the debug mode (:class:`bool`) of the event loop, ``False`` by default.
 
 .. method:: BaseEventLoop.set_debug(enabled: bool)
 
