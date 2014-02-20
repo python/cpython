@@ -68,6 +68,9 @@ Library
 Build
 -----
 
+- Issue #20221: Removed conflicting (or circular) hypot definition when
+  compiled with VS 2010 or above.  Initial patch by Tabrez Mohammed.
+
 - Issue #20609: Restored the ability to build 64-bit Windows binaries on
   32-bit Windows, which was broken by the change in issue #19788.
 
