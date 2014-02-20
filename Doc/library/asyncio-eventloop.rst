@@ -102,7 +102,8 @@ Run an event loop
 
    Run until the :class:`Future` is done.
 
-   If the argument is a coroutine, it is wrapped in a :class:`Task`.
+   If the argument is a :ref:`coroutine <coroutine>`, it is wrapped
+   in a :class:`Task`.
 
    Return the Future's result, or raise its exception.
 
@@ -207,7 +208,7 @@ Creating connections
    socket type :py:data:`~socket.SOCK_STREAM`.  *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
-   This method returns a :ref:`coroutine object <coroutine>` which will try to
+   This method is a :ref:`coroutine <coroutine>` which will try to
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
@@ -274,7 +275,7 @@ Creating connections
    :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
    socket type :py:data:`~socket.SOCK_DGRAM`.
 
-   This method returns a :ref:`coroutine object <coroutine>` which will try to
+   This method is a :ref:`coroutine <coroutine>` which will try to
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
@@ -288,7 +289,7 @@ Creating connections
    family is used to communicate between processes on the same machine
    efficiently.
 
-   This method returns a :ref:`coroutine object <coroutine>` which will try to
+   This method is a :ref:`coroutine <coroutine>` which will try to
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
@@ -302,8 +303,8 @@ Creating listening connections
 
 .. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
-   A :ref:`coroutine function <coroutine>` which creates a TCP server bound to host and
-   port.
+   A :ref:`coroutine <coroutine>` method which creates a TCP server bound to
+   host and port.
 
    The return value is a :class:`AbstractServer` object which can be used to stop
    the service.
@@ -331,8 +332,6 @@ Creating listening connections
    TIME_WAIT state, without waiting for its natural timeout to
    expire. If not specified will automatically be set to True on
    UNIX.
-
-   This method returns a :ref:`coroutine object <coroutine>`.
 
    .. seealso::
 
@@ -380,7 +379,7 @@ Low-level socket operations
    representing the data received.  The maximum amount of data to be received
    at once is specified by *nbytes*.
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
    .. seealso::
 
@@ -392,9 +391,9 @@ Low-level socket operations
    This method continues to send data from *data* until either all data has
    been sent or an error occurs.  ``None`` is returned on success.  On error,
    an exception is raised, and there is no way to determine how much data, if
-   any, was successfully sent.
+   any, was successfully processed by the receiving end of the connection.
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
    .. seealso::
 
@@ -410,7 +409,7 @@ Low-level socket operations
    :py:data:`~socket.AF_INET` and :py:data:`~socket.AF_INET6` address families.
    Use :meth:`getaddrinfo` to resolve the hostname asynchronously.
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
    .. seealso::
 
@@ -427,7 +426,7 @@ Low-level socket operations
    and *address* is the address bound to the socket on the other end of the
    connection.
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
    .. seealso::
 
@@ -440,13 +439,13 @@ Resolve host name
 
 .. method:: BaseEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
 
-   Similar to the :meth:`socket.getaddrinfo`  function, but return a
-   :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`, similar to
+   :meth:`socket.getaddrinfo` function but non-blocking.
 
 .. method:: BaseEventLoop.getnameinfo(sockaddr, flags=0)
 
-   Similar to the :meth:`socket.getnameinfo`  function, but return a
-   :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`, similar to
+   :meth:`socket.getnameinfo` function but non-blocking.
 
 
 Running subprocesses
@@ -472,7 +471,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    XXX
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
@@ -480,7 +479,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    XXX
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
@@ -493,7 +492,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    Return pair (transport, protocol), where transport support
    :class:`ReadTransport` interface.
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
 .. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
 
@@ -504,7 +503,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    Return pair (transport, protocol), where transport support
    :class:`WriteTransport` interface.
 
-   This method returns a :ref:`coroutine object <coroutine>`.
+   This method is a :ref:`coroutine <coroutine>`.
 
 .. seealso::
 
@@ -548,6 +547,8 @@ pool of processes). By default, an event loop uses a thread pool executor
 
    *executor* is a :class:`~concurrent.futures.Executor` instance,
    the default executor is used if *executor* is ``None``.
+
+   This method is a :ref:`coroutine <coroutine>`.
 
 .. method:: BaseEventLoop.set_default_executor(executor)
 
@@ -633,7 +634,7 @@ Server
 
    .. method:: wait_closed()
 
-      Coroutine to wait until service is closed.
+      A :ref:`coroutine <coroutine>` to wait until service is closed.
 
 
 Handle

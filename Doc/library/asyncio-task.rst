@@ -64,6 +64,14 @@ Coroutines (and tasks) can only run when the event loop is running.
     message is logged. See :ref:`Detect coroutines never scheduled
     <asyncio-coroutine-not-scheduled>`.
 
+.. note::
+
+    In this documentation, some methods are documented as coroutines,
+    even if they are plain Python functions returning a :class:`Future`.
+    This is intentional to have a freedom of tweaking the implementation
+    of these functions in the future. If such a function is needed to be
+    used in a callback-style code, wrap its result with :func:`async`.
+
 
 .. _asyncio-hello-world-coroutine:
 
@@ -440,7 +448,7 @@ Task functions
 
 .. function:: sleep(delay, result=None, \*, loop=None)
 
-   Create a :ref:`coroutine object <coroutine>` that completes after a given
+   Create a :ref:`coroutine <coroutine>` that completes after a given
    time (in seconds).  If *result* is provided, it is produced to the caller
    when the coroutine completes.
 
@@ -505,7 +513,7 @@ Task functions
    |                             | futures finish or are cancelled.       |
    +-----------------------------+----------------------------------------+
 
-   This function returns a :ref:`coroutine object <coroutine>`.
+   This function is a :ref:`coroutine <coroutine>`.
 
    Usage::
 
@@ -528,6 +536,8 @@ Task functions
    Returns result of the Future or coroutine.  When a timeout occurs, it
    cancels the task and raises :exc:`TimeoutError`. To avoid the task
    cancellation, wrap it in :func:`shield`.
+
+   This function is a :ref:`coroutine <coroutine>`.
 
    Usage::
 
