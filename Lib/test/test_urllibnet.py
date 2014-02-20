@@ -106,7 +106,7 @@ class urlopenNetworkTests(unittest.TestCase):
         # Make sure fd returned by fileno is valid.
         with self.urlopen("http://www.python.org/", timeout=None) as open_url:
             fd = open_url.fileno()
-            with os.fdopen(fd, encoding='utf-8') as f:
+            with os.fdopen(fd, 'rb') as f:
                 self.assertTrue(f.read(), "reading from file created using fd "
                                           "returned by fileno failed")
 
@@ -151,7 +151,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
         with self.urlretrieve("http://www.python.org/") as (file_location, info):
             self.assertTrue(os.path.exists(file_location), "file location returned by"
                             " urlretrieve is not a valid path")
-            with open(file_location, encoding='utf-8') as f:
+            with open(file_location, 'rb') as f:
                 self.assertTrue(f.read(), "reading from the file location returned"
                                 " by urlretrieve failed")
 
@@ -161,7 +161,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
                               support.TESTFN) as (file_location, info):
             self.assertEqual(file_location, support.TESTFN)
             self.assertTrue(os.path.exists(file_location))
-            with open(file_location, encoding='utf-8') as f:
+            with open(file_location, 'rb') as f:
                 self.assertTrue(f.read(), "reading from temporary file failed")
 
     def test_header(self):
