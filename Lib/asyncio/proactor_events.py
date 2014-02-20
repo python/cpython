@@ -275,7 +275,7 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
         assert fut is self._read_fut, (fut, self._read_fut)
         self._read_fut = None
         if self._write_fut is not None:
-            self._force_close(exc)
+            self._force_close(BrokenPipeError())
         else:
             self.close()
 
