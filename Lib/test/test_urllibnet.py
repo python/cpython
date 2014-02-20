@@ -184,7 +184,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
                               "header is not an instance of mimetools.Message")
 
     def test_data_header(self):
-        logo = "http://www.python.org/community/logos/python-logo-master-v3-TM.png"
+        logo = "http://python.org/static/community_logos/python-logo-master-v3-TM.png"
         file_location, fileheaders = self.urlretrieve(logo)
         os.unlink(file_location)
         datevalue = fileheaders.getheader('Date')
