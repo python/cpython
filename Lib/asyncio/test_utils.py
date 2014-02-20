@@ -15,7 +15,7 @@ import unittest
 import unittest.mock
 
 from http.server import HTTPServer
-from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer
+from wsgiref.simple_server import WSGIRequestHandler, WSGIServer
 
 try:
     import ssl
