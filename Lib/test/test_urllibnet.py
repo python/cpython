@@ -171,7 +171,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
                                   "info is not an instance of email.message.Message")
 
     def test_data_header(self):
-        logo = "http://www.python.org/community/logos/python-logo-master-v3-TM.png"
+        logo = "http://www.python.org/static/community_logos/python-logo-master-v3-TM.png"
         with self.urlretrieve(logo) as (file_location, fileheaders):
             datevalue = fileheaders.get('Date')
             dateformat = '%a, %d %b %Y %H:%M:%S GMT'
