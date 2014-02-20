@@ -72,6 +72,25 @@ Library
   chains. Make its behaviour consistent with bound methods first argument.
   Patch by Nick Coghlan and Yury Selivanov.
 
+- Issue #20566: Change asyncio.as_completed() to use a Queue, to
+  avoid O(N**2) behavior.
+
+- Issue #20704: Implement new debug API in asyncio. Add new methods
+  BaseEventLoop.set_debug() and BaseEventLoop.get_debug().
+  Add support for setting 'asyncio.tasks._DEBUG' variable with
+  'PYTHONASYNCIODEBUG' environment variable.
+
+- asyncio: Refactoring and fixes: BaseEventLoop.sock_connect() raises an
+  error if the address is not resolved; use __slots__ in Handle and
+  TimerHandle; as_completed() and wait() raise TypeError if the passed
+  list of Futures is a single Future; call_soon() and other 'call_*()'
+  functions raise TypeError if the passed callback is a coroutine
+  function; _ProactorBasePipeTransport uses _FlowControlMixin;
+  WriteTransport.set_write_buffer_size() calls _maybe_pause_protocol()
+  to consider pausing receiving if the watermark limits have changed;
+  fix _check_resolved_address() for IPv6 address; and other minor
+  improvements, along with multiple documentation updates.
+
 Tests
 -----
 
