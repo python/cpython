@@ -823,7 +823,18 @@ time_mktime(PyObject *self, PyObject *tup)
     time_t tt;
     if (!gettmarg(tup, &buf))
         return NULL;
+#ifdef _AIX
+    /* year < 1902 or year > 2037 */
+    if (buf.tm_year < 2 || buf.tm_year > 137) {
+        /* Issue #19748: On AIX, mktime() doesn't report overflow error for
+         * timestamp < -2^31 or timestamp > 2**31-1. */
+        PyErr_SetString(PyExc_OverflowError,
+                        "mktime argument out of range");
+        return NULL;
+    }
+#else
     buf.tm_wday = -1;  /* sentinel; original value ignored */
+#endif
     tt = mktime(&buf);
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
