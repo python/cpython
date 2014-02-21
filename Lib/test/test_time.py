@@ -228,7 +228,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
         t = time.mktime((2000, 1, 1, 0, 0, 0, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sat Jan  1 00:00:00 2000')
-        for year in [-100, 100, 1000, 2000, 10000]:
+        for year in [-100, 100, 1000, 2000, 2050, 10000]:
             try:
                 testval = time.mktime((year, 1, 10) + (0,)*6)
             except (ValueError, OverflowError):
