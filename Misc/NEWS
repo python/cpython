@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20710: The pydoc summary line no longer displays the "self" parameter
+  for bound methods.
+
 - Issue #20654: Fixed pydoc for enums with zero value.  Patch by Vajrasky Kok.
 
 - Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
