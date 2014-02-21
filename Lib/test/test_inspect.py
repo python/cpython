@@ -14,6 +14,7 @@ import sys
 import types
 import unicodedata
 import unittest
+import unittest.mock
 
 try:
     from concurrent.futures import ThreadPoolExecutor
@@ -1835,6 +1836,21 @@ class TestSignatureObject(unittest.TestCase):
                          ((('args', ..., ..., "var_positional"),
                            ('kwargs', ..., ..., "var_keyword")),
                            ...))
+
+        # Test with cython-like builtins:
+        _orig_isdesc = inspect.ismethoddescriptor
+        def _isdesc(obj):
+            if hasattr(obj, '_builtinmock'):
+                return True
+            return _orig_isdesc(obj)
+
+        with unittest.mock.patch('inspect.ismethoddescriptor', _isdesc):
+            builtin_func = funclike(func)
+            # Make sure that our mock setup is working
+            self.assertFalse(inspect.ismethoddescriptor(builtin_func))
+            builtin_func._builtinmock = True
+            self.assertTrue(inspect.ismethoddescriptor(builtin_func))
+            self.assertEqual(inspect.signature(builtin_func), sig_func)
 
     def test_signature_functionlike_class(self):
         # We only want to duck type function-like objects,
