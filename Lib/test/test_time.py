@@ -346,6 +346,13 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
+            if sys.platform.startswith('aix') and t == -1:
+                # Issue #11188, #19748: mktime() returns -1 on error. On Linux,
+                # the tm_wday field is used as a sentinel () to detect if -1 is
+                # really an error or a valid timestamp. On AIX, tm_wday is
+                # unchanged even on success and so cannot be used as a
+                # sentinel.
+                continue
             try:
                 tt = time.localtime(t)
             except (OverflowError, OSError):
