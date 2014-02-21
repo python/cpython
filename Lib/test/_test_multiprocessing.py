@@ -3651,7 +3651,7 @@ class TestSemaphoreTracker(unittest.TestCase):
         _multiprocessing.sem_unlink(name1)
         p.terminate()
         p.wait()
-        time.sleep(1.0)
+        time.sleep(2.0)
         with self.assertRaises(OSError) as ctx:
             _multiprocessing.sem_unlink(name2)
         # docs say it should be ENOENT, but OSX seems to give EINVAL
