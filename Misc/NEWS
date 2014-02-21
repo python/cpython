@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20710: The pydoc summary line no longer displays the "self" parameter
+  for bound methods.
+
 - Issue #20566: Change asyncio.as_completed() to use a Queue, to
   avoid O(N**2) behavior.
 
