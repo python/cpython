@@ -643,6 +643,13 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump,
                                      args_e=['self', 'obj'], formatted='(self, obj)')
 
+        self.assertFullArgSpecEquals(
+             os.stat,
+             args_e=['path'],
+             kwonlyargs_e=['dir_fd', 'follow_symlinks'],
+             kwonlydefaults_e={'dir_fd': None, 'follow_symlinks': True},
+             formatted='(path, *, dir_fd=None, follow_symlinks=True)')
+
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
