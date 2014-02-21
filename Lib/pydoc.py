@@ -137,6 +137,19 @@ def _is_some_method(obj):
             inspect.isbuiltin(obj) or
             inspect.ismethoddescriptor(obj))
 
+def _is_bound_method(fn):
+    """
+    Returns True if fn is a bound method, regardless of whether
+    fn was implemented in Python or in C.
+    """
+    if inspect.ismethod(fn):
+        return True
+    if inspect.isbuiltin(fn):
+        self = getattr(fn, '__self__', None)
+        return not (inspect.ismodule(self) or (self is None))
+    return False
+
+
 def allmethods(cl):
     methods = {}
     for key, value in inspect.getmembers(cl, _is_some_method):
@@ -898,7 +911,7 @@ class HTMLDoc(Doc):
         anchor = (cl and cl.__name__ or '') + '-' + name
         note = ''
         skipdocs = 0
-        if inspect.ismethod(object):
+        if _is_bound_method(object):
             imclass = object.__self__.__class__
             if cl:
                 if imclass is not cl:
@@ -909,7 +922,6 @@ class HTMLDoc(Doc):
                         object.__self__.__class__, mod)
                 else:
                     note = ' unbound %s method' % self.classlink(imclass,mod)
-            object = object.__func__
 
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
@@ -924,7 +936,7 @@ class HTMLDoc(Doc):
             title = '<a name="%s"><strong>%s</strong></a> = %s' % (
                 anchor, name, reallink)
         argspec = None
-        if inspect.isfunction(object) or inspect.isbuiltin(object):
+        if inspect.isroutine(object):
             try:
                 signature = inspect.signature(object)
             except (ValueError, TypeError):
@@ -1304,7 +1316,7 @@ location listed above.
         name = name or realname
         note = ''
         skipdocs = 0
-        if inspect.ismethod(object):
+        if _is_bound_method(object):
             imclass = object.__self__.__class__
             if cl:
                 if imclass is not cl:
@@ -1315,7 +1327,6 @@ location listed above.
                         object.__self__.__class__, mod)
                 else:
                     note = ' unbound %s method' % classname(imclass,mod)
-            object = object.__func__
 
         if name == realname:
             title = self.bold(realname)
