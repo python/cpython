@@ -6,6 +6,7 @@ import difflib
 import inspect
 import pydoc
 import keyword
+import _pickle
 import pkgutil
 import re
 import string
@@ -689,12 +690,41 @@ class TestDescriptions(unittest.TestCase):
             self.assertIsNone(pydoc.locate(name))
             self.assertRaises(ImportError, pydoc.render_doc, name)
 
+    @staticmethod
+    def _get_summary_line(o):
+        text = pydoc.plain(pydoc.render_doc(o))
+        lines = text.split('\n')
+        assert len(lines) >= 2
+        return lines[2]
+
+    # these should include "self"
+    def test_unbound_python_method(self):
+        self.assertEqual(self._get_summary_line(textwrap.TextWrapper.wrap),
+            "wrap(self, text)")
+
     @requires_docstrings
-    def test_builtin_signatures(self):
-        # test producing signatures from builtins
-        stat_sig = pydoc.render_doc(os.stat)
-        self.assertEqual(pydoc.plain(stat_sig).splitlines()[2],
-            'stat(path, *, dir_fd=None, follow_symlinks=True)')
+    def test_unbound_builtin_method(self):
+        self.assertEqual(self._get_summary_line(_pickle.Pickler.dump),
+            "dump(self, obj, /)")
+
+    # these no longer include "self"
+    def test_bound_python_method(self):
+        t = textwrap.TextWrapper()
+        self.assertEqual(self._get_summary_line(t.wrap),
+            "wrap(text) method of textwrap.TextWrapper instance")
+
+    @requires_docstrings
+    def test_bound_builtin_method(self):
+        s = StringIO()
+        p = _pickle.Pickler(s)
+        self.assertEqual(self._get_summary_line(p.dump),
+            "dump(obj, /) method of _pickle.Pickler instance")
+
+    # this should *never* include self!
+    @requires_docstrings
+    def test_module_level_callable(self):
+        self.assertEqual(self._get_summary_line(os.stat),
+            "stat(path, *, dir_fd=None, follow_symlinks=True)")
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
