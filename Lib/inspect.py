@@ -1911,14 +1911,14 @@ def _signature_internal(obj, follow_wrapper_chains=True, skip_bound_arg=True):
 
             return sig.replace(parameters=new_params)
 
-    if _signature_is_builtin(obj):
-        return _signature_from_builtin(Signature, obj,
-                                       skip_bound_arg=skip_bound_arg)
-
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
         return Signature.from_function(obj)
+
+    if _signature_is_builtin(obj):
+        return _signature_from_builtin(Signature, obj,
+                                       skip_bound_arg=skip_bound_arg)
 
     if isinstance(obj, functools.partial):
         wrapped_sig = _signature_internal(obj.func,
