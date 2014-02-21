@@ -1827,9 +1827,16 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         p(f.args.kwarg, empty)
 
     if self_parameter is not None:
+        # Possibly strip the bound argument:
+        #    - We *always* strip first bound argument if
+        #      it is a module.
+        #    - We don't strip first bound argument if
+        #      skip_bound_arg is False.
         assert parameters
-        if getattr(obj, '__self__', None) and skip_bound_arg:
-            # strip off self, it's already been bound
+        _self = getattr(obj, '__self__', None)
+        self_isbound = _self is not None
+        self_ismodule = ismodule(_self)
+        if self_isbound and (self_ismodule or skip_bound_arg):
             parameters.pop(0)
         else:
             # for builtins, self parameter is always positional-only!
