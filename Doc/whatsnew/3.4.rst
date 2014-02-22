@@ -1527,10 +1527,30 @@ Deprecated Python Modules, Functions and Methods
   :meth:`difflib.SequenceMatcher.isbpopular` were removed: use ``x in sm.bjunk`` and
   ``x in sm.bpopular``, where *sm* is a :class:`~difflib.SequenceMatcher` object.
 
-* :func:`importlib.util.module_for_loader` is pending deprecation. Using
-  :func:`importlib.util.module_to_load` and
-  :meth:`importlib.abc.Loader.init_module_attrs` allows subclasses of a loader
-  to more easily customize module loading.
+* As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importilb`
+  methods and functions are deprecated: :meth:`importlib.find_loader` is
+  replaced by :func:`importlib.util.find_spec`;
+  :meth:`importlib.machinery.PathFinder.find_module` is replaced by
+  :meth:`importlib.machinery.PathFinder.find_spec`;
+  :meth:`importlib.abc.MetaPathFinder.find_module` is replaced by
+  :meth:`importlib.abc.MetaPathFinder.find_spec`;
+  :meth:`importlib.abc.PathEntryFinder.find_loader` and
+  :meth:`~importlib.abc.PathEntryFinder.find_module` are replaced by
+  :meth:`importlib.abc.PathEntryFinder.find_spec`; all of the ``xxxLoader`` ABC
+  ``load_module`` methods (:meth:`importlib.abc.Loader.load_module`,
+  :meth:`importlib.abc.InspectLoader.load_module`,
+  :meth:`importlib.abc.FileLoader.load_module`,
+  :meth:`importlib.abc.SourceLoader.load_module`) should no longer be
+  implemented, instead loaders should implement an
+  ``exec_module`` method
+  (:meth:`importlib.abc.Loader.exec_module`,
+  :meth:`importlib.abc.InspectLoader.exec_module`
+  :meth:`importlib.abc.SourceLoader.exec_module`) and let the import system
+  take care of the rest; and
+  :meth:`importlib.abc.Loader.module_repr`,
+  :meth:`importlib.util.module_for_loader`, :meth:`importlib.util.set_loader`,
+  and :meth:`importlib.util.set_package` are no longer needed because their
+  functions are now handled automatically by the import system.
 
 * The :mod:`imp` module is pending deprecation. To keep compatibility with
   Python 2/3 code bases, the module's removal is currently not scheduled.
