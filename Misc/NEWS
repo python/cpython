@@ -71,6 +71,9 @@ Library
 Build
 -----
 
+- Issue #20641: Run MSI custom actions (pip installation, pyc compilation)
+  with the NoImpersonate flag, to support elevated execution (UAC).
+
 - Issue #20221: Removed conflicting (or circular) hypot definition when
   compiled with VS 2010 or above.  Initial patch by Tabrez Mohammed.
 
