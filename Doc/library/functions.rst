@@ -781,6 +781,9 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
+   .. versionadded:: 3.4
+      The *default* keyword-only argument.
+
 
 .. _func-memoryview:
 .. function:: memoryview(obj)
@@ -811,6 +814,9 @@ are always available.  They are listed here in alphabetical order.
    encountered.  This is consistent with other sort-stability preserving tools
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
+
+   .. versionadded:: 3.4
+      The *default* keyword-only argument.
 
 .. function:: next(iterator[, default])
 
