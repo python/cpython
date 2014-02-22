@@ -29,6 +29,7 @@ import getopt
 
 
 BUILDROOT = '/home/gbrandl/docbuild'
+SPHINXBUILD = os.path.join(BUILDROOT, 'sphinx-env/bin/sphinx-build')
 WWWROOT = '/data/ftp.python.org/pub/docs.python.org'
 
 BRANCHES = [
@@ -47,7 +48,7 @@ def build_one(checkout, target, isdev, quick):
     print 'Running make autobuild'
     maketarget = 'autobuild-' + ('html' if quick else
                                  ('dev' if isdev else 'stable'))
-    if os.WEXITSTATUS(os.system('cd Doc; make %s' % maketarget)) == 2:
+    if os.WEXITSTATUS(os.system('cd Doc; make SPHINXBUILD=%s %s' % (SPHINXBUILD, maketarget))) == 2:
         print '*' * 80
         return
     print 'Copying HTML files to %s' % target
