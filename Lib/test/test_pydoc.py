@@ -618,6 +618,7 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
+    @unittest.skip('causes undesireable side-effects (#20128)')
     def test_modules(self):
         # See Helper.listmodules().
         num_header_lines = 2
@@ -633,6 +634,7 @@ class PydocImportTest(PydocBaseTest):
 
         self.assertGreaterEqual(num_lines, expected)
 
+    @unittest.skip('causes undesireable side-effects (#20128)')
     def test_modules_search(self):
         # See Helper.listmodules().
         expected = 'pydoc - '
@@ -645,7 +647,7 @@ class PydocImportTest(PydocBaseTest):
 
         self.assertIn(expected, result)
 
-    @unittest.skip('some buildbots are not cooperating (#20123)')
+    @unittest.skip('some buildbots are not cooperating (#20128)')
     def test_modules_search_builtin(self):
         expected = 'gc - '
 
