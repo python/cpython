@@ -346,9 +346,10 @@ Some smaller changes made to the core Python language are:
 
 * Unicode database updated to UCD version 6.3.
 
-* :func:`min` and :func:`max` now accept a *default* argument that can be used
-  to specify the value they return if the iterable they are evaluating has no
-  elements.  Contributed by Julian Berman in :issue:`18111`.
+* :func:`min` and :func:`max` now accept a *default* keyword-only argument that
+  can be used to specify the value they return if the iterable they are
+  evaluating has no elements.  (Contributed by Julian Berman in
+  :issue:`18111`.)
 
 * Module objects are now :mod:`weakref`'able.
 
@@ -1804,6 +1805,12 @@ Changes in the Python API
 * Parameter names in ``__annotations__`` dict are now mangled properly,
   similarly to ``__kwdefaults__``. (Contributed by Yury Selivanov in
   :issue:`20625`).
+
+* Frozen packages used to have their ``__path__`` set to the package name,
+  but this could cause the import system to do the wrong thing on submodule
+  imports if there was also a directory with the same name as the frozen
+  package.  The ``__path__`` for frozen packages is now set to ``[]``
+  (:issue:`18065`).
 
 
 Changes in the C API
