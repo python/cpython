@@ -960,6 +960,9 @@ Chaudhari, Victor Stinner, and Charles-François Natali in :issue:`17914`.)
 :func:`os.path.samefile` implementation is now shared between Unix and
 Windows).  (Contributed by Brian Curtin in :issue:`11939`.)
 
+:func:`os.path.ismount` now recognizes volumes mounted below a drive
+root on Windows. (Contributed by Tim Golden in :issue:`9035`.)
+
 
 pdb
 ---
