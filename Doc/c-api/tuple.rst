@@ -129,6 +129,14 @@ type.
    Initializes a struct sequence type *type* from *desc* in place.
 
 
+.. c:function:: void PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
+
+   The same as ``PyStructSequence_InitType``, but returns ``0`` on success and ``-1`` on
+   failure.
+
+   .. versionadded:: 3.4
+
+
 .. c:type:: PyStructSequence_Desc
 
    Contains the meta information of a struct sequence type to create.
