@@ -1422,6 +1422,7 @@ Other Build and C API Changes
   (Contributed by Ysj Ray and Victor Stinner in :issue:`7330`.)
 
 
+.. _other-improvements-3.4:
 
 Other Improvements
 ------------------
@@ -1509,6 +1510,10 @@ Significant Optimizations
 
 * :func:`html.escape` is now 10x faster.  (Contributed by Matt Bryant in
   :issue:`18020`.)
+
+* On Windows, the native ``VirtualAlloc`` is now used instead of the CRT
+  ``malloc`` in ``obmalloc``.  Artificial benchmarks show about a 3% memory
+  savings.
 
 
 Deprecated
@@ -1682,6 +1687,10 @@ Changes in 'python' command behavior
 * The [X refs, Y blocks] output of a debug (``--with-pydebug``) build of the
   CPython interpreter is now off by default.  It can be re-enabled using the
   ``-X showrefcount`` option. (Contributed by Ezio Melotti in :issue:`17323`.)
+
+* The python command and most stdlib scripts (as well as :mod:`argparse`) now
+  output ``--version`` information to ``stdout`` instead of ``stderr`` (for
+  issue list see :ref:`other-improvements-3.4` above).
 
 
 Changes in the Python API
