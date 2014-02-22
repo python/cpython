@@ -435,12 +435,13 @@ def add_ui(db):
         ("SetLauncherDirToWindows", 307, "LAUNCHERDIR", "[WindowsFolder]"),
         # msidbCustomActionTypeExe + msidbCustomActionTypeSourceFile
         # See "Custom Action Type 18"
-        ("CompilePyc", 18, "python.exe", compileargs),
-        ("CompilePyo", 18, "python.exe", "-O "+compileargs),
-        ("CompileGrammar", 18, "python.exe", lib2to3args),
         # msidbCustomActionTypeInScript (1024); run during actual installation
-        ("UpdatePip", 18+1024, "python.exe", updatepipargs),
-        ("RemovePip", 18, "python.exe", removepipargs),
+        # msidbCustomActionTypeNoImpersonate (2048); run action in system account, not user account
+        ("CompilePyc", 18+1024+2048, "python.exe", compileargs),
+        ("CompilePyo", 18+1024+2048, "python.exe", "-O "+compileargs),
+        ("CompileGrammar", 18+1024+2048, "python.exe", lib2to3args),
+        ("UpdatePip", 18+1024+2048, "python.exe", updatepipargs),
+        ("RemovePip", 18+1024+2048, "python.exe", removepipargs),
         ])
 
     # UI Sequences, see "InstallUISequence Table", "Using a Sequence Table"
@@ -483,17 +484,14 @@ def add_ui(db):
              # remove pip when state changes to INSTALLSTATE_ABSENT
              # run before RemoveFiles
              ("RemovePip", "&pip_feature=2", 3499),
-             ("CompilePyc", "COMPILEALL", 6800),
-             ("CompilePyo", "COMPILEALL", 6801),
-             ("CompileGrammar", "COMPILEALL", 6802),
+             ("CompilePyc", "COMPILEALL", 4002),
+             ("CompilePyo", "COMPILEALL", 4003),
+             ("CompileGrammar", "COMPILEALL", 4004),
             ])
     add_data(db, "AdminExecuteSequence",
             [("InitialTargetDir", 'TARGETDIR=""', 750),
              ("SetDLLDirToTarget", 'DLLDIR=""', 751),
              ("SetLauncherDirToTarget", 'LAUNCHERDIR=""', 752),
-             ("CompilePyc", "COMPILEALL", 6800),
-             ("CompilePyo", "COMPILEALL", 6801),
-             ("CompileGrammar", "COMPILEALL", 6802),
             ])
 
     #####################################################################
