@@ -282,3 +282,13 @@ hyphenated words; only then will long words be broken if necessary, unless
 
       Wraps the single paragraph in *text*, and returns a single string
       containing the wrapped paragraph.
+
+
+   .. method:: shorten(text, width=70, *, placeholder=" [...]")
+
+      Collapse and truncate the given text to fit in the given width.
+      The text first has its whitespace collapsed.  If it then fits in
+      the *width*, it is returned unchanged.  Otherwise, as many words
+      as possible are joined and then the *placeholder* is appended.
+
+      .. versionadded:: 3.4
