@@ -1081,6 +1081,11 @@ When used in a :keyword:`with` statement, the :meth:`~select.epoll.close`
 method will be called automatically at the end of the block.  (Contributed
 by Serhiy Storchaka in :issue:`16488`.)
 
+:class:`~select.devpoll` objects now have :meth:`~select.devpoll.fileno` and
+:meth:`~select.devpoll.close` methods, as well as a new attribute
+:attr:`~select.devpoll.closed`.  (Contributed by Victor Stinner in
+:issue:`18794`.)
+
 
 shelve
 ------
