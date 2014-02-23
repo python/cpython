@@ -5,6 +5,12 @@ Python News
 What's New in Python 3.4.1?
 ===========================
 
+Core and Builtins
+-----------------
+
+- Issue #20637: Key-sharing now also works for instance dictionaries of
+  subclasses.  Patch by Peter Ingebretson.
+
 Library
 -------
 
