@@ -1944,7 +1944,7 @@ Library
 
 - Issue #18394: Close cgi.FieldStorage's optional file.
 
-- Issue #17702: On error, os.environb now removes suppress the except context
+- Issue #17702: On error, os.environb now suppresses the exception context
   when raising a new KeyError with the original key.
 
 - Issue #16809: Fixed some tkinter incompabilities with Tcl/Tk 8.6.
