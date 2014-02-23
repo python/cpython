@@ -275,6 +275,7 @@ class NetworkTestCase(unittest.TestCase):
                 self.skipTest('%s is unavailable' % url)
             self.assertEqual(parser.can_fetch("*", robots_url), False)
 
+    @unittest.skip('does not handle the gzip encoding delivered by pydotorg')
     def testPythonOrg(self):
         support.requires('network')
         with support.transient_internet('www.python.org'):
