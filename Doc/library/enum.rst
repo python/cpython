@@ -139,7 +139,7 @@ If you want to access enum members by *name*, use item access::
     >>> Color['green']
     <Color.green: 2>
 
-If have an enum member and need its :attr:`name` or :attr:`value`::
+If you have an enum member and need its :attr:`name` or :attr:`value`::
 
     >>> member = Color.red
     >>> member.name
