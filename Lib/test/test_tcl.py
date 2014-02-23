@@ -386,6 +386,7 @@ class TclTest(unittest.TestCase):
             result.append(arg)
             return arg
         self.interp.createcommand('testfunc', testfunc)
+        self.addCleanup(self.interp.tk.deletecommand, 'testfunc')
         def check(value, expected, expected2=None, eq=self.assertEqual):
             if expected2 is None:
                 expected2 = expected
