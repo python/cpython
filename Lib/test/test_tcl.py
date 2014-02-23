@@ -376,6 +376,7 @@ class TclTest(unittest.TestCase):
             result = arg
             return arg
         self.interp.createcommand('testfunc', testfunc)
+        self.addCleanup(self.interp.tk.deletecommand, 'testfunc')
         def check(value, expected, eq=self.assertEqual):
             r = self.interp.call('testfunc', value)
             self.assertIsInstance(result, str)
