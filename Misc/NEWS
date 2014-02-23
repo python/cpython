@@ -17,6 +17,11 @@ Library
 - Issue #19748: On AIX, time.mktime() now raises an OverflowError for year
   outsize range [1902; 2037].
 
+Tests
+-----
+
+- Issue #20743: Fix a reference leak in test_tcl.
+
 
 What's New in Python 3.4.0 release candidate 2?
 ===============================================
