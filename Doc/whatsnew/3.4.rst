@@ -828,6 +828,11 @@ by Brett Cannon in :issue:`18058`.)
 that decodes source from bytes using universal newline processing.  This is
 useful for implementing :meth:`.InspectLoader.get_source` methods.
 
+:class:`importlib.machinery.ExtensionFileLoader` now has a
+:meth:`~importlib.machinery.ExtensionFileLoader.get_filename` method.  This was
+inadvertently omitted in the original implementation.  (Contributed by Eric
+Snow in :issue:`19152`.)
+
 
 inspect
 -------
@@ -895,8 +900,8 @@ memory a module occupies in memory when it is loaded from a ``.pyc`` (or
 mmap
 ----
 
-mmap objects can now be weakref'ed.
-(Contributed by Valerie Lambert in :issue:`4885`.)
+mmap objects can now be weakref'ed.  (Contributed by Valerie Lambert in
+:issue:`4885`.)
 
 
 mock
