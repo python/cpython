@@ -38,6 +38,8 @@ The command, if run with ``-h``, will show the available options::
                              virtual environment.
       --symlinks             Try to use symlinks rather than copies, when symlinks
                              are not the default for the platform.
+      --copies               Try to use copies rather than symlinks, even when
+                             symlinks are the default for the platform.
       --clear                Delete the environment directory if it already exists.
                              If not specified and the directory exists, an error is
                              raised.
@@ -47,7 +49,8 @@ The command, if run with ``-h``, will show the available options::
                              environment (pip is bootstrapped by default)
 
 .. versionchanged:: 3.4
-   Installs pip by default, added the ``--without-pip`` option
+   Installs pip by default, added the ``--without-pip``  and ``--copies``
+   options
 
 If the target directory already exists an error will be raised, unless
 the ``--clear`` or ``--upgrade`` option was provided.

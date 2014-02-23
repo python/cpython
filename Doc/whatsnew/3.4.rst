@@ -1508,6 +1508,10 @@ Other Improvements
   Stinner using his :pep:`445`-based ``pyfailmalloc`` tool (:issue:`18408`,
   :issue:`18520`).
 
+* The :ref:`pyvenv <scripts-pyvenv>` command now accepts a ``--copies`` option
+  to use copies rather than symlinks even on systems where symlinks are the
+  default.  (Contributed by Vinay Sajip in :issue:`18807`.)
+
 
 Significant Optimizations
 -------------------------
