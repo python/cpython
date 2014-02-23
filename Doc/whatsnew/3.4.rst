@@ -748,8 +748,15 @@ dictionaries containing the collections statistics since interpreter startup.
 hashlib
 -------
 
-New :func:`hashlib.pbkdf2_hmac` function.
-(Contributed by Christian Heimes in :issue:`18582`)
+New :func:`hashlib.pbkdf2_hmac` function.  (Contributed by Christian Heimes in
+:issue:`18582`)
+
+The :attr:`~hashlib.hash.name` attribute of :mod:`hashlib` hash objects is now
+a formally supported interface.  It has always existed in CPython's
+:mod:`hashlib` (although it did not return lower case names for all supported
+hashes), but it was not a public interface and so some other Python
+implementations have not previously supported it.  (Contributed by Jason R.
+Coombs in :issue:`18532`.)
 
 
 hmac
@@ -1850,6 +1857,10 @@ Changes in the Python API
   imports if there was also a directory with the same name as the frozen
   package.  The ``__path__`` for frozen packages is now set to ``[]``
   (:issue:`18065`).
+
+* :attr:`hashlib.hash.name` now always returns the identifier in lower case.
+  Previously some builtin hashes had uppercase names, but now that it is a
+  formal public interface the naming has been made consistent (:issue:`18532`).
 
 
 Changes in the C API
