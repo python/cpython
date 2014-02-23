@@ -117,6 +117,8 @@ IDLE
 Tests
 -----
 
+- Issue #20743: Fix a reference leak in test_tcl.
+
 - Issue #20510: Rewrote test_exit in test_sys to match existing comments,
   use modern unittest features, and use helpers from test.script_helper
   instead of using subprocess directly.  Patch by Gareth Rees.
