@@ -1862,7 +1862,7 @@ Core and Builtins
 - Issue #18808: Non-daemon threads are now automatically joined when
   a sub-interpreter is shutdown (it would previously dump a fatal error).
 
-- Remove supporting for compiling on systems without getcwd().
+- Remove support for compiling on systems without getcwd().
 
 - Issue #18774: Remove last bits of GNU PTH thread code and thread_pth.h.
 
