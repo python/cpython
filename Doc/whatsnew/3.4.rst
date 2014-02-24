@@ -1286,6 +1286,14 @@ error.  (Contributed by Zach Ware in :issue:`16935`.)
 consistent test ordering.  (Contributed by Martin Melin and Jeff Ramnani in
 :issue:`16709`.)
 
+:class:`~unittest.TestSuite` now drops references to tests as soon as the test
+has been run, if the test is successful.  On Python interpreters that do
+garbage collection, this allows the tests to be garbage collected if nothing
+else is holding a reference to the test.  It is possible to override this
+behavior by creating a :class:`~unittest.TestSuite` subclass that defines a
+custom ``_removeTestAtIndex`` method.  (Contributed by Tom Wardill, Matt
+McClure, and Andrew Svetlov in :issue:`11798`.)
+
 
 venv
 ----
@@ -1870,6 +1878,16 @@ Changes in the Python API
 * :attr:`hashlib.hash.name` now always returns the identifier in lower case.
   Previously some builtin hashes had uppercase names, but now that it is a
   formal public interface the naming has been made consistent (:issue:`18532`).
+
+* Because :mod:`unittest.TestSuite` now drops references to tests after they
+  are run, test harnesses that re-use a :class:`~unittest.TestSuite` to re-run
+  a set of tests may fail.   Test suites should not be re-used in this fashion
+  since it means state is retained between test runs, breaking the test
+  isolation that :mod:`unittest` is designed to provide.  However, if the lack
+  of isolation is considered acceptable, the old behavior can be restored by
+  creating a :mod:`~unittest.TestSuite` subclass that defines a
+  ``_removeTestAtIndex`` method that does nothing (see
+  :meth:`.TestSuite.__iter__`) (:issue:`11798`).
 
 
 Changes in the C API
