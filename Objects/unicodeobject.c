@@ -3129,7 +3129,7 @@ PyUnicode_Decode(const char *s,
     buffer = PyMemoryView_FromBuffer(&info);
     if (buffer == NULL)
         goto onError;
-    unicode = PyCodec_Decode(buffer, encoding, errors);
+    unicode = _PyCodec_DecodeText(buffer, encoding, errors);
     if (unicode == NULL)
         goto onError;
     if (!PyUnicode_Check(unicode)) {
@@ -3489,7 +3489,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     }
 
     /* Encode via the codec registry */
-    v = PyCodec_Encode(unicode, encoding, errors);
+    v = _PyCodec_EncodeText(unicode, encoding, errors);
     if (v == NULL)
         return NULL;
 

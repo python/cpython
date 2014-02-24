@@ -337,17 +337,14 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
 
    errors is passed to the encoder factory as argument if non-NULL. */
 
-PyObject *PyCodec_Encode(PyObject *object,
-                         const char *encoding,
-                         const char *errors)
+static PyObject *
+_PyCodec_EncodeInternal(PyObject *object,
+                        PyObject *encoder,
+                        const char *encoding,
+                        const char *errors)
 {
-    PyObject *encoder = NULL;
     PyObject *args = NULL, *result = NULL;
     PyObject *v = NULL;
-
-    encoder = PyCodec_Encoder(encoding);
-    if (encoder == NULL)
-        goto onError;
 
     args = args_tuple(object, errors);
     if (args == NULL)
@@ -384,17 +381,14 @@ PyObject *PyCodec_Encode(PyObject *object,
 
    errors is passed to the decoder factory as argument if non-NULL. */
 
-PyObject *PyCodec_Decode(PyObject *object,
-                         const char *encoding,
-                         const char *errors)
+static PyObject *
+_PyCodec_DecodeInternal(PyObject *object,
+                        PyObject *decoder,
+                        const char *encoding,
+                        const char *errors)
 {
-    PyObject *decoder = NULL;
     PyObject *args = NULL, *result = NULL;
     PyObject *v;
-
-    decoder = PyCodec_Decoder(encoding);
-    if (decoder == NULL)
-        goto onError;
 
     args = args_tuple(object, errors);
     if (args == NULL)
@@ -423,6 +417,118 @@ PyObject *PyCodec_Decode(PyObject *object,
     Py_XDECREF(decoder);
     Py_XDECREF(result);
     return NULL;
+}
+
+/* Generic encoding/decoding API */
+PyObject *PyCodec_Encode(PyObject *object,
+                         const char *encoding,
+                         const char *errors)
+{
+    PyObject *encoder;
+
+    encoder = PyCodec_Encoder(encoding);
+    if (encoder == NULL)
+        return NULL;
+
+    return _PyCodec_EncodeInternal(object, encoder, encoding, errors);
+}
+
+PyObject *PyCodec_Decode(PyObject *object,
+                         const char *encoding,
+                         const char *errors)
+{
+    PyObject *decoder;
+
+    decoder = PyCodec_Decoder(encoding);
+    if (decoder == NULL)
+        return NULL;
+
+    return _PyCodec_DecodeInternal(object, decoder, encoding, errors);
+}
+
+/* Text encoding/decoding API */
+static
+PyObject *codec_getitem_checked(const char *encoding,
+                                const char *operation_name,
+                                int index)
+{
+    _Py_IDENTIFIER(_is_text_encoding);
+    PyObject *codec;
+    PyObject *attr;
+    PyObject *v;
+    int is_text_codec;
+
+    codec = _PyCodec_Lookup(encoding);
+    if (codec == NULL)
+        return NULL;
+
+    /* Backwards compatibility: assume any raw tuple describes a text
+     * encoding, and the same for anything lacking the private
+     * attribute.
+     */
+    if (!PyTuple_CheckExact(codec)) {
+        attr = _PyObject_GetAttrId(codec, &PyId__is_text_encoding);
+        if (attr == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            } else {
+                Py_DECREF(codec);
+                return NULL;
+            }
+        } else {
+            is_text_codec = PyObject_IsTrue(attr);
+            Py_DECREF(attr);
+            if (!is_text_codec) {
+                Py_DECREF(codec);
+                PyErr_Format(PyExc_LookupError,
+                             "'%.400s' is not a text encoding; "
+                             "use codecs.%s() to handle arbitrary codecs",
+                             encoding, operation_name);
+                return NULL;
+            }
+        }
+    }
+
+    v = PyTuple_GET_ITEM(codec, index);
+    Py_DECREF(codec);
+    Py_INCREF(v);
+    return v;
+}
+
+static PyObject * _PyCodec_TextEncoder(const char *encoding)
+{
+    return codec_getitem_checked(encoding, "encode", 0);
+}
+
+static PyObject * _PyCodec_TextDecoder(const char *encoding)
+{
+    return codec_getitem_checked(encoding, "decode", 1);
+}
+
+PyObject *_PyCodec_EncodeText(PyObject *object,
+                              const char *encoding,
+                              const char *errors)
+{
+    PyObject *encoder;
+
+    encoder = _PyCodec_TextEncoder(encoding);
+    if (encoder == NULL)
+        return NULL;
+
+    return _PyCodec_EncodeInternal(object, encoder, encoding, errors);
+}
+
+PyObject *_PyCodec_DecodeText(PyObject *object,
+                              const char *encoding,
+                              const char *errors)
+{
+    PyObject *decoder;
+
+    decoder = _PyCodec_TextDecoder(encoding);
+    if (decoder == NULL)
+        return NULL;
+
+    return _PyCodec_DecodeInternal(object, decoder, encoding, errors);
 }
 
 /* Register the error handling callback function error under the name
