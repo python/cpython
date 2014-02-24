@@ -188,6 +188,10 @@ class Untokenizer:
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
                              .format(row, col, self.prev_row, self.prev_col))
+        row_offset = row - self.prev_row
+        if row_offset:
+            self.tokens.append("\\\n" * row_offset)
+            self.prev_col = 0
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
@@ -199,6 +203,8 @@ class Untokenizer:
                 self.compat(t, it)
                 break
             tok_type, token, start, end, line = t
+            if tok_type == ENDMARKER:
+                break
             self.add_whitespace(start)
             self.tokens.append(token)
             self.prev_row, self.prev_col = end

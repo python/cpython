@@ -4,7 +4,7 @@ Tests for the tokenize module.
     >>> import glob, random, sys
 
 The tests can be really simple. Given a small fragment of source
-code, print out a table with tokens. The ENDMARK is omitted for
+code, print out a table with tokens. The ENDMARKER is omitted for
 brevity.
 
     >>> dump_tokens("1 + 1")
@@ -618,6 +618,7 @@ def decistmt(s):
 class UntokenizeTest(TestCase):
 
     def test_bad_input_order(self):
+        # raise if previous row
         u = Untokenizer()
         u.prev_row = 2
         u.prev_col = 2
@@ -625,7 +626,20 @@ class UntokenizeTest(TestCase):
             u.add_whitespace((1,3))
         self.assertEqual(cm.exception.args[0],
                 'start (1,3) precedes previous end (2,2)')
+        # raise if previous column in row
         self.assertRaises(ValueError, u.add_whitespace, (2,1))
+
+    def test_backslash_continuation(self):
+        # The problem is that <whitespace>\<newline> leaves no token
+        u = Untokenizer()
+        u.prev_row = 1
+        u.prev_col =  1
+        u.tokens = []
+        u.add_whitespace((2, 0))
+        self.assertEqual(u.tokens, ['\\\n'])
+        u.prev_row = 2
+        u.add_whitespace((4, 4))
+        self.assertEqual(u.tokens, ['\\\n', '\\\n\\\n', '    '])
 
     def test_iter_compat(self):
         u = Untokenizer()
