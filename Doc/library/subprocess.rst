@@ -629,6 +629,12 @@ Instances of the :class:`Popen` class have the following methods:
    :exc:`TimeoutExpired` exception.  It is safe to catch this exception and
    retry the wait.
 
+   .. note::
+
+      The function is implemented using a busy loop (non-blocking call and
+      short sleeps). Use the :mod:`asyncio` module for an asynchronous wait:
+      see :class:`asyncio.create_subprocess_exec`.
+
    .. warning::
 
       This will deadlock when using ``stdout=PIPE`` and/or
