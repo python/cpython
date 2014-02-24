@@ -1791,9 +1791,9 @@ Library
 - Issue #19018: The heapq.merge() function no longer suppresses IndexError
   in the underlying iterables.
 
-- Issue #18784: The uuid module no more attempts to load libc via ctypes.CDLL,
-  if all necessary functions are already found in libuuid.
-  Patch by Evgeny Sologubov.
+- Issue #18784: The uuid module no longer attempts to load libc via ctypes.CDLL
+  if all the necessary functions have already been found in libuuid.  Patch by
+  Evgeny Sologubov.
 
 - The :envvar:`PYTHONFAULTHANDLER` environment variable now only enables the
   faulthandler module if the variable is non-empty. Same behaviour than other
