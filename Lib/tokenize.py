@@ -235,7 +235,7 @@ class Untokenizer:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
                              .format(row, col, self.prev_row, self.prev_col))
         row_offset = row - self.prev_row
-        if row_offset:  
+        if row_offset:
             self.tokens.append("\\\n" * row_offset)
             self.prev_col = 0
         col_offset = col - self.prev_col
