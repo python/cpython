@@ -1311,6 +1311,15 @@ behavior by creating a :class:`~unittest.TestSuite` subclass that defines a
 custom ``_removeTestAtIndex`` method.  (Contributed by Tom Wardill, Matt
 McClure, and Andrew Svetlov in :issue:`11798`.)
 
+A new test assertion context-manager, :meth:`~unittest.TestCase.assertLogs`,
+will ensure that a given block of code emits a log message using the
+:mod:`logging` module.  By default the message can come from any logger and
+have a priority of ``INFO`` or higher, but both the logger name and an
+alternative minimum logging level may be specified.  The object returned by the
+context manager can be queried for the :class:`~logging.LogRecord`\ s and/or
+formatted messages that were logged.  (Contributed by Antoine Pitrou in
+:issue:`18937`.)
+
 
 venv
 ----
@@ -1487,7 +1496,7 @@ Other Build and C API Changes
 * The CPython source can now be compiled using the address sanity checking
   features of recent versions of GCC and clang:  the false alarms in the small
   object allocator have been silenced.  (Contributed by Dhiru Kholia in
-  :issue:`18598`.)
+  :issue:`18596`.)
 
 
 .. _other-improvements-3.4:
