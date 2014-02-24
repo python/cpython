@@ -1902,7 +1902,7 @@ Library
 - Issue #18672: Fixed format specifiers for Py_ssize_t in debugging output in
   the _sre module.
 
-- Issue #18830: inspect.getclasstree() no more produces duplicated entries even
+- Issue #18830: inspect.getclasstree() no longer produces duplicate entries even
   when input list contains duplicates.
 
 - Issue #18878: sunau.open now supports the context manager protocol.  Based on
