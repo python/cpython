@@ -149,6 +149,12 @@ Build
 - Issue #20609: Restored the ability to build 64-bit Windows binaries on
   32-bit Windows, which was broken by the change in issue #19788.
 
+Tools/Demos
+-----------
+
+- Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
+  Patch by Arfrever Frehtes Taifersar Arahesis.
+
 
 What's New in Python 3.3.4?
 ===========================
