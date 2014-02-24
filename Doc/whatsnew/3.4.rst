@@ -95,7 +95,7 @@ New expected features for Python implementations:
 * :ref:`pip should always be "available" <whatsnew-pep-453>` (:pep:`453`).
 * :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`
   (:pep:`446`).
-* command line option for :ref:`isolated mode <using-on-misc-options>`,
+* command line option for :ref:`isolated mode <whatsnew-isolated-mode>`,
   (:issue:`16499`).
 * :ref:`improvements in the handling of codecs <codec-handling-improvements>`
   that are not text encodings (multiple issues).
@@ -372,6 +372,10 @@ Some smaller changes made to the core Python language are:
 * The :class:`int` constructor now accepts any object that has an ``__index__``
   method for its *base* argument.  (Contributed by Mark Dickinson in
   :issue:`16772`.)
+
+* Frame objects now have a :func:`~frame.clear` method that clears all
+  references to local variables from the frame.  (Contributed by Antoine Pitrou
+  in :issue:`17934`.)
 
 
 New Modules
@@ -1253,7 +1257,8 @@ traceback
 
 A new :func:`traceback.clear_frames` function takes a traceback object
 and clears the local variables in all of the frames it references,
-reducing the amount of memory consumed (:issue:`1565525`).
+reducing the amount of memory consumed.  (Contributed by Andrew Kuchling in
+:issue:`1565525`).
 
 
 urllib
@@ -1484,6 +1489,19 @@ Other Build and C API Changes
 
 Other Improvements
 ------------------
+
+.. _whatsnew-isolated-mode:
+
+* The :ref:`python <using-on-cmdline>` command has a new :ref:`option
+  <using-on-misc-options>`, ``-I``, which causes it to run in "isolated mode",
+  which means that :data:`sys.path` contains neither the script's directory nor
+  the user's ``site-packages`` directory, and all :envvar:`PYTHON*` environment
+  variables are ignored (it implies both ``-s`` and ``-E``).  Other
+  restrictions may also be applied in the future, with the goal being to
+  isolate the execution of a script from the user's environment.  This is
+  appropriate, for example, when Python is used to run a system script.  On
+  most POSIX systems it can and should be used in the ``#!`` line of system
+  scripts.  (Contributed by Christian Heims in :issue:`16499`.)
 
 * Tab-completion is now enabled by default in the interactive interpreter.
   (Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
