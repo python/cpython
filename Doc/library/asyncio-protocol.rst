@@ -376,8 +376,8 @@ The following callbacks are called on :class:`DatagramProtocol` instances.
 Flow control callbacks
 ----------------------
 
-These callbacks may be called on :class:`Protocol` and
-:class:`SubprocessProtocol` instances:
+These callbacks may be called on :class:`Protocol`,
+:class:`DatagramProtocol` and :class:`SubprocessProtocol` instances:
 
 .. method:: BaseProtocol.pause_writing()
 
@@ -401,6 +401,15 @@ buffer size reaches the low-water mark.
    equal or lower than the low-water mark.  These end conditions
    are important to ensure that things go as expected when either
    mark is zero.
+
+.. note::
+   On BSD systems (OS X, FreeBSD, etc.) flow control is not supported
+   for :class:`DatagramProtocol`, because send failures caused by
+   writing too many packets cannot be detected easily.  The socket
+   always appears 'ready' and excess packets are dropped; an
+   :class:`OSError` with errno set to :const:`errno.ENOBUFS` may or
+   may not be raised; if it is raised, it will be reported to
+   :meth:`DatagramProtocol.error_received` but otherwise ignored.
 
 
 Coroutines and protocols
