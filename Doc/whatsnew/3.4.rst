@@ -1208,7 +1208,10 @@ sunau
 The :meth:`~sunau.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 
-:meth:`sunau.open` now supports the context manager protocol (:issue:`18878`).
+:meth:`sunau.open` now supports the context manager protocol: when used in a
+:keyword:`with` block, the ``close`` method of the returned object will be
+called automatically at the end of the block.  (Contributed by Serhiy Storchaka
+in :issue:`18878`.)
 
 
 sys
@@ -1234,6 +1237,15 @@ specified placeholder is added (by default, ``[...]``, stored in the new
 :attr:`~textwrap.TextWrapper.placeholder` attribute of the
 :class:`~textwrap.TextWrapper` object)).  (Contributed by Antoine Pitrou in
 :issue:`18585`.)
+
+
+threading
+---------
+
+The :class:`~threading.Thread` object representing the main thread can be
+obtained from the new :func:`~threading.main_thread` function.  In normal
+conditions this will be the thread from which the Python interpreter was
+started.  (Contributed by Andrew Svetlov in :issue:`18882`.)
 
 
 traceback
@@ -1568,6 +1580,10 @@ Significant Optimizations
 * On Windows, the native ``VirtualAlloc`` is now used instead of the CRT
   ``malloc`` in ``obmalloc``.  Artificial benchmarks show about a 3% memory
   savings.
+
+* :func:`os.urandom` now uses a lazily-opened persistent file descriptor
+  so as to avoid using many file descriptors when run in parallel from
+  multiple threads. (Contributed by Antoine Pitrou in :issue:`18756`.)
 
 
 Deprecated
