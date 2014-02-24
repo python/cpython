@@ -801,6 +801,10 @@ This extended error description will be formatted using the
 :attr:`~http.server.HTTP.error_message_format` attribute and sent as the body
 of the error response.  (Contributed by Karl Cow in :issue:`12921`.)
 
+The :mod:`http.server` :ref:`command line interface <http-server-cli>` now has
+a ``-b/--bind`` option that causes the server to listen on a specific address.
+(Contributed by Malte Swart in :issue:`17764`.)
+
 
 importlib
 ---------
