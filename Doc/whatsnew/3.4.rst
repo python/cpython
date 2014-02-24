@@ -1501,7 +1501,7 @@ Other Improvements
   isolate the execution of a script from the user's environment.  This is
   appropriate, for example, when Python is used to run a system script.  On
   most POSIX systems it can and should be used in the ``#!`` line of system
-  scripts.  (Contributed by Christian Heims in :issue:`16499`.)
+  scripts.  (Contributed by Christian Heimes in :issue:`16499`.)
 
 * Tab-completion is now enabled by default in the interactive interpreter.
   (Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
