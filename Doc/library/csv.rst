@@ -145,7 +145,10 @@ The :mod:`csv` module defines the following classes:
 .. class:: DictReader(csvfile, fieldnames=None, restkey=None, restval=None, dialect='excel', *args, **kwds)
 
    Create an object which operates like a regular reader but maps the information
-   read into a dict whose keys are given by the optional  *fieldnames* parameter.
+   read into a dict whose keys are given by the optional *fieldnames* parameter.
+   The *fieldnames* parameter is a :mod:`sequence <collections.abc>` whose elements
+   are associated with the fields of the input data in order. These elements
+   become the keys of the resulting dictionary.
    If the *fieldnames* parameter is omitted, the values in the first row of the
    *csvfile* will be used as the fieldnames.  If the row read has more fields
    than the fieldnames sequence, the remaining data is added as a sequence
@@ -158,7 +161,8 @@ The :mod:`csv` module defines the following classes:
 .. class:: DictWriter(csvfile, fieldnames, restval='', extrasaction='raise', dialect='excel', *args, **kwds)
 
    Create an object which operates like a regular writer but maps dictionaries onto
-   output rows.  The *fieldnames* parameter identifies the order in which values in
+   output rows.  The *fieldnames* parameter is a :mod:`sequence
+   <collections.abc>` of keys that identify the order in which values in
    the dictionary passed to the :meth:`writerow` method are written to the
    *csvfile*.  The optional *restval* parameter specifies the value to be written
    if the dictionary is missing a key in *fieldnames*.  If the dictionary passed to
