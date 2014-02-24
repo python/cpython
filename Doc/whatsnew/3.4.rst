@@ -1889,6 +1889,11 @@ Changes in the Python API
   ``_removeTestAtIndex`` method that does nothing (see
   :meth:`.TestSuite.__iter__`) (:issue:`11798`).
 
+* :mod:`unittest` now uses :mod:`argparse` for command line parsing.  There are
+  certain invalid command forms that used to work that are no longer allowed;
+  in theory this should not cause backward compatibility issues since the
+  disallowed command forms didn't make any sense and are unlikely to be in use.
+
 
 Changes in the C API
 --------------------
