@@ -371,9 +371,9 @@ values.  The most versatile is the *list*, which can be written as a list of
 comma-separated values (items) between square brackets.  Lists might contain
 items of different types, but usually the items all have the same type. ::
 
-   >>> squares = [1, 2, 4, 9, 16, 25]
+   >>> squares = [1, 4, 9, 16, 25]
    >>> squares
-   [1, 2, 4, 9, 16, 25]
+   [1, 4, 9, 16, 25]
 
 Like strings (and all other built-in :term:`sequence` type), lists can be
 indexed and sliced::
@@ -389,12 +389,12 @@ All slice operations return a new list containing the requested elements.  This
 means that the following slice returns a new (shallow) copy of the list::
 
    >>> squares[:]
-   [1, 2, 4, 9, 16, 25]
+   [1, 4, 9, 16, 25]
 
 Lists also supports operations like concatenation::
 
    >>> squares + [36, 49, 64, 81, 100]
-   [1, 2, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+   [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 
 Unlike strings, which are :term:`immutable`, lists are a :term:`mutable`
 type, i.e. it is possible to change their content::
