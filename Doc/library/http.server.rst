@@ -351,7 +351,7 @@ of which this module provides three different variants:
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
-the current directory. ::
+the current directory::
 
    import http.server
    import socketserver
@@ -365,15 +365,17 @@ the current directory. ::
    print("serving at port", PORT)
    httpd.serve_forever()
 
+.. _http-server-cli:
+
 :mod:`http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter with a ``port number`` argument.  Similar to
-the previous example, this serves files relative to the current directory. ::
+the previous example, this serves files relative to the current directory::
 
         python -m http.server 8000
 
-By default, server binds itself to all interfaces. To restrict it to bind to a
-particular interface only, ``--bind ADDRESS`` argument can be used. For e.g, to
-restrict the server to bind only to localhost. ::
+By default, server binds itself to all interfaces.  The option ``-b/--bind``
+specifies a specific address to which it should bind.  For example, the
+following command causes the server to bind to localhost only::
 
         python -m http.server 8000 --bind 127.0.0.1
 
@@ -422,7 +424,7 @@ restrict the server to bind only to localhost. ::
    reasons.  Problems with the CGI script will be translated to error 403.
 
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
-the ``--cgi`` option.::
+the ``--cgi`` option::
 
         python -m http.server --cgi 8000
 
