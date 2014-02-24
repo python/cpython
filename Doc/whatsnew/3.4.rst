@@ -1484,6 +1484,11 @@ Other Build and C API Changes
   existing :c:func:`PyStructSequence_InitType` function.  The difference
   is that it returns ``0`` on success and ``-1`` on failure.
 
+* The CPython source can now be compiled using the address sanity checking
+  features of recent versions of GCC and clang:  the false alarms in the small
+  object allocator have been silenced.  (Contributed by Dhiru Kholia in
+  :issue:`18598`.)
+
 
 .. _other-improvements-3.4:
 
