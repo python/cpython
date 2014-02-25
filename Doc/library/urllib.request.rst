@@ -218,7 +218,7 @@ The following classes are provided:
    fetching of the image, this should be true.
 
    *method* should be a string that indicates the HTTP request method that
-   will be used (e.g. ``'HEAD'``).  Its value is stored in the
+   will be used (e.g. ``'HEAD'``).  If provided, its value is stored in the
    :attr:`~Request.method` attribute and is used by :meth:`get_method()`.
    Subclasses may indicate a default method by setting the
    :attr:`~Request.method` attribute in the class itself.
@@ -440,12 +440,19 @@ request.
 
 .. attribute:: Request.method
 
-   The HTTP request method to use.  This value is used by
-   :meth:`~Request.get_method` to override the computed HTTP request
-   method that would otherwise be returned.  This attribute is initialized with
-   the value of the *method* argument passed to the constructor.
+   The HTTP request method to use.  By default its value is :const:`None`,
+   which means that :meth:`~Request.get_method` will do its normal computation
+   of the method to be used.  Its value can be set (thus overriding the default
+   computation in :meth:`~Request.get_method`) either by providing a default
+   value by setting it at the class level in a :class:`Request` subclass, or by
+   passing a value in to the :class:`Request` constructor via the *method*
+   argument.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.4
+      A default value can now be set in subclasses; previously it could only
+      be set via the constructor argument.
 
 
 .. method:: Request.get_method()
