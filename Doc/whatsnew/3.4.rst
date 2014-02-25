@@ -1272,6 +1272,11 @@ urllib
 :class:`~urllib.request.DataHandler` class.  (Contributed by Mathias Panzenböck
 in :issue:`16423`.)
 
+The http method that will be used by a :class:`~urllib.request.Request` class
+can now be specified by setting a :class:`~urllib.request.Request.method`
+class attribute on the subclass. (Contributed by Jason R Coombs in
+:issue:`18978`.)
+
 
 unittest
 --------
