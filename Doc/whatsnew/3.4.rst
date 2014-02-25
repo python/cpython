@@ -1270,6 +1270,17 @@ reducing the amount of memory consumed.  (Contributed by Andrew Kuchling in
 :issue:`1565525`).
 
 
+types
+-----
+
+A new :func:`~types.DynamicClassAttribute` descriptor provides a way to define
+an attribute that acts normally when looked up through an instance object, but
+which is routed to the *class* ``__getattr__`` when looked up through the
+class.  This allows one to have properties active on a class, and have virtual
+attributes on the class with the same name (see :mod:`Enum` for an example).
+(Contributed by Ethan Furman in :issue:`19030`.)
+
+
 urllib
 ------
 
@@ -1511,6 +1522,12 @@ Other Build and C API Changes
   features of recent versions of GCC and clang:  the false alarms in the small
   object allocator have been silenced.  (Contributed by Dhiru Kholia in
   :issue:`18596`.)
+
+* New function :c:func:`Py_SetStandardStreamEncoding` allows an application
+  that is embedding Python to do the equivalent of setting
+  :envvar:`PYTHONIOENCODING`.  Its arguments override the equivalent
+  values from :envvar:`PYTHONIOENCODING` if it exists.  (Contributed
+  by Bastien Montagne and Nick Coghlan in :issue:`16129`.)
 
 
 .. _other-improvements-3.4:
