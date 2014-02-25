@@ -1578,6 +1578,11 @@ Other Improvements
   to use copies rather than symlinks even on systems where symlinks are the
   default.  (Contributed by Vinay Sajip in :issue:`18807`.)
 
+* The encoding name is now optional in the value set for the
+  :envvar:`PYTHONIOENCODING` environment variable.  This makes it possible to
+  set just the error handler, without changing the default encoding.
+  (Contributed by Serhiy Storchaka in :issue:`18818`.)
+
 
 Significant Optimizations
 -------------------------
