@@ -897,6 +897,11 @@ The :class:`~logging.handlers.TimedRotatingFileHandler` has a new *atTime*
 parameter that can be used to specify the time of day when rollover should
 happen.  (Contributed by Ronald Oussoren in :issue:`9556`.)
 
+:class:`~logging.handlers.SocketHandler` and
+:class:`~logging.handlers.DatagramHandler` now support Unix domain sockets (by
+setting *port* to ``None``).  (Contributed by Vinay Sajip in commit
+ce46195b56a9.)
+
 
 .. _whatsnew-marshal-3:
 
