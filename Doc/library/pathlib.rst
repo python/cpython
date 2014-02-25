@@ -522,6 +522,36 @@ Pure paths provide the following methods and properties:
       ValueError: '/etc/passwd' does not start with '/usr'
 
 
+.. method:: PurePath.with_name(name)
+
+   Return a new path with the :attr:`name` changed.  If the original path
+   doesn't have a name, ValueError is raised::
+
+      >>> p = PureWindowsPath('c:/Downloads/pathlib.tar.gz')
+      >>> p.with_name('setup.py')
+      PureWindowsPath('c:/Downloads/setup.py')
+      >>> p = PureWindowsPath('c:/')
+      >>> p.with_name('setup.py')
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "/home/antoine/cpython/default/Lib/pathlib.py", line 751, in with_name
+          raise ValueError("%r has an empty name" % (self,))
+      ValueError: PureWindowsPath('c:/') has an empty name
+
+
+.. method:: PurePath.with_suffix(suffix)
+
+   Return a new path with the :attr:`suffix` changed.  If the original path
+   doesn't have a suffix, the new *suffix* is appended instead::
+
+      >>> p = PureWindowsPath('c:/Downloads/pathlib.tar.gz')
+      >>> p.with_suffix('.bz2')
+      PureWindowsPath('c:/Downloads/pathlib.tar.bz2')
+      >>> p = PureWindowsPath('README')
+      >>> p.with_suffix('.txt')
+      PureWindowsPath('README.txt')
+
+
 .. _concrete-paths:
 
 
