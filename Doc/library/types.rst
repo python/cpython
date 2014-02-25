@@ -15,6 +15,9 @@ It also defines names for some object types that are used by the standard
 Python interpreter, but not exposed as builtins like :class:`int` or
 :class:`str` are.
 
+Finally, it provides some additional type-related utility classes and functions
+that are not fundamental enough to be builtins.
+
 
 Dynamic Type Creation
 ---------------------
@@ -220,6 +223,9 @@ Standard names are defined for the following types:
       Return a new view of the underlying mapping's values.
 
 
+Additional Utility Classes and Functions
+----------------------------------------
+
 .. class:: SimpleNamespace
 
    A simple :class:`object` subclass that provides attribute access to its
@@ -246,3 +252,18 @@ Standard names are defined for the following types:
    instead.
 
    .. versionadded:: 3.3
+
+
+.. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
+
+   Route attribute access on a class to __getattr__.
+
+   This is a descriptor, used to define attributes that act differently when
+   accessed through an instance and through a class.  Instance access remains
+   normal, but access to an attribute through a class will be routed to the
+   class's __getattr__ method; this is done by raising AttributeError.
+
+   This allows one to have properties active on an instance, and have virtual
+   attributes on the class with the same name (see Enum for an example).
+
+   .. versionadded:: 3.4
