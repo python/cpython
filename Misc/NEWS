@@ -17,6 +17,12 @@ Library
 - Issue #19748: On AIX, time.mktime() now raises an OverflowError for year
   outsize range [1902; 2037].
 
+Documentation
+-------------
+
+- Issue #20765: Add missing documentation for PurePath.with_name() and
+  PurePath.with_suffix().
+
 Tests
 -----
 
