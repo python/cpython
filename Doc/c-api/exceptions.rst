@@ -306,7 +306,7 @@ in various ways.  There is a separate error indicator for each thread.
 
 .. c:function:: void PyErr_SyntaxLocation(char *filename, int lineno)
 
-   Like :c:func:`PyErr_SyntaxLocationExc`, but the col_offset parameter is
+   Like :c:func:`PyErr_SyntaxLocationEx`, but the col_offset parameter is
    omitted.
 
 
@@ -490,11 +490,11 @@ Exception Objects
    reference, as accessible from Python through :attr:`__cause__`.
 
 
-.. c:function:: void PyException_SetCause(PyObject *ex, PyObject *ctx)
+.. c:function:: void PyException_SetCause(PyObject *ex, PyObject *cause)
 
-   Set the cause associated with the exception to *ctx*.  Use *NULL* to clear
-   it.  There is no type check to make sure that *ctx* is either an exception
-   instance or :const:`None`.  This steals a reference to *ctx*.
+   Set the cause associated with the exception to *cause*.  Use *NULL* to clear
+   it.  There is no type check to make sure that *cause* is either an exception
+   instance or :const:`None`.  This steals a reference to *cause*.
 
    :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
 
