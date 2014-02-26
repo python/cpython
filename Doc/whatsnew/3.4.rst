@@ -998,16 +998,14 @@ pdb
 ---
 
 The ``print`` command has been removed from :mod:`pdb`, restoring access to the
-``print`` function.
-
-Rationale: Python2's ``pdb`` did not have a ``print`` command; instead,
-entering ``print`` executed the ``print`` statement.  In Python3 ``print`` was
-mistakenly made an alias for the pdb :pdbcmd:`p` command.  ``p``, however,
-prints the ``repr`` of its argument, not the ``str`` like the Python2 ``print``
-command did.  Worse, the Python3 ``pdb print`` command shadowed the Python3
-``print`` function, making it inaccessible at the ``pdb`` prompt.
-
-(Contributed by Connor Osborn in :issue:`18764`.)
+Python :func:`print` function from the pdb command line.  Python2's ``pdb`` did
+not have a ``print`` command; instead, entering ``print`` executed the
+``print`` statement.  In Python3 ``print`` was mistakenly made an alias for the
+pdb :pdbcmd:`p` command.  ``p``, however, prints the ``repr`` of its argument,
+not the ``str`` like the Python2 ``print`` command did.  Worse, the Python3
+``pdb print`` command shadowed the Python3 ``print`` function, making it
+inaccessible at the ``pdb`` prompt.  (Contributed by Connor Osborn in
+:issue:`18764`.)
 
 
 .. _whatsnew-protocol-4:
