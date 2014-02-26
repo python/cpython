@@ -12,7 +12,7 @@ import tempfile
 import threading
 import time
 import unittest
-import unittest.mock
+from unittest import mock
 
 from http.server import HTTPServer
 from wsgiref.simple_server import WSGIRequestHandler, WSGIServer
@@ -362,7 +362,7 @@ class TestLoop(base_events.BaseEventLoop):
 
 
 def MockCallback(**kwargs):
-    return unittest.mock.Mock(spec=['__call__'], **kwargs)
+    return mock.Mock(spec=['__call__'], **kwargs)
 
 
 class MockPattern(str):

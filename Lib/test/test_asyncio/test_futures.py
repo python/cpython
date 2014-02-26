@@ -3,7 +3,7 @@
 import concurrent.futures
 import threading
 import unittest
-import unittest.mock
+from unittest import mock
 
 import asyncio
 from asyncio import test_utils
@@ -174,20 +174,20 @@ class FutureTests(unittest.TestCase):
         self.assertRaises(AssertionError, test)
         fut.cancel()
 
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_abandoned(self, m_log):
         fut = asyncio.Future(loop=self.loop)
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_result_unretrieved(self, m_log):
         fut = asyncio.Future(loop=self.loop)
         fut.set_result(42)
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_result_retrieved(self, m_log):
         fut = asyncio.Future(loop=self.loop)
         fut.set_result(42)
@@ -195,7 +195,7 @@ class FutureTests(unittest.TestCase):
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_exception_unretrieved(self, m_log):
         fut = asyncio.Future(loop=self.loop)
         fut.set_exception(RuntimeError('boom'))
@@ -203,7 +203,7 @@ class FutureTests(unittest.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertTrue(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_exception_retrieved(self, m_log):
         fut = asyncio.Future(loop=self.loop)
         fut.set_exception(RuntimeError('boom'))
@@ -211,7 +211,7 @@ class FutureTests(unittest.TestCase):
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_exception_result_retrieved(self, m_log):
         fut = asyncio.Future(loop=self.loop)
         fut.set_exception(RuntimeError('boom'))
@@ -236,7 +236,7 @@ class FutureTests(unittest.TestCase):
         f2 = asyncio.wrap_future(f1)
         self.assertIs(f1, f2)
 
-    @unittest.mock.patch('asyncio.futures.events')
+    @mock.patch('asyncio.futures.events')
     def test_wrap_future_use_global_loop(self, m_events):
         def run(arg):
             return (arg, threading.get_ident())
