@@ -26,6 +26,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20621: Fixes a zipimport bug introduced in 3.3.4 that could cause
+  spurious crashes or SystemErrors when importing modules or packages from a
+  zip file.  The change causing the problem was reverted.
+
 - Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
   Tkinter widgets to work in wantobjects=True mode.
 
