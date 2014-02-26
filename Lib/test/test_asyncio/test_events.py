@@ -1155,23 +1155,15 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     def test_write_pipe(self):
-        proto = MyWritePipeProto(loop=self.loop)
-        transport = None
-
         rpipe, wpipe = os.pipe()
         pipeobj = io.open(wpipe, 'wb', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal transport
-            t, p = yield from self.loop.connect_write_pipe(
-                        lambda: proto, pipeobj)
-            self.assertIs(p, proto)
-            self.assertIs(t, proto.transport)
-            self.assertEqual('CONNECTED', proto.state)
-            transport = t
-
-        self.loop.run_until_complete(connect())
+        proto = MyWritePipeProto(loop=self.loop)
+        connect = self.loop.connect_write_pipe(lambda: proto, pipeobj)
+        transport, p = self.loop.run_until_complete(connect)
+        self.assertIs(p, proto)
+        self.assertIs(transport, proto.transport)
+        self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
         test_utils.run_briefly(self.loop)
@@ -1197,23 +1189,14 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     def test_write_pipe_disconnect_on_close(self):
-        proto = MyWritePipeProto(loop=self.loop)
-        transport = None
-
         rsock, wsock = test_utils.socketpair()
         pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal transport
-            t, p = yield from self.loop.connect_write_pipe(lambda: proto,
-                                                           pipeobj)
-            self.assertIs(p, proto)
-            self.assertIs(t, proto.transport)
-            self.assertEqual('CONNECTED', proto.state)
-            transport = t
-
-        self.loop.run_until_complete(connect())
+        proto = MyWritePipeProto(loop=self.loop)
+        connect = self.loop.connect_write_pipe(lambda: proto, pipeobj)
+        transport, p = self.loop.run_until_complete(connect)
+        self.assertIs(p, proto)
+        self.assertIs(transport, proto.transport)
         self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
@@ -1231,23 +1214,15 @@ class EventLoopTestsMixin:
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
     def test_write_pty(self):
-        proto = MyWritePipeProto(loop=self.loop)
-        transport = None
-
         master, slave = os.openpty()
         slave_write_obj = io.open(slave, 'wb', 0)
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal transport
-            t, p = yield from self.loop.connect_write_pipe(lambda: proto,
-                                                           slave_write_obj)
-            self.assertIs(p, proto)
-            self.assertIs(t, proto.transport)
-            self.assertEqual('CONNECTED', proto.state)
-            transport = t
-
-        self.loop.run_until_complete(connect())
+        proto = MyWritePipeProto(loop=self.loop)
+        connect = self.loop.connect_write_pipe(lambda: proto, slave_write_obj)
+        transport, p = self.loop.run_until_complete(connect)
+        self.assertIs(p, proto)
+        self.assertIs(transport, proto.transport)
+        self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
         test_utils.run_briefly(self.loop)
@@ -1369,20 +1344,13 @@ class SubprocessTestsMixin:
             self.assertEqual(-signal.SIGKILL, returncode)
 
     def test_subprocess_exec(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
 
@@ -1395,20 +1363,13 @@ class SubprocessTestsMixin:
         self.assertEqual(b'Python The Winner', proto.data[1])
 
     def test_subprocess_interactive(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
 
@@ -1429,18 +1390,11 @@ class SubprocessTestsMixin:
         self.check_terminated(proto.returncode)
 
     def test_subprocess_shell(self):
-        proto = None
-        transp = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'echo Python')
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'echo Python')
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.get_pipe_transport(0).close()
@@ -1451,33 +1405,20 @@ class SubprocessTestsMixin:
         self.assertEqual(proto.data[2], b'')
 
     def test_subprocess_exitcode(self):
-        proto = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto
-            transp, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'exit 7', stdin=None, stdout=None, stderr=None)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'exit 7', stdin=None, stdout=None, stderr=None)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(7, proto.returncode)
 
     def test_subprocess_close_after_finish(self):
-        proto = None
-        transp = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'exit 7', stdin=None, stdout=None, stderr=None)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'exit 7', stdin=None, stdout=None, stderr=None)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.assertIsNone(transp.get_pipe_transport(0))
         self.assertIsNone(transp.get_pipe_transport(1))
         self.assertIsNone(transp.get_pipe_transport(2))
@@ -1486,20 +1427,13 @@ class SubprocessTestsMixin:
         self.assertIsNone(transp.close())
 
     def test_subprocess_kill(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.kill()
@@ -1507,20 +1441,13 @@ class SubprocessTestsMixin:
         self.check_killed(proto.returncode)
 
     def test_subprocess_terminate(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.terminate()
@@ -1529,20 +1456,13 @@ class SubprocessTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
     def test_subprocess_send_signal(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.send_signal(signal.SIGHUP)
@@ -1550,20 +1470,13 @@ class SubprocessTestsMixin:
         self.assertEqual(-signal.SIGHUP, proto.returncode)
 
     def test_subprocess_stderr(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         stdin = transp.get_pipe_transport(0)
@@ -1577,20 +1490,13 @@ class SubprocessTestsMixin:
         self.assertEqual(0, proto.returncode)
 
     def test_subprocess_stderr_redirect_to_stdout(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog, stderr=subprocess.STDOUT)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog, stderr=subprocess.STDOUT)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         stdin = transp.get_pipe_transport(0)
@@ -1607,20 +1513,13 @@ class SubprocessTestsMixin:
         self.assertEqual(0, proto.returncode)
 
     def test_subprocess_close_client_stream(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo3.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         stdin = transp.get_pipe_transport(0)
@@ -1646,19 +1545,13 @@ class SubprocessTestsMixin:
         self.check_terminated(proto.returncode)
 
     def test_subprocess_wait_no_same_group(self):
-        proto = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto
-            # start the new process in a new session
-            _, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'exit 7', stdin=None, stdout=None, stderr=None,
-                start_new_session=True)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        # start the new process in a new session
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'exit 7', stdin=None, stdout=None, stderr=None,
+                        start_new_session=True)
+        _, proto = yield self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(7, proto.returncode)
 
