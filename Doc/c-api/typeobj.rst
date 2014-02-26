@@ -205,9 +205,8 @@ type objects) *must* have the :attr:`ob_size` field.
    bit currently defined is :const:`Py_PRINT_RAW`. When the :const:`Py_PRINT_RAW`
    flag bit is set, the instance should be printed the same way as :c:member:`~PyTypeObject.tp_str`
    would format it; when the :const:`Py_PRINT_RAW` flag bit is clear, the instance
-   should be printed the same was as :c:member:`~PyTypeObject.tp_repr` would format it. It should
-   return ``-1`` and set an exception condition when an error occurred during the
-   comparison.
+   should be printed the same way as :c:member:`~PyTypeObject.tp_repr` would format it. It should
+   return ``-1`` and set an exception condition when an error occurs.
 
    It is possible that the :c:member:`~PyTypeObject.tp_print` field will be deprecated. In any case,
    it is recommended not to define :c:member:`~PyTypeObject.tp_print`, but instead to rely on
