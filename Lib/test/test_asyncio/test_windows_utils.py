@@ -3,7 +3,7 @@
 import sys
 import test.support
 import unittest
-import unittest.mock
+from unittest import mock
 
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
@@ -25,7 +25,7 @@ class WinsocketpairTests(unittest.TestCase):
         csock.close()
         ssock.close()
 
-    @unittest.mock.patch('asyncio.windows_utils.socket')
+    @mock.patch('asyncio.windows_utils.socket')
     def test_winsocketpair_exc(self, m_socket):
         m_socket.socket.return_value.getsockname.return_value = ('', 12345)
         m_socket.socket.return_value.accept.return_value = object(), object()
