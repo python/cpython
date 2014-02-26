@@ -412,7 +412,7 @@ mock using the "as" form of the with statement:
 
 As an alternative `patch`, `patch.object` and `patch.dict` can be used as
 class decorators. When used in this way it is the same as applying the
-decorator indvidually to every method whose name starts with "test".
+decorator individually to every method whose name starts with "test".
 
 
 .. _further-examples:
