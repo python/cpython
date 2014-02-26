@@ -11,7 +11,6 @@ import sys
 import tempfile
 import threading
 import time
-import unittest
 from unittest import mock
 
 from http.server import HTTPServer

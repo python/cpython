@@ -1,6 +1,5 @@
 """Tests for streams.py."""
 
-import functools
 import gc
 import socket
 import unittest

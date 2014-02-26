@@ -7,7 +7,7 @@ import sys
 import time
 import unittest
 from unittest import mock
-from test.support import find_unused_port, IPV6_ENABLED
+from test.support import IPV6_ENABLED
 
 import asyncio
 from asyncio import base_events

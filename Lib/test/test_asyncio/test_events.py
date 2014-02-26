@@ -25,7 +25,6 @@ from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
 
 
 import asyncio
-from asyncio import events
 from asyncio import selector_events
 from asyncio import test_utils
 
@@ -1648,13 +1647,12 @@ class SubprocessTestsMixin:
 
     def test_subprocess_wait_no_same_group(self):
         proto = None
-        transp = None
 
         @asyncio.coroutine
         def connect():
             nonlocal proto
             # start the new process in a new session
-            transp, proto = yield from self.loop.subprocess_shell(
+            _, proto = yield from self.loop.subprocess_shell(
                 functools.partial(MySubprocessProtocol, self.loop),
                 'exit 7', stdin=None, stdout=None, stderr=None,
                 start_new_session=True)
