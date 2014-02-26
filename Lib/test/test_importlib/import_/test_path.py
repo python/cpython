@@ -116,5 +116,29 @@ Frozen_FinderTests, Source_FinderTests = util.test_both(
         FinderTests, importlib=importlib, machinery=machinery)
 
 
+class PathEntryFinderTests:
+
+    def test_finder_with_failing_find_module(self):
+        # PathEntryFinder with find_module() defined should work.
+        # Issue #20763.
+        class Finder:
+            path_location = 'test_finder_with_find_module'
+            def __init__(self, path):
+                if path != self.path_location:
+                    raise ImportError
+
+            @staticmethod
+            def find_module(fullname):
+                return None
+
+
+        with util.import_state(path=[Finder.path_location]+sys.path[:],
+                               path_hooks=[Finder]):
+            self.machinery.PathFinder.find_spec('importlib')
+
+Frozen_PEFTests, Source_PEFTests = util.test_both(
+        PathEntryFinderTests, machinery=machinery)
+
+
 if __name__ == '__main__':
     unittest.main()

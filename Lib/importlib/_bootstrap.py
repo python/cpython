@@ -1869,7 +1869,7 @@ class PathFinder:
             loader, portions = finder.find_loader(fullname)
         else:
             loader = finder.find_module(fullname)
-            portions = None
+            portions = []
         if loader is not None:
             return spec_from_loader(fullname, loader)
         spec = ModuleSpec(fullname, None)
