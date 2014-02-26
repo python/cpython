@@ -20,7 +20,7 @@ import threading
 import time
 import errno
 import unittest
-import unittest.mock
+from unittest import mock
 from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
 
 
@@ -1812,7 +1812,7 @@ class HandleTests(unittest.TestCase):
             return args
 
         args = ()
-        h = asyncio.Handle(callback, args, unittest.mock.Mock())
+        h = asyncio.Handle(callback, args, mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
         self.assertFalse(h._cancelled)
@@ -1844,15 +1844,15 @@ class HandleTests(unittest.TestCase):
         def callback():
             raise ValueError()
 
-        m_loop = unittest.mock.Mock()
-        m_loop.call_exception_handler = unittest.mock.Mock()
+        m_loop = mock.Mock()
+        m_loop.call_exception_handler = mock.Mock()
 
         h = asyncio.Handle(callback, (), m_loop)
         h._run()
 
         m_loop.call_exception_handler.assert_called_with({
             'message': test_utils.MockPattern('Exception in callback.*'),
-            'exception': unittest.mock.ANY,
+            'exception': mock.ANY,
             'handle': h
         })
 
@@ -1862,7 +1862,7 @@ class TimerTests(unittest.TestCase):
     def test_hash(self):
         when = time.monotonic()
         h = asyncio.TimerHandle(when, lambda: False, (),
-                                unittest.mock.Mock())
+                                mock.Mock())
         self.assertEqual(hash(h), hash(when))
 
     def test_timer(self):
@@ -1871,7 +1871,7 @@ class TimerTests(unittest.TestCase):
 
         args = ()
         when = time.monotonic()
-        h = asyncio.TimerHandle(when, callback, args, unittest.mock.Mock())
+        h = asyncio.TimerHandle(when, callback, args, mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
         self.assertFalse(h._cancelled)
@@ -1887,10 +1887,10 @@ class TimerTests(unittest.TestCase):
 
         self.assertRaises(AssertionError,
                           asyncio.TimerHandle, None, callback, args,
-                          unittest.mock.Mock())
+                          mock.Mock())
 
     def test_timer_comparison(self):
-        loop = unittest.mock.Mock()
+        loop = mock.Mock()
 
         def callback(*args):
             return args
@@ -1935,7 +1935,7 @@ class TimerTests(unittest.TestCase):
 class AbstractEventLoopTests(unittest.TestCase):
 
     def test_not_implemented(self):
-        f = unittest.mock.Mock()
+        f = mock.Mock()
         loop = asyncio.AbstractEventLoop()
         self.assertRaises(
             NotImplementedError, loop.run_forever)
@@ -1995,13 +1995,13 @@ class AbstractEventLoopTests(unittest.TestCase):
             NotImplementedError, loop.remove_signal_handler, 1)
         self.assertRaises(
             NotImplementedError, loop.connect_read_pipe, f,
-            unittest.mock.sentinel.pipe)
+            mock.sentinel.pipe)
         self.assertRaises(
             NotImplementedError, loop.connect_write_pipe, f,
-            unittest.mock.sentinel.pipe)
+            mock.sentinel.pipe)
         self.assertRaises(
             NotImplementedError, loop.subprocess_shell, f,
-            unittest.mock.sentinel)
+            mock.sentinel)
         self.assertRaises(
             NotImplementedError, loop.subprocess_exec, f)
 
@@ -2009,7 +2009,7 @@ class AbstractEventLoopTests(unittest.TestCase):
 class ProtocolsAbsTests(unittest.TestCase):
 
     def test_empty(self):
-        f = unittest.mock.Mock()
+        f = mock.Mock()
         p = asyncio.Protocol()
         self.assertIsNone(p.connection_made(f))
         self.assertIsNone(p.connection_lost(f))
@@ -2055,7 +2055,7 @@ class PolicyTests(unittest.TestCase):
     def test_get_event_loop_calls_set_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
 
-        with unittest.mock.patch.object(
+        with mock.patch.object(
                 policy, "set_event_loop",
                 wraps=policy.set_event_loop) as m_set_event_loop:
 
@@ -2073,7 +2073,7 @@ class PolicyTests(unittest.TestCase):
         policy.set_event_loop(None)
         self.assertRaises(AssertionError, policy.get_event_loop)
 
-    @unittest.mock.patch('asyncio.events.threading.current_thread')
+    @mock.patch('asyncio.events.threading.current_thread')
     def test_get_event_loop_thread(self, m_current_thread):
 
         def f():
