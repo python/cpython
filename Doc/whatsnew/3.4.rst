@@ -1043,11 +1043,15 @@ Catucci in :issue:`4473`.)
 pprint
 ------
 
-The :mod:`pprint` module now supports *compact* mode for formatting long
-sequences (:issue:`19132`).
+The :mod:`pprint` module's :class:`~pprint.PrettyPrinter` class and its
+:func:`~pprint.pformat`, and :func:`~pprint.pprint` functions have a new
+option, *compact*, that controls how the output is formatted.  Currently
+setting *compact* to ``True`` means that sequences will be printed with as many
+sequence elements as will fit within *width* on each (indented) line.
+(Contributed by Serhiy Storchaka in :issue:`19132`.)
 
 Long strings are now wrapped using Python's normal line continuation
-syntax (Contributed by Antoine Pitrou in :issue:`17150`.)
+syntax.  (Contributed by Antoine Pitrou in :issue:`17150`).
 
 
 pty
