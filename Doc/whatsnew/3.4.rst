@@ -580,11 +580,15 @@ statement. (Contributed by Raymond Hettinger in :issue:`15806` and
 Zero Piraeus in :issue:`19266`)
 
 The new :func:`contextlib.redirect_stdout` context manager makes it easier
-for utility scripts to handle inflexible APIs that don't provide any
-options to retrieve their output as a string or direct it to somewhere
-other than :data:`sys.stdout`. In conjunction with :class:`io.StringIO`,
-this context manager is also useful for checking expected output from
-command line utilities. (Contribute by Raymond Hettinger in :issue:`15805`)
+for utility scripts to handle inflexible APIs that write their output to
+:data:`sys.stdout` and don't provide any options to redirect it.  Using the
+context manager, the :data:`sys.stdout` output can be redirected to any
+other stream or, in conjunction with :class:`io.StringIO`, to a string.
+The latter can be especially useful, for example, to capture output
+from a function that was written to implement a command line interface.
+It is recommended only for utility scripts because it affects the
+global state of :data:`sys.stdout`.  (Contributed by Raymond Hettinger
+in :issue:`15805`)
 
 The :mod:`contextlib` documentation has also been updated to include a
 :ref:`discussion <single-use-reusable-and-reentrant-cms>` of the
