@@ -218,8 +218,49 @@ class FileInputTests(unittest.TestCase):
         finally:
             remove_tempfiles(t1)
 
+    def test_readline(self):
+        with open(TESTFN, 'wb') as f:
+            f.write('A\nB\r\nC\r')
+            # Fill TextIOWrapper buffer.
+            f.write('123456789\n' * 1000)
+            # Issue #20501: readline() shouldn't read whole file.
+            f.write('\x80')
+        self.addCleanup(safe_unlink, TESTFN)
+
+        fi = FileInput(files=TESTFN, openhook=hook_encoded('ascii'), bufsize=8)
+        self.assertEqual(fi.readline(), u'A\n')
+        self.assertEqual(fi.readline(), u'B\r\n')
+        self.assertEqual(fi.readline(), u'C\r')
+        with self.assertRaises(UnicodeDecodeError):
+            # Read to the end of file.
+            list(fi)
+        fi.close()
+
+class Test_hook_encoded(unittest.TestCase):
+    """Unit tests for fileinput.hook_encoded()"""
+
+    def test_modes(self):
+        # Unlikely UTF-7 is locale encoding
+        with open(TESTFN, 'wb') as f:
+            f.write('A\nB\r\nC\rD+IKw-')
+        t1 = TESTFN
+        #t1 = writeTmp(1, ['A\nB\r\nC\rD+IKw-'], mode='wb')
+        self.addCleanup(safe_unlink, TESTFN)
+
+        def check(mode, expected_lines):
+            fi = FileInput(files=TESTFN, mode=mode,
+                           openhook=hook_encoded('utf-7'))
+            lines = list(fi)
+            fi.close()
+            self.assertEqual(lines, expected_lines)
+
+        check('r', [u'A\n', u'B\r\n', u'C\r', u'D\u20ac'])
+        check('rU', [u'A\n', u'B\r\n', u'C\r', u'D\u20ac'])
+        check('U', [u'A\n', u'B\r\n', u'C\r', u'D\u20ac'])
+        check('rb', [u'A\n', u'B\r\n', u'C\r', u'D\u20ac'])
+
 def test_main():
-    run_unittest(BufferSizesTests, FileInputTests)
+    run_unittest(BufferSizesTests, FileInputTests, Test_hook_encoded)
 
 if __name__ == "__main__":
     test_main()

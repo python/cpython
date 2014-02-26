@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20501: fileinput module no longer reads whole file into memory when using
+  fileinput.hook_encoded.
+
 - Issue #6815: os.path.expandvars() now supports non-ASCII Unicode environment
   variables names and values.
 
