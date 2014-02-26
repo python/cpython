@@ -213,7 +213,7 @@ class IocpProactor:
         else:
             ov.ReadFile(conn.fileno(), nbytes)
 
-        def finish(trans, key, ov):
+        def finish_recv(trans, key, ov):
             try:
                 return ov.getresult()
             except OSError as exc:
@@ -222,7 +222,7 @@ class IocpProactor:
                 else:
                     raise
 
-        return self._register(ov, conn, finish)
+        return self._register(ov, conn, finish_recv)
 
     def send(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -232,7 +232,7 @@ class IocpProactor:
         else:
             ov.WriteFile(conn.fileno(), buf)
 
-        def finish(trans, key, ov):
+        def finish_send(trans, key, ov):
             try:
                 return ov.getresult()
             except OSError as exc:
@@ -241,7 +241,7 @@ class IocpProactor:
                 else:
                     raise
 
-        return self._register(ov, conn, finish)
+        return self._register(ov, conn, finish_send)
 
     def accept(self, listener):
         self._register_with_iocp(listener)
@@ -300,17 +300,17 @@ class IocpProactor:
         ov = _overlapped.Overlapped(NULL)
         ov.ConnectNamedPipe(pipe.fileno())
 
-        def finish(trans, key, ov):
+        def finish_accept_pipe(trans, key, ov):
             ov.getresult()
             return pipe
 
-        return self._register(ov, pipe, finish)
+        return self._register(ov, pipe, finish_accept_pipe)
 
     def connect_pipe(self, address):
         ov = _overlapped.Overlapped(NULL)
         ov.WaitNamedPipeAndConnect(address, self._iocp, ov.address)
 
-        def finish(err, handle, ov):
+        def finish_connect_pipe(err, handle, ov):
             # err, handle were arguments passed to PostQueuedCompletionStatus()
             # in a function run in a thread pool.
             if err == _overlapped.ERROR_SEM_TIMEOUT:
@@ -323,7 +323,7 @@ class IocpProactor:
             else:
                 return windows_utils.PipeHandle(handle)
 
-        return self._register(ov, None, finish, wait_for_post=True)
+        return self._register(ov, None, finish_connect_pipe, wait_for_post=True)
 
     def wait_for_handle(self, handle, timeout=None):
         if timeout is None:
@@ -339,7 +339,7 @@ class IocpProactor:
             handle, self._iocp, ov.address, ms)
         f = _WaitHandleFuture(wh, loop=self._loop)
 
-        def finish(trans, key, ov):
+        def finish_wait_for_handle(trans, key, ov):
             if not f.cancelled():
                 try:
                     _overlapped.UnregisterWait(wh)
@@ -355,7 +355,7 @@ class IocpProactor:
             return (_winapi.WaitForSingleObject(handle, 0) ==
                     _winapi.WAIT_OBJECT_0)
 
-        self._cache[ov.address] = (f, ov, None, finish)
+        self._cache[ov.address] = (f, ov, None, finish_wait_for_handle)
         return f
 
     def _register_with_iocp(self, obj):
