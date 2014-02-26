@@ -830,7 +830,7 @@ class TaskTests(unittest.TestCase):
                 v = yield from f
                 self.assertEqual(v, 'a')
 
-        res = loop.run_until_complete(asyncio.Task(foo(), loop=loop))
+        loop.run_until_complete(asyncio.Task(foo(), loop=loop))
 
     def test_as_completed_reverse_wait(self):
 
@@ -964,13 +964,9 @@ class TaskTests(unittest.TestCase):
         loop = test_utils.TestLoop(gen)
         self.addCleanup(loop.close)
 
-        sleepfut = None
-
         @asyncio.coroutine
         def sleep(dt):
-            nonlocal sleepfut
-            sleepfut = asyncio.sleep(dt, loop=loop)
-            yield from sleepfut
+            yield from asyncio.sleep(dt, loop=loop)
 
         @asyncio.coroutine
         def doit():

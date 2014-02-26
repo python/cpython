@@ -1,6 +1,5 @@
 """Tests for selector_events.py"""
 
-import collections
 import errno
 import gc
 import pprint
@@ -1378,7 +1377,7 @@ class SelectorSslWithoutSslTransportTests(unittest.TestCase):
     def test_ssl_transport_requires_ssl_module(self):
         Mock = mock.Mock
         with self.assertRaises(RuntimeError):
-            transport = _SelectorSslTransport(Mock(), Mock(), Mock(), Mock())
+            _SelectorSslTransport(Mock(), Mock(), Mock(), Mock())
 
 
 class SelectorDatagramTransportTests(unittest.TestCase):
