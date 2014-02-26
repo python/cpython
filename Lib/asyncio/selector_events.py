@@ -702,8 +702,7 @@ class _SelectorSslTransport(_SelectorTransport):
         if self._buffer:
             try:
                 n = self._sock.send(self._buffer)
-            except (BlockingIOError, InterruptedError,
-                    ssl.SSLWantWriteError):
+            except (BlockingIOError, InterruptedError, ssl.SSLWantWriteError):
                 n = 0
             except ssl.SSLWantReadError:
                 n = 0
