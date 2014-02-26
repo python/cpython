@@ -1302,7 +1302,7 @@ class ChildWatcherTestsMixin:
         m.waitpid.side_effect = ValueError
 
         with mock.patch.object(log.logger,
-                                        'error') as m_error:
+                               'error') as m_error:
 
             self.assertEqual(self.watcher._sig_chld(), None)
             self.assertTrue(m_error.called)
@@ -1376,19 +1376,16 @@ class ChildWatcherTestsMixin:
         # attach a new loop
         old_loop = self.loop
         self.loop = test_utils.TestLoop()
+        patch = mock.patch.object
 
-        with mock.patch.object(
-                old_loop,
-                "remove_signal_handler") as m_old_remove_signal_handler, \
-             mock.patch.object(
-                self.loop,
-                "add_signal_handler") as m_new_add_signal_handler:
+        with patch(old_loop, "remove_signal_handler") as m_old_remove, \
+             patch(self.loop, "add_signal_handler") as m_new_add:
 
             self.watcher.attach_loop(self.loop)
 
-            m_old_remove_signal_handler.assert_called_once_with(
+            m_old_remove.assert_called_once_with(
                 signal.SIGCHLD)
-            m_new_add_signal_handler.assert_called_once_with(
+            m_new_add.assert_called_once_with(
                 signal.SIGCHLD, self.watcher._sig_chld)
 
         # child terminates
@@ -1462,7 +1459,6 @@ class ChildWatcherTestsMixin:
     def test_close(self, m):
         # register two children
         callback1 = mock.Mock()
-        callback2 = mock.Mock()
 
         with self.watcher:
             self.running = True
