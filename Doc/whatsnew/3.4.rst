@@ -757,8 +757,10 @@ dictionaries containing the collections statistics since interpreter startup.
 hashlib
 -------
 
-New :func:`hashlib.pbkdf2_hmac` function.  (Contributed by Christian Heimes in
-:issue:`18582`)
+A new :func:`hashlib.pbkdf2_hmac` function provides
+the `PKCS#5 password-based key derivation function 2
+<http://en.wikipedia.org/wiki/PBKDF2>`_.  (Contributed by Christian
+Heimes in :issue:`18582`)
 
 The :attr:`~hashlib.hash.name` attribute of :mod:`hashlib` hash objects is now
 a formally supported interface.  It has always existed in CPython's
