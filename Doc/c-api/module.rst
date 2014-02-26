@@ -120,7 +120,7 @@ There are only a few functions special to module objects.
 
    Return a pointer to the :c:type:`PyModuleDef` struct from which the module was
    created, or *NULL* if the module wasn't created with
-   :c:func:`PyModule_Create`.i
+   :c:func:`PyModule_Create`.
 
 .. c:function:: PyObject* PyState_FindModule(PyModuleDef *def)
 
