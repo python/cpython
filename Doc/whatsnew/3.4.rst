@@ -1250,15 +1250,15 @@ in :issue:`13390`.)
 textwrap
 --------
 
-:mod:`textwrap` has a new function :func:`~textwrap.shorten`, implemented via a
-new :class:`~textwrap.TextWrapper` method
-:meth:`~textwrap.TextWrapper.shorten`, that provides a convenient way to create
-a string that displays just the leading porting of an input string.  It
-collapses any whitespace, truncates the result to a specified width, and a
-specified placeholder is added (by default, ``[...]``, stored in the new
-:attr:`~textwrap.TextWrapper.placeholder` attribute of the
-:class:`~textwrap.TextWrapper` object)).  (Contributed by Antoine Pitrou in
-:issue:`18585`.)
+The :class:`~textwrap.TextWrapper` class has two new attributes/constructor
+arguments: :attr:`~textwrap.TextWrapper.max_lines`, which limits the number of
+lines in the output, and :attr:`~textwrap.TextWrapper.placeholder`, which is a
+string that will appear at the end of the output if it has been truncated
+because of *max_lines*.  Building on these capabilities, a new convenience
+function :func:`~textwrap.shorten` collapses all of the whitespace in the input
+to single spaces and produces a single line of a given *width* that ends with
+the *placeholder* (by default, ``[...]``).  (Contributed by Antoine Pitrou and
+Serhiy Storchaka in :issue:`18585` and :issue:`18725`.)
 
 
 threading
