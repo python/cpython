@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20791: copy.copy() now doesn't make a copy when the input is
+  a bytes object.  Initial patch by Peter Otten.
+
 - Issue #20621: Fixes a zipimport bug introduced in 3.3.4 that could cause
   spurious crashes or SystemErrors when importing modules or packages from a
   zip file.  The change causing the problem was reverted.
