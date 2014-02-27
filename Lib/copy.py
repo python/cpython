@@ -110,7 +110,7 @@ _copy_dispatch = d = {}
 def _copy_immutable(x):
     return x
 for t in (type(None), int, float, bool, str, tuple,
-          frozenset, type, range,
+          bytes, frozenset, type, range,
           types.BuiltinFunctionType, type(Ellipsis),
           types.FunctionType, weakref.ref):
     d[t] = _copy_immutable
