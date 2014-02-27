@@ -80,6 +80,7 @@ class FetchTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.root.destroy()
+        del cls.root
 
     def fetch_test(self, reverse, line, prefix, index, bell=False):
         # Perform one fetch as invoked by Alt-N or Alt-P

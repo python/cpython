@@ -14,6 +14,7 @@ if use_resources and 'gui' in use_resources:
     try:
         root = tk.Tk()
         root.destroy()
+        del root
     except tk.TclError:
         while 'gui' in use_resources:
             use_resources.remove('gui')
