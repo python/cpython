@@ -1811,6 +1811,9 @@ Code Cleanups
   ``_mac_ver_gstalt``, and ``_bcd2str``, which would only have ever been called
   on badly broken OSX systems (see :issue:`18393`).
 
+* The hardcoded copies of certain :mod:`stat` constants that were included in
+  the :mod:`tarfile` module namespace have been removed.
+
 
 
 Porting to Python 3.4
