@@ -1987,6 +1987,13 @@ Changes in the Python API
   in theory this should not cause backward compatibility issues since the
   disallowed command forms didn't make any sense and are unlikely to be in use.
 
+* The :func:`re.split`, :func:`re.findall`, and :func:`re.sub` functions, and
+  the :meth:`~re.match.group` and :meth:`~re.match.groups` methods of
+  :class:``match`` objects now always return a *bytes* object when the string
+  to be matched is a :term:`bytes-like object`.  Previously the return type
+  matched the input type, so if your code was depending on the return value
+  being, say, a ``bytearray``, you will need to change your code.
+
 
 Changes in the C API
 --------------------
