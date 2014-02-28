@@ -1,5 +1,7 @@
 import os
 import errno
+import importlib.machinery
+import py_compile
 import shutil
 import unittest
 import tempfile
@@ -208,6 +210,14 @@ a/module.py
                                 from . import *
 """]
 
+bytecode_test = [
+    "a",
+    ["a"],
+    [],
+    [],
+    ""
+]
+
 
 def open_file(path):
     dirname = os.path.dirname(path)
@@ -287,6 +297,16 @@ class ModuleFinderTest(unittest.TestCase):
 
     def test_relative_imports_4(self):
         self._do_test(relative_import_test_4)
+
+    def test_bytecode(self):
+        base_path = os.path.join(TEST_DIR, 'a')
+        source_path = base_path + importlib.machinery.SOURCE_SUFFIXES[0]
+        bytecode_path = base_path + importlib.machinery.BYTECODE_SUFFIXES[0]
+        with open_file(source_path) as file:
+            file.write('testing_modulefinder = True\n')
+        py_compile.compile(source_path, cfile=bytecode_path)
+        os.remove(source_path)
+        self._do_test(bytecode_test)
 
 
 def test_main():
