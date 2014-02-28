@@ -2,6 +2,20 @@
 Python News
 +++++++++++
 
+What's New in Python 3.4.0 release candidate 3?
+===============================================
+
+Release date: 2014-03-09
+
+Build
+-----
+
+- Issue #20757: The ensurepip helper for the Windows uninstaller now skips
+  uninstalling pip (rather than failing) if the user has updated pip to a
+  different version from the one bundled with ensurepip.
+
+
+
 What's New in Python 3.4.0 release candidate 2?
 ===============================================
 
