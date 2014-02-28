@@ -31,6 +31,13 @@ Tests
 
 - Issue #20743: Fix a reference leak in test_tcl.
 
+Build
+-----
+
+- Issue #20757: The ensurepip helper for the Windows uninstaller now skips
+  uninstalling pip (rather than failing) if the user has updated pip to a
+  different version from the one bundled with ensurepip.
+
 Tools/Demos
 -----------
 

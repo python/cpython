@@ -196,10 +196,12 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ensurepip._uninstall_helper()
         self.run_pip.assert_not_called()
 
-    def test_uninstall_fails_with_wrong_version(self):
+    def test_uninstall_skipped_with_warning_for_wrong_version(self):
         with fake_pip("not a valid version"):
-            with self.assertRaises(RuntimeError):
+            with test.support.captured_stderr() as stderr:
                 ensurepip._uninstall_helper()
+        warning = stderr.getvalue().strip()
+        self.assertIn("only uninstall a matching version", warning)
         self.run_pip.assert_not_called()
 
 
