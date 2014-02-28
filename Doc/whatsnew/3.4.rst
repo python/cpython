@@ -1609,6 +1609,10 @@ Other Improvements
   set just the error handler, without changing the default encoding.
   (Contributed by Serhiy Storchaka in :issue:`18818`.)
 
+* The :mod:`bz2`, :mod:`lzma`, and :mod:`gzip` module ``open`` functions now
+  support ``x`` (exclusive creation) mode.  (Contributed by Tim Heaney and
+  Vajrasky Kok in :issue:`19201`, :issue:`19222`, and :issue:`19223`.)
+
 
 Significant Optimizations
 -------------------------
