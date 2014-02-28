@@ -60,7 +60,7 @@ class SourceEncodingTest(unittest.TestCase):
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
 
     def test_20731(self):
-        sub = subprocess.Popen([sys.executable, 
+        sub = subprocess.Popen([sys.executable,
                         os.path.join(os.path.dirname(__file__),
                                      'coding20731.py')],
                         stderr=subprocess.PIPE)
