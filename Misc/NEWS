@@ -8,6 +8,9 @@ What's New in Python 3.4.1?
 Core and Builtins
 -----------------
 
+- Issue #20731: Properly position in source code files even if they
+  are opened in text mode. Patch by Serhiy Storchaka.
+
 - Issue #20637: Key-sharing now also works for instance dictionaries of
   subclasses.  Patch by Peter Ingebretson.
 
