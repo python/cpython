@@ -10,6 +10,9 @@ Release date: 2014-03-09
 Build
 -----
 
+- Issue #20568: The Windows installer now installs the unversioned ``pip``
+  command in addition to the versioned ``pip3`` and ``pip3.4`` commands.
+
 - Issue #20757: The ensurepip helper for the Windows uninstaller now skips
   uninstalling pip (rather than failing) if the user has updated pip to a
   different version from the one bundled with ensurepip.
