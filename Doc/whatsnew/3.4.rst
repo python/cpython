@@ -547,7 +547,8 @@ by Lucas Maystre in :issue:`11175`.)
 audioop
 -------
 
-Added support for 24-bit samples (:issue:`12866`).
+The module now supports 24-bit samples.  (Contributed by Serhiy Storchaka
+in :issue:`12866`.)
 
 Added the :func:`~audioop.byteswap` function to convert big-endian samples
 to little-endian and vice versa (:issue:`19641`).
