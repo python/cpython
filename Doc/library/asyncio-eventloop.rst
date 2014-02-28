@@ -589,8 +589,8 @@ pool of processes). By default, an event loop uses a thread pool executor
 
    Arrange for a callback to be called in the specified executor.
 
-   *executor* is a :class:`~concurrent.futures.Executor` instance,
-   the default executor is used if *executor* is ``None``.
+   The *executor* argument should be an :class:`~concurrent.futures.Executor`
+   instance. The default executor is used if *executor* is ``None``.
 
    This method is a :ref:`coroutine <coroutine>`.
 
