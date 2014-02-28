@@ -1,6 +1,6 @@
 import unittest
 from test.support import TESTFN, unlink, unload
-import importlib, os, sys
+import importlib, os, sys, subprocess
 
 class CodingTest(unittest.TestCase):
     def test_bad_coding(self):
@@ -58,6 +58,13 @@ class CodingTest(unittest.TestCase):
         self.assertTrue(c.exception.args[0].startswith(expected),
                         msg=c.exception.args[0])
 
+    def test_20731(self):
+        sub = subprocess.Popen([sys.executable, 
+                        os.path.join(os.path.dirname(__file__),
+                                     'coding20731.py')],
+                        stderr=subprocess.PIPE)
+        err = sub.communicate()[1]
+        self.assertEquals(err, b'')
 
 if __name__ == "__main__":
     unittest.main()
