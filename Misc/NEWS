@@ -10,6 +10,9 @@ What's New in Python 3.3.5 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #20731: Properly position in source code files even if they
+  are opened in text mode. Patch by Serhiy Storchaka.
+
 - Issue #19619: str.encode, bytes.decode and bytearray.decode now use an
   internal API to throw LookupError for known non-text encodings, rather
   than attempting the encoding or decoding operation and then throwing a
