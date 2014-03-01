@@ -1355,6 +1355,9 @@ context manager can be queried for the :class:`~logging.LogRecord`\ s and/or
 formatted messages that were logged.  (Contributed by Antoine Pitrou in
 :issue:`18937`.)
 
+Test discovery now works with namespace packages (Contributed by Claudiu Popa
+in :issue:`17457`.)
+
 
 venv
 ----
