@@ -59,12 +59,13 @@ class CodingTest(unittest.TestCase):
                         msg=c.exception.args[0])
 
     def test_20731(self):
-        sub = subprocess.Popen([sys.executable, 
+        sub = subprocess.Popen([sys.executable,
                         os.path.join(os.path.dirname(__file__),
                                      'coding20731.py')],
                         stderr=subprocess.PIPE)
         err = sub.communicate()[1]
-        self.assertEquals(err, b'')
+        self.assertEqual(sub.returncode, 0)
+        self.assertNotIn(b'SyntaxError', err)
 
 if __name__ == "__main__":
     unittest.main()
