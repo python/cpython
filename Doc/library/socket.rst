@@ -6,8 +6,7 @@
 
 
 This module provides access to the BSD *socket* interface. It is available on
-all modern Unix systems, Windows, MacOS, OS/2, and probably additional
-platforms.
+all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. note::
 
