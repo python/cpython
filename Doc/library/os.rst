@@ -2653,7 +2653,7 @@ written in Python, such as a mail server's external command delivery program.
    Fork a child process.  Return ``0`` in the child and the child's process id in the
    parent.  If an error occurs :exc:`OSError` is raised.
 
-   Note that some platforms including FreeBSD <= 6.3, Cygwin and OS/2 EMX have
+   Note that some platforms including FreeBSD <= 6.3 and Cygwin have
    known issues when using fork() from a thread.
 
    .. warning::
@@ -2899,7 +2899,6 @@ written in Python, such as a mail server's external command delivery program.
    :manpage:`times(2)` or the corresponding Windows Platform API documentation.
    On Windows, only :attr:`user` and :attr:`system` are known; the other
    attributes are zero.
-   On OS/2, only :attr:`elapsed` is known; the other attributes are zero.
 
    Availability: Unix, Windows.
 
