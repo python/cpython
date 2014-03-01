@@ -377,6 +377,10 @@ Some smaller changes made to the core Python language are:
   references to local variables from the frame.  (Contributed by Antoine Pitrou
   in :issue:`17934`.)
 
+* :class:`memoryview` is now registered as a :class:`Sequence <collections.abc>`,
+  and supports the :func:`reversed` builtin.  (Contributed by Nick Coghlan
+  and Claudiu Popa in :issue:`18690` and :issue:`19078`.)
+
 
 New Modules
 ===========
