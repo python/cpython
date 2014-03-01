@@ -65,7 +65,8 @@ class SourceEncodingTest(unittest.TestCase):
                                      'coding20731.py')],
                         stderr=subprocess.PIPE)
         err = sub.communicate()[1]
-        self.assertEquals(err, b'')
+        self.assertEqual(sub.returncode, 0)
+        self.assertNotIn(b'SyntaxError', err)
 
     def test_error_message(self):
         compile(b'# -*- coding: iso-8859-15 -*-\n', 'dummy', 'exec')
