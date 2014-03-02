@@ -1324,8 +1324,6 @@ def add_registry(db):
         tcltkshortcuts = [
               ("IDLE", "MenuDir", "IDLE|IDLE (Python GUI)", "pythonw.exe",
                tcltk.id, r'"[TARGETDIR]Lib\idlelib\idle.pyw"', None, None, "python_icon.exe", 0, None, "TARGETDIR"),
-              ("PyDoc", "MenuDir", "MODDOCS|Module Docs", "pythonw.exe",
-               tcltk.id, r'"[TARGETDIR]Tools\scripts\pydocgui.pyw"', None, None, "python_icon.exe", 0, None, "TARGETDIR"),
               ]
     add_data(db, "Shortcut",
              tcltkshortcuts +
@@ -1340,6 +1338,8 @@ def add_registry(db):
               ("Manual", "MenuDir", "MANUAL|Python Manuals", "REGISTRY.doc",
                "[#%s]" % docfile, None,
                None, None, None, None, None, None),
+              ("PyDoc", "MenuDir", "MODDOCS|Module Docs", "python.exe",
+               default_feature.id, r'-m pydoc -b', None, None, "python_icon.exe", 0, None, "TARGETDIR"),
               ("Uninstall", "MenuDir", "UNINST|Uninstall Python", "REGISTRY",
                SystemFolderName+"msiexec",  "/x%s" % product_code,
                None, None, None, None, None, None),
