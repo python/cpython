@@ -836,7 +836,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     char *kwlist[] = {"buffer", "encoding", "errors",
                       "newline", "line_buffering", "write_through",
                       NULL};
-    PyObject *buffer, *raw;
+    PyObject *buffer, *raw, *codec_info = NULL;
     char *encoding = NULL;
     char *errors = NULL;
     char *newline = NULL;
@@ -951,6 +951,17 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
                         "could not determine default encoding");
     }
 
+    /* Check we have been asked for a real text encoding */
+    codec_info = _PyCodec_LookupTextEncoding(encoding, "codecs.open()");
+    if (codec_info == NULL) {
+        Py_CLEAR(self->encoding);
+        goto error;
+    }
+
+    /* XXX: Failures beyond this point have the potential to leak elements
+     * of the partially constructed object (like self->encoding)
+     */
+
     if (errors == NULL)
         errors = "strict";
     self->errors = PyBytes_FromString(errors);
@@ -965,7 +976,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     if (newline) {
         self->readnl = PyUnicode_FromString(newline);
         if (self->readnl == NULL)
-            return -1;
+            goto error;
     }
     self->writetranslate = (newline == NULL || newline[0] != '\0');
     if (!self->readuniversal && self->readnl) {
@@ -989,8 +1000,8 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     if (r == -1)
         goto error;
     if (r == 1) {
-        self->decoder = PyCodec_IncrementalDecoder(
-            encoding, errors);
+        self->decoder = _PyCodecInfo_GetIncrementalDecoder(codec_info,
+                                                           errors);
         if (self->decoder == NULL)
             goto error;
 
@@ -1014,17 +1025,12 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     if (r == -1)
         goto error;
     if (r == 1) {
-        PyObject *ci;
-        self->encoder = PyCodec_IncrementalEncoder(
-            encoding, errors);
+        self->encoder = _PyCodecInfo_GetIncrementalEncoder(codec_info,
+                                                           errors);
         if (self->encoder == NULL)
             goto error;
         /* Get the normalized named of the codec */
-        ci = _PyCodec_Lookup(encoding);
-        if (ci == NULL)
-            goto error;
-        res = _PyObject_GetAttrId(ci, &PyId_name);
-        Py_DECREF(ci);
+        res = _PyObject_GetAttrId(codec_info, &PyId_name);
         if (res == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_Clear();
@@ -1043,6 +1049,9 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
         }
         Py_XDECREF(res);
     }
+
+    /* Finished sorting out the codec details */
+    Py_DECREF(codec_info);
 
     self->buffer = buffer;
     Py_INCREF(buffer);
@@ -1106,6 +1115,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     return 0;
 
   error:
+    Py_XDECREF(codec_info);
     return -1;
 }
 
