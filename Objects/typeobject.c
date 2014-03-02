@@ -6189,7 +6189,7 @@ static slotdef slotdefs[] = {
            "__set__($self, instance, value, /)\n--\n\nSet an attribute of instance to value."),
     TPSLOT("__delete__", tp_descr_set, slot_tp_descr_set,
            wrap_descr_delete,
-           "__delete__(instance, /)\n--\n\nDelete an attribute of instance."),
+           "__delete__($self, instance, /)\n--\n\nDelete an attribute of instance."),
     FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
            "__init__($self, /, *args, **kwargs)\n--\n\n"
            "Initialize self.  See help(type(self)) for accurate signature.",
@@ -6286,7 +6286,7 @@ static slotdef slotdefs[] = {
            "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
     MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript,
            wrap_delitem,
-           "__delitem__(key)\n--\n\nDelete self[key]."),
+           "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
 
     SQSLOT("__len__", sq_length, slot_sq_length, wrap_lenfunc,
            "__len__($self, /)\n--\n\nReturn len(self)."),
