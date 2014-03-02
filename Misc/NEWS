@@ -2,10 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.3.5 release candidate 1?
+What's New in Python 3.3.5 release candidate 2?
 ===============================================
 
-*Release date: 23-Feb-2014*
+*Release date: 02-Mar-2014*
 
 Core and Builtins
 -----------------
@@ -19,13 +19,6 @@ Core and Builtins
   TypeError for an unexpected output type. (The latter mechanism remains
   in place for third party non-text encodings)
 
-- Issue #20588: Make Python-ast.c C89 compliant.
-
-- Issue #20437: Fixed 21 potential bugs when deleting objects references.
-
-- Issue #20538: UTF-7 incremental decoder produced inconsistant string when
-  input was truncated in BASE64 section.
-
 Library
 -------
 
@@ -37,6 +30,42 @@ Library
 - Issue #20621: Fixes a zipimport bug introduced in 3.3.4 that could cause
   spurious crashes or SystemErrors when importing modules or packages from a
   zip file.  The change causing the problem was reverted.
+
+- Issue #20404: io.TextIOWrapper (and hence the open() builtin) now uses the
+  internal codec marking system added for issue #19619 to throw LookupError
+  for known non-text encodings at stream construction time. The existing
+  output type checks remain in place to deal with unmarked third party
+  codecs.
+
+Tests
+-----
+
+- Issue #20743: Fix a reference leak in test_tcl.
+
+Tools/Demos
+-----------
+
+- Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
+  Patch by Arfrever Frehtes Taifersar Arahesis.
+
+
+What's New in Python 3.3.5 release candidate 1?
+===============================================
+
+*Release date: 23-Feb-2014*
+
+Core and Builtins
+-----------------
+
+- Issue #20588: Make Python-ast.c C89 compliant.
+
+- Issue #20437: Fixed 21 potential bugs when deleting objects references.
+
+- Issue #20538: UTF-7 incremental decoder produced inconsistant string when
+  input was truncated in BASE64 section.
+
+Library
+-------
 
 - Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
   Tkinter widgets to work in wantobjects=True mode.
@@ -135,8 +164,6 @@ IDLE
 Tests
 -----
 
-- Issue #20743: Fix a reference leak in test_tcl.
-
 - Issue #20510: Rewrote test_exit in test_sys to match existing comments,
   use modern unittest features, and use helpers from test.script_helper
   instead of using subprocess directly.  Patch by Gareth Rees.
@@ -166,12 +193,6 @@ Build
 
 - Issue #20609: Restored the ability to build 64-bit Windows binaries on
   32-bit Windows, which was broken by the change in issue #19788.
-
-Tools/Demos
------------
-
-- Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
-  Patch by Arfrever Frehtes Taifersar Arahesis.
 
 
 What's New in Python 3.3.4?
