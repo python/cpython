@@ -104,7 +104,14 @@ PyAPI_FUNC(PyObject *) PyCodec_Decode(
    Please note that these APIs are internal and should not
    be used in Python C extensions.
 
+   XXX (ncoghlan): should we make these, or something like them, public
+   in Python 3.5+?
+
  */
+PyAPI_FUNC(PyObject *) _PyCodec_LookupTextEncoding(
+       const char *encoding,
+       const char *alternate_command
+       );
 
 PyAPI_FUNC(PyObject *) _PyCodec_EncodeText(
        PyObject *object,
@@ -115,6 +122,19 @@ PyAPI_FUNC(PyObject *) _PyCodec_EncodeText(
 PyAPI_FUNC(PyObject *) _PyCodec_DecodeText(
        PyObject *object,
        const char *encoding,
+       const char *errors
+       );
+
+/* These two aren't actually text encoding specific, but _io.TextIOWrapper
+ * is the only current API consumer.
+ */
+PyAPI_FUNC(PyObject *) _PyCodecInfo_GetIncrementalDecoder(
+       PyObject *codec_info,
+       const char *errors
+       );
+
+PyAPI_FUNC(PyObject *) _PyCodecInfo_GetIncrementalEncoder(
+       PyObject *codec_info,
        const char *errors
        );
 #endif
