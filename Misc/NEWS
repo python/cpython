@@ -14,6 +14,9 @@ Core and Builtins
 - Issue #20637: Key-sharing now also works for instance dictionaries of
   subclasses.  Patch by Peter Ingebretson.
 
+- Issue #20786: Fix signatures for dict.__delitem__ and
+  property.__delete__ builtins.
+
 Library
 -------
 
