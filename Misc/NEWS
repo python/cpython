@@ -42,6 +42,8 @@ Tests
 Build
 -----
 
+- Issue #14512: Launch pydoc -b instead of pydocgui.pyw on Windows.
+
 - Issue #20748: Uninstalling pip does not leave behind the pyc of
   the uninstaller anymore.
 
