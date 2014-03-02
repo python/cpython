@@ -52,7 +52,8 @@ Build
   uninstalling pip (rather than failing) if the user has updated pip to a
   different version from the one bundled with ensurepip.
 
-- Issue #20465: Update OS X installer build to use SQLite 3.8.3.1.
+- Issue #20465: Update OS X and Windows installer builds to use 
+  SQLite 3.8.3.1.
 
 Tools/Demos
 -----------
