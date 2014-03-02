@@ -1764,6 +1764,11 @@ class TestSignatureObject(unittest.TestCase):
                 __call__ = type
             test_callable(ThisWorksNow())
 
+        # Regression test for issue #20786
+        test_unbound_method(dict.__delitem__)
+        test_unbound_method(property.__delete__)
+
+
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
