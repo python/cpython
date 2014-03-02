@@ -926,7 +926,8 @@ interned strings and preserving the interning on deserialization, and extends
 this "one copy" ability to any object type (including handling recursive
 references).  This reduces both the size of ``.pyc`` files and the amount of
 memory a module occupies in memory when it is loaded from a ``.pyc`` (or
-``.pyo``) file.  (Contributed by Kristján Valur Jónsson in :issue:`16475`.)
+``.pyo``) file.  (Contributed by Kristján Valur Jónsson in :issue:`16475`,
+with additional speedups by Antoine Pitrou in :issue:`19219`.)
 
 
 mmap
@@ -1782,7 +1783,8 @@ removed:
   ``SHLIB_SUFFIX`` and ``EXT_SUFFIX`` macros) (:issue:`16754`).
 
 * The ``PyThreadState.tick_counter`` field has been removed; its value has
-  been meaningless since Python 3.2, when the "new GIL" was introduced.
+  been meaningless since Python 3.2, when the "new GIL" was introduced
+  (:issue:`19199`).
 
 * ``PyLoader`` and ``PyPycLoader`` have been removed from :mod:`importlib`.
   (Contributed by Taras Lyapun in :issue:`15641`.)
@@ -1912,7 +1914,7 @@ Changes in the Python API
   will not find all keys. A module's ``__file__`` when imported in the current
   working directory will also now have an absolute path, including when using
   ``-m`` with the interpreter (this does not influence when the path to a file
-  is specified on the command-line).
+  is specified on the command-line) (:issue:`18416`).
 
 * The removal of the *strict* argument to :class:`~http.client.HTTPConnection`
   and :class:`~http.client.HTTPSConnection` changes the meaning of the
@@ -2032,7 +2034,8 @@ Changes in the C API
 * The result of the :c:data:`PyOS_ReadlineFunctionPointer` callback must
   now be a string allocated by :c:func:`PyMem_RawMalloc` or
   :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred, instead of a
-  string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
+  string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`
+  (:issue:`16742`)
 
 * :c:func:`PyThread_set_key_value` now always set the value. In Python
   3.3, the function did nothing if the key already exists (if the current
