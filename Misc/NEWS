@@ -4,8 +4,13 @@ Python News
 
 What's New in Python 3.4.0 release candidate 3?
 ===============================================
-
 Release date: 2014-03-09
+
+Core and Builtins
+-----------------
+
+- Issue #20786: Fix signatures for dict.__delitem__ and
+  property.__delete__ builtins.
 
 Build
 -----
