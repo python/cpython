@@ -15,6 +15,9 @@ Core and Builtins
 Build
 -----
 
+- Issue #20748: Uninstalling pip does not leave behind the pyc of
+  the uninstaller anymore.
+
 - Issue #20568: The Windows installer now installs the unversioned ``pip``
   command in addition to the versioned ``pip3`` and ``pip3.4`` commands.
 
