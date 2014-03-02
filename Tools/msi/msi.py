@@ -421,7 +421,7 @@ def add_ui(db):
     compileargs = r'-Wi "[TARGETDIR]Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|lib2to3\\tests|venv\\scripts" "[TARGETDIR]Lib"'
     lib2to3args = r'-c "import lib2to3.pygram, lib2to3.patcomp;lib2to3.patcomp.PatternCompiler()"'
     updatepipargs = r'-m ensurepip -U --default-pip'
-    removepipargs = r'-m ensurepip._uninstall'
+    removepipargs = r'-B -m ensurepip._uninstall'
     # See "CustomAction Table"
     add_data(db, "CustomAction", [
         # msidbCustomActionTypeFirstSequence + msidbCustomActionTypeTextData + msidbCustomActionTypeProperty
