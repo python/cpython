@@ -1883,10 +1883,15 @@ Changes in the Python API
 
 * Import now resets relevant attributes (e.g. ``__name__``, ``__loader__``,
   ``__package__``, ``__file__``, ``__cached__``) unconditionally when reloading.
+  Note that this restores a pre-3.3 behavior in that it means a module is
+  re-found when re-loaded (:issue:`19413` and XXX).
 
 * Frozen packages no longer set ``__path__`` to a list containing the package
-  name but an empty list instead. Determing if a module is a package should be
-  done using ``hasattr(module, '__path__')``.
+  name, they now set it to an empty list.  The previous behavior could cause
+  the import system to do the wrong thing on submodule imports if there was
+  also a directory with the same name as the frozen package.  The correct way
+  to determine if a module is a package or not is to use``hasattr(module,
+  '__path__')`` (:issue:`18065`).
 
 * :func:`py_compile.compile` now raises :exc:`FileExistsError` if the file path
   it would write to is a symlink or a non-regular file. This is to act as a
@@ -1983,12 +1988,6 @@ Changes in the Python API
 * Parameter names in ``__annotations__`` dict are now mangled properly,
   similarly to ``__kwdefaults__``. (Contributed by Yury Selivanov in
   :issue:`20625`).
-
-* Frozen packages used to have their ``__path__`` set to the package name,
-  but this could cause the import system to do the wrong thing on submodule
-  imports if there was also a directory with the same name as the frozen
-  package.  The ``__path__`` for frozen packages is now set to ``[]``
-  (:issue:`18065`).
 
 * :attr:`hashlib.hash.name` now always returns the identifier in lower case.
   Previously some builtin hashes had uppercase names, but now that it is a
