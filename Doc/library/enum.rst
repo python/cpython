@@ -374,6 +374,9 @@ from that module.
     With pickle protocol version 4 it is possible to easily pickle enums
     nested in other classes.
 
+It is possible to modify how Enum members are pickled/unpickled by defining
+:meth:`__reduce_ex__` in the enumeration class.
+
 
 Functional API
 --------------
@@ -420,12 +423,43 @@ The solution is to specify the module name explicitly as follows::
 
     >>> Animals = Enum('Animals', 'ant bee cat dog', module=__name__)
 
+.. warning::
+
+    If :param module: is not supplied, and Enum cannot determine what it is,
+    the new Enum members will not be unpicklable; to keep errors closer to
+    the source, pickling will be disabled.
+
 The new pickle protocol 4 also, in some circumstances, relies on
 :attr:`__qualname__` being set to the location where pickle will be able
 to find the class.  For example, if the class was made available in class
 SomeData in the global scope::
 
     >>> Animals = Enum('Animals', 'ant bee cat dog', qualname='SomeData.Animals')
+
+The complete signature is::
+
+    Enum(value='NewEnumName', names=<...>, *, module='...', qualname='...', type=<mixed-in class>)
+
+:param value: What the new Enum class will record as its name.
+
+:param names: The Enum members.  This can be a whitespace or comma seperated
+string::
+
+    'red green blue', 'red,green,blue', 'red, green, blue'
+
+(values will start at 1), or an iterator of name, value pairs::
+
+    [('cyan', 4), ('magenta', 5), ('yellow', 6)]
+
+or a mapping::
+
+    {'chartruese': 7, 'sea_green': 11, 'rosemary': 42}
+
+:param module: name of module where new Enum class can be found.
+
+:param qualname: where in module new Enum class can be found.
+
+:param type: type to mix in to new Enum class.
 
 
 Derived Enumerations
