@@ -1547,6 +1547,11 @@ Other Build and C API Changes
   values from :envvar:`PYTHONIOENCODING` if it exists.  (Contributed
   by Bastien Montagne and Nick Coghlan in :issue:`16129`.)
 
+* The Windows build now uses `Address Space Layout Randomization
+  <http://en.wikipedia.org/wiki/ASLR>`_ and `Data Execution Prevention
+  <http://en.wikipedia.org/wiki/Data_Execution_Prevention>`_.  (Contributed by
+  Christian Heimes in :issue:`16632`.)
+
 
 .. _other-improvements-3.4:
 
