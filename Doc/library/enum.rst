@@ -425,7 +425,7 @@ The solution is to specify the module name explicitly as follows::
 
 .. warning::
 
-    If :param module: is not supplied, and Enum cannot determine what it is,
+    If ``module`` is not supplied, and Enum cannot determine what it is,
     the new Enum members will not be unpicklable; to keep errors closer to
     the source, pickling will be disabled.
 
@@ -440,26 +440,26 @@ The complete signature is::
 
     Enum(value='NewEnumName', names=<...>, *, module='...', qualname='...', type=<mixed-in class>)
 
-:param value: What the new Enum class will record as its name.
+:value: What the new Enum class will record as its name.
 
-:param names: The Enum members.  This can be a whitespace or comma seperated
-string::
+:names: The Enum members.  This can be a whitespace or comma seperated string
+  (values will start at 1)::
 
-    'red green blue', 'red,green,blue', 'red, green, blue'
+    'red green blue' | 'red,green,blue' | 'red, green, blue'
 
-(values will start at 1), or an iterator of name, value pairs::
+  or an iterator of (name, value) pairs::
 
     [('cyan', 4), ('magenta', 5), ('yellow', 6)]
 
-or a mapping::
+  or a mapping::
 
     {'chartruese': 7, 'sea_green': 11, 'rosemary': 42}
 
-:param module: name of module where new Enum class can be found.
+:module: name of module where new Enum class can be found.
 
-:param qualname: where in module new Enum class can be found.
+:qualname: where in module new Enum class can be found.
 
-:param type: type to mix in to new Enum class.
+:type: type to mix in to new Enum class.
 
 
 Derived Enumerations
