@@ -228,6 +228,8 @@ class FileInputTests(unittest.TestCase):
         self.addCleanup(safe_unlink, TESTFN)
 
         fi = FileInput(files=TESTFN, openhook=hook_encoded('ascii'), bufsize=8)
+        # The most likely failure is a UnicodeDecodeError due to the entire
+        # file being read when it shouldn't have been.
         self.assertEqual(fi.readline(), u'A\n')
         self.assertEqual(fi.readline(), u'B\r\n')
         self.assertEqual(fi.readline(), u'C\r')
@@ -240,11 +242,9 @@ class Test_hook_encoded(unittest.TestCase):
     """Unit tests for fileinput.hook_encoded()"""
 
     def test_modes(self):
-        # Unlikely UTF-7 is locale encoding
         with open(TESTFN, 'wb') as f:
+            # UTF-7 is a convenient, seldom used encoding
             f.write('A\nB\r\nC\rD+IKw-')
-        t1 = TESTFN
-        #t1 = writeTmp(1, ['A\nB\r\nC\rD+IKw-'], mode='wb')
         self.addCleanup(safe_unlink, TESTFN)
 
         def check(mode, expected_lines):
