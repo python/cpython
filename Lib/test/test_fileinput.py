@@ -271,9 +271,12 @@ class FileInputTests(unittest.TestCase):
 
         with FileInput(files=TESTFN,
                        openhook=hook_encoded('ascii'), bufsize=8) as fi:
-            self.assertEqual(fi.readline(), 'A\n')
-            self.assertEqual(fi.readline(), 'B\n')
-            self.assertEqual(fi.readline(), 'C\n')
+            try:
+                self.assertEqual(fi.readline(), 'A\n')
+                self.assertEqual(fi.readline(), 'B\n')
+                self.assertEqual(fi.readline(), 'C\n')
+            except UnicodeDecodeError:
+                self.fail('Read to end of file')
             with self.assertRaises(UnicodeDecodeError):
                 # Read to the end of file.
                 list(fi)
@@ -856,8 +859,8 @@ class Test_hook_encoded(unittest.TestCase):
         self.assertFalse(kwargs)
 
     def test_modes(self):
-        # Unlikely UTF-7 is locale encoding
         with open(TESTFN, 'wb') as f:
+            # UTF-7 is a convenient, seldom used encoding
             f.write(b'A\nB\r\nC\rD+IKw-')
         self.addCleanup(safe_unlink, TESTFN)
 
