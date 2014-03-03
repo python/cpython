@@ -200,8 +200,7 @@ ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
             # replace "/path/to/module/file.py" with "module/file.py"
             filename = os.sep.join(frame.filename.split(os.sep)[-2:])
             print("#%s: %s:%s: %.1f KiB"
-                  % (index, filename, frame.lineno,
-                     stat.size / 1024))
+                  % (index, filename, frame.lineno, stat.size / 1024))
 
         other = top_stats[limit:]
         if other:
@@ -215,7 +214,7 @@ ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
     # ... run your application ...
 
     snapshot = tracemalloc.take_snapshot()
-    display_top(snapshot, 10)
+    display_top(snapshot)
 
 Example of output of the Python test suite::
 
