@@ -12,6 +12,13 @@ Core and Builtins
 - Issue #20786: Fix signatures for dict.__delitem__ and
   property.__delete__ builtins.
 
+Library
+-------
+
+- Issue #20839: Don't trigger a DeprecationWarning in the still supported
+  pkgutil.get_loader() API when __loader__ isn't set on a module (nor
+  when pkgutil.find_loader() is called directly).
+
 Build
 -----
 
@@ -27,7 +34,7 @@ Build
   uninstalling pip (rather than failing) if the user has updated pip to a
   different version from the one bundled with ensurepip.
 
-- Issue #20465: Update OS X and Windows installer builds to use 
+- Issue #20465: Update OS X and Windows installer builds to use
   SQLite 3.8.3.1.
 
 
