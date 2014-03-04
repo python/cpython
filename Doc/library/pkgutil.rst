@@ -74,15 +74,17 @@ support.
 
    Retrieve a :pep:`302` module loader for the given *fullname*.
 
-   This is a convenience wrapper around :func:`importlib.find_loader` that
-   sets the *path* argument correctly when searching for submodules, and
-   also ensures parent packages (if any) are imported before searching for
-   submodules.
+   This is a backwards compatibility wrapper around
+   :func:`importlib.util.find_spec` that converts most failures to
+   :exc:`ImportError` and only returns the loader rather than the full
+   :class:`ModuleSpec`.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
       on the package internal PEP 302 import emulation.
 
+   .. versionchanged:: 3.4
+      Updated to be based on :pep:`451`
 
 .. function:: get_importer(path_item)
 
@@ -109,13 +111,12 @@ support.
    not already imported, its containing package (if any) is imported, in order
    to establish the package ``__path__``.
 
-   This function uses :func:`iter_importers`, and is thus subject to the same
-   limitations regarding platform-specific special import locations such as the
-   Windows registry.
-
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
       on the package internal PEP 302 import emulation.
+
+   .. versionchanged:: 3.4
+      Updated to be based on :pep:`451`
 
 
 .. function:: iter_importers(fullname='')
