@@ -807,7 +807,7 @@ rangeiter_setstate(rangeiterobject *r, PyObject *state)
     long index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (index < 0 || index >= r->len) {
+    if (index < 0 || index > r->len) {
         PyErr_SetString(PyExc_ValueError, "index out of range");
         return NULL;
     }
