@@ -381,6 +381,18 @@ class RangeTest(unittest.TestCase):
                 self.assertEqual(list(it), data[1:])
 
     def test_exhausted_iterator_pickling(self):
+        r = range(2**65, 2**65+2)
+        i = iter(r)
+        while True:
+            r = next(i)
+            if r == 2**65+1:
+                break
+        d = pickle.dumps(i)
+        i2 = pickle.loads(d)
+        self.assertEqual(list(i), [])
+        self.assertEqual(list(i2), [])
+
+    def test_large_exhausted_iterator_pickling(self):
         r = range(20)
         i = iter(r)
         while True:
