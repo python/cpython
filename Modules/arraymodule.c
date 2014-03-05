@@ -2798,6 +2798,8 @@ arrayiter_setstate(arrayiterobject *it, PyObject *state)
         return NULL;
     if (index < 0)
         index = 0;
+    else if (index > Py_SIZE(it->ao))
+        index = Py_SIZE(it->ao); /* iterator exhausted */
     it->index = index;
     Py_RETURN_NONE;
 }
