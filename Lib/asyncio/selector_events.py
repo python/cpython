@@ -136,6 +136,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
+        if self._selector is None:
+            raise RuntimeError('Event loop is closed')
         handle = events.Handle(callback, args, self)
         try:
             key = self._selector.get_key(fd)
@@ -151,6 +153,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def remove_reader(self, fd):
         """Remove a reader callback."""
+        if self._selector is None:
+            return False
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -171,6 +175,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_writer(self, fd, callback, *args):
         """Add a writer callback.."""
+        if self._selector is None:
+            raise RuntimeError('Event loop is closed')
         handle = events.Handle(callback, args, self)
         try:
             key = self._selector.get_key(fd)
@@ -186,6 +192,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def remove_writer(self, fd):
         """Remove a writer callback."""
+        if self._selector is None:
+            return False
         try:
             key = self._selector.get_key(fd)
         except KeyError:
