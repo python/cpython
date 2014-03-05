@@ -2811,6 +2811,8 @@ listiter_setstate(listiterobject *it, PyObject *state)
     if (it->it_seq != NULL) {
         if (index < 0)
             index = 0;
+        else if (index > PyList_GET_SIZE(it->it_seq))
+            index = PyList_GET_SIZE(it->it_seq); /* iterator exhausted */
         it->it_index = index;
     }
     Py_RETURN_NONE;
