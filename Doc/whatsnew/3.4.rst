@@ -1415,11 +1415,13 @@ abbreviated (``<tag />``) or expanded (``<tag></tag>``) form.  (Contributed by
 Ariel Poliak and Serhiy Storchaka in :issue:`14377`.)
 
 
-zipfile.PyZipfile
------------------
+zipfile
+-------
 
-Add a filter function to ignore some packages (tests for instance),
-:meth:`~zipfile.PyZipFile.writepy`.
+The :meth:`~zipfile.PyZipFile.writepy` method of the
+:class:`~zipfile.PyZipFile` class has a new *filterfunc* option that can be
+used to control which directories and files are added to the archive.  For
+example, this could be used to exclude test files from the archive.
 (Contributed by Christian Tismer in :issue:`19274`.)
 
 
