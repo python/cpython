@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15618: Make turtle.py compatible with 'from __future__ import
+  unicode_literals'.  Initial patch by Juancarlo Añez.
+
 - Issue #20501: fileinput module no longer reads whole file into memory when using
   fileinput.hook_encoded.
 
@@ -53,7 +56,7 @@ Library
   Based on patch by Stephen Tu.
 
 - Issue #8478: Untokenizer.compat processes first token from iterator input.
-  Patch based on lines from Georg Brandl, Eric Snow, and Gareth Rees.  
+  Patch based on lines from Georg Brandl, Eric Snow, and Gareth Rees.
 
 - Issue #20594: Avoid name clash with the libc function posix_close.
 
