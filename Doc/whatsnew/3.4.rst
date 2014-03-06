@@ -1759,6 +1759,8 @@ Deprecated Python Modules, Functions and Methods
   not have been exposed and is hopefully not in use; it is deprecated and
   will mostly likely be removed in Python 3.5.
 
+* The *strict* argument of :class:`~html.parser.HTMLParser` is deprecated.
+
 
 Deprecated Functions and Types in the C API
 -------------------------------------------
