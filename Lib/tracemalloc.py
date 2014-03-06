@@ -141,6 +141,7 @@ class Frame:
     __slots__ = ("_frame",)
 
     def __init__(self, frame):
+        # frame is a tuple: (filename: str, lineno: int)
         self._frame = frame
 
     @property
@@ -177,6 +178,8 @@ class Traceback(Sequence):
 
     def __init__(self, frames):
         Sequence.__init__(self)
+        # frames is a tuple of frame tuples: see Frame constructor for the
+        # format of a frame tuple
         self._frames = frames
 
     def __len__(self):
@@ -241,6 +244,8 @@ class Trace:
     __slots__ = ("_trace",)
 
     def __init__(self, trace):
+        # trace is a tuple: (size, traceback), see Traceback constructor
+        # for the format of the traceback tuple
         self._trace = trace
 
     @property
@@ -268,6 +273,7 @@ class Trace:
 class _Traces(Sequence):
     def __init__(self, traces):
         Sequence.__init__(self)
+        # traces is a tuple of trace tuples: see Trace constructor
         self._traces = traces
 
     def __len__(self):
@@ -338,6 +344,8 @@ class Snapshot:
     """
 
     def __init__(self, traces, traceback_limit):
+        # traces is a tuple of trace tuples: see _Traces constructor for
+        # the exact format
         self.traces = _Traces(traces)
         self.traceback_limit = traceback_limit
 
