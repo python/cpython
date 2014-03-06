@@ -901,6 +901,10 @@ has been removed: :mod:`ipaddress` is now considered a stable API, covered
 by the normal standard library requirements to maintain backwards
 compatibility.
 
+A new :attr:`~ipaddress.IPv4Address.is_global` property is ``True`` if
+an address is globally routeable.  (Contributed by Peter Moody in
+:issue:`17400`.)
+
 
 logging
 -------
