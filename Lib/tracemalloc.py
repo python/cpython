@@ -119,12 +119,12 @@ def _compare_grouped_stats(old_group, new_group):
         previous = old_group.pop(traceback, None)
         if previous is not None:
             stat = StatisticDiff(traceback,
-                                  stat.size, stat.size - previous.size,
-                                  stat.count, stat.count - previous.count)
+                                 stat.size, stat.size - previous.size,
+                                 stat.count, stat.count - previous.count)
         else:
             stat = StatisticDiff(traceback,
-                                  stat.size, stat.size,
-                                  stat.count, stat.count)
+                                 stat.size, stat.size,
+                                 stat.count, stat.count)
         statistics.append(stat)
 
     for traceback, stat in old_group.items():
