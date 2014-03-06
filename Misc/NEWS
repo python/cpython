@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20283: RE pattern methods now accept the string keyword parameters
+  as documented.  The pattern and source keyword parameters are left as
+  deprecated aliases.
+
 - Issue #15618: Make turtle.py compatible with 'from __future__ import
   unicode_literals'.  Initial patch by Juancarlo Añez.
 
