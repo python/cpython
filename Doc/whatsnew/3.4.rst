@@ -1101,8 +1101,21 @@ includes the start, end, and the part of the string that matched.
 resource
 --------
 
-New :func:`resource.prlimit` function and Linux specific constants.
-(Contributed by Christian Heimes in :issue:`16595` and :issue:`19324`.)
+New :func:`~resource.prlimit` function, available on Linux platforms with a
+kernel version of 2.6.36 or later and glibc of 2.13 or later, provides the
+ability to query or set the resource limits for processes other than the one
+making the call.  (Contributed by Christian Heimes in :issue:`16595`.)
+
+On Linux kernel version 2.6.36 or later, there are there are also some new
+Linux specific constants: :attr:`~resource.RLIMIT_MSGQUEUE`,
+:attr:`~resource.RLIMIT_NICE`, :attr:`~resource.RLIMIT_RTPRIO`,
+:attr:`~resource.RLIMIT_RTTIME`, and :attr:`~resource.RLIMIT_SIGPENDING`.
+(Contributed by Christian Heimes in :issue:`19324`.)
+
+On FreeBSD version 9 and later, there some new FreeBSD specific constants:
+:attr:`~resource.RLIMIT_SBSIZE`, :attr:`~resource.RLIMIT_SWAP`, and
+:attr:`~resource.RLIMIT_NPTS`.  (Contributed by Claudiu Popa in
+:issue:`19343`.)
 
 
 select
