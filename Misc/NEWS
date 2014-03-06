@@ -20,6 +20,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11558: ``email.message.Message.attach`` now returns a more
+  useful error message if ``attach`` is called on a message for which
+  ``is_multipart`` is False.
+
 - Issue #20283: RE pattern methods now accept the string keyword parameters
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.

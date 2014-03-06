@@ -203,7 +203,11 @@ class Message:
         if self._payload is None:
             self._payload = [payload]
         else:
-            self._payload.append(payload)
+            try:
+                self._payload.append(payload)
+            except AttributeError:
+                raise TypeError("Attach is not valid on a message with a"
+                                " non-multipart payload")
 
     def get_payload(self, i=None, decode=False):
         """Return a reference to the payload.
