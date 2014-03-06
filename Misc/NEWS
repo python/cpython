@@ -1419,8 +1419,6 @@ Library
 
 - Issue #19324: Expose Linux-specific constants in resource module.
 
-- Issue #17400: ipaddress should make it easy to identify rfc6598 addresses.
-
 - Load SSL's error strings in hashlib.
 
 - Issue #18527: Upgrade internal copy of zlib to 1.2.8.
