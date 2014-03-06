@@ -1205,6 +1205,24 @@ class ReTests(unittest.TestCase):
         self.assertEqual(out.getvalue().splitlines(),
                          ['literal 102 ', 'literal 111 ', 'literal 111 '])
 
+    def test_keyword_parameters(self):
+        # Issue #20283: Accepting the string keyword parameter.
+        pat = re.compile(r'(ab)')
+        self.assertEqual(
+            pat.match(string='abracadabra', pos=7, endpos=10).span(), (7, 9))
+        self.assertEqual(
+            pat.fullmatch(string='abracadabra', pos=7, endpos=9).span(), (7, 9))
+        self.assertEqual(
+            pat.search(string='abracadabra', pos=3, endpos=10).span(), (7, 9))
+        self.assertEqual(
+            pat.findall(string='abracadabra', pos=3, endpos=10), ['ab'])
+        self.assertEqual(
+            pat.split(string='abracadabra', maxsplit=1),
+            ['', 'ab', 'racadabra'])
+        self.assertEqual(
+            pat.scanner(string='abracadabra', pos=3, endpos=10).search().span(),
+            (7, 9))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
