@@ -1439,6 +1439,10 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 :meth:`wave.open` now supports the context manager protocol.  (Contributed
 by Claudiu Popa in :issue:`17616`.)
 
+:mod:`wave` can now :ref:`write output to unssekable files
+<wave-write-objects>`.  (Contributed by David Jones, Guilherme Polo, and Serhiy
+Storchaka in :issue:`5202`.)
+
 
 weakref
 -------
