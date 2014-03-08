@@ -1072,8 +1072,10 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/junk')
       (256, 'sh: /bin/junk: not found')
 
-   .. versionchanged:: 3.3
-      Availability: Unix & Windows
+   Availability: Unix & Windows
+
+   .. versionchanged:: 3.3.4
+      Windows support added
 
 
 .. function:: getoutput(cmd)
@@ -1086,8 +1088,10 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   .. versionchanged:: 3.3
-      Availability: Unix & Windows
+   Availability: Unix & Windows
+
+   .. versionchanged:: 3.3.4
+      Windows support added
 
 
 Notes
