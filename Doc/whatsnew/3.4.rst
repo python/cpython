@@ -364,6 +364,9 @@ Some smaller changes made to the core Python language are:
   Contributed by Victor Stinner, Kang-Hao (Kenny) Lu and Serhiy Storchaka in
   :issue:`12892`.
 
+* New EBCDIC :ref:`codec <standard-encodings>` ``cp273``.  (Contributed by
+  Michael Bierenfeld and Andrew Kuchling in :issue:`1097797`.)
+
 
 
 New Modules
