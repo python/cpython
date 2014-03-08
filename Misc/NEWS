@@ -1262,8 +1262,9 @@ Library
 
 - Issue #19523: Closed FileHandler leak which occurred when delay was set.
 
-- Issue #19544 and #6516: Restore support for --user and --group parameters to
-  sdist command accidentally rolled back as part of the distutils2 rollback.
+- Issue #19544 and Issue #6516: Restore support for --user and --group
+  parameters to sdist command accidentally rolled back as part of the
+  distutils2 rollback.
 
 - Issue #13674: Prevented time.strftime from crashing on Windows when given
   a year before 1900 and a format of %y.
@@ -1609,8 +1610,9 @@ Library
 
 - Issue #19254: Provide an optimized Python implementation of pbkdf2_hmac.
 
-- Issues #19201, #19222, #19223: Add "x" mode (exclusive creation) in opening
-  file to bz2, gzip and lzma modules. Patches by Tim Heaney and Vajrasky Kok.
+- Issues #19201, Issue #19222, Issue #19223: Add "x" mode (exclusive creation)
+  in opening file to bz2, gzip and lzma modules. Patches by Tim Heaney and
+  Vajrasky Kok.
 
 - Fix a reference count leak in _sre.
 
@@ -6328,7 +6330,7 @@ Core and Builtins
   deallocator calls one of the methods on the type (e.g. when subclassing
   IOBase).  Diagnosis and patch by Davide Rizzo.
 
-- Issue #9611, #9015: FileIO.read() clamps the length to INT_MAX on Windows.
+- Issue #9611, Issue #9015: FileIO.read() clamps the length to INT_MAX on Windows.
 
 - Issue #9642: Uniformize the tests on the availability of the mbcs codec, add
   a new HAVE_MBCS define.
@@ -6796,7 +6798,7 @@ Library
   'importlib.abc.PyPycLoader', 'nntplib.NNTP.xgtitle', 'nntplib.NNTP.xpath',
   and private attributes of 'smtpd.SMTPChannel'.
 
-- Issue #5905, #13560: time.strftime() is now using the current locale
+- Issue #5905, Issue #13560: time.strftime() is now using the current locale
   encoding, instead of UTF-8, if the wcsftime() function is not available.
 
 - Issue #13464: Add a readinto() method to http.client.HTTPResponse.  Patch
