@@ -109,6 +109,11 @@ aliases = {
     '1258'               : 'cp1258',
     'windows_1258'       : 'cp1258',
 
+    # cp273 codec
+    '273'                : 'cp273',
+    'ibm273'             : 'cp273',
+    'csibm273'           : 'cp273',
+
     # cp424 codec
     '424'                : 'cp424',
     'csibm424'           : 'cp424',
