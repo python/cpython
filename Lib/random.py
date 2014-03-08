@@ -108,7 +108,7 @@ class Random(_random.Random):
 
         if a is None:
             try:
-                a = long(_hexlify(_urandom(16)), 16)
+                a = long(_hexlify(_urandom(32)), 16)
             except NotImplementedError:
                 import time
                 a = long(time.time() * 256) # use fractional seconds

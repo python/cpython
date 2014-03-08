@@ -44,6 +44,10 @@ Library
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.
 
+- Improve the random module's default seeding to use 256 bits of entropy
+  from os.urandom().  This was already done for Python 3, mildly improving
+  security with a bigger seed space.
+
 - Issue #15618: Make turtle.py compatible with 'from __future__ import
   unicode_literals'.  Initial patch by Juancarlo Añez.
 
