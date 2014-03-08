@@ -133,6 +133,8 @@ Significantly Improved Library Modules:
   a new :mod:`~email.message.Message` subclass
   (:class:`~email.contentmanager.EmailMessage`) that :ref:`simplify MIME
   handling <whatsnew_email_contentmanager>` (:issue:`18891`).
+* The :mod:`inspect` and :mod:`pydoc` modules are now capable of
+  correct introspection of a much wider variety of callable objects
 * The :mod:`ipaddress` module API has been declared stable
 
 
@@ -383,6 +385,10 @@ Some smaller changes made to the core Python language are:
 * :class:`memoryview` is now registered as a :class:`Sequence <collections.abc>`,
   and supports the :func:`reversed` builtin.  (Contributed by Nick Coghlan
   and Claudiu Popa in :issue:`18690` and :issue:`19078`.)
+
+* Signatures reported by :func:`help` have been modified and improved in
+  several cases as a result of the introduction of Argument Clinic and other
+  changes to the :mod:`inspect` and :mod:`pydoc` modules.
 
 
 New Modules
@@ -871,7 +877,7 @@ Snow in :issue:`19152`.)
 inspect
 -------
 
-The inspect module now offers a basic :ref:`command line interface
+The :mod:`inspect` module now offers a basic :ref:`command line interface
 <inspect-module-cli>` to quickly display source code and other
 information for modules, classes and functions. (Contributed by Claudiu Popa
 and Nick Coghlan in :issue:`18626`)
@@ -889,10 +895,14 @@ metaclasses (Contributed by Ethan Furman in :issue:`18929` and
 
 :func:`~inspect.getfullargspec` and :func:`~inspect.getargspec`
 now use the :func:`~inspect.signature` API. This allows them to
-support much broader range of functions, including some builtins and
-callables that follow ``__signature__`` protocol. It is still
-recommended to update your code to use :func:`~inspect.signature`
-directly. (Contributed by Yury Selivanov in :issue:`17481`)
+support a much broader range of callables, including those with
+``__signature__`` attributes, those with metadata provided by argument
+clinic, :func:`functools.partial` objects and more. Note that, unlike
+:func:`~inspect.signature`, these functions still ignore ``__wrapped__``
+attributes, and report the already bound first argument for bound methods,
+so it is still necessary to update your code to use
+:func:`~inspect.signature` directly if those features are desired.
+(Contributed by Yury Selivanov in :issue:`17481`)
 
 :func:`~inspect.signature` now supports duck types of CPython functions,
 which adds support for functions compiled with Cython. (Contributed
@@ -1086,10 +1096,24 @@ the child process, instead of ``None``.  (Contributed by Gregory P. Smith.)
 pydoc
 -----
 
-While significant changes have not been made to :mod:`pydoc` directly,
+The :mod:`pydoc` module is now based directly on the
+:func:`inspect.signature` introspection API, allowing it to provide
+signature information for a wider variety of callable objects. This change
+also means that ``__wrapped__`` attributes are now taken into account when
+display help information (Contributed by Larry Hastings in :issue:`19674`)
+
+The :mod:`pydoc` module no longer displays the ``self`` parameter for
+already bound methods. Instead, it aims to always display the exact current
+signature of the supplied callable (Contributed by Larry Hastings in
+:issue:`20710`)
+
+In addition to the changes that have been made to :mod:`pydoc` directly,
 its handling of custom ``__dir__`` methods and various descriptor
-behaviours has been improved substantially by the underlying changes in
+behaviours has also been improved substantially by the underlying changes in
 the :mod:`inspect` module.
+
+As the :func:`help` builtin is based on :mod:`pydoc`, the above changes also
+affect the behaviour of :func:`help`.
 
 
 re
@@ -1532,7 +1556,12 @@ accurate signatures for builtins and standard library extension modules
 implemented in C.
 
 Some standard library extension modules have been converted to use Argument
-Clinic in Python 3.4, and :mod:`inspect` has been updated accordingly.
+Clinic in Python 3.4, and :mod:`pydoc` and :mod:`inspect` has been updated
+accordingly.
+
+It is expected that signature metadata for programmatic introspection will
+be added to additional callables implemented in C as part of Python 3.4
+maintenance releases.
 
 .. note::
    The Argument Clinic PEP is not fully up to date with the state of the
@@ -1955,6 +1984,14 @@ Changes in the Python API
   assumed the previous behaviour was intentional can use
   :func:`inspect.unwrap` to access the first function in the chain that has
   no ``__wrapped__`` attribute.
+
+* :func:`inspect.getfullargspec` has been reimplemented on top of
+  :func`inspect.signature` and hence handles a much wider variety of callable
+  objects than it did in the past. It is expected that additional builtin and
+  extension module callables will gain signature metadata over the course of
+  the Python 3.4 series. Code that assumes that
+  :func:`inspect.getfullargspec` will fail on non-Python callables may need
+  to be adjusted accordingly.
 
 * :class:`importlib.machinery.PathFinder` now passes on the current working
   directory to objects in :data:`sys.path_hooks` for the empty string. This
