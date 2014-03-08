@@ -633,6 +633,9 @@ The :mod:`socket` module also offers various network-related services:
 
    Availability: Unix (maybe not all platforms), Windows.
 
+   .. versionchanged:: 3.4
+      Windows support added
+
 
 .. function:: inet_ntop(address_family, packed_ip)
 
@@ -648,6 +651,9 @@ The :mod:`socket` module also offers various network-related services:
    :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
    Availability: Unix (maybe not all platforms), Windows.
+
+   .. versionchanged:: 3.4
+      Windows support added
 
 
 ..

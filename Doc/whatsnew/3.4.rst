@@ -1178,6 +1178,9 @@ during debugging, instead of integer "magic numbers".
 
 The :data:`~socket.AF_LINK` constant is now available on BSD and OSX.
 
+:func:`~socket.inet_pton` and :func:`~socket.inet_ntop` are now supported
+on Windows.  (Contributed by Atsuo Ishimoto in :issue:`7171`.)
+
 
 sqlite3
 -------
