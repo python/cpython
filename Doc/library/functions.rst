@@ -610,6 +610,10 @@ are always available.  They are listed here in alphabetical order.
 
    This function is added to the built-in namespace by the :mod:`site` module.
 
+   .. versionchanged:: 3.4
+      Changes to :mod:`pydoc` and :mod:`inspect` mean that the reported
+      signatures for callables are now more comprehensive and consistent.
+
 
 .. function:: hex(x)
 
