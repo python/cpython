@@ -540,13 +540,17 @@ Using ``ABC`` as a base class has essentially the same effect as specifying
 aifc
 ----
 
-The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
+The :meth:`~aifc.aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
 :func:`aifc.open` now supports the context manager protocol: when used in a
 :keyword:`with` block, the :meth:`~aifc.aifc.close` method of the returned
 object will be called automatically at the end of the block.  (Contributed by
 Serhiy Storchacha in :issue:`16486`.)
+
+The :meth:`~aifc.aifc.writeframesraw` and :meth:`~aifc.aifc.writeframes`
+methods now accept any :term:`bytes-like object`.  (Contributed by Serhiy
+Storchaka in :issue:`8311`.)
 
 
 argparse
@@ -1300,6 +1304,10 @@ in :issue:`18878`.)
 support for writing 24 sample using the module.  (Contributed by
 Serhiy Storchaka in :issue:`19261`.)
 
+The :meth:`~sunau.AU_write.writeframesraw` and
+:meth:`~sunau.AU_write.writeframes` methods now accept any :term:`bytes-like
+object`.  (Contributed by Serhiy Storchaka in :issue:`8311`.)
+
 
 sys
 ---
@@ -1442,6 +1450,10 @@ by Claudiu Popa in :issue:`17616`.)
 :mod:`wave` can now :ref:`write output to unssekable files
 <wave-write-objects>`.  (Contributed by David Jones, Guilherme Polo, and Serhiy
 Storchaka in :issue:`5202`.)
+
+The :meth:`~wave.Wave_write.writeframesraw` and
+:meth:`~wave.Wave_write.writeframes` methods now accept any :term:`bytes-like
+object`.  (Contributed by Serhiy Storchaka in :issue:`8311`.)
 
 
 weakref

@@ -226,7 +226,7 @@ Wave_write objects, as returned by :func:`.open`, have the following methods:
    Write audio frames, without correcting *nframes*.
 
    .. versionchanged:: 3.4
-      Any :term:`bytes-like object`\ s are now accepted.
+      Any :term:`bytes-like object` is now accepted.
 
 
 .. method:: Wave_write.writeframes(data)
@@ -237,7 +237,7 @@ Wave_write objects, as returned by :func:`.open`, have the following methods:
    previously set value for *nframes*.
 
    .. versionchanged:: 3.4
-      Any :term:`bytes-like object`\ s are now accepted.
+      Any :term:`bytes-like object` is now accepted.
 
 
 Note that it is invalid to set any parameters after calling :meth:`writeframes`
