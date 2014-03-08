@@ -554,11 +554,15 @@ by Lucas Maystre in :issue:`11175`.)
 audioop
 -------
 
-The module now supports 24-bit samples.  (Contributed by Serhiy Storchaka
+:mod:`audioop` now supports 24-bit samples.  (Contributed by Serhiy Storchaka
 in :issue:`12866`.)
 
 Added the :func:`~audioop.byteswap` function to convert big-endian samples
 to little-endian and vice versa (:issue:`19641`).
+
+All :mod:`audioop` functions now accept any :term:`bytes-like object`.  Strings
+are not accepted: they didn't work before, now they raise an error right away.
+(Contributed by Serhiy Storchaka in :issue:`16685`.)
 
 
 base64
@@ -2049,6 +2053,9 @@ Changes in the Python API
   to be matched is a :term:`bytes-like object`.  Previously the return type
   matched the input type, so if your code was depending on the return value
   being, say, a ``bytearray``, you will need to change your code.
+
+* :mod:`audioop` functions now raise an error immediately if passed string
+  input, instead of failing randomly later on (:issue:`16685`).
 
 
 Changes in the C API
