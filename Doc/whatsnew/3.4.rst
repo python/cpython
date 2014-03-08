@@ -1265,6 +1265,10 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 called automatically at the end of the block.  (Contributed by Serhiy Storchaka
 in :issue:`18878`.)
 
+:meth:`.AU_write.setsampwidth` now supports 24 bit samples, thus adding
+support for writing 24 sample using the module.  (Contributed by
+Serhiy Storchaka in :issue:`19261`.)
+
 
 sys
 ---
