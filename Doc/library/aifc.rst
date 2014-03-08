@@ -226,7 +226,7 @@ number of frames must be filled in.
    file parameters have been set.
 
    .. versionchanged:: 3.4
-      Any :term:`bytes-like object`\ s are now accepted.
+      Any :term:`bytes-like object` is now accepted.
 
 
 .. method:: aifc.writeframesraw(data)
@@ -235,7 +235,7 @@ number of frames must be filled in.
    updated.
 
    .. versionchanged:: 3.4
-      Any :term:`bytes-like object`\ s are now accepted.
+      Any :term:`bytes-like object` is now accepted.
 
 
 .. method:: aifc.close()
