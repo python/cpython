@@ -12,10 +12,8 @@ integers, unless specified otherwise.
 
 .. versionchanged:: 3.4
    Support for 24-bit samples was added.
-
-.. versionchanged:: 3.4
-   Any :term:`bytes-like object`\ s are now accepted by all functions in this
-   module.  Strings no more supported.
+   All functions now accept any :term:`bytes-like object`.
+   String input now results in an immediate error.
 
 .. index::
    single: Intel/DVI ADPCM
