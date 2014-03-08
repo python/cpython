@@ -1,27 +1,33 @@
-:mod:`base64` --- RFC 3548: Base16, Base32, Base64 Data Encodings
-=================================================================
+:mod:`base64` --- Base16, Base32, Base64, Base85 Data Encodings
+===============================================================
 
 .. module:: base64
-   :synopsis: RFC 3548: Base16, Base32, Base64 Data Encodings
+   :synopsis: RFC 3548: Base16, Base32, Base64 Data Encodings;
+              Base85 and Ascii85
 
 
 .. index::
    pair: base64; encoding
    single: MIME; base64 encoding
 
-This module provides data encoding and decoding as specified in :rfc:`3548`.
-This standard defines the Base16, Base32, and Base64 algorithms for encoding
-and decoding arbitrary binary strings into ASCII-only byte strings that can be
+This module provides functions for encoding binary data to printable
+ASCII characters and decoding such encodings back to binary data.
+It provides encoding and decoding functions for the encodings specified in
+in :rfc:`3548`, which defines the Base16, Base32, and Base64 algorithms,
+and for the de-facto standard Ascii85 and Base85 encodings.
+
+The :rfc:`3548` encodings are suitable for encoding binary data so that it can
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.  The encoding algorithm is not the same as the
 :program:`uuencode` program.
 
-There are two interfaces provided by this module.  The modern interface
-supports encoding and decoding ASCII byte string objects using all three
-alphabets. Additionally, the decoding functions of the modern interface also
-accept Unicode strings containing only ASCII characters. The legacy interface
-provides for encoding and decoding to and from file-like objects as well as
-byte strings, but only using the Base64 standard alphabet.
+There are two :rfc:`3548` interfaces provided by this module.  The modern
+interface supports encoding and decoding ASCII byte string objects using all
+three :rfc:`3548` defined alphabets (normal, URL-safe, and filesystem-safe).
+Additionally, the decoding functions of the modern interface also accept
+Unicode strings containing only ASCII characters. The legacy interface provides
+for encoding and decoding to and from file-like objects as well as byte
+strings, but only using the Base64 standard alphabet.
 
 .. versionchanged:: 3.3
    ASCII-only Unicode strings are now accepted by the decoding functions of
@@ -29,7 +35,7 @@ byte strings, but only using the Base64 standard alphabet.
 
 .. versionchanged:: 3.4
    Any :term:`bytes-like object`\ s are now accepted by all
-   encoding and decoding functions in this module.
+   encoding and decoding functions in this module.  Ascii85/Base85 support added.
 
 The modern interface provides:
 

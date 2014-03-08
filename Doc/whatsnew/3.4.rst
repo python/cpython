@@ -583,6 +583,14 @@ The encoding and decoding functions in :mod:`base64` now accept any
 :class:`bytes` or :class:`bytearray` instance.  (Contributed by Nick Coghlan in
 :issue:`17839`.)
 
+New functions :func:`~base64.a85encode`, :func:`~base64.a85decode`,
+:func:`~base64.b85encode`, and :func:`~base64.b85decode` provide the ability to
+encode and decode binary data from and to ``Ascii85`` and the git/mercurial
+``Base85`` formats, respectively.  The ``a85`` functions have options that can
+be sued to make them compatible with the variants of the ``Ascii85`` encoding,
+including the Adobe variant.  (Contributed by Martin Morrison, the Mercurial
+project, Serhiy Storchaka, and Antoine Pitrou in :issue:`17618`.)
+
 
 colorsys
 --------
