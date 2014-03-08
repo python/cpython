@@ -617,6 +617,15 @@ The :mod:`contextlib` documentation has also been updated to include a
 differences between single use, reusable and reentrant context managers.
 
 
+dbm
+---
+
+:func:`dbm.open` objects now support the context management protocol.  When
+used in a :keyword:`with` statement, the ``close`` method of the database
+object will be called automatically at the end of the block.  (Contributed by
+Claudiu Popa and Nick Coghlan in :issue:`19282`.)
+
+
 dis
 ---
 
