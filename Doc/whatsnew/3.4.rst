@@ -1246,6 +1246,10 @@ subprocess
 be used to provide the contents of ``stdin`` for the command that is run.
 (Contributed by Zack Weinberg in :issue:`16624`.)
 
+:func:`~subprocess.getstatus` and :func:`~subprocess.getstatusoutput` now
+work on Windows.  This change was actually made in 3.3.4.  (Contributed
+by Tim Golden in :issue:`10197`.)
+
 
 sunau
 -----
