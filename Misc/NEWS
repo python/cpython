@@ -2,6 +2,30 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.6 release candidate 1?
+===============================================
+
+*Release date: XX-XXX-XXXX*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #20283: RE pattern methods now accept the string keyword parameters
+  as documented.  The pattern and source keyword parameters are left as
+  deprecated aliases.
+
+
+What's New in Python 3.3.5?
+===========================
+
+*Release date: 09-Mar-2014*
+
+No changes from release candidate 2.
+
+
 What's New in Python 3.3.5 release candidate 2?
 ===============================================
 
@@ -21,10 +45,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #20283: RE pattern methods now accept the string keyword parameters
-  as documented.  The pattern and source keyword parameters are left as
-  deprecated aliases.
 
 - Issue #20778: Fix modulefinder to work with bytecode-only modules.
 
