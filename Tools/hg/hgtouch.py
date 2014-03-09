@@ -125,6 +125,6 @@ def touch(ui, repo, basedir):
 
 cmdtable = {
     "touch": (touch,
-              [('b', 'basedir', '', 'base dir of the tree to apply touching', 'BASEDIR')],
+              [('b', 'basedir', '', 'base dir of the tree to apply touching')],
               "hg touch [-b BASEDIR]")
 }
