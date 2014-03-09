@@ -1305,6 +1305,14 @@ The dictionary returned by :meth:`.SSLSocket.getpeercert` contains additional
 ``X509v3`` extension items: ``crlDistributionPoints``, ``calIssuers``, and
 ``OCSP`` URIs.  (Contributed by Christian Heimes in :issue:`18379`.)
 
+If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has an new
+attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the
+certificate verification process by setting it to some combination of the new
+constants :data:`~ssl.VERIFY_DEFAULT`, :data:`~ssl.VERIFY_CRL_CHECK_LEAF`,
+:data:`~ssl.VERIFY_CRL_CHECK_CHAIN`, or :data:`~ssl.VERIFY_X509_STRICT`.
+OpenSSL does not do any CRL verification by default.  (Contributed by
+Christien Heimes in :issue:`8813`.)
+
 
 stat
 ----
