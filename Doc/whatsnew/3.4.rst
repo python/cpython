@@ -1507,6 +1507,12 @@ venv
 :mod:`venv` now includes activation scripts for the ``csh`` and ``fish``
 shells (Contributed by Andrew Svetlov in :issue:`15417`.)
 
+:class:`~venv.EnvBuilder` and the :func:`~venv.create` convenience function
+take a new keyword argument *with_pip*, which defaults to ``False``, that
+controls whether or not :class:`~venv.EnvBuilder` ensures that ``pip`` is
+installed in the virtual environment.  (Contributed by Nick Coghlan in
+:issue:`19552` as part of the :pep:`453` implementation.)
+
 
 wave
 ----
@@ -1771,6 +1777,11 @@ Other Improvements
 * The :ref:`pyvenv <scripts-pyvenv>` command now accepts a ``--copies`` option
   to use copies rather than symlinks even on systems where symlinks are the
   default.  (Contributed by Vinay Sajip in :issue:`18807`.)
+
+* The :ref:`pyvenv <scripts-pyvenv>` command also accepts a ``--without-pip``
+  option to suppress the otherwise-automatic bootstrapping of pip into
+  the virtual environment.  (Contributed by Nick Coghlan in :issue:`19552`
+  as part of the :pep:`453` implementation.)
 
 * The encoding name is now optional in the value set for the
   :envvar:`PYTHONIOENCODING` environment variable.  This makes it possible to
