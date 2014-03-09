@@ -1269,6 +1269,11 @@ TLSv1.2 support) have been added; support for these protocols is only available 
 Python is linked with OpenSSL 1.0.1 or later.  (Contributed by Michele Orrù and
 Antoine Pitrou in :issue:`16692`)
 
+:class:`~ssl.SSLContext` method :meth:`~ssl.SSLContext.load_verify_locations`
+accepts a new optional argument *cadata*, which can be used to provide PEM or
+DER encoded certificates directly via strings or bytes, respectively.
+(Contributed by Christian Heimes in :issue:`18138`.)
+
 New function :func:`~ssl.get_default_verify_paths` returns
 a named tuple of the paths and environment variables that the
 :meth:`~ssl.SSLContext.set_default_verify_paths` method uses to set
