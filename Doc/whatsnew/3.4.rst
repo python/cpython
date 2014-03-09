@@ -793,6 +793,14 @@ dictionaries containing the collections statistics since interpreter startup.
 (Contributed by Antoine Pitrou in :issue:`16351`.)
 
 
+glob
+----
+
+A new function :func:`~glob.escape` provides a way to escape special characters
+in a filename so that they do not become part of the globbing expansion but are
+instead matched literally.  (Contributed by Serhiy Storchaka in :issue:`8402`.)
+
+
 hashlib
 -------
 
