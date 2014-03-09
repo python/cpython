@@ -319,5 +319,14 @@ class TestPolicyPropagation(unittest.TestCase):
         self.assertEqual(msg.as_string(), "Subject: testXTo: fooXX")
 
 
+class TestConcretePolicies(unittest.TestCase):
+
+    def test_header_store_parse_rejects_newlines(self):
+        instance = email.policy.EmailPolicy()
+        self.assertRaises(ValueError,
+                          instance.header_store_parse,
+                          'From', 'spam\negg@foo.py')
+
+
 if __name__ == '__main__':
     unittest.main()
