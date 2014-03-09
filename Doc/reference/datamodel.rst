@@ -2050,11 +2050,13 @@ left undefined.
    ``&=``, ``^=``, ``|=``).  These methods should attempt to do the operation
    in-place (modifying *self*) and return the result (which could be, but does
    not have to be, *self*).  If a specific method is not defined, the augmented
-   assignment falls back to the normal methods.  For instance, to execute the
-   statement ``x += y``, where *x* is an instance of a class that has an
-   :meth:`__iadd__` method, ``x.__iadd__(y)`` is called.  If *x* is an instance
-   of a class that does not define a :meth:`__iadd__` method, ``x.__add__(y)``
-   and ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``.
+   assignment falls back to the normal methods.  For instance, if *x* is an
+   instance of a class with an :meth:`__iadd__` method, ``x += y`` is equivalent
+   to ``x = x.__iadd__(y)`` . Otherwise, ``x.__add__(y)`` and ``y.__radd__(x)``
+   are considered, as with the evaluation of ``x + y``. In certain situations,
+   augmented assignment can result in unexpected errors (see
+   :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in
+   fact part of the data model.
 
 
 .. method:: object.__neg__(self)
