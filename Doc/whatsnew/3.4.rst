@@ -1066,6 +1066,11 @@ root on Windows. (Contributed by Tim Golden in :issue:`9035`.)
 pdb
 ---
 
+:mod:`pdb` has been enhanced to handle generators, :keyword:`yield`, and
+:keyword:`yield from` in a more useful fashion.  This is especially helpful when
+debugging :mod:`asyncio` based programs.  (Contributed by Andrew Svetlov and
+Xavier de Gaye in :issue:`16596`.)
+
 The ``print`` command has been removed from :mod:`pdb`, restoring access to the
 Python :func:`print` function from the pdb command line.  Python2's ``pdb`` did
 not have a ``print`` command; instead, entering ``print`` executed the
