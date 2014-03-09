@@ -1906,6 +1906,9 @@ Deprecated Python Modules, Functions and Methods
   :func:`~plistlib.loads`, and :func:`~plistlib.dumps`.  :func:`~plistlib.Data`
   is deprecated in favor of just using the :class:`bytes` constructor.
 
+* The :mod:`sysconfig` key ``SO`` is deprecated, it has been replaced by
+  ``EXT_SUFFIX``.
+
 
 Deprecated Functions and Types in the C API
 -------------------------------------------
