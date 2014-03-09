@@ -1589,6 +1589,10 @@ used to control which directories and files are added to the archive.  For
 example, this could be used to exclude test files from the archive.
 (Contributed by Christian Tismer in :issue:`19274`.)
 
+The *allowZip64* parameter to :class:`~zipfile.ZipFile` and
+:class:`~zipfile.PyZipfile` is now ``True`` by default.  (Contributed by
+William Mallard in :issue:`17201`.)
+
 
 
 CPython Implementation Changes
