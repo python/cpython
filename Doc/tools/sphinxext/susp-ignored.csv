@@ -282,4 +282,3 @@ whatsnew/changelog,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised Unic
 whatsnew/changelog,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
 whatsnew/changelog,,:password,user:password
-whatsnew/changelog,,:gz,w:gz
