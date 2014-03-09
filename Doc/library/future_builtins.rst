@@ -50,6 +50,11 @@ Available builtins are:
 
    Works like :func:`itertools.imap`.
 
+   .. note::
+
+      In Python 3, :func:`map` does not accept ``None`` for the
+      function argument.
+
 .. function:: oct(object)
 
    Works like the built-in :func:`oct`, but instead of :meth:`__oct__` it will
