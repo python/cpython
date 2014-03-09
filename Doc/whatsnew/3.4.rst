@@ -1318,6 +1318,15 @@ constants :data:`~ssl.VERIFY_DEFAULT`, :data:`~ssl.VERIFY_CRL_CHECK_LEAF`,
 OpenSSL does not do any CRL verification by default.  (Contributed by
 Christien Heimes in :issue:`8813`.)
 
+New :class:`~ssl.SSLContext` method :meth:`~ssl.SSLContext.load_default_certs`
+loads a set of dfault "certificate authority" (CA) certificates from default
+locations, which vary according to the platform.  It can be used to load both
+TLS web server authentication certificates
+(``purpose=``:data:`~ssl.Purpose.SERVER_AUTH`) for a client to use to verify a
+server, and certificates for a server to use in verifying client certificates
+(``purpose=``:data:`~ssl.Purpose.CLIENT_AUTH`).  (Contributed by Christian
+Heimes in :issue:`19292`.)
+
 
 stat
 ----
