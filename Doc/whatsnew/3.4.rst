@@ -832,6 +832,11 @@ which the value of *digestmod* defaults to ``MD5`` is deprecated: in a
 future version of Python there will be no default value.  (Contributed by
 Christian Heimes in :issue:`17276`.)
 
+With the addition of :attr:`~hmac.HMAC.block_size` and :attr:`~hmac.HMAC.name`
+attributes (and the formal documentation of the :attr:`~hmac.HMAC.digest_size`
+attribute), the :mod:`hmac` module now conforms fully to the :pep:`247` API.
+(Contributed by Christian Heimes in :issue:`18775`.)
+
 
 html
 ----
