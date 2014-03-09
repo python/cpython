@@ -1297,6 +1297,10 @@ Support for server-side SNI using the new
 :meth:`ssl.SSLContext.set_servername_callback` method.
 (Contributed by Daniel Black in :issue:`8109`.)
 
+The dictionary returned by :meth:`.SSLSocket.getpeercert` contains additional
+``X509v3`` extension items: ``crlDistributionPoints``, ``calIssuers``, and
+``OCSP`` URIs.  (Contributed by Christian Heimes in :issue:`18379`.)
+
 
 stat
 ----
