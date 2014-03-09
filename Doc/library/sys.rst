@@ -692,10 +692,11 @@ always available.
 
 .. data:: __interactivehook__
 
-   When present, this function is automatically called (with no arguments)
-   when the interpreter is launched in :ref:`interactive mode <tut-interactive>`.
-   This is done after the :envvar:`PYTHONSTARTUP` file is read, so that you
-   can set this hook there.
+   When this attribute exists, its value is automatically called (with no
+   arguments) when the interpreter is launched in :ref:`interactive mode
+   <tut-interactive>`.  This is done after the :envvar:`PYTHONSTARTUP` file is
+   read, so that you can set this hook there.  The :mod:`site` module
+   :ref:`sets this <rlcompleter-config>`.
 
    .. versionadded:: 3.4
 
