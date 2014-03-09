@@ -23,9 +23,8 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
    defaults to the :data:`hashlib.md5` constructor.
 
    .. versionchanged:: 3.4
-      Parameter *key* can be a bytes or bytearray object. Parameter *msg* can
-      be of any type supported by :mod:`hashlib`.
-
+      Parameter *key* can be a bytes or bytearray object.
+      Parameter *msg* can be of any type supported by :mod:`hashlib`.
       Paramter *digestmod* can be the name of a hash algorithm.
 
    .. deprecated:: 3.4

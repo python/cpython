@@ -826,6 +826,12 @@ argument to the :func:`~hmac.new` function, and the *msg* parameter to both the
 accepts any type supported by the :mod:`hashlib` module.  (Contributed
 by Jonas Borgström in :issue:`18240`.)
 
+The *digestmod* argument to the :func:`hmac.new` function may now be any hash
+digest name recognized by :mod:`hashlib`.  In addition, the current behavior in
+which the value of *digestmod* defaults to ``MD5`` is deprecated: in a
+future version of Python there will be no default value.  (Contributed by
+Christian Heimes in :issue:`17276`.)
+
 
 html
 ----
@@ -1849,6 +1855,9 @@ Deprecated Python Modules, Functions and Methods
 
 * The *strict* argument of :class:`~html.parser.HTMLParser` is deprecated.
 
+* The :func:`hmac.new` *digestmod* keyword having a default value (currently
+  ``MD5``) is deprecated.
+
 
 Deprecated Functions and Types in the C API
 -------------------------------------------
@@ -2139,7 +2148,11 @@ Changes in the Python API
   currently defaults to ``False`` for backward compatibility, but will
   eventually be changed to default to ``True``.  It is recommended that you add
   this keyword, with the appropriate value, to any
-  :class:`~html.parser.HTMLParser` calls in your code.
+  :class:`~html.parser.HTMLParser` calls in your code (:issue:`13633`).
+
+* Since the *digestmod* argument to the :func:`hmac.new` function will in the
+  future have no default, all calls to :func:`hmac.new` should be changed to
+  explicitly specify a *digestmod*. (:issue:`17276`).
 
 
 Changes in the C API
