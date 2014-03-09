@@ -1097,9 +1097,13 @@ keyword-only arguments.  It also provides some efficiency improvements.
 plistlib
 --------
 
-:mod:`plistlib` now supports binary plist files, and offers the common
-``load``/``loads``/``dump``/``dumps`` API pattern for serialization formats
-(Contributed by Ronald Oussoren and others in :issue:`14455`).
+:mod:`plistlib` now has an API that is similar to the standard pattern for
+stdlib serialization protocols, with new :func:`~plistlib.load`,
+:func:`~plistlib.dump`, :func:`~plistlib.loads`, and :func:`~plistlib.dumps`
+functions.  (The older API is now deprecated.)  In addition to the already
+supported XML plist format (:data:`~plistlib.FMT_XML`), it also now supports
+the binary plist format (:data:`~plistlib.FMT_BINARY`).  (Contributed by Ronald
+Oussoren and others in :issue:`14455`).
 
 
 poplib
@@ -1886,6 +1890,13 @@ Deprecated Python Modules, Functions and Methods
 
 * The :func:`hmac.new` *digestmod* keyword having a default value (currently
   ``MD5``) is deprecated.
+
+* The :mod:`plistlib` :func:`~plistlib.readPlist`,
+  :func:`~plistlib.writePlist`, :func:`~plistlib.readPlistFromBytes`, and
+  :func:`~plistlib.writePlistToBytes` functions are deprecated in favor of the
+  corresponding new functions :func:`~plistlib.load`, :func:`~plistlib.dump`,
+  :func:`~plistlib.loads`, and :func:`~plistlib.dumps`.  :func:`~plistlib.Data`
+  is deprecated in favor of just using the :class:`bytes` constructor.
 
 
 Deprecated Functions and Types in the C API
