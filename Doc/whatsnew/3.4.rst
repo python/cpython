@@ -1845,8 +1845,8 @@ when the interpreter is run with deprecation warnings enabled (for example, by
 using ``-Wd``).
 
 
-Deprecated Python Modules, Functions and Methods
-------------------------------------------------
+Deprecations in the Python API
+------------------------------
 
 * :meth:`difflib.SequenceMatcher.isbjunk` and
   :meth:`difflib.SequenceMatcher.isbpopular` were removed: use ``x in sm.bjunk`` and
@@ -1910,8 +1910,8 @@ Deprecated Python Modules, Functions and Methods
   ``EXT_SUFFIX``.
 
 
-Deprecated Functions and Types in the C API
--------------------------------------------
+Deprecations in the C API
+-------------------------
 
 XXX: None so far
 
