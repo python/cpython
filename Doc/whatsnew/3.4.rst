@@ -830,16 +830,16 @@ by Jonas Borgström in :issue:`18240`.)
 html
 ----
 
-Added a new :func:`html.unescape` function that converts HTML5 character
-references to the corresponding Unicode characters.
-(Contributed by Ezio Melotti in :issue:`2927`)
+New function :func:`~html.unescape` function converts HTML5 character references to
+the corresponding Unicode characters.  (Contributed by Ezio Melotti in
+:issue:`2927`)
 
-Added a new *convert_charrefs* keyword argument to
-:class:`~html.parser.HTMLParser` that, when ``True``, automatically converts
-all character references.  For backward-compatibility, its value defaults
-to ``False``, but it will change to ``True`` in future versions, so you
-are invited to set it explicitly and update your code to use this new feature.
-(Contributed by Ezio Melotti in :issue:`13633`)
+:class:`~html.parser.HTMLParser` accepts a new keyword argument
+*convert_charrefs* that, when ``True``, automatically converts all character
+references.  For backward-compatibility, its value defaults to ``False``, but
+it will change to ``True`` in a future version of Python, so you are invited to
+set it explicitly and update your code to use this new feature.  (Contributed
+by Ezio Melotti in :issue:`13633`)
 
 The *strict* argument of :class:`~html.parser.HTMLParser` is now deprecated.
 (Contributed by Ezio Melotti in :issue:`15114`)
@@ -2134,6 +2134,12 @@ Changes in the Python API
 
 * :mod:`audioop` functions now raise an error immediately if passed string
   input, instead of failing randomly later on (:issue:`16685`).
+
+* The new *convert_charrefs* argument to :class:`~html.parser.HTMLParser`
+  currently defaults to ``False`` for backward compatibility, but will
+  eventually be changed to default to ``True``.  It is recommended that you add
+  this keyword, with the appropriate value, to any
+  :class:`~html.parser.HTMLParser` calls in your code.
 
 
 Changes in the C API
