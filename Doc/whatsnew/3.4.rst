@@ -1781,12 +1781,6 @@ Other Build and C API Changes
   object allocator have been silenced.  (Contributed by Dhiru Kholia in
   :issue:`18596`.)
 
-* New function :c:func:`Py_SetStandardStreamEncoding` allows an application
-  that is embedding Python to do the equivalent of setting
-  :envvar:`PYTHONIOENCODING`.  Its arguments override the equivalent
-  values from :envvar:`PYTHONIOENCODING` if it exists.  (Contributed
-  by Bastien Montagne and Nick Coghlan in :issue:`16129`.)
-
 * The Windows build now uses `Address Space Layout Randomization
   <http://en.wikipedia.org/wiki/ASLR>`_ and `Data Execution Prevention
   <http://en.wikipedia.org/wiki/Data_Execution_Prevention>`_.  (Contributed by
