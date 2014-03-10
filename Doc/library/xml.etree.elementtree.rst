@@ -952,7 +952,8 @@ XMLParser Objects
    specified in the XML file.
 
    .. deprecated:: 3.4
-      The *html* argument.
+      The *html* argument.  The remaining arguments should be passed via
+      keywword to prepare for the removal of the *html* argument.
 
    .. method:: close()
 
