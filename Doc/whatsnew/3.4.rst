@@ -1297,6 +1297,16 @@ and will be automatically closed at the end of the :keyword:`with` block.
 (Contributed by Filip Gruszczyński in :issue:`13896`.)
 
 
+shutil
+------
+
+:func:`~shutil.copyfile` now raises a specific :exc:`~shutil.Error` subclass,
+:exc:`~shutil.SameFileError`, when the source and destination are the same
+file, which allows an application to take appropriate action on this specific
+error.  (Contributed by Atsuo Ishimoto and Hynek Schlawack in
+:issue:`1492704`.)
+
+
 smtpd
 -----
 
