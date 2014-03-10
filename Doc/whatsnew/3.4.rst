@@ -1336,11 +1336,12 @@ server, and certificates for a server to use in verifying client certificates
 Heimes in :issue:`19292`.)
 
 New function :func:`~ssl.create_default_context` provides a standard way to
-obtain an :class:`~ssl.SSLContext` based on the settings Python uses by
-default.  These settings are more stringent than the defaults provided by the
-:class:`~ssl.SSLContext` constructor, and may be adjusted (without notice) in
-the future to maintain a balance between compatibility and security.
-(Contributed by Christian Heimes in :issue:`19689`.)
+obtain an :class:`~ssl.SSLContext` whose settings are intended to be a
+reasonable balance between compatibility and security.  These settings are
+more stringent than the defaults provided by the :class:`~ssl.SSLContext`
+constructor, and may be adjusted in the future, without prior deprecation, if
+best-practice security requirements change.  (Contributed by Christian Heimes
+in :issue:`19689`.)
 
 
 stat
