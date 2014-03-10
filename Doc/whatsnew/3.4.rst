@@ -596,6 +596,15 @@ including the Adobe variant.  (Contributed by Martin Morrison, the Mercurial
 project, Serhiy Storchaka, and Antoine Pitrou in :issue:`17618`.)
 
 
+collections
+-----------
+
+The :meth:`.ChainMap.new_child` method now accepts an *m* argument specifying
+the child map to add to the chain.  This allows an existing mapping and/or a
+custom mapping type to be used for the child.  (Contributed by Vinay Sajip in
+:issue:`16613`.)
+
+
 colorsys
 --------
 
