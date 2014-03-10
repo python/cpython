@@ -731,7 +731,8 @@ email
 override the default policy of the message when generating a string
 representation of it.  This means that ``as_string`` can now be used in more
 circumstances, instead of having to create and use a :mod:`~email.generator` in
-order to pass formatting parameters to its ``flatten`` method.
+order to pass formatting parameters to its ``flatten`` method.  (Contributed by
+R. David Murray in :issue:`18600`.)
 
 New method :meth:`~email.message.Message.as_bytes` added to produce a bytes
 representation of the message in a fashion similar to how ``as_string``
@@ -739,26 +740,30 @@ produces a string representation.  It does not accept the *maxheaderlen*
 argument, but does accept the *unixfrom* and *policy* arguments. The
 :class:`~email.message.Message` :meth:`~email.message.Message.__bytes__` method
 calls it, meaning that ``bytes(mymsg)`` will now produce the intuitive
-result:  a bytes object containing the fully formatted message.
+result:  a bytes object containing the fully formatted message.  (Contributed
+by R. David Murray in :issue:`18600`.)
 
-(Contributed by R. David Murray in :issue:`18600`.)
+The :meth:`.Message.set_param` message now accepts a *replace* keyword argument.
+When specified, the associated header will be updated without changing
+its location in the list of headers.  For backward compatibility, the default
+is ``False``.  (Contributed by R. David Murray in :issue:`18891`.)
+
 
 .. _whatsnew_email_contentmanager:
 
-A pair of new subclasses of :class:`~email.message.Message` have been added,
-along with a new sub-module, :mod:`~email.contentmanager`.  All documentation
-is currently in the new module, which is being added as part of the new
-:term:`provisional <provisional package>` email API.  These classes provide a
-number of new methods that make extracting content from and inserting content
-into email messages much easier.  See the :mod:`~email.contentmanager`
-documentation for details.
-
-These API additions complete the bulk of the work that was planned as part of
-the email6 project.  The currently provisional API is scheduled to become final
-in Python 3.5 (possibly with a few minor additions in the area of error
-handling).
-
-(Contributed by R. David Murray in :issue:`18891`.)
+A pair of new subclasses of :class:`~email.message.Message` have been added
+(:class:`.EmailMessage` and :class:`.MIMEPart`), along with a new sub-module,
+:mod:`~email.contentmanager` and a new :mod:`~email.policy` attribute
+:attr:`~email.policy.EmailPolicy.content_manager`.  All documentation is
+currently in the new module, which is being added as part of email's new
+:term:`provisional API`.  These classes provide a number of new methods that
+make extracting content from and inserting content into email messages much
+easier.  For details, see the :mod:`~email.contentmanager` documentation and
+the :ref:`email-contentmanager-api-examples`.  These API additions complete the
+bulk of the work that was planned as part of the email6 project.  The currently
+provisional API is scheduled to become final in Python 3.5 (possibly with a few
+minor additions in the area of error handling).  (Contributed by R. David
+Murray in :issue:`18891`.)
 
 
 filecmp
@@ -1084,7 +1089,7 @@ pdb
 ---
 
 :mod:`pdb` has been enhanced to handle generators, :keyword:`yield`, and
-:keyword:`yield from` in a more useful fashion.  This is especially helpful when
+``yield from`` in a more useful fashion.  This is especially helpful when
 debugging :mod:`asyncio` based programs.  (Contributed by Andrew Svetlov and
 Xavier de Gaye in :issue:`16596`.)
 
