@@ -357,9 +357,9 @@ attribute is considered sufficient for this determination.
 
 .. c:function:: Py_ssize_t PyObject_LengthHint(PyObject *o, Py_ssize_t default)
 
-   Return an estimated length for the object *o*. First trying to return its
-   actual length, then an estimate using ``__length_hint__``, and finally
-   returning the default value. On error ``-1`` is returned. This is the
+   Return an estimated length for the object *o*. First try to return its
+   actual length, then an estimate using :meth:`~object.__length_hint__`, and
+   finally return the default value. On error return ``-1``. This is the
    equivalent to the Python expression ``operator.length_hint(o, default)``.
 
    .. versionadded:: 3.4
