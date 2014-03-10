@@ -393,6 +393,10 @@ Some smaller changes made to the core Python language are:
   several cases as a result of the introduction of Argument Clinic and other
   changes to the :mod:`inspect` and :mod:`pydoc` modules.
 
+* :meth:`~object.__length_hint__` is now part of the formal language
+  specification (see :pep:`424`).  (Contributed by Armin Ronacher in
+  :issue:`16148`.)
+
 
 New Modules
 ===========
@@ -1098,6 +1102,11 @@ There is now a pure-python version of the :mod:`operator` module available for
 reference and for use by alternate implementations of Python.  (Contributed by
 Zachary Ware in :issue:`16694`.)
 
+New function :func:`~operator.length_hint` provides an implementation of the
+specification for how the :meth:`~object.__length_hint__` special method should
+be used, as part of the :pep:`424` formal specification of this language
+feature.  (Contributed by Armin Ronacher in :issue:`16148`.)
+
 
 os
 --
@@ -1799,6 +1808,10 @@ Other Build and C API Changes
   <http://en.wikipedia.org/wiki/ASLR>`_ and `Data Execution Prevention
   <http://en.wikipedia.org/wiki/Data_Execution_Prevention>`_.  (Contributed by
   Christian Heimes in :issue:`16632`.)
+
+* New function :c:func:`PyObject_LengthHint` is the C API equivalent
+  of :func:`operator.length_hint`.  (Contributed by Armin Ronacher in
+  :issue:`16148`.)
 
 
 .. _other-improvements-3.4:
