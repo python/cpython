@@ -940,8 +940,9 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    the C library.
 
    .. versionchanged:: 3.4
-      Add :data:`O_TMPFILE` constant. It's only available on Linux Kernel 3.11
-      or newer.
+      Add :data:`O_PATH` on systems that support it.
+      Add :data:`O_TMPFILE`, only available on Linux Kernel 3.11
+        or newer.
 
 
 .. function:: openpty()
