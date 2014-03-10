@@ -1063,11 +1063,25 @@ On Unix, two new :ref:`start methods <multiprocessing-start-methods>`
 (``spawn`` and ``forkserver``) have been added for starting processes using
 :mod:`multiprocessing`.  These make the mixing of processes with threads more
 robust, and the ``spawn`` method matches the semantics that multiprocessing has
-always used on Windows. (Contributed by Richard Oudkerk in :issue:`8713`).
+always used on Windows.  New function
+:func:`~multiprocessing.get_all_start_methods` reports all start methods
+available on the platform, :func:`~multiprocessing.get_start_method` reports
+the current start method, and :func:`~multiprocessing.set_start_method` sets
+the start method.  (Contributed by Richard Oudkerk in :issue:`8713`).
 
-Also, except when using the old *fork* start method, child processes
-will no longer inherit unneeded handles/file descriptors from their parents
-(part of :issue:`8713`).
+:mod:`multiprocessing` also now has the concept of a ``context``, which
+determines how child processes are created.  New function
+:func:`~multiprocessing.get_context` returns a context that uses a specified
+start method.  It has the same API as the :mod:`multiprocessing` module itself,
+so you can use it to create :class:`~multiprocessing.pool.Pool`\ s and other
+objects that will operate within that context.  This allows a framework and an
+application or different parts of the same application to use multiprocessing
+without interfering with each other.  (Contributed by Richard Oudkerk in
+:issue:`18999`.)
+
+Except when using the old *fork* start method, child processes no longer
+inherit unneeded handles/file descriptors from their parents (part of
+:issue:`8713`).
 
 :mod:`multiprocessing` now relies on :mod:`runpy` (which implements the
 ``-m`` switch) to initialise ``__main__`` appropriately in child processes

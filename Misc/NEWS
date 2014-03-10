@@ -1636,6 +1636,9 @@ Library
 
 - Issue #18281: Unused stat constants removed from `tarfile`.
 
+- Issue #18999: Multiprocessing now supports 'contexts' with the same API
+  as the module, but bound to specified start methods.
+
 - Issue #18468: The re.split, re.findall, and re.sub functions and the group()
   and groups() methods of match object now always return a string or a bytes
   object.
@@ -2050,6 +2053,10 @@ Library
 
 - Issue #18532: Change the builtin hash algorithms' names to lower case names
   as promised by hashlib's documentation.
+
+- Issue #8713: add new spwan and forkserver start methods, and new functions
+  get_all_start_methods, get_start_method, and set_start_method, to
+  multiprocessing.
 
 - Issue #18405: Improve the entropy of crypt.mksalt().
 

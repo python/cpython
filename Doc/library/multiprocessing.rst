@@ -136,9 +136,11 @@ to start a process.  These *start methods* are
     Available on Unix platforms which support passing file descriptors
     over Unix pipes.
 
-Before Python 3.4 *fork* was the only option available on Unix.  Also,
-prior to Python 3.4, child processes would inherit all the parents
-inheritable handles on Windows.
+.. versionchanged:: 3.4
+   *span* added on all unix platforms, and *forkserver* added for
+     some unix platforms.
+   Child processes no longer inherit all of the parents inheritable
+     handles on Windows.
 
 On Unix using the *spawn* or *forkserver* start methods will also
 start a *semaphore tracker* process which tracks the unlinked named
@@ -1853,25 +1855,30 @@ with the :class:`Pool` class.
    callbacks and has a parallel map implementation.
 
    *processes* is the number of worker processes to use.  If *processes* is
-   ``None`` then the number returned by :func:`os.cpu_count` is used.  If
-   *initializer* is not ``None`` then each worker process will call
+   ``None`` then the number returned by :func:`os.cpu_count` is used.
+
+   If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
+
+   *maxtasksperchild* is the number of tasks a worker process can complete
+   before it will exit and be replaced with a fresh worker process, to enable
+   unused resources to be freed. The default *maxtasksperchild* is None, which
+   means worker processes will live as long as the pool.
+
+   *context* can be used to specify the context used for starting
+   the worker processes.  Usually a pool is created using the
+   function :func:`multiprocessing.Pool` or the :meth:`Pool` method
+   of a context object.  In both cases *context* is set
+   appropriately.
 
    Note that the methods of the pool object should only be called by
    the process which created the pool.
 
    .. versionadded:: 3.2
-      *maxtasksperchild* is the number of tasks a worker process can complete
-      before it will exit and be replaced with a fresh worker process, to enable
-      unused resources to be freed. The default *maxtasksperchild* is None, which
-      means worker processes will live as long as the pool.
+      *maxtasksperchild*
 
    .. versionadded:: 3.4
-      *context* can be used to specify the context used for starting
-      the worker processes.  Usually a pool is created using the
-      function :func:`multiprocessing.Pool` or the :meth:`Pool` method
-      of a context object.  In both cases *context* is set
-      appropriately.
+      *context*
 
    .. note::
 
