@@ -80,7 +80,7 @@ The module defines the following variables and functions:
    "Byteswap" all samples in a fragment and returns the modified fragment.
    Converts big-endian samples to little-endian and vice versa.
 
-   .. versionadded: 3.4
+   .. versionadded:: 3.4
 
 
 .. function:: cross(fragment, width)
