@@ -466,7 +466,7 @@ Here are the methods of the :class:`Message` class:
       to ``False``.
 
 
-   .. method:: set_param(param, value, header='Content-Type', requote=True,
+   .. method:: set_param(param, value, header='Content-Type', requote=True, \
                          charset=None, language='', replace=False)
 
       Set a parameter in the :mailheader:`Content-Type` header.  If the
@@ -488,7 +488,7 @@ Here are the methods of the :class:`Message` class:
       end of the list of headers.  If *replace* is ``True``, the header
       will be updated in place.
 
-      .. versionchanged: 3.4 ``replace`` keyword was added.
+      .. versionchanged:: 3.4 ``replace`` keyword was added.
 
 
    .. method:: del_param(param, header='content-type', requote=True)
