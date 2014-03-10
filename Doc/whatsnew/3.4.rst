@@ -1014,6 +1014,11 @@ the application modifies the configuration before passing it to
 :func:`~logging.config.fileConfig`.  (Contributed by Vinay Sajip in
 :issue:`16110`.)
 
+Logging configuration data received from a socket via the
+:func:`logging.config.listen` function can now be validated before being
+processed by supplying a verification function as the argument to the new
+*verify* keyword argument. (Contributed by Vinay Sajip in :issue:`15452`.)
+
 
 .. _whatsnew-marshal-3:
 
