@@ -1006,6 +1006,14 @@ happen.  (Contributed by Ronald Oussoren in :issue:`9556`.)
 setting *port* to ``None``).  (Contributed by Vinay Sajip in commit
 ce46195b56a9.)
 
+:func:`~logging.config.fileConfig` now accepts a
+:class:`configparser.RawConfigParser` subclass instance for the *fname*
+parameter.  This facilitates using a configuration file when logging
+configuration is just a part of the overall application configuration, or where
+the application modifies the configuration before passing it to
+:func:`~logging.config.fileConfig`.  (Contributed by Vinay Sajip in
+:issue:`16110`.)
+
 
 .. _whatsnew-marshal-3:
 

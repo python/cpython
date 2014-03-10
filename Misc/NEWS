@@ -3617,6 +3617,9 @@ Library
 
 - Issue #16169: Fix ctypes.WinError()'s confusion between errno and winerror.
 
+- Issue #16110: logging.fileConfig now accepts a pre-initialised ConfigParser
+  instance.
+
 - Issue #1492704: shutil.copyfile() raises a distinct SameFileError now if
   source and destination are the same file. Patch by Atsuo Ishimoto.
 
