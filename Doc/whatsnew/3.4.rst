@@ -1129,6 +1129,11 @@ Windows).  (Contributed by Brian Curtin in :issue:`11939`.)
 :func:`os.path.ismount` now recognizes volumes mounted below a drive
 root on Windows. (Contributed by Tim Golden in :issue:`9035`.)
 
+:func:`os.open` supports a new flag, :data:`~os.O_TMPFILE` (unnamed temporary
+file) on platforms that provide it (as of 3.4.0 release, that means Linux
+systems with a kernel version of 3.11 or newer that have uapi headers).
+(Contributed by Christian Heimes in :issue:`18673`.)
+
 
 pdb
 ---
