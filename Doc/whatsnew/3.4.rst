@@ -811,6 +811,10 @@ stdlib; in CPython it is overridden by the C accelerated version, but it is
 available for other implementations to use.  (Contributed by Brian Thorne in
 :issue:`12428`.)
 
+:func:`~functools.total_ordering` now supports a return value of
+:const:`NotImplemented` from the underlying comparison function.  (Contributed
+by Katie Miller in :issue:`10042`.)
+
 
 gc
 --
