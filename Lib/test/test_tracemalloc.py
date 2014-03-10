@@ -346,6 +346,8 @@ class TestSnapshot(unittest.TestCase):
         self.assertIsNot(snapshot5.traces, snapshot.traces)
         self.assertEqual(snapshot5.traces, snapshot.traces)
 
+        self.assertRaises(TypeError, snapshot.filter_traces, filter1)
+
     def test_snapshot_group_by_line(self):
         snapshot, snapshot2 = create_snapshots()
         tb_0 = traceback_lineno('<unknown>', 0)
