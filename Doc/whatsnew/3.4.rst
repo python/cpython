@@ -570,8 +570,9 @@ audioop
 :mod:`audioop` now supports 24-bit samples.  (Contributed by Serhiy Storchaka
 in :issue:`12866`.)
 
-Added the :func:`~audioop.byteswap` function to convert big-endian samples
-to little-endian and vice versa (:issue:`19641`).
+New :func:`~audioop.byteswap` function converts big-endian samples to
+little-endian and vice versa (Contributed by Serhiy Storchaka in
+:issue:`19641`).
 
 All :mod:`audioop` functions now accept any :term:`bytes-like object`.  Strings
 are not accepted: they didn't work before, now they raise an error right away.
