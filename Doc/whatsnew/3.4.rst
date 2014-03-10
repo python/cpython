@@ -1562,6 +1562,19 @@ can now be specified by setting a :class:`~urllib.request.Request.method`
 class attribute on the subclass. (Contributed by Jason R Coombs in
 :issue:`18978`.)
 
+:class:`~urllib.request.Request` objects are now reusable: if the
+:attr:`~urllib.request.Request.full_url` or :attr:`~urllib.request.Request.data`
+attributes are modified, all relevant internal properties are updated.  This
+means, for example, that it is now possible to use the same
+:class:`~urllib.request.Request` object in more than one
+:meth:`.OpenerDirector.open` call with different *data* arguments, or to
+modify a :class:`~urllib.request.Request`\ 's ``url`` rather than recomputing it
+from scratch.  There is also a new
+:meth:`~urllib.request.Request.remove_header` method that can be used to remove
+headers from a :class:`~urllib.request.Request`.  (Contributed by Alexey
+Kachayev in :issue:`16464`, Daniel Wozniak in :issue:`17485`, and Damien Brecht
+and Senthil Kumaran in :issue:`17272`.)
+
 
 unittest
 --------
