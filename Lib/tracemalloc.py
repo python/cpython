@@ -1,4 +1,4 @@
-from collections import Sequence
+from collections import Sequence, Iterable
 from functools import total_ordering
 import fnmatch
 import linecache
@@ -382,6 +382,9 @@ class Snapshot:
         is a list of Filter instances.  If filters is an empty list, return a
         new Snapshot instance with a copy of the traces.
         """
+        if not isinstance(filters, Iterable):
+            raise TypeError("filters must be a list of filters, not %s"
+                            % type(filters).__name__)
         if filters:
             include_filters = []
             exclude_filters = []
