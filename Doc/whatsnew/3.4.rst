@@ -2340,6 +2340,12 @@ Changes in the Python API
   *not* be installed, you must add ``--wihtout-pip`` to your command
   invocation.
 
+* The default behavior of :func:`json.dump` and :func:`json.dumps` when
+  an indent is specified has changed: it no longer produces trailing
+  spaces after the item separating commas at the ends of lines.  This
+  will matter only if you have tests that are doing white-space-sensitive
+  comparisons of such output (:issue:`16333`).
+
 
 Changes in the C API
 --------------------
