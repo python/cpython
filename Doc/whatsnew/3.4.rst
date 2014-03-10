@@ -2249,6 +2249,11 @@ Changes in the Python API
   future have no default, all calls to :func:`hmac.new` should be changed to
   explicitly specify a *digestmod* (:issue:`17276`).
 
+* Calling :func:`sysconfig.get_config_var` with the ``SO`` key, or looking
+  ``SO`` up in the results of a call to :func:`sysconfig.get_config_vars`
+  is deprecated.  This key should be replaced by ``EXT_SUFFIX`` or
+  ``SHLIB_SUFFIX``, depending on the context (:issue:`19555`).
+
 * Any calls to ``open`` functions that specify ``U`` should be modified.
   ``U`` is ineffective in Python3 and will eventually raise an error if used.
   Depending on the function, the equivalent of its old Python2 behavior can be
