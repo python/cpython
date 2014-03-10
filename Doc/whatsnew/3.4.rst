@@ -696,6 +696,10 @@ to ``distb(tb)``).
 (Contributed by Nick Coghlan, Ryan Kelly and Thomas Kluyver in :issue:`11816`
 and Claudiu Popa in :issue:`17916`)
 
+New function :func:`~dis.stack_effect` computes the effect on the Python stack
+of a given opcode and argument, information that is not otherwise available.
+(Contributed by Larry Hastings in :issue:`19722`.)
+
 
 doctest
 -------
