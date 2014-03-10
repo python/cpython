@@ -1172,9 +1172,12 @@ affect the behaviour of :func:`help`.
 re
 --
 
-Added :func:`re.fullmatch` function and :meth:`regex.fullmatch` method,
-which anchor the pattern at both ends of the string to match.
-(Contributed by Matthew Barnett in :issue:`16203`.)
+New :func:`~re.fullmatch` function and :meth:`.regex.fullmatch` method anchor
+the pattern at both ends of the string to match.  This provides a way to be
+explicit about the goal of the match, which avoids a class of subtle bugs where
+``$`` characters get lost during code changes or the addition of alternatives
+to an existing regular expression.  (Contributed by Matthew Barnett in
+:issue:`16203`.)
 
 The repr of :ref:`regex objects <re-objects>` now includes the pattern
 and the flags; the repr of :ref:`match objects <match-objects>` now
