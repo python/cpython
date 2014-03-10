@@ -1424,6 +1424,14 @@ to some other callable).  (Contributed by Éric Araujo and Antoine Pitrou in
 :issue:`5845`.)
 
 
+tarfile
+-------
+
+The :mod:`tarfile` module now supports a simple :ref:`tarfile-commandline` when
+called as a script directly or via ``-m``.  This can be used to create and
+extract tarfile archives.  (Contributed by Berker Peksag in :issue:`13477`.)
+
+
 textwrap
 --------
 
