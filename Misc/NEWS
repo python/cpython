@@ -3638,6 +3638,10 @@ Library
 - Issue #9650: List commonly used format codes in time.strftime and
   time.strptime docsttings.  Original patch by Mike Hoy.
 
+- Issue #15452: logging configuration socket listener now has a verify option
+  that allows an application to apply a verification function to the
+  received configuration data before it is acted upon.
+
 - Issue #16034: Fix performance regressions in the new `bz2.BZ2File`
   implementation.  Initial patch by Serhiy Storchaka.
 
