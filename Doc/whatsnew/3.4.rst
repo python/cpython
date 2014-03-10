@@ -776,6 +776,11 @@ for example, if the file might have been changed and re-checked in less time
 than the resolution of a particular filesystem's file modification time field.
 (Contributed by Mark Levitt in :issue:`18149`.)
 
+New module attribute :data:`~filecmp.DEFAULT_IGNORES` provides the list of
+directories that are used as the default value for the *ignore* parameter of
+the :func:`~filecmp.dircmp` function.  (Contributed by Eli Bendersky in
+:issue:`15442`.)
+
 
 functools
 ---------
