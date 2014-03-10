@@ -2057,6 +2057,11 @@ Deprecations in the Python API
   appropriate uses of :class:`io.TextIOWrapper` (if needed) and its *newline*
   argument.
 
+* The *parser* argument of :func:`~xml.etree.ElementTree.iterparse` has
+  been deprecated, as has the *html* argument of
+  :func:`~xml.etree.ElementTree.XMLParser`.  To prepare for the removal of the
+  latter, all arguments to ``XMLParser`` should be passed by keyword.
+
 
 Deprecations in the C API
 -------------------------
