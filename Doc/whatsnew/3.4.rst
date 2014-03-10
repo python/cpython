@@ -2279,6 +2279,10 @@ Changes in the Python API
   stream in :mod:`~io.TextIOWrapper` to use its *newline* argument
   (:issue:`15204`).
 
+* If you use :ref:`pyvenv <scripts-pyvenv>` in a script and desire that pip
+  *not* be installed, you must add ``--wihtout-pip`` to your command
+  invocation.
+
 
 Changes in the C API
 --------------------
