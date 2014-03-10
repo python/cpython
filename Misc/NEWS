@@ -2538,6 +2538,9 @@ Core and Builtins
 
 - Issue #16160: Subclass support now works for types.SimpleNamespace.
 
+- Issue #16148: Implement PEP 424, adding operator.length_hint and
+  PyObject_LengthHint.
+
 - Upgrade Unicode data (UCD) to version 6.2.
 
 - Issue #15379: Fix passing of non-BMP characters as integers for the charmap
