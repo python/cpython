@@ -100,6 +100,8 @@ New expected features for Python implementations:
   that are not text encodings (multiple issues).
 * :ref:`A ModuleSpec Type <whatsnew-pep-451>` for the Import System
   (:pep:`451`).  (Affects importer authors.)
+* The :mod:`marshal` format has been made :ref:`more compact and efficient
+  <whatsnew-marshal-3>` (:issue:`16475`).
 
 New library modules:
 
@@ -131,7 +133,8 @@ Significantly Improved Library Modules:
   (:class:`~email.contentmanager.EmailMessage`) that :ref:`simplify MIME
   handling <whatsnew_email_contentmanager>` (:issue:`18891`).
 * The :mod:`inspect` and :mod:`pydoc` modules are now capable of
-  correct introspection of a much wider variety of callable objects
+  correct introspection of a much wider variety of callable objects,
+  which improves the output of the Python :func:`help` system.
 * The :mod:`ipaddress` module API has been declared stable
 
 Security improvements:
@@ -161,11 +164,7 @@ CPython implementation improvements:
 * Leveraging :pep:`442`, :ref:`module globals are no longer set to None
   during finalization <whatsnew-pep-442>`, in most cases (:issue:`18214`).
 * :ref:`Configurable memory allocators <whatsnew-pep-445>` (:pep:`445`).
-* :ref:`Secure and interchangeable hash algorithm <whatsnew-pep-456>`
-  (:pep:`456`).
 * :ref:`Argument Clinic <whatsnew-pep-436>` (:pep:`436`).
-* The :mod:`marshal` format has been made :ref:`more compact and efficient
-  <whatsnew-marshal-3>` (:issue:`16475`).
 
 Please read on for a comprehensive list of user-facing changes, including many
 other smaller improvements, CPython optimizations, deprecations, and potential
