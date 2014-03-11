@@ -111,7 +111,7 @@ between Python 2 and 3 easier.
 Projects to Consider
 --------------------
 
-The lowest level library for suppoting Python 2 & 3 simultaneously is six_.
+The lowest level library for supporting Python 2 & 3 simultaneously is six_.
 Reading through its documentation will give you an idea of where exactly the
 Python language changed between versions 2 & 3 and thus what you will want the
 library to help you continue to support.
