@@ -184,6 +184,7 @@ Pretty top
 Code to display the 10 lines allocating the most memory with a pretty output,
 ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
 
+    import linecache
     import os
     import tracemalloc
 
@@ -201,6 +202,9 @@ ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
             filename = os.sep.join(frame.filename.split(os.sep)[-2:])
             print("#%s: %s:%s: %.1f KiB"
                   % (index, filename, frame.lineno, stat.size / 1024))
+            line = linecache.getline(frame.filename, frame.lineno).strip()
+            if line:
+                print('    %s' % line)
 
         other = top_stats[limit:]
         if other:
@@ -218,19 +222,28 @@ ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
 
 Example of output of the Python test suite::
 
-    2013-11-08 14:16:58.149320: Top 10 lines
-    #1: collections/__init__.py:368: 291.9 KiB
-    #2: Lib/doctest.py:1291: 200.2 KiB
-    #3: unittest/case.py:571: 160.3 KiB
-    #4: Lib/abc.py:133: 99.8 KiB
-    #5: urllib/parse.py:476: 71.8 KiB
-    #6: <string>:5: 62.7 KiB
-    #7: Lib/base64.py:140: 59.8 KiB
-    #8: Lib/_weakrefset.py:37: 51.8 KiB
-    #9: collections/__init__.py:362: 50.6 KiB
-    #10: test/test_site.py:56: 48.0 KiB
-    7496 other: 4161.9 KiB
-    Total allocated size: 5258.8 KiB
+    Top 10 lines
+    #1: Lib/base64.py:414: 419.8 KiB
+        _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
+    #2: Lib/base64.py:306: 419.8 KiB
+        _a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
+    #3: collections/__init__.py:368: 293.6 KiB
+        exec(class_definition, namespace)
+    #4: Lib/abc.py:133: 115.2 KiB
+        cls = super().__new__(mcls, name, bases, namespace)
+    #5: unittest/case.py:574: 103.1 KiB
+        testMethod()
+    #6: Lib/linecache.py:127: 95.4 KiB
+        lines = fp.readlines()
+    #7: urllib/parse.py:476: 71.8 KiB
+        for a in _hexdig for b in _hexdig}
+    #8: <string>:5: 62.0 KiB
+    #9: Lib/_weakrefset.py:37: 60.0 KiB
+        self.data = set()
+    #10: Lib/base64.py:142: 59.8 KiB
+        _b32tab2 = [a + b for a in _b32tab for b in _b32tab]
+    6220 other: 3602.8 KiB
+    Total allocated size: 5303.1 KiB
 
 See :meth:`Snapshot.statistics` for more options.
 
