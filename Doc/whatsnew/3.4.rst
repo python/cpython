@@ -2062,12 +2062,6 @@ Deprecations in the Python API
   latter, all arguments to ``XMLParser`` should be passed by keyword.
 
 
-Deprecations in the C API
--------------------------
-
-XXX: None so far
-
-
 Deprecated Features
 -------------------
 
@@ -2205,7 +2199,7 @@ Changes in the Python API
 * Import now resets relevant attributes (e.g. ``__name__``, ``__loader__``,
   ``__package__``, ``__file__``, ``__cached__``) unconditionally when reloading.
   Note that this restores a pre-3.3 behavior in that it means a module is
-  re-found when re-loaded (:issue:`19413` and XXX).
+  re-found when re-loaded (:issue:`19413`).
 
 * Frozen packages no longer set ``__path__`` to a list containing the package
   name, they now set it to an empty list.  The previous behavior could cause
