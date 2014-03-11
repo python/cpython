@@ -95,18 +95,18 @@ Hashlib provides the following constant attributes:
 
 .. data:: algorithms_guaranteed
 
-   Contains the names of the hash algorithms guaranteed to be supported
+   A set containing the names of the hash algorithms guaranteed to be supported
    by this module on all platforms.
 
    .. versionadded:: 3.2
 
 .. data:: algorithms_available
 
-   Contains the names of the hash algorithms that are available
-   in the running Python interpreter.  These names will be recognized
-   when passed to :func:`new`.  :attr:`algorithms_guaranteed`
-   will always be a subset.  Duplicate algorithms with different
-   name formats may appear in this set (thanks to OpenSSL).
+   A set containing the names of the hash algorithms that are available in the
+   running Python interpreter.  These names will be recognized when passed to
+   :func:`new`.  :attr:`algorithms_guaranteed` will always be a subset.  The
+   same algorithm may appear multiple times in this set under different names
+   (thanks to OpenSSL).
 
    .. versionadded:: 3.2
 
