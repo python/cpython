@@ -450,9 +450,11 @@ environment was declined.
 :mod:`ensurepip` includes a bundled copy of ``pip``, up-to-date as of the first
 release candidate of the release of CPython with which it ships (this applies
 to both maintenance releases and feature releases).  ``ensurepip`` does not
-access the internet.  (If the installation has Internet access, it is of course
-possible to upgrade ``pip`` to a release more recent than the bundled ``pip``
-by using the bundled ``pip`` command itself once it is installed.)
+access the internet.  If the installation has Internet access, after
+``ensurepip`` is run the bundled ``pip`` can be used to upgrade ``pip`` to a
+more recent release than the bundled one.  (Note that such an upgraded version
+of ``pip`` is considered to be a separately installed package and will not be
+removed if Python is uninstalled.)
 
 The module is named *ensure*\ pip because if called when ``pip`` is already
 installed, it does nothing.  It also has an ``--upgrade`` option that will
