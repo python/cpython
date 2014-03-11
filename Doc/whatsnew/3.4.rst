@@ -745,6 +745,9 @@ new options, ``-o`` and ``-f``.  ``-o`` allows :ref:`doctest options
 shorthand for ``-o FAIL_FAST`` (to parallel the similar option supported by the
 :mod:`unittest` CLI).  (Contributed by R. David Murray in :issue:`11390`.)
 
+:mod:`doctest` will now find doctests in extension module ``__doc__`` strings.
+(Contributed by Zachary Ware in :issue:`3158`.)
+
 
 email
 -----
@@ -2397,6 +2400,11 @@ Changes in the Python API
   spaces after the item separating commas at the ends of lines.  This
   will matter only if you have tests that are doing white-space-sensitive
   comparisons of such output (:issue:`16333`).
+
+* :mod:`doctest` now looks for doctests in extension module ``__doc__``
+  strings, so if your doctest test discovery includes extension modules that
+  have things that look like doctests in them you may see test failures you've
+  never seen before when running your tests (:issue:`3158`).
 
 
 Changes in the C API
