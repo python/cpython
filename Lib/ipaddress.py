@@ -2155,6 +2155,18 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
 
+    def hosts(self):
+        """Generate Iterator over usable hosts in a network.
+
+          This is like __iter__ except it doesn't return the
+          Subnet-Router anycast address.
+
+        """
+        network = int(self.network_address)
+        broadcast = int(self.broadcast_address)
+        for x in range(network + 1, broadcast + 1):
+            yield self._address_class(x)
+
     @property
     def is_site_local(self):
         """Test if the address is reserved for site-local.
