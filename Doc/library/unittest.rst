@@ -1489,11 +1489,11 @@ Loading and running tests
 
    .. method:: discover(start_dir, pattern='test*.py', top_level_dir=None)
 
-      Find and return all test modules from the specified start directory,
-      recursing into subdirectories to find them. Only test files that match
-      *pattern* will be loaded. (Using shell style pattern matching.) Only
-      module names that are importable (i.e. are valid Python identifiers) will
-      be loaded.
+      Find all the test modules by recursing into subdirectories from the
+      specified start directory, and return a TestSuite object containing them.
+      Only test files that match *pattern* will be loaded. (Using shell style
+      pattern matching.) Only module names that are importable (i.e. are valid
+      Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
       the start directory is not the top level directory then the top level
