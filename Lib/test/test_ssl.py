@@ -1351,12 +1351,15 @@ class NetworkedTests(unittest.TestCase):
     def test_get_server_certificate(self):
         def _test_get_server_certificate(host, port, cert=None):
             with support.transient_internet(host):
-                pem = ssl.get_server_certificate((host, port))
+                pem = ssl.get_server_certificate((host, port),
+                                                 ssl.PROTOCOL_SSLv23)
                 if not pem:
                     self.fail("No server certificate on %s:%s!" % (host, port))
 
                 try:
-                    pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
+                    pem = ssl.get_server_certificate((host, port),
+                                                     ssl.PROTOCOL_SSLv23,
+                                                     ca_certs=CERTFILE)
                 except ssl.SSLError as x:
                     #should fail
                     if support.verbose:
@@ -1364,7 +1367,9 @@ class NetworkedTests(unittest.TestCase):
                 else:
                     self.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
 
-                pem = ssl.get_server_certificate((host, port), ca_certs=cert)
+                pem = ssl.get_server_certificate((host, port),
+                                                 ssl.PROTOCOL_SSLv23,
+                                                 ca_certs=cert)
                 if not pem:
                     self.fail("No server certificate on %s:%s!" % (host, port))
                 if support.verbose:
