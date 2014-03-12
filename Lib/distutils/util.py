@@ -213,25 +213,10 @@ def subst_vars (s, local_vars):
 
 
 def grok_environment_error (exc, prefix="error: "):
-    """Generate a useful error message from an EnvironmentError (IOError or
-    OSError) exception object.  Handles Python 1.5.1 and 1.5.2 styles, and
-    does what it can to deal with exception objects that don't have a
-    filename (which happens when the error is due to a two-file operation,
-    such as 'rename()' or 'link()'.  Returns the error message as a string
-    prefixed with 'prefix'.
-    """
-    # check for Python 1.5.2-style {IO,OS}Error exception objects
-    if hasattr(exc, 'filename') and hasattr(exc, 'strerror'):
-        if exc.filename:
-            error = prefix + "%s: %s" % (exc.filename, exc.strerror)
-        else:
-            # two-argument functions in posix module don't
-            # include the filename in the exception object!
-            error = prefix + "%s" % exc.strerror
-    else:
-        error = prefix + str(exc[-1])
-
-    return error
+    # Function kept for backward compatibility.
+    # Used to try clever things with EnvironmentErrors,
+    # but nowadays str(exception) produces good messages.
+    return prefix + str(exc)
 
 
 # Needed by 'split_quoted()'

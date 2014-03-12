@@ -44,6 +44,9 @@ Library
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.
 
+- Issue #4931: distutils should not produce unhelpful "error: None" messages
+  anymore.  distutils.util.grok_environment_error is kept but doc-deprecated.
+
 - Improve the random module's default seeding to use 256 bits of entropy
   from os.urandom().  This was already done for Python 3, mildly improving
   security with a bigger seed space.
