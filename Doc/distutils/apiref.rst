@@ -1171,15 +1171,6 @@ other utility module.
    underscore. No { } or ( ) style quoting is available.
 
 
-.. function:: grok_environment_error(exc[, prefix='error: '])
-
-   Generate a useful error message from an :exc:`OSError` exception object.
-   Handles Python 1.5.1 and later styles, and does what it can to deal with
-   exception objects that don't have a filename (which happens when the error
-   is due to a two-file operation, such as :func:`~os.rename` or :func:`~os.link`).
-   Returns the error message as a string prefixed with *prefix*.
-
-
 .. function:: split_quoted(s)
 
    Split a string up according to Unix shell-like rules for quotes and backslashes.
