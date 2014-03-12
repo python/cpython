@@ -16,6 +16,9 @@ Library
 - Issue #20875: Prevent possible gzip "'read' is not defined" NameError.
   Patch by Claudiu Popa.
 
+- Issue #4931: distutils should not produce unhelpful "error: None" messages
+  anymore.  distutils.util.grok_environment_error is kept but doc-deprecated.
+
 - Issue #20283: RE pattern methods now accept the string keyword parameters
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.
