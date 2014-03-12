@@ -23,6 +23,9 @@ Library
 - Issue #19157: Include the broadcast address in the usuable hosts for IPv6
   in ipaddress.
 
+- Issue #4931: distutils should not produce unhelpful "error: None" messages
+  anymore.  distutils.util.grok_environment_error is kept but doc-deprecated.
+
 - Issue #20875: Prevent possible gzip "'read' is not defined" NameError.
   Patch by Claudiu Popa.
 

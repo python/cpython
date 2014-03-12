@@ -8,7 +8,8 @@ from test.support import run_unittest
 from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
 from distutils.util import (get_platform, convert_path, change_root,
                             check_environ, split_quoted, strtobool,
-                            rfc822_escape, byte_compile)
+                            rfc822_escape, byte_compile,
+                            grok_environment_error)
 from distutils import util # used to patch _environ_checked
 from distutils.sysconfig import get_config_vars
 from distutils import sysconfig
@@ -284,6 +285,13 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
             self.assertRaises(DistutilsByteCompileError, byte_compile, [])
         finally:
             sys.dont_write_bytecode = old_dont_write_bytecode
+
+    def test_grok_environment_error(self):
+        # test obsolete function to ensure backward compat (#4931)
+        exc = IOError("Unable to find batch file")
+        msg = grok_environment_error(exc)
+        self.assertEqual(msg, "error: Unable to find batch file")
+
 
 def test_suite():
     return unittest.makeSuite(UtilTestCase)
