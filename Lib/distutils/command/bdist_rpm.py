@@ -12,6 +12,7 @@ import string
 from distutils.core import Command
 from distutils.debug import DEBUG
 from distutils.file_util import write_file
+from distutils.sysconfig import get_python_version
 from distutils.errors import (DistutilsOptionError, DistutilsPlatformError,
                               DistutilsFileError, DistutilsExecError)
 from distutils import log
