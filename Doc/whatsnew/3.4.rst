@@ -1642,7 +1642,7 @@ which will run even if one or more of them fail.  For example::
     class NumbersTest(unittest.TestCase):
         def test_even(self):
             for i in range(6):
-                with self.subTest(i=1):
+                with self.subTest(i=i):
                     self.assertEqual(i % 2, 0)
 
 will result in six subtests, each identified in the unittest verbose output
