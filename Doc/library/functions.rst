@@ -880,8 +880,8 @@ available.  They are listed here in alphabetical order.
    to use the system default, which is usually line buffered for tty devices and
    fully buffered for other files.  If omitted, the system default is used. [#]_
 
-   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note that
-   ``'w+'`` truncates the file).  Append ``'b'`` to the mode to open the file in
+   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (reading and writing);
+   note that ``'w+'`` truncates the file.  Append ``'b'`` to the mode to open the file in
    binary mode, on systems that differentiate between binary and text files; on
    systems that don't have this distinction, adding the ``'b'`` has no effect.
 
