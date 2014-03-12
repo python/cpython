@@ -548,6 +548,7 @@ code, or when embedding the Python interpreter:
    .. index:: module: _thread
 
    .. note::
+
       When only the main thread exists, no GIL operations are needed. This is a
       common situation (most Python programs do not use threads), and the lock
       operations slow the interpreter down a bit. Therefore, the lock is not
