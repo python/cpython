@@ -690,12 +690,15 @@ class NetworkedTests(unittest.TestCase):
 
     def test_get_server_certificate(self):
         with support.transient_internet("svn.python.org"):
-            pem = ssl.get_server_certificate(("svn.python.org", 443))
+            pem = ssl.get_server_certificate(("svn.python.org", 443),
+                                             ssl.PROTOCOL_SSLv23)
             if not pem:
                 self.fail("No server certificate on svn.python.org:443!")
 
             try:
-                pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=CERTFILE)
+                pem = ssl.get_server_certificate(("svn.python.org", 443),
+                                                 ssl.PROTOCOL_SSLv23,
+                                                 ca_certs=CERTFILE)
             except ssl.SSLError as x:
                 #should fail
                 if support.verbose:
@@ -703,7 +706,9 @@ class NetworkedTests(unittest.TestCase):
             else:
                 self.fail("Got server certificate %s for svn.python.org!" % pem)
 
-            pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
+            pem = ssl.get_server_certificate(("svn.python.org", 443),
+                                             ssl.PROTOCOL_SSLv23,
+                                             ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
             if not pem:
                 self.fail("No server certificate on svn.python.org:443!")
             if support.verbose:
