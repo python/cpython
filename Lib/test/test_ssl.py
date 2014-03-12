@@ -1351,13 +1351,12 @@ class NetworkedTests(unittest.TestCase):
     def test_get_server_certificate(self):
         def _test_get_server_certificate(host, port, cert=None):
             with support.transient_internet(host):
-                # FIXME: force PROTOCOL_SSLv23 for workaround bug #20896
-                pem = ssl.get_server_certificate((host, port), ssl_version=ssl.PROTOCOL_SSLv23)
+                pem = ssl.get_server_certificate((host, port))
                 if not pem:
                     self.fail("No server certificate on %s:%s!" % (host, port))
 
                 try:
-                    pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE, ssl_version=ssl.PROTOCOL_SSLv23)
+                    pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
                 except ssl.SSLError as x:
                     #should fail
                     if support.verbose:
@@ -1365,7 +1364,7 @@ class NetworkedTests(unittest.TestCase):
                 else:
                     self.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
 
-                pem = ssl.get_server_certificate((host, port), ca_certs=cert, ssl_version=ssl.PROTOCOL_SSLv23)
+                pem = ssl.get_server_certificate((host, port), ca_certs=cert)
                 if not pem:
                     self.fail("No server certificate on %s:%s!" % (host, port))
                 if support.verbose:
