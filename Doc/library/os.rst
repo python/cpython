@@ -260,7 +260,9 @@ process and user.
 
    Availability: Unix.
 
-   .. note:: On Mac OS X, :func:`getgroups` behavior differs somewhat from
+   .. note::
+
+      On Mac OS X, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;

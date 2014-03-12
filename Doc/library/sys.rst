@@ -227,7 +227,9 @@ always available.
    installed in :file:`{exec_prefix}/lib/python{X.Y}/lib-dynload`, where *X.Y*
    is the version number of Python, for example ``3.2``.
 
-   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
+   .. note::
+
+      If a :ref:`virtual environment <venv-def>` is in effect, this
       value will be changed in ``site.py`` to point to the virtual environment.
       The value for the Python installation will still be available, via
       :data:`base_exec_prefix`.
