@@ -156,7 +156,7 @@ def setup(**attrs):
                 sys.stderr.write("error: %s\n" % (exc,))
                 raise
             else:
-                raise SystemExit, exc
+                raise SystemExit, "error: %s" % (exc,)
 
         except (DistutilsError,
                 CCompilerError), msg:
