@@ -1680,7 +1680,7 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 :meth:`wave.open` now supports the context manager protocol.  (Contributed
 by Claudiu Popa in :issue:`17616`.)
 
-:mod:`wave` can now :ref:`write output to unssekable files
+:mod:`wave` can now :ref:`write output to unseekable files
 <wave-write-objects>`.  (Contributed by David Jones, Guilherme Polo, and Serhiy
 Storchaka in :issue:`5202`.)
 
@@ -2392,7 +2392,7 @@ Changes in the Python API
   (:issue:`15204`).
 
 * If you use :ref:`pyvenv <scripts-pyvenv>` in a script and desire that pip
-  *not* be installed, you must add ``--wihtout-pip`` to your command
+  *not* be installed, you must add ``--without-pip`` to your command
   invocation.
 
 * The default behavior of :func:`json.dump` and :func:`json.dumps` when
