@@ -148,7 +148,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    send it to the socket as a string of bytes preceded by a four-byte length
    string packed in binary using ``struct.pack('>L', n)``.
 
-   .. note:: Because portions of the configuration are passed through
+   .. note::
+
+      Because portions of the configuration are passed through
       :func:`eval`, use of this function may open its users to a security risk.
       While the function only binds to a socket on ``localhost``, and so does
       not accept connections from remote machines, there are scenarios where
@@ -752,7 +754,9 @@ The ``class`` entry is optional.  It indicates the name of the formatter's class
 :class:`~logging.Formatter` can present exception tracebacks in an expanded or
 condensed format.
 
-.. note:: Due to the use of :func:`eval` as described above, there are
+.. note::
+
+   Due to the use of :func:`eval` as described above, there are
    potential security risks which result from using the :func:`listen` to send
    and receive configurations via sockets. The risks are limited to where
    multiple users with no mutual trust run code on the same machine; see the

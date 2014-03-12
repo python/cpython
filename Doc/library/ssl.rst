@@ -818,6 +818,7 @@ SSL sockets also have the following additional methods and attributes:
        'version': 3}
 
    .. note::
+
       To validate a certificate for a particular service, you can use the
       :func:`match_hostname` function.
 

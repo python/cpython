@@ -45,6 +45,7 @@ in any early abort case).
 Unless otherwise stated, buffers are not NUL-terminated.
 
 .. note::
+
    For all ``#`` variants of formats (``s#``, ``y#``, etc.), the type of
    the length argument (int or :c:type:`Py_ssize_t`) is controlled by
    defining the macro :c:macro:`PY_SSIZE_T_CLEAN` before including

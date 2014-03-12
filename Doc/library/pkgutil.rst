@@ -147,6 +147,7 @@ support.
    *prefix* is a string to output on the front of every module name on output.
 
    .. note::
+
       Only works for a :term:`finder` which defines an ``iter_modules()``
       method. This interface is non-standard, so the module also provides
       implementations for :class:`importlib.machinery.FileFinder` and
@@ -185,6 +186,7 @@ support.
       walk_packages(ctypes.__path__, ctypes.__name__ + '.')
 
    .. note::
+
       Only works for a :term:`finder` which defines an ``iter_modules()``
       method. This interface is non-standard, so the module also provides
       implementations for :class:`importlib.machinery.FileFinder` and
