@@ -16,6 +16,10 @@ Library
 - Issue #20875: Prevent possible gzip "'read' is not defined" NameError.
   Patch by Claudiu Popa.
 
+- Issue #11599: When an external command (e.g. compiler) fails, distutils now
+  prints out the whole command line (instead of just the command name) if the
+  environment variable DISTUTILS_DEBUG is set.
+
 - Issue #4931: distutils should not produce unhelpful "error: None" messages
   anymore.  distutils.util.grok_environment_error is kept but doc-deprecated.
 
