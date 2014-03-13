@@ -1627,6 +1627,11 @@ headers from a :class:`~urllib.request.Request`.  (Contributed by Alexey
 Kachayev in :issue:`16464`, Daniel Wozniak in :issue:`17485`, and Damien Brecht
 and Senthil Kumaran in :issue:`17272`.)
 
+:class:`~urllib.error.HTTPError` objects now have a
+:attr:`~urllib.error.HTTPError.headers` attribute that provides access to the
+HTTP response headers associated with the error.  (Contributed by
+Berker Peksag in :issue:`15701`.)
+
 
 unittest
 --------
