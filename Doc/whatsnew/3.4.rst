@@ -193,15 +193,16 @@ By default, the scripts ``pipX`` and ``pipX.Y`` will be installed (where
 X.Y stands for the version of the Python installation), along with the
 ``pip`` Python package and its dependencies.
 
-The :mod:`venv` module and the :command:`pyvenv` utility make use of this
-module to make ``pip`` readily available in virtual environments. When
-using the command line interface, ``pip`` is installed by default, while
-for the module API installation of ``pip`` must be requested explicitly.
+The :ref:`pyvenv <scripts-pyvenv>` command line utility and the :mod:`venv`
+module make use of the :mod:`ensurepip` module to make ``pip`` readily
+available in virtual environments. When using the command line utility, ``pip``
+is installed by default, while when using the :mod:`venv` module
+:ref:`venv-api` installation of ``pip`` must be requested explicitly.
 
-For CPython source builds on POSIX systems, the ``make install`` and
-``make altinstall`` commands bootstrap ``pip`` by default. This behaviour
-can be controlled through configure options, and overridden through
-Makefile options.
+For CPython :ref:`source builds on POSIX systems <building-python-on-unix>`,
+the ``make install`` and ``make altinstall`` commands bootstrap ``pip`` by
+default.  This behaviour can be controlled through configure options, and
+overridden through Makefile options.
 
 On Windows and Mac OS X, the CPython installers now offer the option to
 install ``pip`` along with CPython itself.
@@ -251,7 +252,13 @@ PEP 446: Newly Created File Descriptors Are Non-Inheritable
 -----------------------------------------------------------
 
 :pep:`446` makes newly created file descriptors :ref:`non-inheritable
-<fd_inheritance>`.  New functions and methods:
+<fd_inheritance>`.  In general, this is the behavior an application will
+want: when launching a new process, having currently open files also
+open in the new process can lead to all sorts of hard to find bugs,
+and potentially to security issues.
+
+However, there are occasions when inheritance is desired.  To support
+these cases, the following new functions and methods are available:
 
 * :func:`os.get_inheritable`, :func:`os.set_inheritable`
 * :func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`
