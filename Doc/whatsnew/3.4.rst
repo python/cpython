@@ -143,6 +143,12 @@ Security improvements:
   (:pep:`456`).
 * :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`
   (:pep:`446`) to avoid leaking file descriptors to child processes.
+* New command line option for :ref:`isolated mode <whatsnew-isolated-mode>`,
+  (:issue:`16499`).
+* All modules of the standard library now support server certificate
+  verification including hostname matching (:func:`ssl.match_hostname`) and CRL
+  (Certificate Revocation list, see
+  :func:`ssl.SSLContext.load_verify_locations`).
 * A new :func:`hashlib.pbkdf2_hmac` function provides
   the `PKCS#5 password-based key derivation function 2
   <http://en.wikipedia.org/wiki/PBKDF2>`_.
