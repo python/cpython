@@ -685,6 +685,8 @@ include the following code fragment in your :file:`setup.py` before the
         DistributionMetadata.download_url = None
 
 
+.. _debug-setup-script:
+
 Debugging the setup script
 ==========================
 
@@ -700,7 +702,8 @@ installation is broken because they don't read all the way down to the bottom
 and see that it's a permission problem.
 
 On the other hand, this doesn't help the developer to find the cause of the
-failure. For this purpose, the DISTUTILS_DEBUG environment variable can be set
+failure. For this purpose, the :envvar:`DISTUTILS_DEBUG` environment variable can be set
 to anything except an empty string, and distutils will now print detailed
-information what it is doing, and prints the full traceback in case an exception
-occurs.
+information about what it is doing, dump the full traceback when an exception
+occurs, and print the whole command line when an external program (like a C
+compiler) fails.
