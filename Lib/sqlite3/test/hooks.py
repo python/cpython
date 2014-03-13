@@ -162,7 +162,7 @@ class ProgressTests(unittest.TestCase):
             create table bar (a, b)
             """)
         second_count = len(progress_calls)
-        self.assertGreater(first_count, second_count)
+        self.assertGreaterEqual(first_count, second_count)
 
     def CheckCancelOperation(self):
         """
