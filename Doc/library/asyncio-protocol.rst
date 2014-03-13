@@ -497,6 +497,6 @@ TCP echo server example, send back received data and close the connection::
 :meth:`Transport.close` can be called immediately after
 :meth:`WriteTransport.write` even if data are not sent yet on the socket: both
 methods are asynchronous. ``yield from`` is not needed because these transport
-methods don't return coroutines.
+methods are not coroutines.
 
 
