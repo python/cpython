@@ -11,13 +11,13 @@ Create a subprocess
    Run the shell command *cmd* given as a string. Return a :class:`~asyncio.subprocess.Process`
    instance.
 
-   This function returns a :ref:`coroutine object <coroutine>`.
+   This function is a :ref:`coroutine <coroutine>`.
 
 .. function:: create_subprocess_exec(\*args, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
    Create a subprocess. Return a :class:`~asyncio.subprocess.Process` instance.
 
-   This function returns a :ref:`coroutine object <coroutine>`.
+   This function is a :ref:`coroutine <coroutine>`.
 
 Use the :meth:`BaseEventLoop.connect_read_pipe` and
 :meth:`BaseEventLoop.connect_write_pipe` methods to connect pipes.
