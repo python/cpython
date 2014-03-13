@@ -67,11 +67,6 @@ This article explains the new features in Python 3.4, compared to 3.3.
 For full details, see the
 `changelog <http://docs.python.org/3.4/whatsnew/changelog.html>`_.
 
-.. note:: Prerelease users should be aware that this document is currently in
-   draft form. While it should be close to complete for the Python 3.4
-   release candidates, adjustments and additions to the document may be made
-   up until the final release.
-
 
 .. seealso::
 
@@ -92,9 +87,9 @@ New syntax features:
 New expected features for Python implementations:
 
 * :ref:`pip should always be "available" <whatsnew-pep-453>` (:pep:`453`).
-* :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`
+* :ref:`Newly created file descriptors are non-inheritable <whatsnew-pep-446>`
   (:pep:`446`).
-* command line option for :ref:`isolated mode <whatsnew-isolated-mode>`,
+* command line option for :ref:`isolated mode <whatsnew-isolated-mode>`
   (:issue:`16499`).
 * :ref:`improvements in the handling of codecs <codec-handling-improvements>`
   that are not text encodings (multiple issues).
@@ -145,10 +140,11 @@ Security improvements:
   (:pep:`446`) to avoid leaking file descriptors to child processes.
 * New command line option for :ref:`isolated mode <whatsnew-isolated-mode>`,
   (:issue:`16499`).
-* All modules of the standard library now support server certificate
-  verification including hostname matching (:func:`ssl.match_hostname`) and CRL
-  (Certificate Revocation list, see
-  :func:`ssl.SSLContext.load_verify_locations`).
+* :mod:`multiprocessing` now has :ref:`an option to avoid using os.fork
+  on Unix <whatsnew-multiprocessing-no-fork>`.  *spawn* and *forkserver* are
+  more secure because they avoid sharing data with child processes.
+* :mod:`multiprocessing` child processes on Windows no longer inherit
+  all of the parent's inheritable handles, only the necessary ones.
 * A new :func:`hashlib.pbkdf2_hmac` function provides
   the `PKCS#5 password-based key derivation function 2
   <http://en.wikipedia.org/wiki/PBKDF2>`_.
@@ -157,18 +153,18 @@ Security improvements:
   <whatsnew34-win-cert-store>` for :mod:`ssl`.
 * :ref:`Server-side SNI (Server Name Indication) support
   <whatsnew34-sni>` for :mod:`ssl`.
-* The :class:`ssl.SSLContext` class got a :ref:`lot of improvements
+* The :class:`ssl.SSLContext` class has a :ref:`lot of improvements
   <whatsnew34-sslcontext>`.
-* :mod:`multiprocessing` now has :ref:`an option to avoid using os.fork
-  on Unix <whatsnew-multiprocessing-no-fork>`: *spawn* and *forkserver* avoid
-  sharing data with child processes; child processes no longer inherit all of
-  the parents inheritable handles on Windows.
+* All modules in the standard library that support SSL now support server
+  certificate verification, including hostname matching
+  (:func:`ssl.match_hostname`) and CRLs (Certificate Revocation lists, see
+  :func:`ssl.SSLContext.load_verify_locations`).
 
 CPython implementation improvements:
 
 * :ref:`Safe object finalization <whatsnew-pep-442>` (:pep:`442`).
-* Leveraging :pep:`442`, :ref:`module globals are no longer set to None
-  during finalization <whatsnew-pep-442>`, in most cases (:issue:`18214`).
+* Leveraging :pep:`442`, in most cases :ref:`module globals are no longer set
+  to None during finalization <whatsnew-pep-442>` (:issue:`18214`).
 * :ref:`Configurable memory allocators <whatsnew-pep-445>` (:pep:`445`).
 * :ref:`Argument Clinic <whatsnew-pep-436>` (:pep:`436`).
 
@@ -251,8 +247,8 @@ and :ref:`distutils-index`.
 
 .. _whatsnew-pep-446:
 
-PEP 446: Make Newly Created File Descriptors Non-Inheritable
-------------------------------------------------------------
+PEP 446: Newly Created File Descriptors Are Non-Inheritable
+-----------------------------------------------------------
 
 :pep:`446` makes newly created file descriptors :ref:`non-inheritable
 <fd_inheritance>`.  New functions and methods:
@@ -1432,23 +1428,6 @@ s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that returns a
 list of the loaded ``CA`` certificates.  (Contributed by Christian Heimes in
 and :issue:`18147`.)
 
-.. _whatsnew34-win-cert-store:
-
-Two new windows-only functions, :func:`~ssl.enum_certificates` and
-:func:`~ssl.enum_crls` provide the ability to retrieve certificates,
-certificate information, and CRLs from the Windows cert store.  (Contributed
-by Christian Heimes in :issue:`17134`.)
-
-.. _whatsnew34-sni:
-
-Support for server-side SNI (Server Name Indication) using the new
-:meth:`ssl.SSLContext.set_servername_callback` method.
-(Contributed by Daniel Black in :issue:`8109`.)
-
-The dictionary returned by :meth:`.SSLSocket.getpeercert` contains additional
-``X509v3`` extension items: ``crlDistributionPoints``, ``calIssuers``, and
-``OCSP`` URIs.  (Contributed by Christian Heimes in :issue:`18379`.)
-
 If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has an new
 attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the
 certificate verification process by setting it to some combination of the new
@@ -1473,6 +1452,23 @@ more stringent than the defaults provided by the :class:`~ssl.SSLContext`
 constructor, and may be adjusted in the future, without prior deprecation, if
 best-practice security requirements change.  (Contributed by Christian Heimes
 in :issue:`19689`.)
+
+.. _whatsnew34-win-cert-store:
+
+Two new windows-only functions, :func:`~ssl.enum_certificates` and
+:func:`~ssl.enum_crls` provide the ability to retrieve certificates,
+certificate information, and CRLs from the Windows cert store.  (Contributed
+by Christian Heimes in :issue:`17134`.)
+
+.. _whatsnew34-sni:
+
+Support for server-side SNI (Server Name Indication) using the new
+:meth:`ssl.SSLContext.set_servername_callback` method.
+(Contributed by Daniel Black in :issue:`8109`.)
+
+The dictionary returned by :meth:`.SSLSocket.getpeercert` contains additional
+``X509v3`` extension items: ``crlDistributionPoints``, ``calIssuers``, and
+``OCSP`` URIs.  (Contributed by Christian Heimes in :issue:`18379`.)
 
 
 stat
