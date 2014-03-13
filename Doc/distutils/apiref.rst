@@ -1923,8 +1923,12 @@ Subclasses of :class:`Command` must define the following methods.
 .. module:: distutils.command.clean
    :synopsis: Clean a package build area
 
+This command removes the temporary files created by :command:`build`
+and its subcommands, like intermediary compiled object files.  With
+the ``--all`` option, the complete build directory will be removed.
 
-.. % todo
+Extension modules built :ref:`in place <distutils-build-ext-inplace>`
+will not be cleaned, as they are not in the build directory.
 
 
 :mod:`distutils.command.config` --- Perform package configuration
