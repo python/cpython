@@ -14,7 +14,7 @@ DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py)
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help checkout update build html htmlhelp latex text changes linkcheck \
+.PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
 	autobuild-dev autobuild-stable
 
@@ -36,7 +36,7 @@ help:
 	@echo "  check      to run a check for frequent markup errors"
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
-build: checkout
+build:
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
@@ -157,7 +157,6 @@ serve:
 
 # for development releases: always build
 autobuild-dev:
-	make update
 	make dist SPHINXOPTS='-A daily=1 -A versionswitcher=1'
 	-make suspicious
 
