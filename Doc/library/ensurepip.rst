@@ -28,7 +28,7 @@ when creating a virtual environment) or after explicitly uninstalling
 
 .. seealso::
 
-   :ref:`install-index`
+   :ref:`installing-index`
       The end user guide for installing Python packages
 
    :pep:`453`: Explicit bootstrapping of pip in Python installations
