@@ -76,6 +76,8 @@ Creating virtual environments
    without there needing to be any reference to its venv in ``PATH``.
 
 
+.. _venv-api:
+
 API
 ---
 
