@@ -73,7 +73,7 @@ Lock
       This method blocks until the lock is unlocked, then sets it to locked and
       returns ``True``.
 
-      This method returns a :ref:`coroutine object <coroutine>`.
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: release()
 
