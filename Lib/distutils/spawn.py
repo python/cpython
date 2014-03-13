@@ -12,6 +12,7 @@ import sys
 import os
 
 from distutils.errors import DistutilsPlatformError, DistutilsExecError
+from distutils.debug import DEBUG
 from distutils import log
 
 def spawn(cmd, search_path=1, verbose=0, dry_run=0):
@@ -30,6 +31,9 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
     Raise DistutilsExecError if running the program fails in any way; just
     return on success.
     """
+    # cmd is documented as a list, but just in case some code passes a tuple
+    # in, protect our %-formatting code against horrible death
+    cmd = list(cmd)
     if os.name == 'posix':
         _spawn_posix(cmd, search_path, dry_run=dry_run)
     elif os.name == 'nt':
@@ -69,12 +73,16 @@ def _spawn_nt(cmd, search_path=1, verbose=0, dry_run=0):
             rc = os.spawnv(os.P_WAIT, executable, cmd)
         except OSError, exc:
             # this seems to happen when the command isn't found
+            if not DEBUG:
+                cmd = executable
             raise DistutilsExecError, \
-                  "command '%s' failed: %s" % (cmd[0], exc[-1])
+                  "command %r failed: %s" % (cmd, exc[-1])
         if rc != 0:
             # and this reflects the command running but failing
+            if not DEBUG:
+                cmd = executable
             raise DistutilsExecError, \
-                  "command '%s' failed with exit status %d" % (cmd[0], rc)
+                  "command %r failed with exit status %d" % (cmd, rc)
 
 def _spawn_os2(cmd, search_path=1, verbose=0, dry_run=0):
     executable = cmd[0]
@@ -88,13 +96,17 @@ def _spawn_os2(cmd, search_path=1, verbose=0, dry_run=0):
             rc = os.spawnv(os.P_WAIT, executable, cmd)
         except OSError, exc:
             # this seems to happen when the command isn't found
+            if not DEBUG:
+                cmd = executable
             raise DistutilsExecError, \
-                  "command '%s' failed: %s" % (cmd[0], exc[-1])
+                  "command %r failed: %s" % (cmd, exc[-1])
         if rc != 0:
             # and this reflects the command running but failing
-            log.debug("command '%s' failed with exit status %d" % (cmd[0], rc))
+            if not DEBUG:
+                cmd = executable
+            log.debug("command %r failed with exit status %d" % (cmd, rc))
             raise DistutilsExecError, \
-                  "command '%s' failed with exit status %d" % (cmd[0], rc)
+                  "command %r failed with exit status %d" % (cmd, rc)
 
 if sys.platform == 'darwin':
     from distutils import sysconfig
@@ -105,8 +117,9 @@ def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
     log.info(' '.join(cmd))
     if dry_run:
         return
+    executable = cmd[0]
     exec_fn = search_path and os.execvp or os.execv
-    exec_args = [cmd[0], cmd]
+    env = None
     if sys.platform == 'darwin':
         global _cfg_target, _cfg_target_split
         if _cfg_target is None:
@@ -127,18 +140,24 @@ def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
             env = dict(os.environ,
                        MACOSX_DEPLOYMENT_TARGET=cur_target)
             exec_fn = search_path and os.execvpe or os.execve
-            exec_args.append(env)
     pid = os.fork()
 
     if pid == 0:  # in the child
         try:
-            exec_fn(*exec_args)
+            if env is None:
+                exec_fn(executable, cmd)
+            else:
+                exec_fn(executable, cmd, env)
         except OSError, e:
-            sys.stderr.write("unable to execute %s: %s\n" %
-                             (cmd[0], e.strerror))
+            if not DEBUG:
+                cmd = executable
+            sys.stderr.write("unable to execute %r: %s\n" %
+                             (cmd, e.strerror))
             os._exit(1)
 
-        sys.stderr.write("unable to execute %s for unknown reasons" % cmd[0])
+        if not DEBUG:
+            cmd = executable
+        sys.stderr.write("unable to execute %r for unknown reasons" % cmd)
         os._exit(1)
     else:   # in the parent
         # Loop until the child either exits or is terminated by a signal
@@ -150,29 +169,37 @@ def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
                 import errno
                 if exc.errno == errno.EINTR:
                     continue
+                if not DEBUG:
+                    cmd = executable
                 raise DistutilsExecError, \
-                      "command '%s' failed: %s" % (cmd[0], exc[-1])
+                      "command %r failed: %s" % (cmd, exc[-1])
             if os.WIFSIGNALED(status):
+                if not DEBUG:
+                    cmd = executable
                 raise DistutilsExecError, \
-                      "command '%s' terminated by signal %d" % \
-                      (cmd[0], os.WTERMSIG(status))
+                      "command %r terminated by signal %d" % \
+                      (cmd, os.WTERMSIG(status))
 
             elif os.WIFEXITED(status):
                 exit_status = os.WEXITSTATUS(status)
                 if exit_status == 0:
                     return   # hey, it succeeded!
                 else:
+                    if not DEBUG:
+                        cmd = executable
                     raise DistutilsExecError, \
-                          "command '%s' failed with exit status %d" % \
-                          (cmd[0], exit_status)
+                          "command %r failed with exit status %d" % \
+                          (cmd, exit_status)
 
             elif os.WIFSTOPPED(status):
                 continue
 
             else:
+                if not DEBUG:
+                    cmd = executable
                 raise DistutilsExecError, \
-                      "unknown error executing '%s': termination status %d" % \
-                      (cmd[0], status)
+                      "unknown error executing %r: termination status %d" % \
+                      (cmd, status)
 
 def find_executable(executable, path=None):
     """Tries to find 'executable' in the directories listed in 'path'.
