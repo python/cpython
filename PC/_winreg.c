@@ -948,8 +948,10 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
 
                 fixupMultiSZ(str, retDataBuf, retDataSize);
                 obData = PyList_New(s);
-                if (obData == NULL)
+                if (obData == NULL) {
+                    free(str);
                     return NULL;
+                }
                 for (index = 0; index < s; index++)
                 {
                     size_t len = _mbstrlen(str[index]);
@@ -957,6 +959,7 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
                         PyErr_SetString(PyExc_OverflowError,
                             "registry string is too long for a Python string");
                         Py_DECREF(obData);
+                        free(str);
                         return NULL;
                     }
                     PyList_SetItem(obData,
