@@ -34,7 +34,6 @@ Key terms
 
 * ``pip`` is the preferred installer program. Starting with Python 3.4, it
   is included by default with the Python binary installers.
-  installed into virtual environments
 * a virtual environment is a semi-isolated Python environment that allows
   packages to be installed for use by a particular application, rather than
   being installed system wide
