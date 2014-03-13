@@ -23,6 +23,10 @@ Library
 - Issue #19157: Include the broadcast address in the usuable hosts for IPv6
   in ipaddress.
 
+- Issue #11599: When an external command (e.g. compiler) fails, distutils now
+  prints out the whole command line (instead of just the command name) if the
+  environment variable DISTUTILS_DEBUG is set.
+
 - Issue #4931: distutils should not produce unhelpful "error: None" messages
   anymore.  distutils.util.grok_environment_error is kept but doc-deprecated.
 
