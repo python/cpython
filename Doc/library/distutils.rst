@@ -12,14 +12,15 @@ additional modules into a Python installation.  The new modules may be either
 100%-pure Python, or may be extension modules written in C, or may be
 collections of Python packages which include modules coded in both Python and C.
 
+Most Python users will *not* want to use this module directly, but instead
+use the cross-version tools maintained by the Python Packaging Authority.
+Refer to the `Python Packaging User Guide <http://packaging.python.org>`_
+for more information.
 
-User documentation and API reference are provided in another document:
+For the benefits of packaging tool authors and users seeking a deeper
+understanding of the details of the current packaging and distribution
+system, the legacy :mod:`distutils` based user documentation and API
+reference remain available:
 
-.. seealso::
-
-   :ref:`distutils-index`
-      The manual for developers and packagers of Python modules.  This describes
-      how to prepare :mod:`distutils`\ -based packages so that they may be
-      easily installed into an existing Python installation.  It also contains
-      instructions for end-users wanting to install a distutils-based package,
-      :ref:`install-index`.
+* :ref:`install-index`
+* :ref:`distutils-index`

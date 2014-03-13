@@ -180,6 +180,9 @@ New Expected Features for Python Implementations
 PEP 453: Explicit Bootstrapping of PIP in Python Installations
 --------------------------------------------------------------
 
+Bootstrapping pip by default
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
 cross-platform mechanism to bootstrap the pip installer into Python
 installations and virtual environments.
@@ -206,6 +209,22 @@ As `discussed in the PEP`__, platform packagers may choose not to install
 clear and simple directions on how to install ``pip`` on the platform.
 
 __ http://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distributors
+
+
+Documentation changes
+~~~~~~~~~~~~~~~~~~~~~
+
+As part of this change, the :ref:`installing-index` and
+:ref:`distributing-index` sections of the documentation have been
+completely redesigned as short getting started and FAQ documents. Most
+packaging documentation has now been moved out to the Python Packaging
+Authority maintained `Python Packaging User Guide
+<http://packaging.python.org>`__ and the documentation of the individual
+projects.
+
+However, as this migration is currently still incomplete, the legacy
+versions of those guides remaining available as :ref:`install-index`
+and :ref:`distutils-index`.
 
 .. note::
 

@@ -21,8 +21,8 @@ the set are:
   and many other tasks. Skimming through the Library Reference will give you an
   idea of what's available.
 
-* :ref:`install-index` explains how to install external modules written by other
-  Python users.
+* :ref:`installing-index` explains how to install additional modules written
+  by other Python users.
 
 * :ref:`reference-index`: A detailed explanation of Python's syntax and
   semantics.  It's heavy reading, but is useful as a complete guide to the
