@@ -101,7 +101,7 @@ involved in creating a project
 .. _Building and packaging the project: \
    http://packaging.python.org/en/latest/tutorial.html#building-packaging-your-project
 .. _Uploading the project to the Python Package Index: \
-   http://packaging.python.org/en/latest/tutorial.html#building-uploading-your-project-to-pypi
+   http://packaging.python.org/en/latest/tutorial.html#uploading-your-project-to-pypi
 
 
 How do I...?
