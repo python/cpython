@@ -48,7 +48,7 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
 
    .. attribute:: headers
 
-      The HTTP response headers for the HTTP request that cause the
+      The HTTP response headers for the HTTP request that caused the
       :exc:`HTTPError`.
 
       .. versionadded:: 3.4
