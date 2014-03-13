@@ -488,7 +488,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    * *stdout*: Either a file-like object representing the pipe to be connected
      to the subprocess's standard output stream using
-     :meth:`~BaseEventLoop.connect_write_pipe`, or the constant
+     :meth:`~BaseEventLoop.connect_read_pipe`, or the constant
      :const:`subprocess.PIPE` (the default). By default a new pipe will be
      created and connected.
 
