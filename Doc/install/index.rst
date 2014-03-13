@@ -58,7 +58,8 @@ new goodies to their toolbox.  You don't need to know Python to read this
 document; there will be some brief forays into using Python's interactive mode
 to explore your installation, but that's it.  If you're looking for information
 on how to distribute your own Python modules so that others may use them, see
-the :ref:`distutils-index` manual.
+the :ref:`distutils-index` manual.  :ref:`debug-setup-script` may also be of
+interest.
 
 
 .. _inst-trivial-install:
