@@ -2436,6 +2436,13 @@ Changes in the Python API
   have things that look like doctests in them you may see test failures you've
   never seen before when running your tests (:issue:`3158`).
 
+* The :mod:`collections.abc` module has been slightly refactored as
+  part of the Python startup improvements.  As a consequence of this, it is no
+  longer the case that importing :mod:`collections` automatically imports
+  :mod:`collections.abc`.  If your program depended on the (undocumented)
+  implicit import, you will need to add an explicit ``import collections.abc``
+  (:issue:`20784`).
+
 
 Changes in the C API
 --------------------
