@@ -64,7 +64,7 @@ Lock
 
    .. method:: locked()
 
-      Return ``True`` if lock is acquired.
+      Return ``True`` if the lock is acquired.
 
    .. method:: acquire()
 
@@ -141,6 +141,15 @@ Condition
 
    A new :class:`Lock` object is created and used as the underlying lock.
 
+   .. method:: acquire()
+
+      Acquire the underlying lock.
+
+      This method blocks until the lock is unlocked, then sets it to locked and
+      returns ``True``.
+
+      This method is a :ref:`coroutine <coroutine>`.
+
    .. method:: notify(n=1)
 
       By default, wake up one coroutine waiting on this condition, if any.
@@ -156,12 +165,28 @@ Condition
          call until it can reacquire the lock. Since :meth:`notify` does not
          release the lock, its caller should.
 
+   .. method:: locked()
+
+      Return ``True`` if the underlying lock is acquired.
+
    .. method:: notify_all()
 
       Wake up all threads waiting on this condition. This method acts like
       :meth:`notify`, but wakes up all waiting threads instead of one. If the
       calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
+
+   .. method:: release()
+
+      Release the underlying lock.
+
+      When the lock is locked, reset it to unlocked, and return. If any other
+      coroutines are blocked waiting for the lock to become unlocked, allow
+      exactly one of them to proceed.
+
+      When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
+
+      There is no return value.
 
    .. method:: wait()
 
