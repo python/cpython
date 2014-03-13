@@ -2,9 +2,9 @@
 
 .. _install-index:
 
-*****************************
-  Installing Python Modules
-*****************************
+********************************************
+  Installing Python Modules (Legacy version)
+********************************************
 
 :Author: Greg Ward
 

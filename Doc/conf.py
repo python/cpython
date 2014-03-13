@@ -120,11 +120,11 @@ _stdauthor = r'Guido van Rossum\\Fred L. Drake, Jr., editor'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
-    ('distutils/index', 'distutils.tex',
+    ('distributing/index', 'distributing.tex',
      'Distributing Python Modules', _stdauthor, 'manual'),
     ('extending/index', 'extending.tex',
      'Extending and Embedding Python', _stdauthor, 'manual'),
-    ('install/index', 'install.tex',
+    ('installing/index', 'installing.tex',
      'Installing Python Modules', _stdauthor, 'manual'),
     ('library/index', 'library.tex',
      'The Python Library Reference', _stdauthor, 'manual'),
