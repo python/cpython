@@ -9,7 +9,7 @@
 
 The :mod:`subprocess` module allows you to spawn new processes, connect to their
 input/output/error pipes, and obtain their return codes.  This module intends to
-replace several other, older modules and functions, such as::
+replace several older modules and functions::
 
    os.system
    os.spawn*
