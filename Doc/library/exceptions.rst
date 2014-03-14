@@ -265,7 +265,6 @@ The following exceptions are the exceptions that are usually raised.
       :exc:`mmap.error` have been merged into :exc:`OSError`.
 
    .. versionchanged:: 3.4
-
       The :attr:`filename` attribute is now the original file name passed to
       the function, instead of the name encoded to or decoded from the
       filesystem encoding.  Also, the :attr:`filename2` attribute was added.
