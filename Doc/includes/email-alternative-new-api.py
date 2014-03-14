@@ -19,7 +19,7 @@ Cela ressemble à un excellent recipie[1] déjeuner.
 
 [1] http://www.yummly.com/recipe/Roasted-Asparagus-Epicurious-203718
 
---Éric
+--Pepé
 """)
 
 # Add the html version.  This converts the message into a multipart/alternative
