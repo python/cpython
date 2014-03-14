@@ -382,7 +382,9 @@ The public-facing changes from the PEP are entirely backward-compatible.
 Furthermore, they should be transparent to everyone but importer authors.  Key
 finder and loader methods have been deprecated, but they will continue working.
 New importers should use the new methods described in the PEP.  Existing
-importers should be updated to implement the new methods.
+importers should be updated to implement the new methods.  See the
+:ref:`deprecated-3.4` section for a list of methods that should be replaced and
+their replacements.
 
 
 Other Language Changes
@@ -2037,6 +2039,8 @@ Significant Optimizations
   so as to avoid using many file descriptors when run in parallel from
   multiple threads. (Contributed by Antoine Pitrou in :issue:`18756`.)
 
+
+.. _deprecated-3.4:
 
 Deprecated
 ==========
