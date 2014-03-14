@@ -406,10 +406,10 @@ Some smaller changes made to the core Python language are:
   ``__main__.__file__`` when a script has been executed directly using
   a relative path (Contributed by Brett Cannon in :issue:`18416`).
 
-* Now all the UTF-\* codecs (except UTF-7) reject surrogates during both
+* All the UTF-\* codecs (except UTF-7) now reject surrogates during both
   encoding and decoding unless the ``surrogatepass`` error handler is used,
-  with the exception of the UTF-16 decoder that accepts valid surrogate pairs,
-  and the UTF-16 encoder that produces them while encoding non-BMP characters.
+  with the exception of the UTF-16 decoder (which accepts valid surrogate pairs)
+  and the UTF-16 encoder (which produces them while encoding non-BMP characters).
   Contributed by Victor Stinner, Kang-Hao (Kenny) Lu and Serhiy Storchaka in
   :issue:`12892`.
 
@@ -563,7 +563,7 @@ tracemalloc
 The new :mod:`tracemalloc` module (defined in :pep:`454`) is a debug tool to
 trace memory blocks allocated by Python. It provides the following information:
 
-* Traceback where an object was allocated
+* Trace where an object was allocated
 * Statistics on allocated memory blocks per filename and per line number:
   total size, number and average size of allocated memory blocks
 * Compute the differences between two snapshots to detect memory leaks
@@ -643,7 +643,7 @@ New functions :func:`~base64.a85encode`, :func:`~base64.a85decode`,
 :func:`~base64.b85encode`, and :func:`~base64.b85decode` provide the ability to
 encode and decode binary data from and to ``Ascii85`` and the git/mercurial
 ``Base85`` formats, respectively.  The ``a85`` functions have options that can
-be sued to make them compatible with the variants of the ``Ascii85`` encoding,
+be used to make them compatible with the variants of the ``Ascii85`` encoding,
 including the Adobe variant.  (Contributed by Martin Morrison, the Mercurial
 project, Serhiy Storchaka, and Antoine Pitrou in :issue:`17618`.)
 
@@ -861,14 +861,14 @@ multiple implementations of an operation that allows it to work with
    :pep:`443` -- Single-dispatch generic functions
       PEP written and implemented by Łukasz Langa.
 
+:func:`~functools.total_ordering` now supports a return value of
+:const:`NotImplemented` from the underlying comparison function.  (Contributed
+by Katie Miller in :issue:`10042`.)
+
 A pure-python version of the :func:`~functools.partial` function is now in the
 stdlib; in CPython it is overridden by the C accelerated version, but it is
 available for other implementations to use.  (Contributed by Brian Thorne in
 :issue:`12428`.)
-
-:func:`~functools.total_ordering` now supports a return value of
-:const:`NotImplemented` from the underlying comparison function.  (Contributed
-by Katie Miller in :issue:`10042`.)
 
 
 gc
@@ -1093,20 +1093,8 @@ with additional speedups by Antoine Pitrou in :issue:`19219`.)
 mmap
 ----
 
-mmap objects can now be weakref'ed.  (Contributed by Valerie Lambert in
+mmap objects can now be :mod:`weakref`\ ed.  (Contributed by Valerie Lambert in
 :issue:`4885`.)
-
-
-mock
-----
-
-:mod:`~unittest.mock` objects now inspect their specification signatures when
-matching calls, which means an argument can now be matched by either position
-or name, instead of only by position.  (Contributed by Antoine Pitrou in
-:issue:`17015`.)
-
-:func:`~mock.mock_open` objects now have ``readline`` and ``readlines``
-methods. (Contributed by Toshio Kuratomi in :issue:`17467`.)
 
 
 multiprocessing
@@ -1114,8 +1102,8 @@ multiprocessing
 
 .. _whatsnew-multiprocessing-no-fork:
 
-On Unix, two new :ref:`start methods <multiprocessing-start-methods>`
-(``spawn`` and ``forkserver``) have been added for starting processes using
+On Unix two new :ref:`start methods <multiprocessing-start-methods>`,
+(``spawn`` and ``forkserver``, have been added for starting processes using
 :mod:`multiprocessing`.  These make the mixing of processes with threads more
 robust, and the ``spawn`` method matches the semantics that multiprocessing has
 always used on Windows.  New function
@@ -1141,7 +1129,7 @@ inherit unneeded handles/file descriptors from their parents (part of
 :mod:`multiprocessing` now relies on :mod:`runpy` (which implements the
 ``-m`` switch) to initialise ``__main__`` appropriately in child processes
 when using the ``spawn`` or ``forkserver`` start methods. This resolves some
-edge cases where combining multiprocessing, the ``-m`` command line switch
+edge cases where combining multiprocessing, the ``-m`` command line switch,
 and explicit relative imports could cause obscure failures in child
 processes. (Contributed by Nick Coghlan in :issue:`19946`)
 
@@ -1149,29 +1137,29 @@ processes. (Contributed by Nick Coghlan in :issue:`19946`)
 operator
 --------
 
-There is now a pure-python version of the :mod:`operator` module available for
-reference and for use by alternate implementations of Python.  (Contributed by
-Zachary Ware in :issue:`16694`.)
-
 New function :func:`~operator.length_hint` provides an implementation of the
 specification for how the :meth:`~object.__length_hint__` special method should
 be used, as part of the :pep:`424` formal specification of this language
 feature.  (Contributed by Armin Ronacher in :issue:`16148`.)
 
+There is now a pure-python version of the :mod:`operator` module available for
+reference and for use by alternate implementations of Python.  (Contributed by
+Zachary Ware in :issue:`16694`.)
+
 
 os
 --
 
-New functions to get and set the :ref:`inheritable flag <fd_inheritance>` of a file
-descriptors or a Windows handle:
+There are new functions to get and set the :ref:`inheritable flag
+<fd_inheritance>` of a file descriptor (:func:`os.get_inheritable`,
+:func:`os.set_inheritable`) or a Windows handle
+(:func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`).
 
-* :func:`os.get_inheritable`, :func:`os.set_inheritable`
-* :func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`
-
-The :mod:`os` module now provides a :func:`~os.cpu_count` function, analogous to
-the :func:`multiprocessing.cpu_count` function (which is now implemented in
-terms of the new :mod:`os` function).  (Contributed by Trent Nelson, Yogesh
-Chaudhari, Victor Stinner, and Charles-François Natali in :issue:`17914`.)
+New function :func:`~os.cpu_count` reports the number of CPUs available on the
+platform on which Python is running (or ``None`` if the count can't be
+determined).  The :func:`multiprocessing.cpu_count` function is now implemented
+in terms of this function).  (Contributed by Trent Nelson, Yogesh Chaudhari,
+Victor Stinner, and Charles-François Natali in :issue:`17914`.)
 
 :func:`os.path.samestat` is now available on the Windows platform (and the
 :func:`os.path.samefile` implementation is now shared between Unix and
@@ -1181,10 +1169,10 @@ Windows).  (Contributed by Brian Curtin in :issue:`11939`.)
 root on Windows. (Contributed by Tim Golden in :issue:`9035`.)
 
 :func:`os.open` supports two new flags on platforms that provide them,
-:data:`~os.O_TMPFILE` (unnamed temporary file, as of 3.4.0 release available
-only on Linux systems with a kernel version of 3.11 or newer that have uapi
-headers), and :data:`~os.O_PATH` (un-opened file descriptor).  (Contributed by
-Christian Heimes in :issue:`18673` and Benjamin Peterson, respectively.)
+:data:`~os.O_PATH` (un-opened file descriptor), and :data:`~os.O_TMPFILE`
+(unnamed temporary file; as of 3.4.0 release available only on Linux systems
+with a kernel version of 3.11 or newer that have uapi headers).  (Contributed
+by Christian Heimes in :issue:`18673` and Benjamin Peterson, respectively.)
 
 
 pdb
@@ -1214,7 +1202,7 @@ pickle
 :mod:`pickle` now supports (but does not use by default) a new pickle protocol,
 protocol 4.  This new protocol addresses a number of issues that were present
 in previous protocols, such as the serialization of nested classes, very large
-strings and containers, or classes whose :meth:`__new__` method takes
+strings and containers, and classes whose :meth:`__new__` method takes
 keyword-only arguments.  It also provides some efficiency improvements.
 
 .. seealso::
@@ -1269,11 +1257,11 @@ the child process, instead of ``None``.  (Contributed by Gregory P. Smith.)
 pydoc
 -----
 
-The :mod:`pydoc` module is now based directly on the
-:func:`inspect.signature` introspection API, allowing it to provide
-signature information for a wider variety of callable objects. This change
-also means that ``__wrapped__`` attributes are now taken into account when
-display help information (Contributed by Larry Hastings in :issue:`19674`)
+The :mod:`pydoc` module is now based directly on the :func:`inspect.signature`
+introspection API, allowing it to provide signature information for a wider
+variety of callable objects. This change also means that ``__wrapped__``
+attributes are now taken into account when displaying help information
+(Contributed by Larry Hastings in :issue:`19674`)
 
 The :mod:`pydoc` module no longer displays the ``self`` parameter for
 already bound methods. Instead, it aims to always display the exact current
@@ -1362,7 +1350,7 @@ smtpd
 -----
 
 The :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
-accept a *map* keyword argument, which if specified is passed in to
+accept a *map* keyword argument which, if specified, is passed in to
 :class:`asynchat.async_chat` as its *map* argument.  This allows an application
 to avoid affecting the global socket map.  (Contributed by Vinay Sajip in
 :issue:`11959`.)
@@ -1374,7 +1362,7 @@ smtplib
 :exc:`~smtplib.SMTPException` is now a subclass of :exc:`OSError`, which allows
 both socket level errors and SMTP protocol level errors to be caught in one
 try/except statement by code that only cares whether or not an error occurred.
-(:issue:`2118`).
+(Contributed by Ned Jackson Lovely in :issue:`2118`).
 
 
 socket
@@ -1400,10 +1388,10 @@ on Windows.  (Contributed by Atsuo Ishimoto in :issue:`7171`.)
 sqlite3
 -------
 
-A new boolean parameter, *uri*, to the :func:`~sqlite3.connect` function can
-be used to indicate that the *database* parameter is a ``uri`` (see
-the `SQLite URI documentation <http://www.sqlite.org/uri.html>`_).
-(Contributed by poq in :issue:`13773`.)
+A new boolean parameter to the :func:`~sqlite3.connect` function, *uri*, can be
+used to indicate that the *database* parameter is a ``uri`` (see the `SQLite
+URI documentation <http://www.sqlite.org/uri.html>`_).  (Contributed by poq in
+:issue:`13773`.)
 
 
 ssl
@@ -1417,6 +1405,18 @@ Python is linked with OpenSSL 1.0.1 or later.  (Contributed by Michele Orrù and
 Antoine Pitrou in :issue:`16692`)
 
 .. _whatsnew34-sslcontext:
+
+New function :func:`~ssl.create_default_context` provides a standard way to
+obtain an :class:`~ssl.SSLContext` whose settings are intended to be a
+reasonable balance between compatibility and security.  These settings are
+more stringent than the defaults provided by the :class:`~ssl.SSLContext`
+constructor, and may be adjusted in the future, without prior deprecation, if
+best-practice security requirements change.  The new recommended best
+practice for using stdlib libraries that support SSL is to use
+:func:`~ssl.create_default_context` to obtain an :class:`~ssl.SSLContext`
+object, modify it if needed, and then pass it as the *context* argument
+of the appropriate stdlib API.  (Contributed by Christian Heimes
+in :issue:`19689`.)
 
 :class:`~ssl.SSLContext` method :meth:`~ssl.SSLContext.load_verify_locations`
 accepts a new optional argument *cadata*, which can be used to provide PEM or
@@ -1435,7 +1435,7 @@ in :issue:`18143`.)
 ``X.509`` certs, ``X.509 CA`` certs, and certificate revocation lists (``crl``\
 s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that returns a
 list of the loaded ``CA`` certificates.  (Contributed by Christian Heimes in
-and :issue:`18147`.)
+:issue:`18147`.)
 
 If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has an new
 attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the
@@ -1453,14 +1453,6 @@ TLS web server authentication certificates
 server, and certificates for a server to use in verifying client certificates
 (``purpose=``:data:`~ssl.Purpose.CLIENT_AUTH`).  (Contributed by Christian
 Heimes in :issue:`19292`.)
-
-New function :func:`~ssl.create_default_context` provides a standard way to
-obtain an :class:`~ssl.SSLContext` whose settings are intended to be a
-reasonable balance between compatibility and security.  These settings are
-more stringent than the defaults provided by the :class:`~ssl.SSLContext`
-constructor, and may be adjusted in the future, without prior deprecation, if
-best-practice security requirements change.  (Contributed by Christian Heimes
-in :issue:`19689`.)
 
 .. _whatsnew34-win-cert-store:
 
@@ -1485,19 +1477,20 @@ stat
 
 The :mod:`stat` module is now backed by a C implementation in :mod:`_stat`. A C
 implementation is required as most of the values aren't standardized and
-platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
+are platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
-The module supports new file types: door, event port and whiteout.
+The module supports new :mod:`~stat.ST_MODE` flags, :mod:`~stat.S_IFDOOR`,
+:attr:`~stat.S_IFPORT`, and :attr:`~stat.S_IFWHT`.  (Contributed by
+Christian Hiemes in :issue:`11016`.)
 
 
 struct
 ------
 
-:mod:`struct` now supports the streamed unpacking of a buffer containing
-repeated instances of a given format of data.  Both a module level
-:mod:`~struct.iter_unpack` function and a :meth:`struct.Struct.iter_unpack`
-method on compiled formats have been added.  (Contributed by Antoine Pitrou in
-:issue:`17804`.)
+New function :mod:`~struct.iter_unpack` and a new
+:meth:`struct.Struct.iter_unpack` method on compiled formats provide streamed
+unpacking of a buffer containing repeated instances of a given format of data.
+(Contributed by Antoine Pitrou in :issue:`17804`.)
 
 
 subprocess
@@ -1508,8 +1501,8 @@ be used to provide the contents of ``stdin`` for the command that is run.
 (Contributed by Zack Weinberg in :issue:`16624`.)
 
 :func:`~subprocess.getstatus` and :func:`~subprocess.getstatusoutput` now
-work on Windows.  This change was actually made in 3.3.4.  (Contributed
-by Tim Golden in :issue:`10197`.)
+work on Windows.  This change was actually inadvertently made in 3.3.4.
+(Contributed by Tim Golden in :issue:`10197`.)
 
 
 sunau
@@ -1536,9 +1529,9 @@ sys
 ---
 
 New function :func:`sys.getallocatedblocks` returns the current number of
-blocks allocated by the interpreter (in CPython with the default
+blocks allocated by the interpreter.  (In CPython with the default
 ``--with-pymalloc`` setting, this is allocations made through the
-:c:func:`PyObject_Malloc` API).  This can be useful for tracking memory leaks,
+:c:func:`PyObject_Malloc` API.)  This can be useful for tracking memory leaks,
 especially if automated via a test suite.  (Contributed by Antoine Pitrou
 in :issue:`13390`.)
 
@@ -1692,6 +1685,14 @@ formatted messages that were logged.  (Contributed by Antoine Pitrou in
 Test discovery now works with namespace packages (Contributed by Claudiu Popa
 in :issue:`17457`.)
 
+:mod:`unittest.mock` objects now inspect their specification signatures when
+matching calls, which means an argument can now be matched by either position
+or name, instead of only by position.  (Contributed by Antoine Pitrou in
+:issue:`17015`.)
+
+:func:`~mock.mock_open` objects now have ``readline`` and ``readlines``
+methods. (Contributed by Toshio Kuratomi in :issue:`17467`.)
+
 
 venv
 ----
@@ -1844,7 +1845,7 @@ accurate signatures for builtins and standard library extension modules
 implemented in C.
 
 Some standard library extension modules have been converted to use Argument
-Clinic in Python 3.4, and :mod:`pydoc` and :mod:`inspect` has been updated
+Clinic in Python 3.4, and :mod:`pydoc` and :mod:`inspect` have been updated
 accordingly.
 
 It is expected that signature metadata for programmatic introspection will
@@ -1879,7 +1880,7 @@ Other Build and C API Changes
   marked as accepting ``const char *`` rather than ``char *`` (Contributed
   by Serhiy Storchaka in :issue:`1772673`).
 
-* New shell version of ``python-config``; can be used even when a python
+* A new shell version of ``python-config`` can be used even when a python
   interpreter is not available (for example, in cross compilation scenarios).
 
 * :c:func:`PyUnicode_FromFormat` now supports width and precision
@@ -2086,8 +2087,9 @@ Deprecations in the Python API
 * The :mod:`formatter` module is pending deprecation and is slated for removal
   in Python 3.6.
 
-* MD5 as default digestmod for :mod:`hmac` is deprecated. Python 3.6 will
-  require an explicit digest name or constructor as *digestmod* argument.
+* ``MD5`` as the default *digestmod* for the :func:`hmac.new` function is
+  deprecated.  Python 3.6 will require an explicit digest name or constructor as
+  *digestmod* argument.
 
 * The internal ``Netrc`` class in the :mod:`ftplib` module has been documented
   as deprecated in its docstring for quite some time.  It now emits a
@@ -2098,9 +2100,6 @@ Deprecations in the Python API
   will mostly likely be removed in Python 3.5.
 
 * The *strict* argument of :class:`~html.parser.HTMLParser` is deprecated.
-
-* The :func:`hmac.new` *digestmod* keyword having a default value (currently
-  ``MD5``) is deprecated.
 
 * The :mod:`plistlib` :func:`~plistlib.readPlist`,
   :func:`~plistlib.writePlist`, :func:`~plistlib.readPlistFromBytes`, and
@@ -2117,7 +2116,7 @@ Deprecations in the Python API
   appropriate uses of :class:`io.TextIOWrapper` (if needed) and its *newline*
   argument.
 
-* The *parser* argument of :func:`~xml.etree.ElementTree.iterparse` has
+* The *parser* argument of :func:`xml.etree.ElementTree.iterparse` has
   been deprecated, as has the *html* argument of
   :func:`~xml.etree.ElementTree.XMLParser`.  To prepare for the removal of the
   latter, all arguments to ``XMLParser`` should be passed by keyword.
@@ -2308,7 +2307,7 @@ Changes in the Python API
   no ``__wrapped__`` attribute.
 
 * :func:`inspect.getfullargspec` has been reimplemented on top of
-  :func`inspect.signature` and hence handles a much wider variety of callable
+  :func:`inspect.signature` and hence handles a much wider variety of callable
   objects than it did in the past. It is expected that additional builtin and
   extension module callables will gain signature metadata over the course of
   the Python 3.4 series. Code that assumes that
@@ -2321,8 +2320,10 @@ Changes in the Python API
   iterating through :data:`sys.path_importer_cache` based on :data:`sys.path`
   will not find all keys. A module's ``__file__`` when imported in the current
   working directory will also now have an absolute path, including when using
-  ``-m`` with the interpreter (this does not influence when the path to a file
-  is specified on the command-line) (:issue:`18416`).
+  ``-m`` with the interpreter (except for ``__main__.__file__`` when a script
+  has been executed directly using a relative path) (Contributed by Brett
+  Cannon in :issue:`18416`).  is specified on the command-line)
+  (:issue:`18416`).
 
 * The removal of the *strict* argument to :class:`~http.client.HTTPConnection`
   and :class:`~http.client.HTTPSConnection` changes the meaning of the
@@ -2383,7 +2384,7 @@ Changes in the Python API
   perpetually alive (for example, database connections kept in thread-local
   storage).  (:issue:`17094`.)
 
-* Parameter names in ``__annotations__`` dict are now mangled properly,
+* Parameter names in ``__annotations__`` dicts are now mangled properly,
   similarly to ``__kwdefaults__``. (Contributed by Yury Selivanov in
   :issue:`20625`).
 
@@ -2408,7 +2409,7 @@ Changes in the Python API
 
 * The :func:`re.split`, :func:`re.findall`, and :func:`re.sub` functions, and
   the :meth:`~re.match.group` and :meth:`~re.match.groups` methods of
-  :class:``match`` objects now always return a *bytes* object when the string
+  ``match`` objects now always return a *bytes* object when the string
   to be matched is a :term:`bytes-like object`.  Previously the return type
   matched the input type, so if your code was depending on the return value
   being, say, a ``bytearray``, you will need to change your code.
