@@ -289,10 +289,10 @@ module (and have been covered by the regression test suite) since Python 2.4,
 but were previously only discoverable through runtime introspection.
 
 Unlike the convenience methods on :class:`str`, :class:`bytes` and
-:class:`bytearray`, these convenience functions support arbitrary codecs
-in both Python 2 and Python 3, rather than being limited to Unicode text
-encodings (in Python 3) or ``basestring`` <-> ``basestring`` conversions
-(in Python 2).
+:class:`bytearray`, the :mod:`codecs` convenience functions support arbitrary
+codecs in both Python 2 and Python 3, rather than being limited to Unicode text
+encodings (in Python 3) or ``basestring`` <-> ``basestring`` conversions (in
+Python 2).
 
 In Python 3.4, the interpreter is able to identify the known non-text
 encodings provided in the standard library and direct users towards these
@@ -315,7 +315,7 @@ general purpose convenience functions when appropriate::
 
 In a related change, whenever it is feasible without breaking backwards
 compatibility, exceptions raised during encoding and decoding operations
-will be wrapped in a chained exception of the same type that mentions the
+are wrapped in a chained exception of the same type that mentions the
 name of the codec responsible for producing the error::
 
     >>> import codecs
@@ -361,7 +361,7 @@ as::
 The binary and text transforms provided in the standard library are detailed
 in :ref:`binary-transforms` and :ref:`text-transforms`.
 
-(Contributed by Nick Coghlan in :issue:`7475`, , :issue:`17827`,
+(Contributed by Nick Coghlan in :issue:`7475`, :issue:`17827`,
 :issue:`17828` and :issue:`19619`)
 
 
