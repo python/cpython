@@ -2275,6 +2275,14 @@ Changes in the Python API
   to determine if a module is a package or not is to use``hasattr(module,
   '__path__')`` (:issue:`18065`).
 
+* Frozen modules no longer define a ``__file__`` attribute. It's semantically
+  incorrect for frozen modules to set the attribute as they are not loaded from
+  any explicit location. If you must know that a module comes from frozen code
+  then you can see if the module's ``__spec__.location`` is set to ``'frozen'``,
+  check if the loader is a subclass of
+  :class:`importlib.machinery.FrozenImporter`,
+  or if Python 2 compatibility is necessary you can use :func:`imp.is_frozen`.
+
 * :func:`py_compile.compile` now raises :exc:`FileExistsError` if the file path
   it would write to is a symlink or a non-regular file. This is to act as a
   warning that import will overwrite those files with a regular file regardless
