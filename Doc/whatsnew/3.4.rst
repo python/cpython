@@ -1503,10 +1503,6 @@ using ``-Wd``).
 Deprecated Python Modules, Functions and Methods
 ------------------------------------------------
 
-* :meth:`difflib.SequenceMatcher.isbjunk` and
-  :meth:`difflib.SequenceMatcher.isbpopular` were removed: use ``x in sm.bjunk`` and
-  ``x in sm.bpopular``, where *sm* is a :class:`~difflib.SequenceMatcher` object.
-
 * As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importilb`
   methods and functions are deprecated: :meth:`importlib.find_loader` is
   replaced by :func:`importlib.util.find_spec`;
@@ -1611,6 +1607,12 @@ removed:
 
 * :class:`inspect.Signature`: positional-only parameters are now required
   to have a valid name.
+
+* :meth:`difflib.SequenceMatcher.isbjunk` and
+  :meth:`difflib.SequenceMatcher.isbpopular` were deprecated in 3.2, and have
+  now been removed: use ``x in sm.bjunk`` and
+  ``x in sm.bpopular``, where *sm* is a :class:`~difflib.SequenceMatcher` object
+  (:issue:`13248`).
 
 
 Code Cleanups
