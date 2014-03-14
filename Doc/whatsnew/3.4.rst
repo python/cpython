@@ -2051,10 +2051,6 @@ using ``-Wd``).
 Deprecations in the Python API
 ------------------------------
 
-* :meth:`difflib.SequenceMatcher.isbjunk` and
-  :meth:`difflib.SequenceMatcher.isbpopular` were removed: use ``x in sm.bjunk`` and
-  ``x in sm.bpopular``, where *sm* is a :class:`~difflib.SequenceMatcher` object.
-
 * As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importilb`
   methods and functions are deprecated: :meth:`importlib.find_loader` is
   replaced by :func:`importlib.util.find_spec`;
@@ -2193,6 +2189,12 @@ removed:
   raise a :exc:`TypeError` if you are using an ``'s'`` format code with objects
   that do not have a __format__ method that handles it.  See :issue:`7994` for
   background.
+
+* :meth:`difflib.SequenceMatcher.isbjunk` and
+  :meth:`difflib.SequenceMatcher.isbpopular` were deprecated in 3.2, and have
+  now been removed: use ``x in sm.bjunk`` and
+  ``x in sm.bpopular``, where *sm* is a :class:`~difflib.SequenceMatcher` object
+  (:issue:`13248`).
 
 
 Code Cleanups
