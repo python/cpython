@@ -92,7 +92,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
-        URL = "http://www.python.org/"
+        URL = "https://www.python.org/"
         open_url = self.urlopen(URL)
         try:
             gotten_url = open_url.geturl()
