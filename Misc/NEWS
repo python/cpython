@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20939: Fix test_geturl failure in test_urllibnet due to
+  new redirect of http://www.python.org/ to https://www.python.org.
+
 
 What's New in Python 3.4.0 release candidate 3?
 ===============================================
