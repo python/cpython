@@ -3928,9 +3928,6 @@ nm_mpd_qdivmod(PyObject *v, PyObject *w)
     return ret;
 }
 
-static mpd_uint_t data_zero[1] = {0};
-static const mpd_t zero = {MPD_STATIC|MPD_CONST_DATA, 0, 1, 1, 1, data_zero};
-
 static PyObject *
 nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
 {
