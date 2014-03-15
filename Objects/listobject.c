@@ -1970,7 +1970,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
             if (keys[i] == NULL) {
                 for (i=i-1 ; i>=0 ; i--)
                     Py_DECREF(keys[i]);
-                if (keys != &ms.temparray[saved_ob_size+1])
+                if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
                     PyMem_FREE(keys);
                 goto keyfunc_fail;
             }
