@@ -471,7 +471,8 @@ that is written in Python using Tkinter.  PythonWin is a Windows-specific IDE.
 Emacs users will be happy to know that there is a very good Python mode for
 Emacs.  All of these programming environments provide syntax highlighting,
 auto-indenting, and access to the interactive interpreter while coding.  Consult
-http://www.python.org/editors/ for a full list of Python editing environments.
+`the Python wiki <https://wiki.python.org/moin/PythonEditors>`_ for a full list
+of Python editing environments.
 
 If you want to discuss Python's use in education, you may be interested in
 joining `the edu-sig mailing list
