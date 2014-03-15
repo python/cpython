@@ -36,7 +36,8 @@ Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
 static PyObject *
 get_small_int(sdigit ival)
 {
-    PyObject *v = (PyObject*)(small_ints + ival + NSMALLNEGINTS);
+    assert(-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS);
+    PyObject *v = (PyObject *)&small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
     if (ival >= 0)
