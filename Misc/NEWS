@@ -27,6 +27,12 @@ Library
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.
 
+Tests
+-----
+
+- Issue #20939: Fix test_geturl failure in test_urllibnet due to
+  new redirect of http://www.python.org/ to https://www.python.org.
+
 
 What's New in Python 3.3.5?
 ===========================
