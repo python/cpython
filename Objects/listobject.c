@@ -2036,7 +2036,7 @@ fail:
     if (keys != NULL) {
         for (i = 0; i < saved_ob_size; i++)
             Py_DECREF(keys[i]);
-        if (keys != &ms.temparray[saved_ob_size+1])
+        if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
             PyMem_FREE(keys);
     }
 
