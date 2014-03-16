@@ -84,9 +84,9 @@ Terms and conditions for accessing or otherwise using Python
    analyze, test, perform and/or display publicly, prepare derivative works,
    distribute, and otherwise use Python |release| alone or in any derivative
    version, provided, however, that PSF's License Agreement and PSF's notice of
-   copyright, i.e., "Copyright © 2001-2014 Python Software Foundation; All Rights
-   Reserved" are retained in Python |release| alone or in any derivative version
-   prepared by Licensee.
+   copyright, i.e., "Copyright © 2001-2014 Python Software Foundation; All
+   Rights Reserved" are retained in Python |release| alone or in any derivative
+   version prepared by Licensee.
 
 #. In the event Licensee prepares a derivative work that is based on or
    incorporates Python |release| or any part thereof, and wants to make the

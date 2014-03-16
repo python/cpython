@@ -61,10 +61,7 @@
    while :ref:`~mod.attr` will display as ``attr``.
 
 This article explains the new features in Python 3.4, compared to 3.3.
-
-.. Python 3.4 was released on TBD.
-
-For full details, see the
+Python 3.4 was released on March 16, 2014.  For full details, see the
 `changelog <http://docs.python.org/3.4/whatsnew/changelog.html>`_.
 
 
