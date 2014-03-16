@@ -30,6 +30,8 @@ Library
 Tests
 -----
 
+- Issue #20946: Correct alignment assumptions of some ctypes tests.
+
 - Issue #20939: Fix test_geturl failure in test_urllibnet due to
   new redirect of http://www.python.org/ to https://www.python.org.
 
