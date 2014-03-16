@@ -419,7 +419,7 @@ added matters.  To illustrate::
       additional arguments.  By default ``content_manager`` is set to
       :data:`~email.contentmanager.raw_data_manager`.
 
-      .. versionadded 3.4
+      .. versionadded:: 3.4
 
 
    The class provides the following concrete implementations of the abstract

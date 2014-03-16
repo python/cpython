@@ -60,6 +60,8 @@ To install the newest Python versions on OpenSolaris, install `blastwave
 prompt.
 
 
+.. _building-python-on-unix:
+
 Building Python
 ===============
 

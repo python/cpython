@@ -239,9 +239,10 @@ Test Discovery
 
 Unittest supports simple test discovery. In order to be compatible with test
 discovery, all of the test files must be :ref:`modules <tut-modules>` or
-:ref:`packages <tut-packages>` importable from the top-level directory of
-the project (this means that their filenames must be valid
-:ref:`identifiers <identifiers>`).
+:ref:`packages <tut-packages>` (including :term:`namespace packages
+<namespace package>`) importable from the top-level directory of
+the project (this means that their filenames must be valid :ref:`identifiers
+<identifiers>`).
 
 Test discovery is implemented in :meth:`TestLoader.discover`, but can also be
 used from the command line. The basic command-line usage is::
@@ -305,6 +306,9 @@ as the start directory.
 
 Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
+
+.. versionchanged:: 3.4
+   Test discovery supports :term:`namespace packages <namespace package>`.
 
 
 .. _organizing-tests:
@@ -1620,11 +1624,11 @@ Loading and running tests
 
    .. method:: discover(start_dir, pattern='test*.py', top_level_dir=None)
 
-      Find and return all test modules from the specified start directory,
-      recursing into subdirectories to find them. Only test files that match
-      *pattern* will be loaded. (Using shell style pattern matching.) Only
-      module names that are importable (i.e. are valid Python identifiers) will
-      be loaded.
+      Find all the test modules by recursing into subdirectories from the
+      specified start directory, and return a TestSuite object containing them.
+      Only test files that match *pattern* will be loaded. (Using shell style
+      pattern matching.) Only module names that are importable (i.e. are valid
+      Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
       the start directory is not the top level directory then the top level
@@ -1654,12 +1658,11 @@ Loading and running tests
 
       .. versionchanged:: 3.4
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
-         not errors.
-
-      .. versionchanged:: 3.4
-         Paths are sorted before being imported to ensure execution order for a
-         given test suite is the same even if the underlying file system's ordering
-         is not dependent on file name like in ext3/4.
+           not errors.
+         Discovery works for :term:`namespace packages <namespace package>`.
+         Paths are sorted before being imported so that execution order is
+           the same even if the underlying file system's ordering is not
+           dependent on file name.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by

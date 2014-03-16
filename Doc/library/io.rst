@@ -686,6 +686,7 @@ than raw I/O does.
    :exc:`UnsupportedOperation`.
 
    .. warning::
+
       :class:`BufferedRWPair` does not attempt to synchronize accesses to
       its underlying raw streams.  You should not pass it the same object
       as reader and writer; use :class:`BufferedRandom` instead.

@@ -401,18 +401,32 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       ``2``, only files with that optimization level (see :func:`compile`) are
       added to the archive, compiling if necessary.
 
-      If the pathname is a file, the filename must end with :file:`.py`, and
+      If *pathname* is a file, the filename must end with :file:`.py`, and
       just the (corresponding :file:`\*.py[co]`) file is added at the top level
-      (no path information).  If the pathname is a file that does not end with
+      (no path information).  If *pathname* is a file that does not end with
       :file:`.py`, a :exc:`RuntimeError` will be raised.  If it is a directory,
       and the directory is not a package directory, then all the files
       :file:`\*.py[co]` are added at the top level.  If the directory is a
       package directory, then all :file:`\*.py[co]` are added under the package
       name as a file path, and if any subdirectories are package directories,
-      all of these are added recursively.  *basename* is intended for internal
-      use only.  When *filterfunc(pathname)* is given, it will be called for every
-      invocation. When it returns a false value, that path and its subpaths will
-      be ignored.
+      all of these are added recursively.
+
+      *basename* is intended for internal use only.
+
+      *filterfunc*, if given, must be a function taking a single string
+      argument.  It will be passed each path (including each individual full
+      file path) before it is added to the archive.  If *filterfunc* returns a
+      false value, the path will not be added, and if it is a directory its
+      contents will be ignored.  For example, if our test files are all either
+      in ``test`` directories or start with the string ``test_``, we can use a
+      *filterfunc* to exclude them::
+
+          >>> zf = PyZipFile('myprog.zip')
+          >>> def notests(s):
+          ...     fn = os.path.basename(s)
+          ...     return (not (fn == 'test' or fn.startswith('test_')))
+          >>> zf.writepy('myprog', filterfunc=notests)
+
       The :meth:`writepy` method makes archives with file names like
       this::
 

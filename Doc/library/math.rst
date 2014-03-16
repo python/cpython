@@ -36,9 +36,9 @@ Number-theoretic and representation functions
 
 .. function:: copysign(x, y)
 
-   Return *x* with the sign of *y*.  On a platform that supports
-   signed zeros, ``copysign(1.0, -0.0)`` returns *-1.0*.
-
+   Return a float with the magnitude (absolute value) of *x* but the sign of
+   *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
+   returns *-1.0*.
 
 .. function:: fabs(x)
 

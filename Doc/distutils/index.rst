@@ -1,8 +1,8 @@
 .. _distutils-index:
 
-###############################
-  Distributing Python Modules
-###############################
+##############################################
+  Distributing Python Modules (Legacy version)
+##############################################
 
 :Authors: Greg Ward, Anthony Baxter
 :Email: distutils-sig@python.org

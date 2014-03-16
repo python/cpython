@@ -240,9 +240,9 @@ their character equivalents.
 
 .. function:: length_hint(obj, default=0)
 
-   Return an estimated length for the object *o*. First trying to return its
+   Return an estimated length for the object *o*. First try to return its
    actual length, then an estimate using :meth:`object.__length_hint__`, and
-   finally returning the default value.
+   finally return the default value.
 
    .. versionadded:: 3.4
 
