@@ -187,16 +187,23 @@ Bootstrapping pip By Default
 
 The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
 cross-platform mechanism to bootstrap the pip installer into Python
-installations and virtual environments.
+installations and virtual environments. The version of ``pip`` included
+with Python 3.4.0 is ``pip`` 1.5.4, and future 3.4.x maintenance releases
+will update the bundled version to the latest version of ``pip`` that is
+available at the time of creating the release candidate.
 
-By default, the scripts ``pipX`` and ``pipX.Y`` will be installed (where
-X.Y stands for the version of the Python installation), along with the
-``pip`` Python package and its dependencies.
+By default, the commands ``pipX`` and ``pipX.Y`` will be installed on all
+platforms (where X.Y stands for the version of the Python installation),
+along with the ``pip`` Python package and its dependencies. On Windows and
+in virtual environments on all platforms, the unversioned ``pip`` command
+will also be installed. On other platforms, the system wide unversioned
+``pip`` command typically refers to the separately installed Python 2
+version.
 
 The :ref:`pyvenv <scripts-pyvenv>` command line utility and the :mod:`venv`
 module make use of the :mod:`ensurepip` module to make ``pip`` readily
-available in virtual environments. When using the command line utility, ``pip``
-is installed by default, while when using the :mod:`venv` module
+available in virtual environments. When using the command line utility,
+``pip`` is installed by default, while when using the :mod:`venv` module
 :ref:`venv-api` installation of ``pip`` must be requested explicitly.
 
 For CPython :ref:`source builds on POSIX systems <building-python-on-unix>`,
@@ -204,14 +211,30 @@ the ``make install`` and ``make altinstall`` commands bootstrap ``pip`` by
 default.  This behaviour can be controlled through configure options, and
 overridden through Makefile options.
 
-On Windows and Mac OS X, the CPython installers now offer the option to
-install ``pip`` along with CPython itself.
+On Windows and Mac OS X, the CPython installers now default to installing
+``pip`` along with CPython itself (users may opt out of installing it
+during the installation process). Window users will need to opt in to the
+automatic ``PATH`` modifications to have ``pip`` available from the command
+line by default, otherwise it can still be accessed through the Python
+launcher for Windows as ``py -m pip``.
 
 As `discussed in the PEP`__, platform packagers may choose not to install
-``pip`` by default, as long as the command ``pip``, when invoked, provides
-clear and simple directions on how to install ``pip`` on the platform.
+these commands by default, as long as, when invoked, they provide clear and
+simple directions on how to install them on that platform (usually using
+the system package manager).
 
 __ http://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distributors
+
+.. note::
+
+   To avoid conflicts between parallel Python 2 and Python 3 installations,
+   only the versioned ``pip3`` and ``pip3.4`` commands are bootstrapped by
+   default when ``ensurepip`` is invoked directly - the ``--default-pip``
+   option is needed to also request the unversioned ``pip`` command.
+   ``pyvenv`` and the Windows installer ensure that the unqualified ``pip``
+   command is made available in those environments, and ``pip`` can always be
+   invoked via the ``-m`` switch rather than directly to avoid ambiguity on
+   systems with multiple Python installations.
 
 
 Documentation Changes
@@ -228,16 +251,6 @@ projects.
 However, as this migration is currently still incomplete, the legacy
 versions of those guides remaining available as :ref:`install-index`
 and :ref:`distutils-index`.
-
-.. note::
-
-   To avoid conflicts between parallel Python 2 and Python 3 installations,
-   only the versioned ``pip3`` and ``pip3.4`` commands are bootstrapped by
-   default when ``ensurepip`` is invoked directly (including by the CPython
-   installers). ``pyvenv`` ensures that the unqualified ``pip`` command is
-   made available in virtual environments, and ``pip`` can always be
-   invoked via the ``-m`` switch rather than directly to avoid ambiguity on
-   systems with multiple Python installations.
 
 .. seealso::
 
