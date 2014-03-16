@@ -84,7 +84,7 @@ New syntax features:
 
 * No new syntax features were added in Python 3.4.
 
-New expected features for Python implementations:
+New Features:
 
 * :ref:`pip should always be "available" <whatsnew-pep-453>` (:pep:`453`).
 * :ref:`Newly created file descriptors are non-inheritable <whatsnew-pep-446>`
