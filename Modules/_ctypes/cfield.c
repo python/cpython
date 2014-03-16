@@ -1640,9 +1640,9 @@ typedef struct { char c; void *x; } s_void_p;
 /*
 #define CHAR_ALIGN (sizeof(s_char) - sizeof(char))
 #define SHORT_ALIGN (sizeof(s_short) - sizeof(short))
-#define INT_ALIGN (sizeof(s_int) - sizeof(int))
 #define LONG_ALIGN (sizeof(s_long) - sizeof(long))
 */
+#define INT_ALIGN (sizeof(s_int) - sizeof(int))
 #define FLOAT_ALIGN (sizeof(s_float) - sizeof(float))
 #define DOUBLE_ALIGN (sizeof(s_double) - sizeof(double))
 #define LONGDOUBLE_ALIGN (sizeof(s_long_double) - sizeof(long double))
@@ -1684,8 +1684,8 @@ ffi_type ffi_type_sint8 = { 1, 1, FFI_TYPE_SINT8 };
 ffi_type ffi_type_uint16 = { 2, 2, FFI_TYPE_UINT16 };
 ffi_type ffi_type_sint16 = { 2, 2, FFI_TYPE_SINT16 };
 
-ffi_type ffi_type_uint32 = { 4, 4, FFI_TYPE_UINT32 };
-ffi_type ffi_type_sint32 = { 4, 4, FFI_TYPE_SINT32 };
+ffi_type ffi_type_uint32 = { 4, INT_ALIGN, FFI_TYPE_UINT32 };
+ffi_type ffi_type_sint32 = { 4, INT_ALIGN, FFI_TYPE_SINT32 };
 
 ffi_type ffi_type_uint64 = { 8, LONG_LONG_ALIGN, FFI_TYPE_UINT64 };
 ffi_type ffi_type_sint64 = { 8, LONG_LONG_ALIGN, FFI_TYPE_SINT64 };
