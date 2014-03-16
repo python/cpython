@@ -2284,7 +2284,7 @@ Changes in the Python API
   name, they now set it to an empty list.  The previous behavior could cause
   the import system to do the wrong thing on submodule imports if there was
   also a directory with the same name as the frozen package.  The correct way
-  to determine if a module is a package or not is to use``hasattr(module,
+  to determine if a module is a package or not is to use ``hasattr(module,
   '__path__')`` (:issue:`18065`).
 
 * Frozen modules no longer define a ``__file__`` attribute. It's semantically
