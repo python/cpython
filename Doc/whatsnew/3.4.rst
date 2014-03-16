@@ -174,8 +174,8 @@ porting issues.
 
 
 
-New Expected Features for Python Implementations
-================================================
+New Features
+============
 
 .. _whatsnew-pep-453:
 
