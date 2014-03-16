@@ -596,8 +596,21 @@ available.  They are listed here in alphabetical order.
 
 .. function:: hex(x)
 
-   Convert an integer number (of any size) to a hexadecimal string. The result is a
-   valid Python expression.
+   Convert an integer number (of any size) to a lowercase hexadecimal string
+   prefixed with "0x", for example:
+
+      >>> hex(255)
+      '0xff'
+      >>> hex(-42)
+      '-0x2a'
+      >>> hex(1L)
+      '0x1L'
+
+   If x is not a Python :class:`int` or :class:`long` object, it has to
+   define an __index__() method that returns an integer.
+
+   See also :func:`int` for converting a hexadecimal string to an
+   integer using a base of 16.
 
    .. note::
 
