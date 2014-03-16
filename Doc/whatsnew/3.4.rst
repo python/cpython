@@ -84,9 +84,9 @@ New syntax features:
 
 * No new syntax features were added in Python 3.4.
 
-New Features:
+Other new features:
 
-* :ref:`pip should always be "available" <whatsnew-pep-453>` (:pep:`453`).
+* :ref:`pip should always be available <whatsnew-pep-453>` (:pep:`453`).
 * :ref:`Newly created file descriptors are non-inheritable <whatsnew-pep-446>`
   (:pep:`446`).
 * command line option for :ref:`isolated mode <whatsnew-isolated-mode>`
@@ -116,7 +116,7 @@ New library modules:
 * :mod:`tracemalloc`: :ref:`Trace Python memory allocations
   <whatsnew-tracemalloc>` (:pep:`454`).
 
-Significantly Improved Library Modules:
+Significantly improved library modules:
 
 * :ref:`Single-dispatch generic functions <whatsnew-singledispatch>` in
   :mod:`functools` (:pep:`443`).
@@ -182,7 +182,7 @@ New Features
 PEP 453: Explicit Bootstrapping of PIP in Python Installations
 --------------------------------------------------------------
 
-Bootstrapping pip by default
+Bootstrapping pip By Default
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
@@ -214,7 +214,7 @@ clear and simple directions on how to install ``pip`` on the platform.
 __ http://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distributors
 
 
-Documentation changes
+Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~
 
 As part of this change, the :ref:`installing-index` and
@@ -2223,7 +2223,7 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
-Changes in 'python' command behavior
+Changes in 'python' Command Behavior
 ------------------------------------
 
 * In a posix shell, setting the :envvar:`PATH` environment variable to
