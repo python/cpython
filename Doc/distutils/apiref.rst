@@ -853,17 +853,6 @@ Windows.  It also contains the Mingw32CCompiler class which handles the mingw32
 port of GCC (same as cygwin in no-cygwin mode).
 
 
-:mod:`distutils.emxccompiler` --- OS/2 EMX Compiler
-===================================================
-
-.. module:: distutils.emxccompiler
-   :synopsis: OS/2 EMX Compiler support
-
-
-This module provides the EMXCCompiler class, a subclass of
-:class:`UnixCCompiler` that handles the EMX port of the GNU C compiler to OS/2.
-
-
 :mod:`distutils.archive_util` ---  Archiving utilities
 ======================================================
 
@@ -1169,15 +1158,6 @@ other utility module.
    Note that this is not a fully-fledged string interpolation function. A valid
    ``$variable`` can consist only of upper and lower case letters, numbers and an
    underscore. No { } or ( ) style quoting is available.
-
-
-.. function:: grok_environment_error(exc[, prefix='error: '])
-
-   Generate a useful error message from an :exc:`OSError` exception object.
-   Handles Python 1.5.1 and later styles, and does what it can to deal with
-   exception objects that don't have a filename (which happens when the error
-   is due to a two-file operation, such as :func:`~os.rename` or :func:`~os.link`).
-   Returns the error message as a string prefixed with *prefix*.
 
 
 .. function:: split_quoted(s)
@@ -1943,8 +1923,12 @@ Subclasses of :class:`Command` must define the following methods.
 .. module:: distutils.command.clean
    :synopsis: Clean a package build area
 
+This command removes the temporary files created by :command:`build`
+and its subcommands, like intermediary compiled object files.  With
+the ``--all`` option, the complete build directory will be removed.
 
-.. % todo
+Extension modules built :ref:`in place <distutils-build-ext-inplace>`
+will not be cleaned, as they are not in the build directory.
 
 
 :mod:`distutils.command.config` --- Perform package configuration

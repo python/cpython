@@ -1103,6 +1103,7 @@ Use a list comprehension::
 
    result = [obj.method() for obj in mylist]
 
+.. _faq-augmented-assignment-tuple-error:
 
 Why does a_tuple[i] += ['item'] raise an exception when the addition works?
 ---------------------------------------------------------------------------

@@ -729,6 +729,11 @@ Classes and functions
       Consider using the new :ref:`Signature Object <inspect-signature-object>`
       interface, which provides a better way of introspecting functions.
 
+   .. versionchanged:: 3.4
+      This function is now based on :func:`signature`, but still ignores
+      ``__wrapped__`` attributes and includes the already bound first
+      parameter in the signature output for bound methods.
+
 
 .. function:: getargvalues(frame)
 

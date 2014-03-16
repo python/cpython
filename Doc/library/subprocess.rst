@@ -629,6 +629,12 @@ Instances of the :class:`Popen` class have the following methods:
    :exc:`TimeoutExpired` exception.  It is safe to catch this exception and
    retry the wait.
 
+   .. note::
+
+      The function is implemented using a busy loop (non-blocking call and
+      short sleeps). Use the :mod:`asyncio` module for an asynchronous wait:
+      see :class:`asyncio.create_subprocess_exec`.
+
    .. warning::
 
       This will deadlock when using ``stdout=PIPE`` and/or
@@ -639,6 +645,11 @@ Instances of the :class:`Popen` class have the following methods:
    .. versionchanged:: 3.3
       *timeout* was added.
 
+   .. deprecated:: 3.4
+
+      Do not use the undocumented *endtime* parameter.  It is was
+      unintentionally exposed in 3.3 but was intended to be private
+      for internal use.  Use *timeout* instead.
 
 .. method:: Popen.communicate(input=None, timeout=None)
 
@@ -1080,8 +1091,10 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/junk')
       (256, 'sh: /bin/junk: not found')
 
-   .. versionchanged:: 3.3
-      Availability: Unix & Windows
+   Availability: Unix & Windows
+
+   .. versionchanged:: 3.3.4
+      Windows support added
 
 
 .. function:: getoutput(cmd)
@@ -1094,8 +1107,10 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   .. versionchanged:: 3.3
-      Availability: Unix & Windows
+   Availability: Unix & Windows
+
+   .. versionchanged:: 3.3.4
+      Windows support added
 
 
 Notes

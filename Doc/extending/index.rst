@@ -21,14 +21,31 @@ Python) that give the language its wide application range.
 For a detailed description of the whole Python/C API, see the separate
 :ref:`c-api-index`.
 
-.. note::
 
-   This guide only covers the basic tools for creating extensions provided
-   as part of this version of CPython. Third party tools may offer simpler
-   alternatives. Refer to the `binary extensions section
-   <https://python-packaging-user-guide.readthedocs.org/en/latest/extensions.html>`__
-   in the Python Packaging User Guide for more information.
+Recommended third party tools
+=============================
 
+This guide only covers the basic tools for creating extensions provided
+as part of this version of CPython. Third party tools like Cython,
+``cffi``, SWIG and Numba offer both simpler and more sophisticated
+approaches to creating C and C++ extensions for Python.
+
+.. seealso::
+
+   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/en/latest/extensions.html>`_
+      The Python Packaging User Guide not only covers several available
+      tools that simplify the creation of binary extensions, but also
+      discusses the various reasons why creating an extension module may be
+      desirable in the first place.
+
+
+Creating extensions without third party tools
+=============================================
+
+This section of the guide covers creating C and C++ extensions without
+assistance from third party tools. It is intended primarily for creators
+of those tools, rather than being a recommended way to create your own
+C extensions.
 
 .. toctree::
    :maxdepth: 2
@@ -38,4 +55,17 @@ For a detailed description of the whole Python/C API, see the separate
    newtypes.rst
    building.rst
    windows.rst
+
+Embedding the CPython runtime in a larger application
+=====================================================
+
+Sometimes, rather than creating an extension that runs inside the Python
+interpreter as the main application, it is desirable to instead embed
+the CPython runtime inside a larger application. This section covers
+some of the details involved in doing that successfully.
+
+.. toctree::
+   :maxdepth: 2
+   :numbered:
+
    embedding.rst

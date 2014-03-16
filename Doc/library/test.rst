@@ -199,6 +199,7 @@ The :mod:`test.support` module provides support for Python's regression
 test suite.
 
 .. note::
+
    :mod:`test.support` is not a public module.  It is documented here to help
    Python developers write tests.  The API of this module is subject to change
    without backwards compatibility concerns between releases.

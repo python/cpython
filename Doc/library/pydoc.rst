@@ -84,3 +84,8 @@ Reference Manual pages.
 
 .. versionchanged:: 3.2
    Added the ``-b`` option, deprecated the ``-g`` option.
+
+.. versionchanged:: 3.4
+   :mod:`pydoc` now uses :func:`inspect.signature` rather than
+   :func:`inspect.getfullargspec` to extract signature information from
+   callables.

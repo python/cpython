@@ -69,6 +69,8 @@ universal :option:`--help` option, e.g. ::
 Note that an option spelled :option:`--foo-bar` on the command-line  is spelled
 :option:`foo_bar` in configuration files.
 
+.. _distutils-build-ext-inplace:
+
 For example, say you want your extensions to be built "in-place"---that is, you
 have an extension :mod:`pkg.ext`, and you want the compiled extension file
 (:file:`ext.so` on Unix, say) to be put in the same source directory as your

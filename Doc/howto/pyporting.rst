@@ -26,6 +26,32 @@ Porting Python 2 Code to Python 3
    For help with porting, you can email the python-porting_ mailing list with
    questions.
 
+The Short Version
+=================
+
+* Decide what's the oldest version of Python 2 you want to support (if at all)
+* Make sure you have a thorough test suite and use continuous integration
+  testing to make sure you stay compatible with the versions of Python you care
+  about
+* If you have dependencies, check their Python 3 status using caniusepython3
+  (`command-line tool <https://pypi.python.org/pypi/caniusepython3>`__,
+  `web app <https://caniusepython3.com/>`__)
+
+With that done, your options are:
+
+* If you are dropping Python 2 support, use 2to3_ to port to Python 3
+* If you are keeping Python 2 support, then start writing Python 2/3-compatible
+  code starting **TODAY**
+
+  + If you have dependencies that have not been ported, reach out to them to port
+    their project while working to make your code compatible with Python 3 so
+    you're ready when your dependencies are all ported
+  + If all your dependencies have been ported (or you have none), go ahead and
+    port to Python 3
+
+* If you are creating a new project that wants to have 2/3 compatibility,
+  code in Python 3 and then backport to Python 2
+
 
 Before You Begin
 ================
@@ -85,7 +111,7 @@ between Python 2 and 3 easier.
 Projects to Consider
 --------------------
 
-The lowest level library for suppoting Python 2 & 3 simultaneously is six_.
+The lowest level library for supporting Python 2 & 3 simultaneously is six_.
 Reading through its documentation will give you an idea of where exactly the
 Python language changed between versions 2 & 3 and thus what you will want the
 library to help you continue to support.
@@ -548,7 +574,10 @@ Backporting Python 3 code to Python 2
 
 If you have Python 3 code and have little interest in supporting Python 2 you
 can use 3to2_ to translate from Python 3 code to Python 2 code. This is only
-recommended if you don't plan to heavily support Python 2 users.
+recommended if you don't plan to heavily support Python 2 users. Otherwise
+write your code for Python 3 and then backport as far back as you want. This
+is typically easier than going from Python 2 to 3 as you will have worked out
+any difficulties with e.g. bytes/strings, etc.
 
 
 Other Resources

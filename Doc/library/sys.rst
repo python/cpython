@@ -227,7 +227,9 @@ always available.
    installed in :file:`{exec_prefix}/lib/python{X.Y}/lib-dynload`, where *X.Y*
    is the version number of Python, for example ``3.2``.
 
-   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
+   .. note::
+
+      If a :ref:`virtual environment <venv-def>` is in effect, this
       value will be changed in ``site.py`` to point to the virtual environment.
       The value for the Python installation will still be available, via
       :data:`base_exec_prefix`.
@@ -692,10 +694,11 @@ always available.
 
 .. data:: __interactivehook__
 
-   When present, this function is automatically called (with no arguments)
-   when the interpreter is launched in :ref:`interactive mode <tut-interactive>`.
-   This is done after the :envvar:`PYTHONSTARTUP` file is read, so that you
-   can set this hook there.
+   When this attribute exists, its value is automatically called (with no
+   arguments) when the interpreter is launched in :ref:`interactive mode
+   <tut-interactive>`.  This is done after the :envvar:`PYTHONSTARTUP` file is
+   read, so that you can set this hook there.  The :mod:`site` module
+   :ref:`sets this <rlcompleter-config>`.
 
    .. versionadded:: 3.4
 
