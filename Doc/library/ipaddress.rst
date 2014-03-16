@@ -154,20 +154,20 @@ write code that handles both IP versions correctly.
    .. attribute:: is_private
 
       ``True`` if the address is allocated for private networks.  See
-      iana-ipv4-special-registry (for IPv4) or iana-ipv6-special-registry
+      iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
       (for IPv6).
 
    .. attribute:: is_global
 
       ``True`` if the address is allocated for public networks.  See
-      iana-ipv4-special-registry (for IPv4) or iana-ipv6-special-registry
+      iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
       (for IPv6).
 
-   .. versionadded:: 3.4
+      .. versionadded:: 3.4
 
    .. attribute:: is_unspecified
 
-      ``True`` if the address is unspecified.  See :RFC:`5375` (for IPv4)
+      ``True`` if the address is unspecified.  See :RFC:`5735` (for IPv4)
       or :RFC:`2373` (for IPv6).
 
    .. attribute:: is_reserved
@@ -183,6 +183,9 @@ write code that handles both IP versions correctly.
 
       ``True`` if the address is reserved for link-local usage.  See
       :RFC:`3927`.
+
+.. _iana-ipv4-special-registry: http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
+.. _iana-ipv6-special-registry: http://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
 
 .. class:: IPv6Address(address)
@@ -218,18 +221,23 @@ write code that handles both IP versions correctly.
    The long form of the address representation, with all leading zeroes and
    groups consisting entirely of zeroes included.
 
+
+   For the following attributes, see the corresponding documention of the
+   :class:`IPv4Address` class:
+
    .. attribute:: packed
    .. attribute:: version
    .. attribute:: max_prefixlen
    .. attribute:: is_multicast
    .. attribute:: is_private
+   .. attribute:: is_global
    .. attribute:: is_unspecified
    .. attribute:: is_reserved
    .. attribute:: is_loopback
    .. attribute:: is_link_local
 
-      Refer to the corresponding attribute documentation in
-      :class:`IPv4Address`
+      .. versionadded:: 3.4
+         is_global
 
    .. attribute:: is_site_local
 

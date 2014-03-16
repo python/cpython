@@ -540,12 +540,13 @@ are always available.  They are listed here in alphabetical order.
    A call to ``format(value, format_spec)`` is translated to
    ``type(value).__format__(format_spec)`` which bypasses the instance
    dictionary when searching for the value's :meth:`__format__` method.  A
-   :exc:`TypeError` exception is raised if the method is not found or if either
-   the *format_spec* or the return value are not strings.
+   :exc:`TypeError` exception is raised if the method search reaches
+   :mod:`object` and the *format_spec* is non-empty, or if either the
+   *format_spec* or the return value are not strings.
 
-   .. versionadded:: 3.4
+   .. versionchanged:: 3.4
       ``object().__format__(format_spec)`` raises :exc:`TypeError`
-      if *format_spec* is not empty string.
+      if *format_spec* is not an empty string.
 
 
 .. _func-frozenset:
@@ -609,12 +610,26 @@ are always available.  They are listed here in alphabetical order.
 
    This function is added to the built-in namespace by the :mod:`site` module.
 
+   .. versionchanged:: 3.4
+      Changes to :mod:`pydoc` and :mod:`inspect` mean that the reported
+      signatures for callables are now more comprehensive and consistent.
+
 
 .. function:: hex(x)
 
-   Convert an integer number to a hexadecimal string. The result is a valid Python
-   expression.  If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer.
+   Convert an integer number to a lowercase hexadecimal string
+   prefixed with "0x", for example:
+
+      >>> hex(255)
+      '0xff'
+      >>> hex(-42)
+      '-0x2a'
+
+   If x is not a Python :class:`int` object, it has to define an __index__()
+   method that returns an integer.
+
+   See also :func:`int` for converting a hexadecimal string to an
+   integer using a base of 16.
 
    .. note::
 
@@ -780,6 +795,9 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
+   .. versionadded:: 3.4
+      The *default* keyword-only argument.
+
 
 .. _func-memoryview:
 .. function:: memoryview(obj)
@@ -810,6 +828,9 @@ are always available.  They are listed here in alphabetical order.
    encountered.  This is consistent with other sort-stability preserving tools
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
+
+   .. versionadded:: 3.4
+      The *default* keyword-only argument.
 
 .. function:: next(iterator[, default])
 

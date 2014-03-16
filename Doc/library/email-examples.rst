@@ -40,8 +40,10 @@ text version: [2]_
 .. literalinclude:: ../includes/email-alternative.py
 
 
-Examples using the Provision API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _email-contentmanager-api-examples:
+
+Examples using the Provisional API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Here is a reworking of the last example using the provisional API.  To make
 things a bit more interesting, we include a related image in the html part, and
 we save a copy of what we are going to send to disk, as well as sending it.

@@ -134,7 +134,7 @@ Functions
 
    When :func:`reload` is executed:
 
-   * Python modules' code is recompiled and the module-level code re-executed,
+   * Python module's code is recompiled and the module-level code re-executed,
      defining a new set of objects which are bound to names in the module's
      dictionary by reusing the :term:`loader` which originally loaded the
      module.  The ``init`` function of extension modules is not called a second

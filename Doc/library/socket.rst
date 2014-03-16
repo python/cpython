@@ -6,8 +6,7 @@
 
 
 This module provides access to the BSD *socket* interface. It is available on
-all modern Unix systems, Windows, MacOS, OS/2, and probably additional
-platforms.
+all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. note::
 
@@ -468,7 +467,7 @@ The :mod:`socket` module also offers various network-related services:
        (10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]
 
    .. versionchanged:: 3.2
-      parameters can now be passed as single keyword arguments.
+      parameters can now be passed using keyword arguments.
 
 .. function:: getfqdn([name])
 
@@ -634,6 +633,9 @@ The :mod:`socket` module also offers various network-related services:
 
    Availability: Unix (maybe not all platforms), Windows.
 
+   .. versionchanged:: 3.4
+      Windows support added
+
 
 .. function:: inet_ntop(address_family, packed_ip)
 
@@ -649,6 +651,9 @@ The :mod:`socket` module also offers various network-related services:
    :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
    Availability: Unix (maybe not all platforms), Windows.
+
+   .. versionchanged:: 3.4
+      Windows support added
 
 
 ..
@@ -794,6 +799,7 @@ to sockets.
    :keyword:`with` statement around them.
 
    .. note::
+
       :meth:`close()` releases the resource associated with a connection but
       does not necessarily close the connection immediately.  If you want
       to close the connection in a timely fashion, call :meth:`shutdown()`
@@ -1512,4 +1518,3 @@ the :data:`SO_REUSEADDR` flag tells the kernel to reuse a local socket in
    details of socket semantics.  For Unix, refer to the manual pages; for Windows,
    see the WinSock (or Winsock 2) specification.  For IPv6-ready APIs, readers may
    want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
-

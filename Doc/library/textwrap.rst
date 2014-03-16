@@ -40,13 +40,14 @@ functions should be good enough; otherwise, you should use an instance of
    :func:`wrap`.
 
 
-.. function:: shorten(text, width=70, *, placeholder=" [...]")
+.. function:: shorten(text, width, **kwargs)
 
-   Collapse and truncate the given text to fit in the given width.
+   Collapse and truncate the given *text* to fit in the given *width*.
 
-   The text first has its whitespace collapsed.  If it then fits in
-   the *width*, it is returned unchanged.  Otherwise, as many words
-   as possible are joined and then the *placeholder* is appended::
+   First the whitespace in *text* is collapsed (all whitespace is replaced by
+   single spaces).  If the result fits in the *width*, it is returned.
+   Otherwise, enough words are dropped from the end so that the remaining words
+   plus the :attr:`placeholder` fit within :attr:`width`::
 
       >>> textwrap.shorten("Hello  world!", width=12)
       'Hello world!'
@@ -54,6 +55,12 @@ functions should be good enough; otherwise, you should use an instance of
       'Hello [...]'
       >>> textwrap.shorten("Hello world", width=10, placeholder="...")
       'Hello...'
+
+   Optional keyword arguments correspond to the instance attributes of
+   :class:`TextWrapper`, documented below.  Note that the whitespace is
+   collapsed before the text is passed to the :class:`TextWrapper` :meth:`fill`
+   function, so changing the value of :attr:`.tabsize`, :attr:`.expand_tabs`,
+   :attr:`.drop_whitespace`, and :attr:`.replace_whitespace` will have no effect.
 
    .. versionadded:: 3.4
 
@@ -110,8 +117,8 @@ functions should be good enough; otherwise, you should use an instance of
 :func:`wrap`, :func:`fill` and :func:`shorten` work by creating a
 :class:`TextWrapper` instance and calling a single method on it.  That
 instance is not reused, so for applications that process many text
-strings, it may be more efficient to create your own
-:class:`TextWrapper` object.
+strings using :func:`wrap` and/or :func:`fill`, it may be more efficient to
+create your own :class:`TextWrapper` object.
 
 Text is preferably wrapped on whitespaces and right after the hyphens in
 hyphenated words; only then will long words be broken if necessary, unless
@@ -252,16 +259,16 @@ hyphenated words; only then will long words be broken if necessary, unless
 
    .. attribute:: max_lines
 
-      (default: ``None``) If not ``None``, then the text be will truncated to
-      *max_lines* lines.
+      (default: ``None``) If not ``None``, then the output will contain at most
+      *max_lines* lines, with *placeholder* appearing at the end of the output.
 
       .. versionadded:: 3.4
 
 
    .. attribute:: placeholder
 
-      (default: ``' [...]'``) String that will be appended to the last line of
-      text if it will be truncated.
+      (default: ``' [...]'``) String that will appear at the end of the output
+      text if it has been truncated.
 
       .. versionadded:: 3.4
 

@@ -142,36 +142,43 @@ The :mod:`csv` module defines the following functions:
 
 The :mod:`csv` module defines the following classes:
 
-.. class:: DictReader(csvfile, fieldnames=None, restkey=None, restval=None, dialect='excel', *args, **kwds)
+.. class:: DictReader(csvfile, fieldnames=None, restkey=None, restval=None, \
+                      dialect='excel', *args, **kwds)
 
-   Create an object which operates like a regular reader but maps the information
-   read into a dict whose keys are given by the optional  *fieldnames* parameter.
-   If the *fieldnames* parameter is omitted, the values in the first row of the
-   *csvfile* will be used as the fieldnames.  If the row read has more fields
-   than the fieldnames sequence, the remaining data is added as a sequence
-   keyed by the value of *restkey*.  If the row read has fewer fields than the
-   fieldnames sequence, the remaining keys take the value of the optional
-   *restval* parameter.  Any other optional or keyword arguments are passed to
-   the underlying :class:`reader` instance.
+   Create an object which operates like a regular reader but maps the
+   information read into a dict whose keys are given by the optional
+   *fieldnames* parameter.  The *fieldnames* parameter is a :mod:`sequence
+   <collections.abc>` whose elements are associated with the fields of the
+   input data in order. These elements become the keys of the resulting
+   dictionary.  If the *fieldnames* parameter is omitted, the values in the
+   first row of the *csvfile* will be used as the fieldnames.  If the row read
+   has more fields than the fieldnames sequence, the remaining data is added as
+   a sequence keyed by the value of *restkey*.  If the row read has fewer
+   fields than the fieldnames sequence, the remaining keys take the value of
+   the optional *restval* parameter.  Any other optional or keyword arguments
+   are passed to the underlying :class:`reader` instance.
 
 
-.. class:: DictWriter(csvfile, fieldnames, restval='', extrasaction='raise', dialect='excel', *args, **kwds)
+.. class:: DictWriter(csvfile, fieldnames, restval='', extrasaction='raise', \
+                      dialect='excel', *args, **kwds)
 
-   Create an object which operates like a regular writer but maps dictionaries onto
-   output rows.  The *fieldnames* parameter identifies the order in which values in
-   the dictionary passed to the :meth:`writerow` method are written to the
-   *csvfile*.  The optional *restval* parameter specifies the value to be written
-   if the dictionary is missing a key in *fieldnames*.  If the dictionary passed to
-   the :meth:`writerow` method contains a key not found in *fieldnames*, the
-   optional *extrasaction* parameter indicates what action to take.  If it is set
-   to ``'raise'`` a :exc:`ValueError` is raised.  If it is set to ``'ignore'``,
-   extra values in the dictionary are ignored.  Any other optional or keyword
-   arguments are passed to the underlying :class:`writer` instance.
+   Create an object which operates like a regular writer but maps dictionaries
+   onto output rows.  The *fieldnames* parameter is a :mod:`sequence
+   <collections.abc>` of keys that identify the order in which values in the
+   dictionary passed to the :meth:`writerow` method are written to the
+   *csvfile*.  The optional *restval* parameter specifies the value to be
+   written if the dictionary is missing a key in *fieldnames*.  If the
+   dictionary passed to the :meth:`writerow` method contains a key not found in
+   *fieldnames*, the optional *extrasaction* parameter indicates what action to
+   take.  If it is set to ``'raise'`` a :exc:`ValueError` is raised.  If it is
+   set to ``'ignore'``, extra values in the dictionary are ignored.  Any other
+   optional or keyword arguments are passed to the underlying :class:`writer`
+   instance.
 
-   Note that unlike the :class:`DictReader` class, the *fieldnames* parameter of
-   the :class:`DictWriter` is not optional.  Since Python's :class:`dict` objects
-   are not ordered, there is not enough information available to deduce the order
-   in which the row should be written to the *csvfile*.
+   Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
+   of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
+   objects are not ordered, there is not enough information available to deduce
+   the order in which the row should be written to the *csvfile*.
 
 
 .. class:: Dialect

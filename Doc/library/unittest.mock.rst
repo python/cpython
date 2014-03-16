@@ -958,7 +958,7 @@ method:
 
 .. [#] The only exceptions are magic methods and attributes (those that have
        leading and trailing double underscores). Mock doesn't create these but
-       instead of raises an ``AttributeError``. This is because the interpreter
+       instead raises an ``AttributeError``. This is because the interpreter
        will often implicitly request these methods, and gets *very* confused to
        get a new Mock object when it expects a magic method. If you need magic
        method support see :ref:`magic methods <magic-methods>`.
@@ -1509,7 +1509,7 @@ Patching Descriptors and Proxy Objects
 Both patch_ and patch.object_ correctly patch and restore descriptors: class
 methods, static methods and properties. You should patch these on the *class*
 rather than an instance. They also work with *some* objects
-that proxy attribute access, like the `django setttings object
+that proxy attribute access, like the `django settings object
 <http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
 
 

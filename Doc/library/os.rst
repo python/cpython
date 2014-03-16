@@ -260,7 +260,9 @@ process and user.
 
    Availability: Unix.
 
-   .. note:: On Mac OS X, :func:`getgroups` behavior differs somewhat from
+   .. note::
+
+      On Mac OS X, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
@@ -940,8 +942,9 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    the C library.
 
    .. versionchanged:: 3.4
-      Add :data:`O_TMPFILE` constant. It's only available on Linux Kernel 3.11
-      or newer.
+      Add :data:`O_PATH` on systems that support it.
+      Add :data:`O_TMPFILE`, only available on Linux Kernel 3.11
+        or newer.
 
 
 .. function:: openpty()
@@ -2653,7 +2656,7 @@ written in Python, such as a mail server's external command delivery program.
    Fork a child process.  Return ``0`` in the child and the child's process id in the
    parent.  If an error occurs :exc:`OSError` is raised.
 
-   Note that some platforms including FreeBSD <= 6.3, Cygwin and OS/2 EMX have
+   Note that some platforms including FreeBSD <= 6.3 and Cygwin have
    known issues when using fork() from a thread.
 
    .. warning::
@@ -2899,7 +2902,6 @@ written in Python, such as a mail server's external command delivery program.
    :manpage:`times(2)` or the corresponding Windows Platform API documentation.
    On Windows, only :attr:`user` and :attr:`system` are known; the other
    attributes are zero.
-   On OS/2, only :attr:`elapsed` is known; the other attributes are zero.
 
    Availability: Unix, Windows.
 
