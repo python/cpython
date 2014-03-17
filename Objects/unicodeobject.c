@@ -6817,28 +6817,6 @@ code_page_name(UINT code_page, PyObject **obj)
     return PyBytes_AS_STRING(*obj);
 }
 
-static int
-is_dbcs_lead_byte(UINT code_page, const char *s, int offset)
-{
-    const char *curr = s + offset;
-    const char *prev;
-
-    if (!IsDBCSLeadByteEx(code_page, *curr))
-        return 0;
-
-    prev = CharPrevExA(code_page, s, curr, 0);
-    if (prev == curr)
-        return 1;
-    /* FIXME: This code is limited to "true" double-byte encodings,
-       as it assumes an incomplete character consists of a single
-       byte. */
-    if (curr - prev == 2)
-        return 1;
-    if (!IsDBCSLeadByteEx(code_page, *prev))
-        return 1;
-    return 0;
-}
-
 static DWORD
 decode_code_page_flags(UINT code_page)
 {
@@ -6913,7 +6891,7 @@ static int
 decode_code_page_errors(UINT code_page,
                         PyObject **v,
                         const char *in, const int size,
-                        const char *errors)
+                        const char *errors, int final)
 {
     const char *startin = in;
     const char *endin = in + size;
@@ -6940,7 +6918,7 @@ decode_code_page_errors(UINT code_page,
     if (encoding == NULL)
         return -1;
 
-    if (errors == NULL || strcmp(errors, "strict") == 0) {
+    if ((errors == NULL || strcmp(errors, "strict") == 0) && final) {
         /* The last error was ERROR_NO_UNICODE_TRANSLATION, then we raise a
            UnicodeDecodeError. */
         make_decode_exception(&exc, encoding, in, size, 0, 0, reason);
@@ -7003,6 +6981,10 @@ decode_code_page_errors(UINT code_page,
         if (outsize <= 0) {
             Py_ssize_t startinpos, endinpos, outpos;
 
+            /* last character in partial decode? */
+            if (in + insize >= endin && !final)
+                break;
+
             startinpos = in - startin;
             endinpos = startinpos + 1;
             outpos = out - PyUnicode_AS_UNICODE(*v);
@@ -7031,7 +7013,7 @@ decode_code_page_errors(UINT code_page,
     assert(outsize <= PyUnicode_WSTR_LENGTH(*v));
     if (unicode_resize(v, outsize) < 0)
         goto error;
-    ret = size;
+    ret = in - startin;
 
 error:
     Py_XDECREF(encoding_obj);
@@ -7072,24 +7054,19 @@ decode_code_page_stateful(int code_page,
             done = 1;
         }
 
-        /* Skip trailing lead-byte unless 'final' is set */
-        if (!final && is_dbcs_lead_byte(code_page, s, chunk_size - 1))
-            --chunk_size;
-
         if (chunk_size == 0 && done) {
             if (v != NULL)
                 break;
             _Py_RETURN_UNICODE_EMPTY();
         }
 
-
         converted = decode_code_page_strict(code_page, &v,
                                             s, chunk_size);
         if (converted == -2)
             converted = decode_code_page_errors(code_page, &v,
                                                 s, chunk_size,
-                                                errors);
-        assert(converted != 0);
+                                                errors, final);
+        assert(converted != 0 || done);
 
         if (converted < 0) {
             Py_XDECREF(v);

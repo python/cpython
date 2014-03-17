@@ -890,10 +890,6 @@ class CP65001Test(ReadTest, unittest.TestCase):
                          "\U00010fff\uD800")
         self.assertTrue(codecs.lookup_error("surrogatepass"))
 
-    def test_readline(self):
-        self.skipTest("issue #20571: code page 65001 codec does not "
-                      "support partial decoder yet")
-
 
 class UTF7Test(ReadTest, unittest.TestCase):
     encoding = "utf-7"
@@ -2750,15 +2746,15 @@ class CodePageTest(unittest.TestCase):
         self.assertRaisesRegex(UnicodeEncodeError, 'cp932',
             codecs.code_page_encode, 932, '\xff')
         self.assertRaisesRegex(UnicodeDecodeError, 'cp932',
-            codecs.code_page_decode, 932, b'\x81\x00')
+            codecs.code_page_decode, 932, b'\x81\x00', 'strict', True)
         self.assertRaisesRegex(UnicodeDecodeError, 'CP_UTF8',
-            codecs.code_page_decode, self.CP_UTF8, b'\xff')
+            codecs.code_page_decode, self.CP_UTF8, b'\xff', 'strict', True)
 
     def check_decode(self, cp, tests):
         for raw, errors, expected in tests:
             if expected is not None:
                 try:
-                    decoded = codecs.code_page_decode(cp, raw, errors)
+                    decoded = codecs.code_page_decode(cp, raw, errors, True)
                 except UnicodeDecodeError as err:
                     self.fail('Unable to decode %a from "cp%s" with '
                               'errors=%r: %s' % (raw, cp, errors, err))
@@ -2770,7 +2766,7 @@ class CodePageTest(unittest.TestCase):
                 self.assertLessEqual(decoded[1], len(raw))
             else:
                 self.assertRaises(UnicodeDecodeError,
-                    codecs.code_page_decode, cp, raw, errors)
+                    codecs.code_page_decode, cp, raw, errors, True)
 
     def check_encode(self, cp, tests):
         for text, errors, expected in tests:
