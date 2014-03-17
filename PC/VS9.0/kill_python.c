@@ -62,7 +62,7 @@ main(int argc, char **argv)
             continue;
 
         len = wcsnlen_s(me.szExePath, MAX_PATH) - KILL_PYTHON_EXE_LEN;
-        wcsncpy_s(path, MAX_PATH+1, me.szExePath, len); 
+        wcsncpy_s(path, MAX_PATH+1, me.szExePath, len);
 
         break;
 
@@ -80,8 +80,8 @@ main(int argc, char **argv)
      * looking for python processes.  When we find one, verify it lives
      * in the same directory we live in.  If it does, kill it.  If we're
      * unable to kill it, treat this as a fatal error and return 1.
-     * 
-     * The rationale behind this is that we're called at the start of the 
+     *
+     * The rationale behind this is that we're called at the start of the
      * build process on the basis that we'll take care of killing any
      * running instances, such that the build won't encounter permission
      * denied errors during linking. If we can't kill one of the processes,
@@ -104,11 +104,11 @@ main(int argc, char **argv)
     do {
 
         /*
-         * XXX TODO: if we really wanted to be fancy, we could check the 
+         * XXX TODO: if we really wanted to be fancy, we could check the
          * modules for all processes (not just the python[_d].exe ones)
-         * and see if any of our DLLs are loaded (i.e. python34[_d].dll),
+         * and see if any of our DLLs are loaded (i.e. python35[_d].dll),
          * as that would also inhibit our ability to rebuild the solution.
-         * Not worth loosing sleep over though; for now, a simple check 
+         * Not worth loosing sleep over though; for now, a simple check
          * for just the python executable should be sufficient.
          */
 
@@ -119,7 +119,7 @@ main(int argc, char **argv)
         /* It's a python process, so figure out which directory it's in... */
         hsm = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pe.th32ProcessID);
         if (hsm == INVALID_HANDLE_VALUE)
-            /* 
+            /*
              * If our module snapshot fails (which will happen if we don't own
              * the process), just ignore it and continue.  (It seems different
              * versions of Windows return different values for GetLastError()
