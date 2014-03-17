@@ -5,7 +5,7 @@
     <OutDir>$(SolutionDir)</OutDir>
     <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>  
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>amd64</_PropertySheetDisplayName>
@@ -13,7 +13,7 @@
     <IntDir>$(SolutionDir)$(PlatformName)-temp-$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros">
-    <PyDllName>python34$(PyDebugExt)</PyDllName>
+    <PyDllName>python35$(PyDebugExt)</PyDllName>
     <PythonExe>$(OutDir)python$(PyDebugExt).exe</PythonExe>
     <KillPythonExe>$(OutDir)kill_python$(PyDebugExt).exe</KillPythonExe>
     <externalsDir>..\..</externalsDir>
