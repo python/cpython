@@ -472,8 +472,7 @@ def urldefrag(url):
     return _coerce_result(DefragResult(defrag, frag))
 
 _hexdig = '0123456789ABCDEFabcdef'
-_hextobyte = {(a + b).encode(): bytes([int(a + b, 16)])
-              for a in _hexdig for b in _hexdig}
+_hextobyte = None
 
 def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
@@ -490,6 +489,12 @@ def unquote_to_bytes(string):
         return string
     res = [bits[0]]
     append = res.append
+    # Delay the initialization of the table to not waste memory
+    # if the function is never called
+    global _hextobyte
+    if _hextobyte is None:
+        _hextobyte = {(a + b).encode(): bytes([int(a + b, 16)])
+                      for a in _hexdig for b in _hexdig}
     for item in bits[1:]:
         try:
             append(_hextobyte[item[:2]])
