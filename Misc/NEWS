@@ -2,8 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.4.1?
-===========================
+What's New in Python 3.4.1rc1?
+==============================
+
+Release date: TBA
 
 Core and Builtins
 -----------------
@@ -15,9 +17,6 @@ Core and Builtins
 
 - Issue #20637: Key-sharing now also works for instance dictionaries of
   subclasses.  Patch by Peter Ingebretson.
-
-- Issue #20786: Fix signatures for dict.__delitem__ and
-  property.__delete__ builtins.
 
 Library
 -------
@@ -42,10 +41,6 @@ Library
 - Issue #20283: RE pattern methods now accept the string keyword parameters
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.
-
-- Issue #20839: Don't trigger a DeprecationWarning in the still supported
-  pkgutil.get_loader() API when __loader__ isn't set on a module (nor
-  when pkgutil.find_loader() is called directly).
 
 - Issue #20778: Fix modulefinder to work with bytecode-only modules.
 
@@ -72,11 +67,47 @@ Tests
 
 - Issue #20743: Fix a reference leak in test_tcl.
 
-- Issue #20946: Correct alignment assumptions of some ctypes tests.
+Tools/Demos
+-----------
+
+- Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
+  Patch by Arfrever Frehtes Taifersar Arahesis.
+
+
+What's New in Python 3.4.0?
+===========================
+
+Release date: 2014-03-16
+
+Library
+-------
 
 - Issue #20939: Fix test_geturl failure in test_urllibnet due to
   new redirect of http://www.python.org/ to https://www.python.org.
 
+Documentation
+-------------
+
+- Merge in all documentation changes since branching 3.4.0rc1.
+
+
+What's New in Python 3.4.0 release candidate 3?
+===============================================
+
+Release date: 2014-03-09
+
+Core and Builtins
+-----------------
+
+- Issue #20786: Fix signatures for dict.__delitem__ and
+  property.__delete__ builtins.
+
+Library
+-------
+
+- Issue #20839: Don't trigger a DeprecationWarning in the still supported
+  pkgutil.get_loader() API when __loader__ isn't set on a module (nor
+  when pkgutil.find_loader() is called directly).
 
 Build
 -----
@@ -93,14 +124,8 @@ Build
   uninstalling pip (rather than failing) if the user has updated pip to a
   different version from the one bundled with ensurepip.
 
-- Issue #20465: Update OS X and Windows installer builds to use 
+- Issue #20465: Update OS X and Windows installer builds to use
   SQLite 3.8.3.1.
-
-Tools/Demos
------------
-
-- Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
-  Patch by Arfrever Frehtes Taifersar Arahesis.
 
 
 What's New in Python 3.4.0 release candidate 2?
@@ -110,6 +135,9 @@ Release date: 2014-02-23
 
 Core and Builtins
 -----------------
+
+- Issue #20625: Parameter names in __annotations__ were not mangled properly.
+  Discovered by Jonas Wielicki, patch by Yury Selivanov.
 
 - Issue #20261: In pickle, lookup __getnewargs__ and __getnewargs_ex__ on the
   type of the object.
@@ -121,60 +149,11 @@ Core and Builtins
   don't clear anymore the state of Python threads early during the Python
   shutdown.
 
-- Issue #20595: Make getargs.c C89 compliant.
-
-- Issue #20625: Parameter names in __annotations__ were not mangled properly.
-  Discovered by Jonas Wielicki, patch by Yury Selivanov.
-
 Library
 -------
 
 - Issue #20710: The pydoc summary line no longer displays the "self" parameter
   for bound methods.
-
-- Issue #20654: Fixed pydoc for enums with zero value.  Patch by Vajrasky Kok.
-
-- Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
-  Tkinter widgets to work in wantobjects=True mode.
-
-- Issue #19612: On Windows, subprocess.Popen.communicate() now ignores
-  OSError(22, 'Invalid argument') when writing input data into stdin, whereas
-  the process already exited.
-
-- Issue #20320: select.select() and select.kqueue.control() now round the
-  timeout aways from zero, instead of rounding towards zero.
-
-- Issue #20616: Add a format() method to tracemalloc.Traceback.
-
-- Issue #19744: the ensurepip installation step now just prints a warning to
-  stderr rather than failing outright if SSL/TLS is unavailable. This allows
-  local installation of POSIX builds without SSL/TLS support.
-
-- Issue #6815: os.path.expandvars() now supports non-ASCII environment
-  variables names and values.
-
-- Issue #17671: Fixed a crash when use non-initialized io.BufferedRWPair.
-  Based on patch by Stephen Tu.
-
-- Issue #8478: Untokenizer.compat processes first token from iterator input.
-  Patch based on lines from Georg Brandl, Eric Snow, and Gareth Rees.
-
-- Issue #20594: Avoid name clash with the libc function posix_close.
-
-- Issue #19856: shutil.move() failed to move a directory to other directory
-  on Windows if source name ends with os.altsep.
-
-- Issue #20673: Implement support for UNIX Domain Sockets in asyncio.
-  New APIs: loop.create_unix_connection(), loop.create_unix_server(),
-  streams.open_unix_connection(), and streams.start_unix_server().
-
-- Issue #20681: Add new error handling API in asyncio. New APIs:
-  loop.set_exception_handler(), loop.default_exception_handler(), and
-  loop.call_exception_handler().
-
-- Issue #20684: Fix inspect.getfullargspec() to not to follow __wrapped__
-  chains. Make its behaviour consistent with bound methods first argument.
-  Patch by Nick Coghlan and Yury Selivanov.
 
 - Issue #20566: Change asyncio.as_completed() to use a Queue, to
   avoid O(N**2) behavior.
@@ -195,14 +174,25 @@ Library
   fix _check_resolved_address() for IPv6 address; and other minor
   improvements, along with multiple documentation updates.
 
-Tests
------
+- Issue #20684: Fix inspect.getfullargspec() to not to follow __wrapped__
+  chains. Make its behaviour consistent with bound methods first argument.
+  Patch by Nick Coghlan and Yury Selivanov.
 
-- Issue #20510: Rewrote test_exit in test_sys to match existing comments,
-  use modern unittest features, and use helpers from test.script_helper
-  instead of using subprocess directly.  Patch by Gareth Rees.
+- Issue #20681: Add new error handling API in asyncio. New APIs:
+  loop.set_exception_handler(), loop.default_exception_handler(), and
+  loop.call_exception_handler().
 
-- Issue #20605: Make test_socket getaddrinfo OS X segfault test more robust.
+- Issue #20673: Implement support for UNIX Domain Sockets in asyncio.
+  New APIs: loop.create_unix_connection(), loop.create_unix_server(),
+  streams.open_unix_connection(), and streams.start_unix_server().
+
+- Issue #20616: Add a format() method to tracemalloc.Traceback.
+
+- Issue #19744: the ensurepip installation step now just prints a warning to
+  stderr rather than failing outright if SSL/TLS is unavailable. This allows
+  local installation of POSIX builds without SSL/TLS support.
+
+- Issue #20594: Avoid name clash with the libc function posix_close.
 
 Build
 -----
