@@ -2879,5 +2879,11 @@ class CodePageTest(unittest.TestCase):
         self.assertEqual(decoded, ('abc', 3))
 
 
+@unittest.skipUnless(sys.platform == 'win32',
+                     'cp65001 is specific to Windows')
+class CP65001Test(UTF8Test, unittest.TestCase):
+    encoding = "cp65001"
+
+
 if __name__ == "__main__":
     unittest.main()
