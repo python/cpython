@@ -1143,7 +1143,7 @@ class Thread:
         if not self._initialized:
             raise RuntimeError("Thread.__init__() not called")
         if self._started.is_set():
-            raise RuntimeError("cannot set daemon status of active thread");
+            raise RuntimeError("cannot set daemon status of active thread")
         self._daemonic = daemonic
 
     def isDaemon(self):
