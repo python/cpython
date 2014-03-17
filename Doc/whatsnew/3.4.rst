@@ -1456,7 +1456,7 @@ OpenSSL does not do any CRL verification by default.  (Contributed by
 Christien Heimes in :issue:`8813`.)
 
 New :class:`~ssl.SSLContext` method :meth:`~ssl.SSLContext.load_default_certs`
-loads a set of dfault "certificate authority" (CA) certificates from default
+loads a set of default "certificate authority" (CA) certificates from default
 locations, which vary according to the platform.  It can be used to load both
 TLS web server authentication certificates
 (``purpose=``:data:`~ssl.Purpose.SERVER_AUTH`) for a client to use to verify a
