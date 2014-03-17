@@ -138,15 +138,22 @@ def urlsafe_b64decode(s):
 
 # Base32 encoding/decoding must be done in Python
 _b32alphabet = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-_b32tab = [bytes([i]) for i in _b32alphabet]
-_b32tab2 = [a + b for a in _b32tab for b in _b32tab]
-_b32rev = {v: k for k, v in enumerate(_b32alphabet)}
+_b32tab2 = None
+_b32rev = None
 
 def b32encode(s):
     """Encode a byte string using Base32.
 
     s is the byte string to encode.  The encoded byte string is returned.
     """
+    global _b32tab2
+    # Delay the initialization of the table to not waste memory
+    # if the function is never called
+    if _b32tab2 is None:
+        b32tab = [bytes((i,)) for i in _b32alphabet]
+        _b32tab2 = [a + b for a in b32tab for b in b32tab]
+        b32tab = None
+
     if not isinstance(s, bytes_types):
         s = memoryview(s).tobytes()
     leftover = len(s) % 5
@@ -193,6 +200,11 @@ def b32decode(s, casefold=False, map01=None):
     the input is incorrectly padded or if there are non-alphabet
     characters present in the input.
     """
+    global _b32rev
+    # Delay the initialization of the table to not waste memory
+    # if the function is never called
+    if _b32rev is None:
+        _b32rev = {v: k for k, v in enumerate(_b32alphabet)}
     s = _bytes_from_decode_data(s)
     if len(s) % 8:
         raise binascii.Error('Incorrect padding')
@@ -274,6 +286,11 @@ def b16decode(s, casefold=False):
 # Ascii85 encoding/decoding
 #
 
+_a85chars = None
+_a85chars2 = None
+_A85START = b"<~"
+_A85END = b"~>"
+
 def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
     # Helper function for a85encode and b85encode
     if not isinstance(b, bytes_types):
@@ -284,8 +301,6 @@ def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
         b = b + b'\0' * padding
     words = struct.Struct('!%dI' % (len(b) // 4)).unpack(b)
 
-    a85chars2 = _a85chars2
-    a85chars = _a85chars
     chunks = [b'z' if foldnuls and not word else
               b'y' if foldspaces and word == 0x20202020 else
               (chars2[word // 614125] +
@@ -299,11 +314,6 @@ def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
         chunks[-1] = chunks[-1][:-padding]
 
     return b''.join(chunks)
-
-_A85START = b"<~"
-_A85END = b"~>"
-_a85chars = [bytes([i]) for i in range(33, 118)]
-_a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
 
 def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     """Encode a byte string using Ascii85.
@@ -324,6 +334,13 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     adobe controls whether the encoded byte sequence is framed with <~ and ~>,
     which is used by the Adobe implementation.
     """
+    global _a85chars, _a85chars2
+    # Delay the initialization of tables to not waste memory
+    # if the function is never called
+    if _a85chars is None:
+        _a85chars = [bytes((i,)) for i in range(33, 118)]
+        _a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
+
     result = _85encode(b, _a85chars, _a85chars2, pad, True, foldspaces)
 
     if adobe:
@@ -408,10 +425,10 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
 
 # The following code is originally taken (with permission) from Mercurial
 
-_b85chars = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
-            b"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
-_b85chars = [bytes([i]) for i in _b85chars]
-_b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
+_b85alphabet = (b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                b"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~")
+_b85chars = None
+_b85chars2 = None
 _b85dec = None
 
 def b85encode(b, pad=False):
@@ -420,17 +437,25 @@ def b85encode(b, pad=False):
     If pad is true, the input is padded with "\0" so its length is a multiple of
     4 characters before encoding.
     """
+    global _b85chars, _b85chars2
+    # Delay the initialization of tables to not waste memory
+    # if the function is never called
+    if _b85chars is None:
+        _b85chars = [bytes((i,)) for i in _b85alphabet]
+        _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
     return _85encode(b, _b85chars, _b85chars2, pad)
 
 def b85decode(b):
     """Decode base85-encoded byte array"""
-    b = _bytes_from_decode_data(b)
     global _b85dec
+    # Delay the initialization of tables to not waste memory
+    # if the function is never called
     if _b85dec is None:
         _b85dec = [None] * 256
-        for i, c in enumerate(_b85chars):
-            _b85dec[c[0]] = i
+        for i, c in enumerate(_b85alphabet):
+            _b85dec[c] = i
 
+    b = _bytes_from_decode_data(b)
     padding = (-len(b)) % 5
     b = b + b'~' * padding
     out = []

@@ -13,6 +13,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #20879: Delay the initialization of encoding and decoding tables for
+  base32, ascii85 and base85 codecs in the base64 module, and delay the
+  initialization of the unquote_to_bytes() table of the urllib.parse module, to
+  not waste memory if these modules are not used.
+
 
 What's New in Python 3.4.0?
 ===========================
