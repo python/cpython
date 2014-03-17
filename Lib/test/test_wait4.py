@@ -19,13 +19,14 @@ class Wait4Test(ForkWait):
             # Issue #11185: wait4 is broken on AIX and will always return 0
             # with WNOHANG.
             option = 0
-        for i in range(10):
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() <= deadline:
             # wait4() shouldn't hang, but some of the buildbots seem to hang
             # in the forking tests.  This is an attempt to fix the problem.
             spid, status, rusage = os.wait4(cpid, option)
             if spid == cpid:
                 break
-            time.sleep(1.0)
+            time.sleep(0.1)
         self.assertEqual(spid, cpid)
         self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
         self.assertTrue(rusage)

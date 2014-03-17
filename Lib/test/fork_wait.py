@@ -48,7 +48,12 @@ class ForkWait(unittest.TestCase):
         for i in range(NUM_THREADS):
             _thread.start_new(self.f, (i,))
 
-        time.sleep(LONGSLEEP)
+        # busy-loop to wait for threads
+        deadline = time.monotonic() + 10.0
+        while len(self.alive) < NUM_THREADS:
+            time.sleep(0.1)
+            if time.monotonic() <= deadline:
+                break
 
         a = sorted(self.alive.keys())
         self.assertEqual(a, list(range(NUM_THREADS)))
