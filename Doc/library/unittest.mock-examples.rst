@@ -934,8 +934,8 @@ After the `MagicMock` has been used we can use attributes like
     the magic methods you specifically want:
 
         >>> mock = Mock()
-        >>> mock.__setitem__ = Mock(side_effect=getitem)
-        >>> mock.__getitem__ = Mock(side_effect=setitem)
+        >>> mock.__getitem__ = Mock(side_effect=getitem)
+        >>> mock.__setitem__ = Mock(side_effect=setitem)
 
     A *third* option is to use `MagicMock` but passing in `dict` as the `spec`
     (or `spec_set`) argument so that the `MagicMock` created only has
