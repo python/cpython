@@ -2472,12 +2472,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             type->tp_dictoffset = slotoffset;
         slotoffset += sizeof(PyObject *);
     }
-    else if (!type->tp_dictoffset) {
-        type->tp_dictoffset = base->tp_dictoffset;
-    }
-    if (type->tp_dictoffset) {
-        et->ht_cached_keys = _PyDict_NewKeysForClass();
-    }
     if (add_weak) {
         assert(!base->tp_itemsize);
         type->tp_weaklistoffset = slotoffset;
@@ -2526,6 +2520,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     /* Put the proper slots in place */
     fixup_slot_dispatchers(type);
+
+    if (type->tp_dictoffset) {
+        et->ht_cached_keys = _PyDict_NewKeysForClass();
+    }
 
     Py_DECREF(dict);
     return (PyObject *)type;
@@ -2643,9 +2641,6 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             type->tp_doc = tp_doc;
         }
     }
-    if (type->tp_dictoffset) {
-        res->ht_cached_keys = _PyDict_NewKeysForClass();
-    }
     if (type->tp_dealloc == NULL) {
         /* It's a heap type, so needs the heap types' dealloc.
            subtype_dealloc will call the base type's tp_dealloc, if
@@ -2655,6 +2650,10 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
     if (PyType_Ready(type) < 0)
         goto fail;
+
+    if (type->tp_dictoffset) {
+        res->ht_cached_keys = _PyDict_NewKeysForClass();
+    }
 
     /* Set type.__module__ */
     s = strrchr(spec->name, '.');
