@@ -4414,6 +4414,14 @@ order (MRO) for bases """
             self.assertRaises(TypeError, case, 1, 2, 3)
             self.assertRaises(TypeError, case, 1, 2, foo=3)
 
+    def test_subclassing_does_not_duplicate_dict_descriptors(self):
+        class Base:
+            pass
+        class Sub(Base):
+            pass
+        self.assertIn("__dict__", Base.__dict__)
+        self.assertNotIn("__dict__", Sub.__dict__)
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
