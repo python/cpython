@@ -4974,11 +4974,33 @@ class PicklingTests(unittest.TestCase):
                     self._assert_is_copy(obj, objcopy2)
 
 
+class SharedKeyTests(unittest.TestCase):
+
+    @support.cpython_only
+    def test_subclasses(self):
+        # Verify that subclasses can share keys (per PEP 412)
+        class A:
+            pass
+        class B(A):
+            pass
+
+        a, b = A(), B()
+        self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        a.x, a.y, a.z, a.w = range(4)
+        self.assertNotEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
+        a2 = A()
+        self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        b.u, b.v, b.w, b.t = range(4)
+        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({}))
+
+
 def test_main():
     # Run all local test cases, with PTypesLongInitTest first.
     support.run_unittest(PTypesLongInitTest, OperatorsTest,
                          ClassPropertiesAndMethods, DictProxyTests,
-                         MiscTests, PicklingTests)
+                         MiscTests, PicklingTests, SharedKeyTests)
 
 if __name__ == "__main__":
     test_main()
