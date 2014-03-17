@@ -606,7 +606,7 @@ always available.
 
    .. versionadded:: 3.2
 
-   .. versionchanged: 3.4
+   .. versionchanged:: 3.4
       Added *algorithm*, *hash_bits* and *seed_bits*
 
 
