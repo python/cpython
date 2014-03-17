@@ -1,7 +1,7 @@
 """Tests for queues.py"""
 
 import unittest
-import unittest.mock
+from unittest import mock
 
 import asyncio
 from asyncio import test_utils
@@ -72,7 +72,7 @@ class QueueBasicTests(_QueueTestBase):
         self.assertTrue('_queue=[1]' in fn(q))
 
     def test_ctor_loop(self):
-        loop = unittest.mock.Mock()
+        loop = mock.Mock()
         q = asyncio.Queue(loop=loop)
         self.assertIs(q._loop, loop)
 

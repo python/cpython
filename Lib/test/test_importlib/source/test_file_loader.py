@@ -190,6 +190,7 @@ class SimpleTest(abc.LoaderTests):
             if os.path.exists(pycache):
                 shutil.rmtree(pycache)
 
+    @source_util.writes_bytecode_files
     def test_timestamp_overflow(self):
         # When a modification timestamp is larger than 2**32, it should be
         # truncated rather than raise an OverflowError.

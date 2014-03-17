@@ -9,7 +9,6 @@
 import re
 import struct
 import binascii
-import itertools
 
 
 __all__ = [

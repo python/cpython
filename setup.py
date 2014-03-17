@@ -1138,7 +1138,6 @@ class PyBuildExt(build_ext):
                                   define_macros=sqlite_defines,
                                   include_dirs=include_dirs,
                                   library_dirs=sqlite_libdir,
-                                  runtime_library_dirs=sqlite_libdir,
                                   extra_link_args=sqlite_extra_link_args,
                                   libraries=["sqlite3",]))
         else:

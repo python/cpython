@@ -107,6 +107,8 @@ Process
          The data read is buffered in memory, so do not use this method if the
          data size is large or unlimited.
 
+      This method is a :ref:`coroutine <coroutine>`.
+
    .. method:: kill()
 
       Kills the child. On Posix OSs the function sends :py:data:`SIGKILL` to
@@ -129,10 +131,12 @@ Process
       to the child. On Windows the Win32 API function
       :c:func:`TerminateProcess` is called to stop the child.
 
-   .. method:: wait(self):
+   .. method:: wait():
 
       Wait for child process to terminate.  Set and return :attr:`returncode`
       attribute.
+
+      This method is a :ref:`coroutine <coroutine>`.
 
 
 Example

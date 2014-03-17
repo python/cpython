@@ -387,6 +387,16 @@ class PydocDocTest(unittest.TestCase):
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
 
+    def test_text_enum_member_with_value_zero(self):
+        # Test issue #20654 to ensure enum member with value 0 can be
+        # displayed. It used to throw KeyError: 'zero'.
+        import enum
+        class BinaryInteger(enum.IntEnum):
+            zero = 0
+            one = 1
+        doc = pydoc.render_doc(BinaryInteger)
+        self.assertIn('<BinaryInteger.zero: 0>', doc)
+
     def test_issue8225(self):
         # Test issue8225 to ensure no doc link appears for xml.etree
         result, doc_loc = get_pydoc_text(xml.etree)

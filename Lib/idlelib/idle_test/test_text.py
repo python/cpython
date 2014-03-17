@@ -221,6 +221,7 @@ class TkTextTest(TextTest, unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.root.destroy()
+        del cls.root
 
 
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 """Python 'zlib_codec' Codec - zlib compression encoding.
 
-This codec de/encodes from bytes to bytes and is therefore usable with
-bytes.transform() and bytes.untransform().
+This codec de/encodes from bytes to bytes.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 """

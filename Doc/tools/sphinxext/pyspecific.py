@@ -16,6 +16,7 @@ from docutils import nodes, utils
 
 import sphinx
 from sphinx.util.nodes import split_explicit_title
+from sphinx.util.compat import Directive
 from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.latex import LaTeXTranslator
 from sphinx.locale import versionlabels
@@ -27,7 +28,9 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
-if sphinx.__version__[:3] < '1.2':
+SPHINX11 = sphinx.__version__[:3] < '1.2'
+
+if SPHINX11:
     # monkey-patch HTML translator to give versionmodified paragraphs a class
     def new_visit_versionmodified(self, node):
         self.body.append(self.starttag(node, 'p', CLASS=node['type']))
@@ -88,8 +91,6 @@ def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 
 # Support for marking up implementation details
 
-from sphinx.util.compat import Directive
-
 class ImplementationDetail(Directive):
 
     has_content = True
@@ -142,10 +143,6 @@ class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
 
 # Support for documenting version of removal in deprecations
 
-from sphinx.locale import versionlabels
-from sphinx.util.compat import Directive
-
-
 class DeprecatedRemoved(Directive):
     has_content = True
     required_arguments = 2
@@ -171,22 +168,25 @@ class DeprecatedRemoved(Directive):
             messages = []
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, node)
-        if len(node):
             if isinstance(node[0], nodes.paragraph) and node[0].rawsource:
                 content = nodes.inline(node[0].rawsource, translatable=True)
                 content.source = node[0].source
                 content.line = node[0].line
                 content += node[0].children
                 node[0].replace_self(nodes.paragraph('', '', content))
-            node[0].insert(0, nodes.inline('', '%s: ' % text,
-                                           classes=['versionmodified']))
-        else:
+            if not SPHINX11:
+                node[0].insert(0, nodes.inline('', '%s: ' % text,
+                                               classes=['versionmodified']))
+        elif not SPHINX11:
             para = nodes.paragraph('', '',
                 nodes.inline('', '%s.' % text, classes=['versionmodified']))
             node.append(para)
         env = self.state.document.settings.env
         env.note_versionchange('deprecated', version[0], node, self.lineno)
         return [node] + messages
+
+# for Sphinx < 1.2
+versionlabels['deprecated-removed'] = DeprecatedRemoved._label
 
 
 # Support for including Misc/NEWS

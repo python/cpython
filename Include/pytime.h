@@ -53,10 +53,19 @@ do { \
      (tv_end.tv_usec - tv_start.tv_usec) * 0.000001)
 
 #ifndef Py_LIMITED_API
+
+typedef enum {
+    /* Round towards zero. */
+    _PyTime_ROUND_DOWN=0,
+    /* Round away from zero. */
+    _PyTime_ROUND_UP
+} _PyTime_round_t;
+
 /* Convert a number of seconds, int or float, to time_t. */
 PyAPI_FUNC(int) _PyTime_ObjectToTime_t(
     PyObject *obj,
-    time_t *sec);
+    time_t *sec,
+    _PyTime_round_t);
 
 /* Convert a time_t to a PyLong. */
 PyAPI_FUNC(PyObject *) _PyLong_FromTime_t(
@@ -72,7 +81,8 @@ PyAPI_FUNC(time_t) _PyLong_AsTime_t(
 PyAPI_FUNC(int) _PyTime_ObjectToTimeval(
     PyObject *obj,
     time_t *sec,
-    long *usec);
+    long *usec,
+    _PyTime_round_t);
 
 /* Convert a number of seconds, int or float, to a timespec structure.
    nsec is in the range [0; 999999999] and rounded towards zero.
@@ -80,7 +90,8 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimeval(
 PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
     PyObject *obj,
     time_t *sec,
-    long *nsec);
+    long *nsec,
+    _PyTime_round_t);
 #endif
 
 /* Dummy to force linking. */

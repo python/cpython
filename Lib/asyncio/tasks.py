@@ -325,7 +325,7 @@ class Task(futures.Future):
                         'Task got bad yield: {!r}'.format(result)))
         finally:
             self.__class__._current_tasks.pop(self._loop)
-        self = None
+            self = None  # Needed to break cycles when an exception occurs.
 
     def _wakeup(self, future):
         try:

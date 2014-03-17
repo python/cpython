@@ -20,12 +20,11 @@ import threading
 import time
 import errno
 import unittest
-import unittest.mock
+from unittest import mock
 from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
 
 
 import asyncio
-from asyncio import events
 from asyncio import selector_events
 from asyncio import test_utils
 
@@ -57,6 +56,7 @@ SIGNING_CA = data_file('pycacert.pem')
 
 
 class MyBaseProto(asyncio.Protocol):
+    connected = None
     done = None
 
     def __init__(self, loop=None):
@@ -64,12 +64,15 @@ class MyBaseProto(asyncio.Protocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if loop is not None:
+            self.connected = asyncio.Future(loop=loop)
             self.done = asyncio.Future(loop=loop)
 
     def connection_made(self, transport):
         self.transport = transport
         assert self.state == 'INITIAL', self.state
         self.state = 'CONNECTED'
+        if self.connected:
+            self.connected.set_result(None)
 
     def data_received(self, data):
         assert self.state == 'CONNECTED', self.state
@@ -331,7 +334,8 @@ class EventLoopTestsMixin:
 
     def test_reader_callback(self):
         r, w = test_utils.socketpair()
-        bytes_read = []
+        r.setblocking(False)
+        bytes_read = bytearray()
 
         def reader():
             try:
@@ -341,37 +345,40 @@ class EventLoopTestsMixin:
                 # at least on Linux -- see man select.
                 return
             if data:
-                bytes_read.append(data)
+                bytes_read.extend(data)
             else:
                 self.assertTrue(self.loop.remove_reader(r.fileno()))
                 r.close()
 
         self.loop.add_reader(r.fileno(), reader)
         self.loop.call_soon(w.send, b'abc')
-        test_utils.run_briefly(self.loop)
+        test_utils.run_until(self.loop, lambda: len(bytes_read) >= 3)
         self.loop.call_soon(w.send, b'def')
-        test_utils.run_briefly(self.loop)
+        test_utils.run_until(self.loop, lambda: len(bytes_read) >= 6)
         self.loop.call_soon(w.close)
         self.loop.call_soon(self.loop.stop)
         self.loop.run_forever()
-        self.assertEqual(b''.join(bytes_read), b'abcdef')
+        self.assertEqual(bytes_read, b'abcdef')
 
     def test_writer_callback(self):
         r, w = test_utils.socketpair()
         w.setblocking(False)
-        self.loop.add_writer(w.fileno(), w.send, b'x'*(256*1024))
-        test_utils.run_briefly(self.loop)
 
-        def remove_writer():
-            self.assertTrue(self.loop.remove_writer(w.fileno()))
+        def writer(data):
+            w.send(data)
+            self.loop.stop()
 
-        self.loop.call_soon(remove_writer)
-        self.loop.call_soon(self.loop.stop)
+        data = b'x' * 1024
+        self.loop.add_writer(w.fileno(), writer, data)
         self.loop.run_forever()
+
+        self.assertTrue(self.loop.remove_writer(w.fileno()))
+        self.assertFalse(self.loop.remove_writer(w.fileno()))
+
         w.close()
-        data = r.recv(256*1024)
+        read = r.recv(len(data) * 2)
         r.close()
-        self.assertGreaterEqual(len(data), 200)
+        self.assertEqual(read, data)
 
     def _basetest_sock_client_ops(self, httpd, sock):
         sock.setblocking(False)
@@ -465,10 +472,10 @@ class EventLoopTestsMixin:
         self.assertFalse(self.loop.remove_signal_handler(signal.SIGKILL))
         # Now set a handler and handle it.
         self.loop.add_signal_handler(signal.SIGINT, my_handler)
-        test_utils.run_briefly(self.loop)
+
         os.kill(os.getpid(), signal.SIGINT)
-        test_utils.run_briefly(self.loop)
-        self.assertEqual(caught, 1)
+        test_utils.run_until(self.loop, lambda: caught)
+
         # Removing it should restore the default handler.
         self.assertTrue(self.loop.remove_signal_handler(signal.SIGINT))
         self.assertEqual(signal.getsignal(signal.SIGINT),
@@ -624,7 +631,7 @@ class EventLoopTestsMixin:
             self.assertIn(str(httpd.address), cm.exception.strerror)
 
     def test_create_server(self):
-        proto = MyProto()
+        proto = MyProto(self.loop)
         f = self.loop.create_server(lambda: proto, '0.0.0.0', 0)
         server = self.loop.run_until_complete(f)
         self.assertEqual(len(server.sockets), 1)
@@ -634,14 +641,11 @@ class EventLoopTestsMixin:
         client = socket.socket()
         client.connect(('127.0.0.1', port))
         client.sendall(b'xxx')
-        test_utils.run_briefly(self.loop)
-        test_utils.run_until(self.loop, lambda: proto is not None, 10)
-        self.assertIsInstance(proto, MyProto)
-        self.assertEqual('INITIAL', proto.state)
-        test_utils.run_briefly(self.loop)
+
+        self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
-        test_utils.run_until(self.loop, lambda: proto.nbytes > 0,
-                             timeout=10)
+
+        test_utils.run_until(self.loop, lambda: proto.nbytes > 0)
         self.assertEqual(3, proto.nbytes)
 
         # extra info is available
@@ -651,7 +655,7 @@ class EventLoopTestsMixin:
 
         # close connection
         proto.transport.close()
-        test_utils.run_briefly(self.loop)  # windows iocp
+        self.loop.run_until_complete(proto.done)
 
         self.assertEqual('CLOSED', proto.state)
 
@@ -673,27 +677,22 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server(self):
-        proto = MyProto()
+        proto = MyProto(loop=self.loop)
         server, path = self._make_unix_server(lambda: proto)
         self.assertEqual(len(server.sockets), 1)
 
         client = socket.socket(socket.AF_UNIX)
         client.connect(path)
         client.sendall(b'xxx')
-        test_utils.run_briefly(self.loop)
-        test_utils.run_until(self.loop, lambda: proto is not None, 10)
 
-        self.assertIsInstance(proto, MyProto)
-        self.assertEqual('INITIAL', proto.state)
-        test_utils.run_briefly(self.loop)
+        self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
-        test_utils.run_until(self.loop, lambda: proto.nbytes > 0,
-                             timeout=10)
+        test_utils.run_until(self.loop, lambda: proto.nbytes > 0)
         self.assertEqual(3, proto.nbytes)
 
         # close connection
         proto.transport.close()
-        test_utils.run_briefly(self.loop)  # windows iocp
+        self.loop.run_until_complete(proto.done)
 
         self.assertEqual('CLOSED', proto.state)
 
@@ -736,12 +735,10 @@ class EventLoopTestsMixin:
         client, pr = self.loop.run_until_complete(f_c)
 
         client.write(b'xxx')
-        test_utils.run_briefly(self.loop)
-        self.assertIsInstance(proto, MyProto)
-        test_utils.run_briefly(self.loop)
+        self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
-        test_utils.run_until(self.loop, lambda: proto.nbytes > 0,
-                             timeout=10)
+
+        test_utils.run_until(self.loop, lambda: proto.nbytes > 0)
         self.assertEqual(3, proto.nbytes)
 
         # extra info is available
@@ -775,12 +772,9 @@ class EventLoopTestsMixin:
         client, pr = self.loop.run_until_complete(f_c)
 
         client.write(b'xxx')
-        test_utils.run_briefly(self.loop)
-        self.assertIsInstance(proto, MyProto)
-        test_utils.run_briefly(self.loop)
+        self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
-        test_utils.run_until(self.loop, lambda: proto.nbytes > 0,
-                             timeout=10)
+        test_utils.run_until(self.loop, lambda: proto.nbytes > 0)
         self.assertEqual(3, proto.nbytes)
 
         # close connection
@@ -1045,15 +1039,9 @@ class EventLoopTestsMixin:
 
         self.assertEqual('INITIALIZED', client.state)
         transport.sendto(b'xxx')
-        for _ in range(1000):
-            if server.nbytes:
-                break
-            test_utils.run_briefly(self.loop)
+        test_utils.run_until(self.loop, lambda: server.nbytes)
         self.assertEqual(3, server.nbytes)
-        for _ in range(1000):
-            if client.nbytes:
-                break
-            test_utils.run_briefly(self.loop)
+        test_utils.run_until(self.loop, lambda: client.nbytes)
 
         # received
         self.assertEqual(8, client.nbytes)
@@ -1098,11 +1086,11 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(connect())
 
         os.write(wpipe, b'1')
-        test_utils.run_briefly(self.loop)
+        test_utils.run_until(self.loop, lambda: proto.nbytes >= 1)
         self.assertEqual(1, proto.nbytes)
 
         os.write(wpipe, b'2345')
-        test_utils.run_briefly(self.loop)
+        test_utils.run_until(self.loop, lambda: proto.nbytes >= 5)
         self.assertEqual(['INITIAL', 'CONNECTED'], proto.state)
         self.assertEqual(5, proto.nbytes)
 
@@ -1156,33 +1144,30 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     def test_write_pipe(self):
-        proto = MyWritePipeProto(loop=self.loop)
-        transport = None
-
         rpipe, wpipe = os.pipe()
         pipeobj = io.open(wpipe, 'wb', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal transport
-            t, p = yield from self.loop.connect_write_pipe(
-                        lambda: proto, pipeobj)
-            self.assertIs(p, proto)
-            self.assertIs(t, proto.transport)
-            self.assertEqual('CONNECTED', proto.state)
-            transport = t
-
-        self.loop.run_until_complete(connect())
+        proto = MyWritePipeProto(loop=self.loop)
+        connect = self.loop.connect_write_pipe(lambda: proto, pipeobj)
+        transport, p = self.loop.run_until_complete(connect)
+        self.assertIs(p, proto)
+        self.assertIs(transport, proto.transport)
+        self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
-        test_utils.run_briefly(self.loop)
-        data = os.read(rpipe, 1024)
+
+        data = bytearray()
+        def reader(data):
+            chunk = os.read(rpipe, 1024)
+            data += chunk
+            return len(data)
+
+        test_utils.run_until(self.loop, lambda: reader(data) >= 1)
         self.assertEqual(b'1', data)
 
         transport.write(b'2345')
-        test_utils.run_briefly(self.loop)
-        data = os.read(rpipe, 1024)
-        self.assertEqual(b'2345', data)
+        test_utils.run_until(self.loop, lambda: reader(data) >= 5)
+        self.assertEqual(b'12345', data)
         self.assertEqual('CONNECTED', proto.state)
 
         os.close(rpipe)
@@ -1198,23 +1183,14 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     def test_write_pipe_disconnect_on_close(self):
-        proto = MyWritePipeProto(loop=self.loop)
-        transport = None
-
         rsock, wsock = test_utils.socketpair()
         pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal transport
-            t, p = yield from self.loop.connect_write_pipe(lambda: proto,
-                                                           pipeobj)
-            self.assertIs(p, proto)
-            self.assertIs(t, proto.transport)
-            self.assertEqual('CONNECTED', proto.state)
-            transport = t
-
-        self.loop.run_until_complete(connect())
+        proto = MyWritePipeProto(loop=self.loop)
+        connect = self.loop.connect_write_pipe(lambda: proto, pipeobj)
+        transport, p = self.loop.run_until_complete(connect)
+        self.assertIs(p, proto)
+        self.assertIs(transport, proto.transport)
         self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
@@ -1232,33 +1208,32 @@ class EventLoopTestsMixin:
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
     def test_write_pty(self):
-        proto = MyWritePipeProto(loop=self.loop)
-        transport = None
-
         master, slave = os.openpty()
         slave_write_obj = io.open(slave, 'wb', 0)
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal transport
-            t, p = yield from self.loop.connect_write_pipe(lambda: proto,
-                                                           slave_write_obj)
-            self.assertIs(p, proto)
-            self.assertIs(t, proto.transport)
-            self.assertEqual('CONNECTED', proto.state)
-            transport = t
-
-        self.loop.run_until_complete(connect())
+        proto = MyWritePipeProto(loop=self.loop)
+        connect = self.loop.connect_write_pipe(lambda: proto, slave_write_obj)
+        transport, p = self.loop.run_until_complete(connect)
+        self.assertIs(p, proto)
+        self.assertIs(transport, proto.transport)
+        self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
-        test_utils.run_briefly(self.loop)
-        data = os.read(master, 1024)
+
+        data = bytearray()
+        def reader(data):
+            chunk = os.read(master, 1024)
+            data += chunk
+            return len(data)
+
+        test_utils.run_until(self.loop, lambda: reader(data) >= 1,
+                             timeout=10)
         self.assertEqual(b'1', data)
 
         transport.write(b'2345')
-        test_utils.run_briefly(self.loop)
-        data = os.read(master, 1024)
-        self.assertEqual(b'2345', data)
+        test_utils.run_until(self.loop, lambda: reader(data) >= 5,
+                             timeout=10)
+        self.assertEqual(b'12345', data)
         self.assertEqual('CONNECTED', proto.state)
 
         os.close(master)
@@ -1352,6 +1327,30 @@ class EventLoopTestsMixin:
                     self.assertIn('address must be resolved',
                                   str(cm.exception))
 
+    def test_remove_fds_after_closing(self):
+        loop = self.create_event_loop()
+        callback = lambda: None
+        r, w = test_utils.socketpair()
+        self.addCleanup(r.close)
+        self.addCleanup(w.close)
+        loop.add_reader(r, callback)
+        loop.add_writer(w, callback)
+        loop.close()
+        self.assertFalse(loop.remove_reader(r))
+        self.assertFalse(loop.remove_writer(w))
+
+    def test_add_fds_after_closing(self):
+        loop = self.create_event_loop()
+        callback = lambda: None
+        r, w = test_utils.socketpair()
+        self.addCleanup(r.close)
+        self.addCleanup(w.close)
+        loop.close()
+        with self.assertRaises(RuntimeError):
+            loop.add_reader(r, callback)
+        with self.assertRaises(RuntimeError):
+            loop.add_writer(w, callback)
+
 
 class SubprocessTestsMixin:
 
@@ -1370,20 +1369,13 @@ class SubprocessTestsMixin:
             self.assertEqual(-signal.SIGKILL, returncode)
 
     def test_subprocess_exec(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
 
@@ -1396,20 +1388,13 @@ class SubprocessTestsMixin:
         self.assertEqual(b'Python The Winner', proto.data[1])
 
     def test_subprocess_interactive(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
 
@@ -1430,18 +1415,11 @@ class SubprocessTestsMixin:
         self.check_terminated(proto.returncode)
 
     def test_subprocess_shell(self):
-        proto = None
-        transp = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'echo Python')
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'echo Python')
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.get_pipe_transport(0).close()
@@ -1452,33 +1430,20 @@ class SubprocessTestsMixin:
         self.assertEqual(proto.data[2], b'')
 
     def test_subprocess_exitcode(self):
-        proto = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto
-            transp, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'exit 7', stdin=None, stdout=None, stderr=None)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'exit 7', stdin=None, stdout=None, stderr=None)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(7, proto.returncode)
 
     def test_subprocess_close_after_finish(self):
-        proto = None
-        transp = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'exit 7', stdin=None, stdout=None, stderr=None)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'exit 7', stdin=None, stdout=None, stderr=None)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.assertIsNone(transp.get_pipe_transport(0))
         self.assertIsNone(transp.get_pipe_transport(1))
         self.assertIsNone(transp.get_pipe_transport(2))
@@ -1487,20 +1452,13 @@ class SubprocessTestsMixin:
         self.assertIsNone(transp.close())
 
     def test_subprocess_kill(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.kill()
@@ -1508,20 +1466,13 @@ class SubprocessTestsMixin:
         self.check_killed(proto.returncode)
 
     def test_subprocess_terminate(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.terminate()
@@ -1530,20 +1481,13 @@ class SubprocessTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
     def test_subprocess_send_signal(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         transp.send_signal(signal.SIGHUP)
@@ -1551,20 +1495,13 @@ class SubprocessTestsMixin:
         self.assertEqual(-signal.SIGHUP, proto.returncode)
 
     def test_subprocess_stderr(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         stdin = transp.get_pipe_transport(0)
@@ -1578,20 +1515,13 @@ class SubprocessTestsMixin:
         self.assertEqual(0, proto.returncode)
 
     def test_subprocess_stderr_redirect_to_stdout(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog, stderr=subprocess.STDOUT)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog, stderr=subprocess.STDOUT)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         stdin = transp.get_pipe_transport(0)
@@ -1608,20 +1538,13 @@ class SubprocessTestsMixin:
         self.assertEqual(0, proto.returncode)
 
     def test_subprocess_close_client_stream(self):
-        proto = None
-        transp = None
-
         prog = os.path.join(os.path.dirname(__file__), 'echo3.py')
 
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto, transp
-            transp, proto = yield from self.loop.subprocess_exec(
-                functools.partial(MySubprocessProtocol, self.loop),
-                sys.executable, prog)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        connect = self.loop.subprocess_exec(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        sys.executable, prog)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.connected)
 
         stdin = transp.get_pipe_transport(0)
@@ -1647,20 +1570,13 @@ class SubprocessTestsMixin:
         self.check_terminated(proto.returncode)
 
     def test_subprocess_wait_no_same_group(self):
-        proto = None
-        transp = None
-
-        @asyncio.coroutine
-        def connect():
-            nonlocal proto
-            # start the new process in a new session
-            transp, proto = yield from self.loop.subprocess_shell(
-                functools.partial(MySubprocessProtocol, self.loop),
-                'exit 7', stdin=None, stdout=None, stderr=None,
-                start_new_session=True)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-
-        self.loop.run_until_complete(connect())
+        # start the new process in a new session
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'exit 7', stdin=None, stdout=None, stderr=None,
+                        start_new_session=True)
+        _, proto = yield self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(7, proto.returncode)
 
@@ -1741,6 +1657,9 @@ if sys.platform == 'win32':
         def test_create_datagram_endpoint(self):
             raise unittest.SkipTest(
                 "IocpEventLoop does not have create_datagram_endpoint()")
+
+        def test_remove_fds_after_closing(self):
+            raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
 else:
     from asyncio import selectors
 
@@ -1812,7 +1731,7 @@ class HandleTests(unittest.TestCase):
             return args
 
         args = ()
-        h = asyncio.Handle(callback, args, unittest.mock.Mock())
+        h = asyncio.Handle(callback, args, mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
         self.assertFalse(h._cancelled)
@@ -1844,15 +1763,15 @@ class HandleTests(unittest.TestCase):
         def callback():
             raise ValueError()
 
-        m_loop = unittest.mock.Mock()
-        m_loop.call_exception_handler = unittest.mock.Mock()
+        m_loop = mock.Mock()
+        m_loop.call_exception_handler = mock.Mock()
 
         h = asyncio.Handle(callback, (), m_loop)
         h._run()
 
         m_loop.call_exception_handler.assert_called_with({
             'message': test_utils.MockPattern('Exception in callback.*'),
-            'exception': unittest.mock.ANY,
+            'exception': mock.ANY,
             'handle': h
         })
 
@@ -1862,7 +1781,7 @@ class TimerTests(unittest.TestCase):
     def test_hash(self):
         when = time.monotonic()
         h = asyncio.TimerHandle(when, lambda: False, (),
-                                unittest.mock.Mock())
+                                mock.Mock())
         self.assertEqual(hash(h), hash(when))
 
     def test_timer(self):
@@ -1871,7 +1790,7 @@ class TimerTests(unittest.TestCase):
 
         args = ()
         when = time.monotonic()
-        h = asyncio.TimerHandle(when, callback, args, unittest.mock.Mock())
+        h = asyncio.TimerHandle(when, callback, args, mock.Mock())
         self.assertIs(h._callback, callback)
         self.assertIs(h._args, args)
         self.assertFalse(h._cancelled)
@@ -1887,10 +1806,10 @@ class TimerTests(unittest.TestCase):
 
         self.assertRaises(AssertionError,
                           asyncio.TimerHandle, None, callback, args,
-                          unittest.mock.Mock())
+                          mock.Mock())
 
     def test_timer_comparison(self):
-        loop = unittest.mock.Mock()
+        loop = mock.Mock()
 
         def callback(*args):
             return args
@@ -1935,7 +1854,7 @@ class TimerTests(unittest.TestCase):
 class AbstractEventLoopTests(unittest.TestCase):
 
     def test_not_implemented(self):
-        f = unittest.mock.Mock()
+        f = mock.Mock()
         loop = asyncio.AbstractEventLoop()
         self.assertRaises(
             NotImplementedError, loop.run_forever)
@@ -1995,13 +1914,13 @@ class AbstractEventLoopTests(unittest.TestCase):
             NotImplementedError, loop.remove_signal_handler, 1)
         self.assertRaises(
             NotImplementedError, loop.connect_read_pipe, f,
-            unittest.mock.sentinel.pipe)
+            mock.sentinel.pipe)
         self.assertRaises(
             NotImplementedError, loop.connect_write_pipe, f,
-            unittest.mock.sentinel.pipe)
+            mock.sentinel.pipe)
         self.assertRaises(
             NotImplementedError, loop.subprocess_shell, f,
-            unittest.mock.sentinel)
+            mock.sentinel)
         self.assertRaises(
             NotImplementedError, loop.subprocess_exec, f)
 
@@ -2009,7 +1928,7 @@ class AbstractEventLoopTests(unittest.TestCase):
 class ProtocolsAbsTests(unittest.TestCase):
 
     def test_empty(self):
-        f = unittest.mock.Mock()
+        f = mock.Mock()
         p = asyncio.Protocol()
         self.assertIsNone(p.connection_made(f))
         self.assertIsNone(p.connection_lost(f))
@@ -2055,7 +1974,7 @@ class PolicyTests(unittest.TestCase):
     def test_get_event_loop_calls_set_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
 
-        with unittest.mock.patch.object(
+        with mock.patch.object(
                 policy, "set_event_loop",
                 wraps=policy.set_event_loop) as m_set_event_loop:
 
@@ -2073,7 +1992,7 @@ class PolicyTests(unittest.TestCase):
         policy.set_event_loop(None)
         self.assertRaises(AssertionError, policy.get_event_loop)
 
-    @unittest.mock.patch('asyncio.events.threading.current_thread')
+    @mock.patch('asyncio.events.threading.current_thread')
     def test_get_event_loop_thread(self, m_current_thread):
 
         def f():

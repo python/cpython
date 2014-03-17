@@ -11,8 +11,7 @@ import sys
 import tempfile
 import threading
 import time
-import unittest
-import unittest.mock
+from unittest import mock
 
 from http.server import HTTPServer
 from wsgiref.simple_server import WSGIRequestHandler, WSGIServer
@@ -22,10 +21,11 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import tasks
 from . import base_events
 from . import events
+from . import futures
 from . import selectors
+from . import tasks
 
 
 if sys.platform == 'win32':  # pragma: no cover
@@ -53,18 +53,14 @@ def run_briefly(loop):
         gen.close()
 
 
-def run_until(loop, pred, timeout=None):
-    if timeout is not None:
-        deadline = time.time() + timeout
+def run_until(loop, pred, timeout=30):
+    deadline = time.time() + timeout
     while not pred():
         if timeout is not None:
             timeout = deadline - time.time()
             if timeout <= 0:
-                return False
-            loop.run_until_complete(tasks.sleep(timeout, loop=loop))
-        else:
-            run_briefly(loop)
-    return True
+                raise futures.TimeoutError()
+        loop.run_until_complete(tasks.sleep(0.001, loop=loop))
 
 
 def run_once(loop):
@@ -362,7 +358,7 @@ class TestLoop(base_events.BaseEventLoop):
 
 
 def MockCallback(**kwargs):
-    return unittest.mock.Mock(spec=['__call__'], **kwargs)
+    return mock.Mock(spec=['__call__'], **kwargs)
 
 
 class MockPattern(str):

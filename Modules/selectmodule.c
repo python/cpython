@@ -212,10 +212,18 @@ select_select(PyObject *self, PyObject *args)
         return NULL;
     }
     else {
-#ifdef MS_WINDOWS
+        /* On OpenBSD 5.4, timeval.tv_sec is a long.
+         * Example: long is 64-bit, whereas time_t is 32-bit. */
         time_t sec;
-        if (_PyTime_ObjectToTimeval(tout, &sec, &tv.tv_usec) == -1)
+        /* On OS X 64-bit, timeval.tv_usec is an int (and thus still 4
+           bytes as required), but no longer defined by a long. */
+        long usec;
+        if (_PyTime_ObjectToTimeval(tout, &sec, &usec,
+                                    _PyTime_ROUND_UP) == -1)
             return NULL;
+#ifdef MS_WINDOWS
+        /* On Windows, timeval.tv_sec is a long (32 bit),
+         * whereas time_t can be 64-bit. */
         assert(sizeof(tv.tv_sec) == sizeof(long));
 #if SIZEOF_TIME_T > SIZEOF_LONG
         if (sec > LONG_MAX) {
@@ -226,13 +234,10 @@ select_select(PyObject *self, PyObject *args)
 #endif
         tv.tv_sec = (long)sec;
 #else
-        /* 64-bit OS X has struct timeval.tv_usec as an int (and thus still 4
-           bytes as required), but no longer defined by a long. */
-        long tv_usec;
-        if (_PyTime_ObjectToTimeval(tout, &tv.tv_sec, &tv_usec) == -1)
-            return NULL;
-        tv.tv_usec = tv_usec;
+        assert(sizeof(tv.tv_sec) >= sizeof(sec));
+        tv.tv_sec = sec;
 #endif
+        tv.tv_usec = usec;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
             return NULL;
@@ -2037,8 +2042,8 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
         ptimeoutspec = NULL;
     }
     else if (PyNumber_Check(otimeout)) {
-        if (_PyTime_ObjectToTimespec(otimeout,
-                                     &timeout.tv_sec, &timeout.tv_nsec) == -1)
+        if (_PyTime_ObjectToTimespec(otimeout, &timeout.tv_sec,
+                                     &timeout.tv_nsec, _PyTime_ROUND_UP) == -1)
             return NULL;
 
         if (timeout.tv_sec < 0) {

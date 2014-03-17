@@ -807,10 +807,11 @@ rangeiter_setstate(rangeiterobject *r, PyObject *state)
     long index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (index < 0 || index >= r->len) {
-        PyErr_SetString(PyExc_ValueError, "index out of range");
-        return NULL;
-    }
+    /* silently clip the index value */
+    if (index < 0)
+        index = 0;
+    else if (index > r->len)
+        index = r->len; /* exhausted iterator */
     r->index = index;
     Py_RETURN_NONE;
 }
@@ -985,6 +986,28 @@ longrangeiter_reduce(longrangeiterobject *r)
 static PyObject *
 longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
 {
+    int cmp;
+   
+    /* clip the value */
+    PyObject *zero = PyLong_FromLong(0);
+    if (zero == NULL)
+        return NULL;
+    cmp = PyObject_RichCompareBool(state, zero, Py_LT);
+    if (cmp > 0) {
+        Py_CLEAR(r->index);
+        r->index = zero;
+        Py_RETURN_NONE;
+    }
+    Py_DECREF(zero);
+    if (cmp < 0)
+        return NULL;
+
+    cmp = PyObject_RichCompareBool(r->len, state, Py_LT);
+    if (cmp < 0)
+        return NULL;
+    if (cmp > 0)
+        state = r->len;
+    
     Py_CLEAR(r->index);
     r->index = state;
     Py_INCREF(r->index);

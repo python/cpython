@@ -1256,9 +1256,12 @@ location listed above.
                         doc = getdoc(value)
                     else:
                         doc = None
-                    push(self.docother(
-                        getattr(object, name, None) or homecls.__dict__[name],
-                        name, mod, maxlen=70, doc=doc) + '\n')
+                    try:
+                        obj = getattr(object, name)
+                    except AttributeError:
+                        obj = homecls.__dict__[name]
+                    push(self.docother(obj, name, mod, maxlen=70, doc=doc) +
+                         '\n')
             return attrs
 
         attrs = [(name, kind, cls, value)

@@ -2,7 +2,7 @@ doctests = """
 Tests for the tokenize module.
 
 The tests can be really simple. Given a small fragment of source
-code, print out a table with tokens. The ENDMARK is omitted for
+code, print out a table with tokens. The ENDMARKER is omitted for
 brevity.
 
     >>> dump_tokens("1 + 1")
@@ -578,9 +578,15 @@ pass the '-ucpu' option to process the full directory.
     >>> tempdir = os.path.dirname(f) or os.curdir
     >>> testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
 
-tokenize is broken on test_pep3131.py because regular expressions are broken on
-the obscure unicode identifiers in it. *sigh*
+Tokenize is broken on test_pep3131.py because regular expressions are
+broken on the obscure unicode identifiers in it. *sigh*
+With roundtrip extended to test the 5-tuple mode of  untokenize,
+7 more testfiles fail.  Remove them also until the failure is diagnosed.
+
     >>> testfiles.remove(os.path.join(tempdir, "test_pep3131.py"))
+    >>> for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
+    ...     testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
+    ...
     >>> if not support.is_resource_enabled("cpu"):
     ...     testfiles = random.sample(testfiles, 10)
     ...
@@ -638,7 +644,7 @@ Legacy unicode literals:
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open)
+                     open as tokenize_open, Untokenizer)
 from io import BytesIO
 from unittest import TestCase
 import os, sys, glob
@@ -659,21 +665,39 @@ def dump_tokens(s):
 def roundtrip(f):
     """
     Test roundtrip for `untokenize`. `f` is an open file or a string.
-    The source code in f is tokenized, converted back to source code via
-    tokenize.untokenize(), and tokenized again from the latter. The test
-    fails if the second tokenization doesn't match the first.
+    The source code in f is tokenized to both 5- and 2-tuples.
+    Both sequences are converted back to source code via
+    tokenize.untokenize(), and the latter tokenized again to 2-tuples.
+    The test fails if the 3 pair tokenizations do not match.
+
+    When untokenize bugs are fixed, untokenize with 5-tuples should
+    reproduce code that does not contain a backslash continuation
+    following spaces.  A proper test should test this.
+
+    This function would be more useful for correcting bugs if it reported
+    the first point of failure, like assertEqual, rather than just
+    returning False -- or if it were only used in unittests and not
+    doctest and actually used assertEqual.
     """
+    # Get source code and original tokenizations
     if isinstance(f, str):
-        f = BytesIO(f.encode('utf-8'))
-    try:
-        token_list = list(tokenize(f.readline))
-    finally:
+        code = f.encode('utf-8')
+    else:
+        code = f.read()
         f.close()
-    tokens1 = [tok[:2] for tok in token_list]
-    new_bytes = untokenize(tokens1)
-    readline = (line for line in new_bytes.splitlines(keepends=True)).__next__
-    tokens2 = [tok[:2] for tok in tokenize(readline)]
-    return tokens1 == tokens2
+    readline = iter(code.splitlines(keepends=True)).__next__
+    tokens5 = list(tokenize(readline))
+    tokens2 = [tok[:2] for tok in tokens5]
+    # Reproduce tokens2 from pairs
+    bytes_from2 = untokenize(tokens2)
+    readline2 = iter(bytes_from2.splitlines(keepends=True)).__next__
+    tokens2_from2 = [tok[:2] for tok in tokenize(readline2)]
+    # Reproduce tokens2 from 5-tuples
+    bytes_from5 = untokenize(tokens5)
+    readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
+    tokens2_from5 = [tok[:2] for tok in tokenize(readline5)]
+    # Compare 3 versions
+    return tokens2 == tokens2_from2 == tokens2_from5
 
 # This is an example from the docs, set up as a doctest.
 def decistmt(s):
@@ -1153,6 +1177,47 @@ class TestTokenize(TestCase):
         # See http://bugs.python.org/issue16152
         self.assertExactTypeEqual('@          ', token.AT)
 
+class UntokenizeTest(TestCase):
+
+    def test_bad_input_order(self):
+        # raise if previous row
+        u = Untokenizer()
+        u.prev_row = 2
+        u.prev_col = 2
+        with self.assertRaises(ValueError) as cm:
+            u.add_whitespace((1,3))
+        self.assertEqual(cm.exception.args[0],
+                'start (1,3) precedes previous end (2,2)')
+        # raise if previous column in row
+        self.assertRaises(ValueError, u.add_whitespace, (2,1))
+
+    def test_backslash_continuation(self):
+        # The problem is that <whitespace>\<newline> leaves no token
+        u = Untokenizer()
+        u.prev_row = 1
+        u.prev_col =  1
+        u.tokens = []
+        u.add_whitespace((2, 0))
+        self.assertEqual(u.tokens, ['\\\n'])
+        u.prev_row = 2
+        u.add_whitespace((4, 4))
+        self.assertEqual(u.tokens, ['\\\n', '\\\n\\\n', '    '])
+        self.assertTrue(roundtrip('a\n  b\n    c\n  \\\n  c\n'))
+
+    def test_iter_compat(self):
+        u = Untokenizer()
+        token = (NAME, 'Hello')
+        tokens = [(ENCODING, 'utf-8'), token]
+        u.compat(token, iter([]))
+        self.assertEqual(u.tokens, ["Hello "])
+        u = Untokenizer()
+        self.assertEqual(u.untokenize(iter([token])), 'Hello ')
+        u = Untokenizer()
+        self.assertEqual(u.untokenize(iter(tokens)), 'Hello ')
+        self.assertEqual(u.encoding, 'utf-8')
+        self.assertEqual(untokenize(iter(tokens)), b'Hello ')
+
+
 __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 def test_main():
@@ -1162,6 +1227,7 @@ def test_main():
     support.run_unittest(Test_Tokenize)
     support.run_unittest(TestDetectEncoding)
     support.run_unittest(TestTokenize)
+    support.run_unittest(UntokenizeTest)
 
 if __name__ == "__main__":
     test_main()
