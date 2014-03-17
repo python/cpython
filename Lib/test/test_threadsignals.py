@@ -74,6 +74,9 @@ class ThreadSignals(unittest.TestCase):
 
     @unittest.skipIf(USING_PTHREAD_COND,
                      'POSIX condition variables cannot be interrupted')
+    # Issue #20564: sem_timedwait() cannot be interrupted on OpenBSD
+    @unittest.skipIf(sys.platform.startswith('openbsd'),
+                     'lock cannot be interrupted on OpenBSD')
     def test_lock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.
@@ -97,6 +100,9 @@ class ThreadSignals(unittest.TestCase):
 
     @unittest.skipIf(USING_PTHREAD_COND,
                      'POSIX condition variables cannot be interrupted')
+    # Issue #20564: sem_timedwait() cannot be interrupted on OpenBSD
+    @unittest.skipIf(sys.platform.startswith('openbsd'),
+                     'lock cannot be interrupted on OpenBSD')
     def test_rlock_acquire_interruption(self):
         # Mimic receiving a SIGINT (KeyboardInterrupt) with SIGALRM while stuck
         # in a deadlock.

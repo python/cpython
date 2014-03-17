@@ -6,8 +6,8 @@ import socket
 import sys
 import time
 import unittest
-import unittest.mock
-from test.support import find_unused_port, IPV6_ENABLED
+from unittest import mock
+from test.support import IPV6_ENABLED
 
 import asyncio
 from asyncio import base_events
@@ -15,7 +15,7 @@ from asyncio import constants
 from asyncio import test_utils
 
 
-MOCK_ANY = unittest.mock.ANY
+MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
 
 
@@ -23,11 +23,11 @@ class BaseEventLoopTests(unittest.TestCase):
 
     def setUp(self):
         self.loop = base_events.BaseEventLoop()
-        self.loop._selector = unittest.mock.Mock()
+        self.loop._selector = mock.Mock()
         asyncio.set_event_loop(None)
 
     def test_not_implemented(self):
-        m = unittest.mock.Mock()
+        m = mock.Mock()
         self.assertRaises(
             NotImplementedError,
             self.loop._make_socket_transport, m, m)
@@ -75,13 +75,13 @@ class BaseEventLoopTests(unittest.TestCase):
         self.assertFalse(self.loop._ready)
 
     def test_set_default_executor(self):
-        executor = unittest.mock.Mock()
+        executor = mock.Mock()
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
 
     def test_getnameinfo(self):
-        sockaddr = unittest.mock.Mock()
-        self.loop.run_in_executor = unittest.mock.Mock()
+        sockaddr = mock.Mock()
+        self.loop.run_in_executor = mock.Mock()
         self.loop.getnameinfo(sockaddr)
         self.assertEqual(
             (None, socket.getnameinfo, sockaddr, 0),
@@ -111,7 +111,7 @@ class BaseEventLoopTests(unittest.TestCase):
         def cb(arg):
             calls.append(arg)
 
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
         self.loop.call_later(-1, cb, 'a')
         self.loop.call_later(-2, cb, 'b')
         test_utils.run_briefly(self.loop)
@@ -121,7 +121,7 @@ class BaseEventLoopTests(unittest.TestCase):
         def cb():
             self.loop.stop()
 
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
         delay = 0.1
 
         when = self.loop.time() + delay
@@ -163,7 +163,7 @@ class BaseEventLoopTests(unittest.TestCase):
             pass
         h = asyncio.Handle(cb, (), self.loop)
         f = asyncio.Future(loop=self.loop)
-        executor = unittest.mock.Mock()
+        executor = mock.Mock()
         executor.submit.return_value = f
 
         self.loop.set_default_executor(executor)
@@ -171,7 +171,7 @@ class BaseEventLoopTests(unittest.TestCase):
         res = self.loop.run_in_executor(None, h)
         self.assertIs(f, res)
 
-        executor = unittest.mock.Mock()
+        executor = mock.Mock()
         executor.submit.return_value = f
         res = self.loop.run_in_executor(executor, h)
         self.assertIs(f, res)
@@ -187,7 +187,7 @@ class BaseEventLoopTests(unittest.TestCase):
 
         h1.cancel()
 
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
         self.loop._scheduled.append(h1)
         self.loop._scheduled.append(h2)
         self.loop._run_once()
@@ -203,8 +203,8 @@ class BaseEventLoopTests(unittest.TestCase):
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
 
-    @unittest.mock.patch('asyncio.base_events.time')
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.time')
+    @mock.patch('asyncio.base_events.logger')
     def test__run_once_logging(self, m_logger, m_time):
         # Log to INFO level if timeout > 1.0 sec.
         idx = -1
@@ -219,7 +219,7 @@ class BaseEventLoopTests(unittest.TestCase):
 
         self.loop._scheduled.append(
             asyncio.TimerHandle(11.0, lambda: True, (), self.loop))
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
         self.loop._run_once()
         self.assertEqual(logging.INFO, m_logger.log.call_args[0][0])
 
@@ -242,7 +242,7 @@ class BaseEventLoopTests(unittest.TestCase):
         h = asyncio.TimerHandle(time.monotonic() - 1, cb, (self.loop,),
                                 self.loop)
 
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
         self.loop._scheduled.append(h)
         self.loop._run_once()
 
@@ -303,14 +303,14 @@ class BaseEventLoopTests(unittest.TestCase):
             asyncio.SubprocessProtocol, 'exit 0', bufsize=4096)
 
     def test_default_exc_handler_callback(self):
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
 
         def zero_error(fut):
             fut.set_result(True)
             1/0
 
         # Test call_soon (events.Handle)
-        with unittest.mock.patch('asyncio.base_events.logger') as log:
+        with mock.patch('asyncio.base_events.logger') as log:
             fut = asyncio.Future(loop=self.loop)
             self.loop.call_soon(zero_error, fut)
             fut.add_done_callback(lambda fut: self.loop.stop())
@@ -320,7 +320,7 @@ class BaseEventLoopTests(unittest.TestCase):
                 exc_info=(ZeroDivisionError, MOCK_ANY, MOCK_ANY))
 
         # Test call_later (events.TimerHandle)
-        with unittest.mock.patch('asyncio.base_events.logger') as log:
+        with mock.patch('asyncio.base_events.logger') as log:
             fut = asyncio.Future(loop=self.loop)
             self.loop.call_later(0.01, zero_error, fut)
             fut.add_done_callback(lambda fut: self.loop.stop())
@@ -330,7 +330,7 @@ class BaseEventLoopTests(unittest.TestCase):
                 exc_info=(ZeroDivisionError, MOCK_ANY, MOCK_ANY))
 
     def test_default_exc_handler_coro(self):
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
 
         @asyncio.coroutine
         def zero_error_coro():
@@ -338,7 +338,7 @@ class BaseEventLoopTests(unittest.TestCase):
             1/0
 
         # Test Future.__del__
-        with unittest.mock.patch('asyncio.base_events.logger') as log:
+        with mock.patch('asyncio.base_events.logger') as log:
             fut = asyncio.async(zero_error_coro(), loop=self.loop)
             fut.add_done_callback(lambda *args: self.loop.stop())
             self.loop.run_forever()
@@ -368,9 +368,9 @@ class BaseEventLoopTests(unittest.TestCase):
             self.loop.call_soon(zero_error)
             self.loop._run_once()
 
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
 
-        mock_handler = unittest.mock.Mock()
+        mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
         run_loop()
         mock_handler.assert_called_with(self.loop, {
@@ -382,7 +382,7 @@ class BaseEventLoopTests(unittest.TestCase):
         mock_handler.reset_mock()
 
         self.loop.set_exception_handler(None)
-        with unittest.mock.patch('asyncio.base_events.logger') as log:
+        with mock.patch('asyncio.base_events.logger') as log:
             run_loop()
             log.error.assert_called_with(
                         test_utils.MockPattern(
@@ -401,11 +401,11 @@ class BaseEventLoopTests(unittest.TestCase):
         def handler(loop, context):
             raise AttributeError('spam')
 
-        self.loop._process_events = unittest.mock.Mock()
+        self.loop._process_events = mock.Mock()
 
         self.loop.set_exception_handler(handler)
 
-        with unittest.mock.patch('asyncio.base_events.logger') as log:
+        with mock.patch('asyncio.base_events.logger') as log:
             run_loop()
             log.error.assert_called_with(
                 test_utils.MockPattern(
@@ -417,8 +417,8 @@ class BaseEventLoopTests(unittest.TestCase):
 
         class Loop(base_events.BaseEventLoop):
 
-            _selector = unittest.mock.Mock()
-            _process_events = unittest.mock.Mock()
+            _selector = mock.Mock()
+            _process_events = mock.Mock()
 
             def default_exception_handler(self, context):
                 nonlocal _context
@@ -435,7 +435,7 @@ class BaseEventLoopTests(unittest.TestCase):
             loop.call_soon(zero_error)
             loop._run_once()
 
-        with unittest.mock.patch('asyncio.base_events.logger') as log:
+        with mock.patch('asyncio.base_events.logger') as log:
             run_loop()
             log.error.assert_called_with(
                 'Exception in default exception handler',
@@ -446,7 +446,7 @@ class BaseEventLoopTests(unittest.TestCase):
 
         _context = None
         loop.set_exception_handler(custom_handler)
-        with unittest.mock.patch('asyncio.base_events.logger') as log:
+        with mock.patch('asyncio.base_events.logger') as log:
             run_loop()
             log.error.assert_called_with(
                 test_utils.MockPattern('Exception in default exception.*'
@@ -527,7 +527,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
 
-    @unittest.mock.patch('asyncio.base_events.socket')
+    @mock.patch('asyncio.base_events.socket')
     def test_create_connection_multiple_errors(self, m_socket):
 
         class MyProto(asyncio.Protocol):
@@ -592,7 +592,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
 
         self.loop.getaddrinfo = getaddrinfo_task
-        self.loop.sock_connect = unittest.mock.Mock()
+        self.loop.sock_connect = mock.Mock()
         self.loop.sock_connect.side_effect = OSError
 
         coro = self.loop.create_connection(MyProto, 'example.com', 80)
@@ -609,7 +609,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
 
         self.loop.getaddrinfo = getaddrinfo_task
-        self.loop.sock_connect = unittest.mock.Mock()
+        self.loop.sock_connect = mock.Mock()
         self.loop.sock_connect.side_effect = OSError
 
         coro = self.loop.create_connection(
@@ -617,7 +617,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         with self.assertRaises(OSError):
             self.loop.run_until_complete(coro)
 
-    @unittest.mock.patch('asyncio.base_events.socket')
+    @mock.patch('asyncio.base_events.socket')
     def test_create_connection_multiple_errors_local_addr(self, m_socket):
 
         def bind(addr):
@@ -637,7 +637,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
 
         self.loop.getaddrinfo = getaddrinfo_task
-        self.loop.sock_connect = unittest.mock.Mock()
+        self.loop.sock_connect = mock.Mock()
         self.loop.sock_connect.side_effect = OSError('Err2')
 
         coro = self.loop.create_connection(
@@ -669,7 +669,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             OSError, self.loop.run_until_complete, coro)
 
     def test_create_connection_ssl_server_hostname_default(self):
-        self.loop.getaddrinfo = unittest.mock.Mock()
+        self.loop.getaddrinfo = mock.Mock()
 
         def mock_getaddrinfo(*args, **kwds):
             f = asyncio.Future(loop=self.loop)
@@ -678,9 +678,9 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             return f
 
         self.loop.getaddrinfo.side_effect = mock_getaddrinfo
-        self.loop.sock_connect = unittest.mock.Mock()
+        self.loop.sock_connect = mock.Mock()
         self.loop.sock_connect.return_value = ()
-        self.loop._make_ssl_transport = unittest.mock.Mock()
+        self.loop._make_ssl_transport = mock.Mock()
 
         class _SelectorTransportMock:
             _sock = None
@@ -696,7 +696,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             return transport
 
         self.loop._make_ssl_transport.side_effect = mock_make_ssl_transport
-        ANY = unittest.mock.ANY
+        ANY = mock.ANY
         # First try the default server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True)
@@ -775,13 +775,13 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
     def test_create_server_no_getaddrinfo(self):
-        getaddrinfo = self.loop.getaddrinfo = unittest.mock.Mock()
+        getaddrinfo = self.loop.getaddrinfo = mock.Mock()
         getaddrinfo.return_value = []
 
         f = self.loop.create_server(MyProto, '0.0.0.0', 0)
         self.assertRaises(OSError, self.loop.run_until_complete, f)
 
-    @unittest.mock.patch('asyncio.base_events.socket')
+    @mock.patch('asyncio.base_events.socket')
     def test_create_server_cant_bind(self, m_socket):
 
         class Err(OSError):
@@ -790,14 +790,14 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         m_socket.getaddrinfo.return_value = [
             (2, 1, 6, '', ('127.0.0.1', 10100))]
         m_socket.getaddrinfo._is_coroutine = False
-        m_sock = m_socket.socket.return_value = unittest.mock.Mock()
+        m_sock = m_socket.socket.return_value = mock.Mock()
         m_sock.bind.side_effect = Err
 
         fut = self.loop.create_server(MyProto, '0.0.0.0', 0)
         self.assertRaises(OSError, self.loop.run_until_complete, fut)
         self.assertTrue(m_sock.close.called)
 
-    @unittest.mock.patch('asyncio.base_events.socket')
+    @mock.patch('asyncio.base_events.socket')
     def test_create_datagram_endpoint_no_addrinfo(self, m_socket):
         m_socket.getaddrinfo.return_value = []
         m_socket.getaddrinfo._is_coroutine = False
@@ -818,7 +818,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             AssertionError, self.loop.run_until_complete, coro)
 
     def test_create_datagram_endpoint_connect_err(self):
-        self.loop.sock_connect = unittest.mock.Mock()
+        self.loop.sock_connect = mock.Mock()
         self.loop.sock_connect.side_effect = OSError
 
         coro = self.loop.create_datagram_endpoint(
@@ -826,7 +826,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
-    @unittest.mock.patch('asyncio.base_events.socket')
+    @mock.patch('asyncio.base_events.socket')
     def test_create_datagram_endpoint_socket_err(self, m_socket):
         m_socket.getaddrinfo = socket.getaddrinfo
         m_socket.socket.side_effect = OSError
@@ -849,7 +849,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.assertRaises(
             ValueError, self.loop.run_until_complete, coro)
 
-    @unittest.mock.patch('asyncio.base_events.socket')
+    @mock.patch('asyncio.base_events.socket')
     def test_create_datagram_endpoint_setblk_err(self, m_socket):
         m_socket.socket.return_value.setblocking.side_effect = OSError
 
@@ -865,14 +865,14 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             asyncio.DatagramProtocol)
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
-    @unittest.mock.patch('asyncio.base_events.socket')
+    @mock.patch('asyncio.base_events.socket')
     def test_create_datagram_endpoint_cant_bind(self, m_socket):
         class Err(OSError):
             pass
 
         m_socket.AF_INET6 = socket.AF_INET6
         m_socket.getaddrinfo = socket.getaddrinfo
-        m_sock = m_socket.socket.return_value = unittest.mock.Mock()
+        m_sock = m_socket.socket.return_value = mock.Mock()
         m_sock.bind.side_effect = Err
 
         fut = self.loop.create_datagram_endpoint(
@@ -882,19 +882,19 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.assertTrue(m_sock.close.called)
 
     def test_accept_connection_retry(self):
-        sock = unittest.mock.Mock()
+        sock = mock.Mock()
         sock.accept.side_effect = BlockingIOError()
 
         self.loop._accept_connection(MyProto, sock)
         self.assertFalse(sock.close.called)
 
-    @unittest.mock.patch('asyncio.base_events.logger')
+    @mock.patch('asyncio.base_events.logger')
     def test_accept_connection_exception(self, m_log):
-        sock = unittest.mock.Mock()
+        sock = mock.Mock()
         sock.fileno.return_value = 10
         sock.accept.side_effect = OSError(errno.EMFILE, 'Too many open files')
-        self.loop.remove_reader = unittest.mock.Mock()
-        self.loop.call_later = unittest.mock.Mock()
+        self.loop.remove_reader = mock.Mock()
+        self.loop.call_later = mock.Mock()
 
         self.loop._accept_connection(MyProto, sock)
         self.assertTrue(m_log.error.called)
@@ -902,7 +902,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.loop.remove_reader.assert_called_with(10)
         self.loop.call_later.assert_called_with(constants.ACCEPT_RETRY_DELAY,
                                                 # self.loop._start_serving
-                                                unittest.mock.ANY,
+                                                mock.ANY,
                                                 MyProto, sock, None, None)
 
     def test_call_coroutine(self):

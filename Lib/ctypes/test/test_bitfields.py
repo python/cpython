@@ -207,7 +207,7 @@ class BitFieldTest(unittest.TestCase):
         class X(Structure):
             _fields_ = [("a", c_byte, 4),
                         ("b", c_int, 32)]
-        self.assertEqual(sizeof(X), sizeof(c_int)*2)
+        self.assertEqual(sizeof(X), alignment(c_int)+sizeof(c_int))
 
     def test_mixed_3(self):
         class X(Structure):

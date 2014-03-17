@@ -22,7 +22,9 @@
 static const double ln2 = 6.93147180559945286227E-01;
 static const double two_pow_m28 = 3.7252902984619141E-09; /* 2**-28 */
 static const double two_pow_p28 = 268435456.0; /* 2**28 */
+#ifndef Py_NAN
 static const double zero = 0.0;
+#endif
 
 /* acosh(x)
  * Method :

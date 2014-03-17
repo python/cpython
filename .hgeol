@@ -38,6 +38,8 @@ Lib/test/xmltestdata/* = BIN
 
 Lib/venv/scripts/nt/* = BIN
 
+Lib/test/coding20731.py = BIN
+
 # All other files (which presumably are human-editable) are "native".
 # This must be the last rule!
 

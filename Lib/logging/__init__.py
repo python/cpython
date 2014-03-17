@@ -1,4 +1,4 @@
-# Copyright 2001-2013 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2014 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2014 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -42,6 +42,7 @@ except ImportError: #pragma: no cover
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
+# The following module attributes are no longer updated.
 __version__ = "0.5.1.2"
 __date__    = "07 February 2010"
 
@@ -902,8 +903,15 @@ class Handler(Filterer):
                     sys.stderr.write('Logged from file %s, line %s\n' % (
                                      record.filename, record.lineno))
                 # Issue 18671: output logging message and arguments
-                sys.stderr.write('Message: %r\n'
-                                 'Arguments: %s\n' % (record.msg, record.args))
+                try:
+                    sys.stderr.write('Message: %r\n'
+                                     'Arguments: %s\n' % (record.msg,
+                                                          record.args))
+                except Exception:
+                    sys.stderr.write('Unable to print the message and arguments'
+                                     ' - possible formatting error.\nUse the'
+                                     ' traceback above to help find the error.\n'
+                                    )
             except OSError: #pragma: no cover
                 pass    # see issue 5971
             finally:

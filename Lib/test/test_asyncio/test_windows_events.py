@@ -8,7 +8,6 @@ if sys.platform != 'win32':
 import _winapi
 
 import asyncio
-from asyncio import test_utils
 from asyncio import _overlapped
 from asyncio import windows_events
 
@@ -50,7 +49,7 @@ class ProactorTests(unittest.TestCase):
         ADDRESS = r'\\.\pipe\test_double_bind-%s' % os.getpid()
         server1 = windows_events.PipeServer(ADDRESS)
         with self.assertRaises(PermissionError):
-            server2 = windows_events.PipeServer(ADDRESS)
+            windows_events.PipeServer(ADDRESS)
         server1.close()
 
     def test_pipe(self):

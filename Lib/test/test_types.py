@@ -1,6 +1,6 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_unittest, run_with_locale
+from test.support import run_unittest, run_with_locale, cpython_only
 import collections
 import pickle
 import locale
@@ -1170,9 +1170,31 @@ class SimpleNamespaceTests(unittest.TestCase):
             self.assertEqual(ns, ns_roundtrip, pname)
 
 
+class SharedKeyTests(unittest.TestCase):
+
+    @cpython_only
+    def test_subclasses(self):
+        # Verify that subclasses can share keys (per PEP 412)
+        class A:
+            pass
+        class B(A):
+            pass
+
+        a, b = A(), B()
+        self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        a.x, a.y, a.z, a.w = range(4)
+        self.assertNotEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
+        a2 = A()
+        self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        b.u, b.v, b.w, b.t = range(4)
+        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({}))
+
+
 def test_main():
     run_unittest(TypesTests, MappingProxyTests, ClassCreationTests,
-                 SimpleNamespaceTests)
+                 SimpleNamespaceTests, SharedKeyTests)
 
 if __name__ == '__main__':
     test_main()

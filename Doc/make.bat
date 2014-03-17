@@ -1,7 +1,6 @@
 @@echo off
 setlocal
 
-set SVNROOT=http://svn.python.org/projects
 if "%PYTHON%" EQU "" set PYTHON=py -2
 if "%HTMLHELP%" EQU "" set HTMLHELP=%ProgramFiles%\HTML Help Workshop\hhc.exe
 if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/sphinxext/patchlevel.py`) do set DISTVERSION=%%v
@@ -14,15 +13,11 @@ if "%1" EQU "text" goto build
 if "%1" EQU "suspicious" goto build
 if "%1" EQU "linkcheck" goto build
 if "%1" EQU "changes" goto build
-if "%1" EQU "checkout" goto checkout
-if "%1" EQU "update" goto update
 
 :help
 set this=%~n0
 echo HELP
 echo.
-echo %this% checkout
-echo %this% update
 echo %this% html
 echo %this% htmlhelp
 echo %this% latex
@@ -31,20 +26,6 @@ echo %this% suspicious
 echo %this% linkcheck
 echo %this% changes
 echo.
-goto end
-
-:checkout
-svn co %SVNROOT%/external/Sphinx-1.2/sphinx tools/sphinx
-svn co %SVNROOT%/external/docutils-0.11/docutils tools/docutils
-svn co %SVNROOT%/external/Jinja-2.3.1/jinja2 tools/jinja2
-svn co %SVNROOT%/external/Pygments-1.6/pygments tools/pygments
-goto end
-
-:update
-svn update tools/sphinx
-svn update tools/docutils
-svn update tools/jinja2
-svn update tools/pygments
 goto end
 
 :build

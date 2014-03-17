@@ -421,6 +421,13 @@ class TestGzip(BaseTest):
         with gzip.GzipFile(fileobj=io.BytesIO(gzdata)) as f:
             self.assertEqual(f.read(), b'Test')
 
+    def test_prepend_error(self):
+        # See issue #20875
+        with gzip.open(self.filename, "wb") as f:
+            f.write(data1)
+        with gzip.open(self.filename, "rb") as f:
+            f.fileobj.prepend()
+
 class TestOpen(BaseTest):
     def test_binary_modes(self):
         uncompressed = data1 * 50

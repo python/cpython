@@ -14,6 +14,8 @@ except ImportError:
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
 TIME_MINYEAR = -TIME_MAXYEAR - 1
+_PyTime_ROUND_DOWN = 0
+_PyTime_ROUND_UP = 1
 
 
 class TimeTestCase(unittest.TestCase):
@@ -226,7 +228,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
         t = time.mktime((2000, 1, 1, 0, 0, 0, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sat Jan  1 00:00:00 2000')
-        for year in [-100, 100, 1000, 2000, 10000]:
+        for year in [-100, 100, 1000, 2000, 2050, 10000]:
             try:
                 testval = time.mktime((year, 1, 10) + (0,)*6)
             except (ValueError, OverflowError):
@@ -344,6 +346,13 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
+            if sys.platform.startswith('aix') and t == -1:
+                # Issue #11188, #19748: mktime() returns -1 on error. On Linux,
+                # the tm_wday field is used as a sentinel () to detect if -1 is
+                # really an error or a valid timestamp. On AIX, tm_wday is
+                # unchanged even on success and so cannot be used as a
+                # sentinel.
+                continue
             try:
                 tt = time.localtime(t)
             except (OverflowError, OSError):
@@ -585,58 +594,116 @@ class TestPytime(unittest.TestCase):
     @support.cpython_only
     def test_time_t(self):
         from _testcapi import pytime_object_to_time_t
-        for obj, time_t in (
-            (0, 0),
-            (-1, -1),
-            (-1.0, -1),
-            (-1.9, -1),
-            (1.0, 1),
-            (1.9, 1),
+        for obj, time_t, rnd in (
+            # Round towards zero
+            (0, 0, _PyTime_ROUND_DOWN),
+            (-1, -1, _PyTime_ROUND_DOWN),
+            (-1.0, -1, _PyTime_ROUND_DOWN),
+            (-1.9, -1, _PyTime_ROUND_DOWN),
+            (1.0, 1, _PyTime_ROUND_DOWN),
+            (1.9, 1, _PyTime_ROUND_DOWN),
+            # Round away from zero
+            (0, 0, _PyTime_ROUND_UP),
+            (-1, -1, _PyTime_ROUND_UP),
+            (-1.0, -1, _PyTime_ROUND_UP),
+            (-1.9, -2, _PyTime_ROUND_UP),
+            (1.0, 1, _PyTime_ROUND_UP),
+            (1.9, 2, _PyTime_ROUND_UP),
         ):
-            self.assertEqual(pytime_object_to_time_t(obj), time_t)
+            self.assertEqual(pytime_object_to_time_t(obj, rnd), time_t)
 
+        rnd = _PyTime_ROUND_DOWN
         for invalid in self.invalid_values:
-            self.assertRaises(OverflowError, pytime_object_to_time_t, invalid)
+            self.assertRaises(OverflowError,
+                              pytime_object_to_time_t, invalid, rnd)
 
     @support.cpython_only
     def test_timeval(self):
         from _testcapi import pytime_object_to_timeval
-        for obj, timeval in (
-            (0, (0, 0)),
-            (-1, (-1, 0)),
-            (-1.0, (-1, 0)),
-            (1e-6, (0, 1)),
-            (-1e-6, (-1, 999999)),
-            (-1.2, (-2, 800000)),
-            (1.1234560, (1, 123456)),
-            (1.1234569, (1, 123456)),
-            (-1.1234560, (-2, 876544)),
-            (-1.1234561, (-2, 876543)),
+        for obj, timeval, rnd in (
+            # Round towards zero
+            (0, (0, 0), _PyTime_ROUND_DOWN),
+            (-1, (-1, 0), _PyTime_ROUND_DOWN),
+            (-1.0, (-1, 0), _PyTime_ROUND_DOWN),
+            (1e-6, (0, 1), _PyTime_ROUND_DOWN),
+            (1e-7, (0, 0), _PyTime_ROUND_DOWN),
+            (-1e-6, (-1, 999999), _PyTime_ROUND_DOWN),
+            (-1e-7, (-1, 999999), _PyTime_ROUND_DOWN),
+            (-1.2, (-2, 800000), _PyTime_ROUND_DOWN),
+            (0.9999999, (0, 999999), _PyTime_ROUND_DOWN),
+            (0.0000041, (0, 4), _PyTime_ROUND_DOWN),
+            (1.1234560, (1, 123456), _PyTime_ROUND_DOWN),
+            (1.1234569, (1, 123456), _PyTime_ROUND_DOWN),
+            (-0.0000040, (-1, 999996), _PyTime_ROUND_DOWN),
+            (-0.0000041, (-1, 999995), _PyTime_ROUND_DOWN),
+            (-1.1234560, (-2, 876544), _PyTime_ROUND_DOWN),
+            (-1.1234561, (-2, 876543), _PyTime_ROUND_DOWN),
+            # Round away from zero
+            (0, (0, 0), _PyTime_ROUND_UP),
+            (-1, (-1, 0), _PyTime_ROUND_UP),
+            (-1.0, (-1, 0), _PyTime_ROUND_UP),
+            (1e-6, (0, 1), _PyTime_ROUND_UP),
+            (1e-7, (0, 1), _PyTime_ROUND_UP),
+            (-1e-6, (-1, 999999), _PyTime_ROUND_UP),
+            (-1e-7, (-1, 999999), _PyTime_ROUND_UP),
+            (-1.2, (-2, 800000), _PyTime_ROUND_UP),
+            (0.9999999, (1, 0), _PyTime_ROUND_UP),
+            (0.0000041, (0, 5), _PyTime_ROUND_UP),
+            (1.1234560, (1, 123457), _PyTime_ROUND_UP),
+            (1.1234569, (1, 123457), _PyTime_ROUND_UP),
+            (-0.0000040, (-1, 999996), _PyTime_ROUND_UP),
+            (-0.0000041, (-1, 999995), _PyTime_ROUND_UP),
+            (-1.1234560, (-2, 876544), _PyTime_ROUND_UP),
+            (-1.1234561, (-2, 876543), _PyTime_ROUND_UP),
         ):
-            self.assertEqual(pytime_object_to_timeval(obj), timeval)
+            with self.subTest(obj=obj, round=rnd, timeval=timeval):
+                self.assertEqual(pytime_object_to_timeval(obj, rnd), timeval)
 
+        rnd = _PyTime_ROUND_DOWN
         for invalid in self.invalid_values:
-            self.assertRaises(OverflowError, pytime_object_to_timeval, invalid)
+            self.assertRaises(OverflowError,
+                              pytime_object_to_timeval, invalid, rnd)
 
     @support.cpython_only
     def test_timespec(self):
         from _testcapi import pytime_object_to_timespec
-        for obj, timespec in (
-            (0, (0, 0)),
-            (-1, (-1, 0)),
-            (-1.0, (-1, 0)),
-            (1e-9, (0, 1)),
-            (-1e-9, (-1, 999999999)),
-            (-1.2, (-2, 800000000)),
-            (1.1234567890, (1, 123456789)),
-            (1.1234567899, (1, 123456789)),
-            (-1.1234567890, (-2, 876543211)),
-            (-1.1234567891, (-2, 876543210)),
+        for obj, timespec, rnd in (
+            # Round towards zero
+            (0, (0, 0), _PyTime_ROUND_DOWN),
+            (-1, (-1, 0), _PyTime_ROUND_DOWN),
+            (-1.0, (-1, 0), _PyTime_ROUND_DOWN),
+            (1e-9, (0, 1), _PyTime_ROUND_DOWN),
+            (1e-10, (0, 0), _PyTime_ROUND_DOWN),
+            (-1e-9, (-1, 999999999), _PyTime_ROUND_DOWN),
+            (-1e-10, (-1, 999999999), _PyTime_ROUND_DOWN),
+            (-1.2, (-2, 800000000), _PyTime_ROUND_DOWN),
+            (0.9999999999, (0, 999999999), _PyTime_ROUND_DOWN),
+            (1.1234567890, (1, 123456789), _PyTime_ROUND_DOWN),
+            (1.1234567899, (1, 123456789), _PyTime_ROUND_DOWN),
+            (-1.1234567890, (-2, 876543211), _PyTime_ROUND_DOWN),
+            (-1.1234567891, (-2, 876543210), _PyTime_ROUND_DOWN),
+            # Round away from zero
+            (0, (0, 0), _PyTime_ROUND_UP),
+            (-1, (-1, 0), _PyTime_ROUND_UP),
+            (-1.0, (-1, 0), _PyTime_ROUND_UP),
+            (1e-9, (0, 1), _PyTime_ROUND_UP),
+            (1e-10, (0, 1), _PyTime_ROUND_UP),
+            (-1e-9, (-1, 999999999), _PyTime_ROUND_UP),
+            (-1e-10, (-1, 999999999), _PyTime_ROUND_UP),
+            (-1.2, (-2, 800000000), _PyTime_ROUND_UP),
+            (0.9999999999, (1, 0), _PyTime_ROUND_UP),
+            (1.1234567890, (1, 123456790), _PyTime_ROUND_UP),
+            (1.1234567899, (1, 123456790), _PyTime_ROUND_UP),
+            (-1.1234567890, (-2, 876543211), _PyTime_ROUND_UP),
+            (-1.1234567891, (-2, 876543210), _PyTime_ROUND_UP),
         ):
-            self.assertEqual(pytime_object_to_timespec(obj), timespec)
+            with self.subTest(obj=obj, round=rnd, timespec=timespec):
+                self.assertEqual(pytime_object_to_timespec(obj, rnd), timespec)
 
+        rnd = _PyTime_ROUND_DOWN
         for invalid in self.invalid_values:
-            self.assertRaises(OverflowError, pytime_object_to_timespec, invalid)
+            self.assertRaises(OverflowError,
+                              pytime_object_to_timespec, invalid, rnd)
 
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):

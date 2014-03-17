@@ -1970,7 +1970,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
             if (keys[i] == NULL) {
                 for (i=i-1 ; i>=0 ; i--)
                     Py_DECREF(keys[i]);
-                if (keys != &ms.temparray[saved_ob_size+1])
+                if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
                     PyMem_FREE(keys);
                 goto keyfunc_fail;
             }
@@ -2043,7 +2043,7 @@ fail:
     if (keys != NULL) {
         for (i = 0; i < saved_ob_size; i++)
             Py_DECREF(keys[i]);
-        if (keys != &ms.temparray[saved_ob_size+1])
+        if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
             PyMem_FREE(keys);
     }
 
@@ -2811,6 +2811,8 @@ listiter_setstate(listiterobject *it, PyObject *state)
     if (it->it_seq != NULL) {
         if (index < 0)
             index = 0;
+        else if (index > PyList_GET_SIZE(it->it_seq))
+            index = PyList_GET_SIZE(it->it_seq); /* iterator exhausted */
         it->it_index = index;
     }
     Py_RETURN_NONE;

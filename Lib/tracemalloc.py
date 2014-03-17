@@ -1,4 +1,4 @@
-from collections import Sequence
+from collections import Sequence, Iterable
 from functools import total_ordering
 import fnmatch
 import linecache
@@ -119,12 +119,12 @@ def _compare_grouped_stats(old_group, new_group):
         previous = old_group.pop(traceback, None)
         if previous is not None:
             stat = StatisticDiff(traceback,
-                                  stat.size, stat.size - previous.size,
-                                  stat.count, stat.count - previous.count)
+                                 stat.size, stat.size - previous.size,
+                                 stat.count, stat.count - previous.count)
         else:
             stat = StatisticDiff(traceback,
-                                  stat.size, stat.size,
-                                  stat.count, stat.count)
+                                 stat.size, stat.size,
+                                 stat.count, stat.count)
         statistics.append(stat)
 
     for traceback, stat in old_group.items():
@@ -141,6 +141,7 @@ class Frame:
     __slots__ = ("_frame",)
 
     def __init__(self, frame):
+        # frame is a tuple: (filename: str, lineno: int)
         self._frame = frame
 
     @property
@@ -177,6 +178,8 @@ class Traceback(Sequence):
 
     def __init__(self, frames):
         Sequence.__init__(self)
+        # frames is a tuple of frame tuples: see Frame constructor for the
+        # format of a frame tuple
         self._frames = frames
 
     def __len__(self):
@@ -241,6 +244,8 @@ class Trace:
     __slots__ = ("_trace",)
 
     def __init__(self, trace):
+        # trace is a tuple: (size, traceback), see Traceback constructor
+        # for the format of the traceback tuple
         self._trace = trace
 
     @property
@@ -268,6 +273,7 @@ class Trace:
 class _Traces(Sequence):
     def __init__(self, traces):
         Sequence.__init__(self)
+        # traces is a tuple of trace tuples: see Trace constructor
         self._traces = traces
 
     def __len__(self):
@@ -338,6 +344,8 @@ class Snapshot:
     """
 
     def __init__(self, traces, traceback_limit):
+        # traces is a tuple of trace tuples: see _Traces constructor for
+        # the exact format
         self.traces = _Traces(traces)
         self.traceback_limit = traceback_limit
 
@@ -374,6 +382,9 @@ class Snapshot:
         is a list of Filter instances.  If filters is an empty list, return a
         new Snapshot instance with a copy of the traces.
         """
+        if not isinstance(filters, Iterable):
+            raise TypeError("filters must be a list of filters, not %s"
+                            % type(filters).__name__)
         if filters:
             include_filters = []
             exclude_filters = []

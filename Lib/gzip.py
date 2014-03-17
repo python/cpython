@@ -96,7 +96,7 @@ class _PaddedFile:
             self._read -= len(prepend)
             return
         else:
-            self._buffer = self._buffer[read:] + prepend
+            self._buffer = self._buffer[self._read:] + prepend
         self._length = len(self._buffer)
         self._read = 0
 
