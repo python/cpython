@@ -1,1 +1,1 @@
-IDLE_VERSION = "3.4.0rc1"
+IDLE_VERSION = "3.5.0a0"
