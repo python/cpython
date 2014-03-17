@@ -2350,7 +2350,7 @@ Changes in the Python API
 * :meth:`ssl.SSLSocket.getpeercert` and :meth:`ssl.SSLSocket.do_handshake`
   now raise an :exc:`OSError` with ``ENOTCONN`` when the ``SSLSocket`` is not
   connected, instead of the previous behavior of raising an
-  :exc:`AttributError`.  In addition, :meth:`~ssl.SSLSocket.getpeercert`
+  :exc:`AttributeError`.  In addition, :meth:`~ssl.SSLSocket.getpeercert`
   will raise a :exc:`ValueError` if the handshake has not yet been done.
 
 * :func:`base64.b32decode` now raises a :exc:`binascii.Error` when the
