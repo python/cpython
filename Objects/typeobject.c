@@ -2472,6 +2472,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             type->tp_dictoffset = slotoffset;
         slotoffset += sizeof(PyObject *);
     }
+    else if (!type->tp_dictoffset) {
+        type->tp_dictoffset = base->tp_dictoffset;
+    }
     if (type->tp_dictoffset) {
         et->ht_cached_keys = _PyDict_NewKeysForClass();
     }

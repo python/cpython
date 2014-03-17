@@ -1,9 +1,11 @@
 """Tests for window_utils"""
 
+import socket
 import sys
 import test.support
 import unittest
-import unittest.mock
+from test.support import IPV6_ENABLED
+from unittest import mock
 
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
@@ -16,22 +18,39 @@ from asyncio import _overlapped
 
 class WinsocketpairTests(unittest.TestCase):
 
-    def test_winsocketpair(self):
-        ssock, csock = windows_utils.socketpair()
-
+    def check_winsocketpair(self, ssock, csock):
         csock.send(b'xxx')
         self.assertEqual(b'xxx', ssock.recv(1024))
-
         csock.close()
         ssock.close()
 
-    @unittest.mock.patch('asyncio.windows_utils.socket')
+    def test_winsocketpair(self):
+        ssock, csock = windows_utils.socketpair()
+        self.check_winsocketpair(ssock, csock)
+
+    @unittest.skipUnless(IPV6_ENABLED, 'IPv6 not supported or enabled')
+    def test_winsocketpair_ipv6(self):
+        ssock, csock = windows_utils.socketpair(family=socket.AF_INET6)
+        self.check_winsocketpair(ssock, csock)
+
+    @mock.patch('asyncio.windows_utils.socket')
     def test_winsocketpair_exc(self, m_socket):
+        m_socket.AF_INET = socket.AF_INET
+        m_socket.SOCK_STREAM = socket.SOCK_STREAM
         m_socket.socket.return_value.getsockname.return_value = ('', 12345)
         m_socket.socket.return_value.accept.return_value = object(), object()
         m_socket.socket.return_value.connect.side_effect = OSError()
 
         self.assertRaises(OSError, windows_utils.socketpair)
+
+    def test_winsocketpair_invalid_args(self):
+        self.assertRaises(ValueError,
+                          windows_utils.socketpair, family=socket.AF_UNSPEC)
+        self.assertRaises(ValueError,
+                          windows_utils.socketpair, type=socket.SOCK_DGRAM)
+        self.assertRaises(ValueError,
+                          windows_utils.socketpair, proto=1)
+
 
 
 class PipeTests(unittest.TestCase):

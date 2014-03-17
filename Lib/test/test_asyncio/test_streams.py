@@ -1,10 +1,9 @@
 """Tests for streams.py."""
 
-import functools
 import gc
 import socket
 import unittest
-import unittest.mock
+from unittest import mock
 try:
     import ssl
 except ImportError:
@@ -29,7 +28,7 @@ class StreamReaderTests(unittest.TestCase):
         self.loop.close()
         gc.collect()
 
-    @unittest.mock.patch('asyncio.streams.events')
+    @mock.patch('asyncio.streams.events')
     def test_ctor_global_loop(self, m_events):
         stream = asyncio.StreamReader()
         self.assertIs(stream._loop, m_events.get_event_loop.return_value)

@@ -10,8 +10,68 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20929: Add a type cast to avoid shifting a negative number.
+
+- Issue #20731: Properly position in source code files even if they
+  are opened in text mode. Patch by Serhiy Storchaka.
+
+- Issue #20637: Key-sharing now also works for instance dictionaries of
+  subclasses.  Patch by Peter Ingebretson.
+
 Library
 -------
+
+- Issue #19157: Include the broadcast address in the usuable hosts for IPv6
+  in ipaddress.
+
+- Issue #11599: When an external command (e.g. compiler) fails, distutils now
+  prints out the whole command line (instead of just the command name) if the
+  environment variable DISTUTILS_DEBUG is set.
+
+- Issue #4931: distutils should not produce unhelpful "error: None" messages
+  anymore.  distutils.util.grok_environment_error is kept but doc-deprecated.
+
+- Issue #20875: Prevent possible gzip "'read' is not defined" NameError.
+  Patch by Claudiu Popa.
+
+- Issue #11558: ``email.message.Message.attach`` now returns a more
+  useful error message if ``attach`` is called on a message for which
+  ``is_multipart`` is False.
+
+- Issue #20283: RE pattern methods now accept the string keyword parameters
+  as documented.  The pattern and source keyword parameters are left as
+  deprecated aliases.
+
+- Issue #20778: Fix modulefinder to work with bytecode-only modules.
+
+- Issue #20791: copy.copy() now doesn't make a copy when the input is
+  a bytes object.  Initial patch by Peter Otten.
+
+- Issue #19748: On AIX, time.mktime() now raises an OverflowError for year
+  outsize range [1902; 2037].
+
+Documentation
+-------------
+
+- Issue #20765: Add missing documentation for PurePath.with_name() and
+  PurePath.with_suffix().
+
+- Issue #19407: New package installation and distribution guides based on
+  the Python Packaging Authority tools. Existing guides have been retained
+  as legacy links from the distutils docs, as they still contain some
+  required reference material for tool developers that isn't recorded
+  anywhere else.
+
+Tests
+-----
+
+- Issue #20743: Fix a reference leak in test_tcl.
+
+Tools/Demos
+-----------
+
+- Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
+  Patch by Arfrever Frehtes Taifersar Arahesis.
 
 
 What's New in Python 3.4.0?
@@ -157,6 +217,8 @@ Core and Builtins
 
 - Issue #19255: The builtins module is restored to initial value before
   cleaning other modules.  The sys and builtins modules are cleaned last.
+
+- Issue #20588: Make Python-ast.c C89 compliant.
 
 - Issue #20437: Fixed 22 potential bugs when deleting objects references.
 
@@ -1217,8 +1279,9 @@ Library
 
 - Issue #19523: Closed FileHandler leak which occurred when delay was set.
 
-- Issue #19544 and #6516: Restore support for --user and --group parameters to
-  sdist command accidentally rolled back as part of the distutils2 rollback.
+- Issue #19544 and Issue #6516: Restore support for --user and --group
+  parameters to sdist command accidentally rolled back as part of the
+  distutils2 rollback.
 
 - Issue #13674: Prevented time.strftime from crashing on Windows when given
   a year before 1900 and a format of %y.
@@ -1374,8 +1437,6 @@ Library
 
 - Issue #19324: Expose Linux-specific constants in resource module.
 
-- Issue #17400: ipaddress should make it easy to identify rfc6598 addresses.
-
 - Load SSL's error strings in hashlib.
 
 - Issue #18527: Upgrade internal copy of zlib to 1.2.8.
@@ -1422,7 +1483,7 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
-- Issue 19384: Fix test_py_compile for root user, patch by Claudiu Popa.
+- Issue #19384: Fix test_py_compile for root user, patch by Claudiu Popa.
 
 Documentation
 -------------
@@ -1472,9 +1533,8 @@ Build
 
 - Issue #19551: PEP 453 - the OS X installer now installs pip by default.
 
-- Update third-party libraries for OS X installers:
-    xz 5.0.3 -> 5.0.5
-    SQLite 3.7.13 -> 3.8.1
+- Update third-party libraries for OS X installers: xz 5.0.3 -> 5.0.5,
+  SQLite 3.7.13 -> 3.8.1
 
 - Issue #15663: Revert OS X installer built-in Tcl/Tk support for 3.4.0b1.
   Some third-party projects, such as Matplotlib and PIL/Pillow,
@@ -1567,8 +1627,9 @@ Library
 
 - Issue #19254: Provide an optimized Python implementation of pbkdf2_hmac.
 
-- Issues #19201, #19222, #19223: Add "x" mode (exclusive creation) in opening
-  file to bz2, gzip and lzma modules. Patches by Tim Heaney and Vajrasky Kok.
+- Issues #19201, Issue #19222, Issue #19223: Add "x" mode (exclusive creation)
+  in opening file to bz2, gzip and lzma modules. Patches by Tim Heaney and
+  Vajrasky Kok.
 
 - Fix a reference count leak in _sre.
 
@@ -1588,6 +1649,9 @@ Library
   by adding new classes EmailMessage, MIMEPart, and ContentManager.
 
 - Issue #18281: Unused stat constants removed from `tarfile`.
+
+- Issue #18999: Multiprocessing now supports 'contexts' with the same API
+  as the module, but bound to specified start methods.
 
 - Issue #18468: The re.split, re.findall, and re.sub functions and the group()
   and groups() methods of match object now always return a string or a bytes
@@ -1793,9 +1857,9 @@ Library
 - Issue #19018: The heapq.merge() function no longer suppresses IndexError
   in the underlying iterables.
 
-- Issue #18784: The uuid module no more attempts to load libc via ctypes.CDLL,
-  if all necessary functions are already found in libuuid.
-  Patch by Evgeny Sologubov.
+- Issue #18784: The uuid module no longer attempts to load libc via ctypes.CDLL
+  if all the necessary functions have already been found in libuuid.  Patch by
+  Evgeny Sologubov.
 
 - The :envvar:`PYTHONFAULTHANDLER` environment variable now only enables the
   faulthandler module if the variable is non-empty. Same behaviour than other
@@ -1850,9 +1914,6 @@ Core and Builtins
 
 - Issue #18942: sys._debugmallocstats() output was damaged on Windows.
 
-- Issue #18780: %-formatting now prints value instead of str for
-  int subclasses when using %d, %i, and %u codes.
-
 - Issue #18571: Implementation of the PEP 446: file descriptors and file
   handles are now created non-inheritable; add functions
   os.get/set_inheritable(), os.get/set_handle_inheritable() and
@@ -1864,7 +1925,7 @@ Core and Builtins
 - Issue #18808: Non-daemon threads are now automatically joined when
   a sub-interpreter is shutdown (it would previously dump a fatal error).
 
-- Remove supporting for compiling on systems without getcwd().
+- Remove support for compiling on systems without getcwd().
 
 - Issue #18774: Remove last bits of GNU PTH thread code and thread_pth.h.
 
@@ -1910,7 +1971,7 @@ Library
 - Issue #18672: Fixed format specifiers for Py_ssize_t in debugging output in
   the _sre module.
 
-- Issue #18830: inspect.getclasstree() no more produces duplicated entries even
+- Issue #18830: inspect.getclasstree() no longer produces duplicate entries even
   when input list contains duplicates.
 
 - Issue #18878: sunau.open now supports the context manager protocol.  Based on
@@ -1957,7 +2018,7 @@ Library
 
 - Issue #18394: Close cgi.FieldStorage's optional file.
 
-- Issue #17702: On error, os.environb now removes suppress the except context
+- Issue #17702: On error, os.environb now suppresses the exception context
   when raising a new KeyError with the original key.
 
 - Issue #16809: Fixed some tkinter incompabilities with Tcl/Tk 8.6.
@@ -2006,6 +2067,10 @@ Library
 
 - Issue #18532: Change the builtin hash algorithms' names to lower case names
   as promised by hashlib's documentation.
+
+- Issue #8713: add new spwan and forkserver start methods, and new functions
+  get_all_start_methods, get_start_method, and set_start_method, to
+  multiprocessing.
 
 - Issue #18405: Improve the entropy of crypt.mksalt().
 
@@ -2332,6 +2397,9 @@ Core and Builtins
 - Issue #14850: Now a charmap decoder treats U+FFFE as "undefined mapping"
   in any mapping, not only in a string.
 
+- Issue #16613: Add *m* argument to ``collections.Chainmap.new_child`` to
+  allow the new child map to be specified explicitly.
+
 - Issue #16730: importlib.machinery.FileFinder now no longers raises an
   exception when trying to populate its cache and it finds out the directory is
   unreadable or has turned into a file. Reported and diagnosed by
@@ -2390,10 +2458,10 @@ Core and Builtins
   builtins.
 
 - Issue #16455: On FreeBSD and Solaris, if the locale is C, the
-  ASCII/surrogateescape codec is now used, instead of the locale encoding, to
+  ASCII/surrogateescape codec is now used (instead of the locale encoding) to
   decode the command line arguments. This change fixes inconsistencies with
-  os.fsencode() and os.fsdecode() because these operating systems announces an
-  ASCII locale encoding, whereas the ISO-8859-1 encoding is used in practice.
+  os.fsencode() and os.fsdecode(), because these operating systems announce an
+  ASCII locale encoding, but actually use the ISO-8859-1 encoding in practice.
 
 - Issue #16562: Optimize dict equality testing.  Patch by Serhiy Storchaka.
 
@@ -2483,6 +2551,9 @@ Core and Builtins
   range(), and slice() to use multi-line signatures.
 
 - Issue #16160: Subclass support now works for types.SimpleNamespace.
+
+- Issue #16148: Implement PEP 424, adding operator.length_hint and
+  PyObject_LengthHint.
 
 - Upgrade Unicode data (UCD) to version 6.2.
 
@@ -2996,7 +3067,7 @@ Library
   to procedurally generate, in an easy way, small test instances.
 
 - Issue #17485: Also delete the Request Content-Length header if the data
-  attribute is deleted.  (Follow on to issue 16464).
+  attribute is deleted.  (Follow on to issue Issue #16464).
 
 - Issue #15927: CVS now correctly parses escaped newlines and carriage
   when parsing with quoting turned off.
@@ -3423,6 +3494,9 @@ Library
   list() calls aren't added to filter(), map(), and zip() which are directly
   passed enumerate().
 
+- Issue #16464: Reset the Content-Length header when a urllib Request is reused
+  with new data.
+
 - Issue #12848: The pure Python pickle implementation now treats object
   lengths as unsigned 32-bit integers, like the C implementation does.
   Patch by Serhiy Storchaka.
@@ -3573,6 +3647,9 @@ Library
 
 - Issue #16169: Fix ctypes.WinError()'s confusion between errno and winerror.
 
+- Issue #16110: logging.fileConfig now accepts a pre-initialised ConfigParser
+  instance.
+
 - Issue #1492704: shutil.copyfile() raises a distinct SameFileError now if
   source and destination are the same file. Patch by Atsuo Ishimoto.
 
@@ -3590,6 +3667,10 @@ Library
 
 - Issue #9650: List commonly used format codes in time.strftime and
   time.strptime docsttings.  Original patch by Mike Hoy.
+
+- Issue #15452: logging configuration socket listener now has a verify option
+  that allows an application to apply a verification function to the
+  received configuration data before it is acted upon.
 
 - Issue #16034: Fix performance regressions in the new `bz2.BZ2File`
   implementation.  Initial patch by Serhiy Storchaka.
@@ -6290,7 +6371,7 @@ Core and Builtins
   deallocator calls one of the methods on the type (e.g. when subclassing
   IOBase).  Diagnosis and patch by Davide Rizzo.
 
-- Issue #9611, #9015: FileIO.read() clamps the length to INT_MAX on Windows.
+- Issue #9611, Issue #9015: FileIO.read() clamps the length to INT_MAX on Windows.
 
 - Issue #9642: Uniformize the tests on the availability of the mbcs codec, add
   a new HAVE_MBCS define.
@@ -6758,7 +6839,7 @@ Library
   'importlib.abc.PyPycLoader', 'nntplib.NNTP.xgtitle', 'nntplib.NNTP.xpath',
   and private attributes of 'smtpd.SMTPChannel'.
 
-- Issue #5905, #13560: time.strftime() is now using the current locale
+- Issue #5905, Issue #13560: time.strftime() is now using the current locale
   encoding, instead of UTF-8, if the wcsftime() function is not available.
 
 - Issue #13464: Add a readinto() method to http.client.HTTPResponse.  Patch

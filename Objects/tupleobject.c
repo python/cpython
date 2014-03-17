@@ -1011,8 +1011,8 @@ tupleiter_setstate(tupleiterobject *it, PyObject *state)
     if (it->it_seq != NULL) {
         if (index < 0)
             index = 0;
-        else if (it->it_seq != NULL && index > PyTuple_GET_SIZE(it->it_seq))
-            index = PyTuple_GET_SIZE(it->it_seq);
+        else if (index > PyTuple_GET_SIZE(it->it_seq))
+            index = PyTuple_GET_SIZE(it->it_seq); /* exhausted iterator */
         it->it_index = index;
     }
     Py_RETURN_NONE;

@@ -11,7 +11,6 @@ import sys
 
 from distutils.debug import DEBUG
 from distutils.errors import *
-from distutils.util import grok_environment_error
 
 # Mainly import these so setup scripts can "from distutils.core import" them.
 from distutils.dist import Distribution
@@ -150,13 +149,11 @@ def setup (**attrs):
         except KeyboardInterrupt:
             raise SystemExit("interrupted")
         except OSError as exc:
-            error = grok_environment_error(exc)
-
             if DEBUG:
-                sys.stderr.write(error + "\n")
+                sys.stderr.write("error: %s\n" % (exc,))
                 raise
             else:
-                raise SystemExit(error)
+                raise SystemExit("error: %s" % (exc,))
 
         except (DistutilsError,
                 CCompilerError) as msg:

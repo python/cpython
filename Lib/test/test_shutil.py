@@ -1492,6 +1492,15 @@ class TestMove(unittest.TestCase):
         # Move a dir inside an existing dir on another filesystem.
         self.test_move_dir_to_dir()
 
+    def test_move_dir_sep_to_dir(self):
+        self._check_move_dir(self.src_dir + os.path.sep, self.dst_dir,
+            os.path.join(self.dst_dir, os.path.basename(self.src_dir)))
+
+    @unittest.skipUnless(os.path.altsep, 'requires os.path.altsep')
+    def test_move_dir_altsep_to_dir(self):
+        self._check_move_dir(self.src_dir + os.path.altsep, self.dst_dir,
+            os.path.join(self.dst_dir, os.path.basename(self.src_dir)))
+
     def test_existing_file_inside_dest_dir(self):
         # A file with the same name inside the destination dir already exists.
         with open(self.dst_file, "wb"):

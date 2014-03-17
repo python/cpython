@@ -1161,7 +1161,7 @@ class PosixGroupsTester(unittest.TestCase):
     def test_initgroups(self):
         # find missing group
 
-        g = max(self.saved_groups) + 1
+        g = max(self.saved_groups or [0]) + 1
         name = pwd.getpwuid(posix.getuid()).pw_name
         posix.initgroups(name, g)
         self.assertIn(g, posix.getgroups())

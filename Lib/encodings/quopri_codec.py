@@ -1,7 +1,6 @@
 """Codec for quoted-printable encoding.
 
-This codec de/encodes from bytes to bytes and is therefore usable with
-bytes.transform() and bytes.untransform().
+This codec de/encodes from bytes to bytes.
 """
 
 import codecs

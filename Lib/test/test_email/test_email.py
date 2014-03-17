@@ -124,6 +124,14 @@ class TestMessageAPI(TestEmailBase):
         msg.set_payload([])
         self.assertEqual(msg.get_payload(), [])
 
+    def test_attach_when_payload_is_string(self):
+        msg = Message()
+        msg['Content-Type'] = 'multipart/mixed'
+        msg.set_payload('string payload')
+        sub_msg = MIMEMessage(Message())
+        self.assertRaisesRegex(TypeError, "[Aa]ttach.*non-multipart",
+                               msg.attach, sub_msg)
+
     def test_get_charsets(self):
         eq = self.assertEqual
 

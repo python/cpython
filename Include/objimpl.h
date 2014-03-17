@@ -265,7 +265,7 @@ extern PyGC_Head *_PyGC_generation0;
 #define _PyGCHead_REFS(g) ((g)->gc.gc_refs >> _PyGC_REFS_SHIFT)
 #define _PyGCHead_SET_REFS(g, v) do { \
     (g)->gc.gc_refs = ((g)->gc.gc_refs & ~_PyGC_REFS_MASK) \
-        | (v << _PyGC_REFS_SHIFT); \
+        | (((size_t)(v)) << _PyGC_REFS_SHIFT);             \
     } while (0)
 #define _PyGCHead_DECREF(g) ((g)->gc.gc_refs -= 1 << _PyGC_REFS_SHIFT)
 

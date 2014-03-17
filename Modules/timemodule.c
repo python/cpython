@@ -193,7 +193,7 @@ time_clock_settime(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj))
         return NULL;
 
-    if (_PyTime_ObjectToTimespec(obj, &tv_sec, &tv_nsec) == -1)
+    if (_PyTime_ObjectToTimespec(obj, &tv_sec, &tv_nsec, _PyTime_ROUND_DOWN) == -1)
         return NULL;
     tp.tv_sec = tv_sec;
     tp.tv_nsec = tv_nsec;
@@ -341,7 +341,7 @@ parse_time_t_args(PyObject *args, char *format, time_t *pwhen)
         whent = time(NULL);
     }
     else {
-        if (_PyTime_ObjectToTime_t(ot, &whent) == -1)
+        if (_PyTime_ObjectToTime_t(ot, &whent, _PyTime_ROUND_DOWN) == -1)
             return 0;
     }
     *pwhen = whent;
@@ -823,7 +823,18 @@ time_mktime(PyObject *self, PyObject *tup)
     time_t tt;
     if (!gettmarg(tup, &buf))
         return NULL;
+#ifdef _AIX
+    /* year < 1902 or year > 2037 */
+    if (buf.tm_year < 2 || buf.tm_year > 137) {
+        /* Issue #19748: On AIX, mktime() doesn't report overflow error for
+         * timestamp < -2^31 or timestamp > 2**31-1. */
+        PyErr_SetString(PyExc_OverflowError,
+                        "mktime argument out of range");
+        return NULL;
+    }
+#else
     buf.tm_wday = -1;  /* sentinel; original value ignored */
+#endif
     tt = mktime(&buf);
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
