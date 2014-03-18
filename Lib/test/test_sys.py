@@ -615,49 +615,52 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
-    @unittest.skipIf(sys.platform == 'win32',
-                     'test specific to UNIX')
-    def test_c_locale_surrogateescape(self):
+    def c_locale_get_error_handler(self, isolated=False, encoding=None):
         # Force the POSIX locale
         env = os.environ.copy()
         env["LC_ALL"] = "C"
         code = '\n'.join((
-            'import codecs, sys',
+            'import sys',
             'def dump(name):',
             '    std = getattr(sys, name)',
-            '    encoding = codecs.lookup(std.encoding).name',
-            '    print("%s: %s:%s" % (name, encoding, std.errors))',
+            '    print("%s: %s" % (name, std.errors))',
             'dump("stdin")',
             'dump("stdout")',
             'dump("stderr")',
         ))
-        p = subprocess.Popen([sys.executable, "-I", "-c", code],
-                              stdout=subprocess.PIPE, env=env)
-        out = p.communicate()[0]
+        args = [sys.executable, "-c", code]
+        if isolated:
+            args.append("-I")
+        elif encoding:
+            env['PYTHONIOENCODING'] = encoding
+        p = subprocess.Popen(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              env=env,
+                              universal_newlines=True)
+        stdout, stderr = p.communicate()
+        return stdout
+
+    def test_c_locale_surrogateescape(self):
+        out = self.c_locale_get_error_handler(isolated=True)
         self.assertEqual(out,
-                         b'stdin: ascii:surrogateescape\n'
-                         b'stdout: ascii:surrogateescape\n'
-                         b'stderr: ascii:backslashreplace\n')
+                         'stdin: surrogateescape\n'
+                         'stdout: surrogateescape\n'
+                         'stderr: backslashreplace\n')
 
         # replace the default error handler
-        env['PYTHONIOENCODING'] = ':strict'
-        p = subprocess.Popen([sys.executable, "-c", code],
-                              stdout=subprocess.PIPE, env=env)
-        out = p.communicate()[0]
+        out = self.c_locale_get_error_handler(encoding=':strict')
         self.assertEqual(out,
-                         b'stdin: ascii:strict\n'
-                         b'stdout: ascii:strict\n'
-                         b'stderr: ascii:backslashreplace\n')
+                         'stdin: strict\n'
+                         'stdout: strict\n'
+                         'stderr: backslashreplace\n')
 
         # force the encoding
-        env['PYTHONIOENCODING'] = 'iso8859-1'
-        p = subprocess.Popen([sys.executable, "-c", code],
-                              stdout=subprocess.PIPE, env=env)
-        out = p.communicate()[0]
+        out = self.c_locale_get_error_handler(encoding='iso8859-1')
         self.assertEqual(out,
-                         b'stdin: iso8859-1:surrogateescape\n'
-                         b'stdout: iso8859-1:surrogateescape\n'
-                         b'stderr: iso8859-1:backslashreplace\n')
+                         'stdin: surrogateescape\n'
+                         'stdout: surrogateescape\n'
+                         'stderr: backslashreplace\n')
 
     def test_implementation(self):
         # This test applies to all implementations equally.
