@@ -20,7 +20,8 @@ compile Python sources.
 
 .. program:: compileall
 
-.. cmdoption:: [directory|file]...
+.. cmdoption:: directory ...
+               file ...
 
    Positional arguments are files to compile or directories that contain
    source files, traversed recursively.  If no argument is given, behave as if
