@@ -15,6 +15,7 @@
 #include "ast.h"
 #include "marshal.h"
 #include "osdefs.h"
+#include <locale.h>
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -25,7 +26,6 @@
 #endif
 
 #ifdef HAVE_LANGINFO_H
-#include <locale.h>
 #include <langinfo.h>
 #endif
 
