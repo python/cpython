@@ -319,34 +319,38 @@ class EmbeddingTests(unittest.TestCase):
             print()
             print(out)
             print(err)
+        expected_errors = sys.__stdout__.errors
         expected_stdin_encoding = sys.__stdin__.encoding
         expected_pipe_encoding = self._get_default_pipe_encoding()
         expected_output = os.linesep.join([
         "--- Use defaults ---",
         "Expected encoding: default",
         "Expected errors: default",
-        "stdin: {0}:strict",
-        "stdout: {1}:strict",
-        "stderr: {1}:backslashreplace",
+        "stdin: {in_encoding}:{errors}",
+        "stdout: {out_encoding}:{errors}",
+        "stderr: {out_encoding}:backslashreplace",
         "--- Set errors only ---",
         "Expected encoding: default",
-        "Expected errors: surrogateescape",
-        "stdin: {0}:surrogateescape",
-        "stdout: {1}:surrogateescape",
-        "stderr: {1}:backslashreplace",
+        "Expected errors: ignore",
+        "stdin: {in_encoding}:ignore",
+        "stdout: {out_encoding}:ignore",
+        "stderr: {out_encoding}:backslashreplace",
         "--- Set encoding only ---",
         "Expected encoding: latin-1",
         "Expected errors: default",
-        "stdin: latin-1:strict",
-        "stdout: latin-1:strict",
+        "stdin: latin-1:{errors}",
+        "stdout: latin-1:{errors}",
         "stderr: latin-1:backslashreplace",
         "--- Set encoding and errors ---",
         "Expected encoding: latin-1",
-        "Expected errors: surrogateescape",
-        "stdin: latin-1:surrogateescape",
-        "stdout: latin-1:surrogateescape",
-        "stderr: latin-1:backslashreplace"]).format(expected_stdin_encoding,
-                                                    expected_pipe_encoding)
+        "Expected errors: replace",
+        "stdin: latin-1:replace",
+        "stdout: latin-1:replace",
+        "stderr: latin-1:backslashreplace"])
+        expected_output = expected_output.format(
+                                in_encoding=expected_stdin_encoding,
+                                out_encoding=expected_pipe_encoding,
+                                errors=expected_errors)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
