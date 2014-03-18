@@ -615,6 +615,50 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'test specific to UNIX')
+    def test_c_locale_surrogateescape(self):
+        # Force the POSIX locale
+        env = os.environ.copy()
+        env["LC_ALL"] = "C"
+        code = '\n'.join((
+            'import codecs, sys',
+            'def dump(name):',
+            '    std = getattr(sys, name)',
+            '    encoding = codecs.lookup(std.encoding).name',
+            '    print("%s: %s:%s" % (name, encoding, std.errors))',
+            'dump("stdin")',
+            'dump("stdout")',
+            'dump("stderr")',
+        ))
+        p = subprocess.Popen([sys.executable, "-I", "-c", code],
+                              stdout=subprocess.PIPE, env=env)
+        out = p.communicate()[0]
+        self.assertEqual(out,
+                         b'stdin: ascii:surrogateescape\n'
+                         b'stdout: ascii:surrogateescape\n'
+                         b'stderr: ascii:backslashreplace\n')
+
+        # replace the default error handler
+        env['PYTHONIOENCODING'] = ':strict'
+        p = subprocess.Popen([sys.executable, "-c", code],
+                              stdout=subprocess.PIPE, env=env)
+        out = p.communicate()[0]
+        self.assertEqual(out,
+                         b'stdin: ascii:strict\n'
+                         b'stdout: ascii:strict\n'
+                         b'stderr: ascii:backslashreplace\n')
+
+        # force the encoding
+        env['PYTHONIOENCODING'] = 'iso8859-1'
+        p = subprocess.Popen([sys.executable, "-c", code],
+                              stdout=subprocess.PIPE, env=env)
+        out = p.communicate()[0]
+        self.assertEqual(out,
+                         b'stdin: iso8859-1:surrogateescape\n'
+                         b'stdout: iso8859-1:surrogateescape\n'
+                         b'stderr: iso8859-1:backslashreplace\n')
+
     def test_implementation(self):
         # This test applies to all implementations equally.
 
