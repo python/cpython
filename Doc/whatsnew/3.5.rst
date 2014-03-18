@@ -79,7 +79,10 @@ New built-in features:
 
 Implementation improvements:
 
-* None yet.
+* When the ``LC_TYPE`` locale is the POSIX locale (``C`` locale),
+  :py:data:`sys.stdin` and :py:data:`sys.stdout` are now using the
+  ``surrogateescape`` error handler, instead of the ``strict`` error handler
+  (:issue:`19977`).
 
 Significantly Improved Library Modules:
 
