@@ -15,7 +15,7 @@ this should open a window demonstrating a simple Tk interface.
 
 .. seealso::
 
-   `Python Tkinter Resources <http://www.python.org/topics/tkinter/>`_
+   `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
       The Python Tkinter Topic Guide provides a great deal of information on using Tk
       from Python and links to other sources of information on Tk.
 
