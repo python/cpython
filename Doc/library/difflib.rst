@@ -27,7 +27,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    little fancier than, an algorithm published in the late 1980's by Ratcliff and
    Obershelp under the hyperbolic name "gestalt pattern matching."  The idea is to
    find the longest contiguous matching subsequence that contains no "junk"
-   elements (the Ratcliff and Obershelp algorithm doesn't address junk).  The same
+   elements; these "junk" elements are ones that are uninteresting in some
+   sense, such as blank lines or whitespace.  (Handling junk is an
+   extension to the Ratcliff and Obershelp algorithm.) The same
    idea is then applied recursively to the pieces of the sequences to the left and
    to the right of the matching subsequence.  This does not yield minimal edit
    sequences, but does tend to yield matches that "look right" to people.
@@ -210,7 +212,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Compare *a* and *b* (lists of strings); return a :class:`Differ`\ -style
    delta (a :term:`generator` generating the delta lines).
 
-   Optional keyword parameters *linejunk* and *charjunk* are for filter functions
+   Optional keyword parameters *linejunk* and *charjunk* are filtering functions
    (or ``None``):
 
    *linejunk*: A function that accepts a single string argument, and returns
@@ -224,7 +226,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    *charjunk*: A function that accepts a character (a string of length 1), and
    returns if the character is junk, or false if not. The default is module-level
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
-   blank or tab; note: bad idea to include newline in this!).
+   blank or tab; it's a bad idea to include newline in this!).
 
    :file:`Tools/scripts/ndiff.py` is a command-line front-end to this function.
 
@@ -623,6 +625,12 @@ The :class:`Differ` class has this constructor:
    *charjunk*: A function that accepts a single character argument (a string of
    length 1), and returns true if the character is junk. The default is ``None``,
    meaning that no character is considered junk.
+
+   These junk-filtering functions speed up matching to find
+   differences and do not cause any differing lines or characters to
+   be ignored.  Read the description of the
+   :meth:`~SequenceMatcher.find_longest_match` method's *isjunk*
+   parameter for an explanation.
 
    :class:`Differ` objects are used (deltas generated) via a single method:
 

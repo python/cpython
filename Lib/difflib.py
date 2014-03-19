@@ -853,10 +853,9 @@ class Differ:
           and return true iff the string is junk. The module-level function
           `IS_LINE_JUNK` may be used to filter out lines without visible
           characters, except for at most one splat ('#').  It is recommended
-          to leave linejunk None; as of Python 2.3, the underlying
-          SequenceMatcher class has grown an adaptive notion of "noise" lines
-          that's better than any static definition the author has ever been
-          able to craft.
+          to leave linejunk None; the underlying SequenceMatcher class has
+          an adaptive notion of "noise" lines that's better than any static
+          definition the author has ever been able to craft.
 
         - `charjunk`: A function that should accept a string of length 1. The
           module-level function `IS_CHARACTER_JUNK` may be used to filter out
@@ -1299,17 +1298,18 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
     Optional keyword parameters `linejunk` and `charjunk` are for filter
-    functions (or None):
+    functions, or can be None:
 
-    - linejunk: A function that should accept a single string argument, and
+    - linejunk: A function that should accept a single string argument and
       return true iff the string is junk.  The default is None, and is
-      recommended; as of Python 2.3, an adaptive notion of "noise" lines is
-      used that does a good job on its own.
+      recommended; the underlying SequenceMatcher class has an adaptive
+      notion of "noise" lines.
 
-    - charjunk: A function that should accept a string of length 1. The
-      default is module-level function IS_CHARACTER_JUNK, which filters out
-      whitespace characters (a blank or tab; note: bad idea to include newline
-      in this!).
+    - charjunk: A function that accepts a character (string of length
+      1), and returns true iff the character is junk. The default is
+      the module-level function IS_CHARACTER_JUNK, which filters out
+      whitespace characters (a blank or tab; note: it's a bad idea to
+      include newline in this!).
 
     Tools/scripts/ndiff.py is a command-line front-end to this function.
 
@@ -1680,7 +1680,7 @@ class HtmlDiff(object):
         tabsize -- tab stop spacing, defaults to 8.
         wrapcolumn -- column number where lines are broken and wrapped,
             defaults to None where lines are not wrapped.
-        linejunk,charjunk -- keyword arguments passed into ndiff() (used to by
+        linejunk,charjunk -- keyword arguments passed into ndiff() (used by
             HtmlDiff() to generate the side by side HTML differences).  See
             ndiff() documentation for argument default values and descriptions.
         """
