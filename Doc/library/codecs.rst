@@ -7,6 +7,7 @@
 .. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/codecs.py`
 
 .. index::
    single: Unicode
@@ -1418,4 +1419,3 @@ This module implements a variant of the UTF-8 codec: On encoding a UTF-8 encoded
 BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this
 is only done once (on the first write to the byte stream).  For decoding an
 optional UTF-8 encoded BOM at the start of the data will be skipped.
-
