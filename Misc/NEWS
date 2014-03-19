@@ -18,6 +18,8 @@ Core and Builtins
 - Issue #20637: Key-sharing now also works for instance dictionaries of
   subclasses.  Patch by Peter Ingebretson.
 
+- Issue #19995: %c, %o, %x, and %X now raise TypeError on non-integer input.
+
 Library
 -------
 
