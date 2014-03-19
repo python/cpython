@@ -5,6 +5,7 @@
    :synopsis: Write and read tabular data to and from delimited files.
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
+**Source code:** :source:`Lib/csv.py`
 
 .. index::
    single: csv

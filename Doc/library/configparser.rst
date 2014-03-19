@@ -11,6 +11,8 @@
 .. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
 .. sectionauthor:: Łukasz Langa <lukasz@langa.pl>
 
+**Source code:** :source:`Lib/configparser.py`
+
 .. index::
    pair: .ini; file
    pair: configuration; file

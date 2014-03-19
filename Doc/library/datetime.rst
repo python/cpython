@@ -7,6 +7,8 @@
 .. sectionauthor:: Tim Peters <tim@zope.com>
 .. sectionauthor:: A.M. Kuchling <amk@amk.ca>
 
+**Source code:** :source:`Lib/datetime.py`
+
 .. XXX what order should the types be discussed in?
 
 The :mod:`datetime` module supplies classes for manipulating dates and times in

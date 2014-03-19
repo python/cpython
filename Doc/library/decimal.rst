@@ -12,6 +12,8 @@
 .. moduleauthor:: Stefan Krah <skrah at bytereef.org>
 .. sectionauthor:: Raymond D. Hettinger <python at rcn.com>
 
+**Source code:** :source:`Lib/decimal.py`
+
 .. import modules for testing inline doctests with the Sphinx doctest builder
 .. testsetup:: *
 
@@ -2092,4 +2094,3 @@ Alternatively, inputs can be rounded upon creation using the
 
    >>> Context(prec=5, rounding=ROUND_DOWN).create_decimal('1.2345678')
    Decimal('1.2345')
-
