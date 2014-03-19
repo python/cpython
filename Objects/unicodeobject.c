@@ -13987,23 +13987,11 @@ mainformatlong(PyObject *v,
         goto wrongtype;
 
     /* make sure number is a type of integer */
-    /* if not, issue deprecation warning for now */
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
             iobj = PyNumber_Index(v);
             if (iobj == NULL) {
-                PyErr_Clear();
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                 "automatic int conversions have been deprecated",
-                                 1)) {
-                    return -1;
-                }
-                iobj = PyNumber_Long(v);
-                if (iobj == NULL ) {
-                    if (PyErr_ExceptionMatches(PyExc_TypeError))
-                        goto wrongtype;
-                    return -1;
-                }
+                return -1;
             }
         }
         else {
@@ -14085,22 +14073,10 @@ formatchar(PyObject *v)
         PyObject *iobj;
         long x;
         /* make sure number is a type of integer */
-        /* if not, issue deprecation warning for now */
         if (!PyLong_Check(v)) {
             iobj = PyNumber_Index(v);
             if (iobj == NULL) {
-                PyErr_Clear();
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                 "automatic int conversions have been deprecated",
-                                 1)) {
-                    return -1;
-                }
-                iobj = PyNumber_Long(v);
-                if (iobj == NULL ) {
-                    if (PyErr_ExceptionMatches(PyExc_TypeError))
-                        goto onError;
-                    return -1;
-                }
+                goto onError;
             }
             v = iobj;
             Py_DECREF(iobj);
