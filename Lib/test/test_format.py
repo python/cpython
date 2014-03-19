@@ -142,8 +142,6 @@ class FormatTest(unittest.TestCase):
         testformat("%#+027.23X", big, "+0X0001234567890ABCDEF12345")
         # same, except no 0 flag
         testformat("%#+27.23X", big, " +0X001234567890ABCDEF12345")
-        with self.assertWarns(DeprecationWarning):
-            testformat("%x", float(big), "123456_______________", 6)
         big = 0o12345670123456701234567012345670  # 32 octal digits
         testformat("%o", big, "12345670123456701234567012345670")
         testformat("%o", -big, "-12345670123456701234567012345670")
@@ -183,8 +181,6 @@ class FormatTest(unittest.TestCase):
         testformat("%034.33o", big, "0012345670123456701234567012345670")
         # base marker shouldn't change that
         testformat("%0#34.33o", big, "0o012345670123456701234567012345670")
-        with self.assertWarns(DeprecationWarning):
-            testformat("%o", float(big), "123456__________________________", 6)
         # Some small ints, in both Python int and flavors).
         testformat("%d", 42, "42")
         testformat("%d", -42, "-42")
@@ -195,8 +191,6 @@ class FormatTest(unittest.TestCase):
         testformat("%#x", 1, "0x1")
         testformat("%#X", 1, "0X1")
         testformat("%#X", 1, "0X1")
-        with self.assertWarns(DeprecationWarning):
-            testformat("%#x", 1.0, "0x1")
         testformat("%#o", 1, "0o1")
         testformat("%#o", 1, "0o1")
         testformat("%#o", 0, "0o0")
@@ -213,14 +207,10 @@ class FormatTest(unittest.TestCase):
         testformat("%x", -0x42, "-42")
         testformat("%x", 0x42, "42")
         testformat("%x", -0x42, "-42")
-        with self.assertWarns(DeprecationWarning):
-            testformat("%x", float(0x42), "42")
         testformat("%o", 0o42, "42")
         testformat("%o", -0o42, "-42")
         testformat("%o", 0o42, "42")
         testformat("%o", -0o42, "-42")
-        with self.assertWarns(DeprecationWarning):
-            testformat("%o", float(0o42), "42")
         testformat("%r", "\u0378", "'\\u0378'")  # non printable
         testformat("%a", "\u0378", "'\\u0378'")  # non printable
         testformat("%r", "\u0374", "'\u0374'")   # printable

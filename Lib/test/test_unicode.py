@@ -1149,11 +1149,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%X' % letter_m, '6D')
         self.assertEqual('%o' % letter_m, '155')
         self.assertEqual('%c' % letter_m, 'm')
-        self.assertWarns(DeprecationWarning, '%x'.__mod__, pi),
-        self.assertWarns(DeprecationWarning, '%x'.__mod__, 3.14),
-        self.assertWarns(DeprecationWarning, '%X'.__mod__, 2.11),
-        self.assertWarns(DeprecationWarning, '%o'.__mod__, 1.79),
-        self.assertWarns(DeprecationWarning, '%c'.__mod__, pi),
+        self.assertRaises(TypeError, '%x'.__mod__, pi),
+        self.assertRaises(TypeError, '%x'.__mod__, 3.14),
+        self.assertRaises(TypeError, '%X'.__mod__, 2.11),
+        self.assertRaises(TypeError, '%o'.__mod__, 1.79),
+        self.assertRaises(TypeError, '%c'.__mod__, pi),
 
     def test_formatting_with_enum(self):
         # issue18780
