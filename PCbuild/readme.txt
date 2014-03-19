@@ -6,16 +6,19 @@ This directory is used to build CPython for Microsoft Windows NT version
 bit platforms.  Using this directory requires an installation of
 Microsoft Visual C++ 2010 (MSVC 10.0) of any edition.  The specific
 requirements are as follows:
+
 Visual C++ 2010 Express Edition
     Required for building 32-bit Debug and Release configuration builds.
     This edition does not support "solution folders", which pcbuild.sln
     uses; this will not prevent building.
-Visual Studio 2010 Standard Edition
-    Required for building 64-bit Debug and Release configuration builds
 Visual Studio 2010 Professional Edition
+    Required for building 64-bit Debug and Release configuration builds
+Visual Studio 2010 Premium Edition
     Required for building Release configuration builds that make use of
-    Profile Guided Optimization (PGO), on either platform.  The official
-    Python releases are built with Professional Edition using PGO.
+    Profile Guided Optimization (PGO), on either platform.
+
+The official Python releases are built with PGO using Visual Studio 2010
+Ultimate Edition.
 
 All you need to do to build is open the solution "pcbuild.sln" in Visual
 Studio, select the desired combination of configuration and platform,
