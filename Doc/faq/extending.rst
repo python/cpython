@@ -95,8 +95,8 @@ To test the type of an object, first make sure it isn't *NULL*, and then use
 There is also a high-level API to Python objects which is provided by the
 so-called 'abstract' interface -- read ``Include/abstract.h`` for further
 details.  It allows interfacing with any kind of Python sequence using calls
-like :c:func:`PySequence_Length`, :c:func:`PySequence_GetItem`, etc.) as well
-as many other useful protocols such as numbers (:c:func:`PyNumber_Index` et.
+like :c:func:`PySequence_Length`, :c:func:`PySequence_GetItem`, etc. as well
+as many other useful protocols such as numbers (:c:func:`PyNumber_Index` et
 al.) and mappings in the PyMapping APIs.
 
 
