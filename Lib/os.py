@@ -216,7 +216,7 @@ def _get_masked_mode(mode):
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
 def makedirs(name, mode=0o777, exist_ok=False):
-    """makedirs(path [, mode=0o777][, exist_ok=False])
+    """makedirs(name [, mode=0o777][, exist_ok=False])
 
     Super-mkdir; create a leaf directory and all intermediate ones.
     Works like mkdir, except that any intermediate path segment (not
@@ -260,7 +260,7 @@ def makedirs(name, mode=0o777, exist_ok=False):
             raise
 
 def removedirs(name):
-    """removedirs(path)
+    """removedirs(name)
 
     Super-rmdir; remove a leaf directory and all empty intermediate
     ones.  Works like rmdir except that, if the leaf directory is

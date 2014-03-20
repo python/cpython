@@ -1607,7 +1607,7 @@ features:
       The *dir_fd* argument.
 
 
-.. function:: makedirs(path, mode=0o777, exist_ok=False)
+.. function:: makedirs(name, mode=0o777, exist_ok=False)
 
    .. index::
       single: directory; creating
@@ -1763,7 +1763,7 @@ features:
       The *dir_fd* argument.
 
 
-.. function:: removedirs(path)
+.. function:: removedirs(name)
 
    .. index:: single: directory; deleting
 
