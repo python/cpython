@@ -40,7 +40,6 @@ __all__ = [
     ]
 
 import re
-import io
 
 from string import ascii_letters, digits, hexdigits
 

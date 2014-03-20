@@ -11,10 +11,8 @@ __all__ = [
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition', 'Event'
     ]
 
-import os
 import threading
 import sys
-import itertools
 import tempfile
 import _multiprocessing
 

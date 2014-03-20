@@ -11,7 +11,6 @@
 # python" would probably leave unlinked semaphores.
 #
 
-import errno
 import os
 import signal
 import sys
@@ -21,7 +20,6 @@ import _multiprocessing
 
 from . import spawn
 from . import util
-from . import current_process
 
 __all__ = ['ensure_running', 'register', 'unregister']
 

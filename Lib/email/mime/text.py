@@ -6,7 +6,6 @@
 
 __all__ = ['MIMEText']
 
-from email.encoders import encode_7or8bit
 from email.mime.nonmultipart import MIMENonMultipart
 
 
