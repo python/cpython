@@ -277,6 +277,30 @@ def valid_ident(s):
     return True
 
 
+class ConvertingMixin(object):
+    """For ConvertingXXX's, this mixin class provides common functions"""
+
+    def convert_with_key(self, key, value, replace=True):
+        result = self.configurator.convert(value)
+        #If the converted value is different, save for next time
+        if value is not result:
+            if replace:
+                self[key] = result
+            if type(result) in (ConvertingDict, ConvertingList,
+                               ConvertingTuple):
+                result.parent = self
+                result.key = key
+        return result
+
+    def convert(self, value):
+        result = self.configurator.convert(value)
+        if value is not result:
+            if type(result) in (ConvertingDict, ConvertingList,
+                               ConvertingTuple):
+                result.parent = self
+        return result
+
+
 # The ConvertingXXX classes are wrappers around standard Python containers,
 # and they serve to convert any suitable values in the container. The
 # conversion converts base dicts, lists and tuples to their wrapped
@@ -286,77 +310,37 @@ def valid_ident(s):
 # Each wrapper should have a configurator attribute holding the actual
 # configurator to use for conversion.
 
-class ConvertingDict(dict):
+class ConvertingDict(dict, ConvertingMixin):
     """A converting dictionary wrapper."""
 
     def __getitem__(self, key):
         value = dict.__getitem__(self, key)
-        result = self.configurator.convert(value)
-        #If the converted value is different, save for next time
-        if value is not result:
-            self[key] = result
-            if type(result) in (ConvertingDict, ConvertingList,
-                                ConvertingTuple):
-                result.parent = self
-                result.key = key
-        return result
+        return self.convert_with_key(key, value)
 
     def get(self, key, default=None):
         value = dict.get(self, key, default)
-        result = self.configurator.convert(value)
-        #If the converted value is different, save for next time
-        if value is not result:
-            self[key] = result
-            if type(result) in (ConvertingDict, ConvertingList,
-                                ConvertingTuple):
-                result.parent = self
-                result.key = key
-        return result
+        return self.convert_with_key(key, value)
 
     def pop(self, key, default=None):
         value = dict.pop(self, key, default)
-        result = self.configurator.convert(value)
-        if value is not result:
-            if type(result) in (ConvertingDict, ConvertingList,
-                                ConvertingTuple):
-                result.parent = self
-                result.key = key
-        return result
+        return self.convert_with_key(key, value, replace=False)
 
-class ConvertingList(list):
+class ConvertingList(list, ConvertingMixin):
     """A converting list wrapper."""
     def __getitem__(self, key):
         value = list.__getitem__(self, key)
-        result = self.configurator.convert(value)
-        #If the converted value is different, save for next time
-        if value is not result:
-            self[key] = result
-            if type(result) in (ConvertingDict, ConvertingList,
-                                ConvertingTuple):
-                result.parent = self
-                result.key = key
-        return result
+        return self.convert_with_key(key, value)
 
     def pop(self, idx=-1):
         value = list.pop(self, idx)
-        result = self.configurator.convert(value)
-        if value is not result:
-            if type(result) in (ConvertingDict, ConvertingList,
-                                ConvertingTuple):
-                result.parent = self
-        return result
+        return self.convert(value)
 
-class ConvertingTuple(tuple):
+class ConvertingTuple(tuple, ConvertingMixin):
     """A converting tuple wrapper."""
     def __getitem__(self, key):
         value = tuple.__getitem__(self, key)
-        result = self.configurator.convert(value)
-        if value is not result:
-            if type(result) in (ConvertingDict, ConvertingList,
-                                ConvertingTuple):
-                result.parent = self
-                result.key = key
-        return result
+        # Can't replace a tuple entry.
+        return self.convert_with_key(key, value, replace=False)
 
 class BaseConfigurator(object):
     """
