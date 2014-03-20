@@ -10,14 +10,10 @@ import re
 import sys
 import time
 import random
-import warnings
 
 from copy import deepcopy
 from io import StringIO, BytesIO
-from email._policybase import compat32
-from email.header import Header
 from email.utils import _has_surrogates
-import email.charset as _charset
 
 UNDERSCORE = '_'
 NL = '\n'  # XXX: no longer used by the code below.

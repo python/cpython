@@ -73,7 +73,6 @@ import os
 import socket
 import collections
 from urllib.parse import urlsplit
-import warnings
 
 __all__ = ["HTTPResponse", "HTTPConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",

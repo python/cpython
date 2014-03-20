@@ -14,7 +14,7 @@ import time
 import locale
 import calendar
 from re import compile as re_compile
-from re import IGNORECASE, ASCII
+from re import IGNORECASE
 from re import escape as re_escape
 from datetime import (date as datetime_date,
                       timedelta as datetime_timedelta,

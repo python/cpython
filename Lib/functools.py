@@ -19,7 +19,7 @@ except ImportError:
     pass
 from abc import get_cache_token
 from collections import namedtuple
-from types import MappingProxyType, MethodType
+from types import MappingProxyType
 from weakref import WeakKeyDictionary
 try:
     from _thread import RLock

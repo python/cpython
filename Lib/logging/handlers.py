@@ -23,8 +23,7 @@ Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import errno, logging, socket, os, pickle, struct, time, re
-from codecs import BOM_UTF8
+import logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 try:

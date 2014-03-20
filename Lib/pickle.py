@@ -23,7 +23,7 @@ Misc variables:
 
 """
 
-from types import FunctionType, ModuleType
+from types import FunctionType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import islice

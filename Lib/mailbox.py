@@ -6,7 +6,6 @@
 # or returning from a flush() method.  See functions _sync_flush() and
 # _sync_close().
 
-import sys
 import os
 import time
 import calendar

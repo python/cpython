@@ -27,7 +27,7 @@
 #
 
 from tkinter import *
-from tkinter import _flatten, _cnfmerge, _default_root
+from tkinter import _cnfmerge, _default_root
 
 # WARNING - TkVersion is a limited precision floating point number
 if TkVersion < 3.999:
