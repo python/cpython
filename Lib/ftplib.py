@@ -320,7 +320,6 @@ class FTP:
                 raise err
             else:
                 raise OSError("getaddrinfo returns an empty list")
-            raise OSError(msg)
         sock.listen(1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
