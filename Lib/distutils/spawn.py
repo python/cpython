@@ -36,8 +36,6 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
         _spawn_posix(cmd, search_path, dry_run=dry_run)
     elif os.name == 'nt':
         _spawn_nt(cmd, search_path, dry_run=dry_run)
-    elif os.name == 'os2':
-        _spawn_os2(cmd, search_path, dry_run=dry_run)
     else:
         raise DistutilsPlatformError(
               "don't know how to spawn programs on platform '%s'" % os.name)
