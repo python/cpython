@@ -2270,13 +2270,14 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(orig, derived)
 
     def test_bool(self):
+        # time is always True.
         cls = self.theclass
         self.assertTrue(cls(1))
         self.assertTrue(cls(0, 1))
         self.assertTrue(cls(0, 0, 1))
         self.assertTrue(cls(0, 0, 0, 1))
-        self.assertFalse(cls(0))
-        self.assertFalse(cls())
+        self.assertTrue(cls(0))
+        self.assertTrue(cls())
 
     def test_replace(self):
         cls = self.theclass
@@ -2629,7 +2630,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             self.assertEqual(derived.tzname(), 'cookie')
 
     def test_more_bool(self):
-        # Test cases with non-None tzinfo.
+        # time is always True.
         cls = self.theclass
 
         t = cls(0, tzinfo=FixedOffset(-300, ""))
@@ -2639,22 +2640,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertTrue(t)
 
         t = cls(5, tzinfo=FixedOffset(300, ""))
-        self.assertFalse(t)
-
-        t = cls(23, 59, tzinfo=FixedOffset(23*60 + 59, ""))
-        self.assertFalse(t)
-
-        # Mostly ensuring this doesn't overflow internally.
-        t = cls(0, tzinfo=FixedOffset(23*60 + 59, ""))
         self.assertTrue(t)
 
-        # But this should yield a value error -- the utcoffset is bogus.
-        t = cls(0, tzinfo=FixedOffset(24*60, ""))
-        self.assertRaises(ValueError, lambda: bool(t))
-
-        # Likewise.
-        t = cls(0, tzinfo=FixedOffset(-24*60, ""))
-        self.assertRaises(ValueError, lambda: bool(t))
+        t = cls(23, 59, tzinfo=FixedOffset(23*60 + 59, ""))
+        self.assertTrue(t)
 
     def test_replace(self):
         cls = self.theclass

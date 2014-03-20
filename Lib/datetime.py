@@ -1249,12 +1249,6 @@ class time:
         _check_tzinfo_arg(tzinfo)
         return time(hour, minute, second, microsecond, tzinfo)
 
-    def __bool__(self):
-        if self.second or self.microsecond:
-            return True
-        offset = self.utcoffset() or timedelta(0)
-        return timedelta(hours=self.hour, minutes=self.minute) != offset
-
     # Pickle support.
 
     def _getstate(self):
