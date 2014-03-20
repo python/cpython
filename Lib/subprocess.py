@@ -350,8 +350,6 @@ mswindows = (sys.platform == "win32")
 import io
 import os
 import time
-import traceback
-import gc
 import signal
 import builtins
 import warnings

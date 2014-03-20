@@ -147,12 +147,9 @@ else:
 if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
 
-from socket import getnameinfo as _getnameinfo
-from socket import SHUT_RDWR as _SHUT_RDWR
 from socket import socket, AF_INET, SOCK_STREAM, create_connection
 from socket import SOL_SOCKET, SO_TYPE
 import base64        # for DER-to-PEM translation
-import traceback
 import errno
 
 

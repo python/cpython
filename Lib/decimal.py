@@ -142,7 +142,6 @@ __version__ = '1.70'    # Highest version of the spec this complies with
                         # See http://speleotrove.com/decimal/
 __libmpdec_version__ = "2.4.0" # compatible libmpdec version
 
-import copy as _copy
 import math as _math
 import numbers as _numbers
 import sys

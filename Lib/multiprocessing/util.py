@@ -7,8 +7,6 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-import sys
-import functools
 import os
 import itertools
 import weakref

@@ -85,8 +85,6 @@ __version__ = "0.6"
 __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 
 import html
-import email.message
-import email.parser
 import http.client
 import io
 import mimetypes

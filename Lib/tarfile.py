@@ -65,8 +65,6 @@ except NameError:
 # from tarfile import *
 __all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError"]
 
-from builtins import open as _open # Since 'open' is TarFile.open
-
 #---------------------------------------------------------
 # tar constants
 #---------------------------------------------------------

@@ -8,13 +8,11 @@
 #
 
 import bisect
-import itertools
 import mmap
 import os
 import sys
 import tempfile
 import threading
-import _multiprocessing
 
 from . import context
 from . import reduction

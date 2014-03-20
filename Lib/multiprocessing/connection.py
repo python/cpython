@@ -14,7 +14,6 @@ import os
 import sys
 import socket
 import struct
-import errno
 import time
 import tempfile
 import itertools
