@@ -30,7 +30,6 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'HtmlDiff', 'Match']
 
-import warnings
 import heapq
 from collections import namedtuple as _namedtuple
 

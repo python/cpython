@@ -25,13 +25,10 @@ __all__ = [
 import os
 import re
 import time
-import base64
 import random
 import socket
 import datetime
 import urllib.parse
-import warnings
-from io import StringIO
 
 from email._parseaddr import quote
 from email._parseaddr import AddressList as _AddressList

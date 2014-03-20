@@ -131,7 +131,6 @@ __version__ = "0.4"
 
 import socket
 import select
-import sys
 import os
 import errno
 try:

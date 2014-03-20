@@ -3,7 +3,6 @@
 import sys as _sys
 import _thread
 
-from time import sleep as _sleep
 try:
     from time import monotonic as _time
 except ImportError:
