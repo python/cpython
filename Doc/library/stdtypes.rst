@@ -754,11 +754,11 @@ are sequences of the same type; *n*, *i* and *j* are integers:
 +------------------+--------------------------------+----------+
 | ``max(s)``       | largest item of *s*            |          |
 +------------------+--------------------------------+----------+
-| ``s.index(i)``   | index of the first occurrence  |          |
-|                  | of *i* in *s*                  |          |
+| ``s.index(x)``   | index of the first occurrence  |          |
+|                  | of *x* in *s*                  |          |
 +------------------+--------------------------------+----------+
-| ``s.count(i)``   | total number of occurrences of |          |
-|                  | *i* in *s*                     |          |
+| ``s.count(x)``   | total number of occurrences of |          |
+|                  | *x* in *s*                     |          |
 +------------------+--------------------------------+----------+
 
 Sequence types also support comparisons. In particular, tuples and lists
