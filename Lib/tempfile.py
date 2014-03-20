@@ -72,7 +72,7 @@ else:
     # file doesn't exist.
     def _stat(fn):
         fd = _os.open(fn, _os.O_RDONLY)
-        os.close(fd)
+        _os.close(fd)
 
 def _exists(fn):
     try:
