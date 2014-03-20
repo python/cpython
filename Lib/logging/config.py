@@ -1,4 +1,4 @@
-# Copyright 2001-2013 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2014 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -19,13 +19,19 @@ Configuration functions for the logging package for Python. The core package
 is based on PEP 282 and comments thereto in comp.lang.python, and influenced
 by Apache's log4j system.
 
-Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2014 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, logging.handlers, struct, traceback, re
+import errno
 import io
+import logging
+import logging.handlers
+import re
+import struct
+import sys
+import traceback
 
 try:
     import _thread as thread
@@ -38,10 +44,7 @@ from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 DEFAULT_LOGGING_CONFIG_PORT = 9030
 
-if sys.platform == "win32":
-    RESET_ERROR = 10054   #WSAECONNRESET
-else:
-    RESET_ERROR = 104     #ECONNRESET
+RESET_ERROR = errno.ECONNRESET
 
 #
 #   The following code implements a socket listener for on-the-fly
@@ -867,12 +870,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                     if self.server.ready:
                         self.server.ready.set()
             except OSError as e:
-                if not isinstance(e.args, tuple):
+                if e.errno != RESET_ERROR:
                     raise
-                else:
-                    errcode = e.args[0]
-                    if errcode != RESET_ERROR:
-                        raise
 
     class ConfigSocketReceiver(ThreadingTCPServer):
         """
