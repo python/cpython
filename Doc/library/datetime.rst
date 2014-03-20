@@ -1378,10 +1378,13 @@ Supported operations:
 
 * efficient pickling
 
-* in Boolean contexts, a :class:`.time` object is considered to be true if and
-  only if, after converting it to minutes and subtracting :meth:`utcoffset` (or
-  ``0`` if that's ``None``), the result is non-zero.
+In boolean contexts, a :class:`.time` object is always considered to be true.
 
+.. versionchanged:: 3.5
+   Before Python 3.5, a :class:`.time` object was considered to be false if it
+   represented midnight in UTC.  This behavior was considered obscure and
+   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
+   details.
 
 Instance methods:
 

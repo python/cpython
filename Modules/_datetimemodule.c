@@ -3805,29 +3805,6 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     return clone;
 }
 
-static int
-time_bool(PyObject *self)
-{
-    PyObject *offset, *tzinfo;
-    int offsecs = 0;
-
-    if (TIME_GET_SECOND(self) || TIME_GET_MICROSECOND(self)) {
-        /* Since utcoffset is in whole minutes, nothing can
-         * alter the conclusion that this is nonzero.
-         */
-        return 1;
-    }
-    tzinfo = GET_TIME_TZINFO(self);
-    if (tzinfo != Py_None) {
-        offset = call_utcoffset(tzinfo, Py_None);
-        if (offset == NULL)
-            return -1;
-        offsecs = GET_TD_DAYS(offset)*86400 + GET_TD_SECONDS(offset);
-        Py_DECREF(offset);
-    }
-    return (TIME_GET_MINUTE(self)*60 - offsecs + TIME_GET_HOUR(self)*3600) != 0;
-}
-
 /* Pickle support, a simple use of __reduce__. */
 
 /* Let basestate be the non-tzinfo data string.
@@ -3895,19 +3872,6 @@ PyDoc_STR("time([hour[, minute[, second[, microsecond[, tzinfo]]]]]) --> a time 
 All arguments are optional. tzinfo may be None, or an instance of\n\
 a tzinfo subclass. The remaining arguments may be ints.\n");
 
-static PyNumberMethods time_as_number = {
-    0,                                          /* nb_add */
-    0,                                          /* nb_subtract */
-    0,                                          /* nb_multiply */
-    0,                                          /* nb_remainder */
-    0,                                          /* nb_divmod */
-    0,                                          /* nb_power */
-    0,                                          /* nb_negative */
-    0,                                          /* nb_positive */
-    0,                                          /* nb_absolute */
-    (inquiry)time_bool,                         /* nb_bool */
-};
-
 static PyTypeObject PyDateTime_TimeType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "datetime.time",                            /* tp_name */
@@ -3919,7 +3883,7 @@ static PyTypeObject PyDateTime_TimeType = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
     (reprfunc)time_repr,                        /* tp_repr */
-    &time_as_number,                            /* tp_as_number */
+    0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)time_hash,                        /* tp_hash */
