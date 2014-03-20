@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 18931: selectors module now supports /dev/poll on Solaris.
+  Patch by Giampaolo Rodola'.
+
 - Issue #19977: When the ``LC_TYPE`` locale is the POSIX locale (``C`` locale),
   :py:data:`sys.stdin` and :py:data:`sys.stdout` are now using the
   ``surrogateescape`` error handler, instead of the ``strict`` error handler.

@@ -45,6 +45,7 @@ Classes hierarchy::
    +-- SelectSelector
    +-- PollSelector
    +-- EpollSelector
+   +-- DevpollSelector
    +-- KqueueSelector
 
 
@@ -207,6 +208,16 @@ below:
       This returns the file descriptor used by the underlying
       :func:`select.epoll` object.
 
+.. class:: DevpollSelector()
+
+   :func:`select.devpoll`-based selector.
+
+   .. method:: fileno()
+
+      This returns the file descriptor used by the underlying
+      :func:`select.devpoll` object.
+
+.. versionadded:: 3.5
 
 .. class:: KqueueSelector()
 

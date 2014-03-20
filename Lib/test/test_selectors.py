@@ -441,10 +441,18 @@ class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
     SELECTOR = getattr(selectors, 'KqueueSelector', None)
 
 
+@unittest.skipUnless(hasattr(selectors, 'DevpollSelector'),
+                     "Test needs selectors.DevpollSelector")
+class DevpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
+
+    SELECTOR = getattr(selectors, 'DevpollSelector', None)
+
+
+
 def test_main():
     tests = [DefaultSelectorTestCase, SelectSelectorTestCase,
              PollSelectorTestCase, EpollSelectorTestCase,
-             KqueueSelectorTestCase]
+             KqueueSelectorTestCase, DevpollSelectorTestCase]
     support.run_unittest(*tests)
     support.reap_children()
 
