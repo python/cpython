@@ -503,7 +503,6 @@ def win32_ver(release='', version='', csd='', ptype=''):
 
     # Import the needed APIs
     try:
-        import win32api
         from win32api import RegQueryValueEx, RegOpenKeyEx, \
              RegCloseKey, GetVersionEx
         from win32con import HKEY_LOCAL_MACHINE, VER_PLATFORM_WIN32_NT, \

@@ -134,7 +134,6 @@ from datetime import datetime
 import http.client
 import urllib.parse
 from xml.parsers import expat
-import socket
 import errno
 from io import BytesIO
 try:

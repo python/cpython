@@ -85,7 +85,7 @@ if os.name == "posix" and sys.platform == "darwin":
 
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
-    import re, tempfile, errno
+    import re, tempfile
 
     def _findLib_gcc(name):
         expr = r'[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)

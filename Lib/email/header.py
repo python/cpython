@@ -100,7 +100,6 @@ def decode_header(header):
                 words.append((encoded, encoding, charset))
     # Now loop over words and remove words that consist of whitespace
     # between two encoded strings.
-    import sys
     droplist = []
     for n, w in enumerate(words):
         if n>1 and w[1] and words[n-2][1] and words[n-1][0].isspace():
@@ -362,7 +361,6 @@ class Header:
         for string, charset in self._chunks:
             if hasspace is not None:
                 hasspace = string and self._nonctext(string[0])
-                import sys
                 if lastcs not in (None, 'us-ascii'):
                     if not hasspace or charset not in (None, 'us-ascii'):
                         formatter.add_transition()
