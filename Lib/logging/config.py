@@ -24,7 +24,7 @@ Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, logging.handlers, socket, struct, traceback, re
+import sys, logging, logging.handlers, struct, traceback, re
 import io
 
 try:

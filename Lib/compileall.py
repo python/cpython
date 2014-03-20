@@ -12,7 +12,6 @@ See module py_compile for details of the actual byte-compilation.
 """
 import os
 import sys
-import errno
 import importlib.util
 import py_compile
 import struct

@@ -1085,7 +1085,6 @@ if _have_ssl:
 # Test retrieval when run as a script.
 if __name__ == '__main__':
     import argparse
-    from email.utils import parsedate
 
     parser = argparse.ArgumentParser(description="""\
         nntplib built-in demo - display the latest articles in a newsgroup""")

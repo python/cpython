@@ -24,7 +24,7 @@ import traceback
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
 from . import util
-from . import get_context, cpu_count, TimeoutError
+from . import get_context, TimeoutError
 
 #
 # Constants representing the state of a pool
