@@ -242,7 +242,7 @@ the :mod:`glob` module.)
    links encountered in the path (if they are supported by the operating system).
 
 
-.. function:: relpath(path, start=None)
+.. function:: relpath(path, start=os.curdir)
 
    Return a relative filepath to *path* either from the current directory or
    from an optional *start* directory.  This is a path computation:  the
