@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20627: xmlrpc.client.ServerProxy is now a context manager.
+
 - Issue #19165: The formatter module now raises DeprecationWarning instead of
   PendingDeprecationWarning.
 

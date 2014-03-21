@@ -134,7 +134,8 @@ New Modules
 Improved Modules
 ================
 
-* None yet.
+* :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`
+  (contributed by Claudiu Popa in :issue:`20627`).
 
 
 Optimizations
