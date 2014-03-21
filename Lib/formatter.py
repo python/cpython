@@ -21,7 +21,7 @@ manage and inserting data into the output.
 import sys
 import warnings
 warnings.warn('the formatter module is deprecated and will be removed in '
-              'Python 3.6', PendingDeprecationWarning)
+              'Python 3.6', DeprecationWarning)
 
 
 AS_IS = None
