@@ -165,7 +165,8 @@ Unsupported Operating Systems
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-* None yet.
+* The :mod:`formatter` module has now graduated to full deprecation and is still
+  slated for removal in Python 3.6.
 
 
 Deprecated functions and types of the C API
