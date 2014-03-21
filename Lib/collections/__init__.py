@@ -274,9 +274,7 @@ class {typename}(tuple):
         return OrderedDict(zip(self._fields, self))
 
     def _asdict(self):
-        '''Return a new OrderedDict which maps field names to their values.
-           This method is obsolete.  Use vars(nt) or nt.__dict__ instead.
-        '''
+        'Return a new OrderedDict which maps field names to their values.'
         return self.__dict__
 
     def __getnewargs__(self):
