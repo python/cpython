@@ -46,10 +46,9 @@ Constants
 
 .. data:: asyncio.subprocess.DEVNULL
 
-   Special value that can be used as the *stderr* argument to
-   :func:`create_subprocess_shell` and :func:`create_subprocess_exec` and
-   indicates that standard error should go into the same handle as standard
-   output.
+   Special value that can be used as the *stdin*, *stdout* or *stderr* argument
+   to :func:`create_subprocess_shell` and :func:`create_subprocess_exec` and
+   indicates that the special file :data:`os.devnull` will be used.
 
 
 Process
