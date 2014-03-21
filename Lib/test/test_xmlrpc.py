@@ -713,6 +713,23 @@ class SimpleServerTestCase(BaseServerTestCase):
         conn.request('POST', '/RPC2 HTTP/1.0\r\nContent-Length: 100\r\n\r\nbye')
         conn.close()
 
+    def test_context_manager(self):
+        with xmlrpclib.ServerProxy(URL) as server:
+            server.add(2, 3)
+            self.assertNotEqual(server('transport')._connection,
+                                (None, None))
+        self.assertEqual(server('transport')._connection,
+                         (None, None))
+
+    def test_context_manager_method_error(self):
+        try:
+            with xmlrpclib.ServerProxy(URL) as server:
+                server.add(2, "a")
+        except xmlrpclib.Fault:
+            pass
+        self.assertEqual(server('transport')._connection,
+                         (None, None))
+
 
 class MultiPathServerTestCase(BaseServerTestCase):
     threadFunc = staticmethod(http_multi_server)
@@ -897,6 +914,7 @@ class ServerProxyTestCase(unittest.TestCase):
         t = xmlrpclib.Transport()
         p = xmlrpclib.ServerProxy(self.url, transport=t)
         self.assertEqual(p('transport'), t)
+
 
 # This is a contrived way to make a failure occur on the server side
 # in order to test the _send_traceback_header flag on the server

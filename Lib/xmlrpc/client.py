@@ -1449,6 +1449,12 @@ class ServerProxy:
             return self.__transport
         raise AttributeError("Attribute %r not found" % (attr,))
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.__close()
+
 # compatibility
 
 Server = ServerProxy
