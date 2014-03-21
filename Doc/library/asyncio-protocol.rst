@@ -89,7 +89,7 @@ ReadTransport
    .. method:: pause_reading()
 
       Pause the receiving end of the transport.  No data will be passed to
-      the protocol's :meth:`data_received` method until meth:`resume_reading`
+      the protocol's :meth:`data_received` method until :meth:`resume_reading`
       is called.
 
    .. method:: resume_reading()
