@@ -13986,11 +13986,13 @@ mainformatlong(PyObject *v,
     if (!PyNumber_Check(v))
         goto wrongtype;
 
-    /* make sure number is a type of integer */
+    /* make sure number is a type of integer for o, x, and X */
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
             iobj = PyNumber_Index(v);
             if (iobj == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_TypeError))
+                    goto wrongtype;
                 return -1;
             }
         }
@@ -14052,10 +14054,23 @@ mainformatlong(PyObject *v,
     return 0;
 
 wrongtype:
-    PyErr_Format(PyExc_TypeError,
-            "%%%c format: a number is required, "
-            "not %.200s",
-            type, Py_TYPE(v)->tp_name);
+    switch(type)
+    {
+        case 'o':
+        case 'x':
+        case 'X':
+            PyErr_Format(PyExc_TypeError,
+                    "%%%c format: an integer is required, "
+                    "not %.200s",
+                    type, Py_TYPE(v)->tp_name);
+            break;
+        default:
+            PyErr_Format(PyExc_TypeError,
+                    "%%%c format: a number is required, "
+                    "not %.200s",
+                    type, Py_TYPE(v)->tp_name);
+            break;
+    }
     return -1;
 }
 

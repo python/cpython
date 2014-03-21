@@ -8,6 +8,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 import _string
 import codecs
 import itertools
+import operator
 import struct
 import sys
 import unittest
@@ -1127,20 +1128,20 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%.2s' % "a\xe9\u20ac", 'a\xe9')
 
         #issue 19995
-        class PsuedoInt:
+        class PseudoInt:
             def __init__(self, value):
                 self.value = int(value)
             def __int__(self):
                 return self.value
             def __index__(self):
                 return self.value
-        class PsuedoFloat:
+        class PseudoFloat:
             def __init__(self, value):
                 self.value = float(value)
             def __int__(self):
                 return int(self.value)
-        pi = PsuedoFloat(3.1415)
-        letter_m = PsuedoInt(109)
+        pi = PseudoFloat(3.1415)
+        letter_m = PseudoInt(109)
         self.assertEqual('%x' % 42, '2a')
         self.assertEqual('%X' % 15, 'F')
         self.assertEqual('%o' % 9, '11')
@@ -1149,11 +1150,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('%X' % letter_m, '6D')
         self.assertEqual('%o' % letter_m, '155')
         self.assertEqual('%c' % letter_m, 'm')
-        self.assertRaises(TypeError, '%x'.__mod__, pi),
-        self.assertRaises(TypeError, '%x'.__mod__, 3.14),
-        self.assertRaises(TypeError, '%X'.__mod__, 2.11),
-        self.assertRaises(TypeError, '%o'.__mod__, 1.79),
-        self.assertRaises(TypeError, '%c'.__mod__, pi),
+        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not float', operator.mod, '%x', 3.14),
+        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not float', operator.mod, '%X', 2.11),
+        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not float', operator.mod, '%o', 1.79),
+        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not PseudoFloat', operator.mod, '%x', pi),
+        self.assertRaises(TypeError, operator.mod, '%c', pi),
 
     def test_formatting_with_enum(self):
         # issue18780
