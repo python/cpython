@@ -442,7 +442,7 @@ The complete signature is::
 
 :value: What the new Enum class will record as its name.
 
-:names: The Enum members.  This can be a whitespace or comma seperated string
+:names: The Enum members.  This can be a whitespace or comma separated string
   (values will start at 1)::
 
     'red green blue' | 'red,green,blue' | 'red, green, blue'
@@ -453,7 +453,7 @@ The complete signature is::
 
   or a mapping::
 
-    {'chartruese': 7, 'sea_green': 11, 'rosemary': 42}
+    {'chartreuse': 7, 'sea_green': 11, 'rosemary': 42}
 
 :module: name of module where new Enum class can be found.
 
@@ -543,7 +543,7 @@ Some rules:
    add methods and don't specify another data type such as :class:`int` or
    :class:`str`.
 3. When another data type is mixed in, the :attr:`value` attribute is *not the
-   same* as the enum member itself, although it is equivalant and will compare
+   same* as the enum member itself, although it is equivalent and will compare
    equal.
 4. %-style formatting:  `%s` and `%r` call :class:`Enum`'s :meth:`__str__` and
    :meth:`__repr__` respectively; other codes (such as `%i` or `%h` for
