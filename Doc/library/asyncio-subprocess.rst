@@ -146,6 +146,7 @@ it does not use a shell. Get the output of the "python -m platform" command and
 display the output::
 
     import asyncio
+    import os
     import sys
     from asyncio import subprocess
 
@@ -164,7 +165,11 @@ display the output::
         exitcode = yield from proc.wait()
         return (exitcode, stdout)
 
-    loop = asyncio.get_event_loop()
+    if os.name == 'nt':
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    else:
+        loop = asyncio.get_event_loop()
     coro = getstatusoutput(sys.executable, '-m', 'platform')
     exitcode, stdout = loop.run_until_complete(coro)
     if not exitcode:
