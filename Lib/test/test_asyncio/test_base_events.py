@@ -136,6 +136,29 @@ class BaseEventLoopTests(unittest.TestCase):
         # are really slow
         self.assertLessEqual(dt, 0.9, dt)
 
+    def test_assert_is_current_event_loop(self):
+        def cb():
+            pass
+
+        other_loop = base_events.BaseEventLoop()
+        other_loop._selector = unittest.mock.Mock()
+        asyncio.set_event_loop(other_loop)
+
+        # raise RuntimeError if the event loop is different in debug mode
+        self.loop.set_debug(True)
+        with self.assertRaises(RuntimeError):
+            self.loop.call_soon(cb)
+        with self.assertRaises(RuntimeError):
+            self.loop.call_later(60, cb)
+        with self.assertRaises(RuntimeError):
+            self.loop.call_at(self.loop.time() + 60, cb)
+
+        # check disabled if debug mode is disabled
+        self.loop.set_debug(False)
+        self.loop.call_soon(cb)
+        self.loop.call_later(60, cb)
+        self.loop.call_at(self.loop.time() + 60, cb)
+
     def test_run_once_in_executor_handle(self):
         def cb():
             pass
