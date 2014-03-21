@@ -1589,7 +1589,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     }
 #endif
 
-#ifdef AF_CAN
+#if defined(AF_CAN) && defined(CAN_RAW) && defined(CAN_BCM)
     case AF_CAN:
         switch (s->sock_proto) {
         case CAN_RAW:
