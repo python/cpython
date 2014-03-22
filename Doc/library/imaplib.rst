@@ -69,21 +69,25 @@ There's also a subclass for secure connections:
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
    with SSL support).  If *host* is not specified, ``''`` (the local host) is used.
-   If *port* is omitted, the standard IMAP4-over-SSL port (993) is used.  *keyfile*
-   and *certfile* are also optional - they can contain a PEM formatted private key
-   and certificate chain file for the SSL connection. *ssl_context* parameter is a
-   :class:`ssl.SSLContext` object which allows bundling SSL configuration
-   options, certificates and private keys into a single (potentially long-lived)
-   structure. Note that the *keyfile*/*certfile* parameters are mutually exclusive with *ssl_context*,
-   a :class:`ValueError` is raised if *keyfile*/*certfile* is provided along with *ssl_context*.
+   If *port* is omitted, the standard IMAP4-over-SSL port (993) is used.
+   *ssl_context* is a :class:`ssl.SSLContext` object which allows bundling
+   SSL configuration options, certificates and private keys into a single
+   (potentially long-lived) structure.  Please read :ref:`ssl-security` for
+   best practices.
+
+   *keyfile* and *certfile* are a legacy alternative to *ssl_context* - they
+   can point to PEM-formatted private key and certificate chain files for
+   the SSL connection.  Note that the *keyfile*/*certfile* parameters are
+   mutually exclusive with *ssl_context*, a :class:`ValueError` is raised
+   if *keyfile*/*certfile* is provided along with *ssl_context*.
 
    .. versionchanged:: 3.3
       *ssl_context* parameter added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
-      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
-      :data:`~ssl.HAS_SNI`).
+      :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
+      :data:`ssl.HAS_SNI`).
 
 The second subclass allows for connections created by a child process:
 
@@ -437,14 +441,15 @@ An :class:`IMAP4` instance has the following methods:
 
    Send a ``STARTTLS`` command.  The *ssl_context* argument is optional
    and should be a :class:`ssl.SSLContext` object.  This will enable
-   encryption on the IMAP connection.
+   encryption on the IMAP connection.  Please read :ref:`ssl-security` for
+   best practices.
 
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
       The method now supports hostname check with
-      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
-      :data:`~ssl.HAS_SNI`).
+      :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
+      :data:`ssl.HAS_SNI`).
 
 .. method:: IMAP4.status(mailbox, names)
 
