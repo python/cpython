@@ -3,6 +3,9 @@
   <PropertyGroup Label="UserMacros" Condition="'$(HOST_PYTHON)'!=''">
     <PythonExe>$(HOST_PYTHON)</PythonExe>
   </PropertyGroup>
+  <PropertyGroup Label="UserMacros">
+    <tcltkDir>$(externalsDir)\tcltk64</tcltkDir>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -15,6 +18,9 @@
   <ItemGroup>
     <BuildMacro Include="PythonExe">
       <Value>$(PythonExe)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tcltkDir">
+      <Value>$(tcltkDir)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

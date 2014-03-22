@@ -217,11 +217,19 @@ _tkinter
     Homepage:
         http://www.tcl.tk/
 
-    Unlike the other external libraries listed above, Tk must be built
-    separately before the _tkinter module can be built. This means that
-    a pre-built Tcl/Tk installation is expected in ..\..\tcltk (tcltk64
-    for 64-bit) relative to this directory.  See "Getting External
-    Sources" below for the easiest method to ensure Tcl/Tk is built.
+    Tkinter's dependencies are built by the tcl.vcxproj and tk.vcxproj
+    projects.  The tix.vcxproj project also builds the Tix extended
+    widget set for use with Tkinter.
+
+    Those three projects install their respective components in a
+    directory alongside the source directories called "tcltk" on
+    Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
+    into the current output directory, which should ensure that Tkinter
+    is able to load Tcl/Tk without having to change your PATH.
+
+    The tcl, tk, and tix sub-projects do not have the ability to clean
+    their builds; if you need to rebuild, you'll have to clean them by
+    hand.
 
 
 Getting External Sources
@@ -249,26 +257,6 @@ things work.  For instance, if you were to download a version 5.0.7 of
 XZ Utils, you would need to extract the archive into ..\..\xz-5.0.5
 anyway, since that is where the solution is set to look for xz.  The
 same is true for all other external projects.
-
-The external(-amd64).bat scripts will also build a debug build of
-Tcl/Tk, but there aren't any equivalent batch files for building release
-versions of Tcl/Tk currently available.  If you need to build a release
-version of Tcl/Tk, just take a look at the relevant external(-amd64).bat
-file and find the two nmake lines, then call each one without the
-'DEBUG=1' parameter, i.e.:
-
-The external-amd64.bat file contains this for tcl:
-    nmake -f makefile.vc DEBUG=1 MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
-
-So for a release build, you'd call it as:
-    nmake -f makefile.vc MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
-
-Note that the above command is called from within ..\..\tcl-8.6.1.0\win
-(relative to this directory); don't forget to build Tk as well as Tcl!
-
-This will be cleaned up in the future; http://bugs.python.org/issue15968
-tracks adding a new tcltk.vcxproj file that will build Tcl/Tk and Tix
-the same way the other external projects listed above are built.
 
 
 Building for AMD64
