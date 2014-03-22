@@ -43,10 +43,10 @@ The module provides the following classes:
    For example, the following calls all create instances that connect to the server
    at the same host and port::
 
-      >>> h1 = http.client.HTTPConnection('www.cwi.nl')
-      >>> h2 = http.client.HTTPConnection('www.cwi.nl:80')
-      >>> h3 = http.client.HTTPConnection('www.cwi.nl', 80)
-      >>> h3 = http.client.HTTPConnection('www.cwi.nl', 80, timeout=10)
+      >>> h1 = http.client.HTTPConnection('www.python.org')
+      >>> h2 = http.client.HTTPConnection('www.python.org:80')
+      >>> h3 = http.client.HTTPConnection('www.python.org', 80)
+      >>> h4 = http.client.HTTPConnection('www.python.org', 80, timeout=10)
 
    .. versionchanged:: 3.2
       *source_address* was added.
@@ -64,23 +64,27 @@ The module provides the following classes:
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
    must be a :class:`ssl.SSLContext` instance describing the various SSL
-   options.  If *context* is specified and has a :attr:`~ssl.SSLContext.verify_mode`
-   of either :data:`~ssl.CERT_OPTIONAL` or :data:`~ssl.CERT_REQUIRED`, then
-   by default *host* is matched against the host name(s) allowed by the
-   server's certificate.  If you want to change that behaviour, you can
-   explicitly set *check_hostname* to False.
+   options.
 
    *key_file* and *cert_file* are deprecated, please use
-   :meth:`ssl.SSLContext.load_cert_chain` instead.
+   :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+   :func:`ssl.create_default_context` select the system's trusted CA
+   certificates for you.
 
-   If you access arbitrary hosts on the Internet, it is recommended to
-   require certificate checking and feed the *context* with a set of
-   trusted CA certificates::
+   The recommended way to connect to HTTPS hosts on the Internet is as
+   follows::
 
-      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-      context.verify_mode = ssl.CERT_REQUIRED
-      context.load_verify_locations('/etc/pki/tls/certs/ca-bundle.crt')
-      h = client.HTTPSConnection('svn.python.org', 443, context=context)
+      context = ssl.create_default_context()
+      h = client.HTTPSConnection('www.python.org', 443, context=context)
+
+   Please read :ref:`ssl-security` for more information on best practices.
+
+   .. note::
+      If *context* is specified and has a :attr:`~ssl.SSLContext.verify_mode`
+      of either :data:`~ssl.CERT_OPTIONAL` or :data:`~ssl.CERT_REQUIRED`, then
+      by default *host* is matched against the host name(s) allowed by the
+      server's certificate.  If you want to change that behaviour, you can
+      explicitly set *check_hostname* to False.
 
    .. versionchanged:: 3.2
       *source_address*, *context* and *check_hostname* were added.
