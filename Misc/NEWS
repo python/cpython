@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20995: Enhance default ciphers used by the ssl module to enable
+  better security an prioritize perfect forward secrecy.
+
 - Issue #20627: xmlrpc.client.ServerProxy is now a context manager.
 
 - Issue #19165: The formatter module now raises DeprecationWarning instead of
@@ -40,6 +43,9 @@ Library
 
 - Issue #20574: Implement incremental decoder for cp65001 code (Windows code
   page 65001, Microsoft UTF-8).
+=======
+- Issue #20884: Don't assume that __file__ is defined on importlib.__init__.
+>>>>>>> other
 
 - Issue #20879: Delay the initialization of encoding and decoding tables for
   base32, ascii85 and base85 codecs in the base64 module, and delay the
