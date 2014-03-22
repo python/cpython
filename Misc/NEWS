@@ -23,6 +23,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21015: SSL contexts will now automatically select an elliptic
+  curve for ECDH key exchange on OpenSSL 1.0.2 and later, and otherwise
+  default to "prime256v1".
+
 - Issue #21000: Improve the command-line interface of json.tool.
 
 - Issue #20995: Enhance default ciphers used by the ssl module to enable
