@@ -2567,6 +2567,18 @@ else:
                         s.connect((HOST, server.port))
             self.assertIn("no shared cipher", str(server.conn_errors[0]))
 
+        @unittest.skipUnless(ssl.HAS_ECDH, "test requires ECDH-enabled OpenSSL")
+        def test_default_ecdh_curve(self):
+            # Issue #21015: elliptic curve-based Diffie Hellman key exchange
+            # should be enabled by default on SSL contexts.
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context.load_cert_chain(CERTFILE)
+            context.set_ciphers("ECDH")
+            with ThreadedEchoServer(context=context) as server:
+                with context.wrap_socket(socket.socket()) as s:
+                    s.connect((HOST, server.port))
+                    self.assertIn("ECDH", s.cipher()[0])
+
         @unittest.skipUnless("tls-unique" in ssl.CHANNEL_BINDING_TYPES,
                              "'tls-unique' channel binding not available")
         def test_tls_unique_channel_binding(self):
