@@ -96,8 +96,8 @@ prints a welcome message stating its version number and a copyright notice
 before printing the first prompt::
 
    $ python3.5
-   Python 3.5 (default, Sep 24 2012, 09:25:04)
-   [GCC 4.6.3] on linux2
+   Python 3.5 (default, Sep 16 2015, 09:25:04)
+   [GCC 4.8.2] on linux2
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
