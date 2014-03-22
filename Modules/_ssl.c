@@ -2059,6 +2059,21 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         options |= SSL_OP_NO_SSLv2;
     SSL_CTX_set_options(self->ctx, options);
 
+#ifndef OPENSSL_NO_ECDH
+    /* Allow automatic ECDH curve selection (on OpenSSL 1.0.2+), or use
+       prime256v1 by default.  This is Apache mod_ssl's initialization
+       policy, so we should be safe. */
+#if defined(SSL_CTX_set_ecdh_auto)
+    SSL_CTX_set_ecdh_auto(self->ctx, 1);
+#else
+    {
+        EC_KEY *key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        SSL_CTX_set_tmp_ecdh(self->ctx, key);
+        EC_KEY_free(key);
+    }
+#endif
+#endif
+
 #define SID_CTX "Python"
     SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,
                                    sizeof(SID_CTX));
