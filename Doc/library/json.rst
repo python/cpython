@@ -104,6 +104,8 @@ Using json.tool from the shell to validate and pretty-print::
     $ echo '{1.2:3.4}' | python -mjson.tool
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
+See :ref:`json-commandline` for detailed documentation.
+
 .. highlight:: python3
 
 .. note::
@@ -563,3 +565,52 @@ the last name-value pair for a given name::
    {'x': 3}
 
 The *object_pairs_hook* parameter can be used to alter this behavior.
+
+.. highlight:: bash
+
+.. _json-commandline:
+
+Command Line Interface
+----------------------
+
+The :mod:`json.tool` module provides a simple command line interface to validate
+and pretty-print JSON objects.
+
+If the optional :option:`infile` and :option:`outfile` arguments are not
+specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
+
+    $ echo '{"json": "obj"}' | python -m json.tool
+    {
+        "json": "obj"
+    }
+    $ echo '{1.2:3.4}' | python -m json.tool
+    Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+
+
+Command line options
+^^^^^^^^^^^^^^^^^^^^
+
+.. cmdoption:: [<infile>]
+
+   The JSON file to be validated or pretty-printed::
+
+      $ python -m json.tool mp_films.json
+      [
+          {
+              "title": "And Now for Something Completely Different",
+              "year": 1971
+          },
+          {
+              "title": "Monty Python and the Holy Grail",
+              "year": 1975
+          }
+      ]
+
+.. cmdoption:: [<outfile>]
+
+   Write the output of the *infile* to the given *outfile*. Otherwise, write it
+   to :attr:`sys.stdout`.
+
+.. cmdoption:: -h, --help
+
+   Show the help message.
