@@ -21,12 +21,10 @@
     <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
     <lzmaDir>$(externalsDir)\xz-5.0.5</lzmaDir>
     <opensslDir>$(externalsDir)\openssl-1.0.1e</opensslDir>
+    <tclDir>$(externalsDir)\tcl-8.6.1.0</tclDir>
+    <tkDir>$(externalsDir)\tk-8.6.1.0</tkDir>
+    <tixDir>$(externalsDir)\tix-8.4.3.3</tixDir>
     <tcltkDir>$(externalsDir)\tcltk</tcltkDir>
-    <tcltk64Dir>$(externalsDir)\tcltk64</tcltk64Dir>
-    <tcltkLib>$(tcltkDir)\lib\tcl86t.lib;$(tcltkDir)\lib\tk86t.lib</tcltkLib>
-    <tcltkLibDebug>$(tcltkDir)\lib\tcl86tg.lib;$(tcltkDir)\lib\tk86tg.lib</tcltkLibDebug>
-    <tcltk64Lib>$(tcltk64Dir)\lib\tcl86t.lib;$(tcltk64Dir)\lib\tk86t.lib</tcltk64Lib>
-    <tcltk64LibDebug>$(tcltk64Dir)\lib\tcl86tg.lib;$(tcltk64Dir)\lib\tk86tg.lib</tcltk64LibDebug>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -82,23 +80,17 @@
     <BuildMacro Include="opensslDir">
       <Value>$(opensslDir)</Value>
     </BuildMacro>
+    <BuildMacro Include="tclDir">
+      <Value>$(tclDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tkDir">
+      <Value>$(tkDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="tixDir">
+      <Value>$(tixDir)</Value>
+    </BuildMacro>
     <BuildMacro Include="tcltkDir">
       <Value>$(tcltkDir)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tcltk64Dir">
-      <Value>$(tcltk64Dir)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tcltkLib">
-      <Value>$(tcltkLib)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tcltkLibDebug">
-      <Value>$(tcltkLibDebug)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tcltk64Lib">
-      <Value>$(tcltk64Lib)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tcltk64LibDebug">
-      <Value>$(tcltk64LibDebug)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
