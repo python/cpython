@@ -23,7 +23,7 @@
     <opensslDir>$(externalsDir)\openssl-1.0.1e</opensslDir>
     <tclDir>$(externalsDir)\tcl-8.6.1.0</tclDir>
     <tkDir>$(externalsDir)\tk-8.6.1.0</tkDir>
-    <tixDir>$(externalsDir)\tix-8.4.3.3</tixDir>
+    <tixDir>$(externalsDir)\tix-8.4.3.4</tixDir>
     <tcltkDir>$(externalsDir)\tcltk</tcltkDir>
   </PropertyGroup>
   <ItemDefinitionGroup>

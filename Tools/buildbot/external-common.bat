@@ -35,7 +35,7 @@ if not exist tcl-8.6.1.0 (
    svn export http://svn.python.org/projects/external/tcl-8.6.1.0
 )
 if not exist tk-8.6.1.0 svn export http://svn.python.org/projects/external/tk-8.6.1.0
-if not exist tix-8.4.3.3 svn export http://svn.python.org/projects/external/tix-8.4.3.3
+if not exist tix-8.4.3.4 svn export http://svn.python.org/projects/external/tix-8.4.3.4
 
 @rem sqlite3
 if not exist sqlite-3.8.3.1 (
