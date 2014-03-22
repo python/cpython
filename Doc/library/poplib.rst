@@ -43,20 +43,23 @@ The :mod:`poplib` module provides two classes:
 
    This is a subclass of :class:`POP3` that connects to the server over an SSL
    encrypted socket.  If *port* is not specified, 995, the standard POP3-over-SSL
-   port is used.  *keyfile* and *certfile* are also optional - they can contain a
-   PEM formatted private key and certificate chain file for the SSL connection.
-   *timeout* works as in the :class:`POP3` constructor. *context* parameter is a
-   :class:`ssl.SSLContext` object which allows bundling SSL configuration
-   options, certificates and private keys into a single (potentially long-lived)
-   structure.
+   port is used.  *timeout* works as in the :class:`POP3` constructor.
+   *context* is an optional :class:`ssl.SSLContext` object which allows
+   bundling SSL configuration options, certificates and private keys into a
+   single (potentially long-lived) structure.  Please read :ref:`ssl-security`
+   for best practices.
+
+   *keyfile* and *certfile* are a legacy alternative to *context* - they can
+   point to PEM-formatted private key and certificate chain files,
+   respectively, for the SSL connection.
 
    .. versionchanged:: 3.2
       *context* parameter added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
-      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
-      :data:`~ssl.HAS_SNI`).
+      :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
+      :data:`ssl.HAS_SNI`).
 
 One exception is defined as an attribute of the :mod:`poplib` module:
 
@@ -198,10 +201,12 @@ An :class:`POP3` instance has the following methods:
 
    *context* parameter is a :class:`ssl.SSLContext` object which allows
    bundling SSL configuration options, certificates and private keys into
-   a single (potentially long-lived) structure.  This method supports
-   hostname checking via :attr:`SSLContext.check_hostname`
-   :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
-   :data:`~ssl.HAS_SNI`).
+   a single (potentially long-lived) structure.  Please read :ref:`ssl-security`
+   for best practices.
+
+   This method supports hostname checking via
+   :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
+   :data:`ssl.HAS_SNI`).
 
    .. versionadded:: 3.4
 
