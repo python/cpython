@@ -1542,7 +1542,7 @@ waiting for clients to connect::
 
    import socket, ssl
 
-   context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+   context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
    context.load_cert_chain(certfile="mycertfile", keyfile="mykeyfile")
 
    bindsocket = socket.socket()
@@ -1619,9 +1619,39 @@ to be aware of:
 Security considerations
 -----------------------
 
-Verifying certificates
-^^^^^^^^^^^^^^^^^^^^^^
+Best defaults
+^^^^^^^^^^^^^
 
+For **client use**, if you don't have any special requirements for your
+security policy, it is highly recommended that you use the
+:func:`create_default_context` function to create your SSL context.
+It will load the system's trusted CA certificates, enable certificate
+validation, and try to choose reasonably secure protocol and cipher settings.
+
+For example, here is how you would use the :class:`smtplib.SMTP` class to
+create a trusted, secure connection to a SMTP server::
+
+   >>> import ssl, smtplib
+   >>> smtp = smtplib.SMTP("mail.python.org", port=587)
+   >>> context = ssl.create_default_context()
+   >>> smtp.starttls(context=context)
+   (220, b'2.0.0 Ready to start TLS')
+
+If a client certificate is needed for the connection, it can be added with
+:meth:`SSLContext.load_cert_chain`.
+
+By contrast, if you create the SSL context by calling the :class:`SSLContext`
+constructor yourself, it will not have certificate validation enabled by
+default.  If you do so, please read the paragraphs below to achieve a good
+security level.
+
+Manual settings
+^^^^^^^^^^^^^^^
+
+Verifying certificates
+''''''''''''''''''''''
+
+When calling the the :class:`SSLContext` constructor directly,
 :const:`CERT_NONE` is the default.  Since it does not authenticate the other
 peer, it can be insecure, especially in client mode where most of time you
 would like to ensure the authenticity of the server you're talking to.
@@ -1645,7 +1675,7 @@ to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
       by default).
 
 Protocol versions
-^^^^^^^^^^^^^^^^^
+'''''''''''''''''
 
 SSL version 2 is considered insecure and is therefore dangerous to use.  If
 you want maximum compatibility between clients and servers, it is recommended
@@ -1655,11 +1685,11 @@ SSLv2 explicitly using the :data:`SSLContext.options` attribute::
    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
    context.options |= ssl.OP_NO_SSLv2
 
-The SSL context created above will allow SSLv3 and TLSv1 connections, but
-not SSLv2.
+The SSL context created above will allow SSLv3 and TLSv1 (and later, if
+supported by your system) connections, but not SSLv2.
 
 Cipher selection
-^^^^^^^^^^^^^^^^
+''''''''''''''''
 
 If you have advanced security requirements, fine-tuning of the ciphers
 enabled when negotiating a SSL session is possible through the
