@@ -3,6 +3,7 @@
   <PropertyGroup Label="UserMacros">
     <PyDebugExt>_d</PyDebugExt>
     <KillPythonExe>$(OutDir)kill_python_d.exe</KillPythonExe>
+    <TclDebugExt>g</TclDebugExt>
   </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
@@ -22,6 +23,9 @@
     </BuildMacro>
     <BuildMacro Include="KillPythonExe">
       <Value>$(KillPythonExe)</Value>
+    </BuildMacro>
+    <BuildMacro Include="TclDebugExt">
+      <Value>$(TclDebugExt)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

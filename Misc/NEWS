@@ -103,6 +103,12 @@ Tools/Demos
 - Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
   Patch by Arfrever Frehtes Taifersar Arahesis.
 
+Build
+-----
+
+- Issue #15968: Incorporated Tcl, Tk, and Tix builds into the Windows build
+  solution.
+
 
 What's New in Python 3.4.0?
 ===========================
