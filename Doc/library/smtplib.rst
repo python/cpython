@@ -69,20 +69,15 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    required from the beginning of the connection and using :meth:`starttls` is
    not appropriate. If *host* is not specified, the local host is used. If
    *port* is zero, the standard SMTP-over-SSL port (465) is used.  The optional
-   arguments *local_hostname* and *source_address* have the same meaning as
-   they do in the :class:`SMTP` class.  *keyfile* and *certfile* are also
-   optional, and can contain a PEM formatted private key and certificate chain
-   file for the SSL connection. *context* also optional, can contain a
-   SSLContext, and is an alternative to keyfile and certfile; If it is
-   specified both keyfile and certfile must be None.  The optional *timeout*
-   parameter specifies a timeout in seconds for blocking operations like the
-   connection attempt (if not specified, the global default timeout setting
-   will be used). The optional source_address parameter allows to bind to some
-   specific source address in a machine with multiple network interfaces,
-   and/or to some specific source tcp port. It takes a 2-tuple (host, port),
-   for the socket to bind to as its source address before connecting. If
-   omitted (or if host or port are ``''`` and/or 0 respectively) the OS default
-   behavior will be used.
+   arguments *local_hostname*, *timeout* and *source_address* have the same
+   meaning as they do in the :class:`SMTP` class.  *context*, also optional,
+   can contain a :class:`~ssl.SSLContext` and allows to configure various
+   aspects of the secure connection.  Please read :ref:`ssl-security` for
+   best practices.
+
+   *keyfile* and *certfile* are a legacy alternative to *context*, and can
+   point to a PEM formatted private key and certificate chain file for the
+   SSL connection.
 
    .. versionchanged:: 3.3
       *context* was added.
@@ -92,8 +87,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
-      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
-      :data:`~ssl.HAS_SNI`).
+      :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
+      :data:`ssl.HAS_SNI`).
 
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
 
