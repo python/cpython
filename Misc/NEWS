@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21000: Improve the command-line interface of json.tool.
+
 - Issue #20995: Enhance default ciphers used by the ssl module to enable
   better security an prioritize perfect forward secrecy.
 
