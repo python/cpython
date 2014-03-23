@@ -80,8 +80,8 @@ def get_command_line(**kwds):
     Returns prefix of command line used for spawning a child process
     '''
     if getattr(sys, 'frozen', False):
-        tmp = ' '.join('%s=%r' % item for item in kwds.items())
-        return [sys.executable, '--multiprocessing-fork'] + tmp
+        return ([sys.executable, '--multiprocessing-fork'] +
+                ['%s=%r' % item for item in kwds.items()])
     else:
         prog = 'from multiprocessing.spawn import spawn_main; spawn_main(%s)'
         prog %= ', '.join('%s=%r' % item for item in kwds.items())
