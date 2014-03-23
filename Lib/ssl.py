@@ -179,7 +179,7 @@ _DEFAULT_CIPHERS = (
     'DH+RC4:RSA+RC4:!aNULL:!eNULL:!MD5'
 )
 
-# Restricted and more secure ciphers
+# Restricted and more secure ciphers for the server side
 # This list has been explicitly chosen to:
 #   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
 #   * Prefer ECDHE over DHE for better performance
@@ -188,7 +188,7 @@ _DEFAULT_CIPHERS = (
 #   * Then Use 3DES as fallback which is secure but slow
 #   * Disable NULL authentication, NULL encryption, MD5 MACs, DSS, and RC4 for
 #     security reasons
-_RESTRICTED_CIPHERS = (
+_RESTRICTED_SERVER_CIPHERS = (
     'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:'
     'DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES:!aNULL:'
     '!eNULL:!MD5:!DSS:!RC4'
@@ -404,17 +404,35 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     """
     if not isinstance(purpose, _ASN1Object):
         raise TypeError(purpose)
-    context = SSLContext(PROTOCOL_TLSv1)
+
+    context = SSLContext(PROTOCOL_SSLv23)
+
     # SSLv2 considered harmful.
     context.options |= OP_NO_SSLv2
+
+    # SSLv3 has problematic security and is only required for really old
+    # clients such as IE6 on Windows XP
+    context.options |= OP_NO_SSLv3
+
     # disable compression to prevent CRIME attacks (OpenSSL 1.0+)
     context.options |= getattr(_ssl, "OP_NO_COMPRESSION", 0)
-    # disallow ciphers with known vulnerabilities
-    context.set_ciphers(_RESTRICTED_CIPHERS)
-    # verify certs and host name in client mode
+
     if purpose == Purpose.SERVER_AUTH:
+        # verify certs and host name in client mode
         context.verify_mode = CERT_REQUIRED
         context.check_hostname = True
+    elif purpose == Purpose.CLIENT_AUTH:
+        # Prefer the server's ciphers by default so that we get stronger
+        # encryption
+        context.options |= getattr(_ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
+
+        # Use single use keys in order to improve forward secrecy
+        context.options |= getattr(_ssl, "OP_SINGLE_DH_USE", 0)
+        context.options |= getattr(_ssl, "OP_SINGLE_ECDH_USE", 0)
+
+        # disallow ciphers with known vulnerabilities
+        context.set_ciphers(_RESTRICTED_SERVER_CIPHERS)
+
     if cafile or capath or cadata:
         context.load_verify_locations(cafile, capath, cadata)
     elif context.verify_mode != CERT_NONE:

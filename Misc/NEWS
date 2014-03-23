@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21013: Enhance ssl.create_default_context() when used for server side
+  sockets to provide better security by default.
+
 - Issue #20145: `assertRaisesRegex` and `assertWarnsRegex` now raise a
   TypeError if the second argument is not a string or compiled regex.
 
