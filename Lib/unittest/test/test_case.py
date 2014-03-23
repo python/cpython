@@ -1126,6 +1126,18 @@ test case
                 self.assertRaisesRegex, Exception, 'x',
                 lambda: None)
 
+    def testAssertRaisesRegexInvalidRegex(self):
+        # Issue 20145.
+        class MyExc(Exception):
+            pass
+        self.assertRaises(TypeError, self.assertRaisesRegex, MyExc, lambda: True)
+
+    def testAssertWarnsRegexInvalidRegex(self):
+        # Issue 20145.
+        class MyWarn(Warning):
+            pass
+        self.assertRaises(TypeError, self.assertWarnsRegex, MyWarn, lambda: True)
+
     def testAssertRaisesRegexMismatch(self):
         def Stub():
             raise Exception('Unexpected')
