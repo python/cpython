@@ -90,7 +90,8 @@ class MaybeEncodingError(Exception):
         return "<MaybeEncodingError: %s>" % str(self)
 
 
-def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
+def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
+           wrap_exception=False):
     assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     put = outqueue.put
     get = inqueue.get
@@ -117,7 +118,8 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
         try:
             result = (True, func(*args, **kwds))
         except Exception as e:
-            e = ExceptionWithTraceback(e, e.__traceback__)
+            if wrap_exception:
+                e = ExceptionWithTraceback(e, e.__traceback__)
             result = (False, e)
         try:
             put((job, i, result))
@@ -137,6 +139,8 @@ class Pool(object):
     '''
     Class which supports an async version of applying functions to arguments.
     '''
+    _wrap_exception = True
+
     def Process(self, *args, **kwds):
         return self._ctx.Process(*args, **kwds)
 
@@ -220,7 +224,8 @@ class Pool(object):
             w = self.Process(target=worker,
                              args=(self._inqueue, self._outqueue,
                                    self._initializer,
-                                   self._initargs, self._maxtasksperchild)
+                                   self._initargs, self._maxtasksperchild,
+                                   self._wrap_exception)
                             )
             self._pool.append(w)
             w.name = w.name.replace('Process', 'PoolWorker')
@@ -736,6 +741,7 @@ class IMapUnorderedIterator(IMapIterator):
 #
 
 class ThreadPool(Pool):
+    _wrap_exception = False
 
     @staticmethod
     def Process(*args, **kwds):
