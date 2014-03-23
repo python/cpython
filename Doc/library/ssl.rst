@@ -250,13 +250,13 @@ purposes.
    :const:`None`, this function can choose to trust the system's default
    CA certificates instead.
 
-   The settings in Python 3.4 are: :data:`PROTOCOL_TLSv1` with high encryption
-   cipher suites without RC4 and without unauthenticated cipher suites.
-   Passing :data:`~Purpose.SERVER_AUTH` as *purpose* sets
-   :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED` and either
-   loads CA certificates (when at least one of *cafile*, *capath* or *cadata*
-   is given) or uses :meth:`SSLContext.load_default_certs` to load default
-   CA certificates.
+   The settings in Python 3.4 are: :data:`PROTOCOL_SSLv23`, :data:`OP_NO_SSLv2`,
+   and :data:`OP_NO_SSLv3` with high encryption cipher suites without RC4 and
+   without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
+   as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
+   and either loads CA certificates (when at least one of *cafile*, *capath* or
+   *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
+   default CA certificates.
 
    .. note::
       The protocol, options, cipher and other settings may change to more
@@ -265,6 +265,19 @@ purposes.
 
       If your application needs specific settings, you should create a
       :class:`SSLContext` and apply the settings yourself.
+
+   .. note::
+      If you find that when certain older clients or servers attempt to connect
+      with a :class:`SSLContext` created by this function that they get an
+      error stating "Protocol or cipher suite mismatch", it may be that they
+      only support SSL3.0 which this function excludes using the
+      :data:`OP_NO_SSLv3`. SSL3.0 has problematic security due to a number of
+      poor implementations and it's reliance on MD5 within the protocol. If you
+      wish to continue to use this function but still allow SSL 3.0 connections
+      you can re-enable them using::
+
+         ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
+         ctx.options &= ~ssl.OP_NO_SSLv3
 
    .. versionadded:: 3.4
 
