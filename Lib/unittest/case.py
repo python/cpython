@@ -143,7 +143,7 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
                 self.obj_name = str(callable_obj)
         else:
             self.obj_name = None
-        if isinstance(expected_regex, (bytes, str)):
+        if expected_regex is not None:
             expected_regex = re.compile(expected_regex)
         self.expected_regex = expected_regex
         self.msg = None
