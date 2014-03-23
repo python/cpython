@@ -1810,6 +1810,17 @@ class _TestPool(BaseTestCase):
             self.assertIn('raise RuntimeError(123) # some comment',
                           f1.getvalue())
 
+    @classmethod
+    def _test_wrapped_exception(cls):
+        raise RuntimeError('foo')
+
+    def test_wrapped_exception(self):
+        # Issue #20980: Should not wrap exception when using thread pool
+        with self.Pool(1) as p:
+            with self.assertRaises(RuntimeError):
+                p.apply(self._test_wrapped_exception)
+
+
 def raising():
     raise KeyError("key")
 
