@@ -36,10 +36,7 @@ from email._parseaddr import mktime_tz
 
 from email._parseaddr import parsedate, parsedate_tz, _parsedate_tz
 
-from quopri import decodestring as _qdecode
-
 # Intrapackage imports
-from email.encoders import _bencode, _qencode
 from email.charset import Charset
 
 COMMASPACE = ', '
