@@ -64,7 +64,14 @@ def freeze_support():
     Run code for process object if this in not the main process
     '''
     if is_forking(sys.argv):
-        main()
+        kwds = {}
+        for arg in sys.argv[2:]:
+            name, value = arg.split('=')
+            if value == 'None':
+                kwds[name] = None
+            else:
+                kwds[name] = int(value)
+        spawn_main(**kwds)
         sys.exit()
 
 
@@ -73,7 +80,8 @@ def get_command_line(**kwds):
     Returns prefix of command line used for spawning a child process
     '''
     if getattr(sys, 'frozen', False):
-        return [sys.executable, '--multiprocessing-fork']
+        tmp = ' '.join('%s=%r' % item for item in kwds.items())
+        return [sys.executable, '--multiprocessing-fork'] + tmp
     else:
         prog = 'from multiprocessing.spawn import spawn_main; spawn_main(%s)'
         prog %= ', '.join('%s=%r' % item for item in kwds.items())
