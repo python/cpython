@@ -1626,7 +1626,8 @@ For **client use**, if you don't have any special requirements for your
 security policy, it is highly recommended that you use the
 :func:`create_default_context` function to create your SSL context.
 It will load the system's trusted CA certificates, enable certificate
-validation, and try to choose reasonably secure protocol and cipher settings.
+validation and hostname checking, and try to choose reasonably secure
+protocol and cipher settings.
 
 For example, here is how you would use the :class:`smtplib.SMTP` class to
 create a trusted, secure connection to a SMTP server::
@@ -1641,9 +1642,9 @@ If a client certificate is needed for the connection, it can be added with
 :meth:`SSLContext.load_cert_chain`.
 
 By contrast, if you create the SSL context by calling the :class:`SSLContext`
-constructor yourself, it will not have certificate validation enabled by
-default.  If you do so, please read the paragraphs below to achieve a good
-security level.
+constructor yourself, it will not have certificate validation nor hostname
+checking enabled by default.  If you do so, please read the paragraphs below
+to achieve a good security level.
 
 Manual settings
 ^^^^^^^^^^^^^^^
