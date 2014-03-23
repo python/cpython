@@ -49,9 +49,10 @@ class SemLock(object):
     _rand = tempfile._RandomNameSequence()
 
     def __init__(self, kind, value, maxvalue, *, ctx):
-        ctx = ctx or get_context()
-        ctx = ctx.get_context()
-        unlink_now = sys.platform == 'win32' or ctx._name == 'fork'
+        if ctx is None:
+            ctx = context._default_context.get_context()
+        name = ctx.get_start_method()
+        unlink_now = sys.platform == 'win32' or name == 'fork'
         for i in range(100):
             try:
                 sl = self._semlock = _multiprocessing.SemLock(
