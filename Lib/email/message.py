@@ -8,6 +8,7 @@ __all__ = ['Message']
 
 import re
 import uu
+import quopri
 from io import BytesIO, StringIO
 
 # Intrapackage imports
@@ -278,7 +279,7 @@ class Message:
         if not decode:
             return payload
         if cte == 'quoted-printable':
-            return utils._qdecode(bpayload)
+            return quopri.decodestring(bpayload)
         elif cte == 'base64':
             # XXX: this is a bit of a hack; decode_b should probably be factored
             # out somewhere, but I haven't figured out where yet.
