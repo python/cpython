@@ -97,7 +97,7 @@ before printing the first prompt::
 
    $ python3.5
    Python 3.5 (default, Sep 16 2015, 09:25:04)
-   [GCC 4.8.2] on linux2
+   [GCC 4.8.2] on linux
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
