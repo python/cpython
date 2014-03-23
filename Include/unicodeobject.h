@@ -343,6 +343,9 @@ typedef struct {
            the data pointer is filled out. The bit is redundant, and helps
            to minimize the test in PyUnicode_IS_READY(). */
         unsigned int ready:1;
+        /* Padding to ensure that PyUnicode_DATA() is always aligned to
+           4 bytes (see issue #19537 on m68k). */
+        unsigned int :24;
     } state;
     wchar_t *wstr;              /* wchar_t representation (null-terminated) */
 } PyASCIIObject;
