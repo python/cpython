@@ -1014,23 +1014,43 @@ class ContextTests(unittest.TestCase):
 
     def test_create_default_context(self):
         ctx = ssl.create_default_context()
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertTrue(ctx.check_hostname)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        self.assertEqual(
+            ctx.options & getattr(ssl, "OP_NO_COMPRESSION", 0),
+            getattr(ssl, "OP_NO_COMPRESSION", 0),
+        )
 
         with open(SIGNING_CA) as f:
             cadata = f.read()
         ctx = ssl.create_default_context(cafile=SIGNING_CA, capath=CAPATH,
                                          cadata=cadata)
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        self.assertEqual(
+            ctx.options & getattr(ssl, "OP_NO_COMPRESSION", 0),
+            getattr(ssl, "OP_NO_COMPRESSION", 0),
+        )
 
         ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        self.assertEqual(
+            ctx.options & getattr(ssl, "OP_NO_COMPRESSION", 0),
+            getattr(ssl, "OP_NO_COMPRESSION", 0),
+        )
+        self.assertEqual(
+            ctx.options & getattr(ssl, "OP_SINGLE_DH_USE", 0),
+            getattr(ssl, "OP_SINGLE_DH_USE", 0),
+        )
+        self.assertEqual(
+            ctx.options & getattr(ssl, "OP_SINGLE_ECDH_USE", 0),
+            getattr(ssl, "OP_SINGLE_ECDH_USE", 0),
+        )
 
     def test__create_stdlib_context(self):
         ctx = ssl._create_stdlib_context()
