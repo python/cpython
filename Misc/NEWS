@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20990: Fix issues found by pyflakes for multiprocessing.
+
 - Issue #21015: SSL contexts will now automatically select an elliptic
   curve for ECDH key exchange on OpenSSL 1.0.2 and later, and otherwise
   default to "prime256v1".
