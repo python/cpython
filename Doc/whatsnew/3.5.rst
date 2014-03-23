@@ -192,3 +192,9 @@ that may require changes to your code.
   if it represented midnight in UTC.  This behavior was considered obscure and
   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
   details.
+
+* :meth:`unittest.TestCase.assertRaisesRegex` and
+  :meth:`~unittest.TestCase.assertWarnsRegex` now raise a :exc:`TypeError` if
+  the second argument is not a string or a compiled :mod:`regex`.  You may have
+  tests with an invalid second argument that have until 3.5 been falsely
+  passing which will now raise TypeErrors (:issue:`20145`).
