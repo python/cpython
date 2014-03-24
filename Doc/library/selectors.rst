@@ -217,7 +217,7 @@ below:
       This returns the file descriptor used by the underlying
       :func:`select.devpoll` object.
 
-.. versionadded:: 3.5
+   .. versionadded:: 3.5
 
 .. class:: KqueueSelector()
 
