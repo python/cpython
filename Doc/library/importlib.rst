@@ -626,8 +626,8 @@ ABC hierarchy::
            have to implement it, but it is still available for compatibility
            purposes. Raise :exc:`IOError` if the path cannot be handled.
 
-          .. versionchanged:: 3.4
-             Raise :exc:`IOError` instead of :exc:`NotImplementedError`.
+        .. versionchanged:: 3.4
+           Raise :exc:`IOError` instead of :exc:`NotImplementedError`.
 
     .. method:: set_data(path, data)
 
