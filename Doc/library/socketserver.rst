@@ -113,7 +113,7 @@ the request handler class :meth:`handle` method.
 Another approach to handling multiple simultaneous requests in an environment
 that supports neither threads nor :func:`~os.fork` (or where these are too
 expensive or inappropriate for the service) is to maintain an explicit table of
-partially finished requests and to use :func:`~select.select` to decide which
+partially finished requests and to use :mod:`selectors` to decide which
 request to work on next (or whether to handle a new incoming request).  This is
 particularly important for stream services where each client can potentially be
 connected for a long time (if threads or subprocesses cannot be used).  See
@@ -136,7 +136,7 @@ Server Objects
 .. method:: BaseServer.fileno()
 
    Return an integer file descriptor for the socket on which the server is
-   listening.  This function is most commonly passed to :func:`select.select`, to
+   listening.  This function is most commonly passed to :mod:`selectors`, to
    allow monitoring multiple servers in the same process.
 
 
