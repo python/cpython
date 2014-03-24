@@ -76,7 +76,7 @@ source distribution:
   :option:`packages` options
 
 * all C source files mentioned in the :option:`ext_modules` or
-  :option:`libraries` options (
+  :option:`libraries` options
 
   .. XXX getting C library sources currently broken---no
          :meth:`get_source_files` method in :file:`build_clib.py`!
