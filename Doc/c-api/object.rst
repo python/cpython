@@ -364,6 +364,7 @@ attribute is considered sufficient for this determination.
 
    .. versionadded:: 3.4
 
+
 .. c:function:: PyObject* PyObject_GetItem(PyObject *o, PyObject *key)
 
    Return element of *o* corresponding to the object *key* or *NULL* on failure.
