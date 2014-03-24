@@ -26,16 +26,16 @@ typedef struct {
     /* data follows */
 } _Py_hashtable_entry_t;
 
-#define _PY_HASHTABLE_ENTRY_DATA(ENTRY) \
+#define _Py_HASHTABLE_ENTRY_DATA(ENTRY) \
         ((char *)(ENTRY) + sizeof(_Py_hashtable_entry_t))
 
 #define _Py_HASHTABLE_ENTRY_DATA_AS_VOID_P(ENTRY) \
-        (*(void **)_PY_HASHTABLE_ENTRY_DATA(ENTRY))
+        (*(void **)_Py_HASHTABLE_ENTRY_DATA(ENTRY))
 
 #define _Py_HASHTABLE_ENTRY_READ_DATA(TABLE, DATA, DATA_SIZE, ENTRY) \
     do { \
         assert((DATA_SIZE) == (TABLE)->data_size); \
-        memcpy(DATA, _PY_HASHTABLE_ENTRY_DATA(ENTRY), DATA_SIZE); \
+        memcpy(DATA, _Py_HASHTABLE_ENTRY_DATA(ENTRY), DATA_SIZE); \
     } while (0)
 
 typedef Py_uhash_t (*_Py_hashtable_hash_func) (const void *key);
