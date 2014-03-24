@@ -1339,20 +1339,9 @@ If you are going to require validation of the other side of the connection's
 certificate, you need to provide a "CA certs" file, filled with the certificate
 chains for each issuer you are willing to trust.  Again, this file just contains
 these chains concatenated together.  For validation, Python will use the first
-chain it finds in the file which matches.  Some "standard" root certificates are
-available from various certification authorities: `CACert.org
-<http://www.cacert.org/index.php?id=3>`_, `Thawte
-<http://www.thawte.com/roots/>`_, `Verisign
-<http://www.verisign.com/support/roots.html>`_, `Positive SSL
-<http://www.PositiveSSL.com/ssl-certificate-support/cert_installation/UTN-USERFirst-Hardware.crt>`_
-(used by python.org), `Equifax and GeoTrust
-<http://www.geotrust.com/resources/root_certificates/index.asp>`_.
-
-In general, if you are using SSL3 or TLS1, you don't need to put the full chain
-in your "CA certs" file; you only need the root certificates, and the remote
-peer is supposed to furnish the other certificates necessary to chain from its
-certificate to a root certificate.  See :rfc:`4158` for more discussion of the
-way in which certification chains can be built.
+chain it finds in the file which matches.  The platform's certificates file can
+be used by calling :meth:`SSLContext.load_default_certs`, this is done
+automatically with :func:`.create_default_context`.
 
 Combined key and certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
