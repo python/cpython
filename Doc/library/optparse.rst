@@ -8,8 +8,8 @@
 .. sectionauthor:: Greg Ward <gward@python.net>
 
 .. deprecated:: 3.2
-  The :mod:`optparse` module is deprecated and will not be developed further;
-  development will continue with the :mod:`argparse` module.
+   The :mod:`optparse` module is deprecated and will not be developed further;
+   development will continue with the :mod:`argparse` module.
 
 **Source code:** :source:`Lib/optparse.py`
 

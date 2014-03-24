@@ -4,6 +4,8 @@
 .. module:: faulthandler
    :synopsis: Dump the Python traceback.
 
+.. versionadded:: 3.3
+
 This module contains functions to dump Python tracebacks explicitly, on a fault,
 after a timeout, or on a user signal. Call :func:`faulthandler.enable` to
 install fault handlers for the :const:`SIGSEGV`, :const:`SIGFPE`,
@@ -35,8 +37,6 @@ alternatively be passed to :func:`faulthandler.enable`.
 
 The module is implemented in C, so tracebacks can be dumped on a crash or when
 Python is deadlocked.
-
-.. versionadded:: 3.3
 
 
 Dump the traceback

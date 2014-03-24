@@ -451,6 +451,7 @@ An :class:`IMAP4` instance has the following methods:
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
 
+
 .. method:: IMAP4.status(mailbox, names)
 
    Request named status conditions for *mailbox*.
