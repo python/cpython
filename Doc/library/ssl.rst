@@ -490,8 +490,7 @@ these chains concatenated together.  For validation, Python will use the first
 chain it finds in the file which matches.
 
 Some "standard" root certificates are available from various certification
-authorities: `CACert.org <http://www.cacert.org/index.php?id=3>`_, `Thawte
-<http://www.thawte.com/roots/>`_, `Verisign
+authorities: `Thawte <http://www.thawte.com/roots/>`_, `Verisign
 <http://www.verisign.com/support/roots.html>`_, `Positive SSL
 <http://www.PositiveSSL.com/ssl-certificate-support/cert_installation/UTN-USERFirst-Hardware.crt>`_
 (used by python.org), `Equifax and GeoTrust
