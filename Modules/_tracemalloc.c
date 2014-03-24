@@ -1052,7 +1052,7 @@ tracemalloc_get_traces_fill(_Py_hashtable_entry_t *entry, void *user_data)
     PyObject *tracemalloc_obj;
     int res;
 
-    trace = (trace_t *)_PY_HASHTABLE_ENTRY_DATA(entry);
+    trace = (trace_t *)_Py_HASHTABLE_ENTRY_DATA(entry);
 
     tracemalloc_obj = trace_to_pyobject(trace, get_traces->tracebacks);
     if (tracemalloc_obj == NULL)
