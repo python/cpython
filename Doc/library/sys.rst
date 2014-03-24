@@ -12,10 +12,11 @@ always available.
 
 .. data:: abiflags
 
-   On POSIX systems where Python is build with the standard ``configure``
+   On POSIX systems where Python was built with the standard ``configure``
    script, this contains the ABI flags as specified by :pep:`3149`.
 
    .. versionadded:: 3.2
+
 
 .. data:: argv
 

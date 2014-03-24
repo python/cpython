@@ -502,7 +502,8 @@ or'ed together and passed to various functions.  The names can also be used in
 :ref:`doctest directives <doctest-directives>`, and may be passed to the
 doctest command line interface via the ``-o`` option.
 
-.. versionadded:: 3.4 the ``-o`` command line option
+.. versionadded:: 3.4
+   The ``-o`` command line option.
 
 The first group of options define test semantics, controlling aspects of how
 doctest decides whether actual output matches an example's expected output:
