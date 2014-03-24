@@ -222,38 +222,6 @@ class SocketServerTest(unittest.TestCase):
                             socketserver.DatagramRequestHandler,
                             self.dgram_examine)
 
-    @contextlib.contextmanager
-    def mocked_select_module(self):
-        """Mocks the select.select() call to raise EINTR for first call"""
-        old_select = select.select
-
-        class MockSelect:
-            def __init__(self):
-                self.called = 0
-
-            def __call__(self, *args):
-                self.called += 1
-                if self.called == 1:
-                    # raise the exception on first call
-                    raise OSError(errno.EINTR, os.strerror(errno.EINTR))
-                else:
-                    # Return real select value for consecutive calls
-                    return old_select(*args)
-
-        select.select = MockSelect()
-        try:
-            yield select.select
-        finally:
-            select.select = old_select
-
-    def test_InterruptServerSelectCall(self):
-        with self.mocked_select_module() as mock_select:
-            pid = self.run_server(socketserver.TCPServer,
-                                  socketserver.StreamRequestHandler,
-                                  self.stream_examine)
-            # Make sure select was called again:
-            self.assertGreater(mock_select.called, 1)
-
     # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
     # client address so this cannot work:
 
