@@ -247,7 +247,7 @@ in various ways.  There is a separate error indicator for each thread.
    filename object, for raising errors when a function that takes two filenames
    fails.
 
-.. versionadded:: 3.4
+   .. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilename(PyObject *type, const char *filename)
@@ -295,7 +295,7 @@ in various ways.  There is a separate error indicator for each thread.
    but accepts a second filename object.
    Availability: Windows.
 
-.. versionadded:: 3.4
+   .. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, const char *filename)
@@ -321,7 +321,7 @@ in various ways.  There is a separate error indicator for each thread.
    attributes, which make the exception printing subsystem think the exception
    is a :exc:`SyntaxError`.
 
-.. versionadded:: 3.4
+   .. versionadded:: 3.4
 
 
 .. c:function:: void PyErr_SyntaxLocationEx(char *filename, int lineno, int col_offset)
@@ -329,7 +329,7 @@ in various ways.  There is a separate error indicator for each thread.
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
    decoded from the filesystem encoding (:func:`os.fsdecode`).
 
-.. versionadded:: 3.2
+   .. versionadded:: 3.2
 
 
 .. c:function:: void PyErr_SyntaxLocation(char *filename, int lineno)

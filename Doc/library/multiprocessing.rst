@@ -138,9 +138,9 @@ to start a process.  These *start methods* are
 
 .. versionchanged:: 3.4
    *spawn* added on all unix platforms, and *forkserver* added for
-     some unix platforms.
+   some unix platforms.
    Child processes no longer inherit all of the parents inheritable
-     handles on Windows.
+   handles on Windows.
 
 On Unix using the *spawn* or *forkserver* start methods will also
 start a *semaphore tracker* process which tracks the unlinked named
