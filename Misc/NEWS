@@ -79,6 +79,9 @@ Library
 Documentation
 -------------
 
+- Issue #21043: Remove the recommendation for specific CA organizations and to
+  mention the ability to load the OS certificates.
+
 - Issue #20765: Add missing documentation for PurePath.with_name() and
   PurePath.with_suffix().
 
