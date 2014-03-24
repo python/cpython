@@ -832,6 +832,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.4
       The *default* keyword-only argument.
 
+
 .. function:: next(iterator[, default])
 
    Retrieve the next item from the *iterator* by calling its
