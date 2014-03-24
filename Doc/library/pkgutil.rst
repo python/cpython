@@ -58,7 +58,7 @@ support.
 
    .. deprecated:: 3.3
       This emulation is no longer needed, as the standard import mechanism
-      is now fully PEP 302 compliant and available in :mod:`importlib`
+      is now fully PEP 302 compliant and available in :mod:`importlib`.
 
 
 .. class:: ImpLoader(fullname, file, filename, etc)
@@ -67,7 +67,7 @@ support.
 
    .. deprecated:: 3.3
       This emulation is no longer needed, as the standard import mechanism
-      is now fully PEP 302 compliant and available in :mod:`importlib`
+      is now fully PEP 302 compliant and available in :mod:`importlib`.
 
 
 .. function:: find_loader(fullname)
