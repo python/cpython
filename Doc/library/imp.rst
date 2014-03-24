@@ -262,12 +262,12 @@ that circular imports work without any deadlocks.
    exception is made for circular imports, which by construction have to
    expose an incomplete module object at some point.
 
-.. versionchanged:: 3.3
-   The locking scheme has changed to per-module locks for
-   the most part.  A global import lock is kept for some critical tasks,
-   such as initializing the per-module locks.
+   .. versionchanged:: 3.3
+      The locking scheme has changed to per-module locks for
+      the most part.  A global import lock is kept for some critical tasks,
+      such as initializing the per-module locks.
 
-.. deprecated:: 3.4
+   .. deprecated:: 3.4
 
 
 .. function:: acquire_lock()
@@ -282,12 +282,12 @@ that circular imports work without any deadlocks.
 
    On platforms without threads, this function does nothing.
 
-.. versionchanged:: 3.3
-   The locking scheme has changed to per-module locks for
-   the most part.  A global import lock is kept for some critical tasks,
-   such as initializing the per-module locks.
+   .. versionchanged:: 3.3
+      The locking scheme has changed to per-module locks for
+      the most part.  A global import lock is kept for some critical tasks,
+      such as initializing the per-module locks.
 
-.. deprecated:: 3.4
+   .. deprecated:: 3.4
 
 
 .. function:: release_lock()
@@ -295,12 +295,12 @@ that circular imports work without any deadlocks.
    Release the interpreter's global import lock. On platforms without
    threads, this function does nothing.
 
-.. versionchanged:: 3.3
-   The locking scheme has changed to per-module locks for
-   the most part.  A global import lock is kept for some critical tasks,
-   such as initializing the per-module locks.
+   .. versionchanged:: 3.3
+      The locking scheme has changed to per-module locks for
+      the most part.  A global import lock is kept for some critical tasks,
+      such as initializing the per-module locks.
 
-.. deprecated:: 3.4
+   .. deprecated:: 3.4
 
 
 The following constants with integer values, defined in this module, are used
