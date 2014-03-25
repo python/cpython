@@ -201,8 +201,11 @@ Dictionary Objects
 
 .. c:function:: int PyDict_Update(PyObject *a, PyObject *b)
 
-   This is the same as ``PyDict_Merge(a, b, 1)`` in C, or ``a.update(b)`` in
-   Python.  Return ``0`` on success or ``-1`` if an exception was raised.
+   This is the same as ``PyDict_Merge(a, b, 1)`` in C, and is similar to
+   ``a.update(b)`` in Python except that :c:func:`PyDict_Update` doesn't fall
+   back to the iterating over a sequence of key value pairs if the second
+   argument has no "keys" attribute.  Return ``0`` on success or ``-1`` if an
+   exception was raised.
 
 
 .. c:function:: int PyDict_MergeFromSeq2(PyObject *a, PyObject *seq2, int override)
