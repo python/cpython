@@ -3,13 +3,30 @@
 Subprocess
 ==========
 
-Create a subprocess
--------------------
+Operating system support
+------------------------
+
+On Windows, the default event loop uses :class:`selectors.SelectSelector`
+which only supports sockets. The :class:`ProactorEventLoop` should be used to
+support subprocesses.
+
+On Mac OS X older than 10.9 (Mavericks), :class:`selectors.KqueueSelector`
+does not support character devices like PTY, whereas it is used by the
+default event loop. The :class:`SelectorEventLoop` can be used with
+:class:`SelectSelector` or :class:`PollSelector` to handle character
+devices on Mac OS X 10.6 (Snow Leopard) and later.
+
+
+Create a subprocess: high-level API using Process
+-------------------------------------------------
 
 .. function:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
    Run the shell command *cmd* given as a string. Return a :class:`~asyncio.subprocess.Process`
    instance.
+
+   The optional *limit* parameter sets the buffer limit passed to the
+   :class:`StreamReader`.
 
    This function is a :ref:`coroutine <coroutine>`.
 
@@ -17,15 +34,84 @@ Create a subprocess
 
    Create a subprocess. Return a :class:`~asyncio.subprocess.Process` instance.
 
+   The optional *limit* parameter sets the buffer limit passed to the
+   :class:`StreamReader`.
+
    This function is a :ref:`coroutine <coroutine>`.
 
 Use the :meth:`BaseEventLoop.connect_read_pipe` and
 :meth:`BaseEventLoop.connect_write_pipe` methods to connect pipes.
 
+
+Create a subprocess: low-level API using subprocess.Popen
+---------------------------------------------------------
+
+Run subprocesses asynchronously using the :mod:`subprocess` module.
+
+.. method:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
+
+   Create a subprocess from one or more string arguments, where the first string
+   specifies the program to execute, and the remaining strings specify the
+   program's arguments. (Thus, together the string arguments form the
+   ``sys.argv`` value of the program, assuming it is a Python script.) This is
+   similar to the standard library :class:`subprocess.Popen` class called with
+   shell=False and the list of strings passed as the first argument;
+   however, where :class:`~subprocess.Popen` takes a single argument which is
+   list of strings, :func:`subprocess_exec` takes multiple string arguments.
+
+   Other parameters:
+
+   * *stdin*: Either a file-like object representing the pipe to be connected
+     to the subprocess's standard input stream using
+     :meth:`~BaseEventLoop.connect_write_pipe`, or the constant
+     :const:`subprocess.PIPE` (the default). By default a new pipe will be
+     created and connected.
+
+   * *stdout*: Either a file-like object representing the pipe to be connected
+     to the subprocess's standard output stream using
+     :meth:`~BaseEventLoop.connect_read_pipe`, or the constant
+     :const:`subprocess.PIPE` (the default). By default a new pipe will be
+     created and connected.
+
+   * *stderr*: Either a file-like object representing the pipe to be connected
+     to the subprocess's standard error stream using
+     :meth:`~BaseEventLoop.connect_read_pipe`, or one of the constants
+     :const:`subprocess.PIPE` (the default) or :const:`subprocess.STDOUT`.
+     By default a new pipe will be created and connected. When
+     :const:`subprocess.STDOUT` is specified, the subprocess's standard error
+     stream will be connected to the same pipe as the standard output stream.
+
+   * All other keyword arguments are passed to :class:`subprocess.Popen`
+     without interpretation, except for *bufsize*, *universal_newlines* and
+     *shell*, which should not be specified at all.
+
+   Returns a pair of ``(transport, protocol)``, where *transport* is an
+   instance of :class:`BaseSubprocessTransport`.
+
+   This method is a :ref:`coroutine <coroutine>`.
+
+   See the constructor of the :class:`subprocess.Popen` class for parameters.
+
+.. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
+
+   Create a subprocess from *cmd*, which is a string using the platform's
+   "shell" syntax. This is similar to the standard library
+   :class:`subprocess.Popen` class called with ``shell=True``.
+
+   See :meth:`~BaseEventLoop.subprocess_exec` for more details about
+   the remaining arguments.
+
+   Returns a pair of ``(transport, protocol)``, where *transport* is an
+   instance of :class:`BaseSubprocessTransport`.
+
+   This method is a :ref:`coroutine <coroutine>`.
+
+   See the constructor of the :class:`subprocess.Popen` class for parameters.
+
 .. seealso::
 
-   The :meth:`BaseEventLoop.subprocess_exec` and
-   :meth:`BaseEventLoop.subprocess_shell` methods.
+   The :meth:`BaseEventLoop.connect_read_pipe` and
+   :meth:`BaseEventLoop.connect_write_pipe` methods.
 
 
 Constants
