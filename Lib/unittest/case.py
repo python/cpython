@@ -122,8 +122,6 @@ class _AssertRaisesContext(object):
             return True
 
         expected_regexp = self.expected_regexp
-        if isinstance(expected_regexp, basestring):
-            expected_regexp = re.compile(expected_regexp)
         if not expected_regexp.search(str(exc_value)):
             raise self.failureException('"%s" does not match "%s"' %
                      (expected_regexp.pattern, str(exc_value)))
@@ -986,6 +984,8 @@ class TestCase(object):
             args: Extra args.
             kwargs: Extra kwargs.
         """
+        if expected_regexp is not None:
+            expected_regexp = re.compile(expected_regexp)
         context = _AssertRaisesContext(expected_exception, self, expected_regexp)
         if callable_obj is None:
             return context
