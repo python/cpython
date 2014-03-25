@@ -1308,7 +1308,7 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
     }
 
 For more information about this configuration, you can see the `relevant
-section <https://docs.djangoproject.com/en/1.3/topics/logging/#configuring-logging>`_
+section <https://docs.djangoproject.com/en/1.6/topics/logging/#configuring-logging>`_
 of the Django documentation.
 
 .. _cookbook-rotator-namer:
