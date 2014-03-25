@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20145: `assertRaisesRegex` and `assertWarnsRegex` now raise a
+  TypeError if the second argument is not a string or compiled regex.
+
 - Issue #21058: Fix a leak of file descriptor in
   :func:`tempfile.NamedTemporaryFile`, close the file descriptor if
   :func:`io.open` fails
