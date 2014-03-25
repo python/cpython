@@ -463,7 +463,7 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
     try:
         file = _os.fdopen(fd, mode, bufsize)
         return _TemporaryFileWrapper(file, name, delete)
-    except Exception:
+    except:
         _os.close(fd)
         raise
 
