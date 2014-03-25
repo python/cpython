@@ -11,7 +11,7 @@ after a timeout, or on a user signal. Call :func:`faulthandler.enable` to
 install fault handlers for the :const:`SIGSEGV`, :const:`SIGFPE`,
 :const:`SIGABRT`, :const:`SIGBUS`, and :const:`SIGILL` signals. You can also
 enable them at startup by setting the :envvar:`PYTHONFAULTHANDLER` environment
-variable or by using :option:`-X` ``faulthandler`` command line option.
+variable or by using the :option:`-X` ``faulthandler`` command line option.
 
 The fault handler is compatible with system fault handlers like Apport or the
 Windows fault handler. The module uses an alternative stack for signal handlers
@@ -39,8 +39,8 @@ The module is implemented in C, so tracebacks can be dumped on a crash or when
 Python is deadlocked.
 
 
-Dump the traceback
-------------------
+Dumping the traceback
+---------------------
 
 .. function:: dump_traceback(file=sys.stderr, all_threads=True)
 
@@ -69,8 +69,8 @@ Fault handler state
    Check if the fault handler is enabled.
 
 
-Dump the tracebacks after a timeout
------------------------------------
+Dumping the tracebacks after a timeout
+--------------------------------------
 
 .. function:: dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False)
 
@@ -90,8 +90,8 @@ Dump the tracebacks after a timeout
    Cancel the last call to :func:`dump_traceback_later`.
 
 
-Dump the traceback on a user signal
------------------------------------
+Dumping the traceback on a user signal
+--------------------------------------
 
 .. function:: register(signum, file=sys.stderr, all_threads=True, chain=False)
 
@@ -110,8 +110,8 @@ Dump the traceback on a user signal
    Not available on Windows.
 
 
-File descriptor issue
----------------------
+Issue with file descriptors
+---------------------------
 
 :func:`enable`, :func:`dump_traceback_later` and :func:`register` keep the
 file descriptor of their *file* argument. If the file is closed and its file
@@ -123,9 +123,15 @@ these functions again each time that the file is replaced.
 Example
 -------
 
-Example of a segmentation fault on Linux: ::
+.. highlight:: sh
 
-    $ python -q -X faulthandler
+Example of a segmentation fault on Linux with and without enabling the fault
+handler::
+
+    $ python3 -c "import ctypes; ctypes.string_at(0)"
+    Segmentation fault
+
+    $ python3 -q -X faulthandler
     >>> import ctypes
     >>> ctypes.string_at(0)
     Fatal Python error: Segmentation fault
