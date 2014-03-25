@@ -163,9 +163,9 @@ class TestEPoll(unittest.TestCase):
         ep.register(client.fileno(),
                    select.EPOLLIN | select.EPOLLOUT | select.EPOLLET)
 
-        now = time.time()
+        now = time.monotonic()
         events = ep.poll(1, 4)
-        then = time.time()
+        then = time.monotonic()
         self.assertFalse(then - now > 0.1, then - now)
 
         events.sort()
@@ -174,19 +174,16 @@ class TestEPoll(unittest.TestCase):
         expected.sort()
 
         self.assertEqual(events, expected)
-        self.assertFalse(then - now > 0.01, then - now)
 
-        now = time.time()
         events = ep.poll(timeout=2.1, maxevents=4)
-        then = time.time()
         self.assertFalse(events)
 
         client.send(b"Hello!")
         server.send(b"world!!!")
 
-        now = time.time()
+        now = time.monotonic()
         events = ep.poll(1, 4)
-        then = time.time()
+        then = time.monotonic()
         self.assertFalse(then - now > 0.01)
 
         events.sort()
@@ -198,9 +195,9 @@ class TestEPoll(unittest.TestCase):
 
         ep.unregister(client.fileno())
         ep.modify(server.fileno(), select.EPOLLOUT)
-        now = time.time()
+        now = time.monotonic()
         events = ep.poll(1, 4)
-        then = time.time()
+        then = time.monotonic()
         self.assertFalse(then - now > 0.01)
 
         expected = [(server.fileno(), select.EPOLLOUT)]
@@ -217,9 +214,9 @@ class TestEPoll(unittest.TestCase):
         ep = select.epoll(16)
         ep.register(server)
 
-        now = time.time()
+        now = time.monotonic()
         events = ep.poll(1, 4)
-        then = time.time()
+        then = time.monotonic()
         self.assertFalse(then - now > 0.01)
 
         server.close()
