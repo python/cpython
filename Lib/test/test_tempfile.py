@@ -760,7 +760,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.assertRaises(ValueError, use_closed)
 
     def test_no_leak_fd(self):
-        # Issue #21058: don't leak file descriptor when io.pen() fails
+        # Issue #21058: don't leak file descriptor when io.open() fails
         closed = []
         def close(fd):
             closed.append(fd)
