@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21058: Fix a leak of file descriptor in
+  :func:`tempfile.NamedTemporaryFile`, close the file descriptor if
+  :func:`io.open` fails
+
 - Issue #21013: Enhance ssl.create_default_context() when used for server side
   sockets to provide better security by default.
 
