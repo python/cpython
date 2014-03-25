@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21058: Fix a leak of file descriptor in tempfile.NamedTemporaryFile(),
+  close the file descriptor if os.fdopen() fails
+
 - Issue #20283: RE pattern methods now accept the string keyword parameters
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.
