@@ -9,6 +9,7 @@ import re
 import warnings
 import contextlib
 import weakref
+from unittest import mock
 
 import unittest
 from test import support, script_helper
@@ -758,6 +759,17 @@ class TestNamedTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
+    def test_no_leak_fd(self):
+        # Issue #21058: don't leak file descriptor when io.pen() fails
+        closed = []
+        def close(fd):
+            closed.append(fd)
+
+        with mock.patch('os.close', side_effect=close):
+            with mock.patch('io.open', side_effect=ValueError):
+                self.assertRaises(ValueError, tempfile.NamedTemporaryFile)
+                self.assertEqual(len(closed), 1)
+
     # How to test the mode and bufsize parameters?
 
 
@@ -1060,6 +1072,18 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             roundtrip("abdc\n", "w+")
             roundtrip("\u039B", "w+", encoding="utf-16")
             roundtrip("foo\r\n", "w+", newline="")
+
+        def test_no_leak_fd(self):
+            # Issue #21058: don't leak file descriptor when io.open() fails
+            closed = []
+            def close(fd):
+                closed.append(fd)
+
+            with mock.patch('os.close', side_effect=close):
+                with mock.patch('io.open', side_effect=ValueError):
+                    self.assertRaises(ValueError, tempfile.TemporaryFile)
+                    self.assertEqual(len(closed), 1)
+
 
 
 # Helper for test_del_on_shutdown
