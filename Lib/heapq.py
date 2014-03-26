@@ -197,7 +197,7 @@ def nlargest(n, iterable):
 
     Equivalent to:  sorted(iterable, reverse=True)[:n]
     """
-    if n < 0:
+    if n <= 0:
         return []
     it = iter(iterable)
     result = list(islice(it, n))
@@ -215,7 +215,7 @@ def nsmallest(n, iterable):
 
     Equivalent to:  sorted(iterable)[:n]
     """
-    if n < 0:
+    if n <= 0:
         return []
     it = iter(iterable)
     result = list(islice(it, n))
