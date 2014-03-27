@@ -908,7 +908,7 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *f)
         void *buf = XML_GetBuffer(self->itself, BUF_SIZE);
         if (buf == NULL) {
             Py_XDECREF(readmethod);
-            return PyErr_NoMemory();
+            return get_parse_result(self, 0);
         }
 
         bytes_read = readinst(buf, BUF_SIZE, readmethod);
