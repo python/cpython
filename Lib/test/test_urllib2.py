@@ -6,10 +6,6 @@ import io
 import socket
 import array
 import sys
-try:
-    import ssl
-except ImportError:
-    ssl = None
 
 import urllib.request
 # The proxy bypass method imported below has logic specific to the OSX
@@ -1442,11 +1438,9 @@ class MiscTests(unittest.TestCase):
 
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'test requires network access')
-    @unittest.skipIf(ssl is None,
-                     'test requires the ssl module')
     def test_issue16464(self):
         opener = urllib.request.build_opener()
-        request = urllib.request.Request("http://www.python.org/~jeremy/")
+        request = urllib.request.Request("http://www.example.com/")
         self.assertEqual(None, request.data)
 
         opener.open(request, "1".encode("us-ascii"))
