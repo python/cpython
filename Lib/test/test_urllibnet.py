@@ -101,7 +101,7 @@ class urlopenNetworkTests(unittest.TestCase):
     @unittest.skipIf(sys.platform in ('win32',), 'not appropriate for Windows')
     def test_fileno(self):
         # Make sure fd returned by fileno is valid.
-        with self.urlopen("http://www.example.com/", timeout=None) as open_url:
+        with self.urlopen("http://www.google.com/", timeout=None) as open_url:
             fd = open_url.fileno()
             with os.fdopen(fd, 'rb') as f:
                 self.assertTrue(f.read(), "reading from file created using fd "
