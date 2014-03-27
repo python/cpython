@@ -2517,6 +2517,19 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(Spam.foo),
                          self.signature(Ham.foo))
 
+    def test_signature_from_callable_python_obj(self):
+        class MySignature(inspect.Signature): pass
+        def foo(a, *, b:1): pass
+        foo_sig = MySignature.from_callable(foo)
+        self.assertTrue(isinstance(foo_sig, MySignature))
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_from_callable_builtin_obj(self):
+        class MySignature(inspect.Signature): pass
+        sig = MySignature.from_callable(_pickle.Pickler)
+        self.assertTrue(isinstance(sig, MySignature))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
