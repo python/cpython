@@ -76,6 +76,13 @@ Library
 - Issue #21323: Fix http.server to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
 
+Tests
+-----
+
+- Issue #20939: Avoid various network test failures due to new
+  redirect of http://www.python.org/ to https://www.python.org:
+  use http://www.example.com instead.
+
 
 What's New in Python 3.2.5?
 ===========================
