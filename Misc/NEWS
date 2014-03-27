@@ -109,6 +109,8 @@ Library
 
 - Issue #20726: inspect.signature: Make Signature and Parameter picklable.
 
+- Issue #17373: Add inspect.Signature.from_callable method.
+
 Documentation
 -------------
 

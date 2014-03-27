@@ -506,6 +506,18 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
+    .. classmethod:: Signature.from_callable(obj)
+
+       Return a :class:`Signature` (or its subclass) object for a given callable
+       ``obj``. This method simplifies subclassing of :class:`Signature`:
+
+       ::
+
+         class MySignature(Signature):
+             pass
+         sig = MySignature.from_callable(min)
+         assert isinstance(sig, MySignature)
+
 
 .. class:: Parameter(name, kind, \*, default=Parameter.empty, annotation=Parameter.empty)
 
