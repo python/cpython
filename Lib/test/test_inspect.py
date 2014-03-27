@@ -8,6 +8,7 @@ import linecache
 import os
 from os.path import normcase
 import _pickle
+import pickle
 import re
 import shutil
 import sys
@@ -72,6 +73,7 @@ class IsTestBase(unittest.TestCase):
 def generator_function_example(self):
     for i in range(2):
         yield i
+
 
 class TestPredicates(IsTestBase):
     def test_sixteen(self):
@@ -1597,6 +1599,17 @@ class TestGetGeneratorState(unittest.TestCase):
         self.assertRaises(TypeError, inspect.getgeneratorlocals, (2,3))
 
 
+class MySignature(inspect.Signature):
+    # Top-level to make it picklable;
+    # used in test_signature_object_pickle
+    pass
+
+class MyParameter(inspect.Parameter):
+    # Top-level to make it picklable;
+    # used in test_signature_object_pickle
+    pass
+
+
 class TestSignatureObject(unittest.TestCase):
     @staticmethod
     def signature(func):
@@ -1653,6 +1666,36 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((pkd, pk))
+
+    def test_signature_object_pickle(self):
+        def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
+        foo_partial = functools.partial(foo, a=1)
+
+        sig = inspect.signature(foo_partial)
+        self.assertTrue(sig.parameters['a']._partial_kwarg)
+
+        for ver in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_ver=ver, subclass=False):
+                sig_pickled = pickle.loads(pickle.dumps(sig, ver))
+                self.assertEqual(sig, sig_pickled)
+                self.assertTrue(sig_pickled.parameters['a']._partial_kwarg)
+
+        # Test that basic sub-classing works
+        sig = inspect.signature(foo)
+        myparam = MyParameter(name='z', kind=inspect.Parameter.POSITIONAL_ONLY)
+        myparams = collections.OrderedDict(sig.parameters, a=myparam)
+        mysig = MySignature().replace(parameters=myparams.values(),
+                                      return_annotation=sig.return_annotation)
+        self.assertTrue(isinstance(mysig, MySignature))
+        self.assertTrue(isinstance(mysig.parameters['z'], MyParameter))
+
+        for ver in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_ver=ver, subclass=True):
+                sig_pickled = pickle.loads(pickle.dumps(mysig, ver))
+                self.assertEqual(mysig, sig_pickled)
+                self.assertTrue(isinstance(sig_pickled, MySignature))
+                self.assertTrue(isinstance(sig_pickled.parameters['z'],
+                                           MyParameter))
 
     def test_signature_immutability(self):
         def test(a):
@@ -2844,6 +2887,16 @@ class TestBoundArguments(unittest.TestCase):
         def bar(b): pass
         ba4 = inspect.signature(bar).bind(1)
         self.assertNotEqual(ba, ba4)
+
+    def test_signature_bound_arguments_pickle(self):
+        def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
+        sig = inspect.signature(foo)
+        ba = sig.bind(20, 30, z={})
+
+        for ver in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_ver=ver):
+                ba_pickled = pickle.loads(pickle.dumps(ba, ver))
+                self.assertEqual(ba, ba_pickled)
 
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
