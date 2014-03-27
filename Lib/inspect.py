@@ -32,6 +32,7 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 import ast
+import enum
 import importlib.machinery
 import itertools
 import linecache
@@ -2027,24 +2028,22 @@ class _empty:
     pass
 
 
-class _ParameterKind(int):
-    def __new__(self, *args, name):
-        obj = int.__new__(self, *args)
-        obj._name = name
-        return obj
+class _ParameterKind(enum.IntEnum):
+    POSITIONAL_ONLY = 0
+    POSITIONAL_OR_KEYWORD = 1
+    VAR_POSITIONAL = 2
+    KEYWORD_ONLY = 3
+    VAR_KEYWORD = 4
 
     def __str__(self):
-        return self._name
-
-    def __repr__(self):
-        return '<_ParameterKind: {!r}>'.format(self._name)
+        return self._name_
 
 
-_POSITIONAL_ONLY        = _ParameterKind(0, name='POSITIONAL_ONLY')
-_POSITIONAL_OR_KEYWORD  = _ParameterKind(1, name='POSITIONAL_OR_KEYWORD')
-_VAR_POSITIONAL         = _ParameterKind(2, name='VAR_POSITIONAL')
-_KEYWORD_ONLY           = _ParameterKind(3, name='KEYWORD_ONLY')
-_VAR_KEYWORD            = _ParameterKind(4, name='VAR_KEYWORD')
+_POSITIONAL_ONLY         = _ParameterKind.POSITIONAL_ONLY
+_POSITIONAL_OR_KEYWORD   = _ParameterKind.POSITIONAL_OR_KEYWORD
+_VAR_POSITIONAL          = _ParameterKind.VAR_POSITIONAL
+_KEYWORD_ONLY            = _ParameterKind.KEYWORD_ONLY
+_VAR_KEYWORD             = _ParameterKind.VAR_KEYWORD
 
 
 class Parameter:

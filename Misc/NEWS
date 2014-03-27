@@ -105,6 +105,8 @@ Library
 - Issue #19748: On AIX, time.mktime() now raises an OverflowError for year
   outsize range [1902; 2037].
 
+- Issue #19573: inspect.signature: Use enum for parameter kind constants.
+
 Documentation
 -------------
 
