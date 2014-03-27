@@ -84,7 +84,7 @@ class CloseSocketTest(unittest.TestCase):
         # calling .close() on urllib2's response objects should close the
         # underlying socket
 
-        response = _urlopen_with_retry("http://www.python.org/")
+        response = _urlopen_with_retry("http://www.example.com/")
         sock = response.fp
         self.assertTrue(not sock.closed)
         response.close()
@@ -254,7 +254,7 @@ class OtherNetworkTests(unittest.TestCase):
 class TimeoutTest(unittest.TestCase):
     def test_http_basic(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        url = "http://www.python.org"
+        url = "http://www.example.com"
         with support.transient_internet(url, timeout=None):
             u = _urlopen_with_retry(url)
             self.addCleanup(u.close)
@@ -262,7 +262,7 @@ class TimeoutTest(unittest.TestCase):
 
     def test_http_default_timeout(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        url = "http://www.python.org"
+        url = "http://www.example.com"
         with support.transient_internet(url):
             socket.setdefaulttimeout(60)
             try:
@@ -274,7 +274,7 @@ class TimeoutTest(unittest.TestCase):
 
     def test_http_no_timeout(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        url = "http://www.python.org"
+        url = "http://www.example.com"
         with support.transient_internet(url):
             socket.setdefaulttimeout(60)
             try:
@@ -285,7 +285,7 @@ class TimeoutTest(unittest.TestCase):
             self.assertTrue(u.fp.raw._sock.gettimeout() is None)
 
     def test_http_timeout(self):
-        url = "http://www.python.org"
+        url = "http://www.example.com"
         with support.transient_internet(url):
             u = _urlopen_with_retry(url, timeout=120)
             self.addCleanup(u.close)
