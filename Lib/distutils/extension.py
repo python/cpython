@@ -131,6 +131,14 @@ class Extension:
             msg = "Unknown Extension options: %s" % options
             warnings.warn(msg)
 
+    def __repr__(self):
+        return '<%s.%s(%r) at %#x>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.name,
+            id(self))
+
+
 def read_setup_file(filename):
     """Reads a Setup file and returns Extension instances."""
     from distutils.sysconfig import (parse_makefile, expand_makefile_vars,
