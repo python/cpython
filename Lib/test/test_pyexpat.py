@@ -228,6 +228,17 @@ class ParseTest(unittest.TestCase):
         finally:
             test_support.unlink(test_support.TESTFN)
 
+    def test_parse_again(self):
+        parser = expat.ParserCreate()
+        file = StringIO.StringIO(data)
+        parser.ParseFile(file)
+        # Issue 6676: ensure a meaningful exception is raised when attempting
+        # to parse more than one XML document per xmlparser instance,
+        # a limitation of the Expat library.
+        with self.assertRaises(expat.error) as cm:
+            parser.ParseFile(file)
+        self.assertEqual(expat.ErrorString(cm.exception.code),
+                          expat.errors.XML_ERROR_FINISHED)
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):

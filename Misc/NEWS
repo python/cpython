@@ -246,6 +246,11 @@ Library
 - Issue #19286: Directories in ``package_data`` are no longer added to
   the filelist, preventing failure outlined in the ticket.
 
+- Issue #6676: Ensure a meaningful exception is raised when attempting
+  to parse more than one XML document per pyexpat xmlparser instance.
+  (Original patches by Hirokazu Yamamoto and Amaury Forgeot d'Arc, with
+  suggested wording by David Gutteridge)
+
 Tools/Demos
 -----------
 
