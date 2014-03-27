@@ -83,6 +83,9 @@ Library
 - Issue #19748: On AIX, time.mktime() now raises an OverflowError for year
   outsize range [1902; 2037].
 
+- Issue #20816: Fix inspect.getcallargs() to raise correct TypeError for
+  missing keyword-only arguments. Patch by Jeremiah Lowin.
+
 Documentation
 -------------
 

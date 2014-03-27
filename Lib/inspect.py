@@ -1208,7 +1208,7 @@ def getcallargs(*func_and_positional, **named):
     missing = 0
     for kwarg in kwonlyargs:
         if kwarg not in arg2value:
-            if kwarg in kwonlydefaults:
+            if kwonlydefaults and kwarg in kwonlydefaults:
                 arg2value[kwarg] = kwonlydefaults[kwarg]
             else:
                 missing += 1
