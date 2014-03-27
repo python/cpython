@@ -2192,8 +2192,8 @@ class Parameter:
         return formatted
 
     def __repr__(self):
-        return '<{} at {:#x} {!r}>'.format(self.__class__.__name__,
-                                           id(self), self.name)
+        return '<{} at {:#x} "{}">'.format(self.__class__.__name__,
+                                           id(self), self)
 
     def __eq__(self, other):
         # NB: We deliberately do not compare '_partial_kwarg' attributes
@@ -2697,6 +2697,10 @@ class Signature:
 
     def __setstate__(self, state):
         self._return_annotation = state['_return_annotation']
+
+    def __repr__(self):
+        return '<{} at {:#x} "{}">'.format(self.__class__.__name__,
+                                           id(self), self)
 
     def __str__(self):
         result = []
