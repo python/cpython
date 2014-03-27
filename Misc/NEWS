@@ -86,6 +86,9 @@ Library
 - Issue #20816: Fix inspect.getcallargs() to raise correct TypeError for
   missing keyword-only arguments. Patch by Jeremiah Lowin.
 
+- Issue #20817: Fix inspect.getcallargs() to fail correctly if more
+  than 3 arguments are missing. Patch by Jeremiah Lowin.
+
 Documentation
 -------------
 
