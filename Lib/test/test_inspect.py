@@ -1216,6 +1216,12 @@ class TestGetcallargsFunctions(unittest.TestCase):
             inspect.getcallargs(f5)
 
 
+        # issue20817:
+        def f6(a, b, c):
+            pass
+        with self.assertRaisesRegex(TypeError, "'a', 'b' and 'c'"):
+            inspect.getcallargs(f6)
+
 class TestGetcallargsMethods(TestGetcallargsFunctions):
 
     def setUp(self):
