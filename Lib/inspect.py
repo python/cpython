@@ -1125,7 +1125,7 @@ def _missing_arguments(f_name, argnames, pos, values):
     elif missing == 2:
         s = "{} and {}".format(*names)
     else:
-        tail = ", {} and {}".format(names[-2:])
+        tail = ", {} and {}".format(*names[-2:])
         del names[-2:]
         s = ", ".join(names) + tail
     raise TypeError("%s() missing %i required %s argument%s: %s" %
