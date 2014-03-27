@@ -113,6 +113,9 @@ Library
 
 - Issue #20378: Improve repr of inspect.Signature and inspect.Parameter.
 
+- Issue #20816: Fix inspect.getcallargs() to raise correct TypeError for
+  missing keyword-only arguments. Patch by Jeremiah Lowin.
+
 Documentation
 -------------
 
