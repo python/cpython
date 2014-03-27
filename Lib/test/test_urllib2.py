@@ -1440,7 +1440,7 @@ class MiscTests(unittest.TestCase):
                          'test requires network access')
     def test_issue16464(self):
         opener = urllib.request.build_opener()
-        request = urllib.request.Request("http://www.python.org/~jeremy/")
+        request = urllib.request.Request("http://www.example.com/")
         self.assertEqual(None, request.data)
 
         opener.open(request, "1".encode("us-ascii"))
