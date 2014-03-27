@@ -135,6 +135,9 @@ Tests
   redirect of http://www.python.org/ to https://www.python.org:
   use http://www.example.com instead.
 
+- Issue #20668: asyncio tests no longer rely on tests.txt file.
+  (Patch by Vajrasky Kok)
+
 Tools/Demos
 -----------
 
