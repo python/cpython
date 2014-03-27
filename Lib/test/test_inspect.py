@@ -1206,6 +1206,14 @@ class TestGetcallargsFunctions(unittest.TestCase):
         self.assertEqualException(f3, '1, 2')
         self.assertEqualException(f3, '1, 2, a=1, b=2')
 
+        # issue #20816: getcallargs() fails to iterate over non-existent
+        # kwonlydefaults and raises a wrong TypeError
+        def f5(*, a): pass
+        with self.assertRaisesRegex(TypeError,
+                                    'missing 1 required keyword-only'):
+            inspect.getcallargs(f5)
+
+
 class TestGetcallargsMethods(TestGetcallargsFunctions):
 
     def setUp(self):
