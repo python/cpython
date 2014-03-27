@@ -417,7 +417,7 @@ class ImportSideEffectTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
     def test_license_exists_at_url(self):
-        # This test `is a bit fragile since it depends on the format of the
+        # This test is a bit fragile since it depends on the format of the
         # string displayed by license in the absence of a LICENSE file.
         url = license._Printer__data.split()[1]
         req = urllib.request.Request(url, method='HEAD')
