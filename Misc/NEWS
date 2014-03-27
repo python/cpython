@@ -111,6 +111,8 @@ Library
 
 - Issue #17373: Add inspect.Signature.from_callable method.
 
+- Issue #20378: Improve repr of inspect.Signature and inspect.Parameter.
+
 Documentation
 -------------
 

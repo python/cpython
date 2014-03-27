@@ -1667,6 +1667,9 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((pkd, pk))
 
+        self.assertTrue(repr(sig).startswith('<Signature'))
+        self.assertTrue('"(po, pk' in repr(sig))
+
     def test_signature_object_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
         foo_partial = functools.partial(foo, a=1)
@@ -2575,6 +2578,7 @@ class TestParameterObject(unittest.TestCase):
             p.replace(kind=inspect.Parameter.VAR_POSITIONAL)
 
         self.assertTrue(repr(p).startswith('<Parameter'))
+        self.assertTrue('"a=42"' in repr(p))
 
     def test_signature_parameter_equality(self):
         P = inspect.Parameter
