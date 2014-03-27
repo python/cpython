@@ -100,6 +100,11 @@ The :mod:`xml.parsers.expat` module contains two functions:
       http://www.python.org/ns/ elem1
       elem2
 
+   Due to limitations in the ``Expat`` library used by :mod:`pyexpat`,
+   the :class:`xmlparser` instance returned can only be used to parse a single
+   XML document.  Call ``ParserCreate`` for each document to provide unique
+   parser instances.
+
 
 .. seealso::
 
@@ -119,7 +124,9 @@ XMLParser Objects
 
    Parses the contents of the string *data*, calling the appropriate handler
    functions to process the parsed data.  *isfinal* must be true on the final call
-   to this method.  *data* can be the empty string at any time.
+   to this method; it allows the parsing of a single file in fragments,
+   not the submission of multiple files.
+   *data* can be the empty string at any time.
 
 
 .. method:: xmlparser.ParseFile(file)

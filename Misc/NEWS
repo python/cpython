@@ -89,6 +89,11 @@ Library
 - Issue #20817: Fix inspect.getcallargs() to fail correctly if more
   than 3 arguments are missing. Patch by Jeremiah Lowin.
 
+- Issue #6676: Ensure a meaningful exception is raised when attempting
+  to parse more than one XML document per pyexpat xmlparser instance.
+  (Original patches by Hirokazu Yamamoto and Amaury Forgeot d'Arc, with
+  suggested wording by David Gutteridge)
+
 Documentation
 -------------
 
