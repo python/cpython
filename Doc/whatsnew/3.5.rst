@@ -137,6 +137,9 @@ Improved Modules
 * :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`
   (contributed by Claudiu Popa in :issue:`20627`).
 
+* :class:`inspect.Signature` and :class:`inspect.Parameter` are now
+  picklable (contributed by Yury Selivanov in :issue:`20726`).
+
 
 Optimizations
 =============

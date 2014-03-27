@@ -2106,6 +2106,18 @@ class Parameter:
 
         self._partial_kwarg = _partial_kwarg
 
+    def __reduce__(self):
+        return (type(self),
+                (self._name, self._kind),
+                {'_partial_kwarg': self._partial_kwarg,
+                 '_default': self._default,
+                 '_annotation': self._annotation})
+
+    def __setstate__(self, state):
+        self._partial_kwarg = state['_partial_kwarg']
+        self._default = state['_default']
+        self._annotation = state['_annotation']
+
     @property
     def name(self):
         return self._name
@@ -2657,6 +2669,14 @@ class Signature:
         Raises `TypeError` if the passed arguments can not be bound.
         '''
         return args[0]._bind(args[1:], kwargs, partial=True)
+
+    def __reduce__(self):
+        return (type(self),
+                (tuple(self._parameters.values()),),
+                {'_return_annotation': self._return_annotation})
+
+    def __setstate__(self, state):
+        self._return_annotation = state['_return_annotation']
 
     def __str__(self):
         result = []

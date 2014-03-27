@@ -107,6 +107,8 @@ Library
 
 - Issue #19573: inspect.signature: Use enum for parameter kind constants.
 
+- Issue #20726: inspect.signature: Make Signature and Parameter picklable.
+
 Documentation
 -------------
 
