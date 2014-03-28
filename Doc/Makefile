@@ -136,16 +136,10 @@ dist:
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 
-	# archive the epub build
+	# copy the epub build
 	rm -rf build/epub
 	make epub
-	mkdir -p dist/python-$(DISTVERSION)-docs-epub
-	cp -pPR build/epub/*.epub dist/python-$(DISTVERSION)-docs-epub/
-	tar -C dist -cf dist/python-$(DISTVERSION)-docs-epub.tar python-$(DISTVERSION)-docs-epub
-	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-epub.tar
-	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-epub.zip python-$(DISTVERSION)-docs-epub)
-	rm -r dist/python-$(DISTVERSION)-docs-epub
-	rm dist/python-$(DISTVERSION)-docs-epub.tar
+	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools
