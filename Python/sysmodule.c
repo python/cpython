@@ -1799,6 +1799,7 @@ _PySys_Init(void)
 #endif
 
 #undef SET_SYS_FROM_STRING
+#undef SET_SYS_FROM_STRING_BORROW
     if (PyErr_Occurred())
         return NULL;
     return m;
