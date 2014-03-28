@@ -53,7 +53,7 @@ class ScriptBinding:
         self.flist = self.editwin.flist
         self.root = self.editwin.root
 
-        if macosxSupport.runningAsOSXApp():
+        if macosxSupport.isCocoaTk():
             self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
 
     def check_module_event(self, event):
@@ -114,7 +114,7 @@ class ScriptBinding:
             shell.set_warning_stream(saved_stream)
 
     def run_module_event(self, event):
-        if macosxSupport.runningAsOSXApp():
+        if macosxSupport.isCocoaTk():
             # Tk-Cocoa in MacOSX is broken until at least
             # Tk 8.5.9, and without this rather
             # crude workaround IDLE would hang when a user

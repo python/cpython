@@ -94,6 +94,12 @@ Library
   (Original patches by Hirokazu Yamamoto and Amaury Forgeot d'Arc, with
   suggested wording by David Gutteridge)
 
+IDLE
+----
+
+- Issue #17654: Ensure IDLE menus are customized properly on OS X for
+  non-framework builds and for all variants of Tk.
+
 Documentation
 -------------
 
