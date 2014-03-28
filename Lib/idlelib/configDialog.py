@@ -74,7 +74,7 @@ class ConfigDialog(Toplevel):
         frameActionButtons = Frame(self,pady=2)
         #action buttons
 
-        if macosxSupport.runningAsOSXApp():
+        if macosxSupport.isAquaTk():
             # Surpress the padx and pady arguments when
             # running as IDLE.app, otherwise the text
             # on these buttons will not be readable.
