@@ -279,6 +279,9 @@ IDLE
 - Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
   shell window is present.
 
+- Issue #17654: Ensure IDLE menus are customized properly on OS X for
+  non-framework builds and for all variants of Tk.
+
 Tests
 -----
 

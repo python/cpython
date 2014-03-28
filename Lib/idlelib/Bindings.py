@@ -8,9 +8,14 @@ the PythonShell window, and a Format menu which is only present in the Editor
 windows.
 
 """
-import sys
 from idlelib.configHandler import idleConf
-from idlelib import macosxSupport
+
+#   Warning: menudefs is altered in macosxSupport.overrideRootMenu()
+#   after it is determined that an OS X Aqua Tk is in use,
+#   which cannot be done until after Tk() is first called.
+#   Do not alter the 'file', 'options', or 'help' cascades here
+#   without altering overrideRootMenu() as well.
+#       TODO: Make this more robust
 
 menudefs = [
  # underscore prefixes character to underscore
@@ -81,27 +86,4 @@ menudefs = [
    ]),
 ]
 
-if macosxSupport.runningAsOSXApp():
-    # Running as a proper MacOS application bundle. This block restructures
-    # the menus a little to make them conform better to the HIG.
-
-    quitItem = menudefs[0][1][-1]
-    closeItem = menudefs[0][1][-2]
-
-    # Remove the last 3 items of the file menu: a separator, close window and
-    # quit. Close window will be reinserted just above the save item, where
-    # it should be according to the HIG. Quit is in the application menu.
-    del menudefs[0][1][-3:]
-    menudefs[0][1].insert(6, closeItem)
-
-    # Remove the 'About' entry from the help menu, it is in the application
-    # menu
-    del menudefs[-1][1][0:2]
-
-    # Remove the 'Configure' entry from the options menu, it is in the
-    # application menu as 'Preferences'
-    del menudefs[-2][1][0:2]
-
 default_keydefs = idleConf.GetCurrentKeySet()
-
-del sys

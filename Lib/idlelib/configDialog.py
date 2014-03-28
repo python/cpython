@@ -71,7 +71,7 @@ class ConfigDialog(Toplevel):
                 page_names=['Fonts/Tabs','Highlighting','Keys','General'])
         frameActionButtons = Frame(self,pady=2)
         #action buttons
-        if macosxSupport.runningAsOSXApp():
+        if macosxSupport.isAquaTk():
             # Changing the default padding on OSX results in unreadable
             # text in the buttons
             paddingArgs={}
