@@ -20,7 +20,6 @@ configuration problem notification and resolution.
 import os
 import sys
 
-from idlelib import macosxSupport
 from configparser import ConfigParser, NoOptionError, NoSectionError
 
 class InvalidConfigType(Exception): pass
@@ -527,10 +526,13 @@ class IdleConf:
     def GetCurrentKeySet(self):
         result = self.GetKeySet(self.CurrentKeys())
 
-        if macosxSupport.runningAsOSXApp():
-            # We're using AquaTk, replace all keybingings that use the
-            # Alt key by ones that use the Option key because the former
-            # don't work reliably.
+        if sys.platform == "darwin":
+            # OS X Tk variants do not support the "Alt" keyboard modifier.
+            # So replace all keybingings that use "Alt" with ones that
+            # use the "Option" keyboard modifier.
+            # TO DO: the "Option" modifier does not work properly for
+            #        Cocoa Tk and XQuartz Tk so we should not use it
+            #        in default OS X KeySets.
             for k, v in result.items():
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
                 if v != v2:
