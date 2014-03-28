@@ -106,7 +106,7 @@ before printing the first prompt::
 Continuation lines are needed when entering a multi-line construct. As an
 example, take a look at this :keyword:`if` statement::
 
-   >>> the_world_is_flat = 1
+   >>> the_world_is_flat = True
    >>> if the_world_is_flat:
    ...     print("Be careful not to fall off!")
    ...
