@@ -32,7 +32,7 @@ def zoom_height(top):
         newy = 0
         newheight = newheight - 72
 
-    elif macosxSupport.runningAsOSXApp():
+    elif macosxSupport.isAquaTk():
         # The '88' below is a magic number that avoids placing the bottom
         # of the window below the panel on my machine. I don't know how
         # to calculate the correct value for this with tkinter.

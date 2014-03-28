@@ -4,7 +4,7 @@ Dialog for building Tkinter accelerator key bindings
 from tkinter import *
 import tkinter.messagebox as tkMessageBox
 import string
-from idlelib import macosxSupport
+import sys
 
 class GetKeysDialog(Toplevel):
     def __init__(self,parent,title,action,currentKeySequences):
@@ -133,8 +133,7 @@ class GetKeysDialog(Toplevel):
         order is also important: key binding equality depends on it, so
         config-keys.def must use the same ordering.
         """
-        import sys
-        if macosxSupport.runningAsOSXApp():
+        if sys.platform == "darwin":
             self.modifiers = ['Shift', 'Control', 'Option', 'Command']
         else:
             self.modifiers = ['Control', 'Alt', 'Shift']
