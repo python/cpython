@@ -320,6 +320,7 @@ The property files used are (+-- = "also imports"):
  * pyproject (base settings for all projects, user macros like PyDllName)
  * release (release macro: NDEBUG)
  * sqlite3 (used only by sqlite3.vcxproj)
+ * tcltk (used by _tkinter, tcl, tk and tix projects)
  * x64 (AMD64 / x64 platform specific settings)
 
 The pyproject property file defines _WIN32 and x64 defines _WIN64 and
