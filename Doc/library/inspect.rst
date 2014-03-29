@@ -462,6 +462,9 @@ function.
    Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
    modified copy.
 
+   .. versionchanged:: 3.5
+      Signature objects are picklable.
+
    .. attribute:: Signature.empty
 
       A special class-level marker to specify absence of a return annotation.
@@ -525,6 +528,9 @@ function.
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
    you can use :meth:`Parameter.replace` to create a modified copy.
+
+   .. versionchanged:: 3.5
+      Parameter objects are picklable.
 
    .. attribute:: Parameter.empty
 
