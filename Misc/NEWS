@@ -122,6 +122,8 @@ Tests
 
 - Issue #20743: Fix a reference leak in test_tcl.
 
+- Issue #21097: Move test_namespace_pkgs into test_importlib.
+
 - Issue #20939: Avoid various network test failures due to new
   redirect of http://www.python.org/ to https://www.python.org:
   use http://www.example.com instead.
