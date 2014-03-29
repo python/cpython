@@ -129,6 +129,9 @@ Tests
 - Issue #20668: asyncio tests no longer rely on tests.txt file.
   (Patch by Vajrasky Kok)
 
+- Issue #21093: Prevent failures of ctypes test_macholib on OS X if a
+  copy of libz exists in $HOME/lib or /usr/local/lib.
+
 Tools/Demos
 -----------
 

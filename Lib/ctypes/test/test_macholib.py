@@ -50,8 +50,11 @@ class MachOTest(unittest.TestCase):
                                  '/usr/lib/libSystem.B.dylib')
 
             result = find_lib('z')
-            self.assertTrue(result.startswith('/usr/lib/libz.1'))
-            self.assertTrue(result.endswith('.dylib'))
+            # Issue #21093: dyld default search path includes $HOME/lib and
+            # /usr/local/lib before /usr/lib, which caused test failures if
+            # a local copy of libz exists in one of them. Now ignore the head
+            # of the path.
+            self.assertRegex(result, r".*/lib/libz\..*.*\.dylib")
 
             self.assertEqual(find_lib('IOKit'),
                                  '/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit')
