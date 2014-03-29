@@ -336,6 +336,9 @@ Tests
   redirect of http://www.python.org/ to https://www.python.org:
   use http://www.example.com instead.
 
+- Issue #21093: Prevent failures of ctypes test_macholib on OS X if a
+  copy of libz exists in $HOME/lib or /usr/local/lib.
+
 Documentation
 -------------
 
