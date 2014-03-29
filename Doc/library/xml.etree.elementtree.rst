@@ -325,7 +325,7 @@ Supported XPath syntax
 +=======================+======================================================+
 | ``tag``               | Selects all child elements with the given tag.       |
 |                       | For example, ``spam`` selects all child elements     |
-|                       | named ``spam``, ``spam/egg`` selects all             |
+|                       | named ``spam``, and ``spam/egg`` selects all         |
 |                       | grandchildren named ``egg`` in all children named    |
 |                       | ``spam``.                                            |
 +-----------------------+------------------------------------------------------+
