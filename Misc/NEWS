@@ -145,6 +145,8 @@ Documentation
   required reference material for tool developers that isn't recorded
   anywhere else.
 
+- Issue #19697: Document cases where __main__.__spec__ is None.
+
 Tests
 -----
 
