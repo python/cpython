@@ -519,7 +519,10 @@ the module.
 
    The ``__spec__`` attribute must be set to the module spec that was
    used when importing the module.  This is used primarily for
-   introspection and during reloading.
+   introspection and during reloading.  Setting ``__spec__``
+   appropriately applies equally to :ref:`modules initialized during
+   interpreter startup <programs>`.  The one exception is ``__main__``,
+   where ``__spec__`` is :ref:`set to None in some cases <main_spec>`.
 
    .. versionadded:: 3.4
 
@@ -829,6 +832,37 @@ it is sufficient to raise :exc:`ImportError` directly from
 while raising an exception terminates it immediately.
 
 
+Special considerations for __main__
+===================================
+
+The :mod:`__main__` module is a special case relative to Python's import
+system.  As noted :ref:`elsewhere <programs>`, the ``__main__`` module
+is directly initialized at interpreter startup, much like :mod:`sys` and
+:mod:`builtins`.  However, unlike those two, it doesn't strictly
+qualify as a built-in module.  This is because the manner in which
+``__main__`` is initialized depends on the flags and other options with
+which the interpreter is invoked.
+
+.. _main_spec:
+
+__main__.__spec__
+-----------------
+
+Depending on how :mod:`__main__` is initialized, ``__main__.__spec__``
+gets set appropriately or to ``None``.
+
+When Python is started with the :option:`-m` option, ``__spec__`` is set
+to the module spec of the corresponding module.
+
+In :ref:`the remaining cases <using-on-interface-options>`
+``__main__.__spec__`` is set to ``None``:
+
+- interactive prompt
+- -c switch
+- running from stdin
+- running directly from a source or bytecode file
+
+
 Open issues
 ===========
 
@@ -840,6 +874,12 @@ related entries in the data model reference page?
 
 XXX runpy, pkgutil, et al in the library manual should all get "See Also"
 links at the top pointing to the new import system section.
+
+XXX Add more explanation regarding the different ways in which
+``__main__`` is initialized?
+
+XXX Add more info on ``__main__`` quirks/pitfalls (i.e. copy from
+:pep:`395`).
 
 
 References
