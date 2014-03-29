@@ -852,15 +852,29 @@ Depending on how :mod:`__main__` is initialized, ``__main__.__spec__``
 gets set appropriately or to ``None``.
 
 When Python is started with the :option:`-m` option, ``__spec__`` is set
-to the module spec of the corresponding module.
+to the module spec of the corresponding module or package. ``__spec__`` is
+also populated when the ``__main__`` module is loaded as part of executing a
+directory, zipfile or other :data:`sys.path` entry.
 
 In :ref:`the remaining cases <using-on-interface-options>`
-``__main__.__spec__`` is set to ``None``:
+``__main__.__spec__`` is set to ``None``, as the code used to populate the
+:mod:`__main__` does not correspond directly with an importable module:
 
 - interactive prompt
 - -c switch
 - running from stdin
 - running directly from a source or bytecode file
+
+Note that ``__main__.__spec__`` is always ``None`` in the last case,
+*even if* the file could technically be imported directly as a module
+instead. Use the :option:`-m` switch if valid module metadata is desired
+in :mod:`__main__`.
+
+Note also that even when ``__main__`` corresponds with an importable module
+and ``__main__.__spec__`` is set accordingly, they're still considered
+*distinct* modules. This is due to the fact that blocks guarded by
+``if __name__ == "__main__":`` checks only execute when the module is used
+to populate the ``__main__`` namespace, and not during normal import.
 
 
 Open issues
