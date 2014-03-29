@@ -278,8 +278,7 @@ The build process for AMD64 / x64 is very similar to standard builds,
 you just have to set x64 as platform. In addition, the HOST_PYTHON
 environment variable must point to a Python interpreter (at least 2.4),
 to support cross-compilation from Win32.  Note that Visual Studio
-requires either Standard Edition or better, or Express Edition with the
-Windows SDK 64-bit compilers to be available in order to build 64-bit
+requires Professional Edition or better in order to build 64-bit
 binaries.
 
 
