@@ -3,7 +3,7 @@ import sys
 
 # Write the config.c file
 
-never = ['marshal', 'imp', '_ast', '__main__', 'builtins',
+never = ['marshal', '_imp', '_ast', '__main__', 'builtins',
          'sys', 'gc', '_warnings']
 
 def makeconfig(infp, outfp, modules, with_ifdef=0):
