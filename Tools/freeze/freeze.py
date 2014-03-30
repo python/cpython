@@ -219,6 +219,7 @@ def main():
 
     # locations derived from options
     version = sys.version[:3]
+    flagged_version = version + sys.abiflags
     if win:
         extensions_c = 'frozen_extensions.c'
     if ishome:
@@ -233,10 +234,11 @@ def main():
             frozendllmain_c = os.path.join(exec_prefix, 'Pc\\frozen_dllmain.c')
     else:
         binlib = os.path.join(exec_prefix,
-                              'lib', 'python%s' % version, 'config')
-        incldir = os.path.join(prefix, 'include', 'python%s' % version)
+                              'lib', 'python%s' % version,
+                              'config-%s' % flagged_version)
+        incldir = os.path.join(prefix, 'include', 'python%s' % flagged_version)
         config_h_dir = os.path.join(exec_prefix, 'include',
-                                    'python%s' % version)
+                                    'python%s' % flagged_version)
         config_c_in = os.path.join(binlib, 'config.c.in')
         frozenmain_c = os.path.join(binlib, 'frozenmain.c')
         makefile_in = os.path.join(binlib, 'Makefile')
@@ -455,7 +457,7 @@ def main():
 
     cflags = ['$(OPT)']
     cppflags = defines + includes
-    libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
+    libs = [os.path.join(binlib, '$(LDLIBRARY)')]
 
     somevars = {}
     if os.path.exists(makefile_in):
