@@ -13,12 +13,14 @@ Py_REF_DEBUG
 ------------
 
 Turn on aggregate reference counting.  This arranges that extern _Py_RefTotal
-hold a count of all references, the sum of ob_refcnt across all objects.  In a
-debug-mode build, this is where the "8288" comes from in
+hold a count of all references, the sum of ob_refcnt across all objects.
+Passing ``-X showrefcount`` on the command line causes the interactive
+interpreter to print the reference count total as well the number of memory
+blocks allocated after each statement:
 
     >>> 23
     23
-    [8288 refs]
+    [8288 refs, 14332 blocks]
     >>>
 
 Note that if this count increases when you're not storing away new objects,
