@@ -120,6 +120,8 @@ Documentation
 Tests
 -----
 
+- Add test case for freeze.
+
 - Issue #20743: Fix a reference leak in test_tcl.
 
 - Issue #21097: Move test_namespace_pkgs into test_importlib.
