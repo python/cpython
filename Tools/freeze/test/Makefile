@@ -7,4 +7,5 @@ OUTDIR=outdir
 test:
 	$(PYTHON) ../freeze.py -o $(OUTDIR) ok.py
 	make -C $(OUTDIR)
+	$(OUTDIR)/ok
 	
