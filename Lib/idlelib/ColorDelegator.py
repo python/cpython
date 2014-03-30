@@ -16,6 +16,9 @@ def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     builtinlist = [str(name) for name in dir(__builtin__)
                                         if not name.startswith('_')]
+    # We don't know whether "print" is a function or a keyword,
+    # so we always treat is as a keyword (the most common case).
+    builtinlist.remove('print')
     # self.file = file("file") :
     # 1st 'file' colorized normal, 2nd as builtin, 3rd as string
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"

@@ -265,6 +265,10 @@ IDLE
 - Issue #20406: Use Python application icons for Idle window title bars.
   Patch mostly by Serhiy Storchaka.
 
+- Issue #21029: Occurrences of "print" are now consistently colored as
+  being a keyword (the colorizer doesn't know if print functions are
+  enabled in the source).
+
 - Issue #17721: Remove non-functional configuration dialog help button until we
   make it actually gives some help when clicked. Patch by Guilherme Simões.
 
