@@ -169,6 +169,8 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #11824: Consider ABI tags in freeze. Patch by Meador Inge.
+
 - Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
   Patch by Arfrever Frehtes Taifersar Arahesis.
 
