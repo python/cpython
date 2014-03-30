@@ -3125,25 +3125,26 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     q = PyString_AS_STRING(u); /* next output char */
     qe = PyString_AS_STRING(u) + PyString_GET_SIZE(u); /* end of output */
 
-    for (p = PyString_AS_STRING(self); p < e; p++)
-    if (*p == '\t') {
-        if (tabsize > 0) {
-            i = tabsize - (j % tabsize);
-            j += i;
-            while (i--) {
-                if (q >= qe)
-                    goto overflow2;
-                *q++ = ' ';
+    for (p = PyString_AS_STRING(self); p < e; p++) {
+        if (*p == '\t') {
+            if (tabsize > 0) {
+                i = tabsize - (j % tabsize);
+                j += i;
+                while (i--) {
+                    if (q >= qe)
+                        goto overflow2;
+                    *q++ = ' ';
+                }
             }
         }
-    }
-    else {
-        if (q >= qe)
-            goto overflow2;
-        *q++ = *p;
-        j++;
-        if (*p == '\n' || *p == '\r')
-            j = 0;
+        else {
+            if (q >= qe)
+                goto overflow2;
+            *q++ = *p;
+            j++;
+            if (*p == '\n' || *p == '\r')
+                j = 0;
+        }
     }
 
     return u;
