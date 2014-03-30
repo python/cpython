@@ -9,7 +9,7 @@ Transports  and protocols (low-level API)
 Transports
 ==========
 
-Transports are classed provided by :mod:`asyncio` in order to abstract
+Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.  You generally won't instantiate
 a transport yourself; instead, you will call a :class:`BaseEventLoop` method
 which will create the transport and try to initiate the underlying
