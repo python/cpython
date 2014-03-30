@@ -3091,24 +3091,25 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     i = 0; /* chars up to and including most recent \n or \r */
     j = 0; /* chars since most recent \n or \r (use in tab calculations) */
     e = PyString_AS_STRING(self) + PyString_GET_SIZE(self); /* end of input */
-    for (p = PyString_AS_STRING(self); p < e; p++)
-    if (*p == '\t') {
-        if (tabsize > 0) {
-            incr = tabsize - (j % tabsize);
-            if (j > PY_SSIZE_T_MAX - incr)
-                goto overflow1;
-            j += incr;
+    for (p = PyString_AS_STRING(self); p < e; p++) {
+        if (*p == '\t') {
+            if (tabsize > 0) {
+                incr = tabsize - (j % tabsize);
+                if (j > PY_SSIZE_T_MAX - incr)
+                    goto overflow1;
+                j += incr;
+            }
         }
-    }
-    else {
-        if (j > PY_SSIZE_T_MAX - 1)
-            goto overflow1;
-        j++;
-        if (*p == '\n' || *p == '\r') {
-            if (i > PY_SSIZE_T_MAX - j)
+        else {
+            if (j > PY_SSIZE_T_MAX - 1)
                 goto overflow1;
-            i += j;
-            j = 0;
+            j++;
+            if (*p == '\n' || *p == '\r') {
+                if (i > PY_SSIZE_T_MAX - j)
+                    goto overflow1;
+                i += j;
+                j = 0;
+            }
         }
     }
 
