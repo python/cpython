@@ -15,11 +15,9 @@ BUILDPYTHON=    $(builddir)/python$(BUILDEXE)
 PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
 
 # Deployment target selected during configure, to be checked
-# by distutils  
+# by distutils
 MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 @EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
-
-BUNDLEBULDER=$(srcdir)/../Tools/bundlebuilder.py
 
 PYTHONAPPSDIR=@FRAMEWORKINSTALLAPPSPREFIX@/$(PYTHONFRAMEWORK) $(VERSION)
 OBJECTS=FileSettings.o MyAppDelegate.o MyDocument.o PreferencesWindowController.o doscript.o main.o
@@ -30,10 +28,10 @@ install: Python\ Launcher.app
 	/bin/cp -r "Python Launcher.app" "$(DESTDIR)$(PYTHONAPPSDIR)"
 	touch "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app"
 
-
 clean:
 	rm -f *.o "Python Launcher"
 	rm -rf "Python Launcher.app"
+	rm -f Info.plist
 
 Python\ Launcher.app:  Info.plist \
 		Python\ Launcher $(srcdir)/../Icons/PythonLauncher.icns \
@@ -41,20 +39,18 @@ Python\ Launcher.app:  Info.plist \
 		$(srcdir)/../Icons/PythonCompiled.icns \
 		$(srcdir)/factorySettings.plist
 	rm -fr "Python Launcher.app"
-	$(RUNSHARED) $(BUILDPYTHON) $(BUNDLEBULDER) \
-		--builddir=. \
-		--name="Python Launcher" \
-		--executable="Python Launcher" \
-		--iconfile=$(srcdir)/../Icons/PythonLauncher.icns \
-		--bundle-id=org.python.PythonLauncher \
-		--resource=$(srcdir)/../Icons/PythonSource.icns \
-		--resource=$(srcdir)/../Icons/PythonCompiled.icns \
-		--resource=$(srcdir)/English.lproj \
-		--resource=$(srcdir)/factorySettings.plist \
-		--plist Info.plist \
-		build
+	mkdir "Python Launcher.app"
+	mkdir "Python Launcher.app/Contents"
+	mkdir "Python Launcher.app/Contents/MacOS"
+	mkdir "Python Launcher.app/Contents/Resources"
+	cp "Python Launcher" "Python Launcher.app/Contents/MacOS"
+	cp Info.plist  "Python Launcher.app/Contents"
+	cp $(srcdir)/../Icons/PythonLauncher.icns  "Python Launcher.app/Contents/Resources"
+	cp $(srcdir)/../Icons/PythonSource.icns  "Python Launcher.app/Contents/Resources"
+	cp $(srcdir)/../Icons/PythonCompiled.icns  "Python Launcher.app/Contents/Resources"
+	cp $(srcdir)/factorySettings.plist  "Python Launcher.app/Contents/Resources"
+	cp -R $(srcdir)/English.lproj "Python Launcher.app/Contents/Resources"
 	find "Python Launcher.app" -name '.svn' -print0 | xargs -0 rm -r
-		
 
 FileSettings.o: $(srcdir)/FileSettings.m
 	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/FileSettings.m
