@@ -364,12 +364,17 @@ def setcopyright():
         builtins.credits = _sitebuiltins._Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
     for supporting Python development.  See www.python.org for more information.""")
-    here = os.path.dirname(os.__file__)
+    files, dirs = [], []
+    # Not all modules are required to have a __file__ attribute.  See
+    # PEP 420 for more details.
+    if hasattr(os, '__file__'):
+        here = os.path.dirname(os.__file__)
+        files.extend(["LICENSE.txt", "LICENSE"])
+        dirs.extend([os.path.join(here, os.pardir), here, os.curdir])
     builtins.license = _sitebuiltins._Printer(
         "license",
         "See http://www.python.org/download/releases/%.5s/license" % sys.version,
-        ["LICENSE.txt", "LICENSE"],
-        [os.path.join(here, os.pardir), here, os.curdir])
+        files, dirs)
 
 
 def sethelper():
