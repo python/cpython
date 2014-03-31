@@ -236,8 +236,8 @@ in various ways.  There is a separate error indicator for each thread.
 
    Similar to :c:func:`PyErr_SetFromErrno`, with the additional behavior that if
    *filenameObject* is not *NULL*, it is passed to the constructor of *type* as
-   a third parameter.  In the case of exceptions such as :exc:`IOError` and
-   :exc:`OSError`, this is used to define the :attr:`filename` attribute of the
+   a third parameter.  In the case of :exc:`OSError` exception,
+   this is used to define the :attr:`filename` attribute of the
    exception instance.
 
 

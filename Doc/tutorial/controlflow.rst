@@ -370,7 +370,7 @@ defined to allow.  For example::
                return False
            retries = retries - 1
            if retries < 0:
-               raise IOError('uncooperative user')
+               raise OSError('uncooperative user')
            print(complaint)
 
 This function can be called in several ways:
