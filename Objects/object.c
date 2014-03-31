@@ -1849,6 +1849,8 @@ Py_ReprEnter(PyObject *obj)
     Py_ssize_t i;
 
     dict = PyThreadState_GetDict();
+    /* Ignore a missing thread-state, so that this function can be called
+       early on startup. */
     if (dict == NULL)
         return 0;
     list = _PyDict_GetItemId(dict, &PyId_Py_Repr);
