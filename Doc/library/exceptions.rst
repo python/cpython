@@ -82,7 +82,7 @@ The following exceptions are used mostly as base classes for other exceptions.
    .. attribute:: args
 
       The tuple of arguments given to the exception constructor.  Some built-in
-      exceptions (like :exc:`IOError`) expect a certain number of arguments and
+      exceptions (like :exc:`OSError`) expect a certain number of arguments and
       assign a special meaning to the elements of this tuple, while others are
       usually called only with a single string giving an error message.
 
