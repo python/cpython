@@ -246,7 +246,7 @@ include a Unicode character in a string literal::
    try:
        with open('/tmp/input.txt', 'r') as f:
            ...
-   except IOError:
+   except OSError:
        # 'File not found' error message.
        print("Fichier non trouvé")
 
