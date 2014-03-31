@@ -4,6 +4,7 @@ warnings.filterwarnings("ignore", "strop functions are obsolete;",
                         r'test.test_strop|unittest')
 import strop
 import unittest
+import sys
 from test import test_support
 
 
@@ -114,6 +115,11 @@ class StropFunctionTestCase(unittest.TestCase):
         strop.lowercase
         strop.uppercase
         strop.whitespace
+
+    @unittest.skipUnless(sys.maxsize == 2147483647, "only for 32-bit")
+    def test_expandtabs_overflow(self):
+        s = '\t\n' * 0x10000 + 'A' * 0x1000000
+        self.assertRaises(OverflowError, strop.expandtabs, s, 0x10001)
 
     @test_support.precisionbigmemtest(size=test_support._2G - 1, memuse=5)
     def test_stropjoin_huge_list(self, size):

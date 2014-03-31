@@ -593,7 +593,7 @@ strop_expandtabs(PyObject *self, PyObject *args)
     char* e;
     char* p;
     char* q;
-    Py_ssize_t i, j, old_j;
+    Py_ssize_t i, j;
     PyObject* out;
     char* string;
     Py_ssize_t stringlen;
@@ -610,30 +610,29 @@ strop_expandtabs(PyObject *self, PyObject *args)
     }
 
     /* First pass: determine size of output string */
-    i = j = old_j = 0; /* j: current column; i: total of previous lines */
+    i = j = 0; /* j: current column; i: total of previous lines */
     e = string + stringlen;
     for (p = string; p < e; p++) {
         if (*p == '\t') {
-            j += tabsize - (j%tabsize);
-            if (old_j > j) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "new string is too long");
-                return NULL;
-            }
-            old_j = j;
+            Py_ssize_t incr = tabsize - (j%tabsize);
+            if (j > PY_SSIZE_T_MAX - incr)
+                goto overflow;
+            j += incr;
         } else {
+            if (j > PY_SSIZE_T_MAX - 1)
+                goto overflow;
             j++;
             if (*p == '\n') {
+                if (i > PY_SSIZE_T_MAX - j)
+                    goto overflow;
                 i += j;
                 j = 0;
             }
         }
     }
 
-    if ((i + j) < 0) {
-        PyErr_SetString(PyExc_OverflowError, "new string is too long");
-        return NULL;
-    }
+    if (i > PY_SSIZE_T_MAX - j)
+        goto overflow;
 
     /* Second pass: create output string and fill it */
     out = PyString_FromStringAndSize(NULL, i+j);
@@ -658,6 +657,9 @@ strop_expandtabs(PyObject *self, PyObject *args)
     }
 
     return out;
+  overflow:
+    PyErr_SetString(PyExc_OverflowError, "result is too long");
+    return NULL;
 }
 
 

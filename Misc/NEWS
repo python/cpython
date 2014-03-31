@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Fix possible overflow bug in strop.expandtabs. You shouldn't be using this
+  module!
+
 - Issue #20145: `assertRaisesRegex` now raises a TypeError if the second
   argument is not a string or compiled regex.
 
