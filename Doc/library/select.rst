@@ -380,10 +380,6 @@ linearly scanned again. :c:func:`select` is O(highest file descriptor), while
    that was never registered causes an :exc:`OSError` exception with errno
    :const:`ENOENT` to be raised.
 
-   .. deprecated:: 3.3
-
-      Instead of :exc:`IOError` the :exc:`OSError` exception is used now.
-
 
 .. method:: poll.unregister(fd)
 
