@@ -165,12 +165,12 @@ class OtherNetworkTests(unittest.TestCase):
                     "https://docs.python.org/2/glossary.html#glossary")
 
     def test_redirect_url_withfrag(self):
-        redirect_url_with_frag = "http://bitly.com/urllibredirecttest"
+        redirect_url_with_frag = "http://bit.ly/1iSHToT"
         with support.transient_internet(redirect_url_with_frag):
             req = urllib.request.Request(redirect_url_with_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    "http://docs.python.org/3.4/glossary.html#term-global-interpreter-lock")
+                    "https://docs.python.org/3.4/glossary.html#term-global-interpreter-lock")
 
     def test_custom_headers(self):
         url = "http://www.example.com"
