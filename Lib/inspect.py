@@ -17,7 +17,7 @@ Here are some of the useful functions provided by this module:
     getclasstree() - arrange classes so as to represent their hierarchy
 
     getargspec(), getargvalues(), getcallargs() - get info about function arguments
-    getfullargspec() - same, with support for Python-3000 features
+    getfullargspec() - same, with support for Python 3 features
     formatargspec(), formatargvalues() - format an argument spec
     getouterframes(), getinnerframes() - get info about frames
     currentframe() - get the current stack frame
@@ -920,7 +920,7 @@ def getargspec(func):
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'defaults' is an n-tuple of the default values of the last n arguments.
 
-    Use the getfullargspec() API for Python-3000 code, as annotations
+    Use the getfullargspec() API for Python 3 code, as annotations
     and keyword arguments are supported. getargspec() will raise ValueError
     if the func has either annotations or keyword arguments.
     """
