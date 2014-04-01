@@ -872,7 +872,7 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path, mode)
         self.assertRaises(OSError, os.makedirs, path, mode)
         self.assertRaises(OSError, os.makedirs, path, mode, exist_ok=False)
-        self.assertRaises(OSError, os.makedirs, path, 0o776, exist_ok=True)
+        os.makedirs(path, 0o776, exist_ok=True)
         os.makedirs(path, mode=mode, exist_ok=True)
         os.umask(old_mask)
 
@@ -898,9 +898,8 @@ class MakedirTests(unittest.TestCase):
             os.makedirs(path, mode, exist_ok=True)
             # remove the bit.
             os.chmod(path, stat.S_IMODE(os.lstat(path).st_mode) & ~S_ISGID)
-            with self.assertRaises(OSError):
-                # Should fail when the bit is not already set when demanded.
-                os.makedirs(path, mode | S_ISGID, exist_ok=True)
+            # May work even when the bit is not already set when demanded.
+            os.makedirs(path, mode | S_ISGID, exist_ok=True)
         finally:
             os.umask(old_mask)
 

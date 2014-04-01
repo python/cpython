@@ -15,6 +15,9 @@ Library
 
 - Issue #20633: Replace relative import by absolute import.
 
+- Issue #21082: In os.makedirs, do not set the process-wide umask. Note this
+  changes behavior of makedirs when exist_ok=True.
+
 - Issue #20875: Prevent possible gzip "'read' is not defined" NameError.
   Patch by Claudiu Popa.
 
