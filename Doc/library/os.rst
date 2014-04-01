@@ -1632,12 +1632,12 @@ features:
    .. versionadded:: 3.2
       The *exist_ok* parameter.
 
-   .. versionchanged:: 3.3.6
+   .. versionchanged:: 3.4.1
 
-      Before Python 3.3.6, if *exist_ok* was ``True`` and the directory existed,
+      Before Python 3.4.1, if *exist_ok* was ``True`` and the directory existed,
       :func:`makedirs` would still raise an error if *mode* did not match the
       mode of the existing directory. Since this behavior was impossible to
-      implement safely, it was removed in Python 3.3.6. See :issue:`21082`.
+      implement safely, it was removed in Python 3.4.1. See :issue:`21082`.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
