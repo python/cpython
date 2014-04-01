@@ -38,6 +38,9 @@ Library
 
 - Issue #20980: Stop wrapping exception when using ThreadPool.
 
+- Issue #21082: In os.makedirs, do not set the process-wide umask. Note this
+  changes behavior of makedirs when exist_ok=True.
+
 - Issue #20990: Fix issues found by pyflakes for multiprocessing.
 
 - Issue #21015: SSL contexts will now automatically select an elliptic
