@@ -10,6 +10,9 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #21082: In os.makedirs, do not set the process-wide umask. Note this
+  changes behavior of makedirs when exist_ok=True.
+
 - Issue #20246: Fix buffer overflow in socket.recvfrom_into.
 
 - Issue #12226: HTTPS is now used by default when connecting to PyPI.
