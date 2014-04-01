@@ -511,9 +511,6 @@ def build_opener(*handlers):
     If any of the handlers passed as arguments are subclasses of the
     default handlers, the default handlers will not be used.
     """
-    def isclass(obj):
-        return isinstance(obj, type) or hasattr(obj, "__bases__")
-
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
@@ -524,7 +521,7 @@ def build_opener(*handlers):
     skip = set()
     for klass in default_classes:
         for check in handlers:
-            if isclass(check):
+            if instance(check, type):
                 if issubclass(check, klass):
                     skip.add(klass)
             elif isinstance(check, klass):
@@ -536,7 +533,7 @@ def build_opener(*handlers):
         opener.add_handler(klass())
 
     for h in handlers:
-        if isclass(h):
+        if isinstance(h, type):
             h = h()
         opener.add_handler(h)
     return opener
