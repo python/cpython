@@ -114,12 +114,6 @@ SEEK_SET = 0
 SEEK_CUR = 1
 SEEK_END = 2
 
-
-def _get_masked_mode(mode):
-    mask = umask(0)
-    umask(mask)
-    return mode & ~mask
-
 #'
 
 # Super directory utilities.
@@ -128,11 +122,10 @@ def _get_masked_mode(mode):
 def makedirs(name, mode=0o777, exist_ok=False):
     """makedirs(path [, mode=0o777][, exist_ok=False])
 
-    Super-mkdir; create a leaf directory and all intermediate ones.
-    Works like mkdir, except that any intermediate path segment (not
-    just the rightmost) will be created if it does not exist. If the
-    target directory with the same mode as we specified already exists,
-    raises an OSError if exist_ok is False, otherwise no exception is
+    Super-mkdir; create a leaf directory and all intermediate ones.  Works like
+    mkdir, except that any intermediate path segment (not just the rightmost)
+    will be created if it does not exist. If the target directory already
+    exists, raise an OSError if exist_ok is False. Otherwise no exception is
     raised.  This is recursive.
 
     """
@@ -154,18 +147,7 @@ def makedirs(name, mode=0o777, exist_ok=False):
     try:
         mkdir(name, mode)
     except OSError as e:
-        import stat as st
-        dir_exists = path.isdir(name)
-        expected_mode = _get_masked_mode(mode)
-        if dir_exists:
-            # S_ISGID is automatically copied by the OS from parent to child
-            # directories on mkdir.  Don't consider it being set to be a mode
-            # mismatch as mkdir does not unset it when not specified in mode.
-            actual_mode = st.S_IMODE(lstat(name).st_mode) & ~st.S_ISGID
-        else:
-            actual_mode = -1
-        if not (e.errno == errno.EEXIST and exist_ok and dir_exists and
-                actual_mode == expected_mode):
+        if not exist_ok or e.errno != errno.EEXIST or not path.isdir(name):
             raise
 
 def removedirs(name):
