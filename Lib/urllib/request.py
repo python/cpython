@@ -521,7 +521,7 @@ def build_opener(*handlers):
     skip = set()
     for klass in default_classes:
         for check in handlers:
-            if instance(check, type):
+            if isinstance(check, type):
                 if issubclass(check, klass):
                     skip.add(klass)
             elif isinstance(check, klass):
