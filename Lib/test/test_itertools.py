@@ -1998,6 +1998,19 @@ Samuele
 ...     # unique_justseen('ABBCcAD', str.lower) --> A B C A D
 ...     return map(next, map(itemgetter(1), groupby(iterable, key)))
 
+>>> def first_true(iterable, default=False, pred=None):
+...     '''Returns the first true value in the iterable.
+...
+...     If no true value is found, returns *default*
+...
+...     If *pred* is not None, returns the first item
+...     for which pred(item) is true.
+...
+...     '''
+...     # first_true([a,b,c], x) --> a or b or c or x
+...     # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
+...     return next(filter(pred, iterable), default)
+
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.
 
@@ -2074,6 +2087,9 @@ True
 
 >>> list(unique_justseen('ABBCcAD', str.lower))
 ['A', 'B', 'C', 'A', 'D']
+
+>>> first_true('ABC0DEF1', '9', str.isdigit)
+'0'
 
 """
 
