@@ -802,7 +802,7 @@ class ExceptionTests(unittest.TestCase):
 
     def test_unicode_errors_no_object(self):
         # See issue #21134.
-        klasses = UnicodeDecodeError, UnicodeDecodeError, UnicodeTranslateError
+        klasses = UnicodeEncodeError, UnicodeDecodeError, UnicodeTranslateError
         for klass in klasses:
             self.assertEqual(str(klass.__new__(klass)), "")
 
