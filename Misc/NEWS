@@ -12,6 +12,9 @@ Core and Builtins
 
 - Issue #20437: Fixed 43 potential bugs when deleting objects references.
 
+- Issue #21134: Fix segfault when str is called on an uninitialized
+  UnicodeEncodeError, UnicodeDecodeError, or UnicodeTranslateError object.
+
 - Issue #20494: Ensure that free()d memory arenas are really released on POSIX
   systems supporting anonymous memory mappings.  Patch by Charles-François
   Natali.
