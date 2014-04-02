@@ -773,7 +773,7 @@ are always available.  They are listed here in alphabetical order.
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable, *[, default, key])
+.. function:: max(iterable, *[, key, default])
               max(arg1, arg2, *args[, key])
 
    Return the largest item in an iterable or the largest of two or more
@@ -807,7 +807,7 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *[, default, key])
+.. function:: min(iterable, *[, key, default])
               min(arg1, arg2, *args[, key])
 
    Return the smallest item in an iterable or the smallest of two or more
