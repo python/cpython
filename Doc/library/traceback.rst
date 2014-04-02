@@ -72,7 +72,7 @@ The module defines the following functions:
    Return a list of up to *limit* "pre-processed" stack trace entries extracted
    from the traceback object *traceback*.  It is useful for alternate formatting of
    stack traces.  If *limit* is omitted or ``None``, all entries are extracted.  A
-   "pre-processed" stack trace entry is a quadruple (*filename*, *line number*,
+   "pre-processed" stack trace entry is a 4-tuple (*filename*, *line number*,
    *function name*, *text*) representing the information that is usually printed
    for a stack trace.  The *text* is a string with leading and trailing whitespace
    stripped; if the source is not available it is ``None``.
