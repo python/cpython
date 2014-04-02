@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21134: Fix segfault when str is called on an uninitialized
+  UnicodeEncodeError, UnicodeDecodeError, or UnicodeTranslateError object.
+
 - Issue #19537: Fix PyUnicode_DATA() alignment under m68k.  Patch by
   Andreas Schwab.
 
