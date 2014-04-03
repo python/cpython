@@ -1045,7 +1045,7 @@ def escape(s, quote=None):
     return s
 
 
-def valid_boundary(s, _vb_pattern=None):
+def valid_boundary(s):
     import re
     if isinstance(s, bytes):
         _vb_pattern = b"^[ -~]{0,200}[!-~]$"
