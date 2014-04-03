@@ -106,6 +106,19 @@ Children are nested, and we can access specific child nodes by index::
    '2008'
 
 
+.. note::
+
+   Not all elements of the XML input will end up as elements of the
+   parsed tree. Currently, this module skips over any XML comments,
+   processing instructions, and document type declarations in the
+   input. Nevertheless, trees built using this module's API rather
+   than parsing from XML text can have comments and processing
+   instructions in them; they will be included when generating XML
+   output. A document type declaration may be accessed by passing a
+   custom :class:`TreeBuilder` instance to the :class:`XMLParser`
+   constructor.
+
+
 .. _elementtree-pull-parsing:
 
 Pull API for non-blocking parsing
@@ -381,6 +394,10 @@ Functions
    string containing the comment string.  Returns an element instance
    representing a comment.
 
+   Note that :class:`XMLParser` skips over comments in the input
+   instead of creating comment objects for them. An :class:`ElementTree` will
+   only contain comment nodes if they have been inserted into to
+   the tree using one of the :class:`Element` methods.
 
 .. function:: dump(elem)
 
@@ -461,6 +478,11 @@ Functions
    containing the PI target.  *text* is a string containing the PI contents, if
    given.  Returns an element instance, representing a processing instruction.
 
+   Note that :class:`XMLParser` skips over processing instructions
+   in the input instead of creating comment objects for them. An
+   :class:`ElementTree` will only contain processing instruction nodes if
+   they have been inserted into to the tree using one of the
+   :class:`Element` methods.
 
 .. function:: register_namespace(prefix, uri)
 
