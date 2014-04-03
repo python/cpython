@@ -781,7 +781,7 @@ are always available.  They are listed here in alphabetical order.
 
    If one positional argument is provided, it should be an :term:`iterable`.
    The largest item in the iterable is returned.  If two or more positional
-   arguments are provided, the smallest of the positional arguments is
+   arguments are provided, the largest of the positional arguments is
    returned.
 
    There are two optional keyword-only arguments. The *key* argument specifies
