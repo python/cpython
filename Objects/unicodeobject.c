@@ -8595,7 +8595,6 @@ _PyUnicode_TranslateCharmap(PyObject *input,
         /* startpos for collecting untranslatable chars */
         Py_ssize_t collstart;
         Py_ssize_t collend;
-        Py_ssize_t coll;
         Py_UCS4 ch;
 
         ch = PyUnicode_READ(kind, data, i);
