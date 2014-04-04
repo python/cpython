@@ -1280,6 +1280,11 @@ class Misc:
     def __str__(self):
         """Return the window path name of this widget."""
         return self._w
+
+    def __repr__(self):
+        return '<%s.%s object %s>' % (
+            self.__class__.__module__, self.__class__.__qualname__, self._w)
+
     # Pack methods that apply to the master
     _noarg_ = ['_noarg_']
     def pack_propagate(self, flag=_noarg_):

@@ -10,6 +10,11 @@ class MiscTest(unittest.TestCase):
     def setUp(self):
         self.root = ttk.setup_master()
 
+    def test_repr(self):
+        t = tkinter.Toplevel(self.root, name='top')
+        f = tkinter.Frame(t, name='child')
+        self.assertEqual(repr(f), '<tkinter.Frame object .top.child>')
+
     def test_tk_setPalette(self):
         root = self.root
         root.tk_setPalette('black')
