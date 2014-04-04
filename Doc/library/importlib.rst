@@ -1191,3 +1191,38 @@ an :term:`importer`.
    module will be file-based.
 
    .. versionadded:: 3.4
+
+.. class:: LazyLoader(loader)
+
+   A class which postpones the execution of the loader of a module until the
+   module has an attribute accessed.
+
+   This class **only** works with loaders that define
+   :meth:`importlib.abc.Loader.exec_module` as control over what module type
+   is used for the module is required. For the same reasons, the loader
+   **cannot** define :meth:`importlib.abc.Loader.create_module`. Finally,
+   modules which substitute the object placed into :attr:`sys.modules` will
+   not work as there is no way to properly replace the module references
+   throughout the interpreter safely; :exc:`ValueError` is raised if such a
+   substitution is detected.
+
+   .. note::
+      For projects where startup time is critical, this class allows for
+      potentially minimizing the cost of loading a module if it is never used.
+      For projects where startup time is not essential then use of this class is
+      **heavily** discouraged due to error messages created during loading being
+      postponed and thus occurring out of context.
+
+   .. versionadded:: 3.5
+
+   .. classmethod:: factory(loader)
+
+      A static method which returns a callable that creates a lazy loader. This
+      is meant to be used in situations where the loader is passed by class
+      instead of by instance.
+      ::
+
+        suffixes = importlib.machinery.SOURCE_SUFFIXES
+        loader = importlib.machinery.SourceFileLoader
+        lazy_loader = importlib.util.LazyLoader.factory(loader)
+        finder = importlib.machinery.FileFinder(path, [(lazy_loader, suffixes)])
