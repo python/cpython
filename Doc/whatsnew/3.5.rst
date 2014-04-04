@@ -134,6 +134,11 @@ New Modules
 Improved Modules
 ================
 
+* Different constants of :mod:`signal` module are now enumeration values using
+  the :mod:`enum` module. This allows meaningful names to be printed during
+  debugging, instead of integer “magic numbers”. (contribute by Giampaolo
+  Rodola' in :issue:`21076`)
+
 * :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`
   (contributed by Claudiu Popa in :issue:`20627`).
 
