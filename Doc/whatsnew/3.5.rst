@@ -149,6 +149,10 @@ Improved Modules
   subclassing of :class:`~inspect.Signature` easier (contributed
   by Yury Selivanov and Eric Snow in :issue:`17373`).
 
+* :class:`importlib.util.LazyLoader` allows for the lazy loading of modules in
+  applications where startup time is paramount (contributed by Brett Cannon in
+  :issue:`17621`).
+
 
 Optimizations
 =============
