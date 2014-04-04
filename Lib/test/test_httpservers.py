@@ -335,6 +335,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             response = self.request(self.tempdir_name + '/')
             self.check_status_and_reason(response, 404)
             os.chmod(self.tempdir, 0755)
+        f.close()    
 
     def test_head(self):
         response = self.request(
