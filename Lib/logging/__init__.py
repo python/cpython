@@ -711,16 +711,17 @@ def _removeHandlerRef(wr):
     Remove a handler reference from the internal cleanup list.
     """
     # This function can be called during module teardown, when globals are
-    # set to None. If _acquireLock is None, assume this is the case and do
-    # nothing.
-    if (_acquireLock is not None and _handlerList is not None and
-        _releaseLock is not None):
-        _acquireLock()
+    # set to None. It can also be called from another thread. So we need to
+    # pre-emptively grab the necessary globals and check if they're None,
+    # to prevent race conditions and failures during interpreter shutdown.
+    acquire, release, handlers = _acquireLock, _releaseLock, _handlerList
+    if acquire and release and handlers:
+        acquire()
         try:
-            if wr in _handlerList:
-                _handlerList.remove(wr)
+            if wr in handlers:
+                handlers.remove(wr)
         finally:
-            _releaseLock()
+            release()
 
 def _addHandlerRef(handler):
     """

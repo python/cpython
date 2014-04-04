@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21149: Improved thread-safety in logging cleanup during interpreter
+  shutdown. Thanks to Devin Jeanpierre for the patch.
+
 - Issue #21058: Fix a leak of file descriptor in
   :func:`tempfile.NamedTemporaryFile`, close the file descriptor if
   :func:`io.open` fails
