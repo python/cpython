@@ -7,7 +7,7 @@
 @USE_THREAD_MODULE@_thread _threadmodule.c
 
 # The signal module
-@USE_SIGNAL_MODULE@signal signalmodule.c
+@USE_SIGNAL_MODULE@_signal signalmodule.c
 
 # The rest of the modules previously listed in this file are built
 # by the setup.py script in Python 2.1 and later.
