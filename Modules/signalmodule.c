@@ -956,7 +956,7 @@ the first is the signal number, the second is the interrupted stack frame.");
 
 static struct PyModuleDef signalmodule = {
     PyModuleDef_HEAD_INIT,
-    "signal",
+    "_signal",
     module_doc,
     -1,
     signal_methods,
@@ -967,7 +967,7 @@ static struct PyModuleDef signalmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_signal(void)
+PyInit__signal(void)
 {
     PyObject *m, *d, *x;
     int i;
@@ -1380,7 +1380,7 @@ PyErr_SetInterrupt(void)
 void
 PyOS_InitInterrupts(void)
 {
-    PyObject *m = PyImport_ImportModule("signal");
+    PyObject *m = PyImport_ImportModule("_signal");
     if (m) {
         Py_DECREF(m);
     }
