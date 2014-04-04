@@ -1201,9 +1201,9 @@ Files and Directories
    .. versionadded:: 3.2
       The *exist_ok* parameter.
 
-   .. versionchanged:: 3.2.5
+   .. versionchanged:: 3.2.6
 
-      Before Python 3.2.5, if *exist_ok* was ``True`` and the directory existed,
+      Before Python 3.2.6, if *exist_ok* was ``True`` and the directory existed,
       :func:`makedirs` would still raise an error if *mode* did not match the
       mode of the existing directory. Since this behavior was impossible to
       implement safely, it was removed in Python 3.2.6. See :issue:`21082`.
