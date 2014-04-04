@@ -144,6 +144,12 @@ IDLE
 - Issue #17654: Ensure IDLE menus are customized properly on OS X for
   non-framework builds and for all variants of Tk.
 
+C API
+-----
+- Issue #20942: PyImport_ImportFrozenModuleObject() no longer sets __file__ to
+  match what importlib does; this affects _frozen_importlib as well as any
+  module loaded using imp.init_frozen().
+
 Documentation
 -------------
 
