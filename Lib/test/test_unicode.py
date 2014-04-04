@@ -251,6 +251,7 @@ class UnicodeTest(string_tests.CommonTest,
                              {ord('a'): None, ord('b'): ''})
         self.checkequalnofix('xyyx', 'xzx', 'translate',
                              {ord('z'): 'yy'})
+
         # this needs maketrans()
         self.checkequalnofix('abababc', 'abababc', 'translate',
                              {'b': '<i>'})
@@ -259,6 +260,25 @@ class UnicodeTest(string_tests.CommonTest,
         # test alternative way of calling maketrans()
         tbl = self.type2test.maketrans('abc', 'xyz', 'd')
         self.checkequalnofix('xyzzy', 'abdcdcbdddd', 'translate', tbl)
+
+        # various tests switching from ASCII to latin1 or the opposite;
+        # same length, remove a letter, or replace with a longer string.
+        self.assertEqual("[a]".translate(str.maketrans('a', 'X')),
+                         "[X]")
+        self.assertEqual("[a]".translate(str.maketrans({'a': 'X'})),
+                         "[X]")
+        self.assertEqual("[a]".translate(str.maketrans({'a': None})),
+                         "[]")
+        self.assertEqual("[a]".translate(str.maketrans({'a': 'XXX'})),
+                         "[XXX]")
+        self.assertEqual("[a]".translate(str.maketrans({'a': '\xe9'})),
+                         "[\xe9]")
+        self.assertEqual("[a]".translate(str.maketrans({'a': '<\xe9>'})),
+                         "[<\xe9>]")
+        self.assertEqual("[\xe9]".translate(str.maketrans({'\xe9': 'a'})),
+                         "[a]")
+        self.assertEqual("[\xe9]".translate(str.maketrans({'\xe9': None})),
+                         "[]")
 
         self.assertRaises(TypeError, self.type2test.maketrans)
         self.assertRaises(ValueError, self.type2test.maketrans, 'abc', 'defg')
