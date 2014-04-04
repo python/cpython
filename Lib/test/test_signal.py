@@ -1,6 +1,7 @@
 import unittest
 from test import support
 from contextlib import closing
+import enum
 import gc
 import pickle
 import select
@@ -37,6 +38,22 @@ def ignoring_eintr(__func, *args, **kwargs):
         if e.errno != errno.EINTR:
             raise
         return None
+
+
+class GenericTests(unittest.TestCase):
+
+    def test_enums(self):
+        for name in dir(signal):
+            sig = getattr(signal, name)
+            if name in {'SIG_DFL', 'SIG_IGN'}:
+                self.assertIsInstance(sig, signal.Handlers)
+            elif name in {'SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'}:
+                self.assertIsInstance(sig, signal.Sigmasks)
+            elif name.startswith('SIG') and not name.startswith('SIG_'):
+                self.assertIsInstance(sig, signal.Signals)
+            elif name.startswith('CTRL_'):
+                self.assertIsInstance(sig, signal.Signals)
+                self.assertEqual(sys.platform, "win32")
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
@@ -195,6 +212,7 @@ class PosixTests(unittest.TestCase):
 
     def test_getsignal(self):
         hup = signal.signal(signal.SIGHUP, self.trivial_signal_handler)
+        self.assertIsInstance(hup, signal.Handlers)
         self.assertEqual(signal.getsignal(signal.SIGHUP),
                          self.trivial_signal_handler)
         signal.signal(signal.SIGHUP, hup)
@@ -271,7 +289,7 @@ class WakeupSignalTests(unittest.TestCase):
 
         os.close(read)
         os.close(write)
-        """.format(signals, ordered, test_body)
+        """.format(tuple(map(int, signals)), ordered, test_body)
 
         assert_python_ok('-c', code)
 
@@ -604,6 +622,8 @@ class PendingSignalsTests(unittest.TestCase):
             signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
             os.kill(os.getpid(), signum)
             pending = signal.sigpending()
+            for sig in pending:
+                assert isinstance(sig, signal.Signals), repr(pending)
             if pending != {signum}:
                 raise Exception('%s != {%s}' % (pending, signum))
             try:
@@ -660,6 +680,7 @@ class PendingSignalsTests(unittest.TestCase):
         code = '''if 1:
         import signal
         import sys
+        from signal import Signals
 
         def handler(signum, frame):
             1/0
@@ -702,6 +723,7 @@ class PendingSignalsTests(unittest.TestCase):
         def test(signum):
             signal.alarm(1)
             received = signal.sigwait([signum])
+            assert isinstance(received, signal.Signals), received
             if received != signum:
                 raise Exception('received %s, not %s' % (received, signum))
         ''')
@@ -842,8 +864,14 @@ class PendingSignalsTests(unittest.TestCase):
         def kill(signum):
             os.kill(os.getpid(), signum)
 
+        def check_mask(mask):
+            for sig in mask:
+                assert isinstance(sig, signal.Signals), repr(sig)
+
         def read_sigmask():
-            return signal.pthread_sigmask(signal.SIG_BLOCK, [])
+            sigmask = signal.pthread_sigmask(signal.SIG_BLOCK, [])
+            check_mask(sigmask)
+            return sigmask
 
         signum = signal.SIGUSR1
 
@@ -852,6 +880,7 @@ class PendingSignalsTests(unittest.TestCase):
 
         # Unblock SIGUSR1 (and copy the old mask) to test our signal handler
         old_mask = signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
+        check_mask(old_mask)
         try:
             kill(signum)
         except ZeroDivisionError:
@@ -861,11 +890,13 @@ class PendingSignalsTests(unittest.TestCase):
 
         # Block and then raise SIGUSR1. The signal is blocked: the signal
         # handler is not called, and the signal is now pending
-        signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
+        mask = signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
+        check_mask(mask)
         kill(signum)
 
         # Check the new mask
         blocked = read_sigmask()
+        check_mask(blocked)
         if signum not in blocked:
             raise Exception("%s not in %s" % (signum, blocked))
         if old_mask ^ blocked != {signum}:
@@ -928,7 +959,7 @@ class PendingSignalsTests(unittest.TestCase):
 
 def test_main():
     try:
-        support.run_unittest(PosixTests, InterProcessSignalTests,
+        support.run_unittest(GenericTests, PosixTests, InterProcessSignalTests,
                              WakeupFDTests, WakeupSignalTests,
                              SiginterruptTest, ItimerTest, WindowsSignalTests,
                              PendingSignalsTests)

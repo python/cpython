@@ -65,6 +65,16 @@ Besides, only the main thread is allowed to set a new signal handler.
 Module contents
 ---------------
 
+.. versionchanged:: 3.5
+   signal (SIG*), handler (:const:`SIG_DFL`, :const:`SIG_IGN`) and sigmask
+   (:const:`SIG_BLOCK`, :const:`SIG_UNBLOCK`, :const:`SIG_SETMASK`)
+   related constants listed below were turned into
+   :class:`enums <enum.IntEnum>`.
+   :func:`getsignal`, :func:`pthread_sigmask`, :func:`sigpending` and
+   :func:`sigwait` functions return human-readable
+   :class:`enums <enum.IntEnum>`.
+
+
 The variables defined in the :mod:`signal` module are:
 
 
