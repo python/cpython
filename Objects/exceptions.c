@@ -2124,7 +2124,7 @@ _PyUnicodeTranslateError_Create(
     PyObject *object,
     Py_ssize_t start, Py_ssize_t end, const char *reason)
 {
-    return PyObject_CallFunction(PyExc_UnicodeTranslateError, "Ons",
+    return PyObject_CallFunction(PyExc_UnicodeTranslateError, "Onns",
                                  object, start, end, reason);
 }
 
