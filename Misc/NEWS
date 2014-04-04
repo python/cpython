@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17621: Introduce importlib.util.LazyLoader.
+
 - Issue #21076: signal module constants were turned into enums.
   Patch by Giampaolo Rodola'.
 
