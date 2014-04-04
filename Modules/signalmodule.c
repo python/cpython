@@ -967,7 +967,7 @@ static struct PyModuleDef signalmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_signal(void)
+PyInit__signal(void)
 {
     PyObject *m, *d, *x;
     int i;
@@ -1380,7 +1380,7 @@ PyErr_SetInterrupt(void)
 void
 PyOS_InitInterrupts(void)
 {
-    PyObject *m = PyImport_ImportModule("signal");
+    PyObject *m = PyImport_ImportModule("_signal");
     if (m) {
         Py_DECREF(m);
     }
