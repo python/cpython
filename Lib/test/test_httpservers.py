@@ -324,18 +324,16 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, 404)
         response = self.request('/' + 'ThisDoesNotExist' + '/')
         self.check_status_and_reason(response, 404)
-        f = open(os.path.join(self.tempdir_name, 'index.html'), 'w')
-        response = self.request('/' + self.tempdir_name + '/')
-        self.check_status_and_reason(response, 200)
-
-        # chmod() doesn't work as expected on Windows, and filesystem
-        # permissions are ignored by root on Unix.
-        if os.name == 'posix' and os.geteuid() != 0:
-            os.chmod(self.tempdir, 0)
-            response = self.request(self.tempdir_name + '/')
-            self.check_status_and_reason(response, 404)
-            os.chmod(self.tempdir, 0755)
-        f.close()    
+        with open(os.path.join(self.tempdir_name, 'index.html'), 'w') as fp:
+            response = self.request('/' + self.tempdir_name + '/')
+            self.check_status_and_reason(response, 200)
+            # chmod() doesn't work as expected on Windows, and filesystem
+            # permissions are ignored by root on Unix.
+            if os.name == 'posix' and os.geteuid() != 0:
+                os.chmod(self.tempdir, 0)
+                response = self.request(self.tempdir_name + '/')
+                self.check_status_and_reason(response, 404)
+                os.chmod(self.tempdir, 0755)
 
     def test_head(self):
         response = self.request(
