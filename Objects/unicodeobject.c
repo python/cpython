@@ -8495,76 +8495,54 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
         return -1;
     }
 }
-/* ensure that *outobj is at least requiredsize characters long,
-   if not reallocate and adjust various state variables.
-   Return 0 on success, -1 on error */
+
+/* lookup the character, write the result into the writer.
+   Return 1 if the result was written into the writer, return 0 if the mapping
+   was undefined, raise an exception return -1 on error. */
 static int
-charmaptranslate_makespace(Py_UCS4 **outobj, Py_ssize_t *psize,
-                               Py_ssize_t requiredsize)
+charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
+                        _PyUnicodeWriter *writer)
 {
-    Py_ssize_t oldsize = *psize;
-    Py_UCS4 *new_outobj;
-    if (requiredsize > oldsize) {
-        /* exponentially overallocate to minimize reallocations */
-        if (requiredsize < 2 * oldsize)
-            requiredsize = 2 * oldsize;
-        new_outobj = PyMem_Realloc(*outobj, requiredsize * sizeof(Py_UCS4));
-        if (new_outobj == 0)
-            return -1;
-        *outobj = new_outobj;
-        *psize = requiredsize;
-    }
-    return 0;
-}
-/* lookup the character, put the result in the output string and adjust
-   various state variables. Return a new reference to the object that
-   was put in the output buffer in *result, or Py_None, if the mapping was
-   undefined (in which case no character was written).
-   The called must decref result.
-   Return 0 on success, -1 on error. */
-static int
-charmaptranslate_output(PyObject *input, Py_ssize_t ipos,
-                        PyObject *mapping, Py_UCS4 **output,
-                        Py_ssize_t *osize, Py_ssize_t *opos,
-                        PyObject **res)
-{
-    Py_UCS4 curinp = PyUnicode_READ_CHAR(input, ipos);
-    if (charmaptranslate_lookup(curinp, mapping, res))
+    PyObject *item;
+
+    if (charmaptranslate_lookup(ch, mapping, &item))
         return -1;
-    if (*res==NULL) {
+
+    if (item == NULL) {
         /* not found => default to 1:1 mapping */
-        (*output)[(*opos)++] = curinp;
-    }
-    else if (*res==Py_None)
-        ;
-    else if (PyLong_Check(*res)) {
-        /* no overflow check, because we know that the space is enough */
-        (*output)[(*opos)++] = (Py_UCS4)PyLong_AS_LONG(*res);
-    }
-    else if (PyUnicode_Check(*res)) {
-        Py_ssize_t repsize;
-        if (PyUnicode_READY(*res) == -1)
+        if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0) {
             return -1;
-        repsize = PyUnicode_GET_LENGTH(*res);
-        if (repsize==1) {
-            /* no overflow check, because we know that the space is enough */
-            (*output)[(*opos)++] = PyUnicode_READ_CHAR(*res, 0);
         }
-        else if (repsize!=0) {
-            /* more than one character */
-            Py_ssize_t requiredsize = *opos +
-                (PyUnicode_GET_LENGTH(input) - ipos) +
-                repsize - 1;
-            Py_ssize_t i;
-            if (charmaptranslate_makespace(output, osize, requiredsize))
-                return -1;
-            for(i = 0; i < repsize; i++)
-                (*output)[(*opos)++] = PyUnicode_READ_CHAR(*res, i);
-        }
+        return 1;
     }
-    else
+
+    if (item == Py_None) {
+        Py_DECREF(item);
+        return 0;
+    }
+
+    if (PyLong_Check(item)) {
+        Py_UCS4 ch = (Py_UCS4)PyLong_AS_LONG(item);
+        if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0) {
+            Py_DECREF(item);
+            return -1;
+        }
+        Py_DECREF(item);
+        return 1;
+    }
+
+    if (!PyUnicode_Check(item)) {
+        Py_DECREF(item);
         return -1;
-    return 0;
+    }
+
+    if (_PyUnicodeWriter_WriteStr(writer, item) < 0) {
+        Py_DECREF(item);
+        return -1;
+    }
+
+    Py_DECREF(item);
+    return 1;
 }
 
 PyObject *
@@ -8573,22 +8551,16 @@ _PyUnicode_TranslateCharmap(PyObject *input,
                             const char *errors)
 {
     /* input object */
-    char *idata;
+    char *data;
     Py_ssize_t size, i;
     int kind;
     /* output buffer */
-    Py_UCS4 *output = NULL;
-    Py_ssize_t osize;
-    PyObject *res;
-    /* current output position */
-    Py_ssize_t opos;
+    _PyUnicodeWriter writer;
+    /* error handler */
     char *reason = "character maps to <undefined>";
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    /* the following variable is used for caching string comparisons
-     * -1=not initialized, 0=unknown, 1=strict, 2=replace,
-     * 3=ignore, 4=xmlcharrefreplace */
-    int known_errorHandler = -1;
+    int ignore;
 
     if (mapping == NULL) {
         PyErr_BadArgument();
@@ -8597,10 +8569,9 @@ _PyUnicode_TranslateCharmap(PyObject *input,
 
     if (PyUnicode_READY(input) == -1)
         return NULL;
-    idata = (char*)PyUnicode_DATA(input);
+    data = (char*)PyUnicode_DATA(input);
     kind = PyUnicode_KIND(input);
     size = PyUnicode_GET_LENGTH(input);
-    i = 0;
 
     if (size == 0) {
         Py_INCREF(input);
@@ -8609,121 +8580,74 @@ _PyUnicode_TranslateCharmap(PyObject *input,
 
     /* allocate enough for a simple 1:1 translation without
        replacements, if we need more, we'll resize */
-    osize = size;
-    output = PyMem_Malloc(osize * sizeof(Py_UCS4));
-    opos = 0;
-    if (output == NULL) {
-        PyErr_NoMemory();
+    _PyUnicodeWriter_Init(&writer);
+    if (_PyUnicodeWriter_Prepare(&writer, size, 127) == -1)
         goto onError;
-    }
 
+    ignore = (errors != NULL && strcmp(errors, "ignore") == 0);
+
+    i = 0;
     while (i<size) {
         /* try to encode it */
-        PyObject *x = NULL;
-        if (charmaptranslate_output(input, i, mapping,
-                                    &output, &osize, &opos, &x)) {
-            Py_XDECREF(x);
-            goto onError;
-        }
-        Py_XDECREF(x);
-        if (x!=Py_None) /* it worked => adjust input pointer */
-            ++i;
-        else { /* untranslatable character */
-            PyObject *repunicode = NULL; /* initialize to prevent gcc warning */
-            Py_ssize_t repsize;
-            Py_ssize_t newpos;
-            Py_ssize_t uni2;
-            /* startpos for collecting untranslatable chars */
-            Py_ssize_t collstart = i;
-            Py_ssize_t collend = i+1;
-            Py_ssize_t coll;
+        int translate;
+        PyObject *repunicode = NULL; /* initialize to prevent gcc warning */
+        Py_ssize_t newpos;
+        /* startpos for collecting untranslatable chars */
+        Py_ssize_t collstart;
+        Py_ssize_t collend;
+        Py_ssize_t coll;
+        Py_UCS4 ch;
 
-            /* find all untranslatable characters */
-            while (collend < size) {
-                if (charmaptranslate_lookup(PyUnicode_READ(kind,idata, collend), mapping, &x))
-                    goto onError;
-                Py_XDECREF(x);
-                if (x!=Py_None)
-                    break;
-                ++collend;
-            }
-            /* cache callback name lookup
-             * (if not done yet, i.e. it's the first error) */
-            if (known_errorHandler==-1) {
-                if ((errors==NULL) || (!strcmp(errors, "strict")))
-                    known_errorHandler = 1;
-                else if (!strcmp(errors, "replace"))
-                    known_errorHandler = 2;
-                else if (!strcmp(errors, "ignore"))
-                    known_errorHandler = 3;
-                else if (!strcmp(errors, "xmlcharrefreplace"))
-                    known_errorHandler = 4;
-                else
-                    known_errorHandler = 0;
-            }
-            switch (known_errorHandler) {
-            case 1: /* strict */
-                make_translate_exception(&exc,
-                                         input, collstart, collend, reason);
-                if (exc != NULL)
-                    PyCodec_StrictErrors(exc);
+        ch = PyUnicode_READ(kind, data, i);
+        translate = charmaptranslate_output(ch, mapping, &writer);
+        if (translate < 0)
+            goto onError;
+
+        if (translate != 0) {
+            /* it worked => adjust input pointer */
+            ++i;
+            continue;
+        }
+
+        /* untranslatable character */
+        collstart = i;
+        collend = i+1;
+
+        /* find all untranslatable characters */
+        while (collend < size) {
+            PyObject *x;
+            ch = PyUnicode_READ(kind, data, collend);
+            if (charmaptranslate_lookup(ch, mapping, &x))
                 goto onError;
-            case 2: /* replace */
-                /* No need to check for space, this is a 1:1 replacement */
-                for (coll = collstart; coll<collend; coll++)
-                    output[opos++] = '?';
-                /* fall through */
-            case 3: /* ignore */
-                i = collend;
+            Py_XDECREF(x);
+            if (x != Py_None)
                 break;
-            case 4: /* xmlcharrefreplace */
-                /* generate replacement (temporarily (mis)uses i) */
-                for (i = collstart; i < collend; ++i) {
-                    char buffer[2+29+1+1];
-                    char *cp;
-                    sprintf(buffer, "&#%d;", PyUnicode_READ(kind, idata, i));
-                    if (charmaptranslate_makespace(&output, &osize,
-                                                   opos+strlen(buffer)+(size-collend)))
-                        goto onError;
-                    for (cp = buffer; *cp; ++cp)
-                        output[opos++] = *cp;
-                }
-                i = collend;
-                break;
-            default:
-                repunicode = unicode_translate_call_errorhandler(errors, &errorHandler,
-                                                                 reason, input, &exc,
-                                                                 collstart, collend, &newpos);
-                if (repunicode == NULL)
-                    goto onError;
-                if (PyUnicode_READY(repunicode) == -1) {
-                    Py_DECREF(repunicode);
-                    goto onError;
-                }
-                /* generate replacement  */
-                repsize = PyUnicode_GET_LENGTH(repunicode);
-                if (charmaptranslate_makespace(&output, &osize,
-                                               opos+repsize+(size-collend))) {
-                    Py_DECREF(repunicode);
-                    goto onError;
-                }
-                for (uni2 = 0; repsize-->0; ++uni2)
-                    output[opos++] = PyUnicode_READ_CHAR(repunicode, uni2);
-                i = newpos;
+            ++collend;
+        }
+
+        if (ignore) {
+            i = collend;
+        }
+        else {
+            repunicode = unicode_translate_call_errorhandler(errors, &errorHandler,
+                                                             reason, input, &exc,
+                                                             collstart, collend, &newpos);
+            if (repunicode == NULL)
+                goto onError;
+            if (_PyUnicodeWriter_WriteStr(&writer, repunicode) < 0) {
                 Py_DECREF(repunicode);
+                goto onError;
             }
+            Py_DECREF(repunicode);
+            i = newpos;
         }
     }
-    res = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, output, opos);
-    if (!res)
-        goto onError;
-    PyMem_Free(output);
     Py_XDECREF(exc);
     Py_XDECREF(errorHandler);
-    return res;
+    return _PyUnicodeWriter_Finish(&writer);
 
   onError:
-    PyMem_Free(output);
+    _PyUnicodeWriter_Dealloc(&writer);
     Py_XDECREF(exc);
     Py_XDECREF(errorHandler);
     return NULL;
