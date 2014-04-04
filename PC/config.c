@@ -19,7 +19,7 @@ extern PyObject* PyInit_math(void);
 extern PyObject* PyInit__md5(void);
 extern PyObject* PyInit_nt(void);
 extern PyObject* PyInit__operator(void);
-extern PyObject* PyInit_signal(void);
+extern PyObject* PyInit__signal(void);
 extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha256(void);
 extern PyObject* PyInit__sha512(void);
