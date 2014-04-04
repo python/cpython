@@ -837,12 +837,10 @@ error:
     return m;
 }
 
-PyObject*
-PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
-                              PyObject *cpathname)
+static PyObject *
+module_dict_for_exec(PyObject *name)
 {
-    PyObject *modules = PyImport_GetModuleDict();
-    PyObject *m, *d, *v;
+    PyObject *m, *d = NULL;
 
     m = PyImport_AddModuleObject(name);
     if (m == NULL)
@@ -852,9 +850,51 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     d = PyModule_GetDict(m);
     if (PyDict_GetItemString(d, "__builtins__") == NULL) {
         if (PyDict_SetItemString(d, "__builtins__",
-                                 PyEval_GetBuiltins()) != 0)
-            goto error;
+                                 PyEval_GetBuiltins()) != 0) {
+            remove_module(name);
+            return NULL;
+        }
     }
+
+    return d;
+}
+
+static PyObject *
+exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object)
+{
+    PyObject *modules = PyImport_GetModuleDict();
+    PyObject *v, *m;
+
+    v = PyEval_EvalCode(code_object, module_dict, module_dict);
+    if (v == NULL) {
+        remove_module(name);
+        return NULL;
+    }
+    Py_DECREF(v);
+
+    if ((m = PyDict_GetItem(modules, name)) == NULL) {
+        PyErr_Format(PyExc_ImportError,
+                     "Loaded module %R not found in sys.modules",
+                     name);
+        return NULL;
+    }
+
+    Py_INCREF(m);
+
+    return m;
+}
+
+PyObject*
+PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
+                              PyObject *cpathname)
+{
+    PyObject *d, *v;
+
+    d = module_dict_for_exec(name);
+    if (d == NULL) {
+        return NULL;
+    }
+
     if (pathname != NULL) {
         v = pathname;
     }
@@ -874,25 +914,7 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     if (PyDict_SetItemString(d, "__cached__", v) != 0)
         PyErr_Clear(); /* Not important enough to report */
 
-    v = PyEval_EvalCode(co, d, d);
-    if (v == NULL)
-        goto error;
-    Py_DECREF(v);
-
-    if ((m = PyDict_GetItem(modules, name)) == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "Loaded module %R not found in sys.modules",
-                     name);
-        return NULL;
-    }
-
-    Py_INCREF(m);
-
-    return m;
-
-  error:
-    remove_module(name);
-    return NULL;
+    return exec_code_in_module(name, d, co);
 }
 
 
@@ -1206,7 +1228,7 @@ int
 PyImport_ImportFrozenModuleObject(PyObject *name)
 {
     const struct _frozen *p;
-    PyObject *co, *m, *path;
+    PyObject *co, *m, *d;
     int ispackage;
     int size;
 
@@ -1235,7 +1257,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     }
     if (ispackage) {
         /* Set __path__ to the empty list */
-        PyObject *d, *l;
+        PyObject *l;
         int err;
         m = PyImport_AddModuleObject(name);
         if (m == NULL)
@@ -1250,11 +1272,11 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         if (err != 0)
             goto err_return;
     }
-    path = PyUnicode_FromString("<frozen>");
-    if (path == NULL)
+    d = module_dict_for_exec(name);
+    if (d == NULL) {
         goto err_return;
-    m = PyImport_ExecCodeModuleObject(name, co, path, NULL);
-    Py_DECREF(path);
+    }
+    m = exec_code_in_module(name, d, co);
     if (m == NULL)
         goto err_return;
     Py_DECREF(co);
