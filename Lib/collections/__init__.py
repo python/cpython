@@ -20,6 +20,23 @@ from reprlib import recursive_repr as _recursive_repr
 ### OrderedDict
 ################################################################################
 
+class _OrderedDictKeysView(KeysView):
+
+    def __reversed__(self):
+        yield from reversed(self._mapping)
+
+class _OrderedDictItemsView(ItemsView):
+
+    def __reversed__(self):
+        for key in reversed(self._mapping):
+            yield (key, self._mapping[key])
+
+class _OrderedDictValuesView(ValuesView):
+
+    def __reversed__(self):
+        for key in reversed(self._mapping):
+            yield self._mapping[key]
+
 class _Link(object):
     __slots__ = 'prev', 'next', 'key', '__weakref__'
 
@@ -162,9 +179,19 @@ class OrderedDict(dict):
         return size
 
     update = __update = MutableMapping.update
-    keys = MutableMapping.keys
-    values = MutableMapping.values
-    items = MutableMapping.items
+
+    def keys(self):
+        "D.keys() -> a set-like object providing a view on D's keys"
+        return _OrderedDictKeysView(self)
+
+    def items(self):
+        "D.items() -> a set-like object providing a view on D's items"
+        return _OrderedDictItemsView(self)
+
+    def values(self):
+        "D.values() -> an object providing a view on D's values"
+        return _OrderedDictValuesView(self)
+
     __ne__ = MutableMapping.__ne__
 
     __marker = object()

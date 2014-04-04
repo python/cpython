@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19505: The items, keys, and values views of OrderedDict now support
+  reverse iteration using reversed().
+
 - Issue #21149: Improved thread-safety in logging cleanup during interpreter
   shutdown. Thanks to Devin Jeanpierre for the patch.
 
