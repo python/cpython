@@ -2897,7 +2897,7 @@ Invalid doctest option:
 
 def test_main():
     # Check the doctest cases in doctest itself:
-    support.run_doctest(doctest, verbosity=True)
+    ret = support.run_doctest(doctest, verbosity=True)
     # Check the doctest cases defined here:
     from test import test_doctest
     support.run_doctest(test_doctest, verbosity=True)
