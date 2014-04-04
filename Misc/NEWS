@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21076: signal module constants were turned into enums.
+  Patch by Giampaolo Rodola'.
+
 - Issue #20636: Improved the repr of Tkinter widgets.
 
 - Issue #19505: The items, keys, and values views of OrderedDict now support
