@@ -245,6 +245,9 @@ Importing Modules
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.4
+      The ``__file__`` attribute is no longer set on the module.
+
 
 .. c:function:: int PyImport_ImportFrozenModule(const char *name)
 
