@@ -1,4 +1,4 @@
-# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2014 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2014 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -46,6 +46,7 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
+# Note: the attributes below are no longer maintained.
 __version__ = "0.5.1.2"
 __date__    = "07 February 2010"
 
@@ -622,16 +623,17 @@ def _removeHandlerRef(wr):
     Remove a handler reference from the internal cleanup list.
     """
     # This function can be called during module teardown, when globals are
-    # set to None. If _acquireLock is None, assume this is the case and do
-    # nothing.
-    if (_acquireLock is not None and _handlerList is not None and
-        _releaseLock is not None):
-        _acquireLock()
+    # set to None. It can also be called from another thread. So we need to
+    # pre-emptively grab the necessary globals and check if they're None,
+    # to prevent race conditions and failures during interpreter shutdown.
+    acquire, release, handlers = _acquireLock, _releaseLock, _handlerList
+    if acquire and release and handlers:
+        acquire()
         try:
-            if wr in _handlerList:
-                _handlerList.remove(wr)
+            if wr in handlers:
+                handlers.remove(wr)
         finally:
-            _releaseLock()
+            release()
 
 def _addHandlerRef(handler):
     """
