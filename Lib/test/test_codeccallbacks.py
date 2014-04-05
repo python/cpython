@@ -819,7 +819,7 @@ class CodecCallbackTest(unittest.TestCase):
             def __getitem__(self, key):
                 raise ValueError
         #self.assertRaises(ValueError, "\xff".translate, D())
-        self.assertRaises(TypeError, "\xff".translate, {0xff: sys.maxunicode+1})
+        self.assertRaises(ValueError, "\xff".translate, {0xff: sys.maxunicode+1})
         self.assertRaises(TypeError, "\xff".translate, {0xff: ()})
 
     def test_bug828737(self):
