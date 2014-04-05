@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21136: Avoid unnecessary normalization of Fractions resulting from
+  power and other operations.  Patch by Raymond Hettinger.
+
 - Issue #17621: Introduce importlib.util.LazyLoader.
 
 - Issue #21076: signal module constants were turned into enums.
