@@ -280,6 +280,14 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual("[\xe9]".translate(str.maketrans({'\xe9': None})),
                          "[]")
 
+        # invalid Unicode characters
+        invalid_char = 0x10ffff+1
+        for before in "a\xe9\u20ac\U0010ffff":
+            mapping = str.maketrans({before: invalid_char})
+            text = "[%s]" % before
+            self.assertRaises(ValueError, text.translate, mapping)
+
+        # errors
         self.assertRaises(TypeError, self.type2test.maketrans)
         self.assertRaises(ValueError, self.type2test.maketrans, 'abc', 'defg')
         self.assertRaises(TypeError, self.type2test.maketrans, 2, 'def')
