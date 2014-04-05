@@ -8545,6 +8545,116 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
     return 1;
 }
 
+static int
+unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
+                              Py_UCS1 *translate)
+{
+    PyObject *item;
+    int ret = 0;
+
+    item = NULL;
+    if (charmaptranslate_lookup(ch, mapping, &item)) {
+        return -1;
+    }
+
+    if (item == Py_None) {
+        /* deletion: skip fast translate */
+        goto exit;
+    }
+
+    if (item == NULL) {
+        /* not found => default to 1:1 mapping */
+        translate[ch] = ch;
+        return 1;
+    }
+
+    if (PyLong_Check(item)) {
+        long replace = (Py_UCS4)PyLong_AS_LONG(item);
+        if (replace == -1) {
+            Py_DECREF(item);
+            return -1;
+        }
+        if (replace < 0 || 127 < replace) {
+            /* invalid character or character outside ASCII:
+               skip the fast translate */
+            goto exit;
+        }
+        translate[ch] = (Py_UCS1)replace;
+    }
+    else if (PyUnicode_Check(item)) {
+        Py_UCS4 replace;
+
+        if (PyUnicode_READY(item) == -1) {
+            Py_DECREF(item);
+            return -1;
+        }
+        if (PyUnicode_GET_LENGTH(item) != 1)
+            goto exit;
+
+        replace = PyUnicode_READ_CHAR(item, 0);
+        if (replace > 127)
+            goto exit;
+        translate[ch] = (Py_UCS1)replace;
+    }
+    else {
+        /* not a long or unicode */
+        goto exit;
+    }
+    Py_DECREF(item);
+    item = NULL;
+    ret = 1;
+
+exit:
+    Py_XDECREF(item);
+    return ret;
+}
+
+/* Fast path for ascii => ascii translation. Return 1 if the whole string
+   was translated into writer, return 0 if the input string was partially
+   translated into writer, raise an exception and return -1 on error. */
+static int
+unicode_fast_translate(PyObject *input, PyObject *mapping,
+                       _PyUnicodeWriter *writer)
+{
+    Py_UCS1 translate[128], ch, ch2;
+    Py_ssize_t len;
+    Py_UCS1 *in, *end, *out;
+    int res;
+
+    if (PyUnicode_READY(input) == -1)
+        return -1;
+    if (!PyUnicode_IS_ASCII(input))
+        return 0;
+    len = PyUnicode_GET_LENGTH(input);
+
+    memset(translate, 0xff, 128);
+
+    in = PyUnicode_1BYTE_DATA(input);
+    end = in + len;
+
+    assert(PyUnicode_IS_ASCII(writer->buffer));
+    assert(PyUnicode_GET_LENGTH(writer->buffer) == len);
+    out = PyUnicode_1BYTE_DATA(writer->buffer);
+
+    for (; in < end; in++, out++) {
+        ch = *in;
+        ch2 = translate[ch];
+        if (ch2 == 0xff) {
+            res = unicode_fast_translate_lookup(mapping, ch, translate);
+            if (res < 0)
+                return -1;
+            if (res == 0) {
+                writer->pos = in - PyUnicode_1BYTE_DATA(input);
+                return 0;
+            }
+            ch2 = translate[ch];
+        }
+        *out = ch2;
+    }
+    writer->pos = len;
+    return 1;
+}
+
 PyObject *
 _PyUnicode_TranslateCharmap(PyObject *input,
                             PyObject *mapping,
@@ -8561,6 +8671,7 @@ _PyUnicode_TranslateCharmap(PyObject *input,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     int ignore;
+    int res;
 
     if (mapping == NULL) {
         PyErr_BadArgument();
@@ -8584,9 +8695,17 @@ _PyUnicode_TranslateCharmap(PyObject *input,
     if (_PyUnicodeWriter_Prepare(&writer, size, 127) == -1)
         goto onError;
 
+    res = unicode_fast_translate(input, mapping, &writer);
+    if (res < 0) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        return NULL;
+    }
+    if (res == 1)
+        return _PyUnicodeWriter_Finish(&writer);
+
     ignore = (errors != NULL && strcmp(errors, "ignore") == 0);
 
-    i = 0;
+    i = writer.pos;
     while (i<size) {
         /* try to encode it */
         int translate;
