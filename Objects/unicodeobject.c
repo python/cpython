@@ -8561,7 +8561,8 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
 
     if (item == Py_None) {
         /* deletion: skip fast translate */
-        goto exit;
+        translate[ch] = 0xfe;
+        return 1;
     }
 
     if (item == NULL) {
@@ -8614,12 +8615,12 @@ exit:
    translated into writer, raise an exception and return -1 on error. */
 static int
 unicode_fast_translate(PyObject *input, PyObject *mapping,
-                       _PyUnicodeWriter *writer)
+                       _PyUnicodeWriter *writer, int ignore)
 {
-    Py_UCS1 translate[128], ch, ch2;
+    Py_UCS1 ascii_table[128], ch, ch2;
     Py_ssize_t len;
     Py_UCS1 *in, *end, *out;
-    int res;
+    int res = 0;
 
     if (PyUnicode_READY(input) == -1)
         return -1;
@@ -8627,7 +8628,7 @@ unicode_fast_translate(PyObject *input, PyObject *mapping,
         return 0;
     len = PyUnicode_GET_LENGTH(input);
 
-    memset(translate, 0xff, 128);
+    memset(ascii_table, 0xff, 128);
 
     in = PyUnicode_1BYTE_DATA(input);
     end = in + len;
@@ -8636,23 +8637,32 @@ unicode_fast_translate(PyObject *input, PyObject *mapping,
     assert(PyUnicode_GET_LENGTH(writer->buffer) == len);
     out = PyUnicode_1BYTE_DATA(writer->buffer);
 
-    for (; in < end; in++, out++) {
+    for (; in < end; in++) {
         ch = *in;
-        ch2 = translate[ch];
+        ch2 = ascii_table[ch];
         if (ch2 == 0xff) {
-            res = unicode_fast_translate_lookup(mapping, ch, translate);
-            if (res < 0)
+            int translate = unicode_fast_translate_lookup(mapping, ch,
+                                                          ascii_table);
+            if (translate < 0)
                 return -1;
-            if (res == 0) {
-                writer->pos = in - PyUnicode_1BYTE_DATA(input);
-                return 0;
-            }
-            ch2 = translate[ch];
+            if (translate == 0)
+                goto exit;
+            ch2 = ascii_table[ch];
         }
+        if (ch2 == 0xfe) {
+            if (ignore)
+                continue;
+            goto exit;
+        }
+        assert(ch2 < 128);
         *out = ch2;
+        out++;
     }
-    writer->pos = len;
-    return 1;
+    res = 1;
+
+exit:
+    writer->pos = out - PyUnicode_1BYTE_DATA(writer->buffer);
+    return res;
 }
 
 PyObject *
@@ -8695,15 +8705,15 @@ _PyUnicode_TranslateCharmap(PyObject *input,
     if (_PyUnicodeWriter_Prepare(&writer, size, 127) == -1)
         goto onError;
 
-    res = unicode_fast_translate(input, mapping, &writer);
+    ignore = (errors != NULL && strcmp(errors, "ignore") == 0);
+
+    res = unicode_fast_translate(input, mapping, &writer, ignore);
     if (res < 0) {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
     if (res == 1)
         return _PyUnicodeWriter_Finish(&writer);
-
-    ignore = (errors != NULL && strcmp(errors, "ignore") == 0);
 
     i = writer.pos;
     while (i<size) {
