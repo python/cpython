@@ -330,7 +330,6 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(F(-2, 10), round(F(-15, 100), 1))
         self.assertTypedEquals(F(-2, 10), round(F(-25, 100), 1))
 
-
     def testArithmetic(self):
         self.assertEqual(F(1, 2), F(1, 10) + F(2, 5))
         self.assertEqual(F(-3, 10), F(1, 10) - F(2, 5))
@@ -402,6 +401,8 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(2.0 , 4 ** F(1, 2))
         self.assertTypedEquals(0.25, 2.0 ** F(-2, 1))
         self.assertTypedEquals(1.0 + 0j, (1.0 + 0j) ** F(1, 10))
+        self.assertRaises(ZeroDivisionError, operator.pow,
+                          F(0, 1), -2)
 
     def testMixingWithDecimal(self):
         # Decimal refuses mixed arithmetic (but not mixed comparisons)

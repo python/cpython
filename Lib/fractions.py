@@ -70,7 +70,7 @@ class Fraction(numbers.Rational):
     __slots__ = ('_numerator', '_denominator')
 
     # We're immutable, so use __new__ not __init__
-    def __new__(cls, numerator=0, denominator=None):
+    def __new__(cls, numerator=0, denominator=None, _normalize=True):
         """Constructs a Rational.
 
         Takes a string like '3/2' or '1.5', another Rational instance, a
@@ -165,9 +165,12 @@ class Fraction(numbers.Rational):
 
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
-        g = gcd(numerator, denominator)
-        self._numerator = numerator // g
-        self._denominator = denominator // g
+        if _normalize:
+            g = gcd(numerator, denominator)
+            numerator //= g
+            denominator //= g
+        self._numerator = numerator
+        self._denominator = denominator
         return self
 
     @classmethod
@@ -453,10 +456,12 @@ class Fraction(numbers.Rational):
                 power = b.numerator
                 if power >= 0:
                     return Fraction(a._numerator ** power,
-                                    a._denominator ** power)
+                                    a._denominator ** power,
+                                    _normalize=False)
                 else:
                     return Fraction(a._denominator ** -power,
-                                    a._numerator ** -power)
+                                    a._numerator ** -power,
+                                    _normalize=False)
             else:
                 # A fractional power will generally produce an
                 # irrational number.
@@ -480,15 +485,15 @@ class Fraction(numbers.Rational):
 
     def __pos__(a):
         """+a: Coerces a subclass instance to Fraction"""
-        return Fraction(a._numerator, a._denominator)
+        return Fraction(a._numerator, a._denominator, _normalize=False)
 
     def __neg__(a):
         """-a"""
-        return Fraction(-a._numerator, a._denominator)
+        return Fraction(-a._numerator, a._denominator, _normalize=False)
 
     def __abs__(a):
         """abs(a)"""
-        return Fraction(abs(a._numerator), a._denominator)
+        return Fraction(abs(a._numerator), a._denominator, _normalize=False)
 
     def __trunc__(a):
         """trunc(a)"""
