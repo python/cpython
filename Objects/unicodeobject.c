@@ -8473,10 +8473,10 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
     }
     else if (PyLong_Check(x)) {
         long value = PyLong_AS_LONG(x);
-        long max = PyUnicode_GetMax();
-        if (value < 0 || value > max) {
-            PyErr_Format(PyExc_TypeError,
-                         "character mapping must be in range(0x%x)", max+1);
+        if (value < 0 || value > MAX_UNICODE) {
+            PyErr_Format(PyExc_ValueError,
+                         "character mapping must be in range(0x%x)",
+                         MAX_UNICODE+1);
             Py_DECREF(x);
             return -1;
         }
@@ -8522,7 +8522,9 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
     }
 
     if (PyLong_Check(item)) {
-        Py_UCS4 ch = (Py_UCS4)PyLong_AS_LONG(item);
+        long ch = (Py_UCS4)PyLong_AS_LONG(item);
+        /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
+           used it */
         if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0) {
             Py_DECREF(item);
             return -1;
@@ -8570,11 +8572,9 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
 
     if (PyLong_Check(item)) {
         long replace = (Py_UCS4)PyLong_AS_LONG(item);
-        if (replace == -1) {
-            Py_DECREF(item);
-            return -1;
-        }
-        if (replace < 0 || 127 < replace) {
+        /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
+           used it */
+        if (127 < replace) {
             /* invalid character or character outside ASCII:
                skip the fast translate */
             goto exit;
