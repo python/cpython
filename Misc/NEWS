@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21155: asyncio.EventLoop.create_unix_server() now raises a ValueError
+  if path and sock are specified at the same time.
+
 - Issue #21136: Avoid unnecessary normalization of Fractions resulting from
   power and other operations.  Patch by Raymond Hettinger.
 
