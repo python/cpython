@@ -703,6 +703,17 @@ class EventLoopTestsMixin:
         # close server
         server.close()
 
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    def test_create_unix_server_path_socket_error(self):
+        proto = MyProto(loop=self.loop)
+        sock = socket.socket()
+        with sock:
+            f = self.loop.create_unix_server(lambda: proto, '/test', sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'path and sock can not be specified '
+                                        'at the same time'):
+                server = self.loop.run_until_complete(f)
+
     def _create_ssl_context(self, certfile, keyfile=None):
         sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         sslcontext.options |= ssl.OP_NO_SSLv2
