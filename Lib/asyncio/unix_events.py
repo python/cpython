@@ -206,6 +206,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             raise TypeError('ssl argument must be an SSLContext or None')
 
         if path is not None:
+            if sock is not None:
+                raise ValueError(
+                    'path and sock can not be specified at the same time')
+
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
             try:
