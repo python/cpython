@@ -250,6 +250,25 @@ class Task(futures.Future):
                 print(line, file=file, end='')
 
     def cancel(self):
+        """Request that a task to cancel itself.
+
+        This arranges for a CancellationError to be thrown into the
+        wrapped coroutine on the next cycle through the event loop.
+        The coroutine then has a chance to clean up or even deny
+        the request using try/except/finally.
+
+        Contrary to Future.cancel(), this does not guarantee that the
+        task will be cancelled: the exception might be caught and
+        acted upon, delaying cancellation of the task or preventing it
+        completely.  The task may also return a value or raise a
+        different exception.
+
+        Immediately after this method is called, Task.cancelled() will
+        not return True (unless the task was already cancelled).  A
+        task will be marked as cancelled when the wrapped coroutine
+        terminates with a CancelledError exception (even if cancel()
+        was not called).
+        """
         if self.done():
             return False
         if self._fut_waiter is not None:
