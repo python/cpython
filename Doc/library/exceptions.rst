@@ -161,7 +161,7 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: GeneratorExit
 
-   Raise when a :term:`generator`\'s :meth:`close` method is called.  It
+   Raised when a :term:`generator`\'s :meth:`close` method is called.  It
    directly inherits from :exc:`BaseException` instead of :exc:`Exception` since
    it is technically not an error.
 
