@@ -154,6 +154,8 @@ Library
   positional-or-keyword arguments passed as keyword arguments become
   keyword-only.
 
+- Issue #20334: inspect.Signature and inspect.Parameter are now hashable.
+
 IDLE
 ----
 

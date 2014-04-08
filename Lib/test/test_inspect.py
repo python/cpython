@@ -2513,11 +2513,29 @@ class TestSignatureObject(unittest.TestCase):
         def bar(pos, *args, c, b, a=42, **kwargs:int): pass
         self.assertEqual(inspect.signature(foo), inspect.signature(bar))
 
-    def test_signature_unhashable(self):
+    def test_signature_hashable(self):
+        S = inspect.Signature
+        P = inspect.Parameter
+
         def foo(a): pass
-        sig = inspect.signature(foo)
+        foo_sig = inspect.signature(foo)
+
+        manual_sig = S(parameters=[P('a', P.POSITIONAL_OR_KEYWORD)])
+
+        self.assertEqual(hash(foo_sig), hash(manual_sig))
+        self.assertNotEqual(hash(foo_sig),
+                            hash(manual_sig.replace(return_annotation='spam')))
+
+        def bar(a) -> 1: pass
+        self.assertNotEqual(hash(foo_sig), hash(inspect.signature(bar)))
+
+        def foo(a={}): pass
         with self.assertRaisesRegex(TypeError, 'unhashable type'):
-            hash(sig)
+            hash(inspect.signature(foo))
+
+        def foo(a) -> {}: pass
+        with self.assertRaisesRegex(TypeError, 'unhashable type'):
+            hash(inspect.signature(foo))
 
     def test_signature_str(self):
         def foo(a:int=1, *, b, c=None, **kwargs) -> 42:
@@ -2651,6 +2669,15 @@ class TestParameterObject(unittest.TestCase):
         self.assertTrue(repr(p).startswith('<Parameter'))
         self.assertTrue('"a=42"' in repr(p))
 
+    def test_signature_parameter_hashable(self):
+        P = inspect.Parameter
+        foo = P('foo', kind=P.POSITIONAL_ONLY)
+        self.assertEqual(hash(foo), hash(P('foo', kind=P.POSITIONAL_ONLY)))
+        self.assertNotEqual(hash(foo), hash(P('foo', kind=P.POSITIONAL_ONLY,
+                                              default=42)))
+        self.assertNotEqual(hash(foo),
+                            hash(foo.replace(kind=P.VAR_POSITIONAL)))
+
     def test_signature_parameter_equality(self):
         P = inspect.Parameter
         p = P('foo', default=42, kind=inspect.Parameter.KEYWORD_ONLY)
@@ -2660,13 +2687,6 @@ class TestParameterObject(unittest.TestCase):
 
         self.assertEqual(p, P('foo', default=42,
                               kind=inspect.Parameter.KEYWORD_ONLY))
-
-    def test_signature_parameter_unhashable(self):
-        p = inspect.Parameter('foo', default=42,
-                              kind=inspect.Parameter.KEYWORD_ONLY)
-
-        with self.assertRaisesRegex(TypeError, 'unhashable type'):
-            hash(p)
 
     def test_signature_parameter_replace(self):
         p = inspect.Parameter('foo', default=42,

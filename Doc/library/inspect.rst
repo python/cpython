@@ -463,7 +463,7 @@ function.
    modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable.
+      Signature objects are picklable and hashable.
 
    .. attribute:: Signature.empty
 
@@ -530,7 +530,7 @@ function.
    you can use :meth:`Parameter.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable.
+      Parameter objects are picklable and hashable.
 
    .. attribute:: Parameter.empty
 
