@@ -149,6 +149,11 @@ Library
   (Original patches by Hirokazu Yamamoto and Amaury Forgeot d'Arc, with
   suggested wording by David Gutteridge)
 
+- Issue #21117: Fix inspect.signature to better support functools.partial.
+  Due to the specifics of functools.partial implementation,
+  positional-or-keyword arguments passed as keyword arguments become
+  keyword-only.
+
 IDLE
 ----
 
