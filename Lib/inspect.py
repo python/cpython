@@ -1518,7 +1518,8 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     on it.
     """
 
-    new_params = OrderedDict(wrapped_sig.parameters.items())
+    old_params = wrapped_sig.parameters
+    new_params = OrderedDict(old_params.items())
 
     partial_args = partial.args or ()
     partial_keywords = partial.keywords or {}
@@ -1532,32 +1533,57 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
         msg = 'partial object {!r} has incorrect arguments'.format(partial)
         raise ValueError(msg) from ex
 
-    for arg_name, arg_value in ba.arguments.items():
-        param = new_params[arg_name]
-        if arg_name in partial_keywords:
-            # We set a new default value, because the following code
-            # is correct:
-            #
-            #   >>> def foo(a): print(a)
-            #   >>> print(partial(partial(foo, a=10), a=20)())
-            #   20
-            #   >>> print(partial(partial(foo, a=10), a=20)(a=30))
-            #   30
-            #
-            # So, with 'partial' objects, passing a keyword argument is
-            # like setting a new default value for the corresponding
-            # parameter
-            #
-            # We also mark this parameter with '_partial_kwarg'
-            # flag.  Later, in '_bind', the 'default' value of this
-            # parameter will be added to 'kwargs', to simulate
-            # the 'functools.partial' real call.
-            new_params[arg_name] = param.replace(default=arg_value,
-                                                 _partial_kwarg=True)
 
-        elif (param.kind not in (_VAR_KEYWORD, _VAR_POSITIONAL) and
-                        not param._partial_kwarg):
-            new_params.pop(arg_name)
+    transform_to_kwonly = False
+    for param_name, param in old_params.items():
+        try:
+            arg_value = ba.arguments[param_name]
+        except KeyError:
+            pass
+        else:
+            if param.kind is _POSITIONAL_ONLY:
+                # If positional-only parameter is bound by partial,
+                # it effectively disappears from the signature
+                new_params.pop(param_name)
+                continue
+
+            if param.kind is _POSITIONAL_OR_KEYWORD:
+                if param_name in partial_keywords:
+                    # This means that this parameter, and all parameters
+                    # after it should be keyword-only (and var-positional
+                    # should be removed). Here's why. Consider the following
+                    # function:
+                    #     foo(a, b, *args, c):
+                    #         pass
+                    #
+                    # "partial(foo, a='spam')" will have the following
+                    # signature: "(*, a='spam', b, c)". Because attempting
+                    # to call that partial with "(10, 20)" arguments will
+                    # raise a TypeError, saying that "a" argument received
+                    # multiple values.
+                    transform_to_kwonly = True
+                    # Set the new default value
+                    new_params[param_name] = param.replace(default=arg_value)
+                else:
+                    # was passed as a positional argument
+                    new_params.pop(param.name)
+                    continue
+
+            if param.kind is _KEYWORD_ONLY:
+                # Set the new default value
+                new_params[param_name] = param.replace(default=arg_value)
+
+        if transform_to_kwonly:
+            assert param.kind is not _POSITIONAL_ONLY
+
+            if param.kind is _POSITIONAL_OR_KEYWORD:
+                new_param = new_params[param_name].replace(kind=_KEYWORD_ONLY)
+                new_params[param_name] = new_param
+                new_params.move_to_end(param_name)
+            elif param.kind in (_KEYWORD_ONLY, _VAR_KEYWORD):
+                new_params.move_to_end(param_name)
+            elif param.kind is _VAR_POSITIONAL:
+                new_params.pop(param.name)
 
     return wrapped_sig.replace(parameters=new_params.values())
 
@@ -2103,7 +2129,7 @@ class Parameter:
         `Parameter.KEYWORD_ONLY`, `Parameter.VAR_KEYWORD`.
     """
 
-    __slots__ = ('_name', '_kind', '_default', '_annotation', '_partial_kwarg')
+    __slots__ = ('_name', '_kind', '_default', '_annotation')
 
     POSITIONAL_ONLY         = _POSITIONAL_ONLY
     POSITIONAL_OR_KEYWORD   = _POSITIONAL_OR_KEYWORD
@@ -2113,8 +2139,7 @@ class Parameter:
 
     empty = _empty
 
-    def __init__(self, name, kind, *, default=_empty, annotation=_empty,
-                 _partial_kwarg=False):
+    def __init__(self, name, kind, *, default=_empty, annotation=_empty):
 
         if kind not in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD,
                         _VAR_POSITIONAL, _KEYWORD_ONLY, _VAR_KEYWORD):
@@ -2139,17 +2164,13 @@ class Parameter:
 
         self._name = name
 
-        self._partial_kwarg = _partial_kwarg
-
     def __reduce__(self):
         return (type(self),
                 (self._name, self._kind),
-                {'_partial_kwarg': self._partial_kwarg,
-                 '_default': self._default,
+                {'_default': self._default,
                  '_annotation': self._annotation})
 
     def __setstate__(self, state):
-        self._partial_kwarg = state['_partial_kwarg']
         self._default = state['_default']
         self._annotation = state['_annotation']
 
@@ -2169,8 +2190,8 @@ class Parameter:
     def kind(self):
         return self._kind
 
-    def replace(self, *, name=_void, kind=_void, annotation=_void,
-                default=_void, _partial_kwarg=_void):
+    def replace(self, *, name=_void, kind=_void,
+                annotation=_void, default=_void):
         """Creates a customized copy of the Parameter."""
 
         if name is _void:
@@ -2185,11 +2206,7 @@ class Parameter:
         if default is _void:
             default = self._default
 
-        if _partial_kwarg is _void:
-            _partial_kwarg = self._partial_kwarg
-
-        return type(self)(name, kind, default=default, annotation=annotation,
-                          _partial_kwarg=_partial_kwarg)
+        return type(self)(name, kind, default=default, annotation=annotation)
 
     def __str__(self):
         kind = self.kind
@@ -2215,17 +2232,6 @@ class Parameter:
                                            id(self), self)
 
     def __eq__(self, other):
-        # NB: We deliberately do not compare '_partial_kwarg' attributes
-        # here. Imagine we have a following situation:
-        #
-        #    def foo(a, b=1): pass
-        #    def bar(a, b): pass
-        #    bar2 = functools.partial(bar, b=1)
-        #
-        # For the above scenario, signatures for `foo` and `bar2` should
-        # be equal.  '_partial_kwarg' attribute is an internal flag, to
-        # distinguish between keyword parameters with defaults and
-        # keyword parameters which got their defaults from functools.partial
         return (issubclass(other.__class__, Parameter) and
                 self._name == other._name and
                 self._kind == other._kind and
@@ -2265,12 +2271,7 @@ class BoundArguments:
     def args(self):
         args = []
         for param_name, param in self._signature.parameters.items():
-            if (param.kind in (_VAR_KEYWORD, _KEYWORD_ONLY) or
-                                                    param._partial_kwarg):
-                # Keyword arguments mapped by 'functools.partial'
-                # (Parameter._partial_kwarg is True) are mapped
-                # in 'BoundArguments.kwargs', along with VAR_KEYWORD &
-                # KEYWORD_ONLY
+            if param.kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
                 break
 
             try:
@@ -2295,8 +2296,7 @@ class BoundArguments:
         kwargs_started = False
         for param_name, param in self._signature.parameters.items():
             if not kwargs_started:
-                if (param.kind in (_VAR_KEYWORD, _KEYWORD_ONLY) or
-                                                param._partial_kwarg):
+                if param.kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
                     kwargs_started = True
                 else:
                     if param_name not in self.arguments:
@@ -2378,18 +2378,14 @@ class Signature:
                     name = param.name
 
                     if kind < top_kind:
-                        msg = 'wrong parameter order: {} before {}'
+                        msg = 'wrong parameter order: {!r} before {!r}'
                         msg = msg.format(top_kind, kind)
                         raise ValueError(msg)
                     elif kind > top_kind:
                         kind_defaults = False
                         top_kind = kind
 
-                    if (kind in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD) and
-                                                     not param._partial_kwarg):
-                        # If we have a positional-only or positional-or-keyword
-                        # parameter, that does not have its default value set
-                        # by 'functools.partial' or other "partial" signature:
+                    if kind in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD):
                         if param.default is _empty:
                             if kind_defaults:
                                 # No default for this parameter, but the
@@ -2569,15 +2565,6 @@ class Signature:
         parameters = iter(self.parameters.values())
         parameters_ex = ()
         arg_vals = iter(args)
-
-        if partial:
-            # Support for binding arguments to 'functools.partial' objects.
-            # See 'functools.partial' case in 'signature()' implementation
-            # for details.
-            for param_name, param in self.parameters.items():
-                if (param._partial_kwarg and param_name not in kwargs):
-                    # Simulating 'functools.partial' behavior
-                    kwargs[param_name] = param.default
 
         while True:
             # Let's iterate through the positional arguments and corresponding
