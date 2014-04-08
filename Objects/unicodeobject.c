@@ -8551,28 +8551,24 @@ static int
 unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
                               Py_UCS1 *translate)
 {
-    PyObject *item;
+    PyObject *item = NULL;
     int ret = 0;
 
-    item = NULL;
     if (charmaptranslate_lookup(ch, mapping, &item)) {
         return -1;
     }
 
     if (item == Py_None) {
-        /* deletion: skip fast translate */
+        /* deletion */
         translate[ch] = 0xfe;
-        return 1;
     }
-
-    if (item == NULL) {
+    else if (item == NULL) {
         /* not found => default to 1:1 mapping */
         translate[ch] = ch;
         return 1;
     }
-
-    if (PyLong_Check(item)) {
-        long replace = (Py_UCS4)PyLong_AS_LONG(item);
+    else if (PyLong_Check(item)) {
+        Py_UCS4 replace = (Py_UCS4)PyLong_AS_LONG(item);
         /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
            used it */
         if (127 < replace) {
@@ -8598,15 +8594,13 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
         translate[ch] = (Py_UCS1)replace;
     }
     else {
-        /* not a long or unicode */
+        /* not None, NULL, long or unicode */
         goto exit;
     }
-    Py_DECREF(item);
-    item = NULL;
     ret = 1;
 
-exit:
-    Py_XDECREF(item);
+  exit:
+    Py_DECREF(item);
     return ret;
 }
 
