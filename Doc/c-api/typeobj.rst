@@ -1199,7 +1199,8 @@ Sequence Object Structures
 
    This function is used by :c:func:`PySequence_Repeat` and has the same
    signature.  It is also used by the ``*`` operator, after trying numeric
-   multiplication via the :c:member:`~PyTypeObject.tp_as_number.nb_mul` slot.
+   multiplication via the :c:member:`~PyTypeObject.tp_as_number.nb_multiply`
+   slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_item
 
