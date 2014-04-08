@@ -1021,7 +1021,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
        /*
-     Returns the sequence, o, as a list, unless it's already a
+     Return the sequence, o, as a list, unless it's already a
      tuple or list.  Use PySequence_Fast_GET_ITEM to access the
      members of this list, and PySequence_Fast_GET_SIZE to get its length.
 
