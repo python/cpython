@@ -143,7 +143,8 @@ Improved Modules
   (contributed by Claudiu Popa in :issue:`20627`).
 
 * :class:`inspect.Signature` and :class:`inspect.Parameter` are now
-  picklable (contributed by Yury Selivanov in :issue:`20726`).
+  picklable and hashable (contributed by Yury Selivanov in :issue:`20726`
+  and :issue:`20334`).
 
 * New class method :meth:`inspect.Signature.from_callable`, which makes
   subclassing of :class:`~inspect.Signature` easier (contributed

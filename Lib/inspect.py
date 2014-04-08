@@ -2231,6 +2231,16 @@ class Parameter:
         return '<{} at {:#x} "{}">'.format(self.__class__.__name__,
                                            id(self), self)
 
+    def __hash__(self):
+        hash_tuple = (self.name, int(self.kind))
+
+        if self._annotation is not _empty:
+            hash_tuple += (self._annotation,)
+        if self._default is not _empty:
+            hash_tuple += (self._default,)
+
+        return hash(hash_tuple)
+
     def __eq__(self, other):
         return (issubclass(other.__class__, Parameter) and
                 self._name == other._name and
@@ -2523,6 +2533,12 @@ class Signature:
 
         return type(self)(parameters,
                           return_annotation=return_annotation)
+
+    def __hash__(self):
+        hash_tuple = tuple(self.parameters.values())
+        if self._return_annotation is not _empty:
+            hash_tuple += (self._return_annotation,)
+        return hash(hash_tuple)
 
     def __eq__(self, other):
         if (not issubclass(type(other), Signature) or
