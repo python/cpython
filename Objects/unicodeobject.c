@@ -8568,7 +8568,7 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
         return 1;
     }
     else if (PyLong_Check(item)) {
-        Py_UCS4 replace = (Py_UCS4)PyLong_AS_LONG(item);
+        long replace = PyLong_AS_LONG(item);
         /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
            used it */
         if (127 < replace) {
