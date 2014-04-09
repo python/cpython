@@ -6841,16 +6841,21 @@ posix_fdopen(PyObject *self, PyObject *args)
     /* Sanitize mode.  See fileobject.c */
     mode = PyMem_MALLOC(strlen(orgmode)+3);
     if (!mode) {
+        close(fd);
         PyErr_NoMemory();
         return NULL;
     }
     strcpy(mode, orgmode);
     if (_PyFile_SanitizeMode(mode)) {
+        close(fd);
         PyMem_FREE(mode);
         return NULL;
     }
-    if (!_PyVerify_fd(fd))
-        return posix_error();
+    if (!_PyVerify_fd(fd)) {
+        posix_error();
+        close(fd);
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
 #if !defined(MS_WINDOWS) && defined(HAVE_FCNTL_H)
     if (mode[0] == 'a') {
@@ -6871,8 +6876,11 @@ posix_fdopen(PyObject *self, PyObject *args)
 #endif
     Py_END_ALLOW_THREADS
     PyMem_FREE(mode);
-    if (fp == NULL)
-        return posix_error();
+    if (fp == NULL) {
+        posix_error();
+        close(fd);
+        return NULL;
+    }
     /* The dummy filename used here must be kept in sync with the value
        tested against in gzip.GzipFile.__init__() - see issue #13781. */
     f = PyFile_FromFile(fp, "<fdopen>", orgmode, fclose);

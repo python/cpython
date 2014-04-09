@@ -194,6 +194,10 @@ class PosixTester(unittest.TestCase):
         self.fdopen_helper('r')
         self.fdopen_helper('r', 100)
 
+        fd = os.open(test_support.TESTFN, os.O_RDONLY)
+        self.assertRaises(OSError, posix.fdopen, fd, 'w')
+        self.assertRaises(OSError, os.close, fd) # fd should be closed.
+
     @unittest.skipUnless(hasattr(posix, 'O_EXLOCK'),
                          'test needs posix.O_EXLOCK')
     def test_osexlock(self):
