@@ -867,7 +867,7 @@ def buildRecipe(recipe, basedir, archList):
                         ' -arch '.join(archList),
                         shellQuote(SDKPATH)[1:-1],
                         shellQuote(basedir)[1:-1],),
-                "LDFLAGS=-mmacosx-version-min=%s -syslibroot,%s -L%s/usr/local/lib -arch %s"%(
+                "LDFLAGS=-mmacosx-version-min=%s -isysroot %s -L%s/usr/local/lib -arch %s"%(
                     DEPTARGET,
                     shellQuote(SDKPATH)[1:-1],
                     shellQuote(basedir)[1:-1],
