@@ -194,7 +194,7 @@ def library_recipes():
     LT_10_5 = bool(DEPTARGET < '10.5')
 
 #   Disable for now
-    if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 5)):
+    if False:   # if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 5)):
         result.extend([
           dict(
               name="Tcl 8.5.15",
@@ -607,6 +607,10 @@ def checkEnvironment():
         base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
     os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
+    # Ensure ws have access to hg and to sphinx-build.
+    # You may have to create links in /usr/bin for them.
+    runCommand('hg --version')
+    runCommand('sphinx-build --version')
 
 
 def parseOptions(args=None):
@@ -920,8 +924,9 @@ def buildPythonDocs():
     docdir = os.path.join(rootDir, 'pydocs')
     curDir = os.getcwd()
     os.chdir(buildDir)
-    runCommand('make update')
-    runCommand("make html PYTHON='%s'" % os.path.abspath(sys.executable))
+    runCommand('make clean')
+    # Assume sphinx-build is on our PATH, checked in checkEnvironment
+    runCommand('make html')
     os.chdir(curDir)
     if not os.path.exists(docdir):
         os.mkdir(docdir)
