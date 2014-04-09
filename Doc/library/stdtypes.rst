@@ -399,8 +399,8 @@ All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
 | ``math.trunc(x)``  | *x* truncated to Integral          |        |
 +--------------------+------------------------------------+--------+
 | ``round(x[, n])``  | *x* rounded to n digits,           |        |
-|                    | rounding half to even. If n is     |        |
-|                    | omitted, it defaults to 0.         |        |
+|                    | rounding ties away from zero. If n |        |
+|                    | is omitted, it defaults to 0.      |        |
 +--------------------+------------------------------------+--------+
 | ``math.floor(x)``  | the greatest integral float <= *x* |        |
 +--------------------+------------------------------------+--------+
