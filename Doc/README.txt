@@ -3,7 +3,7 @@ Python Documentation README
 
 This directory contains the reStructuredText (reST) sources to the Python
 documentation.  You don't need to build them yourself, prebuilt versions are
-available at <http://docs.python.org/download/>.
+available at <https://docs.python.org/dev/download.html>.
 
 Documentation on the authoring Python documentation, including information about
 both style and markup, is available in the "Documenting Python" chapter of the
