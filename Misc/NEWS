@@ -162,6 +162,12 @@ IDLE
 - Issue #17654: Ensure IDLE menus are customized properly on OS X for
   non-framework builds and for all variants of Tk.
 
+Build
+-----
+
+- Issue #20644: OS X installer build support for documentation build changes
+  in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
+
 C API
 -----
 - Issue #20942: PyImport_ImportFrozenModuleObject() no longer sets __file__ to
