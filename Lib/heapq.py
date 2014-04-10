@@ -202,16 +202,17 @@ def _heapify_max(x):
 # Number of comparisons for n random inputs, keeping the k smallest values:
 # -----------------------------------------------------------
 # Step   Comparisons                 Action
-#  1        2*k                      heapify the first k-inputs
-#  2        n-k                      compare new input elements to top of heap
-#  3        k*lg2(k)*(ln(n)-lg(k))   add new extreme values to the heap
+#  1        1.66*k                   heapify the first k-inputs
+#  2        n - k                    compare new input elements to top of heap
+#  3        k*lg2(k)*(ln(n)-ln(k))   add new extreme values to the heap
 #  4        k*lg2(k)                 final sort of the k most extreme values
 #
-# n-random inputs   k-extreme values    number of comparisons    % more than min()
-# ---------------   ----------------    -------------------      -----------------
-#       10,000            100                   13,634                 36.3%
-#      100,000            100                  105,163                  5.2%
-#    1,000,000            100                 1,006,694                 0.7%
+#                                      number of comparisons
+# n-random inputs   k-extreme values    average of 5 trials     % more than min()
+# ---------------   ----------------    -------------------     -----------------
+#       10,000            100                   14,046                 40.5%
+#      100,000            100                  105,749                  5.7%
+#    1,000,000            100                1,007,751                  0.8%
 #
 # Computing the number of comparisons for step 3:
 # -----------------------------------------------
@@ -234,7 +235,7 @@ def _heapify_max(x):
 #            comparisons = k * log(k, 2) * (log(n,e) - log(k, e))
 #
 # Worst-case for step 3:
-# ---------------------
+# ----------------------
 # In the worst case, the input data is reversed sorted so that every new element
 # must be inserted in the heap:
 #             comparisons = log(k, 2) * (n - k)
