@@ -168,6 +168,8 @@ Tests
 Tools/Demos
 -----------
 
+- Add support for the PEP 465 matrix multiplication operator to 2to3.
+
 - Issue #16047: Fix module exception list and __file__ handling in freeze.
   Patch by Meador Inge.
 
