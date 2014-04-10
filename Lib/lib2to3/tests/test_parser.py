@@ -48,6 +48,12 @@ class GrammarTest(support.TestCase):
             raise AssertionError("Syntax shouldn't have been valid")
 
 
+class TestMatrixMultiplication(GrammarTest):
+    def test_matrix_multiplication_operator(self):
+        self.validate("a @ b")
+        self.validate("a @= b")
+
+
 class TestRaiseChanges(GrammarTest):
     def test_2x_style_1(self):
         self.validate("raise")
