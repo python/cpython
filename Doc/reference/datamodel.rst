@@ -1970,6 +1970,7 @@ left undefined.
 .. method:: object.__add__(self, other)
             object.__sub__(self, other)
             object.__mul__(self, other)
+            object.__matmul__(self, other)
             object.__truediv__(self, other)
             object.__floordiv__(self, other)
             object.__mod__(self, other)
@@ -1986,15 +1987,16 @@ left undefined.
       builtin: pow
       builtin: pow
 
-   These methods are called to implement the binary arithmetic operations (``+``,
-   ``-``, ``*``, ``/``, ``//``, ``%``, :func:`divmod`, :func:`pow`, ``**``, ``<<``,
-   ``>>``, ``&``, ``^``, ``|``).  For instance, to evaluate the expression
-   ``x + y``, where *x* is an instance of a class that has an :meth:`__add__`
-   method, ``x.__add__(y)`` is called.  The :meth:`__divmod__` method should be the
-   equivalent to using :meth:`__floordiv__` and :meth:`__mod__`; it should not be
-   related to :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined
-   to accept an optional third argument if the ternary version of the built-in
-   :func:`pow` function is to be supported.
+   These methods are called to implement the binary arithmetic operations
+   (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
+   :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``).  For instance, to
+   evaluate the expression ``x + y``, where *x* is an instance of a class that
+   has an :meth:`__add__` method, ``x.__add__(y)`` is called.  The
+   :meth:`__divmod__` method should be the equivalent to using
+   :meth:`__floordiv__` and :meth:`__mod__`; it should not be related to
+   :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined to accept
+   an optional third argument if the ternary version of the built-in :func:`pow`
+   function is to be supported.
 
    If one of those methods does not support the operation with the supplied
    arguments, it should return ``NotImplemented``.
@@ -2003,6 +2005,7 @@ left undefined.
 .. method:: object.__radd__(self, other)
             object.__rsub__(self, other)
             object.__rmul__(self, other)
+            object.__rmatmul__(self, other)
             object.__rtruediv__(self, other)
             object.__rfloordiv__(self, other)
             object.__rmod__(self, other)
@@ -2018,14 +2021,14 @@ left undefined.
       builtin: divmod
       builtin: pow
 
-   These methods are called to implement the binary arithmetic operations (``+``,
-   ``-``, ``*``, ``/``, ``//``, ``%``, :func:`divmod`, :func:`pow`, ``**``,
-   ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected (swapped) operands.
-   These functions are only called if the left operand does not support the
-   corresponding operation and the operands are of different types. [#]_  For
-   instance, to evaluate the expression ``x - y``, where *y* is an instance of
-   a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)`` is called if
-   ``x.__sub__(y)`` returns *NotImplemented*.
+   These methods are called to implement the binary arithmetic operations
+   (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
+   :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected
+   (swapped) operands.  These functions are only called if the left operand does
+   not support the corresponding operation and the operands are of different
+   types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
+   an instance of a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)``
+   is called if ``x.__sub__(y)`` returns *NotImplemented*.
 
    .. index:: builtin: pow
 
@@ -2043,6 +2046,7 @@ left undefined.
 .. method:: object.__iadd__(self, other)
             object.__isub__(self, other)
             object.__imul__(self, other)
+            object.__imatmul__(self, other)
             object.__itruediv__(self, other)
             object.__ifloordiv__(self, other)
             object.__imod__(self, other)
@@ -2054,17 +2058,17 @@ left undefined.
             object.__ior__(self, other)
 
    These methods are called to implement the augmented arithmetic assignments
-   (``+=``, ``-=``, ``*=``, ``/=``, ``//=``, ``%=``, ``**=``, ``<<=``, ``>>=``,
-   ``&=``, ``^=``, ``|=``).  These methods should attempt to do the operation
-   in-place (modifying *self*) and return the result (which could be, but does
-   not have to be, *self*).  If a specific method is not defined, the augmented
-   assignment falls back to the normal methods.  For instance, if *x* is an
-   instance of a class with an :meth:`__iadd__` method, ``x += y`` is equivalent
-   to ``x = x.__iadd__(y)`` . Otherwise, ``x.__add__(y)`` and ``y.__radd__(x)``
-   are considered, as with the evaluation of ``x + y``. In certain situations,
-   augmented assignment can result in unexpected errors (see
-   :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in
-   fact part of the data model.
+   (``+=``, ``-=``, ``*=``, ``@=``, ``/=``, ``//=``, ``%=``, ``**=``, ``<<=``,
+   ``>>=``, ``&=``, ``^=``, ``|=``).  These methods should attempt to do the
+   operation in-place (modifying *self*) and return the result (which could be,
+   but does not have to be, *self*).  If a specific method is not defined, the
+   augmented assignment falls back to the normal methods.  For instance, if *x*
+   is an instance of a class with an :meth:`__iadd__` method, ``x += y`` is
+   equivalent to ``x = x.__iadd__(y)`` . Otherwise, ``x.__add__(y)`` and
+   ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``. In
+   certain situations, augmented assignment can result in unexpected errors (see
+   :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in fact
+   part of the data model.
 
 
 .. method:: object.__neg__(self)

@@ -364,6 +364,11 @@ result back on the stack.
    Implements ``TOS = TOS1 * TOS``.
 
 
+.. opcode:: BINARY_MATRIX_MULTIPLY
+
+   Implements ``TOS = TOS1 @ TOS``.
+
+
 .. opcode:: BINARY_FLOOR_DIVIDE
 
    Implements ``TOS = TOS1 // TOS``.
@@ -434,6 +439,11 @@ the original TOS1.
 .. opcode:: INPLACE_MULTIPLY
 
    Implements in-place ``TOS = TOS1 * TOS``.
+
+
+.. opcode:: INPLACE_MATRIX_MULTIPLY
+
+   Implements in-place ``TOS = TOS1 @ TOS``.
 
 
 .. opcode:: INPLACE_FLOOR_DIVIDE

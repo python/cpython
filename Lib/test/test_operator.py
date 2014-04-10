@@ -203,6 +203,15 @@ class OperatorTestCase:
         self.assertRaises(TypeError, operator.mul, None, None)
         self.assertTrue(operator.mul(5, 2) == 10)
 
+    def test_matmul(self):
+        operator = self.module
+        self.assertRaises(TypeError, operator.matmul)
+        self.assertRaises(TypeError, operator.matmul, 42, 42)
+        class M:
+            def __matmul__(self, other):
+                return other - 1
+        self.assertEqual(M() @ 42, 41)
+
     def test_neg(self):
         operator = self.module
         self.assertRaises(TypeError, operator.neg)
@@ -416,6 +425,7 @@ class OperatorTestCase:
             def __ilshift__  (self, other): return "ilshift"
             def __imod__     (self, other): return "imod"
             def __imul__     (self, other): return "imul"
+            def __imatmul__  (self, other): return "imatmul"
             def __ior__      (self, other): return "ior"
             def __ipow__     (self, other): return "ipow"
             def __irshift__  (self, other): return "irshift"
@@ -430,6 +440,7 @@ class OperatorTestCase:
         self.assertEqual(operator.ilshift  (c, 5), "ilshift")
         self.assertEqual(operator.imod     (c, 5), "imod")
         self.assertEqual(operator.imul     (c, 5), "imul")
+        self.assertEqual(operator.imatmul  (c, 5), "imatmul")
         self.assertEqual(operator.ior      (c, 5), "ior")
         self.assertEqual(operator.ipow     (c, 5), "ipow")
         self.assertEqual(operator.irshift  (c, 5), "irshift")

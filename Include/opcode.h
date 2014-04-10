@@ -20,6 +20,9 @@ extern "C" {
 
 #define UNARY_INVERT    15
 
+#define BINARY_MATRIX_MULTIPLY 16
+#define INPLACE_MATRIX_MULTIPLY 17
+
 #define BINARY_POWER    19
 
 #define BINARY_MULTIPLY 20

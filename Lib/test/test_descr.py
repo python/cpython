@@ -4160,6 +4160,7 @@ order (MRO) for bases """
                 ('__add__',      'x + y',                   'x += y'),
                 ('__sub__',      'x - y',                   'x -= y'),
                 ('__mul__',      'x * y',                   'x *= y'),
+                ('__matmul__',   'x @ y',                   'x @= y'),
                 ('__truediv__',  'operator.truediv(x, y)',  None),
                 ('__floordiv__', 'operator.floordiv(x, y)', None),
                 ('__div__',      'x / y',                   'x /= y'),

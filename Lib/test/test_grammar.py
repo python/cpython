@@ -985,6 +985,20 @@ class GrammarTests(unittest.TestCase):
         self.assertFalse((False is 2) is 3)
         self.assertFalse(False is 2 is 3)
 
+    def test_matrix_mul(self):
+        # This is not intended to be a comprehensive test, rather just to be few
+        # samples of the @ operator in test_grammar.py.
+        class M:
+            def __matmul__(self, o):
+                return 4
+            def __imatmul__(self, o):
+                self.other = o
+                return self
+        m = M()
+        self.assertEqual(m @ m, 4)
+        m @= 42
+        self.assertEqual(m.other, 42)
+
 
 def test_main():
     run_unittest(TokenTests, GrammarTests)

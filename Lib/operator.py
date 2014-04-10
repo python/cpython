@@ -105,6 +105,10 @@ def mul(a, b):
     "Same as a * b."
     return a * b
 
+def matmul(a, b):
+    "Same as a @ b."
+    return a @ b
+
 def neg(a):
     "Same as -a."
     return -a
@@ -326,6 +330,11 @@ def imul(a, b):
     a *= b
     return a
 
+def imatmul(a, b):
+    "Same as a @= b."
+    a @= b
+    return a
+
 def ior(a, b):
     "Same as a |= b."
     a |= b
@@ -383,6 +392,7 @@ __invert__ = invert
 __lshift__ = lshift
 __mod__ = mod
 __mul__ = mul
+__matmul__ = matmul
 __neg__ = neg
 __or__ = or_
 __pos__ = pos
@@ -403,6 +413,7 @@ __ifloordiv__ = ifloordiv
 __ilshift__ = ilshift
 __imod__ = imod
 __imul__ = imul
+__imatmul__ = imatmul
 __ior__ = ior
 __ipow__ = ipow
 __irshift__ = irshift

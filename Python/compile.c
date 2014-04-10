@@ -881,6 +881,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
         case BINARY_POWER:
         case BINARY_MULTIPLY:
+        case BINARY_MATRIX_MULTIPLY:
         case BINARY_MODULO:
         case BINARY_ADD:
         case BINARY_SUBTRACT:
@@ -895,6 +896,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case INPLACE_ADD:
         case INPLACE_SUBTRACT:
         case INPLACE_MULTIPLY:
+        case INPLACE_MATRIX_MULTIPLY:
         case INPLACE_MODULO:
             return -1;
         case STORE_SUBSCR:
@@ -2625,6 +2627,8 @@ binop(struct compiler *c, operator_ty op)
         return BINARY_SUBTRACT;
     case Mult:
         return BINARY_MULTIPLY;
+    case MatMult:
+        return BINARY_MATRIX_MULTIPLY;
     case Div:
         return BINARY_TRUE_DIVIDE;
     case Mod:
@@ -2689,6 +2693,8 @@ inplace_binop(struct compiler *c, operator_ty op)
         return INPLACE_SUBTRACT;
     case Mult:
         return INPLACE_MULTIPLY;
+    case MatMult:
+        return INPLACE_MATRIX_MULTIPLY;
     case Div:
         return INPLACE_TRUE_DIVIDE;
     case Mod:
