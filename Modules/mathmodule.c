@@ -1408,6 +1408,7 @@ static PyObject *
 math_factorial(PyObject *self, PyObject *arg)
 {
     long x;
+    int overflow;
     PyObject *result, *odd_part, *two_valuation;
 
     if (PyFloat_Check(arg)) {
@@ -1421,15 +1422,22 @@ math_factorial(PyObject *self, PyObject *arg)
         lx = PyLong_FromDouble(dx);
         if (lx == NULL)
             return NULL;
-        x = PyLong_AsLong(lx);
+        x = PyLong_AsLongAndOverflow(lx, &overflow);
         Py_DECREF(lx);
     }
     else
-        x = PyLong_AsLong(arg);
+        x = PyLong_AsLongAndOverflow(arg, &overflow);
 
-    if (x == -1 && PyErr_Occurred())
+    if (x == -1 && PyErr_Occurred()) {
         return NULL;
-    if (x < 0) {
+    }
+    else if (overflow == 1) {
+        PyErr_Format(PyExc_OverflowError,
+                     "factorial() argument should not exceed %ld",
+                     LONG_MAX);
+        return NULL;
+    }
+    else if (overflow == -1 || x < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "factorial() not defined for negative values");
         return NULL;

@@ -422,9 +422,17 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.factorial(i), py_factorial(i))
         self.assertRaises(ValueError, math.factorial, -1)
         self.assertRaises(ValueError, math.factorial, -1.0)
+        self.assertRaises(ValueError, math.factorial, -10**100)
+        self.assertRaises(ValueError, math.factorial, -1e100)
         self.assertRaises(ValueError, math.factorial, math.pi)
-        self.assertRaises(OverflowError, math.factorial, sys.maxsize+1)
-        self.assertRaises(OverflowError, math.factorial, 10e100)
+
+    # Other implementations may place different upper bounds.
+    @support.cpython_only
+    def testFactorialHugeInputs(self):
+        # Currently raises ValueError for inputs that are too large
+        # to fit into a C long.
+        self.assertRaises(OverflowError, math.factorial, 10**100)
+        self.assertRaises(OverflowError, math.factorial, 1e100)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
