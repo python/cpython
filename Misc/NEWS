@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21172: isinstance check relaxed from dict to collections.Mapping.
+
 - Issue #21191: In os.fdopen, alwyas close the file descriptor when an exception
   happens.
 
