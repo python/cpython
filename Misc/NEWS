@@ -266,6 +266,8 @@ Library
 Tools/Demos
 -----------
 
+- Add support for the PEP 465 matrix multiplication operator to 2to3.
+
 - Issue #19936: Added executable bits or shebang lines to Python scripts which
   requires them.  Disable executable bits and shebang lines in test and
   benchmark files in order to prevent using a random system python, and in
