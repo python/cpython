@@ -40,7 +40,7 @@ small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt |
 expr_stmt: testlist_star_expr (augassign (yield_expr|testlist) |
                      ('=' (yield_expr|testlist_star_expr))*)
 testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
-augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
+augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' |
             '<<=' | '>>=' | '**=' | '//=')
 # For normal assignments, additional restrictions enforced by the interpreter
 del_stmt: 'del' exprlist
@@ -97,7 +97,7 @@ xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
-term: factor (('*'|'/'|'%'|'//') factor)*
+term: factor (('*'|'@'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
 power: atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_comp] ')' |

@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- PEP 465 and Issue #21176: Add the '@' operator for matrix multiplication.
+
 - Issue #21134: Fix segfault when str is called on an uninitialized
   UnicodeEncodeError, UnicodeDecodeError, or UnicodeTranslateError object.
 

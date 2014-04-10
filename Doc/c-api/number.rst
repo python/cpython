@@ -30,6 +30,14 @@ Number Protocol
    the equivalent of the Python expression ``o1 * o2``.
 
 
+.. c:function:: PyObject* PyNumber_MatrixMultiply(PyObject *o1, PyObject *o2)
+
+   Returns the result of matrix multiplication on *o1* and *o2*, or *NULL* on
+   failure.  This is the equivalent of the Python expression ``o1 @ o2``.
+
+   .. versionadded:: 3.5
+
+
 .. c:function:: PyObject* PyNumber_FloorDivide(PyObject *o1, PyObject *o2)
 
    Return the floor of *o1* divided by *o2*, or *NULL* on failure.  This is
@@ -144,6 +152,15 @@ Number Protocol
    Returns the result of multiplying *o1* and *o2*, or *NULL* on failure.  The
    operation is done *in-place* when *o1* supports it.  This is the equivalent of
    the Python statement ``o1 *= o2``.
+
+
+.. c:function:: PyObject* PyNumber_InPlaceMatrixMultiply(PyObject *o1, PyObject *o2)
+
+   Returns the result of matrix multiplication on *o1* and *o2*, or *NULL* on
+   failure.  The operation is done *in-place* when *o1* supports it.  This is
+   the equivalent of the Python statement ``o1 @= o2``.
+
+   .. versionadded:: 3.5
 
 
 .. c:function:: PyObject* PyNumber_InPlaceFloorDivide(PyObject *o1, PyObject *o2)

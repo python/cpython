@@ -267,7 +267,7 @@ operation and an assignment statement:
 .. productionlist::
    augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
    augtarget: `identifier` | `attributeref` | `subscription` | `slicing`
-   augop: "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**="
+   augop: "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
 
 (See section :ref:`primaries` for the syntax definitions for the last three

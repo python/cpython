@@ -952,7 +952,7 @@ class SizeofTest(unittest.TestCase):
         check(int, s)
         # (PyTypeObject + PyNumberMethods + PyMappingMethods +
         #  PySequenceMethods + PyBufferProcs + 4P)
-        s = vsize('P2n15Pl4Pn9Pn11PIP') + struct.calcsize('34P 3P 10P 2P 4P')
+        s = vsize('P2n17Pl4Pn9Pn11PIP') + struct.calcsize('34P 3P 10P 2P 4P')
         # Separate block for PyDictKeysObject with 4 entries
         s += struct.calcsize("2nPn") + 4*struct.calcsize("n2P")
         # class
