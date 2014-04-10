@@ -349,13 +349,14 @@ static PyTypeObject *And_type;
 static PyTypeObject *Or_type;
 static PyTypeObject *operator_type;
 static PyObject *Add_singleton, *Sub_singleton, *Mult_singleton,
-*Div_singleton, *Mod_singleton, *Pow_singleton, *LShift_singleton,
-*RShift_singleton, *BitOr_singleton, *BitXor_singleton, *BitAnd_singleton,
-*FloorDiv_singleton;
+*MatMult_singleton, *Div_singleton, *Mod_singleton, *Pow_singleton,
+*LShift_singleton, *RShift_singleton, *BitOr_singleton, *BitXor_singleton,
+*BitAnd_singleton, *FloorDiv_singleton;
 static PyObject* ast2obj_operator(operator_ty);
 static PyTypeObject *Add_type;
 static PyTypeObject *Sub_type;
 static PyTypeObject *Mult_type;
+static PyTypeObject *MatMult_type;
 static PyTypeObject *Div_type;
 static PyTypeObject *Mod_type;
 static PyTypeObject *Pow_type;
@@ -970,6 +971,10 @@ static int init_types(void)
     if (!Mult_type) return 0;
     Mult_singleton = PyType_GenericNew(Mult_type, NULL, NULL);
     if (!Mult_singleton) return 0;
+    MatMult_type = make_type("MatMult", operator_type, NULL, 0);
+    if (!MatMult_type) return 0;
+    MatMult_singleton = PyType_GenericNew(MatMult_type, NULL, NULL);
+    if (!MatMult_singleton) return 0;
     Div_type = make_type("Div", operator_type, NULL, 0);
     if (!Div_type) return 0;
     Div_singleton = PyType_GenericNew(Div_type, NULL, NULL);
@@ -3232,6 +3237,9 @@ PyObject* ast2obj_operator(operator_ty o)
         case Mult:
             Py_INCREF(Mult_singleton);
             return Mult_singleton;
+        case MatMult:
+            Py_INCREF(MatMult_singleton);
+            return MatMult_singleton;
         case Div:
             Py_INCREF(Div_singleton);
             return Div_singleton;
@@ -6175,6 +6183,14 @@ obj2ast_operator(PyObject* obj, operator_ty* out, PyArena* arena)
         *out = Mult;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, (PyObject *)MatMult_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        *out = MatMult;
+        return 0;
+    }
     isinstance = PyObject_IsInstance(obj, (PyObject *)Div_type);
     if (isinstance == -1) {
         return 1;
@@ -6956,6 +6972,8 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "Add", (PyObject*)Add_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Sub", (PyObject*)Sub_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Mult", (PyObject*)Mult_type) < 0) return NULL;
+    if (PyDict_SetItemString(d, "MatMult", (PyObject*)MatMult_type) < 0) return
+        NULL;
     if (PyDict_SetItemString(d, "Div", (PyObject*)Div_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Mod", (PyObject*)Mod_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Pow", (PyObject*)Pow_type) < 0) return NULL;

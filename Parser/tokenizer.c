@@ -98,6 +98,7 @@ const char *_PyParser_TokenNames[] = {
     "DOUBLESLASH",
     "DOUBLESLASHEQUAL",
     "AT",
+    "ATEQUAL",
     "RARROW",
     "ELLIPSIS",
     /* This table must match the #defines in token.h! */
@@ -1131,7 +1132,7 @@ PyToken_OneChar(int c)
     case '}':           return RBRACE;
     case '^':           return CIRCUMFLEX;
     case '~':           return TILDE;
-    case '@':       return AT;
+    case '@':           return AT;
     default:            return OP;
     }
 }
@@ -1205,6 +1206,11 @@ PyToken_TwoChars(int c1, int c2)
     case '^':
         switch (c2) {
         case '=':               return CIRCUMFLEXEQUAL;
+        }
+        break;
+    case '@':
+        switch (c2) {
+        case '=':               return ATEQUAL;
         }
         break;
     }

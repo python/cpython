@@ -74,3 +74,5 @@
 #define Py_tp_members 72
 #define Py_tp_getset 73
 #define Py_tp_free 74
+#define Py_nb_matrix_multiply 75
+#define Py_nb_inplace_matrix_multiply 76

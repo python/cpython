@@ -15,9 +15,9 @@ typedef struct _slice *slice_ty;
 
 typedef enum _boolop { And=1, Or=2 } boolop_ty;
 
-typedef enum _operator { Add=1, Sub=2, Mult=3, Div=4, Mod=5, Pow=6, LShift=7,
-                         RShift=8, BitOr=9, BitXor=10, BitAnd=11, FloorDiv=12 }
-                         operator_ty;
+typedef enum _operator { Add=1, Sub=2, Mult=3, MatMult=4, Div=5, Mod=6, Pow=7,
+                         LShift=8, RShift=9, BitOr=10, BitXor=11, BitAnd=12,
+                         FloorDiv=13 } operator_ty;
 
 typedef enum _unaryop { Invert=1, Not=2, UAdd=3, USub=4 } unaryop_ty;
 

@@ -136,6 +136,14 @@ class AugAssignTest(unittest.TestCase):
                 output.append("__imul__ called")
                 return self
 
+            def __matmul__(self, val):
+                output.append("__matmul__ called")
+            def __rmatmul__(self, val):
+                output.append("__rmatmul__ called")
+            def __imatmul__(self, val):
+                output.append("__imatmul__ called")
+                return self
+
             def __div__(self, val):
                 output.append("__div__ called")
             def __rdiv__(self, val):
@@ -233,6 +241,10 @@ class AugAssignTest(unittest.TestCase):
         1 * x
         x *= 1
 
+        x @ 1
+        1 @ x
+        x @= 1
+
         x / 1
         1 / x
         x /= 1
@@ -279,6 +291,9 @@ __isub__ called
 __mul__ called
 __rmul__ called
 __imul__ called
+__matmul__ called
+__rmatmul__ called
+__imatmul__ called
 __truediv__ called
 __rtruediv__ called
 __itruediv__ called

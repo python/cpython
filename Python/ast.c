@@ -825,6 +825,8 @@ get_operator(const node *n)
             return Sub;
         case STAR:
             return Mult;
+        case AT:
+            return MatMult;
         case SLASH:
             return Div;
         case DOUBLESLASH:
@@ -1030,6 +1032,8 @@ ast_for_augassign(struct compiling *c, const node *n)
                 return Pow;
             else
                 return Mult;
+        case '@':
+            return MatMult;
         default:
             PyErr_Format(PyExc_SystemError, "invalid augassign: %s", STR(n));
             return (operator_ty)0;
@@ -2266,7 +2270,7 @@ ast_for_expr(struct compiling *c, const node *n)
        and_expr: shift_expr ('&' shift_expr)*
        shift_expr: arith_expr (('<<'|'>>') arith_expr)*
        arith_expr: term (('+'|'-') term)*
-       term: factor (('*'|'/'|'%'|'//') factor)*
+       term: factor (('*'|'@'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom trailer* ('**' factor)*
     */
@@ -2577,7 +2581,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
     /* expr_stmt: testlist_star_expr (augassign (yield_expr|testlist)
                 | ('=' (yield_expr|testlist))*)
        testlist_star_expr: (test|star_expr) (',' test|star_expr)* [',']
-       augassign: '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^='
+       augassign: '+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^='
                 | '<<=' | '>>=' | '**=' | '//='
        test: ... here starts the operator precendence dance
      */
