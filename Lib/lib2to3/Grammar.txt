@@ -155,4 +155,5 @@ testlist1: test (',' test)*
 # not used in grammar, but may appear in "node" passed from Parser to Compiler
 encoding_decl: NAME
 
-yield_expr: 'yield' [testlist]
+yield_expr: 'yield' [yield_arg]
+yield_arg: 'from' test | testlist
