@@ -1807,14 +1807,14 @@ Loading and running tests
       Called after the test case *test* has been executed, regardless of the
       outcome.
 
-   .. method:: startTestRun(test)
+   .. method:: startTestRun()
 
       Called once before any tests are executed.
 
       .. versionadded:: 3.1
 
 
-   .. method:: stopTestRun(test)
+   .. method:: stopTestRun()
 
       Called once after all tests are executed.
 
