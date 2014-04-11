@@ -1085,7 +1085,7 @@ class BuiltinTest(unittest.TestCase):
                     if isinstance(x, float) or \
                        isinstance(y, float) or \
                        isinstance(z, float):
-                        self.assertRaises(TypeError, pow, x, y, z)
+                        self.assertRaises(ValueError, pow, x, y, z)
                     else:
                         self.assertAlmostEqual(pow(x, y, z), 24.0)
 

@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21193: pow(a, b, c) now raises ValueError rather than TypeError when b
+  is negative.  Patch by Josh Rosenberg.
+
 - PEP 465 and Issue #21176: Add the '@' operator for matrix multiplication.
 
 - Issue #21134: Fix segfault when str is called on an uninitialized

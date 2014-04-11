@@ -3841,7 +3841,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
     if (Py_SIZE(b) < 0) {  /* if exponent is negative */
         if (c) {
-            PyErr_SetString(PyExc_TypeError, "pow() 2nd argument "
+            PyErr_SetString(PyExc_ValueError, "pow() 2nd argument "
                             "cannot be negative when 3rd argument specified");
             goto Error;
         }
