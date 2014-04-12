@@ -32,14 +32,14 @@ install (since it comes included with most
 `binary distributions <http://www.python.org/download/>`_ of Python) and use.
 For more info about Tk, including pointers to the source, see the
 `Tcl/Tk home page <http://www.tcl.tk>`_.  Tcl/Tk is fully portable to the
-MacOS, Windows, and Unix platforms.
+Mac OS X, Windows, and Unix platforms.
 
 wxWidgets
 ---------
 
 wxWidgets (http://www.wxwidgets.org) is a free, portable GUI class
 library written in C++ that provides a native look and feel on a
-number of platforms, with Windows, MacOS X, GTK, X11, all listed as
+number of platforms, with Windows, Mac OS X, GTK, X11, all listed as
 current stable targets.  Language bindings are available for a number
 of languages including Python, Perl, Ruby, etc.
 
@@ -102,13 +102,9 @@ For OpenGL bindings, see `PyOpenGL <http://pyopengl.sourceforge.net>`_.
 What platform-specific GUI toolkits exist for Python?
 ========================================================
 
-`The Mac port <http://python.org/download/mac>`_ by Jack Jansen has a rich and
-ever-growing set of modules that support the native Mac toolbox calls.  The port
-supports MacOS X's Carbon libraries.
-
 By installing the `PyObjc Objective-C bridge
-<http://pyobjc.sourceforge.net>`_, Python programs can use MacOS X's
-Cocoa libraries. See the documentation that comes with the Mac port.
+<http://pyobjc.sourceforge.net>`_, Python programs can use Mac OS X's
+Cocoa libraries.
 
 :ref:`Pythonwin <windows-faq>` by Mark Hammond includes an interface to the
 Microsoft Foundation Classes and a Python programming environment
