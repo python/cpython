@@ -208,6 +208,8 @@ Documentation
 Tests
 -----
 
+- Issue #20635: Added tests for Tk geometry managers.
+
 - Add test case for freeze.
 
 - Issue #20743: Fix a reference leak in test_tcl.
