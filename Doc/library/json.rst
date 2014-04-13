@@ -590,7 +590,7 @@ specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
-.. cmdoption:: [<infile>]
+.. cmdoption:: infile
 
    The JSON file to be validated or pretty-printed::
 
@@ -606,7 +606,9 @@ Command line options
           }
       ]
 
-.. cmdoption:: [<outfile>]
+   If *infile* is not specified, read from :attr:`sys.stdin`.
+
+.. cmdoption:: outfile
 
    Write the output of the *infile* to the given *outfile*. Otherwise, write it
    to :attr:`sys.stdout`.
