@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21171: Fixed undocumented filter API of the rot13 codec.
+  Patch by Berker Peksag.
+
 - Issue #20539: Improved math.factorial error message for large positive inputs
   and changed exception type (OverflowError -> ValueError) for large negative
   inputs.
