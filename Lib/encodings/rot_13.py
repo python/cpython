@@ -106,7 +106,7 @@ rot13_map.update({
 ### Filter API
 
 def rot13(infile, outfile):
-    outfile.write(infile.read().encode('rot-13'))
+    outfile.write(codecs.encode(infile.read(), 'rot-13'))
 
 if __name__ == '__main__':
     import sys
