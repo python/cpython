@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21171: Fixed undocumented filter API of the rot13 codec.
+  Patch by Berker Peksag.
+
 - Issue #21172: isinstance check relaxed from dict to collections.Mapping.
 
 - Issue #21155: asyncio.EventLoop.create_unix_server() now raises a ValueError
