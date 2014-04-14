@@ -126,6 +126,31 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(7 + mock, mock)
         self.assertEqual(mock.value, 16)
 
+    def test_division(self):
+        original = mock = Mock()
+        mock.value = 32
+        self.assertRaises(TypeError, lambda: mock / 2)
+
+        def truediv(self, other):
+            mock.value /= other
+            return self
+        mock.__truediv__ = truediv
+        self.assertEqual(mock / 2, mock)
+        self.assertEqual(mock.value, 16)
+
+        del mock.__truediv__
+        def itruediv(mock):
+            mock /= 4
+        self.assertRaises(TypeError, itruediv, mock)
+        mock.__itruediv__ = truediv
+        mock /= 8
+        self.assertEqual(mock, original)
+        self.assertEqual(mock.value, 2)
+
+        self.assertRaises(TypeError, lambda: 8 / mock)
+        mock.__rtruediv__ = truediv
+        self.assertEqual(0.5 / mock, mock)
+        self.assertEqual(mock.value, 4)
 
     def test_hash(self):
         mock = Mock()
