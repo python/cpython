@@ -343,7 +343,14 @@ def _check_and_set_parent(parent, value, name, new_name):
         value._mock_name = name
     return True
 
-
+# Internal class to identify if we wrapped an iterator object or not.
+class _MockIter(object):
+    def __init__(self, obj):
+        self.obj = iter(obj)
+    def __iter__(self):
+        return self
+    def __next__(self):
+        return next(self.obj)
 
 class Base(object):
     _mock_return_value = DEFAULT
@@ -495,7 +502,11 @@ class NonCallableMock(Base):
         delegated = self._mock_delegate
         if delegated is None:
             return self._mock_side_effect
-        return delegated.side_effect
+        sf = delegated.side_effect
+        if sf is not None and not callable(sf) and not isinstance(sf, _MockIter):
+            sf = _MockIter(sf)
+            delegated.side_effect = sf
+        return sf
 
     def __set_side_effect(self, value):
         value = _try_iter(value)
