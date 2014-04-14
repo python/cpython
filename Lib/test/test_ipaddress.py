@@ -1593,6 +1593,14 @@ class IpaddrUnitTest(unittest.TestCase):
                          addr3.exploded)
         self.assertEqual('192.168.178.1', addr4.exploded)
 
+    def testReversePointer(self):
+        addr1 = ipaddress.IPv4Address('127.0.0.1')
+        addr2 = ipaddress.IPv6Address('2001:db8::1')
+        self.assertEqual('1.0.0.127.in-addr.arpa', addr1.reverse_pointer)
+        self.assertEqual('1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.' +
+                         'b.d.0.1.0.0.2.ip6.arpa',
+                         addr2.reverse_pointer)
+
     def testIntRepresentation(self):
         self.assertEqual(16909060, int(self.ipv4_address))
         self.assertEqual(42540616829182469433547762482097946625,

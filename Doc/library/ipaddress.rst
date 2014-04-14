@@ -146,6 +146,20 @@ write code that handles both IP versions correctly.
       the appropriate length (most significant octet first). This is 4 bytes
       for IPv4 and 16 bytes for IPv6.
 
+   .. attribute:: reverse_pointer
+
+      The name of the reverse DNS PTR record for the IP address, e.g.::
+
+          >>> ipaddress.ip_address("127.0.0.1").reverse_pointer
+          '1.0.0.127.in-addr.arpa'
+          >>> ipaddress.ip_address("2001:db8::1").reverse_pointer
+          '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa'
+
+      This is the name that could be used for performing a PTR lookup, not the
+      resolved hostname itself.
+
+   .. versionadded:: 3.5
+
    .. attribute:: is_multicast
 
       ``True`` if the address is reserved for multicast use.  See
@@ -226,6 +240,7 @@ write code that handles both IP versions correctly.
    :class:`IPv4Address` class:
 
    .. attribute:: packed
+   .. attribute:: reverse_pointer
    .. attribute:: version
    .. attribute:: max_prefixlen
    .. attribute:: is_multicast
