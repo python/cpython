@@ -104,16 +104,20 @@ in the child process prior to executing the command.
 If env is not None, it defines the environment variables for the new
 process.
 
-If universal_newlines is false, the file objects stdin, stdout and stderr
+If universal_newlines is False, the file objects stdin, stdout and stderr
 are opened as binary files, and no line ending conversion is done.
 
-If universal_newlines is true, the file objects stdout and stderr are
-opened as a text files, but lines may be terminated by any of '\n',
+If universal_newlines is True, the file objects stdout and stderr are
+opened as a text file, but lines may be terminated by any of '\n',
 the Unix end-of-line convention, '\r', the old Macintosh convention or
 '\r\n', the Windows convention.  All of these external representations
 are seen as '\n' by the Python program.  Also, the newlines attribute
 of the file objects stdout, stdin and stderr are not updated by the
 communicate() method.
+
+In either case, the process being communicated with should start up
+expecting to receive bytes on its standard input and decode them with
+the same encoding they are sent in.
 
 The startupinfo and creationflags, if given, will be passed to the
 underlying CreateProcess() function.  They can specify things such as
@@ -184,6 +188,9 @@ check_output(*popenargs, **kwargs):
     pass a string to the subprocess's stdin.  If you use this argument
     you may not also use the Popen constructor's "stdin" argument.
 
+    If universal_newlines is set to True, the "input" argument must
+    be a string rather than bytes, and the return value will be a string.
+
 Exceptions
 ----------
 Exceptions raised in the child process, before the new program has
@@ -225,9 +232,13 @@ wait()
 communicate(input=None)
     Interact with process: Send data to stdin.  Read data from stdout
     and stderr, until end-of-file is reached.  Wait for process to
-    terminate.  The optional input argument should be a string to be
+    terminate.  The optional input argument should be data to be
     sent to the child process, or None, if no data should be sent to
-    the child.
+    the child. If the Popen instance was constructed with universal_newlines
+    set to True, the input argument should be a string and will be encoded
+    using the preferred system encoding (see locale.getpreferredencoding);
+    if universal_newlines is False, the input argument should be a
+    byte string.
 
     communicate() returns a tuple (stdout, stderr).
 
@@ -587,8 +598,8 @@ def check_output(*popenargs, timeout=None, **kwargs):
     ...              input=b"when in the course of fooman events\n")
     b'when in the course of barman events\n'
 
-    If universal_newlines=True is passed, the return value will be a
-    string rather than bytes.
+    If universal_newlines=True is passed, the "input" argument must be a
+    string and the return value will be a string rather than bytes.
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
@@ -908,11 +919,16 @@ class Popen(object):
     def communicate(self, input=None, timeout=None):
         """Interact with process: Send data to stdin.  Read data from
         stdout and stderr, until end-of-file is reached.  Wait for
-        process to terminate.  The optional input argument should be
-        bytes to be sent to the child process, or None, if no data
-        should be sent to the child.
+        process to terminate.
 
-        communicate() returns a tuple (stdout, stderr)."""
+        The optional "input" argument should be data to be sent to the
+        child process (if self.universal_newlines is True, this should
+        be a string; if it is False, "input" should be bytes), or
+        None, if no data should be sent to the child.
+
+        communicate() returns a tuple (stdout, stderr).  These will be
+        bytes or, if self.universal_newlines was True, a string.
+        """
 
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
