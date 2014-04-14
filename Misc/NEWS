@@ -30,6 +30,10 @@ Core and Builtins
 - Issue #12546: Allow \x00 to be used as a fill character when using str, int,
   float, and complex __format__ methods.
 
+- Issue #13598: Modify string.Formatter to support auto-numbering of 
+  replacement fields. It now matches the behavior of str.format() in
+  this regard.
+
 Library
 -------
 
