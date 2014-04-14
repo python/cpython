@@ -76,7 +76,7 @@ def arbitrary_address(family):
         return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
         return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
-                               (os.getpid(), next(_mmap_counter)))
+                               (os.getpid(), next(_mmap_counter)), dir="")
     else:
         raise ValueError('unrecognized family')
 
