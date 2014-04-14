@@ -478,6 +478,18 @@ class SMTP:
         """SMTP 'rset' command -- resets session."""
         return self.docmd("rset")
 
+    def _rset(self):
+        """Internal 'rset' command which ignores any SMTPServerDisconnected error.
+
+        Used internally in the library, since the server disconnected error
+        should appear to the application when the *next* command is issued, if
+        we are doing an internal "safety" reset.
+        """
+        try:
+            self.rset()
+        except SMTPServerDisconnected:
+            pass
+
     def noop(self):
         """SMTP 'noop' command -- doesn't do anything :>"""
         return self.docmd("noop")
@@ -762,7 +774,7 @@ class SMTP:
             if code == 421:
                 self.close()
             else:
-                self.rset()
+                self._rset()
             raise SMTPSenderRefused(code, resp, from_addr)
         senderrs = {}
         if isinstance(to_addrs, str):
@@ -776,14 +788,14 @@ class SMTP:
                 raise SMTPRecipientsRefused(senderrs)
         if len(senderrs) == len(to_addrs):
             # the server refused all our recipients
-            self.rset()
+            self._rset()
             raise SMTPRecipientsRefused(senderrs)
         (code, resp) = self.data(msg)
         if code != 250:
             if code == 421:
                 self.close()
             else:
-                self.rset()
+                self._rset()
             raise SMTPDataError(code, resp)
         #if we got here then somebody got our mail
         return senderrs
