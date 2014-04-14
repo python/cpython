@@ -17,9 +17,10 @@ for on-screen displays.
 
 To simplify token stream handling, all :ref:`operators` and :ref:`delimiters`
 tokens are returned using the generic :data:`token.OP` token type.  The exact
-type can be determined by checking the token ``string`` field on the
-:term:`named tuple` returned from :func:`tokenize.tokenize` for the character
-sequence that identifies a specific operator token.
+type can be determined by checking the second field (containing the actual
+token string matched) of the tuple returned from
+:func:`tokenize.generate_tokens` for the character sequence that identifies a
+specific operator token.
 
 The primary entry point is a :term:`generator`:
 
