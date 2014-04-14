@@ -465,7 +465,7 @@ These functions create new file objects. (See also :func:`open`.)
    Return an open file object connected to the file descriptor *fd*.  The *mode*
    and *bufsize* arguments have the same meaning as the corresponding arguments
    to the built-in :func:`open` function.  If :func:`fdopen` raises an
-   exception, it closes *fd*.
+   exception, it leaves *fd* untouched (unclosed).
 
    Availability: Unix, Windows.
 

@@ -51,7 +51,7 @@ Library
 
 - Issue #21172: isinstance check relaxed from dict to collections.Mapping.
 
-- Issue #21191: In os.fdopen, alwyas close the file descriptor when an exception
+- Issue #21191: In os.fdopen, never close the file descriptor when an exception
   happens.
 
 - Issue #21149: Improved thread-safety in logging cleanup during interpreter

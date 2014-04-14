@@ -6841,19 +6841,37 @@ posix_fdopen(PyObject *self, PyObject *args)
     /* Sanitize mode.  See fileobject.c */
     mode = PyMem_MALLOC(strlen(orgmode)+3);
     if (!mode) {
-        close(fd);
         PyErr_NoMemory();
         return NULL;
     }
     strcpy(mode, orgmode);
     if (_PyFile_SanitizeMode(mode)) {
-        close(fd);
         PyMem_FREE(mode);
         return NULL;
     }
     if (!_PyVerify_fd(fd)) {
-        posix_error();
-        close(fd);
+        PyMem_FREE(mode);
+        return posix_error();
+    }
+#if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
+    {
+        struct stat buf;
+        if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
+            PyMem_FREE(mode);
+            char *msg = strerror(EISDIR);
+            PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(isO)",
+                                                  EISDIR, msg, "<fdopen>");
+            PyErr_SetObject(PyExc_IOError, exc);
+            Py_XDECREF(exc);
+            return NULL;
+        }
+    }
+#endif
+    /* The dummy filename used here must be kept in sync with the value
+       tested against in gzip.GzipFile.__init__() - see issue #13781. */
+    f = PyFile_FromFile(NULL, "<fdopen>", orgmode, fclose);
+    if (f == NULL) {
+        PyMem_FREE(mode);
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
@@ -6876,16 +6894,11 @@ posix_fdopen(PyObject *self, PyObject *args)
 #endif
     Py_END_ALLOW_THREADS
     PyMem_FREE(mode);
-    if (fp == NULL) {
-        posix_error();
-        close(fd);
-        return NULL;
-    }
-    /* The dummy filename used here must be kept in sync with the value
-       tested against in gzip.GzipFile.__init__() - see issue #13781. */
-    f = PyFile_FromFile(fp, "<fdopen>", orgmode, fclose);
-    if (f != NULL)
-        PyFile_SetBufSize(f, bufsize);
+    if (fp == NULL)
+        return posix_error();
+    /* We now know we will succeed, so initialize the file object. */
+    ((PyFileObject *)f)->f_fp = fp;
+    PyFile_SetBufSize(f, bufsize);
     return f;
 }
 
