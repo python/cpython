@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21209: Fix sending tuples to custom generator objects with the yield
+  from syntax.
+
 - Issue #21134: Fix segfault when str is called on an uninitialized
   UnicodeEncodeError, UnicodeDecodeError, or UnicodeTranslateError object.
 
