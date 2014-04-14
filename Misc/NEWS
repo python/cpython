@@ -10,6 +10,9 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
+  parameter. Bug reported by Guido Vranken.
+
 - Issue #21082: In os.makedirs, do not set the process-wide umask. Note this
   changes behavior of makedirs when exist_ok=True.
 

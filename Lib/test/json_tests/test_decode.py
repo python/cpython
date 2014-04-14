@@ -70,5 +70,9 @@ class TestDecode:
         msg = 'escape'
         self.assertRaisesRegex(ValueError, msg, self.loads, s)
 
+    def test_negative_index(self):
+        d = self.json.JSONDecoder()
+        self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
+
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
