@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
+  parameter. Bug reported by Guido Vranken.
+
 - Issue #20246: Fix buffer overflow in socket.recvfrom_into.
 
 - Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
