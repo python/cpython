@@ -930,10 +930,11 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     PyObject *res;
     Py_UNICODE *str = PyUnicode_AS_UNICODE(pystr);
     Py_ssize_t length = PyUnicode_GET_SIZE(pystr);
-    if (idx < 0)
-        /* Compatibility with Python version. */
-        idx += length;
-    if (idx < 0 || idx >= length) {
+    if (idx < 0) {
+        PyErr_SetString(PyExc_ValueError, "idx canont be negative");
+        return NULL;
+    }
+    if (idx >= length) {
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
     }
