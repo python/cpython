@@ -941,7 +941,10 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     kind = PyUnicode_KIND(pystr);
     length = PyUnicode_GET_LENGTH(pystr);
 
-    if (idx >= length) {
+    if (idx < 0)
+        /* Compatibility with Python version. */
+        idx += length;
+    if (idx < 0 || idx >= length) {
         raise_stop_iteration(idx);
         return NULL;
     }

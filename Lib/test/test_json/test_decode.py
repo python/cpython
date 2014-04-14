@@ -91,5 +91,9 @@ class TestDecode:
         self.assertEqual(self.loads(bom_in_str), '\ufeff')
         self.assertEqual(self.json.load(StringIO(bom_in_str)), '\ufeff')
 
+    def test_negative_index(self):
+        d = self.json.JSONDecoder()
+        self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
+
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
