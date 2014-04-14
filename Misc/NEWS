@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20968: unittest.mock.MagicMock now supports division.
+  Patch by Johannes Baiter.
+
 - Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
   parameter. Bug reported by Guido Vranken.
 
