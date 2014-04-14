@@ -41,7 +41,7 @@ Core and Builtins
 
 - Issue #13598: Modify string.Formatter to support auto-numbering of 
   replacement fields. It now matches the behavior of str.format() in
-  this regard.
+  this regard. Patches by Phil Elson and Ramchandra Apte.
 
 Library
 -------
