@@ -28,10 +28,10 @@ handler or to report an error condition "just like" the situation in which the
 interpreter raises the same exception; but beware that there is nothing to
 prevent user code from raising an inappropriate error.
 
-The built-in exception classes can be sub-classed to define new exceptions;
-programmers are encouraged to at least derive new exceptions from the
-:exc:`Exception` class and not :exc:`BaseException`.  More information on
-defining exceptions is available in the Python Tutorial under
+The built-in exception classes can be subclassed to define new exceptions;
+programmers are encouraged to derive new exceptions from the :exc:`Exception`
+class or one of its subclasses, and not from :exc:`BaseException`.  More
+information on defining exceptions is available in the Python Tutorial under
 :ref:`tut-userexceptions`.
 
 When raising (or re-raising) an exception in an :keyword:`except` clause
