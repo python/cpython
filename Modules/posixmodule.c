@@ -6856,13 +6856,17 @@ posix_fdopen(PyObject *self, PyObject *args)
 #if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
     {
         struct stat buf;
+        const char *msg;
+        PyObject *exc;
         if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
             PyMem_FREE(mode);
-            char *msg = strerror(EISDIR);
-            PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(isO)",
-                                                  EISDIR, msg, "<fdopen>");
-            PyErr_SetObject(PyExc_IOError, exc);
-            Py_XDECREF(exc);
+            msg = strerror(EISDIR);
+            exc = PyObject_CallFunction(PyExc_IOError, "(isO)",
+                                        EISDIR, msg, "<fdopen>");
+            if (exc) {
+                PyErr_SetObject(PyExc_IOError, exc);
+                Py_DECREF(exc);
+            }
             return NULL;
         }
     }
