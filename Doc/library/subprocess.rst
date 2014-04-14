@@ -660,6 +660,7 @@ Instances of the :class:`Popen` class have the following methods:
    must be bytes or, if *universal_newlines* was ``True``, a string.
 
    :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
+   The data will be bytes or, if *universal_newlines* was ``True``, strings.
 
    Note that if you want to send data to the process's stdin, you need to create
    the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
