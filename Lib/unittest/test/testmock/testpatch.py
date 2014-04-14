@@ -377,7 +377,7 @@ class PatchTest(unittest.TestCase):
 
     def test_patchobject_wont_create_by_default(self):
         try:
-            @patch.object(SomeClass, 'frooble', sentinel.Frooble)
+            @patch.object(SomeClass, 'ord', sentinel.Frooble)
             def test():
                 self.fail('Patching non existent attributes should fail')
 
@@ -386,7 +386,27 @@ class PatchTest(unittest.TestCase):
             pass
         else:
             self.fail('Patching non existent attributes should fail')
-        self.assertFalse(hasattr(SomeClass, 'frooble'))
+        self.assertFalse(hasattr(SomeClass, 'ord'))
+
+
+    def test_patch_builtins_without_create(self):
+        @patch(__name__+'.ord')
+        def test_ord(mock_ord):
+            mock_ord.return_value = 101
+            return ord('c')
+
+        @patch(__name__+'.open')
+        def test_open(mock_open):
+            m = mock_open.return_value
+            m.read.return_value = 'abcd'
+
+            fobj = open('doesnotexists.txt')
+            data = fobj.read()
+            fobj.close()
+            return data
+
+        self.assertEqual(test_ord(), 101)
+        self.assertEqual(test_open(), 'abcd')
 
 
     def test_patch_with_static_methods(self):
