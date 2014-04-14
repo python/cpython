@@ -169,7 +169,8 @@ class Formatter:
         self.check_unused_args(used_args, args, kwargs)
         return result
 
-    def _vformat(self, format_string, args, kwargs, used_args, recursion_depth):
+    def _vformat(self, format_string, args, kwargs, used_args, recursion_depth,
+                 auto_arg_index=0):
         if recursion_depth < 0:
             raise ValueError('Max string recursion exceeded')
         result = []
@@ -185,6 +186,23 @@ class Formatter:
                 # this is some markup, find the object and do
                 #  the formatting
 
+                # handle arg indexing when empty field_names are given.
+                if field_name == '':
+                    if auto_arg_index is False:
+                        raise ValueError('cannot switch from manual field '
+                                         'specification to automatic field '
+                                         'numbering')
+                    field_name = str(auto_arg_index)
+                    auto_arg_index += 1
+                elif field_name.isdigit():
+                    if auto_arg_index:
+                        raise ValueError('cannot switch from manual field '
+                                         'specification to automatic field '
+                                         'numbering')
+                    # disable auto arg incrementing, if it gets
+                    # used later on, then an exception will be raised
+                    auto_arg_index = False
+
                 # given the field_name, find the object it references
                 #  and the argument it came from
                 obj, arg_used = self.get_field(field_name, args, kwargs)
@@ -195,7 +213,8 @@ class Formatter:
 
                 # expand the format spec, if needed
                 format_spec = self._vformat(format_spec, args, kwargs,
-                                            used_args, recursion_depth-1)
+                                            used_args, recursion_depth-1,
+                                            auto_arg_index=auto_arg_index)
 
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))
