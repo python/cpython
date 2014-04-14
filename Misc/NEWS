@@ -37,6 +37,8 @@ Core and Builtins
 - Issue #12546: Allow \x00 to be used as a fill character when using str, int,
   float, and complex __format__ methods.
 
+- Issue #20480: Add ipaddress.reverse_pointer. Patch by Leon Weber.
+
 Library
 -------
 
