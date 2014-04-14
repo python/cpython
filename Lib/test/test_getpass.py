@@ -1,7 +1,7 @@
 import getpass
 import os
 import unittest
-from io import BytesIO, StringIO
+from io import BytesIO, StringIO, TextIOWrapper
 from unittest import mock
 from test import support
 
@@ -68,6 +68,14 @@ class GetpassRawinputTest(unittest.TestCase):
         mock_input.readline.return_value = 'input_string'
         getpass._raw_input(stream=StringIO())
         mock_input.readline.assert_called_once_with()
+
+    @mock.patch('sys.stdin')
+    def test_uses_stdin_as_different_locale(self, mock_input):
+        stream = TextIOWrapper(BytesIO(), encoding="ascii")
+        mock_input.readline.return_value = "HasÅ‚o: "
+        getpass._raw_input(prompt="HasÅ‚o: ",stream=stream)
+        mock_input.readline.assert_called_once_with()
+
 
     def test_raises_on_empty_input(self):
         input = StringIO('')
