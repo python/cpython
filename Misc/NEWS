@@ -34,6 +34,9 @@ Core and Builtins
 
 - Issue #19995: %c, %o, %x, and %X now raise TypeError on non-integer input.
 
+- Issue #12546: Allow \x00 to be used as a fill character when using str, int,
+  float, and complex __format__ methods.
+
 Library
 -------
 
