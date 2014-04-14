@@ -21,7 +21,12 @@ typedef struct {
     PyObject *co_varnames;	/* tuple of strings (local variable names) */
     PyObject *co_freevars;	/* tuple of strings (free variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    /* The rest doesn't count for hash or comparisons */
+    /* The rest aren't used in either hash or comparisons, except for
+       co_name (used in both) and co_firstlineno (used only in
+       comparisons).  This is done to preserve the name and line number
+       for tracebacks and debuggers; otherwise, constant de-duplication
+       would collapse identical functions/lambdas defined on different lines.
+    */
     unsigned char *co_cell2arg; /* Maps cell vars which are arguments. */
     PyObject *co_filename;	/* unicode (where it was loaded from) */
     PyObject *co_name;		/* unicode (name, for reference) */
