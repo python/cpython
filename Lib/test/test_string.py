@@ -32,6 +32,23 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(fmt.format("foo{0}", "bar"), "foobar")
         self.assertEqual(fmt.format("foo{1}{0}-{1}", "bar", 6), "foo6bar-6")
 
+    def test_auto_numbering(self):
+        fmt = string.Formatter()
+        self.assertEqual(fmt.format('foo{}{}', 'bar', 6),
+                         'foo{}{}'.format('bar', 6))
+        self.assertEqual(fmt.format('foo{1}{num}{1}', None, 'bar', num=6),
+                         'foo{1}{num}{1}'.format(None, 'bar', num=6))
+        self.assertEqual(fmt.format('{:^{}}', 'bar', 6),
+                         '{:^{}}'.format('bar', 6))
+        self.assertEqual(fmt.format('{:^{pad}}{}', 'foo', 'bar', pad=6),
+                         '{:^{pad}}{}'.format('foo', 'bar', pad=6))
+
+        with self.assertRaises(ValueError):
+            fmt.format('foo{1}{}', 'bar', 6)
+
+        with self.assertRaises(ValueError):
+            fmt.format('foo{}{1}', 'bar', 6)
+
     def test_conversion_specifiers(self):
         fmt = string.Formatter()
         self.assertEqual(fmt.format("-{arg!r}-", arg='test'), "-'test'-")
