@@ -619,6 +619,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
     data_response = None
     rcpt_count = 0
     rset_count = 0
+    disconnect = 0
 
     def __init__(self, extra_features, *args, **kw):
         self._extrafeatures = ''.join(
@@ -684,6 +685,8 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             super().smtp_MAIL(arg)
         else:
             self.push(self.mail_response)
+            if self.disconnect:
+                self.close_when_done()
 
     def smtp_RCPT(self, arg):
         if self.rcpt_response is None:
@@ -874,6 +877,16 @@ class SMTPSimTests(unittest.TestCase):
 
     #TODO: add tests for correct AUTH method fallback now that the
     #test infrastructure can support it.
+
+    # Issue 17498: make sure _rset does not raise SMTPServerDisconnected exception
+    def test__rest_from_mail_cmd(self):
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp.noop()
+        self.serv._SMTPchannel.mail_response = '451 Requested action aborted'
+        self.serv._SMTPchannel.disconnect = True
+        with self.assertRaises(smtplib.SMTPSenderRefused):
+            smtp.sendmail('John', 'Sally', 'test message')
+        self.assertIsNone(smtp.sock)
 
     # Issue 5713: make sure close, not rset, is called if we get a 421 error
     def test_421_from_mail_cmd(self):

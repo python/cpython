@@ -37,6 +37,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #17498: Some SMTP servers disconnect after certain errors, violating
+  strict RFC conformance.  Instead of losing the error code when we issue the
+  subsequent RSET, smtplib now returns the error code and defers raising the
+  SMTPServerDisconnected error until the next command is issued.
+
 - Issue #17826: setting an iterable side_effect on a mock function created by
   create_autospec now works. Patch by Kushal Das.
 
