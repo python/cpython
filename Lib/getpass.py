@@ -138,6 +138,7 @@ def _raw_input(prompt="", stream=None, input=None):
         try:
             stream.write(prompt)
         except UnicodeEncodeError:
+            # Use replace error handler to get as much as possible printed.
             prompt = prompt.encode(stream.encoding, 'replace')
             prompt = prompt.decode(stream.encoding)
             stream.write(prompt)
