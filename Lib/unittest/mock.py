@@ -27,8 +27,12 @@ __version__ = '1.0'
 import inspect
 import pprint
 import sys
+import builtins
+from types import ModuleType
 from functools import wraps, partial
 
+
+_builtins = {name for name in dir(builtins) if not name.startswith('_')}
 
 BaseExceptions = (BaseException,)
 if 'java' in sys.platform:
@@ -1165,6 +1169,9 @@ class _patch(object):
             original = getattr(target, name, DEFAULT)
         else:
             local = True
+
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
 
         if not self.create and original is DEFAULT:
             raise AttributeError(
