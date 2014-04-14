@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7776: Fix ``Host:'' header and reconnection when using
+  http.client.HTTPConnection.set_tunnel(). Patch by Nikolaus Rath.
+
 - Issue #20968: unittest.mock.MagicMock now supports division.
   Patch by Johannes Baiter.
 
