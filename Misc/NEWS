@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21209: Fix sending tuples to custom generator objects with the yield
+  from syntax.
+
 - Issue #21193: pow(a, b, c) now raises ValueError rather than TypeError when b
   is negative.  Patch by Josh Rosenberg.
 
