@@ -180,8 +180,9 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
 
     Py_ssize_t consumed;
     int align_specified = 0;
+    int fill_char_specified = 0;
 
-    format->fill_char = '\0';
+    format->fill_char = ' ';
     format->align = default_align;
     format->alternate = 0;
     format->sign = '\0';
@@ -195,6 +196,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     if (end-ptr >= 2 && is_alignment_token(ptr[1])) {
         format->align = ptr[1];
         format->fill_char = ptr[0];
+        fill_char_specified = 1;
         align_specified = 1;
         ptr += 2;
     }
@@ -218,7 +220,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     }
 
     /* The special case for 0-padding (backwards compat) */
-    if (format->fill_char == '\0' && end-ptr >= 1 && ptr[0] == '0') {
+    if (!fill_char_specified && end-ptr >= 1 && ptr[0] == '0') {
         format->fill_char = '0';
         if (!align_specified) {
             format->align = '=';
@@ -715,8 +717,7 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
 
     /* Write into that space. First the padding. */
     p = fill_padding(STRINGLIB_STR(result), len,
-                     format->fill_char=='\0'?' ':format->fill_char,
-                     lpad, rpad);
+                     format->fill_char, lpad, rpad);
 
     /* Then the source string. */
     memcpy(p, STRINGLIB_STR(value), len * sizeof(STRINGLIB_CHAR));
@@ -893,8 +894,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Populate the memory. */
     fill_number(STRINGLIB_STR(result), &spec, pnumeric_chars, n_digits,
-                prefix, format->fill_char == '\0' ? ' ' : format->fill_char,
-                &locale, format->type == 'X');
+                prefix, format->fill_char, &locale, format->type == 'X');
 
 done:
     Py_XDECREF(tmp);
@@ -1048,8 +1048,7 @@ format_float_internal(PyObject *value,
 
     /* Populate the memory. */
     fill_number(STRINGLIB_STR(result), &spec, p, n_digits, NULL,
-                format->fill_char == '\0' ? ' ' : format->fill_char, &locale,
-                0);
+                format->fill_char, &locale, 0);
 
 done:
     PyMem_Free(buf);
@@ -1265,8 +1264,7 @@ format_complex_internal(PyObject *value,
     /* Populate the memory. First, the padding. */
     p = fill_padding(STRINGLIB_STR(result),
                      n_re_total + n_im_total + 1 + add_parens * 2,
-                     format->fill_char=='\0' ? ' ' : format->fill_char,
-                     lpad, rpad);
+                     format->fill_char, lpad, rpad);
 
     if (add_parens)
         *p++ = '(';

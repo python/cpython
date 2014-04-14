@@ -40,6 +40,9 @@ Core and Builtins
 - Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
   billion characters) input strings in _Py_dg_strtod.
 
+- Issue #12546: Allow \x00 to be used as a fill character when using str, int,
+  float, and complex __format__ methods.
+
 Library
 -------
 
