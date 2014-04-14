@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
+  parameter. Bug reported by Guido Vranken.
+
 - Issue #20633: Replace relative import by absolute import.
 
 - Issue #21082: In os.makedirs, do not set the process-wide umask. Note this
