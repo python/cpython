@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
+  parameter. Bug reported by Guido Vranken.
+
 - Issue #21169: getpass now handles non-ascii characters that the
   input stream encoding cannot encode by re-encoding using the
   replace error handler.
