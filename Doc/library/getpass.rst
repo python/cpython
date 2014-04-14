@@ -13,10 +13,11 @@ The :mod:`getpass` module provides two functions:
 .. function:: getpass(prompt='Password: ', stream=None)
 
    Prompt the user for a password without echoing.  The user is prompted using
-   the string *prompt*, which defaults to ``'Password: '``.  On Unix, the prompt
-   is written to the file-like object *stream*.  *stream* defaults to the
-   controlling terminal (:file:`/dev/tty`) or if that is unavailable to
-   ``sys.stderr`` (this argument is ignored on Windows).
+   the string *prompt*, which defaults to ``'Password: '``.  On Unix, the
+   prompt is written to the file-like object *stream* using the replace error
+   handler if needed.  *stream* defaults to the controlling terminal
+   (:file:`/dev/tty`) or if that is unavailable to ``sys.stderr`` (this
+   argument is ignored on Windows).
 
    If echo free input is unavailable getpass() falls back to printing
    a warning message to *stream* and reading from ``sys.stdin`` and
