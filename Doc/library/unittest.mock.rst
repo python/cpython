@@ -1031,6 +1031,12 @@ patch
     default because it can be dangerous. With it switched on you can write
     passing tests against APIs that don't actually exist!
 
+    .. note::
+
+        .. versionchanged:: 3.5
+           If you are patching builtins in a module then you don't
+           need to pass `create=True`, it will be added by default.
+
     Patch can be used as a `TestCase` class decorator. It works by
     decorating each test method in the class. This reduces the boilerplate
     code when your test methods share a common patchings set. `patch` finds
@@ -1400,6 +1406,21 @@ It is also possible to stop all patches which have been started by using
 .. function:: patch.stopall
 
     Stop all active patches. Only stops patches started with `start`.
+
+.. patch-builtins:
+
+patch builtins
+~~~~~~~~~~~~~~~
+You can patch any builtins within a module. The following example patches
+builtin `ord`:
+
+    >>> @patch('__main__.ord')
+    ... def test(mock_ord):
+    ...     mock_ord.return_value = 101
+    ...     print(ord('c'))
+    ...
+    >>> test()
+    101
 
 
 TEST_PREFIX
@@ -2011,7 +2032,7 @@ Mocking context managers with a :class:`MagicMock` is common enough and fiddly
 enough that a helper function is useful.
 
     >>> m = mock_open()
-    >>> with patch('__main__.open', m, create=True):
+    >>> with patch('__main__.open', m):
     ...     with open('foo', 'w') as h:
     ...         h.write('some stuff')
     ...
@@ -2026,7 +2047,7 @@ enough that a helper function is useful.
 
 And for reading files:
 
-    >>> with patch('__main__.open', mock_open(read_data='bibble'), create=True) as m:
+    >>> with patch('__main__.open', mock_open(read_data='bibble')) as m:
     ...     with open('foo') as h:
     ...         result = h.read()
     ...
