@@ -154,6 +154,24 @@ class MockTest(unittest.TestCase):
         mock = Mock(side_effect=side_effect, return_value=sentinel.RETURN)
         self.assertEqual(mock(), sentinel.RETURN)
 
+    def test_autospec_side_effect(self):
+        # Test for issue17826
+        results = [1, 2, 3]
+        def effect():
+            return results.pop()
+        def f():
+            pass
+
+        mock = create_autospec(f)
+        mock.side_effect = [1, 2, 3]
+        self.assertEqual([mock(), mock(), mock()], [1, 2, 3],
+                          "side effect not used correctly in create_autospec")
+        # Test where side effect is a callable
+        results = [1, 2, 3]
+        mock = create_autospec(f)
+        mock.side_effect = effect
+        self.assertEqual([mock(), mock(), mock()], [3, 2, 1],
+                          "callable side effect not used correctly")
 
     @unittest.skipUnless('java' in sys.platform,
                           'This test only applies to Jython')
