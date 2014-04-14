@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17826: setting an iterable side_effect on a mock function created by
+  create_autospec now works. Patch by Kushal Das.
+
 - Issue #7776: Fix ``Host:`` header and reconnection when using
   http.client.HTTPConnection.set_tunnel(). Patch by Nikolaus Rath.
 
