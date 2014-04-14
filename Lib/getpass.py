@@ -135,7 +135,12 @@ def _raw_input(prompt="", stream=None, input=None):
         input = sys.stdin
     prompt = str(prompt)
     if prompt:
-        stream.write(prompt)
+        try:
+            stream.write(prompt)
+        except UnicodeEncodeError:
+            prompt = prompt.encode(stream.encoding, 'replace')
+            prompt = prompt.decode(stream.encoding)
+            stream.write(prompt)
         stream.flush()
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
     line = input.readline()
