@@ -116,11 +116,12 @@ def _create_formatters(cp):
         sectname = "formatter_%s" % form
         fs = cp.get(sectname, "format", raw=True, fallback=None)
         dfs = cp.get(sectname, "datefmt", raw=True, fallback=None)
+        stl = cp.get(sectname, "style", raw=True, fallback='%')
         c = logging.Formatter
         class_name = cp[sectname].get("class")
         if class_name:
             c = _resolve(class_name)
-        f = c(fs, dfs)
+        f = c(fs, dfs, stl)
         formatters[form] = f
     return formatters
 
@@ -660,7 +661,12 @@ class DictConfigurator(BaseConfigurator):
             fmt = config.get('format', None)
             dfmt = config.get('datefmt', None)
             style = config.get('style', '%')
-            result = logging.Formatter(fmt, dfmt, style)
+            cname = config.get('class', None)
+            if not cname:
+                c = logging.Formatter
+            else:
+                c = _resolve(cname)
+            result = c(fmt, dfmt, style)
         return result
 
     def configure_filter(self, config):
