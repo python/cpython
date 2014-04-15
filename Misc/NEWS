@@ -223,6 +223,9 @@ IDLE
 Build
 -----
 
+- Issue #17861: Tools/scripts/generate_opcode_h.py automatically regenerates
+  Include/opcode.h from Lib/opcode.py if the later gets any change.
+
 - Issue #20644: OS X installer build support for documentation build changes
   in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
 
