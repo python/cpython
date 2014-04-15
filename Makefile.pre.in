@@ -323,6 +323,13 @@ PGENSRCS=	$(PSRCS) $(PGSRCS)
 PGENOBJS=	$(POBJS) $(PGOBJS)
 
 ##########################################################################
+# opcode.h generation
+OPCODE_H_DIR= 	Include
+OPCODE_H_SCRIPT= Tools/scripts/generate_opcode_h.py
+OPCODE_H=	$(srcdir)/$(OPCODE_H_DIR)/opcode.h
+OPCODE_H_GEN=	@OPCODEHGEN@  $(OPCODE_H_SCRIPT) Lib/ $(OPCODE_H)
+#
+##########################################################################
 # AST
 AST_H_DIR=	Include
 AST_H=		$(AST_H_DIR)/Python-ast.h
@@ -760,6 +767,9 @@ $(AST_C): $(AST_H) $(AST_ASDL) $(ASDLGEN_FILES)
 	$(MKDIR_P) $(AST_C_DIR)
 	$(ASDLGEN) -c $(AST_C_DIR) $(AST_ASDL)
 
+$(OPCODE_H): $(srcdir)/Lib/opcode.py $(OPCODE_H_SCRIPT)
+	$(OPCODE_H_GEN)
+
 Python/compile.o Python/symtable.o Python/ast.o: $(GRAMMAR_H) $(AST_H)
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
@@ -871,7 +881,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/node.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
-		$(srcdir)/Include/opcode.h \
+		$(OPCODE_H) \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/patchlevel.h \
 		$(srcdir)/Include/pgen.h \
