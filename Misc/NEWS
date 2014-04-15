@@ -147,6 +147,9 @@ Library
   positional-or-keyword arguments passed as keyword arguments become
   keyword-only.
 
+- Issue #21209: Fix asyncio.tasks.CoroWrapper to workaround a bug
+  in yield-from implementation in CPythons prior to 3.4.1.
+
 IDLE
 ----
 
