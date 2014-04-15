@@ -1036,6 +1036,15 @@ else
     ASDLGEN="$PYTHON"
 fi
 
+AC_SUBST(OPCODEHGEN)
+AC_CHECK_PROGS(PYTHON, python$PACKAGE_VERSION python3 python, not-found)
+if test "$PYTHON" = not-found; then
+    OPCODEHGEN="@echo python: $PYTHON! cannot run Tools/scripts/generate_opcode_h.py"
+else
+    OPCODEHGEN="$PYTHON"
+fi
+
+
 
 case $MACHDEP in
 bsdos*|hp*|HP*)
