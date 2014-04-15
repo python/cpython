@@ -1,7 +1,7 @@
 """
 Virtual environment (venv) package for Python. Based on PEP 405.
 
-Copyright (C) 2011-2012 Vinay Sajip.
+Copyright (C) 2011-2014 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
 
 usage: python -m venv [-h] [--system-site-packages] [--symlinks] [--clear]
@@ -30,6 +30,7 @@ optional arguments:
 import logging
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import types
@@ -132,10 +133,18 @@ class EnvBuilder:
         else:
             binname = 'bin'
             incpath = 'include'
-            libpath = os.path.join(env_dir, 'lib', 'python%d.%d' % sys.version_info[:2], 'site-packages')
+            libpath = os.path.join(env_dir, 'lib',
+                                   'python%d.%d' % sys.version_info[:2],
+                                   'site-packages')
         context.inc_path = path = os.path.join(env_dir, incpath)
         create_if_needed(path)
         create_if_needed(libpath)
+        # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
+        if ((struct.calcsize('P') == 8) and (os.name == 'posix') and
+            (sys.platform != 'darwin')):
+            p = os.path.join(env_dir, 'lib')
+            link_path = os.path.join(env_dir, 'lib64')
+            os.symlink(p, link_path)
         context.bin_path = binpath = os.path.join(env_dir, binname)
         context.bin_name = binname
         context.env_exe = os.path.join(binpath, exename)
