@@ -1182,6 +1182,10 @@ class MockTest(unittest.TestCase):
                 func.mock_calls, [call(1, 2), call(3, 4)]
             )
 
+    #Issue21222
+    def test_create_autospec_with_name(self):
+        m = mock.create_autospec(object(), name='sweet_func')
+        self.assertIn('sweet_func', repr(m))
 
     def test_mock_add_spec(self):
         class _One(object):
