@@ -190,6 +190,9 @@ Documentation
 Tests
 -----
 
+- Issue #21223: Pass test_site/test_startup_imports when some of the extensions
+  are built as builtins.
+
 - Issue #20635: Added tests for Tk geometry managers.
 
 - Add test case for freeze.
