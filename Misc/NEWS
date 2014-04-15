@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21197: Add lib64 -> lib symlink in venvs on 64-bit non-OS X POSIX.
+
 - Issue #17498: Some SMTP servers disconnect after certain errors, violating
   strict RFC conformance.  Instead of losing the error code when we issue the
   subsequent RSET, smtplib now returns the error code and defers raising the

@@ -9,6 +9,7 @@ import ensurepip
 import os
 import os.path
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -87,6 +88,14 @@ class BasicTest(BaseTest):
         self.isdir(self.bindir)
         self.isdir(self.include)
         self.isdir(*self.lib)
+        # Issue 21197
+        p = self.get_env_file('lib64')
+        conditions = ((struct.calcsize('P') == 8) and (os.name == 'posix') and
+                      (sys.platform != 'darwin'))
+        if conditions:
+            self.assertTrue(os.path.islink(p))
+        else:
+            self.assertFalse(os.path.exists(p))
         data = self.get_text_file_contents('pyvenv.cfg')
         if sys.platform == 'darwin' and ('__PYVENV_LAUNCHER__'
                                          in os.environ):
