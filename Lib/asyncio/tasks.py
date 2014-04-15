@@ -63,6 +63,18 @@ class CoroWrapper:
     def close(self):
         return self.gen.close()
 
+    @property
+    def gi_frame(self):
+        return self.gen.gi_frame
+
+    @property
+    def gi_running(self):
+        return self.gen.gi_running
+
+    @property
+    def gi_code(self):
+        return self.gen.gi_code
+
     def __del__(self):
         frame = self.gen.gi_frame
         if frame is not None and frame.f_lasti == -1:
