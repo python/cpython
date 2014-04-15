@@ -846,13 +846,6 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                             " format specifier 'c'");
             goto done;
         }
-        /* error to request alternate format */
-        if (format->alternate) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Alternate form (#) not allowed with integer"
-                            " format specifier 'c'");
-            goto done;
-        }
 
         /* taken from unicodeobject.c formatchar() */
         /* Integer input truncated to a character */

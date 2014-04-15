@@ -34,10 +34,6 @@ Core and Builtins
   replacement fields. It now matches the behavior of str.format() in
   this regard. Patches by Phil Elson and Ramchandra Apte.
 
-- Issue #8931: Make alternate formatting ('#') for type 'c' raise an
-  exception. It had no effect, now trying to specify it is an error.
-  Patch by Torsten Landschoff.
-
 Library
 -------
 

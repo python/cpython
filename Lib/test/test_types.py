@@ -343,8 +343,6 @@ class TypesTests(unittest.TestCase):
         self.assertRaises(ValueError, 3 .__format__, ",n")
         # can't have ',' with 'c'
         self.assertRaises(ValueError, 3 .__format__, ",c")
-        # can't have '#' with 'c'
-        self.assertRaises(ValueError, 3 .__format__, "#c")
 
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
