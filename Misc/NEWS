@@ -48,6 +48,9 @@ Library
 
 - Issue #21203: Updated fileConfig and dictConfig to remove inconsistencies.
   Thanks to Jure Koren for the patch.
+  
+- Issue #21222: Passing name keyword argument to mock.create_autospec now
+  works.
 
 - Issue #21197: Add lib64 -> lib symlink in venvs on 64-bit non-OS X POSIX.
 
