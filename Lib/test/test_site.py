@@ -459,7 +459,8 @@ class StartupImportTests(unittest.TestCase):
         # http://bugs.python.org/issue19218>
         collection_mods = {'_collections', 'collections', 'functools',
                            'heapq', 'itertools', 'keyword', 'operator',
-                           'reprlib', 'types', 'weakref'}
+                           'reprlib', 'types', 'weakref'
+                          }.difference(sys.builtin_module_names)
         self.assertFalse(modules.intersection(collection_mods), stderr)
 
 
