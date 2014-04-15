@@ -154,6 +154,10 @@ Improved Modules
   applications where startup time is paramount (contributed by Brett Cannon in
   :issue:`17621`).
 
+* :func:`doctest.DocTestSuite` returns an empty :class:`unittest.TestSuite` if
+  *module* contains no docstrings instead of raising :exc:`ValueError`
+  (contributed by Glenn Jones in :issue:`15916`).
+
 
 Optimizations
 =============
