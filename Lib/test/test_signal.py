@@ -42,6 +42,7 @@ def ignoring_eintr(__func, *args, **kwargs):
 
 class GenericTests(unittest.TestCase):
 
+    @unittest.skipIf(threading is None, "test needs threading module")
     def test_enums(self):
         for name in dir(signal):
             sig = getattr(signal, name)
