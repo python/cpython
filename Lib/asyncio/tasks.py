@@ -53,6 +53,8 @@ class CoroWrapper:
         # We use `*value` because of a bug in CPythons prior
         # to 3.4.1. See issue #21209 and test_yield_from_corowrapper
         # for details.  This workaround should be removed in 3.5.0.
+        if len(value) == 1:
+            value = value[0]
         return self.gen.send(value)
 
     def throw(self, exc):
