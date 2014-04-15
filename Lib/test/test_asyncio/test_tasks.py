@@ -1410,6 +1410,24 @@ class TaskTests(unittest.TestCase):
         finally:
             asyncio.tasks._DEBUG = old_debug
 
+    def test_yield_from_corowrapper_send(self):
+        def foo():
+            a = yield
+            return a
+
+        def call(arg):
+            cw = asyncio.tasks.CoroWrapper(foo(), foo)
+            cw.send(None)
+            try:
+                cw.send(arg)
+            except StopIteration as ex:
+                return ex.args[0]
+            else:
+                raise AssertionError('StopIteration was expected')
+
+        self.assertEqual(call((1, 2)), (1, 2))
+        self.assertEqual(call('spam'), 'spam')
+
 
 class GatherTestsBase:
 
