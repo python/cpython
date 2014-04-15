@@ -5,8 +5,11 @@ import urllib.request
 import http.server
 import unittest
 import hashlib
+
 from test import support
+
 threading = support.import_module('threading')
+
 try:
     import ssl
 except ImportError:
@@ -57,14 +60,11 @@ class LoopbackHttpServerThread(threading.Thread):
         request_handler.protocol_version = "HTTP/1.0"
         self.httpd = LoopbackHttpServer(("127.0.0.1", 0),
                                         request_handler)
-        #print "Serving HTTP on %s port %s" % (self.httpd.server_name,
-        #                                      self.httpd.server_port)
         self.port = self.httpd.server_port
 
     def stop(self):
         """Stops the webserver if it's currently running."""
 
-        # Set the stop flag.
         self._stop_server = True
 
         self.join()
@@ -232,6 +232,7 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
 
 # Test cases
 
+@unittest.skipUnless(threading, "Threading required for this test.")
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
@@ -343,6 +344,7 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
+@unittest.skipUnless(threading, "Threading required for this test.")
 class TestUrlopen(unittest.TestCase):
     """Tests urllib.request.urlopen using the network.
 
@@ -590,9 +592,17 @@ class TestUrlopen(unittest.TestCase):
         self.assertEqual(index + 1, len(lines))
 
 
-@support.reap_threads
-def test_main():
-    support.run_unittest(ProxyAuthTests, TestUrlopen)
+threads_key = None
+
+def setUpModule():
+    # Store the threading_setup in a key and ensure that it is cleaned up
+    # in the tearDown
+    global threads_key
+    threads_key = support.threading_setup()
+
+def tearDownModule():
+    if threads_key:
+        support.threading_cleanup(threads_key)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
