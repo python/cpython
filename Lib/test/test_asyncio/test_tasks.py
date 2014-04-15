@@ -1386,6 +1386,31 @@ class TaskTests(unittest.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete,
             asyncio.wait([], loop=self.loop))
 
+    def test_yield_from_corowrapper(self):
+        old_debug = asyncio.tasks._DEBUG
+        asyncio.tasks._DEBUG = True
+        try:
+            @asyncio.coroutine
+            def t1():
+                return (yield from t2())
+
+            @asyncio.coroutine
+            def t2():
+                f = asyncio.Future(loop=self.loop)
+                asyncio.Task(t3(f), loop=self.loop)
+                return (yield from f)
+
+            @asyncio.coroutine
+            def t3(f):
+                f.set_result((1, 2, 3))
+
+            task = asyncio.Task(t1(), loop=self.loop)
+            val = self.loop.run_until_complete(task)
+            self.assertEqual(val, (1, 2, 3))
+        finally:
+            asyncio.tasks._DEBUG = old_debug
+
+
 class GatherTestsBase:
 
     def setUp(self):
