@@ -2103,6 +2103,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     elif is_type and instance and not _instance_callable(spec):
         Klass = NonCallableMagicMock
 
+    _name = _kwargs.pop('name', _name)
+
     _new_name = _name
     if _parent is None:
         # for a top level object no _new_name should be set
