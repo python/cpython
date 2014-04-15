@@ -1054,7 +1054,7 @@ def _is_started(patcher):
 class _patch(object):
 
     attribute_name = None
-    _active_patches = set()
+    _active_patches = []
 
     def __init__(
             self, getter, attribute, new, spec, create,
@@ -1330,13 +1330,18 @@ class _patch(object):
     def start(self):
         """Activate a patch, returning any created mock."""
         result = self.__enter__()
-        self._active_patches.add(self)
+        self._active_patches.append(self)
         return result
 
 
     def stop(self):
         """Stop an active patch."""
-        self._active_patches.discard(self)
+        try:
+            self._active_patches.remove(self)
+        except ValueError:
+            # If the patch hasn't been started this will fail
+            pass
+
         return self.__exit__()
 
 
@@ -1629,8 +1634,8 @@ def _clear_dict(in_dict):
 
 
 def _patch_stopall():
-    """Stop all active patches."""
-    for patch in list(_patch._active_patches):
+    """Stop all active patches. LIFO to unroll nested patches."""
+    for patch in reversed(_patch._active_patches):
         patch.stop()
 
 
