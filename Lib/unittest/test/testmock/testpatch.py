@@ -12,7 +12,7 @@ from unittest.test.testmock.support import SomeClass, is_instance
 from unittest.mock import (
     NonCallableMock, CallableMixin, patch, sentinel,
     MagicMock, Mock, NonCallableMagicMock, patch, _patch,
-    DEFAULT, call, _get_target
+    DEFAULT, call, _get_target, _patch
 )
 
 
@@ -1798,6 +1798,23 @@ class PatchTest(unittest.TestCase):
 
         patched()
         self.assertIs(os.path, path)
+
+    def test_stopall_lifo(self):
+        stopped = []
+        class thing(object):
+            one = two = three = None
+
+        def get_patch(attribute):
+            class mypatch(_patch):
+                def stop(self):
+                    stopped.append(attribute)
+                    return super(mypatch, self).stop()
+            return mypatch(lambda: thing, attribute, None, None,
+                           False, None, None, None, {})
+        [get_patch(val).start() for val in ("one", "two", "three")]
+        patch.stopall()
+
+        self.assertEqual(stopped, ["three", "two", "one"])
 
 
 if __name__ == '__main__':
