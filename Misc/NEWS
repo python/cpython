@@ -39,7 +39,7 @@ Core and Builtins
 
 - Issue #20480: Add ipaddress.reverse_pointer. Patch by Leon Weber.
 
-- Issue #13598: Modify string.Formatter to support auto-numbering of 
+- Issue #13598: Modify string.Formatter to support auto-numbering of
   replacement fields. It now matches the behavior of str.format() in
   this regard. Patches by Phil Elson and Ramchandra Apte.
 
