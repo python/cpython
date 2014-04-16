@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21238: New keyword argument `unsafe` to Mock. It raises
+  `AttributeError` incase of an attribute startswith assert or assret.
+
 - Issue #20896: ssl.get_server_certificate() now uses PROTOCOL_SSLv23, not
   PROTOCOL_SSLv3, for maximum compatibility.
 

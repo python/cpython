@@ -1187,6 +1187,17 @@ class MockTest(unittest.TestCase):
         m = mock.create_autospec(object(), name='sweet_func')
         self.assertIn('sweet_func', repr(m))
 
+    #Issue21238
+    def test_mock_unsafe(self):
+        m = Mock()
+        with self.assertRaises(AttributeError):
+            m.assert_foo_call()
+        with self.assertRaises(AttributeError):
+            m.assret_foo_call()
+        m = Mock(unsafe=True)
+        m.assert_foo_call()
+        m.assret_foo_call()
+
     def test_mock_add_spec(self):
         class _One(object):
             one = 1
