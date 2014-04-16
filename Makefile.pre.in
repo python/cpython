@@ -324,10 +324,10 @@ PGENOBJS=	$(POBJS) $(PGOBJS)
 
 ##########################################################################
 # opcode.h generation
-OPCODE_H_DIR= 	Include
-OPCODE_H_SCRIPT= Tools/scripts/generate_opcode_h.py
-OPCODE_H=	$(srcdir)/$(OPCODE_H_DIR)/opcode.h
-OPCODE_H_GEN=	@OPCODEHGEN@  $(OPCODE_H_SCRIPT) Lib/ $(OPCODE_H)
+OPCODE_H_DIR= 	$(srcdir)/Include
+OPCODE_H_SCRIPT= $(srcdir)/Tools/scripts/generate_opcode_h.py
+OPCODE_H=	$(OPCODE_H_DIR)/opcode.h
+OPCODE_H_GEN=	@OPCODEHGEN@  $(OPCODE_H_SCRIPT) $(srcdir)/Lib/opcode.py $(OPCODE_H)
 #
 ##########################################################################
 # AST
