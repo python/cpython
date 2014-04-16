@@ -81,7 +81,10 @@ of which this module provides three different variants:
 
       Holds an instance of the class specified by the :attr:`MessageClass` class
       variable. This instance parses and manages the headers in the HTTP
-      request.
+      request. The :func:`~http.client.parse_headers` function from
+      :mod:`http.client` is used to parse the headers and it requires that the
+      HTTP request provide a valid :rfc:`2822` style header.
+
 
    .. attribute:: rfile
 
