@@ -321,6 +321,20 @@ the `new_callable` argument to `patch`.
             >>> calls = [call(4), call(2), call(3)]
             >>> mock.assert_has_calls(calls, any_order=True)
 
+    .. method:: assert_not_called(*args, **kwargs)
+
+        Assert the mock was never called.
+
+            >>> m = Mock()
+            >>> m.hello.assert_not_called()
+            >>> obj = m.hello()
+            >>> m.hello.assert_not_called()
+            Traceback (most recent call last):
+              ...
+            AssertionError: Expected 'hello' to not have been called. Called 1 times.
+
+        .. versionadded:: 3.5
+
 
     .. method:: reset_mock()
 
