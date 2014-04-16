@@ -758,7 +758,7 @@ class NonCallableMock(Base):
         else:
             return _call
 
-    def assert_not_called(_mock_self, *args, **kwargs):
+    def assert_not_called(_mock_self):
         """assert that the mock was never called.
         """
         self = _mock_self
