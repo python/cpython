@@ -198,7 +198,7 @@ a `MagicMock` for you. You can specify an alternative class of `Mock` using
 the `new_callable` argument to `patch`.
 
 
-.. class:: Mock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, **kwargs)
+.. class:: Mock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
     Create a new `Mock` object. `Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
@@ -234,6 +234,12 @@ the `new_callable` argument to `patch`.
     * `return_value`: The value returned when the mock is called. By default
       this is a new Mock (created on first access). See the
       :attr:`return_value` attribute.
+
+    * `unsafe`: By default if any attribute starts with *assert* or
+      *assret* will raise an `AttributeError`. Passing `unsafe=True` will allow
+      access to these attributes.
+
+      .. versionadded:: 3.5
 
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
