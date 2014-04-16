@@ -387,7 +387,7 @@ Certificate handling
      >>> time.ctime(ssl.cert_time_to_seconds("May  9 00:00:00 2007 GMT"))
      'Wed May  9 00:00:00 2007'
 
-.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None)
+.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_SSLv23, ca_certs=None)
 
    Given the address ``addr`` of an SSL-protected server, as a (*hostname*,
    *port-number*) pair, fetches the server's certificate, and returns it as a
@@ -400,6 +400,10 @@ Certificate handling
 
    .. versionchanged:: 3.3
       This function is now IPv6-compatible.
+
+   .. versionchanged:: 3.5
+      The default *ssl_version* is changed from :data:`PROTOCOL_SSLv3` to
+      :data:`PROTOCOL_SSLv23` for maximum compatibility with modern servers.
 
 .. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
 
