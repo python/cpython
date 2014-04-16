@@ -1198,6 +1198,15 @@ class MockTest(unittest.TestCase):
         m.assert_foo_call()
         m.assret_foo_call()
 
+    #Issue21262
+    def test_assert_not_called(self):
+        m = Mock()
+        m.hello.assert_not_called()
+        m.hello()
+        with self.assertRaises(AssertionError):
+            m.hello.assert_not_called()
+
+
     def test_mock_add_spec(self):
         class _One(object):
             one = 1
