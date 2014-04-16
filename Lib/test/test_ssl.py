@@ -2593,7 +2593,12 @@ else:
             # should be enabled by default on SSL contexts.
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             context.load_cert_chain(CERTFILE)
-            context.set_ciphers("ECDH")
+            # Prior to OpenSSL 1.0.0, ECDH ciphers have to be enabled
+            # explicitly using the 'ECCdraft' cipher alias.  Otherwise,
+            # our default cipher list should prefer ECDH-based ciphers
+            # automatically.
+            if ssl.OPENSSL_VERSION_INFO < (1, 0, 0):
+                context.set_ciphers("ECCdraft:ECDH")
             with ThreadedEchoServer(context=context) as server:
                 with context.wrap_socket(socket.socket()) as s:
                     s.connect((HOST, server.port))
