@@ -674,8 +674,8 @@ Test cases
    .. method:: setUp()
 
       Method called to prepare the test fixture.  This is called immediately
-      before calling the test method; other than :exc:`AssertionError` or :exc:`SkipTest`, 
-      any exception raised by this method will be considered an error rather than 
+      before calling the test method; other than :exc:`AssertionError` or :exc:`SkipTest`,
+      any exception raised by this method will be considered an error rather than
       a test failure. The default implementation does nothing.
 
 
@@ -684,9 +684,9 @@ Test cases
       Method called immediately after the test method has been called and the
       result recorded.  This is called even if the test method raised an
       exception, so the implementation in subclasses may need to be particularly
-      careful about checking internal state.  Any exception, other than :exc:`AssertionError` 
-      or :exc:`SkipTest`, raised by this method will be considered an error rather than a 
-      test failure.  This method will only be called if the :meth:`setUp` succeeds, 
+      careful about checking internal state.  Any exception, other than :exc:`AssertionError`
+      or :exc:`SkipTest`, raised by this method will be considered an error rather than a
+      test failure.  This method will only be called if the :meth:`setUp` succeeds,
       regardless of the outcome of the test method. The default implementation does nothing.
 
 
