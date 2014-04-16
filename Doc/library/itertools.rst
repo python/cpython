@@ -87,10 +87,15 @@ loops that truncate the stream.
 
 .. function:: accumulate(iterable[, func])
 
-    Make an iterator that returns accumulated sums. Elements may be any addable
-    type including :class:`~decimal.Decimal` or :class:`~fractions.Fraction`.
-    If the optional *func* argument is supplied, it should be a function of two
-    arguments and it will be used instead of addition.
+    Make an iterator that returns accumulated sums, or accumulated
+    results of other binary functions (specified via the optional
+    *func* argument).  If *func* is supplied, it should be a function
+    of two arguments. Elements of the input *iterable* may be any type
+    that can be accepted as arguments to *func*. (For example, with
+    the default operation of addition, elements may be any addable
+    type including :class:`~decimal.Decimal` or
+    :class:`~fractions.Fraction`.) If the input iterable is empty, the
+    output iterable will also be empty.
 
     Equivalent to::
 
