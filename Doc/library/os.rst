@@ -2730,10 +2730,27 @@ written in Python, such as a mail server's external command delivery program.
    Availability: Unix.
 
 
-.. function:: popen(...)
+.. function:: popen(command, mode='r', buffering=-1)
 
-   Run child processes, returning opened pipes for communications.  These functions
-   are described in section :ref:`os-newstreams`.
+   Open a pipe to or from *command*.  The return value is an open file object
+   connected to the pipe, which can be read or written depending on whether *mode*
+   is ``'r'`` (default) or ``'w'``. The *buffering* argument has the same meaning as
+   the corresponding argument to the built-in :func:`open` function. The
+   returned file object reads or writes text strings rather than bytes.
+
+   The ``close`` method returns :const:`None` if the subprocess exited
+   successfully, or the subprocess's return code if there was an
+   error. On POSIX systems, if the return code is positive it
+   represents the return value of the process left-shifted by one
+   byte.  If the return code is negative, the process was terminated
+   by the signal given by the negated value of the return code.  (For
+   example, the return value might be ``- signal.SIGKILL`` if the
+   subprocess was killed.)  On Windows systems, the return value
+   contains the signed integer return code from the child process.
+
+   This is implemented using :class:`subprocess.Popen`; see that class's
+   documentation for more powerful ways to manage and communicate with
+   subprocesses.
 
 
 .. function:: spawnl(mode, path, ...)
