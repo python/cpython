@@ -35,15 +35,14 @@ Windows) at the primary prompt causes the interpreter to exit with a zero exit
 status.  If that doesn't work, you can exit the interpreter by typing the
 following command: ``quit()``.
 
-The interpreter's line-editing features usually aren't very sophisticated.  On
-Unix, whoever installed the interpreter may have enabled support for the GNU
-readline library, which adds more elaborate interactive editing and history
-features. Perhaps the quickest check to see whether command line editing is
-supported is typing Control-P to the first Python prompt you get.  If it beeps,
-you have command line editing; see Appendix :ref:`tut-interacting` for an
-introduction to the keys.  If nothing appears to happen, or if ``^P`` is echoed,
-command line editing isn't available; you'll only be able to use backspace to
-remove characters from the current line.
+The interpreter's line-editing features include interactive editing, history
+substitution and code completion on systems that support readline.  Perhaps the
+quickest check to see whether command line editing is supported is typing
+Control-P to the first Python prompt you get.  If it beeps, you have command
+line editing; see Appendix :ref:`tut-interacting` for an introduction to the
+keys.  If nothing appears to happen, or if ``^P`` is echoed, command line
+editing isn't available; you'll only be able to use backspace to remove
+characters from the current line.
 
 The interpreter operates somewhat like the Unix shell: when called with standard
 input connected to a tty device, it reads and executes commands interactively;
