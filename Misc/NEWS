@@ -167,6 +167,10 @@ IDLE
 Build
 -----
 
+- Issue #15234: For BerkelyDB and Sqlite, only add the found library and
+  include directories if they aren't already being searched. This avoids
+  an explicit runtime library dependency.
+
 - Issue #20644: OS X installer build support for documentation build changes
   in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
 
