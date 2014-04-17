@@ -588,6 +588,25 @@ extern "C" {
     } while (0)
 #endif
 
+#ifdef HAVE_GCC_ASM_FOR_MC68881
+#define HAVE_PY_SET_53BIT_PRECISION 1
+#define _Py_SET_53BIT_PRECISION_HEADER \
+  unsigned int old_fpcr, new_fpcr
+#define _Py_SET_53BIT_PRECISION_START					\
+  do {									\
+    __asm__ ("fmove.l %%fpcr,%0" : "=g" (old_fpcr));			\
+    /* Set double precision / round to nearest.  */			\
+    new_fpcr = (old_fpcr & ~0xf0) | 0x80;				\
+    if (new_fpcr != old_fpcr)						\
+      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (new_fpcr));	\
+  } while (0)
+#define _Py_SET_53BIT_PRECISION_END					\
+  do {									\
+    if (new_fpcr != old_fpcr)						\
+      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (old_fpcr));	\
+  } while (0)
+#endif
+
 /* default definitions are empty */
 #ifndef HAVE_PY_SET_53BIT_PRECISION
 #define _Py_SET_53BIT_PRECISION_HEADER

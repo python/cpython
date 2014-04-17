@@ -3810,6 +3810,19 @@ then
     [Define if we can use gcc inline assembler to get and set x87 control word])
 fi
 
+AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set mc68881 fpcr)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  unsigned int fpcr;
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+]])],[have_gcc_asm_for_mc68881=yes],[have_gcc_asm_for_mc68881=no])
+AC_MSG_RESULT($have_gcc_asm_for_mc68881)
+if test "$have_gcc_asm_for_mc68881" = yes
+then
+    AC_DEFINE(HAVE_GCC_ASM_FOR_MC68881, 1,
+    [Define if we can use gcc inline assembler to get and set mc68881 fpcr])
+fi
+
 # Detect whether system arithmetic is subject to x87-style double
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding

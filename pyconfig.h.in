@@ -313,6 +313,9 @@
 /* Define to 1 if you have the `gamma' function. */
 #undef HAVE_GAMMA
 
+/* Define if we can use gcc inline assembler to get and set mc68881 fpcr */
+#undef HAVE_GCC_ASM_FOR_MC68881
+
 /* Define if we can use x64 gcc inline assembler */
 #undef HAVE_GCC_ASM_FOR_X64
 
