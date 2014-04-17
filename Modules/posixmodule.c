@@ -92,7 +92,7 @@ corresponding Unix manual entries for more information on calls.");
 #undef HAVE_SCHED_SETAFFINITY
 #endif
 
-#if defined(HAVE_SYS_XATTR_H) && defined(__GLIBC__)
+#if defined(HAVE_SYS_XATTR_H) && defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
 #define USE_XATTRS
 #endif
 
