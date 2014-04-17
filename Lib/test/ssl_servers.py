@@ -150,7 +150,7 @@ class HTTPSServerThread(threading.Thread):
 def make_https_server(case, *, context=None, certfile=CERTFILE,
                       host=HOST, handler_class=None):
     if context is None:
-        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     # We assume the certfile contains both private key and certificate
     context.load_cert_chain(certfile)
     server = HTTPSServerThread(context, host, handler_class)
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     else:
         handler_class = RootedHTTPRequestHandler
         handler_class.root = os.getcwd()
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     context.load_cert_chain(CERTFILE)
     if args.curve_name:
         context.set_ecdh_curve(args.curve_name)
