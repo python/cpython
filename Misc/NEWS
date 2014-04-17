@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21274: Define PATH_MAX for GNU/Hurd in Python/pythonrun.c.
+
 - Issue #21209: Fix sending tuples to custom generator objects with the yield
   from syntax.
 
@@ -158,6 +160,11 @@ Library
 - Issue #21209: Fix asyncio.tasks.CoroWrapper to workaround a bug
   in yield-from implementation in CPythons prior to 3.4.1.
 
+Extension Modules
+-----------------
+
+- Issue #21276: posixmodule: Don't define USE_XATTRS on KFreeBSD and the Hurd.
+
 IDLE
 ----
 
@@ -199,6 +206,8 @@ Documentation
 
 Tests
 -----
+
+- Issue #21275: Fix a socket test on KFreeBSD.
 
 - Issue #21223: Pass test_site/test_startup_imports when some of the extensions
   are built as builtins.
