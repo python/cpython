@@ -19,12 +19,12 @@ will be used if graphical browsers are not available or an X11 display isn't
 available.  If text-mode browsers are used, the calling process will block until
 the user exits the browser.
 
-If the environment variable :envvar:`BROWSER` exists, it is interpreted to
-override the platform default list of browsers, as a :data:`os.pathsep`-separated
-list of browsers to try in order.  When the value of a list part contains the
-string ``%s``, then it is  interpreted as a literal browser command line to be
-used with the argument URL substituted for ``%s``; if the part does not contain
-``%s``, it is simply interpreted as the name of the browser to launch. [1]_
+If the environment variable :envvar:`BROWSER` exists, it is interpreted as the
+:data:`os.pathsep`-separated list of browsers to try ahead of the the platform
+defaults.  When the value of a list part contains the string ``%s``, then it is
+interpreted as a literal browser command line to be used with the argument URL
+substituted for ``%s``; if the part does not contain ``%s``, it is simply
+interpreted as the name of the browser to launch. [1]_
 
 For non-Unix platforms, or when a remote browser is available on Unix, the
 controlling process will not wait for the user to finish with the browser, but
