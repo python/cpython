@@ -35,6 +35,10 @@
 #define PATH_MAX MAXPATHLEN
 #endif
 
+#ifdef __gnu_hurd__
+#define PATH_MAX MAXPATHLEN
+#endif
+
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(excepthook);
 _Py_IDENTIFIER(flush);
