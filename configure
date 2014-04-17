@@ -13244,6 +13244,38 @@ $as_echo "#define HAVE_GCC_ASM_FOR_X87 1" >>confdefs.h
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set mc68881 fpcr" >&5
+$as_echo_n "checking whether we can use gcc inline assembler to get and set mc68881 fpcr... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  unsigned int fpcr;
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  have_gcc_asm_for_mc68881=yes
+else
+  have_gcc_asm_for_mc68881=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_asm_for_mc68881" >&5
+$as_echo "$have_gcc_asm_for_mc68881" >&6; }
+if test "$have_gcc_asm_for_mc68881" = yes
+then
+
+$as_echo "#define HAVE_GCC_ASM_FOR_MC68881 1" >>confdefs.h
+
+fi
+
 # Detect whether system arithmetic is subject to x87-style double
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding

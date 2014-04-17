@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20904: Support setting FPU precision on m68k.
+
 - Issue #21209: Fix sending tuples to custom generator objects with the yield
   from syntax.
 
