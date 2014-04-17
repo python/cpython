@@ -367,6 +367,12 @@ Tests
 - Issue #21093: Prevent failures of ctypes test_macholib on OS X if a
   copy of libz exists in $HOME/lib or /usr/local/lib.
 
+Build
+-----
+
+- Issue #21285: Refactor and fix curses configure check to always search
+  in a ncursesw directory.
+
 Documentation
 -------------
 
