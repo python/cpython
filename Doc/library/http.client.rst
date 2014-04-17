@@ -660,7 +660,7 @@ request using http.client::
 
     >>> # This creates an HTTP message
     >>> # with the content of BODY as the enclosed representation
-    >>> # for the resource http://localhost:8080/foobar
+    >>> # for the resource http://localhost:8080/file
     ...
     >>> import http.client
     >>> BODY = "***filecontents***"
