@@ -104,9 +104,7 @@ are ignored by the syntax; they are not tokens.
 Encoding declarations
 ---------------------
 
-.. index::
-   single: source character set
-   single: encodings
+.. index:: source character set, encoding declarations (source file)
 
 If a comment in the first or second line of the Python script matches the
 regular expression ``coding[=:]\s*([-\w.]+)``, this comment is processed as an
