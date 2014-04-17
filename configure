@@ -7021,11 +7021,9 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 fi
 
-ac_save_cppflags="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
-for ac_header in asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
+for ac_header in asm/types.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
-ieeefp.h io.h langinfo.h libintl.h ncurses.h process.h pthread.h \
+ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stdint.h stropts.h termios.h \
 unistd.h utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
@@ -7049,7 +7047,6 @@ fi
 
 done
 
-CPPFLAGS=$ac_save_cppflags
 ac_header_dirent=no
 for ac_hdr in dirent.h sys/ndir.h sys/dir.h ndir.h; do
   as_ac_Header=`$as_echo "ac_cv_header_dirent_$ac_hdr" | $as_tr_sh`
@@ -7279,26 +7276,6 @@ do :
 if test "x$ac_cv_header_net_if_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_NET_IF_H 1
-_ACEOF
-
-fi
-
-done
-
-
-
-# On Solaris, term.h requires curses.h
-for ac_header in term.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
-#ifdef HAVE_CURSES_H
-#include <curses.h>
-#endif
-
-"
-if test "x$ac_cv_header_term_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_TERM_H 1
 _ACEOF
 
 fi
@@ -14761,8 +14738,43 @@ $as_echo "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 
 fi
 
+# first curses header check
 ac_save_cppflags="$CPPFLAGS"
 CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
+
+for ac_header in curses.h ncurses.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
+# On Solaris, term.h requires curses.h
+for ac_header in term.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
+#ifdef HAVE_CURSES_H
+#include <curses.h>
+#endif
+
+"
+if test "x$ac_cv_header_term_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_TERM_H 1
+_ACEOF
+
+fi
+
+done
+
+
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether mvwdelch is an expression" >&5
 $as_echo_n "checking whether mvwdelch is an expression... " >&6; }
