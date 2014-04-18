@@ -134,6 +134,14 @@ class BasicSocketTests(unittest.TestCase):
         self.assertIn(ssl.HAS_SNI, {True, False})
         self.assertIn(ssl.HAS_ECDH, {True, False})
 
+    def test_str_for_enums(self):
+        # Make sure that the PROTOCOL_* constants have enum-like string
+        # reprs.
+        proto = ssl.PROTOCOL_SSLv3
+        self.assertEqual(str(proto), '_SSLMethod.PROTOCOL_SSLv3')
+        ctx = ssl.SSLContext(proto)
+        self.assertIs(ctx.protocol, proto)
+
     def test_random(self):
         v = ssl.RAND_status()
         if support.verbose:
