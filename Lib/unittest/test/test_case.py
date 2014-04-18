@@ -1080,7 +1080,7 @@ test case
             # so can't use assertEqual either. Just use assertTrue.
             self.assertTrue(sample_text_error == error)
 
-    def testAsertEqualSingleLine(self):
+    def testAssertEqualSingleLine(self):
         sample_text = "laden swallows fly slowly"
         revised_sample_text = "unladen swallows fly quickly"
         sample_text_error = """\
