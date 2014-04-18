@@ -92,7 +92,7 @@ import re
 import sys
 import os
 from collections import namedtuple
-from enum import Enum as _Enum
+from enum import Enum as _Enum, IntEnum as _IntEnum
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -119,30 +119,19 @@ _import_symbols('SSL_ERROR_')
 
 from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN
 
-from _ssl import PROTOCOL_SSLv3, PROTOCOL_SSLv23, PROTOCOL_TLSv1
 from _ssl import _OPENSSL_API_VERSION
 
+_SSLMethod = _IntEnum('_SSLMethod',
+                      {name: value for name, value in vars(_ssl).items()
+                       if name.startswith('PROTOCOL_')})
+globals().update(_SSLMethod.__members__)
 
-_PROTOCOL_NAMES = {
-    PROTOCOL_TLSv1: "TLSv1",
-    PROTOCOL_SSLv23: "SSLv23",
-    PROTOCOL_SSLv3: "SSLv3",
-}
+_PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
+
 try:
-    from _ssl import PROTOCOL_SSLv2
     _SSLv2_IF_EXISTS = PROTOCOL_SSLv2
-except ImportError:
+except NameError:
     _SSLv2_IF_EXISTS = None
-else:
-    _PROTOCOL_NAMES[PROTOCOL_SSLv2] = "SSLv2"
-
-try:
-    from _ssl import PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
-except ImportError:
-    pass
-else:
-    _PROTOCOL_NAMES[PROTOCOL_TLSv1_1] = "TLSv1.1"
-    _PROTOCOL_NAMES[PROTOCOL_TLSv1_2] = "TLSv1.2"
 
 if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
