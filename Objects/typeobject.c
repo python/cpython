@@ -6184,7 +6184,7 @@ static slotdef slotdefs[] = {
     TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare, richcmp_gt,
            "__gt__($self, value, /)\n--\n\nReturn self>value."),
     TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare, richcmp_ge,
-           "__ge__=($self, value, /)\n--\n\nReturn self>=value."),
+           "__ge__($self, value, /)\n--\n\nReturn self>=value."),
     TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc,
            "__iter__($self, /)\n--\n\nImplement iter(self)."),
     TPSLOT("__next__", tp_iternext, slot_tp_iternext, wrap_next,
