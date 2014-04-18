@@ -237,6 +237,9 @@ Library
 - Issue #21209: Fix asyncio.tasks.CoroWrapper to workaround a bug
   in yield-from implementation in CPythons prior to 3.4.1.
 
+- asyncio: Add gi_{frame,running,code} properties to CoroWrapper
+  (upstream issue #163).
+
 Extension Modules
 -----------------
 
