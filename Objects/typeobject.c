@@ -6280,7 +6280,7 @@ static slotdef slotdefs[] = {
            slot_nb_inplace_true_divide, wrap_binaryfunc, "/"),
     NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc,
            "__index__($self, /)\n--\n\n"
-           "Return self converted to an integer, if self is suitable"
+           "Return self converted to an integer, if self is suitable "
            "for use as an index into a list."),
     BINSLOT("__matmul__", nb_matrix_multiply, slot_nb_matrix_multiply,
             "@"),
