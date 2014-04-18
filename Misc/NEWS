@@ -54,6 +54,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21068: The ssl.PROTOCOL* constants are now enum members.
+
 - Issue #21262: New method assert_not_called for Mock.
   It raises AssertionError if the mock has been called.
 
