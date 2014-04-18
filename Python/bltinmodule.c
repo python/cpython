@@ -1325,7 +1325,7 @@ builtin_len(PyObject *self, PyObject *v)
 }
 
 PyDoc_STRVAR(len_doc,
-"len(module, object)\n\
+"len(object)\n\
 \n\
 Return the number of items of a sequence or mapping.");
 
