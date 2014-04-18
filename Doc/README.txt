@@ -81,7 +81,7 @@ Without make
 
 Install the Sphinx package and its dependencies from PyPI.
 
-Then, from the ``Docs`` directory, run ::
+Then, from the ``Doc`` directory, run ::
 
    sphinx-build -b<builder> . build/<builder>
 
