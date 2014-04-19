@@ -244,6 +244,9 @@ Library
 - asyncio: Add gi_{frame,running,code} properties to CoroWrapper
   (upstream issue #163).
 
+- Issue #21311: Avoid exception in _osx_support with non-standard compiler
+  configurations.  Patch by John Szakmeister.
+
 Extension Modules
 -----------------
 
