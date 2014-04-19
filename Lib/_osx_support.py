@@ -182,7 +182,7 @@ def _find_appropriate_compiler(_config_vars):
         # Compiler is GCC, check if it is LLVM-GCC
         data = _read_output("'%s' --version"
                              % (cc.replace("'", "'\"'\"'"),))
-        if 'llvm-gcc' in data:
+        if data and 'llvm-gcc' in data:
             # Found LLVM-GCC, fall back to clang
             cc = _find_build_tool('clang')
 
