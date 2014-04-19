@@ -461,6 +461,8 @@ def get_loader(module_or_name):
         loader = getattr(module, '__loader__', None)
         if loader is not None:
             return loader
+        if getattr(module, '__spec__', None) is None:
+            return None
         fullname = module.__name__
     else:
         fullname = module_or_name

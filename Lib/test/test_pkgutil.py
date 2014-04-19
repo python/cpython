@@ -1,4 +1,4 @@
-from test.support import run_unittest, unload, check_warnings
+from test.support import run_unittest, unload, check_warnings, CleanImport
 import unittest
 import sys
 import importlib
@@ -345,6 +345,23 @@ class ImportlibMigrationTests(unittest.TestCase):
         finally:
             __loader__ = this_loader
 
+    def test_get_loader_handles_missing_spec_attribute(self):
+        name = 'spam'
+        mod = type(sys)(name)
+        del mod.__spec__
+        with CleanImport(name):
+            sys.modules[name] = mod
+            loader = pkgutil.get_loader(name)
+        self.assertIsNone(loader)
+
+    def test_get_loader_handles_spec_attribute_none(self):
+        name = 'spam'
+        mod = type(sys)(name)
+        mod.__spec__ = None
+        with CleanImport(name):
+            sys.modules[name] = mod
+            loader = pkgutil.get_loader(name)
+        self.assertIsNone(loader)
 
     def test_find_loader_avoids_emulation(self):
         with check_warnings() as w:
