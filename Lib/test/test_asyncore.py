@@ -349,9 +349,8 @@ class dispatcherwithsend_noread(asyncore.dispatcher_with_send):
     def handle_connect(self):
         pass
 
-class DispatcherWithSendTests(unittest.TestCase):
-    usepoll = False
 
+class DispatcherWithSendTests(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -400,10 +399,6 @@ class DispatcherWithSendTests(unittest.TestCase):
             if t.is_alive():
                 self.fail("join() timed out")
 
-
-
-class DispatcherWithSendTests_UsePoll(DispatcherWithSendTests):
-    usepoll = True
 
 @unittest.skipUnless(hasattr(asyncore, 'file_wrapper'),
                      'asyncore.file_wrapper required')
