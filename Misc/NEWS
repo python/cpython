@@ -39,6 +39,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15002: urllib.response object to use _TemporaryFileWrapper (and
+  _TemporaryFileCloser) facility. Provides a better way to handle file
+  descriptor close. Patch contributed by Christian Theune.
+
 - Issue #12220: mindom now raises a custom ValueError indicating it doesn't
   support spaces in URIs instead of letting a 'split' ValueError bubble up.
 
