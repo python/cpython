@@ -1518,6 +1518,10 @@ class MinidomTest(unittest.TestCase):
         doc2 = parseString(doc.toxml())
         self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
+    def testExceptionOnSpacesInXMLNSValue(self):
+        with self.assertRaisesRegex(ValueError, 'Unsupported syntax'):
+            parseString('<element xmlns:abc="http:abc.com/de f g/hi/j k"><abc:foo /></element>')
+
     def testDocRemoveChild(self):
         doc = parse(tstfile)
         title_tag = doc.documentElement.getElementsByTagName("TITLE")[0]

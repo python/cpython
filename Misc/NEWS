@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12220: mindom now raises a custom ValueError indicating it doesn't
+  support spaces in URIs instead of letting a 'split' ValueError bubble up.
+
 - Issue #21239: patch.stopall() didn't work deterministically when the same
   name was patched more than once.
 
