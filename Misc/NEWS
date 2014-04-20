@@ -168,6 +168,9 @@ Library
 - Issue #21311: Avoid exception in _osx_support with non-standard compiler
   configurations.  Patch by John Szakmeister.
 
+- Issue #11571: Ensure that the turtle window becomes the topmost window
+  when launched on OS X.
+
 Extension Modules
 -----------------
 
