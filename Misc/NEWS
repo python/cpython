@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12220: mindom now raises a custom ValueError indicating it doesn't
+  support spaces in URIs instead of letting a 'split' ValueError bubble up.
+
 - Issue #21068: The ssl.PROTOCOL* constants are now enum members.
 
 - Issue #21262: New method assert_not_called for Mock.
