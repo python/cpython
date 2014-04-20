@@ -109,6 +109,7 @@ import types
 import math
 import time
 import inspect
+import sys
 
 from os.path import isfile, split, join
 from copy import deepcopy
@@ -992,6 +993,12 @@ class TurtleScreen(TurtleScreenBase):
         self._colormode = _CFG["colormode"]
         self._keys = []
         self.clear()
+        if sys.platform == 'darwin':
+            # Force Turtle window to the front on OS X. This is needed because
+            # the Turtle window will show behind the Terminal window when you
+            # start the demo from the command line.
+            cv._rootwindow.call('wm', 'attributes', '.', '-topmost', '1')
+            cv._rootwindow.call('wm', 'attributes', '.', '-topmost', '0')
 
     def clear(self):
         """Delete all drawings and all turtles from the TurtleScreen.
