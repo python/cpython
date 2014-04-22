@@ -186,6 +186,8 @@ Extension Modules
 IDLE
 ----
 
+- Issue 21284: Paragraph reformat test passes after user changes reformat width.
+
 - Issue #17654: Ensure IDLE menus are customized properly on OS X for
   non-framework builds and for all variants of Tk.
 
