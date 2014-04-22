@@ -265,7 +265,9 @@ Extension Modules
 IDLE
 ----
 
-- Issue 21284: Paragraph reformat test passes after user changes reformat width.
+- Issue #21139: Change default paragraph width to 72, the PEP 8 recommendation.
+
+- Issue #21284: Paragraph reformat test passes after user changes reformat width.
 
 - Issue #17654: Ensure IDLE menus are customized properly on OS X for
   non-framework builds and for all variants of Tk.
