@@ -390,6 +390,12 @@ Documentation
 
 - Issue #19795: Improved markup of True/False constants.
 
+Windows
+-------
+
+- Issue #21303, #20565: Updated the version of Tcl/Tk included in the
+  installer from 8.5.2 to 8.5.15.
+
 
 Whats' New in Python 2.7.6?
 ===========================
