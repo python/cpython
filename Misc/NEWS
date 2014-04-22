@@ -289,6 +289,8 @@ Tools/Demos
 IDLE
 ----
 
+- Issue 21284: Paragraph reformat test passes after user changes reformat width.
+
 - Issue #20406: Use Python application icons for Idle window title bars.
   Patch mostly by Serhiy Storchaka.
 
