@@ -197,6 +197,25 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
 
+    def _check_str_subclass(self, *args):
+        # Issue #21127: it should be possible to construct a PurePath object
+        # from an str subclass instance, and it then gets converted to
+        # a pure str object.
+        class StrSubclass(str):
+            pass
+        P = self.cls
+        p = P(*(StrSubclass(x) for x in args))
+        self.assertEqual(p, P(*args))
+        for part in p.parts:
+            self.assertIs(type(part), str)
+
+    def test_str_subclass_common(self):
+        self._check_str_subclass('')
+        self._check_str_subclass('.')
+        self._check_str_subclass('a')
+        self._check_str_subclass('a/b.txt')
+        self._check_str_subclass('/a/b.txt')
+
     def test_join_common(self):
         P = self.cls
         p = P('a/b')
@@ -689,6 +708,17 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(str(p), '\\\\a\\b\\c')
         p = self.cls('//a/b/c/d')
         self.assertEqual(str(p), '\\\\a\\b\\c\\d')
+
+    def test_str_subclass(self):
+        self._check_str_subclass('c:')
+        self._check_str_subclass('c:a')
+        self._check_str_subclass('c:a\\b.txt')
+        self._check_str_subclass('c:\\')
+        self._check_str_subclass('c:\\a')
+        self._check_str_subclass('c:\\a\\b.txt')
+        self._check_str_subclass('\\\\some\\share')
+        self._check_str_subclass('\\\\some\\share\\a')
+        self._check_str_subclass('\\\\some\\share\\a\\b.txt')
 
     def test_eq(self):
         P = self.cls
