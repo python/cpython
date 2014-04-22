@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21127: Path objects can now be instantiated from str subclass
+  instances (such as numpy.str_).
+
 - Issue #15002: urllib.response object to use _TemporaryFileWrapper (and
   _TemporaryFileCloser) facility. Provides a better way to handle file
   descriptor close. Patch contributed by Christian Theune.

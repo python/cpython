@@ -574,8 +574,8 @@ class PurePath(object):
             if isinstance(a, PurePath):
                 parts += a._parts
             elif isinstance(a, str):
-                # Assuming a str
-                parts.append(a)
+                # Force-cast str subclasses to str (issue #21127)
+                parts.append(str(a))
             else:
                 raise TypeError(
                     "argument should be a path or str object, not %r"
