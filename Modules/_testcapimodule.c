@@ -3317,7 +3317,7 @@ matmulType_imatmul(PyObject *self, PyObject *other)
 static void
 matmulType_dealloc(PyObject *self)
 {
-    return Py_TYPE(self)->tp_free(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyNumberMethods matmulType_as_number = {
