@@ -3,7 +3,7 @@
 
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
-   Copyright (c) 2004-2013 Python Software Foundation.
+   Copyright (c) 2004-2014 Python Software Foundation.
    All rights reserved.
 */
 
@@ -144,6 +144,12 @@ typedef struct {
     }
 
 static PyTypeObject deque_type;
+
+/* XXX Todo: 
+   If aligned memory allocations become available, make the
+   deque object 64 byte aligned so that all of the fields
+   can be retrieved or updated in a single cache line.
+*/
 
 static PyObject *
 deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -453,6 +459,31 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
     Py_INCREF(deque);
     return (PyObject *)deque;
 }
+
+/* The rotate() method is part of the public API and is used internally
+as a primitive for other methods.
+
+Rotation by 1 or -1 is a common case, so any optimizations for high
+volume rotations should take care not to penalize the common case.
+
+Conceptually, a rotate by one is equivalent to a pop on one side and an
+append on the other.  However, a pop/append pair is unnecessarily slow
+because it requires a incref/decref pair for an object located randomly
+in memory.  It is better to just move the object pointer from one block
+to the next without changing the reference count.
+
+When moving batches of pointers, it is tempting to use memcpy() but that
+proved to be slower than a simple loop for a variety of reasons.
+Memcpy() cannot know in advance that we're copying pointers instead of
+bytes, that the source and destination are pointer aligned and
+non-overlapping, that moving just one pointer is a common case, that we
+never need to move more than BLOCKLEN pointers, and that at least one
+pointer is always moved.
+
+For high volume rotations, newblock() and freeblock() are never called
+more than once.  Previously emptied blocks are immediately reused as a
+destination block.  If a block is left-over at the end, it is freed.
+*/
 
 static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
