@@ -184,7 +184,7 @@
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
@@ -219,7 +219,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
@@ -254,7 +254,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
@@ -292,7 +292,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
@@ -325,7 +325,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
@@ -361,7 +361,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
@@ -394,7 +394,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
@@ -430,7 +430,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <PreBuildEvent>
       <Command>$(KillPythonExe)
 IF %ERRORLEVEL% NEQ 0 (
-    echo kill_python: warning: could not kill running Pythons, exit code %ERRORLEVEL%
+    echo kill_python: war^ning: could not kill running Pythons, exit code %ERRORLEVEL%
     exit /b 0
 )</Command>
     </PreBuildEvent>
