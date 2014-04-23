@@ -44,7 +44,7 @@ Library
   at the same time without losing the Popen.returncode value.
 
 - Issue #21127: Path objects can now be instantiated from str subclass
-  instances (such as numpy.str_).
+  instances (such as ``numpy.str_``).
 
 - Issue #15002: urllib.response object to use _TemporaryFileWrapper (and
   _TemporaryFileCloser) facility. Provides a better way to handle file
