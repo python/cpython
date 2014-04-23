@@ -1077,17 +1077,22 @@ class ProcessTestCase(BaseTestCase):
         t = threading.Timer(0.2, kill_proc_timer_thread)
         t.start()
 
+        if mswindows:
+            expected_errorcode = 1
+        else:
+            # Should be -9 because of the proc.kill() from the thread.
+            expected_errorcode = -9
+
         # Wait for the process to finish; the thread should kill it
         # long before it finishes on its own.  Supplying a timeout
         # triggers a different code path for better coverage.
         proc.wait(timeout=20)
-        # Should be -9 because of the proc.kill() from the thread.
-        self.assertEqual(proc.returncode, -9,
+        self.assertEqual(proc.returncode, expected_errorcode,
                          msg="unexpected result in wait from main thread")
 
         # This should be a no-op with no change in returncode.
         proc.wait()
-        self.assertEqual(proc.returncode, -9,
+        self.assertEqual(proc.returncode, expected_errorcode,
                          msg="unexpected result in second main wait.")
 
         t.join()
@@ -1096,8 +1101,8 @@ class ProcessTestCase(BaseTestCase):
         # be set by the wrong thread that doesn't actually have it
         # leading to an incorrect value.
         self.assertEqual([('thread-start-poll-result', None),
-                          ('thread-after-kill-and-wait', -9),
-                          ('thread-after-second-wait', -9)],
+                          ('thread-after-kill-and-wait', expected_errorcode),
+                          ('thread-after-second-wait', expected_errorcode)],
                          results)
 
     def test_issue8780(self):
