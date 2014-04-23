@@ -54,6 +54,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21291: subprocess's Popen.wait() is now thread safe so that
+  multiple threads may be calling wait() or poll() on a Popen instance
+  at the same time without losing the Popen.returncode value.
+
 - Issue #21127: Path objects can now be instantiated from str subclass
   instances (such as numpy.str_).
 

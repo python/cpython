@@ -1052,6 +1052,54 @@ class ProcessTestCase(BaseTestCase):
             if exc is not None:
                 raise exc
 
+    @unittest.skipIf(threading is None, "threading required")
+    def test_threadsafe_wait(self):
+        """Issue21291: Popen.wait() needs to be threadsafe for returncode."""
+        proc = subprocess.Popen([sys.executable, '-c',
+                                 'import time; time.sleep(12)'])
+        self.assertEqual(proc.returncode, None)
+        results = []
+
+        def kill_proc_timer_thread():
+            results.append(('thread-start-poll-result', proc.poll()))
+            # terminate it from the thread and wait for the result.
+            proc.kill()
+            proc.wait()
+            results.append(('thread-after-kill-and-wait', proc.returncode))
+            # this wait should be a no-op given the above.
+            proc.wait()
+            results.append(('thread-after-second-wait', proc.returncode))
+
+        # This is a timing sensitive test, the failure mode is
+        # triggered when both the main thread and this thread are in
+        # the wait() call at once.  The delay here is to allow the
+        # main thread to most likely be blocked in its wait() call.
+        t = threading.Timer(0.2, kill_proc_timer_thread)
+        t.start()
+
+        # Wait for the process to finish; the thread should kill it
+        # long before it finishes on its own.  Supplying a timeout
+        # triggers a different code path for better coverage.
+        proc.wait(timeout=20)
+        # Should be -9 because of the proc.kill() from the thread.
+        self.assertEqual(proc.returncode, -9,
+                         msg="unexpected result in wait from main thread")
+
+        # This should be a no-op with no change in returncode.
+        proc.wait()
+        self.assertEqual(proc.returncode, -9,
+                         msg="unexpected result in second main wait.")
+
+        t.join()
+        # Ensure that all of the thread results are as expected.
+        # When a race condition occurs in wait(), the returncode could
+        # be set by the wrong thread that doesn't actually have it
+        # leading to an incorrect value.
+        self.assertEqual([('thread-start-poll-result', None),
+                          ('thread-after-kill-and-wait', -9),
+                          ('thread-after-second-wait', -9)],
+                         results)
+
     def test_issue8780(self):
         # Ensure that stdout is inherited from the parent
         # if stdout=PIPE is not used
