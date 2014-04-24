@@ -36,6 +36,9 @@ Core and Builtins
 - Issue #20637: Key-sharing now also works for instance dictionaries of
   subclasses.  Patch by Peter Ingebretson.
 
+- Issue #8297: Attributes missing from modules now include the module name
+  in the error text.  Original patch by ysj.ray.
+
 - Issue #19995: %c, %o, %x, and %X now raise TypeError on non-integer input.
 
 - Issue #12546: Allow \x00 to be used as a fill character when using str, int,
