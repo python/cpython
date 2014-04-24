@@ -412,24 +412,23 @@ module_repr(PyModuleObject *m)
 }
 
 static PyObject*
-module_getattr(PyObject *m, PyObject *name)
+module_getattro(PyModuleObject *m, PyObject *name)
 {
-    PyModuleObject *module;
     PyObject *attr, *mod_name;
-    attr = PyObject_GenericGetAttr(m, name);
-    if (attr != NULL)
+    attr = PyObject_GenericGetAttr((PyObject *)m, name);
+    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError))
         return attr;
     PyErr_Clear();
-    module = (PyModuleObject*)m;
-    if (module->md_dict != NULL) {
-        mod_name = PyDict_GetItemString(module->md_dict, "__name__");
-        if (mod_name != NULL) {
+    if (m->md_dict) {
+        mod_name = PyDict_GetItemString(m->md_dict, "__name__");
+        if (mod_name) {
             PyErr_Format(PyExc_AttributeError,
                         "module '%U' has no attribute '%U'", mod_name, name);
             return NULL;
         }
-        else if (PyErr_Occurred())
+        else if (PyErr_Occurred()) {
             PyErr_Clear();
+        }
     }
     PyErr_Format(PyExc_AttributeError,
                 "module has no attribute '%U'", name);
@@ -512,7 +511,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
-    module_getattr,                             /* tp_getattro */
+    (getattrofunc)module_getattro,              /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |

@@ -227,6 +227,14 @@ a = A(destroyed)"""
             b"len = len",
             b"shutil.rmtree = rmtree"})
 
+    def test_descriptor_errors_propogate(self):
+        class Descr:
+            def __get__(self, o, t):
+                raise RuntimeError
+        class M(ModuleType):
+            melon = Descr()
+        self.assertRaises(RuntimeError, getattr, M("mymod"), "melon")
+
     # frozen and namespace module reprs are tested in importlib.
 
 
