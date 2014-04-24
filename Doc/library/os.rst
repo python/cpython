@@ -1087,6 +1087,9 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    All platforms support sockets as *out* file descriptor, and some platforms
    allow other types (e.g. regular file, pipe) as well.
 
+   Cross-platform applications should not use *headers*, *trailers* and *flags*
+   arguments.
+
    Availability: Unix.
 
    .. versionadded:: 3.3
