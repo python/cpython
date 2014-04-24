@@ -255,7 +255,7 @@ class Test_TestLoader(unittest.TestCase):
         try:
             loader.loadTestsFromName('unittest.sdasfasfasdf')
         except AttributeError as e:
-            self.assertEqual(str(e), "'module' object has no attribute 'sdasfasfasdf'")
+            self.assertEqual(str(e), "module 'unittest' has no attribute 'sdasfasfasdf'")
         else:
             self.fail("TestLoader.loadTestsFromName failed to raise AttributeError")
 
@@ -272,7 +272,7 @@ class Test_TestLoader(unittest.TestCase):
         try:
             loader.loadTestsFromName('sdasfasfasdf', unittest)
         except AttributeError as e:
-            self.assertEqual(str(e), "'module' object has no attribute 'sdasfasfasdf'")
+            self.assertEqual(str(e), "module 'unittest' has no attribute 'sdasfasfasdf'")
         else:
             self.fail("TestLoader.loadTestsFromName failed to raise AttributeError")
 
@@ -635,7 +635,7 @@ class Test_TestLoader(unittest.TestCase):
         try:
             loader.loadTestsFromNames(['unittest.sdasfasfasdf', 'unittest'])
         except AttributeError as e:
-            self.assertEqual(str(e), "'module' object has no attribute 'sdasfasfasdf'")
+            self.assertEqual(str(e), "module 'unittest' has no attribute 'sdasfasfasdf'")
         else:
             self.fail("TestLoader.loadTestsFromNames failed to raise AttributeError")
 
@@ -654,7 +654,7 @@ class Test_TestLoader(unittest.TestCase):
         try:
             loader.loadTestsFromNames(['sdasfasfasdf'], unittest)
         except AttributeError as e:
-            self.assertEqual(str(e), "'module' object has no attribute 'sdasfasfasdf'")
+            self.assertEqual(str(e), "module 'unittest' has no attribute 'sdasfasfasdf'")
         else:
             self.fail("TestLoader.loadTestsFromName failed to raise AttributeError")
 
@@ -673,7 +673,7 @@ class Test_TestLoader(unittest.TestCase):
         try:
             loader.loadTestsFromNames(['TestCase', 'sdasfasfasdf'], unittest)
         except AttributeError as e:
-            self.assertEqual(str(e), "'module' object has no attribute 'sdasfasfasdf'")
+            self.assertEqual(str(e), "module 'unittest' has no attribute 'sdasfasfasdf'")
         else:
             self.fail("TestLoader.loadTestsFromName failed to raise AttributeError")
 
