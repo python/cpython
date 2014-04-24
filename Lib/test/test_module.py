@@ -30,6 +30,22 @@ class ModuleTests(unittest.TestCase):
             pass
         self.assertEqual(foo.__doc__, ModuleType.__doc__)
 
+    def test_unintialized_missing_getattr(self):
+        # Issue 8297
+        # test the text in the AttributeError of an uninitialized module
+        foo = ModuleType.__new__(ModuleType)
+        self.assertRaisesRegex(
+                AttributeError, "module has no attribute 'not_here'",
+                getattr, foo, "not_here")
+
+    def test_missing_getattr(self):
+        # Issue 8297
+        # test the text in the AttributeError
+        foo = ModuleType("foo")
+        self.assertRaisesRegex(
+                AttributeError, "module 'foo' has no attribute 'not_here'",
+                getattr, foo, "not_here")
+
     def test_no_docstring(self):
         # Regularly initialized module, no docstring
         foo = ModuleType("foo")
