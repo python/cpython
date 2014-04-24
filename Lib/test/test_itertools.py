@@ -411,7 +411,7 @@ class TestBasicOps(unittest.TestCase):
 
                 self.pickletest(permutations(values, r))                # test pickling
 
-    @support.impl_detail("tuple resuse is CPython specific")
+    @support.impl_detail("tuple reuse is specific to CPython")
     def test_permutations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(permutations('abcde', 3))))), 1)
