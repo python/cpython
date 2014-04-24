@@ -32,20 +32,26 @@ static int
 module_init_dict(PyModuleObject *mod, PyObject *md_dict,
                  PyObject *name, PyObject *doc)
 {
+    _Py_IDENTIFIER(__name__);
+    _Py_IDENTIFIER(__doc__);
+    _Py_IDENTIFIER(__package__);
+    _Py_IDENTIFIER(__loader__);
+    _Py_IDENTIFIER(__spec__);
+    
     if (md_dict == NULL)
         return -1;
     if (doc == NULL)
         doc = Py_None;
 
-    if (PyDict_SetItemString(md_dict, "__name__", name) != 0)
+    if (_PyDict_SetItemId(md_dict, &PyId___name__, name) != 0)
         return -1;
-    if (PyDict_SetItemString(md_dict, "__doc__", doc) != 0)
+    if (_PyDict_SetItemId(md_dict, &PyId___doc__, doc) != 0)
         return -1;
-    if (PyDict_SetItemString(md_dict, "__package__", Py_None) != 0)
+    if (_PyDict_SetItemId(md_dict, &PyId___package__, Py_None) != 0)
         return -1;
-    if (PyDict_SetItemString(md_dict, "__loader__", Py_None) != 0)
+    if (_PyDict_SetItemId(md_dict, &PyId___loader__, Py_None) != 0)
         return -1;
-    if (PyDict_SetItemString(md_dict, "__spec__", Py_None) != 0)
+    if (_PyDict_SetItemId(md_dict, &PyId___spec__, Py_None) != 0)
         return -1;
     if (PyUnicode_CheckExact(name)) {
         Py_INCREF(name);
@@ -184,8 +190,9 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
         Py_DECREF(n);
     }
     if (module->m_doc != NULL) {
+        _Py_IDENTIFIER(__doc__);
         v = PyUnicode_FromString(module->m_doc);
-        if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0) {
+        if (v == NULL || _PyDict_SetItemId(d, &PyId___doc__, v) != 0) {
             Py_XDECREF(v);
             Py_DECREF(m);
             return NULL;
@@ -214,6 +221,7 @@ PyModule_GetDict(PyObject *m)
 PyObject*
 PyModule_GetNameObject(PyObject *m)
 {
+    _Py_IDENTIFIER(__name__);
     PyObject *d;
     PyObject *name;
     if (!PyModule_Check(m)) {
@@ -222,7 +230,7 @@ PyModule_GetNameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (name = PyDict_GetItemString(d, "__name__")) == NULL ||
+        (name = _PyDict_GetItemId(d, &PyId___name__)) == NULL ||
         !PyUnicode_Check(name))
     {
         PyErr_SetString(PyExc_SystemError, "nameless module");
@@ -245,6 +253,7 @@ PyModule_GetName(PyObject *m)
 PyObject*
 PyModule_GetFilenameObject(PyObject *m)
 {
+    _Py_IDENTIFIER(__file__);
     PyObject *d;
     PyObject *fileobj;
     if (!PyModule_Check(m)) {
@@ -253,7 +262,7 @@ PyModule_GetFilenameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (fileobj = PyDict_GetItemString(d, "__file__")) == NULL ||
+        (fileobj = _PyDict_GetItemId(d, &PyId___file__)) == NULL ||
         !PyUnicode_Check(fileobj))
     {
         PyErr_SetString(PyExc_SystemError, "module filename missing");
@@ -420,7 +429,8 @@ module_getattro(PyModuleObject *m, PyObject *name)
         return attr;
     PyErr_Clear();
     if (m->md_dict) {
-        mod_name = PyDict_GetItemString(m->md_dict, "__name__");
+        _Py_IDENTIFIER(__name__);
+        mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name) {
             PyErr_Format(PyExc_AttributeError,
                         "module '%U' has no attribute '%U'", mod_name, name);
