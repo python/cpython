@@ -732,7 +732,8 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
             }
             else {
                 /* Grow the big buffer */
-                _PyString_Resize(&big_buffer, buffersize);
+                if (_PyString_Resize(&big_buffer, buffersize))
+                    goto error;
                 buffer = PyString_AS_STRING(big_buffer);
             }
             continue;

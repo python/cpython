@@ -748,8 +748,8 @@ PyObject *PyString_DecodeEscape(const char *s,
                              UTF-8 bytes may follow. */
         }
     }
-    if (p-buf < newlen && _PyString_Resize(&v, p - buf))
-        goto failed;
+    if (p-buf < newlen)
+        _PyString_Resize(&v, p - buf); /* v is cleared on error */
     return v;
   failed:
     Py_DECREF(v);

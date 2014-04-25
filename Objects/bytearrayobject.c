@@ -994,10 +994,8 @@ bytearray_repr(PyByteArrayObject *self)
            *p++ = *quote_postfix++;
         }
         *p = '\0';
-        if (_PyString_Resize(&v, (p - PyString_AS_STRING(v)))) {
-            Py_DECREF(v);
-            return NULL;
-        }
+        /* v is cleared on error */
+        (void)_PyString_Resize(&v, (p - PyString_AS_STRING(v)));
         return v;
     }
 }
