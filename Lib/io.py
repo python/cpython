@@ -70,16 +70,16 @@ SEEK_END = 2
 # Method descriptions and default implementations are inherited from the C
 # version however.
 class IOBase(_io._IOBase, metaclass=abc.ABCMeta):
-    pass
+    __doc__ = _io._IOBase.__doc__
 
 class RawIOBase(_io._RawIOBase, IOBase):
-    pass
+    __doc__ = _io._RawIOBase.__doc__
 
 class BufferedIOBase(_io._BufferedIOBase, IOBase):
-    pass
+    __doc__ = _io._BufferedIOBase.__doc__
 
 class TextIOBase(_io._TextIOBase, IOBase):
-    pass
+    __doc__ = _io._TextIOBase.__doc__
 
 RawIOBase.register(FileIO)
 
