@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19385: Make operations on a closed dbm.dumb database always raise the
+  same exception.
+
 - Issue #21207: Detect when the os.urandom cached fd has been closed or
   replaced, and open it anew.
 
