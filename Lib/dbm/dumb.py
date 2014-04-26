@@ -118,9 +118,14 @@ class _Database(collections.MutableMapping):
 
     sync = _commit
 
+    def _verify_open(self):
+        if self._index is None:
+            raise error('DBM object has already been closed')
+
     def __getitem__(self, key):
         if isinstance(key, str):
             key = key.encode('utf-8')
+        self._verify_open()
         pos, siz = self._index[key]     # may raise KeyError
         f = _io.open(self._datfile, 'rb')
         f.seek(pos)
@@ -173,6 +178,7 @@ class _Database(collections.MutableMapping):
             val = val.encode('utf-8')
         elif not isinstance(val, (bytes, bytearray)):
             raise TypeError("values must be bytes or strings")
+        self._verify_open()
         if key not in self._index:
             self._addkey(key, self._addval(val))
         else:
@@ -200,6 +206,7 @@ class _Database(collections.MutableMapping):
     def __delitem__(self, key):
         if isinstance(key, str):
             key = key.encode('utf-8')
+        self._verify_open()
         # The blocks used by the associated value are lost.
         del self._index[key]
         # XXX It's unclear why we do a _commit() here (the code always
@@ -209,21 +216,26 @@ class _Database(collections.MutableMapping):
         self._commit()
 
     def keys(self):
+        self._verify_open()
         return list(self._index.keys())
 
     def items(self):
+        self._verify_open()
         return [(key, self[key]) for key in self._index.keys()]
 
     def __contains__(self, key):
         if isinstance(key, str):
             key = key.encode('utf-8')
+        self._verify_open()
         return key in self._index
 
     def iterkeys(self):
+        self._verify_open()
         return iter(self._index.keys())
     __iter__ = iterkeys
 
     def __len__(self):
+        self._verify_open()
         return len(self._index)
 
     def close(self):
