@@ -329,6 +329,15 @@ class LocalWinregTests(BaseWinregTests):
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
+    def test_setvalueex_with_memoryview(self):
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
+                self.assertNotEqual(ck.handle, 0)
+                with self.assertRaises(TypeError):
+                    SetValueEx(ck, "test_name", None, REG_BINARY, memoryview('val'))
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
     def test_queryvalueex_return_value(self):
         # Test for Issue #16759, return unsigned int from QueryValueEx.
         # Reg2Py, which gets called by QueryValueEx, was returning a value
