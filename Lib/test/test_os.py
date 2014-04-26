@@ -1070,6 +1070,49 @@ class URandomTests(unittest.TestCase):
             """
         assert_python_ok('-c', code)
 
+    def test_urandom_fd_closed(self):
+        # Issue #21207: urandom() should reopen its fd to /dev/urandom if
+        # closed.
+        code = """if 1:
+            import os
+            import sys
+            os.urandom(4)
+            os.closerange(3, 256)
+            sys.stdout.buffer.write(os.urandom(4))
+            """
+        rc, out, err = assert_python_ok('-Sc', code)
+
+    def test_urandom_fd_reopened(self):
+        # Issue #21207: urandom() should detect its fd to /dev/urandom
+        # changed to something else, and reopen it.
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b"x" * 256)
+        self.addCleanup(os.unlink, support.TESTFN)
+        code = """if 1:
+            import os
+            import sys
+            os.urandom(4)
+            for fd in range(3, 256):
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                else:
+                    # Found the urandom fd (XXX hopefully)
+                    break
+            os.closerange(3, 256)
+            with open({TESTFN!r}, 'rb') as f:
+                os.dup2(f.fileno(), fd)
+                sys.stdout.buffer.write(os.urandom(4))
+                sys.stdout.buffer.write(os.urandom(4))
+            """.format(TESTFN=support.TESTFN)
+        rc, out, err = assert_python_ok('-Sc', code)
+        self.assertEqual(len(out), 8)
+        self.assertNotEqual(out[0:4], out[4:8])
+        rc, out2, err2 = assert_python_ok('-Sc', code)
+        self.assertEqual(len(out2), 8)
+        self.assertNotEqual(out2, out)
+
 
 @contextlib.contextmanager
 def _execvpe_mockup(defpath=None):
