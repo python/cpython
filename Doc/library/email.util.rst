@@ -98,12 +98,9 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 
 .. function:: mktime_tz(tuple)
 
-   Turn a 10-tuple as returned by :func:`parsedate_tz` into a UTC timestamp.  It
-   the timezone item in the tuple is ``None``, assume local time.  Minor
-   deficiency: :func:`mktime_tz` interprets the first 8 elements of *tuple* as a
-   local time and then compensates for the timezone difference.  This may yield a
-   slight error around changes in daylight savings time, though not worth worrying
-   about for common use.
+   Turn a 10-tuple as returned by :func:`parsedate_tz` into a UTC
+   timestamp (seconds since the Epoch).  If the timezone item in the
+   tuple is ``None``, assume local time.
 
 
 .. function:: formatdate(timeval=None, localtime=False, usegmt=False)
@@ -210,4 +207,3 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 .. [#] Note that the sign of the timezone offset is the opposite of the sign of the
    ``time.timezone`` variable for the same timezone; the latter variable follows
    the POSIX standard while this module follows :rfc:`2822`.
-
