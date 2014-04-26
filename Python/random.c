@@ -3,6 +3,9 @@
 #include <windows.h>
 #else
 #include <fcntl.h>
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 #endif
 
 #ifdef Py_DEBUG
@@ -69,7 +72,11 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 
 
 #ifndef MS_WINDOWS
-static int urandom_fd = -1;
+static struct {
+    int fd;
+    dev_t st_dev;
+    ino_t st_ino;
+} urandom_cache = { -1 };
 
 /* Read size bytes from /dev/urandom into buffer.
    Call Py_FatalError() on error. */
@@ -109,12 +116,24 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
 {
     int fd;
     Py_ssize_t n;
+    struct stat st;
 
     if (size <= 0)
         return 0;
 
-    if (urandom_fd >= 0)
-        fd = urandom_fd;
+    if (urandom_cache.fd >= 0) {
+        /* Does the fd point to the same thing as before? (issue #21207) */
+        if (fstat(urandom_cache.fd, &st)
+            || st.st_dev != urandom_cache.st_dev
+            || st.st_ino != urandom_cache.st_ino) {
+            /* Something changed: forget the cached fd (but don't close it,
+               since it probably points to something important for some
+               third-party code). */
+            urandom_cache.fd = -1;
+        }
+    }
+    if (urandom_cache.fd >= 0)
+        fd = urandom_cache.fd;
     else {
         Py_BEGIN_ALLOW_THREADS
         fd = _Py_open("/dev/urandom", O_RDONLY);
@@ -129,14 +148,24 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
                 PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
-        if (urandom_fd >= 0) {
+        if (urandom_cache.fd >= 0) {
             /* urandom_fd was initialized by another thread while we were
                not holding the GIL, keep it. */
             close(fd);
-            fd = urandom_fd;
+            fd = urandom_cache.fd;
         }
-        else
-            urandom_fd = fd;
+        else {
+            if (fstat(fd, &st)) {
+                PyErr_SetFromErrno(PyExc_OSError);
+                close(fd);
+                return -1;
+            }
+            else {
+                urandom_cache.fd = fd;
+                urandom_cache.st_dev = st.st_dev;
+                urandom_cache.st_ino = st.st_ino;
+            }
+        }
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -168,9 +197,9 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
 static void
 dev_urandom_close(void)
 {
-    if (urandom_fd >= 0) {
-        close(urandom_fd);
-        urandom_fd = -1;
+    if (urandom_cache.fd >= 0) {
+        close(urandom_cache.fd);
+        urandom_cache.fd = -1;
     }
 }
 
