@@ -27,8 +27,6 @@
 #include "Python.h"
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
-#else
-#include "winreparse.h"
 #endif
 
 #ifdef __cplusplus
@@ -302,9 +300,6 @@ extern int lstat(const char *, struct stat *);
 #endif
 #ifndef IO_REPARSE_TAG_SYMLINK
 #define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
-#endif
-#ifndef IO_REPARSE_TAG_MOUNT_POINT
-#define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
 #endif
 #include "osdefs.h"
 #include <malloc.h>
@@ -1114,6 +1109,41 @@ _PyVerify_fd_dup2(int fd1, int fd2)
 #endif
 
 #ifdef MS_WINDOWS
+/* The following structure was copied from
+   http://msdn.microsoft.com/en-us/library/ms791514.aspx as the required
+   include doesn't seem to be present in the Windows SDK (at least as included
+   with Visual Studio Express). */
+typedef struct _REPARSE_DATA_BUFFER {
+    ULONG ReparseTag;
+    USHORT ReparseDataLength;
+    USHORT Reserved;
+    union {
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            ULONG Flags;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT  SubstituteNameLength;
+            USHORT  PrintNameOffset;
+            USHORT  PrintNameLength;
+            WCHAR  PathBuffer[1];
+        } MountPointReparseBuffer;
+
+        struct {
+            UCHAR  DataBuffer[1];
+        } GenericReparseBuffer;
+    };
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+
+#define REPARSE_DATA_BUFFER_HEADER_SIZE  FIELD_OFFSET(REPARSE_DATA_BUFFER,\
+                                                      GenericReparseBuffer)
+#define MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
 
 static int
 win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
@@ -4462,10 +4492,7 @@ BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
             find_data_handle = FindFirstFileW(lpFileName, &find_data);
 
             if(find_data_handle != INVALID_HANDLE_VALUE) {
-                /* IO_REPARSE_TAG_SYMLINK if it is a symlink and
-                   IO_REPARSE_TAG_MOUNT_POINT if it is a junction point. */
-                is_link = find_data.dwReserved0 == IO_REPARSE_TAG_SYMLINK ||
-                          find_data.dwReserved0 == IO_REPARSE_TAG_MOUNT_POINT;
+                is_link = find_data.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
                 FindClose(find_data_handle);
             }
         }
