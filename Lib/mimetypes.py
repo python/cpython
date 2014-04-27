@@ -242,38 +242,28 @@ class MimeTypes:
             i = 0
             while True:
                 try:
-                    ctype = _winreg.EnumKey(mimedb, i)
+                    yield _winreg.EnumKey(mimedb, i)
                 except EnvironmentError:
                     break
-                try:
-                    ctype = ctype.encode(default_encoding) # omit in 3.x!
-                except UnicodeEncodeError:
-                    pass
-                else:
-                    yield ctype
                 i += 1
 
-        default_encoding = sys.getdefaultencoding()
         with _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT, '') as hkcr:
             for subkeyname in enum_types(hkcr):
-                try:
-                    with _winreg.OpenKey(hkcr, subkeyname) as subkey:
-                        # Only check file extensions
-                        if not subkeyname.startswith("."):
-                            continue
-                        # raises EnvironmentError if no 'Content Type' value
+                # Only check file extensions, not all possible classes
+                if not subkeyname.startswith("."):
+                    continue
+
+                with _winreg.OpenKey(hkcr, subkeyname) as subkey:
+                    # If there is no "Content Type" value, or if it is not
+                    # a simple string, simply skip
+                    try:
                         mimetype, datatype = _winreg.QueryValueEx(
                             subkey, 'Content Type')
-                        if datatype != _winreg.REG_SZ:
-                            continue
-                        try:
-                            mimetype = mimetype.encode(default_encoding)
-                            subkeyname = subkeyname.encode(default_encoding)
-                        except UnicodeEncodeError:
-                            continue
-                        self.add_type(mimetype, subkeyname, strict)
-                except EnvironmentError:
-                    continue
+                    except EnvironmentError:
+                        continue
+                    if datatype != _winreg.REG_SZ:
+                        continue
+                    self.add_type(mimetype, subkeyname, strict)
 
 def guess_type(url, strict=True):
     """Guess the type of a file based on its URL.
