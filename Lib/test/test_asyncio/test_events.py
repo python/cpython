@@ -21,6 +21,7 @@ import time
 import errno
 import unittest
 from unittest import mock
+import weakref
 from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
 
 
@@ -1785,6 +1786,11 @@ class HandleTests(unittest.TestCase):
             'exception': mock.ANY,
             'handle': h
         })
+
+    def test_handle_weakref(self):
+        wd = weakref.WeakValueDictionary()
+        h = asyncio.Handle(lambda: None, (), object())
+        wd['h'] = h  # Would fail without __weakref__ slot.
 
 
 class TimerTests(unittest.TestCase):
