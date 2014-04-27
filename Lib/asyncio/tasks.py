@@ -36,7 +36,7 @@ _DEBUG = (not sys.flags.ignore_environment
 class CoroWrapper:
     # Wrapper for coroutine in _DEBUG mode.
 
-    __slots__ = ['gen', 'func', '__name__', '__doc__']
+    __slots__ = ['gen', 'func', '__name__', '__doc__', '__weakref__']
 
     def __init__(self, gen, func):
         assert inspect.isgenerator(gen), gen
