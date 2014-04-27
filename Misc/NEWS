@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9291: Do not attempt to re-encode mimetype data read from registry in
+  ANSI mode. Initial patches by Dmitry Jemerov & Vladimir Iofik.
+
 - Issue #21349: Passing a memoryview to _winreg.SetValueEx now correctly raises
   a TypeError where it previously crashed the interpreter. Patch by Brian Kearns
 
