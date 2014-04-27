@@ -16,7 +16,7 @@ import socket
 class Handle:
     """Object returned by callback registration methods."""
 
-    __slots__ = ['_callback', '_args', '_cancelled', '_loop']
+    __slots__ = ['_callback', '_args', '_cancelled', '_loop', '__weakref__']
 
     def __init__(self, callback, args, loop):
         assert not isinstance(callback, Handle), 'A Handle is not a callback'

@@ -4,6 +4,7 @@ import gc
 import os.path
 import types
 import unittest
+import weakref
 from test.script_helper import assert_python_ok
 
 import asyncio
@@ -1474,6 +1475,13 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(call((1, 2)), (1, 2))
         self.assertEqual(call('spam'), 'spam')
+
+    def test_corowrapper_weakref(self):
+        wd = weakref.WeakValueDictionary()
+        def foo(): yield from []
+        cw = asyncio.tasks.CoroWrapper(foo(), foo)
+        wd['cw'] = cw  # Would fail without __weakref__ slot.
+        cw.gen = None  # Suppress warning from __del__.
 
 
 class GatherTestsBase:
