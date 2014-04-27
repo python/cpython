@@ -76,7 +76,9 @@ class CoroWrapper:
         return self.gen.gi_code
 
     def __del__(self):
-        frame = self.gen.gi_frame
+        # Be careful accessing self.gen.frame -- self.gen might not exist.
+        gen = getattr(self, 'gen', None)
+        frame = getattr(gen, 'gi_frame', None)
         if frame is not None and frame.f_lasti == -1:
             func = self.func
             code = func.__code__
