@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18314: os.unlink now removes junction points on Windows.
+  Kim Gräsman
+
 - Issue #19385: Make operations on a closed dbm.dumb database always raise the
   same exception.
 
