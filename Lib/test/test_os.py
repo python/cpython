@@ -39,10 +39,6 @@ try:
     import fcntl
 except ImportError:
     fcntl = None
-try:
-    import _winapi
-except ImportError:
-    _winapi = None
 
 from test.script_helper import assert_python_ok
 
@@ -1777,37 +1773,6 @@ class Win32SymlinkTests(unittest.TestCase):
             shutil.rmtree(level1)
 
 
-@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
-class Win32JunctionTests(unittest.TestCase):
-    junction = 'junctiontest'
-    junction_target = os.path.dirname(os.path.abspath(__file__))
-
-    def setUp(self):
-        assert os.path.exists(self.junction_target)
-        assert not os.path.exists(self.junction)
-
-    def tearDown(self):
-        if os.path.exists(self.junction):
-            # os.rmdir delegates to Windows' RemoveDirectoryW,
-            # which removes junction points safely.
-            os.rmdir(self.junction)
-
-    def test_create_junction(self):
-        _winapi.CreateJunction(self.junction_target, self.junction)
-        self.assertTrue(os.path.exists(self.junction))
-        self.assertTrue(os.path.isdir(self.junction))
-
-        # Junctions are not recognized as links.
-        self.assertFalse(os.path.islink(self.junction))
-
-    def test_unlink_removes_junction(self):
-        _winapi.CreateJunction(self.junction_target, self.junction)
-        self.assertTrue(os.path.exists(self.junction))
-
-        os.unlink(self.junction)
-        self.assertFalse(os.path.exists(self.junction))
-
-
 @support.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
 
@@ -2579,7 +2544,6 @@ def test_main():
         RemoveDirsTests,
         CPUCountTests,
         FDInheritanceTests,
-        Win32JunctionTests,
     )
 
 if __name__ == "__main__":
