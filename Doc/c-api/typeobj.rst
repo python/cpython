@@ -464,6 +464,24 @@ type objects) *must* have the :attr:`ob_size` field.
       :const:`Py_TPFLAGS_HAVE_VERSION_TAG`.
 
 
+   .. data:: Py_TPFLAGS_LONG_SUBCLASS
+   .. data:: Py_TPFLAGS_LIST_SUBCLASS
+   .. data:: Py_TPFLAGS_TUPLE_SUBCLASS
+   .. data:: Py_TPFLAGS_BYTES_SUBCLASS
+   .. data:: Py_TPFLAGS_UNICODE_SUBCLASS
+   .. data:: Py_TPFLAGS_DICT_SUBCLASS
+   .. data:: Py_TPFLAGS_BASE_EXC_SUBCLASS
+   .. data:: Py_TPFLAGS_TYPE_SUBCLASS
+
+      These flags are used by functions such as
+      :c:func:`PyLong_Check` to quickly determine if a type is a subclass
+      of a built-in type; such specific checks are faster than a generic
+      check, like :c:func:`PyObject_IsInstance`. Custom types that inherit
+      from built-ins should have their :c:member:`~PyTypeObject.tp_flags`
+      set appropriately, or the code that interacts with such types
+      will behave differently depending on what kind of check is used.
+
+
    .. data:: Py_TPFLAGS_HAVE_FINALIZE
 
       This bit is set when the :c:member:`~PyTypeObject.tp_finalize` slot is present in the
