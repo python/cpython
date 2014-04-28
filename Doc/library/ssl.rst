@@ -372,20 +372,32 @@ Certificate handling
       IDN A-labels such as ``www*.xn--pthon-kva.org`` are still supported,
       but ``x*.python.org`` no longer matches ``xn--tda.python.org``.
 
-.. function:: cert_time_to_seconds(timestring)
+.. function:: cert_time_to_seconds(cert_time)
 
-   Returns a floating-point value containing a normal seconds-after-the-epoch
-   time value, given the time-string representing the "notBefore" or "notAfter"
-   date from a certificate.
+   Return the time in seconds since the Epoch, given the ``cert_time``
+   string representing the "notBefore" or "notAfter" date from a
+   certificate in ``"%b %d %H:%M:%S %Y %Z"`` strptime format (C
+   locale).
 
-   Here's an example::
+   Here's an example:
 
-     >>> import ssl
-     >>> ssl.cert_time_to_seconds("May  9 00:00:00 2007 GMT")
-     1178694000.0
-     >>> import time
-     >>> time.ctime(ssl.cert_time_to_seconds("May  9 00:00:00 2007 GMT"))
-     'Wed May  9 00:00:00 2007'
+   .. doctest:: newcontext
+
+      >>> import ssl
+      >>> timestamp = ssl.cert_time_to_seconds("Jan  5 09:34:43 2018 GMT")
+      >>> timestamp
+      1515144883
+      >>> from datetime import datetime
+      >>> print(datetime.utcfromtimestamp(timestamp))
+      2018-01-05 09:34:43
+
+   "notBefore" or "notAfter" dates must use GMT (:rfc:`5280`).
+
+   .. versionchanged:: 3.5
+      Interpret the input time as a time in UTC as specified by 'GMT'
+      timezone in the input string. Local timezone was used
+      previously. Return an integer (no fractions of a second in the
+      input format)
 
 .. function:: get_server_certificate(addr, ssl_version=PROTOCOL_SSLv23, ca_certs=None)
 
