@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13204: Calling sys.flags.__new__ would crash the interpreter,
+  now it raises a TypeError.
+
 - Issue #19385: Make operations on a closed dbm.dumb database always raise the
   same exception.
 

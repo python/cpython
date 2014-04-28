@@ -1622,6 +1622,7 @@ PyObject *
 _PySys_Init(void)
 {
     PyObject *m, *sysdict, *version_info;
+    int res;
 
     m = PyModule_Create(&sysmodule);
     if (m == NULL)
@@ -1629,7 +1630,6 @@ _PySys_Init(void)
     sysdict = PyModule_GetDict(m);
 #define SET_SYS_FROM_STRING_BORROW(key, value)             \
     do {                                                   \
-        int res;                                           \
         PyObject *v = (value);                             \
         if (v == NULL)                                     \
             return NULL;                                   \
@@ -1640,7 +1640,6 @@ _PySys_Init(void)
     } while (0)
 #define SET_SYS_FROM_STRING(key, value)                    \
     do {                                                   \
-        int res;                                           \
         PyObject *v = (value);                             \
         if (v == NULL)                                     \
             return NULL;                                   \
@@ -1759,6 +1758,9 @@ _PySys_Init(void)
     /* prevent user from creating new instances */
     VersionInfoType.tp_init = NULL;
     VersionInfoType.tp_new = NULL;
+    res = PyDict_DelItemString(VersionInfoType.tp_dict, "__new__");
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+        PyErr_Clear();
 
     /* implementation */
     SET_SYS_FROM_STRING("implementation", make_impl_info(version_info));
@@ -1772,7 +1774,9 @@ _PySys_Init(void)
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
-
+    res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+        PyErr_Clear();
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -1783,6 +1787,9 @@ _PySys_Init(void)
     /* prevent user from creating new instances */
     WindowsVersionType.tp_init = NULL;
     WindowsVersionType.tp_new = NULL;
+    res = PyDict_DelItemString(WindowsVersionType.tp_dict, "__new__");
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+        PyErr_Clear();
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
