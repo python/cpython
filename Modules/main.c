@@ -343,6 +343,8 @@ Py_Main(int argc, wchar_t **argv)
     int version = 0;
     int saw_unbuffered_flag = 0;
     PyCompilerFlags cf;
+    PyObject *warning_option = NULL;
+    PyObject *warning_options = NULL;
 
     cf.cf_flags = 0;
 
@@ -465,7 +467,15 @@ Py_Main(int argc, wchar_t **argv)
             break;
 
         case 'W':
-            PySys_AddWarnOption(_PyOS_optarg);
+            if (warning_options == NULL)
+                warning_options = PyList_New(0);
+            if (warning_options == NULL)
+                Py_FatalError("failure in handling of -W argument");
+            warning_option = PyUnicode_FromWideChar(_PyOS_optarg, -1);
+            if (warning_option == NULL)
+                Py_FatalError("failure in handling of -W argument");
+            PyList_Append(warning_options, warning_option);
+            Py_DECREF(warning_option);
             break;
 
         case 'X':
@@ -559,6 +569,12 @@ Py_Main(int argc, wchar_t **argv)
         PyMem_RawFree(buf);
     }
 #endif
+    if (warning_options != NULL) {
+        Py_ssize_t i;
+        for (i = 0; i < PyList_GET_SIZE(warning_options); i++) {
+            PySys_AddWarnOptionUnicode(PyList_GET_ITEM(warning_options, i));
+        }
+    }
 
     if (command == NULL && module == NULL && _PyOS_optind < argc &&
         wcscmp(argv[_PyOS_optind], L"-") != 0)
@@ -652,6 +668,7 @@ Py_Main(int argc, wchar_t **argv)
     Py_SetProgramName(argv[0]);
 #endif
     Py_Initialize();
+    Py_XDECREF(warning_options);
 
     if (!Py_QuietFlag && (Py_VerboseFlag ||
                         (command == NULL && filename == NULL &&

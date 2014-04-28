@@ -5,7 +5,7 @@ from io import StringIO
 import sys
 import unittest
 from test import support
-from test.script_helper import assert_python_ok
+from test.script_helper import assert_python_ok, assert_python_failure
 
 from test import warning_tests
 
@@ -748,7 +748,19 @@ class EnvironmentVariableTests(BaseTest):
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONWARNINGS="ignore::DeprecationWarning")
         self.assertEqual(stdout,
-            b"['ignore::UnicodeWarning', 'ignore::DeprecationWarning']")
+            b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
+
+    def test_conflicting_envvar_and_command_line(self):
+        rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
+            "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
+            "warnings.warn('Message', DeprecationWarning)",
+            PYTHONWARNINGS="default::DeprecationWarning")
+        self.assertEqual(stdout,
+            b"['default::DeprecationWarning', 'error::DeprecationWarning']")
+        self.assertEqual(stderr.splitlines(),
+            [b"Traceback (most recent call last):",
+             b"  File \"<string>\", line 1, in <module>",
+             b"DeprecationWarning: Message"])
 
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
                          'requires non-ascii filesystemencoding')
