@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9815: assertRaises now tries to clear references to local variables
+  in the exception's traceback.
+
 - Issue #13204: Calling sys.flags.__new__ would crash the interpreter,
   now it raises a TypeError.
 
