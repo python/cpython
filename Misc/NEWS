@@ -57,6 +57,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19940: ssl.cert_time_to_seconds() now interprets the given time
+  string in the UTC timezone (as specified in RFC 5280), not the local
+  timezone.
+
 - Issue #13204: Calling sys.flags.__new__ would crash the interpreter,
   now it raises a TypeError.
 
