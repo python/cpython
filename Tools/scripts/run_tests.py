@@ -33,8 +33,6 @@ def main(regrtest_args):
     # Allow user-specified interpreter options to override our defaults.
     args.extend(test.support.args_from_interpreter_flags())
 
-    # Workaround for issue #20355
-    os.environ.pop("PYTHONWARNINGS", None)
     # Workaround for issue #20361
     args.extend(['-W', 'error::BytesWarning'])
 
