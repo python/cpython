@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20355: -W command line options now have higher priority than the
+  PYTHONWARNINGS environment variable.  Patch by Arfrever.
+
 - Issue #21274: Define PATH_MAX for GNU/Hurd in Python/pythonrun.c.
 
 - Issue #20904: Support setting FPU precision on m68k.
