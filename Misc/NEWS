@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9815: assertRaises now tries to clear references to local variables
+  in the exception's traceback.
+
 - Issue #19940: ssl.cert_time_to_seconds() now interprets the given time
   string in the UTC timezone (as specified in RFC 5280), not the local
   timezone.
