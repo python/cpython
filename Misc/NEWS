@@ -320,6 +320,9 @@ C API
 Documentation
 -------------
 
+- Issue #21312: Update the thread_foobar.h template file to include newer
+  threading APIs.  Patch by Jack McCracken.
+
 - Issue #21043: Remove the recommendation for specific CA organizations and to
   mention the ability to load the OS certificates.
 
