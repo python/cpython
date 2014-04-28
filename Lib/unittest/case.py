@@ -9,6 +9,7 @@ import re
 import warnings
 import collections
 import contextlib
+import traceback
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -178,6 +179,8 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
                                                                 self.obj_name))
             else:
                 self._raiseFailure("{} not raised".format(exc_name))
+        else:
+            traceback.clear_frames(tb)
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
