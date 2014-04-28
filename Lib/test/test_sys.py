@@ -519,6 +519,26 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
 
+    def assert_raise_on_new_sys_type(self, sys_attr):
+        # Users are intentionally prevented from creating new instances of
+        # sys.flags, sys.version_info, and sys.getwindowsversion.
+        attr_type = type(sys_attr)
+        with self.assertRaises(TypeError):
+            attr_type()
+        with self.assertRaises(TypeError):
+            attr_type.__new__(attr_type)
+
+    def test_sys_flags_no_instantiation(self):
+        self.assert_raise_on_new_sys_type(sys.flags)
+
+    def test_sys_version_info_no_instantiation(self):
+        self.assert_raise_on_new_sys_type(sys.version_info)
+
+    def test_sys_getwindowsversion_no_instantiation(self):
+        # Skip if not being run on Windows.
+        test.support.get_attribute(sys, "getwindowsversion")
+        self.assert_raise_on_new_sys_type(sys.getwindowsversion())
+
     def test_clear_type_cache(self):
         sys._clear_type_cache()
 
