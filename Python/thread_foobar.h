@@ -1,4 +1,3 @@
-
 /*
  * Initialization.
  */
@@ -61,10 +60,18 @@ PyThread_free_lock(PyThread_type_lock lock)
 int
 PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
 {
+    return PyThread_acquire_lock_timed(lock, waitflag ? -1 : 0, 0);
+}
+
+PyLockStatus
+PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
+                            int intr_flag)
+{
     int success;
 
-    dprintf(("PyThread_acquire_lock(%p, %d) called\n", lock, waitflag));
-    dprintf(("PyThread_acquire_lock(%p, %d) -> %d\n", lock, waitflag, success));
+    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n", lock, microseconds, intr_flag));
+    dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
+	     lock, microseconds, intr_flag, success));
     return success;
 }
 
@@ -73,3 +80,53 @@ PyThread_release_lock(PyThread_type_lock lock)
 {
     dprintf(("PyThread_release_lock(%p) called\n", lock));
 }
+
+/* The following are only needed if native TLS support exists */
+#define Py_HAVE_NATIVE_TLS
+
+#ifdef Py_HAVE_NATIVE_TLS
+int
+PyThread_create_key(void)
+{
+    int result;
+    return result;
+}
+
+void
+PyThread_delete_key(int key)
+{
+
+}
+
+int
+PyThread_set_key_value(int key, void *value)
+{
+    int ok;
+
+    /* A failure in this case returns -1 */
+    if (!ok)
+        return -1;
+    return 0;
+}
+
+void *
+PyThread_get_key_value(int key)
+{
+    void *result;
+
+    return result;
+}
+
+void
+PyThread_delete_key_value(int key)
+{
+
+}
+
+void
+PyThread_ReInitTLS(void)
+{
+
+}
+
+#endif
