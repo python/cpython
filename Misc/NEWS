@@ -60,6 +60,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20951: SSLSocket.send() now raises either SSLWantReadError or
+  SSLWantWriteError on a non-blocking socket if the operation would block.
+  Previously, it would return 0.  Patch by Nikolaus Rath.
+
 - Issue #13248: removed previously deprecated asyncore.dispatcher __getattr__
   cheap inheritance hack.
 

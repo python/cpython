@@ -2547,6 +2547,36 @@ else:
                 s.write(b"over\n")
                 s.close()
 
+        def test_nonblocking_send(self):
+            server = ThreadedEchoServer(CERTFILE,
+                                        certreqs=ssl.CERT_NONE,
+                                        ssl_version=ssl.PROTOCOL_TLSv1,
+                                        cacerts=CERTFILE,
+                                        chatty=True,
+                                        connectionchatty=False)
+            with server:
+                s = ssl.wrap_socket(socket.socket(),
+                                    server_side=False,
+                                    certfile=CERTFILE,
+                                    ca_certs=CERTFILE,
+                                    cert_reqs=ssl.CERT_NONE,
+                                    ssl_version=ssl.PROTOCOL_TLSv1)
+                s.connect((HOST, server.port))
+                s.setblocking(False)
+
+                # If we keep sending data, at some point the buffers
+                # will be full and the call will block
+                buf = bytearray(8192)
+                def fill_buffer():
+                    while True:
+                        s.send(buf)
+                self.assertRaises((ssl.SSLWantWriteError,
+                                   ssl.SSLWantReadError), fill_buffer)
+
+                # Now read all the output and discard it
+                s.setblocking(True)
+                s.close()
+
         def test_handshake_timeout(self):
             # Issue #5103: SSL handshake must respect the socket timeout
             server = socket.socket(socket.AF_INET)
