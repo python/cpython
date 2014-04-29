@@ -653,6 +653,7 @@ The :keyword:`import` statement
    single: module; importing
    pair: name; binding
    keyword: from
+   single: as; import statement
 
 .. productionlist::
    import_stmt: "import" `module` ["as" `name`] ( "," `module` ["as" `name`] )*

@@ -331,7 +331,9 @@ may be found in section :ref:`raise`.
 The :keyword:`with` statement
 =============================
 
-.. index:: statement: with
+.. index::
+    statement: with
+    single: as; with statement
 
 .. versionadded:: 2.5
 
