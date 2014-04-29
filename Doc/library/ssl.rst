@@ -1604,8 +1604,25 @@ the sockets in non-blocking mode and use an event loop).
 Notes on non-blocking sockets
 -----------------------------
 
-When working with non-blocking sockets, there are several things you need
-to be aware of:
+SSL sockets behave slightly different than regular sockets in
+non-blocking mode. When working with non-blocking sockets, there are
+thus several things you need to be aware of:
+
+- Most :class:`SSLSocket` methods will raise either
+  :exc:`SSLWantWriteError` or :exc:`SSLWantReadError` instead of
+  :exc:`BlockingIOError` if an I/O operation would
+  block. :exc:`SSLWantReadError` will be raised if a read operation on
+  the underlying socket is necessary, and :exc:`SSLWantWriteError` for
+  a write operation on the underlying socket. Note that attempts to
+  *write* to an SSL socket may require *reading* from the underlying
+  socket first, and attempts to *read* from the SSL socket may require
+  a prior *write* to the underlying socket.
+
+  .. versionchanged:: 3.5
+
+     In earlier Python versions, the :meth:`!SSLSocket.send` method
+     returned zero instead of raising :exc:`SSLWantWriteError` or
+     :exc:`SSLWantReadError`.
 
 - Calling :func:`~select.select` tells you that the OS-level socket can be
   read from (or written to), but it does not imply that there is sufficient
