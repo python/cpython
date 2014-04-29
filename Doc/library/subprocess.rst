@@ -702,6 +702,12 @@ The following attributes are also available:
    deadlocks due to any of the other OS pipe buffers filling up and blocking the
    child process.
 
+.. attribute:: Popen.args
+
+   The *args* argument as it was passed to :class:`Popen` -- a
+   sequence of program arguments or else a single string.
+
+   .. versionadded:: 3.3
 
 .. attribute:: Popen.stdin
 
