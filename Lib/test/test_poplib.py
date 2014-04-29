@@ -349,23 +349,18 @@ class TestPOP3Class(TestCase):
 
 
 if SUPPORTS_SSL:
+    from test.test_ftplib import SSLConnection
 
-    class DummyPOP3_SSLHandler(DummyPOP3Handler):
+    class DummyPOP3_SSLHandler(SSLConnection, DummyPOP3Handler):
 
         def __init__(self, conn):
             asynchat.async_chat.__init__(self, conn)
-            ssl_socket = ssl.wrap_socket(self.socket, certfile=CERTFILE,
-                                          server_side=True,
-                                          do_handshake_on_connect=False)
-            self.del_channel()
-            self.set_socket(ssl_socket)
-            # Must try handshake before calling push()
-            self.tls_active = True
-            self.tls_starting = True
-            self._do_tls_handshake()
+            self.secure_connection()
             self.set_terminator(b"\r\n")
             self.in_buffer = []
             self.push('+OK dummy pop3 server ready. <timestamp>')
+            self.tls_active = True
+            self.tls_starting = False
 
 
 @requires_ssl
