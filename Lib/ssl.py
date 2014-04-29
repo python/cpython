@@ -664,17 +664,7 @@ class SSLSocket(socket):
                 raise ValueError(
                     "non-zero flags not allowed in calls to send() on %s" %
                     self.__class__)
-            try:
-                v = self._sslobj.write(data)
-            except SSLError as x:
-                if x.args[0] == SSL_ERROR_WANT_READ:
-                    return 0
-                elif x.args[0] == SSL_ERROR_WANT_WRITE:
-                    return 0
-                else:
-                    raise
-            else:
-                return v
+            return self._sslobj.write(data)
         else:
             return socket.send(self, data, flags)
 
