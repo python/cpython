@@ -575,6 +575,16 @@ class TestDictFields(unittest.TestCase):
             fileobj.readline() # header
             self.assertEqual(fileobj.read(), "10,,abc\r\n")
 
+    def test_write_multiple_dict_rows(self):
+        fileobj = StringIO()
+        writer = csv.DictWriter(fileobj, fieldnames=["f1", "f2", "f3"])
+        writer.writeheader()
+        self.assertEqual(fileobj.getvalue(), "f1,f2,f3\r\n")
+        writer.writerows([{"f1": 1, "f2": "abc", "f3": "f"},
+                          {"f1": 2, "f2": 5, "f3": "xyz"}])
+        self.assertEqual(fileobj.getvalue(),
+                         "f1,f2,f3\r\n1,abc,f\r\n2,5,xyz\r\n")
+
     def test_write_no_fields(self):
         fileobj = StringIO()
         self.assertRaises(TypeError, csv.DictWriter, fileobj)
