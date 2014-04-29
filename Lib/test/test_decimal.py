@@ -2431,6 +2431,23 @@ class PythonAPItests(unittest.TestCase):
             self.assertIsInstance(r, C.Decimal)
             self.assertEqual(r, x)
 
+            x = C.Decimal('-3.123e81723').as_tuple()
+            y = P.Decimal('-3.123e81723').as_tuple()
+
+            sys.modules['decimal'] = C
+            sx = pickle.dumps(x)
+            sys.modules['decimal'] = P
+            r = pickle.loads(sx)
+            self.assertIsInstance(r, P.DecimalTuple)
+            self.assertEqual(r, y)
+
+            sys.modules['decimal'] = P
+            sy = pickle.dumps(y)
+            sys.modules['decimal'] = C
+            r = pickle.loads(sy)
+            self.assertIsInstance(r, C.DecimalTuple)
+            self.assertEqual(r, x)
+
         sys.modules['decimal'] = savedecimal
 
     def test_int(self):
