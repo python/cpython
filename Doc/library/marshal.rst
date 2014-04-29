@@ -66,8 +66,9 @@ The module defines these functions:
 .. function:: dump(value, file[, version])
 
    Write the value on the open file.  The value must be a supported type.  The
-   file must be an open file object such as ``sys.stdout`` or returned by
-   :func:`open` or :func:`os.popen`.  It must be opened in binary mode (``'wb'``
+   file must be a open file object such as ``sys.stdout`` or returned by
+   :func:`open` or :func:`os.popen`.  It may not be a wrapper such as
+   TemporaryFile on Windows. It must be opened in binary mode (``'wb'``
    or ``'w+b'``).
 
    If the value has (or contains an object that has) an unsupported type, a
