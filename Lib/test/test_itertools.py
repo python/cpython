@@ -1,7 +1,7 @@
 import unittest
 from test import support
 from itertools import *
-from weakref import proxy
+import weakref
 from decimal import Decimal
 from fractions import Fraction
 import sys
@@ -1087,6 +1087,15 @@ class TestBasicOps(unittest.TestCase):
                              list(range(*args)))
             self.pickletest(islice(range(100), *args))
 
+        # Issue #21321: check source iterator is not referenced
+        # from islice() after the latter has been exhausted
+        it = (x for x in (1, 2))
+        wr = weakref.ref(it)
+        it = islice(it, 1)
+        self.assertIsNotNone(wr())
+        list(it) # exhaust the iterator
+        self.assertIsNone(wr())
+
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
         self.assertEqual(list(takewhile(underten, data)), [1, 3, 5])
@@ -1203,7 +1212,7 @@ class TestBasicOps(unittest.TestCase):
 
         # test that tee objects are weak referencable
         a, b = tee(range(10))
-        p = proxy(a)
+        p = weakref.proxy(a)
         self.assertEqual(getattr(p, '__class__'), type(b))
         del a
         self.assertRaises(ReferenceError, getattr, p, '__class__')
