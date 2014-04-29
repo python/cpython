@@ -1241,19 +1241,22 @@ islice_next(isliceobject *lz)
     Py_ssize_t oldnext;
     PyObject *(*iternext)(PyObject *);
 
+    if (it == NULL)
+        return NULL;
+
     iternext = *Py_TYPE(it)->tp_iternext;
     while (lz->cnt < lz->next) {
         item = iternext(it);
         if (item == NULL)
-            return NULL;
+            goto empty;
         Py_DECREF(item);
         lz->cnt++;
     }
     if (stop != -1 && lz->cnt >= stop)
-        return NULL;
+        goto empty;
     item = iternext(it);
     if (item == NULL)
-        return NULL;
+        goto empty;
     lz->cnt++;
     oldnext = lz->next;
     /* The (size_t) cast below avoids the danger of undefined
@@ -1262,6 +1265,10 @@ islice_next(isliceobject *lz)
     if (lz->next < oldnext || (stop != -1 && lz->next > stop))
         lz->next = stop;
     return item;
+
+empty:
+    Py_CLEAR(lz->it);
+    return NULL;
 }
 
 PyDoc_STRVAR(islice_doc,
