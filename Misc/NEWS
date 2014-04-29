@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21321: itertools.islice() now releases the reference to the source
+  iterator when the slice is exhausted.  Patch by Anton Afanasyev.
+
 - Issue #9815: assertRaises now tries to clear references to local variables
   in the exception's traceback.
 
