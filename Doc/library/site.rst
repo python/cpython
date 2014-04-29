@@ -99,7 +99,11 @@ After these path manipulations, an attempt is made to import a module named
 :mod:`sitecustomize`, which can perform arbitrary site-specific customizations.
 It is typically created by a system administrator in the site-packages
 directory.  If this import fails with an :exc:`ImportError` exception, it is
-silently ignored.
+silently ignored.  If Python is started without output streams available, as
+with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
+attempted output from :mod:`sitecustomize` is ignored. Any exception other
+than :exc:`ImportError` causes a silent and perhaps mysterious failure of the
+process.
 
 .. index:: module: usercustomize
 
