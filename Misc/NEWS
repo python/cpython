@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13248: removed previously deprecated asyncore.dispatcher __getattr__
+  cheap inheritance hack.
+
 - Issue #9815: assertRaises now tries to clear references to local variables
   in the exception's traceback.
 
