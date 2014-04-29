@@ -340,6 +340,9 @@ C API
 Documentation
 -------------
 
+- Issue #17386: Expanded functionality of the ``Doc/make.bat`` script to make
+  it much more comparable to ``Doc/Makefile``.
+
 - Issue #21312: Update the thread_foobar.h template file to include newer
   threading APIs.  Patch by Jack McCracken.
 
