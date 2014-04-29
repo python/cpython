@@ -22,6 +22,7 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
 	@echo "  html       to make standalone HTML files"
+	@echo "  htmlview   to open the index page built by the html target in your browser"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text       to make plain text files"
