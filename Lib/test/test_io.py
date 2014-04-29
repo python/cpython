@@ -2681,6 +2681,34 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertFalse(err)
         self.assertEqual("ok", out.decode().strip())
 
+    def test_read_byteslike(self):
+        r = MemviewBytesIO(b'Just some random string\n')
+        t = self.TextIOWrapper(r, 'utf-8')
+
+        # TextIOwrapper will not read the full string, because
+        # we truncate it to a multiple of the native int size
+        # so that we can construct a more complex memoryview.
+        bytes_val =  _to_memoryview(r.getvalue()).tobytes()
+
+        self.assertEqual(t.read(200), bytes_val.decode('utf-8'))
+
+class MemviewBytesIO(io.BytesIO):
+    '''A BytesIO object whose read method returns memoryviews
+       rather than bytes'''
+
+    def read1(self, len_):
+        return _to_memoryview(super().read1(len_))
+
+    def read(self, len_):
+        return _to_memoryview(super().read(len_))
+
+def _to_memoryview(buf):
+    '''Convert bytes-object *buf* to a non-trivial memoryview'''
+
+    arr = array.array('i')
+    idx = len(buf) - len(buf) % arr.itemsize
+    arr.frombytes(buf[:idx])
+    return memoryview(arr)
 
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io

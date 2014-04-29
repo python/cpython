@@ -1439,6 +1439,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     PyObject *dec_buffer = NULL;
     PyObject *dec_flags = NULL;
     PyObject *input_chunk = NULL;
+    Py_buffer input_chunk_buf;
     PyObject *decoded_chars, *chunk_size;
     Py_ssize_t nbytes, nchars;
     int eof;
@@ -1470,6 +1471,15 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
             Py_DECREF(state);
             return -1;
         }
+
+        if (!PyBytes_Check(dec_buffer)) {
+            PyErr_Format(PyExc_TypeError,
+                         "decoder getstate() should have returned a bytes "
+                         "object, not '%.200s'",
+                         Py_TYPE(dec_buffer)->tp_name);
+            Py_DECREF(state);
+            return -1;
+        }
         Py_INCREF(dec_buffer);
         Py_INCREF(dec_flags);
         Py_DECREF(state);
@@ -1482,23 +1492,24 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     chunk_size = PyLong_FromSsize_t(Py_MAX(self->chunk_size, size_hint));
     if (chunk_size == NULL)
         goto fail;
+
     input_chunk = PyObject_CallMethodObjArgs(self->buffer,
         (self->has_read1 ? _PyIO_str_read1: _PyIO_str_read),
         chunk_size, NULL);
     Py_DECREF(chunk_size);
     if (input_chunk == NULL)
         goto fail;
-    if (!PyBytes_Check(input_chunk)) {
+
+    if (PyObject_GetBuffer(input_chunk, &input_chunk_buf, 0) != 0) {
         PyErr_Format(PyExc_TypeError,
-                     "underlying %s() should have returned a bytes object, "
+                     "underlying %s() should have returned a bytes-like object, "
                      "not '%.200s'", (self->has_read1 ? "read1": "read"),
                      Py_TYPE(input_chunk)->tp_name);
         goto fail;
     }
 
-    nbytes = PyBytes_Size(input_chunk);
+    nbytes = input_chunk_buf.len;
     eof = (nbytes == 0);
-
     if (Py_TYPE(self->decoder) == &PyIncrementalNewlineDecoder_Type) {
         decoded_chars = _PyIncrementalNewlineDecoder_decode(
             self->decoder, input_chunk, eof);
@@ -1507,6 +1518,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         decoded_chars = PyObject_CallMethodObjArgs(self->decoder,
             _PyIO_str_decode, input_chunk, eof ? Py_True : Py_False, NULL);
     }
+    PyBuffer_Release(&input_chunk_buf);
 
     if (check_decoded(decoded_chars) < 0)
         goto fail;
@@ -1523,18 +1535,12 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         /* At the snapshot point, len(dec_buffer) bytes before the read, the
          * next input to be decoded is dec_buffer + input_chunk.
          */
-        PyObject *next_input = PyNumber_Add(dec_buffer, input_chunk);
-        if (next_input == NULL)
-            goto fail;
-        if (!PyBytes_Check(next_input)) {
-            PyErr_Format(PyExc_TypeError,
-                         "decoder getstate() should have returned a bytes "
-                         "object, not '%.200s'",
-                         Py_TYPE(next_input)->tp_name);
-            Py_DECREF(next_input);
+        PyObject *next_input = dec_buffer;
+        PyBytes_Concat(&next_input, input_chunk);
+        if (next_input == NULL) {
+            dec_buffer = NULL; /* Reference lost to PyBytes_Concat */
             goto fail;
         }
-        Py_DECREF(dec_buffer);
         Py_CLEAR(self->snapshot);
         self->snapshot = Py_BuildValue("NN", dec_flags, next_input);
     }
