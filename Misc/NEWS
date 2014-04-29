@@ -237,6 +237,9 @@ C API
 Documentation
 -------------
 
+- Issue #17386: Expanded functionality of the ``Doc/make.bat`` script to make
+  it much more comparable to ``Doc/Makefile``.
+
 - Issue #21043: Remove the recommendation for specific CA organizations and to
   mention the ability to load the OS certificates.
 
