@@ -1492,19 +1492,22 @@ islice_next(isliceobject *lz)
     Py_ssize_t oldnext;
     PyObject *(*iternext)(PyObject *);
 
+    if (it == NULL)
+        return NULL;
+
     iternext = *Py_TYPE(it)->tp_iternext;
     while (lz->cnt < lz->next) {
         item = iternext(it);
         if (item == NULL)
-            return NULL;
+            goto empty;
         Py_DECREF(item);
         lz->cnt++;
     }
     if (stop != -1 && lz->cnt >= stop)
-        return NULL;
+        goto empty;
     item = iternext(it);
     if (item == NULL)
-        return NULL;
+        goto empty;
     lz->cnt++;
     oldnext = lz->next;
     /* The (size_t) cast below avoids the danger of undefined
@@ -1513,6 +1516,10 @@ islice_next(isliceobject *lz)
     if (lz->next < oldnext || (stop != -1 && lz->next > stop))
         lz->next = stop;
     return item;
+
+empty:
+    Py_CLEAR(lz->it);
+    return NULL;
 }
 
 static PyObject *
@@ -1522,6 +1529,18 @@ islice_reduce(isliceobject *lz)
      * then 'setstate' with the next and count
      */
     PyObject *stop;
+    if (lz->it == NULL) {
+        PyObject *empty_list;
+        PyObject *empty_it;
+        empty_list = PyList_New(0);
+        if (empty_list == NULL)
+            return NULL;
+        empty_it = PyObject_GetIter(empty_list);
+        Py_DECREF(empty_list);
+        if (empty_it == NULL)
+            return NULL;
+        return Py_BuildValue("O(Nn)n", Py_TYPE(lz), empty_it, 0, 0);
+    }
     if (lz->stop == -1) {
         stop = Py_None;
         Py_INCREF(stop);
