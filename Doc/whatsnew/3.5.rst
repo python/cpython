@@ -213,3 +213,7 @@ that may require changes to your code.
   if it represented midnight in UTC.  This behavior was considered obscure and
   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
   details.
+
+* :meth:`ssl.SSLSocket.send()` now raises either :exc:`ssl.SSLWantReadError`
+  or :exc:`ssl.SSLWantWriteError` on a non-blocking socket if the operation
+  would block. Previously, it would return 0.  See :issue:`20951`.
