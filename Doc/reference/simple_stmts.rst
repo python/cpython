@@ -656,6 +656,8 @@ initializing the module, which includes execution of the module's code.
 If the requested module is retrieved successfully, it will be made
 available in the local namespace in one of three ways:
 
+.. index:: single: as; import statement
+
 * If the module name is followed by :keyword:`as`, then the name
   following :keyword:`as` is bound directly to the imported module.
 * If no other name is specified, and the module being imported is a top
