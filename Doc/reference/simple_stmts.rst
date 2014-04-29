@@ -72,6 +72,7 @@ Assignment statements
 =====================
 
 .. index::
+   single: =; assignment statement
    pair: assignment; statement
    pair: binding; name
    pair: rebinding; name
@@ -241,6 +242,18 @@ Augmented assignment statements
 .. index::
    pair: augmented; assignment
    single: statement; assignment, augmented
+   single: +=; augmented assignment
+   single: -=; augmented assignment
+   single: *=; augmented assignment
+   single: /=; augmented assignment
+   single: %=; augmented assignment
+   single: &=; augmented assignment
+   single: ^=; augmented assignment
+   single: |=; augmented assignment
+   single: **=; augmented assignment
+   single: //=; augmented assignment
+   single: >>=; augmented assignment
+   single: <<=; augmented assignment
 
 Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
