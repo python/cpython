@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21321: itertools.islice() now releases the reference to the source
+  iterator when the slice is exhausted.  Patch by Anton Afanasyev.
+
 - Issue #21057: TextIOWrapper now allows the underlying binary stream's
   read() or read1() method to return an arbitrary bytes-like object
   (such as a memoryview).  Patch by Nikolaus Rath.
