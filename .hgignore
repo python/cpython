@@ -18,6 +18,7 @@ db_home
 platform$
 pyconfig.h$
 python$
+python.bat$
 python.exe$
 python-config$
 python-config.py$
