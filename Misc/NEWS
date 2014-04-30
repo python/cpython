@@ -339,6 +339,11 @@ Build
 - Issue #20644: OS X installer build support for documentation build changes
   in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
 
+- Issue #20022: Eliminate use of deprecated bundlebuilder in OS X builds.
+
+- Issue #15968: Incorporated Tcl, Tk, and Tix builds into the Windows build
+  solution.
+
 C API
 -----
 - Issue #20942: PyImport_ImportFrozenModuleObject() no longer sets __file__ to
@@ -409,13 +414,6 @@ Tools/Demos
 - Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
   Patch by Arfrever Frehtes Taifersar Arahesis.
 
-Build
------
-
-- Issue #15968: Incorporated Tcl, Tk, and Tix builds into the Windows build
-  solution.
-
-- Issue #20022: Eliminate use of deprecated bundlebuilder in OS X builds.
 
 What's New in Python 3.4.0?
 ===========================
