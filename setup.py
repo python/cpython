@@ -167,6 +167,7 @@ class PyBuildExt(build_ext):
     def __init__(self, dist):
         build_ext.__init__(self, dist)
         self.failed = []
+        self.failed_on_import = []
 
     def build_extensions(self):
 
@@ -247,8 +248,9 @@ class PyBuildExt(build_ext):
         build_ext.build_extensions(self)
 
         longest = max([len(e.name) for e in self.extensions])
-        if self.failed:
-            longest = max(longest, max([len(name) for name in self.failed]))
+        if self.failed or self.failed_on_import:
+            all_failed = self.failed + self.failed_on_import
+            longest = max(longest, max([len(name) for name in all_failed]))
 
         def print_three_column(lst):
             lst.sort(key=str.lower)
@@ -273,6 +275,14 @@ class PyBuildExt(build_ext):
             failed = self.failed[:]
             print()
             print("Failed to build these modules:")
+            print_three_column(failed)
+            print()
+
+        if self.failed_on_import:
+            failed = self.failed_on_import[:]
+            print()
+            print("Following modules built successfully"
+                  " but were removed because they could not be imported:")
             print_three_column(failed)
             print()
 
@@ -334,7 +344,7 @@ class PyBuildExt(build_ext):
         try:
             importlib._bootstrap._SpecMethods(spec).load()
         except ImportError as why:
-            self.failed.append(ext.name)
+            self.failed_on_import.append(ext.name)
             self.announce('*** WARNING: renaming "%s" since importing it'
                           ' failed: %s' % (ext.name, why), level=3)
             assert not self.inplace
