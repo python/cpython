@@ -60,6 +60,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10650: Remove the non-standard 'watchexp' parameter from the
+  Decimal.quantize() method in the Python version.  It had never been
+  present in the C version.
+
 - Issue #21321: itertools.islice() now releases the reference to the source
   iterator when the slice is exhausted.  Patch by Anton Afanasyev.
 

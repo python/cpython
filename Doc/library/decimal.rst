@@ -744,7 +744,7 @@ Decimal objects
       * ``"NaN"``, indicating that the operand is a quiet NaN (Not a Number).
       * ``"sNaN"``, indicating that the operand is a signaling NaN.
 
-   .. method:: quantize(exp, rounding=None, context=None, watchexp=True)
+   .. method:: quantize(exp, rounding=None, context=None)
 
       Return a value equal to the first operand after rounding and having the
       exponent of the second operand.
@@ -767,14 +767,8 @@ Decimal objects
       ``context`` argument; if neither argument is given the rounding mode of
       the current thread's context is used.
 
-      If *watchexp* is set (default), then an error is returned whenever the
-      resulting exponent is greater than :attr:`Emax` or less than
-      :attr:`Etiny`.
-
-      .. deprecated:: 3.3
-         *watchexp* is an implementation detail from the pure Python version
-         and is not present in the C version. It will be removed in version
-         3.4, where it defaults to ``True``.
+      An error is returned whenever the resulting exponent is greater than
+      :attr:`Emax` or less than :attr:`Etiny`.
 
    .. method:: radix()
 

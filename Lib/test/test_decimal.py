@@ -4448,18 +4448,6 @@ class PyCoverage(Coverage):
 class PyFunctionality(unittest.TestCase):
     """Extra functionality in decimal.py"""
 
-    def test_py_quantize_watchexp(self):
-        # watchexp functionality
-        Decimal = P.Decimal
-        localcontext = P.localcontext
-
-        with localcontext() as c:
-            c.prec = 1
-            c.Emax = 1
-            c.Emin = -1
-            x = Decimal(99999).quantize(Decimal("1e3"), watchexp=False)
-            self.assertEqual(x, Decimal('1.00E+5'))
-
     def test_py_alternate_formatting(self):
         # triples giving a format, a Decimal, and the expected result
         Decimal = P.Decimal
