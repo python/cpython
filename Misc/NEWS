@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21377: PyBytes_Concat() now tries to concatenate in-place when the
+  first argument has a reference count of 1.  Patch by Nikolaus Rath.
+
 - Issue #20355: -W command line options now have higher priority than the
   PYTHONWARNINGS environment variable.  Patch by Arfrever.
 
