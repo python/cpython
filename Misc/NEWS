@@ -325,6 +325,8 @@ IDLE
 Build
 -----
 
+- The Windows build now includes OpenSSL 1.0.1g
+
 - Issue #19962: The Windows build process now creates "python.bat" in the
   root of the source tree, which passes all arguments through to the most
   recently built interpreter.
