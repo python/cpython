@@ -218,6 +218,8 @@ IDLE
 Build
 -----
 
+- The Windows build now includes OpenSSL 1.0.1g
+
 - Issue #21285: Refactor and fix curses configure check to always search
   in a ncursesw directory.
 
