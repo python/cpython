@@ -33,7 +33,7 @@ import unittest
 import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
-                          requires_IEEE_754)
+                          requires_IEEE_754, requires_docstrings)
 from test.support import (check_warnings, import_fresh_module, TestFailed,
                           run_with_locale, cpython_only)
 import random
@@ -5391,7 +5391,8 @@ class CWhitebox(unittest.TestCase):
             y = Decimal(10**(9*25)).__sizeof__()
             self.assertEqual(y, x+4)
 
-unittest.skipUnless(C, "test requires C version")
+@requires_docstrings
+@unittest.skipUnless(C, "test requires C version")
 class SignatureTest(unittest.TestCase):
     """Function signatures"""
 
