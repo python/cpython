@@ -310,6 +310,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #21407: _decimal: The module now supports function signatures.
+
 - Issue #21276: posixmodule: Don't define USE_XATTRS on KFreeBSD and the Hurd.
 
 IDLE
