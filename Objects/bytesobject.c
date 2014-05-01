@@ -2781,7 +2781,6 @@ PyTypeObject PyBytes_Type = {
 void
 PyBytes_Concat(PyObject **pv, PyObject *w)
 {
-    PyObject *v;
     assert(pv != NULL);
     if (*pv == NULL)
         return;
@@ -2789,9 +2788,45 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         Py_CLEAR(*pv);
         return;
     }
-    v = bytes_concat(*pv, w);
-    Py_DECREF(*pv);
-    *pv = v;
+
+    if (Py_REFCNT(*pv) == 1 && PyBytes_CheckExact(*pv)) {
+        /* Only one reference, so we can resize in place */
+        size_t oldsize;
+        Py_buffer wb;
+        
+        wb.len = -1;
+        if (_getbuffer(w, &wb) < 0) {
+            PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+                         Py_TYPE(w)->tp_name, Py_TYPE(*pv)->tp_name);
+            Py_CLEAR(*pv);
+            return;
+        }
+
+        oldsize = PyBytes_GET_SIZE(*pv);
+        if (oldsize > PY_SSIZE_T_MAX - wb.len) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        if (_PyBytes_Resize(pv, oldsize + wb.len) < 0)
+            goto error;
+
+        memcpy(PyBytes_AS_STRING(*pv) + oldsize, wb.buf, wb.len);
+        PyBuffer_Release(&wb);
+        return;
+
+      error:
+        PyBuffer_Release(&wb);
+        Py_CLEAR(*pv);
+        return;
+    }
+
+    else {
+        /* Multiple references, need to create new object */
+        PyObject *v;
+        v = bytes_concat(*pv, w);
+        Py_DECREF(*pv);
+        *pv = v;
+    }
 }
 
 void
