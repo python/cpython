@@ -15,8 +15,6 @@ static int _Py_HashSecret_Initialized = 0;
 #endif
 
 #ifdef MS_WINDOWS
-/* This handle is never explicitly released. Instead, the operating
-   system will release it when the process terminates. */
 static HCRYPTPROV hCryptProv = 0;
 
 static int
@@ -298,7 +296,12 @@ _PyRandom_Init(void)
 void
 _PyRandom_Fini(void)
 {
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS
+    if (hCryptProv) {
+        CloseHandle(hCryptProv);
+        hCryptProv = 0;
+    }
+#else
     dev_urandom_close();
 #endif
 }
