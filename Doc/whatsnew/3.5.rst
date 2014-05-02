@@ -164,7 +164,10 @@ Optimizations
 
 Major performance enhancements have been added:
 
-* None yet.
+* Construction of ``bytes(int)`` and ``bytearray(int)`` (filled by zero bytes)
+  is faster and use less memory (until the bytearray buffer is filled with
+  data) for large objects. ``calloc()`` is used instead of ``malloc()`` to
+  allocate memory for these objects.
 
 
 Build and C API Changes
@@ -172,7 +175,12 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* None yet.
+* New ``calloc`` functions:
+
+  * :c:func:`PyMem_RawCalloc`
+  * :c:func:`PyMem_Calloc`
+  * :c:func:`PyObject_Calloc`
+  * :c:func:`_PyObject_GC_Calloc`
 
 
 Deprecated
@@ -209,6 +217,9 @@ Porting to Python 3.5
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
 * Before Python 3.5, a :class:`datetime.time` object was considered to be false
   if it represented midnight in UTC.  This behavior was considered obscure and
   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
@@ -217,3 +228,8 @@ that may require changes to your code.
 * :meth:`ssl.SSLSocket.send()` now raises either :exc:`ssl.SSLWantReadError`
   or :exc:`ssl.SSLWantWriteError` on a non-blocking socket if the operation
   would block. Previously, it would return 0.  See :issue:`20951`.
+
+Changes in the C API
+--------------------
+
+* The :c:type:`PyMemAllocator` structure has a new ``calloc`` field.

@@ -95,6 +95,7 @@ PyObject_{New, NewVar, Del}.
    the raw memory.
 */
 PyAPI_FUNC(void *) PyObject_Malloc(size_t size);
+PyAPI_FUNC(void *) PyObject_Calloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyObject_Free(void *ptr);
 
@@ -321,7 +322,8 @@ extern PyGC_Head *_PyGC_generation0;
         (!PyTuple_CheckExact(obj) || _PyObject_GC_IS_TRACKED(obj)))
 #endif /* Py_LIMITED_API */
 
-PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t);
+PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t size);
+PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);
 PyAPI_FUNC(PyObject *) _PyObject_GC_New(PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, Py_ssize_t);
 PyAPI_FUNC(void) PyObject_GC_Track(void *);
