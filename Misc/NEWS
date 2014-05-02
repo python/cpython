@@ -383,6 +383,10 @@ Documentation
 Tests
 -----
 
+- Issue #18604: Consolidated checks for GUI availability.  All platforms now
+  at least check whether Tk can be instantiated when the GUI resource is
+  requested.
+
 - Issue #21275: Fix a socket test on KFreeBSD.
 
 - Issue #21223: Pass test_site/test_startup_imports when some of the extensions
