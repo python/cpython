@@ -378,12 +378,16 @@ def forget(modname):
         unlink(importlib.util.cache_from_source(source, debug_override=True))
         unlink(importlib.util.cache_from_source(source, debug_override=False))
 
-# On some platforms, should not run gui test even if it is allowed
-# in `use_resources'.
-if sys.platform.startswith('win'):
-    import ctypes
-    import ctypes.wintypes
-    def _is_gui_available():
+# Check whether a gui is actually available
+def _is_gui_available():
+    if hasattr(_is_gui_available, 'result'):
+        return _is_gui_available.result
+    reason = None
+    if sys.platform.startswith('win'):
+        # if Python is running as a service (such as the buildbot service),
+        # gui interaction may be disallowed
+        import ctypes
+        import ctypes.wintypes
         UOI_FLAGS = 1
         WSF_VISIBLE = 0x0001
         class USEROBJECTFLAGS(ctypes.Structure):
@@ -403,10 +407,49 @@ if sys.platform.startswith('win'):
             ctypes.byref(needed))
         if not res:
             raise ctypes.WinError()
-        return bool(uof.dwFlags & WSF_VISIBLE)
-else:
-    def _is_gui_available():
-        return True
+        if not bool(uof.dwFlags & WSF_VISIBLE):
+            reason = "gui not available (WSF_VISIBLE flag not set)"
+    elif sys.platform == 'darwin':
+        # The Aqua Tk implementations on OS X can abort the process if
+        # being called in an environment where a window server connection
+        # cannot be made, for instance when invoked by a buildbot or ssh
+        # process not running under the same user id as the current console
+        # user.  To avoid that, raise an exception if the window manager
+        # connection is not available.
+        from ctypes import cdll, c_int, pointer, Structure
+        from ctypes.util import find_library
+
+        app_services = cdll.LoadLibrary(find_library("ApplicationServices"))
+
+        if app_services.CGMainDisplayID() == 0:
+            reason = "gui tests cannot run without OS X window manager"
+        else:
+            class ProcessSerialNumber(Structure):
+                _fields_ = [("highLongOfPSN", c_int),
+                            ("lowLongOfPSN", c_int)]
+            psn = ProcessSerialNumber()
+            psn_p = pointer(psn)
+            if (  (app_services.GetCurrentProcess(psn_p) < 0) or
+                  (app_services.SetFrontProcess(psn_p) < 0) ):
+                reason = "cannot run without OS X gui process"
+
+    # check on every platform whether tkinter can actually do anything
+    if not reason:
+        try:
+            from tkinter import Tk
+            root = Tk()
+            root.destroy()
+        except Exception as e:
+            err_string = str(e)
+            if len(err_string) > 50:
+                err_string = err_string[:50] + ' [...]'
+            reason = 'Tk unavailable due to {}: {}'.format(type(e).__name__,
+                                                           err_string)
+
+    _is_gui_available.reason = reason
+    _is_gui_available.result = not reason
+
+    return _is_gui_available.result
 
 def is_resource_enabled(resource):
     """Test whether a resource is enabled.  Known resources are set by
@@ -421,7 +464,7 @@ def requires(resource, msg=None):
     executing.
     """
     if resource == 'gui' and not _is_gui_available():
-        raise unittest.SkipTest("Cannot use the 'gui' resource")
+        raise ResourceDenied(_is_gui_available.reason)
     # see if the caller's module is __main__ - if so, treat as if
     # the resource was set
     if sys._getframe(1).f_globals.get("__name__") == "__main__":
@@ -1589,7 +1632,7 @@ def _id(obj):
 
 def requires_resource(resource):
     if resource == 'gui' and not _is_gui_available():
-        return unittest.skip("resource 'gui' is not available")
+        return unittest.skip(_is_gui_available.reason)
     if is_resource_enabled(resource):
         return _id
     else:
