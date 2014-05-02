@@ -164,7 +164,7 @@ is correctly rounded.\n\
 \n");
 
 PyDoc_STRVAR(doc_from_float,
-"from_float($cls, f, /)\n--\n\n\
+"from_float($type, f, /)\n--\n\n\
 Class method that converts a float to a decimal number, exactly.\n\
 Since 0.1 is not exactly representable in binary floating point,\n\
 Decimal.from_float(0.1) is not the same as Decimal('0.1').\n\
