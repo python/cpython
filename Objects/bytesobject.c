@@ -71,27 +71,14 @@ static PyBytesObject *nullstring;
    PyBytes_FromStringAndSize()) or the length of the string in the `str'
    parameter (for PyBytes_FromString()).
 */
-PyObject *
-PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
+static PyObject *
+_PyBytes_FromSize(Py_ssize_t size, int use_calloc)
 {
     PyBytesObject *op;
-    if (size < 0) {
-        PyErr_SetString(PyExc_SystemError,
-            "Negative size passed to PyBytes_FromStringAndSize");
-        return NULL;
-    }
+    assert(size >= 0);
     if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
         null_strings++;
-#endif
-        Py_INCREF(op);
-        return (PyObject *)op;
-    }
-    if (size == 1 && str != NULL &&
-        (op = characters[*str & UCHAR_MAX]) != NULL)
-    {
-#ifdef COUNT_ALLOCS
-        one_strings++;
 #endif
         Py_INCREF(op);
         return (PyObject *)op;
@@ -104,19 +91,52 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
     }
 
     /* Inline PyObject_NewVar */
-    op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + size);
+    if (use_calloc)
+        op = (PyBytesObject *)PyObject_Calloc(1, PyBytesObject_SIZE + size);
+    else
+        op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
     if (op == NULL)
         return PyErr_NoMemory();
     (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
-    if (str != NULL)
-        Py_MEMCPY(op->ob_sval, str, size);
-    op->ob_sval[size] = '\0';
-    /* share short strings */
+    if (!use_calloc)
+        op->ob_sval[size] = '\0';
+    /* empty byte string singleton */
     if (size == 0) {
         nullstring = op;
         Py_INCREF(op);
-    } else if (size == 1 && str != NULL) {
+    }
+    return (PyObject *) op;
+}
+
+PyObject *
+PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
+{
+    PyBytesObject *op;
+    if (size < 0) {
+        PyErr_SetString(PyExc_SystemError,
+            "Negative size passed to PyBytes_FromStringAndSize");
+        return NULL;
+    }
+    if (size == 1 && str != NULL &&
+        (op = characters[*str & UCHAR_MAX]) != NULL)
+    {
+#ifdef COUNT_ALLOCS
+        one_strings++;
+#endif
+        Py_INCREF(op);
+        return (PyObject *)op;
+    }
+
+    op = (PyBytesObject *)_PyBytes_FromSize(size, 0);
+    if (op == NULL)
+        return NULL;
+    if (str == NULL)
+        return (PyObject *) op;
+
+    Py_MEMCPY(op->ob_sval, str, size);
+    /* share short strings */
+    if (size == 1) {
         characters[*str & UCHAR_MAX] = op;
         Py_INCREF(op);
     }
@@ -2482,7 +2502,7 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                             "argument");
             return NULL;
         }
-        return PyBytes_FromString("");
+        return PyBytes_FromStringAndSize(NULL, 0);
     }
 
     if (PyUnicode_Check(x)) {
@@ -2532,11 +2552,9 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     else {
-        new = PyBytes_FromStringAndSize(NULL, size);
+        new = _PyBytes_FromSize(size, 1);
         if (new == NULL)
             return NULL;
-        if (size > 0)
-            memset(((PyBytesObject*)new)->ob_sval, 0, size);
         return new;
     }
 
