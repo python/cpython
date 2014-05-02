@@ -1183,11 +1183,11 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
         goto redirect;
 #endif
 
-    if (nelem == 0 || elsize == 0)
-        goto redirect;
-
     assert(nelem <= PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
+
+    if (nelem == 0 || elsize == 0)
+        goto redirect;
 
     if ((nbytes - 1) < SMALL_REQUEST_THRESHOLD) {
         LOCK();
