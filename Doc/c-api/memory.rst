@@ -92,8 +92,8 @@ functions are thread-safe, the :term:`GIL <global interpreter lock>` does not
 need to be held.
 
 The default raw memory block allocator uses the following functions:
-:c:func:`malloc`, :c:func:`realloc` and :c:func:`free`; call ``malloc(1)`` when
-requesting zero bytes.
+:c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`; call
+``malloc(1)`` (or ``calloc(1, 1)``) when requesting zero bytes.
 
 .. versionadded:: 3.4
 
@@ -104,6 +104,17 @@ requesting zero bytes.
    returns a distinct non-*NULL* pointer if possible, as if
    ``PyMem_RawMalloc(1)`` had been called instead. The memory will not have
    been initialized in any way.
+
+
+.. c:function:: void* PyMem_RawCalloc(size_t nelem, size_t elsize)
+
+   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   a pointer of type :c:type:`void\*` to the allocated memory, or *NULL* if the
+   request fails. The memory is initialized to zeros. Requesting zero elements
+   or elements of size zero bytes returns a distinct non-*NULL* pointer if
+   possible, as if ``PyMem_RawCalloc(1, 1)`` had been called instead.
+
+   .. versionadded:: 3.5
 
 
 .. c:function:: void* PyMem_RawRealloc(void *p, size_t n)
@@ -136,8 +147,8 @@ behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
 The default memory block allocator uses the following functions:
-:c:func:`malloc`, :c:func:`realloc` and :c:func:`free`; call ``malloc(1)`` when
-requesting zero bytes.
+:c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`; call
+``malloc(1)`` (or ``calloc(1, 1)``) when requesting zero bytes.
 
 .. warning::
 
@@ -150,6 +161,17 @@ requesting zero bytes.
    allocated memory, or *NULL* if the request fails. Requesting zero bytes returns
    a distinct non-*NULL* pointer if possible, as if ``PyMem_Malloc(1)`` had
    been called instead. The memory will not have been initialized in any way.
+
+
+.. c:function:: void* PyMem_Calloc(size_t nelem, size_t elsize)
+
+   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   a pointer of type :c:type:`void\*` to the allocated memory, or *NULL* if the
+   request fails. The memory is initialized to zeros. Requesting zero elements
+   or elements of size zero bytes returns a distinct non-*NULL* pointer if
+   possible, as if ``PyMem_Calloc(1, 1)`` had been called instead.
+
+   .. versionadded:: 3.5
 
 
 .. c:function:: void* PyMem_Realloc(void *p, size_t n)
@@ -222,10 +244,16 @@ Customize Memory Allocators
    +----------------------------------------------------------+---------------------------------------+
    | ``void* malloc(void *ctx, size_t size)``                 | allocate a memory block               |
    +----------------------------------------------------------+---------------------------------------+
+   | ``void* calloc(void *ctx, size_t nelem, size_t elsize)`` | allocate a memory block initialized   |
+   |                                                          | with zeros                            |
+   +----------------------------------------------------------+---------------------------------------+
    | ``void* realloc(void *ctx, void *ptr, size_t new_size)`` | allocate or resize a memory block     |
    +----------------------------------------------------------+---------------------------------------+
    | ``void free(void *ctx, void *ptr)``                      | free a memory block                   |
    +----------------------------------------------------------+---------------------------------------+
+
+   .. versionchanged:: 3.5
+      Add a new field ``calloc``.
 
 .. c:type:: PyMemAllocatorDomain
 

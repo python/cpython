@@ -13,6 +13,7 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
+PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 #endif
@@ -57,6 +58,7 @@ PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 */
 
 PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
+PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
@@ -131,6 +133,9 @@ typedef struct {
 
     /* allocate a memory block */
     void* (*malloc) (void *ctx, size_t size);
+
+    /* allocate a memory block initialized by zeros */
+    void* (*calloc) (void *ctx, size_t nelem, size_t elsize);
 
     /* allocate or resize a memory block */
     void* (*realloc) (void *ctx, void *ptr, size_t new_size);

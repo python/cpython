@@ -1703,15 +1703,19 @@ PyObject_GC_UnTrack(void *op)
         _PyObject_GC_UNTRACK(op);
 }
 
-PyObject *
-_PyObject_GC_Malloc(size_t basicsize)
+static PyObject *
+_PyObject_GC_Alloc(int use_calloc, size_t basicsize)
 {
     PyObject *op;
     PyGC_Head *g;
+    size_t size;
     if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
         return PyErr_NoMemory();
-    g = (PyGC_Head *)PyObject_MALLOC(
-        sizeof(PyGC_Head) + basicsize);
+    size = sizeof(PyGC_Head) + basicsize;
+    if (use_calloc)
+        g = (PyGC_Head *)PyObject_Calloc(1, size);
+    else
+        g = (PyGC_Head *)PyObject_Malloc(size);
     if (g == NULL)
         return PyErr_NoMemory();
     g->gc.gc_refs = 0;
@@ -1728,6 +1732,18 @@ _PyObject_GC_Malloc(size_t basicsize)
     }
     op = FROM_GC(g);
     return op;
+}
+
+PyObject *
+_PyObject_GC_Malloc(size_t basicsize)
+{
+    return _PyObject_GC_Alloc(0, basicsize);
+}
+
+PyObject *
+_PyObject_GC_Calloc(size_t basicsize)
+{
+    return _PyObject_GC_Alloc(1, basicsize);
 }
 
 PyObject *

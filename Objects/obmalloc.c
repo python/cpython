@@ -5,6 +5,7 @@
 #ifdef PYMALLOC_DEBUG   /* WITH_PYMALLOC && PYMALLOC_DEBUG */
 /* Forward declaration */
 static void* _PyMem_DebugMalloc(void *ctx, size_t size);
+static void* _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize);
 static void _PyMem_DebugFree(void *ctx, void *p);
 static void* _PyMem_DebugRealloc(void *ctx, void *ptr, size_t size);
 
@@ -43,6 +44,7 @@ static void _PyMem_DebugCheckAddress(char api_id, const void *p);
 
 /* Forward declaration */
 static void* _PyObject_Malloc(void *ctx, size_t size);
+static void* _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize);
 static void _PyObject_Free(void *ctx, void *p);
 static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #endif
@@ -51,13 +53,27 @@ static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
-    /* PyMem_Malloc(0) means malloc(1). Some systems would return NULL
+    /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
        for malloc(0), which would be treated as an error. Some platforms would
        return a pointer with no memory behind it, which would break pymalloc.
        To solve these problems, allocate an extra byte. */
     if (size == 0)
         size = 1;
     return malloc(size);
+}
+
+static void *
+_PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
+{
+    /* PyMem_RawCalloc(0, 0) means calloc(1, 1). Some systems would return NULL
+       for calloc(0, 0), which would be treated as an error. Some platforms
+       would return a pointer with no memory behind it, which would break
+       pymalloc.  To solve these problems, allocate an extra byte. */
+    if (nelem == 0 || elsize == 0) {
+        nelem = 1;
+        elsize = 1;
+    }
+    return calloc(nelem, elsize);
 }
 
 static void *
@@ -123,9 +139,9 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 #endif
 
 
-#define PYRAW_FUNCS _PyMem_RawMalloc, _PyMem_RawRealloc, _PyMem_RawFree
+#define PYRAW_FUNCS _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree
 #ifdef WITH_PYMALLOC
-#  define PYOBJ_FUNCS _PyObject_Malloc, _PyObject_Realloc, _PyObject_Free
+#  define PYOBJ_FUNCS _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free
 #else
 #  define PYOBJ_FUNCS PYRAW_FUNCS
 #endif
@@ -147,7 +163,7 @@ static struct {
     {'o', {NULL, PYOBJ_FUNCS}}
     };
 
-#define PYDBG_FUNCS _PyMem_DebugMalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
+#define PYDBG_FUNCS _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
 #endif
 
 static PyMemAllocator _PyMem_Raw = {
@@ -196,6 +212,7 @@ PyMem_SetupDebugHooks(void)
     PyMemAllocator alloc;
 
     alloc.malloc = _PyMem_DebugMalloc;
+    alloc.calloc = _PyMem_DebugCalloc;
     alloc.realloc = _PyMem_DebugRealloc;
     alloc.free = _PyMem_DebugFree;
 
@@ -228,9 +245,10 @@ PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocator *allocator)
     case PYMEM_DOMAIN_MEM: *allocator = _PyMem; break;
     case PYMEM_DOMAIN_OBJ: *allocator = _PyObject; break;
     default:
-        /* unknown domain */
+        /* unknown domain: set all attributes to NULL */
         allocator->ctx = NULL;
         allocator->malloc = NULL;
+        allocator->calloc = NULL;
         allocator->realloc = NULL;
         allocator->free = NULL;
     }
@@ -272,8 +290,16 @@ PyMem_RawMalloc(size_t size)
      */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
-
     return _PyMem_Raw.malloc(_PyMem_Raw.ctx, size);
+}
+
+void *
+PyMem_RawCalloc(size_t nelem, size_t elsize)
+{
+    /* see PyMem_RawMalloc() */
+    if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
+        return NULL;
+    return _PyMem_Raw.calloc(_PyMem_Raw.ctx, nelem, elsize);
 }
 
 void*
@@ -297,6 +323,15 @@ PyMem_Malloc(size_t size)
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
     return _PyMem.malloc(_PyMem.ctx, size);
+}
+
+void *
+PyMem_Calloc(size_t nelem, size_t elsize)
+{
+    /* see PyMem_RawMalloc() */
+    if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
+        return NULL;
+    return _PyMem.calloc(_PyMem.ctx, nelem, elsize);
 }
 
 void *
@@ -349,6 +384,15 @@ PyObject_Malloc(size_t size)
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
     return _PyObject.malloc(_PyObject.ctx, size);
+}
+
+void *
+PyObject_Calloc(size_t nelem, size_t elsize)
+{
+    /* see PyMem_RawMalloc() */
+    if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
+        return NULL;
+    return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }
 
 void *
@@ -1122,8 +1166,9 @@ int Py_ADDRESS_IN_RANGE(void *P, poolp pool) Py_NO_INLINE;
  */
 
 static void *
-_PyObject_Malloc(void *ctx, size_t nbytes)
+_PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 {
+    size_t nbytes;
     block *bp;
     poolp pool;
     poolp next;
@@ -1138,9 +1183,12 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
         goto redirect;
 #endif
 
-    /*
-     * This implicitly redirects malloc(0).
-     */
+    if (nelem == 0 || elsize == 0)
+        goto redirect;
+
+    assert(nelem <= PY_SSIZE_T_MAX / elsize);
+    nbytes = nelem * elsize;
+
     if ((nbytes - 1) < SMALL_REQUEST_THRESHOLD) {
         LOCK();
         /*
@@ -1158,6 +1206,8 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
             assert(bp != NULL);
             if ((pool->freeblock = *(block **)bp) != NULL) {
                 UNLOCK();
+                if (use_calloc)
+                    memset(bp, 0, nbytes);
                 return (void *)bp;
             }
             /*
@@ -1170,6 +1220,8 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
                 pool->nextoffset += INDEX2SIZE(size);
                 *(block **)(pool->freeblock) = NULL;
                 UNLOCK();
+                if (use_calloc)
+                    memset(bp, 0, nbytes);
                 return (void *)bp;
             }
             /* Pool is full, unlink from used pools. */
@@ -1178,6 +1230,8 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
             next->prevpool = pool;
             pool->nextpool = next;
             UNLOCK();
+            if (use_calloc)
+                memset(bp, 0, nbytes);
             return (void *)bp;
         }
 
@@ -1257,6 +1311,8 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
                 assert(bp != NULL);
                 pool->freeblock = *(block **)bp;
                 UNLOCK();
+                if (use_calloc)
+                    memset(bp, 0, nbytes);
                 return (void *)bp;
             }
             /*
@@ -1272,6 +1328,8 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
             pool->freeblock = bp + size;
             *(block **)(pool->freeblock) = NULL;
             UNLOCK();
+            if (use_calloc)
+                memset(bp, 0, nbytes);
             return (void *)bp;
         }
 
@@ -1311,11 +1369,27 @@ redirect:
      * has been reached.
      */
     {
-        void *result = PyMem_RawMalloc(nbytes);
+        void *result;
+        if (use_calloc)
+            result = PyMem_RawCalloc(nelem, elsize);
+        else
+            result = PyMem_RawMalloc(nbytes);
         if (!result)
             _Py_AllocatedBlocks--;
         return result;
     }
+}
+
+static void *
+_PyObject_Malloc(void *ctx, size_t nbytes)
+{
+    return _PyObject_Alloc(0, ctx, 1, nbytes);
+}
+
+static void *
+_PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
+{
+    return _PyObject_Alloc(1, ctx, nelem, elsize);
 }
 
 /* free */
@@ -1561,7 +1635,7 @@ _PyObject_Realloc(void *ctx, void *p, size_t nbytes)
 #endif
 
     if (p == NULL)
-        return _PyObject_Malloc(ctx, nbytes);
+        return _PyObject_Alloc(0, ctx, 1, nbytes);
 
 #ifdef WITH_VALGRIND
     /* Treat running_on_valgrind == -1 the same as 0 */
@@ -1589,7 +1663,7 @@ _PyObject_Realloc(void *ctx, void *p, size_t nbytes)
             }
             size = nbytes;
         }
-        bp = _PyObject_Malloc(ctx, nbytes);
+        bp = _PyObject_Alloc(0, ctx, 1, nbytes);
         if (bp != NULL) {
             memcpy(bp, p, size);
             _PyObject_Free(ctx, p);
@@ -1745,7 +1819,7 @@ p[2*S+n+S: 2*S+n+2*S]
 */
 
 static void *
-_PyMem_DebugMalloc(void *ctx, size_t nbytes)
+_PyMem_DebugAlloc(int use_calloc, void *ctx, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
     uchar *p;           /* base address of malloc'ed block */
@@ -1758,7 +1832,10 @@ _PyMem_DebugMalloc(void *ctx, size_t nbytes)
         /* overflow:  can't represent total as a size_t */
         return NULL;
 
-    p = (uchar *)api->alloc.malloc(api->alloc.ctx, total);
+    if (use_calloc)
+        p = (uchar *)api->alloc.calloc(api->alloc.ctx, 1, total);
+    else
+        p = (uchar *)api->alloc.malloc(api->alloc.ctx, total);
     if (p == NULL)
         return NULL;
 
@@ -1767,7 +1844,7 @@ _PyMem_DebugMalloc(void *ctx, size_t nbytes)
     p[SST] = (uchar)api->api_id;
     memset(p + SST + 1, FORBIDDENBYTE, SST-1);
 
-    if (nbytes > 0)
+    if (nbytes > 0 && !use_calloc)
         memset(p + 2*SST, CLEANBYTE, nbytes);
 
     /* at tail, write pad (SST bytes) and serialno (SST bytes) */
@@ -1776,6 +1853,21 @@ _PyMem_DebugMalloc(void *ctx, size_t nbytes)
     write_size_t(tail + SST, serialno);
 
     return p + 2*SST;
+}
+
+static void *
+_PyMem_DebugMalloc(void *ctx, size_t nbytes)
+{
+    return _PyMem_DebugAlloc(0, ctx, nbytes);
+}
+
+static void *
+_PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
+{
+    size_t nbytes;
+    assert(elsize == 0 || nelem <= PY_SSIZE_T_MAX / elsize);
+    nbytes = nelem * elsize;
+    return _PyMem_DebugAlloc(1, ctx, nbytes);
 }
 
 /* The debug free first checks the 2*SST bytes on each end for sanity (in
@@ -1811,7 +1903,7 @@ _PyMem_DebugRealloc(void *ctx, void *p, size_t nbytes)
     int i;
 
     if (p == NULL)
-        return _PyMem_DebugMalloc(ctx, nbytes);
+        return _PyMem_DebugAlloc(0, ctx, nbytes);
 
     _PyMem_DebugCheckAddress(api->api_id, p);
     bumpserialno();

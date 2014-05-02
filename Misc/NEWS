@@ -10,6 +10,12 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21233: Add new C functions: PyMem_RawCalloc(), PyMem_Calloc(),
+  PyObject_Calloc(), _PyObject_GC_Calloc(). bytes(int) and bytearray(int)
+  are now using ``calloc()`` instead of ``malloc()`` for large objects which
+  is faster and use less memory (until the bytearray buffer is filled with
+  data).
+
 - Issue #21377: PyBytes_Concat() now tries to concatenate in-place when the
   first argument has a reference count of 1.  Patch by Nikolaus Rath.
 
