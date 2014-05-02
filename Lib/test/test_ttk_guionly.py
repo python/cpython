@@ -9,8 +9,7 @@ support.import_module('_tkinter')
 support.import_fresh_module('tkinter')
 
 # Skip test if tk cannot be initialized.
-from tkinter.test.support import check_tk_availability
-check_tk_availability()
+support.requires('gui')
 
 from _tkinter import TclError
 from tkinter import ttk
