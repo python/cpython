@@ -2,8 +2,9 @@ import os
 import unittest
 from test import test_support
 
-# Skip this test if _tkinter wasn't built.
+# Skip this test if _tkinter wasn't built or gui resource is not available.
 test_support.import_module('_tkinter')
+test_support.requires('gui')
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,
@@ -11,9 +12,6 @@ lib_tk_test = os.path.abspath(os.path.join(this_dir, os.path.pardir,
 
 with test_support.DirsOnSysPath(lib_tk_test):
     import runtktests
-
-# Skip test if tk cannot be initialized.
-runtktests.check_tk_availability()
 
 import ttk
 from _tkinter import TclError

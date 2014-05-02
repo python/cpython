@@ -329,6 +329,10 @@ IDLE
 Tests
 -----
 
+- Issue #18604: Consolidated checks for GUI availability.  All platforms now
+  at least check whether Tk can be instantiated when the GUI resource is
+  requested.
+
 - Issue #20946: Correct alignment assumptions of some ctypes tests.
 
 - Issue #20743: Fix a reference leak in test_tcl.
