@@ -62,7 +62,7 @@ _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 static int
 _siftup(PyListObject *heap, Py_ssize_t pos)
 {
-    Py_ssize_t startpos, endpos, childpos, rightpos;
+    Py_ssize_t startpos, endpos, childpos, rightpos, limit;
     int cmp;
     PyObject *newitem, *tmp, *olditem;
     Py_ssize_t size;
@@ -79,9 +79,10 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
     Py_INCREF(newitem);
 
     /* Bubble up the smaller child until hitting a leaf. */
-    childpos = 2*pos + 1;    /* leftmost child position  */
-    while (childpos < endpos) {
+    limit = endpos / 2;          /* smallest pos that has no child */
+    while (pos < limit) {
         /* Set childpos to index of smaller child.   */
+        childpos = 2*pos + 1;    /* leftmost child position  */
         rightpos = childpos + 1;
         if (rightpos < endpos) {
             cmp = PyObject_RichCompareBool(
@@ -108,7 +109,6 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
         PyList_SET_ITEM(heap, pos, tmp);
         Py_DECREF(olditem);
         pos = childpos;
-        childpos = 2*pos + 1;
         if (size != PyList_GET_SIZE(heap)) {
             PyErr_SetString(PyExc_RuntimeError,
                             "list changed size during iteration");
@@ -419,7 +419,7 @@ _siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 static int
 _siftupmax(PyListObject *heap, Py_ssize_t pos)
 {
-    Py_ssize_t startpos, endpos, childpos, rightpos;
+    Py_ssize_t startpos, endpos, childpos, rightpos, limit;
     int cmp;
     PyObject *newitem, *tmp;
 
@@ -434,9 +434,10 @@ _siftupmax(PyListObject *heap, Py_ssize_t pos)
     Py_INCREF(newitem);
 
     /* Bubble up the smaller child until hitting a leaf. */
-    childpos = 2*pos + 1;    /* leftmost child position  */
-    while (childpos < endpos) {
+    limit = endpos / 2;          /* smallest pos that has no child */
+    while (pos < limit) {
         /* Set childpos to index of smaller child.   */
+        childpos = 2*pos + 1;    /* leftmost child position  */
         rightpos = childpos + 1;
         if (rightpos < endpos) {
             cmp = PyObject_RichCompareBool(
@@ -456,7 +457,6 @@ _siftupmax(PyListObject *heap, Py_ssize_t pos)
         Py_DECREF(PyList_GET_ITEM(heap, pos));
         PyList_SET_ITEM(heap, pos, tmp);
         pos = childpos;
-        childpos = 2*pos + 1;
     }
 
     /* The leaf at pos is empty now.  Put newitem there, and bubble
