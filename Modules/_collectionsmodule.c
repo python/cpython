@@ -1831,18 +1831,29 @@ _count_elements(PyObject *self, PyObject *args)
     if (mapping_get != NULL && mapping_get == dict_get &&
         mapping_setitem != NULL && mapping_setitem == dict_setitem) {
         while (1) {
+            Py_hash_t hash;
+
             key = PyIter_Next(it);
             if (key == NULL)
                 break;
-            oldval = PyDict_GetItem(mapping, key);
+
+            if (!PyUnicode_CheckExact(key) ||
+                (hash = ((PyASCIIObject *) key)->hash) == -1)
+            {
+                hash = PyObject_Hash(key);
+                if (hash == -1) 
+                    goto done;
+            }
+
+            oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
             if (oldval == NULL) {
-                if (PyDict_SetItem(mapping, key, one) == -1)
+                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) == -1)
                     break;
             } else {
                 newval = PyNumber_Add(oldval, one);
                 if (newval == NULL)
                     break;
-                if (PyDict_SetItem(mapping, key, newval) == -1)
+                if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) == -1)
                     break;
                 Py_CLEAR(newval);
             }
