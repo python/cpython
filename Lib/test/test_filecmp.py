@@ -14,13 +14,11 @@ class FileCompareTestCase(unittest.TestCase):
         self.name_diff = support.TESTFN + '-diff'
         data = 'Contents of file go here.\n'
         for name in [self.name, self.name_same, self.name_diff]:
-            output = open(name, 'w')
-            output.write(data)
-            output.close()
+            with open(name, 'w') as output:
+                output.write(data)
 
-        output = open(self.name_diff, 'a+')
-        output.write('An extra line.\n')
-        output.close()
+        with open(self.name_diff, 'a+') as output:
+            output.write('An extra line.\n')
         self.dir = tempfile.gettempdir()
 
     def tearDown(self):
@@ -71,13 +69,11 @@ class DirCompareTestCase(unittest.TestCase):
                 fn = 'FiLe'     # Verify case-insensitive comparison
             else:
                 fn = 'file'
-            output = open(os.path.join(dir, fn), 'w')
-            output.write(data)
-            output.close()
+            with open(os.path.join(dir, fn), 'w') as output:
+                output.write(data)
 
-        output = open(os.path.join(self.dir_diff, 'file2'), 'w')
-        output.write('An extra file.\n')
-        output.close()
+        with open(os.path.join(self.dir_diff, 'file2'), 'w') as output:
+            output.write('An extra file.\n')
 
     def tearDown(self):
         for dir in (self.dir, self.dir_same, self.dir_diff):
@@ -104,9 +100,8 @@ class DirCompareTestCase(unittest.TestCase):
                         "Comparing directory to same fails")
 
         # Add different file2
-        output = open(os.path.join(self.dir, 'file2'), 'w')
-        output.write('Different contents.\n')
-        output.close()
+        with open(os.path.join(self.dir, 'file2'), 'w') as output:
+            output.write('Different contents.\n')
 
         self.assertFalse(filecmp.cmpfiles(self.dir, self.dir_same,
                                      ['file', 'file2']) ==
@@ -178,9 +173,8 @@ class DirCompareTestCase(unittest.TestCase):
         self._assert_report(d.report, expected_report)
 
         # Add different file2
-        output = open(os.path.join(self.dir_diff, 'file2'), 'w')
-        output.write('Different contents.\n')
-        output.close()
+        with open(os.path.join(self.dir_diff, 'file2'), 'w') as output:
+            output.write('Different contents.\n')
         d = filecmp.dircmp(self.dir, self.dir_diff)
         self.assertEqual(d.same_files, ['file'])
         self.assertEqual(d.diff_files, ['file2'])
