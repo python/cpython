@@ -96,6 +96,8 @@ class OrderedDict(dict):
         link_next = link.next
         link_prev.next = link_next
         link_next.prev = link_prev
+        link.prev = None
+        link.next = None
 
     def __iter__(self):
         'od.__iter__() <==> iter(od)'
