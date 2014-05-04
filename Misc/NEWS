@@ -73,6 +73,9 @@ Library
   Decimal.quantize() method in the Python version.  It had never been
   present in the C version.
 
+- Issue #19414: Have the OrderedDict mark deleted links as unusable.
+  This gives an early failure if the link is deleted during iteration.
+
 - Issue #21421: Add __slots__ to the MappingViews ABC.
   Patch by Josh Rosenberg.
 
