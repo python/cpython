@@ -17,6 +17,7 @@ import sys, tempfile, os
 
 import unittest
 from test.support import requires, import_module
+import inspect
 requires('curses')
 
 # If either of these don't exist, skip the tests.
@@ -331,6 +332,34 @@ def test_encoding(stdscr):
     else:
         raise AssertionError("TypeError not raised")
 
+def test_issue21088(stdscr):
+    #
+    # http://bugs.python.org/issue21088
+    #
+    # the bug:
+    # when converting curses.window.addch to Argument Clinic
+    # the first two parameters were switched.
+
+    # if someday we can represent the signature of addch
+    # we will need to rewrite this test.
+    try:
+        signature = inspect.signature(stdscr.addch)
+        self.assertFalse(signature)
+    except ValueError:
+        # not generating a signature is fine.
+        pass
+
+    # So.  No signature for addch.
+    # But Argument Clinic gave us a human-readable equivalent
+    # as the first line of the docstring.  So we parse that,
+    # and ensure that the parameters appear in the correct order.
+    # Since this is parsing output from Argument Clinic, we can
+    # be reasonably certain the generated parsing code will be
+    # correct too.
+    human_readable_signature = stdscr.addch.__doc__.split("\n")[0]
+    offset = human_readable_signature.find("[y, x,]")
+    assert offset >= 0, ""
+
 def main(stdscr):
     curses.savetty()
     try:
@@ -344,6 +373,7 @@ def main(stdscr):
         test_unget_wch(stdscr)
         test_issue10570()
         test_encoding(stdscr)
+        test_issue21088(stdscr)
     finally:
         curses.resetty()
 
