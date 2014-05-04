@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21088: Bugfix for curses.window.addch() regression in 3.4.0.
+  In porting to Argument Clinic, the first two arguments were reversed.
+
 - Issue #21321: itertools.islice() now releases the reference to the source
   iterator when the slice is exhausted.  Patch by Anton Afanasyev.
 
