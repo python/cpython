@@ -12,9 +12,8 @@ static int
 _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
     PyObject *newitem, *parent;
+    Py_ssize_t parentpos, size;
     int cmp;
-    Py_ssize_t parentpos;
-    Py_ssize_t size;
 
     assert(PyList_Check(heap));
     size = PyList_GET_SIZE(heap);
@@ -26,7 +25,7 @@ _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     /* Follow the path to the root, moving parents down until finding
        a place newitem fits. */
     newitem = PyList_GET_ITEM(heap, pos);
-    while (pos > startpos){
+    while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
         parent = PyList_GET_ITEM(heap, parentpos);
         cmp = PyObject_RichCompareBool(newitem, parent, Py_LT);
@@ -355,11 +354,12 @@ static int
 _siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
     PyObject *newitem, *parent;
+    Py_ssize_t parentpos, size;
     int cmp;
-    Py_ssize_t parentpos;
 
     assert(PyList_Check(heap));
-    if (pos >= PyList_GET_SIZE(heap)) {
+    size = PyList_GET_SIZE(heap);
+    if (pos >= size) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return -1;
     }
@@ -367,12 +367,17 @@ _siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     /* Follow the path to the root, moving parents down until finding
        a place newitem fits. */
     newitem = PyList_GET_ITEM(heap, pos);
-    while (pos > startpos){
+    while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
         parent = PyList_GET_ITEM(heap, parentpos);
         cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
         if (cmp == -1)
             return -1;
+        if (size != PyList_GET_SIZE(heap)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "list changed size during iteration");
+            return -1;
+        }
         if (cmp == 0)
             break;
         parent = PyList_GET_ITEM(heap, parentpos);
