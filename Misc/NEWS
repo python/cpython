@@ -73,6 +73,9 @@ Library
   Decimal.quantize() method in the Python version.  It had never been
   present in the C version.
 
+- Issue #21421: Add __slots__ to the MappingViews ABC.
+  Patch by Josh Rosenberg.
+
 - Issue #21101: Eliminate double hashing in the C speed-up code for
   collections.Counter().
 
