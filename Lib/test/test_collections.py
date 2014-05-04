@@ -1193,6 +1193,16 @@ class TestOrderedDict(unittest.TestCase):
                          [t[1] for t in reversed(pairs)])
         self.assertEqual(list(reversed(od.items())), list(reversed(pairs)))
 
+    def test_detect_deletion_during_iteration(self):
+        od = OrderedDict.fromkeys('abc')
+        it = iter(od)
+        key = next(it)
+        del od[key]
+        with self.assertRaises(Exception):
+            # Note, the exact exception raised is not guaranteed
+            # The only guarantee that the next() will not succeed
+            next(it)
+
     def test_popitem(self):
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
