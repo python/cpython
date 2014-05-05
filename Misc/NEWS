@@ -69,6 +69,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18314: Unlink now removes junctions on Windows. Patch by Kim Gräsman
+
 - Issue #21088: Bugfix for curses.window.addch() regression in 3.4.0.
   In porting to Argument Clinic, the first two arguments were reversed.
 
