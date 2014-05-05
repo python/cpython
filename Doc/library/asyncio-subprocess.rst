@@ -8,7 +8,7 @@ Operating system support
 
 On Windows, the default event loop uses :class:`selectors.SelectSelector`
 which only supports sockets. The :class:`ProactorEventLoop` should be used to
-support subprocesses.
+support subprocesses. However, the latter does not support SSL.
 
 On Mac OS X older than 10.9 (Mavericks), :class:`selectors.KqueueSelector`
 does not support character devices like PTY, whereas it is used by the
