@@ -1176,15 +1176,15 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 
     _Py_AllocatedBlocks++;
 
+    assert(nelem <= PY_SSIZE_T_MAX / elsize);
+    nbytes = nelem * elsize;
+
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind == -1))
         running_on_valgrind = RUNNING_ON_VALGRIND;
     if (UNLIKELY(running_on_valgrind))
         goto redirect;
 #endif
-
-    assert(nelem <= PY_SSIZE_T_MAX / elsize);
-    nbytes = nelem * elsize;
 
     if (nelem == 0 || elsize == 0)
         goto redirect;
