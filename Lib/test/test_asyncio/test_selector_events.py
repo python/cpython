@@ -121,8 +121,9 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertIsNone(self.loop._write_to_self())
 
     def test_write_to_self_exception(self):
-        self.loop._csock.send.side_effect = OSError()
-        self.assertRaises(OSError, self.loop._write_to_self)
+        # _write_to_self() swallows OSError
+        self.loop._csock.send.side_effect = RuntimeError()
+        self.assertRaises(RuntimeError, self.loop._write_to_self)
 
     def test_sock_recv(self):
         sock = mock.Mock()
