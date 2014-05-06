@@ -298,7 +298,7 @@ _PyRandom_Fini(void)
 {
 #ifdef MS_WINDOWS
     if (hCryptProv) {
-        CloseHandle(hCryptProv);
+        CryptReleaseContext(hCryptProv, 0);
         hCryptProv = 0;
     }
 #else
