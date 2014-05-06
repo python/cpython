@@ -2809,7 +2809,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
 
     if (Py_REFCNT(*pv) == 1 && PyBytes_CheckExact(*pv)) {
         /* Only one reference, so we can resize in place */
-        size_t oldsize;
+        Py_ssize_t oldsize;
         Py_buffer wb;
         
         wb.len = -1;
