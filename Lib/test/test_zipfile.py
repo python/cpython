@@ -3,7 +3,6 @@ import os
 import sys
 import importlib.util
 import time
-import shutil
 import struct
 import zipfile
 import unittest
@@ -12,7 +11,7 @@ import unittest
 from tempfile import TemporaryFile
 from random import randint, random, getrandbits
 
-from test.support import (TESTFN, findfile, unlink,
+from test.support import (TESTFN, findfile, unlink, rmtree,
                           requires_zlib, requires_bz2, requires_lzma,
                           captured_stdout, check_warnings)
 
@@ -691,7 +690,7 @@ class PyZipFileTests(unittest.TestCase):
                 self.assertNotIn('mod2.txt', names)
 
         finally:
-            shutil.rmtree(TESTFN2)
+            rmtree(TESTFN2)
 
     def test_write_python_directory_filtered(self):
         os.mkdir(TESTFN2)
@@ -711,7 +710,7 @@ class PyZipFileTests(unittest.TestCase):
                 self.assertNotIn('mod2.py', names)
 
         finally:
-            shutil.rmtree(TESTFN2)
+            rmtree(TESTFN2)
 
     def test_write_non_pyfile(self):
         with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
@@ -741,7 +740,7 @@ class PyZipFileTests(unittest.TestCase):
                 self.assertNotIn('mod1.pyo', names)
 
         finally:
-            shutil.rmtree(TESTFN2)
+            rmtree(TESTFN2)
 
 
 class ExtractTests(unittest.TestCase):
@@ -767,7 +766,7 @@ class ExtractTests(unittest.TestCase):
                 os.remove(writtenfile)
 
         # remove the test file subdirectories
-        shutil.rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
+        rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
 
     def test_extract_all(self):
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
@@ -785,7 +784,7 @@ class ExtractTests(unittest.TestCase):
                 os.remove(outfile)
 
         # remove the test file subdirectories
-        shutil.rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
+        rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
 
     def check_file(self, filename, content):
         self.assertTrue(os.path.isfile(filename))
@@ -867,12 +866,12 @@ class ExtractTests(unittest.TestCase):
                                  msg='extract %r: %r != %r' %
                                  (arcname, writtenfile, correctfile))
             self.check_file(correctfile, content)
-            shutil.rmtree('target')
+            rmtree('target')
 
             with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
                 zipfp.extractall(targetpath)
             self.check_file(correctfile, content)
-            shutil.rmtree('target')
+            rmtree('target')
 
             correctfile = os.path.join(os.getcwd(), *fixedname.split('/'))
 
@@ -881,12 +880,12 @@ class ExtractTests(unittest.TestCase):
                 self.assertEqual(writtenfile, correctfile,
                                  msg="extract %r" % arcname)
             self.check_file(correctfile, content)
-            shutil.rmtree(fixedname.split('/')[0])
+            rmtree(fixedname.split('/')[0])
 
             with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
                 zipfp.extractall()
             self.check_file(correctfile, content)
-            shutil.rmtree(fixedname.split('/')[0])
+            rmtree(fixedname.split('/')[0])
 
             os.remove(TESTFN2)
 
@@ -1628,7 +1627,7 @@ class TestWithDirectory(unittest.TestCase):
         self.assertTrue(zipf.filelist[0].filename.endswith("x/"))
 
     def tearDown(self):
-        shutil.rmtree(TESTFN2)
+        rmtree(TESTFN2)
         if os.path.exists(TESTFN):
             unlink(TESTFN)
 
