@@ -403,6 +403,8 @@ Documentation
 Tests
 -----
 
+- Issue #17752: Fix distutils tests when run from the installed location.
+
 - Issue #18604: Consolidated checks for GUI availability.  All platforms now
   at least check whether Tk can be instantiated when the GUI resource is
   requested.
