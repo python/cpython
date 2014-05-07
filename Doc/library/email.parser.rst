@@ -60,15 +60,18 @@ list of defects that it can find.
 Here is the API for the :class:`FeedParser`:
 
 
-.. class:: FeedParser(_factory=email.message.Message, *, policy=policy.default)
+.. class:: FeedParser(_factory=email.message.Message, *, policy=policy.compat32)
 
    Create a :class:`FeedParser` instance.  Optional *_factory* is a no-argument
    callable that will be called whenever a new message object is needed.  It
    defaults to the :class:`email.message.Message` class.
 
-   The *policy* keyword specifies a :mod:`~email.policy` object that controls a
-   number of aspects of the parser's operation.  The default policy maintains
-   backward compatibility.
+   If *policy* is specified (it must be an instance of a :mod:`~email.policy`
+   class) use the rules it specifies to udpate the representation of the
+   message.  If *policy* is not set, use the :class:`compat32
+   <email.policy.Compat32>` policy, which maintains backward compatibility with
+   the Python 3.2 version of the email package.  For more information see the
+   :mod:`~email.policy` documentation.
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
 
@@ -113,7 +116,7 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
    The BytesHeaderParser class.
 
 
-.. class:: Parser(_class=email.message.Message, *, policy=policy.default)
+.. class:: Parser(_class=email.message.Message, *, policy=policy.compat32)
 
    The constructor for the :class:`Parser` class takes an optional argument
    *_class*.  This must be a callable factory (such as a function or a class), and
@@ -121,9 +124,12 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
    :class:`~email.message.Message` (see :mod:`email.message`).  The factory will
    be called without arguments.
 
-   The *policy* keyword specifies a :mod:`~email.policy` object that controls a
-   number of aspects of the parser's operation.  The default policy maintains
-   backward compatibility.
+   If *policy* is specified (it must be an instance of a :mod:`~email.policy`
+   class) use the rules it specifies to udpate the representation of the
+   message.  If *policy* is not set, use the :class:`compat32
+   <email.policy.Compat32>` policy, which maintains backward compatibility with
+   the Python 3.2 version of the email package.  For more information see the
+   :mod:`~email.policy` documentation.
 
    .. versionchanged:: 3.3
       Removed the *strict* argument that was deprecated in 2.4.  Added the
@@ -159,15 +165,18 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
       Optional *headersonly* is as with the :meth:`parse` method.
 
 
-.. class:: BytesParser(_class=email.message.Message, *, policy=policy.default)
+.. class:: BytesParser(_class=email.message.Message, *, policy=policy.compat32)
 
    This class is exactly parallel to :class:`Parser`, but handles bytes input.
    The *_class* and *strict* arguments are interpreted in the same way as for
    the :class:`Parser` constructor.
 
-   The *policy* keyword specifies a :mod:`~email.policy` object that
-   controls a number of aspects of the parser's operation.  The default
-   policy maintains backward compatibility.
+   If *policy* is specified (it must be an instance of a :mod:`~email.policy`
+   class) use the rules it specifies to udpate the representation of the
+   message.  If *policy* is not set, use the :class:`compat32
+   <email.policy.Compat32>` policy, which maintains backward compatibility with
+   the Python 3.2 version of the email package.  For more information see the
+   :mod:`~email.policy` documentation.
 
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
@@ -209,7 +218,7 @@ in the top-level :mod:`email` package namespace.
 .. currentmodule:: email
 
 .. function:: message_from_string(s, _class=email.message.Message, *, \
-                                  policy=policy.default)
+                                  policy=policy.compat32)
 
    Return a message object structure from a string.  This is exactly equivalent to
    ``Parser().parsestr(s)``.  *_class* and *policy* are interpreted as
@@ -219,7 +228,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 .. function:: message_from_bytes(s, _class=email.message.Message, *, \
-                                 policy=policy.default)
+                                 policy=policy.compat32)
 
    Return a message object structure from a byte string.  This is exactly
    equivalent to ``BytesParser().parsebytes(s)``.  Optional *_class* and
@@ -231,7 +240,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 .. function:: message_from_file(fp, _class=email.message.Message, *, \
-                                policy=policy.default)
+                                policy=policy.compat32)
 
    Return a message object structure tree from an open :term:`file object`.
    This is exactly equivalent to ``Parser().parse(fp)``.  *_class*
@@ -242,7 +251,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 .. function:: message_from_binary_file(fp, _class=email.message.Message, *, \
-                                       policy=policy.default)
+                                       policy=policy.compat32)
 
    Return a message object structure tree from an open binary :term:`file
    object`.  This is exactly equivalent to ``BytesParser().parse(fp)``.
