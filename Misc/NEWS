@@ -2,10 +2,21 @@
 Python News
 +++++++++++
 
+What's New in Python 3.4.1?
+==========================
+
+Release date: TBA
+
+Tests
+-----
+
+- Issue #17752: Fix distutils tests when run from the installed location.
+
+
 What's New in Python 3.4.1rc1?
 ==============================
 
-Release date: TBA
+Release date: 2014-05-05
 
 Core and Builtins
 -----------------
