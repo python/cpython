@@ -38,6 +38,8 @@ Library
 Tests
 -----
 
+- Issue #17752: Fix distutils tests when run from the installed location.
+
 - Issue #20946: Correct alignment assumptions of some ctypes tests.
 
 - Issue #20939: Fix test_geturl failure in test_urllibnet due to
