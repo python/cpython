@@ -909,7 +909,7 @@ AC_MSG_CHECKING(LDLIBRARY)
 if test "$enable_framework"
 then
   LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-  RUNSHARED=DYLD_FRAMEWORK_PATH="`pwd`:$DYLD_FRAMEWORK_PATH"
+  RUNSHARED=DYLD_FRAMEWORK_PATH=`pwd`${DYLD_FRAMEWORK_PATH:+:${DYLD_FRAMEWORK_PATH}}
   BLDLIBRARY=''
 else
   BLDLIBRARY='$(LDLIBRARY)'
@@ -926,7 +926,7 @@ if test $enable_shared = "yes"; then
     SunOS*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  if test "$with_pydebug" != yes
 	  then
@@ -936,7 +936,7 @@ if test $enable_shared = "yes"; then
     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 	  case $ac_sys_system in
 	      FreeBSD*)
 		SOVERSION=`echo $SOVERSION|cut -d "." -f 1`
@@ -958,16 +958,16 @@ if test $enable_shared = "yes"; then
 			;;
 	  esac
 	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=SHLIB_PATH=`pwd`:${SHLIB_PATH}
+	  RUNSHARED=SHLIB_PATH=`pwd`${SHLIB_PATH:+:${SHLIB_PATH}}
 	  ;;
     Darwin*)
     	LDLIBRARY='libpython$(LDVERSION).dylib'
 	BLDLIBRARY='-L. -lpython$(LDVERSION)'
-	RUNSHARED='DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}'
+	RUNSHARED='DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}'
 	;;
     AIX*)
 	LDLIBRARY='libpython$(LDVERSION).so'
-	RUNSHARED=LIBPATH=`pwd`:${LIBPATH}
+	RUNSHARED=LIBPATH=`pwd`${LIBPATH:+:${LIBPATH}}
 	;;
 
   esac
