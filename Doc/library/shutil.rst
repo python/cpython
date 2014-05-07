@@ -421,6 +421,26 @@ Another example that uses the *ignore* argument to add a logging call::
    copytree(source, destination, ignore=_logpath)
 
 
+.. _shutil-rmtree-example:
+
+rmtree example
+~~~~~~~~~~~~~~
+
+This example shows how to remove a directory tree on Windows where some
+of the files have their read-only bit set. It uses the onerror callback
+to clear the readonly bit and reattempt the remove. Any subsequent failure
+will propagate. ::
+
+    import os, stat
+    import shutil
+    
+    def remove_readonly(func, path, _):
+        "Clear the readonly bit and reattempt the removal"
+        os.chmod(path, stat.S_IWRITE)
+        func(path)   
+   
+    shutil.rmtree(directory, onerror=remove_readonly)
+
 .. _archiving-operations:
 
 Archiving operations
