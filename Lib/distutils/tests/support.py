@@ -218,4 +218,4 @@ def fixup_build_ext(cmd):
                 cmd.library_dirs = []
             else:
                 name, equals, value = runshared.partition('=')
-                cmd.library_dirs = value.split(os.pathsep)
+                cmd.library_dirs = [d for d in value.split(os.pathsep) if d]
