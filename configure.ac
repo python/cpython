@@ -2314,6 +2314,17 @@ esac
 ],
 [AC_MSG_RESULT(default)])
 
+AC_MSG_CHECKING(for --with-address-sanitizer)
+AC_ARG_WITH(address_sanitizer,
+            AS_HELP_STRING([--with-address-sanitizer],
+                           [enable AddressSanitizer]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=address $LDFLAGS"
+],
+[AC_MSG_RESULT(no)])
+
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
