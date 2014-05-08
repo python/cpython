@@ -1941,13 +1941,13 @@ file_writelines(PyFileObject *f, PyObject *seq)
             PyObject *v = PyList_GET_ITEM(list, i);
             if (!PyString_Check(v)) {
                 const char *buffer;
-                if (((f->f_binary &&
-                      PyObject_AsReadBuffer(v,
-                          (const void**)&buffer,
-                                        &len)) ||
-                     PyObject_AsCharBuffer(v,
-                                           &buffer,
-                                           &len))) {
+                int res;
+                if (f->f_binary) {
+                    res = PyObject_AsReadBuffer(v, (const void**)&buffer, &len);
+                } else {
+                    res = PyObject_AsCharBuffer(v, &buffer, &len);
+                }
+                if (res) {
                     PyErr_SetString(PyExc_TypeError,
             "writelines() argument must be a sequence of strings");
                             goto error;
