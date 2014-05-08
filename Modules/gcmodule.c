@@ -776,28 +776,40 @@ handle_legacy_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
     return 0;
 }
 
+/* Run first-time finalizers (if any) on all the objects in collectable.
+ * Note that this may remove some (or even all) of the objects from the
+ * list, due to refcounts falling to 0.
+ */
 static void
-finalize_garbage(PyGC_Head *collectable, PyGC_Head *old)
+finalize_garbage(PyGC_Head *collectable)
 {
     destructor finalize;
-    PyGC_Head *gc = collectable->gc.gc_next;
+    PyGC_Head seen;
 
-    for (; gc != collectable; gc = gc->gc.gc_next) {
+    /* While we're going through the loop, `finalize(op)` may cause op, or
+     * other objects, to be reclaimed via refcounts falling to zero.  So
+     * there's little we can rely on about the structure of the input
+     * `collectable` list across iterations.  For safety, we always take the
+     * first object in that list and move it to a temporary `seen` list.
+     * If objects vanish from the `collectable` and `seen` lists we don't
+     * care.
+     */
+    gc_list_init(&seen);
+
+    while (!gc_list_is_empty(collectable)) {
+        PyGC_Head *gc = collectable->gc.gc_next;
         PyObject *op = FROM_GC(gc);
-
+        gc_list_move(gc, &seen);
         if (!_PyGCHead_FINALIZED(gc) &&
-            PyType_HasFeature(Py_TYPE(op), Py_TPFLAGS_HAVE_FINALIZE) &&
-            (finalize = Py_TYPE(op)->tp_finalize) != NULL) {
+                PyType_HasFeature(Py_TYPE(op), Py_TPFLAGS_HAVE_FINALIZE) &&
+                (finalize = Py_TYPE(op)->tp_finalize) != NULL) {
             _PyGCHead_SET_FINALIZED(gc, 1);
             Py_INCREF(op);
             finalize(op);
-            if (Py_REFCNT(op) == 1) {
-                /* op will be destroyed */
-                gc = gc->gc.gc_prev;
-            }
             Py_DECREF(op);
         }
     }
+    gc_list_merge(&seen, collectable);
 }
 
 /* Walk the collectable list and check that they are really unreachable
@@ -1006,7 +1018,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
     m += handle_weakrefs(&unreachable, old);
 
     /* Call tp_finalize on objects which have one. */
-    finalize_garbage(&unreachable, old);
+    finalize_garbage(&unreachable);
 
     if (check_garbage(&unreachable)) {
         revive_garbage(&unreachable);
