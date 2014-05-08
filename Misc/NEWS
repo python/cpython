@@ -347,6 +347,8 @@ IDLE
 Build
 -----
 
+- Issue #21037: Add a build option to enable AddressSanitizer support.
+
 - The Windows build now includes OpenSSL 1.0.1g
 
 - Issue #19962: The Windows build process now creates "python.bat" in the
