@@ -67,7 +67,7 @@ Here is the API for the :class:`FeedParser`:
    defaults to the :class:`email.message.Message` class.
 
    If *policy* is specified (it must be an instance of a :mod:`~email.policy`
-   class) use the rules it specifies to udpate the representation of the
+   class) use the rules it specifies to update the representation of the
    message.  If *policy* is not set, use the :class:`compat32
    <email.policy.Compat32>` policy, which maintains backward compatibility with
    the Python 3.2 version of the email package.  For more information see the
@@ -125,7 +125,7 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
    be called without arguments.
 
    If *policy* is specified (it must be an instance of a :mod:`~email.policy`
-   class) use the rules it specifies to udpate the representation of the
+   class) use the rules it specifies to update the representation of the
    message.  If *policy* is not set, use the :class:`compat32
    <email.policy.Compat32>` policy, which maintains backward compatibility with
    the Python 3.2 version of the email package.  For more information see the
@@ -172,7 +172,7 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
    the :class:`Parser` constructor.
 
    If *policy* is specified (it must be an instance of a :mod:`~email.policy`
-   class) use the rules it specifies to udpate the representation of the
+   class) use the rules it specifies to update the representation of the
    message.  If *policy* is not set, use the :class:`compat32
    <email.policy.Compat32>` policy, which maintains backward compatibility with
    the Python 3.2 version of the email package.  For more information see the
