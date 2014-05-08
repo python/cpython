@@ -796,6 +796,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_hash_algorithm
+with_address_sanitizer
 with_libs
 with_system_expat
 with_system_ffi
@@ -1472,6 +1473,8 @@ Optional Packages:
   --with-pydebug          build with Py_DEBUG defined
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm
+  --with-address-sanitizer
+                          enable AddressSanitizer
   --with-libs='lib1 ...'  link against additional libs
   --with-system-expat     build pyexpat module using an installed expat
                           library
@@ -9151,6 +9154,23 @@ esac
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: default" >&5
 $as_echo "default" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-address-sanitizer" >&5
+$as_echo_n "checking for --with-address-sanitizer... " >&6; }
+
+# Check whether --with-address_sanitizer was given.
+if test "${with_address_sanitizer+set}" = set; then :
+  withval=$with_address_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=address $LDFLAGS"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 
