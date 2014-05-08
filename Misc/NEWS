@@ -10,6 +10,10 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21435: In rare cases, when running finalizers on objects in cyclic
+  trash a bad pointer dereference could occur due to a subtle flaw in
+  internal iteration logic.
+
 - Issue #21233: Add new C functions: PyMem_RawCalloc(), PyMem_Calloc(),
   PyObject_Calloc(), _PyObject_GC_Calloc(). bytes(int) and bytearray(int)
   are now using ``calloc()`` instead of ``malloc()`` for large objects which
