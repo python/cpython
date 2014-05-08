@@ -7,6 +7,13 @@ What's New in Python 3.4.1?
 
 Release date: TBA
 
+Core and Builtins
+-----------------
+
+- Issue #21435: In rare cases, when running finalizers on objects in cyclic
+  trash a bad pointer dereference could occur due to a subtle flaw in
+  internal iteration logic.
+
 Library
 -------
 
