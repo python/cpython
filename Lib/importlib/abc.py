@@ -217,7 +217,8 @@ class InspectLoader(Loader):
         """
         raise ImportError
 
-    def source_to_code(self, data, path='<string>'):
+    @staticmethod
+    def source_to_code(data, path='<string>'):
         """Compile 'data' into a code object.
 
         The 'data' argument can be anything that compile() can handle. The'path'
