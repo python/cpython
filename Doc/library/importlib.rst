@@ -499,7 +499,7 @@ ABC hierarchy::
         .. versionchanged:: 3.4
            Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
 
-    .. method:: source_to_code(data, path='<string>')
+    .. staticmethod:: source_to_code(data, path='<string>')
 
         Create a code object from Python source.
 
@@ -508,7 +508,13 @@ ABC hierarchy::
         the "path" to where the source code originated from, which can be an
         abstract concept (e.g. location in a zip file).
 
+        With the subsequent code object one can execute it in a module by
+        running ``exec(code, module.__dict__)``.
+
         .. versionadded:: 3.4
+
+        .. versionchanged:: 3.5
+           Made the method static.
 
     .. method:: exec_module(module)
 
