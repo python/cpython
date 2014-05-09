@@ -112,6 +112,53 @@ class FinderTests:
             if email is not missing:
                 sys.modules['email'] = email
 
+    def test_finder_with_find_module(self):
+        class TestFinder:
+            def find_module(self, fullname):
+                return self.to_return
+        failing_finder = TestFinder()
+        failing_finder.to_return = None
+        path = 'testing path'
+        with util.import_state(path_importer_cache={path: failing_finder}):
+            self.assertIsNone(
+                    self.machinery.PathFinder.find_spec('whatever', [path]))
+        success_finder = TestFinder()
+        success_finder.to_return = __loader__
+        with util.import_state(path_importer_cache={path: success_finder}):
+            spec = self.machinery.PathFinder.find_spec('whatever', [path])
+        self.assertEqual(spec.loader, __loader__)
+
+    def test_finder_with_find_loader(self):
+        class TestFinder:
+            loader = None
+            portions = []
+            def find_loader(self, fullname):
+                return self.loader, self.portions
+        path = 'testing path'
+        with util.import_state(path_importer_cache={path: TestFinder()}):
+            self.assertIsNone(
+                    self.machinery.PathFinder.find_spec('whatever', [path]))
+        success_finder = TestFinder()
+        success_finder.loader = __loader__
+        with util.import_state(path_importer_cache={path: success_finder}):
+            spec = self.machinery.PathFinder.find_spec('whatever', [path])
+        self.assertEqual(spec.loader, __loader__)
+
+    def test_finder_with_find_spec(self):
+        class TestFinder:
+            spec = None
+            def find_spec(self, fullname, target=None):
+                return self.spec
+        path = 'testing path'
+        with util.import_state(path_importer_cache={path: TestFinder()}):
+            self.assertIsNone(
+                    self.machinery.PathFinder.find_spec('whatever', [path]))
+        success_finder = TestFinder()
+        success_finder.spec = self.machinery.ModuleSpec('whatever', __loader__)
+        with util.import_state(path_importer_cache={path: success_finder}):
+            got = self.machinery.PathFinder.find_spec('whatever', [path])
+        self.assertEqual(got, success_finder.spec)
+
 Frozen_FinderTests, Source_FinderTests = util.test_both(
         FinderTests, importlib=importlib, machinery=machinery)
 
