@@ -21,6 +21,7 @@ import os
 import re
 import sys
 import shutil
+import subprocess
 
 # Find all "foo.exe" files on the PATH.
 def find_all_on_path(filename, extras = None):
@@ -43,22 +44,21 @@ def find_all_on_path(filename, extras = None):
 # is available.
 def find_working_perl(perls):
     for perl in perls:
-        fh = os.popen('"%s" -e "use Win32;"' % perl)
-        fh.read()
-        rc = fh.close()
-        if rc:
+        try:
+            subprocess.check_output([perl, "-e", "use Win32;"])
+        except subprocess.CalledProcessError:
             continue
-        return perl
-    print("Can not find a suitable PERL:")
+        else:
+            return perl
+
     if perls:
-        print(" the following perl interpreters were found:")
+        print("The following perl interpreters were found:")
         for p in perls:
             print(" ", p)
         print(" None of these versions appear suitable for building OpenSSL")
     else:
-        print(" NO perl interpreters were found on this machine at all!")
+        print("NO perl interpreters were found on this machine at all!")
     print(" Please install ActivePerl and ensure it appears on your path")
-    return None
 
 def create_makefile64(makefile, m32):
     """Create and fix makefile for 64bit
