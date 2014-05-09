@@ -1,4 +1,3 @@
-from . import util as ext_util
 from .. import abc
 from .. import util
 
@@ -15,8 +14,8 @@ class LoaderTests(abc.LoaderTests):
     """Test load_module() for extension modules."""
 
     def setUp(self):
-        self.loader = self.machinery.ExtensionFileLoader(ext_util.NAME,
-                                                         ext_util.FILEPATH)
+        self.loader = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
+                                                         util.EXTENSIONS.file_path)
 
     def load_module(self, fullname):
         return self.loader.load_module(fullname)
@@ -29,23 +28,23 @@ class LoaderTests(abc.LoaderTests):
             self.load_module('XXX')
 
     def test_equality(self):
-        other = self.machinery.ExtensionFileLoader(ext_util.NAME,
-                                                   ext_util.FILEPATH)
+        other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
+                                                   util.EXTENSIONS.file_path)
         self.assertEqual(self.loader, other)
 
     def test_inequality(self):
-        other = self.machinery.ExtensionFileLoader('_' + ext_util.NAME,
-                                                   ext_util.FILEPATH)
+        other = self.machinery.ExtensionFileLoader('_' + util.EXTENSIONS.name,
+                                                   util.EXTENSIONS.file_path)
         self.assertNotEqual(self.loader, other)
 
     def test_module(self):
-        with util.uncache(ext_util.NAME):
-            module = self.load_module(ext_util.NAME)
-            for attr, value in [('__name__', ext_util.NAME),
-                                ('__file__', ext_util.FILEPATH),
+        with util.uncache(util.EXTENSIONS.name):
+            module = self.load_module(util.EXTENSIONS.name)
+            for attr, value in [('__name__', util.EXTENSIONS.name),
+                                ('__file__', util.EXTENSIONS.file_path),
                                 ('__package__', '')]:
                 self.assertEqual(getattr(module, attr), value)
-            self.assertIn(ext_util.NAME, sys.modules)
+            self.assertIn(util.EXTENSIONS.name, sys.modules)
             self.assertIsInstance(module.__loader__,
                                   self.machinery.ExtensionFileLoader)
 
@@ -56,9 +55,9 @@ class LoaderTests(abc.LoaderTests):
     test_lacking_parent = None
 
     def test_module_reuse(self):
-        with util.uncache(ext_util.NAME):
-            module1 = self.load_module(ext_util.NAME)
-            module2 = self.load_module(ext_util.NAME)
+        with util.uncache(util.EXTENSIONS.name):
+            module1 = self.load_module(util.EXTENSIONS.name)
+            module2 = self.load_module(util.EXTENSIONS.name)
             self.assertIs(module1, module2)
 
     # No easy way to trigger a failure after a successful import.
@@ -71,7 +70,7 @@ class LoaderTests(abc.LoaderTests):
         self.assertEqual(cm.exception.name, name)
 
     def test_is_package(self):
-        self.assertFalse(self.loader.is_package(ext_util.NAME))
+        self.assertFalse(self.loader.is_package(util.EXTENSIONS.name))
         for suffix in self.machinery.EXTENSION_SUFFIXES:
             path = os.path.join('some', 'path', 'pkg', '__init__' + suffix)
             loader = self.machinery.ExtensionFileLoader('pkg', path)

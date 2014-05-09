@@ -4,22 +4,21 @@ from test import support
 import unittest
 
 from .. import util
-from . import util as ext_util
 
 frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
 
 
 # XXX find_spec tests
 
-@unittest.skipIf(ext_util.FILENAME is None, '_testcapi not available')
+@unittest.skipIf(util.EXTENSIONS.filename is None, '_testcapi not available')
 @util.case_insensitive_tests
 class ExtensionModuleCaseSensitivityTest:
 
     def find_module(self):
-        good_name = ext_util.NAME
+        good_name = util.EXTENSIONS.name
         bad_name = good_name.upper()
         assert good_name != bad_name
-        finder = self.machinery.FileFinder(ext_util.PATH,
+        finder = self.machinery.FileFinder(util.EXTENSIONS.path,
                                           (self.machinery.ExtensionFileLoader,
                                            self.machinery.EXTENSION_SUFFIXES))
         return finder.find_module(bad_name)

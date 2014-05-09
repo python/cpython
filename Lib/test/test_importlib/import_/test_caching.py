@@ -1,6 +1,5 @@
 """Test that sys.modules is used properly by import."""
 from .. import util
-from . import util as import_util
 import sys
 from types import MethodType
 import unittest
@@ -40,14 +39,14 @@ class UseCache:
             self.assertEqual(cm.exception.name, name)
 
 Frozen_UseCache, Source_UseCache = util.test_both(
-        UseCache, __import__=import_util.__import__)
+        UseCache, __import__=util.__import__)
 
 
 class ImportlibUseCache(UseCache, unittest.TestCase):
 
     # Pertinent only to PEP 302; exec_module() doesn't return a module.
 
-    __import__ = import_util.__import__[1]
+    __import__ = util.__import__[1]
 
     def create_mock(self, *names, return_=None):
         mock = util.mock_modules(*names)

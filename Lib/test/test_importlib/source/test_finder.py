@@ -1,6 +1,5 @@
 from .. import abc
 from .. import util
-from . import util as source_util
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -60,7 +59,7 @@ class FinderTests(abc.FinderTests):
         """
         if create is None:
             create = {test}
-        with source_util.create_modules(*create) as mapping:
+        with util.create_modules(*create) as mapping:
             if compile_:
                 for name in compile_:
                     py_compile.compile(mapping[name])
@@ -100,14 +99,14 @@ class FinderTests(abc.FinderTests):
 
     # [sub module]
     def test_module_in_package(self):
-        with source_util.create_modules('pkg.__init__', 'pkg.sub') as mapping:
+        with util.create_modules('pkg.__init__', 'pkg.sub') as mapping:
             pkg_dir = os.path.dirname(mapping['pkg.__init__'])
             loader = self.import_(pkg_dir, 'pkg.sub')
             self.assertTrue(hasattr(loader, 'load_module'))
 
     # [sub package]
     def test_package_in_package(self):
-        context = source_util.create_modules('pkg.__init__', 'pkg.sub.__init__')
+        context = util.create_modules('pkg.__init__', 'pkg.sub.__init__')
         with context as mapping:
             pkg_dir = os.path.dirname(mapping['pkg.__init__'])
             loader = self.import_(pkg_dir, 'pkg.sub')
@@ -120,7 +119,7 @@ class FinderTests(abc.FinderTests):
         self.assertIn('__init__', loader.get_filename(name))
 
     def test_failure(self):
-        with source_util.create_modules('blah') as mapping:
+        with util.create_modules('blah') as mapping:
             nothing = self.import_(mapping['.root'], 'sdfsadsadf')
             self.assertIsNone(nothing)
 
@@ -147,7 +146,7 @@ class FinderTests(abc.FinderTests):
     # Regression test for http://bugs.python.org/issue14846
     def test_dir_removal_handling(self):
         mod = 'mod'
-        with source_util.create_modules(mod) as mapping:
+        with util.create_modules(mod) as mapping:
             finder = self.get_finder(mapping['.root'])
             found = self._find(finder, 'mod', loader_only=True)
             self.assertIsNotNone(found)
