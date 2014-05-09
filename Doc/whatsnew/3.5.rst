@@ -158,6 +158,11 @@ Improved Modules
   *module* contains no docstrings instead of raising :exc:`ValueError`
   (contributed by Glenn Jones in :issue:`15916`).
 
+* :func:`importlib.abc.InspectLoader.source_to_code` is now a
+  static method to make it easier to work with source code in a string.
+  With a module object that you want to initialize you can then use
+  ``exec(code, module.__dict__)`` to execute the code in the module.
+
 
 Optimizations
 =============
