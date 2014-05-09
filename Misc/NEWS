@@ -354,6 +354,13 @@ IDLE
 Build
 -----
 
+- Issue #21141: The Windows build process no longer attempts to find Perl,
+  instead relying on OpenSSL source being configured and ready to build.  The
+  ``PCbuild\build_ssl.py`` script has been re-written and re-named to
+  ``PCbuild\prepare_ssl.py``, and takes care of configuring OpenSSL source
+  for both 32 and 64 bit platforms.  OpenSSL sources obtained from
+  svn.python.org will always be pre-configured and ready to build.
+
 - Issue #21037: Add a build option to enable AddressSanitizer support.
 
 - The Windows build now includes OpenSSL 1.0.1g

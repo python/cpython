@@ -118,9 +118,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+cd "$(SolutionDir)$(opensslDir)"
+copy /Y crypto\buildinf_x86.h crypto\buildinf.h
+copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
@@ -129,9 +132,13 @@
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+cd "$(SolutionDir)$(opensslDir)"
+nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
+copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
+copy /Y crypto\opensslconf_amd64.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt64.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
@@ -140,9 +147,12 @@
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+cd "$(SolutionDir)$(opensslDir)"
+copy /Y crypto\buildinf_x86.h crypto\buildinf.h
+copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
@@ -151,9 +161,13 @@
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+cd "$(SolutionDir)$(opensslDir)"
+nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
+copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
+copy /Y crypto\opensslconf_amd64.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt64.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
@@ -162,9 +176,12 @@
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
+cd "$(SolutionDir)$(opensslDir)"
+copy /Y crypto\buildinf_x86.h crypto\buildinf.h
+copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" />
@@ -173,9 +190,13 @@
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
+cd "$(SolutionDir)$(opensslDir)"
+nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
+copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
+copy /Y crypto\opensslconf_amd64.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt64.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" />
@@ -184,9 +205,12 @@
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
+cd "$(SolutionDir)$(opensslDir)"
+copy /Y crypto\buildinf_x86.h crypto\buildinf.h
+copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" />
@@ -195,9 +219,13 @@
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">cd "$(SolutionDir)"
-"$(PythonExe)" build_ssl.py Release $(Platform) -a
-</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
+cd "$(SolutionDir)$(opensslDir)"
+nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
+copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
+copy /Y crypto\opensslconf_amd64.h crypto\opensslconf.h
+nmake /nologo -f "ms\nt64.mak"
+	</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" />
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">echo OpenSSL must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" />
@@ -209,12 +237,6 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ProjectReference Include="python.vcxproj">
-      <Project>{b11d750f-cd1f-4a96-85ce-e69a5c5259f9}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

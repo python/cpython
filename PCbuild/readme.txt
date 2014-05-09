@@ -181,30 +181,19 @@ _ssl
     you should first try to update NASM and do a full rebuild of
     OpenSSL.
 
-    If you like to use the official sources instead of the files from
-    python.org's subversion repository, Perl is required to build the
-    necessary makefiles and assembly files.  ActivePerl is available
-    from
+    The ssl sub-project expects your OpenSSL sources to have already
+    been configured and be ready to build.  If you get your sources
+    from svn.python.org as suggested in the "Getting External Sources"
+    section below, the OpenSSL source will already be ready to go.  If
+    you want to build a different version, you will need to run
+
+       PCbuild\prepare_ssl.py path\to\openssl-source-dir
+
+    That script will prepare your OpenSSL sources in the same way that
+    those available on svn.python.org have been prepared.  Note that
+    Perl must be installed and available on your PATH to configure
+    OpenSSL.  ActivePerl is recommended and is available from
         http://www.activestate.com/activeperl/
-    The svn.python.org version contains pre-built makefiles and assembly
-    files.
-
-    The build process makes sure that no patented algorithms are
-    included.  For now RC5, MDC2 and IDEA are excluded from the build.
-    You may have to manually remove $(OBJ_D)\i_*.obj from ms\nt.mak if
-    using official sources; the svn.python.org-hosted version is already
-    fixed.
-
-    The ssl.vcxproj sub-project simply invokes PCbuild/build_ssl.py,
-    which locates and builds OpenSSL.
-
-    build_ssl.py attempts to catch the most common errors (such as not
-    being able to find OpenSSL sources, or not being able to find a Perl
-    that works with OpenSSL) and give a reasonable error message.  If
-    you have a problem that doesn't seem to be handled correctly (e.g.,
-    you know you have ActivePerl but we can't find it), please take a
-    peek at build_ssl.py and suggest patches.  Note that build_ssl.py
-    should be able to be run directly from the command-line.
 
     The ssl sub-project does not have the ability to clean the OpenSSL
     build; if you need to rebuild, you'll have to clean it by hand.
