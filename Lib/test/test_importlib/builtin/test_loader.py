@@ -1,6 +1,5 @@
 from .. import abc
 from .. import util
-from . import util as builtin_util
 
 frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
 
@@ -8,7 +7,7 @@ import sys
 import types
 import unittest
 
-
+@unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
 class LoaderTests(abc.LoaderTests):
 
     """Test load_module() for built-in modules."""
@@ -29,8 +28,8 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
         # Common case.
-        with util.uncache(builtin_util.NAME):
-            module = self.load_module(builtin_util.NAME)
+        with util.uncache(util.BUILTINS.good_name):
+            module = self.load_module(util.BUILTINS.good_name)
             self.verify(module)
 
     # Built-in modules cannot be a package.
@@ -41,9 +40,9 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module_reuse(self):
         # Test that the same module is used in a reload.
-        with util.uncache(builtin_util.NAME):
-            module1 = self.load_module(builtin_util.NAME)
-            module2 = self.load_module(builtin_util.NAME)
+        with util.uncache(util.BUILTINS.good_name):
+            module1 = self.load_module(util.BUILTINS.good_name)
+            module2 = self.load_module(util.BUILTINS.good_name)
             self.assertIs(module1, module2)
 
     def test_unloadable(self):
@@ -70,32 +69,34 @@ Frozen_LoaderTests, Source_LoaderTests = util.test_both(LoaderTests,
         machinery=[frozen_machinery, source_machinery])
 
 
+@unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
 class InspectLoaderTests:
 
     """Tests for InspectLoader methods for BuiltinImporter."""
 
     def test_get_code(self):
         # There is no code object.
-        result = self.machinery.BuiltinImporter.get_code(builtin_util.NAME)
+        result = self.machinery.BuiltinImporter.get_code(util.BUILTINS.good_name)
         self.assertIsNone(result)
 
     def test_get_source(self):
         # There is no source.
-        result = self.machinery.BuiltinImporter.get_source(builtin_util.NAME)
+        result = self.machinery.BuiltinImporter.get_source(util.BUILTINS.good_name)
         self.assertIsNone(result)
 
     def test_is_package(self):
         # Cannot be a package.
-        result = self.machinery.BuiltinImporter.is_package(builtin_util.NAME)
+        result = self.machinery.BuiltinImporter.is_package(util.BUILTINS.good_name)
         self.assertTrue(not result)
 
+    @unittest.skipIf(util.BUILTINS.bad_name is None, 'all modules are built in')
     def test_not_builtin(self):
         # Modules not built-in should raise ImportError.
         for meth_name in ('get_code', 'get_source', 'is_package'):
             method = getattr(self.machinery.BuiltinImporter, meth_name)
         with self.assertRaises(ImportError) as cm:
-            method(builtin_util.BAD_NAME)
-        self.assertRaises(builtin_util.BAD_NAME)
+            method(util.BUILTINS.bad_name)
+        self.assertRaises(util.BUILTINS.bad_name)
 
 Frozen_InspectLoaderTests, Source_InspectLoaderTests = util.test_both(
         InspectLoaderTests,

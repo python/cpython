@@ -1,5 +1,4 @@
 from .. import util
-from . import util as import_util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -58,7 +57,7 @@ class FinderTests:
         module = '<test module>'
         path = '<test path>'
         importer = util.mock_spec(module)
-        hook = import_util.mock_path_hook(path, importer=importer)
+        hook = util.mock_path_hook(path, importer=importer)
         with util.import_state(path_hooks=[hook]):
             loader = self.machinery.PathFinder.find_module(module, [path])
             self.assertIs(loader, importer)
@@ -83,7 +82,7 @@ class FinderTests:
         path = ''
         module = '<test module>'
         importer = util.mock_spec(module)
-        hook = import_util.mock_path_hook(os.getcwd(), importer=importer)
+        hook = util.mock_path_hook(os.getcwd(), importer=importer)
         with util.import_state(path=[path], path_hooks=[hook]):
             loader = self.machinery.PathFinder.find_module(module)
             self.assertIs(loader, importer)

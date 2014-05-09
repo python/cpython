@@ -1,6 +1,5 @@
 """Test case-sensitivity (PEP 235)."""
 from .. import util
-from . import util as source_util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -32,7 +31,7 @@ class CaseSensitivityTest:
         """Look for a module with matching and non-matching sensitivity."""
         sensitive_pkg = 'sensitive.{0}'.format(self.name)
         insensitive_pkg = 'insensitive.{0}'.format(self.name.lower())
-        context = source_util.create_modules(insensitive_pkg, sensitive_pkg)
+        context = util.create_modules(insensitive_pkg, sensitive_pkg)
         with context as mapping:
             sensitive_path = os.path.join(mapping['.root'], 'sensitive')
             insensitive_path = os.path.join(mapping['.root'], 'insensitive')
