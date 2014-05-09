@@ -24,6 +24,7 @@
 # python.exe build_ssl.py Release Win32
 
 import os, sys, re, shutil
+import subprocess
 
 # Find all "foo.exe" files on the PATH.
 def find_all_on_path(filename, extras = None):
@@ -46,22 +47,21 @@ def find_all_on_path(filename, extras = None):
 # is available.
 def find_working_perl(perls):
     for perl in perls:
-        fh = os.popen('"%s" -e "use Win32;"' % perl)
-        fh.read()
-        rc = fh.close()
-        if rc:
+        try:
+            subprocess.check_output([perl, "-e", "use Win32;"])
+        except subprocess.CalledProcessError:
             continue
-        return perl
-    print("Can not find a suitable PERL:")
+        else:
+            return perl
+
     if perls:
-        print(" the following perl interpreters were found:")
+        print("The following perl interpreters were found:")
         for p in perls:
             print(" ", p)
         print(" None of these versions appear suitable for building OpenSSL")
     else:
-        print(" NO perl interpreters were found on this machine at all!")
+        print("NO perl interpreters were found on this machine at all!")
     print(" Please install ActivePerl and ensure it appears on your path")
-    return None
 
 # Fetch SSL directory from VC properties
 def get_ssl_dir():
