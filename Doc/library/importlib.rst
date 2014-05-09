@@ -887,6 +887,11 @@ find and load modules.
 
       Concrete implementation of :meth:`importlib.abc.SourceLoader.set_data`.
 
+   .. method:: load_module(name=None)
+
+      Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
+      specifying the name of the module to load is optional.
+
 
 .. class:: SourcelessFileLoader(fullname, path)
 
@@ -921,6 +926,11 @@ find and load modules.
       Returns ``None`` as bytecode files have no source when this loader is
       used.
 
+   .. method:: load_module(name=None)
+
+   Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
+   specifying the name of the module to load is optional.
+
 
 .. class:: ExtensionFileLoader(fullname, path)
 
@@ -940,7 +950,7 @@ find and load modules.
 
       Path to the extension module.
 
-   .. method:: load_module(fullname)
+   .. method:: load_module(name=None)
 
       Loads the extension module if and only if *fullname* is the same as
       :attr:`name` or is ``None``.
