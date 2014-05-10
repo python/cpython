@@ -289,6 +289,10 @@ Library
 Tools/Demos
 -----------
 
+- Issue #3561: The Windows installer now has an option, off by default, for
+  placing the Python installation into the system "Path" environment variable.
+  This was backported from Python 3.3.
+
 - Add support for ``yield from`` to 2to3.
 
 - Add support for the PEP 465 matrix multiplication operator to 2to3.

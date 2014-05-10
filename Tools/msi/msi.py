@@ -445,6 +445,10 @@ def add_ui(db):
               ("SetDLLDirToTarget", 'DLLDIR=""', 751),
              ])
 
+    # Prepend TARGETDIR to the system path, and remove it on uninstall.
+    add_data(db, "Environment",
+             [("PathAddition", "=-*Path", "[TARGETDIR];[~]", "REGISTRY.path")])
+
     # Execute Sequences
     add_data(db, "InstallExecuteSequence",
             [("InitialTargetDir", 'TARGETDIR=""', 750),
@@ -668,11 +672,11 @@ def add_ui(db):
     c=features.xbutton("Advanced", "Advanced", None, 0.30)
     c.event("SpawnDialog", "AdvancedDlg")
 
-    c=features.text("ItemDescription", 140, 180, 210, 30, 3,
+    c=features.text("ItemDescription", 140, 180, 210, 40, 3,
                   "Multiline description of the currently selected item.")
     c.mapping("SelectionDescription","Text")
 
-    c=features.text("ItemSize", 140, 210, 210, 45, 3,
+    c=features.text("ItemSize", 140, 225, 210, 33, 3,
                     "The size of the currently selected item.")
     c.mapping("SelectionSize", "Text")
 
@@ -826,7 +830,7 @@ def add_features(db):
     # (i.e. additional Python libraries) need to follow the parent feature.
     # Features that have no advertisement trigger (e.g. the test suite)
     # must not support advertisement
-    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature, private_crt
+    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature, private_crt, prepend_path
     default_feature = Feature(db, "DefaultFeature", "Python",
                               "Python Interpreter and Libraries",
                               1, directory = "TARGETDIR")
@@ -851,6 +855,15 @@ def add_features(db):
     testsuite = Feature(db, "Testsuite", "Test suite",
                         "Python test suite (Lib/test/)", 11,
                         parent = default_feature, attributes=2|8)
+    # prepend_path is an additional feature which is to be off by default.
+    # Since the default level for the above features is 1, this needs to be
+    # at least level higher.
+    prepend_path = Feature(db, "PrependPath", "Add python.exe to Path",
+                           "Prepend [TARGETDIR] to the system Path variable. "
+                           "This allows you to type 'python' into a command "
+                           "prompt without needing the full path.", 13,
+                           parent = default_feature, attributes=2|8,
+                           level=2)
 
 def extract_msvcr90():
     # Find the redistributable files
@@ -1168,6 +1181,8 @@ def add_registry(db):
                "InstallPath"),
               ("REGISTRY.doc", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
                "Documentation"),
+              ("REGISTRY.path", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
+               None),
               ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", registry_component,
                None, None)] + tcldata)
     # See "FeatureComponents Table".
@@ -1184,6 +1199,7 @@ def add_registry(db):
     add_data(db, "FeatureComponents",
              [(default_feature.id, "REGISTRY"),
               (htmlfiles.id, "REGISTRY.doc"),
+              (prepend_path.id, "REGISTRY.path"),
               (ext_feature.id, "REGISTRY.def")] +
               tcldata
               )
