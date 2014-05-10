@@ -775,11 +775,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         elif self._scheduled:
             # Compute the desired timeout.
             when = self._scheduled[0]._when
-            deadline = max(0, when - self.time())
-            if timeout is None:
-                timeout = deadline
-            else:
-                timeout = min(timeout, deadline)
+            timeout = max(0, when - self.time())
 
         # TODO: Instrumentation only in debug mode?
         if logger.isEnabledFor(logging.INFO):
