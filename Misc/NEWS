@@ -57,6 +57,11 @@ Core and Builtins
 
 - Issue #19995: %c, %o, %x, and %X now raise TypeError on non-integer input.
 
+- Issue #19655: The ASDL parser - used by the build process to generate code for
+  managing the Python AST in C - was rewritten. The new parser is self contained
+  and does not require to carry long the spark.py parser-generator library;
+  spark.py was removed from the source base.
+
 - Issue #12546: Allow \x00 to be used as a fill character when using str, int,
   float, and complex __format__ methods.
 

@@ -1,255 +1,53 @@
-"""An implementation of the Zephyr Abstract Syntax Definition Language.
+#-------------------------------------------------------------------------------
+# Parser for ASDL [1] definition files. Reads in an ASDL description and parses
+# it into an AST that describes it.
+#
+# The EBNF we're parsing here: Figure 1 of the paper [1]. Extended to support
+# modules and attributes after a product. Words starting with Capital letters
+# are terminals. Literal tokens are in "double quotes". Others are
+# non-terminals. Id is either TokenId or ConstructorId.
+#
+# module        ::= "module" Id "{" [definitions] "}"
+# definitions   ::= { TypeId "=" type }
+# type          ::= product | sum
+# product       ::= fields ["attributes" fields]
+# fields        ::= "(" { field, "," } field ")"
+# field         ::= TypeId ["?" | "*"] [Id]
+# sum           ::= constructor { "|" constructor } ["attributes" fields]
+# constructor   ::= ConstructorId [fields]
+#
+# [1] "The Zephyr Abstract Syntax Description Language" by Wang, et. al. See
+#     http://asdl.sourceforge.net/
+#-------------------------------------------------------------------------------
+from collections import namedtuple
+import re
 
-See http://asdl.sourceforge.net/ and
-http://www.cs.princeton.edu/research/techreps/TR-554-97
+__all__ = [
+    'builtin_types', 'parse', 'AST', 'Module', 'Type', 'Constructor',
+    'Field', 'Sum', 'Product', 'VisitorBase', 'Check', 'check']
 
-Only supports top level module decl, not view.  I'm guessing that view
-is intended to support the browser and I'm not interested in the
-browser.
+# The following classes define nodes into which the ASDL description is parsed.
+# Note: this is a "meta-AST". ASDL files (such as Python.asdl) describe the AST
+# structure used by a programming language. But ASDL files themselves need to be
+# parsed. This module parses ASDL files and uses a simple AST to represent them.
+# See the EBNF at the top of the file to understand the logical connection
+# between the various node types.
 
-Changes for Python: Add support for module versions
-"""
+builtin_types = set(
+    ['identifier', 'string', 'bytes', 'int', 'object', 'singleton'])
 
-import os
-import sys
-import traceback
-
-import spark
-
-def output(*strings):
-    for s in strings:
-        sys.stdout.write(str(s) + "\n")
-
-
-class Token(object):
-    # spark seems to dispatch in the parser based on a token's
-    # type attribute
-    def __init__(self, type, lineno):
-        self.type = type
-        self.lineno = lineno
-
-    def __str__(self):
-        return self.type
-
+class AST:
     def __repr__(self):
-        return str(self)
-
-class Id(Token):
-    def __init__(self, value, lineno):
-        self.type = 'Id'
-        self.value = value
-        self.lineno = lineno
-
-    def __str__(self):
-        return self.value
-
-class String(Token):
-    def __init__(self, value, lineno):
-        self.type = 'String'
-        self.value = value
-        self.lineno = lineno
-
-class ASDLSyntaxError(Exception):
-
-    def __init__(self, lineno, token=None, msg=None):
-        self.lineno = lineno
-        self.token = token
-        self.msg = msg
-
-    def __str__(self):
-        if self.msg is None:
-            return "Error at '%s', line %d" % (self.token, self.lineno)
-        else:
-            return "%s, line %d" % (self.msg, self.lineno)
-
-class ASDLScanner(spark.GenericScanner, object):
-
-    def tokenize(self, input):
-        self.rv = []
-        self.lineno = 1
-        super(ASDLScanner, self).tokenize(input)
-        return self.rv
-
-    def t_id(self, s):
-        r"[\w\.]+"
-        # XXX doesn't distinguish upper vs. lower, which is
-        # significant for ASDL.
-        self.rv.append(Id(s, self.lineno))
-
-    def t_string(self, s):
-        r'"[^"]*"'
-        self.rv.append(String(s, self.lineno))
-
-    def t_xxx(self, s): # not sure what this production means
-        r"<="
-        self.rv.append(Token(s, self.lineno))
-
-    def t_punctuation(self, s):
-        r"[\{\}\*\=\|\(\)\,\?\:]"
-        self.rv.append(Token(s, self.lineno))
-
-    def t_comment(self, s):
-        r"\-\-[^\n]*"
-        pass
-
-    def t_newline(self, s):
-        r"\n"
-        self.lineno += 1
-
-    def t_whitespace(self, s):
-        r"[ \t]+"
-        pass
-
-    def t_default(self, s):
-        r" . +"
-        raise ValueError("unmatched input: %r" % s)
-
-class ASDLParser(spark.GenericParser, object):
-    def __init__(self):
-        super(ASDLParser, self).__init__("module")
-
-    def typestring(self, tok):
-        return tok.type
-
-    def error(self, tok):
-        raise ASDLSyntaxError(tok.lineno, tok)
-
-    def p_module_0(self, info):
-        " module ::= Id Id { } "
-        module, name, _0, _1 = info
-        if module.value != "module":
-            raise ASDLSyntaxError(module.lineno,
-                                  msg="expected 'module', found %s" % module)
-        return Module(name, None)
-
-    def p_module(self, info):
-        " module ::= Id Id { definitions } "
-        module, name, _0, definitions, _1 = info
-        if module.value != "module":
-            raise ASDLSyntaxError(module.lineno,
-                                  msg="expected 'module', found %s" % module)
-        return Module(name, definitions)
-
-    def p_definition_0(self, definition):
-        " definitions ::= definition "
-        return definition[0]
-
-    def p_definition_1(self, definitions):
-        " definitions ::= definition definitions "
-        return definitions[0] + definitions[1]
-
-    def p_definition(self, info):
-        " definition ::= Id = type "
-        id, _, type = info
-        return [Type(id, type)]
-
-    def p_type_0(self, product):
-        " type ::= product "
-        return product[0]
-
-    def p_type_1(self, sum):
-        " type ::= sum "
-        return Sum(sum[0])
-
-    def p_type_2(self, info):
-        " type ::= sum Id ( fields ) "
-        sum, id, _0, attributes, _1 = info
-        if id.value != "attributes":
-            raise ASDLSyntaxError(id.lineno,
-                                  msg="expected attributes, found %s" % id)
-        return Sum(sum, attributes)
-
-    def p_product_0(self, info):
-        " product ::= ( fields ) "
-        _0, fields, _1 = info
-        return Product(fields)
-
-    def p_product_1(self, info):
-        " product ::= ( fields ) Id ( fields ) "
-        _0, fields, _1, id, _2, attributes, _3 = info
-        if id.value != "attributes":
-            raise ASDLSyntaxError(id.lineno,
-                                  msg="expected attributes, found %s" % id)
-        return Product(fields, attributes)
-
-    def p_sum_0(self, constructor):
-        " sum ::= constructor "
-        return [constructor[0]]
-
-    def p_sum_1(self, info):
-        " sum ::= constructor | sum "
-        constructor, _, sum = info
-        return [constructor] + sum
-
-    def p_sum_2(self, info):
-        " sum ::= constructor | sum "
-        constructor, _, sum = info
-        return [constructor] + sum
-
-    def p_constructor_0(self, id):
-        " constructor ::= Id "
-        return Constructor(id[0])
-
-    def p_constructor_1(self, info):
-        " constructor ::= Id ( fields ) "
-        id, _0, fields, _1 = info
-        return Constructor(id, fields)
-
-    def p_fields_0(self, field):
-        " fields ::= field "
-        return [field[0]]
-
-    def p_fields_1(self, info):
-        " fields ::= fields , field "
-        fields, _, field = info
-        return fields + [field]
-
-    def p_field_0(self, type_):
-        " field ::= Id "
-        return Field(type_[0])
-
-    def p_field_1(self, info):
-        " field ::= Id Id "
-        type, name = info
-        return Field(type, name)
-
-    def p_field_2(self, info):
-        " field ::= Id * Id "
-        type, _, name = info
-        return Field(type, name, seq=True)
-
-    def p_field_3(self, info):
-        " field ::= Id ? Id "
-        type, _, name = info
-        return Field(type, name, opt=True)
-
-    def p_field_4(self, type_):
-        " field ::= Id * "
-        return Field(type_[0], seq=True)
-
-    def p_field_5(self, type_):
-        " field ::= Id ? "
-        return Field(type[0], opt=True)
-
-builtin_types = ("identifier", "string", "bytes", "int", "object", "singleton")
-
-# below is a collection of classes to capture the AST of an AST :-)
-# not sure if any of the methods are useful yet, but I'm adding them
-# piecemeal as they seem helpful
-
-class AST(object):
-    pass # a marker class
+        raise NotImplementedError
 
 class Module(AST):
     def __init__(self, name, dfns):
         self.name = name
         self.dfns = dfns
-        self.types = {} # maps type name to value (from dfns)
-        for type in dfns:
-            self.types[type.name.value] = type.value
+        self.types = {type.name: type.value for type in dfns}
 
     def __repr__(self):
-        return "Module(%s, %s)" % (self.name, self.dfns)
+        return 'Module({0.name}, {0.dfns})'.format(self)
 
 class Type(AST):
     def __init__(self, name, value):
@@ -257,7 +55,7 @@ class Type(AST):
         self.value = value
 
     def __repr__(self):
-        return "Type(%s, %s)" % (self.name, self.value)
+        return 'Type({0.name}, {0.value})'.format(self)
 
 class Constructor(AST):
     def __init__(self, name, fields=None):
@@ -265,7 +63,7 @@ class Constructor(AST):
         self.fields = fields or []
 
     def __repr__(self):
-        return "Constructor(%s, %s)" % (self.name, self.fields)
+        return 'Constructor({0.name}, {0.fields})'.format(self)
 
 class Field(AST):
     def __init__(self, type, name=None, seq=False, opt=False):
@@ -282,9 +80,9 @@ class Field(AST):
         else:
             extra = ""
         if self.name is None:
-            return "Field(%s%s)" % (self.type, extra)
+            return 'Field({0.type}{1})'.format(self, extra)
         else:
-            return "Field(%s, %s%s)" % (self.type, self.name, extra)
+            return 'Field({0.type}, {0.name}{1})'.format(self, extra)
 
 class Sum(AST):
     def __init__(self, types, attributes=None):
@@ -292,10 +90,10 @@ class Sum(AST):
         self.attributes = attributes or []
 
     def __repr__(self):
-        if self.attributes is None:
-            return "Sum(%s)" % self.types
+        if self.attributes:
+            return 'Sum({0.types}, {0.attributes})'.format(self)
         else:
-            return "Sum(%s, %s)" % (self.types, self.attributes)
+            return 'Sum({0.types})'.format(self)
 
 class Product(AST):
     def __init__(self, fields, attributes=None):
@@ -303,49 +101,43 @@ class Product(AST):
         self.attributes = attributes or []
 
     def __repr__(self):
-        if self.attributes is None:
-            return "Product(%s)" % self.fields
+        if self.attributes:
+            return 'Product({0.fields}, {0.attributes})'.format(self)
         else:
-            return "Product(%s, %s)" % (self.fields, self.attributes)
+            return 'Product({0.fields})'.format(self)
 
-class VisitorBase(object):
+# A generic visitor for the meta-AST that describes ASDL. This can be used by
+# emitters. Note that this visitor does not provide a generic visit method, so a
+# subclass needs to define visit methods from visitModule to as deep as the
+# interesting node.
+# We also define a Check visitor that makes sure the parsed ASDL is well-formed.
 
-    def __init__(self, skip=False):
+class VisitorBase:
+    """Generic tree visitor for ASTs."""
+    def __init__(self):
         self.cache = {}
-        self.skip = skip
 
-    def visit(self, object, *args):
-        meth = self._dispatch(object)
-        if meth is None:
-            return
-        try:
-            meth(object, *args)
-        except Exception:
-            output("Error visiting" + repr(object))
-            output(str(sys.exc_info()[1]))
-            traceback.print_exc()
-            # XXX hack
-            if hasattr(self, 'file'):
-                self.file.flush()
-            os._exit(1)
-
-    def _dispatch(self, object):
-        assert isinstance(object, AST), repr(object)
-        klass = object.__class__
+    def visit(self, obj, *args):
+        klass = obj.__class__
         meth = self.cache.get(klass)
         if meth is None:
             methname = "visit" + klass.__name__
-            if self.skip:
-                meth = getattr(self, methname, None)
-            else:
-                meth = getattr(self, methname)
+            meth = getattr(self, methname, None)
             self.cache[klass] = meth
-        return meth
+        if meth:
+            try:
+                meth(obj, *args)
+            except Exception as e:
+                print("Error visiting %r: %s" % (obj, e))
+                raise
 
 class Check(VisitorBase):
+    """A visitor that checks a parsed ASDL tree for correctness.
 
+    Errors are printed and accumulated.
+    """
     def __init__(self):
-        super(Check, self).__init__(skip=True)
+        super().__init__()
         self.cons = {}
         self.errors = 0
         self.types = {}
@@ -367,8 +159,8 @@ class Check(VisitorBase):
         if conflict is None:
             self.cons[key] = name
         else:
-            output("Redefinition of constructor %s" % key)
-            output("Defined in %s and %s" % (conflict, name))
+            print('Redefinition of constructor {}'.format(key))
+            print('Defined in {} and {}'.format(conflict, name))
             self.errors += 1
         for f in cons.fields:
             self.visit(f, key)
@@ -383,6 +175,11 @@ class Check(VisitorBase):
             self.visit(f, name)
 
 def check(mod):
+    """Check the parsed ASDL tree for correctness.
+
+    Return True if success. For failure, the errors are printed out and False
+    is returned.
+    """
     v = Check()
     v.visit(mod)
 
@@ -390,47 +187,190 @@ def check(mod):
         if t not in mod.types and not t in builtin_types:
             v.errors += 1
             uses = ", ".join(v.types[t])
-            output("Undefined type %s, used in %s" % (t, uses))
-
+            print('Undefined type {}, used in {}'.format(t, uses))
     return not v.errors
 
-def parse(file):
-    scanner = ASDLScanner()
-    parser = ASDLParser()
+# The ASDL parser itself comes next. The only interesting external interface
+# here is the top-level parse function.
 
-    f = open(file)
-    try:
-        buf = f.read()
-    finally:
-        f.close()
-    tokens = scanner.tokenize(buf)
-    try:
-        return parser.parse(tokens)
-    except ASDLSyntaxError:
-        err = sys.exc_info()[1]
-        output(str(err))
-        lines = buf.split("\n")
-        output(lines[err.lineno - 1]) # lines starts at 0, files at 1
+def parse(filename):
+    """Parse ASDL from the given file and return a Module node describing it."""
+    with open(filename) as f:
+        parser = ASDLParser()
+        return parser.parse(f.read())
 
-if __name__ == "__main__":
-    import glob
-    import sys
+# Types for describing tokens in an ASDL specification.
+class TokenKind:
+    """TokenKind is provides a scope for enumerated token kinds."""
+    (ConstructorId, TypeId, Equals, Comma, Question, Pipe, Asterisk,
+     LParen, RParen, LBrace, RBrace) = range(11)
 
-    if len(sys.argv) > 1:
-        files = sys.argv[1:]
-    else:
-        testdir = "tests"
-        files = glob.glob(testdir + "/*.asdl")
+    operator_table = {
+        '=': Equals, ',': Comma,    '?': Question, '|': Pipe,    '(': LParen,
+        ')': RParen, '*': Asterisk, '{': LBrace,   '}': RBrace}
 
-    for file in files:
-        output(file)
-        mod = parse(file)
-        if not mod:
-            break
-        output("module", mod.name)
-        output(len(mod.dfns), "definitions")
-        if not check(mod):
-            output("Check failed")
+Token = namedtuple('Token', 'kind value lineno')
+
+class ASDLSyntaxError(Exception):
+    def __init__(self, msg, lineno=None):
+        self.msg = msg
+        self.lineno = lineno or '<unknown>'
+
+    def __str__(self):
+        return 'Syntax error on line {0.lineno}: {0.msg}'.format(self)
+
+def tokenize_asdl(buf):
+    """Tokenize the given buffer. Yield Token objects."""
+    for lineno, line in enumerate(buf.splitlines(), 1):
+        for m in re.finditer(r'\s*(\w+|--.*|.)', line.strip()):
+            c = m.group(1)
+            if c[0].isalpha():
+                # Some kind of identifier
+                if c[0].isupper():
+                    yield Token(TokenKind.ConstructorId, c, lineno)
+                else:
+                    yield Token(TokenKind.TypeId, c, lineno)
+            elif c[:2] == '--':
+                # Comment
+                break
+            else:
+                # Operators
+                try:
+                    op_kind = TokenKind.operator_table[c]
+                except KeyError:
+                    raise ASDLSyntaxError('Invalid operator %s' % c, lineno)
+                yield Token(op_kind, c, lineno)
+
+class ASDLParser:
+    """Parser for ASDL files.
+
+    Create, then call the parse method on a buffer containing ASDL.
+    This is a simple recursive descent parser that uses tokenize_asdl for the
+    lexing.
+    """
+    def __init__(self):
+        self._tokenizer = None
+        self.cur_token = None
+
+    def parse(self, buf):
+        """Parse the ASDL in the buffer and return an AST with a Module root.
+        """
+        self._tokenizer = tokenize_asdl(buf)
+        self._advance()
+        return self._parse_module()
+
+    def _parse_module(self):
+        if self._at_keyword('module'):
+            self._advance()
         else:
-            for dfn in mod.dfns:
-                output(dfn.name, dfn.value)
+            raise ASDLSyntaxError(
+                'Expected "module" (found {})'.format(self.cur_token.value),
+                self.cur_token.lineno)
+        name = self._match(self._id_kinds)
+        self._match(TokenKind.LBrace)
+        defs = self._parse_definitions()
+        self._match(TokenKind.RBrace)
+        return Module(name, defs)
+
+    def _parse_definitions(self):
+        defs = []
+        while self.cur_token.kind == TokenKind.TypeId:
+            typename = self._advance()
+            self._match(TokenKind.Equals)
+            type = self._parse_type()
+            defs.append(Type(typename, type))
+        return defs
+
+    def _parse_type(self):
+        if self.cur_token.kind == TokenKind.LParen:
+            # If we see a (, it's a product
+            return self._parse_product()
+        else:
+            # Otherwise it's a sum. Look for ConstructorId
+            sumlist = [Constructor(self._match(TokenKind.ConstructorId),
+                                   self._parse_optional_fields())]
+            while self.cur_token.kind  == TokenKind.Pipe:
+                # More constructors
+                self._advance()
+                sumlist.append(Constructor(
+                                self._match(TokenKind.ConstructorId),
+                                self._parse_optional_fields()))
+            return Sum(sumlist, self._parse_optional_attributes())
+
+    def _parse_product(self):
+        return Product(self._parse_fields(), self._parse_optional_attributes())
+
+    def _parse_fields(self):
+        fields = []
+        self._match(TokenKind.LParen)
+        while self.cur_token.kind == TokenKind.TypeId:
+            typename = self._advance()
+            is_seq, is_opt = self._parse_optional_field_quantifier()
+            id = (self._advance() if self.cur_token.kind in self._id_kinds
+                                  else None)
+            fields.append(Field(typename, id, seq=is_seq, opt=is_opt))
+            if self.cur_token.kind == TokenKind.RParen:
+                break
+            elif self.cur_token.kind == TokenKind.Comma:
+                self._advance()
+        self._match(TokenKind.RParen)
+        return fields
+
+    def _parse_optional_fields(self):
+        if self.cur_token.kind == TokenKind.LParen:
+            return self._parse_fields()
+        else:
+            return None
+
+    def _parse_optional_attributes(self):
+        if self._at_keyword('attributes'):
+            self._advance()
+            return self._parse_fields()
+        else:
+            return None
+
+    def _parse_optional_field_quantifier(self):
+        is_seq, is_opt = False, False
+        if self.cur_token.kind == TokenKind.Asterisk:
+            is_seq = True
+            self._advance()
+        elif self.cur_token.kind == TokenKind.Question:
+            is_opt = True
+            self._advance()
+        return is_seq, is_opt
+
+    def _advance(self):
+        """ Return the value of the current token and read the next one into
+            self.cur_token.
+        """
+        cur_val = None if self.cur_token is None else self.cur_token.value
+        try:
+            self.cur_token = next(self._tokenizer)
+        except StopIteration:
+            self.cur_token = None
+        return cur_val
+
+    _id_kinds = (TokenKind.ConstructorId, TokenKind.TypeId)
+
+    def _match(self, kind):
+        """The 'match' primitive of RD parsers.
+
+        * Verifies that the current token is of the given kind (kind can
+          be a tuple, in which the kind must match one of its members).
+        * Returns the value of the current token
+        * Reads in the next token
+        """
+        if (isinstance(kind, tuple) and self.cur_token.kind in kind or
+            self.cur_token.kind == kind
+            ):
+            value = self.cur_token.value
+            self._advance()
+            return value
+        else:
+            raise ASDLSyntaxError(
+                'Unmatched {} (found {})'.format(kind, self.cur_token.kind),
+                self.cur_token.lineno)
+
+    def _at_keyword(self, keyword):
+        return (self.cur_token.kind == TokenKind.TypeId and
+                self.cur_token.value == keyword)
