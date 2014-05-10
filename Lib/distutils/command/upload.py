@@ -1,18 +1,21 @@
-"""distutils.command.upload
+"""
+distutils.command.upload
 
-Implements the Distutils 'upload' subcommand (upload package to PyPI)."""
+Implements the Distutils 'upload' subcommand (upload package to a package
+index).
+"""
 
-from distutils.errors import *
-from distutils.core import PyPIRCCommand
-from distutils.spawn import spawn
-from distutils import log
 import sys
-import os, io
-import socket
+import os
+import io
 import platform
 from base64 import standard_b64encode
 from urllib.request import urlopen, Request, HTTPError
 from urllib.parse import urlparse
+from distutils.errors import *
+from distutils.core import PyPIRCCommand
+from distutils.spawn import spawn
+from distutils import log
 
 # this keeps compatibility for 2.3 and 2.4
 if sys.version < "2.5":
@@ -106,7 +109,7 @@ class upload(PyPIRCCommand):
             'md5_digest': md5(content).hexdigest(),
 
             # additional meta-data
-            'metadata_version' : '1.0',
+            'metadata_version': '1.0',
             'summary': meta.get_description(),
             'home_page': meta.get_url(),
             'author': meta.get_contact(),
@@ -167,13 +170,15 @@ class upload(PyPIRCCommand):
         body.write(b"\n")
         body = body.getvalue()
 
-        self.announce("Submitting %s to %s" % (filename, self.repository), log.INFO)
+        msg = "Submitting %s to %s" % (filename, self.repository)
+        self.announce(msg, log.INFO)
 
         # build the Request
-        headers = {'Content-type':
-                        'multipart/form-data; boundary=%s' % boundary,
-                   'Content-length': str(len(body)),
-                   'Authorization': auth}
+        headers = {
+            'Content-type': 'multipart/form-data; boundary=%s' % boundary,
+            'Content-length': str(len(body)),
+            'Authorization': auth,
+        }
 
         request = Request(self.repository, data=body,
                           headers=headers)
