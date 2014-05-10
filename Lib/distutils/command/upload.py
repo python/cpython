@@ -146,7 +146,7 @@ class upload(PyPIRCCommand):
         for key, value in data.items():
             title = '\nContent-Disposition: form-data; name="%s"' % key
             # handle multiple entries for the same name
-            if type(value) != type([]):
+            if not isinstance(value, list):
                 value = [value]
             for value in value:
                 if type(value) is tuple:
