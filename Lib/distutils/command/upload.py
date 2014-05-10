@@ -5,10 +5,10 @@ Implements the Distutils 'upload' subcommand (upload package to a package
 index).
 """
 
-import sys
 import os
 import io
 import platform
+import hashlib
 from base64 import standard_b64encode
 from urllib.request import urlopen, Request, HTTPError
 from urllib.parse import urlparse
@@ -16,12 +16,6 @@ from distutils.errors import DistutilsOptionError
 from distutils.core import PyPIRCCommand
 from distutils.spawn import spawn
 from distutils import log
-
-# this keeps compatibility for 2.3 and 2.4
-if sys.version < "2.5":
-    from md5 import md5
-else:
-    from hashlib import md5
 
 class upload(PyPIRCCommand):
 
@@ -106,7 +100,7 @@ class upload(PyPIRCCommand):
             'content': (os.path.basename(filename),content),
             'filetype': command,
             'pyversion': pyversion,
-            'md5_digest': md5(content).hexdigest(),
+            'md5_digest': hashlib.md5(content).hexdigest(),
 
             # additional meta-data
             'metadata_version': '1.0',
