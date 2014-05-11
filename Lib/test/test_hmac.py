@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import hmac
 import hashlib
 import unittest
