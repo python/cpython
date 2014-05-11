@@ -1453,12 +1453,13 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
     d = PyModule_GetDict(m);
     v = run_mod(mod, filename, d, d, flags, arena);
     PyArena_Free(arena);
-    flush_io();
     if (v == NULL) {
         PyErr_Print();
+        flush_io();
         return -1;
     }
     Py_DECREF(v);
+    flush_io();
     return 0;
 }
 

@@ -78,7 +78,7 @@ def assert_python_failure(*args, **env_vars):
     """
     return _assert_python(False, *args, **env_vars)
 
-def spawn_python(*args, **kw):
+def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run a Python subprocess with the given arguments.
 
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
@@ -87,7 +87,7 @@ def spawn_python(*args, **kw):
     cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            stdout=stdout, stderr=stderr,
                             **kw)
 
 def kill_python(p):
