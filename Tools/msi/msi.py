@@ -1047,6 +1047,7 @@ def add_files(db):
             lib.add_file("idle.bat")
         if dir=="Icons":
             lib.glob("*.gif")
+            lib.glob("*.ico")
             lib.add_file("idle.icns")
         if dir=="command" and parent.physical=="distutils":
             lib.glob("wininst*.exe")
