@@ -342,7 +342,7 @@ functions.
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=())
 
-   Execute a child program in a new process.  On Unix, the class uses
+   Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
@@ -354,7 +354,7 @@ functions.
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
 
-   On Unix, if *args* is a string, the string is interpreted as the name or
+   On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
    passing arguments to the program.
 
@@ -385,7 +385,7 @@ functions.
    the shell as the program to execute.  If *shell* is *True*, it is
    recommended to pass *args* as a string rather than as a sequence.
 
-   On Unix with ``shell=True``, the shell defaults to :file:`/bin/sh`.  If
+   On POSIX with ``shell=True``, the shell defaults to :file:`/bin/sh`.  If
    *args* is a string, the string specifies the command
    to execute through the shell.  This means that the string must be
    formatted exactly as it would be when typed at the shell prompt.  This
@@ -425,9 +425,9 @@ functions.
    program to execute specified by *args*.  However, the original *args* is
    still passed to the program.  Most programs treat the program specified
    by *args* as the command name, which can then be different from the program
-   actually executed.  On Unix, the *args* name
+   actually executed.  On POSIX, the *args* name
    becomes the display name for the executable in utilities such as
-   :program:`ps`.  If ``shell=True``, on Unix the *executable* argument
+   :program:`ps`.  If ``shell=True``, on POSIX the *executable* argument
    specifies a replacement shell for the default :file:`/bin/sh`.
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
@@ -443,7 +443,7 @@ functions.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
-   (Unix only)
+   (POSIX only)
 
    .. warning::
 
@@ -461,8 +461,8 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed. (Unix only).
-   The default varies by platform:  Always true on Unix.  On Windows it is
+   :const:`2` will be closed before the child process is executed. (POSIX only).
+   The default varies by platform:  Always true on POSIX.  On Windows it is
    true when *stdin*/*stdout*/*stderr* are :const:`None`, false otherwise.
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process.  Note that on Windows, you cannot set *close_fds* to true and
@@ -474,7 +474,7 @@ functions.
 
    *pass_fds* is an optional sequence of file descriptors to keep open
    between the parent and child.  Providing any *pass_fds* forces
-   *close_fds* to be :const:`True`.  (Unix only)
+   *close_fds* to be :const:`True`.  (POSIX only)
 
    .. versionadded:: 3.2
       The *pass_fds* parameter was added.
@@ -487,13 +487,13 @@ functions.
    If *restore_signals* is true (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
    Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.
-   (Unix only)
+   (POSIX only)
 
    .. versionchanged:: 3.2
       *restore_signals* was added.
 
    If *start_new_session* is true the setsid() system call will be made in the
-   child process prior to the execution of the subprocess.  (Unix only)
+   child process prior to the execution of the subprocess.  (POSIX only)
 
    .. versionchanged:: 3.2
       *start_new_session* was added.
@@ -741,7 +741,7 @@ The following attributes are also available:
    hasn't terminated yet.
 
    A negative value ``-N`` indicates that the child was terminated by signal
-   ``N`` (Unix only).
+   ``N`` (POSIX only).
 
 
 Windows Popen Helpers
@@ -1066,7 +1066,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/junk')
       (256, 'sh: /bin/junk: not found')
 
-   Availability: Unix & Windows
+   Availability: POSIX & Windows
 
    .. versionchanged:: 3.3.4
       Windows support added
@@ -1082,7 +1082,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   Availability: Unix & Windows
+   Availability: POSIX & Windows
 
    .. versionchanged:: 3.3.4
       Windows support added
