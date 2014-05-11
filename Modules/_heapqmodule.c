@@ -354,88 +354,34 @@ _siftupmax(PyListObject *heap, Py_ssize_t pos)
 }
 
 static PyObject *
-nsmallest(PyObject *self, PyObject *args)
+_heapreplace_max(PyObject *self, PyObject *args)
 {
-    PyObject *heap=NULL, *elem, *iterable, *los, *it, *oldelem;
-    Py_ssize_t i, n;
-    int cmp;
+    PyObject *heap, *item, *returnitem;
 
-    if (!PyArg_ParseTuple(args, "nO:nsmallest", &n, &iterable))
+    if (!PyArg_UnpackTuple(args, "_heapreplace_max", 2, 2, &heap, &item))
         return NULL;
 
-    it = PyObject_GetIter(iterable);
-    if (it == NULL)
+    if (!PyList_Check(heap)) {
+        PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
         return NULL;
-
-    heap = PyList_New(0);
-    if (heap == NULL)
-        goto fail;
-
-    for (i=0 ; i<n ; i++ ){
-        elem = PyIter_Next(it);
-        if (elem == NULL) {
-            if (PyErr_Occurred())
-                goto fail;
-            else
-                goto sortit;
-        }
-        if (PyList_Append(heap, elem) == -1) {
-            Py_DECREF(elem);
-            goto fail;
-        }
-        Py_DECREF(elem);
-    }
-    n = PyList_GET_SIZE(heap);
-    if (n == 0)
-        goto sortit;
-
-    for (i=n/2-1 ; i>=0 ; i--)
-        if(_siftupmax((PyListObject *)heap, i) == -1)
-            goto fail;
-
-    los = PyList_GET_ITEM(heap, 0);
-    while (1) {
-        elem = PyIter_Next(it);
-        if (elem == NULL) {
-            if (PyErr_Occurred())
-                goto fail;
-            else
-                goto sortit;
-        }
-        cmp = PyObject_RichCompareBool(elem, los, Py_LT);
-        if (cmp == -1) {
-            Py_DECREF(elem);
-            goto fail;
-        }
-        if (cmp == 0) {
-            Py_DECREF(elem);
-            continue;
-        }
-
-        oldelem = PyList_GET_ITEM(heap, 0);
-        PyList_SET_ITEM(heap, 0, elem);
-        Py_DECREF(oldelem);
-        if (_siftupmax((PyListObject *)heap, 0) == -1)
-            goto fail;
-        los = PyList_GET_ITEM(heap, 0);
     }
 
-sortit:
-    if (PyList_Sort(heap) == -1)
-        goto fail;
-    Py_DECREF(it);
-    return heap;
+    if (PyList_GET_SIZE(heap) < 1) {
+        PyErr_SetString(PyExc_IndexError, "index out of range");
+        return NULL;
+    }
 
-fail:
-    Py_DECREF(it);
-    Py_XDECREF(heap);
-    return NULL;
+    returnitem = PyList_GET_ITEM(heap, 0);
+    Py_INCREF(item);
+    PyList_SET_ITEM(heap, 0, item);
+    if (_siftupmax((PyListObject *)heap, 0) == -1) {
+        Py_DECREF(returnitem);
+        return NULL;
+    }
+    return returnitem;
 }
 
-PyDoc_STRVAR(nsmallest_doc,
-"Find the n smallest elements in a dataset.\n\
-\n\
-Equivalent to:  sorted(iterable)[:n]\n");
+PyDoc_STRVAR(heapreplace_max_doc, "Maxheap variant of heapreplace");
 
 static PyMethodDef heapq_methods[] = {
     {"heappush",        (PyCFunction)heappush,
@@ -448,8 +394,8 @@ static PyMethodDef heapq_methods[] = {
         METH_VARARGS,           heapreplace_doc},
     {"heapify",         (PyCFunction)heapify,
         METH_O,                 heapify_doc},
-    {"nsmallest",       (PyCFunction)nsmallest,
-        METH_VARARGS,           nsmallest_doc},
+    {"_heapreplace_max",(PyCFunction)_heapreplace_max,
+        METH_VARARGS,           heapreplace_max_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
