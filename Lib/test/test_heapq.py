@@ -13,7 +13,7 @@ c_heapq = support.import_fresh_module('heapq', fresh=['_heapq'])
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
 func_names = ['heapify', 'heappop', 'heappush', 'heappushpop',
-              'heapreplace', '_nsmallest']
+              'heapreplace', '_heapreplace_max']
 
 class TestModules(TestCase):
     def test_py_functions(self):
