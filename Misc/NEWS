@@ -84,8 +84,8 @@ Library
 - Issue #21156: importlib.abc.InspectLoader.source_to_code() is now a
   staticmethod.
 
-- Issue #21424: Simplified and optimized heaqp.nlargest() to make fewer
-  tuple comparisons.
+- Issue #21424: Simplified and optimized heaqp.nlargest() and nmsmallest()
+  to make fewer tuple comparisons.
 
 - Issue #21396: Fix TextIOWrapper(..., write_through=True) to not force a
   flush() on the underlying binary stream.  Patch by akira.

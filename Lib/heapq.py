@@ -127,7 +127,7 @@ From all times, sorting has always been a Great Art! :-)
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
            'nlargest', 'nsmallest', 'heappushpop']
 
-from itertools import islice, count, tee, chain
+from itertools import islice, count
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -179,36 +179,18 @@ def heapify(x):
     for i in reversed(range(n//2)):
         _siftup(x, i)
 
-def _heappushpop_max(heap, item):
-    """Maxheap version of a heappush followed by a heappop."""
-    if heap and item < heap[0]:
-        item, heap[0] = heap[0], item
-        _siftup_max(heap, 0)
-    return item
+def _heapreplace_max(heap, item):
+    """Maxheap version of a heappop followed by a heappush."""
+    returnitem = heap[0]    # raises appropriate IndexError if heap is empty
+    heap[0] = item
+    _siftup_max(heap, 0)
+    return returnitem
 
 def _heapify_max(x):
     """Transform list into a maxheap, in-place, in O(len(x)) time."""
     n = len(x)
     for i in reversed(range(n//2)):
         _siftup_max(x, i)
-
-def nsmallest(n, iterable):
-    """Find the n smallest elements in a dataset.
-
-    Equivalent to:  sorted(iterable)[:n]
-    """
-    if n <= 0:
-        return []
-    it = iter(iterable)
-    result = list(islice(it, n))
-    if not result:
-        return result
-    _heapify_max(result)
-    _heappushpop = _heappushpop_max
-    for elem in it:
-        _heappushpop(result, elem)
-    result.sort()
-    return result
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
@@ -327,6 +309,10 @@ try:
     from _heapq import *
 except ImportError:
     pass
+try:
+    from _heapq import _heapreplace_max
+except ImportError:
+    pass
 
 def merge(*iterables):
     '''Merge multiple sorted inputs into a single sorted output.
@@ -367,22 +353,86 @@ def merge(*iterables):
         yield v
         yield from next.__self__
 
-# Extend the implementations of nsmallest and nlargest to use a key= argument
-_nsmallest = nsmallest
+
+# Algorithm notes for nlargest() and nsmallest()
+# ==============================================
+#
+# Makes just a single pass over the data while keeping the k most extreme values
+# in a heap.  Memory consumption is limited to keeping k values in a list.
+#
+# Measured performance for random inputs:
+#
+#                                   number of comparisons
+#    n inputs     k-extreme values  (average of 5 trials)   % more than min()
+# -------------   ----------------  - -------------------   -----------------
+#      1,000           100                  3,317               133.2%
+#     10,000           100                 14,046                40.5%
+#    100,000           100                105,749                 5.7%
+#  1,000,000           100              1,007,751                 0.8%
+# 10,000,000           100             10,009,401                 0.1%
+#
+# Theoretical number of comparisons for k smallest of n random inputs:
+#
+# Step   Comparisons                  Action
+# ----   --------------------------   ---------------------------
+#  1     1.66 * k                     heapify the first k-inputs
+#  2     n - k                        compare remaining elements to top of heap
+#  3     k * (1 + lg2(k)) * ln(n/k)   replace the topmost value on the heap
+#  4     k * lg2(k) - (k/2)           final sort of the k most extreme values
+# Combining and simplifying for a rough estimate gives:
+#        comparisons = n + k * (1 + log(n/k)) * (1 + log(k, 2))
+#
+# Computing the number of comparisons for step 3:
+# -----------------------------------------------
+# * For the i-th new value from the iterable, the probability of being in the
+#   k most extreme values is k/i.  For example, the probability of the 101st
+#   value seen being in the 100 most extreme values is 100/101.
+# * If the value is a new extreme value, the cost of inserting it into the
+#   heap is 1 + log(k, 2).
+# * The probabilty times the cost gives:
+#            (k/i) * (1 + log(k, 2))
+# * Summing across the remaining n-k elements gives:
+#            sum((k/i) * (1 + log(k, 2)) for xrange(k+1, n+1))
+# * This reduces to:
+#            (H(n) - H(k)) * k * (1 + log(k, 2))
+# * Where H(n) is the n-th harmonic number estimated by:
+#            gamma = 0.5772156649
+#            H(n) = log(n, e) + gamma + 1.0 / (2.0 * n)
+#   http://en.wikipedia.org/wiki/Harmonic_series_(mathematics)#Rate_of_divergence
+# * Substituting the H(n) formula:
+#            comparisons = k * (1 + log(k, 2)) * (log(n/k, e) + (1/n - 1/k) / 2)
+#
+# Worst-case for step 3:
+# ----------------------
+# In the worst case, the input data is reversed sorted so that every new element
+# must be inserted in the heap:
+#
+#             comparisons = 1.66 * k + log(k, 2) * (n - k)
+#
+# Alternative Algorithms
+# ----------------------
+# Other algorithms were not used because they:
+# 1) Took much more auxiliary memory,
+# 2) Made multiple passes over the data.
+# 3) Made more comparisons in common cases (small k, large n, semi-random input).
+# See the more detailed comparison of approach at:
+# http://code.activestate.com/recipes/577573-compare-algorithms-for-heapqsmallest
+
 def nsmallest(n, iterable, key=None):
     """Find the n smallest elements in a dataset.
 
     Equivalent to:  sorted(iterable, key=key)[:n]
     """
+
     # Short-cut for n==1 is to use min() when len(iterable)>0
     if n == 1:
         it = iter(iterable)
-        head = list(islice(it, 1))
-        if not head:
-            return []
+        sentinel = object()
         if key is None:
-            return [min(chain(head, it))]
-        return [min(chain(head, it), key=key)]
+            result = min(it, default=sentinel)
+        else:
+            result = min(it, default=sentinel, key=key)
+        return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
     try:
@@ -395,15 +445,39 @@ def nsmallest(n, iterable, key=None):
 
     # When key is none, use simpler decoration
     if key is None:
-        it = zip(iterable, count())                         # decorate
-        result = _nsmallest(n, it)
-        return [r[0] for r in result]                       # undecorate
+        it = iter(iterable)
+        result = list(islice(zip(it, count()), n))
+        if not result:
+            return result
+        _heapify_max(result)
+        order = n
+        top = result[0][0]
+        _heapreplace = _heapreplace_max
+        for elem in it:
+            if elem < top:
+                _heapreplace(result, (elem, order))
+                top = result[0][0]
+                order += 1
+        result.sort()
+        return [r[0] for r in result]
 
     # General case, slowest method
-    in1, in2 = tee(iterable)
-    it = zip(map(key, in1), count(), in2)                   # decorate
-    result = _nsmallest(n, it)
-    return [r[2] for r in result]                           # undecorate
+    it = iter(iterable)
+    result = [(key(elem), i, elem) for i, elem in zip(range(n), it)]
+    if not result:
+        return result
+    _heapify_max(result)
+    order = n
+    top = result[0][0]
+    _heapreplace = _heapreplace_max
+    for elem in it:
+        k = key(elem)
+        if k < top:
+            _heapreplace(result, (k, order, elem))
+            top = result[0][0]
+            order += 1
+    result.sort()
+    return [r[2] for r in result]
 
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
@@ -442,9 +516,9 @@ def nlargest(n, iterable, key=None):
         _heapreplace = heapreplace
         for elem in it:
             if top < elem:
-                order -= 1
                 _heapreplace(result, (elem, order))
                 top = result[0][0]
+                order -= 1
         result.sort(reverse=True)
         return [r[0] for r in result]
 
@@ -460,9 +534,9 @@ def nlargest(n, iterable, key=None):
     for elem in it:
         k = key(elem)
         if top < k:
-            order -= 1
             _heapreplace(result, (k, order, elem))
             top = result[0][0]
+            order -= 1
     result.sort(reverse=True)
     return [r[2] for r in result]
 
