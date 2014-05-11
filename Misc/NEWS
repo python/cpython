@@ -3,12 +3,15 @@ Python News
 +++++++++++
 
 What's New in Python 3.4.1?
-==========================
+===========================
 
 Release date: TBA
 
 Core and Builtins
 -----------------
+
+- Issue #21425: Fix flushing of standard streams in the interactive
+  interpreter.
 
 - Issue #21435: In rare cases, when running finalizers on objects in cyclic
   trash a bad pointer dereference could occur due to a subtle flaw in
