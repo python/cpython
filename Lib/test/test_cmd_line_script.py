@@ -187,6 +187,9 @@ class CmdLineTest(unittest.TestCase):
             # Drain stderr until prompt
             while True:
                 data = stderr.read(4)
+                if support.verbose:
+                    print("repl stderr[:4]:", data)
+                    sys.stdout.flush()
                 if data == b">>> ":
                     break
                 stderr.readline()
