@@ -267,89 +267,6 @@ heapify(PyObject *self, PyObject *heap)
 PyDoc_STRVAR(heapify_doc,
 "Transform list into a heap, in-place, in O(len(heap)) time.");
 
-static PyObject *
-nlargest(PyObject *self, PyObject *args)
-{
-    PyObject *heap=NULL, *elem, *iterable, *sol, *it, *oldelem;
-    Py_ssize_t i, n;
-    int cmp;
-
-    if (!PyArg_ParseTuple(args, "nO:nlargest", &n, &iterable))
-        return NULL;
-
-    it = PyObject_GetIter(iterable);
-    if (it == NULL)
-        return NULL;
-
-    heap = PyList_New(0);
-    if (heap == NULL)
-        goto fail;
-
-    for (i=0 ; i<n ; i++ ){
-        elem = PyIter_Next(it);
-        if (elem == NULL) {
-            if (PyErr_Occurred())
-                goto fail;
-            else
-                goto sortit;
-        }
-        if (PyList_Append(heap, elem) == -1) {
-            Py_DECREF(elem);
-            goto fail;
-        }
-        Py_DECREF(elem);
-    }
-    if (PyList_GET_SIZE(heap) == 0)
-        goto sortit;
-
-    for (i=n/2-1 ; i>=0 ; i--)
-        if(_siftup((PyListObject *)heap, i) == -1)
-            goto fail;
-
-    sol = PyList_GET_ITEM(heap, 0);
-    while (1) {
-        elem = PyIter_Next(it);
-        if (elem == NULL) {
-            if (PyErr_Occurred())
-                goto fail;
-            else
-                goto sortit;
-        }
-        cmp = PyObject_RichCompareBool(sol, elem, Py_LT);
-        if (cmp == -1) {
-            Py_DECREF(elem);
-            goto fail;
-        }
-        if (cmp == 0) {
-            Py_DECREF(elem);
-            continue;
-        }
-        oldelem = PyList_GET_ITEM(heap, 0);
-        PyList_SET_ITEM(heap, 0, elem);
-        Py_DECREF(oldelem);
-        if (_siftup((PyListObject *)heap, 0) == -1)
-            goto fail;
-        sol = PyList_GET_ITEM(heap, 0);
-    }
-sortit:
-    if (PyList_Sort(heap) == -1)
-        goto fail;
-    if (PyList_Reverse(heap) == -1)
-        goto fail;
-    Py_DECREF(it);
-    return heap;
-
-fail:
-    Py_DECREF(it);
-    Py_XDECREF(heap);
-    return NULL;
-}
-
-PyDoc_STRVAR(nlargest_doc,
-"Find the n largest elements in a dataset.\n\
-\n\
-Equivalent to:  sorted(iterable, reverse=True)[:n]\n");
-
 static int
 _siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
@@ -531,8 +448,6 @@ static PyMethodDef heapq_methods[] = {
         METH_VARARGS,           heapreplace_doc},
     {"heapify",         (PyCFunction)heapify,
         METH_O,                 heapify_doc},
-    {"nlargest",        (PyCFunction)nlargest,
-        METH_VARARGS,           nlargest_doc},
     {"nsmallest",       (PyCFunction)nsmallest,
         METH_VARARGS,           nsmallest_doc},
     {NULL,              NULL}           /* sentinel */

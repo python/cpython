@@ -192,81 +192,6 @@ def _heapify_max(x):
     for i in reversed(range(n//2)):
         _siftup_max(x, i)
 
-
-# Algorithm notes for nlargest() and nsmallest()
-# ==============================================
-#
-# Makes just one pass over the data while keeping the n most extreme values
-# in a heap.  Memory consumption is limited to keeping n values in a list.
-#
-# Number of comparisons for n random inputs, keeping the k smallest values:
-# -----------------------------------------------------------
-# Step   Comparisons                 Action
-#  1        1.66*k                   heapify the first k-inputs
-#  2        n - k                    compare new input elements to top of heap
-#  3        k*lg2(k)*(ln(n)-ln(k))   add new extreme values to the heap
-#  4        k*lg2(k)                 final sort of the k most extreme values
-#
-#                                      number of comparisons
-# n-random inputs   k-extreme values    average of 5 trials     % more than min()
-# ---------------   ----------------    -------------------     -----------------
-#       10,000            100                   14,046                 40.5%
-#      100,000            100                  105,749                  5.7%
-#    1,000,000            100                1,007,751                  0.8%
-#
-# Computing the number of comparisons for step 3:
-# -----------------------------------------------
-# * For the i-th new value from the iterable, the probability of being in the
-#   k most extreme values is k/i.  For example, the probability of the 101st
-#   value seen being in the 100 most extreme values is 100/101.
-# * If the value is a new extreme value, the cost of inserting it into the
-#   heap is log(k, 2).
-# * The probabilty times the cost gives:
-#            (k/i) * log(k, 2)
-# * Summing across the remaining n-k elements gives:
-#            sum((k/i) * log(k, 2) for xrange(k+1, n+1))
-# * This reduces to:
-#            (H(n) - H(k)) * k * log(k, 2)
-# * Where H(n) is the n-th harmonic number estimated by:
-#            H(n) = log(n, e) + gamma + 1.0 / (2.0 * n)
-#            gamma = 0.5772156649
-#   http://en.wikipedia.org/wiki/Harmonic_series_(mathematics)#Rate_of_divergence
-# * Substituting the H(n) formula and ignoring the (1/2*n) fraction gives:
-#            comparisons = k * log(k, 2) * (log(n,e) - log(k, e))
-#
-# Worst-case for step 3:
-# ----------------------
-# In the worst case, the input data is reversed sorted so that every new element
-# must be inserted in the heap:
-#             comparisons = log(k, 2) * (n - k)
-#
-# Alternative Algorithms
-# ----------------------
-# Other algorithms were not used because they:
-# 1) Took much more auxiliary memory,
-# 2) Made multiple passes over the data.
-# 3) Made more comparisons in common cases (small k, large n, semi-random input).
-# See detailed comparisons at:
-# http://code.activestate.com/recipes/577573-compare-algorithms-for-heapqsmallest
-
-def nlargest(n, iterable):
-    """Find the n largest elements in a dataset.
-
-    Equivalent to:  sorted(iterable, reverse=True)[:n]
-    """
-    if n <= 0:
-        return []
-    it = iter(iterable)
-    result = list(islice(it, n))
-    if not result:
-        return result
-    heapify(result)
-    _heappushpop = heappushpop
-    for elem in it:
-        _heappushpop(result, elem)
-    result.sort(reverse=True)
-    return result
-
 def nsmallest(n, iterable):
     """Find the n smallest elements in a dataset.
 
@@ -480,7 +405,6 @@ def nsmallest(n, iterable, key=None):
     result = _nsmallest(n, it)
     return [r[2] for r in result]                           # undecorate
 
-_nlargest = nlargest
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
 
@@ -490,12 +414,12 @@ def nlargest(n, iterable, key=None):
     # Short-cut for n==1 is to use max() when len(iterable)>0
     if n == 1:
         it = iter(iterable)
-        head = list(islice(it, 1))
-        if not head:
-            return []
+        sentinel = object()
         if key is None:
-            return [max(chain(head, it))]
-        return [max(chain(head, it), key=key)]
+            result = max(it, default=sentinel)
+        else:
+            result = max(it, default=sentinel, key=key)
+        return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
     try:
@@ -508,15 +432,40 @@ def nlargest(n, iterable, key=None):
 
     # When key is none, use simpler decoration
     if key is None:
-        it = zip(iterable, count(0,-1))                     # decorate
-        result = _nlargest(n, it)
-        return [r[0] for r in result]                       # undecorate
+        it = iter(iterable)
+        result = list(islice(zip(it, count(0, -1)), n))
+        if not result:
+            return result
+        heapify(result)
+        order = -n
+        top = result[0][0]
+        _heapreplace = heapreplace
+        for elem in it:
+            if top < elem:
+                order -= 1
+                _heapreplace(result, (elem, order))
+                top = result[0][0]
+        result.sort(reverse=True)
+        return [r[0] for r in result]
 
     # General case, slowest method
-    in1, in2 = tee(iterable)
-    it = zip(map(key, in1), count(0,-1), in2)               # decorate
-    result = _nlargest(n, it)
-    return [r[2] for r in result]                           # undecorate
+    it = iter(iterable)
+    result = [(key(elem), i, elem) for i, elem in zip(range(0, -n, -1), it)]
+    if not result:
+        return result
+    heapify(result)
+    order = -n
+    top = result[0][0]
+    _heapreplace = heapreplace
+    for elem in it:
+        k = key(elem)
+        if top < k:
+            order -= 1
+            _heapreplace(result, (k, order, elem))
+            top = result[0][0]
+    result.sort(reverse=True)
+    return [r[2] for r in result]
+
 
 if __name__ == "__main__":
     # Simple sanity test
