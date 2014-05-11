@@ -323,8 +323,6 @@ Sequences
          object: mutable sequence
          object: mutable
          pair: assignment; statement
-         single: delete
-         statement: del
          single: subscription
          single: slicing
 
