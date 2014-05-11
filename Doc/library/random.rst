@@ -43,6 +43,11 @@ The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
 from sources provided by the operating system.
 
+.. warning::
+
+   The pseudo-random generators of this module should not be used for
+   security purposes.
+
 
 Bookkeeping functions:
 
