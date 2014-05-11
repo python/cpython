@@ -309,8 +309,8 @@ compare_digest(PyObject *self, PyObject *args)
 
     /* Unicode string */
     if (PyUnicode_Check(a) && PyUnicode_Check(b)) {
-        rc = _tscmp(PyUnicode_AS_DATA(a),
-                    PyUnicode_AS_DATA(b),
+        rc = _tscmp((const unsigned char *)PyUnicode_AS_DATA(a),
+                    (const unsigned char *)PyUnicode_AS_DATA(b),
                     PyUnicode_GET_DATA_SIZE(a),
                     PyUnicode_GET_DATA_SIZE(b));
     }
