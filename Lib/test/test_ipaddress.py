@@ -628,6 +628,119 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual("IPv6Interface('::1/128')",
                          repr(ipaddress.IPv6Interface('::1')))
 
+    # issue #16531: constructing IPv4Network from a (address, mask) tuple
+    def testIPv4Tuple(self):
+        # /32
+        ip = ipaddress.IPv4Address('192.0.2.1')
+        net = ipaddress.IPv4Network('192.0.2.1/32')
+        self.assertEqual(ipaddress.IPv4Network(('192.0.2.1', 32)), net)
+        self.assertEqual(ipaddress.IPv4Network((ip, 32)), net)
+        self.assertEqual(ipaddress.IPv4Network((3221225985, 32)), net)
+        self.assertEqual(ipaddress.IPv4Network(('192.0.2.1',
+                                                '255.255.255.255')), net)
+        self.assertEqual(ipaddress.IPv4Network((ip,
+                                                '255.255.255.255')), net)
+        self.assertEqual(ipaddress.IPv4Network((3221225985,
+                                                '255.255.255.255')), net)
+        # strict=True and host bits set
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network(('192.0.2.1', 24))
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network((ip, 24))
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network((3221225985, 24))
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network(('192.0.2.1', '255.255.255.0'))
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network((ip, '255.255.255.0'))
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network((3221225985, '255.255.255.0'))
+        # strict=False and host bits set
+        net = ipaddress.IPv4Network('192.0.2.0/24')
+        self.assertEqual(ipaddress.IPv4Network(('192.0.2.1', 24),
+                                               strict=False), net)
+        self.assertEqual(ipaddress.IPv4Network((ip, 24),
+                                               strict=False), net)
+        self.assertEqual(ipaddress.IPv4Network((3221225985, 24),
+                                               strict=False), net)
+        self.assertEqual(ipaddress.IPv4Network(('192.0.2.1',
+                                                '255.255.255.0'),
+                                               strict=False), net)
+        self.assertEqual(ipaddress.IPv4Network((ip,
+                                                '255.255.255.0'),
+                                               strict=False), net)
+        self.assertEqual(ipaddress.IPv4Network((3221225985,
+                                                '255.255.255.0'),
+                                               strict=False), net)
+
+        # /24
+        ip = ipaddress.IPv4Address('192.0.2.0')
+        net = ipaddress.IPv4Network('192.0.2.0/24')
+        self.assertEqual(ipaddress.IPv4Network(('192.0.2.0',
+                                                '255.255.255.0')), net)
+        self.assertEqual(ipaddress.IPv4Network((ip,
+                                                '255.255.255.0')), net)
+        self.assertEqual(ipaddress.IPv4Network((3221225984,
+                                                '255.255.255.0')), net)
+        self.assertEqual(ipaddress.IPv4Network(('192.0.2.0', 24)), net)
+        self.assertEqual(ipaddress.IPv4Network((ip, 24)), net)
+        self.assertEqual(ipaddress.IPv4Network((3221225984, 24)), net)
+
+        self.assertEqual(ipaddress.IPv4Interface(('192.0.2.1', 24)),
+                         ipaddress.IPv4Interface('192.0.2.1/24'))
+        self.assertEqual(ipaddress.IPv4Interface((3221225985, 24)),
+                         ipaddress.IPv4Interface('192.0.2.1/24'))
+
+    # issue #16531: constructing IPv6Network from a (address, mask) tuple
+    def testIPv6Tuple(self):
+        # /128
+        ip = ipaddress.IPv6Address('2001:db8::')
+        net = ipaddress.IPv6Network('2001:db8::/128')
+        self.assertEqual(ipaddress.IPv6Network(('2001:db8::', '128')),
+                         net)
+        self.assertEqual(ipaddress.IPv6Network(
+                (42540766411282592856903984951653826560, 128)),
+                         net)
+        self.assertEqual(ipaddress.IPv6Network((ip, '128')),
+                         net)
+        ip = ipaddress.IPv6Address('2001:db8::')
+        net = ipaddress.IPv6Network('2001:db8::/96')
+        self.assertEqual(ipaddress.IPv6Network(('2001:db8::', '96')),
+                         net)
+        self.assertEqual(ipaddress.IPv6Network(
+                (42540766411282592856903984951653826560, 96)),
+                         net)
+        self.assertEqual(ipaddress.IPv6Network((ip, '96')),
+                         net)
+
+        # strict=True and host bits set
+        ip = ipaddress.IPv6Address('2001:db8::1')
+        with self.assertRaises(ValueError):
+            ipaddress.IPv6Network(('2001:db8::1', 96))
+        with self.assertRaises(ValueError):
+            ipaddress.IPv6Network((
+                42540766411282592856903984951653826561, 96))
+        with self.assertRaises(ValueError):
+            ipaddress.IPv6Network((ip, 96))
+        # strict=False and host bits set
+        net = ipaddress.IPv6Network('2001:db8::/96')
+        self.assertEqual(ipaddress.IPv6Network(('2001:db8::1', 96),
+                                               strict=False),
+                         net)
+        self.assertEqual(ipaddress.IPv6Network(
+                             (42540766411282592856903984951653826561, 96),
+                             strict=False),
+                         net)
+        self.assertEqual(ipaddress.IPv6Network((ip, 96), strict=False),
+                         net)
+
+        # /96
+        self.assertEqual(ipaddress.IPv6Interface(('2001:db8::1', '96')),
+                         ipaddress.IPv6Interface('2001:db8::1/96'))
+        self.assertEqual(ipaddress.IPv6Interface(
+                (42540766411282592856903984951653826561, '96')),
+                         ipaddress.IPv6Interface('2001:db8::1/96'))
+
     # issue57
     def testAddressIntMath(self):
         self.assertEqual(ipaddress.IPv4Address('1.1.1.1') + 255,

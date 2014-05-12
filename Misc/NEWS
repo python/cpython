@@ -81,6 +81,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16531: ipaddress.IPv4Network and ipaddress.IPv6Network now accept
+  an (address, netmask) tuple argument, so as to easily construct network
+  objects from existing addresses.
+
 - Issue #21156: importlib.abc.InspectLoader.source_to_code() is now a
   staticmethod.
 
