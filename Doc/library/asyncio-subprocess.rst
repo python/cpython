@@ -262,9 +262,7 @@ display the output::
         stdout = stdout.decode('ascii').rstrip()
         print("Platform: %s" % stdout)
     else:
-        print("Python failed with exit code %s:" % exitcode)
-        sys.stdout.flush()
-        sys.stdout.buffer.flush()
+        print("Python failed with exit code %s:" % exitcode, flush=True)
         sys.stdout.buffer.write(stdout)
         sys.stdout.buffer.flush()
     loop.close()
