@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21418: Fix a crash in the builtin function super() when called without
+  argument and without current frame (ex: embedded Python).
+
 - Issue #21425: Fix flushing of standard streams in the interactive
   interpreter.
 
