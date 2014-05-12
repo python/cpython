@@ -358,6 +358,10 @@ Extension Modules
 IDLE
 ----
 
+- Issue #18104: Add idlelib/idle_test/htest.py with a few sample tests to begin
+  consolidating and improving human-validated tests of Idle. Change other files
+  as needed to work with htest.  Running the module as __main__ runs all tests.
+
 - Issue #21139: Change default paragraph width to 72, the PEP 8 recommendation.
 
 - Issue #21284: Paragraph reformat test passes after user changes reformat width.
