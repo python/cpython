@@ -8,10 +8,11 @@ from tkinter import *
 import tkinter.messagebox as tkMessageBox
 
 class GetCfgSectionNameDialog(Toplevel):
-    def __init__(self, parent, title, message, used_names):
+    def __init__(self, parent, title, message, used_names, _htest=False):
         """
         message - string, informational message to display
         used_names - string collection, names already in use for validity check
+        _htest - bool, change box location when running htest
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -30,11 +31,12 @@ class GetCfgSectionNameDialog(Toplevel):
         self.messageInfo.config(width=self.frameMain.winfo_reqwidth())
         self.geometry(
                 "+%d+%d" % (
-                parent.winfo_rootx() +
-                (parent.winfo_width()/2 - self.winfo_reqwidth()/2),
-                parent.winfo_rooty() +
-                (parent.winfo_height()/2 - self.winfo_reqheight()/2)
-                ) )  #centre dialog over parent
+                    parent.winfo_rootx() +
+                    (parent.winfo_width()/2 - self.winfo_reqwidth()/2),
+                    parent.winfo_rooty() +
+                    ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
+                    if not _htest else 100)
+                ) )  #centre dialog over parent (or below htest box)
         self.deiconify()  #geometry set, unhide
         self.wait_window()
 
@@ -92,15 +94,5 @@ if __name__ == '__main__':
     import unittest
     unittest.main('idlelib.idle_test.test_config_name', verbosity=2, exit=False)
 
-    # also human test the dialog
-    root = Tk()
-    def run():
-        dlg=GetCfgSectionNameDialog(root,'Get Name',
-                "After the text entered with [Ok] is stripped, <nothing>, "
-                "'abc', or more that 30 chars are errors. "
-                "Close with a valid entry (printed), [Cancel], or [X]",
-                {'abc'})
-        print(dlg.result)
-    Message(root, text='').pack()  # will be needed for oher dialog tests
-    Button(root, text='Click to begin dialog test', command=run).pack()
-    root.mainloop()
+    from idlelib.idle_test.htest import run
+    run(GetCfgSectionNameDialog)
