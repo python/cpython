@@ -6919,9 +6919,16 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
-        PyFrameObject *f = PyThreadState_GET()->frame;
-        PyCodeObject *co = f->f_code;
+        PyFrameObject *f;
+        PyCodeObject *co;
         Py_ssize_t i, n;
+        f = PyThreadState_GET()->frame;
+        if (f == NULL) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "super(): no current frame");
+            return -1;
+        }
+        co = f->f_code;
         if (co == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no code object");
