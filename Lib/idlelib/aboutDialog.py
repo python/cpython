@@ -12,7 +12,7 @@ class AboutDialog(Toplevel):
     """Modal about dialog for idle
 
     """
-    def __init__(self,parent,title):
+    def __init__(self, parent, title):
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+30,
@@ -136,10 +136,5 @@ class AboutDialog(Toplevel):
         self.destroy()
 
 if __name__ == '__main__':
-    # test the dialog
-    root = Tk()
-    def run():
-        from idlelib import aboutDialog
-        aboutDialog.AboutDialog(root, 'About')
-    Button(root, text='Dialog', command=run).pack()
-    root.mainloop()
+    from idlelib.idle_test.htest import run
+    run(AboutDialog)
