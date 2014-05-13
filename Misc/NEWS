@@ -187,6 +187,8 @@ Library
 
 - Issue #20884: Don't assume that __file__ is defined on importlib.__init__.
 
+- Issue #21499: Ignore __builtins__ in several test_importlib.test_api tests.
+
 - Issue #20879: Delay the initialization of encoding and decoding tables for
   base32, ascii85 and base85 codecs in the base64 module, and delay the
   initialization of the unquote_to_bytes() table of the urllib.parse module, to
