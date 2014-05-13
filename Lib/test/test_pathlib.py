@@ -1251,6 +1251,26 @@ class _BasePathTest(object):
         p = self.cls.cwd()
         self._test_cwd(p)
 
+    def test_samefile(self):
+        fileA_path = os.path.join(BASE, 'fileA')
+        fileB_path = os.path.join(BASE, 'dirB', 'fileB')
+        p = self.cls(fileA_path)
+        pp = self.cls(fileA_path)
+        q = self.cls(fileB_path)
+        self.assertTrue(p.samefile(fileA_path))
+        self.assertTrue(p.samefile(pp))
+        self.assertFalse(p.samefile(fileB_path))
+        self.assertFalse(p.samefile(q))
+        # Test the non-existent file case
+        non_existent = os.path.join(BASE, 'foo')
+        r = self.cls(non_existent)
+        self.assertRaises(FileNotFoundError, p.samefile, r)
+        self.assertRaises(FileNotFoundError, p.samefile, non_existent)
+        self.assertRaises(FileNotFoundError, r.samefile, p)
+        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
+        self.assertRaises(FileNotFoundError, r.samefile, r)
+        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
+
     def test_empty_path(self):
         # The empty path points to '.'
         p = self.cls('')

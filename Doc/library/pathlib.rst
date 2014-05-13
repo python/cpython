@@ -884,6 +884,25 @@ call fails (for example because the path doesn't exist):
    Remove this directory.  The directory must be empty.
 
 
+.. method:: Path.samefile(other_path)
+
+   Return whether this path points to the same file as *other_path*, which
+   can be either a Path object, or a string.  The semantics are similar
+   to :func:`os.path.samefile` and :func:`os.path.samestat`.
+
+   An :exc:`OSError` can be raised if either file cannot be accessed for some
+   reason.
+
+      >>> p = Path('spam')
+      >>> q = Path('eggs')
+      >>> p.samefile(q)
+      False
+      >>> p.samefile('spam')
+      True
+
+   .. versionadded:: 3.5
+
+
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
    Make this path a symbolic link to *target*.  Under Windows,
