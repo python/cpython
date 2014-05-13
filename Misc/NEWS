@@ -109,6 +109,10 @@ Library
   Decimal.quantize() method in the Python version.  It had never been
   present in the C version.
 
+- Issue #21469:  Reduced the risk of false positives in robotparser by
+  checking to make sure that robots.txt has been read or does not exist
+  prior to returning True in can_fetch().
+
 - Issue #19414: Have the OrderedDict mark deleted links as unusable.
   This gives an early failure if the link is deleted during iteration.
 
