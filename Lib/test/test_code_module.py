@@ -51,7 +51,7 @@ class TestInteractiveConsole(unittest.TestCase):
         self.infunc.side_effect = ["undefined", EOFError('Finished')]
         self.console.interact()
         for call in self.stderr.method_calls:
-            if 'NameError:' in ''.join(call[1]):
+            if 'NameError' in ''.join(call[1]):
                 break
         else:
             raise AssertionError("No syntax error from console")
