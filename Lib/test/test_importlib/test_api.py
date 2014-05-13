@@ -241,13 +241,13 @@ class ReloadTests:
                                 '__file__': path,
                                 '__cached__': cached,
                                 '__doc__': None,
-                                '__builtins__': __builtins__,
                                 }
                     support.create_empty_file(path)
                     module = self.init.import_module(name)
-                    ns = vars(module)
+                    ns = vars(module).copy()
                     loader = ns.pop('__loader__')
                     spec = ns.pop('__spec__')
+                    ns.pop('__builtins__', None)  # An implementation detail.
                     self.assertEqual(spec.name, name)
                     self.assertEqual(spec.loader, loader)
                     self.assertEqual(loader.path, path)
@@ -263,14 +263,14 @@ class ReloadTests:
                                 '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
-                                '__builtins__': __builtins__,
                                 }
                     os.mkdir(name)
                     os.rename(path, init_path)
                     reloaded = self.init.reload(module)
-                    ns = vars(reloaded)
+                    ns = vars(reloaded).copy()
                     loader = ns.pop('__loader__')
                     spec = ns.pop('__spec__')
+                    ns.pop('__builtins__', None)  # An implementation detail.
                     self.assertEqual(spec.name, name)
                     self.assertEqual(spec.loader, loader)
                     self.assertIs(reloaded, module)
@@ -295,10 +295,11 @@ class ReloadTests:
                     with open(bad_path, 'w') as init_file:
                         init_file.write('eggs = None')
                     module = self.init.import_module(name)
-                    ns = vars(module)
+                    ns = vars(module).copy()
                     loader = ns.pop('__loader__')
                     path = ns.pop('__path__')
                     spec = ns.pop('__spec__')
+                    ns.pop('__builtins__', None)  # An implementation detail.
                     self.assertEqual(spec.name, name)
                     self.assertIs(spec.loader, None)
                     self.assertIsNot(loader, None)
@@ -319,14 +320,14 @@ class ReloadTests:
                                 '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
-                                '__builtins__': __builtins__,
                                 'eggs': None,
                                 }
                     os.rename(bad_path, init_path)
                     reloaded = self.init.reload(module)
-                    ns = vars(reloaded)
+                    ns = vars(reloaded).copy()
                     loader = ns.pop('__loader__')
                     spec = ns.pop('__spec__')
+                    ns.pop('__builtins__', None)  # An implementation detail.
                     self.assertEqual(spec.name, name)
                     self.assertEqual(spec.loader, loader)
                     self.assertIs(reloaded, module)
