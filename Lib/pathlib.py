@@ -961,6 +961,17 @@ class Path(PurePath):
         """
         return cls(os.getcwd())
 
+    def samefile(self, other_path):
+        """Return whether `other_file` is the same or not as this file.
+        (as returned by os.path.samefile(file, other_file)).
+        """
+        st = self.stat()
+        try:
+            other_st = other_path.stat()
+        except AttributeError:
+            other_st = os.stat(other_path)
+        return os.path.samestat(st, other_st)
+
     def iterdir(self):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
