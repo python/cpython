@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21398: Fix an unicode error in the pydoc pager when the documentation
+  contains characters not encodable to the stdout encoding.
+
 - Issue #16531: ipaddress.IPv4Network and ipaddress.IPv6Network now accept
   an (address, netmask) tuple argument, so as to easily construct network
   objects from existing addresses.
