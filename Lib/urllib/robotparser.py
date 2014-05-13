@@ -172,7 +172,7 @@ class RuleLine:
         return self.path == "*" or filename.startswith(self.path)
 
     def __str__(self):
-        return (self.allowance and "Allow" or "Disallow") + ": " + self.path
+        return ("Allow" if self.allowance else "Disallow") + ": " + self.path
 
 
 class Entry:
