@@ -7,7 +7,7 @@
     2) PSF license for Python 2.2
 
     The robots.txt Exclusion Protocol is implemented as specified in
-    http://info.webcrawler.com/mak/projects/robots/norobots-rfc.html
+    http://www.robotstxt.org/norobots-rfc.txt
 """
 
 import urllib.parse, urllib.request
@@ -57,7 +57,7 @@ class RobotFileParser:
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
                 self.disallow_all = True
-            elif err.code >= 400:
+            elif err.code >= 400 and err.code < 500:
                 self.allow_all = True
         else:
             raw = f.read()
@@ -85,6 +85,7 @@ class RobotFileParser:
         state = 0
         entry = Entry()
 
+        self.modified()
         for line in lines:
             if not line:
                 if state == 1:
@@ -129,6 +130,12 @@ class RobotFileParser:
             return False
         if self.allow_all:
             return True
+        # Until the robots.txt file has been read or found not
+        # to exist, we must assume that no url is allowable.
+        # This prevents false positives when a user erronenously
+        # calls can_fetch() before calling read().
+        if not self.last_checked:
+            return False
         # search for given user agent matches
         # the first match counts
         parsed_url = urllib.parse.urlparse(urllib.parse.unquote(url))
