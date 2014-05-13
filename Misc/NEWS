@@ -82,6 +82,10 @@ Library
 - Issue #21088: Bugfix for curses.window.addch() regression in 3.4.0.
   In porting to Argument Clinic, the first two arguments were reversed.
 
+- Issue #21469:  Reduced the risk of false positives in robotparser by
+  checking to make sure that robots.txt has been read or does not exist
+  prior to returning True in can_fetch().
+
 - Issue #21321: itertools.islice() now releases the reference to the source
   iterator when the slice is exhausted.  Patch by Anton Afanasyev.
 
