@@ -593,9 +593,6 @@ class StreamReaderTests(unittest.TestCase):
         # of the data writter.  Also we must explicitly attach a child
         # watcher to the event loop.
 
-        watcher = asyncio.get_child_watcher()
-        watcher.attach_loop(self.loop)
-
         code = """\
 import os, sys
 fd = int(sys.argv[1])
@@ -611,9 +608,15 @@ os.close(fd)
         transport, _ = self.loop.run_until_complete(
             self.loop.connect_read_pipe(lambda: protocol, pipe))
 
-        proc = self.loop.run_until_complete(
-            asyncio.create_subprocess_exec(*args, pass_fds={wfd}, loop=self.loop))
-        self.loop.run_until_complete(proc.wait())
+        watcher = asyncio.SafeChildWatcher()
+        watcher.attach_loop(self.loop)
+        try:
+            asyncio.set_child_watcher(watcher)
+            proc = self.loop.run_until_complete(
+                asyncio.create_subprocess_exec(*args, pass_fds={wfd}, loop=self.loop))
+            self.loop.run_until_complete(proc.wait())
+        finally:
+            asyncio.set_child_watcher(None)
 
         os.close(wfd)
         data = self.loop.run_until_complete(reader.read(-1))
