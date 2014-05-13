@@ -364,6 +364,8 @@ Extension Modules
 - Issue #21407: _decimal: The module now supports function signatures.
 
 - Issue #21276: posixmodule: Don't define USE_XATTRS on KFreeBSD and the Hurd.
+- Issue #21226: Set up modules properly in PyImport_ExecCodeModuleObject
+  (and friends).
 
 IDLE
 ----
