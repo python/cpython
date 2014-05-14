@@ -48,9 +48,6 @@
 */
 
 
-#define XSTRINGIZE(v) #v
-#define STRINGIZE(v) XSTRINGIZE(v)
-
 #define CHECK_MBUF_RELEASED(mbuf) \
     if (((_PyManagedBufferObject *)mbuf)->flags&_Py_MANAGED_BUFFER_RELEASED) { \
         PyErr_SetString(PyExc_ValueError,                                      \
@@ -660,7 +657,7 @@ mbuf_add_view(_PyManagedBufferObject *mbuf, const Py_buffer *src)
     if (src->ndim > PyBUF_MAX_NDIM) {
         PyErr_SetString(PyExc_ValueError,
             "memoryview: number of dimensions must not exceed "
-            STRINGIZE(PyBUF_MAX_NDIM));
+            Py_STRINGIFY(PyBUF_MAX_NDIM));
         return NULL;
     }
 
@@ -1341,7 +1338,7 @@ memory_cast(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
         if (ndim > PyBUF_MAX_NDIM) {
             PyErr_SetString(PyExc_ValueError,
                 "memoryview: number of dimensions must not exceed "
-                STRINGIZE(PyBUF_MAX_NDIM));
+                Py_STRINGIFY(PyBUF_MAX_NDIM));
             return NULL;
         }
         if (self->view.ndim != 1 && ndim != 1) {

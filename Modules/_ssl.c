@@ -249,10 +249,8 @@ typedef enum {
 } timeout_state;
 
 /* Wrap error strings with filename and line # */
-#define STRINGIFY1(x) #x
-#define STRINGIFY2(x) STRINGIFY1(x)
 #define ERRSTR1(x,y,z) (x ":" y ": " z)
-#define ERRSTR(x) ERRSTR1("_ssl.c", STRINGIFY2(__LINE__), x)
+#define ERRSTR(x) ERRSTR1("_ssl.c", Py_STRINGIFY(__LINE__), x)
 
 
 /*

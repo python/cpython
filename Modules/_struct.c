@@ -85,8 +85,6 @@ typedef struct { char c; _Bool x; } s_bool;
 #define BOOL_ALIGN 0
 #endif
 
-#define STRINGIFY(x)    #x
-
 #ifdef __powerc
 #pragma options align=reset
 #endif
@@ -546,8 +544,8 @@ np_short(char *p, PyObject *v, const formatdef *f)
         return -1;
     if (x < SHRT_MIN || x > SHRT_MAX){
         PyErr_SetString(StructError,
-                        "short format requires " STRINGIFY(SHRT_MIN)
-                        " <= number <= " STRINGIFY(SHRT_MAX));
+                        "short format requires " Py_STRINGIFY(SHRT_MIN)
+                        " <= number <= " Py_STRINGIFY(SHRT_MAX));
         return -1;
     }
     y = (short)x;
@@ -564,7 +562,8 @@ np_ushort(char *p, PyObject *v, const formatdef *f)
         return -1;
     if (x < 0 || x > USHRT_MAX){
         PyErr_SetString(StructError,
-                        "ushort format requires 0 <= number <= " STRINGIFY(USHRT_MAX));
+                        "ushort format requires 0 <= number <= "
+                        Py_STRINGIFY(USHRT_MAX));
         return -1;
     }
     y = (unsigned short)x;
