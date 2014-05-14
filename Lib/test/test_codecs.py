@@ -1596,6 +1596,12 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertEqual(codecs.decode(b'abc'), 'abc')
         self.assertRaises(UnicodeDecodeError, codecs.decode, b'\xff', 'ascii')
 
+        # test keywords
+        self.assertEqual(codecs.decode(obj=b'\xe4\xf6\xfc', encoding='latin-1'),
+                         '\xe4\xf6\xfc')
+        self.assertEqual(codecs.decode(b'[\xff]', 'ascii', errors='ignore'),
+                         '[]')
+
     def test_encode(self):
         self.assertEqual(codecs.encode('\xe4\xf6\xfc', 'latin-1'),
                          b'\xe4\xf6\xfc')
@@ -1603,6 +1609,12 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertRaises(LookupError, codecs.encode, "foo", "__spam__")
         self.assertEqual(codecs.encode('abc'), b'abc')
         self.assertRaises(UnicodeEncodeError, codecs.encode, '\xffff', 'ascii')
+
+        # test keywords
+        self.assertEqual(codecs.encode(obj='\xe4\xf6\xfc', encoding='latin-1'),
+                         b'\xe4\xf6\xfc')
+        self.assertEqual(codecs.encode('[\xff]', 'ascii', errors='ignore'),
+                         b'[]')
 
     def test_register(self):
         self.assertRaises(TypeError, codecs.register)
