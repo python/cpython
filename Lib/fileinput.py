@@ -320,7 +320,10 @@ class FileInput:
             self._backupfilename = 0
             if self._filename == '-':
                 self._filename = '<stdin>'
-                self._file = sys.stdin
+                if 'b' in self._mode:
+                    self._file = sys.stdin.buffer
+                else:
+                    self._file = sys.stdin
                 self._isstdin = True
             else:
                 if self._inplace:

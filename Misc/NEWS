@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21075: fileinput.FileInput now reads bytes from standard stream if
+  binary mode is specified.  Patch by Sam Kimbrel.
+
 - Issue #19775: Add a samefile() method to pathlib Path objects.  Initial
   patch by Vajrasky Kok.
 
