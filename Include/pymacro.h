@@ -1,12 +1,25 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
+/* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
+
+/* Maximum value between x and y */
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+/* Absolute value of the number x */
+#define Py_ABS(x) ((x) < 0 ? -(x) : (x))
+
+#define _Py_XSTRINGIFY(x) #x
+
+/* Convert the argument to a string. For example, Py_STRINGIFY(123) is replaced
+   with "123" by the preprocessor. Defines are also replaced by their value.
+   For example Py_STRINGIFY(__LINE__) is replaced by the line number, not
+   by "__LINE__". */
+#define Py_STRINGIFY(x) _Py_XSTRINGIFY(x)
 
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
-
 
 /* Assert a build-time dependency, as an expression.
 

@@ -16,9 +16,6 @@ static void raw_free(void *ptr);
 #  define TRACE_DEBUG
 #endif
 
-#define _STR(VAL) #VAL
-#define STR(VAL) _STR(VAL)
-
 /* Protected by the GIL */
 static struct {
     PyMemAllocator mem;
