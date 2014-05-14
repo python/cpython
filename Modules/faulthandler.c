@@ -144,6 +144,10 @@ faulthandler_get_fileno(PyObject *file, int *p_fd)
             PyErr_SetString(PyExc_RuntimeError, "unable to get sys.stderr");
             return NULL;
         }
+        if (file == Py_None) {
+            PyErr_SetString(PyExc_RuntimeError, "sys.stderr is None");
+            return NULL;
+        }
     }
 
     result = _PyObject_CallMethodId(file, &PyId_fileno, "");
