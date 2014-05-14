@@ -19,11 +19,12 @@ try:
 except ImportError:
     gzip = None
 
-from io import StringIO
+from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
 
 from test.support import verbose, TESTFN, run_unittest, check_warnings
 from test.support import unlink as safe_unlink
+from unittest import mock
 
 
 # The fileinput module has 2 interfaces: the FileInput class which does
@@ -231,6 +232,13 @@ class FileInputTests(unittest.TestCase):
             self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
         finally:
             remove_tempfiles(t1)
+
+    def test_stdin_binary_mode(self):
+        with mock.patch('sys.stdin') as m_stdin:
+            m_stdin.buffer = BytesIO(b'spam, bacon, sausage, and spam')
+            fi = FileInput(files=['-'], mode='rb')
+            lines = list(fi)
+            self.assertEqual(lines, [b'spam, bacon, sausage, and spam'])
 
     def test_file_opening_hook(self):
         try:
