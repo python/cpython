@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20998: Fixed re.fullmatch() of repeated single character pattern
+  with ignore case.  Original patch by Matthew Barnett.
+
 - Issue #21075: fileinput.FileInput now reads bytes from standard stream if
   binary mode is specified.  Patch by Sam Kimbrel.
 
