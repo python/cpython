@@ -591,6 +591,31 @@ sys.exit(exitcode)
     def test_register_chain(self):
         self.check_register(chain=True)
 
+    @contextmanager
+    def check_stderr_none(self):
+        stderr = sys.stderr
+        try:
+            sys.stderr = None
+            with self.assertRaises(RuntimeError) as cm:
+                yield
+            self.assertEqual(str(cm.exception), "sys.stderr is None")
+        finally:
+            sys.stderr = stderr
+
+    def test_stderr_None(self):
+        # Issue #21497: provide an helpful error if sys.stderr is None,
+        # instead of just an attribute error: "None has no attribute fileno".
+        with self.check_stderr_none():
+            faulthandler.enable()
+        with self.check_stderr_none():
+            faulthandler.dump_traceback()
+        if hasattr(faulthandler, 'dump_traceback_later'):
+            with self.check_stderr_none():
+                faulthandler.dump_traceback_later(1e-3)
+        if hasattr(faulthandler, "register"):
+            with self.check_stderr_none():
+                faulthandler.register(signal.SIGUSR1)
+
 
 if __name__ == "__main__":
     unittest.main()
