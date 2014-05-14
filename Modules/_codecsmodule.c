@@ -89,13 +89,15 @@ a ValueError. Other possible values are 'ignore', 'replace' and\n\
 codecs.register_error that can handle ValueErrors.");
 
 static PyObject *
-codec_encode(PyObject *self, PyObject *args)
+codec_encode(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"obj", "encoding", "errors", NULL};
     const char *encoding = NULL;
     const char *errors = NULL;
     PyObject *v;
 
-    if (!PyArg_ParseTuple(args, "O|ss:encode", &v, &encoding, &errors))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ss:encode", kwlist,
+                                     &v, &encoding, &errors))
         return NULL;
 
     if (encoding == NULL)
@@ -116,13 +118,15 @@ as well as any other name registered with codecs.register_error that is\n\
 able to handle ValueErrors.");
 
 static PyObject *
-codec_decode(PyObject *self, PyObject *args)
+codec_decode(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"obj", "encoding", "errors", NULL};
     const char *encoding = NULL;
     const char *errors = NULL;
     PyObject *v;
 
-    if (!PyArg_ParseTuple(args, "O|ss:decode", &v, &encoding, &errors))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ss:decode", kwlist,
+                                     &v, &encoding, &errors))
         return NULL;
 
     if (encoding == NULL)
@@ -1120,9 +1124,9 @@ static PyMethodDef _codecs_functions[] = {
         register__doc__},
     {"lookup",                  codec_lookup,                   METH_VARARGS,
         lookup__doc__},
-    {"encode",                  codec_encode,                   METH_VARARGS,
+    {"encode",     (PyCFunction)codec_encode,     METH_VARARGS|METH_KEYWORDS,
         encode__doc__},
-    {"decode",                  codec_decode,                   METH_VARARGS,
+    {"decode",     (PyCFunction)codec_decode,     METH_VARARGS|METH_KEYWORDS,
         decode__doc__},
     {"escape_encode",           escape_encode,                  METH_VARARGS},
     {"escape_decode",           escape_decode,                  METH_VARARGS},
