@@ -1014,7 +1014,7 @@ Replacing functions from the :mod:`popen2` module
 
    (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
    ==>
-   p = Popen(["somestring"], shell=True, bufsize=bufsize,
+   p = Popen("somestring", shell=True, bufsize=bufsize,
              stdin=PIPE, stdout=PIPE, close_fds=True)
    (child_stdout, child_stdin) = (p.stdout, p.stdin)
 
