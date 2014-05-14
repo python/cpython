@@ -13,8 +13,6 @@
 #include "code.h"
 #include "marshal.h"
 
-#define ABS(x) ((x) < 0 ? -(x) : (x))
-
 /* High water mark to determine when the marshalled object is dangerously deep
  * and risks coring the interpreter.  When the object stack gets this deep,
  * raise an exception instead of continuing.
@@ -192,7 +190,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     }
 
     /* set l to number of base PyLong_MARSHAL_BASE digits */
-    n = ABS(Py_SIZE(ob));
+    n = Py_ABS(Py_SIZE(ob));
     l = (n-1) * PyLong_MARSHAL_RATIO;
     d = ob->ob_digit[n-1];
     assert(d != 0); /* a PyLong is always normalized */
@@ -727,8 +725,8 @@ r_PyLong(RFILE *p)
         return NULL;
     }
 
-    size = 1 + (ABS(n) - 1) / PyLong_MARSHAL_RATIO;
-    shorts_in_top_digit = 1 + (ABS(n) - 1) % PyLong_MARSHAL_RATIO;
+    size = 1 + (Py_ABS(n) - 1) / PyLong_MARSHAL_RATIO;
+    shorts_in_top_digit = 1 + (Py_ABS(n) - 1) % PyLong_MARSHAL_RATIO;
     ob = _PyLong_New(size);
     if (ob == NULL)
         return NULL;
