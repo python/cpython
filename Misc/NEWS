@@ -52,6 +52,9 @@ Library
 - Issue #21306: Backport hmac.compare_digest from Python 3. This is part of PEP
   466.
 
+- Issue #21470: Do a better job seeding the random number generator by
+  using enough bytes to span the full state space of the Mersenne Twister.
+
 - Issue #21469:  Reduced the risk of false positives in robotparser by
   checking to make sure that robots.txt has been read or does not exist
   prior to returning True in can_fetch().

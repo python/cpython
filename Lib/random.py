@@ -108,7 +108,9 @@ class Random(_random.Random):
 
         if a is None:
             try:
-                a = long(_hexlify(_urandom(32)), 16)
+                # Seed with enough bytes to span the 19937 bit
+                # state space for the Mersenne Twister
+                a = long(_hexlify(_urandom(2500)), 16)
             except NotImplementedError:
                 import time
                 a = long(time.time() * 256) # use fractional seconds
