@@ -901,6 +901,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     }
 }
 
+#define ENC_UNKNOWN     -1
 #define ENC_UTF8        0
 #define ENC_UTF16BE     1
 #define ENC_UTF16LE     2
@@ -916,7 +917,11 @@ get_standard_encoding(const char *encoding, int *bytelength)
         encoding += 3;
         if (*encoding == '-' || *encoding == '_' )
             encoding++;
-        if (encoding[0] == '1' && encoding[1] == '6') {
+        if (encoding[0] == '8' && encoding[1] == '\0') {
+            *bytelength = 3;
+            return ENC_UTF8;
+        }
+        else if (encoding[0] == '1' && encoding[1] == '6') {
             encoding += 2;
             *bytelength = 2;
             if (*encoding == '\0') {
@@ -955,9 +960,7 @@ get_standard_encoding(const char *encoding, int *bytelength)
             }
         }
     }
-    /* utf-8 */
-    *bytelength = 3;
-    return ENC_UTF8;
+    return ENC_UNKNOWN;
 }
 
 /* This handler is declared static until someone demonstrates
@@ -994,6 +997,12 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
         }
         code = get_standard_encoding(encoding, &bytelength);
         Py_DECREF(encode);
+        if (code == ENC_UNKNOWN) {
+            /* Not supported, fail with original exception */
+            PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
+            Py_DECREF(object);
+            return NULL;
+        }
 
         res = PyBytes_FromStringAndSize(NULL, bytelength*(end-start));
         if (!res) {
@@ -1068,6 +1077,12 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
         }
         code = get_standard_encoding(encoding, &bytelength);
         Py_DECREF(encode);
+        if (code == ENC_UNKNOWN) {
+            /* Not supported, fail with original exception */
+            PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
+            Py_DECREF(object);
+            return NULL;
+        }
 
         /* Try decoding a single surrogate character. If
            there are more, let the codec call us again. */
