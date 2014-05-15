@@ -164,6 +164,14 @@ inspect
   subclassing of :class:`~inspect.Signature` easier (contributed
   by Yury Selivanov and Eric Snow in :issue:`17373`).
 
+ipaddress
+---------
+
+* :class:`ipaddress.IPv4Network` and :class:`ipaddress.IPv6Network` now
+  accept an ``(address, netmask)`` tuple argument, so as to easily construct
+  network objects from existing addresses (contributed by Peter Moody
+  and Antoine Pitrou in :issue:`16531`).
+
 signal
 ------
 
@@ -188,6 +196,13 @@ The following performance enhancements have been added:
   is faster and use less memory (until the bytearray buffer is filled with
   data) for large objects. ``calloc()`` is used instead of ``malloc()`` to
   allocate memory for these objects.
+
+* Some operations on :class:`~ipaddress.IPv4Network` and
+  :class:`~ipaddress.IPv6Network` have been massively sped up, such as
+  :meth:`~ipaddress.IPv4Network.subnets`, :meth:`~ipaddress.IPv4Network.supernet`,
+  :func:`~ipaddress.summarize_address_range`, :func:`~ipaddress.collapse_addresses`.
+  The speed up can range from 3x to 15x.
+  (:issue:`21486`, :issue:`21487`, :issue:`20826`)
 
 
 Build and C API Changes
