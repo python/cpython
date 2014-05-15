@@ -2807,6 +2807,9 @@ class CodePageTest(unittest.TestCase):
             ('[\u20ac]', 'replace', b'[?]'),
             ('[\xff]', 'backslashreplace', b'[\\xff]'),
             ('[\xff]', 'xmlcharrefreplace', b'[&#255;]'),
+            ('\udcff', 'strict', None),
+            ('[\udcff]', 'surrogateescape', b'[\xff]'),
+            ('[\udcff]', 'surrogatepass', None),
         ))
         self.check_decode(932, (
             (b'abc', 'strict', 'abc'),
@@ -2816,6 +2819,7 @@ class CodePageTest(unittest.TestCase):
             (b'[\xff]', 'ignore', '[]'),
             (b'[\xff]', 'replace', '[\ufffd]'),
             (b'[\xff]', 'surrogateescape', '[\udcff]'),
+            (b'[\xff]', 'surrogatepass', None),
             (b'\x81\x00abc', 'strict', None),
             (b'\x81\x00abc', 'ignore', '\x00abc'),
             (b'\x81\x00abc', 'replace', '\ufffd\x00abc'),
@@ -2826,14 +2830,23 @@ class CodePageTest(unittest.TestCase):
             ('abc', 'strict', b'abc'),
             ('\xe9\u20ac', 'strict',  b'\xe9\x80'),
             ('\xff', 'strict', b'\xff'),
+            # test error handlers
             ('\u0141', 'strict', None),
             ('\u0141', 'ignore', b''),
             ('\u0141', 'replace', b'L'),
+            ('\udc98', 'surrogateescape', b'\x98'),
+            ('\udc98', 'surrogatepass', None),
         ))
         self.check_decode(1252, (
             (b'abc', 'strict', 'abc'),
             (b'\xe9\x80', 'strict', '\xe9\u20ac'),
             (b'\xff', 'strict', '\xff'),
+            # invalid bytes
+            (b'[\x98]', 'strict', None),
+            (b'[\x98]', 'ignore', '[]'),
+            (b'[\x98]', 'replace', '[\ufffd]'),
+            (b'[\x98]', 'surrogateescape', '[\udc98]'),
+            (b'[\x98]', 'surrogatepass', None),
         ))
 
     def test_cp_utf7(self):
