@@ -253,7 +253,7 @@ def summarize_address_range(first, last):
             break
 
 
-def _collapse_addresses_recursive(addresses):
+def _collapse_addresses_internal(addresses):
     """Loops through the addresses, collapsing concurrent netblocks.
 
     Example:
@@ -263,7 +263,7 @@ def _collapse_addresses_recursive(addresses):
         ip3 = IPv4Network('192.0.2.128/26')
         ip4 = IPv4Network('192.0.2.192/26')
 
-        _collapse_addresses_recursive([ip1, ip2, ip3, ip4]) ->
+        _collapse_addresses_internal([ip1, ip2, ip3, ip4]) ->
           [IPv4Network('192.0.2.0/24')]
 
         This shouldn't be called directly; it is called via
@@ -277,28 +277,29 @@ def _collapse_addresses_recursive(addresses):
         passed.
 
     """
-    while True:
-        last_addr = None
-        ret_array = []
-        optimized = False
-
-        for cur_addr in addresses:
-            if not ret_array:
-                last_addr = cur_addr
-                ret_array.append(cur_addr)
-            elif (cur_addr.network_address >= last_addr.network_address and
-                cur_addr.broadcast_address <= last_addr.broadcast_address):
-                optimized = True
-            elif cur_addr == list(last_addr.supernet().subnets())[1]:
-                ret_array[-1] = last_addr = last_addr.supernet()
-                optimized = True
-            else:
-                last_addr = cur_addr
-                ret_array.append(cur_addr)
-
-        addresses = ret_array
-        if not optimized:
-            return addresses
+    # First merge
+    to_merge = list(addresses)
+    subnets = {}
+    while to_merge:
+        net = to_merge.pop()
+        supernet = net.supernet()
+        existing = subnets.get(supernet)
+        if existing is None:
+            subnets[supernet] = net
+        elif existing != net:
+            # Merge consecutive subnets
+            del subnets[supernet]
+            to_merge.append(supernet)
+    # Then iterate over resulting networks, skipping subsumed subnets
+    last = None
+    for net in sorted(subnets.values()):
+        if last is not None:
+            # Since they are sorted, last.network_address <= net.network_address
+            # is a given.
+            if last.broadcast_address >= net.broadcast_address:
+                continue
+        yield net
+        last = net
 
 
 def collapse_addresses(addresses):
@@ -347,15 +348,13 @@ def collapse_addresses(addresses):
 
     # sort and dedup
     ips = sorted(set(ips))
-    nets = sorted(set(nets))
 
     while i < len(ips):
         (first, last) = _find_address_range(ips[i:])
         i = ips.index(last) + 1
         addrs.extend(summarize_address_range(first, last))
 
-    return iter(_collapse_addresses_recursive(sorted(
-        addrs + nets, key=_BaseNetwork._get_networks_key)))
+    return _collapse_addresses_internal(addrs + nets)
 
 
 def get_mixed_type_key(obj):
