@@ -1066,8 +1066,9 @@ always available.
      statements and for the prompts of :func:`input`;
    * The interpreter's own prompts and its error messages go to ``stderr``.
 
-   By default, these streams are regular text streams as returned by the
-   :func:`open` function.  Their parameters are chosen as follows:
+   These streams are regular :term:`text files <text file>` like those
+   returned by the :func:`open` function.  Their parameters are chosen as
+   follows:
 
    * The character encoding is platform-dependent.  Under Windows, if the stream
      is interactive (that is, if its :meth:`isatty` method returns ``True``), the
@@ -1075,26 +1076,22 @@ always available.
      platforms, the locale encoding is used (see :meth:`locale.getpreferredencoding`).
 
      Under all platforms though, you can override this value by setting the
-     :envvar:`PYTHONIOENCODING` environment variable.
+     :envvar:`PYTHONIOENCODING` environment variable before starting Python.
 
    * When interactive, standard streams are line-buffered.  Otherwise, they
      are block-buffered like regular text files.  You can override this
      value with the :option:`-u` command-line option.
 
-   To write or read binary data from/to the standard streams, use the
-   underlying binary :data:`~io.TextIOBase.buffer`.  For example, to write
-   bytes to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.  Using
-   :meth:`io.TextIOBase.detach`, streams can be made binary by default.  This
-   function sets :data:`stdin` and :data:`stdout` to binary::
+   .. note::
 
-      def make_streams_binary():
-          sys.stdin = sys.stdin.detach()
-          sys.stdout = sys.stdout.detach()
+      To write or read binary data from/to the standard streams, use the
+      underlying binary :data:`~io.TextIOBase.buffer` object.  For example, to
+      write bytes to :data:`stdout`, use ``sys.stdout.buffer.write(b'abc')``.
 
-   Note that the streams may be replaced with objects (like :class:`io.StringIO`)
-   that do not support the :attr:`~io.BufferedIOBase.buffer` attribute or the
-   :meth:`~io.BufferedIOBase.detach` method and can raise :exc:`AttributeError`
-   or :exc:`io.UnsupportedOperation`.
+      However, if you are writing a library (and do not control in which
+      context its code will be executed), be aware that the standard streams
+      may be replaced with file-like objects like :class:`io.StringIO` which
+      do not support the :attr:`~io.BufferedIOBase.buffer` attribute.
 
 
 .. data:: __stdin__
