@@ -84,6 +84,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20826: Optimize ipaddress.collapse_addresses().
+
 - Issue #21487: Optimize ipaddress.summarize_address_range() and
   ipaddress.{IPv4Network,IPv6Network}.subnets().
 
