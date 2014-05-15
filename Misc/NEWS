@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21487: Optimize ipaddress.summarize_address_range() and
+  ipaddress.{IPv4Network,IPv6Network}.subnets().
+
 - Issue #21486: Optimize parsing of netmasks in ipaddress.IPv4Network and
   ipaddress.IPv6Network.
 
