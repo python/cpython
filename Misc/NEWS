@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13916: Disallowed the surrogatepass error handler for non UTF-*
+  encodings.
+
 - Issue #20998: Fixed re.fullmatch() of repeated single character pattern
   with ignore case.  Original patch by Matthew Barnett.
 
