@@ -134,13 +134,27 @@ New Modules
 Improved Modules
 ================
 
-* Different constants of :mod:`signal` module are now enumeration values using
-  the :mod:`enum` module. This allows meaningful names to be printed during
-  debugging, instead of integer “magic numbers”. (contribute by Giampaolo
-  Rodola' in :issue:`21076`)
+doctest
+-------
 
-* :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`
-  (contributed by Claudiu Popa in :issue:`20627`).
+* :func:`doctest.DocTestSuite` returns an empty :class:`unittest.TestSuite` if
+  *module* contains no docstrings instead of raising :exc:`ValueError`
+  (contributed by Glenn Jones in :issue:`15916`).
+
+importlib
+---------
+
+* :class:`importlib.util.LazyLoader` allows for the lazy loading of modules in
+  applications where startup time is paramount (contributed by Brett Cannon in
+  :issue:`17621`).
+
+* :func:`importlib.abc.InspectLoader.source_to_code` is now a
+  static method to make it easier to work with source code in a string.
+  With a module object that you want to initialize you can then use
+  ``exec(code, module.__dict__)`` to execute the code in the module.
+
+inspect
+-------
 
 * :class:`inspect.Signature` and :class:`inspect.Parameter` are now
   picklable and hashable (contributed by Yury Selivanov in :issue:`20726`
@@ -150,24 +164,25 @@ Improved Modules
   subclassing of :class:`~inspect.Signature` easier (contributed
   by Yury Selivanov and Eric Snow in :issue:`17373`).
 
-* :class:`importlib.util.LazyLoader` allows for the lazy loading of modules in
-  applications where startup time is paramount (contributed by Brett Cannon in
-  :issue:`17621`).
+signal
+------
 
-* :func:`doctest.DocTestSuite` returns an empty :class:`unittest.TestSuite` if
-  *module* contains no docstrings instead of raising :exc:`ValueError`
-  (contributed by Glenn Jones in :issue:`15916`).
+* Different constants of :mod:`signal` module are now enumeration values using
+  the :mod:`enum` module. This allows meaningful names to be printed during
+  debugging, instead of integer “magic numbers”. (contribute by Giampaolo
+  Rodola' in :issue:`21076`)
 
-* :func:`importlib.abc.InspectLoader.source_to_code` is now a
-  static method to make it easier to work with source code in a string.
-  With a module object that you want to initialize you can then use
-  ``exec(code, module.__dict__)`` to execute the code in the module.
+xmlrpc
+------
+
+* :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`
+  (contributed by Claudiu Popa in :issue:`20627`).
 
 
 Optimizations
 =============
 
-Major performance enhancements have been added:
+The following performance enhancements have been added:
 
 * Construction of ``bytes(int)`` and ``bytearray(int)`` (filled by zero bytes)
   is faster and use less memory (until the bytearray buffer is filled with
