@@ -195,11 +195,7 @@ def _count_righthand_zero_bits(number, bits):
     """
     if number == 0:
         return bits
-    for i in range(bits):
-        if (number >> i) & 1:
-            return i
-    # All bits of interest were zero, even if there are more in the number
-    return bits
+    return min(bits, (~number & (number-1)).bit_length())
 
 
 def summarize_address_range(first, last):
@@ -250,12 +246,11 @@ def summarize_address_range(first, last):
     while first_int <= last_int:
         nbits = min(_count_righthand_zero_bits(first_int, ip_bits),
                     (last_int - first_int + 1).bit_length() - 1)
-        net = ip('%s/%d' % (first, ip_bits - nbits))
+        net = ip((first_int, ip_bits - nbits))
         yield net
         first_int += 1 << nbits
         if first_int - 1 == ip._ALL_ONES:
             break
-        first = first.__class__(first_int)
 
 
 def _collapse_addresses_recursive(addresses):
@@ -949,20 +944,11 @@ class _BaseNetwork(_IPAddressBase):
                 'prefix length diff %d is invalid for netblock %s' % (
                     new_prefixlen, self))
 
-        first = self.__class__('%s/%s' %
-                                 (self.network_address,
-                                  self._prefixlen + prefixlen_diff))
-
-        yield first
-        current = first
-        while True:
-            broadcast = current.broadcast_address
-            if broadcast == self.broadcast_address:
-                return
-            new_addr = self._address_class(int(broadcast) + 1)
-            current = self.__class__('%s/%s' % (new_addr,
-                                                new_prefixlen))
-
+        start = int(self.network_address)
+        end = int(self.broadcast_address)
+        step = (int(self.hostmask) + 1) >> prefixlen_diff
+        for new_addr in range(start, end, step):
+            current = self.__class__((new_addr, new_prefixlen))
             yield current
 
     def supernet(self, prefixlen_diff=1, new_prefix=None):
