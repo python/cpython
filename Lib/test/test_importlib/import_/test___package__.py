@@ -75,11 +75,11 @@ class Using__package__PEP302(Using__package__):
 Frozen_UsingPackagePEP302, Source_UsingPackagePEP302 = util.test_both(
         Using__package__PEP302, __import__=util.__import__)
 
-class Using__package__PEP302(Using__package__):
+class Using__package__PEP451(Using__package__):
     mock_modules = util.mock_spec
 
 Frozen_UsingPackagePEP451, Source_UsingPackagePEP451 = util.test_both(
-        Using__package__PEP302, __import__=util.__import__)
+        Using__package__PEP451, __import__=util.__import__)
 
 
 class Setting__package__:
