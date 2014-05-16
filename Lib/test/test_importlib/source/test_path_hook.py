@@ -22,7 +22,10 @@ class PathHookTest:
         # The empty string represents the cwd.
         self.assertTrue(hasattr(self.path_hook()(''), 'find_module'))
 
-Frozen_PathHookTest, Source_PathHooktest = util.test_both(PathHookTest, machinery=machinery)
+
+(Frozen_PathHookTest,
+ Source_PathHooktest
+ ) = util.test_both(PathHookTest, machinery=machinery)
 
 
 if __name__ == '__main__':

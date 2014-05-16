@@ -1,7 +1,7 @@
 from .. import abc
 from .. import util
 
-frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
+machinery = util.import_importlib('importlib.machinery')
 
 import sys
 import types
@@ -65,8 +65,9 @@ class LoaderTests(abc.LoaderTests):
         self.assertEqual(cm.exception.name, module_name)
 
 
-Frozen_LoaderTests, Source_LoaderTests = util.test_both(LoaderTests,
-        machinery=[frozen_machinery, source_machinery])
+(Frozen_LoaderTests,
+ Source_LoaderTests
+ ) = util.test_both(LoaderTests, machinery=machinery)
 
 
 @unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
@@ -98,9 +99,10 @@ class InspectLoaderTests:
             method(util.BUILTINS.bad_name)
         self.assertRaises(util.BUILTINS.bad_name)
 
-Frozen_InspectLoaderTests, Source_InspectLoaderTests = util.test_both(
-        InspectLoaderTests,
-        machinery=[frozen_machinery, source_machinery])
+
+(Frozen_InspectLoaderTests,
+ Source_InspectLoaderTests
+ ) = util.test_both(InspectLoaderTests, machinery=machinery)
 
 
 if __name__ == '__main__':

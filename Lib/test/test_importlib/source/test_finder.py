@@ -195,8 +195,10 @@ class FinderTestsPEP451(FinderTests):
         spec = finder.find_spec(name)
         return spec.loader if spec is not None else spec
 
-Frozen_FinderTestsPEP451, Source_FinderTestsPEP451 = util.test_both(
-        FinderTestsPEP451, machinery=machinery)
+
+(Frozen_FinderTestsPEP451,
+ Source_FinderTestsPEP451
+ ) = util.test_both(FinderTestsPEP451, machinery=machinery)
 
 
 class FinderTestsPEP420(FinderTests):
@@ -209,8 +211,10 @@ class FinderTestsPEP420(FinderTests):
             loader_portions = finder.find_loader(name)
             return loader_portions[0] if loader_only else loader_portions
 
-Frozen_FinderTestsPEP420, Source_FinderTestsPEP420 = util.test_both(
-        FinderTestsPEP420, machinery=machinery)
+
+(Frozen_FinderTestsPEP420,
+ Source_FinderTestsPEP420
+ ) = util.test_both(FinderTestsPEP420, machinery=machinery)
 
 
 class FinderTestsPEP302(FinderTests):
@@ -222,9 +226,10 @@ class FinderTestsPEP302(FinderTests):
             warnings.simplefilter("ignore", DeprecationWarning)
             return finder.find_module(name)
 
-Frozen_FinderTestsPEP302, Source_FinderTestsPEP302 = util.test_both(
-        FinderTestsPEP302, machinery=machinery)
 
+(Frozen_FinderTestsPEP302,
+ Source_FinderTestsPEP302
+ ) = util.test_both(FinderTestsPEP302, machinery=machinery)
 
 
 if __name__ == '__main__':

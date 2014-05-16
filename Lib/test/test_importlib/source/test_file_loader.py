@@ -235,9 +235,11 @@ class SimpleTest(abc.LoaderTests):
                 warnings.simplefilter('ignore', DeprecationWarning)
                 loader.load_module('bad name')
 
-Frozen_SimpleTest, Source_SimpleTest = util.test_both(
-        SimpleTest, importlib=importlib, machinery=machinery, abc=importlib_abc,
-        util=importlib_util)
+
+(Frozen_SimpleTest,
+ Source_SimpleTest
+ ) = util.test_both(SimpleTest, importlib=importlib, machinery=machinery,
+                    abc=importlib_abc, util=importlib_util)
 
 
 class BadBytecodeTest:
@@ -346,6 +348,7 @@ class BadBytecodeTest:
                                     lambda bc: b'\x00\x00\x00\x00' + bc[4:])
             test('_temp', mapping, bc_path)
 
+
 class BadBytecodeTestPEP451(BadBytecodeTest):
 
     def import_(self, file, module_name):
@@ -353,6 +356,7 @@ class BadBytecodeTestPEP451(BadBytecodeTest):
         module = types.ModuleType(module_name)
         module.__spec__ = self.util.spec_from_loader(module_name, loader)
         loader.exec_module(module)
+
 
 class BadBytecodeTestPEP302(BadBytecodeTest):
 
@@ -490,21 +494,29 @@ class SourceLoaderBadBytecodeTest:
                 # Make writable for eventual clean-up.
                 os.chmod(bytecode_path, stat.S_IWUSR)
 
+
 class SourceLoaderBadBytecodeTestPEP451(
         SourceLoaderBadBytecodeTest, BadBytecodeTestPEP451):
     pass
 
-Frozen_SourceBadBytecodePEP451, Source_SourceBadBytecodePEP451 = util.test_both(
-        SourceLoaderBadBytecodeTestPEP451, importlib=importlib, machinery=machinery,
-        abc=importlib_abc, util=importlib_util)
+
+(Frozen_SourceBadBytecodePEP451,
+ Source_SourceBadBytecodePEP451
+ ) = util.test_both(SourceLoaderBadBytecodeTestPEP451, importlib=importlib,
+                    machinery=machinery, abc=importlib_abc,
+                    util=importlib_util)
+
 
 class SourceLoaderBadBytecodeTestPEP302(
         SourceLoaderBadBytecodeTest, BadBytecodeTestPEP302):
     pass
 
-Frozen_SourceBadBytecodePEP302, Source_SourceBadBytecodePEP302 = util.test_both(
-        SourceLoaderBadBytecodeTestPEP302, importlib=importlib, machinery=machinery,
-        abc=importlib_abc, util=importlib_util)
+
+(Frozen_SourceBadBytecodePEP302,
+ Source_SourceBadBytecodePEP302
+ ) = util.test_both(SourceLoaderBadBytecodeTestPEP302, importlib=importlib,
+                    machinery=machinery, abc=importlib_abc,
+                    util=importlib_util)
 
 
 class SourcelessLoaderBadBytecodeTest:
@@ -566,21 +578,29 @@ class SourcelessLoaderBadBytecodeTest:
     def test_non_code_marshal(self):
         self._test_non_code_marshal(del_source=True)
 
+
 class SourcelessLoaderBadBytecodeTestPEP451(SourcelessLoaderBadBytecodeTest,
         BadBytecodeTestPEP451):
     pass
 
-Frozen_SourcelessBadBytecodePEP451, Source_SourcelessBadBytecodePEP451 = util.test_both(
-        SourcelessLoaderBadBytecodeTestPEP451, importlib=importlib,
-        machinery=machinery, abc=importlib_abc, util=importlib_util)
+
+(Frozen_SourcelessBadBytecodePEP451,
+ Source_SourcelessBadBytecodePEP451
+ ) = util.test_both(SourcelessLoaderBadBytecodeTestPEP451, importlib=importlib,
+                    machinery=machinery, abc=importlib_abc,
+                    util=importlib_util)
+
 
 class SourcelessLoaderBadBytecodeTestPEP302(SourcelessLoaderBadBytecodeTest,
         BadBytecodeTestPEP302):
     pass
 
-Frozen_SourcelessBadBytecodePEP302, Source_SourcelessBadBytecodePEP302 = util.test_both(
-        SourcelessLoaderBadBytecodeTestPEP302, importlib=importlib,
-        machinery=machinery, abc=importlib_abc, util=importlib_util)
+
+(Frozen_SourcelessBadBytecodePEP302,
+ Source_SourcelessBadBytecodePEP302
+ ) = util.test_both(SourcelessLoaderBadBytecodeTestPEP302, importlib=importlib,
+                    machinery=machinery, abc=importlib_abc,
+                    util=importlib_util)
 
 
 if __name__ == '__main__':

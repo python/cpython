@@ -35,8 +35,10 @@ class FinderTests(abc.FinderTests):
     def test_failure(self):
         self.assertIsNone(self.find_module('asdfjkl;'))
 
-Frozen_FinderTests, Source_FinderTests = util.test_both(
-        FinderTests, machinery=machinery)
+
+(Frozen_FinderTests,
+ Source_FinderTests
+ ) = util.test_both(FinderTests, machinery=machinery)
 
 
 if __name__ == '__main__':

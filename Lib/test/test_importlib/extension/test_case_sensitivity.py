@@ -5,7 +5,7 @@ import unittest
 
 from .. import util
 
-frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
+machinery = util.import_importlib('importlib.machinery')
 
 
 # XXX find_spec tests
@@ -41,9 +41,10 @@ class ExtensionModuleCaseSensitivityTest:
             loader = self.find_module()
             self.assertTrue(hasattr(loader, 'load_module'))
 
-Frozen_ExtensionCaseSensitivity, Source_ExtensionCaseSensitivity = util.test_both(
-        ExtensionModuleCaseSensitivityTest,
-        machinery=[frozen_machinery, source_machinery])
+
+(Frozen_ExtensionCaseSensitivity,
+ Source_ExtensionCaseSensitivity
+ ) = util.test_both(ExtensionModuleCaseSensitivityTest, machinery=machinery)
 
 
 if __name__ == '__main__':

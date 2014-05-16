@@ -85,8 +85,10 @@ class ExecModuleTests(abc.LoaderTests):
             self.exec_module('_not_real')
         self.assertEqual(cm.exception.name, '_not_real')
 
-Frozen_ExecModuleTests, Source_ExecModuleTests = util.test_both(ExecModuleTests,
-                                                        machinery=machinery)
+
+(Frozen_ExecModuleTests,
+ Source_ExecModuleTests
+ ) = util.test_both(ExecModuleTests, machinery=machinery)
 
 
 class LoaderTests(abc.LoaderTests):
@@ -175,8 +177,10 @@ class LoaderTests(abc.LoaderTests):
             self.machinery.FrozenImporter.load_module('_not_real')
         self.assertEqual(cm.exception.name, '_not_real')
 
-Frozen_LoaderTests, Source_LoaderTests = util.test_both(LoaderTests,
-                                                        machinery=machinery)
+
+(Frozen_LoaderTests,
+ Source_LoaderTests
+ ) = util.test_both(LoaderTests, machinery=machinery)
 
 
 class InspectLoaderTests:
@@ -214,8 +218,9 @@ class InspectLoaderTests:
                 method('importlib')
             self.assertEqual(cm.exception.name, 'importlib')
 
-Frozen_ILTests, Source_ILTests = util.test_both(InspectLoaderTests,
-                                                machinery=machinery)
+(Frozen_ILTests,
+ Source_ILTests
+ ) = util.test_both(InspectLoaderTests, machinery=machinery)
 
 
 if __name__ == '__main__':
