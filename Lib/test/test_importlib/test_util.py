@@ -1,8 +1,8 @@
-from importlib import util
+import importlib.util
 from . import util as test_util
-frozen_init, source_init = test_util.import_importlib('importlib')
-frozen_machinery, source_machinery = test_util.import_importlib('importlib.machinery')
-frozen_util, source_util = test_util.import_importlib('importlib.util')
+init = test_util.import_importlib('importlib')
+machinery = test_util.import_importlib('importlib.machinery')
+util = test_util.import_importlib('importlib.util')
 
 import os
 import sys
@@ -32,8 +32,10 @@ class DecodeSourceBytesTests:
         self.assertEqual(self.util.decode_source(source_bytes),
                          '\n'.join([self.source, self.source]))
 
-Frozen_DecodeSourceBytesTests, Source_DecodeSourceBytesTests = test_util.test_both(
-        DecodeSourceBytesTests, util=[frozen_util, source_util])
+
+(Frozen_DecodeSourceBytesTests,
+ Source_DecodeSourceBytesTests
+ ) = test_util.test_both(DecodeSourceBytesTests, util=util)
 
 
 class ModuleForLoaderTests:
@@ -161,8 +163,10 @@ class ModuleForLoaderTests:
             self.assertIs(module.__loader__, loader)
             self.assertEqual(module.__package__, name)
 
-Frozen_ModuleForLoaderTests, Source_ModuleForLoaderTests = test_util.test_both(
-        ModuleForLoaderTests, util=[frozen_util, source_util])
+
+(Frozen_ModuleForLoaderTests,
+ Source_ModuleForLoaderTests
+ ) = test_util.test_both(ModuleForLoaderTests, util=util)
 
 
 class SetPackageTests:
@@ -222,18 +226,25 @@ class SetPackageTests:
         self.assertEqual(wrapped.__name__, fxn.__name__)
         self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
-Frozen_SetPackageTests, Source_SetPackageTests = test_util.test_both(
-        SetPackageTests, util=[frozen_util, source_util])
+
+(Frozen_SetPackageTests,
+ Source_SetPackageTests
+ ) = test_util.test_both(SetPackageTests, util=util)
 
 
 class SetLoaderTests:
 
     """Tests importlib.util.set_loader()."""
 
-    class DummyLoader:
-        @util.set_loader
-        def load_module(self, module):
-            return self.module
+    @property
+    def DummyLoader(self):
+        # Set DummyLoader on the class lazily.
+        class DummyLoader:
+            @self.util.set_loader
+            def load_module(self, module):
+                return self.module
+        self.__class__.DummyLoader = DummyLoader
+        return DummyLoader
 
     def test_no_attribute(self):
         loader = self.DummyLoader()
@@ -262,17 +273,10 @@ class SetLoaderTests:
             warnings.simplefilter('ignore', DeprecationWarning)
             self.assertEqual(42, loader.load_module('blah').__loader__)
 
-class Frozen_SetLoaderTests(SetLoaderTests, unittest.TestCase):
-    class DummyLoader:
-        @frozen_util.set_loader
-        def load_module(self, module):
-            return self.module
 
-class Source_SetLoaderTests(SetLoaderTests, unittest.TestCase):
-    class DummyLoader:
-        @source_util.set_loader
-        def load_module(self, module):
-            return self.module
+(Frozen_SetLoaderTests,
+ Source_SetLoaderTests
+ ) = test_util.test_both(SetLoaderTests, util=util)
 
 
 class ResolveNameTests:
@@ -307,9 +311,10 @@ class ResolveNameTests:
         with self.assertRaises(ValueError):
             self.util.resolve_name('..bacon', 'spam')
 
-Frozen_ResolveNameTests, Source_ResolveNameTests = test_util.test_both(
-        ResolveNameTests,
-        util=[frozen_util, source_util])
+
+(Frozen_ResolveNameTests,
+ Source_ResolveNameTests
+ ) = test_util.test_both(ResolveNameTests, util=util)
 
 
 class FindSpecTests:
@@ -446,15 +451,10 @@ class FindSpecTests:
             self.assertNotIn(fullname, sorted(sys.modules))
 
 
-class Frozen_FindSpecTests(FindSpecTests, unittest.TestCase):
-    init = frozen_init
-    machinery = frozen_machinery
-    util = frozen_util
-
-class Source_FindSpecTests(FindSpecTests, unittest.TestCase):
-    init = source_init
-    machinery = source_machinery
-    util = source_util
+(Frozen_FindSpecTests,
+ Source_FindSpecTests
+ ) = test_util.test_both(FindSpecTests, init=init, util=util,
+                         machinery=machinery)
 
 
 class MagicNumberTests:
@@ -467,8 +467,10 @@ class MagicNumberTests:
         # The magic number uses \r\n to come out wrong when splitting on lines.
         self.assertTrue(self.util.MAGIC_NUMBER.endswith(b'\r\n'))
 
-Frozen_MagicNumberTests, Source_MagicNumberTests = test_util.test_both(
-        MagicNumberTests, util=[frozen_util, source_util])
+
+(Frozen_MagicNumberTests,
+ Source_MagicNumberTests
+ ) = test_util.test_both(MagicNumberTests, util=util)
 
 
 class PEP3147Tests:
@@ -583,9 +585,10 @@ class PEP3147Tests:
             ValueError, self.util.source_from_cache,
             '/foo/bar/foo.cpython-32.foo.pyc')
 
-Frozen_PEP3147Tests, Source_PEP3147Tests = test_util.test_both(
-        PEP3147Tests,
-        util=[frozen_util, source_util])
+
+(Frozen_PEP3147Tests,
+ Source_PEP3147Tests
+ ) = test_util.test_both(PEP3147Tests, util=util)
 
 
 if __name__ == '__main__':

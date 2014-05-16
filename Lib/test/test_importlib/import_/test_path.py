@@ -158,8 +158,10 @@ class FinderTests:
             got = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(got, success_finder.spec)
 
-Frozen_FinderTests, Source_FinderTests = util.test_both(
-        FinderTests, importlib=importlib, machinery=machinery)
+
+(Frozen_FinderTests,
+ Source_FinderTests
+ ) = util.test_both(FinderTests, importlib=importlib, machinery=machinery)
 
 
 class PathEntryFinderTests:
@@ -182,8 +184,10 @@ class PathEntryFinderTests:
                                path_hooks=[Finder]):
             self.machinery.PathFinder.find_spec('importlib')
 
-Frozen_PEFTests, Source_PEFTests = util.test_both(
-        PathEntryFinderTests, machinery=machinery)
+
+(Frozen_PEFTests,
+ Source_PEFTests
+ ) = util.test_both(PathEntryFinderTests, machinery=machinery)
 
 
 if __name__ == '__main__':

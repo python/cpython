@@ -207,8 +207,10 @@ class RelativeImports:
         with self.assertRaises(KeyError):
             self.__import__('sys', level=1)
 
-Frozen_RelativeImports, Source_RelativeImports = util.test_both(
-        RelativeImports, __import__=util.__import__)
+
+(Frozen_RelativeImports,
+ Source_RelativeImports
+ ) = util.test_both(RelativeImports, __import__=util.__import__)
 
 
 if __name__ == '__main__':

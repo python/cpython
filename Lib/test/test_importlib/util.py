@@ -50,19 +50,36 @@ def import_importlib(module_name):
     frozen = support.import_fresh_module(module_name)
     source = support.import_fresh_module(module_name, fresh=fresh,
                                          blocked=('_frozen_importlib',))
+    return {'Frozen': frozen, 'Source': source}
+
+
+def specialize_class(cls, kind, base=None, **kwargs):
+    # XXX Support passing in submodule names--load (and cache) them?
+    # That would clean up the test modules a bit more.
+    if base is None:
+        base = unittest.TestCase
+    elif not isinstance(base, type):
+        base = base[kind]
+    name = '{}_{}'.format(kind, cls.__name__)
+    bases = (cls, base)
+    specialized = types.new_class(name, bases)
+    specialized.__module__ = cls.__module__
+    specialized._NAME = cls.__name__
+    specialized._KIND = kind
+    for attr, values in kwargs.items():
+        value = values[kind]
+        setattr(specialized, attr, value)
+    return specialized
+
+
+def split_frozen(cls, base=None, **kwargs):
+    frozen = specialize_class(cls, 'Frozen', base, **kwargs)
+    source = specialize_class(cls, 'Source', base, **kwargs)
     return frozen, source
 
 
-def test_both(test_class, **kwargs):
-    frozen_tests = types.new_class('Frozen_'+test_class.__name__,
-                                   (test_class, unittest.TestCase))
-    source_tests = types.new_class('Source_'+test_class.__name__,
-                                   (test_class, unittest.TestCase))
-    frozen_tests.__module__ = source_tests.__module__ = test_class.__module__
-    for attr, (frozen_value, source_value) in kwargs.items():
-        setattr(frozen_tests, attr, frozen_value)
-        setattr(source_tests, attr, source_value)
-    return frozen_tests, source_tests
+def test_both(test_class, base=None, **kwargs):
+    return split_frozen(test_class, base, **kwargs)
 
 
 CASE_INSENSITIVE_FS = True
@@ -75,8 +92,9 @@ if sys.platform not in ('win32', 'cygwin'):
     if not os.path.exists(changed_name):
         CASE_INSENSITIVE_FS = False
 
-_, source_importlib = import_importlib('importlib')
-__import__ = staticmethod(builtins.__import__), staticmethod(source_importlib.__import__)
+source_importlib = import_importlib('importlib')['Source']
+__import__ = {'Frozen': staticmethod(builtins.__import__),
+              'Source': staticmethod(source_importlib.__import__)}
 
 
 def case_insensitive_tests(test):
