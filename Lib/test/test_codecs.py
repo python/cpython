@@ -2841,12 +2841,6 @@ class CodePageTest(unittest.TestCase):
             (b'abc', 'strict', 'abc'),
             (b'\xe9\x80', 'strict', '\xe9\u20ac'),
             (b'\xff', 'strict', '\xff'),
-            # invalid bytes
-            (b'[\x98]', 'strict', None),
-            (b'[\x98]', 'ignore', '[]'),
-            (b'[\x98]', 'replace', '[\ufffd]'),
-            (b'[\x98]', 'surrogateescape', '[\udc98]'),
-            (b'[\x98]', 'surrogatepass', None),
         ))
 
     def test_cp_utf7(self):
