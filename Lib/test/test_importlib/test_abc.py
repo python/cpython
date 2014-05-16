@@ -10,12 +10,13 @@ import unittest
 from unittest import mock
 import warnings
 
-from . import util
+from . import util as test_util
 
-frozen_init, source_init = util.import_importlib('importlib')
-frozen_abc, source_abc = util.import_importlib('importlib.abc')
-machinery = util.import_importlib('importlib.machinery')
-frozen_util, source_util = util.import_importlib('importlib.util')
+init = test_util.import_importlib('importlib')
+abc = test_util.import_importlib('importlib.abc')
+machinery = test_util.import_importlib('importlib.machinery')
+util = test_util.import_importlib('importlib.util')
+
 
 ##### Inheritance ##############################################################
 class InheritanceTests:
@@ -26,8 +27,7 @@ class InheritanceTests:
     subclasses = []
     superclasses = []
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def setUp(self):
         self.superclasses = [getattr(self.abc, class_name)
                              for class_name in self.superclass_names]
         if hasattr(self, 'subclass_names'):
@@ -36,11 +36,11 @@ class InheritanceTests:
             # checking across module boundaries (i.e. the _bootstrap in abc is
             # not the same as the one in machinery). That means stealing one of
             # the modules from the other to make sure the same instance is used.
-            self.subclasses = [getattr(self.abc.machinery, class_name)
-                                for class_name in self.subclass_names]
+            machinery = self.abc.machinery
+            self.subclasses = [getattr(machinery, class_name)
+                               for class_name in self.subclass_names]
         assert self.subclasses or self.superclasses, self.__class__
-        testing = self.__class__.__name__.partition('_')[2]
-        self.__test = getattr(self.abc, testing)
+        self.__test = getattr(self.abc, self._NAME)
 
     def test_subclasses(self):
         # Test that the expected subclasses inherit.
@@ -54,94 +54,97 @@ class InheritanceTests:
             self.assertTrue(issubclass(self.__test, superclass),
                "{0} is not a superclass of {1}".format(superclass, self.__test))
 
-def create_inheritance_tests(base_class):
-    def set_frozen(ns):
-        ns['abc'] = frozen_abc
-    def set_source(ns):
-        ns['abc'] = source_abc
-
-    classes = []
-    for prefix, ns_set in [('Frozen', set_frozen), ('Source', set_source)]:
-        classes.append(types.new_class('_'.join([prefix, base_class.__name__]),
-                                       (base_class, unittest.TestCase),
-                                       exec_body=ns_set))
-    return classes
-
 
 class MetaPathFinder(InheritanceTests):
     superclass_names = ['Finder']
     subclass_names = ['BuiltinImporter', 'FrozenImporter', 'PathFinder',
                       'WindowsRegistryFinder']
 
-tests = create_inheritance_tests(MetaPathFinder)
-Frozen_MetaPathFinderInheritanceTests, Source_MetaPathFinderInheritanceTests = tests
+
+(Frozen_MetaPathFinderInheritanceTests,
+ Source_MetaPathFinderInheritanceTests
+ ) = test_util.test_both(MetaPathFinder, abc=abc)
 
 
 class PathEntryFinder(InheritanceTests):
     superclass_names = ['Finder']
     subclass_names = ['FileFinder']
 
-tests = create_inheritance_tests(PathEntryFinder)
-Frozen_PathEntryFinderInheritanceTests, Source_PathEntryFinderInheritanceTests = tests
+
+(Frozen_PathEntryFinderInheritanceTests,
+ Source_PathEntryFinderInheritanceTests
+ ) = test_util.test_both(PathEntryFinder, abc=abc)
 
 
 class ResourceLoader(InheritanceTests):
     superclass_names = ['Loader']
 
-tests = create_inheritance_tests(ResourceLoader)
-Frozen_ResourceLoaderInheritanceTests, Source_ResourceLoaderInheritanceTests = tests
+
+(Frozen_ResourceLoaderInheritanceTests,
+ Source_ResourceLoaderInheritanceTests
+ ) = test_util.test_both(ResourceLoader, abc=abc)
 
 
 class InspectLoader(InheritanceTests):
     superclass_names = ['Loader']
     subclass_names = ['BuiltinImporter', 'FrozenImporter', 'ExtensionFileLoader']
 
-tests = create_inheritance_tests(InspectLoader)
-Frozen_InspectLoaderInheritanceTests, Source_InspectLoaderInheritanceTests = tests
+
+(Frozen_InspectLoaderInheritanceTests,
+ Source_InspectLoaderInheritanceTests
+ ) = test_util.test_both(InspectLoader, abc=abc)
 
 
 class ExecutionLoader(InheritanceTests):
     superclass_names = ['InspectLoader']
     subclass_names = ['ExtensionFileLoader']
 
-tests = create_inheritance_tests(ExecutionLoader)
-Frozen_ExecutionLoaderInheritanceTests, Source_ExecutionLoaderInheritanceTests = tests
+
+(Frozen_ExecutionLoaderInheritanceTests,
+ Source_ExecutionLoaderInheritanceTests
+ ) = test_util.test_both(ExecutionLoader, abc=abc)
 
 
 class FileLoader(InheritanceTests):
     superclass_names = ['ResourceLoader', 'ExecutionLoader']
     subclass_names = ['SourceFileLoader', 'SourcelessFileLoader']
 
-tests = create_inheritance_tests(FileLoader)
-Frozen_FileLoaderInheritanceTests, Source_FileLoaderInheritanceTests = tests
+
+(Frozen_FileLoaderInheritanceTests,
+ Source_FileLoaderInheritanceTests
+ ) = test_util.test_both(FileLoader, abc=abc)
 
 
 class SourceLoader(InheritanceTests):
     superclass_names = ['ResourceLoader', 'ExecutionLoader']
     subclass_names = ['SourceFileLoader']
 
-tests = create_inheritance_tests(SourceLoader)
-Frozen_SourceLoaderInheritanceTests, Source_SourceLoaderInheritanceTests = tests
+
+(Frozen_SourceLoaderInheritanceTests,
+ Source_SourceLoaderInheritanceTests
+ ) = test_util.test_both(SourceLoader, abc=abc)
+
 
 ##### Default return values ####################################################
-def make_abc_subclasses(base_class):
-    classes = []
-    for kind, abc in [('Frozen', frozen_abc), ('Source', source_abc)]:
-        name = '_'.join([kind, base_class.__name__])
-        base_classes = base_class, getattr(abc, base_class.__name__)
-        classes.append(types.new_class(name, base_classes))
-    return classes
 
-def make_return_value_tests(base_class, test_class):
-    frozen_class, source_class = make_abc_subclasses(base_class)
-    tests = []
-    for prefix, class_in_test in [('Frozen', frozen_class), ('Source', source_class)]:
-        def set_ns(ns):
-            ns['ins'] = class_in_test()
-        tests.append(types.new_class('_'.join([prefix, test_class.__name__]),
-                                     (test_class, unittest.TestCase),
-                                     exec_body=set_ns))
-    return tests
+def make_abc_subclasses(base_class, name=None, inst=False, **kwargs):
+    if name is None:
+        name = base_class.__name__
+    base = {kind: getattr(splitabc, name)
+            for kind, splitabc in abc.items()}
+    return {cls._KIND: cls() if inst else cls
+            for cls in test_util.split_frozen(base_class, base, **kwargs)}
+
+
+class ABCTestHarness:
+
+    @property
+    def ins(self):
+        # Lazily set ins on the class.
+        cls = self.SPLIT[self._KIND]
+        ins = cls()
+        self.__class__.ins = ins
+        return ins
 
 
 class MetaPathFinder:
@@ -149,10 +152,10 @@ class MetaPathFinder:
     def find_module(self, fullname, path):
         return super().find_module(fullname, path)
 
-Frozen_MPF, Source_MPF = make_abc_subclasses(MetaPathFinder)
 
+class MetaPathFinderDefaultsTests(ABCTestHarness):
 
-class MetaPathFinderDefaultsTests:
+    SPLIT = make_abc_subclasses(MetaPathFinder)
 
     def test_find_module(self):
         # Default should return None.
@@ -163,8 +166,9 @@ class MetaPathFinderDefaultsTests:
         self.ins.invalidate_caches()
 
 
-tests = make_return_value_tests(MetaPathFinder, MetaPathFinderDefaultsTests)
-Frozen_MPFDefaultTests, Source_MPFDefaultTests = tests
+(Frozen_MPFDefaultTests,
+ Source_MPFDefaultTests
+ ) = test_util.test_both(MetaPathFinderDefaultsTests)
 
 
 class PathEntryFinder:
@@ -172,10 +176,10 @@ class PathEntryFinder:
     def find_loader(self, fullname):
         return super().find_loader(fullname)
 
-Frozen_PEF, Source_PEF = make_abc_subclasses(PathEntryFinder)
 
+class PathEntryFinderDefaultsTests(ABCTestHarness):
 
-class PathEntryFinderDefaultsTests:
+    SPLIT = make_abc_subclasses(PathEntryFinder)
 
     def test_find_loader(self):
         self.assertEqual((None, []), self.ins.find_loader('something'))
@@ -188,8 +192,9 @@ class PathEntryFinderDefaultsTests:
         self.ins.invalidate_caches()
 
 
-tests = make_return_value_tests(PathEntryFinder, PathEntryFinderDefaultsTests)
-Frozen_PEFDefaultTests, Source_PEFDefaultTests = tests
+(Frozen_PEFDefaultTests,
+ Source_PEFDefaultTests
+ ) = test_util.test_both(PathEntryFinderDefaultsTests)
 
 
 class Loader:
@@ -198,10 +203,9 @@ class Loader:
         return super().load_module(fullname)
 
 
-Frozen_L, Source_L = make_abc_subclasses(Loader)
+class LoaderDefaultsTests(ABCTestHarness):
 
-
-class LoaderDefaultsTests:
+    SPLIT = make_abc_subclasses(Loader)
 
     def test_load_module(self):
         with self.assertRaises(ImportError):
@@ -217,8 +221,9 @@ class LoaderDefaultsTests:
         self.assertTrue(repr(mod))
 
 
-tests = make_return_value_tests(Loader, LoaderDefaultsTests)
-Frozen_LDefaultTests, SourceLDefaultTests = tests
+(Frozen_LDefaultTests,
+ SourceLDefaultTests
+ ) = test_util.test_both(LoaderDefaultsTests)
 
 
 class ResourceLoader(Loader):
@@ -227,18 +232,18 @@ class ResourceLoader(Loader):
         return super().get_data(path)
 
 
-Frozen_RL, Source_RL = make_abc_subclasses(ResourceLoader)
+class ResourceLoaderDefaultsTests(ABCTestHarness):
 
-
-class ResourceLoaderDefaultsTests:
+    SPLIT = make_abc_subclasses(ResourceLoader)
 
     def test_get_data(self):
         with self.assertRaises(IOError):
             self.ins.get_data('/some/path')
 
 
-tests = make_return_value_tests(ResourceLoader, ResourceLoaderDefaultsTests)
-Frozen_RLDefaultTests, Source_RLDefaultTests = tests
+(Frozen_RLDefaultTests,
+ Source_RLDefaultTests
+ ) = test_util.test_both(ResourceLoaderDefaultsTests)
 
 
 class InspectLoader(Loader):
@@ -250,10 +255,12 @@ class InspectLoader(Loader):
         return super().get_source(fullname)
 
 
-Frozen_IL, Source_IL = make_abc_subclasses(InspectLoader)
+SPLIT_IL = make_abc_subclasses(InspectLoader)
 
 
-class InspectLoaderDefaultsTests:
+class InspectLoaderDefaultsTests(ABCTestHarness):
+
+    SPLIT = SPLIT_IL
 
     def test_is_package(self):
         with self.assertRaises(ImportError):
@@ -264,8 +271,9 @@ class InspectLoaderDefaultsTests:
             self.ins.get_source('blah')
 
 
-tests = make_return_value_tests(InspectLoader, InspectLoaderDefaultsTests)
-Frozen_ILDefaultTests, Source_ILDefaultTests = tests
+(Frozen_ILDefaultTests,
+ Source_ILDefaultTests
+ ) = test_util.test_both(InspectLoaderDefaultsTests)
 
 
 class ExecutionLoader(InspectLoader):
@@ -273,21 +281,25 @@ class ExecutionLoader(InspectLoader):
     def get_filename(self, fullname):
         return super().get_filename(fullname)
 
-Frozen_EL, Source_EL = make_abc_subclasses(ExecutionLoader)
+
+SPLIT_EL = make_abc_subclasses(ExecutionLoader)
 
 
-class ExecutionLoaderDefaultsTests:
+class ExecutionLoaderDefaultsTests(ABCTestHarness):
+
+    SPLIT = SPLIT_EL
 
     def test_get_filename(self):
         with self.assertRaises(ImportError):
             self.ins.get_filename('blah')
 
 
-tests = make_return_value_tests(ExecutionLoader, InspectLoaderDefaultsTests)
-Frozen_ELDefaultTests, Source_ELDefaultsTests = tests
+(Frozen_ELDefaultTests,
+ Source_ELDefaultsTests
+ ) = test_util.test_both(InspectLoaderDefaultsTests)
+
 
 ##### MetaPathFinder concrete methods ##########################################
-
 class MetaPathFinderFindModuleTests:
 
     @classmethod
@@ -317,13 +329,12 @@ class MetaPathFinderFindModuleTests:
         self.assertIs(found, spec.loader)
 
 
-Frozen_MPFFindModuleTests, Source_MPFFindModuleTests = util.test_both(
-        MetaPathFinderFindModuleTests,
-        abc=(frozen_abc, source_abc),
-        util=(frozen_util, source_util))
+(Frozen_MPFFindModuleTests,
+ Source_MPFFindModuleTests
+ ) = test_util.test_both(MetaPathFinderFindModuleTests, abc=abc, util=util)
+
 
 ##### PathEntryFinder concrete methods #########################################
-
 class PathEntryFinderFindLoaderTests:
 
     @classmethod
@@ -361,11 +372,10 @@ class PathEntryFinderFindLoaderTests:
         self.assertEqual(paths, found[1])
 
 
-Frozen_PEFFindLoaderTests, Source_PEFFindLoaderTests = util.test_both(
-        PathEntryFinderFindLoaderTests,
-        abc=(frozen_abc, source_abc),
-        machinery=machinery,
-        util=(frozen_util, source_util))
+(Frozen_PEFFindLoaderTests,
+ Source_PEFFindLoaderTests
+ ) = test_util.test_both(PathEntryFinderFindLoaderTests, abc=abc, util=util,
+                         machinery=machinery)
 
 
 ##### Loader concrete methods ##################################################
@@ -386,7 +396,7 @@ class LoaderLoadModuleTests:
     def test_fresh(self):
         loader = self.loader()
         name = 'blah'
-        with util.uncache(name):
+        with test_util.uncache(name):
             loader.load_module(name)
             module = loader.found
             self.assertIs(sys.modules[name], module)
@@ -404,7 +414,7 @@ class LoaderLoadModuleTests:
         module = types.ModuleType(name)
         module.__spec__ = self.util.spec_from_loader(name, loader)
         module.__loader__ = loader
-        with util.uncache(name):
+        with test_util.uncache(name):
             sys.modules[name] = module
             loader.load_module(name)
             found = loader.found
@@ -412,10 +422,9 @@ class LoaderLoadModuleTests:
             self.assertIs(module, sys.modules[name])
 
 
-Frozen_LoaderLoadModuleTests, Source_LoaderLoadModuleTests = util.test_both(
-        LoaderLoadModuleTests,
-        abc=(frozen_abc, source_abc),
-        util=(frozen_util, source_util))
+(Frozen_LoaderLoadModuleTests,
+ Source_LoaderLoadModuleTests
+ ) = test_util.test_both(LoaderLoadModuleTests, abc=abc, util=util)
 
 
 ##### InspectLoader concrete methods ###########################################
@@ -461,11 +470,10 @@ class InspectLoaderSourceToCodeTests:
         self.assertEqual(code.co_filename, '<string>')
 
 
-class Frozen_ILSourceToCodeTests(InspectLoaderSourceToCodeTests, unittest.TestCase):
-    InspectLoaderSubclass = Frozen_IL
-
-class Source_ILSourceToCodeTests(InspectLoaderSourceToCodeTests, unittest.TestCase):
-    InspectLoaderSubclass = Source_IL
+(Frozen_ILSourceToCodeTests,
+ Source_ILSourceToCodeTests
+ ) = test_util.test_both(InspectLoaderSourceToCodeTests,
+                         InspectLoaderSubclass=SPLIT_IL)
 
 
 class InspectLoaderGetCodeTests:
@@ -495,11 +503,10 @@ class InspectLoaderGetCodeTests:
             loader.get_code('blah')
 
 
-class Frozen_ILGetCodeTests(InspectLoaderGetCodeTests, unittest.TestCase):
-    InspectLoaderSubclass = Frozen_IL
-
-class Source_ILGetCodeTests(InspectLoaderGetCodeTests, unittest.TestCase):
-    InspectLoaderSubclass = Source_IL
+(Frozen_ILGetCodeTests,
+ Source_ILGetCodeTests
+ ) = test_util.test_both(InspectLoaderGetCodeTests,
+                         InspectLoaderSubclass=SPLIT_IL)
 
 
 class InspectLoaderLoadModuleTests:
@@ -543,11 +550,10 @@ class InspectLoaderLoadModuleTests:
             self.assertEqual(module, sys.modules[self.module_name])
 
 
-class Frozen_ILLoadModuleTests(InspectLoaderLoadModuleTests, unittest.TestCase):
-    InspectLoaderSubclass = Frozen_IL
-
-class Source_ILLoadModuleTests(InspectLoaderLoadModuleTests, unittest.TestCase):
-    InspectLoaderSubclass = Source_IL
+(Frozen_ILLoadModuleTests,
+ Source_ILLoadModuleTests
+ ) = test_util.test_both(InspectLoaderLoadModuleTests,
+                         InspectLoaderSubclass=SPLIT_IL)
 
 
 ##### ExecutionLoader concrete methods #########################################
@@ -608,15 +614,14 @@ class ExecutionLoaderGetCodeTests:
         self.assertEqual(module.attr, 42)
 
 
-class Frozen_ELGetCodeTests(ExecutionLoaderGetCodeTests, unittest.TestCase):
-    ExecutionLoaderSubclass = Frozen_EL
-
-class Source_ELGetCodeTests(ExecutionLoaderGetCodeTests, unittest.TestCase):
-    ExecutionLoaderSubclass = Source_EL
+(Frozen_ELGetCodeTests,
+ Source_ELGetCodeTests
+ ) = test_util.test_both(ExecutionLoaderGetCodeTests,
+                         ExecutionLoaderSubclass=SPLIT_EL)
 
 
 ##### SourceLoader concrete methods ############################################
-class SourceLoader:
+class SourceOnlyLoader:
 
     # Globals that should be defined for all modules.
     source = (b"_ = '::'.join([__name__, __file__, __cached__, __package__, "
@@ -637,10 +642,10 @@ class SourceLoader:
         return '<module>'
 
 
-Frozen_SourceOnlyL, Source_SourceOnlyL = make_abc_subclasses(SourceLoader)
+SPLIT_SOL = make_abc_subclasses(SourceOnlyLoader, 'SourceLoader')
 
 
-class SourceLoader(SourceLoader):
+class SourceLoader(SourceOnlyLoader):
 
     source_mtime = 1
 
@@ -677,11 +682,7 @@ class SourceLoader(SourceLoader):
         return path == self.bytecode_path
 
 
-Frozen_SL, Source_SL = make_abc_subclasses(SourceLoader)
-Frozen_SL.util = frozen_util
-Source_SL.util = source_util
-Frozen_SL.init = frozen_init
-Source_SL.init = source_init
+SPLIT_SL = make_abc_subclasses(SourceLoader, util=util, init=init)
 
 
 class SourceLoaderTestHarness:
@@ -765,7 +766,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         # Loading a module should set __name__, __loader__, __package__,
         # __path__ (for packages), __file__, and __cached__.
         # The module should also be put into sys.modules.
-        with util.uncache(self.name):
+        with test_util.uncache(self.name):
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', DeprecationWarning)
                 module = self.loader.load_module(self.name)
@@ -778,7 +779,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         # is a package.
         # Testing the values for a package are covered by test_load_module.
         self.setUp(is_package=False)
-        with util.uncache(self.name):
+        with test_util.uncache(self.name):
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', DeprecationWarning)
                 module = self.loader.load_module(self.name)
@@ -798,13 +799,10 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         self.assertEqual(returned_source, source)
 
 
-class Frozen_SourceOnlyLTests(SourceOnlyLoaderTests, unittest.TestCase):
-    loader_mock = Frozen_SourceOnlyL
-    util = frozen_util
-
-class Source_SourceOnlyLTests(SourceOnlyLoaderTests, unittest.TestCase):
-    loader_mock = Source_SourceOnlyL
-    util = source_util
+(Frozen_SourceOnlyLoaderTests,
+ Source_SourceOnlyLoaderTests
+ ) = test_util.test_both(SourceOnlyLoaderTests, util=util,
+                         loader_mock=SPLIT_SOL)
 
 
 @unittest.skipIf(sys.dont_write_bytecode, "sys.dont_write_bytecode is true")
@@ -896,15 +894,10 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         self.verify_code(code_object)
 
 
-class Frozen_SLBytecodeTests(SourceLoaderBytecodeTests, unittest.TestCase):
-    loader_mock = Frozen_SL
-    init = frozen_init
-    util = frozen_util
-
-class SourceSLBytecodeTests(SourceLoaderBytecodeTests, unittest.TestCase):
-    loader_mock = Source_SL
-    init = source_init
-    util = source_util
+(Frozen_SLBytecodeTests,
+ SourceSLBytecodeTests
+ ) = test_util.test_both(SourceLoaderBytecodeTests, init=init, util=util,
+                         loader_mock=SPLIT_SL)
 
 
 class SourceLoaderGetSourceTests:
@@ -940,11 +933,10 @@ class SourceLoaderGetSourceTests:
         self.assertEqual(mock.get_source(name), expect)
 
 
-class Frozen_SourceOnlyLGetSourceTests(SourceLoaderGetSourceTests, unittest.TestCase):
-    SourceOnlyLoaderMock = Frozen_SourceOnlyL
-
-class Source_SourceOnlyLGetSourceTests(SourceLoaderGetSourceTests, unittest.TestCase):
-    SourceOnlyLoaderMock = Source_SourceOnlyL
+(Frozen_SourceOnlyLoaderGetSourceTests,
+ Source_SourceOnlyLoaderGetSourceTests
+ ) = test_util.test_both(SourceLoaderGetSourceTests,
+                         SourceOnlyLoaderMock=SPLIT_SOL)
 
 
 if __name__ == '__main__':

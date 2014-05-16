@@ -1,7 +1,7 @@
 from .. import abc
 from .. import util
 
-frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
+machinery = util.import_importlib('importlib.machinery')
 
 import sys
 import unittest
@@ -44,8 +44,10 @@ class FindSpecTests(abc.FinderTests):
                                                             ['pkg'])
             self.assertIsNone(spec)
 
-Frozen_FindSpecTests, Source_FindSpecTests = util.test_both(FindSpecTests,
-        machinery=[frozen_machinery, source_machinery])
+
+(Frozen_FindSpecTests,
+ Source_FindSpecTests
+ ) = util.test_both(FindSpecTests, machinery=machinery)
 
 
 @unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
@@ -78,8 +80,10 @@ class FinderTests(abc.FinderTests):
                                                             ['pkg'])
             self.assertIsNone(loader)
 
-Frozen_FinderTests, Source_FinderTests = util.test_both(FinderTests,
-        machinery=[frozen_machinery, source_machinery])
+
+(Frozen_FinderTests,
+ Source_FinderTests
+ ) = util.test_both(FinderTests, machinery=machinery)
 
 
 if __name__ == '__main__':

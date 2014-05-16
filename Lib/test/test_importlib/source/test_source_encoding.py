@@ -88,6 +88,7 @@ class EncodingTest:
         with self.assertRaises(SyntaxError):
             self.run_test(source)
 
+
 class EncodingTestPEP451(EncodingTest):
 
     def load(self, loader):
@@ -96,8 +97,11 @@ class EncodingTestPEP451(EncodingTest):
         loader.exec_module(module)
         return module
 
-Frozen_EncodingTestPEP451, Source_EncodingTestPEP451 = util.test_both(
-        EncodingTestPEP451, machinery=machinery)
+
+(Frozen_EncodingTestPEP451,
+ Source_EncodingTestPEP451
+ ) = util.test_both(EncodingTestPEP451, machinery=machinery)
+
 
 class EncodingTestPEP302(EncodingTest):
 
@@ -106,8 +110,10 @@ class EncodingTestPEP302(EncodingTest):
             warnings.simplefilter('ignore', DeprecationWarning)
             return loader.load_module(self.module_name)
 
-Frozen_EncodingTestPEP302, Source_EncodingTestPEP302 = util.test_both(
-        EncodingTestPEP302, machinery=machinery)
+
+(Frozen_EncodingTestPEP302,
+ Source_EncodingTestPEP302
+ ) = util.test_both(EncodingTestPEP302, machinery=machinery)
 
 
 class LineEndingTest:
@@ -138,6 +144,7 @@ class LineEndingTest:
     def test_lf(self):
         self.run_test(b'\n')
 
+
 class LineEndingTestPEP451(LineEndingTest):
 
     def load(self, loader, module_name):
@@ -146,8 +153,11 @@ class LineEndingTestPEP451(LineEndingTest):
         loader.exec_module(module)
         return module
 
-Frozen_LineEndingTestPEP451, Source_LineEndingTestPEP451 = util.test_both(
-        LineEndingTestPEP451, machinery=machinery)
+
+(Frozen_LineEndingTestPEP451,
+ Source_LineEndingTestPEP451
+ ) = util.test_both(LineEndingTestPEP451, machinery=machinery)
+
 
 class LineEndingTestPEP302(LineEndingTest):
 
@@ -156,8 +166,10 @@ class LineEndingTestPEP302(LineEndingTest):
             warnings.simplefilter('ignore', DeprecationWarning)
             return loader.load_module(module_name)
 
-Frozen_LineEndingTestPEP302, Source_LineEndingTestPEP302 = util.test_both(
-        LineEndingTestPEP302, machinery=machinery)
+
+(Frozen_LineEndingTestPEP302,
+ Source_LineEndingTestPEP302
+ ) = util.test_both(LineEndingTestPEP302, machinery=machinery)
 
 
 if __name__ == '__main__':

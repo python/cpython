@@ -37,8 +37,10 @@ class FindSpecTests(abc.FinderTests):
         spec = self.find('<not real>')
         self.assertIsNone(spec)
 
-Frozen_FindSpecTests, Source_FindSpecTests = util.test_both(FindSpecTests,
-                                                            machinery=machinery)
+
+(Frozen_FindSpecTests,
+ Source_FindSpecTests
+ ) = util.test_both(FindSpecTests, machinery=machinery)
 
 
 class FinderTests(abc.FinderTests):
@@ -72,8 +74,10 @@ class FinderTests(abc.FinderTests):
         loader = self.find('<not real>')
         self.assertIsNone(loader)
 
-Frozen_FinderTests, Source_FinderTests = util.test_both(FinderTests,
-                                                        machinery=machinery)
+
+(Frozen_FinderTests,
+ Source_FinderTests
+ ) = util.test_both(FinderTests, machinery=machinery)
 
 
 if __name__ == '__main__':

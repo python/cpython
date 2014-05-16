@@ -76,8 +76,9 @@ class LoaderTests(abc.LoaderTests):
             loader = self.machinery.ExtensionFileLoader('pkg', path)
             self.assertTrue(loader.is_package('pkg'))
 
-Frozen_LoaderTests, Source_LoaderTests = util.test_both(
-        LoaderTests, machinery=machinery)
+(Frozen_LoaderTests,
+ Source_LoaderTests
+ ) = util.test_both(LoaderTests, machinery=machinery)
 
 
 

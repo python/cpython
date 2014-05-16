@@ -1,10 +1,8 @@
-from . import util
+from . import util as test_util
 
-frozen_init, source_init = util.import_importlib('importlib')
-frozen_bootstrap = frozen_init._bootstrap
-source_bootstrap = source_init._bootstrap
-frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
-frozen_util, source_util = util.import_importlib('importlib.util')
+init = test_util.import_importlib('importlib')
+machinery = test_util.import_importlib('importlib.machinery')
+util = test_util.import_importlib('importlib.util')
 
 import os.path
 from test.support import CleanImport
@@ -51,6 +49,8 @@ class LegacyLoader(TestLoader):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
+
+        frozen_util = util['Frozen']
 
         @frozen_util.module_for_loader
         def load_module(self, module):
@@ -221,17 +221,16 @@ class ModuleSpecTests:
         self.assertEqual(self.loc_spec.cached, 'spam.pyc')
 
 
-class Frozen_ModuleSpecTests(ModuleSpecTests, unittest.TestCase):
-    util = frozen_util
-    machinery = frozen_machinery
-
-
-class Source_ModuleSpecTests(ModuleSpecTests, unittest.TestCase):
-    util = source_util
-    machinery = source_machinery
+(Frozen_ModuleSpecTests,
+ Source_ModuleSpecTests
+ ) = test_util.test_both(ModuleSpecTests, util=util, machinery=machinery)
 
 
 class ModuleSpecMethodsTests:
+
+    @property
+    def bootstrap(self):
+        return self.init._bootstrap
 
     def setUp(self):
         self.name = 'spam'
@@ -528,19 +527,17 @@ class ModuleSpecMethodsTests:
         self.assertIs(installed, loaded)
 
 
-class Frozen_ModuleSpecMethodsTests(ModuleSpecMethodsTests, unittest.TestCase):
-    bootstrap = frozen_bootstrap
-    machinery = frozen_machinery
-    util = frozen_util
-
-
-class Source_ModuleSpecMethodsTests(ModuleSpecMethodsTests, unittest.TestCase):
-    bootstrap = source_bootstrap
-    machinery = source_machinery
-    util = source_util
+(Frozen_ModuleSpecMethodsTests,
+ Source_ModuleSpecMethodsTests
+ ) = test_util.test_both(ModuleSpecMethodsTests, init=init, util=util,
+                         machinery=machinery)
 
 
 class ModuleReprTests:
+
+    @property
+    def bootstrap(self):
+        return self.init._bootstrap
 
     def setUp(self):
         self.module = type(os)('spam')
@@ -625,16 +622,10 @@ class ModuleReprTests:
         self.assertEqual(modrepr, '<module {!r}>'.format('spam'))
 
 
-class Frozen_ModuleReprTests(ModuleReprTests, unittest.TestCase):
-    bootstrap = frozen_bootstrap
-    machinery = frozen_machinery
-    util = frozen_util
-
-
-class Source_ModuleReprTests(ModuleReprTests, unittest.TestCase):
-    bootstrap = source_bootstrap
-    machinery = source_machinery
-    util = source_util
+(Frozen_ModuleReprTests,
+ Source_ModuleReprTests
+ ) = test_util.test_both(ModuleReprTests, init=init, util=util,
+                         machinery=machinery)
 
 
 class FactoryTests:
@@ -787,7 +778,7 @@ class FactoryTests:
     # spec_from_file_location()
 
     def test_spec_from_file_location_default(self):
-        if self.machinery is source_machinery:
+        if self.machinery is machinery['Source']:
             raise unittest.SkipTest('not sure why this is breaking...')
         spec = self.util.spec_from_file_location(self.name, self.path)
 
@@ -947,11 +938,6 @@ class FactoryTests:
         self.assertTrue(spec.has_location)
 
 
-class Frozen_FactoryTests(FactoryTests, unittest.TestCase):
-    util = frozen_util
-    machinery = frozen_machinery
-
-
-class Source_FactoryTests(FactoryTests, unittest.TestCase):
-    util = source_util
-    machinery = source_machinery
+(Frozen_FactoryTests,
+ Source_FactoryTests
+ ) = test_util.test_both(FactoryTests, util=util, machinery=machinery)

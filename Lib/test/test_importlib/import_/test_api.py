@@ -78,15 +78,19 @@ class APITest:
 class OldAPITests(APITest):
     bad_finder_loader = BadLoaderFinder
 
-Frozen_OldAPITests, Source_OldAPITests = util.test_both(
-        OldAPITests, __import__=util.__import__)
+
+(Frozen_OldAPITests,
+ Source_OldAPITests
+ ) = util.test_both(OldAPITests, __import__=util.__import__)
 
 
 class SpecAPITests(APITest):
     bad_finder_loader = BadSpecFinderLoader
 
-Frozen_SpecAPITests, Source_SpecAPITests = util.test_both(
-        SpecAPITests, __import__=util.__import__)
+
+(Frozen_SpecAPITests,
+ Source_SpecAPITests
+ ) = util.test_both(SpecAPITests, __import__=util.__import__)
 
 
 if __name__ == '__main__':

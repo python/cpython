@@ -1,5 +1,5 @@
-from . import util
-frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
+from . import util as test_util
+machinery = test_util.import_importlib('importlib.machinery')
 
 import sys
 import unittest
@@ -19,11 +19,6 @@ class WindowsRegistryFinderTests:
         self.assertIs(loader, None)
 
 
-class Frozen_WindowsRegistryFinderTests(WindowsRegistryFinderTests,
-                                        unittest.TestCase):
-    machinery = frozen_machinery
-
-
-class Source_WindowsRegistryFinderTests(WindowsRegistryFinderTests,
-                                        unittest.TestCase):
-    machinery = source_machinery
+(Frozen_WindowsRegistryFinderTests,
+ Source_WindowsRegistryFinderTests
+ ) = test_util.test_both(WindowsRegistryFinderTests, machinery=machinery)
