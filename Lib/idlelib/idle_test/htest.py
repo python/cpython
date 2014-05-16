@@ -1,35 +1,38 @@
-'''Run a human test of Idle wndow, dialog, and other widget classes.
+'''Run human tests of Idle's window, dialog, and popup widgets.
 
-run(klass) runs a test for one class.
-runall() runs all the defined tests
+run(test): run *test*, a callable that causes a widget to be displayed.
+runall(): run all tests defined in this file.
 
-The file wih the widget class should end with
+Let X be a global name bound to a widget callable. End the module with
+
 if __name__ == '__main__':
     <unittest, if there is one>
     from idlelib.idle_test.htest import run
     run(X)
-where X is a global object of the module. X must be a callable with a
-.__name__ attribute that accepts a 'parent' attribute. X will usually be
-a widget class, but a callable instance with .__name__ or a wrapper
-function also work. The name of wrapper functions, like _Editor_Window,
-should start with '_'.
 
-This file must then contain an instance of this template.
+The X object must have a .__name__ attribute and a 'parent' parameter.
+X will often be a widget class, but a callable instance with .__name__
+or a wrapper function also work. The name of wrapper functions, like
+'_Editor_Window', should start with '_'.
+
+This file must contain a matching instance of the folling template,
+with X.__name__ prepended, as in '_Editor_window_spec ...'.
+
 _spec = {
     'file': '',
     'kwds': {'title': ''},
     'msg': ""
     }
-with X.__name__ prepended to _spec.
-File (no .py) is used in runall() to import the file and get the class.
-Kwds is passed to X (**kwds) after 'parent' is added, to initialize X.
-Msg. displayed is a window with a start button. hint as to how the user
-might test the widget. Closing The box skips or ends the test.
+
+file (no .py): used in runall() to import the file and get X.
+kwds: passed to X (**kwds), after 'parent' is added, to initialize X.
+title: an example; used for some widgets, delete if not.
+msg: displayed in a master window. Hints as to how the user might
+  test the widget. Close the window to skip or end the test.
 '''
 from importlib import import_module
 import Tkinter as tk
 
-# Template for class_spec dicts, copy and uncomment
 
 _Editor_window_spec = {
     'file': 'EditorWindow',
@@ -61,30 +64,30 @@ GetCfgSectionNameDialog_spec = {
               "Close 'Get Name' with a valid entry (printed to Shell), [Cancel], or [X]",
     }
 
-def run(klas):
-    "Test the widget class klas using _spec dict"
+def run(test):
+    "Display a widget with callable *test* using a _spec dict"
     root = tk.Tk()
-    klas_spec = globals()[klas.__name__+'_spec']
-    klas_kwds = klas_spec['kwds']
-    klas_kwds['parent'] = root
-    # This presumes that Idle consistently uses 'parent'
-    def run_klas():
-        widget = klas(**klas_kwds)
+    test_spec = globals()[test.__name__ + '_spec']
+    test_kwds = test_spec['kwds']
+    test_kwds['parent'] = root
+
+    def run_test():
+        widget = test(**test_kwds)
         try:
             print(widget.result)
         except AttributeError:
             pass
-    tk.Label(root, text=klas_spec['msg'], justify='left').pack()
-    tk.Button(root, text='Test ' + klas.__name__, command=run_klas).pack()
+    tk.Label(root, text=test_spec['msg'], justify='left').pack()
+    tk.Button(root, text='Test ' + test.__name__, command=run_test).pack()
     root.mainloop()
 
 def runall():
-    'Run all tests. Quick and dirty version.'
+    "Run all tests. Quick and dirty version."
     for k, d in globals().items():
         if k.endswith('_spec'):
             mod = import_module('idlelib.' + d['file'])
-            klas = getattr(mod, k[:-5])
-            run(klas)
+            test = getattr(mod, k[:-5])
+            run(test)
 
 if __name__ == '__main__':
     runall()
