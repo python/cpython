@@ -960,6 +960,10 @@ get_standard_encoding(const char *encoding, int *bytelength)
             }
         }
     }
+    else if (strcmp(encoding, "CP_UTF8") == 0) {
+        *bytelength = 3;
+        return ENC_UTF8;
+    }
     return ENC_UNKNOWN;
 }
 
