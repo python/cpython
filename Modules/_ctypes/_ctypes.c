@@ -289,6 +289,48 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
 }
 
 /*
+  Allocate a memory block for a pep3118 format string, adding
+  the given prefix (if non-null), an additional shape prefix, and a suffix.
+  Returns NULL on failure, with the error indicator set.  If called with
+  a suffix of NULL the error indicator must already be set.
+ */
+char *
+_ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
+                                       const char *prefix, const char *suffix)
+{
+    char *new_prefix;
+    char *result;
+    char buf[32];
+    int prefix_len;
+    int k;
+
+    prefix_len = 32 * ndim + 3;
+    if (prefix)
+        prefix_len += strlen(prefix);
+    new_prefix = PyMem_Malloc(prefix_len);
+    if (new_prefix == NULL)
+        return NULL;
+    new_prefix[0] = '\0';
+    if (prefix)
+        strcpy(new_prefix, prefix);
+    if (ndim > 0) {
+        /* Add the prefix "(shape[0],shape[1],...,shape[ndim-1])" */
+        strcat(new_prefix, "(");
+        for (k = 0; k < ndim; ++k) {
+            if (k < ndim-1) {
+                sprintf(buf, "%"PY_FORMAT_SIZE_T"d,", shape[k]);
+            } else {
+                sprintf(buf, "%"PY_FORMAT_SIZE_T"d)", shape[k]);
+            }
+            strcat(new_prefix, buf);
+        }
+    }
+    result = _ctypes_alloc_format_string(new_prefix, suffix);
+    PyMem_Free(new_prefix);
+    return result;
+}
+
+/*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
   __metaclass__ will call the contructor StructUnionType_new.  It replaces the
   tp_dict member with a new instance of StgDict, and initializes the C
@@ -860,14 +902,21 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (proto) {
         StgDictObject *itemdict = PyType_stgdict(proto);
+        const char *current_format;
         assert(itemdict);
         /* If itemdict->format is NULL, then this is a pointer to an
            incomplete type.  We create a generic format string
            'pointer to bytes' in this case.  XXX Better would be to
            fix the format string later...
         */
-        stgdict->format = _ctypes_alloc_format_string("&",
-                      itemdict->format ? itemdict->format : "B");
+        current_format = itemdict->format ? itemdict->format : "B";
+        if (itemdict->shape != NULL) {
+            /* pointer to an array: the shape needs to be prefixed */
+            stgdict->format = _ctypes_alloc_format_string_with_shape(
+                itemdict->ndim, itemdict->shape, "&", current_format);
+        } else {
+            stgdict->format = _ctypes_alloc_format_string("&", current_format);
+        }
         if (stgdict->format == NULL) {
             Py_DECREF((PyObject *)stgdict);
             return NULL;
@@ -1245,7 +1294,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     long length;
     int overflow;
     Py_ssize_t itemsize, itemalign;
-    char buf[32];
 
     /* create the new instance (which is a class,
        since we are a metatype!) */
@@ -1295,13 +1343,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     assert(itemdict->format);
-    if (itemdict->format[0] == '(') {
-        sprintf(buf, "(%ld,", length);
-        stgdict->format = _ctypes_alloc_format_string(buf, itemdict->format+1);
-    } else {
-        sprintf(buf, "(%ld)", length);
-        stgdict->format = _ctypes_alloc_format_string(buf, itemdict->format);
-    }
+    stgdict->format = _ctypes_alloc_format_string(NULL, itemdict->format);
     if (stgdict->format == NULL)
         goto error;
     stgdict->ndim = itemdict->ndim + 1;

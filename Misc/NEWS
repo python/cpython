@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10744: Fix PEP 3118 format strings on ctypes objects with a nontrivial
+  shape.
+
 - Issue #20826: Optimize ipaddress.collapse_addresses().
 
 - Issue #21487: Optimize ipaddress.summarize_address_range() and
