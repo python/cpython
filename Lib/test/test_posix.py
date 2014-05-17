@@ -195,7 +195,7 @@ class PosixTester(unittest.TestCase):
         self.fdopen_helper('r', 100)
 
     @unittest.skipUnless(hasattr(posix, 'fdopen') and
-                         not sys.platform.startswith("solaris"),
+                         not sys.platform.startswith("sunos"),
                          'test needs posix.fdopen()')
     def test_fdopen_keeps_fd_open_on_errors(self):
         fd = os.open(test_support.TESTFN, os.O_RDONLY)
