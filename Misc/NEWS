@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10744: Fix PEP 3118 format strings on ctypes objects with a nontrivial
+  shape.
+
 - Issue #7776: Backport Fix ``Host:'' header and reconnection when using
   http.client.HTTPConnection.set_tunnel() from Python 3.  Patch by Nikolaus
   Rath.
