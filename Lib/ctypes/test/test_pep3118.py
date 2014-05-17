@@ -96,6 +96,9 @@ class EmptyStruct(Structure):
 class aUnion(Union):
     _fields_ = [("a", c_int)]
 
+class StructWithArrays(Structure):
+    _fields_ = [("x", c_long * 3 * 2), ("y", Point * 4)]
+
 class Incomplete(Structure):
     pass
 
@@ -145,10 +148,10 @@ native_types = [
 
     ## arrays and pointers
 
-    (c_double * 4,              "(4)<d",                (4,),           c_double),
-    (c_float * 4 * 3 * 2,       "(2,3,4)<f",            (2,3,4),        c_float),
-    (POINTER(c_short) * 2,      "(2)&<h",               (2,),           POINTER(c_short)),
-    (POINTER(c_short) * 2 * 3,  "(3,2)&<h",             (3,2,),         POINTER(c_short)),
+    (c_double * 4,              "<d",                   (4,),           c_double),
+    (c_float * 4 * 3 * 2,       "<f",                   (2,3,4),        c_float),
+    (POINTER(c_short) * 2,      "&<h",                  (2,),           POINTER(c_short)),
+    (POINTER(c_short) * 2 * 3,  "&<h",                  (3,2,),         POINTER(c_short)),
     (POINTER(c_short * 2),      "&(2)<h",               (),           POINTER(c_short)),
 
     ## structures and unions
@@ -160,6 +163,9 @@ native_types = [
     (EmptyStruct,               "T{}",                  (),           EmptyStruct),
     # the pep does't support unions
     (aUnion,                    "B",                    (),           aUnion),
+    # structure with sub-arrays
+    (StructWithArrays,          "T{(2,3)<l:x:(4)T{<l:x:<l:y:}:y:}", (),  StructWithArrays),
+    (StructWithArrays * 3,      "T{(2,3)<l:x:(4)T{<l:x:<l:y:}:y:}", (3,),  StructWithArrays),
 
     ## pointer to incomplete structure
     (Incomplete,                "B",                    (),           Incomplete),
