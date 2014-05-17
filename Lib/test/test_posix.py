@@ -194,12 +194,12 @@ class PosixTester(unittest.TestCase):
         self.fdopen_helper('r')
         self.fdopen_helper('r', 100)
 
+    @unittest.skipUnless(hasattr(posix, 'fdopen') and
+                         not sys.platform.startswith("solaris"),
+                         'test needs posix.fdopen()')
+    def test_fdopen_keeps_fd_open_on_errors(self):
         fd = os.open(test_support.TESTFN, os.O_RDONLY)
-        try:
-            posix.fdopen(fd, 'w')
-        except OSError:
-            # This should happen on most platforms.
-            pass
+        self.assertRaises(OSError, posix.fdopen, fd, 'w')
         os.close(fd) # fd should not be closed.
 
     @unittest.skipUnless(hasattr(posix, 'O_EXLOCK'),
