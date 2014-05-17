@@ -436,6 +436,20 @@ Windows
 - Issue #21303, #20565: Updated the version of Tcl/Tk included in the
   installer from 8.5.2 to 8.5.15.
 
+Mac OS X
+--------
+
+- As of 2.7.8, the 32-bit-only installer will support OS X 10.5
+  and later systems as is currently done for Python 3.x installers.
+  For 2.7.7 only, we will provide three installers:
+  the legacy deprecated 10.3+ 32-bit-only format;
+  the newer 10.5+ 32-bit-only format;
+  and the unchanged 10.6+ 64-/32-bit format.
+  Although binary installers will no longer be available from
+  python.org as of 2.7.8, it will still be possible to build from
+  source on 10.3.9 and 10.4 systems if necessary.
+  See Mac/BuildScript/README.txt for more information.
+
 
 Whats' New in Python 2.7.6?
 ===========================

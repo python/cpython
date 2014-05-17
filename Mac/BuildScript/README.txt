@@ -8,11 +8,15 @@ $DESTROOT, massages that installation to remove .pyc files and such, creates
 an Installer package from the installation plus other files in ``resources`` 
 and ``scripts`` and placed that on a ``.dmg`` disk image.
 
-For Python 2.7.x and 3.2.x, PSF practice is to build two installer variants
+For Python 2.7.x and 3.x, PSF practice is to build two installer variants
 for each release.
 
-1.  32-bit-only, i386 and PPC universal, capable on running on all machines
-    supported by Mac OS X 10.3.9 through (at least) 10.8::
+Beginning with Python 2.7.8, we plan to drop binary installer support for
+Mac OS X 10.3.9 and 10.4.x systems.  To ease the transition, for Python 2.7.7
+only there will be three installers provided:
+
+1.  DEPRECATED - 32-bit-only, i386 and PPC universal, capable on running on all
+    machines supported by Mac OS X 10.3.9 through (at least) 10.9::
 
         /usr/bin/python build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.4u.sdk \
@@ -45,8 +49,42 @@ for each release.
             - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
         * Note Xcode 4.* does not support building for PPC so cannot be used for this build
 
+2.  32-bit-only, i386 and PPC universal, capable on running on all machines
+    supported by Mac OS X 10.5 through (at least) 10.9::
 
-2.  64-bit / 32-bit, x86_64 and i386 universal, for OS X 10.6 (and later)::
+        /usr/bin/python  build-installer.py \
+            --sdk-path=/Developer/SDKs/MacOSX10.5.sdk \
+            --universal-archs=32-bit \
+            --dep-target=10.5
+
+    - builds the following third-party libraries
+
+        * NCurses 5.9
+        * SQLite 3.7.13
+        * Oracle Sleepycat DB 4.8 (Python 2.x only)
+
+    - uses system-supplied versions of third-party libraries
+
+        * readline module links with Apple BSD editline (libedit)
+
+    - requires ActiveState ``Tcl/Tk 8.4`` (currently 8.4.20) to be installed for building
+
+    - recommended build environment:
+
+        * Mac OS X 10.5.8 Intel or PPC
+        * Xcode 3.1.4
+        * ``MacOSX10.5`` SDK
+        * ``MACOSX_DEPLOYMENT_TARGET=10.5``
+        * Apple ``gcc-4.2``
+        * system Python 2.5+ for documentation build with Sphinx
+
+    - alternate build environments:
+
+        * Mac OS X 10.6.8 with Xcode 3.2.6
+            - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
+        * Note Xcode 4.* does not support building for PPC so cannot be used for this build
+
+3.  64-bit / 32-bit, x86_64 and i386 universal, for OS X 10.6 (and later)::
 
         /usr/bin/python build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.6.sdk \
@@ -57,13 +95,13 @@ for each release.
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
         * SQLite 3.7.13
+        * Oracle Sleepycat DB 4.8 (Python 2.x only)
 
     - uses system-supplied versions of third-party libraries
 
         * readline module links with Apple BSD editline (libedit)
-        * builds Oracle Sleepycat DB 4.8 (Python 2.x only)
 
-    - requires ActiveState Tcl/Tk 8.5.9 (or later) to be installed for building
+    - requires ActiveState Tcl/Tk 8.5.15 (or later) to be installed for building
 
     - recommended build environment:
 
@@ -82,10 +120,10 @@ for each release.
           considered a migration aid by Apple and is not likely to be fixed,
           its use should be avoided.  The other compiler, ``clang``, has been
           undergoing rapid development.  While it appears to have become
-          production-ready in the most recent Xcode 4 releases (Xcode 4.5.x
-          as of this writing), there are still some open issues when
-          building Python and there has not yet been the level of exposure in
-          production environments that the Xcode 3 gcc-4.2 compiler has had.
+          production-ready in the most recent Xcode 5 releases, the versions
+          available on the deprecated Xcode 4.x for 10.6 were early releases
+          and did not receive the level of exposure in production environments
+          that the Xcode 3 gcc-4.2 compiler has had.
 
 
 General Prerequisites
