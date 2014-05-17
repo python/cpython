@@ -220,7 +220,7 @@ PyTypeObject _PyManagedBuffer_Type = {
 
 
 PyDoc_STRVAR(memory_doc,
-"memoryview(object)\n\
+"memoryview($module, object)\n--\n\
 \n\
 Create a new memoryview object which references the given object.");
 
@@ -2897,6 +2897,7 @@ PyDoc_STRVAR(memory_f_contiguous_doc,
 PyDoc_STRVAR(memory_contiguous_doc,
              "A bool indicating whether the memory is contiguous.");
 
+
 static PyGetSetDef memory_getsetlist[] = {
     {"obj",             (getter)memory_obj_get,        NULL, memory_obj_doc},
     {"nbytes",          (getter)memory_nbytes_get,     NULL, memory_nbytes_doc},
@@ -2914,19 +2915,19 @@ static PyGetSetDef memory_getsetlist[] = {
 };
 
 PyDoc_STRVAR(memory_release_doc,
-"M.release() -> None\n\
+"release($self, /)\n--\n\
 \n\
 Release the underlying buffer exposed by the memoryview object.");
 PyDoc_STRVAR(memory_tobytes_doc,
-"M.tobytes() -> bytes\n\
+"tobytes($self, /)\n--\n\
 \n\
 Return the data in the buffer as a byte string.");
 PyDoc_STRVAR(memory_tolist_doc,
-"M.tolist() -> list\n\
+"tolist($self, /)\n--\n\
 \n\
 Return the data in the buffer as a list of elements.");
 PyDoc_STRVAR(memory_cast_doc,
-"M.cast(format[, shape]) -> memoryview\n\
+"cast($self, /, format, *, shape)\n--\n\
 \n\
 Cast a memoryview to a new format or shape.");
 
