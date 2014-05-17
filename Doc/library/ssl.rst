@@ -1631,8 +1631,14 @@ thus several things you need to be aware of:
   and :meth:`SSLSocket.send` failures, and retry after another call to
   :func:`~select.select`.
 
+- Conversely, since the SSL layer has its own framing, a SSL socket may
+  still have data available for reading without :func:`~select.select`
+  being aware of it.  Therefore, you should first call
+  :meth:`SSLSocket.recv` to drain any potentially available data, and then
+  only block on a :func:`~select.select` call if still necessary.
+
   (of course, similar provisions apply when using other primitives such as
-  :func:`~select.poll`)
+  :func:`~select.poll`, or those in the :mod:`selectors` module)
 
 - The SSL handshake itself will be non-blocking: the
   :meth:`SSLSocket.do_handshake` method has to be retried until it returns
