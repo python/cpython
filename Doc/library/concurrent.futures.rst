@@ -175,6 +175,8 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
+   If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
+   will be raised.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
