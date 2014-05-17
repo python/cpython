@@ -425,6 +425,13 @@ class ExecutorTest:
         self.assertTrue(collected,
                         "Stale reference not collected within timeout.")
 
+    def test_max_workers_negative(self):
+        for number in (0, -1):
+            with self.assertRaisesRegexp(ValueError,
+                                         "max_workers must be greater "
+                                         "than 0"):
+                self.executor_type(max_workers=number)
+
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, unittest.TestCase):
     def test_map_submits_without_iteration(self):

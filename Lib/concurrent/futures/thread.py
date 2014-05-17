@@ -87,6 +87,9 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
         """
+        if max_workers <= 0:
+            raise ValueError("max_workers must be greater than 0")
+
         self._max_workers = max_workers
         self._work_queue = queue.Queue()
         self._threads = set()
