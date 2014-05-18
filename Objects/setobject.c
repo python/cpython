@@ -4,7 +4,7 @@
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
-   Copyright (c) 2003-2013 Python Software Foundation.
+   Copyright (c) 2003-2014 Python Software Foundation.
    All rights reserved.
 
    The basic lookup function used by all operations.
@@ -67,16 +67,16 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     while (1) {
         if (entry->key == key)
             return entry;
-        if (entry->hash == hash && entry->key != dummy) {
+        if (entry->hash == hash && entry->key != dummy) {         /* dummy match unlikely */
             PyObject *startkey = entry->key;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
-            if (cmp < 0)
+            if (cmp < 0)                                          /* unlikely */
                 return NULL;
-            if (table != so->table || entry->key != startkey)
+            if (table != so->table || entry->key != startkey)     /* unlikely */
                 return set_lookkey(so, key, hash);
-            if (cmp > 0)
+            if (cmp > 0)                                          /* likely */
                 return entry;
         }
         if (entry->key == dummy && freeslot == NULL)
@@ -135,7 +135,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
        including subclasses of str; e.g., one reason to subclass
        strings is to override __eq__, and for speed we don't cater to
        that here. */
-    if (!PyUnicode_CheckExact(key)) {
+    if (!PyUnicode_CheckExact(key)) {                             /* unlikely */
         so->lookup = set_lookkey;
         return set_lookkey(so, key, hash);
     }
@@ -147,8 +147,8 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     while (1) {
         if (entry->key == key
             || (entry->hash == hash
-                && entry->key != dummy
-                && unicode_eq(entry->key, key)))
+                && entry->key != dummy                            /* unlikely */
+                && unicode_eq(entry->key, key)))                  /* likely */
             return entry;
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
@@ -267,6 +267,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     assert(minused >= 0);
 
     /* Find the smallest table size > minused. */
+    /* XXX speed-up with intrinsics */
     for (newsize = PySet_MINSIZE;
          newsize <= minused && newsize > 0;
          newsize <<= 1)
@@ -1013,6 +1014,12 @@ set_update(PySetObject *so, PyObject *args)
 
 PyDoc_STRVAR(update_doc,
 "Update a set with the union of itself and others.");
+
+/* XXX Todo:
+   If aligned memory allocations become available, make the
+   set object 64 byte aligned so that most of the fields
+   can be retrieved or updated in a single cache line.
+*/
 
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
