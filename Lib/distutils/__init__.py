@@ -15,5 +15,5 @@ __revision__ = "$Id$"
 # Updated automatically by the Python release process.
 #
 #--start constants--
-__version__ = "2.7.6"
+__version__ = "2.7.7rc1"
 #--end constants--
