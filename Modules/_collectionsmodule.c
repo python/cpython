@@ -1831,6 +1831,16 @@ _count_elements(PyObject *self, PyObject *args)
     if (mapping_get != NULL && mapping_get == dict_get &&
         mapping_setitem != NULL && mapping_setitem == dict_setitem) {
         while (1) {
+            /* Fast path advantages:
+                   1. Eliminate double hashing
+                      (by re-using the same hash for both the get and set)
+                   2. Avoid argument overhead of PyObject_CallFunctionObjArgs
+                      (argument tuple creation and parsing)
+                   3. Avoid indirection through a bound method object
+                      (creates another argument tuple)
+                   4. Avoid initial increment from zero
+                      (reuse an existing one-object instead)
+            */
             Py_hash_t hash;
 
             key = PyIter_Next(it);
@@ -1848,13 +1858,13 @@ _count_elements(PyObject *self, PyObject *args)
             oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
             if (oldval == NULL) {
                 if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) == -1)
-                    break;
+                    goto done;
             } else {
                 newval = PyNumber_Add(oldval, one);
                 if (newval == NULL)
-                    break;
+                    goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) == -1)
-                    break;
+                    goto done;
                 Py_CLEAR(newval);
             }
             Py_DECREF(key);
