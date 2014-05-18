@@ -132,8 +132,14 @@ Importing Modules
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 
+   The module's :attr:`__spec__` and :attr:`__loader__` will be set, if
+   not set already, with the appropriate values.  The spec's loader will
+   be set to the module's ``__loader__`` (if set) and to an instance of
+   :class:`SourceFileLoader` otherwise.
+
    The module's :attr:`__file__` attribute will be set to the code object's
-   :c:member:`co_filename`.
+   :c:member:`co_filename`.  If applicable, :attr:`__cached__` will also
+   be set.
 
    This function will reload the module if it was already imported.  See
    :c:func:`PyImport_ReloadModule` for the intended way to reload a module.

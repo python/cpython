@@ -277,7 +277,7 @@ compare_digest(PyObject *self, PyObject *args)
         Py_buffer view_a;
         Py_buffer view_b;
 
-        if ((PyObject_CheckBuffer(a) == 0) & (PyObject_CheckBuffer(b) == 0)) {
+        if (PyObject_CheckBuffer(a) == 0 && PyObject_CheckBuffer(b) == 0) {
             PyErr_Format(PyExc_TypeError,
                          "unsupported operand types(s) or combination of types: "
                          "'%.100s' and '%.100s'",

@@ -1487,6 +1487,7 @@ TAGS::
 
 # Touch generated files
 touch:
+	cd $(srcdir); \
 	hg --config extensions.touch=Tools/hg/hgtouch.py touch -v
 
 # Sanitation targets -- clean leaves libraries, executables and tags

@@ -856,7 +856,7 @@ module_dict_for_exec(PyObject *name)
         }
     }
 
-    return d;
+    return d;  /* Return a borrowed reference. */
 }
 
 static PyObject *
@@ -888,33 +888,25 @@ PyObject*
 PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
                               PyObject *cpathname)
 {
-    PyObject *d, *v;
+    PyObject *d, *res;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    _Py_IDENTIFIER(_fix_up_module);
 
     d = module_dict_for_exec(name);
     if (d == NULL) {
         return NULL;
     }
 
-    if (pathname != NULL) {
-        v = pathname;
+    if (pathname == NULL) {
+        pathname = ((PyCodeObject *)co)->co_filename;
     }
-    else {
-        v = ((PyCodeObject *)co)->co_filename;
+    res = _PyObject_CallMethodIdObjArgs(interp->importlib,
+                                        &PyId__fix_up_module,
+                                        d, name, pathname, cpathname, NULL);
+    if (res != NULL) {
+        res = exec_code_in_module(name, d, co);
     }
-    Py_INCREF(v);
-    if (PyDict_SetItemString(d, "__file__", v) != 0)
-        PyErr_Clear(); /* Not important enough to report */
-    Py_DECREF(v);
-
-    /* Remember the pyc path name as the __cached__ attribute. */
-    if (cpathname != NULL)
-        v = cpathname;
-    else
-        v = Py_None;
-    if (PyDict_SetItemString(d, "__cached__", v) != 0)
-        PyErr_Clear(); /* Not important enough to report */
-
-    return exec_code_in_module(name, d, co);
+    return res;
 }
 
 

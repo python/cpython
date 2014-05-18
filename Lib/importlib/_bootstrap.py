@@ -1220,6 +1220,29 @@ class _SpecMethods:
             return self._load_unlocked()
 
 
+def _fix_up_module(ns, name, pathname, cpathname=None):
+    # This function is used by PyImport_ExecCodeModuleObject().
+    loader = ns.get('__loader__')
+    spec = ns.get('__spec__')
+    if not loader:
+        if spec:
+            loader = spec.loader
+        elif pathname == cpathname:
+            loader = SourcelessFileLoader(name, pathname)
+        else:
+            loader = SourceFileLoader(name, pathname)
+    if not spec:
+        spec = spec_from_file_location(name, pathname, loader=loader)
+    try:
+        ns['__spec__'] = spec
+        ns['__loader__'] = loader
+        ns['__file__'] = pathname
+        ns['__cached__'] = cpathname
+    except Exception:
+        # Not important enough to report.
+        pass
+
+
 # Loaders #####################################################################
 
 class BuiltinImporter:
