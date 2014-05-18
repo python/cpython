@@ -87,10 +87,17 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass
 
     def _write_to_self(self):
-        try:
-            self._csock.send(b'x')
-        except (BlockingIOError, InterruptedError):
-            pass
+        # This may be called from a different thread, possibly after
+        # _close_self_pipe() has been called or even while it is
+        # running.  Guard for self._csock being None or closed.  When
+        # a socket is closed, send() raises OSError (with errno set to
+        # EBADF, but let's not rely on the exact error code).
+        csock = self._csock
+        if csock is not None:
+            try:
+                csock.send(b'x')
+            except OSError:
+                pass
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None):

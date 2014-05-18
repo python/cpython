@@ -173,7 +173,7 @@
     </ResourceCompile>
     <PreLinkEvent>
       <Message>Generate build information...</Message>
-      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)"</Command>
+      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
@@ -209,7 +209,7 @@ IF %ERRORLEVEL% NEQ 0 (
     </ResourceCompile>
     <PreLinkEvent>
       <Message>Generate build information...</Message>
-      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)"</Command>
+      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
@@ -314,7 +314,7 @@ IF %ERRORLEVEL% NEQ 0 (
     </ResourceCompile>
     <PreLinkEvent>
       <Message>Generate build information...</Message>
-      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)"</Command>
+      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
@@ -350,7 +350,7 @@ IF %ERRORLEVEL% NEQ 0 (
     </ResourceCompile>
     <PreLinkEvent>
       <Message>Generate build information...</Message>
-      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)"</Command>
+      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
@@ -383,7 +383,7 @@ IF %ERRORLEVEL% NEQ 0 (
     </ResourceCompile>
     <PreLinkEvent>
       <Message>Generate build information...</Message>
-      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)"</Command>
+      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
@@ -419,7 +419,7 @@ IF %ERRORLEVEL% NEQ 0 (
     </ResourceCompile>
     <PreLinkEvent>
       <Message>Generate build information...</Message>
-      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)"</Command>
+      <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>

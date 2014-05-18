@@ -786,6 +786,7 @@ class ProcessTestCase(BaseTestCase):
                              stdout=subprocess.PIPE,
                              universal_newlines=1)
         p.stdin.write("line1\n")
+        p.stdin.flush()
         self.assertEqual(p.stdout.readline(), "line1\n")
         p.stdin.write("line3\n")
         p.stdin.close()

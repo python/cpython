@@ -1404,6 +1404,9 @@ class _PlainTextDoc(TextDoc):
 def pager(text):
     """The first time this is called, determine what kind of pager to use."""
     global pager
+    # Escape non-encodable characters to avoid encoding errors later
+    encoding = sys.getfilesystemencoding()
+    text = text.encode(encoding, 'backslashreplace').decode(encoding)
     pager = getpager()
     pager(text)
 

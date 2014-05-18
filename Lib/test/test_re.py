@@ -1223,6 +1223,11 @@ class ReTests(unittest.TestCase):
             pat.scanner(string='abracadabra', pos=3, endpos=10).search().span(),
             (7, 9))
 
+    def test_bug_20998(self):
+        # Issue #20998: Fullmatch of repeated single character pattern
+        # with ignore case.
+        self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):

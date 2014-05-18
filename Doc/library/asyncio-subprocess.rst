@@ -8,7 +8,7 @@ Operating system support
 
 On Windows, the default event loop uses :class:`selectors.SelectSelector`
 which only supports sockets. The :class:`ProactorEventLoop` should be used to
-support subprocesses.
+support subprocesses. However, the latter does not support SSL.
 
 On Mac OS X older than 10.9 (Mavericks), :class:`selectors.KqueueSelector`
 does not support character devices like PTY, whereas it is used by the
@@ -262,9 +262,7 @@ display the output::
         stdout = stdout.decode('ascii').rstrip()
         print("Platform: %s" % stdout)
     else:
-        print("Python failed with exit code %s:" % exitcode)
-        sys.stdout.flush()
-        sys.stdout.buffer.flush()
+        print("Python failed with exit code %s:" % exitcode, flush=True)
         sys.stdout.buffer.write(stdout)
         sys.stdout.buffer.flush()
     loop.close()
