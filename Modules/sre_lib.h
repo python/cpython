@@ -173,7 +173,7 @@ SRE(charset)(SRE_CODE* set, SRE_CODE ch)
     }
 }
 
-LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, SRE_CODE* pattern);
+LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int match_all);
 
 LOCAL(Py_ssize_t)
 SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
@@ -259,7 +259,7 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
         /* repeated single character pattern */
         TRACE(("|%p|%p|COUNT SUBPATTERN\n", pattern, ptr));
         while ((SRE_CHAR*) state->ptr < end) {
-            i = SRE(match)(state, pattern);
+            i = SRE(match)(state, pattern, 0);
             if (i < 0)
                 return i;
             if (!i)
@@ -490,7 +490,7 @@ typedef struct {
 /* check if string matches the given pattern.  returns <0 for
    error, 0 for failure, and 1 for success */
 LOCAL(Py_ssize_t)
-SRE(match)(SRE_STATE* state, SRE_CODE* pattern)
+SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int match_all)
 {
     SRE_CHAR* end = (SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
@@ -507,7 +507,7 @@ SRE(match)(SRE_STATE* state, SRE_CODE* pattern)
     ctx->last_ctx_pos = -1;
     ctx->jump = JUMP_NONE;
     ctx->pattern = pattern;
-    ctx->match_all = state->match_all;
+    ctx->match_all = match_all;
     ctx_pos = alloc_pos;
 
 entrance:
@@ -739,7 +739,7 @@ entrance:
                 RETURN_FAILURE;
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
-                (!ctx->match_all || ctx->ptr == state->end)) {
+                ctx->ptr == state->end) {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -824,7 +824,7 @@ entrance:
             }
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
-                (!ctx->match_all || ctx->ptr == state->end)) {
+                (!match_all || ctx->ptr == state->end)) {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -1269,7 +1269,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
                     state->ptr = ptr - (prefix_len - prefix_skip - 1);
                     if (flags & SRE_INFO_LITERAL)
                         return 1; /* we got all of it */
-                    status = SRE(match)(state, pattern + 2*prefix_skip);
+                    status = SRE(match)(state, pattern + 2*prefix_skip, 0);
                     if (status != 0)
                         return status;
                     /* close but no cigar -- try again */
@@ -1302,7 +1302,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             state->ptr = ++ptr;
             if (flags & SRE_INFO_LITERAL)
                 return 1; /* we got all of it */
-            status = SRE(match)(state, pattern + 2);
+            status = SRE(match)(state, pattern + 2, 0);
             if (status != 0)
                 break;
         }
@@ -1317,7 +1317,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             TRACE(("|%p|%p|SEARCH CHARSET\n", pattern, ptr));
             state->start = ptr;
             state->ptr = ptr;
-            status = SRE(match)(state, pattern);
+            status = SRE(match)(state, pattern, 0);
             if (status != 0)
                 break;
             ptr++;
@@ -1327,7 +1327,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         while (ptr <= end) {
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
             state->start = state->ptr = ptr++;
-            status = SRE(match)(state, pattern);
+            status = SRE(match)(state, pattern, 0);
             if (status != 0)
                 break;
         }

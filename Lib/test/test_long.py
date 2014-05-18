@@ -1235,6 +1235,13 @@ class LongTest(unittest.TestCase):
         for n in map(int, integers):
             self.assertEqual(n, 0)
 
+    def test_shift_bool(self):
+        # Issue #21422: ensure that bool << int and bool >> int return int
+        for value in (True, False):
+            for shift in (0, 2):
+                self.assertEqual(type(value << shift), int)
+                self.assertEqual(type(value >> shift), int)
+
 
 def test_main():
     support.run_unittest(LongTest)

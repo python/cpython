@@ -22,9 +22,10 @@ manages the codec and error handling lookup process.
 
 It defines the following functions:
 
-.. function:: encode(obj, encoding='utf-8', errors='strict')
+.. function:: encode(obj, [encoding[, errors]])
 
-   Encodes *obj* using the codec registered for *encoding*.
+   Encodes *obj* using the codec registered for *encoding*. The default
+   encoding is ``utf-8``.
 
    *Errors* may be given to set the desired error handling scheme. The
    default error handler is ``strict`` meaning that encoding errors raise
@@ -32,9 +33,10 @@ It defines the following functions:
    :exc:`UnicodeEncodeError`). Refer to :ref:`codec-base-classes` for more
    information on codec error handling.
 
-.. function:: decode(obj, encoding='utf-8', errors='strict')
+.. function:: decode(obj, [encoding[, errors]])
 
-   Decodes *obj* using the codec registered for *encoding*.
+   Decodes *obj* using the codec registered for *encoding*. The default
+   encoding is ``utf-8``.
 
    *Errors* may be given to set the desired error handling scheme. The
    default error handler is ``strict`` meaning that decoding errors raise

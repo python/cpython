@@ -112,7 +112,7 @@ formatted string representation of a message object.  For more detail, see
 :mod:`email.message`.
 
 .. class:: BytesGenerator(outfp, mangle_from_=True, maxheaderlen=78, *, \
-                          policy=policy.default)
+                          policy=None)
 
    The constructor for the :class:`BytesGenerator` class takes a binary
    :term:`file-like object` called *outfp* for an argument.  *outfp* must
@@ -134,9 +134,11 @@ formatted string representation of a message object.  For more detail, see
    wrapping.  The default is 78, as recommended (but not required) by
    :rfc:`2822`.
 
+
    The *policy* keyword specifies a :mod:`~email.policy` object that controls a
-   number of aspects of the generator's operation.  The default policy
-   maintains backward compatibility.
+   number of aspects of the generator's operation.  If no *policy* is specified,
+   then the *policy* attached to the message object passed to :attr:`flatten`
+   is used.
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
 
@@ -174,7 +176,7 @@ formatted string representation of a message object.  For more detail, see
 
       Optional *linesep* specifies the line separator character used to
       terminate lines in the output.  If specified it overrides the value
-      specified by the ``Generator``\ 's ``policy``.
+      specified by the ``Generator``\ or *msg*\ 's ``policy``.
 
    .. method:: clone(fp)
 

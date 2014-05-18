@@ -1297,7 +1297,7 @@ textiowrapper_write(textio *self, PyObject *args)
     PyObject *b;
     Py_ssize_t textlen;
     int haslf = 0;
-    int needflush = 0;
+    int needflush = 0, text_needflush = 0;
 
     CHECK_INITIALIZED(self);
 
@@ -1331,8 +1331,8 @@ textiowrapper_write(textio *self, PyObject *args)
     }
 
     if (self->write_through)
-        needflush = 1;
-    else if (self->line_buffering &&
+        text_needflush = 1;
+    if (self->line_buffering &&
         (haslf ||
          PyUnicode_FindChar(text, '\r', 0, PyUnicode_GET_LENGTH(text), 1) != -1))
         needflush = 1;
@@ -1363,7 +1363,8 @@ textiowrapper_write(textio *self, PyObject *args)
     }
     self->pending_bytes_count += PyBytes_GET_SIZE(b);
     Py_DECREF(b);
-    if (self->pending_bytes_count > self->chunk_size || needflush) {
+    if (self->pending_bytes_count > self->chunk_size || needflush ||
+        text_needflush) {
         if (_textiowrapper_writeflush(self) < 0)
             return NULL;
     }

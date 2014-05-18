@@ -505,14 +505,14 @@ pattern_dealloc(PatternObject* self)
 }
 
 LOCAL(Py_ssize_t)
-sre_match(SRE_STATE* state, SRE_CODE* pattern)
+sre_match(SRE_STATE* state, SRE_CODE* pattern, int match_all)
 {
     if (state->charsize == 1)
-        return sre_ucs1_match(state, pattern);
+        return sre_ucs1_match(state, pattern, match_all);
     if (state->charsize == 2)
-        return sre_ucs2_match(state, pattern);
+        return sre_ucs2_match(state, pattern, match_all);
     assert(state->charsize == 4);
-    return sre_ucs4_match(state, pattern);
+    return sre_ucs4_match(state, pattern, match_all);
 }
 
 LOCAL(Py_ssize_t)
@@ -576,7 +576,7 @@ pattern_match(PatternObject *self, PyObject *args, PyObject *kwargs)
 
     TRACE(("|%p|%p|MATCH\n", PatternObject_GetCode(self), state.ptr));
 
-    status = sre_match(&state, PatternObject_GetCode(self));
+    status = sre_match(&state, PatternObject_GetCode(self), 0);
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
     if (PyErr_Occurred())
@@ -609,12 +609,11 @@ pattern_fullmatch(PatternObject* self, PyObject* args, PyObject* kw)
     if (!string)
         return NULL;
 
-    state.match_all = 1;
     state.ptr = state.start;
 
     TRACE(("|%p|%p|FULLMATCH\n", PatternObject_GetCode(self), state.ptr));
 
-    status = sre_match(&state, PatternObject_GetCode(self));
+    status = sre_match(&state, PatternObject_GetCode(self), 1);
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
     if (PyErr_Occurred())
@@ -2572,7 +2571,7 @@ scanner_match(ScannerObject* self, PyObject *unused)
 
     state->ptr = state->start;
 
-    status = sre_match(state, PatternObject_GetCode(self->pattern));
+    status = sre_match(state, PatternObject_GetCode(self->pattern), 0);
     if (PyErr_Occurred())
         return NULL;
 

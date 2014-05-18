@@ -78,7 +78,7 @@ def assert_python_failure(*args, **env_vars):
     """
     return _assert_python(False, *args, **env_vars)
 
-def spawn_python(*args, **kw):
+def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run a Python subprocess with the given arguments.
 
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
@@ -86,8 +86,16 @@ def spawn_python(*args, **kw):
     """
     cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)
+    # Under Fedora (?), GNU readline can output junk on stderr when initialized,
+    # depending on the TERM setting.  Setting TERM=vt100 is supposed to disable
+    # that.  References:
+    # - http://reinout.vanrees.org/weblog/2009/08/14/readline-invisible-character-hack.html
+    # - http://stackoverflow.com/questions/15760712/python-readline-module-prints-escape-character-during-import
+    # - http://lists.gnu.org/archive/html/bug-readline/2007-08/msg00004.html
+    env = kw.setdefault('env', dict(os.environ))
+    env['TERM'] = 'vt100'
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            stdout=stdout, stderr=stderr,
                             **kw)
 
 def kill_python(p):
