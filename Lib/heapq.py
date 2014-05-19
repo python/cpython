@@ -141,9 +141,8 @@ def heappop(heap):
         returnitem = heap[0]
         heap[0] = lastelt
         _siftup(heap, 0)
-    else:
-        returnitem = lastelt
-    return returnitem
+        return returnitem
+    return lastelt
 
 def heapreplace(heap, item):
     """Pop and return the current smallest value, and add the new item.
@@ -357,14 +356,14 @@ def merge(*iterables):
 # Algorithm notes for nlargest() and nsmallest()
 # ==============================================
 #
-# Makes just a single pass over the data while keeping the k most extreme values
+# Make a single pass over the data while keeping the k most extreme values
 # in a heap.  Memory consumption is limited to keeping k values in a list.
 #
 # Measured performance for random inputs:
 #
 #                                   number of comparisons
 #    n inputs     k-extreme values  (average of 5 trials)   % more than min()
-# -------------   ----------------  - -------------------   -----------------
+# -------------   ----------------  ---------------------   -----------------
 #      1,000           100                  3,317               133.2%
 #     10,000           100                 14,046                40.5%
 #    100,000           100                105,749                 5.7%
@@ -542,15 +541,6 @@ def nlargest(n, iterable, key=None):
 
 
 if __name__ == "__main__":
-    # Simple sanity test
-    heap = []
-    data = [1, 3, 5, 7, 9, 2, 4, 6, 8, 0]
-    for item in data:
-        heappush(heap, item)
-    sort = []
-    while heap:
-        sort.append(heappop(heap))
-    print(sort)
 
     import doctest
     doctest.testmod()
