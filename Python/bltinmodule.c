@@ -1454,10 +1454,12 @@ builtin_min(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(min_doc,
-"min(iterable[, key=func]) -> value\n\
-min(a, b, c, ...[, key=func]) -> value\n\
+"min(iterable, *[, default=obj, key=func]) -> value\n\
+min(arg1, arg2, *args, *[, key=func]) -> value\n\
 \n\
-With a single iterable argument, return its smallest item.\n\
+With a single iterable argument, return its smallest item. The\n\
+default keyword-only argument specifies an object to return if\n\
+the provided iterable is empty.\n\
 With two or more arguments, return the smallest argument.");
 
 
@@ -1468,10 +1470,12 @@ builtin_max(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(max_doc,
-"max(iterable[, key=func]) -> value\n\
-max(a, b, c, ...[, key=func]) -> value\n\
+"max(iterable, *[, default=obj, key=func]) -> value\n\
+max(arg1, arg2, *args, *[, key=func]) -> value\n\
 \n\
-With a single iterable argument, return its largest item.\n\
+With a single iterable argument, return its biggest item. The\n\
+default keyword-only argument specifies an object to return if\n\
+the provided iterable is empty.\n\
 With two or more arguments, return the largest argument.");
 
 
