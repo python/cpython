@@ -13,10 +13,10 @@ if __name__ == '__main__':
 The X object must have a .__name__ attribute and a 'parent' parameter.
 X will often be a widget class, but a callable instance with .__name__
 or a wrapper function also work. The name of wrapper functions, like
-'_Editor_Window', should start with '_'.
+'_editor_Window', should start with '_'.
 
 This file must contain a matching instance of the folling template,
-with X.__name__ prepended, as in '_Editor_window_spec ...'.
+with X.__name__ prepended, as in '_editor_window_spec ...'.
 
 _spec = {
     'file': '',
@@ -33,19 +33,6 @@ msg: displayed in a master window. Hints as to how the user might
 from importlib import import_module
 import Tkinter as tk
 
-
-_Editor_window_spec = {
-    'file': 'EditorWindow',
-    'kwds': {},
-    'msg': "Test editor functions of interest"
-    }
-
-_Help_dialog_spec = {
-    'file': 'EditorWindow',
-    'kwds': {},
-    'msg': "If the help text displays, this works"
-    }
-
 AboutDialog_spec = {
     'file': 'aboutDialog',
     'kwds': {'title': 'About test'},
@@ -53,15 +40,27 @@ AboutDialog_spec = {
     }
 
 
+_editor_window_spec = {
+    'file': 'EditorWindow',
+    'kwds': {},
+    'msg': "Test editor functions of interest"
+    }
+
 GetCfgSectionNameDialog_spec = {
     'file': 'configSectionNameDialog',
     'kwds': {'title':'Get Name',
-                 'message':'Enter something',
-                 'used_names': {'abc'},
-                 '_htest': True},
+             'message':'Enter something',
+             'used_names': {'abc'},
+             '_htest': True},
     'msg': "After the text entered with [Ok] is stripped, <nothing>, "
-              "'abc', or more that 30 chars are errors.\n"
-              "Close 'Get Name' with a valid entry (printed to Shell), [Cancel], or [X]",
+           "'abc', or more that 30 chars are errors.\n"
+           "Close 'Get Name' with a valid entry (printed to Shell), [Cancel], or [X]",
+    }
+
+_help_dialog_spec = {
+    'file': 'EditorWindow',
+    'kwds': {},
+    'msg': "If the help text displays, this works"
     }
 
 def run(test):

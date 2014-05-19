@@ -108,7 +108,7 @@ class HelpDialog(object):
         self.parent = None
 
 helpDialog = HelpDialog()  # singleton instance
-def _Help_dialog(parent):  # wrapper for htest
+def _help_dialog(parent):  # wrapper for htest
     helpDialog.show_dialog(parent)
 
 
@@ -1711,21 +1711,21 @@ def fixwordbreaks(root):
     tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_]')
 
 
-def _Editor_window(parent):
+def _editor_window(parent):
     root = parent
     fixwordbreaks(root)
-    root.withdraw()
+##    root.withdraw()
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:
         filename = None
     macosxSupport.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
-    edit.set_close_hook(root.quit)
-    edit.text.bind("<<close-all-windows>>", edit.close_event)
+##    edit.set_close_hook(root.quit)
+##    edit.text.bind("<<close-all-windows>>", edit.close_event)
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run
     if len(sys.argv) <= 1:
-        run(_Help_dialog)
-    run(_Editor_window)
+        run(_help_dialog)
+    run(_editor_window)
