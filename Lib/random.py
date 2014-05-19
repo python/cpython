@@ -684,7 +684,7 @@ def _test_generator(n, func, args):
     print(round(t1-t0, 3), 'sec,', end=' ')
     avg = total/n
     stddev = _sqrt(sqsum/n - avg*avg)
-    print('avg %g, stddev %g, min %g, max %g' % \
+    print('avg %g, stddev %g, min %g, max %g\n' % \
               (avg, stddev, smallest, largest))
 
 
