@@ -237,7 +237,7 @@ messages to be sent back to back (without some kind of reply), and you pass
 following message. You'll need to put that aside and hold onto it, until it's
 needed.
 
-Prefixing the message with it's length (say, as 5 numeric characters) gets more
+Prefixing the message with its length (say, as 5 numeric characters) gets more
 complex, because (believe it or not), you may not get all 5 characters in one
 ``recv``. In playing around, you'll get away with it; but in high network loads,
 your code will very quickly break unless you use two ``recv`` loops - the first

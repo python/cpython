@@ -431,7 +431,7 @@ objects:
 .. method:: NodeList.item(i)
 
    Return the *i*'th item from the sequence, if there is one, or ``None``.  The
-   index *i* is not allowed to be less then zero or greater than or equal to the
+   index *i* is not allowed to be less than zero or greater than or equal to the
    length of the sequence.
 
 

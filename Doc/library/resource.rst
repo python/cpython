@@ -44,7 +44,7 @@ this module for those platforms.
 
 .. data:: RLIM_INFINITY
 
-   Constant used to represent the the limit for an unlimited resource.
+   Constant used to represent the limit for an unlimited resource.
 
 
 .. function:: getrlimit(resource)
