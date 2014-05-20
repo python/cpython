@@ -60,7 +60,7 @@ If your project is on the Cheeseshop_/PyPI_, make sure it has the proper
 `trove classifiers`_ to signify what versions of Python it **currently**
 supports. At minimum you should specify the major version(s), e.g.
 ``Programming Language :: Python :: 2`` if your project currently only supports
-Python 2. It is preferrable that you be as specific as possible by listing every
+Python 2. It is preferable that you be as specific as possible by listing every
 major/minor version of Python that you support, e.g. if your project supports
 Python 2.6 and 2.7, then you want the classifiers of::
 

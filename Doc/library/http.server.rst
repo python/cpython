@@ -220,7 +220,7 @@ of which this module provides three different variants:
 
    .. method:: send_response_only(code, message=None)
 
-      Sends the reponse header only, used for the purposes when ``100
+      Sends the response header only, used for the purposes when ``100
       Continue`` response is sent by the server to the client. The headers not
       buffered and sent directly the output stream.If the *message* is not
       specified, the HTTP message corresponding the response *code*  is sent.

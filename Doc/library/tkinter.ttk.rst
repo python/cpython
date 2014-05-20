@@ -1167,7 +1167,7 @@ Ttk Styling
 Each widget in :mod:`ttk` is assigned a style, which specifies the set of
 elements making up the widget and how they are arranged, along with dynamic
 and default settings for element options. By default the style name is the
-same as the widget's class name, but it may be overriden by the widget's style
+same as the widget's class name, but it may be overridden by the widget's style
 option. If you don't know the class name of a widget, use the method
 :meth:`Misc.winfo_class` (somewidget.winfo_class()).
 
