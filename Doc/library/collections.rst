@@ -986,7 +986,7 @@ semantics pass-in keyword arguments using a regular unordered dictionary.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Since an ordered dictionary remembers its insertion order, it can be used
-in conjuction with sorting to make a sorted dictionary::
+in conjunction with sorting to make a sorted dictionary::
 
     >>> # regular unsorted dictionary
     >>> d = {'banana': 3, 'apple':4, 'pear': 1, 'orange': 2}

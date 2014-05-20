@@ -388,7 +388,7 @@ However, there are a few differences that should be taken into account:
 * All sections include ``DEFAULTSECT`` values as well which means that
   ``.clear()`` on a section may not leave the section visibly empty.  This is
   because default values cannot be deleted from the section (because technically
-  they are not there).  If they are overriden in the section, deleting causes
+  they are not there).  If they are overridden in the section, deleting causes
   the default value to be visible again.  Trying to delete a default value
   causes a ``KeyError``.
 
@@ -669,7 +669,7 @@ the :meth:`__init__` options:
 
 More advanced customization may be achieved by overriding default values of
 these parser attributes.  The defaults are defined on the classes, so they
-may be overriden by subclasses or by attribute assignment.
+may be overridden by subclasses or by attribute assignment.
 
 .. attribute:: BOOLEAN_STATES
 

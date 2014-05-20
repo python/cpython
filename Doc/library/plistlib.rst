@@ -129,7 +129,7 @@ The following functions are deprecated:
    and binary) file object. Returns the unpacked root object (which usually
    is a dictionary).
 
-   This function calls :func:`load` to do the actual work, the the documentation
+   This function calls :func:`load` to do the actual work, see the documentation
    of :func:`that function <load>` for an explanation of the keyword arguments.
 
    .. note::
