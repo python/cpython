@@ -141,7 +141,7 @@ class BaseEventLoopTests(unittest.TestCase):
             pass
 
         other_loop = base_events.BaseEventLoop()
-        other_loop._selector = unittest.mock.Mock()
+        other_loop._selector = mock.Mock()
         asyncio.set_event_loop(other_loop)
 
         # raise RuntimeError if the event loop is different in debug mode
