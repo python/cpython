@@ -210,7 +210,7 @@ object.
    .. warning::
 
       Registering a file descriptor that's already registered is not an
-      error, but the result is undefined. The appropiate action is to
+      error, but the result is undefined. The appropriate action is to
       unregister or modify it first. This is an important difference
       compared with :c:func:`poll`.
 

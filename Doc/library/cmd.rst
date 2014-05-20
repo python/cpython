@@ -252,7 +252,7 @@ immediate playback::
             'Move turtle to an absolute position with changing orientation.  GOTO 100 200'
             goto(*parse(arg))
         def do_home(self, arg):
-            'Return turtle to the home postion:  HOME'
+            'Return turtle to the home position:  HOME'
             home()
         def do_circle(self, arg):
             'Draw circle with given radius an options extent and steps:  CIRCLE 50'

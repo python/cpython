@@ -184,7 +184,7 @@ Module contents
    unless the Python interpreter was started with the :option:`-S` flag.
 
    .. versionchanged:: 3.3
-      This function used to be called unconditionnally.
+      This function used to be called unconditionally.
 
 
 .. function:: addsitedir(sitedir, known_paths=None)

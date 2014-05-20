@@ -1809,7 +1809,7 @@ Input methods
 
    Pop up a dialog window for input of a number. title is the title of the
    dialog window, prompt is a text mostly describing what numerical information
-   to input. default: default value, minval: minimum value for imput,
+   to input. default: default value, minval: minimum value for input,
    maxval: maximum value for input
    The number input must be in the range minval .. maxval if these are
    given. If not, a hint is issued and the dialog remains open for
@@ -2397,7 +2397,7 @@ Changes since Python 3.0
   Accordingly the latter has got an alias: :meth:`Screen.onkeyrelease`.
 
 - The method  :meth:`Screen.mainloop` has been added. So when working only
-  with Screen and Turtle objects one must not additonally import
+  with Screen and Turtle objects one must not additionally import
   :func:`mainloop` anymore.
 
 - Two input methods has been added :meth:`Screen.textinput` and

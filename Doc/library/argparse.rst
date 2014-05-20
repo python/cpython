@@ -1873,7 +1873,7 @@ Customizing file parsing
 
    Arguments that are read from a file (see the *fromfile_prefix_chars*
    keyword argument to the :class:`ArgumentParser` constructor) are read one
-   argument per line. :meth:`convert_arg_line_to_args` can be overriden for
+   argument per line. :meth:`convert_arg_line_to_args` can be overridden for
    fancier reading.
 
    This method takes a single argument *arg_line* which is a string read from

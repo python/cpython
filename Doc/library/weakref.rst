@@ -566,8 +566,8 @@ third party, such as running code when a module is unloaded::
 
 .. note::
 
-   If you create a finalizer object in a daemonic thread just as the
-   the program exits then there is the possibility that the finalizer
+   If you create a finalizer object in a daemonic thread just as the program
+   exits then there is the possibility that the finalizer
    does not get called at exit.  However, in a daemonic thread
    :func:`atexit.register`, ``try: ... finally: ...`` and ``with: ...``
    do not guarantee that cleanup occurs either.
