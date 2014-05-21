@@ -457,6 +457,26 @@ SplitObj(PyObject *arg)
             return result;
         /* Fall through, returning arg. */
     }
+    else if (PyList_Check(arg)) {
+        int i, size;
+        PyObject *elem, *newelem, *result;
+
+        size = PyList_GET_SIZE(arg);
+        result = PyTuple_New(size);
+        if (!result)
+            return NULL;
+        /* Recursively invoke SplitObj for all list items. */
+        for(i = 0; i < size; i++) {
+            elem = PyList_GET_ITEM(arg, i);
+            newelem = SplitObj(elem);
+            if (!newelem) {
+                Py_XDECREF(result);
+                return NULL;
+            }
+            PyTuple_SetItem(result, i, newelem);
+        }
+        return result;
+    }
     else if (PyUnicode_Check(arg)) {
         int argc;
         char **argv;
@@ -882,21 +902,23 @@ AsObj(PyObject *value)
     }
     else if (PyFloat_Check(value))
         return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
-    else if (PyTuple_Check(value)) {
+    else if (PyTuple_Check(value) || PyList_Check(value)) {
         Tcl_Obj **argv;
         Py_ssize_t size, i;
 
-        size = PyTuple_Size(value);
+        size = PySequence_Fast_GET_SIZE(value);
         if (!CHECK_SIZE(size, sizeof(Tcl_Obj *))) {
-            PyErr_SetString(PyExc_OverflowError, "tuple is too long");
+            PyErr_SetString(PyExc_OverflowError,
+                            PyTuple_Check(value) ? "tuple is too long" :
+                                                   "list is too long");
             return NULL;
         }
         argv = (Tcl_Obj **) ckalloc(((size_t)size) * sizeof(Tcl_Obj *));
         if(!argv)
           return 0;
         for (i = 0; i < size; i++)
-          argv[i] = AsObj(PyTuple_GetItem(value,i));
-        result = Tcl_NewListObj(PyTuple_Size(value), argv);
+          argv[i] = AsObj(PySequence_Fast_GET_ITEM(value,i));
+        result = Tcl_NewListObj(size, argv);
         ckfree(FREECAST argv);
         return result;
     }
@@ -1071,7 +1093,7 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
     if (args == NULL)
         /* do nothing */;
 
-    else if (!PyTuple_Check(args)) {
+    else if (!(PyTuple_Check(args) || PyList_Check(args))) {
         objv[0] = AsObj(args);
         if (objv[0] == 0)
             goto finally;
@@ -1079,11 +1101,13 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
         Tcl_IncrRefCount(objv[0]);
     }
     else {
-        objc = PyTuple_Size(args);
+        objc = PySequence_Fast_GET_SIZE(args);
 
         if (objc > ARGSZ) {
             if (!CHECK_SIZE(objc, sizeof(Tcl_Obj *))) {
-                PyErr_SetString(PyExc_OverflowError, "tuple is too long");
+                PyErr_SetString(PyExc_OverflowError,
+                                PyTuple_Check(args) ? "tuple is too long" :
+                                                      "list is too long");
                 return NULL;
             }
             objv = (Tcl_Obj **)ckalloc(((size_t)objc) * sizeof(Tcl_Obj *));
@@ -1095,7 +1119,7 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
         }
 
         for (i = 0; i < objc; i++) {
-            PyObject *v = PyTuple_GetItem(args, i);
+            PyObject *v = PySequence_Fast_GET_ITEM(args, i);
             if (v == Py_None) {
                 objc = i;
                 break;
@@ -1834,6 +1858,9 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
         Py_INCREF(arg);
         return arg;
     }
+    if (PyList_Check(arg)) {
+        return PySequence_Tuple(arg);
+    }
 
     if (!PyArg_ParseTuple(args, "et:splitlist", "utf-8", &list))
         return NULL;
@@ -1894,7 +1921,7 @@ Tkapp_Split(PyObject *self, PyObject *args)
         }
         return v;
     }
-    if (PyTuple_Check(arg))
+    if (PyTuple_Check(arg) || PyList_Check(arg))
         return SplitObj(arg);
 
     if (!PyArg_ParseTuple(args, "et:split", "utf-8", &list))
@@ -2684,35 +2711,15 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
         PyErr_SetString(PyExc_ValueError,
                         "nesting too deep in _flatten");
         return 0;
-    } else if (PyList_Check(item)) {
-        size = PyList_GET_SIZE(item);
+    } else if (PyTuple_Check(item) || PyList_Check(item)) {
+        size = PySequence_Fast_GET_SIZE(item);
         /* preallocate (assume no nesting) */
         if (context->size + size > context->maxsize &&
             !_bump(context, size))
             return 0;
         /* copy items to output tuple */
         for (i = 0; i < size; i++) {
-            PyObject *o = PyList_GET_ITEM(item, i);
-            if (PyList_Check(o) || PyTuple_Check(o)) {
-                if (!_flatten1(context, o, depth + 1))
-                    return 0;
-            } else if (o != Py_None) {
-                if (context->size + 1 > context->maxsize &&
-                    !_bump(context, 1))
-                    return 0;
-                Py_INCREF(o);
-                PyTuple_SET_ITEM(context->tuple,
-                                 context->size++, o);
-            }
-        }
-    } else if (PyTuple_Check(item)) {
-        /* same, for tuples */
-        size = PyTuple_GET_SIZE(item);
-        if (context->size + size > context->maxsize &&
-            !_bump(context, size))
-            return 0;
-        for (i = 0; i < size; i++) {
-            PyObject *o = PyTuple_GET_ITEM(item, i);
+            PyObject *o = PySequence_Fast_GET_ITEM(item, i);
             if (PyList_Check(o) || PyTuple_Check(o)) {
                 if (!_flatten1(context, o, depth + 1))
                     return 0;
