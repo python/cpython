@@ -121,7 +121,7 @@ getpeername() -- return remote address [*]\n\
 getsockname() -- return local address\n\
 getsockopt(level, optname[, buflen]) -- get socket options\n\
 gettimeout() -- return timeout or None\n\
-listen(n) -- start listening for incoming connections\n\
+listen([n]) -- start listening for incoming connections\n\
 recv(buflen[, flags]) -- receive data\n\
 recv_into(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
 recvfrom(buflen[, flags]) -- receive data and sender\'s address\n\
@@ -2534,14 +2534,16 @@ info is a pair (hostaddr, port).");
 /* s.listen(n) method */
 
 static PyObject *
-sock_listen(PySocketSockObject *s, PyObject *arg)
+sock_listen(PySocketSockObject *s, PyObject *args)
 {
-    int backlog;
+    /* We try to choose a default backlog high enough to avoid connection drops
+     * for common workloads, yet not too high to limit resource usage. */
+    int backlog = Py_MIN(SOMAXCONN, 128);
     int res;
 
-    backlog = _PyLong_AsInt(arg);
-    if (backlog == -1 && PyErr_Occurred())
+    if (!PyArg_ParseTuple(args, "|i:listen", &backlog))
         return NULL;
+
     Py_BEGIN_ALLOW_THREADS
     /* To avoid problems on systems that don't allow a negative backlog
      * (which doesn't make sense anyway) we force a minimum value of 0. */
@@ -2556,12 +2558,12 @@ sock_listen(PySocketSockObject *s, PyObject *arg)
 }
 
 PyDoc_STRVAR(listen_doc,
-"listen(backlog)\n\
+"listen([backlog])\n\
 \n\
-Enable a server to accept connections.  The backlog argument must be at\n\
-least 0 (if it is lower, it is set to 0); it specifies the number of\n\
+Enable a server to accept connections.  If backlog is specified, it must be\n\
+at least 0 (if it is lower, it is set to 0); it specifies the number of\n\
 unaccepted connections that the system will allow before refusing new\n\
-connections.");
+connections. If not specified, a default reasonable value is chosen.");
 
 
 /*
@@ -3795,7 +3797,7 @@ static PyMethodDef sock_methods[] = {
     {"share",         (PyCFunction)sock_share, METH_VARARGS,
                       sock_share_doc},
 #endif
-    {"listen",            (PyCFunction)sock_listen, METH_O,
+    {"listen",            (PyCFunction)sock_listen, METH_VARARGS,
                       listen_doc},
     {"recv",              (PyCFunction)sock_recv, METH_VARARGS,
                       recv_doc},
