@@ -906,12 +906,15 @@ to sockets.
    On other platforms, the generic :func:`fcntl.fcntl` and :func:`fcntl.ioctl`
    functions may be used; they accept a socket object as their first argument.
 
-.. method:: socket.listen(backlog)
+.. method:: socket.listen([backlog])
 
-   Listen for connections made to the socket.  The *backlog* argument specifies the
-   maximum number of queued connections and should be at least 0; the maximum value
-   is system-dependent (usually 5), the minimum value is forced to 0.
+   Enable a server to accept connections.  If *backlog* is specified, it must
+   be at least 0 (if it is lower, it is set to 0); it specifies the number of
+   unaccepted connections that the system will allow before refusing new
+   connections. If not specified, a default reasonable value is chosen.
 
+   .. versionchanged:: 3.5
+      The *backlog* parameter is now optional.
 
 .. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, \
                             errors=None, newline=None)

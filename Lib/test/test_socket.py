@@ -1344,10 +1344,13 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_listen_backlog(self):
         for backlog in 0, -1:
-            srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+                srv.bind((HOST, 0))
+                srv.listen(backlog)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
             srv.bind((HOST, 0))
-            srv.listen(backlog)
-            srv.close()
+            srv.listen()
 
     @support.cpython_only
     def test_listen_backlog_overflow(self):
