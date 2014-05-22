@@ -544,7 +544,7 @@ A ``TarInfo`` object has the following public data attributes:
    :const:`AREGTYPE`, :const:`LNKTYPE`, :const:`SYMTYPE`, :const:`DIRTYPE`,
    :const:`FIFOTYPE`, :const:`CONTTYPE`, :const:`CHRTYPE`, :const:`BLKTYPE`,
    :const:`GNUTYPE_SPARSE`.  To determine the type of a :class:`TarInfo` object
-   more conveniently, use the ``is_*()`` methods below.
+   more conveniently, use the ``is*()`` methods below.
 
 
 .. attribute:: TarInfo.linkname
