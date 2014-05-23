@@ -292,7 +292,7 @@ be finalized; only the internally used file object will be closed. See the
    will be added as a pax global header if *format* is :const:`PAX_FORMAT`.
 
 
-.. method:: TarFile.open(...)
+.. classmethod:: TarFile.open(...)
 
    Alternative constructor. The :func:`tarfile.open` function is actually a
    shortcut to this classmethod.
