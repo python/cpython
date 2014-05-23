@@ -15,6 +15,12 @@ Core and Builtins
   time issue noticeable when compiling code with a large number of "and"
   and "or" operators.
 
+Tests
+-----
+
+- Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
+  PanedWindow.paneconfigure(), and Menu.entryconfigure().
+
 
 What's New in Python 3.4.1?
 ===========================
