@@ -1325,8 +1325,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
              reserved IPv4 Network range.
 
         """
-        reserved_network = IPv4Network('240.0.0.0/4')
-        return self in reserved_network
+        return self in self._reserved_network
 
     @property
     @functools.lru_cache()
@@ -1338,21 +1337,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             iana-ipv4-special-registry.
 
         """
-        return (self in IPv4Network('0.0.0.0/8') or
-                self in IPv4Network('10.0.0.0/8') or
-                self in IPv4Network('127.0.0.0/8') or
-                self in IPv4Network('169.254.0.0/16') or
-                self in IPv4Network('172.16.0.0/12') or
-                self in IPv4Network('192.0.0.0/29') or
-                self in IPv4Network('192.0.0.170/31') or
-                self in IPv4Network('192.0.2.0/24') or
-                self in IPv4Network('192.168.0.0/16') or
-                self in IPv4Network('198.18.0.0/15') or
-                self in IPv4Network('198.51.100.0/24') or
-                self in IPv4Network('203.0.113.0/24') or
-                self in IPv4Network('240.0.0.0/4') or
-                self in IPv4Network('255.255.255.255/32'))
-
+        return any(self in net for net in self._private_networks)
 
     @property
     def is_multicast(self):
@@ -1363,8 +1348,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             See RFC 3171 for details.
 
         """
-        multicast_network = IPv4Network('224.0.0.0/4')
-        return self in multicast_network
+        return self in self._multicast_network
 
     @property
     def is_unspecified(self):
@@ -1375,8 +1359,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             RFC 5735 3.
 
         """
-        unspecified_address = IPv4Address('0.0.0.0')
-        return self == unspecified_address
+        return self == self._unspecified_address
 
     @property
     def is_loopback(self):
@@ -1386,8 +1369,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             A boolean, True if the address is a loopback per RFC 3330.
 
         """
-        loopback_network = IPv4Network('127.0.0.0/8')
-        return self in loopback_network
+        return self in self._loopback_network
 
     @property
     def is_link_local(self):
@@ -1397,8 +1379,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             A boolean, True if the address is link-local per RFC 3927.
 
         """
-        linklocal_network = IPv4Network('169.254.0.0/16')
-        return self in linklocal_network
+        return self in self._linklocal_network
 
 
 class IPv4Interface(IPv4Address):
@@ -1596,6 +1577,33 @@ class IPv4Network(_BaseV4, _BaseNetwork):
                     self.broadcast_address in IPv4Network('100.64.0.0/10')) and
                 not self.is_private)
 
+
+IPv4Address._linklocal_network = IPv4Network('169.254.0.0/16')
+
+IPv4Address._loopback_network = IPv4Network('127.0.0.0/8')
+
+IPv4Address._multicast_network = IPv4Network('224.0.0.0/4')
+
+IPv4Address._private_networks = [
+    IPv4Network('0.0.0.0/8'),
+    IPv4Network('10.0.0.0/8'),
+    IPv4Network('127.0.0.0/8'),
+    IPv4Network('169.254.0.0/16'),
+    IPv4Network('172.16.0.0/12'),
+    IPv4Network('192.0.0.0/29'),
+    IPv4Network('192.0.0.170/31'),
+    IPv4Network('192.0.2.0/24'),
+    IPv4Network('192.168.0.0/16'),
+    IPv4Network('198.18.0.0/15'),
+    IPv4Network('198.51.100.0/24'),
+    IPv4Network('203.0.113.0/24'),
+    IPv4Network('240.0.0.0/4'),
+    IPv4Network('255.255.255.255/32'),
+    ]
+
+IPv4Address._reserved_network = IPv4Network('240.0.0.0/4')
+
+IPv4Address._unspecified_address = IPv4Address('0.0.0.0')
 
 
 class _BaseV6:
@@ -1938,8 +1946,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             See RFC 2373 2.7 for details.
 
         """
-        multicast_network = IPv6Network('ff00::/8')
-        return self in multicast_network
+        return self in self._multicast_network
 
     @property
     def is_reserved(self):
@@ -1950,16 +1957,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             reserved IPv6 Network ranges.
 
         """
-        reserved_networks = [IPv6Network('::/8'), IPv6Network('100::/8'),
-                             IPv6Network('200::/7'), IPv6Network('400::/6'),
-                             IPv6Network('800::/5'), IPv6Network('1000::/4'),
-                             IPv6Network('4000::/3'), IPv6Network('6000::/3'),
-                             IPv6Network('8000::/3'), IPv6Network('A000::/3'),
-                             IPv6Network('C000::/3'), IPv6Network('E000::/4'),
-                             IPv6Network('F000::/5'), IPv6Network('F800::/6'),
-                             IPv6Network('FE00::/9')]
-
-        return any(self in x for x in reserved_networks)
+        return any(self in x for x in self._reserved_networks)
 
     @property
     def is_link_local(self):
@@ -1969,8 +1967,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             A boolean, True if the address is reserved per RFC 4291.
 
         """
-        linklocal_network = IPv6Network('fe80::/10')
-        return self in linklocal_network
+        return self in self._linklocal_network
 
     @property
     def is_site_local(self):
@@ -1984,8 +1981,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             A boolean, True if the address is reserved per RFC 3513 2.5.6.
 
         """
-        sitelocal_network = IPv6Network('fec0::/10')
-        return self in sitelocal_network
+        return self in self._sitelocal_network
 
     @property
     @functools.lru_cache()
@@ -1997,16 +1993,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             iana-ipv6-special-registry.
 
         """
-        return (self in IPv6Network('::1/128') or
-                self in IPv6Network('::/128') or
-                self in IPv6Network('::ffff:0:0/96') or
-                self in IPv6Network('100::/64') or
-                self in IPv6Network('2001::/23') or
-                self in IPv6Network('2001:2::/48') or
-                self in IPv6Network('2001:db8::/32') or
-                self in IPv6Network('2001:10::/28') or
-                self in IPv6Network('fc00::/7') or
-                self in IPv6Network('fe80::/10'))
+        return any(self in net for net in self._private_networks)
 
     @property
     def is_global(self):
@@ -2288,3 +2275,34 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         """
         return (self.network_address.is_site_local and
                 self.broadcast_address.is_site_local)
+
+
+IPv6Address._linklocal_network = IPv6Network('fe80::/10')
+
+IPv6Address._multicast_network = IPv6Network('ff00::/8')
+
+IPv6Address._private_networks = [
+    IPv6Network('::1/128'),
+    IPv6Network('::/128'),
+    IPv6Network('::ffff:0:0/96'),
+    IPv6Network('100::/64'),
+    IPv6Network('2001::/23'),
+    IPv6Network('2001:2::/48'),
+    IPv6Network('2001:db8::/32'),
+    IPv6Network('2001:10::/28'),
+    IPv6Network('fc00::/7'),
+    IPv6Network('fe80::/10'),
+    ]
+
+IPv6Address._reserved_networks = [
+    IPv6Network('::/8'), IPv6Network('100::/8'),
+    IPv6Network('200::/7'), IPv6Network('400::/6'),
+    IPv6Network('800::/5'), IPv6Network('1000::/4'),
+    IPv6Network('4000::/3'), IPv6Network('6000::/3'),
+    IPv6Network('8000::/3'), IPv6Network('A000::/3'),
+    IPv6Network('C000::/3'), IPv6Network('E000::/4'),
+    IPv6Network('F000::/5'), IPv6Network('F800::/6'),
+    IPv6Network('FE00::/9'),
+    ]
+
+IPv6Address._sitelocal_network = IPv6Network('fec0::/10')
