@@ -15,6 +15,12 @@ Core and Builtins
   time issue noticeable when compiling code with a large number of "and"
   and "or" operators.
 
+Library
+-------
+
+- Issue #21538: The plistlib module now supports loading of binary plist files
+  when reference or offset size is not a power of two.
+
 Tests
 -----
 
