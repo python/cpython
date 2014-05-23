@@ -305,7 +305,7 @@ be finalized; only the internally used file object will be closed. See the
    .. versionadded:: 2.6
 
 
-.. method:: TarFile.open(...)
+.. classmethod:: TarFile.open(...)
 
    Alternative constructor. The :func:`tarfile.open` function is actually a
    shortcut to this classmethod.
