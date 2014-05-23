@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21513: Speedup some properties of IP addresses (IPv4Address,
+  IPv6Address) such as .is_private or .is_multicast.
+
 - Issue #21538: The plistlib module now supports loading of binary plist files
   when reference or offset size is not a power of two.
 
