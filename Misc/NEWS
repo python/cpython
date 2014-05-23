@@ -18,6 +18,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #14710: pkgutil.get_loader() no longer raises an exception when None is
+  found in sys.modules.
+
+- Issue #14710: pkgutil.find_loader() no longer raises an exception when a
+  module doesn't exist.
+
 - Issue #21538: The plistlib module now supports loading of binary plist files
   when reference or offset size is not a power of two.
 
