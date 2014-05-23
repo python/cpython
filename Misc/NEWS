@@ -18,6 +18,11 @@ Core and Builtins
 Library
 -------
 
+Tests
+-----
+
+- Issue #20635: Added tests for Tk geometry managers.
+
 
 What's New in Python 2.7.7 release candidate 1?
 ===============================================
