@@ -15,12 +15,6 @@ Core and Builtins
   time issue noticeable when compiling code with a large number of "and"
   and "or" operators.
 
-Tests
------
-
-- Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
-  PanedWindow.paneconfigure(), and Menu.entryconfigure().
-
 - Issue #21418: Fix a crash in the builtin function super() when called without
   argument and without current frame (ex: embedded Python).
 
@@ -492,6 +486,9 @@ Documentation
 
 Tests
 -----
+
+- Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
+  PanedWindow.paneconfigure(), and Menu.entryconfigure().
 
 - Issue #17756: Fix test_code test when run from the installed location.
 
