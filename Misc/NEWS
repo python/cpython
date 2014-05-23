@@ -21,6 +21,9 @@ Library
 Tests
 -----
 
+- Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
+  PanedWindow.paneconfigure(), and Menu.entryconfigure().
+
 - Issue #20635: Added tests for Tk geometry managers.
 
 
