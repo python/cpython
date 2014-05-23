@@ -961,12 +961,15 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
             self.assertEqual(v, p.paneconfigure(b, k))
             self.assertEqual(v[4], p.panecget(b, k))
 
-    def check_paneconfigure(self, p, b, name, value, expected):
-        if not self.wantobjects:
+    def check_paneconfigure(self, p, b, name, value, expected, stringify=False):
+        conv = lambda x: x
+        if not self.wantobjects or stringify:
             expected = str(expected)
+        if self.wantobjects and stringify:
+            conv = str
         p.paneconfigure(b, **{name: value})
-        self.assertEqual(p.paneconfigure(b, name)[4], expected)
-        self.assertEqual(p.panecget(b, name), expected)
+        self.assertEqual(conv(p.paneconfigure(b, name)[4]), expected)
+        self.assertEqual(conv(p.panecget(b, name)), expected)
 
     def check_paneconfigure_bad(self, p, b, name, msg):
         with self.assertRaisesRegex(TclError, msg):
@@ -986,10 +989,12 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_paneconfigure_height(self):
         p, b, c = self.create2()
-        self.check_paneconfigure(p, b, 'height', 10, 10)
+        self.check_paneconfigure(p, b, 'height', 10, 10,
+                                 stringify=tcl_version < (8, 5))
         self.check_paneconfigure_bad(p, b, 'height',
                                      'bad screen distance "badValue"')
 
+    @requires_tcl(8, 5)
     def test_paneconfigure_hide(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'hide', False, 0)
@@ -1022,6 +1027,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
                                      'be a string containing zero or more of '
                                      'n, e, s, and w')
 
+    @requires_tcl(8, 5)
     def test_paneconfigure_stretch(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'stretch', 'alw', 'always')
@@ -1031,7 +1037,8 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_paneconfigure_width(self):
         p, b, c = self.create2()
-        self.check_paneconfigure(p, b, 'width', 10, 10)
+        self.check_paneconfigure(p, b, 'width', 10, 10,
+                                 stringify=tcl_version < (8, 5))
         self.check_paneconfigure_bad(p, b, 'width',
                                      'bad screen distance "badValue"')
 
