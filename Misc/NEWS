@@ -10,6 +10,11 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21523: Fix over-pessimistic computation of the stack effect of
+  some opcodes in the compiler.  This also fixes a quadratic compilation
+  time issue noticeable when compiling code with a large number of "and"
+  and "or" operators.
+
 - Issue #21418: Fix a crash in the builtin function super() when called without
   argument and without current frame (ex: embedded Python).
 
