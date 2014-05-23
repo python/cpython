@@ -456,6 +456,8 @@ def get_loader(module_or_name):
     """
     if module_or_name in sys.modules:
         module_or_name = sys.modules[module_or_name]
+        if module_or_name is None:
+            return None
     if isinstance(module_or_name, ModuleType):
         module = module_or_name
         loader = getattr(module, '__loader__', None)
@@ -487,7 +489,7 @@ def find_loader(fullname):
         # pkgutil previously raised ImportError
         msg = "Error while finding loader for {!r} ({}: {})"
         raise ImportError(msg.format(fullname, type(ex), ex)) from ex
-    return spec.loader
+    return spec.loader if spec is not None else None
 
 
 def extend_path(path, name):

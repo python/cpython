@@ -363,6 +363,20 @@ class ImportlibMigrationTests(unittest.TestCase):
             loader = pkgutil.get_loader(name)
         self.assertIsNone(loader)
 
+    def test_get_loader_None_in_sys_modules(self):
+        name = 'totally bogus'
+        sys.modules[name] = None
+        try:
+            loader = pkgutil.get_loader(name)
+        finally:
+            del sys.modules[name]
+        self.assertIsNone(loader)
+
+    def test_find_loader_missing_module(self):
+        name = 'totally bogus'
+        loader = pkgutil.find_loader(name)
+        self.assertIsNone(loader)
+
     def test_find_loader_avoids_emulation(self):
         with check_warnings() as w:
             self.assertIsNotNone(pkgutil.find_loader("sys"))
