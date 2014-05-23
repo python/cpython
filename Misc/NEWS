@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21538: The plistlib module now supports loading of binary plist files
+  when reference or offset size is not a power of two.
+
 - Issue #21455: Add a default backlog to socket.listen().
 
 - Issue #21525: Most Tkinter methods which accepted tuples now accept lists too.
