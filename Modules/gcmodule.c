@@ -917,7 +917,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
                           generation);
         PySys_WriteStderr("gc: objects in each generation:");
         for (i = 0; i < NUM_GENERATIONS; i++)
-            PySys_WriteStderr(" %" PY_FORMAT_SIZE_T "d",
+            PySys_FormatStderr(" %zd",
                               gc_list_size(GEN_HEAD(i)));
         _PyTime_gettimeofday(&t1);
 
@@ -1030,10 +1030,8 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
         if (m == 0 && n == 0)
             PySys_WriteStderr("gc: done");
         else
-            PySys_WriteStderr(
-                "gc: done, "
-                "%" PY_FORMAT_SIZE_T "d unreachable, "
-                "%" PY_FORMAT_SIZE_T "d uncollectable",
+            PySys_FormatStderr(
+                "gc: done, %zd unreachable, %zd uncollectable",
                 n+m, n);
         PySys_WriteStderr(", %.4fs elapsed\n", _PyTime_INTERVAL(t1, t2));
     }
