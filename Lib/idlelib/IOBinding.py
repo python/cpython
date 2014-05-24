@@ -525,16 +525,17 @@ class IOBinding:
         if self.editwin.flist:
             self.editwin.update_recent_files_list(filename)
 
-def test():
+def _io_binding(parent):
     root = Tk()
+    root.title("Test IOBinding")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
     class MyEditWin:
         def __init__(self, text):
             self.text = text
             self.flist = None
             self.text.bind("<Control-o>", self.open)
             self.text.bind("<Control-s>", self.save)
-            self.text.bind("<Alt-s>", self.save_as)
-            self.text.bind("<Alt-z>", self.save_a_copy)
         def get_saved(self): return 0
         def set_saved(self, flag): pass
         def reset_undo(self): pass
@@ -542,16 +543,13 @@ def test():
             self.text.event_generate("<<open-window-from-file>>")
         def save(self, event):
             self.text.event_generate("<<save-window>>")
-        def save_as(self, event):
-            self.text.event_generate("<<save-window-as-file>>")
-        def save_a_copy(self, event):
-            self.text.event_generate("<<save-copy-of-window-as-file>>")
+
     text = Text(root)
     text.pack()
     text.focus_set()
     editwin = MyEditWin(text)
     io = IOBinding(editwin)
-    root.mainloop()
 
 if __name__ == "__main__":
-    test()
+    from idlelib.idle_test.htest import run
+    run(_io_binding)
