@@ -9,15 +9,17 @@ class TextViewer(Toplevel):
     """A simple text viewer dialog for IDLE
 
     """
-    def __init__(self, parent, title, text, modal=True):
+    def __init__(self, parent, title, text, modal=True, _htest=False):
         """Show the given text in a scrollable window with a 'close' button
 
+        _htest - bool, change box location when running htest
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
+        # place dialog below parent if running htest
         self.geometry("=%dx%d+%d+%d" % (625, 500,
-                                        parent.winfo_rootx() + 10,
-                                        parent.winfo_rooty() + 10))
+                           parent.winfo_rootx() + 10,
+                           parent.winfo_rooty() + (10 if not _htest else 100)))
         #elguavas - config placeholders til config stuff completed
         self.bg = '#ffffff'
         self.fg = '#000000'
@@ -79,21 +81,5 @@ def view_file(parent, title, filename, encoding=None, modal=True):
 
 
 if __name__ == '__main__':
-    #test the dialog
-    root=Tk()
-    root.title('textView test')
-    filename = './textView.py'
-    text = file(filename, 'r').read()
-    btn1 = Button(root, text='view_text',
-                  command=lambda:view_text(root, 'view_text', text))
-    btn1.pack(side=LEFT)
-    btn2 = Button(root, text='view_file',
-                  command=lambda:view_file(root, 'view_file', filename))
-    btn2.pack(side=LEFT)
-    btn3 = Button(root, text='nonmodal view_text',
-                  command=lambda:view_text(root, 'nonmodal view_text', text,
-                                           modal=False))
-    btn3.pack(side=LEFT)
-    close = Button(root, text='Close', command=root.destroy)
-    close.pack(side=RIGHT)
-    root.mainloop()
+    from idlelib.idle_test.htest import run
+    run(TextViewer)

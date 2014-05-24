@@ -104,10 +104,12 @@ class OriginalCommand:
         return self.tk_call(self.orig_and_operation + args)
 
 
-def main():
+def _widget_redirector(parent):
     root = Tk()
-    root.wm_protocol("WM_DELETE_WINDOW", root.quit)
-    text = Text()
+    root.title("Test WidgetRedirector")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+    text = Text(root)
     text.pack()
     text.focus_set()
     redir = WidgetRedirector(text)
@@ -117,10 +119,7 @@ def main():
         previous_tcl_fcn(*args)
     previous_tcl_fcn = redir.register("insert", my_insert)
     root.mainloop()
-    redir.unregister("insert")  # runs after first 'close window'
-    redir.close()
-    root.mainloop()
-    root.destroy()
 
 if __name__ == "__main__":
-    main()
+    from idlelib.idle_test.htest import run
+    run(_widget_redirector)

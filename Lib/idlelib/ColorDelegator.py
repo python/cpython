@@ -255,17 +255,25 @@ class ColorDelegator(Delegator):
         for tag in self.tagdefs.keys():
             self.tag_remove(tag, "1.0", "end")
 
-def main():
+def _color_delegator(parent):
     from idlelib.Percolator import Percolator
     root = Tk()
-    root.wm_protocol("WM_DELETE_WINDOW", root.quit)
-    text = Text(background="white")
+    root.title("Test ColorDelegator")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+##    with open(__file__, 'r') as f:
+##        source = f.read()
+    source = "if somename: x = 'abc' # comment"
+    text = Text(root, background="white")
+    # insert only a sample portion
+##    text.insert("insert", source[:690])
+    text.insert("insert", source[:690])
     text.pack(expand=1, fill="both")
-    text.focus_set()
     p = Percolator(text)
     d = ColorDelegator()
     p.insertfilter(d)
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    from idlelib.idle_test.htest import run
+    run(_color_delegator)

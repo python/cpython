@@ -449,29 +449,27 @@ class ScrolledCanvas:
         return "break"
 
 
-# Testing functions
-
-def test():
-    from idlelib import PyShell
-    root = Toplevel(PyShell.root)
-    root.configure(bd=0, bg="yellow")
-    root.focus_set()
+def _tree_widget(parent):
+    root = Tk()
+    root.title("Test TreeWidget")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+    # test with scrollable canvas
     sc = ScrolledCanvas(root, bg="white", highlightthickness=0, takefocus=1)
-    sc.frame.pack(expand=1, fill="both")
-    item = FileTreeItem("C:/windows/desktop")
+    sc.frame.pack(expand=1, fill="both", side=LEFT)
+    item = FileTreeItem(os.getcwd())
     node = TreeNode(sc.canvas, None, item)
     node.expand()
 
-def test2():
-    # test w/o scrolling canvas
-    root = Tk()
-    root.configure(bd=0)
+    # test without scrollable canvas
     canvas = Canvas(root, bg="white", highlightthickness=0)
-    canvas.pack(expand=1, fill="both")
-    item = FileTreeItem(os.curdir)
+    canvas.pack(expand=0, fill="both", side=RIGHT)
+    item = FileTreeItem(os.getcwd())
     node = TreeNode(canvas, None, item)
     node.update()
-    canvas.focus_set()
+
+    root.mainloop()
 
 if __name__ == '__main__':
-    test()
+    from idlelib.idle_test.htest import run
+    run(_tree_widget)
