@@ -25,6 +25,7 @@
 
 #include "Python.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
+#include "pytime.h"           /* for _PyTime_gettimeofday, _PyTime_INTERVAL */
 
 /* Get an object's GC head */
 #define AS_GC(o) ((PyGC_Head *)(o)-1)
@@ -166,7 +167,6 @@ static Py_ssize_t long_lived_pending = 0;
                 DEBUG_UNCOLLECTABLE | \
                 DEBUG_SAVEALL
 static int debug;
-static PyObject *tmod = NULL;
 
 /* Running stats per generation */
 struct gc_generation_stats {
@@ -894,26 +894,6 @@ clear_freelists(void)
     (void)PySet_ClearFreeList();
 }
 
-static double
-get_time(void)
-{
-    double result = 0;
-    if (tmod != NULL) {
-        _Py_IDENTIFIER(time);
-
-        PyObject *f = _PyObject_CallMethodId(tmod, &PyId_time, NULL);
-        if (f == NULL) {
-            PyErr_Clear();
-        }
-        else {
-            if (PyFloat_Check(f))
-                result = PyFloat_AsDouble(f);
-            Py_DECREF(f);
-        }
-    }
-    return result;
-}
-
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -928,7 +908,8 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     PyGC_Head *gc;
-    double t1 = 0.0;
+    _PyTime_timeval t1;
+
     struct gc_generation_stats *stats = &generation_stats[generation];
 
     if (debug & DEBUG_STATS) {
@@ -938,7 +919,8 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
         for (i = 0; i < NUM_GENERATIONS; i++)
             PySys_WriteStderr(" %" PY_FORMAT_SIZE_T "d",
                               gc_list_size(GEN_HEAD(i)));
-        t1 = get_time();
+        _PyTime_gettimeofday(&t1);
+
         PySys_WriteStderr("\n");
     }
 
@@ -1042,7 +1024,9 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     if (debug & DEBUG_STATS) {
-        double t2 = get_time();
+        _PyTime_timeval t2;
+        _PyTime_gettimeofday(&t2);
+
         if (m == 0 && n == 0)
             PySys_WriteStderr("gc: done");
         else
@@ -1051,10 +1035,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
                 "%" PY_FORMAT_SIZE_T "d unreachable, "
                 "%" PY_FORMAT_SIZE_T "d uncollectable",
                 n+m, n);
-        if (t1 && t2) {
-            PySys_WriteStderr(", %.4fs elapsed", t2-t1);
-        }
-        PySys_WriteStderr(".\n");
+        PySys_WriteStderr(", %.4fs elapsed\n", _PyTime_INTERVAL(t1, t2));
     }
 
     /* Append instances in the uncollectable set to a Python
@@ -1581,18 +1562,6 @@ PyInit_gc(void)
     if (PyModule_AddObject(m, "callbacks", callbacks) < 0)
         return NULL;
 
-    /* Importing can't be done in collect() because collect()
-     * can be called via PyGC_Collect() in Py_Finalize().
-     * This wouldn't be a problem, except that <initialized> is
-     * reset to 0 before calling collect which trips up
-     * the import and triggers an assertion.
-     */
-    if (tmod == NULL) {
-        tmod = PyImport_ImportModuleNoBlock("time");
-        if (tmod == NULL)
-            PyErr_Clear();
-    }
-
 #define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return NULL
     ADD_INT(DEBUG_STATS);
     ADD_INT(DEBUG_COLLECTABLE);
@@ -1681,7 +1650,6 @@ void
 _PyGC_Fini(void)
 {
     Py_CLEAR(callbacks);
-    Py_CLEAR(tmod);
 }
 
 /* for debugging */
