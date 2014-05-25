@@ -21,6 +21,8 @@ Library
 Tests
 -----
 
+- Issue #19925: Added tests for the spwd module. Original patch by Vajrasky Kok.
+
 - Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
   PanedWindow.paneconfigure(), and Menu.entryconfigure().
 
