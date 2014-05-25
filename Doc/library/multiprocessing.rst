@@ -1320,6 +1320,9 @@ processes.
    Note that accessing the ctypes object through the wrapper can be a lot slower
    than accessing the raw ctypes object.
 
+   .. versionchanged:: 3.5
+      Synchronized objects support the :term:`context manager` protocol.
+
 
 The table below compares the syntax for creating shared ctypes objects from
 shared memory with the normal ctypes syntax.  (In the table ``MyStruct`` is some

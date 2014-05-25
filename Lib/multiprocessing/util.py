@@ -327,6 +327,13 @@ class ForkAwareThreadLock(object):
         self.acquire = self._lock.acquire
         self.release = self._lock.release
 
+    def __enter__(self):
+        return self._lock.__enter__()
+
+    def __exit__(self, *args):
+        return self._lock.__exit__(*args)
+
+
 class ForkAwareLocal(threading.local):
     def __init__(self):
         register_after_fork(self, lambda obj : obj.__dict__.clear())

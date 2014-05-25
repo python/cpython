@@ -59,9 +59,8 @@ class Connection(object):
             return True
         if timeout <= 0.0:
             return False
-        self._in.not_empty.acquire()
-        self._in.not_empty.wait(timeout)
-        self._in.not_empty.release()
+        with self._in.not_empty:
+            self._in.not_empty.wait(timeout)
         return self._in.qsize() > 0
 
     def close(self):
