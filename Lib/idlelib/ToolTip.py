@@ -87,8 +87,9 @@ def _tooltip(parent):
     button2 = Button(root, text="Button 2")
     button1.pack()
     button2.pack()
-    ToolTip(button1, "This is calltip text for button1.")
-    ListboxToolTip(button2, ["This is","calltip text","for button2"])
+    ToolTip(button1, "This is tooltip text for button1.")
+    ListboxToolTip(button2, ["This is","multiple line",
+                            "tooltip text","for button2"])
     root.mainloop()
 
 if __name__ == '__main__':

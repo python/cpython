@@ -7,12 +7,13 @@ import string
 import sys
 
 class GetKeysDialog(Toplevel):
-    def __init__(self,parent,title,action,currentKeySequences):
+    def __init__(self,parent,title,action,currentKeySequences,_htest=False):
         """
         action - string, the name of the virtual event these keys will be
                  mapped to
         currentKeys - list, a list of all key sequence lists currently mapped
                  to virtual events, for overlap checking
+        _htest - bool, change box location when running htest
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -38,11 +39,14 @@ class GetKeysDialog(Toplevel):
         self.LoadFinalKeyList()
         self.withdraw() #hide while setting geometry
         self.update_idletasks()
-        self.geometry("+%d+%d" %
-            ((parent.winfo_rootx()+((parent.winfo_width()/2)
-                -(self.winfo_reqwidth()/2)),
-              parent.winfo_rooty()+((parent.winfo_height()/2)
-                -(self.winfo_reqheight()/2)) )) ) #centre dialog over parent
+        self.geometry(
+                "+%d+%d" % (
+                    parent.winfo_rootx() +
+                    (parent.winfo_width()/2 - self.winfo_reqwidth()/2),
+                    parent.winfo_rooty() +
+                    ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
+                    if not _htest else 150)
+                ) )  #centre dialog over parent (or below htest box)
         self.deiconify() #geometry set, unhide
         self.wait_window()
 
@@ -258,11 +262,5 @@ class GetKeysDialog(Toplevel):
         return keysOK
 
 if __name__ == '__main__':
-    #test the dialog
-    root=Tk()
-    def run():
-        keySeq=''
-        dlg=GetKeysDialog(root,'Get Keys','find-again',[])
-        print(dlg.result)
-    Button(root,text='Dialog',command=run).pack()
-    root.mainloop()
+    from idlelib.idle_test.htest import run
+    run(GetKeysDialog)
