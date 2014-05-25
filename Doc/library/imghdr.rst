@@ -48,6 +48,11 @@ from :func:`what`:
 +------------+-----------------------------------+
 | ``'png'``  | Portable Network Graphics         |
 +------------+-----------------------------------+
+| ``'webp'`` | WebP files                        |
++------------+-----------------------------------+
+
+.. versionchanged:: 3.5
+   The *webp* type was added.
 
 You can extend the list of file types :mod:`imghdr` can recognize by appending
 to this variable:
