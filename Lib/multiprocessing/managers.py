@@ -306,8 +306,7 @@ class Server(object):
         '''
         Return some info --- useful to spot problems with refcounting
         '''
-        self.mutex.acquire()
-        try:
+        with self.mutex:
             result = []
             keys = list(self.id_to_obj.keys())
             keys.sort()
@@ -317,8 +316,6 @@ class Server(object):
                                   (ident, self.id_to_refcount[ident],
                                    str(self.id_to_obj[ident][0])[:75]))
             return '\n'.join(result)
-        finally:
-            self.mutex.release()
 
     def number_of_objects(self, c):
         '''
@@ -343,8 +340,7 @@ class Server(object):
         '''
         Create a new shared object and return its id
         '''
-        self.mutex.acquire()
-        try:
+        with self.mutex:
             callable, exposed, method_to_typeid, proxytype = \
                       self.registry[typeid]
 
@@ -374,8 +370,6 @@ class Server(object):
             # has been created.
             self.incref(c, ident)
             return ident, tuple(exposed)
-        finally:
-            self.mutex.release()
 
     def get_methods(self, c, token):
         '''
@@ -392,22 +386,16 @@ class Server(object):
         self.serve_client(c)
 
     def incref(self, c, ident):
-        self.mutex.acquire()
-        try:
+        with self.mutex:
             self.id_to_refcount[ident] += 1
-        finally:
-            self.mutex.release()
 
     def decref(self, c, ident):
-        self.mutex.acquire()
-        try:
+        with self.mutex:
             assert self.id_to_refcount[ident] >= 1
             self.id_to_refcount[ident] -= 1
             if self.id_to_refcount[ident] == 0:
                 del self.id_to_obj[ident], self.id_to_refcount[ident]
                 util.debug('disposing of obj with id %r', ident)
-        finally:
-            self.mutex.release()
 
 #
 # Class to represent state of a manager
@@ -671,14 +659,11 @@ class BaseProxy(object):
 
     def __init__(self, token, serializer, manager=None,
                  authkey=None, exposed=None, incref=True):
-        BaseProxy._mutex.acquire()
-        try:
+        with BaseProxy._mutex:
             tls_idset = BaseProxy._address_to_local.get(token.address, None)
             if tls_idset is None:
                 tls_idset = util.ForkAwareLocal(), ProcessLocalSet()
                 BaseProxy._address_to_local[token.address] = tls_idset
-        finally:
-            BaseProxy._mutex.release()
 
         # self._tls is used to record the connection used by this
         # thread to communicate with the manager at token.address
