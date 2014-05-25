@@ -13,7 +13,6 @@ XXX TO DO:
 import os
 import sys
 import pyclbr
-import re
 
 from idlelib import PyShell
 from idlelib.WindowList import ListedToplevel
@@ -223,6 +222,7 @@ def _class_browser(parent): #Wrapper for htest
     name = os.path.splitext(file)[0]
     flist = PyShell.PyShellFileList(parent)
     ClassBrowser(flist, name, [dir], _htest=True)
+    parent.mainloop()
 
 if __name__ == "__main__":
     from idlelib.idle_test.htest import run
