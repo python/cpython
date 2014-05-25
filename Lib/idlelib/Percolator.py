@@ -51,8 +51,9 @@ class Percolator:
             f.setdelegate(filter.delegate)
             filter.setdelegate(None)
 
-def main():
-    import tkinter as Tk
+def _percolator(parent):
+    import tkinter as tk
+    import re
     class Tracer(Delegator):
         def __init__(self, name):
             self.name = name
@@ -63,22 +64,41 @@ def main():
         def delete(self, *args):
             print(self.name, ": delete", args)
             self.delegate.delete(*args)
-    root = Tk.Tk()
-    root.wm_protocol("WM_DELETE_WINDOW", root.quit)
-    text = Tk.Text()
-    text.pack()
-    text.focus_set()
+    root = tk.Tk()
+    root.title("Test Percolator")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+    text = tk.Text(root)
     p = Percolator(text)
     t1 = Tracer("t1")
     t2 = Tracer("t2")
-    p.insertfilter(t1)
-    p.insertfilter(t2)
-    root.mainloop() # click close widget to continue...
-    p.removefilter(t2)
-    root.mainloop()
-    p.insertfilter(t2)
-    p.removefilter(t1)
+
+    def toggle1():
+        if var1.get() == 0:
+            var1.set(1)
+            p.insertfilter(t1)
+        elif var1.get() == 1:
+            var1.set(0)
+            p.removefilter(t1)
+
+    def toggle2():
+        if var2.get() == 0:
+            var2.set(1)
+            p.insertfilter(t2)
+        elif var2.get() == 1:
+            var2.set(0)
+            p.removefilter(t2)
+
+    text.pack()
+    var1 = tk.IntVar()
+    cb1 = tk.Checkbutton(root, text="Tracer1", command=toggle1, variable=var1)
+    cb1.pack()
+    var2 = tk.IntVar()
+    cb2 = tk.Checkbutton(root, text="Tracer2", command=toggle2, variable=var2)
+    cb2.pack()
+
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    from idlelib.idle_test.htest import run
+    run(_percolator)
