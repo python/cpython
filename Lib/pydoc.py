@@ -1733,7 +1733,6 @@ class Helper:
         'TRACEBACKS': 'TYPES',
         'NONE': ('bltin-null-object', ''),
         'ELLIPSIS': ('bltin-ellipsis-object', 'SLICINGS'),
-        'FILES': ('bltin-file-objects', ''),
         'SPECIALATTRIBUTES': ('specialattrs', ''),
         'CLASSES': ('types', 'class SPECIALMETHODS PRIVATENAMES'),
         'MODULES': ('typesmodules', 'import'),
