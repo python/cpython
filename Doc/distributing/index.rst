@@ -48,6 +48,18 @@ Key terms
   standard library, but its name lives on in other ways (such as the name
   of the mailing list used to coordinate Python packaging standards
   development).
+* ``setuptools`` is a (largely) drop-in replacement for ``distutils`` first
+  published in 2004. It's most notable addition over the unmodified
+  ``distutils`` tools was the ability to declare dependencies on other
+  packages. It is currently recommended as a more regularly updated
+  alternative to ``distutils`` that offers consistent support for more
+  recent packaging standards across a wide range of Python versions.
+* ``wheel`` (in this context) is a project that adds the ``bdist_wheel``
+  command to ``distutils``/``setuptools``. This produces a cross platform
+  binary packaging format (called "wheels" or "wheel files" and defined in
+  :pep:`427`) that allows Python libraries, even those including binary
+  extensions, to be installed on a system without needing to be built
+  locally.
 
 
 Open source licensing and collaboration
@@ -85,12 +97,16 @@ using ``pip``::
 
     pip install setuptools wheel twine
 
+The Python Packaging User Guide includes more details on the `currently
+recommended tools`_.
+
+.. _currently recommended tools: https://packaging.python.org/en/latest/current.html#packaging-tool-recommendations
 
 Reading the guide
 =================
 
 The Python Packaging User Guide covers the various key steps and elements
-involved in creating a project
+involved in creating a project:
 
 * `Project structure`_
 * `Building and packaging the project`_
