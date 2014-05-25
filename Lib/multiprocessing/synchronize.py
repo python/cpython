@@ -337,34 +337,24 @@ class Event(object):
         self._flag = ctx.Semaphore(0)
 
     def is_set(self):
-        self._cond.acquire()
-        try:
+        with self._cond:
             if self._flag.acquire(False):
                 self._flag.release()
                 return True
             return False
-        finally:
-            self._cond.release()
 
     def set(self):
-        self._cond.acquire()
-        try:
+        with self._cond:
             self._flag.acquire(False)
             self._flag.release()
             self._cond.notify_all()
-        finally:
-            self._cond.release()
 
     def clear(self):
-        self._cond.acquire()
-        try:
+        with self._cond:
             self._flag.acquire(False)
-        finally:
-            self._cond.release()
 
     def wait(self, timeout=None):
-        self._cond.acquire()
-        try:
+        with self._cond:
             if self._flag.acquire(False):
                 self._flag.release()
             else:
@@ -374,8 +364,6 @@ class Event(object):
                 self._flag.release()
                 return True
             return False
-        finally:
-            self._cond.release()
 
 #
 # Barrier

@@ -216,9 +216,8 @@ class Heap(object):
         assert 0 <= size < sys.maxsize
         if os.getpid() != self._lastpid:
             self.__init__()                     # reinitialize after fork
-        self._lock.acquire()
-        self._free_pending_blocks()
-        try:
+        with self._lock:
+            self._free_pending_blocks()
             size = self._roundup(max(size,1), self._alignment)
             (arena, start, stop) = self._malloc(size)
             new_stop = start + size
@@ -227,8 +226,6 @@ class Heap(object):
             block = (arena, start, new_stop)
             self._allocated_blocks.add(block)
             return block
-        finally:
-            self._lock.release()
 
 #
 # Class representing a chunk of an mmap -- can be inherited by child process
