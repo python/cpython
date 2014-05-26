@@ -82,7 +82,13 @@ class BaseLockTests(BaseTestCase):
 
     def test_repr(self):
         lock = self.locktype()
-        repr(lock)
+        self.assertRegex(repr(lock), "<unlocked .* object (.*)?at .*>")
+        del lock
+
+    def test_locked_repr(self):
+        lock = self.locktype()
+        lock.acquire()
+        self.assertRegex(repr(lock), "<locked .* object (.*)?at .*>")
         del lock
 
     def test_acquire_destroy(self):

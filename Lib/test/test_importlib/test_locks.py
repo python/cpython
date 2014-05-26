@@ -31,6 +31,9 @@ if threading is not None:
         test_timeout = None
         # _release_save() unsupported
         test_release_save_unacquired = None
+        # lock status in repr unsupported
+        test_repr = None
+        test_locked_repr = None
 
     LOCK_TYPES = {kind: splitinit._bootstrap._ModuleLock
                   for kind, splitinit in init.items()}

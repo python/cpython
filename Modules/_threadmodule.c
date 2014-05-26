@@ -192,6 +192,13 @@ PyDoc_STRVAR(locked_doc,
 \n\
 Return whether the lock is in the locked state.");
 
+static PyObject *
+lock_repr(lockobject *self)
+{
+    return PyUnicode_FromFormat("<%s %s object at %p>",
+        self->locked ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
+}
+
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock,
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
@@ -223,7 +230,7 @@ static PyTypeObject Locktype = {
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
     0,                                  /*tp_reserved*/
-    0,                                  /*tp_repr*/
+    (reprfunc)lock_repr,                /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
     0,                                  /*tp_as_mapping*/
@@ -475,8 +482,10 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 rlock_repr(rlockobject *self)
 {
-    return PyUnicode_FromFormat("<%s owner=%ld count=%lu>",
-        Py_TYPE(self)->tp_name, self->rlock_owner, self->rlock_count);
+    return PyUnicode_FromFormat("<%s %s object owner=%ld count=%lu at %p>",
+        self->rlock_count ? "locked" : "unlocked",
+        Py_TYPE(self)->tp_name, self->rlock_owner,
+        self->rlock_count, self);
 }
 
 
