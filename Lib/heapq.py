@@ -127,8 +127,6 @@ From all times, sorting has always been a Great Art! :-)
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
            'nlargest', 'nsmallest', 'heappushpop']
 
-from itertools import islice, count
-
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
     heap.append(item)
@@ -378,8 +376,10 @@ def merge(*iterables):
 #  2     n - k                        compare remaining elements to top of heap
 #  3     k * (1 + lg2(k)) * ln(n/k)   replace the topmost value on the heap
 #  4     k * lg2(k) - (k/2)           final sort of the k most extreme values
+#
 # Combining and simplifying for a rough estimate gives:
-#        comparisons = n + k * (1 + log(n/k)) * (1 + log(k, 2))
+#
+#        comparisons = n + k * (log(k, 2) * log(n/k)) + log(k, 2) + log(n/k))
 #
 # Computing the number of comparisons for step 3:
 # -----------------------------------------------
@@ -391,12 +391,12 @@ def merge(*iterables):
 # * The probabilty times the cost gives:
 #            (k/i) * (1 + log(k, 2))
 # * Summing across the remaining n-k elements gives:
-#            sum((k/i) * (1 + log(k, 2)) for xrange(k+1, n+1))
+#            sum((k/i) * (1 + log(k, 2)) for i in range(k+1, n+1))
 # * This reduces to:
 #            (H(n) - H(k)) * k * (1 + log(k, 2))
 # * Where H(n) is the n-th harmonic number estimated by:
 #            gamma = 0.5772156649
-#            H(n) = log(n, e) + gamma + 1.0 / (2.0 * n)
+#            H(n) = log(n, e) + gamma + 1 / (2 * n)
 #   http://en.wikipedia.org/wiki/Harmonic_series_(mathematics)#Rate_of_divergence
 # * Substituting the H(n) formula:
 #            comparisons = k * (1 + log(k, 2)) * (log(n/k, e) + (1/n - 1/k) / 2)
@@ -445,12 +445,12 @@ def nsmallest(n, iterable, key=None):
     # When key is none, use simpler decoration
     if key is None:
         it = iter(iterable)
-        result = list(islice(zip(it, count()), n))
+        result = [(elem, i) for i, elem in zip(range(n), it)]
         if not result:
             return result
         _heapify_max(result)
-        order = n
         top = result[0][0]
+        order = n
         _heapreplace = _heapreplace_max
         for elem in it:
             if elem < top:
@@ -466,8 +466,8 @@ def nsmallest(n, iterable, key=None):
     if not result:
         return result
     _heapify_max(result)
-    order = n
     top = result[0][0]
+    order = n
     _heapreplace = _heapreplace_max
     for elem in it:
         k = key(elem)
@@ -506,12 +506,12 @@ def nlargest(n, iterable, key=None):
     # When key is none, use simpler decoration
     if key is None:
         it = iter(iterable)
-        result = list(islice(zip(it, count(0, -1)), n))
+        result = [(elem, i) for i, elem in zip(range(0, -n, -1), it)]
         if not result:
             return result
         heapify(result)
-        order = -n
         top = result[0][0]
+        order = -n
         _heapreplace = heapreplace
         for elem in it:
             if top < elem:
@@ -527,8 +527,8 @@ def nlargest(n, iterable, key=None):
     if not result:
         return result
     heapify(result)
-    order = -n
     top = result[0][0]
+    order = -n
     _heapreplace = heapreplace
     for elem in it:
         k = key(elem)
