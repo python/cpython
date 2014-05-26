@@ -8,6 +8,7 @@ import pickle, cPickle, copy
 from random import randrange, shuffle
 import keyword
 import re
+import sets
 import sys
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
@@ -618,10 +619,173 @@ class TestCollectionABCs(ABCTestCase):
 
         cs = MyComparableSet()
         ncs = MyNonComparableSet()
-        self.assertFalse(ncs < cs)
-        self.assertFalse(ncs <= cs)
-        self.assertFalse(cs > ncs)
-        self.assertFalse(cs >= ncs)
+
+        # Run all the variants to make sure they don't mutually recurse
+        ncs < cs
+        ncs <= cs
+        ncs > cs
+        ncs >= cs
+        cs < ncs
+        cs <= ncs
+        cs > ncs
+        cs >= ncs
+
+    def assertSameSet(self, s1, s2):
+        # coerce both to a real set then check equality
+        self.assertEqual(set(s1), set(s2))
+
+    def test_Set_interoperability_with_real_sets(self):
+        # Issue: 8743
+        class ListSet(Set):
+            def __init__(self, elements=()):
+                self.data = []
+                for elem in elements:
+                    if elem not in self.data:
+                        self.data.append(elem)
+            def __contains__(self, elem):
+                return elem in self.data
+            def __iter__(self):
+                return iter(self.data)
+            def __len__(self):
+                return len(self.data)
+            def __repr__(self):
+                return 'Set({!r})'.format(self.data)
+
+        r1 = set('abc')
+        r2 = set('bcd')
+        r3 = set('abcde')
+        f1 = ListSet('abc')
+        f2 = ListSet('bcd')
+        f3 = ListSet('abcde')
+        l1 = list('abccba')
+        l2 = list('bcddcb')
+        l3 = list('abcdeedcba')
+        p1 = sets.Set('abc')
+        p2 = sets.Set('bcd')
+        p3 = sets.Set('abcde')
+
+        target = r1 & r2
+        self.assertSameSet(f1 & f2, target)
+        self.assertSameSet(f1 & r2, target)
+        self.assertSameSet(r2 & f1, target)
+        self.assertSameSet(f1 & p2, target)
+        self.assertSameSet(p2 & f1, target)
+        self.assertSameSet(f1 & l2, target)
+
+        target = r1 | r2
+        self.assertSameSet(f1 | f2, target)
+        self.assertSameSet(f1 | r2, target)
+        self.assertSameSet(r2 | f1, target)
+        self.assertSameSet(f1 | p2, target)
+        self.assertSameSet(p2 | f1, target)
+        self.assertSameSet(f1 | l2, target)
+
+        fwd_target = r1 - r2
+        rev_target = r2 - r1
+        self.assertSameSet(f1 - f2, fwd_target)
+        self.assertSameSet(f2 - f1, rev_target)
+        self.assertSameSet(f1 - r2, fwd_target)
+        self.assertSameSet(f2 - r1, rev_target)
+        self.assertSameSet(r1 - f2, fwd_target)
+        self.assertSameSet(r2 - f1, rev_target)
+        self.assertSameSet(f1 - p2, fwd_target)
+        self.assertSameSet(f2 - p1, rev_target)
+        self.assertSameSet(p1 - f2, fwd_target)
+        self.assertSameSet(p2 - f1, rev_target)
+        self.assertSameSet(f1 - l2, fwd_target)
+        self.assertSameSet(f2 - l1, rev_target)
+
+        target = r1 ^ r2
+        self.assertSameSet(f1 ^ f2, target)
+        self.assertSameSet(f1 ^ r2, target)
+        self.assertSameSet(r2 ^ f1, target)
+        self.assertSameSet(f1 ^ p2, target)
+        self.assertSameSet(p2 ^ f1, target)
+        self.assertSameSet(f1 ^ l2, target)
+
+        # proper subset
+        self.assertTrue(f1 < f3)
+        self.assertFalse(f1 < f1)
+        self.assertFalse(f1 < f2)
+        self.assertTrue(r1 < f3)
+        self.assertFalse(r1 < f1)
+        self.assertFalse(r1 < f2)
+        self.assertTrue(r1 < r3)
+        self.assertFalse(r1 < r1)
+        self.assertFalse(r1 < r2)
+        # python 2 only, cross-type compares will succeed
+        f1 < l3
+        f1 < l1
+        f1 < l2
+
+        # any subset
+        self.assertTrue(f1 <= f3)
+        self.assertTrue(f1 <= f1)
+        self.assertFalse(f1 <= f2)
+        self.assertTrue(r1 <= f3)
+        self.assertTrue(r1 <= f1)
+        self.assertFalse(r1 <= f2)
+        self.assertTrue(r1 <= r3)
+        self.assertTrue(r1 <= r1)
+        self.assertFalse(r1 <= r2)
+        # python 2 only, cross-type compares will succeed
+        f1 <= l3
+        f1 <= l1
+        f1 <= l2
+
+        # proper superset
+        self.assertTrue(f3 > f1)
+        self.assertFalse(f1 > f1)
+        self.assertFalse(f2 > f1)
+        self.assertTrue(r3 > r1)
+        self.assertFalse(f1 > r1)
+        self.assertFalse(f2 > r1)
+        self.assertTrue(r3 > r1)
+        self.assertFalse(r1 > r1)
+        self.assertFalse(r2 > r1)
+        # python 2 only, cross-type compares will succeed
+        f1 > l3
+        f1 > l1
+        f1 > l2
+
+        # any superset
+        self.assertTrue(f3 >= f1)
+        self.assertTrue(f1 >= f1)
+        self.assertFalse(f2 >= f1)
+        self.assertTrue(r3 >= r1)
+        self.assertTrue(f1 >= r1)
+        self.assertFalse(f2 >= r1)
+        self.assertTrue(r3 >= r1)
+        self.assertTrue(r1 >= r1)
+        self.assertFalse(r2 >= r1)
+        # python 2 only, cross-type compares will succeed
+        f1 >= l3
+        f1 >=l1
+        f1 >= l2
+
+        # equality
+        self.assertTrue(f1 == f1)
+        self.assertTrue(r1 == f1)
+        self.assertTrue(f1 == r1)
+        self.assertFalse(f1 == f3)
+        self.assertFalse(r1 == f3)
+        self.assertFalse(f1 == r3)
+        # python 2 only, cross-type compares will succeed
+        f1 == l3
+        f1 == l1
+        f1 == l2
+
+        # inequality
+        self.assertFalse(f1 != f1)
+        self.assertFalse(r1 != f1)
+        self.assertFalse(f1 != r1)
+        self.assertTrue(f1 != f3)
+        self.assertTrue(r1 != f3)
+        self.assertTrue(f1 != r3)
+        # python 2 only, cross-type compares will succeed
+        f1 != l3
+        f1 != l1
+        f1 != l2
 
     def test_Mapping(self):
         for sample in [dict]:

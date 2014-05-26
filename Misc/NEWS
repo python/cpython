@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8743: Fix interoperability between set objects and the
+  collections.Set() abstract base class.
+
 Tests
 -----
 

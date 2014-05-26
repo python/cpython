@@ -1017,8 +1017,6 @@ class TestBinaryOps(unittest.TestCase):
         # without calling __cmp__.
         self.assertEqual(cmp(a, a), 0)
 
-        self.assertRaises(TypeError, cmp, a, 12)
-        self.assertRaises(TypeError, cmp, "abc", a)
 
 #==============================================================================
 
@@ -1269,17 +1267,6 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         self.assertEqual(self.other != self.set, True)
         self.assertEqual(self.set != self.other, True)
 
-    def test_ge_gt_le_lt(self):
-        self.assertRaises(TypeError, lambda: self.set < self.other)
-        self.assertRaises(TypeError, lambda: self.set <= self.other)
-        self.assertRaises(TypeError, lambda: self.set > self.other)
-        self.assertRaises(TypeError, lambda: self.set >= self.other)
-
-        self.assertRaises(TypeError, lambda: self.other < self.set)
-        self.assertRaises(TypeError, lambda: self.other <= self.set)
-        self.assertRaises(TypeError, lambda: self.other > self.set)
-        self.assertRaises(TypeError, lambda: self.other >= self.set)
-
     def test_update_operator(self):
         try:
             self.set |= self.other
@@ -1389,18 +1376,6 @@ class TestOnlySetsDict(TestOnlySetsInBinaryOps):
         self.set   = set((1, 2, 3))
         self.other = {1:2, 3:4}
         self.otherIsIterable = True
-
-#------------------------------------------------------------------------------
-
-class TestOnlySetsOperator(TestOnlySetsInBinaryOps):
-    def setUp(self):
-        self.set   = set((1, 2, 3))
-        self.other = operator.add
-        self.otherIsIterable = False
-
-    def test_ge_gt_le_lt(self):
-        with test_support.check_py3k_warnings():
-            super(TestOnlySetsOperator, self).test_ge_gt_le_lt()
 
 #------------------------------------------------------------------------------
 
@@ -1801,7 +1776,6 @@ def test_main(verbose=None):
         TestSubsetNonOverlap,
         TestOnlySetsNumeric,
         TestOnlySetsDict,
-        TestOnlySetsOperator,
         TestOnlySetsTuple,
         TestOnlySetsString,
         TestOnlySetsGenerator,
