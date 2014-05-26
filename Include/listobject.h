@@ -46,7 +46,7 @@ PyAPI_DATA(PyTypeObject) PyListRevIter_Type;
 PyAPI_DATA(PyTypeObject) PySortWrapper_Type;
 
 #define PyList_Check(op) \
-		PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LIST_SUBCLASS)
+    PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LIST_SUBCLASS)
 #define PyList_CheckExact(op) (Py_TYPE(op) == &PyList_Type)
 
 PyAPI_FUNC(PyObject *) PyList_New(Py_ssize_t size);
