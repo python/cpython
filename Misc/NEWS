@@ -24,6 +24,9 @@ Library
 - Issue #14710: pkgutil.find_loader() no longer raises an exception when a
   module doesn't exist.
 
+- Issue #21481:  Argparse equality and inequality tests now return 
+  NotImplemented when comparing to an unknown type.
+
 - Issue #8743: Fix interoperability between set objects and the
   collections.Set() abstract base class.
 
