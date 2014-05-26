@@ -106,8 +106,14 @@ class _RLock:
             owner = _active[owner].name
         except KeyError:
             pass
-        return "<%s owner=%r count=%d>" % (
-                self.__class__.__name__, owner, self._count)
+        return "<%s %s.%s object owner=%r count=%d at %s>" % (
+            "locked" if self._block.locked() else "unlocked",
+            self.__class__.__module__,
+            self.__class__.__qualname__,
+            owner,
+            self._count,
+            hex(id(self))
+        )
 
     def acquire(self, blocking=True, timeout=-1):
         """Acquire a lock, blocking or non-blocking.
