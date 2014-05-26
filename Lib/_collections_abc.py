@@ -207,12 +207,17 @@ class Set(Sized, Iterable, Container):
     def __gt__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
-        return other.__lt__(self)
+        return len(self) > len(other) and self.__ge__(other)
 
     def __ge__(self, other):
         if not isinstance(other, Set):
             return NotImplemented
-        return other.__le__(self)
+        if len(self) < len(other):
+            return False
+        for elem in other:
+            if elem not in self:
+                return False
+        return True
 
     def __eq__(self, other):
         if not isinstance(other, Set):
@@ -236,6 +241,8 @@ class Set(Sized, Iterable, Container):
             return NotImplemented
         return self._from_iterable(value for value in other if value in self)
 
+    __rand__ = __and__
+
     def isdisjoint(self, other):
         'Return True if two sets have a null intersection.'
         for value in other:
@@ -249,6 +256,8 @@ class Set(Sized, Iterable, Container):
         chain = (e for s in (self, other) for e in s)
         return self._from_iterable(chain)
 
+    __ror__ = __or__
+
     def __sub__(self, other):
         if not isinstance(other, Set):
             if not isinstance(other, Iterable):
@@ -257,12 +266,22 @@ class Set(Sized, Iterable, Container):
         return self._from_iterable(value for value in self
                                    if value not in other)
 
+    def __rsub__(self, other):
+        if not isinstance(other, Set):
+            if not isinstance(other, Iterable):
+                return NotImplemented
+            other = self._from_iterable(other)
+        return self._from_iterable(value for value in other
+                                   if value not in self)
+
     def __xor__(self, other):
         if not isinstance(other, Set):
             if not isinstance(other, Iterable):
                 return NotImplemented
             other = self._from_iterable(other)
         return (self - other) | (other - self)
+
+    __rxor__ = __xor__
 
     def _hash(self):
         """Compute the hash value of a set.
