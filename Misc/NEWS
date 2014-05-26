@@ -23,6 +23,9 @@ Tests
 
 - Issue #19925: Added tests for the spwd module. Original patch by Vajrasky Kok.
 
+- Issue #13355: random.triangular() no longer fails with a ZeroDivisionError
+  when low equals high.
+
 - Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
   PanedWindow.paneconfigure(), and Menu.entryconfigure().
 
