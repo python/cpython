@@ -1198,9 +1198,13 @@ class Namespace(_AttributeHolder):
             setattr(self, name, kwargs[name])
 
     def __eq__(self, other):
+        if not isinstance(other, Namespace):
+            return NotImplemented
         return vars(self) == vars(other)
 
     def __ne__(self, other):
+        if not isinstance(other, Namespace):
+            return NotImplemented
         return not (self == other)
 
     def __contains__(self, key):
