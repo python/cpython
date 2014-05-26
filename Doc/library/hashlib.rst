@@ -197,8 +197,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    a proper source, e.g. :func:`os.urandom`.
 
    The number of *rounds* should be chosen based on the hash algorithm and
-   computing power. As of 2013 a value of at least 100,000 rounds of SHA-256
-   have been suggested.
+   computing power. As of 2013, at least 100,000 rounds of SHA-256 is suggested.
 
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *name* is used, e.g. 64 for SHA-512.
