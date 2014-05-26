@@ -210,9 +210,11 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    .. versionadded:: 3.4
 
-   .. note:: A fast implementation of *pbkdf2_hmac* is available with OpenSSL.
-      The Python implementation uses an inline version of :mod:`hmac`. It is
-      about three times slower and doesn't release the GIL.
+   .. note::
+
+      A fast implementation of *pbkdf2_hmac* is available with OpenSSL.  The
+      Python implementation uses an inline version of :mod:`hmac`. It is about
+      three times slower and doesn't release the GIL.
 
 
 .. seealso::
