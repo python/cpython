@@ -24,6 +24,9 @@ Library
 - Issue #14710: pkgutil.find_loader() no longer raises an exception when a
   module doesn't exist.
 
+- Issue #13355: random.triangular() no longer fails with a ZeroDivisionError
+  when low equals high.
+
 - Issue #21538: The plistlib module now supports loading of binary plist files
   when reference or offset size is not a power of two.
 

@@ -355,7 +355,10 @@ class Random(_random.Random):
 
         """
         u = self.random()
-        c = 0.5 if mode is None else (mode - low) / (high - low)
+        try:
+            c = 0.5 if mode is None else (mode - low) / (high - low)
+        except ZeroDivisionError:
+            return low
         if u > c:
             u = 1.0 - u
             c = 1.0 - c
