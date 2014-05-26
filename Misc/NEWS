@@ -21,6 +21,9 @@ Library
 - Issue #8743: Fix interoperability between set objects and the
   collections.Set() abstract base class.
 
+- Issue #21481:  Argparse equality and inequality tests now return 
+  NotImplemented when comparing to an unknown type.
+
 Tests
 -----
 

@@ -1157,9 +1157,13 @@ class Namespace(_AttributeHolder):
     __hash__ = None
 
     def __eq__(self, other):
+        if not isinstance(other, Namespace):
+            return NotImplemented
         return vars(self) == vars(other)
 
     def __ne__(self, other):
+        if not isinstance(other, Namespace):
+            return NotImplemented
         return not (self == other)
 
     def __contains__(self, key):
