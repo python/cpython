@@ -662,6 +662,11 @@ which incur interpreter overhead.
        "Return function(0), function(1), ..."
        return map(function, count(start))
 
+   def tail(n, iterable):
+       "Return an iterator over the last n items"
+       # tail(3, 'ABCDEFG') --> E F G
+       return iter(collections.deque(iterable, maxlen=n))
+
    def consume(iterator, n):
        "Advance the iterator n-steps ahead. If n is none, consume entirely."
        # Use functions that consume iterators at C speed.
