@@ -180,9 +180,9 @@ Key Derivation Function
 -----------------------
 
 Key derivation and key stretching algorithms are designed for secure password
-hashing. Naive algorithms such as ``sha1(password)`` are not resistant
-against brute-force attacks. A good password hashing function must be tunable,
-slow and include a salt.
+hashing. Naive algorithms such as ``sha1(password)`` are not resistant against
+brute-force attacks. A good password hashing function must be tunable, slow, and
+include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
 
 .. function:: pbkdf2_hmac(name, password, salt, rounds, dklen=None)
