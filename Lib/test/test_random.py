@@ -602,7 +602,7 @@ class TestDistributions(unittest.TestCase):
         for variate, args, expected in [
                 (g.uniform, (10.0, 10.0), 10.0),
                 (g.triangular, (10.0, 10.0), 10.0),
-                #(g.triangular, (10.0, 10.0, 10.0), 10.0),
+                (g.triangular, (10.0, 10.0, 10.0), 10.0),
                 (g.expovariate, (float('inf'),), 0.0),
                 (g.vonmisesvariate, (3.0, float('inf')), 3.0),
                 (g.gauss, (10.0, 0.0), 10.0),
