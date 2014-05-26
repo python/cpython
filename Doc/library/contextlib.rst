@@ -371,7 +371,7 @@ some of the context managers being optional::
     with ExitStack() as stack:
         for resource in resources:
             stack.enter_context(resource)
-        if need_special resource:
+        if need_special_resource():
             special = acquire_special_resource()
             stack.callback(release_special_resource, special)
         # Perform operations that use the acquired resources
