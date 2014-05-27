@@ -77,7 +77,7 @@ are still reachable.
    module for information on controlling the collection of cyclic garbage.
    Other implementations act differently and CPython may change.
    Do not depend on immediate finalization of objects when they become
-   unreachable (ex: always close files).
+   unreachable (so you should always close files explicitly).
 
 Note that the use of the implementation's tracing or debugging facilities may
 keep objects alive that would normally be collectable. Also note that catching
@@ -1722,7 +1722,7 @@ property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
 Here is an example of a metaclass that uses an :class:`collections.OrderedDict`
-to remember the order that class members were defined::
+to remember the order that class variables are defined::
 
     class OrderedClass(type):
 
