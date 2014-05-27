@@ -322,32 +322,31 @@ def merge(*iterables):
     [0, 1, 2, 3, 4, 5, 5, 7, 8, 10, 15, 20, 25]
 
     '''
-    _heappop, _heapreplace, _StopIteration = heappop, heapreplace, StopIteration
-    _len = len
 
     h = []
     h_append = h.append
-    for itnum, it in enumerate(map(iter, iterables)):
+    for order, it in enumerate(map(iter, iterables)):
         try:
             next = it.__next__
-            h_append([next(), itnum, next])
-        except _StopIteration:
+            h_append([next(), order, next])
+        except StopIteration:
             pass
     heapify(h)
 
-    while _len(h) > 1:
+    _heapreplace = heapreplace
+    while len(h) > 1:
         try:
             while True:
-                v, itnum, next = s = h[0]
-                yield v
-                s[0] = next()               # raises StopIteration when exhausted
-                _heapreplace(h, s)          # restore heap condition
-        except _StopIteration:
-            _heappop(h)                     # remove empty iterator
+                value, order, next = s = h[0]
+                yield value
+                s[0] = next()           # raises StopIteration when exhausted
+                _heapreplace(h, s)      # restore heap condition
+        except StopIteration:
+            heappop(h)                  # remove empty iterator
     if h:
         # fast case when only a single iterator remains
-        v, itnum, next = h[0]
-        yield v
+        value, order, next = h[0]
+        yield value
         yield from next.__self__
 
 
