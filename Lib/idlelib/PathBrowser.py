@@ -1,6 +1,5 @@
 import os
 import sys
-import re
 import imp
 
 from idlelib.TreeWidget import TreeItem
@@ -95,6 +94,7 @@ class DirBrowserTreeItem(TreeItem):
 def _path_browser(parent):
     flist = PyShellFileList(parent)
     PathBrowser(flist, _htest=True)
+    parent.mainloop()
 
 if __name__ == "__main__":
     from unittest import main

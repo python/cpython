@@ -261,13 +261,9 @@ def _color_delegator(parent):
     root.title("Test ColorDelegator")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
     root.geometry("+%d+%d"%(x, y + 150))
-##    with open(__file__, 'r') as f:
-##        source = f.read()
-    source = "if somename: x = 'abc' # comment"
+    source = "if somename: x = 'abc' # comment\nprint"
     text = Text(root, background="white")
-    # insert only a sample portion
-##    text.insert("insert", source[:690])
-    text.insert("insert", source[:690])
+    text.insert("insert", source)
     text.pack(expand=1, fill="both")
     p = Percolator(text)
     d = ColorDelegator()

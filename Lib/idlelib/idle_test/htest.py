@@ -40,7 +40,7 @@ AboutDialog_spec = {
              },
     'msg': "Test every button. Ensure Python, TK and IDLE versions "
            "are correctly displayed.\n [Close] to exit.",
-     }
+    }
 
 _calltip_window_spec = {
     'file': 'CallTipWindow',
@@ -53,9 +53,10 @@ _class_browser_spec = {
     'file': 'ClassBrowser',
     'kwds': {},
     'msg': "Inspect names of module, class(with superclass if "
-           "applicable), methods and functions.\nToggle nested items."
-           "\nN.S: Double click on items does not work",
-     }
+           "applicable), methods and functions.\nToggle nested items.\n"
+           "Double clicking on items prints a traceback for an exception "
+           "that is ignored."
+    }
 
 _color_delegator_spec = {
     'file': 'ColorDelegator',
@@ -74,11 +75,11 @@ _dyn_option_menu_spec = {
            "Select one of the many options in the 'new option set'."
     }
 
-#_editor_window_spec = {
-#   'file': 'EditorWindow',
-#    'kwds': {},
-#    'msg': "Test editor functions of interest"
-#    }
+_editor_window_spec = {
+   'file': 'EditorWindow',
+    'kwds': {},
+    'msg': "Test editor functions of interest"
+    }
 
 GetCfgSectionNameDialog_spec = {
     'file': 'configSectionNameDialog',
@@ -91,6 +92,7 @@ GetCfgSectionNameDialog_spec = {
            "Close 'Get Name' with a valid entry (printed to Shell), "
            "[Cancel], or [X]",
     }
+
 GetHelpSourceDialog_spec = {
     'file': 'configHelpSourceEdit',
     'kwds': {'title': 'Get helpsource',
@@ -103,10 +105,27 @@ GetHelpSourceDialog_spec = {
            "[Cancel] will print None to shell",
     }
 
+# Update once issue21519 is resolved.
+GetKeysDialog_spec = {
+    'file': 'keybindingDialog',
+    'kwds': {'title': 'Test keybindings',
+             'action': 'find-again',
+             'currentKeySequences': [''] ,
+             '_htest': True,
+             },
+    'msg': "Test for different key modifier sequences.\n"
+           "<nothing> is invalid.\n"
+           "No modifier key is invalid.\n"
+           "Shift key with [a-z],[0-9], function key, move key, tab, space"
+           "is invalid.\nNo validitity checking if advanced key binding "
+           "entry is used."
+    }
+
 _help_dialog_spec = {
     'file': 'EditorWindow',
     'kwds': {},
-    'msg': "If the help text displays, this works"
+    'msg': "If the help text displays, this works.\n"
+           "Text is selectable. Window is scrollable."
     }
 
 _io_binding_spec = {
@@ -115,17 +134,16 @@ _io_binding_spec = {
     'msg': "Test the following bindings\n"
            "<Control-o> to display open window from file dialog.\n"
            "<Control-s> to save the file\n"
-
     }
 
 _multi_call_spec = {
     'file': 'MultiCall',
     'kwds': {},
-    'msg': "The following actions should trigger a print to console.\n"
-           "Entering and leaving the text area, key entry, <Control-Key>,\n"
-           "<Alt-Key-a>, <Control-Key-a>, <Alt-Control-Key-a>, \n"
-           "<Control-Button-1>, <Alt-Button-1> and focussing out of the window\n"
-           "are sequences to be tested."
+    'msg': "The following actions should trigger a print to console or IDLE"
+           " Shell.\nEntering and leaving the text area, key entry, "
+           "<Control-Key>,\n<Alt-Key-a>, <Control-Key-a>, "
+           "<Alt-Control-Key-a>, \n<Control-Button-1>, <Alt-Button-1> and "
+           "focusing out of the window\nare sequences to be tested."
     }
 
 _multistatus_bar_spec = {
@@ -146,18 +164,38 @@ _object_browser_spec = {
 _path_browser_spec = {
     'file': 'PathBrowser',
     'kwds': {},
-    'msg': "Test for correct display of all paths in sys.path."
-           "\nToggle nested items upto the lowest level."
-           "\nN.S: Double click on items does not work."
+    'msg': "Test for correct display of all paths in sys.path.\n"
+           "Toggle nested items upto the lowest level.\n"
+           "Double clicking on an item prints a traceback\n"
+           "for an exception that is ignored."
+    }
+
+_percolator_spec = {
+    'file': 'Percolator',
+    'kwds': {},
+    'msg': "There are two tracers which can be toggled using a checkbox.\n"
+           "Toggling a tracer 'on' by checking it should print tracer"
+           "output to the console or to the IDLE shell.\n"
+           "If both the tracers are 'on', the output from the tracer which "
+           "was switched 'on' later, should be printed first\n"
+           "Test for actions like text entry, and removal."
     }
 
 _scrolled_list_spec = {
     'file': 'ScrolledList',
     'kwds': {},
     'msg': "You should see a scrollable list of items\n"
-           "Selecting an item will print it to console.\n"
-           "Double clicking an item will print it to console\n"
-           "Right click on an item will display a popup."
+           "Selecting (clicking) or double clicking an item "
+           "prints the name to the console or Idle shell.\n"
+           "Right clicking an item will display a popup."
+    }
+
+_stack_viewer_spec = {
+    'file': 'StackViewer',
+    'kwds': {},
+    'msg': "A stacktrace for a NameError exception.\n"
+           "Expand 'idlelib ...' and '<locals>'.\n"
+           "Check that exc_value, exc_tb, and exc_type are correct.\n"
     }
 
 _tabbed_pages_spec = {
@@ -189,7 +227,7 @@ _tooltip_spec = {
 _tree_widget_spec = {
     'file': 'TreeWidget',
     'kwds': {},
-    'msg': "You should see two canvas' side-by-side.\n"
+    'msg': "You should see two canvases side-by-side.\n"
            "The left canvas is scrollable.\n"
            "The right canvas is not scrollable.\n"
            "Click on folders upto to the lowest level."
@@ -198,29 +236,27 @@ _tree_widget_spec = {
 _widget_redirector_spec = {
     'file': 'WidgetRedirector',
     'kwds': {},
-    'msg': "Every text insert should be printed to console."
+    'msg': "Every text insert should be printed to the console."
+           "or the IDLE shell."
     }
 
-def run(test=None):
+def run(*tests):
     root = tk.Tk()
-    test_list = [] # List of tuples of the form (spec, kwds, callable widget)
-    if test:
-        test_spec = globals()[test.__name__ + '_spec']
-        test_spec['name'] = test.__name__
-        test_kwds = test_spec['kwds']
-        test_kwds['parent'] = root
-        test_list.append((test_spec, test_kwds, test))
+    test_list = [] # List of tuples of the form (spec, callable widget)
+    if tests:
+        for test in tests:
+            test_spec = globals()[test.__name__ + '_spec']
+            test_spec['name'] = test.__name__
+            test_list.append((test_spec,  test))
     else:
         for k, d in globals().items():
             if k.endswith('_spec'):
                 test_name = k[:-5]
                 test_spec = d
                 test_spec['name'] = test_name
-                test_kwds = test_spec['kwds']
-                test_kwds['parent'] = root
                 mod = import_module('idlelib.' + test_spec['file'])
                 test = getattr(mod, test_name)
-                test_list.append((test_spec, test_kwds, test))
+                test_list.append((test_spec, test))
 
     help_string = [tk.StringVar('')]
     test_name = [tk.StringVar('')]
@@ -231,11 +267,11 @@ def run(test=None):
     def next():
         if len(test_list) == 1:
             next_button.pack_forget()
-        test_spec, test_kwds[0], test = test_list.pop()
+        test_spec, callable_object[0] = test_list.pop()
+        test_kwds[0] = test_spec['kwds']
+        test_kwds[0]['parent'] = root
         help_string[0].set(test_spec['msg'])
         test_name[0].set('test ' + test_spec['name'])
-        callable_object[0] = test
-
 
     def run_test():
         widget = callable_object[0](**test_kwds[0])

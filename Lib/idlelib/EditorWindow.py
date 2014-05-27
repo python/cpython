@@ -1714,18 +1714,16 @@ def fixwordbreaks(root):
 def _editor_window(parent):
     root = parent
     fixwordbreaks(root)
-##    root.withdraw()
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:
         filename = None
     macosxSupport.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
-##    edit.set_close_hook(root.quit)
-##    edit.text.bind("<<close-all-windows>>", edit.close_event)
+    edit.text.bind("<<close-all-windows>>", edit.close_event)
+    parent.mainloop()
+
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run
-    if len(sys.argv) <= 1:
-        run(_help_dialog)
-    run(_editor_window)
+    run(_help_dialog, _editor_window)
