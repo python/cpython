@@ -711,6 +711,8 @@ class SelectorSocketTransportTests(unittest.TestCase):
         tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop.assert_reader(7, tr._read_ready)
+        with self.assertRaises(RuntimeError):
+            tr.resume_reading()
 
     def test_read_ready(self):
         transport = _SelectorSocketTransport(
@@ -1125,6 +1127,8 @@ class SelectorSslTransportTests(unittest.TestCase):
         tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop.assert_reader(1, tr._read_ready)
+        with self.assertRaises(RuntimeError):
+            tr.resume_reading()
 
     def test_write(self):
         transport = self._make_one()
