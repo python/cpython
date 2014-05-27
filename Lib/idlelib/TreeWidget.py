@@ -454,20 +454,11 @@ def _tree_widget(parent):
     root.title("Test TreeWidget")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
     root.geometry("+%d+%d"%(x, y + 150))
-    # test with scrollable canvas
     sc = ScrolledCanvas(root, bg="white", highlightthickness=0, takefocus=1)
     sc.frame.pack(expand=1, fill="both", side=LEFT)
     item = FileTreeItem(os.getcwd())
     node = TreeNode(sc.canvas, None, item)
     node.expand()
-
-    # test without scrollable canvas
-    canvas = Canvas(root, bg="white", highlightthickness=0)
-    canvas.pack(expand=0, fill="both", side=RIGHT)
-    item = FileTreeItem(os.getcwd())
-    node = TreeNode(canvas, None, item)
-    node.update()
-
     root.mainloop()
 
 if __name__ == '__main__':

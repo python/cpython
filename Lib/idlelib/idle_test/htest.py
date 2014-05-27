@@ -181,6 +181,22 @@ _percolator_spec = {
            "Test for actions like text entry, and removal."
     }
 
+_replace_dialog_spec = {
+    'file': 'ReplaceDialog',
+    'kwds': {},
+    'msg': "Click the 'Replace' button.\n"
+           "Test various replace options in the 'Replace dialog'.\n"
+           "Click [Close] or [X] to close to the 'Replace Dialog'."
+    }
+
+_search_dialog_spec = {
+    'file': 'SearchDialog',
+    'kwds': {},
+    'msg': "Click the 'Search' button.\n"
+           "Test various search options in the 'Search dialog'.\n"
+           "Click [Close] or [X] to close to the 'Search Dialog'."
+    }
+
 _scrolled_list_spec = {
     'file': 'ScrolledList',
     'kwds': {},
@@ -227,9 +243,7 @@ _tooltip_spec = {
 _tree_widget_spec = {
     'file': 'TreeWidget',
     'kwds': {},
-    'msg': "You should see two canvases side-by-side.\n"
-           "The left canvas is scrollable.\n"
-           "The right canvas is not scrollable.\n"
+    'msg': "The canvas is scrollable.\n"
            "Click on folders upto to the lowest level."
     }
 
