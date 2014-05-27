@@ -670,7 +670,7 @@ class _SelectorSslTransport(_SelectorTransport):
 
     def resume_reading(self):
         if not self._paused:
-            raise ('Not paused')
+            raise RuntimeError('Not paused')
         self._paused = False
         if self._closing:
             return
