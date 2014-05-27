@@ -29,7 +29,7 @@ Arithmetic conversions
 
 When a description of an arithmetic operator below uses the phrase "the numeric
 arguments are converted to a common type," this means that the operator
-implementation for built-in types works that way:
+implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
 
@@ -38,8 +38,9 @@ implementation for built-in types works that way:
 
 * otherwise, both must be integers and no conversion is necessary.
 
-Some additional rules apply for certain operators (e.g., a string left argument
-to the '%' operator).  Extensions must define their own conversion behavior.
+Some additional rules apply for certain operators (e.g., a string as a left
+argument to the '%' operator).  Extensions must define their own conversion
+behavior.
 
 
 .. _atoms:
@@ -183,7 +184,7 @@ nesting from left to right, and evaluating the expression to produce an element
 each time the innermost block is reached.
 
 Note that the comprehension is executed in a separate scope, so names assigned
-to in the target list don't "leak" in the enclosing scope.
+to in the target list don't "leak" into the enclosing scope.
 
 
 .. _lists:
@@ -293,7 +294,7 @@ for comprehensions, except that it is enclosed in parentheses instead of
 brackets or curly braces.
 
 Variables used in the generator expression are evaluated lazily when the
-:meth:`~generator.__next__` method is called for generator object (in the same
+:meth:`~generator.__next__` method is called for the generator object (in the same
 fashion as normal generators).  However, the leftmost :keyword:`for` clause is
 immediately evaluated, so that an error produced by it can be seen before any
 other possible error in the code that handles the generator expression.
@@ -302,7 +303,7 @@ may depend on the previous :keyword:`for` loop. For example: ``(x*y for x in
 range(10) for y in bar(x))``.
 
 The parentheses can be omitted on calls with only one argument.  See section
-:ref:`calls` for the detail.
+:ref:`calls` for details.
 
 
 .. _yieldexpr:
@@ -327,12 +328,12 @@ When a generator function is called, it returns an iterator known as a
 generator.  That generator then controls the execution of a generator function.
 The execution starts when one of the generator's methods is called.  At that
 time, the execution proceeds to the first yield expression, where it is
-suspended again, returning the value of :token:`expression_list` to generator's
+suspended again, returning the value of :token:`expression_list` to the generator's
 caller.  By suspended, we mean that all local state is retained, including the
 current bindings of local variables, the instruction pointer, and the internal
 evaluation stack.  When the execution is resumed by calling one of the
 generator's methods, the function can proceed exactly as if the yield expression
-was just another external call.  The value of the yield expression after
+were just another external call.  The value of the yield expression after
 resuming depends on the method which resumed the execution.  If
 :meth:`~generator.__next__` is used (typically via either a :keyword:`for` or
 the :func:`next` builtin) then the result is :const:`None`.  Otherwise, if
@@ -344,10 +345,10 @@ that method.
 All of this makes generator functions quite similar to coroutines; they yield
 multiple times, they have more than one entry point and their execution can be
 suspended.  The only difference is that a generator function cannot control
-where should the execution continue after it yields; the control is always
+where the execution should continue after it yields; the control is always
 transferred to the generator's caller.
 
-yield expressions are allowed in the :keyword:`try` clause of a :keyword:`try`
+Yield expressions are allowed in the :keyword:`try` clause of a :keyword:`try`
 ...  :keyword:`finally` construct.  If the generator is not resumed before it is
 finalized (by reaching a zero reference count or by being garbage collected),
 the generator-iterator's :meth:`~generator.close` method will be called,
@@ -430,7 +431,7 @@ is already executing raises a :exc:`ValueError` exception.
 
 .. method:: generator.throw(type[, value[, traceback]])
 
-   Raises an exception of type ``type`` at the point where generator was paused,
+   Raises an exception of type ``type`` at the point where the generator was paused,
    and returns the next value yielded by the generator function.  If the generator
    exits without yielding another value, a :exc:`StopIteration` exception is
    raised.  If the generator function does not catch the passed-in exception, or
@@ -520,11 +521,11 @@ An attribute reference is a primary followed by a period and a name:
 
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
-attribute whose name is the identifier (which can be customized by overriding
-the :meth:`__getattr__` method).  If this attribute is not available, the
-exception :exc:`AttributeError` is raised.  Otherwise, the type and value of the
-object produced is determined by the object.  Multiple evaluations of the same
-attribute reference may yield different objects.
+attribute whose name is the identifier.  This production can be customized by
+overriding the :meth:`__getattr__` method).  If this attribute is not available,
+the exception :exc:`AttributeError` is raised.  Otherwise, the type and value of
+the object produced is determined by the object.  Multiple evaluations of the
+same attribute reference may yield different objects.
 
 
 .. _subscriptions:
@@ -549,9 +550,9 @@ A subscription selects an item of a sequence (string, tuple or list) or mapping
 .. productionlist::
    subscription: `primary` "[" `expression_list` "]"
 
-The primary must evaluate to an object that supports subscription, e.g. a list
-or dictionary.  User-defined objects can support subscription by defining a
-:meth:`__getitem__` method.
+The primary must evaluate to an object that supports subscription (lists or
+dictionaries for example).  User-defined objects can support subscription by
+defining a :meth:`__getitem__` method.
 
 For built-in objects, there are two types of objects that support subscription:
 
@@ -660,8 +661,8 @@ series of :term:`arguments <argument>`:
    keyword_arguments: `keyword_item` ("," `keyword_item`)*
    keyword_item: `identifier` "=" `expression`
 
-A trailing comma may be present after the positional and keyword arguments but
-does not affect the semantics.
+An optional trailing comma may be present after the positional and keyword arguments
+but does not affect the semantics.
 
 .. index::
    single: parameter; call semantics
@@ -943,9 +944,9 @@ point number using the :func:`abs` function if appropriate.
 .. index:: single: addition
 
 The ``+`` (addition) operator yields the sum of its arguments.  The arguments
-must either both be numbers or both sequences of the same type.  In the former
-case, the numbers are converted to a common type and then added together.  In
-the latter case, the sequences are concatenated.
+must either both be numbers or both be sequences of the same type.  In the
+former case, the numbers are converted to a common type and then added together.
+In the latter case, the sequences are concatenated.
 
 .. index:: single: subtraction
 
@@ -1106,7 +1107,7 @@ Comparison of objects of the same type depends on the type:
   another one is made arbitrarily but consistently within one execution of a
   program.
 
-Comparison of objects of the differing types depends on whether either of the
+Comparison of objects of differing types depends on whether either of the
 types provide explicit support for the comparison.  Most numeric types can be
 compared with one another.  When cross-type comparison is not supported, the
 comparison method returns ``NotImplemented``.
@@ -1116,7 +1117,7 @@ comparison method returns ``NotImplemented``.
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
 s`` evaluates to true if *x* is a member of *s*, and false otherwise.  ``x not
 in s`` returns the negation of ``x in s``.  All built-in sequences and set types
-support this as well as dictionary, for which :keyword:`in` tests whether a the
+support this as well as dictionary, for which :keyword:`in` tests whether the
 dictionary has a given key. For container types such as list, tuple, set,
 frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
 to ``any(x is e or x == e for e in y)``.
@@ -1202,9 +1203,9 @@ returned; otherwise, *y* is evaluated and the resulting value is returned.
 they return to ``False`` and ``True``, but rather return the last evaluated
 argument.  This is sometimes useful, e.g., if ``s`` is a string that should be
 replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
-the desired value.  Because :keyword:`not` has to invent a value anyway, it does
-not bother to return a value of the same type as its argument, so e.g., ``not
-'foo'`` yields ``False``, not ``''``.)
+the desired value.  Because :keyword:`not` has to create a new value, it
+returns a boolean value regardless of the type of its argument
+(for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
 Conditional expressions
@@ -1222,8 +1223,8 @@ Conditional expressions
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
 
-The expression ``x if C else y`` first evaluates the condition, *C* (*not* *x*);
-if *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
+The expression ``x if C else y`` first evaluates the condition, *C* rather than *x*.
+If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
 evaluated and its value is returned.
 
 See :pep:`308` for more details about conditional expressions.
@@ -1244,10 +1245,9 @@ Lambdas
    lambda_expr: "lambda" [`parameter_list`]: `expression`
    lambda_expr_nocond: "lambda" [`parameter_list`]: `expression_nocond`
 
-Lambda expressions (sometimes called lambda forms) have the same syntactic position as
-expressions.  They are a shorthand to create anonymous functions; the expression
-``lambda arguments: expression`` yields a function object.  The unnamed object
-behaves like a function object defined with ::
+Lambda expressions (sometimes called lambda forms) are create anonymous
+functions. The expression ``lambda arguments: expression`` yields a function
+object.  The unnamed object behaves like a function object defined with ::
 
    def <lambda>(arguments):
        return expression
@@ -1310,13 +1310,15 @@ Operator precedence
 
 .. index:: pair: operator; precedence
 
-The following table summarizes the operator precedences in Python, from lowest
+The following table summarizes the operator precedence in Python, from lowest
 precedence (least binding) to highest precedence (most binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
 operators are binary.  Operators in the same box group left to right (except for
-comparisons, including tests, which all have the same precedence and chain from
-left to right --- see section :ref:`comparisons` --- and exponentiation, which
-groups from right to left).
+exponentiation, which groups from right to left).
+
+Note that comparisons, membership tests, and identity tests, all have the same
+precedence and have a left-to-right chaining feature as described in the
+:ref:`comparisons` section.
 
 
 +-----------------------------------------------+-------------------------------------+
