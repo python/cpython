@@ -7,7 +7,7 @@ Simple statements
 
 .. index:: pair: simple; statement
 
-Simple statements are comprised within a single logical line. Several simple
+A simple statement is comprised within a single logical line. Several simple
 statements may occur on a single line separated by semicolons.  The syntax for
 simple statements is:
 
@@ -91,8 +91,8 @@ attributes or items of mutable objects:
          : | `slicing`
          : | "*" `target`
 
-(See section :ref:`primaries` for the syntax definitions for the last three
-symbols.)
+(See section :ref:`primaries` for the syntax definitions for *attributeref*,
+*subscription*, and *slicing*.)
 
 An assignment statement evaluates the expression list (remember that this can be
 a single expression or a comma-separated list, the latter yielding a tuple) and
@@ -228,7 +228,7 @@ Assignment of an object to a single target is recursively defined as follows.
   inclusive.  Finally, the sequence object is asked to replace the slice with
   the items of the assigned sequence.  The length of the slice may be different
   from the length of the assigned sequence, thus changing the length of the
-  target sequence, if the object allows it.
+  target sequence, if the target sequence allows it.
 
 .. impl-detail::
 
@@ -236,14 +236,15 @@ Assignment of an object to a single target is recursively defined as follows.
    as for expressions, and invalid syntax is rejected during the code generation
    phase, causing less detailed error messages.
 
-WARNING: Although the definition of assignment implies that overlaps between the
-left-hand side and the right-hand side are 'safe' (for example ``a, b = b, a``
-swaps two variables), overlaps *within* the collection of assigned-to variables
-are not safe!  For instance, the following program prints ``[0, 2]``::
+Although the definition of assignment implies that overlaps between the
+left-hand side and the right-hand side are 'simultanenous' (for example ``a, b =
+b, a`` swaps two variables), overlaps *within* the collection of assigned-to
+variables occur left-to-right, sometimes resulting in confusion.  For instance,
+the following program prints ``[0, 2]``::
 
    x = [0, 1]
    i = 0
-   i, x[i] = 1, 2
+   i, x[i] = 1, 2         # i is updated, then x[i] is updated
    print(x)
 
 
@@ -283,7 +284,7 @@ operation and an assignment statement:
    augop: "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
 
-(See section :ref:`primaries` for the syntax definitions for the last three
+(See section :ref:`primaries` for the syntax definitions of the last three
 symbols.)
 
 An augmented assignment evaluates the target (which, unlike normal assignment
@@ -296,6 +297,11 @@ An augmented assignment expression like ``x += 1`` can be rewritten as ``x = x +
 version, ``x`` is only evaluated once. Also, when possible, the actual operation
 is performed *in-place*, meaning that rather than creating a new object and
 assigning that to the target, the old object is modified instead.
+
+Unlike normal assignments, augmented assignments evaluate the left-hand side
+*before* evaluating the right-hand side.  For example, ``a[i] += f(x)`` first
+looks-up ``a[i]``, then it evaluates ``f(x)`` and performs the addition, and
+lastly, it writes the result back to ``a[i]``.
 
 With the exception of assigning to tuples and multiple targets in a single
 statement, the assignment done by augmented assignment statements is handled the
@@ -658,7 +664,7 @@ commas) the two steps are carried out separately for each clause, just
 as though the clauses had been separated out into individiual import
 statements.
 
-The details of the first step, finding and loading modules is described in
+The details of the first step, finding and loading modules are described in
 greater detail in the section on the :ref:`import system <importsystem>`,
 which also describes the various types of packages and modules that can
 be imported, as well as all the hooks that can be used to customize
@@ -689,7 +695,7 @@ available in the local namespace in one of three ways:
 
 The :keyword:`from` form uses a slightly more complex process:
 
-#. find the module specified in the :keyword:`from` clause loading and
+#. find the module specified in the :keyword:`from` clause, loading and
    initializing it if necessary;
 #. for each of the identifiers specified in the :keyword:`import` clauses:
 
@@ -697,7 +703,7 @@ The :keyword:`from` form uses a slightly more complex process:
    #. if not, attempt to import a submodule with that name and then
       check the imported module again for that attribute
    #. if the attribute is not found, :exc:`ImportError` is raised.
-   #. otherwise, a reference to that value is bound in the local namespace,
+   #. otherwise, a reference to that value is stored in the local namespace,
       using the name in the :keyword:`as` clause if it is present,
       otherwise using the attribute name
 
@@ -726,9 +732,9 @@ to avoid accidentally exporting items that are not part of the API (such as
 library modules which were imported and used within the module).
 
 The :keyword:`from` form with ``*`` may only occur in a module scope.  The wild
-card form of import --- ``import *`` --- is only allowed at the module level.
-Attempting to use it in class or function definitions will raise a
-:exc:`SyntaxError`.
+card form of import --- ``from module import *`` --- is only allowed at the
+module level.  Attempting to use it in class or function definitions will raise
+a :exc:`SyntaxError`.
 
 .. index::
     single: relative; import
@@ -747,7 +753,7 @@ import mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
 The specification for relative imports is contained within :pep:`328`.
 
 :func:`importlib.import_module` is provided to support applications that
-determine which modules need to be loaded dynamically.
+determine dynamically the modules to be loaded.
 
 
 .. _future:
@@ -759,10 +765,12 @@ Future statements
 
 A :dfn:`future statement` is a directive to the compiler that a particular
 module should be compiled using syntax or semantics that will be available in a
-specified future release of Python.  The future statement is intended to ease
-migration to future versions of Python that introduce incompatible changes to
-the language.  It allows use of the new features on a per-module basis before
-the release in which the feature becomes standard.
+specified future release of Python where the feature becomes standard.
+
+The future statement is intended to ease migration to future versions of Python
+that introduce incompatible changes to the language.  It allows use of the new
+features on a per-module basis before the release in which the feature becomes
+standard.
 
 .. productionlist:: *
    future_statement: "from" "__future__" "import" feature ["as" name]
@@ -857,7 +865,7 @@ definition, function definition, or :keyword:`import` statement.
 
 .. impl-detail::
 
-   The current implementation does not enforce the latter two restrictions, but
+   The current implementation does not enforce the two restrictions, but
    programs should not abuse this freedom, as future implementations may enforce
    them or silently change the meaning of the program.
 
@@ -890,16 +898,16 @@ The :keyword:`nonlocal` statement
                 : | "nonlocal" identifier augop expression_list
 
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope.  This is important
-because the default behavior for binding is to search the local namespace
-first.  The statement allows encapsulated code to rebind variables outside of
-the local scope besides the global (module) scope.
+previously bound variables in the nearest enclosing scope excluding globals.
+This is important because the default behavior for binding is to search the
+local namespace first.  The statement allows encapsulated code to rebind
+variables outside of the local scope besides the global (module) scope.
 
 .. XXX not implemented
    The :keyword:`nonlocal` statement may prepend an assignment or augmented
    assignment, but not an expression.
 
-Names listed in a :keyword:`nonlocal` statement, unlike to those listed in a
+Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
 :keyword:`global` statement, must refer to pre-existing bindings in an
 enclosing scope (the scope in which a new binding should be created cannot
 be determined unambiguously).
