@@ -31,11 +31,11 @@ that name established in the innermost function block containing the use.
 A :dfn:`block` is a piece of Python program text that is executed as a unit.
 The following are blocks: a module, a function body, and a class definition.
 Each command typed interactively is a block.  A script file (a file given as
-standard input to the interpreter or specified on the interpreter command line
-the first argument) is a code block.  A script command (a command specified on
-the interpreter command line with the '**-c**' option) is a code block.  The
-string argument passed to the built-in functions :func:`eval` and :func:`exec`
-is a code block.
+standard input to the interpreter or specified as a command line argument to the
+interpreter) is a code block.  A script command (a command specified on the
+interpreter command line with the '**-c**' option) is a code block.  The string
+argument passed to the built-in functions :func:`eval` and :func:`exec` is a
+code block.
 
 .. index:: pair: execution; frame
 
@@ -77,7 +77,7 @@ global.)  If a variable is used in a code block but not defined there, it is a
    single: UnboundLocalError
 
 When a name is not found at all, a :exc:`NameError` exception is raised.  If the
-name refers to a local variable that has not been bound, a
+name refers to a local variable that has not been bound, an
 :exc:`UnboundLocalError` exception is raised.  :exc:`UnboundLocalError` is a
 subclass of :exc:`NameError`.
 
