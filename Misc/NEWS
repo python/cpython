@@ -89,6 +89,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21402: tkinter.ttk now works when default root window is not set.
+
 - Issue #3015: _tkinter.create() now creates tkapp object with wantobject=1 by
   default.
 
