@@ -2777,7 +2777,7 @@ Tkinter_Create(PyObject *self, PyObject *args)
                               try getting rid of it. */
     char *className = NULL;
     int interactive = 0;
-    int wantobjects = 0;
+    int wantobjects = 1;
     int wantTk = 1;     /* If false, then Tk_Init() doesn't get called */
     int sync = 0; /* pass -sync to wish */
     char *use = NULL; /* pass -use to wish */
