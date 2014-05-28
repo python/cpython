@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18807: If copying (no symlinks) specified for a venv, then the python
+  interpreter aliases (python, python3) are now created by copying rather than
+  symlinking.
+
 - Issue #14710: pkgutil.get_loader() no longer raises an exception when None is
   found in sys.modules.
 

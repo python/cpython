@@ -212,7 +212,10 @@ class EnvBuilder:
             for suffix in ('python', 'python3'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
-                    os.symlink(exename, path)
+                    # Issue 18807: make copies if
+                    # symlinks are not wanted
+                    copier(context.env_exe, path)
+                    os.chmod(path, 0o755)
         else:
             subdir = 'DLLs'
             include = self.include_binary
