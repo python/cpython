@@ -64,9 +64,16 @@ int pysqlite_row_init(pysqlite_Row* self, PyObject* args, PyObject* kwargs)
     return 0;
 }
 
+PyObject* pysqlite_row_item(pysqlite_Row* self, Py_ssize_t idx)
+{
+   PyObject* item = PyTuple_GetItem(self->data, idx);
+   Py_XINCREF(item);
+   return item;
+}
+
 PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
 {
-    long _idx;
+    Py_ssize_t _idx;
     char* key;
     int nitems, i;
     char* compare_key;
@@ -78,11 +85,17 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
 
     if (PyInt_Check(idx)) {
         _idx = PyInt_AsLong(idx);
+        if (_idx < 0)
+           _idx += PyTuple_GET_SIZE(self->data);
         item = PyTuple_GetItem(self->data, _idx);
         Py_XINCREF(item);
         return item;
     } else if (PyLong_Check(idx)) {
-        _idx = PyLong_AsLong(idx);
+        _idx = PyNumber_AsSsize_t(idx, PyExc_IndexError);
+        if (_idx == -1 && PyErr_Occurred())
+            return NULL;
+        if (_idx < 0)
+           _idx += PyTuple_GET_SIZE(self->data);
         item = PyTuple_GetItem(self->data, _idx);
         Py_XINCREF(item);
         return item;
@@ -199,6 +212,14 @@ PyMappingMethods pysqlite_row_as_mapping = {
     /* mp_ass_subscript */ (objobjargproc)0,
 };
 
+static PySequenceMethods pysqlite_row_as_sequence = {
+   /* sq_length */         (lenfunc)pysqlite_row_length,
+   /* sq_concat */         0,
+   /* sq_repeat */         0,
+   /* sq_item */           (ssizeargfunc)pysqlite_row_item,
+};
+
+
 static PyMethodDef pysqlite_row_methods[] = {
     {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
         PyDoc_STR("Returns the keys of the row.")},
@@ -252,5 +273,6 @@ extern int pysqlite_row_setup_types(void)
 {
     pysqlite_RowType.tp_new = PyType_GenericNew;
     pysqlite_RowType.tp_as_mapping = &pysqlite_row_as_mapping;
+    pysqlite_RowType.tp_as_sequence = &pysqlite_row_as_sequence;
     return PyType_Ready(&pysqlite_RowType);
 }

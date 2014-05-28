@@ -21,6 +21,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import collections
 import datetime
 import time
 
@@ -51,6 +52,7 @@ version_info = tuple([int(x) for x in version.split(".")])
 sqlite_version_info = tuple([int(x) for x in sqlite_version.split(".")])
 
 Binary = buffer
+collections.Sequence.register(Row)
 
 def register_adapters_and_converters():
     def adapt_date(val):
