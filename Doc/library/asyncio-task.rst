@@ -142,6 +142,18 @@ InvalidStateError
    The operation is not allowed in this state.
 
 
+TimeoutError
+------------
+
+.. exception:: TimeoutError
+
+   The operation exceeded the given deadline.
+
+.. note::
+
+   This exception is different from the builtin :exc:`TimeoutError` exception!
+
+
 Future
 ------
 
@@ -400,7 +412,8 @@ Task functions
    Return an iterator whose values, when waited for, are :class:`Future`
    instances.
 
-   Raises :exc:`TimeoutError` if the timeout occurs before all Futures are done.
+   Raises :exc:`asyncio.TimeoutError` if the timeout occurs before all Futures
+   are done.
 
    Example::
 
@@ -521,8 +534,8 @@ Task functions
 
    .. note::
 
-      This does not raise :exc:`TimeoutError`! Futures that aren't done when
-      the timeout occurs are returned in the second set.
+      This does not raise :exc:`asyncio.TimeoutError`! Futures that aren't done
+      when the timeout occurs are returned in the second set.
 
 
 .. function:: wait_for(fut, timeout, \*, loop=None)
@@ -534,7 +547,7 @@ Task functions
    Coroutine will be wrapped in :class:`Task`.
 
    Returns result of the Future or coroutine.  When a timeout occurs, it
-   cancels the task and raises :exc:`TimeoutError`. To avoid the task
+   cancels the task and raises :exc:`asyncio.TimeoutError`. To avoid the task
    cancellation, wrap it in :func:`shield`.
 
    This function is a :ref:`coroutine <coroutine>`.
