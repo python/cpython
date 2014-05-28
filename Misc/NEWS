@@ -91,6 +91,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18807: If copying (no symlinks) specified for a venv, then the python
+  interpreter aliases (python, python3) are now created by copying rather than
+  symlinking.
+
 - Issue #20197: Added support for the WebP image type in the imghdr module.
   Patch by Fabrice Aneche and Claudiu Popa.
 
