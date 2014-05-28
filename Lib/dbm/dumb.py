@@ -216,8 +216,10 @@ class _Database(collections.MutableMapping):
         self._commit()
 
     def keys(self):
-        self._verify_open()
-        return list(self._index.keys())
+        try:
+            return list(self._index)
+        except TypeError:
+            raise error('DBM object has already been closed') from None
 
     def items(self):
         self._verify_open()
@@ -226,17 +228,26 @@ class _Database(collections.MutableMapping):
     def __contains__(self, key):
         if isinstance(key, str):
             key = key.encode('utf-8')
-        self._verify_open()
-        return key in self._index
+        try:
+            return key in self._index
+        except TypeError:
+            if self._index is None:
+                raise error('DBM object has already been closed') from None
+            else:
+                raise
 
     def iterkeys(self):
-        self._verify_open()
-        return iter(self._index.keys())
+        try:
+            return iter(self._index)
+        except TypeError:
+            raise error('DBM object has already been closed') from None
     __iter__ = iterkeys
 
     def __len__(self):
-        self._verify_open()
-        return len(self._index)
+        try:
+            return len(self._index)
+        except TypeError:
+            raise error('DBM object has already been closed') from None
 
     def close(self):
         self._commit()
