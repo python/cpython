@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21402: Tkinter.ttk now works when default root window is not set.
+
 - Issue #10203: sqlite3.Row now truly supports sequence protocol.  In particulr
   it supports reverse() and negative indices.  Original patch by Claudiu Popa.
 

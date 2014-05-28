@@ -3,6 +3,17 @@ import sys
 import unittest
 import ttk
 
+class MockTkApp:
+
+    def splitlist(self, arg):
+        if isinstance(arg, tuple):
+            return arg
+        return arg.split(':')
+
+    def wantobjects(self):
+        return True
+
+
 class MockTclObj(object):
     typename = 'test'
 
@@ -353,20 +364,22 @@ class InternalFunctionsTest(unittest.TestCase):
 
 
     def test_list_from_layouttuple(self):
+        tk = MockTkApp()
+
         # empty layout tuple
-        self.assertFalse(ttk._list_from_layouttuple(()))
+        self.assertFalse(ttk._list_from_layouttuple(tk, ()))
 
         # shortest layout tuple
-        self.assertEqual(ttk._list_from_layouttuple(('name', )),
+        self.assertEqual(ttk._list_from_layouttuple(tk, ('name', )),
             [('name', {})])
 
         # not so interesting ltuple
         sample_ltuple = ('name', '-option', 'value')
-        self.assertEqual(ttk._list_from_layouttuple(sample_ltuple),
+        self.assertEqual(ttk._list_from_layouttuple(tk, sample_ltuple),
             [('name', {'option': 'value'})])
 
         # empty children
-        self.assertEqual(ttk._list_from_layouttuple(
+        self.assertEqual(ttk._list_from_layouttuple(tk,
             ('something', '-children', ())),
             [('something', {'children': []})]
         )
@@ -379,7 +392,7 @@ class InternalFunctionsTest(unittest.TestCase):
                 )
             )
         )
-        self.assertEqual(ttk._list_from_layouttuple(ltuple),
+        self.assertEqual(ttk._list_from_layouttuple(tk, ltuple),
             [('name', {'option': 'niceone', 'children':
                 [('otherone', {'otheropt': 'othervalue', 'children':
                     [('child', {})]
@@ -388,29 +401,37 @@ class InternalFunctionsTest(unittest.TestCase):
         )
 
         # bad tuples
-        self.assertRaises(ValueError, ttk._list_from_layouttuple,
+        self.assertRaises(ValueError, ttk._list_from_layouttuple, tk,
             ('name', 'no_minus'))
-        self.assertRaises(ValueError, ttk._list_from_layouttuple,
+        self.assertRaises(ValueError, ttk._list_from_layouttuple, tk,
             ('name', 'no_minus', 'value'))
-        self.assertRaises(ValueError, ttk._list_from_layouttuple,
+        self.assertRaises(ValueError, ttk._list_from_layouttuple, tk,
             ('something', '-children')) # no children
-        import Tkinter
-        if not Tkinter._default_root or Tkinter._default_root.wantobjects():
-            self.assertRaises(ValueError, ttk._list_from_layouttuple,
-                ('something', '-children', 'value')) # invalid children
+        self.assertRaises(ValueError, ttk._list_from_layouttuple, tk,
+            ('something', '-children', 'value')) # invalid children
 
 
     def test_val_or_dict(self):
-        def func(opt, val=None):
+        def func(res, opt=None, val=None):
+            if opt is None:
+                return res
             if val is None:
                 return "test val"
             return (opt, val)
 
-        options = {'test': None}
-        self.assertEqual(ttk._val_or_dict(options, func), "test val")
+        tk = MockTkApp()
+        tk.call = func
 
-        options = {'test': 3}
-        self.assertEqual(ttk._val_or_dict(options, func), options)
+        self.assertEqual(ttk._val_or_dict(tk, {}, '-test:3'),
+                         {'test': '3'})
+        self.assertEqual(ttk._val_or_dict(tk, {}, ('-test', 3)),
+                         {'test': 3})
+
+        self.assertEqual(ttk._val_or_dict(tk, {'test': None}, 'x:y'),
+                         'test val')
+
+        self.assertEqual(ttk._val_or_dict(tk, {'test': 3}, 'x:y'),
+                         {'test': 3})
 
 
     def test_convert_stringval(self):
