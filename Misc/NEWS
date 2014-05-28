@@ -30,6 +30,9 @@ Library
 Tests
 -----
 
+- Issue #21493: Added test for ntpath.expanduser().  Original patch by
+  Claudiu Popa.
+
 - Issue #19925: Added tests for the spwd module. Original patch by Vajrasky Kok.
 
 - Issue #13355: random.triangular() no longer fails with a ZeroDivisionError
