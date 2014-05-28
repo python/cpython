@@ -15,8 +15,6 @@ Core and Builtins
   time issue noticeable when compiling code with a large number of "and"
   and "or" operators.
 
-- Issue #19925: Added tests for the spwd module. Original patch by Vajrasky Kok.
-
 - Issue #21418: Fix a crash in the builtin function super() when called without
   argument and without current frame (ex: embedded Python).
 
@@ -510,6 +508,11 @@ Documentation
 
 Tests
 -----
+
+- Issue #21493: Added test for ntpath.expanduser().  Original patch by
+  Claudiu Popa.
+
+- Issue #19925: Added tests for the spwd module. Original patch by Vajrasky Kok.
 
 - Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
   PanedWindow.paneconfigure(), and Menu.entryconfigure().

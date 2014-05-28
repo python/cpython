@@ -258,6 +258,41 @@ class TestNtpath(unittest.TestCase):
             check('%spam%bar', '%sbar' % nonascii)
             check('%{}%bar'.format(nonascii), 'ham%sbar' % nonascii)
 
+    def test_expanduser(self):
+        tester('ntpath.expanduser("test")', 'test')
+
+        with support.EnvironmentVarGuard() as env:
+            env.clear()
+            tester('ntpath.expanduser("~test")', '~test')
+
+            env['HOMEPATH'] = 'eric\\idle'
+            env['HOMEDRIVE'] = 'C:\\'
+            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
+            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
+
+            del env['HOMEDRIVE']
+            tester('ntpath.expanduser("~test")', 'eric\\test')
+            tester('ntpath.expanduser("~")', 'eric\\idle')
+
+            env.clear()
+            env['USERPROFILE'] = 'C:\\eric\\idle'
+            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
+            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
+
+            env.clear()
+            env['HOME'] = 'C:\\idle\\eric'
+            tester('ntpath.expanduser("~test")', 'C:\\idle\\test')
+            tester('ntpath.expanduser("~")', 'C:\\idle\\eric')
+
+            tester('ntpath.expanduser("~test\\foo\\bar")',
+                   'C:\\idle\\test\\foo\\bar')
+            tester('ntpath.expanduser("~test/foo/bar")',
+                   'C:\\idle\\test/foo/bar')
+            tester('ntpath.expanduser("~\\foo\\bar")',
+                   'C:\\idle\\eric\\foo\\bar')
+            tester('ntpath.expanduser("~/foo/bar")',
+                   'C:\\idle\\eric/foo/bar')
+
     def test_abspath(self):
         # ntpath.abspath() can only be used on a system with the "nt" module
         # (reasonably), so we protect this test with "import nt".  This allows
