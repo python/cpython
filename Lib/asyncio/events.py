@@ -257,11 +257,11 @@ class AbstractEventLoop:
     # Pipes and subprocesses.
 
     def connect_read_pipe(self, protocol_factory, pipe):
-        """Register read pipe in event loop.
+        """Register read pipe in event loop. Set the pipe to non-blocking mode.
 
         protocol_factory should instantiate object with Protocol interface.
-        pipe is file-like object already switched to nonblocking.
-        Return pair (transport, protocol), where transport support
+        pipe is a file-like object.
+        Return pair (transport, protocol), where transport supports the
         ReadTransport interface."""
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing

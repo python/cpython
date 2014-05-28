@@ -455,11 +455,11 @@ Connect pipes
 
 .. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
-   Register read pipe in eventloop.
+   Register read pipe in eventloop. Set the *pipe* to non-blocking mode.
 
    *protocol_factory* should instantiate object with :class:`Protocol`
-   interface.  pipe is file-like object already switched to nonblocking.
-   Return pair (transport, protocol), where transport support
+   interface.  *pipe* is a :term:`file-like object <file object>`.
+   Return pair ``(transport, protocol)``, where *transport* supports the
    :class:`ReadTransport` interface.
 
    This method is a :ref:`coroutine <coroutine>`.
