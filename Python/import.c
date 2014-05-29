@@ -904,6 +904,7 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
                                         &PyId__fix_up_module,
                                         d, name, pathname, cpathname, NULL);
     if (res != NULL) {
+        Py_DECREF(res);
         res = exec_code_in_module(name, d, co);
     }
     return res;
