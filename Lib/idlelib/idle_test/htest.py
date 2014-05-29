@@ -31,6 +31,7 @@ msg: displayed in a master window. Hints as to how the user might
   test the widget. Close the window to skip or end the test.
 '''
 from importlib import import_module
+from idlelib.macosxSupport import _initializeTkVariantTests
 import Tkinter as tk
 
 AboutDialog_spec = {
@@ -65,6 +66,21 @@ _color_delegator_spec = {
            "Ensure components like comments, keywords, builtins,\n"
            "string, definitions, and break are correctly colored.\n"
            "The default color scheme is in idlelib/config-highlight.def"
+    }
+
+ConfigDialog_spec = {
+    'file': 'configDialog',
+    'kwds': {'title': 'Settings',
+             '_htest': True,},
+    'msg': "IDLE preferences dialog.\n"
+           "In the 'Fonts/Tabs' tab, changing font face, should update the "
+           "font face of the text in the area below it.\nIn the "
+           "'Highlighting' tab, try different color schemes. Clicking "
+           "items in the sample program should update the choices above it."
+           "\nIn the 'Keys' and 'General' tab, test settings of interest."
+           "\n[Ok] to close the dialog.[Apply] to apply the settings and "
+           "and [Cancel] to revert all changes.\nRe-run the test to ensure "
+           "changes made have persisted."
     }
 
 _dyn_option_menu_spec = {
@@ -119,6 +135,16 @@ GetKeysDialog_spec = {
            "Shift key with [a-z],[0-9], function key, move key, tab, space"
            "is invalid.\nNo validitity checking if advanced key binding "
            "entry is used."
+    }
+
+_grep_dialog_spec = {
+    'file': 'GrepDialog',
+    'kwds': {},
+    'msg': "Click the 'Show GrepDialog' button.\n"
+           "Test the various 'Find-in-files' functions.\n"
+           "The results should be displayed in a new '*Output*' window.\n"
+           "'Right-click'->'Goto file/line' anywhere in the search results "
+           "should open that file \nin a new EditorWindow."
     }
 
 _help_dialog_spec = {
@@ -186,7 +212,7 @@ _replace_dialog_spec = {
     'kwds': {},
     'msg': "Click the 'Replace' button.\n"
            "Test various replace options in the 'Replace dialog'.\n"
-           "Click [Close] or [X] to close to the 'Replace Dialog'."
+           "Click [Close] or [X] to close the 'Replace Dialog'."
     }
 
 _search_dialog_spec = {
@@ -194,7 +220,7 @@ _search_dialog_spec = {
     'kwds': {},
     'msg': "Click the 'Search' button.\n"
            "Test various search options in the 'Search dialog'.\n"
-           "Click [Close] or [X] to close to the 'Search Dialog'."
+           "Click [Close] or [X] to close the 'Search Dialog'."
     }
 
 _scrolled_list_spec = {
@@ -247,6 +273,15 @@ _tree_widget_spec = {
            "Click on folders upto to the lowest level."
     }
 
+_undo_delegator_spec = {
+    'file': 'UndoDelegator',
+    'kwds': {},
+    'msg': "Click [Undo] to undo any action.\n"
+           "Click [Redo] to redo any action.\n"
+           "Click [Dump] to dump the current state "
+           "by printing to the console or the IDLE shell.\n"
+    }
+
 _widget_redirector_spec = {
     'file': 'WidgetRedirector',
     'kwds': {},
@@ -256,6 +291,21 @@ _widget_redirector_spec = {
 
 def run(*tests):
     root = tk.Tk()
+    root.title('IDLE htest')
+    root.resizable(0, 0)
+    _initializeTkVariantTests(root)
+
+    # a scrollable Label like constant width text widget.
+    frameLabel = tk.Frame(root, padx=10)
+    frameLabel.pack()
+    text = tk.Text(frameLabel, wrap='word')
+    text.configure(bg=root.cget('bg'), relief='flat', height=4, width=70)
+    scrollbar = tk.Scrollbar(frameLabel, command=text.yview)
+    text.config(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side='right', fill='y', expand=False)
+    text.pack(side='left', fill='both', expand=True)
+
+
     test_list = [] # List of tuples of the form (spec, callable widget)
     if tests:
         for test in tests:
@@ -272,7 +322,6 @@ def run(*tests):
                 test = getattr(mod, test_name)
                 test_list.append((test_spec, test))
 
-    help_string = [tk.StringVar('')]
     test_name = [tk.StringVar('')]
     callable_object = [None]
     test_kwds = [None]
@@ -284,8 +333,12 @@ def run(*tests):
         test_spec, callable_object[0] = test_list.pop()
         test_kwds[0] = test_spec['kwds']
         test_kwds[0]['parent'] = root
-        help_string[0].set(test_spec['msg'])
         test_name[0].set('test ' + test_spec['name'])
+
+        text.configure(state='normal') # enable text editing
+        text.delete('1.0','end')
+        text.insert("1.0",test_spec['msg'])
+        text.configure(state='disabled') # preserve read-only property
 
     def run_test():
         widget = callable_object[0](**test_kwds[0])
@@ -294,8 +347,6 @@ def run(*tests):
         except AttributeError:
             pass
 
-    label = tk.Label(root, textvariable=help_string[0], justify='left')
-    label.pack()
     button = tk.Button(root, textvariable=test_name[0], command=run_test)
     button.pack()
     next_button = tk.Button(root, text="Next", command=next)

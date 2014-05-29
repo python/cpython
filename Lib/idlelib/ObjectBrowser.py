@@ -139,8 +139,9 @@ def _object_browser(parent):
     import sys
     from Tkinter import Tk
     root = Tk()
+    root.title("Test ObjectBrowser")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 100))
+    root.geometry("+%d+%d"%(x, y + 150))
     root.configure(bd=0, bg="yellow")
     root.focus_set()
     sc = ScrolledCanvas(root, bg="white", highlightthickness=0, takefocus=1)

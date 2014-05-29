@@ -120,8 +120,32 @@ class GrepDialog(SearchDialogBase):
             self.top.grab_release()
             self.top.withdraw()
 
+def _grep_dialog(parent):
+    from idlelib.PyShell import PyShellFileList
+    root = Tk()
+    root.title("Test GrepDialog")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+
+    flist = PyShellFileList(root)
+    text = Text(root, height=5)
+    text.pack()
+
+    def show_grep_dialog():
+        text.tag_add(SEL, "1.0", END)
+        grep(text, flist=flist)
+        text.tag_remove(SEL, "1.0", END)
+
+    button = Button(root, text="Show GrepDialog", command=show_grep_dialog)
+    button.pack()
+    root.mainloop()
+
+
 if __name__ == "__main__":
     # A human test is a bit tricky since EditorWindow() imports this module.
     # Hence Idle must be restarted after editing this file for a live test.
     import unittest
     unittest.main('idlelib.idle_test.test_grep', verbosity=2, exit=False)
+
+    from idlelib.idle_test.htest import run
+    run(_grep_dialog)

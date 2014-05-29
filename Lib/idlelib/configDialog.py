@@ -23,14 +23,19 @@ from idlelib import macosxSupport
 
 class ConfigDialog(Toplevel):
 
-    def __init__(self,parent,title):
+    def __init__(self,parent,title,_htest=False):
+        """
+        _htest - bool, change box location when running htest
+        """
         Toplevel.__init__(self, parent)
         self.wm_withdraw()
 
         self.configure(borderwidth=5)
         self.title('IDLE Preferences')
+        if _htest:
+            parent.instance_dict = {}
         self.geometry("+%d+%d" % (parent.winfo_rootx()+20,
-                parent.winfo_rooty()+30))
+                parent.winfo_rooty()+(30 if not _htest else 150)))
         #Theme Elements. Each theme element key is its display name.
         #The first value of the tuple is the sample area tag name.
         #The second value is the display name list sort index.
@@ -1151,9 +1156,5 @@ class ConfigDialog(Toplevel):
         pass
 
 if __name__ == '__main__':
-    #test the dialog
-    root=Tk()
-    Button(root,text='Dialog',
-            command=lambda:ConfigDialog(root,'Settings')).pack()
-    root.instance_dict={}
-    root.mainloop()
+    from idlelib.idle_test.htest import run
+    run(ConfigDialog)
