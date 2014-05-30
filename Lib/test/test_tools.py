@@ -407,7 +407,7 @@ class PdepsTests(unittest.TestCase):
     def setUpClass(self):
         path = os.path.join(scriptsdir, 'pdeps.py')
         spec = importlib.util.spec_from_file_location('pdeps', path)
-        self.pdeps = importlib._bootstrap._SpecMethods(spec).load()
+        self.pdeps = importlib._bootstrap._load(spec)
 
     @classmethod
     def tearDownClass(self):
@@ -432,7 +432,7 @@ class Gprof2htmlTests(unittest.TestCase):
     def setUp(self):
         path = os.path.join(scriptsdir, 'gprof2html.py')
         spec = importlib.util.spec_from_file_location('gprof2html', path)
-        self.gprof = importlib._bootstrap._SpecMethods(spec).load()
+        self.gprof = importlib._bootstrap._load(spec)
         oldargv = sys.argv
         def fixup():
             sys.argv = oldargv

@@ -3,6 +3,7 @@ from . import abc
 from ._bootstrap import MAGIC_NUMBER
 from ._bootstrap import cache_from_source
 from ._bootstrap import decode_source
+from ._bootstrap import module_from_spec
 from ._bootstrap import source_from_cache
 from ._bootstrap import spec_from_loader
 from ._bootstrap import spec_from_file_location

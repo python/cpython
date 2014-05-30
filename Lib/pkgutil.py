@@ -616,7 +616,7 @@ def get_data(package, resource):
         return None
     # XXX needs test
     mod = (sys.modules.get(package) or
-           importlib._bootstrap._SpecMethods(spec).load())
+           importlib._bootstrap._load(spec))
     if mod is None or not hasattr(mod, '__file__'):
         return None
 

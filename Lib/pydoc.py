@@ -263,9 +263,8 @@ def synopsis(filename, cache={}):
             # XXX We probably don't need to pass in the loader here.
             spec = importlib.util.spec_from_file_location('__temp__', filename,
                                                           loader=loader)
-            _spec = importlib._bootstrap._SpecMethods(spec)
             try:
-                module = _spec.load()
+                module = importlib._bootstrap._load(spec)
             except:
                 return None
             del sys.modules['__temp__']
@@ -297,9 +296,8 @@ def importfile(path):
         loader = importlib._bootstrap.SourceFileLoader(name, path)
     # XXX We probably don't need to pass in the loader here.
     spec = importlib.util.spec_from_file_location(name, path, loader=loader)
-    _spec = importlib._bootstrap._SpecMethods(spec)
     try:
-        return _spec.load()
+        return importlib._bootstrap._load(spec)
     except:
         raise ErrorDuringImport(path, sys.exc_info())
 
@@ -2057,9 +2055,8 @@ class ModuleScanner:
                     else:
                         path = None
                 else:
-                    _spec = importlib._bootstrap._SpecMethods(spec)
                     try:
-                        module = _spec.load()
+                        module = importlib._bootstrap._load(spec)
                     except ImportError:
                         if onerror:
                             onerror(modname)

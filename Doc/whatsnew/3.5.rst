@@ -153,6 +153,10 @@ importlib
   With a module object that you want to initialize you can then use
   ``exec(code, module.__dict__)`` to execute the code in the module.
 
+* :func:`importlib.util.module_from_spec` is now the preferred way to create a
+  new module. Compared to :class:`types.ModuleType`, this new function will set
+  the various import-controlled attributes based on the passed-in spec object.
+
 inspect
 -------
 

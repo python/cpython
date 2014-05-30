@@ -242,152 +242,14 @@ class ModuleSpecMethodsTests:
                                                   origin=self.path)
         self.loc_spec._set_fileattr = True
 
-    # init_module_attrs
-
-    def test_init_module_attrs(self):
-        module = type(sys)(self.name)
-        spec = self.machinery.ModuleSpec(self.name, self.loader)
-        self.bootstrap._SpecMethods(spec).init_module_attrs(module)
-
-        self.assertEqual(module.__name__, spec.name)
-        self.assertIs(module.__loader__, spec.loader)
-        self.assertEqual(module.__package__, spec.parent)
-        self.assertIs(module.__spec__, spec)
-        self.assertFalse(hasattr(module, '__path__'))
-        self.assertFalse(hasattr(module, '__file__'))
-        self.assertFalse(hasattr(module, '__cached__'))
-
-    def test_init_module_attrs_package(self):
-        module = type(sys)(self.name)
-        spec = self.machinery.ModuleSpec(self.name, self.loader)
-        spec.submodule_search_locations = ['spam', 'ham']
-        self.bootstrap._SpecMethods(spec).init_module_attrs(module)
-
-        self.assertEqual(module.__name__, spec.name)
-        self.assertIs(module.__loader__, spec.loader)
-        self.assertEqual(module.__package__, spec.parent)
-        self.assertIs(module.__spec__, spec)
-        self.assertIs(module.__path__, spec.submodule_search_locations)
-        self.assertFalse(hasattr(module, '__file__'))
-        self.assertFalse(hasattr(module, '__cached__'))
-
-    def test_init_module_attrs_location(self):
-        module = type(sys)(self.name)
-        spec = self.loc_spec
-        self.bootstrap._SpecMethods(spec).init_module_attrs(module)
-
-        self.assertEqual(module.__name__, spec.name)
-        self.assertIs(module.__loader__, spec.loader)
-        self.assertEqual(module.__package__, spec.parent)
-        self.assertIs(module.__spec__, spec)
-        self.assertFalse(hasattr(module, '__path__'))
-        self.assertEqual(module.__file__, spec.origin)
-        self.assertEqual(module.__cached__,
-                         self.util.cache_from_source(spec.origin))
-
-    def test_init_module_attrs_different_name(self):
-        module = type(sys)('eggs')
-        spec = self.machinery.ModuleSpec(self.name, self.loader)
-        self.bootstrap._SpecMethods(spec).init_module_attrs(module)
-
-        self.assertEqual(module.__name__, spec.name)
-
-    def test_init_module_attrs_different_spec(self):
-        module = type(sys)(self.name)
-        module.__spec__ = self.machinery.ModuleSpec('eggs', object())
-        spec = self.machinery.ModuleSpec(self.name, self.loader)
-        self.bootstrap._SpecMethods(spec).init_module_attrs(module)
-
-        self.assertEqual(module.__name__, spec.name)
-        self.assertIs(module.__loader__, spec.loader)
-        self.assertEqual(module.__package__, spec.parent)
-        self.assertIs(module.__spec__, spec)
-
-    def test_init_module_attrs_already_set(self):
-        module = type(sys)('ham.eggs')
-        module.__loader__ = object()
-        module.__package__ = 'ham'
-        module.__path__ = ['eggs']
-        module.__file__ = 'ham/eggs/__init__.py'
-        module.__cached__ = self.util.cache_from_source(module.__file__)
-        original = vars(module).copy()
-        spec = self.loc_spec
-        spec.submodule_search_locations = ['']
-        self.bootstrap._SpecMethods(spec).init_module_attrs(module)
-
-        self.assertIs(module.__loader__, original['__loader__'])
-        self.assertEqual(module.__package__, original['__package__'])
-        self.assertIs(module.__path__, original['__path__'])
-        self.assertEqual(module.__file__, original['__file__'])
-        self.assertEqual(module.__cached__, original['__cached__'])
-
-    def test_init_module_attrs_immutable(self):
-        module = object()
-        spec = self.loc_spec
-        spec.submodule_search_locations = ['']
-        self.bootstrap._SpecMethods(spec).init_module_attrs(module)
-
-        self.assertFalse(hasattr(module, '__name__'))
-        self.assertFalse(hasattr(module, '__loader__'))
-        self.assertFalse(hasattr(module, '__package__'))
-        self.assertFalse(hasattr(module, '__spec__'))
-        self.assertFalse(hasattr(module, '__path__'))
-        self.assertFalse(hasattr(module, '__file__'))
-        self.assertFalse(hasattr(module, '__cached__'))
-
-    # create()
-
-    def test_create(self):
-        created = self.bootstrap._SpecMethods(self.spec).create()
-
-        self.assertEqual(created.__name__, self.spec.name)
-        self.assertIs(created.__loader__, self.spec.loader)
-        self.assertEqual(created.__package__, self.spec.parent)
-        self.assertIs(created.__spec__, self.spec)
-        self.assertFalse(hasattr(created, '__path__'))
-        self.assertFalse(hasattr(created, '__file__'))
-        self.assertFalse(hasattr(created, '__cached__'))
-
-    def test_create_from_loader(self):
-        module = type(sys.implementation)()
-        class CreatingLoader(TestLoader):
-            def create_module(self, spec):
-                return module
-        self.spec.loader = CreatingLoader()
-        created = self.bootstrap._SpecMethods(self.spec).create()
-
-        self.assertIs(created, module)
-        self.assertEqual(created.__name__, self.spec.name)
-        self.assertIs(created.__loader__, self.spec.loader)
-        self.assertEqual(created.__package__, self.spec.parent)
-        self.assertIs(created.__spec__, self.spec)
-        self.assertFalse(hasattr(created, '__path__'))
-        self.assertFalse(hasattr(created, '__file__'))
-        self.assertFalse(hasattr(created, '__cached__'))
-
-    def test_create_from_loader_not_handled(self):
-        class CreatingLoader(TestLoader):
-            def create_module(self, spec):
-                return None
-        self.spec.loader = CreatingLoader()
-        created = self.bootstrap._SpecMethods(self.spec).create()
-
-        self.assertEqual(created.__name__, self.spec.name)
-        self.assertIs(created.__loader__, self.spec.loader)
-        self.assertEqual(created.__package__, self.spec.parent)
-        self.assertIs(created.__spec__, self.spec)
-        self.assertFalse(hasattr(created, '__path__'))
-        self.assertFalse(hasattr(created, '__file__'))
-        self.assertFalse(hasattr(created, '__cached__'))
-
     # exec()
 
     def test_exec(self):
         self.spec.loader = NewLoader()
-        module = self.bootstrap._SpecMethods(self.spec).create()
+        module = self.util.module_from_spec(self.spec)
         sys.modules[self.name] = module
         self.assertFalse(hasattr(module, 'eggs'))
-        self.bootstrap._SpecMethods(self.spec).exec(module)
+        self.bootstrap._exec(self.spec, module)
 
         self.assertEqual(module.eggs, 1)
 
@@ -396,7 +258,7 @@ class ModuleSpecMethodsTests:
     def test_load(self):
         self.spec.loader = NewLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
             installed = sys.modules[self.spec.name]
 
         self.assertEqual(loaded.eggs, 1)
@@ -409,7 +271,7 @@ class ModuleSpecMethodsTests:
                 sys.modules[module.__name__] = replacement
         self.spec.loader = ReplacingLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
             installed = sys.modules[self.spec.name]
 
         self.assertIs(loaded, replacement)
@@ -422,7 +284,7 @@ class ModuleSpecMethodsTests:
         self.spec.loader = FailedLoader()
         with CleanImport(self.spec.name):
             with self.assertRaises(RuntimeError):
-                loaded = self.bootstrap._SpecMethods(self.spec).load()
+                loaded = self.bootstrap._load(self.spec)
             self.assertNotIn(self.spec.name, sys.modules)
 
     def test_load_failed_removed(self):
@@ -433,20 +295,20 @@ class ModuleSpecMethodsTests:
         self.spec.loader = FailedLoader()
         with CleanImport(self.spec.name):
             with self.assertRaises(RuntimeError):
-                loaded = self.bootstrap._SpecMethods(self.spec).load()
+                loaded = self.bootstrap._load(self.spec)
             self.assertNotIn(self.spec.name, sys.modules)
 
     def test_load_legacy(self):
         self.spec.loader = LegacyLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
 
         self.assertEqual(loaded.ham, -1)
 
     def test_load_legacy_attributes(self):
         self.spec.loader = LegacyLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
 
         self.assertIs(loaded.__loader__, self.spec.loader)
         self.assertEqual(loaded.__package__, self.spec.parent)
@@ -460,7 +322,7 @@ class ModuleSpecMethodsTests:
                 return module
         self.spec.loader = ImmutableLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
 
             self.assertIs(sys.modules[self.spec.name], module)
 
@@ -469,8 +331,8 @@ class ModuleSpecMethodsTests:
     def test_reload(self):
         self.spec.loader = NewLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
-            reloaded = self.bootstrap._SpecMethods(self.spec).exec(loaded)
+            loaded = self.bootstrap._load(self.spec)
+            reloaded = self.bootstrap._exec(self.spec, loaded)
             installed = sys.modules[self.spec.name]
 
         self.assertEqual(loaded.eggs, 1)
@@ -480,9 +342,9 @@ class ModuleSpecMethodsTests:
     def test_reload_modified(self):
         self.spec.loader = NewLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
             loaded.eggs = 2
-            reloaded = self.bootstrap._SpecMethods(self.spec).exec(loaded)
+            reloaded = self.bootstrap._exec(self.spec, loaded)
 
         self.assertEqual(loaded.eggs, 1)
         self.assertIs(reloaded, loaded)
@@ -490,9 +352,9 @@ class ModuleSpecMethodsTests:
     def test_reload_extra_attributes(self):
         self.spec.loader = NewLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
             loaded.available = False
-            reloaded = self.bootstrap._SpecMethods(self.spec).exec(loaded)
+            reloaded = self.bootstrap._exec(self.spec, loaded)
 
         self.assertFalse(loaded.available)
         self.assertIs(reloaded, loaded)
@@ -500,12 +362,12 @@ class ModuleSpecMethodsTests:
     def test_reload_init_module_attrs(self):
         self.spec.loader = NewLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
+            loaded = self.bootstrap._load(self.spec)
             loaded.__name__ = 'ham'
             del loaded.__loader__
             del loaded.__package__
             del loaded.__spec__
-            self.bootstrap._SpecMethods(self.spec).exec(loaded)
+            self.bootstrap._exec(self.spec, loaded)
 
         self.assertEqual(loaded.__name__, self.spec.name)
         self.assertIs(loaded.__loader__, self.spec.loader)
@@ -518,8 +380,8 @@ class ModuleSpecMethodsTests:
     def test_reload_legacy(self):
         self.spec.loader = LegacyLoader()
         with CleanImport(self.spec.name):
-            loaded = self.bootstrap._SpecMethods(self.spec).load()
-            reloaded = self.bootstrap._SpecMethods(self.spec).exec(loaded)
+            loaded = self.bootstrap._load(self.spec)
+            reloaded = self.bootstrap._exec(self.spec, loaded)
             installed = sys.modules[self.spec.name]
 
         self.assertEqual(loaded.ham, -1)
@@ -778,13 +640,14 @@ class FactoryTests:
     # spec_from_file_location()
 
     def test_spec_from_file_location_default(self):
-        if self.machinery is machinery['Source']:
-            raise unittest.SkipTest('not sure why this is breaking...')
         spec = self.util.spec_from_file_location(self.name, self.path)
 
         self.assertEqual(spec.name, self.name)
+        # Need to use a circuitous route to get at importlib.machinery to make
+        # sure the same class object is used in the isinstance() check as
+        # would have been used to create the loader.
         self.assertIsInstance(spec.loader,
-                              self.machinery.SourceFileLoader)
+                              self.util.abc.machinery.SourceFileLoader)
         self.assertEqual(spec.loader.name, self.name)
         self.assertEqual(spec.loader.path, self.path)
         self.assertEqual(spec.origin, self.path)
@@ -941,3 +804,7 @@ class FactoryTests:
 (Frozen_FactoryTests,
  Source_FactoryTests
  ) = test_util.test_both(FactoryTests, util=util, machinery=machinery)
+
+
+if __name__ == '__main__':
+    unittest.main()

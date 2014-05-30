@@ -16,7 +16,7 @@ except ImportError:
     # Platform doesn't support dynamic loading.
     load_dynamic = None
 
-from importlib._bootstrap import SourcelessFileLoader, _ERR_MSG, _SpecMethods
+from importlib._bootstrap import SourcelessFileLoader, _ERR_MSG, _exec, _load
 
 from importlib import machinery
 from importlib import util
@@ -164,11 +164,10 @@ class _LoadSourceCompatibility(_HackedGetData, machinery.SourceFileLoader):
 def load_source(name, pathname, file=None):
     loader = _LoadSourceCompatibility(name, pathname, file)
     spec = util.spec_from_file_location(name, pathname, loader=loader)
-    methods = _SpecMethods(spec)
     if name in sys.modules:
-        module = methods.exec(sys.modules[name])
+        module = _exec(spec, sys.modules[name])
     else:
-        module = methods.load()
+        module = _load(spec)
     # To allow reloading to potentially work, use a non-hacked loader which
     # won't rely on a now-closed file object.
     module.__loader__ = machinery.SourceFileLoader(name, pathname)
@@ -185,11 +184,10 @@ def load_compiled(name, pathname, file=None):
     """**DEPRECATED**"""
     loader = _LoadCompiledCompatibility(name, pathname, file)
     spec = util.spec_from_file_location(name, pathname, loader=loader)
-    methods = _SpecMethods(spec)
     if name in sys.modules:
-        module = methods.exec(sys.modules[name])
+        module = _exec(spec, sys.modules[name])
     else:
-        module = methods.load()
+        module = _load(spec)
     # To allow reloading to potentially work, use a non-hacked loader which
     # won't rely on a now-closed file object.
     module.__loader__ = SourcelessFileLoader(name, pathname)
@@ -210,11 +208,10 @@ def load_package(name, path):
             raise ValueError('{!r} is not a package'.format(path))
     spec = util.spec_from_file_location(name, path,
                                         submodule_search_locations=[])
-    methods = _SpecMethods(spec)
     if name in sys.modules:
-        return methods.exec(sys.modules[name])
+        return _exec(spec, sys.modules[name])
     else:
-        return methods.load()
+        return _load(spec)
 
 
 def load_module(name, file, filename, details):
