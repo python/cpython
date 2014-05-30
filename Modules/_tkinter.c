@@ -881,6 +881,16 @@ static PyType_Spec PyTclObject_Type_spec = {
 };
 
 
+#if PY_SIZE_MAX > INT_MAX
+#define CHECK_STRING_LENGTH(s) do {                                     \
+        if (s != NULL && strlen(s) >= INT_MAX) {                        \
+            PyErr_SetString(PyExc_OverflowError, "string is too long"); \
+            return NULL;                                                \
+        } } while(0)
+#else
+#define CHECK_STRING_LENGTH(s)
+#endif
+
 static Tcl_Obj*
 AsObj(PyObject *value)
 {
@@ -1303,6 +1313,7 @@ Tkapp_Eval(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:eval", &script))
         return NULL;
 
+    CHECK_STRING_LENGTH(script);
     CHECK_TCL_APPARTMENT;
 
     ENTER_TCL
@@ -1326,6 +1337,7 @@ Tkapp_EvalFile(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:evalfile", &fileName))
         return NULL;
 
+    CHECK_STRING_LENGTH(fileName);
     CHECK_TCL_APPARTMENT;
 
     ENTER_TCL
@@ -1346,9 +1358,10 @@ Tkapp_Record(PyObject *self, PyObject *args)
     PyObject *res = NULL;
     int err;
 
-    if (!PyArg_ParseTuple(args, "s", &script))
+    if (!PyArg_ParseTuple(args, "s:record", &script))
         return NULL;
 
+    CHECK_STRING_LENGTH(script);
     CHECK_TCL_APPARTMENT;
 
     ENTER_TCL
@@ -1369,6 +1382,7 @@ Tkapp_AddErrorInfo(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "s:adderrorinfo", &msg))
         return NULL;
+    CHECK_STRING_LENGTH(msg);
     CHECK_TCL_APPARTMENT;
 
     ENTER_TCL
@@ -1552,6 +1566,8 @@ SetVar(PyObject *self, PyObject *args, int flags)
         if (!PyArg_ParseTuple(args, "ssO:setvar",
                               &name1, &name2, &newValue))
             return NULL;
+        CHECK_STRING_LENGTH(name1);
+        CHECK_STRING_LENGTH(name2);
         /* XXX must hold tcl lock already??? */
         newval = AsObj(newValue);
         ENTER_TCL
@@ -1597,6 +1613,7 @@ GetVar(PyObject *self, PyObject *args, int flags)
                           varname_converter, &name1, &name2))
         return NULL;
 
+    CHECK_STRING_LENGTH(name2);
     ENTER_TCL
     tres = Tcl_GetVar2Ex(Tkapp_Interp(self), name1, name2, flags);
     ENTER_OVERLAP
@@ -1639,6 +1656,8 @@ UnsetVar(PyObject *self, PyObject *args, int flags)
     if (!PyArg_ParseTuple(args, "s|s:unsetvar", &name1, &name2))
         return NULL;
 
+    CHECK_STRING_LENGTH(name1);
+    CHECK_STRING_LENGTH(name2);
     ENTER_TCL
     code = Tcl_UnsetVar2(Tkapp_Interp(self), name1, name2, flags);
     ENTER_OVERLAP
@@ -1684,6 +1703,7 @@ Tkapp_GetInt(PyObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "s:getint", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     if (Tcl_GetInt(Tkapp_Interp(self), s, &v) == TCL_ERROR)
         return Tkinter_Error(self);
     return Py_BuildValue("i", v);
@@ -1704,6 +1724,7 @@ Tkapp_GetDouble(PyObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "s:getdouble", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     if (Tcl_GetDouble(Tkapp_Interp(self), s, &v) == TCL_ERROR)
         return Tkinter_Error(self);
     return Py_BuildValue("d", v);
@@ -1724,6 +1745,7 @@ Tkapp_GetBoolean(PyObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "s:getboolean", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     if (Tcl_GetBoolean(Tkapp_Interp(self), s, &v) == TCL_ERROR)
         return Tkinter_Error(self);
     return PyBool_FromLong(v);
@@ -1739,6 +1761,7 @@ Tkapp_ExprString(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:exprstring", &s))
         return NULL;
 
+    CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
 
     ENTER_TCL
@@ -1763,6 +1786,7 @@ Tkapp_ExprLong(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:exprlong", &s))
         return NULL;
 
+    CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
 
     ENTER_TCL
@@ -1786,6 +1810,7 @@ Tkapp_ExprDouble(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "s:exprdouble", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
     PyFPE_START_PROTECT("Tkapp_ExprDouble", return 0)
     ENTER_TCL
@@ -1810,6 +1835,7 @@ Tkapp_ExprBoolean(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "s:exprboolean", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
     ENTER_TCL
     retval = Tcl_ExprBoolean(Tkapp_Interp(self), s, &v);
@@ -1865,6 +1891,7 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "et:splitlist", "utf-8", &list))
         return NULL;
 
+    CHECK_STRING_LENGTH(list);
     if (Tcl_SplitList(Tkapp_Interp(self), list,
                       &argc, &argv) == TCL_ERROR)  {
         PyMem_Free(list);
@@ -1926,6 +1953,7 @@ Tkapp_Split(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "et:split", "utf-8", &list))
         return NULL;
+    CHECK_STRING_LENGTH(list);
     v = Split(list);
     PyMem_Free(list);
     return v;
@@ -2057,6 +2085,7 @@ Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "sO:createcommand", &cmdName, &func))
         return NULL;
+    CHECK_STRING_LENGTH(cmdName);
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError, "command not callable");
         return NULL;
@@ -2118,6 +2147,7 @@ Tkapp_DeleteCommand(PyObject *selfptr, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "s:deletecommand", &cmdName))
         return NULL;
+    CHECK_STRING_LENGTH(cmdName);
 
 #ifdef WITH_THREAD
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
@@ -2789,6 +2819,10 @@ Tkinter_Create(PyObject *self, PyObject *args)
                           &interactive, &wantobjects, &wantTk,
                           &sync, &use))
         return NULL;
+    CHECK_STRING_LENGTH(screenName);
+    CHECK_STRING_LENGTH(baseName);
+    CHECK_STRING_LENGTH(className);
+    CHECK_STRING_LENGTH(use);
 
     return (PyObject *) Tkapp_New(screenName, className,
                                   interactive, wantobjects, wantTk,
