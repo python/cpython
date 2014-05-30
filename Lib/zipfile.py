@@ -384,7 +384,7 @@ class ZipInfo (object):
         # Try to decode the extra field.
         extra = self.extra
         unpack = struct.unpack
-        while extra:
+        while len(extra) >= 4:
             tp, ln = unpack('<HH', extra[:4])
             if tp == 1:
                 if ln >= 24:
