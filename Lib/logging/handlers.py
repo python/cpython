@@ -1067,7 +1067,7 @@ class HTTPHandler(logging.Handler):
         """
         Default implementation of mapping the log record into a dict
         that is sent as the CGI data. Overwrite in your class.
-        Contributed by Franz  Glasner.
+        Contributed by Franz Glasner.
         """
         return record.__dict__
 
