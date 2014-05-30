@@ -32,9 +32,12 @@ struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 static PyObject *initstr = NULL;
 
 /*[clinic input]
+output preset file
 module _imp
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9c332475d8686284]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=98c38221164579d5]*/
+
+#include "clinic/import.c.h"
 
 /*[python input]
 class fs_unicode_converter(CConverter):
@@ -235,29 +238,9 @@ Return True if the import lock is currently held, else False.
 On platforms without threads, return False.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_lock_held__doc__,
-"lock_held($module, /)\n"
-"--\n"
-"\n"
-"Return True if the import lock is currently held, else False.\n"
-"\n"
-"On platforms without threads, return False.");
-
-#define _IMP_LOCK_HELD_METHODDEF    \
-    {"lock_held", (PyCFunction)_imp_lock_held, METH_NOARGS, _imp_lock_held__doc__},
-
-static PyObject *
-_imp_lock_held_impl(PyModuleDef *module);
-
-static PyObject *
-_imp_lock_held(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return _imp_lock_held_impl(module);
-}
-
 static PyObject *
 _imp_lock_held_impl(PyModuleDef *module)
-/*[clinic end generated code: output=dae65674966baa65 input=9b088f9b217d9bdf]*/
+/*[clinic end generated code: output=d7a8cc3a5169081a input=9b088f9b217d9bdf]*/
 {
 #ifdef WITH_THREAD
     return PyBool_FromLong(import_lock_thread != -1);
@@ -275,30 +258,9 @@ This lock should be used by import hooks to ensure thread-safety when importing
 modules. On platforms without threads, this function does nothing.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_acquire_lock__doc__,
-"acquire_lock($module, /)\n"
-"--\n"
-"\n"
-"Acquires the interpreter\'s import lock for the current thread.\n"
-"\n"
-"This lock should be used by import hooks to ensure thread-safety when importing\n"
-"modules. On platforms without threads, this function does nothing.");
-
-#define _IMP_ACQUIRE_LOCK_METHODDEF    \
-    {"acquire_lock", (PyCFunction)_imp_acquire_lock, METH_NOARGS, _imp_acquire_lock__doc__},
-
-static PyObject *
-_imp_acquire_lock_impl(PyModuleDef *module);
-
-static PyObject *
-_imp_acquire_lock(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return _imp_acquire_lock_impl(module);
-}
-
 static PyObject *
 _imp_acquire_lock_impl(PyModuleDef *module)
-/*[clinic end generated code: output=478f1fa089fdb9a4 input=4a2d4381866d5fdc]*/
+/*[clinic end generated code: output=cc143b1d16422cae input=4a2d4381866d5fdc]*/
 {
 #ifdef WITH_THREAD
     _PyImport_AcquireLock();
@@ -315,29 +277,9 @@ Release the interpreter's import lock.
 On platforms without threads, this function does nothing.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_release_lock__doc__,
-"release_lock($module, /)\n"
-"--\n"
-"\n"
-"Release the interpreter\'s import lock.\n"
-"\n"
-"On platforms without threads, this function does nothing.");
-
-#define _IMP_RELEASE_LOCK_METHODDEF    \
-    {"release_lock", (PyCFunction)_imp_release_lock, METH_NOARGS, _imp_release_lock__doc__},
-
-static PyObject *
-_imp_release_lock_impl(PyModuleDef *module);
-
-static PyObject *
-_imp_release_lock(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return _imp_release_lock_impl(module);
-}
-
 static PyObject *
 _imp_release_lock_impl(PyModuleDef *module)
-/*[clinic end generated code: output=36c77a6832fdafd4 input=934fb11516dd778b]*/
+/*[clinic end generated code: output=74d28e38ebe2b224 input=934fb11516dd778b]*/
 {
 #ifdef WITH_THREAD
     if (_PyImport_ReleaseLock() < 0) {
@@ -962,43 +904,9 @@ _imp._fix_co_filename
 Changes code.co_filename to specify the passed-in file path.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp__fix_co_filename__doc__,
-"_fix_co_filename($module, code, path, /)\n"
-"--\n"
-"\n"
-"Changes code.co_filename to specify the passed-in file path.\n"
-"\n"
-"  code\n"
-"    Code object to change.\n"
-"  path\n"
-"    File path to use.");
-
-#define _IMP__FIX_CO_FILENAME_METHODDEF    \
-    {"_fix_co_filename", (PyCFunction)_imp__fix_co_filename, METH_VARARGS, _imp__fix_co_filename__doc__},
-
-static PyObject *
-_imp__fix_co_filename_impl(PyModuleDef *module, PyCodeObject *code, PyObject *path);
-
-static PyObject *
-_imp__fix_co_filename(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyCodeObject *code;
-    PyObject *path;
-
-    if (!PyArg_ParseTuple(args,
-        "O!U:_fix_co_filename",
-        &PyCode_Type, &code, &path))
-        goto exit;
-    return_value = _imp__fix_co_filename_impl(module, code, path);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp__fix_co_filename_impl(PyModuleDef *module, PyCodeObject *code, PyObject *path)
-/*[clinic end generated code: output=6b4b1edeb0d55c5d input=895ba50e78b82f05]*/
+/*[clinic end generated code: output=7afe5ba6b9d383e4 input=895ba50e78b82f05]*/
 
 {
     update_compiled_module(code, path);
@@ -1860,27 +1768,9 @@ _imp.extension_suffixes
 Returns the list of file suffixes used to identify extension modules.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_extension_suffixes__doc__,
-"extension_suffixes($module, /)\n"
-"--\n"
-"\n"
-"Returns the list of file suffixes used to identify extension modules.");
-
-#define _IMP_EXTENSION_SUFFIXES_METHODDEF    \
-    {"extension_suffixes", (PyCFunction)_imp_extension_suffixes, METH_NOARGS, _imp_extension_suffixes__doc__},
-
-static PyObject *
-_imp_extension_suffixes_impl(PyModuleDef *module);
-
-static PyObject *
-_imp_extension_suffixes(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return _imp_extension_suffixes_impl(module);
-}
-
 static PyObject *
 _imp_extension_suffixes_impl(PyModuleDef *module)
-/*[clinic end generated code: output=bb30a2438167798c input=ecdeeecfcb6f839e]*/
+/*[clinic end generated code: output=d44c1566ef362229 input=ecdeeecfcb6f839e]*/
 {
     PyObject *list;
     const char *suffix;
@@ -1917,37 +1807,9 @@ _imp.init_builtin
 Initializes a built-in module.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_init_builtin__doc__,
-"init_builtin($module, name, /)\n"
-"--\n"
-"\n"
-"Initializes a built-in module.");
-
-#define _IMP_INIT_BUILTIN_METHODDEF    \
-    {"init_builtin", (PyCFunction)_imp_init_builtin, METH_VARARGS, _imp_init_builtin__doc__},
-
-static PyObject *
-_imp_init_builtin_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-_imp_init_builtin(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-
-    if (!PyArg_ParseTuple(args,
-        "U:init_builtin",
-        &name))
-        goto exit;
-    return_value = _imp_init_builtin_impl(module, name);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp_init_builtin_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=a0244948a43f8e26 input=f934d2231ec52a2e]*/
+/*[clinic end generated code: output=1868f473685f6d67 input=f934d2231ec52a2e]*/
 {
     int ret;
     PyObject *m;
@@ -1973,37 +1835,9 @@ _imp.init_frozen
 Initializes a frozen module.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_init_frozen__doc__,
-"init_frozen($module, name, /)\n"
-"--\n"
-"\n"
-"Initializes a frozen module.");
-
-#define _IMP_INIT_FROZEN_METHODDEF    \
-    {"init_frozen", (PyCFunction)_imp_init_frozen, METH_VARARGS, _imp_init_frozen__doc__},
-
-static PyObject *
-_imp_init_frozen_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-_imp_init_frozen(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-
-    if (!PyArg_ParseTuple(args,
-        "U:init_frozen",
-        &name))
-        goto exit;
-    return_value = _imp_init_frozen_impl(module, name);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp_init_frozen_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=e4bc2bff296f8f22 input=13019adfc04f3fb3]*/
+/*[clinic end generated code: output=a9de493bdd711878 input=13019adfc04f3fb3]*/
 {
     int ret;
     PyObject *m;
@@ -2029,37 +1863,9 @@ _imp.get_frozen_object
 Create a code object for a frozen module.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_get_frozen_object__doc__,
-"get_frozen_object($module, name, /)\n"
-"--\n"
-"\n"
-"Create a code object for a frozen module.");
-
-#define _IMP_GET_FROZEN_OBJECT_METHODDEF    \
-    {"get_frozen_object", (PyCFunction)_imp_get_frozen_object, METH_VARARGS, _imp_get_frozen_object__doc__},
-
-static PyObject *
-_imp_get_frozen_object_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-_imp_get_frozen_object(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-
-    if (!PyArg_ParseTuple(args,
-        "U:get_frozen_object",
-        &name))
-        goto exit;
-    return_value = _imp_get_frozen_object_impl(module, name);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp_get_frozen_object_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=4089ec702a9d70c5 input=ed689bc05358fdbd]*/
+/*[clinic end generated code: output=3114c970a47f2e3c input=ed689bc05358fdbd]*/
 {
     return get_frozen_object(name);
 }
@@ -2073,37 +1879,9 @@ _imp.is_frozen_package
 Returns True if the module name is of a frozen package.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_is_frozen_package__doc__,
-"is_frozen_package($module, name, /)\n"
-"--\n"
-"\n"
-"Returns True if the module name is of a frozen package.");
-
-#define _IMP_IS_FROZEN_PACKAGE_METHODDEF    \
-    {"is_frozen_package", (PyCFunction)_imp_is_frozen_package, METH_VARARGS, _imp_is_frozen_package__doc__},
-
-static PyObject *
-_imp_is_frozen_package_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-_imp_is_frozen_package(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-
-    if (!PyArg_ParseTuple(args,
-        "U:is_frozen_package",
-        &name))
-        goto exit;
-    return_value = _imp_is_frozen_package_impl(module, name);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp_is_frozen_package_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=86aab14dcd4b959b input=81b6cdecd080fbb8]*/
+/*[clinic end generated code: output=3e4cab802b56d649 input=81b6cdecd080fbb8]*/
 {
     return is_frozen_package(name);
 }
@@ -2117,37 +1895,9 @@ _imp.is_builtin
 Returns True if the module name corresponds to a built-in module.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_is_builtin__doc__,
-"is_builtin($module, name, /)\n"
-"--\n"
-"\n"
-"Returns True if the module name corresponds to a built-in module.");
-
-#define _IMP_IS_BUILTIN_METHODDEF    \
-    {"is_builtin", (PyCFunction)_imp_is_builtin, METH_VARARGS, _imp_is_builtin__doc__},
-
-static PyObject *
-_imp_is_builtin_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-_imp_is_builtin(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-
-    if (!PyArg_ParseTuple(args,
-        "U:is_builtin",
-        &name))
-        goto exit;
-    return_value = _imp_is_builtin_impl(module, name);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp_is_builtin_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=d5847f8cac50946e input=86befdac021dd1c7]*/
+/*[clinic end generated code: output=2deec9cac6fb9a7e input=86befdac021dd1c7]*/
 {
     return PyLong_FromLong(is_builtin(name));
 }
@@ -2161,37 +1911,9 @@ _imp.is_frozen
 Returns True if the module name corresponds to a frozen module.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_is_frozen__doc__,
-"is_frozen($module, name, /)\n"
-"--\n"
-"\n"
-"Returns True if the module name corresponds to a frozen module.");
-
-#define _IMP_IS_FROZEN_METHODDEF    \
-    {"is_frozen", (PyCFunction)_imp_is_frozen, METH_VARARGS, _imp_is_frozen__doc__},
-
-static PyObject *
-_imp_is_frozen_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-_imp_is_frozen(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-
-    if (!PyArg_ParseTuple(args,
-        "U:is_frozen",
-        &name))
-        goto exit;
-    return_value = _imp_is_frozen_impl(module, name);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp_is_frozen_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=6691af884ba4987d input=7301dbca1897d66b]*/
+/*[clinic end generated code: output=7de8e260c8e36aed input=7301dbca1897d66b]*/
 {
     const struct _frozen *p;
 
@@ -2212,39 +1934,9 @@ _imp.load_dynamic
 Loads an extension module.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_imp_load_dynamic__doc__,
-"load_dynamic($module, name, path, file=None, /)\n"
-"--\n"
-"\n"
-"Loads an extension module.");
-
-#define _IMP_LOAD_DYNAMIC_METHODDEF    \
-    {"load_dynamic", (PyCFunction)_imp_load_dynamic, METH_VARARGS, _imp_load_dynamic__doc__},
-
-static PyObject *
-_imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path, PyObject *file);
-
-static PyObject *
-_imp_load_dynamic(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-    PyObject *path;
-    PyObject *file = NULL;
-
-    if (!PyArg_ParseTuple(args,
-        "UO&|O:load_dynamic",
-        &name, PyUnicode_FSDecoder, &path, &file))
-        goto exit;
-    return_value = _imp_load_dynamic_impl(module, name, path, file);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path, PyObject *file)
-/*[clinic end generated code: output=81d11a1fbd1ea0a8 input=af64f06e4bad3526]*/
+/*[clinic end generated code: output=8b7ae431d795e1ba input=af64f06e4bad3526]*/
 {
     PyObject *mod;
     FILE *fp;
@@ -2272,11 +1964,7 @@ _imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path, PyOb
 /*[clinic input]
 dump buffer
 [clinic start generated code]*/
-
-#ifndef _IMP_LOAD_DYNAMIC_METHODDEF
-    #define _IMP_LOAD_DYNAMIC_METHODDEF
-#endif /* !defined(_IMP_LOAD_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=d07c1d4a343a9579 input=524ce2e021e4eba6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
 
 
 PyDoc_STRVAR(doc_imp,
@@ -2385,4 +2073,3 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 #ifdef __cplusplus
 }
 #endif
-
