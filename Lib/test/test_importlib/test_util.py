@@ -1,8 +1,8 @@
-import importlib.util
-from . import util as test_util
-init = test_util.import_importlib('importlib')
-machinery = test_util.import_importlib('importlib.machinery')
-util = test_util.import_importlib('importlib.util')
+from . import util
+abc = util.import_importlib('importlib.abc')
+init = util.import_importlib('importlib')
+machinery = util.import_importlib('importlib.machinery')
+importlib_util = util.import_importlib('importlib.util')
 
 import os
 import sys
@@ -35,7 +35,85 @@ class DecodeSourceBytesTests:
 
 (Frozen_DecodeSourceBytesTests,
  Source_DecodeSourceBytesTests
- ) = test_util.test_both(DecodeSourceBytesTests, util=util)
+ ) = util.test_both(DecodeSourceBytesTests, util=importlib_util)
+
+
+class ModuleFromSpecTests:
+
+    def test_no_create_module(self):
+        class Loader(self.abc.Loader):
+            pass
+        spec = self.machinery.ModuleSpec('test', Loader())
+        module = self.util.module_from_spec(spec)
+        self.assertIsInstance(module, types.ModuleType)
+        self.assertEqual(module.__name__, spec.name)
+
+    def test_create_module_returns_None(self):
+        class Loader(self.abc.Loader):
+            def create_module(self, spec):
+                return None
+        spec = self.machinery.ModuleSpec('test', Loader())
+        module = self.util.module_from_spec(spec)
+        self.assertIsInstance(module, types.ModuleType)
+        self.assertEqual(module.__name__, spec.name)
+
+    def test_create_module(self):
+        name = 'already set'
+        class CustomModule(types.ModuleType):
+            pass
+        class Loader(self.abc.Loader):
+            def create_module(self, spec):
+                module = CustomModule(spec.name)
+                module.__name__ = name
+                return module
+        spec = self.machinery.ModuleSpec('test', Loader())
+        module = self.util.module_from_spec(spec)
+        self.assertIsInstance(module, CustomModule)
+        self.assertEqual(module.__name__, name)
+
+    def test___name__(self):
+        spec = self.machinery.ModuleSpec('test', object())
+        module = self.util.module_from_spec(spec)
+        self.assertEqual(module.__name__, spec.name)
+
+    def test___spec__(self):
+        spec = self.machinery.ModuleSpec('test', object())
+        module = self.util.module_from_spec(spec)
+        self.assertEqual(module.__spec__, spec)
+
+    def test___loader__(self):
+        loader = object()
+        spec = self.machinery.ModuleSpec('test', loader)
+        module = self.util.module_from_spec(spec)
+        self.assertIs(module.__loader__, loader)
+
+    def test___package__(self):
+        spec = self.machinery.ModuleSpec('test.pkg', object())
+        module = self.util.module_from_spec(spec)
+        self.assertEqual(module.__package__, spec.parent)
+
+    def test___path__(self):
+        spec = self.machinery.ModuleSpec('test', object(), is_package=True)
+        module = self.util.module_from_spec(spec)
+        self.assertEqual(module.__path__, spec.submodule_search_locations)
+
+    def test___file__(self):
+        spec = self.machinery.ModuleSpec('test', object(), origin='some/path')
+        spec.has_location = True
+        module = self.util.module_from_spec(spec)
+        self.assertEqual(module.__file__, spec.origin)
+
+    def test___cached__(self):
+        spec = self.machinery.ModuleSpec('test', object())
+        spec.cached = 'some/path'
+        spec.has_location = True
+        module = self.util.module_from_spec(spec)
+        self.assertEqual(module.__cached__, spec.cached)
+
+(Frozen_ModuleFromSpecTests,
+ Source_ModuleFromSpecTests
+) = util.test_both(ModuleFromSpecTests, abc=abc, machinery=machinery,
+                   util=importlib_util)
 
 
 class ModuleForLoaderTests:
@@ -72,7 +150,7 @@ class ModuleForLoaderTests:
         # Test that when no module exists in sys.modules a new module is
         # created.
         module_name = 'a.b.c'
-        with test_util.uncache(module_name):
+        with util.uncache(module_name):
             module = self.return_module(module_name)
             self.assertIn(module_name, sys.modules)
         self.assertIsInstance(module, types.ModuleType)
@@ -90,7 +168,7 @@ class ModuleForLoaderTests:
         module = types.ModuleType('a.b.c')
         module.__loader__ = 42
         module.__package__ = 42
-        with test_util.uncache(name):
+        with util.uncache(name):
             sys.modules[name] = module
             loader = FakeLoader()
             returned_module = loader.load_module(name)
@@ -102,7 +180,7 @@ class ModuleForLoaderTests:
         # Test that a module is removed from sys.modules if added but an
         # exception is raised.
         name = 'a.b.c'
-        with test_util.uncache(name):
+        with util.uncache(name):
             self.raise_exception(name)
             self.assertNotIn(name, sys.modules)
 
@@ -110,7 +188,7 @@ class ModuleForLoaderTests:
         # Test that a failure on reload leaves the module in-place.
         name = 'a.b.c'
         module = types.ModuleType(name)
-        with test_util.uncache(name):
+        with util.uncache(name):
             sys.modules[name] = module
             self.raise_exception(name)
             self.assertIs(module, sys.modules[name])
@@ -129,7 +207,7 @@ class ModuleForLoaderTests:
 
         name = 'mod'
         module = FalseModule(name)
-        with test_util.uncache(name):
+        with util.uncache(name):
             self.assertFalse(module)
             sys.modules[name] = module
             given = self.return_module(name)
@@ -148,7 +226,7 @@ class ModuleForLoaderTests:
                 return module
 
         name = 'pkg.mod'
-        with test_util.uncache(name):
+        with util.uncache(name):
             loader = FakeLoader(False)
             module = loader.load_module(name)
             self.assertEqual(module.__name__, name)
@@ -156,7 +234,7 @@ class ModuleForLoaderTests:
             self.assertEqual(module.__package__, 'pkg')
 
         name = 'pkg.sub'
-        with test_util.uncache(name):
+        with util.uncache(name):
             loader = FakeLoader(True)
             module = loader.load_module(name)
             self.assertEqual(module.__name__, name)
@@ -166,7 +244,7 @@ class ModuleForLoaderTests:
 
 (Frozen_ModuleForLoaderTests,
  Source_ModuleForLoaderTests
- ) = test_util.test_both(ModuleForLoaderTests, util=util)
+ ) = util.test_both(ModuleForLoaderTests, util=importlib_util)
 
 
 class SetPackageTests:
@@ -229,7 +307,7 @@ class SetPackageTests:
 
 (Frozen_SetPackageTests,
  Source_SetPackageTests
- ) = test_util.test_both(SetPackageTests, util=util)
+ ) = util.test_both(SetPackageTests, util=importlib_util)
 
 
 class SetLoaderTests:
@@ -276,7 +354,7 @@ class SetLoaderTests:
 
 (Frozen_SetLoaderTests,
  Source_SetLoaderTests
- ) = test_util.test_both(SetLoaderTests, util=util)
+ ) = util.test_both(SetLoaderTests, util=importlib_util)
 
 
 class ResolveNameTests:
@@ -314,7 +392,7 @@ class ResolveNameTests:
 
 (Frozen_ResolveNameTests,
  Source_ResolveNameTests
- ) = test_util.test_both(ResolveNameTests, util=util)
+ ) = util.test_both(ResolveNameTests, util=importlib_util)
 
 
 class FindSpecTests:
@@ -325,7 +403,7 @@ class FindSpecTests:
 
     def test_sys_modules(self):
         name = 'some_mod'
-        with test_util.uncache(name):
+        with util.uncache(name):
             module = types.ModuleType(name)
             loader = 'a loader!'
             spec = self.machinery.ModuleSpec(name, loader)
@@ -337,7 +415,7 @@ class FindSpecTests:
 
     def test_sys_modules_without___loader__(self):
         name = 'some_mod'
-        with test_util.uncache(name):
+        with util.uncache(name):
             module = types.ModuleType(name)
             del module.__loader__
             loader = 'a loader!'
@@ -349,7 +427,7 @@ class FindSpecTests:
 
     def test_sys_modules_spec_is_None(self):
         name = 'some_mod'
-        with test_util.uncache(name):
+        with util.uncache(name):
             module = types.ModuleType(name)
             module.__spec__ = None
             sys.modules[name] = module
@@ -358,7 +436,7 @@ class FindSpecTests:
 
     def test_sys_modules_loader_is_None(self):
         name = 'some_mod'
-        with test_util.uncache(name):
+        with util.uncache(name):
             module = types.ModuleType(name)
             spec = self.machinery.ModuleSpec(name, None)
             module.__spec__ = spec
@@ -368,7 +446,7 @@ class FindSpecTests:
 
     def test_sys_modules_spec_is_not_set(self):
         name = 'some_mod'
-        with test_util.uncache(name):
+        with util.uncache(name):
             module = types.ModuleType(name)
             try:
                 del module.__spec__
@@ -380,8 +458,8 @@ class FindSpecTests:
 
     def test_success(self):
         name = 'some_mod'
-        with test_util.uncache(name):
-            with test_util.import_state(meta_path=[self.FakeMetaFinder]):
+        with util.uncache(name):
+            with util.import_state(meta_path=[self.FakeMetaFinder]):
                 self.assertEqual((name, None, None),
                                  self.util.find_spec(name))
 
@@ -389,8 +467,8 @@ class FindSpecTests:
 #        # Searching on a path should work.
 #        name = 'some_mod'
 #        path = 'path to some place'
-#        with test_util.uncache(name):
-#            with test_util.import_state(meta_path=[self.FakeMetaFinder]):
+#        with util.uncache(name):
+#            with util.import_state(meta_path=[self.FakeMetaFinder]):
 #                self.assertEqual((name, path, None),
 #                                 self.util.find_spec(name, path))
 
@@ -401,8 +479,8 @@ class FindSpecTests:
     def test_find_submodule(self):
         name = 'spam'
         subname = 'ham'
-        with test_util.temp_module(name, pkg=True) as pkg_dir:
-            fullname, _ = test_util.submodule(name, subname, pkg_dir)
+        with util.temp_module(name, pkg=True) as pkg_dir:
+            fullname, _ = util.submodule(name, subname, pkg_dir)
             spec = self.util.find_spec(fullname)
             self.assertIsNot(spec, None)
             self.assertIn(name, sorted(sys.modules))
@@ -414,9 +492,9 @@ class FindSpecTests:
     def test_find_submodule_parent_already_imported(self):
         name = 'spam'
         subname = 'ham'
-        with test_util.temp_module(name, pkg=True) as pkg_dir:
+        with util.temp_module(name, pkg=True) as pkg_dir:
             self.init.import_module(name)
-            fullname, _ = test_util.submodule(name, subname, pkg_dir)
+            fullname, _ = util.submodule(name, subname, pkg_dir)
             spec = self.util.find_spec(fullname)
             self.assertIsNot(spec, None)
             self.assertIn(name, sorted(sys.modules))
@@ -428,8 +506,8 @@ class FindSpecTests:
     def test_find_relative_module(self):
         name = 'spam'
         subname = 'ham'
-        with test_util.temp_module(name, pkg=True) as pkg_dir:
-            fullname, _ = test_util.submodule(name, subname, pkg_dir)
+        with util.temp_module(name, pkg=True) as pkg_dir:
+            fullname, _ = util.submodule(name, subname, pkg_dir)
             relname = '.' + subname
             spec = self.util.find_spec(relname, name)
             self.assertIsNot(spec, None)
@@ -442,8 +520,8 @@ class FindSpecTests:
     def test_find_relative_module_missing_package(self):
         name = 'spam'
         subname = 'ham'
-        with test_util.temp_module(name, pkg=True) as pkg_dir:
-            fullname, _ = test_util.submodule(name, subname, pkg_dir)
+        with util.temp_module(name, pkg=True) as pkg_dir:
+            fullname, _ = util.submodule(name, subname, pkg_dir)
             relname = '.' + subname
             with self.assertRaises(ValueError):
                 self.util.find_spec(relname)
@@ -453,7 +531,7 @@ class FindSpecTests:
 
 (Frozen_FindSpecTests,
  Source_FindSpecTests
- ) = test_util.test_both(FindSpecTests, init=init, util=util,
+ ) = util.test_both(FindSpecTests, init=init, util=importlib_util,
                          machinery=machinery)
 
 
@@ -470,7 +548,7 @@ class MagicNumberTests:
 
 (Frozen_MagicNumberTests,
  Source_MagicNumberTests
- ) = test_util.test_both(MagicNumberTests, util=util)
+ ) = util.test_both(MagicNumberTests, util=importlib_util)
 
 
 class PEP3147Tests:
@@ -588,7 +666,7 @@ class PEP3147Tests:
 
 (Frozen_PEP3147Tests,
  Source_PEP3147Tests
- ) = test_util.test_both(PEP3147Tests, util=util)
+ ) = util.test_both(PEP3147Tests, util=importlib_util)
 
 
 if __name__ == '__main__':

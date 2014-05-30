@@ -342,7 +342,7 @@ class PyBuildExt(build_ext):
         spec = importlib.util.spec_from_file_location(ext.name, ext_filename,
                                                       loader=loader)
         try:
-            importlib._bootstrap._SpecMethods(spec).load()
+            importlib._bootstrap._load(spec)
         except ImportError as why:
             self.failed_on_import.append(ext.name)
             self.announce('*** WARNING: renaming "%s" since importing it'

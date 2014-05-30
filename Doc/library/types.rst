@@ -115,6 +115,10 @@ Standard names are defined for the following types:
    The type of :term:`modules <module>`. Constructor takes the name of the
    module to be created and optionally its :term:`docstring`.
 
+   .. note::
+      Use :func:`importlib.util.module_from_spec` to create a new module if you
+      wish to set the various import-controlled attributes.
+
    .. attribute:: __doc__
 
       The :term:`docstring` of the module. Defaults to ``None``.
