@@ -127,6 +127,53 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         self.assertRaises(TclError,tcl.unsetvar,'a')
 
+    def test_getint(self):
+        tcl = self.interp.tk
+        self.assertEqual(tcl.getint(' 42 '), 42)
+        self.assertEqual(tcl.getint(42), 42)
+        self.assertRaises(TypeError, tcl.getint)
+        self.assertRaises(TypeError, tcl.getint, '42', '10')
+        self.assertRaises(TypeError, tcl.getint, 42.0)
+        self.assertRaises(TclError, tcl.getint, 'a')
+        self.assertRaises((TypeError, ValueError, TclError),
+                          tcl.getint, '42\0')
+        if test_support.have_unicode:
+            self.assertEqual(tcl.getint(unicode('42')), 42)
+            self.assertRaises((UnicodeEncodeError, ValueError, TclError),
+                              tcl.getint, '42' + unichr(0xd800))
+
+    def test_getdouble(self):
+        tcl = self.interp.tk
+        self.assertEqual(tcl.getdouble(' 42 '), 42.0)
+        self.assertEqual(tcl.getdouble(' 42.5 '), 42.5)
+        self.assertEqual(tcl.getdouble(42.5), 42.5)
+        self.assertRaises(TypeError, tcl.getdouble)
+        self.assertRaises(TypeError, tcl.getdouble, '42.5', '10')
+        self.assertRaises(TypeError, tcl.getdouble, 42)
+        self.assertRaises(TclError, tcl.getdouble, 'a')
+        self.assertRaises((TypeError, ValueError, TclError),
+                          tcl.getdouble, '42.5\0')
+        if test_support.have_unicode:
+            self.assertEqual(tcl.getdouble(unicode('42.5')), 42.5)
+            self.assertRaises((UnicodeEncodeError, ValueError, TclError),
+                              tcl.getdouble, '42.5' + unichr(0xd800))
+
+    def test_getboolean(self):
+        tcl = self.interp.tk
+        self.assertIs(tcl.getboolean('on'), True)
+        self.assertIs(tcl.getboolean('1'), True)
+        self.assertEqual(tcl.getboolean(42), 42)
+        self.assertRaises(TypeError, tcl.getboolean)
+        self.assertRaises(TypeError, tcl.getboolean, 'on', '1')
+        self.assertRaises(TypeError, tcl.getboolean, 1.0)
+        self.assertRaises(TclError, tcl.getboolean, 'a')
+        self.assertRaises((TypeError, ValueError, TclError),
+                          tcl.getboolean, 'on\0')
+        if test_support.have_unicode:
+            self.assertIs(tcl.getboolean(unicode('on')), True)
+            self.assertRaises((UnicodeEncodeError, ValueError, TclError),
+                              tcl.getboolean, 'on' + unichr(0xd800))
+
     def testEvalFile(self):
         tcl = self.interp
         filename = "testEvalFile.tcl"
