@@ -581,13 +581,14 @@ def _find_module_shim(self, fullname):
     return loader
 
 
-def _load_module_shim(spec, fullname):
+# Typically used by loader classes as a method replacement.
+def _load_module_shim(self, fullname):
     """Load the specified module into sys.modules and return it.
 
     This method is deprecated.  Use loader.exec_module instead.
 
     """
-    spec = spec_from_loader(fullname, spec)
+    spec = spec_from_loader(fullname, self)
     if fullname in sys.modules:
         module = sys.modules[fullname]
         _exec(spec, module)
