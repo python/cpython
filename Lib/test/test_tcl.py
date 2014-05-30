@@ -574,9 +574,9 @@ class BigmemTclTest(unittest.TestCase):
     @support.bigmemtest(size=INT_MAX + 1, memuse=9, dry_run=False)
     def test_huge_string_builtins(self, size):
         value = '1' + ' ' * size
-        self.assertRaises(OverflowError, self.interp.getint, value)
-        self.assertRaises(OverflowError, self.interp.getdouble, value)
-        self.assertRaises(OverflowError, self.interp.getboolean, value)
+        self.assertRaises(OverflowError, self.interp.tk.getint, value)
+        self.assertRaises(OverflowError, self.interp.tk.getdouble, value)
+        self.assertRaises(OverflowError, self.interp.tk.getboolean, value)
         self.assertRaises(OverflowError, self.interp.eval, value)
         self.assertRaises(OverflowError, self.interp.evalfile, value)
         self.assertRaises(OverflowError, self.interp.record, value)
