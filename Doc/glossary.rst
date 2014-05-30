@@ -444,12 +444,13 @@ Glossary
 
       A number of tools in Python accept key functions to control how elements
       are ordered or grouped.  They include :func:`min`, :func:`max`,
-      :func:`sorted`, :meth:`list.sort`, :func:`heapq.nsmallest`,
-      :func:`heapq.nlargest`, and :func:`itertools.groupby`.
+      :func:`sorted`, :meth:`list.sort`, :func:`heapq.merge`,
+      :func:`heapq.nsmallest`, :func:`heapq.nlargest`, and
+      :func:`itertools.groupby`.
 
       There are several ways to create a key function.  For example. the
       :meth:`str.lower` method can serve as a key function for case insensitive
-      sorts.  Alternatively, an ad-hoc key function can be built from a
+      sorts.  Alternatively, a key function can be built from a
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
       the :mod:`operator` module provides three key function constructors:
       :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and

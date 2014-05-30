@@ -94,6 +94,9 @@ Library
   error bubble up as this "bad data" appears in many real world zip files in
   the wild and is ignored by other zip tools.
 
+- Issue #13742:  Added "key" and "reverse" parameters to heapq.merge().
+  (First draft of patch contributed by Simon Sapin.)
+
 - Issue #21402: tkinter.ttk now works when default root window is not set.
 
 - Issue #3015: _tkinter.create() now creates tkapp object with wantobject=1 by
