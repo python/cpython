@@ -1894,6 +1894,7 @@ Tkapp_GetInt(PyObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "s:getint", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     if (Tcl_GetInt(Tkapp_Interp(self), s, &v) == TCL_ERROR)
         return Tkinter_Error(self);
     return Py_BuildValue("i", v);
@@ -1914,6 +1915,7 @@ Tkapp_GetDouble(PyObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "s:getdouble", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     if (Tcl_GetDouble(Tkapp_Interp(self), s, &v) == TCL_ERROR)
         return Tkinter_Error(self);
     return Py_BuildValue("d", v);
@@ -1934,6 +1936,7 @@ Tkapp_GetBoolean(PyObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "s:getboolean", &s))
         return NULL;
+    CHECK_STRING_LENGTH(s);
     if (Tcl_GetBoolean(Tkapp_Interp(self), s, &v) == TCL_ERROR)
         return Tkinter_Error(self);
     return PyBool_FromLong(v);
