@@ -176,6 +176,16 @@ def heapify(x):
     for i in reversed(range(n//2)):
         _siftup(x, i)
 
+def _heappop_max(heap):
+    """Maxheap version of a heappop."""
+    lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
+    if heap:
+        returnitem = heap[0]
+        heap[0] = lastelt
+        _siftup_max(heap, 0)
+        return returnitem
+    return lastelt
+
 def _heapreplace_max(heap, item):
     """Maxheap version of a heappop followed by a heappush."""
     returnitem = heap[0]    # raises appropriate IndexError if heap is empty
@@ -311,7 +321,7 @@ try:
 except ImportError:
     pass
 
-def merge(*iterables):
+def merge(*iterables, key=None, reverse=False):
     '''Merge multiple sorted inputs into a single sorted output.
 
     Similar to sorted(itertools.chain(*iterables)) but returns a generator,
@@ -321,31 +331,73 @@ def merge(*iterables):
     >>> list(merge([1,3,5,7], [0,2,4,8], [5,10,15,20], [], [25]))
     [0, 1, 2, 3, 4, 5, 5, 7, 8, 10, 15, 20, 25]
 
+    If *key* is not None, applies a key function to each element to determine
+    its sort order.
+
+    >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))
+    ['dog', 'cat', 'fish', 'horse', 'kangaroo']
+
     '''
 
     h = []
     h_append = h.append
+
+    if reverse:
+        _heapify = _heapify_max
+        _heappop = _heappop_max
+        _heapreplace = _heapreplace_max
+        direction = -1
+    else:
+        _heapify = heapify
+        _heappop = heappop
+        _heapreplace = heapreplace
+        direction = 1
+
+    if key is None:
+        for order, it in enumerate(map(iter, iterables)):
+            try:
+                next = it.__next__
+                h_append([next(), order * direction, next])
+            except StopIteration:
+                pass
+        _heapify(h)
+        while len(h) > 1:
+            try:
+                while True:
+                    value, order, next = s = h[0]
+                    yield value
+                    s[0] = next()           # raises StopIteration when exhausted
+                    _heapreplace(h, s)      # restore heap condition
+            except StopIteration:
+                _heappop(h)                 # remove empty iterator
+        if h:
+            # fast case when only a single iterator remains
+            value, order, next = h[0]
+            yield value
+            yield from next.__self__
+        return
+
     for order, it in enumerate(map(iter, iterables)):
         try:
             next = it.__next__
-            h_append([next(), order, next])
+            value = next()
+            h_append([key(value), order * direction, value, next])
         except StopIteration:
             pass
-    heapify(h)
-
-    _heapreplace = heapreplace
+    _heapify(h)
     while len(h) > 1:
         try:
             while True:
-                value, order, next = s = h[0]
+                key_value, order, value, next = s = h[0]
                 yield value
-                s[0] = next()           # raises StopIteration when exhausted
-                _heapreplace(h, s)      # restore heap condition
+                value = next()
+                s[0] = key(value)
+                s[2] = value
+                _heapreplace(h, s)
         except StopIteration:
-            heappop(h)                  # remove empty iterator
+            _heappop(h)
     if h:
-        # fast case when only a single iterator remains
-        value, order, next = h[0]
+        key_value, order, value,  next = h[0]
         yield value
         yield from next.__self__
 
