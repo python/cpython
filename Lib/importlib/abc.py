@@ -126,7 +126,7 @@ class Loader(metaclass=abc.ABCMeta):
         create_module() is optional.
 
         """
-        # By default, defer to _SpecMethods.create() for the new module.
+        # By default, defer to default semantics for the new module.
         return None
 
     # We don't define exec_module() here since that would break

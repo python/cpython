@@ -9,7 +9,7 @@ work. One should use importlib as the public-facing version of this module.
 #
 # IMPORTANT: Whenever making changes to this module, be sure to run
 # a top-level make in order to get the frozen version of the module
-# update. Not doing so will result in the Makefile to fail for
+# updated. Not doing so will result in the Makefile to fail for
 # all others who don't have a ./python around to freeze the module
 # in the early stages of compilation.
 #
@@ -581,20 +581,19 @@ def _find_module_shim(self, fullname):
     return loader
 
 
-def _load_module_shim(self, fullname):
+def _load_module_shim(spec, fullname):
     """Load the specified module into sys.modules and return it.
 
     This method is deprecated.  Use loader.exec_module instead.
 
     """
-    spec = spec_from_loader(fullname, self)
-    methods = _SpecMethods(spec)
+    spec = spec_from_loader(fullname, spec)
     if fullname in sys.modules:
         module = sys.modules[fullname]
-        methods.exec(module)
+        _exec(spec, module)
         return sys.modules[fullname]
     else:
-        return methods.load()
+        return _load(spec)
 
 
 def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
@@ -705,7 +704,7 @@ def _module_repr(module):
         pass
     else:
         if spec is not None:
-            return _SpecMethods(spec).module_repr()
+            return _module_repr_from_spec(spec)
 
     # We could use module.__class__.__name__ instead of 'module' in the
     # various repr permutations.
@@ -991,234 +990,182 @@ def _spec_from_module(module, loader=None, origin=None):
     return spec
 
 
-class _SpecMethods:
+def _init_module_attrs(spec, module, *, override=False):
+    # The passed-in module may be not support attribute assignment,
+    # in which case we simply don't set the attributes.
+    # __name__
+    if (override or getattr(module, '__name__', None) is None):
+        try:
+            module.__name__ = spec.name
+        except AttributeError:
+            pass
+    # __loader__
+    if override or getattr(module, '__loader__', None) is None:
+        loader = spec.loader
+        if loader is None:
+            # A backward compatibility hack.
+            if spec.submodule_search_locations is not None:
+                loader = _NamespaceLoader.__new__(_NamespaceLoader)
+                loader._path = spec.submodule_search_locations
+        try:
+            module.__loader__ = loader
+        except AttributeError:
+            pass
+    # __package__
+    if override or getattr(module, '__package__', None) is None:
+        try:
+            module.__package__ = spec.parent
+        except AttributeError:
+            pass
+    # __spec__
+    try:
+        module.__spec__ = spec
+    except AttributeError:
+        pass
+    # __path__
+    if override or getattr(module, '__path__', None) is None:
+        if spec.submodule_search_locations is not None:
+            try:
+                module.__path__ = spec.submodule_search_locations
+            except AttributeError:
+                pass
+    # __file__/__cached__
+    if spec.has_location:
+        if override or getattr(module, '__file__', None) is None:
+            try:
+                module.__file__ = spec.origin
+            except AttributeError:
+                pass
 
-    """Convenience wrapper around spec objects to provide spec-specific
-    methods."""
+        if override or getattr(module, '__cached__', None) is None:
+            if spec.cached is not None:
+                try:
+                    module.__cached__ = spec.cached
+                except AttributeError:
+                    pass
+    return module
 
-    # The various spec_from_* functions could be made factory methods here.
 
-    def __init__(self, spec):
-        self.spec = spec
+def module_from_spec(spec):
+    """Create a module based on the provided spec."""
+    # Typically loaders will not implement create_module().
+    module = None
+    if hasattr(spec.loader, 'create_module'):
+        # If create_module() returns `None` then it means default
+        # module creation should be used.
+        module = spec.loader.create_module(spec)
+    if module is None:
+        module = _new_module(spec.name)
+    _init_module_attrs(spec, module)
+    return module
 
-    def module_repr(self):
-        """Return the repr to use for the module."""
-        # We mostly replicate _module_repr() using the spec attributes.
-        spec = self.spec
-        name = '?' if spec.name is None else spec.name
-        if spec.origin is None:
-            if spec.loader is None:
-                return '<module {!r}>'.format(name)
-            else:
-                return '<module {!r} ({!r})>'.format(name, spec.loader)
+
+def _module_repr_from_spec(spec):
+    """Return the repr to use for the module."""
+    # We mostly replicate _module_repr() using the spec attributes.
+    name = '?' if spec.name is None else spec.name
+    if spec.origin is None:
+        if spec.loader is None:
+            return '<module {!r}>'.format(name)
         else:
-            if spec.has_location:
-                return '<module {!r} from {!r}>'.format(name, spec.origin)
-            else:
-                return '<module {!r} ({})>'.format(spec.name, spec.origin)
+            return '<module {!r} ({!r})>'.format(name, spec.loader)
+    else:
+        if spec.has_location:
+            return '<module {!r} from {!r}>'.format(name, spec.origin)
+        else:
+            return '<module {!r} ({})>'.format(spec.name, spec.origin)
 
-    def init_module_attrs(self, module, *, _override=False, _force_name=True):
-        """Set the module's attributes.
 
-        All missing import-related module attributes will be set.  Here
-        is how the spec attributes map onto the module:
+# Used by importlib.reload() and _load_module_shim().
+def _exec(spec, module):
+    """Execute the spec in an existing module's namespace."""
+    name = spec.name
+    _imp.acquire_lock()
+    with _ModuleLockManager(name):
+        if sys.modules.get(name) is not module:
+            msg = 'module {!r} not in sys.modules'.format(name)
+            raise ImportError(msg, name=name)
+        if spec.loader is None:
+            if spec.submodule_search_locations is None:
+                raise ImportError('missing loader', name=spec.name)
+            # namespace package
+            _init_module_attrs(spec, module, override=True)
+            return module
+        _init_module_attrs(spec, module, override=True)
+        if not hasattr(spec.loader, 'exec_module'):
+            # (issue19713) Once BuiltinImporter and ExtensionFileLoader
+            # have exec_module() implemented, we can add a deprecation
+            # warning here.
+            spec.loader.load_module(name)
+        else:
+            spec.loader.exec_module(module)
+    return sys.modules[name]
 
-        spec.name -> module.__name__
-        spec.loader -> module.__loader__
-        spec.parent -> module.__package__
-        spec -> module.__spec__
 
-        Optional:
-        spec.origin -> module.__file__ (if spec.set_fileattr is true)
-        spec.cached -> module.__cached__ (if __file__ also set)
-        spec.submodule_search_locations -> module.__path__ (if set)
-
-        """
-        spec = self.spec
-
-        # The passed in module may be not support attribute assignment,
-        # in which case we simply don't set the attributes.
-
-        # __name__
-        if (_override or _force_name or
-            getattr(module, '__name__', None) is None):
-            try:
-                module.__name__ = spec.name
-            except AttributeError:
-                pass
-
-        # __loader__
-        if _override or getattr(module, '__loader__', None) is None:
-            loader = spec.loader
-            if loader is None:
-                # A backward compatibility hack.
-                if spec.submodule_search_locations is not None:
-                    loader = _NamespaceLoader.__new__(_NamespaceLoader)
-                    loader._path = spec.submodule_search_locations
-            try:
-                module.__loader__ = loader
-            except AttributeError:
-                pass
-
-        # __package__
-        if _override or getattr(module, '__package__', None) is None:
-            try:
-                module.__package__ = spec.parent
-            except AttributeError:
-                pass
-
-        # __spec__
+def _load_backward_compatible(spec):
+    # (issue19713) Once BuiltinImporter and ExtensionFileLoader
+    # have exec_module() implemented, we can add a deprecation
+    # warning here.
+    spec.loader.load_module(spec.name)
+    # The module must be in sys.modules at this point!
+    module = sys.modules[spec.name]
+    if getattr(module, '__loader__', None) is None:
+        try:
+            module.__loader__ = spec.loader
+        except AttributeError:
+            pass
+    if getattr(module, '__package__', None) is None:
+        try:
+            # Since module.__path__ may not line up with
+            # spec.submodule_search_paths, we can't necessarily rely
+            # on spec.parent here.
+            module.__package__ = module.__name__
+            if not hasattr(module, '__path__'):
+                module.__package__ = spec.name.rpartition('.')[0]
+        except AttributeError:
+            pass
+    if getattr(module, '__spec__', None) is None:
         try:
             module.__spec__ = spec
         except AttributeError:
             pass
+    return module
 
-        # __path__
-        if _override or getattr(module, '__path__', None) is None:
-            if spec.submodule_search_locations is not None:
-                try:
-                    module.__path__ = spec.submodule_search_locations
-                except AttributeError:
-                    pass
+def _load_unlocked(spec):
+    # A helper for direct use by the import system.
+    if spec.loader is not None:
+        # not a namespace package
+        if not hasattr(spec.loader, 'exec_module'):
+            return _load_backward_compatible(spec)
 
-        if spec.has_location:
-            # __file__
-            if _override or getattr(module, '__file__', None) is None:
-                try:
-                    module.__file__ = spec.origin
-                except AttributeError:
-                    pass
-
-            # __cached__
-            if _override or getattr(module, '__cached__', None) is None:
-                if spec.cached is not None:
-                    try:
-                        module.__cached__ = spec.cached
-                    except AttributeError:
-                        pass
-
-    def create(self):
-        """Return a new module to be loaded.
-
-        The import-related module attributes are also set with the
-        appropriate values from the spec.
-
-        """
-        spec = self.spec
-        # Typically loaders will not implement create_module().
-        if hasattr(spec.loader, 'create_module'):
-            # If create_module() returns `None` it means the default
-            # module creation should be used.
-            module = spec.loader.create_module(spec)
+    module = module_from_spec(spec)
+    with _installed_safely(module):
+        if spec.loader is None:
+            if spec.submodule_search_locations is None:
+                raise ImportError('missing loader', name=spec.name)
+            # A namespace package so do nothing.
         else:
-            module = None
-        if module is None:
-            # This must be done before open() is ever called as the 'io'
-            # module implicitly imports 'locale' and would otherwise
-            # trigger an infinite loop.
-            module = _new_module(spec.name)
-        self.init_module_attrs(module)
-        return module
+            spec.loader.exec_module(module)
 
-    def _exec(self, module):
-        """Do everything necessary to execute the module.
+    # We don't ensure that the import-related module attributes get
+    # set in the sys.modules replacement case.  Such modules are on
+    # their own.
+    return sys.modules[spec.name]
 
-        The namespace of `module` is used as the target of execution.
-        This method uses the loader's `exec_module()` method.
+# A method used during testing of _load_unlocked() and by
+# _load_module_shim().
+def _load(spec):
+    """Return a new module object, loaded by the spec's loader.
 
-        """
-        self.spec.loader.exec_module(module)
+    The module is not added to its parent.
 
-    # Used by importlib.reload() and _load_module_shim().
-    def exec(self, module):
-        """Execute the spec in an existing module's namespace."""
-        name = self.spec.name
-        _imp.acquire_lock()
-        with _ModuleLockManager(name):
-            if sys.modules.get(name) is not module:
-                msg = 'module {!r} not in sys.modules'.format(name)
-                raise ImportError(msg, name=name)
-            if self.spec.loader is None:
-                if self.spec.submodule_search_locations is None:
-                    raise ImportError('missing loader', name=self.spec.name)
-                # namespace package
-                self.init_module_attrs(module, _override=True)
-                return module
-            self.init_module_attrs(module, _override=True)
-            if not hasattr(self.spec.loader, 'exec_module'):
-                # (issue19713) Once BuiltinImporter and ExtensionFileLoader
-                # have exec_module() implemented, we can add a deprecation
-                # warning here.
-                self.spec.loader.load_module(name)
-            else:
-                self._exec(module)
-        return sys.modules[name]
+    If a module is already in sys.modules, that existing module gets
+    clobbered.
 
-    def _load_backward_compatible(self):
-        # (issue19713) Once BuiltinImporter and ExtensionFileLoader
-        # have exec_module() implemented, we can add a deprecation
-        # warning here.
-        spec = self.spec
-        spec.loader.load_module(spec.name)
-        # The module must be in sys.modules at this point!
-        module = sys.modules[spec.name]
-        if getattr(module, '__loader__', None) is None:
-            try:
-                module.__loader__ = spec.loader
-            except AttributeError:
-                pass
-        if getattr(module, '__package__', None) is None:
-            try:
-                # Since module.__path__ may not line up with
-                # spec.submodule_search_paths, we can't necessarily rely
-                # on spec.parent here.
-                module.__package__ = module.__name__
-                if not hasattr(module, '__path__'):
-                    module.__package__ = spec.name.rpartition('.')[0]
-            except AttributeError:
-                pass
-        if getattr(module, '__spec__', None) is None:
-            try:
-                module.__spec__ = spec
-            except AttributeError:
-                pass
-        return module
-
-    def _load_unlocked(self):
-        # A helper for direct use by the import system.
-        if self.spec.loader is not None:
-            # not a namespace package
-            if not hasattr(self.spec.loader, 'exec_module'):
-                return self._load_backward_compatible()
-
-        module = self.create()
-        with _installed_safely(module):
-            if self.spec.loader is None:
-                if self.spec.submodule_search_locations is None:
-                    raise ImportError('missing loader', name=self.spec.name)
-                # A namespace package so do nothing.
-            else:
-                self._exec(module)
-
-        # We don't ensure that the import-related module attributes get
-        # set in the sys.modules replacement case.  Such modules are on
-        # their own.
-        return sys.modules[self.spec.name]
-
-    # A method used during testing of _load_unlocked() and by
-    # _load_module_shim().
-    def load(self):
-        """Return a new module object, loaded by the spec's loader.
-
-        The module is not added to its parent.
-
-        If a module is already in sys.modules, that existing module gets
-        clobbered.
-
-        """
-        _imp.acquire_lock()
-        with _ModuleLockManager(self.spec.name):
-            return self._load_unlocked()
+    """
+    _imp.acquire_lock()
+    with _ModuleLockManager(spec.name):
+        return _load_unlocked(spec)
 
 
 def _fix_up_module(ns, name, pathname, cpathname=None):
@@ -1800,7 +1747,7 @@ class _NamespacePath:
         self._path.append(item)
 
 
-# We use this exclusively in init_module_attrs() for backward-compatibility.
+# We use this exclusively in module_from_spec() for backward-compatibility.
 class _NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
@@ -2224,7 +2171,7 @@ def _find_and_load_unlocked(name, import_):
     if spec is None:
         raise ImportError(_ERR_MSG.format(name), name=name)
     else:
-        module = _SpecMethods(spec)._load_unlocked()
+        module = _load_unlocked(spec)
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
@@ -2359,8 +2306,7 @@ def _builtin_from_name(name):
     spec = BuiltinImporter.find_spec(name)
     if spec is None:
         raise ImportError('no built-in module named ' + name)
-    methods = _SpecMethods(spec)
-    return methods._load_unlocked()
+    return _load_unlocked(spec)
 
 
 def _setup(sys_module, _imp_module):
@@ -2391,8 +2337,7 @@ def _setup(sys_module, _imp_module):
             else:
                 continue
             spec = _spec_from_module(module, loader)
-            methods = _SpecMethods(spec)
-            methods.init_module_attrs(module)
+            _init_module_attrs(spec, module)
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]

@@ -145,8 +145,7 @@ def reload(module):
             pkgpath = None
         target = module
         spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, target)
-        methods = _bootstrap._SpecMethods(spec)
-        methods.exec(module)
+        _bootstrap._exec(spec, module)
         # The module may have replaced itself in sys.modules!
         return sys.modules[name]
     finally:

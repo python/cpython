@@ -1129,6 +1129,21 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
+.. function:: module_from_spec(spec)
+
+   Create a new module based on **spec**.
+
+   If the module object is from ``spec.loader.create_module()``, then any
+   pre-existing attributes will not be reset. Also, no :exc:`AttributeError`
+   will be raised if triggered while accessing **spec** or setting an attribute
+   on the module.
+
+   This function is preferred over using :class:`types.ModuleType` to create a
+   new module as **spec** is used to set as many import-controlled attributes on
+   the module as possible.
+
+   .. versionadded:: 3.5
+
 .. decorator:: module_for_loader
 
     A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
