@@ -565,9 +565,34 @@ class BigmemTclTest(unittest.TestCase):
     @support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
     @support.bigmemtest(size=INT_MAX + 1, memuse=5, dry_run=False)
-    def test_huge_string(self, size):
+    def test_huge_string_call(self, size):
         value = ' ' * size
         self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
+
+    @support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @support.bigmemtest(size=INT_MAX + 1, memuse=9, dry_run=False)
+    def test_huge_string_builtins(self, size):
+        value = '1' + ' ' * size
+        self.assertRaises(OverflowError, self.interp.getint, value)
+        self.assertRaises(OverflowError, self.interp.getdouble, value)
+        self.assertRaises(OverflowError, self.interp.getboolean, value)
+        self.assertRaises(OverflowError, self.interp.eval, value)
+        self.assertRaises(OverflowError, self.interp.evalfile, value)
+        self.assertRaises(OverflowError, self.interp.record, value)
+        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
+        self.assertRaises(OverflowError, self.interp.setvar, value, 'x', 'a')
+        self.assertRaises(OverflowError, self.interp.setvar, 'x', value, 'a')
+        self.assertRaises(OverflowError, self.interp.unsetvar, value)
+        self.assertRaises(OverflowError, self.interp.unsetvar, 'x', value)
+        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
+        self.assertRaises(OverflowError, self.interp.exprstring, value)
+        self.assertRaises(OverflowError, self.interp.exprlong, value)
+        self.assertRaises(OverflowError, self.interp.exprboolean, value)
+        self.assertRaises(OverflowError, self.interp.splitlist, value)
+        self.assertRaises(OverflowError, self.interp.split, value)
+        self.assertRaises(OverflowError, self.interp.createcommand, value, max)
+        self.assertRaises(OverflowError, self.interp.deletecommand, value)
 
 
 def setUpModule():
