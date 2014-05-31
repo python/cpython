@@ -1,4 +1,4 @@
-# Copyright 2001-2013 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2014 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2014 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -34,14 +34,12 @@ import os
 import queue
 import random
 import re
-import select
 import socket
 import struct
 import sys
 import tempfile
 from test.script_helper import assert_python_ok
-from test.support import (captured_stdout, run_with_locale, run_unittest,
-                          patch, requires_zlib, TestHandler, Matcher)
+from test import support
 import textwrap
 import time
 import unittest
@@ -51,16 +49,12 @@ try:
     import threading
     # The following imports are needed only for tests which
     # require threading
-    import asynchat
     import asyncore
-    import errno
     from http.server import HTTPServer, BaseHTTPRequestHandler
     import smtpd
     from urllib.parse import urlparse, parse_qs
     from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
-                              ThreadingTCPServer, StreamRequestHandler,
-                              ThreadingUnixStreamServer,
-                              ThreadingUnixDatagramServer)
+                              ThreadingTCPServer, StreamRequestHandler)
 except ImportError:
     threading = None
 try:
@@ -641,22 +635,23 @@ class StreamHandlerTest(BaseTest):
         h = TestStreamHandler(BadStream())
         r = logging.makeLogRecord({})
         old_raise = logging.raiseExceptions
-        old_stderr = sys.stderr
+
         try:
             h.handle(r)
             self.assertIs(h.error_record, r)
+
             h = logging.StreamHandler(BadStream())
-            sys.stderr = sio = io.StringIO()
-            h.handle(r)
-            self.assertIn('\nRuntimeError: deliberate mistake\n',
-                          sio.getvalue())
+            with support.captured_stderr() as stderr:
+                h.handle(r)
+                msg = '\nRuntimeError: deliberate mistake\n'
+                self.assertIn(msg, stderr.getvalue())
+
             logging.raiseExceptions = False
-            sys.stderr = sio = io.StringIO()
-            h.handle(r)
-            self.assertEqual('', sio.getvalue())
+            with support.captured_stderr() as stderr:
+                h.handle(r)
+                self.assertEqual('', stderr.getvalue())
         finally:
             logging.raiseExceptions = old_raise
-            sys.stderr = old_stderr
 
 # -- The following section could be moved into a server_helper.py module
 # -- if it proves to be of wider utility than just test_logging
@@ -1244,7 +1239,7 @@ class ConfigFileTest(BaseTest):
 
     def test_config0_ok(self):
         # A simple config file which overrides the default settings.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config0)
             logger = logging.getLogger()
             # Won't output anything
@@ -1259,7 +1254,7 @@ class ConfigFileTest(BaseTest):
 
     def test_config0_using_cp_ok(self):
         # A simple config file which overrides the default settings.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             file = io.StringIO(textwrap.dedent(self.config0))
             cp = configparser.ConfigParser()
             cp.read_file(file)
@@ -1277,7 +1272,7 @@ class ConfigFileTest(BaseTest):
 
     def test_config1_ok(self, config=config1):
         # A config file defining a sub-parser as well.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(config)
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
@@ -1300,7 +1295,7 @@ class ConfigFileTest(BaseTest):
 
     def test_config4_ok(self):
         # A config file specifying a custom formatter class.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config4)
             logger = logging.getLogger()
             try:
@@ -1320,7 +1315,7 @@ class ConfigFileTest(BaseTest):
         self.test_config1_ok(config=self.config6)
 
     def test_config7_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config1a)
             logger = logging.getLogger("compiler.parser")
             # See issue #11424. compiler-hyphenated sorts
@@ -1340,7 +1335,7 @@ class ConfigFileTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config7)
             logger = logging.getLogger("compiler.parser")
             self.assertFalse(logger.disabled)
@@ -2514,7 +2509,7 @@ class ConfigDictTest(BaseTest):
 
     def test_config0_ok(self):
         # A simple config which overrides the default settings.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config0)
             logger = logging.getLogger()
             # Won't output anything
@@ -2529,7 +2524,7 @@ class ConfigDictTest(BaseTest):
 
     def test_config1_ok(self, config=config1):
         # A config defining a sub-parser as well.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(config)
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
@@ -2560,7 +2555,7 @@ class ConfigDictTest(BaseTest):
 
     def test_config4_ok(self):
         # A config specifying a custom formatter class.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config4)
             #logger = logging.getLogger()
             try:
@@ -2575,7 +2570,7 @@ class ConfigDictTest(BaseTest):
 
     def test_config4a_ok(self):
         # A config specifying a custom formatter class.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config4a)
             #logger = logging.getLogger()
             try:
@@ -2595,7 +2590,7 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(Exception, self.apply_config, self.config6)
 
     def test_config7_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config1)
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
@@ -2607,7 +2602,7 @@ class ConfigDictTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config7)
             logger = logging.getLogger("compiler.parser")
             self.assertTrue(logger.disabled)
@@ -2624,7 +2619,7 @@ class ConfigDictTest(BaseTest):
 
     #Same as test_config_7_ok but don't disable old loggers.
     def test_config_8_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config1)
             logger = logging.getLogger("compiler.parser")
             # All will output a message
@@ -2636,7 +2631,7 @@ class ConfigDictTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config8)
             logger = logging.getLogger("compiler.parser")
             self.assertFalse(logger.disabled)
@@ -2657,7 +2652,7 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
 
     def test_config_8a_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config1a)
             logger = logging.getLogger("compiler.parser")
             # See issue #11424. compiler-hyphenated sorts
@@ -2677,7 +2672,7 @@ class ConfigDictTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config8a)
             logger = logging.getLogger("compiler.parser")
             self.assertFalse(logger.disabled)
@@ -2700,7 +2695,7 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
 
     def test_config_9_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config9)
             logger = logging.getLogger("compiler.parser")
             #Nothing will be output since both handler and logger are set to WARNING
@@ -2718,7 +2713,7 @@ class ConfigDictTest(BaseTest):
             ], stream=output)
 
     def test_config_10_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config10)
             logger = logging.getLogger("compiler.parser")
             logger.warning(self.next_message())
@@ -2746,7 +2741,7 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(Exception, self.apply_config, self.config13)
 
     def test_config14_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.apply_config(self.config14)
             h = logging._handlers['hand1']
             self.assertEqual(h.foo, 'bar')
@@ -2785,7 +2780,7 @@ class ConfigDictTest(BaseTest):
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_listen_config_10_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
             logger = logging.getLogger("compiler.parser")
             logger.warning(self.next_message())
@@ -2805,7 +2800,7 @@ class ConfigDictTest(BaseTest):
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_listen_config_1_ok(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
@@ -2832,7 +2827,7 @@ class ConfigDictTest(BaseTest):
         # First, specify a verification function that will fail.
         # We expect to see no output, since our configuration
         # never took effect.
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.setup_via_listener(to_send, verify_fail)
             # Both will output a message
             logger.info(self.next_message())
@@ -2847,7 +2842,7 @@ class ConfigDictTest(BaseTest):
         # Now, perform no verification. Our configuration
         # should take effect.
 
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.setup_via_listener(to_send)    # no verify callable specified
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
@@ -2865,7 +2860,7 @@ class ConfigDictTest(BaseTest):
 
         # Now, perform verification which transforms the bytes.
 
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             self.setup_via_listener(to_send[::-1], verify_reverse)
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
@@ -3020,7 +3015,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
-        handler = TestHandler(Matcher())
+        handler = support.TestHandler(support.Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
         listener.start()
         try:
@@ -3188,32 +3183,35 @@ class LastResortTest(BaseTest):
         # Test the last resort handler
         root = self.root_logger
         root.removeHandler(self.root_hdlr)
-        old_stderr = sys.stderr
         old_lastresort = logging.lastResort
         old_raise_exceptions = logging.raiseExceptions
+
         try:
-            sys.stderr = sio = io.StringIO()
-            root.debug('This should not appear')
-            self.assertEqual(sio.getvalue(), '')
-            root.warning('This is your final chance!')
-            self.assertEqual(sio.getvalue(), 'This is your final chance!\n')
-            #No handlers and no last resort, so 'No handlers' message
+            with support.captured_stderr() as stderr:
+                root.debug('This should not appear')
+                self.assertEqual(stderr.getvalue(), '')
+                root.warning('Final chance!')
+                self.assertEqual(stderr.getvalue(), 'Final chance!\n')
+
+            # No handlers and no last resort, so 'No handlers' message
             logging.lastResort = None
-            sys.stderr = sio = io.StringIO()
-            root.warning('This is your final chance!')
-            self.assertEqual(sio.getvalue(), 'No handlers could be found for logger "root"\n')
+            with support.captured_stderr() as stderr:
+                root.warning('Final chance!')
+                msg = 'No handlers could be found for logger "root"\n'
+                self.assertEqual(stderr.getvalue(), msg)
+
             # 'No handlers' message only printed once
-            sys.stderr = sio = io.StringIO()
-            root.warning('This is your final chance!')
-            self.assertEqual(sio.getvalue(), '')
+            with support.captured_stderr() as stderr:
+                root.warning('Final chance!')
+                self.assertEqual(stderr.getvalue(), '')
+
+            # If raiseExceptions is False, no message is printed
             root.manager.emittedNoHandlerWarning = False
-            #If raiseExceptions is False, no message is printed
             logging.raiseExceptions = False
-            sys.stderr = sio = io.StringIO()
-            root.warning('This is your final chance!')
-            self.assertEqual(sio.getvalue(), '')
+            with support.captured_stderr() as stderr:
+                root.warning('Final chance!')
+                self.assertEqual(stderr.getvalue(), '')
         finally:
-            sys.stderr = old_stderr
             root.addHandler(self.root_hdlr)
             logging.lastResort = old_lastresort
             logging.raiseExceptions = old_raise_exceptions
@@ -3344,8 +3342,8 @@ class ModuleLevelMiscTest(BaseTest):
 
     def _test_log(self, method, level=None):
         called = []
-        patch(self, logging, 'basicConfig',
-              lambda *a, **kw: called.append((a, kw)))
+        support.patch(self, logging, 'basicConfig',
+                      lambda *a, **kw: called.append((a, kw)))
 
         recording = RecordingHandler()
         logging.root.addHandler(recording)
@@ -3516,7 +3514,7 @@ class BasicConfigTest(unittest.TestCase):
         self.assertEqual(logging.root.level, self.original_logging_level)
 
     def test_strformatstyle(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             logging.basicConfig(stream=sys.stdout, style="{")
             logging.error("Log an error")
             sys.stdout.seek(0)
@@ -3524,7 +3522,7 @@ class BasicConfigTest(unittest.TestCase):
                 "ERROR:root:Log an error")
 
     def test_stringtemplatestyle(self):
-        with captured_stdout() as output:
+        with support.captured_stdout() as output:
             logging.basicConfig(stream=sys.stdout, style="$")
             logging.error("Log an error")
             sys.stdout.seek(0)
@@ -3641,7 +3639,7 @@ class BasicConfigTest(unittest.TestCase):
             self.addCleanup(logging.root.setLevel, old_level)
             called.append((a, kw))
 
-        patch(self, logging, 'basicConfig', my_basic_config)
+        support.patch(self, logging, 'basicConfig', my_basic_config)
 
         log_method = getattr(logging, method)
         if level is not None:
@@ -3781,8 +3779,8 @@ class LoggerTest(BaseTest):
 
     def test_find_caller_with_stack_info(self):
         called = []
-        patch(self, logging.traceback, 'print_stack',
-              lambda f, file: called.append(file.getvalue()))
+        support.patch(self, logging.traceback, 'print_stack',
+                      lambda f, file: called.append(file.getvalue()))
 
         self.logger.findCaller(stack_info=True)
 
@@ -3919,7 +3917,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 
-    @requires_zlib
+    @support.requires_zlib
     def test_rotator(self):
         def namer(name):
             return name + ".gz"
@@ -4152,22 +4150,20 @@ class NTEventLogHandlerTest(BaseTest):
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
-@run_with_locale('LC_ALL', '')
+@support.run_with_locale('LC_ALL', '')
 def test_main():
-    run_unittest(BuiltinLevelsTest, BasicFilterTest,
-                 CustomLevelsAndFiltersTest, HandlerTest, MemoryHandlerTest,
-                 ConfigFileTest, SocketHandlerTest, DatagramHandlerTest,
-                 MemoryTest, EncodingTest, WarningsTest, ConfigDictTest,
-                 ManagerTest, FormatterTest, BufferingFormatterTest,
-                 StreamHandlerTest, LogRecordFactoryTest, ChildLoggerTest,
-                 QueueHandlerTest, ShutdownTest, ModuleLevelMiscTest,
-                 BasicConfigTest, LoggerAdapterTest, LoggerTest,
-                 SMTPHandlerTest, FileHandlerTest, RotatingFileHandlerTest,
-                 LastResortTest, LogRecordTest, ExceptionTest,
-                 SysLogHandlerTest, HTTPHandlerTest, NTEventLogHandlerTest,
-                 TimedRotatingFileHandlerTest, UnixSocketHandlerTest,
-                 UnixDatagramHandlerTest, UnixSysLogHandlerTest
-                )
+    support.run_unittest(
+        BuiltinLevelsTest, BasicFilterTest, CustomLevelsAndFiltersTest,
+        HandlerTest, MemoryHandlerTest, ConfigFileTest, SocketHandlerTest,
+        DatagramHandlerTest, MemoryTest, EncodingTest, WarningsTest,
+        ConfigDictTest, ManagerTest, FormatterTest, BufferingFormatterTest,
+        StreamHandlerTest, LogRecordFactoryTest, ChildLoggerTest,
+        QueueHandlerTest, ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
+        LoggerAdapterTest, LoggerTest, SMTPHandlerTest, FileHandlerTest,
+        RotatingFileHandlerTest,  LastResortTest, LogRecordTest,
+        ExceptionTest, SysLogHandlerTest, HTTPHandlerTest,
+        NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
+        UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest)
 
 if __name__ == "__main__":
     test_main()
