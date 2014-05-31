@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21304: Backport the key derivation function hashlib.pbkdf2_hmac from
+  Python 3 per PEP 466.
+
 - Issue #21552: Fixed possible integer overflow of too long string lengths in
   the tkinter module on 64-bit platforms.
 
