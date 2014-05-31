@@ -53,6 +53,19 @@ Tests
 
 - Issue #20635: Added tests for Tk geometry managers.
 
+What's New in Python 2.7.7
+==========================
+
+*Release date: 2014-05-31*
+
+Build
+-----
+
+- Issue #21462: Build the Windows installers with OpenSSL 1.0.1g.
+
+- Issue #19866: Include some test data in the Windows installers, so tests don't
+  fail.
+
 
 What's New in Python 2.7.7 release candidate 1?
 ===============================================
