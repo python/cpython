@@ -1926,6 +1926,59 @@ class POSIXProcessTestCase(BaseTestCase):
                          "Some fds not in pass_fds were left open")
         self.assertIn(1, remaining_fds, "Subprocess failed")
 
+
+    def test_close_fds_when_max_fd_is_lowered(self):
+        """Confirm that issue21618 is fixed (may fail under valgrind)."""
+        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+
+        open_fds = set()
+        # Add a bunch more fds to pass down.
+        for _ in range(10):
+            fd = os.open("/dev/null", os.O_RDONLY)
+            open_fds.add(fd)
+
+        # Leave a two pairs of low ones available for use by the
+        # internal child error pipe and the stdout pipe.
+        for fd in sorted(open_fds)[:4]:
+            os.close(fd)
+            open_fds.remove(fd)
+
+        for fd in open_fds:
+            self.addCleanup(os.close, fd)
+            os.set_inheritable(fd, True)
+
+        max_fd_open = max(open_fds)
+
+        import resource
+        rlim_cur, rlim_max = resource.getrlimit(resource.RLIMIT_NOFILE)
+        try:
+            # 9 is lower than the highest fds we are leaving open.
+            resource.setrlimit(resource.RLIMIT_NOFILE, (9, rlim_max))
+            # Launch a new Python interpreter with our low fd rlim_cur that
+            # inherits open fds above that limit.  It then uses subprocess
+            # with close_fds=True to get a report of open fds in the child.
+            # An explicit list of fds to check is passed to fd_status.py as
+            # letting fd_status rely on its default logic would miss the
+            # fds above rlim_cur as it normally only checks up to that limit.
+            p = subprocess.Popen(
+                [sys.executable, '-c',
+                 textwrap.dedent("""
+                     import subprocess, sys
+                     subprocess.Popen([sys.executable, {fd_status!r}] +
+                                      [str(x) for x in range({max_fd})],
+                                      close_fds=True)
+                     """.format(fd_status=fd_status, max_fd=max_fd_open+1))],
+                stdout=subprocess.PIPE, close_fds=False)
+        finally:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (rlim_cur, rlim_max))
+
+        output, unused_stderr = p.communicate()
+        remaining_fds = set(map(int, output.strip().split(b',')))
+
+        self.assertFalse(remaining_fds & open_fds,
+                         msg="Some fds were left open.")
+
+
     # Mac OS X Tiger (10.4) has a kernel bug: sometimes, the file
     # descriptor of a pipe closed in the parent process is valid in the
     # child process according to fstat(), but the mode of the file
