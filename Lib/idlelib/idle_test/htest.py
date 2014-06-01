@@ -1,9 +1,12 @@
 '''Run human tests of Idle's window, dialog, and popup widgets.
 
-run(test): run *test*, a callable that causes a widget to be displayed.
-runall(): run all tests defined in this file.
+run(*tests)
+Run each callable in tests after finding the matching test spec in this file.
+If there are none, run an htest for each spec dict in this file after finding
+the matching callable in the module named in the spec.
 
-Let X be a global name bound to a widget callable. End the module with
+In a tested module, let X be a global name bound to a widget callable.
+End the module with
 
 if __name__ == '__main__':
     <unittest, if there is one>
@@ -13,9 +16,9 @@ if __name__ == '__main__':
 The X object must have a .__name__ attribute and a 'parent' parameter.
 X will often be a widget class, but a callable instance with .__name__
 or a wrapper function also work. The name of wrapper functions, like
-'_editor_Window', should start with '_'.
+'_editor_window', should start with '_'.
 
-This file must contain a matching instance of the folling template,
+This file must contain a matching instance of the following template,
 with X.__name__ prepended, as in '_editor_window_spec ...'.
 
 _spec = {
@@ -24,11 +27,17 @@ _spec = {
     'msg': ""
     }
 
-file (no .py): used in runall() to import the file and get X.
+file (no .py): used in run() to import the file and get X.
 kwds: passed to X (**kwds), after 'parent' is added, to initialize X.
 title: an example; used for some widgets, delete if not.
 msg: displayed in a master window. Hints as to how the user might
   test the widget. Close the window to skip or end the test.
+
+Modules not being tested at the moment:
+PyShell.PyShellEditorWindow
+Debugger.Debugger
+AutoCompleteWindow.AutoCompleteWindow
+OutputWindow.OutputWindow (indirectly being tested with grep test)
 '''
 from importlib import import_module
 from idlelib.macosxSupport import _initializeTkVariantTests
@@ -41,7 +50,7 @@ AboutDialog_spec = {
              },
     'msg': "Test every button. Ensure Python, TK and IDLE versions "
            "are correctly displayed.\n [Close] to exit.",
-     }
+    }
 
 _calltip_window_spec = {
     'file': 'CallTipWindow',
@@ -212,7 +221,7 @@ _replace_dialog_spec = {
     'kwds': {},
     'msg': "Click the 'Replace' button.\n"
            "Test various replace options in the 'Replace dialog'.\n"
-           "Click [Close] or [X] to close 'Replace Dialog'."
+           "Click [Close] or [X] to close the 'Replace Dialog'."
     }
 
 _search_dialog_spec = {
@@ -220,7 +229,7 @@ _search_dialog_spec = {
     'kwds': {},
     'msg': "Click the 'Search' button.\n"
            "Test various search options in the 'Search dialog'.\n"
-           "Click [Close] or [X] to close 'Search Dialog'."
+           "Click [Close] or [X] to close the 'Search Dialog'."
     }
 
 _scrolled_list_spec = {
