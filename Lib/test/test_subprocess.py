@@ -1933,13 +1933,15 @@ class POSIXProcessTestCase(BaseTestCase):
 
         open_fds = set()
         # Add a bunch more fds to pass down.
-        for _ in range(10):
+        for _ in range(40):
             fd = os.open("/dev/null", os.O_RDONLY)
             open_fds.add(fd)
 
         # Leave a two pairs of low ones available for use by the
         # internal child error pipe and the stdout pipe.
-        for fd in sorted(open_fds)[:4]:
+        # We also leave 10 more open as some Python buildbots run into
+        # "too many open files" errors during the test if we do not.
+        for fd in sorted(open_fds)[:14]:
             os.close(fd)
             open_fds.remove(fd)
 
@@ -1952,8 +1954,8 @@ class POSIXProcessTestCase(BaseTestCase):
         import resource
         rlim_cur, rlim_max = resource.getrlimit(resource.RLIMIT_NOFILE)
         try:
-            # 9 is lower than the highest fds we are leaving open.
-            resource.setrlimit(resource.RLIMIT_NOFILE, (9, rlim_max))
+            # 29 is lower than the highest fds we are leaving open.
+            resource.setrlimit(resource.RLIMIT_NOFILE, (29, rlim_max))
             # Launch a new Python interpreter with our low fd rlim_cur that
             # inherits open fds above that limit.  It then uses subprocess
             # with close_fds=True to get a report of open fds in the child.
