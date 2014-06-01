@@ -43,6 +43,8 @@ Library
 Tests
 -----
 
+- Issue #21605: Added tests for Tkinter images.
+
 - Issue #21493: Added test for ntpath.expanduser().  Original patch by
   Claudiu Popa.
 
