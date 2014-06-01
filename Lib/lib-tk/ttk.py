@@ -277,6 +277,7 @@ def _list_from_statespec(stuple):
 def _list_from_layouttuple(tk, ltuple):
     """Construct a list from the tuple returned by ttk::layout, this is
     somewhat the reverse of _format_layoutlist."""
+    ltuple = tk.splitlist(ltuple)
     res = []
 
     indx = 0
@@ -295,8 +296,6 @@ def _list_from_layouttuple(tk, ltuple):
             indx += 2
 
             if opt == 'children':
-                if not tk.wantobjects():
-                    val = tk.splitlist(val)
                 val = _list_from_layouttuple(tk, val)
 
             opts[opt] = val
@@ -410,8 +409,8 @@ class Style(object):
             return _list_from_statespec(self.tk.splitlist(
                 self.tk.call(self._name, "map", style, '-%s' % query_opt)))
 
-        return _dict_from_tcltuple(
-            self.tk.call(self._name, "map", style, *(_format_mapdict(kw))))
+        return _dict_from_tcltuple(self.tk.splitlist(
+            self.tk.call(self._name, "map", style, *(_format_mapdict(kw)))))
 
 
     def lookup(self, style, option, state=None, default=None):
@@ -465,8 +464,8 @@ class Style(object):
             lspec = "null" # could be any other word, but this may make sense
                            # when calling layout(style) later
 
-        return _list_from_layouttuple(self.tk, self.tk.splitlist(
-            self.tk.call(self._name, "layout", style, lspec)))
+        return _list_from_layouttuple(self.tk,
+            self.tk.call(self._name, "layout", style, lspec))
 
 
     def element_create(self, elementname, etype, *args, **kw):

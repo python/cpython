@@ -407,8 +407,6 @@ class InternalFunctionsTest(unittest.TestCase):
             ('name', 'no_minus', 'value'))
         self.assertRaises(ValueError, ttk._list_from_layouttuple, tk,
             ('something', '-children')) # no children
-        self.assertRaises(ValueError, ttk._list_from_layouttuple, tk,
-            ('something', '-children', 'value')) # invalid children
 
 
     def test_val_or_dict(self):
