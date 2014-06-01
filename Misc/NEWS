@@ -89,6 +89,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #21618: The subprocess module could fail to close open fds that were
+  inherited by the calling process and already higher than POSIX resource
+  limits would otherwise allow.  On systems with a functioning /proc/self/fd
+  or /dev/fd interface the max is now ignored and all fds are closed.
+
 - Issue #20383: Introduce importlib.util.module_from_spec() as the preferred way
   to create a new module.
 
