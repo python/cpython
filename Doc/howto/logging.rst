@@ -996,6 +996,15 @@ You can write code like this::
 so that if the logger's threshold is set above ``DEBUG``, the calls to
 :func:`expensive_func1` and :func:`expensive_func2` are never made.
 
+.. note:: In some cases, :meth:`~Logger.isEnabledFor` can iself be more
+   expensive than you'd like (e.g. for deeply nested loggers where an explicit
+   level is only set high up in the logger hierarchy). In such cases (or if you
+   want to avoid calling a method in tight loops), you can cache the result of a
+   call to :meth:`~Logger.isEnabledFor` in a local or instance variable, and use
+   that instead of calling the method each time. Such a cached value would only
+   need to be recomputed when the logging configuration changes dynamically
+   while the application is running (which is not all that common).
+
 There are other optimizations which can be made for specific applications which
 need more precise control over what logging information is collected. Here's a
 list of things you can do to avoid processing during logging which you don't
@@ -1005,6 +1014,11 @@ need:
 | What you don't want to collect                | How to avoid collecting it             |
 +===============================================+========================================+
 | Information about where calls were made from. | Set ``logging._srcfile`` to ``None``.  |
+|                                               | This avoids calling                    |
+|                                               | :func:`sys._getframe`, which may help  |
+|                                               | to speed up your code in environments  |
+|                                               | like PyPy (which can't speed up code   |
+|                                               | that uses :func:`sys._getframe`).      |
 +-----------------------------------------------+----------------------------------------+
 | Threading information.                        | Set ``logging.logThreads`` to ``0``.   |
 +-----------------------------------------------+----------------------------------------+
