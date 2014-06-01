@@ -469,10 +469,6 @@ if mswindows:
         __del__ = Close
         __str__ = __repr__
 
-try:
-    MAXFD = os.sysconf("SC_OPEN_MAX")
-except:
-    MAXFD = 256
 
 # This lists holds Popen instances for which the underlying process had not
 # exited at the time its __del__ method got called: those processes are wait()ed
@@ -1333,16 +1329,6 @@ class Popen(object):
             return (p2cread, p2cwrite,
                     c2pread, c2pwrite,
                     errread, errwrite)
-
-
-        def _close_fds(self, fds_to_keep):
-            start_fd = 3
-            for fd in sorted(fds_to_keep):
-                if fd >= start_fd:
-                    os.closerange(start_fd, fd)
-                    start_fd = fd + 1
-            if start_fd <= MAXFD:
-                os.closerange(start_fd, MAXFD)
 
 
         def _execute_child(self, args, executable, preexec_fn, close_fds,
