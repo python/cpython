@@ -1966,7 +1966,7 @@ class POSIXProcessTestCase(BaseTestCase):
                      import subprocess, sys
                      subprocess.Popen([sys.executable, {fd_status!r}] +
                                       [str(x) for x in range({max_fd})],
-                                      close_fds=True)
+                                      close_fds=True).wait()
                      """.format(fd_status=fd_status, max_fd=max_fd_open+1))],
                 stdout=subprocess.PIPE, close_fds=False)
         finally:
