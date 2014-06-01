@@ -1927,6 +1927,9 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertIn(1, remaining_fds, "Subprocess failed")
 
 
+    @unittest.skipIf(sys.platform.startswith("freebsd") and
+                     os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD.")
     def test_close_fds_when_max_fd_is_lowered(self):
         """Confirm that issue21618 is fixed (may fail under valgrind)."""
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
