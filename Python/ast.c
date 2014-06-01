@@ -37,7 +37,7 @@ static expr_ty ast_for_testlist_comp(struct compiling *, const node *);
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
 
 static PyObject *parsenumber(struct compiling *, const char *);
-static PyObject *parsestr(struct compiling *, const char *);
+static PyObject *parsestr(struct compiling *, const node *n, const char *);
 static PyObject *parsestrplus(struct compiling *, const node *n);
 
 #ifndef LINENO
@@ -3444,13 +3444,14 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
  * parsestr parses it, and returns the decoded Python string object.
  */
 static PyObject *
-parsestr(struct compiling *c, const char *s)
+parsestr(struct compiling *c, const node *n, const char *s)
 {
-        size_t len;
+        size_t len, i;
         int quote = Py_CHARMASK(*s);
         int rawmode = 0;
         int need_encoding;
         int unicode = c->c_future_unicode;
+        int bytes = 0;
 
         if (isalpha(quote) || quote == '_') {
                 if (quote == 'u' || quote == 'U') {
@@ -3460,6 +3461,7 @@ parsestr(struct compiling *c, const char *s)
                 if (quote == 'b' || quote == 'B') {
                         quote = *++s;
                         unicode = 0;
+                        bytes = 1;
                 }
                 if (quote == 'r' || quote == 'R') {
                         quote = *++s;
@@ -3488,6 +3490,16 @@ parsestr(struct compiling *c, const char *s)
                         PyErr_BadInternalCall();
                         return NULL;
                 }
+        }
+        if (Py_Py3kWarningFlag && bytes) {
+            for (i = 0; i < len; i++) {
+                if ((unsigned char)s[i] > 127) {
+                    if (!ast_warn(c, n,
+                        "non-ascii bytes literals not supported in 3.x"))
+                        return NULL;
+                    break;
+                }
+            }
         }
 #ifdef Py_USING_UNICODE
         if (unicode || Py_UnicodeFlag) {
@@ -3531,11 +3543,11 @@ parsestrplus(struct compiling *c, const node *n)
         PyObject *v;
         int i;
         REQ(CHILD(n, 0), STRING);
-        if ((v = parsestr(c, STR(CHILD(n, 0)))) != NULL) {
+        if ((v = parsestr(c, n, STR(CHILD(n, 0)))) != NULL) {
                 /* String literal concatenation */
                 for (i = 1; i < NCH(n); i++) {
                         PyObject *s;
-                        s = parsestr(c, STR(CHILD(n, i)));
+                        s = parsestr(c, n, STR(CHILD(n, i)));
                         if (s == NULL)
                                 goto onError;
                         if (PyString_Check(v) && PyString_Check(s)) {
