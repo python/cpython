@@ -18,6 +18,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #21618: The subprocess module could fail to close open fds that were
+  inherited by the calling process and already higher than POSIX resource
+  limits would otherwise allow.  On systems with a functioning /proc/self/fd
+  or /dev/fd interface the max is now ignored and all fds are closed.
+
 - Issue #21552: Fixed possible integer overflow of too long string lengths in
   the tkinter module on 64-bit platforms.
 
