@@ -234,8 +234,8 @@ struct linux_dirent64 {
    char           d_name[256];  /* Filename (null-terminated) */
 };
 
-/* Close all open file descriptors in the range start_fd inclusive to end_fd
- * exclusive. Do not close any in the sorted py_fds_to_keep list.
+/* Close all open file descriptors in the range from start_fd and higher
+ * Do not close any in the sorted py_fds_to_keep list.
  *
  * This version is async signal safe as it does not make any unsafe C library
  * calls, malloc calls or handle any locks.  It is _unfortunate_ to be forced
