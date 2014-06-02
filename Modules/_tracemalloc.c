@@ -478,7 +478,7 @@ tracemalloc_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
     PyMemAllocator *alloc = (PyMemAllocator *)ctx;
     void *ptr;
 
-    assert(nelem <= PY_SIZE_MAX / elsize);
+    assert(elsize == 0 || nelem <= PY_SIZE_MAX / elsize);
 
     if (use_calloc)
         ptr = alloc->calloc(alloc->ctx, nelem, elsize);

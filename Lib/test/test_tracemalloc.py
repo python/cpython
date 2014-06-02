@@ -807,6 +807,12 @@ class TestCommandLine(unittest.TestCase):
                                   b'number of frames',
                                   stderr)
 
+    def test_pymem_alloc0(self):
+        # Issue #21639: Check that PyMem_Malloc(0) with tracemalloc enabled
+        # does not crash.
+        code = 'import _testcapi; _testcapi.test_pymem_alloc0(); 1'
+        assert_python_ok('-X', 'tracemalloc', '-c', code)
+
 
 def test_main():
     support.run_unittest(
