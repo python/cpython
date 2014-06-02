@@ -196,9 +196,8 @@ Optimizations
 
 The following performance enhancements have been added:
 
-* Construction of ``bytes(int)`` and ``bytearray(int)`` (filled by zero bytes)
-  is faster and use less memory (until the bytearray buffer is filled with
-  data) for large objects. ``calloc()`` is used instead of ``malloc()`` to
+* Construction of ``bytes(int)`` (filled by zero bytes) is faster and use less
+  memory for large objects. ``calloc()`` is used instead of ``malloc()`` to
   allocate memory for these objects.
 
 * Some operations on :class:`~ipaddress.IPv4Network` and
