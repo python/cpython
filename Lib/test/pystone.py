@@ -3,7 +3,7 @@
 """
 "PYSTONE" Benchmark Program
 
-Version:        Python/1.1 (corresponds to C/1.1 plus 2 Pystone fixes)
+Version:        Python/1.2 (corresponds to C/1.1 plus 3 Pystone fixes)
 
 Author:         Reinhold P. Weicker,  CACM Vol 27, No 10, 10/84 pg. 1013.
 
@@ -30,13 +30,20 @@ Version History:
                 percent faster than version 1.0, so benchmark figures
                 of different versions can't be compared directly.
 
+                Version 1.2 changes the division to floor division.
+
+                Under Python 3 version 1.1 would use the normal division
+                operator, resulting in some of the operations mistakenly
+                yielding floats. Version 1.2 instead uses floor division
+                making the benchmark a integer benchmark again.
+
 """
 
 LOOPS = 50000
 
 from time import clock
 
-__version__ = "1.1"
+__version__ = "1.2"
 
 [Ident1, Ident2, Ident3, Ident4, Ident5] = range(1, 6)
 
@@ -123,7 +130,7 @@ def Proc0(loops=LOOPS):
                 EnumLoc = Proc6(Ident1)
             CharIndex = chr(ord(CharIndex)+1)
         IntLoc3 = IntLoc2 * IntLoc1
-        IntLoc2 = IntLoc3 / IntLoc1
+        IntLoc2 = IntLoc3 // IntLoc1
         IntLoc2 = 7 * (IntLoc3 - IntLoc2) - IntLoc1
         IntLoc1 = Proc2(IntLoc1)
 
