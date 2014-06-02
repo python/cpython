@@ -100,7 +100,5 @@ class History:
         self.prefix = None
 
 if __name__ == "__main__":
-    from test import support
-    support.use_resources = ['gui']
     from unittest import main
     main('idlelib.idle_test.test_idlehistory', verbosity=2, exit=False)

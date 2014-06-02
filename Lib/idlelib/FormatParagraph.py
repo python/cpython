@@ -188,7 +188,6 @@ def get_comment_header(line):
     return m.group(1)
 
 if __name__ == "__main__":
-    from test import support; support.use_resources = ['gui']
     import unittest
     unittest.main('idlelib.idle_test.test_formatparagraph',
             verbosity=2, exit=False)
