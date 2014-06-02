@@ -46,6 +46,9 @@ Library
 Tests
 -----
 
+- Issue #18492: All resources are now allowed when tests are not run by
+  regrtest.py.
+
 - Issue #21605: Added tests for Tkinter images.
 
 - Issue #21493: Added test for ntpath.expanduser().  Original patch by
