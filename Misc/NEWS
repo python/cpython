@@ -58,6 +58,11 @@ Library
 - Issue #21538: The plistlib module now supports loading of binary plist files
   when reference or offset size is not a power of two.
 
+Build
+-----
+
+- Issue #17095: Fix Modules/Setup *shared* support.
+
 Tests
 -----
 
