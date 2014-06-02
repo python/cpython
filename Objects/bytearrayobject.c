@@ -813,21 +813,9 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     }
     else {
         if (count > 0) {
-            void *sval;
-            Py_ssize_t alloc;
-
-            assert (Py_SIZE(self) == 0);
-
-            alloc = count + 1;
-            sval = PyObject_Calloc(1, alloc);
-            if (sval == NULL)
+            if (PyByteArray_Resize((PyObject *)self, count))
                 return -1;
-
-            PyObject_Free(self->ob_bytes);
-
-            self->ob_bytes = self->ob_start = sval;
-            Py_SIZE(self) = count;
-            self->ob_alloc = alloc;
+            memset(PyByteArray_AS_STRING(self), 0, count);
         }
         return 0;
     }
