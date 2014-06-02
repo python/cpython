@@ -5556,7 +5556,7 @@ else:
     all_tests.insert(1, SignatureTest)
 
 
-def test_main(arith=False, verbose=None, todo_tests=None, debug=None):
+def test_main(arith=None, verbose=None, todo_tests=None, debug=None):
     """ Execute the tests.
 
     Runs all arithmetic tests if arith is True or if the "decimal" resource
@@ -5566,7 +5566,7 @@ def test_main(arith=False, verbose=None, todo_tests=None, debug=None):
     init(C)
     init(P)
     global TEST_ALL, DEBUG
-    TEST_ALL = arith or is_resource_enabled('decimal')
+    TEST_ALL = arith if arith is not None else is_resource_enabled('decimal')
     DEBUG = debug
 
     if todo_tests is None:
