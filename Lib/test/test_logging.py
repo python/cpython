@@ -865,9 +865,6 @@ if threading:
             super(TestTCPServer, self).server_bind()
             self.port = self.socket.getsockname()[1]
 
-    class TestUnixStreamServer(TestTCPServer):
-        address_family = socket.AF_UNIX
-
     class TestUDPServer(ControlMixin, ThreadingUDPServer):
         """
         A UDP server which is controllable using :class:`ControlMixin`.
@@ -915,8 +912,12 @@ if threading:
             super(TestUDPServer, self).server_close()
             self._closed = True
 
-    class TestUnixDatagramServer(TestUDPServer):
-        address_family = socket.AF_UNIX
+    if hasattr(socket, "AF_UNIX"):
+        class TestUnixStreamServer(TestTCPServer):
+            address_family = socket.AF_UNIX
+
+        class TestUnixDatagramServer(TestUDPServer):
+            address_family = socket.AF_UNIX
 
 # - end of server_helper section
 
@@ -1457,12 +1458,13 @@ def _get_temp_domain_socket():
     os.remove(fn)
     return fn
 
+@unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class UnixSocketHandlerTest(SocketHandlerTest):
 
     """Test for SocketHandler with unix sockets."""
 
-    if threading:
+    if threading and hasattr(socket, "AF_UNIX"):
         server_class = TestUnixStreamServer
 
     def setUp(self):
@@ -1528,13 +1530,13 @@ class DatagramHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, "spam\neggs\n")
 
-
+@unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     """Test for DatagramHandler using Unix sockets."""
 
-    if threading:
+    if threading and hasattr(socket, "AF_UNIX"):
         server_class = TestUnixDatagramServer
 
     def setUp(self):
@@ -1603,13 +1605,13 @@ class SysLogHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
-
+@unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     """Test for SysLogHandler with Unix sockets."""
 
-    if threading:
+    if threading and hasattr(socket, "AF_UNIX"):
         server_class = TestUnixDatagramServer
 
     def setUp(self):
