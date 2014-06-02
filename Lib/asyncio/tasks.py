@@ -269,9 +269,9 @@ class Task(futures.Future):
                 print(line, file=file, end='')
 
     def cancel(self):
-        """Request that a task to cancel itself.
+        """Request this task to cancel itself.
 
-        This arranges for a CancellationError to be thrown into the
+        This arranges for a CancelledError to be thrown into the
         wrapped coroutine on the next cycle through the event loop.
         The coroutine then has a chance to clean up or even deny
         the request using try/except/finally.
