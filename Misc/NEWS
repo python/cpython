@@ -46,7 +46,7 @@ Library
 - Issue #14710: pkgutil.find_loader() no longer raises an exception when a
   module doesn't exist.
 
-- Issue #21481:  Argparse equality and inequality tests now return 
+- Issue #21481:  Argparse equality and inequality tests now return
   NotImplemented when comparing to an unknown type.
 
 - Issue #8743: Fix interoperability between set objects and the
@@ -65,6 +65,10 @@ Build
 
 Tests
 -----
+
+- Issue #21634: Fix pystone micro-benchmark: use floor division instead of true
+  division to benchmark integers instead of floating point numbers. Set pystone
+  version to 1.2. Patch written by Lennart Regebro.
 
 - Issue #21605: Added tests for Tkinter images.
 
