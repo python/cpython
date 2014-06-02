@@ -460,10 +460,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
 
     def test_bbox(self):
-        self.assertEqual(len(self.entry.bbox(0)), 4)
-        for item in self.entry.bbox(0):
-            self.assertIsInstance(item, int)
-
+        self.assertIsBoundingBox(self.entry.bbox(0))
         self.assertRaises(tkinter.TclError, self.entry.bbox, 'noindex')
         self.assertRaises(tkinter.TclError, self.entry.bbox, None)
 
@@ -1216,12 +1213,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertTrue(children)
 
         bbox = self.tv.bbox(children[0])
-        self.assertEqual(len(bbox), 4)
-        self.assertIsInstance(bbox, tuple)
-        for item in bbox:
-            if not isinstance(item, int):
-                self.fail("Invalid bounding box: %s" % bbox)
-                break
+        self.assertIsBoundingBox(bbox)
 
         # compare width in bboxes
         self.tv['columns'] = ['test']
