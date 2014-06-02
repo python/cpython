@@ -291,5 +291,4 @@ def load_tests(loader, suite, pattern):
     return suite
 
 if __name__=='__main__':
-    support.use_resources = ['network']
     unittest.main()
