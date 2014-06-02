@@ -397,7 +397,7 @@ def merge(*iterables, key=None, reverse=False):
         except StopIteration:
             _heappop(h)
     if h:
-        key_value, order, value,  next = h[0]
+        key_value, order, value, next = h[0]
         yield value
         yield from next.__self__
 
@@ -413,7 +413,7 @@ def merge(*iterables, key=None, reverse=False):
 #                                   number of comparisons
 #    n inputs     k-extreme values  (average of 5 trials)   % more than min()
 # -------------   ----------------  ---------------------   -----------------
-#      1,000           100                  3,317               133.2%
+#      1,000           100                  3,317               233.2%
 #     10,000           100                 14,046                40.5%
 #    100,000           100                105,749                 5.7%
 #  1,000,000           100              1,007,751                 0.8%
@@ -496,6 +496,8 @@ def nsmallest(n, iterable, key=None):
     # When key is none, use simpler decoration
     if key is None:
         it = iter(iterable)
+        # put the range(n) first so that zip() doesn't
+        # consume one too many elements from the iterator
         result = [(elem, i) for i, elem in zip(range(n), it)]
         if not result:
             return result
@@ -594,4 +596,4 @@ def nlargest(n, iterable, key=None):
 if __name__ == "__main__":
 
     import doctest
-    doctest.testmod()
+    print(doctest.testmod())
