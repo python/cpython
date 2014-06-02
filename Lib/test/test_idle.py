@@ -13,8 +13,4 @@ idletest = import_module('idlelib.idle_test')
 load_tests = idletest.load_tests
 
 if __name__ == '__main__':
-    # Until unittest supports resources, we emulate regrtest's -ugui
-    # so loaded tests run the same as if textually present here.
-    # If any Idle test ever needs another resource, add it to the list.
-    support.use_resources = ['gui']  # use_resources is initially None
     unittest.main(verbosity=2, exit=False)

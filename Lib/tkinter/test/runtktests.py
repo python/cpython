@@ -68,5 +68,4 @@ def get_tests(text=True, gui=True, packages=None):
                 yield test
 
 if __name__ == "__main__":
-    test.support.use_resources = ['gui']
     test.support.run_unittest(*get_tests())

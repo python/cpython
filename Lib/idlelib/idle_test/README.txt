@@ -26,7 +26,6 @@ Once test_xyy is written, the following should go at the end of xyy.py,
 with xyz (lowercased) added after 'test_'.
 ---
 if __name__ == "__main__":
-    from test import support; support.use_resources = ['gui']
     import unittest
     unittest.main('idlelib.idle_test.test_', verbosity=2, exit=False)
 ---
@@ -34,12 +33,12 @@ if __name__ == "__main__":
 
 2. Gui Tests
 
-Gui tests need 'requires' and 'use_resources' from test.support
-(test.test_support in 2.7). A test is a gui test if it creates a Tk root or
-master object either directly or indirectly by instantiating a tkinter or
-idle class. For the benefit of buildbot machines that do not have a graphics
-screen, gui tests must be 'guarded' by "requires('gui')" in a setUp
-function or method. This will typically be setUpClass.
+Gui tests need 'requires' from test.support (test.test_support in 2.7). A
+test is a gui test if it creates a Tk root or master object either directly
+or indirectly by instantiating a tkinter or idle class. For the benefit of
+test processes that either have no graphical environment available or are not
+allowed to use it, gui tests must be 'guarded' by "requires('gui')" in a
+setUp function or method. This will typically be setUpClass.
 
 To avoid interfering with other gui tests, all gui objects must be destroyed
 and deleted by the end of the test.  If a widget, such as a Tk root, is created
@@ -57,11 +56,17 @@ and class attributes, also delete the widget.
         del cls.root
 ---
 
-Support.requires('gui') returns true if it is either called in a main module
-(which never happens on buildbots) or if use_resources contains 'gui'.
-Use_resources is set by test.regrtest but not by unittest. So when running
-tests in another module with unittest, we set it ourselves, as in the xyz.py
-template above.
+Support.requires('gui') causes the test(s) it guards to be skipped if any of
+a few conditions are met:
+ - The tests are being run by regrtest.py, and it was started without
+   enabling the "gui" resource with the "-u" command line option.
+ - The tests are being run on Windows by a service that is not allowed to
+   interact with the graphical environment.
+ - The tests are being run on Mac OSX in a process that cannot make a window
+   manager connection.
+ - tkinter.Tk cannot be successfully instantiated for some reason.
+ - test.support.use_resources has been set by something other than
+   regrtest.py and does not contain "gui".
 
 Since non-gui tests always run, but gui tests only sometimes, tests of non-gui
 operations should best avoid needing a gui. Methods that make incidental use of
@@ -88,8 +93,8 @@ python -m idlelib.idle_test.test_xyz
 
 To run all idle_test/test_*.py tests, either interactively
 ('>>>', with unittest imported) or from a command line, use one of the
-following. (Notes: unittest does not run gui tests; in 2.7, 'test ' (with the
-space) is 'test.regrtest '; where present, -v and -ugui can be omitted.)
+following. (Notes: in 2.7, 'test ' (with the space) is 'test.regrtest ';
+where present, -v and -ugui can be omitted.)
 
 >>> unittest.main('idlelib.idle_test', verbosity=2, exit=False)
 python -m unittest -v idlelib.idle_test
@@ -98,13 +103,13 @@ python -m test.test_idle
 
 The idle tests are 'discovered' by idlelib.idle_test.__init__.load_tests,
 which is also imported into test.test_idle. Normally, neither file should be
-changed when working on individual test modules. The third command runs runs
+changed when working on individual test modules. The third command runs
 unittest indirectly through regrtest. The same happens when the entire test
 suite is run with 'python -m test'. So that command must work for buildbots
 to stay green. Idle tests must not disturb the environment in a way that
 makes other tests fail (issue 18081).
 
 To run an individual Testcase or test method, extend the dotted name given to
-unittest on the command line. (But gui tests will not this way.)
+unittest on the command line.
 
 python -m unittest -v idlelib.idle_test.test_xyz.Test_case.test_meth
