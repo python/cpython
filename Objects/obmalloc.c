@@ -151,7 +151,7 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 typedef struct {
     /* We tag each block with an API ID in order to tag API violations */
     char api_id;
-    PyMemAllocator alloc;
+    PyMemAllocatorEx alloc;
 } debug_alloc_api_t;
 static struct {
     debug_alloc_api_t raw;
@@ -166,7 +166,7 @@ static struct {
 #define PYDBG_FUNCS _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
 #endif
 
-static PyMemAllocator _PyMem_Raw = {
+static PyMemAllocatorEx _PyMem_Raw = {
 #ifdef PYMALLOC_DEBUG
     &_PyMem_Debug.raw, PYDBG_FUNCS
 #else
@@ -174,7 +174,7 @@ static PyMemAllocator _PyMem_Raw = {
 #endif
     };
 
-static PyMemAllocator _PyMem = {
+static PyMemAllocatorEx _PyMem = {
 #ifdef PYMALLOC_DEBUG
     &_PyMem_Debug.mem, PYDBG_FUNCS
 #else
@@ -182,7 +182,7 @@ static PyMemAllocator _PyMem = {
 #endif
     };
 
-static PyMemAllocator _PyObject = {
+static PyMemAllocatorEx _PyObject = {
 #ifdef PYMALLOC_DEBUG
     &_PyMem_Debug.obj, PYDBG_FUNCS
 #else
@@ -209,7 +209,7 @@ void
 PyMem_SetupDebugHooks(void)
 {
 #ifdef PYMALLOC_DEBUG
-    PyMemAllocator alloc;
+    PyMemAllocatorEx alloc;
 
     alloc.malloc = _PyMem_DebugMalloc;
     alloc.calloc = _PyMem_DebugCalloc;
@@ -237,7 +237,7 @@ PyMem_SetupDebugHooks(void)
 }
 
 void
-PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocator *allocator)
+PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {
@@ -255,7 +255,7 @@ PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocator *allocator)
 }
 
 void
-PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocator *allocator)
+PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {

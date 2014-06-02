@@ -2756,7 +2756,7 @@ test_pymem_alloc0(PyObject *self)
 }
 
 typedef struct {
-    PyMemAllocator alloc;
+    PyMemAllocatorEx alloc;
 
     size_t malloc_size;
     size_t calloc_nelem;
@@ -2802,7 +2802,7 @@ test_setallocators(PyMemAllocatorDomain domain)
     PyObject *res = NULL;
     const char *error_msg;
     alloc_hook_t hook;
-    PyMemAllocator alloc;
+    PyMemAllocatorEx alloc;
     size_t size, size2, nelem, elsize;
     void *ptr, *ptr2;
 
