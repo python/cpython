@@ -221,6 +221,16 @@ class AbstractWidgetTest(object):
     def checkVariableParam(self, widget, name, var):
         self.checkParam(widget, name, var, conv=str)
 
+    def assertIsBoundingBox(self, bbox):
+        self.assertIsNotNone(bbox)
+        self.assertIsInstance(bbox, tuple)
+        if len(bbox) != 4:
+            self.fail('Invalid bounding box: %r' % (bbox,))
+        for item in bbox:
+            if not isinstance(item, int):
+                self.fail('Invalid bounding box: %r' % (bbox,))
+                break
+
 
 class StandardOptionsTests(object):
     STANDARD_OPTIONS = (

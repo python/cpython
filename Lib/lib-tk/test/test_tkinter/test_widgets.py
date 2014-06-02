@@ -464,11 +464,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
     def test_bbox(self):
         widget = self.create()
-        bbox = widget.bbox(0)
-        self.assertEqual(len(bbox), 4)
-        for item in bbox:
-            self.assertIsInstance(item, int)
-
+        self.assertIsBoundingBox(widget.bbox(0))
         self.assertRaises(Tkinter.TclError, widget.bbox, 'noindex')
         self.assertRaises(Tkinter.TclError, widget.bbox, None)
         self.assertRaises(TypeError, widget.bbox)
@@ -621,11 +617,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_bbox(self):
         widget = self.create()
-        bbox = widget.bbox('1.1')
-        self.assertEqual(len(bbox), 4)
-        for item in bbox:
-            self.assertIsInstance(item, int)
-
+        self.assertIsBoundingBox(widget.bbox('1.1'))
         self.assertIsNone(widget.bbox('end'))
         self.assertRaises(Tkinter.TclError, widget.bbox, 'noindex')
         self.assertRaises(Tkinter.TclError, widget.bbox, None)
@@ -781,6 +773,46 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_itemconfigure_selectforeground(self):
         self.check_itemconfigure('selectforeground', '#654321')
+
+    def test_box(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        lb.pack()
+        self.assertIsBoundingBox(lb.bbox(0))
+        self.assertIsNone(lb.bbox(-1))
+        self.assertIsNone(lb.bbox(10))
+        self.assertRaises(TclError, lb.bbox, 'noindex')
+        self.assertRaises(TclError, lb.bbox, None)
+        self.assertRaises(TypeError, lb.bbox)
+        self.assertRaises(TypeError, lb.bbox, 0, 1)
+
+    def test_curselection(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        lb.selection_clear(0, Tkinter.END)
+        lb.selection_set(2, 4)
+        lb.selection_set(6)
+        self.assertEqual(lb.curselection(), (2, 3, 4, 6))
+        self.assertRaises(TypeError, lb.curselection, 0)
+
+    def test_get(self):
+        lb = self.create()
+        lb.insert(0, *('el%d' % i for i in range(8)))
+        self.assertEqual(lb.get(0), 'el0')
+        self.assertEqual(lb.get(3), 'el3')
+        self.assertEqual(lb.get('end'), 'el7')
+        self.assertEqual(lb.get(8), '')
+        self.assertEqual(lb.get(-1), '')
+        self.assertEqual(lb.get(3, 5), ('el3', 'el4', 'el5'))
+        self.assertEqual(lb.get(5, 'end'), ('el5', 'el6', 'el7'))
+        self.assertEqual(lb.get(5, 0), ())
+        self.assertEqual(lb.get(0, 0), ('el0',))
+        self.assertRaises(TclError, lb.get, 'noindex')
+        self.assertRaises(TclError, lb.get, None)
+        self.assertRaises(TypeError, lb.get)
+        self.assertRaises(TclError, lb.get, 'end', 'noindex')
+        self.assertRaises(TypeError, lb.get, 1, 2, 3)
+        self.assertRaises(TclError, lb.get, 2.4)
 
 
 @add_standard_options(PixelSizeTests, StandardOptionsTests)
