@@ -128,7 +128,7 @@ typedef enum {
 } PyMemAllocatorDomain;
 
 typedef struct {
-    /* user context passed as the first argument to the 3 functions */
+    /* user context passed as the first argument to the 4 functions */
     void *ctx;
 
     /* allocate a memory block */
@@ -142,11 +142,11 @@ typedef struct {
 
     /* release a memory block */
     void (*free) (void *ctx, void *ptr);
-} PyMemAllocator;
+} PyMemAllocatorEx;
 
 /* Get the memory block allocator of the specified domain. */
 PyAPI_FUNC(void) PyMem_GetAllocator(PyMemAllocatorDomain domain,
-                                    PyMemAllocator *allocator);
+                                    PyMemAllocatorEx *allocator);
 
 /* Set the memory block allocator of the specified domain.
 
@@ -160,7 +160,7 @@ PyAPI_FUNC(void) PyMem_GetAllocator(PyMemAllocatorDomain domain,
    PyMem_SetupDebugHooks() function must be called to reinstall the debug hooks
    on top on the new allocator. */
 PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
-                                    PyMemAllocator *allocator);
+                                    PyMemAllocatorEx *allocator);
 
 /* Setup hooks to detect bugs in the following Python memory allocator
    functions:

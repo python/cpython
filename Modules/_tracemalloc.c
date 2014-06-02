@@ -18,9 +18,9 @@ static void raw_free(void *ptr);
 
 /* Protected by the GIL */
 static struct {
-    PyMemAllocator mem;
-    PyMemAllocator raw;
-    PyMemAllocator obj;
+    PyMemAllocatorEx mem;
+    PyMemAllocatorEx raw;
+    PyMemAllocatorEx obj;
 } allocators;
 
 static struct {
@@ -475,7 +475,7 @@ tracemalloc_remove_trace(void *ptr)
 static void*
 tracemalloc_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 {
-    PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
     void *ptr;
 
     assert(elsize == 0 || nelem <= PY_SIZE_MAX / elsize);
@@ -501,7 +501,7 @@ tracemalloc_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 static void*
 tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 {
-    PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
     void *ptr2;
 
     ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
@@ -546,7 +546,7 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 static void
 tracemalloc_free(void *ctx, void *ptr)
 {
-    PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
 
     if (ptr == NULL)
         return;
@@ -567,7 +567,7 @@ tracemalloc_alloc_gil(int use_calloc, void *ctx, size_t nelem, size_t elsize)
     void *ptr;
 
     if (get_reentrant()) {
-        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+        PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
         if (use_calloc)
             return alloc->calloc(alloc->ctx, nelem, elsize);
         else
@@ -607,7 +607,7 @@ tracemalloc_realloc_gil(void *ctx, void *ptr, size_t new_size)
            Example: PyMem_RawRealloc() is called internally by pymalloc
            (_PyObject_Malloc() and  _PyObject_Realloc()) to allocate a new
            arena (new_arena()). */
-        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+        PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
 
         ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
         if (ptr2 != NULL && ptr != NULL) {
@@ -639,7 +639,7 @@ tracemalloc_raw_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
     void *ptr;
 
     if (get_reentrant()) {
-        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+        PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
         if (use_calloc)
             return alloc->calloc(alloc->ctx, nelem, elsize);
         else
@@ -685,7 +685,7 @@ tracemalloc_raw_realloc(void *ctx, void *ptr, size_t new_size)
 
     if (get_reentrant()) {
         /* Reentrant call to PyMem_RawRealloc(). */
-        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+        PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
 
         ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
 
@@ -863,7 +863,7 @@ tracemalloc_deinit(void)
 static int
 tracemalloc_start(int max_nframe)
 {
-    PyMemAllocator alloc;
+    PyMemAllocatorEx alloc;
     size_t size;
 
     if (tracemalloc_init() < 0)

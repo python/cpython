@@ -232,7 +232,7 @@ Customize Memory Allocators
 
 .. versionadded:: 3.4
 
-.. c:type:: PyMemAllocator
+.. c:type:: PyMemAllocatorEx
 
    Structure used to describe a memory block allocator. The structure has
    four fields:
@@ -253,7 +253,9 @@ Customize Memory Allocators
    +----------------------------------------------------------+---------------------------------------+
 
    .. versionchanged:: 3.5
-      Add a new field ``calloc``.
+      The :c:type:`PyMemAllocator` structure was renamed to
+      :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
+
 
 .. c:type:: PyMemAllocatorDomain
 
@@ -267,12 +269,12 @@ Customize Memory Allocators
      :c:func:`PyObject_Realloc` and :c:func:`PyObject_Free`
 
 
-.. c:function:: void PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocator *allocator)
+.. c:function:: void PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 
    Get the memory block allocator of the specified domain.
 
 
-.. c:function:: void PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocator *allocator)
+.. c:function:: void PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 
    Set the memory block allocator of the specified domain.
 
