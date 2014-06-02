@@ -229,6 +229,5 @@ def get_line_col(index):
     return line, col
 
 if __name__ == "__main__":
-    from test import support; support.use_resources = ['gui']
     import unittest
     unittest.main('idlelib.idle_test.test_searchengine', verbosity=2, exit=False)
