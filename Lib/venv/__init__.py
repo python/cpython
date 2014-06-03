@@ -30,7 +30,6 @@ optional arguments:
 import logging
 import os
 import shutil
-import struct
 import subprocess
 import sys
 import types
@@ -140,11 +139,12 @@ class EnvBuilder:
         create_if_needed(path)
         create_if_needed(libpath)
         # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
-        if ((struct.calcsize('P') == 8) and (os.name == 'posix') and
+        if ((sys.maxsize > 2**32) and (os.name == 'posix') and
             (sys.platform != 'darwin')):
             p = os.path.join(env_dir, 'lib')
             link_path = os.path.join(env_dir, 'lib64')
-            os.symlink(p, link_path)
+            if not os.path.exists(link_path):   # Issue #21643
+                os.symlink(p, link_path)
         context.bin_path = binpath = os.path.join(env_dir, binname)
         context.bin_name = binname
         context.env_exe = os.path.join(binpath, exename)
