@@ -51,6 +51,15 @@ class WinsocketpairTests(unittest.TestCase):
         self.assertRaises(ValueError,
                           windows_utils.socketpair, proto=1)
 
+    @mock.patch('asyncio.windows_utils.socket')
+    def test_winsocketpair_close(self, m_socket):
+        m_socket.AF_INET = socket.AF_INET
+        m_socket.SOCK_STREAM = socket.SOCK_STREAM
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+        sock.bind.side_effect = OSError
+        self.assertRaises(OSError, windows_utils.socketpair)
+        self.assertTrue(sock.close.called)
 
 
 class PipeTests(unittest.TestCase):
