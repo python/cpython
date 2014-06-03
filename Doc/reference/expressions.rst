@@ -522,7 +522,7 @@ An attribute reference is a primary followed by a period and a name:
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
 attribute whose name is the identifier.  This production can be customized by
-overriding the :meth:`__getattr__` method).  If this attribute is not available,
+overriding the :meth:`__getattr__` method.  If this attribute is not available,
 the exception :exc:`AttributeError` is raised.  Otherwise, the type and value of
 the object produced is determined by the object.  Multiple evaluations of the
 same attribute reference may yield different objects.
@@ -1245,7 +1245,7 @@ Lambdas
    lambda_expr: "lambda" [`parameter_list`]: `expression`
    lambda_expr_nocond: "lambda" [`parameter_list`]: `expression_nocond`
 
-Lambda expressions (sometimes called lambda forms) are create anonymous
+Lambda expressions (sometimes called lambda forms) are used to create anonymous
 functions. The expression ``lambda arguments: expression`` yields a function
 object.  The unnamed object behaves like a function object defined with ::
 
