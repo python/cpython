@@ -1989,8 +1989,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    If no positional argument is given, an empty dictionary is created.
    If a positional argument is given and it is a mapping object, a dictionary
    is created with the same key-value pairs as the mapping object.  Otherwise,
-   the positional argument must be an :term:`iterator` object.  Each item in
-   the iterable must itself be an iterator with exactly two objects.  The
+   the positional argument must be an :term:`iterable` object.  Each item in
+   the iterable must itself be an iterable with exactly two objects.  The
    first object of each item becomes a key in the new dictionary, and the
    second object the corresponding value.  If a key occurs more than once, the
    last value for that key becomes the corresponding value in the new
