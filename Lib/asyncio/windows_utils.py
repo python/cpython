@@ -51,23 +51,25 @@ def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
     # We create a connected TCP socket. Note the trick with setblocking(0)
     # that prevents us from having to create a thread.
     lsock = socket.socket(family, type, proto)
-    lsock.bind((host, 0))
-    lsock.listen(1)
-    # On IPv6, ignore flow_info and scope_id
-    addr, port = lsock.getsockname()[:2]
-    csock = socket.socket(family, type, proto)
-    csock.setblocking(False)
     try:
-        csock.connect((addr, port))
-    except (BlockingIOError, InterruptedError):
-        pass
-    except Exception:
+        lsock.bind((host, 0))
+        lsock.listen(1)
+        # On IPv6, ignore flow_info and scope_id
+        addr, port = lsock.getsockname()[:2]
+        csock = socket.socket(family, type, proto)
+        try:
+            csock.setblocking(False)
+            try:
+                csock.connect((addr, port))
+            except (BlockingIOError, InterruptedError):
+                pass
+            ssock, _ = lsock.accept()
+            csock.setblocking(True)
+        except:
+            csock.close()
+            raise
+    finally:
         lsock.close()
-        csock.close()
-        raise
-    ssock, _ = lsock.accept()
-    csock.setblocking(True)
-    lsock.close()
     return (ssock, csock)
 
 
