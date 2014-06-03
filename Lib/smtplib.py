@@ -377,6 +377,7 @@ class SMTP:
             if self.debuglevel > 0:
                 print('reply:', repr(line), file=stderr)
             if len(line) > _MAXLINE:
+                self.close()
                 raise SMTPResponseException(500, "Line too long.")
             resp.append(line[4:].strip(b' \t\r\n'))
             code = line[:3]
