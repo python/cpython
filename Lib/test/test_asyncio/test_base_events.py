@@ -583,6 +583,27 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'Multiple exceptions: err1, err2')
 
+    @mock.patch('asyncio.base_events.socket')
+    def test_create_connection_timeout(self, m_socket):
+        # Ensure that the socket is closed on timeout
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+
+        def getaddrinfo(*args, **kw):
+            fut = asyncio.Future(loop=self.loop)
+            addr = (socket.AF_INET, socket.SOCK_STREAM, 0, '',
+                    ('127.0.0.1', 80))
+            fut.set_result([addr])
+            return fut
+        self.loop.getaddrinfo = getaddrinfo
+
+        with mock.patch.object(self.loop, 'sock_connect',
+                               side_effect=asyncio.TimeoutError):
+            coro = self.loop.create_connection(MyProto, '127.0.0.1', 80)
+            with self.assertRaises(asyncio.TimeoutError) as cm:
+                self.loop.run_until_complete(coro)
+            self.assertTrue(sock.close.called)
+
     def test_create_connection_host_port_sock(self):
         coro = self.loop.create_connection(
             MyProto, 'example.com', 80, sock=object())
