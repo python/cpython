@@ -256,6 +256,24 @@ class SelectorEventLoopUnixSocketTests(unittest.TestCase):
                                         'A UNIX Domain Socket was expected'):
                 self.loop.run_until_complete(coro)
 
+    @mock.patch('asyncio.unix_events.socket')
+    def test_create_unix_server_bind_error(self, m_socket):
+        # Ensure that the socket is closed on any bind error
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+
+        sock.bind.side_effect = OSError
+        coro = self.loop.create_unix_server(lambda: None, path="/test")
+        with self.assertRaises(OSError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+        sock.bind.side_effect = MemoryError
+        coro = self.loop.create_unix_server(lambda: None, path="/test")
+        with self.assertRaises(MemoryError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
     def test_create_unix_connection_path_sock(self):
         coro = self.loop.create_unix_connection(
             lambda: None, '/dev/null', sock=object())
