@@ -180,7 +180,7 @@ those made in the suite of the for-loop::
    for i in range(10):
        print(i)
        i = 5             # this will not affect the for-loop
-                         # be i will be overwritten with the next
+                         # because i will be overwritten with the next
                          # index in the range
 
 
