@@ -600,7 +600,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         with mock.patch.object(self.loop, 'sock_connect',
                                side_effect=asyncio.TimeoutError):
             coro = self.loop.create_connection(MyProto, '127.0.0.1', 80)
-            with self.assertRaises(asyncio.TimeoutError) as cm:
+            with self.assertRaises(asyncio.TimeoutError):
                 self.loop.run_until_complete(coro)
             self.assertTrue(sock.close.called)
 
