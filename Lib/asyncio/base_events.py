@@ -412,6 +412,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if sock is not None:
                         sock.close()
                     exceptions.append(exc)
+                except:
+                    if sock is not None:
+                        sock.close()
+                    raise
                 else:
                     break
             else:
@@ -512,6 +516,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if sock is not None:
                     sock.close()
                 exceptions.append(exc)
+            except:
+                if sock is not None:
+                    sock.close()
+                raise
             else:
                 break
         else:
