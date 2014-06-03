@@ -288,10 +288,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 
 #include <stddef.h>
 
-#ifndef offsetof
-# define offsetof(type, member) ((size_t)(&((type *)0)->member))
-#endif
-
 #ifndef O_NONBLOCK
 # define O_NONBLOCK O_NDELAY
 #endif
