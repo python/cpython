@@ -164,6 +164,8 @@ class PopenTests(unittest.TestCase):
         self.assertTrue(msg.upper().rstrip().startswith(out))
         self.assertTrue(b"stderr".startswith(err))
 
+        p.wait()
+
 
 if __name__ == '__main__':
     unittest.main()
