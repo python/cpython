@@ -55,11 +55,13 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return _SelectorDatagramTransport(self, sock, protocol, address, extra)
 
     def close(self):
+        if self.is_closed():
+            return
+        self._close_self_pipe()
         if self._selector is not None:
-            self._close_self_pipe()
             self._selector.close()
             self._selector = None
-            super().close()
+        super().close()
 
     def _socketpair(self):
         raise NotImplementedError
@@ -143,8 +145,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
-        if self._selector is None:
-            raise RuntimeError('Event loop is closed')
+        self._check_closed()
         handle = events.Handle(callback, args, self)
         try:
             key = self._selector.get_key(fd)
@@ -160,7 +161,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def remove_reader(self, fd):
         """Remove a reader callback."""
-        if self._selector is None:
+        if self.is_closed():
             return False
         try:
             key = self._selector.get_key(fd)
@@ -182,8 +183,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def add_writer(self, fd, callback, *args):
         """Add a writer callback.."""
-        if self._selector is None:
-            raise RuntimeError('Event loop is closed')
+        self._check_closed()
         handle = events.Handle(callback, args, self)
         try:
             key = self._selector.get_key(fd)
@@ -199,7 +199,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def remove_writer(self, fd):
         """Remove a writer callback."""
-        if self._selector is None:
+        if self.is_closed():
             return False
         try:
             key = self._selector.get_key(fd)
