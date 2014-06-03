@@ -203,17 +203,22 @@ class BasicTest(BaseTest):
         """
         Test upgrading an existing environment directory.
         """
-        builder = venv.EnvBuilder(upgrade=True)
-        self.run_with_capture(builder.create, self.env_dir)
-        self.isdir(self.bindir)
-        self.isdir(self.include)
-        self.isdir(*self.lib)
-        fn = self.get_env_file(self.bindir, self.exe)
-        if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
-            bd = self.get_env_file(self.bindir)
-            print('Contents of %r:' % bd)
-            print('    %r' % os.listdir(bd))
-        self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
+        # See Issue #21643: the loop needs to run twice to ensure
+        # that everything works on the upgrade (the first run just creates
+        # the venv).
+        for upgrade in (False, True):
+            builder = venv.EnvBuilder(upgrade=upgrade)
+            self.run_with_capture(builder.create, self.env_dir)
+            self.isdir(self.bindir)
+            self.isdir(self.include)
+            self.isdir(*self.lib)
+            fn = self.get_env_file(self.bindir, self.exe)
+            if not os.path.exists(fn):
+                # diagnostics for Windows buildbot failures
+                bd = self.get_env_file(self.bindir)
+                print('Contents of %r:' % bd)
+                print('    %r' % os.listdir(bd))
+            self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
     def test_isolation(self):
         """
