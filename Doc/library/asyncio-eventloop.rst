@@ -119,6 +119,12 @@ Run an event loop
    Callback scheduled after :meth:`stop` is called won't.  However, those
    callbacks will run if :meth:`run_forever` is called again later.
 
+.. method:: BaseEventLoop.is_closed()
+
+   Returns ``True`` if the event loop was closed.
+
+   .. versionadded:: 3.5
+
 .. method:: BaseEventLoop.close()
 
    Close the event loop. The loop should not be running.

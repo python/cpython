@@ -353,13 +353,14 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                                            sock, protocol, waiter, extra)
 
     def close(self):
-        if self._proactor is not None:
-            self._close_self_pipe()
-            self._proactor.close()
-            self._proactor = None
-            self._selector = None
-            super().close()
-        self._accept_futures.clear()
+        if self.is_closed():
+            return
+        self._stop_accept_futures()
+        self._close_self_pipe()
+        self._proactor.close()
+        self._proactor = None
+        self._selector = None
+        super().close()
 
     def sock_recv(self, sock, n):
         return self._proactor.recv(sock, n)
@@ -428,6 +429,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     self._make_socket_transport(
                         conn, protocol,
                         extra={'peername': addr}, server=server)
+                if self.is_closed():
+                    return
                 f = self._proactor.accept(sock)
             except OSError as exc:
                 if sock.fileno() != -1:
@@ -448,8 +451,12 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def _process_events(self, event_list):
         pass    # XXX hard work currently done in poll
 
-    def _stop_serving(self, sock):
+    def _stop_accept_futures(self):
         for future in self._accept_futures.values():
             future.cancel()
+        self._accept_futures.clear()
+
+    def _stop_serving(self, sock):
+        self._stop_accept_futures()
         self._proactor._stop_serving(sock)
         sock.close()
