@@ -42,6 +42,11 @@ Library
 
 - Issue #21481:  Argparse equality and inequality tests now return 
   NotImplemented when comparing to an unknown type.
+  
+IDLE
+----
+
+- Issue #18409: Add unittest for AutoComplete. Patch by Phil Webster.
 
 Tests
 -----
