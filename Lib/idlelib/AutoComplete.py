@@ -226,3 +226,8 @@ class AutoComplete:
         namespace = sys.modules.copy()
         namespace.update(__main__.__dict__)
         return eval(name, namespace)
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_autocomplete', verbosity=2)
