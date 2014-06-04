@@ -215,7 +215,8 @@ class EnvBuilder:
                     # Issue 18807: make copies if
                     # symlinks are not wanted
                     copier(context.env_exe, path)
-                    os.chmod(path, 0o755)
+                    if not os.path.islink(path):
+                        os.chmod(path, 0o755)
         else:
             subdir = 'DLLs'
             include = self.include_binary
