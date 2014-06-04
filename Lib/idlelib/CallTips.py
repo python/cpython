@@ -167,7 +167,7 @@ def get_arg_text(ob):
         # bit of a hack for methods - turn it into a function
         # and drop the "self" param for bound methods
         fob = ob.im_func
-        if ob.im_self:
+        if ob.im_self is not None:
             arg_offset = 1
     elif type(ob_call) == types.MethodType:
         # a callable class instance
