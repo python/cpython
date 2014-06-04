@@ -63,6 +63,11 @@ Build
 
 - Issue #17095: Fix Modules/Setup *shared* support.
 
+IDLE
+----
+
+- Issue #18409: Add unittest for AutoComplete. Patch by Phil Webster.
+
 Tests
 -----
 
