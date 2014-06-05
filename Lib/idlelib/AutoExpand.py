@@ -1,3 +1,17 @@
+'''Complete the current word before the cursor with words in the editor.
+
+Each menu selection or shortcut key selection replaces the word with a
+different word with the same prefix. The search for matches begins
+before the target and moves toward the top of the editor. It then starts
+after the cursor and moves down. It then returns to the original word and
+the cycle starts again.
+
+Changing the current text line or leaving the cursor in a different
+place before requesting the next selection causes AutoExpand to reset
+its state.
+
+This is an extension file and there is only one instance of AutoExpand.
+'''
 import string
 import re
 
@@ -20,6 +34,7 @@ class AutoExpand:
         self.state = None
 
     def expand_word_event(self, event):
+        "Replace the current word with the next expansion."
         curinsert = self.text.index("insert")
         curline = self.text.get("insert linestart", "insert lineend")
         if not self.state:
@@ -46,6 +61,7 @@ class AutoExpand:
         return "break"
 
     def getwords(self):
+        "Return a list of words that match the prefix before the cursor."
         word = self.getprevword()
         if not word:
             return []
@@ -76,8 +92,13 @@ class AutoExpand:
         return words
 
     def getprevword(self):
+        "Return the word prefix before the cursor."
         line = self.text.get("insert linestart", "insert")
         i = len(line)
         while i > 0 and line[i-1] in self.wordchars:
             i = i-1
         return line[i:]
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_autoexpand', verbosity=2)
