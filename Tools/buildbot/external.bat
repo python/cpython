@@ -7,15 +7,15 @@ call "%VS100COMNTOOLS%\vsvars32.bat"
 if not exist tcltk\bin\tcl86tg.dll (
     @rem all and install need to be separate invocations, otherwise nmakehlp is not found on install
     cd tcl-8.6.1.0\win
-    nmake -f makefile.vc DEBUG=1 INSTALLDIR=..\..\tcltk clean all 
-    nmake -f makefile.vc DEBUG=1 INSTALLDIR=..\..\tcltk install
+    nmake -f makefile.vc OPTS=symbols INSTALLDIR=..\..\tcltk clean core shell dlls
+    nmake -f makefile.vc OPTS=symbols INSTALLDIR=..\..\tcltk install-binaries install-libraries
     cd ..\..
 )
 
 if not exist tcltk\bin\tk86tg.dll (
     cd tk-8.6.1.0\win
-    nmake -f makefile.vc OPTS=noxp DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.6.1.0 clean
-    nmake -f makefile.vc OPTS=noxp DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.6.1.0 all
-    nmake -f makefile.vc OPTS=noxp DEBUG=1 INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.6.1.0 install
+    nmake -f makefile.vc OPTS=symbols INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.6.1.0 clean
+    nmake -f makefile.vc OPTS=symbols INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.6.1.0 all
+    nmake -f makefile.vc OPTS=symbols INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.6.1.0 install-binaries install-libraries
     cd ..\..
 )
