@@ -355,25 +355,33 @@ class AbstractEventLoopPolicy:
     """Abstract policy for accessing the event loop."""
 
     def get_event_loop(self):
-        """XXX"""
+        """Get the event loop for the current context.
+
+        Returns an event loop object implementing the BaseEventLoop interface,
+        or raises an exception in case no event loop has been set for the
+        current context and the current policy does not specify to create one.
+
+        It should never return None."""
         raise NotImplementedError
 
     def set_event_loop(self, loop):
-        """XXX"""
+        """Set the event loop for the current context to loop."""
         raise NotImplementedError
 
     def new_event_loop(self):
-        """XXX"""
+        """Create and return a new event loop object according to this
+        policy's rules. If there's need to set this loop as the event loop for
+        the current context, set_event_loop must be called explicitly."""
         raise NotImplementedError
 
     # Child processes handling (Unix only).
 
     def get_child_watcher(self):
-        """XXX"""
+        "Get the watcher for child processes."
         raise NotImplementedError
 
     def set_child_watcher(self, watcher):
-        """XXX"""
+        """Set the watcher for child processes."""
         raise NotImplementedError
 
 
@@ -447,39 +455,42 @@ def _init_event_loop_policy():
 
 
 def get_event_loop_policy():
-    """XXX"""
+    """Get the current event loop policy."""
     if _event_loop_policy is None:
         _init_event_loop_policy()
     return _event_loop_policy
 
 
 def set_event_loop_policy(policy):
-    """XXX"""
+    """Set the current event loop policy.
+
+    If policy is None, the default policy is restored."""
     global _event_loop_policy
     assert policy is None or isinstance(policy, AbstractEventLoopPolicy)
     _event_loop_policy = policy
 
 
 def get_event_loop():
-    """XXX"""
+    """Equivalent to calling get_event_loop_policy().get_event_loop()."""
     return get_event_loop_policy().get_event_loop()
 
 
 def set_event_loop(loop):
-    """XXX"""
+    """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
     get_event_loop_policy().set_event_loop(loop)
 
 
 def new_event_loop():
-    """XXX"""
+    """Equivalent to calling get_event_loop_policy().new_event_loop()."""
     return get_event_loop_policy().new_event_loop()
 
 
 def get_child_watcher():
-    """XXX"""
+    """Equivalent to calling get_event_loop_policy().get_child_watcher()."""
     return get_event_loop_policy().get_child_watcher()
 
 
 def set_child_watcher(watcher):
-    """XXX"""
+    """Equivalent to calling
+    get_event_loop_policy().set_child_watcher(watcher)."""
     return get_event_loop_policy().set_child_watcher(watcher)
