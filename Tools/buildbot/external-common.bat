@@ -5,22 +5,10 @@ cd ..
 @rem XXX: If you need to force the buildbots to start from a fresh environment, uncomment
 @rem the following, check it in, then check it out, comment it out, then check it back in.
 @rem if exist bzip2-1.0.6 rd /s/q bzip2-1.0.6
-if exist tcltk rd /s/q tcltk
-if exist tcltk64 rd /s/q tcltk64
-if exist tcl8.4.12 rd /s/q tcl8.4.12
-if exist tcl8.4.16 rd /s/q tcl8.4.16
-if exist tcl-8.4.18.1 rd /s/q tcl-8.4.18.1
-if exist tcl-8.5.2.1 rd /s/q tcl-8.5.2.1
-if exist tcl-8.5.9.0 rd /s/q tcl-8.5.9.0
-if exist tcl-8.5.11.0 rd /s/q tcl-8.5.11.0
-if exist tcl-8.6.1.0 rd /s/q tcl-8.6.1.0
-if exist tk8.4.12 rd /s/q tk8.4.12
-if exist tk8.4.16 rd /s/q tk8.4.16
-if exist tk-8.4.18.1 rd /s/q tk-8.4.18.1
-if exist tk-8.5.2.0 rd /s/q tk-8.5.2.0
-if exist tk-8.5.9.0 rd /s/q tk-8.5.9.0
-if exist tk-8.5.11.0 rd /s/q tk-8.5.11.0
-if exist tk-8.6.1.0 rd /s/q tk-8.6.1.0
+@rem if exist tcltk rd /s/q tcltk
+@rem if exist tcltk64 rd /s/q tcltk64
+@rem if exist tcl-8.6.1.0 rd /s/q tcl-8.6.1.0
+@rem if exist tk-8.6.1.0 rd /s/q tk-8.6.1.0
 @rem if exist db-4.4.20 rd /s/q db-4.4.20
 @rem if exist openssl-1.0.1e rd /s/q openssl-1.0.1g
 @rem if exist sqlite-3.7.12 rd /s/q sqlite-3.7.12
