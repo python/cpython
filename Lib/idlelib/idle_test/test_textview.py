@@ -33,7 +33,7 @@ class textviewClassTest(unittest.TestCase):
         TV.transient.__init__()
         TV.grab_set.__init__()
         TV.wait_window.__init__()
-        
+
 
     def test_init_modal(self):
         TV = self.TV
