@@ -153,9 +153,9 @@ IF "$(Platform)" EQU "Win32" set TclMachine=IX86
 IF "$(Platform)" EQU "x64" set TclMachine=AMD64
 
 IF "$(Configuration)" EQU "Debug" (
-    set TclOpts=symbols,noxp
+    set TclOpts=symbols
 ) ELSE (
-    set TclOpts=noxp
+    set TclOpts=
 )
 
 cd $(tkDir)\win
