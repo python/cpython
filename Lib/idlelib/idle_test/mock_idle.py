@@ -8,14 +8,22 @@ from idlelib.idle_test.mock_tk import Text
 class Func(object):
     '''Mock function captures args and returns result set by test.
 
+    Attributes:
+    self.called - records call even if no args, kwds passed.
+    self.result - set by init, returned by call.
+    self.args - captures positional arguments.
+    self.kwds - captures keyword arguments.
+
     Most common use will probably be to mock methods.
-    mock_tk.Var and Mbox_func are special cases of this.
+    Mock_tk.Var and Mbox_func are special variants of this.
     '''
     def __init__(self, result=None):
+        self.called = False
         self.result = result
         self.args = None
         self.kwds = None
     def __call__(self, *args, **kwds):
+        self.called = True
         self.args = args
         self.kwds = kwds
         return self.result

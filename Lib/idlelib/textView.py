@@ -12,7 +12,11 @@ class TextViewer(Toplevel):
     def __init__(self, parent, title, text, modal=True, _htest=False):
         """Show the given text in a scrollable window with a 'close' button
 
-        _htest - bool, change box location when running htest
+        If modal option set to False, user can interact with other windows,
+        otherwise they will be unable to interact with other windows until
+        the textview window is closed.
+
+        _htest - bool; change box location when running htest.
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -72,7 +76,6 @@ def view_file(parent, title, filename, encoding=None, modal=True):
         else:
             textFile = open(filename, 'r')
     except IOError:
-        import tkMessageBox
         tkMessageBox.showerror(title='File Load Error',
                                message='Unable to load file %r .' % filename,
                                parent=parent)
@@ -81,5 +84,7 @@ def view_file(parent, title, filename, encoding=None, modal=True):
 
 
 if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_textview', verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
     run(TextViewer)
