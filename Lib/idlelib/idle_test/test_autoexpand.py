@@ -15,7 +15,7 @@ class AutoExpandTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if 'tkinter' in str(Text):
+        if 'Tkinter' in str(Text):
             requires('gui')
             cls.tk = Tk()
             cls.text = Text(cls.tk)
