@@ -2102,9 +2102,9 @@ left undefined.
 
    .. note::
 
-      When :meth:`__index__` is defined, :meth:`__int__` should also be defined,
-      and both shuld return the same value, in order to have a coherent integer
-      type class.
+      In order to have a coherent integer type class, when :meth:`__index__` is
+      defined :meth:`__int__` should also be defined, and both should return
+      the same value.
 
 
 .. _context-managers:
