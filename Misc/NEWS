@@ -46,6 +46,8 @@ Library
 IDLE
 ----
 
+- Issue #18292: Add unittest for AutoExpand. Patch by Saihadhav Heblikar.
+
 - Issue #18409: Add unittest for AutoComplete. Patch by Phil Webster.
 
 Tests
