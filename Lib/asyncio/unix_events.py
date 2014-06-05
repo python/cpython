@@ -822,7 +822,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
             self._watcher.attach_loop(loop)
 
     def get_child_watcher(self):
-        """Get the child watcher
+        """Get the watcher for child processes.
 
         If not yet set, a SafeChildWatcher object is automatically created.
         """
@@ -832,7 +832,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         return self._watcher
 
     def set_child_watcher(self, watcher):
-        """Set the child watcher"""
+        """Set the watcher for child processes."""
 
         assert watcher is None or isinstance(watcher, AbstractChildWatcher)
 
