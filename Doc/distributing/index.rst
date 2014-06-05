@@ -49,7 +49,7 @@ Key terms
   of the mailing list used to coordinate Python packaging standards
   development).
 * ``setuptools`` is a (largely) drop-in replacement for ``distutils`` first
-  published in 2004. It's most notable addition over the unmodified
+  published in 2004. Its most notable addition over the unmodified
   ``distutils`` tools was the ability to declare dependencies on other
   packages. It is currently recommended as a more regularly updated
   alternative to ``distutils`` that offers consistent support for more
