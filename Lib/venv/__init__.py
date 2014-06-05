@@ -238,7 +238,8 @@ class EnvBuilder:
                 if 'init.tcl' in files:
                     tcldir = os.path.basename(root)
                     tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
-                    os.makedirs(tcldir)
+                    if not os.path.exists(tcldir):
+                        os.makedirs(tcldir)
                     src = os.path.join(root, 'init.tcl')
                     dst = os.path.join(tcldir, 'init.tcl')
                     shutil.copyfile(src, dst)
