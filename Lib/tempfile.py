@@ -473,6 +473,11 @@ if _os.name != 'posix' or _os.sys.platform == 'cygwin':
     TemporaryFile = NamedTemporaryFile
 
 else:
+    # Is the O_TMPFILE flag available and does it work?
+    # The flag is set to False if os.open(dir, os.O_TMPFILE) raises an
+    # IsADirectoryError exception
+    _O_TMPFILE_WORKS = hasattr(_os, 'O_TMPFILE')
+
     def TemporaryFile(mode='w+b', buffering=-1, encoding=None,
                       newline=None, suffix="", prefix=template,
                       dir=None):
@@ -488,11 +493,32 @@ else:
         Returns an object with a file-like interface.  The file has no
         name, and will cease to exist when it is closed.
         """
+        global _O_TMPFILE_WORKS
 
         if dir is None:
             dir = gettempdir()
 
         flags = _bin_openflags
+        if _O_TMPFILE_WORKS:
+            try:
+                flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
+                fd = _os.open(dir, flags2, 0o600)
+            except IsADirectoryError:
+                # Linux kernel older than 3.11 ignores O_TMPFILE flag.
+                # Set flag to None to not try again.
+                _O_TMPFILE_WORKS = False
+            except OSError:
+                # The filesystem of the directory does not support O_TMPFILE.
+                # For example, OSError(95, 'Operation not supported').
+                pass
+            else:
+                try:
+                    return _io.open(fd, mode, buffering=buffering,
+                                    newline=newline, encoding=encoding)
+                except:
+                    _os.close(fd)
+                    raise
+            # Fallback to _mkstemp_inner().
 
         (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
         try:

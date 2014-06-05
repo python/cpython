@@ -54,6 +54,13 @@ The module defines the following user-callable items:
    underlying true file object. This file-like object can be used in a
    :keyword:`with` statement, just like a normal file.
 
+   The :py:data:`os.O_TMPFILE` flag is used if it is available and works
+   (Linux-specific, require Linux kernel 3.11 or later).
+
+   .. versionchanged:: 3.5
+
+      The :py:data:`os.O_TMPFILE` flag is now used if available.
+
 
 .. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix='', prefix='tmp', dir=None, delete=True)
 
