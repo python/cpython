@@ -92,6 +92,12 @@ Tests
 - Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
   PanedWindow.paneconfigure(), and Menu.entryconfigure().
 
+Windows
+-------
+
+- Issue #21671, CVE-2014-0224: The bundled version of OpenSSL has been
+  updated to 1.0.1h.
+
 
 What's New in Python 3.4.1?
 ===========================
