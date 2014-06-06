@@ -73,6 +73,12 @@ Tests
 
 - Issue #20635: Added tests for Tk geometry managers.
 
+Windows
+-------
+
+- Issue #21671, CVE-2014-0224: The bundled version of OpenSSL has been
+  updated to 1.0.1h.
+
 What's New in Python 2.7.7
 ==========================
 
