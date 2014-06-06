@@ -1624,7 +1624,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
    Compare a unicode object, *uni*, with *string* and return -1, 0, 1 for less
    than, equal, and greater than, respectively. It is best to pass only
    ASCII-encoded strings, but the function interprets the input string as
-   ISO-8859-1 if it contains non-ASCII characters".
+   ISO-8859-1 if it contains non-ASCII characters.
 
 
 .. c:function:: PyObject* PyUnicode_RichCompare(PyObject *left,  PyObject *right,  int op)
