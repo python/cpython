@@ -77,6 +77,10 @@ Some facts and figures:
    If *fileobj* is specified, it is used as an alternative to a file object opened
    for *name*. It is supposed to be at position 0.
 
+   For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, :func:`tarfile.open`
+   accepts the keyword argument *compresslevel* to specify the compression level of
+   the file.
+
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
