@@ -285,16 +285,17 @@ Sequences
             single: integer
             single: Unicode
 
-         A string is a sequence of values that represent Unicode codepoints.
-         All the codepoints in range ``U+0000 - U+10FFFF`` can be represented
-         in a string.  Python doesn't have a :c:type:`chr` type, and
-         every character in the string is represented as a string object
-         with length ``1``.  The built-in function :func:`ord` converts a
-         character to its codepoint (as an integer); :func:`chr` converts
-         an integer in range ``0 - 10FFFF`` to the corresponding character.
+         A string is a sequence of values that represent Unicode code points.
+         All the code points in the range ``U+0000 - U+10FFFF`` can be
+         represented in a string.  Python doesn't have a :c:type:`char` type;
+         instead, every code point in the string is represented as a string
+         object with length ``1``.  The built-in function :func:`ord`
+         converts a code point from its string form to an integer in the
+         range ``0 - 10FFFF``; :func:`chr` converts an integer in the range
+         ``0 - 10FFFF`` to the corresponding length ``1`` string object.
          :meth:`str.encode` can be used to convert a :class:`str` to
-         :class:`bytes` using the given encoding, and :meth:`bytes.decode` can
-         be used to achieve the opposite.
+         :class:`bytes` using the given text encoding, and
+         :meth:`bytes.decode` can be used to achieve the opposite.
 
       Tuples
          .. index::
