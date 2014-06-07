@@ -379,7 +379,7 @@ process and user.
 
    .. index:: single: user; id
 
-   Return the current process's user id.
+   Return the current process's real user id.
 
    Availability: Unix.
 
