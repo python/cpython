@@ -28,6 +28,9 @@ Library
 - Issue #21304: Backport the key derivation function hashlib.pbkdf2_hmac from
   Python 3 per PEP 466.
 
+- Issue #13223: Fix pydoc.writedoc so that the HTML documentation for methods
+  that use 'self' in the example code is generated correctly.
+
 - Issue #21552: Fixed possible integer overflow of too long string lengths in
   the tkinter module on 64-bit platforms.
 
