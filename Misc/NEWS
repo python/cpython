@@ -94,6 +94,9 @@ Library
 
 - Issue #21515: tempfile.TemporaryFile now uses os.O_TMPFILE flag is available.
 
+- Issue #13223: Fix pydoc.writedoc so that the HTML documentation for methods
+  that use 'self' in the example code is generated correctly.
+
 - Issue #21463: In urllib.request, fix pruning of the FTP cache.
 
 - Issue #21618: The subprocess module could fail to close open fds that were
