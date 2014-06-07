@@ -1500,15 +1500,24 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
                     } while (isdigit(c));
                 }
                 if (c == 'e' || c == 'E') {
-        exponent:
+                    int e;
+                  exponent:
+                    e = c;
                     /* Exponent part */
                     c = tok_nextc(tok);
-                    if (c == '+' || c == '-')
+                    if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
-                    if (!isdigit(c)) {
-                        tok->done = E_TOKEN;
+                        if (!isdigit(c)) {
+                            tok->done = E_TOKEN;
+                            tok_backup(tok, c);
+                            return ERRORTOKEN;
+                        }
+                    } else if (!isdigit(c)) {
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        tok_backup(tok, e);
+                        *p_start = tok->start;
+                        *p_end = tok->cur;
+                        return NUMBER;
                     }
                     do {
                         c = tok_nextc(tok);

@@ -13,6 +13,10 @@ Core and Builtins
 - Issue #19656: Running Python with the -3 option now also warns about
   non-ascii bytes literals.
 
+- Issue #21642: If the conditional if-else expression, allow an integer written
+  with no space between itself and the ``else`` keyword (e.g. ``True if 42else
+  False``) to be valid syntax.
+
 - Issue #21523: Fix over-pessimistic computation of the stack effect of
   some opcodes in the compiler.  This also fixes a quadratic compilation
   time issue noticeable when compiling code with a large number of "and"
