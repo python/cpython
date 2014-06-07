@@ -7,6 +7,7 @@ import http.client
 import email.message
 import io
 import unittest
+from unittest.mock import patch
 from test import support
 import os
 import sys
@@ -87,6 +88,26 @@ class FakeHTTPMixin(object):
 
     def unfakehttp(self):
         http.client.HTTPConnection = self._connection_class
+
+
+class FakeFTPMixin(object):
+    def fakeftp(self):
+        class FakeFtpWrapper(object):
+            def __init__(self,  user, passwd, host, port, dirs, timeout=None,
+                     persistent=True):
+                pass
+
+            def retrfile(self, file, type):
+                return io.BytesIO(), 0
+
+            def close(self):
+                pass
+
+        self._ftpwrapper_class = urllib.request.ftpwrapper
+        urllib.request.ftpwrapper = FakeFtpWrapper
+
+    def unfakeftp(self):
+        urllib.request.ftpwrapper = self._ftpwrapper_class
 
 
 class urlopen_FileTests(unittest.TestCase):
@@ -195,7 +216,7 @@ class ProxyTests(unittest.TestCase):
         self.env.set('NO_PROXY', 'localhost, anotherdomain.com, newdomain.com')
         self.assertTrue(urllib.request.proxy_bypass_environment('anotherdomain.com'))
 
-class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin):
+class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
     """Test urlopen() opening a fake http connection."""
 
     def check_read(self, ver):
@@ -308,6 +329,15 @@ Content-Type: text/html; charset=iso-8859-1
             urlopen('ftp://localhost/a/file/which/doesnot/exists.py')
         self.assertFalse(e.exception.filename)
         self.assertTrue(e.exception.reason)
+
+    @patch.object(urllib.request, 'MAXFTPCACHE', 0)
+    def test_ftp_cache_pruning(self):
+        self.fakeftp()
+        try:
+            urllib.request.ftpcache['test'] = urllib.request.ftpwrapper('user', 'pass', 'localhost', 21, [])
+            urlopen('ftp://localhost')
+        finally:
+            self.unfakeftp()
 
 
     def test_userpass_inurl(self):
