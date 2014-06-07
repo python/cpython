@@ -5,7 +5,6 @@ from Tkinter import Tk, Text, TclError
 import idlelib.AutoComplete as ac
 import idlelib.AutoCompleteWindow as acw
 import idlelib.macosxSupport as mac
-from idlelib.EditorWindow import EditorWindow
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Event
 
@@ -13,6 +12,14 @@ class AutoCompleteWindow:
     def complete():
         return
 
+class DummyEditwin:
+    def __init__(self, root, text):
+        self.root = root
+        self.text = text
+        self.indentwidth = 8
+        self.tabwidth = 8
+        self.context_use_ps1 = True
+        
 
 class AutoCompleteTest(unittest.TestCase):
 
@@ -21,8 +28,8 @@ class AutoCompleteTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         mac.setupApp(cls.root, None)
-        cls.editor = EditorWindow(root=cls.root)
-        cls.text = cls.editor.text
+        cls.text = Text(cls.root)
+        cls.editor = DummyEditwin(cls.root, cls.text)
 
     @classmethod
     def tearDownClass(cls):
