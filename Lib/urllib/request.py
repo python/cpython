@@ -1911,7 +1911,7 @@ class URLopener:
         # XXX thread unsafe!
         if len(self.ftpcache) > MAXFTPCACHE:
             # Prune the cache, rather arbitrarily
-            for k in self.ftpcache.keys():
+            for k in list(self.ftpcache):
                 if k != key:
                     v = self.ftpcache[k]
                     del self.ftpcache[k]
