@@ -19,7 +19,7 @@ class DummyEditwin:
         self.indentwidth = 8
         self.tabwidth = 8
         self.context_use_ps1 = True
-        
+
 
 class AutoCompleteTest(unittest.TestCase):
 
