@@ -17,6 +17,7 @@ cd ..
 @rem if exist tk-8.4.18.1 rd /s/q tk-8.4.18.1
 @rem if exist tk-8.5.2.0 rd /s/q tk-8.5.2.0
 @rem if exist tk-8.5.15.0 rd /s/q tk-8.5.15.0
+@rem if exist tix-8.4.3.5 rd /s/q tix-8.4.3.5
 @rem if exist db-4.4.20 rd /s/q db-4.4.20
 @rem if exist db-4.7.25.0 rd /s/q db-4.7.25.0
 @rem if exist openssl-0.9.8y rd /s/q openssl-0.9.8y
@@ -44,6 +45,7 @@ if not exist tcl-8.5.15.0 (
    svn export http://svn.python.org/projects/external/tcl-8.5.15.0
 )
 if not exist tk-8.5.15.0 svn export http://svn.python.org/projects/external/tk-8.5.15.0
+if not exist tix-8.4.3.5 svn export http://svn.python.org/projects/external/tix-8.4.3.5
 
 @rem sqlite3
 if not exist sqlite-3.6.21 (
