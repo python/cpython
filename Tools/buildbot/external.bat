@@ -19,3 +19,11 @@ if not exist tcltk\bin\tk86tg.dll (
     nmake -f makefile.vc OPTS=symbols INSTALLDIR=..\..\tcltk TCLDIR=..\..\tcl-8.6.1.0 install-binaries install-libraries
     cd ..\..
 )
+
+if not exist tcltk\lib\tix8.4.3\tix84g.dll (
+    cd tix-8.4.3.4\win
+    nmake -f python.mak DEBUG=1 MACHINE=IX86 TCL_DIR=..\..\tcl-8.6.1.0 TK_DIR=..\..\tk-8.6.1.0 INSTALL_DIR=..\..\tcltk clean
+    nmake -f python.mak DEBUG=1 MACHINE=IX86 TCL_DIR=..\..\tcl-8.6.1.0 TK_DIR=..\..\tk-8.6.1.0 INSTALL_DIR=..\..\tcltk all
+    nmake -f python.mak DEBUG=1 MACHINE=IX86 TCL_DIR=..\..\tcl-8.6.1.0 TK_DIR=..\..\tk-8.6.1.0 INSTALL_DIR=..\..\tcltk install
+    cd ..\..
+)
