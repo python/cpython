@@ -92,8 +92,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #20578: Add io.BufferedIOBase.readinto1.
-
 - Issue #11709: Fix the pydoc.help function to not fail when sys.stdin is not a
   valid file.
 
