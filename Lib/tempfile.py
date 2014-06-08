@@ -505,7 +505,7 @@ else:
                 fd = _os.open(dir, flags2, 0o600)
             except IsADirectoryError:
                 # Linux kernel older than 3.11 ignores O_TMPFILE flag.
-                # Set flag to None to not try again.
+                # Set flag to False to not try again.
                 _O_TMPFILE_WORKS = False
             except OSError:
                 # The filesystem of the directory does not support O_TMPFILE.
