@@ -911,6 +911,29 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertEqual(bufio.readinto(b), 1)
         self.assertEqual(b, b"cb")
 
+    def test_readinto1(self):
+        buffer_size = 10
+        rawio = self.MockRawIO((b"abc", b"de", b"fgh", b"jkl"))
+        bufio = self.tp(rawio, buffer_size=buffer_size)
+        b = bytearray(2)
+        self.assertEqual(bufio.peek(3), b'abc')
+        self.assertEqual(rawio._reads, 1)
+        self.assertEqual(bufio.readinto1(b), 2)
+        self.assertEqual(b, b"ab")
+        self.assertEqual(rawio._reads, 1)
+        self.assertEqual(bufio.readinto1(b), 1)
+        self.assertEqual(b[:1], b"c")
+        self.assertEqual(rawio._reads, 1)
+        self.assertEqual(bufio.readinto1(b), 2)
+        self.assertEqual(b, b"de")
+        self.assertEqual(rawio._reads, 2)
+        b = bytearray(2*buffer_size)
+        self.assertEqual(bufio.peek(3), b'fgh')
+        self.assertEqual(rawio._reads, 3)
+        self.assertEqual(bufio.readinto1(b), 6)
+        self.assertEqual(b[:6], b"fghjkl")
+        self.assertEqual(rawio._reads, 4)
+
     def test_readlines(self):
         def bufio():
             rawio = self.MockRawIO((b"abc\n", b"d\n", b"ef"))
@@ -2985,6 +3008,8 @@ class MiscIOTest(unittest.TestCase):
                 self.assertRaises(ValueError, f.readall)
             if hasattr(f, "readinto"):
                 self.assertRaises(ValueError, f.readinto, bytearray(1024))
+            if hasattr(f, "readinto1"):
+                self.assertRaises(ValueError, f.readinto1, bytearray(1024))
             self.assertRaises(ValueError, f.readline)
             self.assertRaises(ValueError, f.readlines)
             self.assertRaises(ValueError, f.seek, 0)

@@ -655,8 +655,26 @@ class BufferedIOBase(IOBase):
         Raises BlockingIOError if the underlying raw stream has no
         data at the moment.
         """
+
+        return self._readinto(b, read1=False)
+
+    def readinto1(self, b):
+        """Read up to len(b) bytes into *b*, using at most one system call
+
+        Returns an int representing the number of bytes read (0 for EOF).
+
+        Raises BlockingIOError if the underlying raw stream has no
+        data at the moment.
+        """
+
+        return self._readinto(b, read1=True)
+
+    def _readinto(self, b, read1):
         # XXX This ought to work with anything that supports the buffer API
-        data = self.read(len(b))
+        if read1:
+            data = self.read1(len(b))
+        else:
+            data = self.read(len(b))
         n = len(data)
         try:
             b[:n] = data
@@ -1058,6 +1076,62 @@ class BufferedReader(_BufferedIOMixin):
             return self._read_unlocked(
                 min(size, len(self._read_buf) - self._read_pos))
 
+    # Implementing readinto() and readinto1() is not strictly necessary (we
+    # could rely on the base class that provides an implementation in terms of
+    # read() and read1()). We do ai anyway to keep the _pyio implementation
+    # similar to the io implementation (which implements the methods for
+    # performance reasons).
+    def readinto(self, buf):
+        """Read data into *buf*."""
+        return self._readinto(buf, read1=False)
+    def readinto1(self, buf):
+        """Read data into *buf* with at most one system call."""
+        return self._readinto(buf, read1=True)
+
+    def _readinto(self, buf, read1):
+        """Read data into *buf* with at most one system call."""
+
+        if len(buf) == 0:
+            return 0
+
+        written = 0
+        with self._read_lock:
+            while written < len(buf):
+
+                # First try to read from internal buffer
+                avail = min(len(self._read_buf) - self._read_pos, len(buf))
+                if avail:
+                    buf[written:written+avail] = \
+                        self._read_buf[self._read_pos:self._read_pos+avail]
+                    self._read_pos += avail
+                    written += avail
+                    if written == len(buf):
+                        break
+
+                # If remaining space in callers buffer is larger than
+                # internal buffer, read directly into callers buffer
+                if len(buf) - written > self.buffer_size:
+                    # If we don't use a memoryview, slicing buf will create
+                    # a new object
+                    if not isinstance(buf, memoryview):
+                        buf = memoryview(buf)
+                    n = self.raw.readinto(buf[written:])
+                    if not n:
+                        break # eof
+                    written += n
+
+                # Otherwise refill internal buffer - unless we're
+                # in read1 mode and already got some data
+                elif not (read1 and written):
+                    if not self._peek_unlocked(1):
+                        break # eof
+
+                # In readinto1 mode, return as soon as we have some data
+                if read1 and written:
+                    break
+
+        return written
+
     def tell(self):
         return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
 
@@ -1207,6 +1281,9 @@ class BufferedRWPair(BufferedIOBase):
     def read1(self, size):
         return self.reader.read1(size)
 
+    def readinto1(self, b):
+        return self.reader.readinto1(b)
+
     def readable(self):
         return self.reader.readable()
 
@@ -1288,6 +1365,10 @@ class BufferedRandom(BufferedWriter, BufferedReader):
     def read1(self, size):
         self.flush()
         return BufferedReader.read1(self, size)
+
+    def readinto1(self, b):
+        self.flush()
+        return BufferedReader.readinto1(self, b)
 
     def write(self, b):
         if self._read_buf:
