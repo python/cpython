@@ -98,6 +98,24 @@ back the modified script.
 
    .. versionadded:: 2.5
 
+.. exception:: TokenError
+
+   Raised when either a docstring or expression that may be split over several
+   lines is not completed anywhere in the file, for example::
+
+      """Beginning of
+      docstring
+
+   or::
+
+      [1,
+       2,
+       3
+
+Note that unclosed single-quoted strings do not cause an error to be
+raised. They are tokenized as ``ERRORTOKEN``, followed by the tokenization of
+their contents.
+
 Example of a script re-writer that transforms float literals into Decimal
 objects::
 
