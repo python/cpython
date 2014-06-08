@@ -1377,6 +1377,8 @@ def getpager():
     """Decide what method to use for paging through text."""
     if type(sys.stdout) is not types.FileType:
         return plainpager
+    if not hasattr(sys.stdin, "isatty"):
+        return plainpager
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return plainpager
     if 'PAGER' in os.environ:

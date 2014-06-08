@@ -333,6 +333,14 @@ class PydocDocTest(unittest.TestCase):
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
+    def test_getpager_with_stdin_none(self):
+        previous_stdin = sys.stdin
+        try:
+            sys.stdin = None
+            pydoc.getpager() # Shouldn't fail.
+        finally:
+            sys.stdin = previous_stdin
+
     def test_non_str_name(self):
         # issue14638
         # Treat illegal (non-str) name like no name

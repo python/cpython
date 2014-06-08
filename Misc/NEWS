@@ -28,6 +28,9 @@ Library
 - Issue #21304: Backport the key derivation function hashlib.pbkdf2_hmac from
   Python 3 per PEP 466.
 
+- Issue #11709: Fix the pydoc.help function to not fail when sys.stdin is not a
+  valid file.
+
 - Issue #13223: Fix pydoc.writedoc so that the HTML documentation for methods
   that use 'self' in the example code is generated correctly.
 
