@@ -1417,6 +1417,8 @@ def pager(text):
 
 def getpager():
     """Decide what method to use for paging through text."""
+    if not hasattr(sys.stdin, "isatty"):
+        return plainpager
     if not hasattr(sys.stdout, "isatty"):
         return plainpager
     if not sys.stdin.isatty() or not sys.stdout.isatty():
