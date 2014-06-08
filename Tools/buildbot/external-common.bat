@@ -9,9 +9,10 @@ cd ..
 @rem if exist tcltk64 rd /s/q tcltk64
 @rem if exist tcl-8.6.1.0 rd /s/q tcl-8.6.1.0
 @rem if exist tk-8.6.1.0 rd /s/q tk-8.6.1.0
+@rem if exist tix-8.4.3.4 rd /s/q tix-8.4.3.4
 @rem if exist db-4.4.20 rd /s/q db-4.4.20
 @rem if exist openssl-1.0.1h rd /s/q openssl-1.0.1h
-@rem if exist sqlite-3.7.12 rd /s/q sqlite-3.7.12    
+@rem if exist sqlite-3.7.12 rd /s/q sqlite-3.7.12
 
 @rem bzip
 if not exist bzip2-1.0.6 (
@@ -31,6 +32,7 @@ if not exist tcl-8.6.1.0 (
    svn export http://svn.python.org/projects/external/tcl-8.6.1.0
 )
 if not exist tk-8.6.1.0 svn export http://svn.python.org/projects/external/tk-8.6.1.0
+if not exist tix-8.4.3.4 svn export http://svn.python.org/projects/external/tix-8.4.3.4
 
 @rem sqlite3
 if not exist sqlite-3.8.3.1 (
