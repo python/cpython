@@ -24,6 +24,7 @@ _Py_IDENTIFIER(read);
 _Py_IDENTIFIER(read1);
 _Py_IDENTIFIER(readable);
 _Py_IDENTIFIER(readinto);
+_Py_IDENTIFIER(readinto1);
 _Py_IDENTIFIER(writable);
 _Py_IDENTIFIER(write);
 
@@ -47,17 +48,21 @@ PyDoc_STRVAR(bufferediobase_doc,
     );
 
 static PyObject *
-bufferediobase_readinto(PyObject *self, PyObject *args)
+_bufferediobase_readinto_generic(PyObject *self, PyObject *args, char readinto1)
 {
     Py_buffer buf;
     Py_ssize_t len;
     PyObject *data;
 
-    if (!PyArg_ParseTuple(args, "w*:readinto", &buf)) {
+    if (!PyArg_ParseTuple(args,
+                          readinto1 ? "w*:readinto1" : "w*:readinto",
+                          &buf)) {
         return NULL;
     }
 
-    data = _PyObject_CallMethodId(self, &PyId_read, "n", buf.len);
+    data = _PyObject_CallMethodId(self,
+                                  readinto1 ? &PyId_read1 : &PyId_read,
+                                  "n", buf.len);
     if (data == NULL)
         goto error;
 
@@ -86,6 +91,18 @@ bufferediobase_readinto(PyObject *self, PyObject *args)
   error:
     PyBuffer_Release(&buf);
     return NULL;
+}
+
+static PyObject *
+bufferediobase_readinto(PyObject *self, PyObject *args)
+{
+    return _bufferediobase_readinto_generic(self, args, 0);
+}
+
+static PyObject *
+bufferediobase_readinto1(PyObject *self, PyObject *args)
+{
+    return _bufferediobase_readinto_generic(self, args, 1);
 }
 
 static PyObject *
@@ -167,6 +184,7 @@ static PyMethodDef bufferediobase_methods[] = {
     {"read", bufferediobase_read, METH_VARARGS, bufferediobase_read_doc},
     {"read1", bufferediobase_read1, METH_VARARGS, bufferediobase_read1_doc},
     {"readinto", bufferediobase_readinto, METH_VARARGS, NULL},
+    {"readinto1", bufferediobase_readinto1, METH_VARARGS, NULL},
     {"write", bufferediobase_write, METH_VARARGS, bufferediobase_write_doc},
     {NULL, NULL}
 };
@@ -988,7 +1006,7 @@ buffered_read1(buffered *self, PyObject *args)
 }
 
 static PyObject *
-buffered_readinto(buffered *self, PyObject *args)
+_buffered_readinto_generic(buffered *self, PyObject *args, char readinto1)
 {
     Py_buffer buf;
     Py_ssize_t n, written = 0, remaining;
@@ -996,7 +1014,9 @@ buffered_readinto(buffered *self, PyObject *args)
 
     CHECK_INITIALIZED(self)
 
-    if (!PyArg_ParseTuple(args, "w*:readinto", &buf))
+    if (!PyArg_ParseTuple(args,
+                          readinto1 ? "w*:readinto1" : "w*:readinto",
+                          &buf))
         return NULL;
 
     n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
@@ -1034,7 +1054,10 @@ buffered_readinto(buffered *self, PyObject *args)
             n = _bufferedreader_raw_read(self, (char *) buf.buf + written,
                                          remaining);
         }
-        else {
+
+        /* In readinto1 mode, we do not want to fill the internal
+           buffer if we already have some data to return */
+        else if (!(readinto1 && written)) {
             n = _bufferedreader_fill_buffer(self);
             if (n > 0) {
                 if (n > remaining)
@@ -1045,6 +1068,10 @@ buffered_readinto(buffered *self, PyObject *args)
                 continue; /* short circuit */
             }
         }
+        else {
+            n = 0;
+        }
+        
         if (n == 0 || (n == -2 && written > 0))
             break;
         if (n < 0) {
@@ -1053,6 +1080,12 @@ buffered_readinto(buffered *self, PyObject *args)
                 res = Py_None;
             }
             goto end;
+        }
+        
+        /* At most one read in readinto1 mode */
+        if (readinto1) {
+            written += n;
+            break;
         }
     }
     res = PyLong_FromSsize_t(written);
@@ -1063,6 +1096,19 @@ end_unlocked:
     PyBuffer_Release(&buf);
     return res;
 }
+
+static PyObject *
+buffered_readinto(buffered *self, PyObject *args)
+{
+    return _buffered_readinto_generic(self, args, 0);
+}
+
+static PyObject *
+buffered_readinto1(buffered *self, PyObject *args)
+{
+    return _buffered_readinto_generic(self, args, 1);
+}
+
 
 static PyObject *
 _buffered_readline(buffered *self, Py_ssize_t limit)
@@ -1749,6 +1795,7 @@ static PyMethodDef bufferedreader_methods[] = {
     {"peek", (PyCFunction)buffered_peek, METH_VARARGS},
     {"read1", (PyCFunction)buffered_read1, METH_VARARGS},
     {"readinto", (PyCFunction)buffered_readinto, METH_VARARGS},
+    {"readinto1", (PyCFunction)buffered_readinto1, METH_VARARGS},
     {"readline", (PyCFunction)buffered_readline, METH_VARARGS},
     {"seek", (PyCFunction)buffered_seek, METH_VARARGS},
     {"tell", (PyCFunction)buffered_tell, METH_NOARGS},
@@ -2348,6 +2395,12 @@ bufferedrwpair_readinto(rwpair *self, PyObject *args)
 }
 
 static PyObject *
+bufferedrwpair_readinto1(rwpair *self, PyObject *args)
+{
+    return _forward_call(self->reader, &PyId_readinto1, args);
+}
+
+static PyObject *
 bufferedrwpair_write(rwpair *self, PyObject *args)
 {
     return _forward_call(self->writer, &PyId_write, args);
@@ -2412,6 +2465,7 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {"peek", (PyCFunction)bufferedrwpair_peek, METH_VARARGS},
     {"read1", (PyCFunction)bufferedrwpair_read1, METH_VARARGS},
     {"readinto", (PyCFunction)bufferedrwpair_readinto, METH_VARARGS},
+    {"readinto1", (PyCFunction)bufferedrwpair_readinto1, METH_VARARGS},
 
     {"write", (PyCFunction)bufferedrwpair_write, METH_VARARGS},
     {"flush", (PyCFunction)bufferedrwpair_flush, METH_NOARGS},
@@ -2560,6 +2614,7 @@ static PyMethodDef bufferedrandom_methods[] = {
     {"read", (PyCFunction)buffered_read, METH_VARARGS},
     {"read1", (PyCFunction)buffered_read1, METH_VARARGS},
     {"readinto", (PyCFunction)buffered_readinto, METH_VARARGS},
+    {"readinto1", (PyCFunction)buffered_readinto1, METH_VARARGS},
     {"readline", (PyCFunction)buffered_readline, METH_VARARGS},
     {"peek", (PyCFunction)buffered_peek, METH_VARARGS},
     {"write", (PyCFunction)bufferedwriter_write, METH_VARARGS},
