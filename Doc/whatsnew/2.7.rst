@@ -437,7 +437,7 @@ standard input or output.
    :mod:`argparse` documentation
      The documentation page of the argparse module.
 
-   :ref:`argparse-from-optparse`
+   :ref:`upgrading-optparse-code`
      Part of the Python documentation, describing how to convert
      code that uses :mod:`optparse`.
 
