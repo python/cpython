@@ -200,38 +200,45 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
                  (appending and "a" or "") +
                  (updating and "+" or ""),
                  closefd, opener=opener)
-    line_buffering = False
-    if buffering == 1 or buffering < 0 and raw.isatty():
-        buffering = -1
-        line_buffering = True
-    if buffering < 0:
-        buffering = DEFAULT_BUFFER_SIZE
-        try:
-            bs = os.fstat(raw.fileno()).st_blksize
-        except (OSError, AttributeError):
-            pass
+    result = raw
+    try:
+        line_buffering = False
+        if buffering == 1 or buffering < 0 and raw.isatty():
+            buffering = -1
+            line_buffering = True
+        if buffering < 0:
+            buffering = DEFAULT_BUFFER_SIZE
+            try:
+                bs = os.fstat(raw.fileno()).st_blksize
+            except (OSError, AttributeError):
+                pass
+            else:
+                if bs > 1:
+                    buffering = bs
+        if buffering < 0:
+            raise ValueError("invalid buffering size")
+        if buffering == 0:
+            if binary:
+                return result
+            raise ValueError("can't have unbuffered text I/O")
+        if updating:
+            buffer = BufferedRandom(raw, buffering)
+        elif creating or writing or appending:
+            buffer = BufferedWriter(raw, buffering)
+        elif reading:
+            buffer = BufferedReader(raw, buffering)
         else:
-            if bs > 1:
-                buffering = bs
-    if buffering < 0:
-        raise ValueError("invalid buffering size")
-    if buffering == 0:
+            raise ValueError("unknown mode: %r" % mode)
+        result = buffer
         if binary:
-            return raw
-        raise ValueError("can't have unbuffered text I/O")
-    if updating:
-        buffer = BufferedRandom(raw, buffering)
-    elif creating or writing or appending:
-        buffer = BufferedWriter(raw, buffering)
-    elif reading:
-        buffer = BufferedReader(raw, buffering)
-    else:
-        raise ValueError("unknown mode: %r" % mode)
-    if binary:
-        return buffer
-    text = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
-    text.mode = mode
-    return text
+            return result
+        text = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
+        result = text
+        text.mode = mode
+        return result
+    except:
+        result.close()
+        raise
 
 
 class DocDescriptor:
