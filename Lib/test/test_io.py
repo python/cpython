@@ -792,7 +792,25 @@ class CommonBufferedTests:
         with self.assertRaises(OSError) as err: # exception not swallowed
             b.close()
         self.assertEqual(err.exception.args, ('close',))
+        self.assertIsInstance(err.exception.__context__, OSError)
         self.assertEqual(err.exception.__context__.args, ('flush',))
+        self.assertFalse(b.closed)
+
+    def test_nonnormalized_close_error_on_close(self):
+        # Issue #21677
+        raw = self.MockRawIO()
+        def bad_flush():
+            raise non_existing_flush
+        def bad_close():
+            raise non_existing_close
+        raw.close = bad_close
+        b = self.tp(raw)
+        b.flush = bad_flush
+        with self.assertRaises(NameError) as err: # exception not swallowed
+            b.close()
+        self.assertIn('non_existing_close', str(err.exception))
+        self.assertIsInstance(err.exception.__context__, NameError)
+        self.assertIn('non_existing_flush', str(err.exception.__context__))
         self.assertFalse(b.closed)
 
     def test_multi_close(self):
@@ -2575,6 +2593,39 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.flush = bad_flush
         self.assertRaises(OSError, txt.close) # exception not swallowed
         self.assertTrue(txt.closed)
+
+    def test_close_error_on_close(self):
+        buffer = self.BytesIO(self.testdata)
+        def bad_flush():
+            raise OSError('flush')
+        def bad_close():
+            raise OSError('close')
+        buffer.close = bad_close
+        txt = self.TextIOWrapper(buffer, encoding="ascii")
+        txt.flush = bad_flush
+        with self.assertRaises(OSError) as err: # exception not swallowed
+            txt.close()
+        self.assertEqual(err.exception.args, ('close',))
+        self.assertIsInstance(err.exception.__context__, OSError)
+        self.assertEqual(err.exception.__context__.args, ('flush',))
+        self.assertFalse(txt.closed)
+
+    def test_nonnormalized_close_error_on_close(self):
+        # Issue #21677
+        buffer = self.BytesIO(self.testdata)
+        def bad_flush():
+            raise non_existing_flush
+        def bad_close():
+            raise non_existing_close
+        buffer.close = bad_close
+        txt = self.TextIOWrapper(buffer, encoding="ascii")
+        txt.flush = bad_flush
+        with self.assertRaises(NameError) as err: # exception not swallowed
+            txt.close()
+        self.assertIn('non_existing_close', str(err.exception))
+        self.assertIsInstance(err.exception.__context__, NameError)
+        self.assertIn('non_existing_flush', str(err.exception.__context__))
+        self.assertFalse(txt.closed)
 
     def test_multi_close(self):
         txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
