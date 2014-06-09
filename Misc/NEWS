@@ -25,6 +25,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21310: Fixed possible resource leak in failed open().
+
 - Issue #21304: Backport the key derivation function hashlib.pbkdf2_hmac from
   Python 3 per PEP 466.
 
