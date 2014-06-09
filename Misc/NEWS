@@ -92,6 +92,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21310: Fixed possible resource leak in failed open().
+
 - Issue #21256: Printout of keyword args should be in deterministic order in
   a mock function call. This will help to write better doctests.
 
