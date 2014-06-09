@@ -2614,6 +2614,7 @@ textiowrapper_close(textio *self, PyObject *args)
             }
             else {
                 PyObject *val2;
+                PyErr_NormalizeException(&exc, &val, &tb);
                 Py_DECREF(exc);
                 Py_XDECREF(tb);
                 PyErr_Fetch(&exc, &val2, &tb);
