@@ -92,6 +92,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21677: Fixed chaining nonnormalized exceptions in io close() methods.
+
 - Issue #11709: Fix the pydoc.help function to not fail when sys.stdin is not a
   valid file.
 
