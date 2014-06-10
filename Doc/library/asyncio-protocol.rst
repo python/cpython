@@ -272,8 +272,8 @@ Protocol classes
 Connection callbacks
 --------------------
 
-These callbacks may be called on :class:`Protocol` and
-:class:`SubprocessProtocol` instances:
+These callbacks may be called on :class:`Protocol`, :class:`DatagramProtocol`
+and :class:`SubprocessProtocol` instances:
 
 .. method:: BaseProtocol.connection_made(transport)
 
@@ -291,10 +291,10 @@ These callbacks may be called on :class:`Protocol` and
    The latter means a regular EOF is received, or the connection was
    aborted or closed by this side of the connection.
 
-:meth:`connection_made` and :meth:`connection_lost` are called exactly once
-per successful connection.  All other callbacks will be called between those
-two methods, which allows for easier resource management in your protocol
-implementation.
+:meth:`~BaseProtocol.connection_made` and :meth:`~BaseProtocol.connection_lost`
+are called exactly once per successful connection.  All other callbacks will be
+called between those two methods, which allows for easier resource management
+in your protocol implementation.
 
 The following callbacks may be called only on :class:`SubprocessProtocol`
 instances:
