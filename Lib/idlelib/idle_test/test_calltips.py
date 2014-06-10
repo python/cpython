@@ -22,7 +22,7 @@ class TC(object):
     def t4(self, *args): 'doc'
     t4.tip = "(self, *args)"
     def t5(self, ai, b=None, *args, **kw): 'doc'
-    t5.tip = "(self, ai, b=None, *args, **kwds)"
+    t5.tip = "(self, ai, b=None, *args, **kwargs)"
     def t6(no, self): 'doc'
     t6.tip = "(no, self)"
     def __call__(self, ci): 'doc'
@@ -104,7 +104,7 @@ class Get_signatureTest(unittest.TestCase):
         def t4(*args): 'doc'
         t4.tip = "(*args)"
         def t5(a, b=None, *args, **kwds): 'doc'
-        t5.tip = "(a, b=None, *args, **kwds)"
+        t5.tip = "(a, b=None, *args, **kwargs)"
 
         for func in (t1, t2, t3, t4, t5, TC):
             self.assertEqual(signature(func), func.tip + '\ndoc')
@@ -126,10 +126,16 @@ class Get_signatureTest(unittest.TestCase):
         class C:
             def m1(*args): pass
             def m2(**kwds): pass
+        def f1(args, kwargs, *a, **k): pass
+        def f2(args, kwargs, args1, kwargs1, *a, **k): pass
         c = C()
-        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),
-                                      (C.m2, "(**kwds)"), (c.m2, "(**kwds)"),):
-            self.assertEqual(signature(meth), mtip)
+        self.assertEqual(signature(C.m1), '(*args)')
+        self.assertEqual(signature(c.m1), '(*args)')
+        self.assertEqual(signature(C.m2), '(**kwargs)')
+        self.assertEqual(signature(c.m2), '(**kwargs)')
+        self.assertEqual(signature(f1), '(args, kwargs, *args1, **kwargs1)')
+        self.assertEqual(signature(f2),
+                         '(args, kwargs, args1, kwargs1, *args2, **kwargs2)')
 
     def test_no_docstring(self):
         def nd(s): pass
