@@ -44,7 +44,7 @@ class _Database(collections.MutableMapping):
     _os = _os       # for _commit()
     _io = _io       # for _commit()
 
-    def __init__(self, filebasename, mode):
+    def __init__(self, filebasename, mode, flag='c'):
         self._mode = mode
 
         # The directory file is a text file.  Each line looks like
@@ -64,6 +64,17 @@ class _Database(collections.MutableMapping):
         # The index is an in-memory dict, mirroring the directory file.
         self._index = None  # maps keys to (pos, siz) pairs
 
+        # Handle the creation
+        self._create(flag)
+        self._update()
+
+    def _create(self, flag):
+        if flag == 'n':
+            for filename in (self._datfile, self._bakfile, self._dirfile):
+                try:
+                    _os.remove(filename)
+                except OSError:
+                    pass
         # Mod by Jack: create data file if needed
         try:
             f = _io.open(self._datfile, 'r', encoding="Latin-1")
@@ -71,7 +82,6 @@ class _Database(collections.MutableMapping):
             f = _io.open(self._datfile, 'w', encoding="Latin-1")
             self._chmod(self._datfile)
         f.close()
-        self._update()
 
     # Read directory file into the in-memory index dict.
     def _update(self):
@@ -266,20 +276,20 @@ class _Database(collections.MutableMapping):
         self.close()
 
 
-def open(file, flag=None, mode=0o666):
+def open(file, flag='c', mode=0o666):
     """Open the database file, filename, and return corresponding object.
 
     The flag argument, used to control how the database is opened in the
-    other DBM implementations, is ignored in the dbm.dumb module; the
-    database is always opened for update, and will be created if it does
-    not exist.
+    other DBM implementations, supports only the semantics of 'c' and 'n'
+    values.  Other values will default to the semantics of 'c' value:
+    the database will always opened for update and will be created if it
+    does not exist.
 
     The optional mode argument is the UNIX mode of the file, used only when
     the database has to be created.  It defaults to octal code 0o666 (and
     will be modified by the prevailing umask).
 
     """
-    # flag argument is currently ignored
 
     # Modify mode depending on the umask
     try:
@@ -290,5 +300,4 @@ def open(file, flag=None, mode=0o666):
     else:
         # Turn off any bits that are set in the umask
         mode = mode & (~um)
-
-    return _Database(file, mode)
+    return _Database(file, mode, flag=flag)

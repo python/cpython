@@ -217,6 +217,14 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(str(cm.exception),
                              "DBM object has already been closed")
 
+    def test_create_new(self):
+        with dumbdbm.open(_fname, 'n') as f:
+            for k in self._dict:
+                f[k] = self._dict[k]
+
+        with dumbdbm.open(_fname, 'n') as f:
+            self.assertEqual(f.keys(), [])
+
     def tearDown(self):
         _delete_files()
 

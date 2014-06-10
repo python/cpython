@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18039: dbm.dump.open() now always creates a new database when the
+  flag has the value 'n'.  Patch by Claudiu Popa.
+
 - Issue #21326: Add a new is_closed() method to asyncio.BaseEventLoop.
   run_forever() and run_until_complete() methods of asyncio.BaseEventLoop now
   raise an exception if the event loop was closed.

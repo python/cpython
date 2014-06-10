@@ -316,12 +316,17 @@ The module defines the following:
    dumbdbm database is created, files with :file:`.dat` and :file:`.dir` extensions
    are created.
 
-   The optional *flag* argument is currently ignored; the database is always opened
-   for update, and will be created if it does not exist.
+   The optional *flag* argument supports only the semantics of ``'c'``
+   and ``'n'`` values.  Other values will default to database being always
+   opened for update, and will be created if it does not exist.
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be modified
    by the prevailing umask).
+
+   .. versionchanged:: 3.5
+      :func:`.open` always creates a new database when the flag has the value
+      ``'n'``.
 
    In addition to the methods provided by the
    :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects
