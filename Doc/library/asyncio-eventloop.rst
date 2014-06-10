@@ -123,7 +123,7 @@ Run an event loop
 
    Returns ``True`` if the event loop was closed.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.4.2
 
 .. method:: BaseEventLoop.close()
 

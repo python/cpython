@@ -92,6 +92,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21326: Add a new is_closed() method to asyncio.BaseEventLoop.
+  run_forever() and run_until_complete() methods of asyncio.BaseEventLoop now
+  raise an exception if the event loop was closed.
+
 - Issue #21310: Fixed possible resource leak in failed open().
 
 - Issue #21256: Printout of keyword args should be in deterministic order in
