@@ -521,6 +521,8 @@ Task functions
    to complete.  Coroutines will be wrapped in Tasks. Returns two sets of
    :class:`Future`: (done, pending).
 
+   The sequence *futures* must not be empty.
+
    *timeout* can be used to control the maximum number of seconds to wait before
    returning.  *timeout* can be an int or float.  If *timeout* is not specified
    or ``None``, there is no limit to the wait time.
