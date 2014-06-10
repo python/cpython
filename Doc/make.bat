@@ -76,6 +76,15 @@ if NOT "%PAPER%" == "" (
 cmd /C %SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . %BUILDDIR%\%*
 
 if "%1" EQU "htmlhelp" (
+    if  not exist "%HTMLHELP%" (
+        echo.
+        echo.The HTML Help Workshop was not found.  Set the HTMLHELP variable
+        echo.to the path to hhc.exe or download and install it from
+        echo.http://msdn.microsoft.com/en-us/library/ms669985
+        rem Set errorlevel to 1 and exit
+        cmd /C exit /b 1
+        goto end
+    )
     cmd /C "%HTMLHELP%" build\htmlhelp\python%DISTVERSION:.=%.hhp
     rem hhc.exe seems to always exit with code 1, reset to 0 for less than 2
     if not errorlevel 2 cmd /C exit /b 0
