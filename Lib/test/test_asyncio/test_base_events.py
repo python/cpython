@@ -52,6 +52,20 @@ class BaseEventLoopTests(unittest.TestCase):
         gen = self.loop._make_subprocess_transport(m, m, m, m, m, m, m)
         self.assertRaises(NotImplementedError, next, iter(gen))
 
+    def test_close(self):
+        self.assertFalse(self.loop.is_closed())
+        self.loop.close()
+        self.assertTrue(self.loop.is_closed())
+
+        # it should be possible to call close() more than once
+        self.loop.close()
+        self.loop.close()
+
+        # operation blocked when the loop is closed
+        f = asyncio.Future(loop=self.loop)
+        self.assertRaises(RuntimeError, self.loop.run_forever)
+        self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
+
     def test__add_callback_handle(self):
         h = asyncio.Handle(lambda: False, (), self.loop)
 
