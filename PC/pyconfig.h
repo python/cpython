@@ -390,7 +390,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #else
 /* VC6, VS 2002 and eVC4 don't support the C99 LL suffix for 64-bit integer literals */
 #define Py_LL(x) x##I64
-#endif  /* _MSC_VER > 1200  */
+#endif  /* _MSC_VER > 1300  */
 #endif  /* _MSC_VER */
 
 #endif
