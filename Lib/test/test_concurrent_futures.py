@@ -427,9 +427,9 @@ class ExecutorTest:
 
     def test_max_workers_negative(self):
         for number in (0, -1):
-            with self.assertRaisesRegexp(ValueError,
-                                         "max_workers must be greater "
-                                         "than 0"):
+            with self.assertRaisesRegex(ValueError,
+                                        "max_workers must be greater "
+                                        "than 0"):
                 self.executor_type(max_workers=number)
 
 
