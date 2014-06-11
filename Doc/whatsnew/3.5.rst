@@ -176,6 +176,14 @@ ipaddress
   network objects from existing addresses (contributed by Peter Moody
   and Antoine Pitrou in :issue:`16531`).
 
+shutil
+------
+
+* :func:`~shutil.move` now accepts a *copy_function* argument, allowing,
+  for example, :func:`~shutil.copy` to be used instead of the default
+  :func:`~shutil.copy2` if there is a need to ignore metadata.  (Contributed by
+  Claudiu Popa in :issue:`19840`.)
+
 signal
 ------
 

@@ -486,7 +486,7 @@ def _basename(path):
     sep = os.path.sep + (os.path.altsep or '')
     return os.path.basename(path.rstrip(sep))
 
-def move(src, dst):
+def move(src, dst, copy_function=copy2):
     """Recursively move a file or directory to another location. This is
     similar to the Unix "mv" command. Return the file or directory's
     destination.
@@ -502,6 +502,11 @@ def move(src, dst):
     Otherwise, src is copied to the destination and then removed. Symlinks are
     recreated under the new name if os.rename() fails because of cross
     filesystem renames.
+
+    The optional `copy_function` argument is a callable that will be used
+    to copy the source or it will be delegated to `copytree`.
+    By default, copy2() is used, but any function that supports the same
+    signature (like copy()) can be used.
 
     A lot more could be done here...  A look at a mv.c shows a lot of
     the issues this implementation glosses over.
@@ -527,11 +532,13 @@ def move(src, dst):
             os.unlink(src)
         elif os.path.isdir(src):
             if _destinsrc(src, dst):
-                raise Error("Cannot move a directory '%s' into itself '%s'." % (src, dst))
-            copytree(src, real_dst, symlinks=True)
+                raise Error("Cannot move a directory '%s' into itself"
+                            " '%s'." % (src, dst))
+            copytree(src, real_dst, copy_function=copy_function,
+                     symlinks=True)
             rmtree(src)
         else:
-            copy2(src, real_dst)
+            copy_function(src, real_dst)
             os.unlink(src)
     return real_dst
 

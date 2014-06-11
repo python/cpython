@@ -1592,6 +1592,24 @@ class TestMove(unittest.TestCase):
         rv = shutil.move(self.src_file, os.path.join(self.dst_dir, 'bar'))
         self.assertEqual(rv, os.path.join(self.dst_dir, 'bar'))
 
+    @mock_rename
+    def test_move_file_special_function(self):
+        moved = []
+        def _copy(src, dst):
+            moved.append((src, dst))
+        shutil.move(self.src_file, self.dst_dir, copy_function=_copy)
+        self.assertEqual(len(moved), 1)
+
+    @mock_rename
+    def test_move_dir_special_function(self):
+        moved = []
+        def _copy(src, dst):
+            moved.append((src, dst))
+        support.create_empty_file(os.path.join(self.src_dir, 'child'))
+        support.create_empty_file(os.path.join(self.src_dir, 'child1'))
+        shutil.move(self.src_dir, self.dst_dir, copy_function=_copy)
+        self.assertEqual(len(moved), 3)
+
 
 class TestCopyFile(unittest.TestCase):
 
