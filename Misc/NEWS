@@ -623,6 +623,8 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #21629: Fix Argument Clinic's "--converters" feature.
+
 - Add support for ``yield from`` to 2to3.
 
 - Add support for the PEP 465 matrix multiplication operator to 2to3.
