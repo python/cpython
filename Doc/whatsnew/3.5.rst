@@ -194,6 +194,10 @@ smtpd
   is ``True`` for backward compatibility reasons, but will change to ``False``
   in Python 3.6.  (Contributed by Maciej Szulik in :issue:`19662`.)
 
+* It is now possible to provide, directly or via name resolution, IPv6
+  addresses in the :class:`~smtpd.SMTPServer` constructor, and have it
+  successfully connect.  (Contributed by Milan Oberkirch in :issue:`14758`.)
+
 socket
 ------
 
