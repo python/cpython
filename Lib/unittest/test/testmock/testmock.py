@@ -1211,7 +1211,7 @@ class MockTest(unittest.TestCase):
         m = Mock()
         m.hello(name='hello', daddy='hero')
         text = "call(daddy='hero', name='hello')"
-        self.assertEquals(repr(m.hello.call_args), text)
+        self.assertEqual(repr(m.hello.call_args), text)
 
     def test_mock_add_spec(self):
         class _One(object):
