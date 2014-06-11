@@ -2044,11 +2044,9 @@ def add_default_legacy_c_converter(cls):
     # automatically add converter for default format unit
     # (but without stomping on the existing one if it's already
     # set, in case you subclass)
-    if ((cls.format_unit != 'O&') and
+    if ((cls.format_unit not in ('O&', '')) and
         (cls.format_unit not in legacy_converters)):
         legacy_converters[cls.format_unit] = cls
-        if cls.format_unit:
-            legacy_converters[cls.format_unit] = cls
     return cls
 
 def add_legacy_c_converter(format_unit, **kwargs):
