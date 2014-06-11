@@ -35,8 +35,9 @@ class MockFile:
 class MockSocket:
     """Mock socket object used by smtpd and smtplib tests.
     """
-    def __init__(self):
+    def __init__(self, family=None):
         global _reply_data
+        self.family = family
         self.output = []
         self.lines = []
         if _reply_data:
@@ -108,8 +109,7 @@ class MockSocket:
 
 
 def socket(family=None, type=None, proto=None):
-    return MockSocket()
-
+    return MockSocket(family)
 
 def create_connection(address, timeout=socket_module._GLOBAL_DEFAULT_TIMEOUT,
                       source_address=None):
@@ -144,13 +144,16 @@ def gethostname():
 def gethostbyname(name):
     return ""
 
+def getaddrinfo(host, port):
+    return socket_module.getaddrinfo(host, port)
 
 gaierror = socket_module.gaierror
 error = socket_module.error
 
 
 # Constants
-AF_INET = None
+AF_INET = socket_module.AF_INET
+AF_INET6 = socket_module.AF_INET6
 SOCK_STREAM = None
 SOL_SOCKET = None
 SO_REUSEADDR = None
