@@ -2619,14 +2619,14 @@ textiowrapper_close(textio *self, PyObject *args)
                 PyErr_Restore(exc, val, tb);
             }
             else {
-                PyObject *val2;
+                PyObject *exc2, *val2, *tb2;
+                PyErr_Fetch(&exc2, &val2, &tb2);
                 PyErr_NormalizeException(&exc, &val, &tb);
                 Py_DECREF(exc);
                 Py_XDECREF(tb);
-                PyErr_Fetch(&exc, &val2, &tb);
-                PyErr_NormalizeException(&exc, &val2, &tb);
+                PyErr_NormalizeException(&exc2, &val2, &tb2);
                 PyException_SetContext(val2, val);
-                PyErr_Restore(exc, val2, tb);
+                PyErr_Restore(exc2, val2, tb2);
             }
         }
         return res;
