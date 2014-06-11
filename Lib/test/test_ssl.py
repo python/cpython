@@ -2957,6 +2957,23 @@ else:
                 self.assertRaises(ValueError, s.read, 1024)
                 self.assertRaises(ValueError, s.write, b'hello')
 
+        def test_sendfile(self):
+            TEST_DATA = b"x" * 512
+            with open(support.TESTFN, 'wb') as f:
+                f.write(TEST_DATA)
+            self.addCleanup(support.unlink, support.TESTFN)
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.load_verify_locations(CERTFILE)
+            context.load_cert_chain(CERTFILE)
+            server = ThreadedEchoServer(context=context, chatty=False)
+            with server:
+                with context.wrap_socket(socket.socket()) as s:
+                    s.connect((HOST, server.port))
+                    with open(support.TESTFN, 'rb') as file:
+                        s.sendfile(file)
+                        self.assertEqual(s.recv(1024), TEST_DATA)
+
 
 def test_main(verbose=False):
     if support.verbose:
