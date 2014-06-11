@@ -28,7 +28,7 @@ SMTPServer Objects
 
 
 .. class:: SMTPServer(localaddr, remoteaddr, data_size_limit=33554432,\
-                      map=None)
+                      map=None, decode_data=True)
 
    Create a new :class:`SMTPServer` object, which binds to local address
    *localaddr*.  It will treat *remoteaddr* as an upstream SMTP relayer.  It
@@ -41,6 +41,11 @@ SMTPServer Objects
 
    A dictionary can be specified in *map* to avoid using a global socket map.
 
+   *decode_data* specifies whether the data portion of the SMTP transaction
+   should be decoded using UTF-8.  The default is ``True`` for backward
+   compatibility reasons, but will change to ``False`` in Python 3.6.  Specify
+   the keyword value explicitly to avoid the :exc:`DeprecationWarning`.
+
    .. method:: process_message(peer, mailfrom, rcpttos, data)
 
       Raise :exc:`NotImplementedError` exception. Override this in subclasses to
@@ -51,6 +56,10 @@ SMTPServer Objects
       containing the contents of the e-mail (which should be in :rfc:`2822`
       format).
 
+      If the *decode_data* constructor keyword is set to ``True``, the *data*
+      argument will be a unicode string.  If it is set to ``False``, it
+      will be a bytes object.
+
    .. attribute:: channel_class
 
       Override this in subclasses to use a custom :class:`SMTPChannel` for
@@ -58,6 +67,9 @@ SMTPServer Objects
 
    .. versionchanged:: 3.4
       The *map* argument was added.
+
+   .. versionchanged:: 3.5
+      the *decode_data* argument was added.
 
 
 DebuggingServer Objects
@@ -97,7 +109,7 @@ SMTPChannel Objects
 -------------------
 
 .. class:: SMTPChannel(server, conn, addr, data_size_limit=33554432,\
-                       map=None))
+                       map=None, decode_data=True)
 
    Create a new :class:`SMTPChannel` object which manages the communication
    between the server and a single SMTP client.
@@ -110,8 +122,16 @@ SMTPChannel Objects
 
    A dictionary can be specified in *map* to avoid using a global socket map.
 
+   *decode_data* specifies whether the data portion of the SMTP transaction
+   should be decoded using UTF-8.  The default is ``True`` for backward
+   compatibility reasons, but will change to ``False`` in Python 3.6.  Specify
+   the keyword value explicitly to avoid the :exc:`DeprecationWarning`.
+
    To use a custom SMTPChannel implementation you need to override the
    :attr:`SMTPServer.channel_class` of your :class:`SMTPServer`.
+
+   .. versionchanged:: 3.5
+      the *decode_data* argument was added.
 
    The :class:`SMTPChannel` has the following instance variables:
 
