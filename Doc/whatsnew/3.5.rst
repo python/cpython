@@ -184,6 +184,16 @@ signal
   debugging, instead of integer “magic numbers”. (contributed by Giampaolo
   Rodola' in :issue:`21076`)
 
+smtpd
+-----
+
+* Both :class:`~smtpd.SMTPServer` and :class:`smtpd.SMTPChannel` now accept a
+  *decode_data* keyword to determine if the DATA portion of the SMTP
+  transaction is decoded using the ``utf-8`` codec or is instead provided to
+  :meth:`~smtpd.SMTPServer.process_message` as a byte string.  The default
+  is ``True`` for backward compatibility reasons, but will change to ``False``
+  in Python 3.6.  (Contributed by Maciej Szulik in :issue:`19662`.)
+
 socket
 ------
 
@@ -244,6 +254,12 @@ Deprecated Python modules, functions and methods
 
 * The :mod:`formatter` module has now graduated to full deprecation and is still
   slated for removal in Python 3.6.
+
+* :mod:`smtpd` has in the past always decoded the DATA portion of email
+  messages using the ``utf-8`` codec.  This can now be controlled by the new
+  *decode_data* keyword to :class:`~smtpd.SMTPServer`.  The default value is
+  ``True``, but this default is deprecated.  Specify the *decode_data* keyword
+  with an appropriate value to avoid the deprecation warning.
 
 
 Deprecated functions and types of the C API
