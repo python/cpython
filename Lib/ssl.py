@@ -700,6 +700,16 @@ class SSLSocket(socket):
         else:
             return socket.sendall(self, data, flags)
 
+    def sendfile(self, file, offset=0, count=None):
+        """Send a file, possibly by using os.sendfile() if this is a
+        clear-text socket.  Return the total number of bytes sent.
+        """
+        if self._sslobj is None:
+            # os.sendfile() works with plain sockets only
+            return super().sendfile(file, offset, count)
+        else:
+            return self._sendfile_use_send(file, offset, count)
+
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()
         if self._sslobj:
