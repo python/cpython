@@ -679,7 +679,8 @@ if threading:
         """
 
         def __init__(self, addr, handler, poll_interval, sockmap):
-            smtpd.SMTPServer.__init__(self, addr, None, map=sockmap)
+            smtpd.SMTPServer.__init__(self, addr, None, map=sockmap,
+                                      decode_data=True)
             self.port = self.socket.getsockname()[1]
             self._handler = handler
             self._thread = None

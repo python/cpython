@@ -184,7 +184,8 @@ class DebuggingServerTests(unittest.TestCase):
         self.old_DEBUGSTREAM = smtpd.DEBUGSTREAM
         smtpd.DEBUGSTREAM = io.StringIO()
         # Pick a random unused port by passing 0 for the port number
-        self.serv = smtpd.DebuggingServer((HOST, 0), ('nowhere', -1))
+        self.serv = smtpd.DebuggingServer((HOST, 0), ('nowhere', -1),
+                                          decode_data=True)
         # Keep a note of what port was assigned
         self.port = self.serv.socket.getsockname()[1]
         serv_args = (self.serv, self.serv_evt, self.client_evt)
@@ -719,7 +720,8 @@ class SimSMTPServer(smtpd.SMTPServer):
 
     def handle_accepted(self, conn, addr):
         self._SMTPchannel = self.channel_class(
-            self._extra_features, self, conn, addr)
+            self._extra_features, self, conn, addr,
+            decode_data=self._decode_data)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
         pass
@@ -742,7 +744,7 @@ class SMTPSimTests(unittest.TestCase):
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
         # Pick a random unused port by passing 0 for the port number
-        self.serv = SimSMTPServer((HOST, 0), ('nowhere', -1))
+        self.serv = SimSMTPServer((HOST, 0), ('nowhere', -1), decode_data=True)
         # Keep a note of what port was assigned
         self.port = self.serv.socket.getsockname()[1]
         serv_args = (self.serv, self.serv_evt, self.client_evt)
