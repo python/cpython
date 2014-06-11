@@ -191,7 +191,8 @@ Directory and files operations
    match one of the glob-style *patterns* provided.  See the example below.
 
 
-.. function:: copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2, ignore_dangling_symlinks=False)
+.. function:: copytree(src, dst, symlinks=False, ignore=None, \
+              copy_function=copy2, ignore_dangling_symlinks=False)
 
    Recursively copy an entire directory tree rooted at *src*, returning the
    destination directory.  The destination
@@ -282,7 +283,7 @@ Directory and files operations
       .. versionadded:: 3.3
 
 
-.. function:: move(src, dst)
+.. function:: move(src, dst, copy_function=copy2)
 
    Recursively move a file or directory (*src*) to another location (*dst*)
    and return the destination.
@@ -295,14 +296,25 @@ Directory and files operations
    :func:`os.rename` semantics.
 
    If the destination is on the current filesystem, then :func:`os.rename` is
-   used.  Otherwise, *src* is copied (using :func:`shutil.copy2`) to *dst* and
-   then removed. In case of symlinks, a new symlink pointing to the target of
-   *src* will be created in or as *dst* and *src* will be removed.
+   used. Otherwise, *src* is copied to *dst* using *copy_function* and then
+   removed.  In case of symlinks, a new symlink pointing to the target of *src*
+   will be created in or as *dst* and *src* will be removed.
+
+   If *copy_function* is given, it must be a callable that takes two arguments
+   *src* and *dst*, and will be used to copy *src* to *dest* if
+   :func:`os.rename` cannot be used.  If the source is a directory,
+   :func:`copytree` is called, passing it the :func:`copy_function`. The
+   default *copy_function* is :func:`copy2`.  Using :func:`copy` as the
+   *copy_function* allows the move to succeed when it is not possible to also
+   copy the metadata, at the expense of not copying any of the metadata.
 
    .. versionchanged:: 3.3
       Added explicit symlink handling for foreign filesystems, thus adapting
       it to the behavior of GNU's :program:`mv`.
       Now returns *dst*.
+
+   .. versionchanged:: 3.5
+      Added the *copy_function* keyword argument.
 
 .. function:: disk_usage(path)
 
