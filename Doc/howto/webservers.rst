@@ -691,7 +691,7 @@ published, which is a good starting point.
 The newest version of TurboGears, version 2.0, moves even further in direction
 of WSGI support and a component-based architecture.  TurboGears 2 is based on
 the WSGI stack of another popular component-based web framework, `Pylons
-<http://pylonshq.com/>`_.
+<http://www.pylonsproject.org/>`_.
 
 
 Zope
