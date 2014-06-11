@@ -118,6 +118,11 @@ Windows
 - Issue #21671, CVE-2014-0224: The bundled version of OpenSSL has been
   updated to 1.0.1h.
 
+Tools/Demos
+-----------
+
+- Issue #21629: Fix Argument Clinic's "--converters" feature.
+
 
 What's New in Python 3.4.1?
 ===========================
