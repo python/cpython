@@ -470,14 +470,14 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
         if (_PyObject_CallMethodId(result, &PyId_close, NULL) != NULL)
             PyErr_Restore(exc, val, tb);
         else {
-            PyObject *val2;
+            PyObject *exc2, *val2, *tb2;
+            PyErr_Fetch(&exc2, &val2, &tb2);
             PyErr_NormalizeException(&exc, &val, &tb);
             Py_XDECREF(exc);
             Py_XDECREF(tb);
-            PyErr_Fetch(&exc, &val2, &tb);
-            PyErr_NormalizeException(&exc, &val2, &tb);
+            PyErr_NormalizeException(&exc2, &val2, &tb2);
             PyException_SetContext(val2, val);
-            PyErr_Restore(exc, val2, tb);
+            PyErr_Restore(exc2, val2, tb2);
         }
         Py_DECREF(result);
     }
