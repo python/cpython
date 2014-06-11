@@ -98,7 +98,6 @@ class Devnull:
 
 DEBUGSTREAM = Devnull()
 NEWLINE = '\n'
-EMPTYSTRING = ''
 COMMASPACE = ', '
 DATA_SIZE_DEFAULT = 33554432
 
@@ -122,12 +121,28 @@ class SMTPChannel(asynchat.async_chat):
     max_command_size_limit = max(command_size_limits.values())
 
     def __init__(self, server, conn, addr, data_size_limit=DATA_SIZE_DEFAULT,
-                 map=None):
+                 map=None, decode_data=None):
         asynchat.async_chat.__init__(self, conn, map=map)
         self.smtp_server = server
         self.conn = conn
         self.addr = addr
         self.data_size_limit = data_size_limit
+        if decode_data is None:
+            warn("The decode_data default of True will change to False in 3.6;"
+                 " specify an explicit value for this keyword",
+                 DeprecationWarning, 2)
+            decode_data = True
+        self._decode_data = decode_data
+        if decode_data:
+            self._emptystring = ''
+            self._linesep = '\r\n'
+            self._dotsep = '.'
+            self._newline = NEWLINE
+        else:
+            self._emptystring = b''
+            self._linesep = b'\r\n'
+            self._dotsep = b'.'
+            self._newline = b'\n'
         self.received_lines = []
         self.smtp_state = self.COMMAND
         self.seen_greeting = ''
@@ -287,11 +302,14 @@ class SMTPChannel(asynchat.async_chat):
             return
         elif limit:
             self.num_bytes += len(data)
-        self.received_lines.append(str(data, "utf-8"))
+        if self._decode_data:
+            self.received_lines.append(str(data, 'utf-8'))
+        else:
+            self.received_lines.append(data)
 
     # Implementation of base class abstract method
     def found_terminator(self):
-        line = EMPTYSTRING.join(self.received_lines)
+        line = self._emptystring.join(self.received_lines)
         print('Data:', repr(line), file=DEBUGSTREAM)
         self.received_lines = []
         if self.smtp_state == self.COMMAND:
@@ -300,6 +318,8 @@ class SMTPChannel(asynchat.async_chat):
                 self.push('500 Error: bad syntax')
                 return
             method = None
+            if not self._decode_data:
+                line = str(line, 'utf-8')
             i = line.find(' ')
             if i < 0:
                 command = line.upper()
@@ -330,12 +350,12 @@ class SMTPChannel(asynchat.async_chat):
             # Remove extraneous carriage returns and de-transparency according
             # to RFC 5321, Section 4.5.2.
             data = []
-            for text in line.split('\r\n'):
-                if text and text[0] == '.':
+            for text in line.split(self._linesep):
+                if text and text[0] == self._dotsep:
                     data.append(text[1:])
                 else:
                     data.append(text)
-            self.received_data = NEWLINE.join(data)
+            self.received_data = self._newline.join(data)
             status = self.smtp_server.process_message(self.peer,
                                                       self.mailfrom,
                                                       self.rcpttos,
@@ -577,10 +597,17 @@ class SMTPServer(asyncore.dispatcher):
     channel_class = SMTPChannel
 
     def __init__(self, localaddr, remoteaddr,
-                 data_size_limit=DATA_SIZE_DEFAULT, map=None):
+                 data_size_limit=DATA_SIZE_DEFAULT, map=None,
+                 decode_data=None):
         self._localaddr = localaddr
         self._remoteaddr = remoteaddr
         self.data_size_limit = data_size_limit
+        if decode_data is None:
+            warn("The decode_data default of True will change to False in 3.6;"
+                 " specify an explicit value for this keyword",
+                 DeprecationWarning, 2)
+            decode_data = True
+        self._decode_data = decode_data
         asyncore.dispatcher.__init__(self, map=map)
         try:
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -599,7 +626,7 @@ class SMTPServer(asyncore.dispatcher):
     def handle_accepted(self, conn, addr):
         print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
         channel = self.channel_class(self, conn, addr, self.data_size_limit,
-                                     self._map)
+                                     self._map, self._decode_data)
 
     # API for "doing something useful with the message"
     def process_message(self, peer, mailfrom, rcpttos, data):
