@@ -144,8 +144,8 @@ def gethostname():
 def gethostbyname(name):
     return ""
 
-def getaddrinfo(host, port):
-    return socket_module.getaddrinfo(host, port)
+def getaddrinfo(*args, **kw):
+    return socket_module.getaddrinfo(*args, **kw)
 
 gaierror = socket_module.gaierror
 error = socket_module.error
@@ -154,6 +154,6 @@ error = socket_module.error
 # Constants
 AF_INET = socket_module.AF_INET
 AF_INET6 = socket_module.AF_INET6
-SOCK_STREAM = None
+SOCK_STREAM = socket_module.SOCK_STREAM
 SOL_SOCKET = None
 SO_REUSEADDR = None
