@@ -610,7 +610,8 @@ class SMTPServer(asyncore.dispatcher):
         self._decode_data = decode_data
         asyncore.dispatcher.__init__(self, map=map)
         try:
-            gai_results = socket.getaddrinfo(*localaddr)
+            gai_results = socket.getaddrinfo(*localaddr,
+                                             type=socket.SOCK_STREAM)
             self.create_socket(gai_results[0][0], gai_results[0][1])
             # try to re-use a server port if possible
             self.set_reuse_addr()
