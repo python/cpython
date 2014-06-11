@@ -68,8 +68,8 @@ SMTPServer Objects
    .. versionchanged:: 3.4
       The *map* argument was added.
 
-   .. versionchanged:: 3.5
-      the *decode_data* argument was added.
+   .. versionchanged:: 3.5 the *decode_data* argument was added, and *localaddr*
+      and *remoteaddr* may now contain IPv6 addresses.
 
 
 DebuggingServer Objects
