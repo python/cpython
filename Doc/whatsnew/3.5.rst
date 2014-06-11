@@ -181,8 +181,17 @@ signal
 
 * Different constants of :mod:`signal` module are now enumeration values using
   the :mod:`enum` module. This allows meaningful names to be printed during
-  debugging, instead of integer “magic numbers”. (contribute by Giampaolo
+  debugging, instead of integer “magic numbers”. (contributed by Giampaolo
   Rodola' in :issue:`21076`)
+
+socket
+------
+
+* New :meth:`socket.socket.sendfile` method allows to send a file over a socket
+  by using high-performance :func:`os.sendfile` function on UNIX resulting in
+  uploads being from 2x to 3x faster than when using plain
+  :meth:`socket.socket.send`.
+  (contributed by Giampaolo Rodola' in :issue:`17552`)
 
 xmlrpc
 ------

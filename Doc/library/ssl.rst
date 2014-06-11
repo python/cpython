@@ -789,6 +789,9 @@ SSL sockets provide the following methods of :ref:`socket-objects`:
   (but passing a non-zero ``flags`` argument is not allowed)
 - :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
   the same limitation)
+- :meth:`~socket.socket.sendfile()` (but :mod:`os.sendfile` will be used
+  for plain-text sockets only, else :meth:`~socket.socket.send()` will be used)
+   .. versionadded:: 3.5
 - :meth:`~socket.socket.shutdown()`
 
 However, since the SSL (and TLS) protocol has its own framing atop

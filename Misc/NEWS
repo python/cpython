@@ -92,6 +92,10 @@ Core and Builtins
 Library
 -------
 
+- Issue 17552: new socket.sendfile() method allowing to send a file over a
+  socket by using high-performance os.sendfile() on UNIX.
+  Patch by Giampaolo Rodola'.
+
 - Issue #18039: dbm.dump.open() now always creates a new database when the
   flag has the value 'n'.  Patch by Claudiu Popa.
 

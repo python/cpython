@@ -1092,6 +1092,10 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 
    Availability: Unix.
 
+   .. note::
+
+      For a higher-level version of this see :mod:`socket.socket.sendfile`.
+
    .. versionadded:: 3.3
 
 
