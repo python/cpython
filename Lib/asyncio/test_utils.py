@@ -372,3 +372,10 @@ class MockPattern(str):
     """
     def __eq__(self, other):
         return bool(re.search(str(self), other, re.S))
+
+
+def get_function_source(func):
+    source = events._get_function_source(func)
+    if source is None:
+        raise ValueError("unable to get the source of %r" % (func,))
+    return source
