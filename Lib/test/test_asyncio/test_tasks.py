@@ -116,21 +116,30 @@ class TaskTests(unittest.TestCase):
             yield from []
             return 'abc'
 
+        filename, lineno = test_utils.get_function_source(notmuch)
+        src = "%s:%s" % (filename, lineno)
+
         t = asyncio.Task(notmuch(), loop=self.loop)
         t.add_done_callback(Dummy())
-        self.assertEqual(repr(t), 'Task(<notmuch>)<PENDING, [Dummy()]>')
+        self.assertEqual(repr(t),
+                         'Task(<notmuch at %s>)<PENDING, [Dummy()]>' % src)
+
         t.cancel()  # Does not take immediate effect!
-        self.assertEqual(repr(t), 'Task(<notmuch>)<CANCELLING, [Dummy()]>')
+        self.assertEqual(repr(t),
+                         'Task(<notmuch at %s>)<CANCELLING, [Dummy()]>' % src)
         self.assertRaises(asyncio.CancelledError,
                           self.loop.run_until_complete, t)
-        self.assertEqual(repr(t), 'Task(<notmuch>)<CANCELLED>')
+        self.assertEqual(repr(t),
+                         'Task(<notmuch done at %s>)<CANCELLED>' % filename)
+
         t = asyncio.Task(notmuch(), loop=self.loop)
         self.loop.run_until_complete(t)
-        self.assertEqual(repr(t), "Task(<notmuch>)<result='abc'>")
+        self.assertEqual(repr(t),
+                         "Task(<notmuch done at %s>)<result='abc'>" % filename)
 
     def test_task_repr_custom(self):
         @asyncio.coroutine
-        def coro():
+        def notmuch():
             pass
 
         class T(asyncio.Future):
@@ -141,10 +150,14 @@ class TaskTests(unittest.TestCase):
             def __repr__(self):
                 return super().__repr__()
 
-        gen = coro()
+        gen = notmuch()
         t = MyTask(gen, loop=self.loop)
-        self.assertEqual(repr(t), 'T[](<coro>)')
-        gen.close()
+        filename = gen.gi_code.co_filename
+        lineno = gen.gi_frame.f_lineno
+        # FIXME: check for the name "coro" instead of "notmuch" because
+        # @asyncio.coroutine drops the name of the wrapped function:
+        # http://bugs.python.org/issue21205
+        self.assertEqual(repr(t), 'T[](<coro at %s:%s>)' % (filename, lineno))
 
     def test_task_basics(self):
         @asyncio.coroutine
