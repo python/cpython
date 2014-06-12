@@ -8,9 +8,29 @@ __all__ = ['AbstractEventLoopPolicy',
            'get_child_watcher', 'set_child_watcher',
            ]
 
+import functools
+import inspect
 import subprocess
 import threading
 import socket
+import sys
+
+
+_PY34 = sys.version_info >= (3, 4)
+
+def _get_function_source(func):
+    if _PY34:
+        func = inspect.unwrap(func)
+    elif hasattr(func, '__wrapped__'):
+        func = func.__wrapped__
+    if inspect.isfunction(func):
+        code = func.__code__
+        return (code.co_filename, code.co_firstlineno)
+    if isinstance(func, functools.partial):
+        return _get_function_source(func.func)
+    if _PY34 and isinstance(func, functools.partialmethod):
+        return _get_function_source(func.func)
+    return None
 
 
 class Handle:
@@ -26,7 +46,15 @@ class Handle:
         self._cancelled = False
 
     def __repr__(self):
-        res = 'Handle({}, {})'.format(self._callback, self._args)
+        cb_repr = getattr(self._callback, '__qualname__', None)
+        if not cb_repr:
+            cb_repr = str(self._callback)
+
+        source = _get_function_source(self._callback)
+        if source:
+            cb_repr += ' at %s:%s' % source
+
+        res = 'Handle({}, {})'.format(cb_repr, self._args)
         if self._cancelled:
             res += '<cancelled>'
         return res
