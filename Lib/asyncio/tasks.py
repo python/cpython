@@ -188,7 +188,15 @@ class Task(futures.Future):
         i = res.find('<')
         if i < 0:
             i = len(res)
-        res = res[:i] + '(<{}>)'.format(self._coro.__name__) + res[i:]
+        text = self._coro.__name__
+        coro = self._coro
+        if inspect.isgenerator(coro):
+            filename = coro.gi_code.co_filename
+            if coro.gi_frame is not None:
+                text += ' at %s:%s' % (filename, coro.gi_frame.f_lineno)
+            else:
+                text += ' done at %s' % filename
+        res = res[:i] + '(<{}>)'.format(text) + res[i:]
         return res
 
     def get_stack(self, *, limit=None):
