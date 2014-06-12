@@ -26,24 +26,23 @@ additions, call the :func:`site.main` function.
    :option:`-S`.
 
 .. index::
-   pair: site-python; directory
    pair: site-packages; directory
 
 It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` and then :file:`lib/site-python` (on
-Unix and Macintosh).  For each of the distinct head-tail combinations, it sees
-if it refers to an existing directory, and if so, adds it to ``sys.path`` and
-also inspects the newly added path for configuration files.
+:file:`lib/python{X.Y}/site-packages` (on Unix and Macintosh).  For each
+of the distinct head-tail combinations, it sees if it refers to an existing
+directory, and if so, adds it to ``sys.path`` and also inspects the newly
+added path for configuration files.
 
-.. deprecated-removed:: 3.4 3.5
-   Support for the "site-python" directory will be removed in 3.5.
+.. versionchanged:: 3.5
+   Support for the "site-python" directory has been removed.
 
 If a file named "pyvenv.cfg" exists one directory above sys.executable,
 sys.prefix and sys.exec_prefix are set to that directory and
-it is also checked for site-packages and site-python (sys.base_prefix and
+it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
 the key "include-system-site-packages" set to anything other than "false"
@@ -195,8 +194,7 @@ Module contents
 
 .. function:: getsitepackages()
 
-   Return a list containing all global site-packages directories (and possibly
-   site-python).
+   Return a list containing all global site-packages directories.
 
    .. versionadded:: 3.2
 
