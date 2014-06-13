@@ -193,9 +193,6 @@ then the corresponding setup script would be  ::
          packages=['foobar', 'foobar.subfoo'],
          )
 
-(Again, the empty string in :option:`package_dir` stands for the current
-directory.)
-
 
 .. _single-ext:
 
