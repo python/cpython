@@ -82,12 +82,13 @@ class NumberTestCase(unittest.TestCase):
             self.assertRaises(TypeError, t, "")
             self.assertRaises(TypeError, t, None)
 
-##    def test_valid_ranges(self):
-##        # invalid values of the correct type
-##        # raise ValueError (not OverflowError)
-##        for t, (l, h) in zip(unsigned_types, unsigned_ranges):
-##            self.assertRaises(ValueError, t, l-1)
-##            self.assertRaises(ValueError, t, h+1)
+    @unittest.skip('test disabled')
+    def test_valid_ranges(self):
+        # invalid values of the correct type
+        # raise ValueError (not OverflowError)
+        for t, (l, h) in zip(unsigned_types, unsigned_ranges):
+            self.assertRaises(ValueError, t, l-1)
+            self.assertRaises(ValueError, t, h+1)
 
     def test_from_param(self):
         # the from_param class method attribute always
@@ -200,16 +201,17 @@ class NumberTestCase(unittest.TestCase):
         self.assertEqual(v.value, b'?')
 
     # array does not support c_bool / 't'
-    # def test_bool_from_address(self):
-    #     from ctypes import c_bool
-    #     from array import array
-    #     a = array(c_bool._type_, [True])
-    #     v = t.from_address(a.buffer_info()[0])
-    #     self.assertEqual(v.value, a[0])
-    #     self.assertEqual(type(v) is t)
-    #     a[0] = False
-    #     self.assertEqual(v.value, a[0])
-    #     self.assertEqual(type(v) is t)
+    @unittest.skip('test disabled')
+    def test_bool_from_address(self):
+        from ctypes import c_bool
+        from array import array
+        a = array(c_bool._type_, [True])
+        v = t.from_address(a.buffer_info()[0])
+        self.assertEqual(v.value, a[0])
+        self.assertEqual(type(v) is t)
+        a[0] = False
+        self.assertEqual(v.value, a[0])
+        self.assertEqual(type(v) is t)
 
     def test_init(self):
         # c_int() can be initialized from Python's int, and c_int.
@@ -227,8 +229,9 @@ class NumberTestCase(unittest.TestCase):
             if (hasattr(t, "__ctype_le__")):
                 self.assertRaises(OverflowError, t.__ctype_le__, big_int)
 
-##    def test_perf(self):
-##        check_perf()
+    @unittest.skip('test disabled')
+    def test_perf(self):
+        check_perf()
 
 from ctypes import _SimpleCData
 class c_int_S(_SimpleCData):
