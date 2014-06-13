@@ -43,21 +43,21 @@ def find_lib(name):
     raise ValueError("%s not found" % (name,))
 
 class MachOTest(unittest.TestCase):
-    if sys.platform == "darwin":
-        def test_find(self):
+    @unittest.skipUnless(sys.platform == "darwin", 'OSX-specific test')
+    def test_find(self):
 
-            self.assertEqual(find_lib('pthread'),
-                                 '/usr/lib/libSystem.B.dylib')
+        self.assertEqual(find_lib('pthread'),
+                             '/usr/lib/libSystem.B.dylib')
 
-            result = find_lib('z')
-            # Issue #21093: dyld default search path includes $HOME/lib and
-            # /usr/local/lib before /usr/lib, which caused test failures if
-            # a local copy of libz exists in one of them. Now ignore the head
-            # of the path.
-            self.assertRegex(result, r".*/lib/libz\..*.*\.dylib")
+        result = find_lib('z')
+        # Issue #21093: dyld default search path includes $HOME/lib and
+        # /usr/local/lib before /usr/lib, which caused test failures if
+        # a local copy of libz exists in one of them. Now ignore the head
+        # of the path.
+        self.assertRegex(result, r".*/lib/libz\..*.*\.dylib")
 
-            self.assertEqual(find_lib('IOKit'),
-                                 '/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit')
+        self.assertEqual(find_lib('IOKit'),
+                             '/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit')
 
 if __name__ == "__main__":
     unittest.main()
