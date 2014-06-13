@@ -1456,6 +1456,7 @@ class BasicCANTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class CANTest(ThreadedCANSocketTest):
 
     def __init__(self, methodName='runTest'):
