@@ -20,9 +20,6 @@ Visual Studio 2010 Premium Edition
 Installing Service Pack 1 for Visual Studio 2010 is highly recommended
 to avoid LNK1123 errors.
 
-The official Python releases are built with PGO using Visual Studio 2010
-Ultimate Edition.
-
 All you need to do to build is open the solution "pcbuild.sln" in Visual
 Studio, select the desired combination of configuration and platform,
 then build with "Build Solution" or the F7 keyboard shortcut.  You can
