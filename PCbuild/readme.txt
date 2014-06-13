@@ -17,6 +17,9 @@ Visual Studio 2010 Premium Edition
     Required for building Release configuration builds that make use of
     Profile Guided Optimization (PGO), on either platform.
 
+Installing Service Pack 1 for Visual Studio 2010 is highly recommended
+to avoid LNK1123 errors.
+
 The official Python releases are built with PGO using Visual Studio 2010
 Ultimate Edition.
 
