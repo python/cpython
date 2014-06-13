@@ -457,10 +457,6 @@ starting from Python 3.3, they are aliases of :exc:`OSError`.
 
 .. exception:: IOError
 
-.. exception:: VMSError
-
-   Only available on VMS.
-
 .. exception:: WindowsError
 
    Only available on Windows.
