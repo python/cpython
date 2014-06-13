@@ -1,7 +1,7 @@
 from ctypes import *
 import unittest, sys
 from test import support
-from ctypes.test import is_resource_enabled
+from ctypes.test import requires
 
 ################################################################
 # This section should be moved into ctypes\__init__.py, when it's ready.
@@ -39,24 +39,25 @@ class PythonAPITestCase(unittest.TestCase):
         del pyob
         self.assertEqual(grc(s), refcnt)
 
-    if is_resource_enabled("refcount"):
-        # This test is unreliable, because it is possible that code in
-        # unittest changes the refcount of the '42' integer.  So, it
-        # is disabled by default.
-        def test_PyLong_Long(self):
-            ref42 = grc(42)
-            pythonapi.PyLong_FromLong.restype = py_object
-            self.assertEqual(pythonapi.PyLong_FromLong(42), 42)
+    # This test is unreliable, because it is possible that code in
+    # unittest changes the refcount of the '42' integer.  So, it
+    # is disabled by default.
+    @requires("refcount")
+    @support.refcount_test
+    def test_PyLong_Long(self):
+        ref42 = grc(42)
+        pythonapi.PyLong_FromLong.restype = py_object
+        self.assertEqual(pythonapi.PyLong_FromLong(42), 42)
 
-            self.assertEqual(grc(42), ref42)
+        self.assertEqual(grc(42), ref42)
 
-            pythonapi.PyLong_AsLong.argtypes = (py_object,)
-            pythonapi.PyLong_AsLong.restype = c_long
+        pythonapi.PyLong_AsLong.argtypes = (py_object,)
+        pythonapi.PyLong_AsLong.restype = c_long
 
-            res = pythonapi.PyLong_AsLong(42)
-            self.assertEqual(grc(res), ref42 + 1)
-            del res
-            self.assertEqual(grc(42), ref42)
+        res = pythonapi.PyLong_AsLong(42)
+        self.assertEqual(grc(res), ref42 + 1)
+        del res
+        self.assertEqual(grc(42), ref42)
 
     @support.refcount_test
     def test_PyObj_FromPtr(self):
