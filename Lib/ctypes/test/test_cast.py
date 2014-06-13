@@ -1,4 +1,5 @@
 from ctypes import *
+from ctypes.test import need_symbol
 import unittest
 import sys
 
@@ -75,15 +76,11 @@ class Test(unittest.TestCase):
         self.assertEqual(cast(cast(s, c_void_p), c_char_p).value,
                              b"hiho")
 
-    try:
-        c_wchar_p
-    except NameError:
-        pass
-    else:
-        def test_wchar_p(self):
-            s = c_wchar_p("hiho")
-            self.assertEqual(cast(cast(s, c_void_p), c_wchar_p).value,
-                                 "hiho")
+    @need_symbol('c_wchar_p')
+    def test_wchar_p(self):
+        s = c_wchar_p("hiho")
+        self.assertEqual(cast(cast(s, c_void_p), c_wchar_p).value,
+                             "hiho")
 
 if __name__ == "__main__":
     unittest.main()
