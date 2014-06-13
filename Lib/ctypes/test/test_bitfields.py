@@ -1,4 +1,5 @@
 from ctypes import *
+from ctypes.test import need_symbol
 import unittest
 import os
 
@@ -127,19 +128,17 @@ class BitFieldTest(unittest.TestCase):
         result = self.fail_fields(("a", c_char, 1))
         self.assertEqual(result, (TypeError, 'bit fields not allowed for type c_char'))
 
-        try:
-            c_wchar
-        except NameError:
-            pass
-        else:
-            result = self.fail_fields(("a", c_wchar, 1))
-            self.assertEqual(result, (TypeError, 'bit fields not allowed for type c_wchar'))
-
         class Dummy(Structure):
             _fields_ = []
 
         result = self.fail_fields(("a", Dummy, 1))
         self.assertEqual(result, (TypeError, 'bit fields not allowed for type Dummy'))
+
+    @need_symbol('c_wchar')
+    def test_c_wchar(self):
+        result = self.fail_fields(("a", c_wchar, 1))
+        self.assertEqual(result,
+                (TypeError, 'bit fields not allowed for type c_wchar'))
 
     def test_single_bitfield_size(self):
         for c_typ in int_types:
@@ -240,7 +239,7 @@ class BitFieldTest(unittest.TestCase):
             _anonymous_ = ["_"]
             _fields_ = [("_", X)]
 
-    @unittest.skipUnless(hasattr(ctypes, "c_uint32"), "c_int32 is required")
+    @need_symbol('c_uint32')
     def test_uint32(self):
         class X(Structure):
             _fields_ = [("a", c_uint32, 32)]
@@ -250,7 +249,7 @@ class BitFieldTest(unittest.TestCase):
         x.a = 0xFDCBA987
         self.assertEqual(x.a, 0xFDCBA987)
 
-    @unittest.skipUnless(hasattr(ctypes, "c_uint64"), "c_int64 is required")
+    @need_symbol('c_uint64')
     def test_uint64(self):
         class X(Structure):
             _fields_ = [("a", c_uint64, 64)]

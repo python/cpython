@@ -1,5 +1,6 @@
 import unittest
 from ctypes import *
+from ctypes.test import need_symbol
 from struct import calcsize
 import _testcapi
 
@@ -291,12 +292,8 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(p.phone.number, "5678")
         self.assertEqual(p.age, 5)
 
+    @need_symbol('c_wchar')
     def test_structures_with_wchar(self):
-        try:
-            c_wchar
-        except NameError:
-            return # no unicode
-
         class PersonW(Structure):
             _fields_ = [("name", c_wchar * 12),
                         ("age", c_int)]
@@ -360,14 +357,14 @@ class StructureTestCase(unittest.TestCase):
         except Exception, detail:
             return detail.__class__, str(detail)
 
-
-##    def test_subclass_creation(self):
-##        meta = type(Structure)
-##        # same as 'class X(Structure): pass'
-##        # fails, since we need either a _fields_ or a _abstract_ attribute
-##        cls, msg = self.get_except(meta, "X", (Structure,), {})
-##        self.assertEqual((cls, msg),
-##                             (AttributeError, "class must define a '_fields_' attribute"))
+    @unittest.skip('test disabled')
+    def test_subclass_creation(self):
+        meta = type(Structure)
+        # same as 'class X(Structure): pass'
+        # fails, since we need either a _fields_ or a _abstract_ attribute
+        cls, msg = self.get_except(meta, "X", (Structure,), {})
+        self.assertEqual((cls, msg),
+                (AttributeError, "class must define a '_fields_' attribute"))
 
     def test_abstract_class(self):
         class X(Structure):

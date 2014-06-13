@@ -2,7 +2,15 @@ import os, sys, unittest, getopt, time
 
 use_resources = []
 
-class ResourceDenied(Exception):
+import ctypes
+ctypes_symbols = dir(ctypes)
+
+def need_symbol(name):
+    return unittest.skipUnless(name in ctypes_symbols,
+                               '{!r} is required'.format(name))
+
+
+class ResourceDenied(unittest.SkipTest):
     """Test skipped because it requested a disallowed resource.
 
     This is raised when a test calls requires() for a resource that

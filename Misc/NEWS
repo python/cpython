@@ -67,6 +67,9 @@ IDLE
 Tests
 -----
 
+- Issue #19493: Refactored the ctypes test package to skip tests explicitly
+  rather than silently.
+
 - Issue #18492: All resources are now allowed when tests are not run by
   regrtest.py.
 
