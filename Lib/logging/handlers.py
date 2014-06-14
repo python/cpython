@@ -463,6 +463,7 @@ class WatchedFileHandler(logging.FileHandler):
                 # we have an open file handle, clean it up
                 self.stream.flush()
                 self.stream.close()
+                self.stream = None  # See Issue #21742: _open () might fail.
                 # open a new file handle and get new stat info from that fd
                 self.stream = self._open()
                 self._statstream()
