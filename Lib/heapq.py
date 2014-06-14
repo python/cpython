@@ -430,7 +430,7 @@ def merge(*iterables, key=None, reverse=False):
 #
 # Combining and simplifying for a rough estimate gives:
 #
-#        comparisons = n + k * (log(k, 2) * log(n/k)) + log(k, 2) + log(n/k))
+#        comparisons = n + k * (log(k, 2) * log(n/k) + log(k, 2) + log(n/k))
 #
 # Computing the number of comparisons for step 3:
 # -----------------------------------------------
