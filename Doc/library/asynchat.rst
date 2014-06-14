@@ -147,40 +147,6 @@ connection requests.
    by the channel after :meth:`found_terminator` is called.
 
 
-asynchat - Auxiliary Classes
-------------------------------------------
-
-.. class:: fifo(list=None)
-
-   A :class:`fifo` holding data which has been pushed by the application but
-   not yet popped for writing to the channel.  A :class:`fifo` is a list used
-   to hold data and/or producers until they are required.  If the *list*
-   argument is provided then it should contain producers or data items to be
-   written to the channel.
-
-
-   .. method:: is_empty()
-
-      Returns ``True`` if and only if the fifo is empty.
-
-
-   .. method:: first()
-
-      Returns the least-recently :meth:`push`\ ed item from the fifo.
-
-
-   .. method:: push(data)
-
-      Adds the given data (which may be a string or a producer object) to the
-      producer fifo.
-
-
-   .. method:: pop()
-
-      If the fifo is not empty, returns ``True, first()``, deleting the popped
-      item.  Returns ``False, None`` for an empty fifo.
-
-
 .. _asynchat-example:
 
 asynchat Example

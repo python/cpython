@@ -550,6 +550,8 @@ C API
 Documentation
 -------------
 
+- Issue #6916: undocument deprecated asynchat.fifo class.
+
 - Issue #17386: Expanded functionality of the ``Doc/make.bat`` script to make
   it much more comparable to ``Doc/Makefile``.
 
