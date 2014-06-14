@@ -1049,6 +1049,11 @@ functions.
    of the defined levels is passed in, the corresponding string representation is
    returned. Otherwise, the string 'Level %s' % lvl is returned.
 
+   .. versionchanged:: 3.4
+      In Python versions earlier than 3.4, this function could also be passed a
+      text level, and would return the corresponding numeric value of the level.
+      This undocumented behaviour was a mistake, and has been removed in Python
+      3.4.
 
 .. function:: makeLogRecord(attrdict)
 
