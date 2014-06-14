@@ -311,16 +311,6 @@ def _siftup_max(heap, pos):
     heap[pos] = newitem
     _siftdown_max(heap, startpos, pos)
 
-# If available, use C implementation
-try:
-    from _heapq import *
-except ImportError:
-    pass
-try:
-    from _heapq import _heapreplace_max
-except ImportError:
-    pass
-
 def merge(*iterables, key=None, reverse=False):
     '''Merge multiple sorted inputs into a single sorted output.
 
@@ -591,6 +581,24 @@ def nlargest(n, iterable, key=None):
             order -= 1
     result.sort(reverse=True)
     return [r[2] for r in result]
+
+# If available, use C implementation
+try:
+    from _heapq import *
+except ImportError:
+    pass
+try:
+    from _heapq import _heapreplace_max
+except ImportError:
+    pass
+try:
+    from _heapq import _heapify_max
+except ImportError:
+    pass
+try:
+    from _heapq import _heappop_max
+except ImportError:
+    pass
 
 
 if __name__ == "__main__":
