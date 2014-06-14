@@ -9,7 +9,7 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 #include "Python.h"
 
 static int
-_siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
+siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
     PyObject *newitem, *parent;
     Py_ssize_t parentpos, size;
@@ -48,7 +48,7 @@ _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 }
 
 static int
-_siftup(PyListObject *heap, Py_ssize_t pos)
+siftup(PyListObject *heap, Py_ssize_t pos)
 {
     Py_ssize_t startpos, endpos, childpos, rightpos, limit;
     PyObject *tmp1, *tmp2;
@@ -91,7 +91,7 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
-    return _siftdown(heap, startpos, pos);
+    return siftdown(heap, startpos, pos);
 }
 
 static PyObject *
@@ -110,17 +110,16 @@ heappush(PyObject *self, PyObject *args)
     if (PyList_Append(heap, item) == -1)
         return NULL;
 
-    if (_siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1) == -1)
+    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1) == -1)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(heappush_doc,
 "heappush(heap, item) -> None. Push item onto heap, maintaining the heap invariant.");
 
 static PyObject *
-heappop(PyObject *self, PyObject *heap)
+heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 {
     PyObject *lastelt, *returnitem;
     Py_ssize_t n;
@@ -130,7 +129,7 @@ heappop(PyObject *self, PyObject *heap)
         return NULL;
     }
 
-    /* # raises appropriate IndexError if heap is empty */
+    /* raises IndexError if the heap is empty */
     n = PyList_GET_SIZE(heap);
     if (n == 0) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
@@ -149,18 +148,24 @@ heappop(PyObject *self, PyObject *heap)
         return lastelt;
     returnitem = PyList_GET_ITEM(heap, 0);
     PyList_SET_ITEM(heap, 0, lastelt);
-    if (_siftup((PyListObject *)heap, 0) == -1) {
+    if (siftup_func((PyListObject *)heap, 0) == -1) {
         Py_DECREF(returnitem);
         return NULL;
     }
     return returnitem;
 }
 
+static PyObject *
+heappop(PyObject *self, PyObject *heap)
+{
+    return heappop_internal(heap, siftup);
+}
+
 PyDoc_STRVAR(heappop_doc,
 "Pop the smallest item off the heap, maintaining the heap invariant.");
 
 static PyObject *
-heapreplace(PyObject *self, PyObject *args)
+heapreplace_internal(PyObject *args, int siftup_func(PyListObject *, Py_ssize_t))
 {
     PyObject *heap, *item, *returnitem;
 
@@ -180,11 +185,17 @@ heapreplace(PyObject *self, PyObject *args)
     returnitem = PyList_GET_ITEM(heap, 0);
     Py_INCREF(item);
     PyList_SET_ITEM(heap, 0, item);
-    if (_siftup((PyListObject *)heap, 0) == -1) {
+    if (siftup_func((PyListObject *)heap, 0) == -1) {
         Py_DECREF(returnitem);
         return NULL;
     }
     return returnitem;
+}
+
+static PyObject *
+heapreplace(PyObject *self, PyObject *args)
+{
+    return heapreplace_internal(args, siftup);
 }
 
 PyDoc_STRVAR(heapreplace_doc,
@@ -227,7 +238,7 @@ heappushpop(PyObject *self, PyObject *args)
     returnitem = PyList_GET_ITEM(heap, 0);
     Py_INCREF(item);
     PyList_SET_ITEM(heap, 0, item);
-    if (_siftup((PyListObject *)heap, 0) == -1) {
+    if (siftup((PyListObject *)heap, 0) == -1) {
         Py_DECREF(returnitem);
         return NULL;
     }
@@ -240,7 +251,7 @@ from the heap. The combined action runs more efficiently than\n\
 heappush() followed by a separate call to heappop().");
 
 static PyObject *
-heapify(PyObject *self, PyObject *heap)
+heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 {
     Py_ssize_t i, n;
 
@@ -258,17 +269,22 @@ heapify(PyObject *self, PyObject *heap)
        and that's again n//2-1.
     */
     for (i=n/2-1 ; i>=0 ; i--)
-        if(_siftup((PyListObject *)heap, i) == -1)
+        if(siftup_func((PyListObject *)heap, i) == -1)
             return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+heapify(PyObject *self, PyObject *heap)
+{
+    return heapify_internal(heap, siftup);
 }
 
 PyDoc_STRVAR(heapify_doc,
 "Transform list into a heap, in-place, in O(len(heap)) time.");
 
 static int
-_siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
+siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
     PyObject *newitem, *parent;
     Py_ssize_t parentpos, size;
@@ -307,7 +323,7 @@ _siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 }
 
 static int
-_siftupmax(PyListObject *heap, Py_ssize_t pos)
+siftup_max(PyListObject *heap, Py_ssize_t pos)
 {
     Py_ssize_t startpos, endpos, childpos, rightpos, limit;
     PyObject *tmp1, *tmp2;
@@ -350,38 +366,32 @@ _siftupmax(PyListObject *heap, Py_ssize_t pos)
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
-    return _siftdownmax(heap, startpos, pos);
+    return siftdown_max(heap, startpos, pos);
 }
 
 static PyObject *
-_heapreplace_max(PyObject *self, PyObject *args)
+heappop_max(PyObject *self, PyObject *heap)
 {
-    PyObject *heap, *item, *returnitem;
+    return heappop_internal(heap, siftup_max);
+}
 
-    if (!PyArg_UnpackTuple(args, "_heapreplace_max", 2, 2, &heap, &item))
-        return NULL;
+PyDoc_STRVAR(heappop_max_doc, "Maxheap variant of heappop.");
 
-    if (!PyList_Check(heap)) {
-        PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
-        return NULL;
-    }
-
-    if (PyList_GET_SIZE(heap) < 1) {
-        PyErr_SetString(PyExc_IndexError, "index out of range");
-        return NULL;
-    }
-
-    returnitem = PyList_GET_ITEM(heap, 0);
-    Py_INCREF(item);
-    PyList_SET_ITEM(heap, 0, item);
-    if (_siftupmax((PyListObject *)heap, 0) == -1) {
-        Py_DECREF(returnitem);
-        return NULL;
-    }
-    return returnitem;
+static PyObject *
+heapreplace_max(PyObject *self, PyObject *args)
+{
+    return heapreplace_internal(args, siftup_max);
 }
 
 PyDoc_STRVAR(heapreplace_max_doc, "Maxheap variant of heapreplace");
+
+static PyObject *
+heapify_max(PyObject *self, PyObject *heap)
+{
+    return heapify_internal(heap, siftup_max);
+}
+
+PyDoc_STRVAR(heapify_max_doc, "Maxheap variant of heapify.");
 
 static PyMethodDef heapq_methods[] = {
     {"heappush",        (PyCFunction)heappush,
@@ -394,8 +404,12 @@ static PyMethodDef heapq_methods[] = {
         METH_VARARGS,           heapreplace_doc},
     {"heapify",         (PyCFunction)heapify,
         METH_O,                 heapify_doc},
-    {"_heapreplace_max",(PyCFunction)_heapreplace_max,
+    {"_heappop_max",    (PyCFunction)heappop_max,
+        METH_O,                 heappop_max_doc},
+    {"_heapreplace_max",(PyCFunction)heapreplace_max,
         METH_VARARGS,           heapreplace_max_doc},
+    {"_heapify_max",    (PyCFunction)heapify_max,
+        METH_O,                 heapify_max_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
