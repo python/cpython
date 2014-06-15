@@ -461,6 +461,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 (res.read(), res.getheader('Content-type'), res.status))
         self.assertEqual(os.environ['SERVER_SOFTWARE'], signature)
 
+    def test_urlquote_decoding_in_cgi_check(self):
+        res = self.request('/cgi-bin%2ffile1.py')
+        self.assertEqual((b'Hello World\n', 'text/html', 200),
+                (res.read(), res.getheader('Content-type'), res.status))
+
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self):
