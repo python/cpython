@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21766: Prevent a security hole in CGIHTTPServer by URL unquoting paths
+  before checking for a CGI script at that path.
+
 - Issue #21310: Fixed possible resource leak in failed open().
 
 - Issue #21304: Backport the key derivation function hashlib.pbkdf2_hmac from
