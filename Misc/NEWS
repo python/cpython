@@ -26,6 +26,9 @@ Library
   run_forever() and run_until_complete() methods of asyncio.BaseEventLoop now
   raise an exception if the event loop was closed.
 
+- Issue #21766: Prevent a security hole in CGIHTTPServer by URL unquoting paths
+  before checking for a CGI script at that path.
+
 - Issue #21310: Fixed possible resource leak in failed open().
 
 - Issue #21677: Fixed chaining nonnormalized exceptions in io close() methods.
