@@ -1531,6 +1531,13 @@ class MinidomTest(unittest.TestCase):
         num_children_after = len(doc.childNodes)
         self.assertTrue(num_children_after == num_children_before - 1)
 
+    def testProcessingInstructionNameError(self):
+        # wrong variable in .nodeValue property will
+        # lead to "NameError: name 'data' is not defined"
+        doc = parse(tstfile)
+        pi = doc.createProcessingInstruction("y", "z")
+        pi.nodeValue = "crash"
+
 def test_main():
     run_unittest(MinidomTest)
 
