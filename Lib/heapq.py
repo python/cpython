@@ -464,7 +464,7 @@ def nsmallest(n, iterable, key=None):
     Equivalent to:  sorted(iterable, key=key)[:n]
     """
 
-    # Short-cut for n==1 is to use min() when len(iterable)>0
+    # Short-cut for n==1 is to use min()
     if n == 1:
         it = iter(iterable)
         sentinel = object()
@@ -527,7 +527,7 @@ def nlargest(n, iterable, key=None):
     Equivalent to:  sorted(iterable, key=key, reverse=True)[:n]
     """
 
-    # Short-cut for n==1 is to use max() when len(iterable)>0
+    # Short-cut for n==1 is to use max()
     if n == 1:
         it = iter(iterable)
         sentinel = object()
