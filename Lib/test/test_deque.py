@@ -507,6 +507,11 @@ class TestBasic(unittest.TestCase):
         for s in ('abcd', range(2000)):
             self.assertEqual(list(reversed(deque(s))), list(reversed(s)))
 
+    def test_reversed_new(self):
+        klass = type(reversed(deque()))
+        for s in ('abcd', range(2000)):
+            self.assertEqual(list(klass(deque(s))), list(reversed(s)))
+
     def test_gc_doesnt_blowup(self):
         import gc
         # This used to assert-fail in deque_traverse() under a debug
