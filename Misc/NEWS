@@ -26,6 +26,10 @@ Library
   run_forever() and run_until_complete() methods of asyncio.BaseEventLoop now
   raise an exception if the event loop was closed.
 
+- Issue #21774: Fixed NameError for an incorrect variable reference in the
+  XML Minidom code for creating processing instructions.
+  (Found and fixed by Claudiu Popa.)
+
 - Issue #21766: Prevent a security hole in CGIHTTPServer by URL unquoting paths
   before checking for a CGI script at that path.
 

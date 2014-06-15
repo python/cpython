@@ -976,7 +976,7 @@ class ProcessingInstruction(Childless, Node):
     def _get_nodeValue(self):
         return self.data
     def _set_nodeValue(self, value):
-        self.data = data
+        self.data = value
     nodeValue = property(_get_nodeValue, _set_nodeValue)
 
     # nodeName is an alias for target
