@@ -55,11 +55,20 @@ Library
 - Issue #8743: Fix interoperability between set objects and the
   collections.Set() abstract base class.
 
-- Issue #21481:  Argparse equality and inequality tests now return 
+- Issue #21481:  Argparse equality and inequality tests now return
   NotImplemented when comparing to an unknown type.
-  
+
 IDLE
 ----
+
+- Issue #21686: add unittest for HyperParser. Original patch by Saimadhav
+  Heblikar.
+
+- Issue #12387: Add missing upper(lower)case versions of default Windows key
+  bindings for Idle so Caps Lock does not disable them. Patch by Roger Serwy.
+
+- Issue #21695: Closing a Find-in-files output window while the search is
+  still in progress no longer closes Idle.
 
 - Issue #18910: Add unittest for textView. Patch by Phil Webster.
 
