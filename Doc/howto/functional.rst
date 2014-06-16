@@ -587,7 +587,8 @@ And here's an example of changing the counter:
 
 Because ``yield`` will often be returning ``None``, you should always check for
 this case.  Don't just use its value in expressions unless you're sure that the
-``send()`` method will be the only method used resume your generator function.
+``send()`` method will be the only method used to resume your generator
+function.
 
 In addition to ``send()``, there are two other new methods on generators:
 
