@@ -154,10 +154,7 @@ class TaskTests(unittest.TestCase):
         t = MyTask(gen, loop=self.loop)
         filename = gen.gi_code.co_filename
         lineno = gen.gi_frame.f_lineno
-        # FIXME: check for the name "coro" instead of "notmuch" because
-        # @asyncio.coroutine drops the name of the wrapped function:
-        # http://bugs.python.org/issue21205
-        self.assertEqual(repr(t), 'T[](<coro at %s:%s>)' % (filename, lineno))
+        self.assertEqual(repr(t), 'T[](<notmuch at %s:%s>)' % (filename, lineno))
 
     def test_task_basics(self):
         @asyncio.coroutine
