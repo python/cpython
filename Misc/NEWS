@@ -10,6 +10,11 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #21669: With the aid of heuristics in SyntaxError.__init__, the
+  parser now attempts to generate more meaningful (or at least more search
+  engine friendly) error messages when "exec" and "print" are used as
+  statements.
+
 - Issue #21642: If the conditional if-else expression, allow an integer written
   with no space between itself and the ``else`` keyword (e.g. ``True if 42else
   False``) to be valid syntax.
