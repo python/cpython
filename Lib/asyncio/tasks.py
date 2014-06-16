@@ -190,7 +190,7 @@ class Task(futures.Future):
             i = len(res)
         text = self._coro.__name__
         coro = self._coro
-        if inspect.isgenerator(coro):
+        if iscoroutine(coro):
             filename = coro.gi_code.co_filename
             if coro.gi_frame is not None:
                 text += ' at %s:%s' % (filename, coro.gi_frame.f_lineno)
