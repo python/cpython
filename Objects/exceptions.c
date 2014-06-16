@@ -1254,6 +1254,9 @@ SimpleExtendsException(PyExc_Exception, AttributeError,
  *    SyntaxError extends Exception
  */
 
+/* Helper function to customise error message for some syntax errors */
+static int _report_missing_parentheses(PySyntaxErrorObject *self);
+
 static int
 SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1298,6 +1301,13 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         Py_INCREF(self->text);
 
         Py_DECREF(info);
+
+        /* Issue #21669: Custom error for 'print' & 'exec' as statements */
+        if (self->text && PyUnicode_Check(self->text)) {
+            if (_report_missing_parentheses(self) < 0) {
+                return -1;
+            }
+        }
     }
     return 0;
 }
@@ -2782,4 +2792,129 @@ _PyErr_TrySetFromCause(const char *format, ...)
     PyException_SetCause(new_val, val);
     PyErr_Restore(new_exc, new_val, new_tb);
     return new_val;
+}
+
+
+/* To help with migration from Python 2, SyntaxError.__init__ applies some
+ * heuristics to try to report a more meaningful exception when print and
+ * exec are used like statements.
+ *
+ * The heuristics are currently expected to detect the following cases:
+ *   - top level statement
+ *   - statement in a nested suite
+ *   - trailing section of a one line complex statement
+ *
+ * They're currently known not to trigger:
+ *   - after a semi-colon
+ *
+ * The error message can be a bit odd in cases where the "arguments" are
+ * completely illegal syntactically, but that isn't worth the hassle of
+ * fixing.
+ *
+ * We also can't do anything about cases that are legal Python 3 syntax
+ * but mean something entirely different from what they did in Python 2
+ * (omitting the arguments entirely, printing items preceded by a unary plus
+ * or minus, using the stream redirection syntax).
+ */
+
+static int
+_check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
+{
+    /* Return values:
+     *   -1: an error occurred
+     *    0: nothing happened
+     *    1: the check triggered & the error message was changed
+     */
+    static PyObject *print_prefix = NULL;
+    static PyObject *exec_prefix = NULL;
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    int kind = PyUnicode_KIND(self->text);
+    void *data = PyUnicode_DATA(self->text);
+
+    /* Ignore leading whitespace */
+    while (start < text_len) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, start);
+        if (!Py_UNICODE_ISSPACE(ch))
+            break;
+        start++;
+    }
+    /* Checking against an empty or whitespace-only part of the string */
+    if (start == text_len) {
+        return 0;
+    }
+
+    /* Check for legacy print statements */
+    if (print_prefix == NULL) {
+        print_prefix = PyUnicode_InternFromString("print ");
+        if (print_prefix == NULL) {
+            return -1;
+        }
+    }
+    if (PyUnicode_Tailmatch(self->text, print_prefix,
+                            start, text_len, -1)) {
+        Py_CLEAR(self->msg);
+        self->msg = PyUnicode_FromString(
+                   "Missing parentheses in call to 'print'");
+        return 1;
+    }
+
+    /* Check for legacy exec statements */
+    if (exec_prefix == NULL) {
+        exec_prefix = PyUnicode_InternFromString("exec ");
+        if (exec_prefix == NULL) {
+            return -1;
+        }
+    }
+    if (PyUnicode_Tailmatch(self->text, exec_prefix,
+                            start, text_len, -1)) {
+        Py_CLEAR(self->msg);
+        self->msg = PyUnicode_FromString(
+                    "Missing parentheses in call to 'exec'");
+        return 1;
+    }
+    /* Fall back to the default error message */
+    return 0;
+}
+
+static int
+_report_missing_parentheses(PySyntaxErrorObject *self)
+{
+    Py_UCS4 left_paren = 40;
+    Py_ssize_t left_paren_index;
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    int legacy_check_result = 0;
+
+    /* Skip entirely if there is an opening parenthesis */
+    left_paren_index = PyUnicode_FindChar(self->text, left_paren,
+                                          0, text_len, 1);
+    if (left_paren_index < -1) {
+        return -1;
+    }
+    if (left_paren_index != -1) {
+        /* Use default error message for any line with an opening paren */
+        return 0;
+    }
+    /* Handle the simple statement case */
+    legacy_check_result = _check_for_legacy_statements(self, 0);
+    if (legacy_check_result < 0) {
+        return -1;
+
+    }
+    if (legacy_check_result == 0) {
+        /* Handle the one-line complex statement case */
+        Py_UCS4 colon = 58;
+        Py_ssize_t colon_index;
+        colon_index = PyUnicode_FindChar(self->text, colon,
+                                         0, text_len, 1);
+        if (colon_index < -1) {
+            return -1;
+        }
+        if (colon_index >= 0 && colon_index < text_len) {
+            /* Check again, starting from just after the colon */
+            if (_check_for_legacy_statements(self, colon_index+1) < 0) {
+                return -1;
+            }
+        }
+    }
+    return 0;
 }
