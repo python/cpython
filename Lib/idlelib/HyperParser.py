@@ -1,4 +1,4 @@
-"""Provide advanced parsing abilities for the ParenMatch and other extensions.
+"""Provide advanced parsing abilities for ParenMatch and other extensions.
 
 HyperParser uses PyParser.  PyParser mostly gives information on the
 proper indentation of code.  HyperParser gives additional information on
@@ -88,7 +88,7 @@ class HyperParser:
             self.indexbracket += 1
 
     def is_in_string(self):
-        """Is the index given to the HyperParser is in a string?"""
+        """Is the index given to the HyperParser in a string?"""
         # The bracket to which we belong should be an opener.
         # If it's an opener, it has to have a character.
         return (self.isopener[self.indexbracket] and
@@ -96,7 +96,7 @@ class HyperParser:
                 in ('"', "'"))
 
     def is_in_code(self):
-        """Is the index given to the HyperParser is in a normal code?"""
+        """Is the index given to the HyperParser in normal code?"""
         return (not self.isopener[self.indexbracket] or
                 self.rawtext[self.bracketing[self.indexbracket][0]]
                 not in ('#', '"', "'"))
@@ -248,3 +248,8 @@ class HyperParser:
                 break
 
         return rawtext[last_identifier_pos:self.indexinrawtext]
+
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_hyperparser', verbosity=2)
