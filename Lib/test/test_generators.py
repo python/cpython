@@ -50,6 +50,45 @@ class FinalizationTest(unittest.TestCase):
         self.assertEqual(gc.garbage, old_garbage)
 
 
+class GeneratorTest(unittest.TestCase):
+
+    def test_name(self):
+        def func():
+            yield 1
+
+        # check generator names
+        gen = func()
+        self.assertEqual(gen.__name__, "func")
+        self.assertEqual(gen.__qualname__,
+                         "GeneratorTest.test_name.<locals>.func")
+
+        # modify generator names
+        gen.__name__ = "name"
+        gen.__qualname__ = "qualname"
+        self.assertEqual(gen.__name__, "name")
+        self.assertEqual(gen.__qualname__, "qualname")
+
+        # generator names must be a string and cannot be deleted
+        self.assertRaises(TypeError, setattr, gen, '__name__', 123)
+        self.assertRaises(TypeError, setattr, gen, '__qualname__', 123)
+        self.assertRaises(TypeError, delattr, gen, '__name__')
+        self.assertRaises(TypeError, delattr, gen, '__qualname__')
+
+        # modify names of the function creating the generator
+        func.__qualname__ = "func_qualname"
+        func.__name__ = "func_name"
+        gen = func()
+        self.assertEqual(gen.__name__, "func_name")
+        self.assertEqual(gen.__qualname__, "func_qualname")
+
+        # unnamed generator
+        gen = (x for x in range(10))
+        self.assertEqual(gen.__name__,
+                         "<genexpr>")
+        self.assertEqual(gen.__qualname__,
+                         "GeneratorTest.test_name.<locals>.<genexpr>")
+
+
 tutorial_tests = """
 Let's try a simple generator:
 

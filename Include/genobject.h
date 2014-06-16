@@ -25,6 +25,12 @@ typedef struct {
 
     /* List of weak reference. */
     PyObject *gi_weakreflist;
+
+    /* Name of the generator. */
+    PyObject *gi_name;
+
+    /* Qualified name of the generator. */
+    PyObject *gi_qualname;
 } PyGenObject;
 
 PyAPI_DATA(PyTypeObject) PyGen_Type;
@@ -33,6 +39,8 @@ PyAPI_DATA(PyTypeObject) PyGen_Type;
 #define PyGen_CheckExact(op) (Py_TYPE(op) == &PyGen_Type)
 
 PyAPI_FUNC(PyObject *) PyGen_New(struct _frame *);
+PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(struct _frame *,
+    PyObject *name, PyObject *qualname);
 PyAPI_FUNC(int) PyGen_NeedsFinalizing(PyGenObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyObject *_PyGen_Send(PyGenObject *, PyObject *);
