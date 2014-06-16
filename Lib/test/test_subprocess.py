@@ -1998,7 +1998,7 @@ class POSIXProcessTestCase(BaseTestCase):
         output, unused_stderr = p.communicate()
         output_lines = output.splitlines()
         self.assertEqual(len(output_lines), 2,
-                         msg="expected exactly two lines of output:\n%s" % output)
+                         msg="expected exactly two lines of output:\n%r" % output)
         opened_fds = set(map(int, output_lines[0].strip().split(b',')))
         remaining_fds = set(map(int, output_lines[1].strip().split(b',')))
 
