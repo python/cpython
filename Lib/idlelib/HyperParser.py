@@ -112,7 +112,7 @@ class HyperParser:
         If it is not surrounded by brackets, or the end of line comes
         before the closing bracket and mustclose is True, returns None.
         """
-        
+
         bracketinglevel = self.bracketing[self.indexbracket][1]
         before = self.indexbracket
         while (not self.isopener[before] or
