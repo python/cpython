@@ -10,6 +10,12 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21205: Add a new ``__qualname__`` attribute to generator, the
+  qualified name, and use it in the representation of a generator
+  (``repr(gen)``). The default name of the generator (``__name__`` attribute)
+  is now get from the function instead of the code. Use ``gen.gi_code.co_name``
+  to get the name of the code.
+
 - Issue #21669: With the aid of heuristics in SyntaxError.__init__, the
   parser now attempts to generate more meaningful (or at least more search
   engine friendly) error messages when "exec" and "print" are used as

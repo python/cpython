@@ -12,6 +12,8 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
     Py_VISIT((PyObject *)gen->gi_frame);
     Py_VISIT(gen->gi_code);
+    Py_VISIT(gen->gi_name);
+    Py_VISIT(gen->gi_qualname);
     return 0;
 }
 
@@ -58,6 +60,8 @@ gen_dealloc(PyGenObject *gen)
     _PyObject_GC_UNTRACK(self);
     Py_CLEAR(gen->gi_frame);
     Py_CLEAR(gen->gi_code);
+    Py_CLEAR(gen->gi_name);
+    Py_CLEAR(gen->gi_qualname);
     PyObject_GC_Del(gen);
 }
 
@@ -418,33 +422,73 @@ static PyObject *
 gen_repr(PyGenObject *gen)
 {
     return PyUnicode_FromFormat("<generator object %S at %p>",
-                                ((PyCodeObject *)gen->gi_code)->co_name,
-                                gen);
+                                gen->gi_qualname, gen);
 }
-
 
 static PyObject *
-gen_get_name(PyGenObject *gen)
+gen_get_name(PyGenObject *op)
 {
-    PyObject *name = ((PyCodeObject *)gen->gi_code)->co_name;
-    Py_INCREF(name);
-    return name;
+    Py_INCREF(op->gi_name);
+    return op->gi_name;
 }
 
+static int
+gen_set_name(PyGenObject *op, PyObject *value)
+{
+    PyObject *tmp;
 
-PyDoc_STRVAR(gen__name__doc__,
-"Return the name of the generator's associated code object.");
+    /* Not legal to del gen.gi_name or to set it to anything
+     * other than a string object. */
+    if (value == NULL || !PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__name__ must be set to a string object");
+        return -1;
+    }
+    tmp = op->gi_name;
+    Py_INCREF(value);
+    op->gi_name = value;
+    Py_DECREF(tmp);
+    return 0;
+}
+
+static PyObject *
+gen_get_qualname(PyGenObject *op)
+{
+    Py_INCREF(op->gi_qualname);
+    return op->gi_qualname;
+}
+
+static int
+gen_set_qualname(PyGenObject *op, PyObject *value)
+{
+    PyObject *tmp;
+
+    /* Not legal to del gen.__qualname__ or to set it to anything
+     * other than a string object. */
+    if (value == NULL || !PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__qualname__ must be set to a string object");
+        return -1;
+    }
+    tmp = op->gi_qualname;
+    Py_INCREF(value);
+    op->gi_qualname = value;
+    Py_DECREF(tmp);
+    return 0;
+}
 
 static PyGetSetDef gen_getsetlist[] = {
-    {"__name__", (getter)gen_get_name, NULL, gen__name__doc__},
-    {NULL}
+    {"__name__", (getter)gen_get_name, (setter)gen_set_name,
+     PyDoc_STR("name of the generator")},
+    {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
+     PyDoc_STR("qualified name of the generator")},
+    {NULL} /* Sentinel */
 };
 
-
 static PyMemberDef gen_memberlist[] = {
-    {"gi_frame",        T_OBJECT, offsetof(PyGenObject, gi_frame),      READONLY},
-    {"gi_running",      T_BOOL,    offsetof(PyGenObject, gi_running),    READONLY},
-    {"gi_code",     T_OBJECT, offsetof(PyGenObject, gi_code),  READONLY},
+    {"gi_frame",     T_OBJECT, offsetof(PyGenObject, gi_frame),    READONLY},
+    {"gi_running",   T_BOOL,   offsetof(PyGenObject, gi_running),  READONLY},
+    {"gi_code",      T_OBJECT, offsetof(PyGenObject, gi_code),     READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -510,7 +554,7 @@ PyTypeObject PyGen_Type = {
 };
 
 PyObject *
-PyGen_New(PyFrameObject *f)
+PyGen_NewWithQualName(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
     PyGenObject *gen = PyObject_GC_New(PyGenObject, &PyGen_Type);
     if (gen == NULL) {
@@ -523,8 +567,24 @@ PyGen_New(PyFrameObject *f)
     gen->gi_code = (PyObject *)(f->f_code);
     gen->gi_running = 0;
     gen->gi_weakreflist = NULL;
+    if (name != NULL)
+        gen->gi_name = name;
+    else
+        gen->gi_name = ((PyCodeObject *)gen->gi_code)->co_name;
+    Py_INCREF(gen->gi_name);
+    if (qualname != NULL)
+        gen->gi_qualname = qualname;
+    else
+        gen->gi_qualname = gen->gi_name;
+    Py_INCREF(gen->gi_qualname);
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
+}
+
+PyObject *
+PyGen_New(PyFrameObject *f)
+{
+    return PyGen_NewWithQualName(f, NULL, NULL);
 }
 
 int
