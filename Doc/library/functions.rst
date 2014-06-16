@@ -726,7 +726,8 @@ available.  They are listed here in alphabetical order.
 .. function:: len(s)
 
    Return the length (the number of items) of an object.  The argument may be a
-   sequence (string, tuple or list) or a mapping (dictionary).
+   sequence (such as a string, bytes, tuple, list, or range) or a collection
+   (such as a dictionary, set, or frozen set).
 
 
 .. function:: list([iterable])
