@@ -1934,6 +1934,20 @@ class POSIXProcessTestCase(BaseTestCase):
         """Confirm that issue21618 is fixed (may fail under valgrind)."""
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
 
+        # This launches the meat of the test in a child process to
+        # avoid messing with the larger unittest processes maximum
+        # number of file descriptors.
+        #  This process launches:
+        #  +--> Process that lowers its RLIMIT_NOFILE aftr setting up
+        #    a bunch of high open fds above the new lower rlimit.
+        #    Those are reported via stdout before launching a new
+        #    process with close_fds=False to run the actual test:
+        #    +--> The TEST: This one launches a fd_status.py
+        #      subprocess with close_fds=True so we can find out if
+        #      any of the fds above the lowered rlimit are still open.
+        p = subprocess.Popen([sys.executable, '-c', textwrap.dedent(
+        '''
+        import os, resource, subprocess, sys, textwrap
         open_fds = set()
         # Add a bunch more fds to pass down.
         for _ in range(40):
@@ -1949,12 +1963,15 @@ class POSIXProcessTestCase(BaseTestCase):
             open_fds.remove(fd)
 
         for fd in open_fds:
-            self.addCleanup(os.close, fd)
+            #self.addCleanup(os.close, fd)
             os.set_inheritable(fd, True)
 
         max_fd_open = max(open_fds)
 
-        import resource
+        # Communicate the open_fds to the parent unittest.TestCase process.
+        print(','.join(map(str, sorted(open_fds))))
+        sys.stdout.flush()
+
         rlim_cur, rlim_max = resource.getrlimit(resource.RLIMIT_NOFILE)
         try:
             # 29 is lower than the highest fds we are leaving open.
@@ -1965,22 +1982,27 @@ class POSIXProcessTestCase(BaseTestCase):
             # An explicit list of fds to check is passed to fd_status.py as
             # letting fd_status rely on its default logic would miss the
             # fds above rlim_cur as it normally only checks up to that limit.
-            p = subprocess.Popen(
+            subprocess.Popen(
                 [sys.executable, '-c',
                  textwrap.dedent("""
                      import subprocess, sys
-                     subprocess.Popen([sys.executable, {fd_status!r}] +
+                     subprocess.Popen([sys.executable, %r] +
                                       [str(x) for x in range({max_fd})],
                                       close_fds=True).wait()
-                     """.format(fd_status=fd_status, max_fd=max_fd_open+1))],
-                stdout=subprocess.PIPE, close_fds=False)
+                     """.format(max_fd=max_fd_open+1))],
+                close_fds=False).wait()
         finally:
             resource.setrlimit(resource.RLIMIT_NOFILE, (rlim_cur, rlim_max))
+        ''' % fd_status)], stdout=subprocess.PIPE)
 
         output, unused_stderr = p.communicate()
-        remaining_fds = set(map(int, output.strip().split(b',')))
+        output_lines = output.splitlines()
+        self.assertEqual(len(output_lines), 2,
+                         msg="expected exactly two lines of output:\n%s" % output)
+        opened_fds = set(map(int, output_lines[0].strip().split(b',')))
+        remaining_fds = set(map(int, output_lines[1].strip().split(b',')))
 
-        self.assertFalse(remaining_fds & open_fds,
+        self.assertFalse(remaining_fds & opened_fds,
                          msg="Some fds were left open.")
 
 
