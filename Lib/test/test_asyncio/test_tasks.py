@@ -2,6 +2,7 @@
 
 import gc
 import os.path
+import sys
 import types
 import unittest
 import weakref
@@ -154,7 +155,13 @@ class TaskTests(unittest.TestCase):
         t = MyTask(gen, loop=self.loop)
         filename = gen.gi_code.co_filename
         lineno = gen.gi_frame.f_lineno
-        self.assertEqual(repr(t), 'T[](<notmuch at %s:%s>)' % (filename, lineno))
+        if sys.version_info >= (3, 5):
+            name = 'notmuch'
+        else:
+            # On Python < 3.5, generators inherit the name of the code, not of
+            # the function. See: http://bugs.python.org/issue21205
+            name = 'coro'
+        self.assertEqual(repr(t), 'T[](<%s at %s:%s>)' % (name, filename, lineno))
 
     def test_task_basics(self):
         @asyncio.coroutine
