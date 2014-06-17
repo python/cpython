@@ -26,15 +26,11 @@ class UpperProto(asyncio.Protocol):
             self.trans.close()
 
 
-class ProactorTests(unittest.TestCase):
+class ProactorTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
-        self.loop = None
+        self.set_event_loop(self.loop)
 
     def test_close(self):
         a, b = self.loop._socketpair()
