@@ -7,14 +7,10 @@ import asyncio
 from asyncio import test_utils
 
 
-class _QueueTestBase(unittest.TestCase):
+class _QueueTestBase(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
+        self.loop = self.new_test_loop()
 
 
 class QueueBasicTests(_QueueTestBase):
@@ -32,8 +28,7 @@ class QueueBasicTests(_QueueTestBase):
             self.assertAlmostEqual(0.2, when)
             yield 0.1
 
-        loop = test_utils.TestLoop(gen)
-        self.addCleanup(loop.close)
+        loop = self.new_test_loop(gen)
 
         q = asyncio.Queue(loop=loop)
         self.assertTrue(fn(q).startswith('<Queue'), fn(q))
@@ -80,12 +75,9 @@ class QueueBasicTests(_QueueTestBase):
         self.assertIs(q._loop, self.loop)
 
     def test_ctor_noloop(self):
-        try:
-            asyncio.set_event_loop(self.loop)
-            q = asyncio.Queue()
-            self.assertIs(q._loop, self.loop)
-        finally:
-            asyncio.set_event_loop(None)
+        asyncio.set_event_loop(self.loop)
+        q = asyncio.Queue()
+        self.assertIs(q._loop, self.loop)
 
     def test_repr(self):
         self._test_repr_or_str(repr, True)
@@ -126,8 +118,7 @@ class QueueBasicTests(_QueueTestBase):
             self.assertAlmostEqual(0.02, when)
             yield 0.01
 
-        loop = test_utils.TestLoop(gen)
-        self.addCleanup(loop.close)
+        loop = self.new_test_loop(gen)
 
         q = asyncio.Queue(maxsize=2, loop=loop)
         self.assertEqual(2, q.maxsize)
@@ -194,8 +185,7 @@ class QueueGetTests(_QueueTestBase):
             self.assertAlmostEqual(0.01, when)
             yield 0.01
 
-        loop = test_utils.TestLoop(gen)
-        self.addCleanup(loop.close)
+        loop = self.new_test_loop(gen)
 
         q = asyncio.Queue(loop=loop)
         started = asyncio.Event(loop=loop)
@@ -241,8 +231,7 @@ class QueueGetTests(_QueueTestBase):
             self.assertAlmostEqual(0.061, when)
             yield 0.05
 
-        loop = test_utils.TestLoop(gen)
-        self.addCleanup(loop.close)
+        loop = self.new_test_loop(gen)
 
         q = asyncio.Queue(loop=loop)
 
@@ -302,8 +291,7 @@ class QueuePutTests(_QueueTestBase):
             self.assertAlmostEqual(0.01, when)
             yield 0.01
 
-        loop = test_utils.TestLoop(gen)
-        self.addCleanup(loop.close)
+        loop = self.new_test_loop(gen)
 
         q = asyncio.Queue(maxsize=1, loop=loop)
         started = asyncio.Event(loop=loop)

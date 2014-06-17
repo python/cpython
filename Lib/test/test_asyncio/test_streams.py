@@ -15,13 +15,13 @@ import asyncio
 from asyncio import test_utils
 
 
-class StreamReaderTests(unittest.TestCase):
+class StreamReaderTests(test_utils.TestCase):
 
     DATA = b'line1\nline2\nline3\n'
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
+        self.set_event_loop(self.loop)
 
     def tearDown(self):
         # just in case if we have transport close callbacks
@@ -29,6 +29,7 @@ class StreamReaderTests(unittest.TestCase):
 
         self.loop.close()
         gc.collect()
+        super().tearDown()
 
     @mock.patch('asyncio.streams.events')
     def test_ctor_global_loop(self, m_events):
