@@ -423,6 +423,8 @@ PyThreadState_DeleteCurrent()
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
     _Py_atomic_store_relaxed(&_PyThreadState_Current, NULL);
+    if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
+        PyThread_delete_key_value(autoTLSkey);
     /*
       Only call tstate_delete_common to have the tstate if we're not finalizing
       or we're the main thread. The main thread will do this for us. Not calling
@@ -431,9 +433,6 @@ PyThreadState_DeleteCurrent()
     */
     if (!_Py_Finalizing || _Py_Finalizing == tstate)
         tstate_delete_common(tstate);
-    if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
-        PyThread_delete_key_value(autoTLSkey);
-    tstate_delete_common(tstate);
     PyEval_ReleaseLock();
 }
 #endif /* WITH_THREAD */
