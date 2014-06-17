@@ -9,7 +9,11 @@ import weakref
 from test.script_helper import assert_python_ok
 
 import asyncio
+from asyncio import tasks
 from asyncio import test_utils
+
+
+PY35 = (sys.version_info >= (3, 5))
 
 
 @asyncio.coroutine
@@ -117,10 +121,22 @@ class TaskTests(unittest.TestCase):
             yield from []
             return 'abc'
 
+        self.assertEqual(notmuch.__name__, 'notmuch')
+        if PY35:
+            self.assertEqual(notmuch.__qualname__,
+                             'TaskTests.test_task_repr.<locals>.notmuch')
+        self.assertEqual(notmuch.__module__, __name__)
+
         filename, lineno = test_utils.get_function_source(notmuch)
         src = "%s:%s" % (filename, lineno)
 
-        t = asyncio.Task(notmuch(), loop=self.loop)
+        gen = notmuch()
+        self.assertEqual(gen.__name__, 'notmuch')
+        if PY35:
+            self.assertEqual(gen.__qualname__,
+                             'TaskTests.test_task_repr.<locals>.notmuch')
+
+        t = asyncio.Task(gen, loop=self.loop)
         t.add_done_callback(Dummy())
         self.assertEqual(repr(t),
                          'Task(<notmuch at %s>)<PENDING, [Dummy()]>' % src)
@@ -143,6 +159,12 @@ class TaskTests(unittest.TestCase):
         def notmuch():
             pass
 
+        self.assertEqual(notmuch.__name__, 'notmuch')
+        self.assertEqual(notmuch.__module__, __name__)
+        if PY35:
+            self.assertEqual(notmuch.__qualname__,
+                             'TaskTests.test_task_repr_custom.<locals>.notmuch')
+
         class T(asyncio.Future):
             def __repr__(self):
                 return 'T[]'
@@ -152,16 +174,26 @@ class TaskTests(unittest.TestCase):
                 return super().__repr__()
 
         gen = notmuch()
-        t = MyTask(gen, loop=self.loop)
-        filename = gen.gi_code.co_filename
-        lineno = gen.gi_frame.f_lineno
-        if sys.version_info >= (3, 5):
-            name = 'notmuch'
+        if PY35 or tasks._DEBUG:
+            # On Python >= 3.5, generators now inherit the name of the
+            # function, as expected, and have a qualified name (__qualname__
+            # attribute). In debug mode, @coroutine decorator uses CoroWrapper
+            # which gets its name (__name__ attribute) from the wrapped
+            # coroutine function.
+            coro_name = 'notmuch'
         else:
             # On Python < 3.5, generators inherit the name of the code, not of
             # the function. See: http://bugs.python.org/issue21205
-            name = 'coro'
-        self.assertEqual(repr(t), 'T[](<%s at %s:%s>)' % (name, filename, lineno))
+            coro_name = 'coro'
+        self.assertEqual(gen.__name__, coro_name)
+        if PY35:
+            self.assertEqual(gen.__qualname__,
+                             'TaskTests.test_task_repr_custom.<locals>.notmuch')
+
+        t = MyTask(gen, loop=self.loop)
+        filename = gen.gi_code.co_filename
+        lineno = gen.gi_frame.f_lineno
+        self.assertEqual(repr(t), 'T[](<%s at %s:%s>)' % (coro_name, filename, lineno))
 
     def test_task_basics(self):
         @asyncio.coroutine
