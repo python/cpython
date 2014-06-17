@@ -90,7 +90,8 @@ class ParenMatch:
             self.set_timeout = self.set_timeout_none
 
     def flash_paren_event(self, event):
-        indices = HyperParser(self.editwin, "insert").get_surrounding_brackets()
+        indices = (HyperParser(self.editwin, "insert")
+                   .get_surrounding_brackets())
         if indices is None:
             self.warn_mismatched()
             return
@@ -167,6 +168,11 @@ class ParenMatch:
         # associate a counter with an event; only disable the "paren"
         # tag if the event is for the most recent timer.
         self.counter += 1
-        self.editwin.text_frame.after(self.FLASH_DELAY,
-                                      lambda self=self, c=self.counter: \
-                                      self.handle_restore_timer(c))
+        self.editwin.text_frame.after(
+            self.FLASH_DELAY,
+            lambda self=self, c=self.counter: self.handle_restore_timer(c))
+
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_parenmatch', verbosity=2)
