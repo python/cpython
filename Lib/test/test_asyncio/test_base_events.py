@@ -240,30 +240,23 @@ class BaseEventLoopTests(unittest.TestCase):
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
 
-    @mock.patch('asyncio.base_events.time')
     @mock.patch('asyncio.base_events.logger')
-    def test__run_once_logging(self, m_logger, m_time):
+    def test__run_once_logging(self, m_logger):
+        def slow_select(timeout):
+            time.sleep(1.0)
+            return []
+
         # Log to INFO level if timeout > 1.0 sec.
-        idx = -1
-        data = [10.0, 10.0, 12.0, 13.0]
-
-        def monotonic():
-            nonlocal data, idx
-            idx += 1
-            return data[idx]
-
-        m_time.monotonic = monotonic
-
-        self.loop._scheduled.append(
-            asyncio.TimerHandle(11.0, lambda: True, (), self.loop))
+        self.loop._selector.select = slow_select
         self.loop._process_events = mock.Mock()
         self.loop._run_once()
         self.assertEqual(logging.INFO, m_logger.log.call_args[0][0])
 
-        idx = -1
-        data = [10.0, 10.0, 10.3, 13.0]
-        self.loop._scheduled = [asyncio.TimerHandle(11.0, lambda: True, (),
-                                                    self.loop)]
+        def fast_select(timeout):
+            time.sleep(0.001)
+            return []
+
+        self.loop._selector.select = fast_select
         self.loop._run_once()
         self.assertEqual(logging.DEBUG, m_logger.log.call_args[0][0])
 
