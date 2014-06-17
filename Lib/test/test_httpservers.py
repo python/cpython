@@ -466,7 +466,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
     def test_urlquote_decoding_in_cgi_check(self):
         res = self.request('/cgi-bin%2ffile1.py')
-        self.assertEqual((b'Hello World\n', 'text/html', 200),
+        self.assertEqual((b'Hello World' + self.linesep, 'text/html', 200),
                 (res.read(), res.getheader('Content-type'), res.status))
 
 
