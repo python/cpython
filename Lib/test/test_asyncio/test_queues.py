@@ -339,6 +339,21 @@ class QueuePutTests(_QueueTestBase):
         q.put_nowait(1)
         self.assertRaises(asyncio.QueueFull, q.put_nowait, 2)
 
+    def test_float_maxsize(self):
+        q = asyncio.Queue(maxsize=1.3, loop=self.loop)
+        q.put_nowait(1)
+        q.put_nowait(2)
+        self.assertTrue(q.full())
+        self.assertRaises(asyncio.QueueFull, q.put_nowait, 3)
+
+        q = asyncio.Queue(maxsize=1.3, loop=self.loop)
+        @asyncio.coroutine
+        def queue_put():
+            yield from q.put(1)
+            yield from q.put(2)
+            self.assertTrue(q.full())
+        self.loop.run_until_complete(queue_put())
+
     def test_put_cancelled(self):
         q = asyncio.Queue(loop=self.loop)
 
