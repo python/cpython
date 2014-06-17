@@ -1,4 +1,5 @@
 from asyncio import subprocess
+from asyncio import test_utils
 import asyncio
 import signal
 import sys
@@ -151,21 +152,21 @@ if sys.platform != 'win32':
             policy = asyncio.get_event_loop_policy()
             policy.set_child_watcher(None)
             self.loop.close()
-            policy.set_event_loop(None)
+            super().tearDown()
 
     class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
-                                     unittest.TestCase):
+                                     test_utils.TestCase):
 
         Watcher = unix_events.SafeChildWatcher
 
     class SubprocessFastWatcherTests(SubprocessWatcherMixin,
-                                     unittest.TestCase):
+                                     test_utils.TestCase):
 
         Watcher = unix_events.FastChildWatcher
 
 else:
     # Windows
-    class SubprocessProactorTests(SubprocessMixin, unittest.TestCase):
+    class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
 
         def setUp(self):
             policy = asyncio.get_event_loop_policy()
@@ -178,6 +179,7 @@ else:
             policy = asyncio.get_event_loop_policy()
             self.loop.close()
             policy.set_event_loop(None)
+            super().tearDown()
 
 
 if __name__ == '__main__':

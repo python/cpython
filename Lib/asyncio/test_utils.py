@@ -11,6 +11,7 @@ import sys
 import tempfile
 import threading
 import time
+import unittest
 from unittest import mock
 
 from http.server import HTTPServer
@@ -379,3 +380,20 @@ def get_function_source(func):
     if source is None:
         raise ValueError("unable to get the source of %r" % (func,))
     return source
+
+
+class TestCase(unittest.TestCase):
+    def set_event_loop(self, loop, *, cleanup=True):
+        assert loop is not None
+        # ensure that the event loop is passed explicitly in asyncio
+        events.set_event_loop(None)
+        if cleanup:
+            self.addCleanup(loop.close)
+
+    def new_test_loop(self, gen=None):
+        loop = TestLoop(gen)
+        self.set_event_loop(loop)
+        return loop
+
+    def tearDown(self):
+        events.set_event_loop(None)
