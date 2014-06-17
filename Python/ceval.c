@@ -1024,6 +1024,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 /* Other threads may run now */
 
                 PyThread_acquire_lock(interpreter_lock, 1);
+
+                /* Check if we should make a quick exit. */
+                if (_Py_Finalizing && _Py_Finalizing != tstate) {
+                    PyThread_release_lock(interpreter_lock);
+                    PyThread_exit_thread();
+                }
+
                 if (PyThreadState_Swap(tstate) != NULL)
                     Py_FatalError("ceval: orphan tstate");
 
