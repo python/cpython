@@ -10,6 +10,10 @@ What's New in Python 2.7.8?
 Core and Builtins
 -----------------
 
+- Issue #1856: Avoid crashes and lockups when daemon threads run while the
+  interpreter is shutting down; instead, these threads are now killed when they
+  try to take the GIL.
+
 - Issue #19656: Running Python with the -3 option now also warns about
   non-ascii bytes literals.
 

@@ -355,6 +355,12 @@ PyEval_RestoreThread(PyThreadState *tstate)
     if (interpreter_lock) {
         int err = errno;
         PyThread_acquire_lock(interpreter_lock, 1);
+        /* _Py_Finalizing is protected by the GIL */
+        if (_Py_Finalizing && tstate != _Py_Finalizing) {
+            PyThread_release_lock(interpreter_lock);
+            PyThread_exit_thread();
+            assert(0);  /* unreachable */
+        }
         errno = err;
     }
 #endif
