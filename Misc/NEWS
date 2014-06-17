@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21723: asyncio.Queue: support any type of number (ex: float) for the
+  maximum size. Patch written by Vajrasky Kok.
+
 - Issue #21711: support for "site-python" directories has now been removed
   from the site module (it was deprecated in 3.4).
 
