@@ -224,7 +224,7 @@ class EventLoopTestsMixin:
     def setUp(self):
         super().setUp()
         self.loop = self.create_event_loop()
-        asyncio.set_event_loop(None)
+        self.set_event_loop(self.loop)
 
     def tearDown(self):
         # just in case if we have transport close callbacks
@@ -1629,14 +1629,14 @@ class SubprocessTestsMixin:
 
 if sys.platform == 'win32':
 
-    class SelectEventLoopTests(EventLoopTestsMixin, unittest.TestCase):
+    class SelectEventLoopTests(EventLoopTestsMixin, test_utils.TestCase):
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop()
 
     class ProactorEventLoopTests(EventLoopTestsMixin,
                                  SubprocessTestsMixin,
-                                 unittest.TestCase):
+                                 test_utils.TestCase):
 
         def create_event_loop(self):
             return asyncio.ProactorEventLoop()
@@ -1691,7 +1691,7 @@ else:
     if hasattr(selectors, 'KqueueSelector'):
         class KqueueEventLoopTests(UnixEventLoopTestsMixin,
                                    SubprocessTestsMixin,
-                                   unittest.TestCase):
+                                   test_utils.TestCase):
 
             def create_event_loop(self):
                 return asyncio.SelectorEventLoop(
@@ -1716,7 +1716,7 @@ else:
     if hasattr(selectors, 'EpollSelector'):
         class EPollEventLoopTests(UnixEventLoopTestsMixin,
                                   SubprocessTestsMixin,
-                                  unittest.TestCase):
+                                  test_utils.TestCase):
 
             def create_event_loop(self):
                 return asyncio.SelectorEventLoop(selectors.EpollSelector())
@@ -1724,7 +1724,7 @@ else:
     if hasattr(selectors, 'PollSelector'):
         class PollEventLoopTests(UnixEventLoopTestsMixin,
                                  SubprocessTestsMixin,
-                                 unittest.TestCase):
+                                 test_utils.TestCase):
 
             def create_event_loop(self):
                 return asyncio.SelectorEventLoop(selectors.PollSelector())
@@ -1732,7 +1732,7 @@ else:
     # Should always exist.
     class SelectEventLoopTests(UnixEventLoopTestsMixin,
                                SubprocessTestsMixin,
-                               unittest.TestCase):
+                               test_utils.TestCase):
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
