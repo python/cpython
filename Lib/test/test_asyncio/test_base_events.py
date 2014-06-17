@@ -19,12 +19,12 @@ MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
 
 
-class BaseEventLoopTests(unittest.TestCase):
+class BaseEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = base_events.BaseEventLoop()
         self.loop._selector = mock.Mock()
-        asyncio.set_event_loop(None)
+        self.set_event_loop(self.loop)
 
     def test_not_implemented(self):
         m = mock.Mock()
@@ -548,14 +548,11 @@ class MyDatagramProto(asyncio.DatagramProtocol):
             self.done.set_result(None)
 
 
-class BaseEventLoopWithSelectorTests(unittest.TestCase):
+class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
+        self.set_event_loop(self.loop)
 
     @mock.patch('asyncio.base_events.socket')
     def test_create_connection_multiple_errors(self, m_socket):
