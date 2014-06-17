@@ -32,11 +32,11 @@ from .log import logger
 _DEBUG = (not sys.flags.ignore_environment
           and bool(os.environ.get('PYTHONASYNCIODEBUG')))
 
+_PY35 = (sys.version_info >= (3, 5))
+
 
 class CoroWrapper:
     # Wrapper for coroutine in _DEBUG mode.
-
-    __slots__ = ['gen', 'func', '__name__', '__doc__', '__weakref__']
 
     def __init__(self, gen, func):
         assert inspect.isgenerator(gen), gen
@@ -111,8 +111,10 @@ def coroutine(func):
         @functools.wraps(func)
         def wrapper(*args, **kwds):
             w = CoroWrapper(coro(*args, **kwds), func)
-            w.__name__ = coro.__name__
-            w.__doc__ = coro.__doc__
+            w.__name__ = func.__name__
+            if _PY35:
+                w.__qualname__ = func.__qualname__
+            w.__doc__ = func.__doc__
             return w
 
     wrapper._is_coroutine = True  # For iscoroutinefunction().
