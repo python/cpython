@@ -1,6 +1,5 @@
 """Tests for tasks.py."""
 
-import gc
 import os.path
 import sys
 import types
