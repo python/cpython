@@ -108,10 +108,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.assertRaises(RuntimeError, self.loop.add_writer, fd, callback)
 
     def test_close_no_selector(self):
-        ssock = self.loop._ssock
-        csock = self.loop._csock
-        remove_reader = self.loop.remove_reader = mock.Mock()
-
+        self.loop.remove_reader = mock.Mock()
         self.loop._selector.close()
         self.loop._selector = None
         self.loop.close()
