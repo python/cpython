@@ -407,7 +407,7 @@ The remaining methods are specific to audio mixing:
    (silent) to 100 (full volume).  If the control is monophonic, a 2-tuple is still
    returned, but both volumes are the same.
 
-   Raises :exc:`OSSAudioError` if an invalid control was is specified, or
+   Raises :exc:`OSSAudioError` if an invalid control is specified, or
    :exc:`OSError` if an unsupported control is specified.
 
 
