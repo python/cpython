@@ -65,6 +65,7 @@ Notes on the availability of these functions:
 
 
 .. _os-filenames:
+.. _filesystem-encoding:
 
 File Names, Command Line Arguments, and Environment Variables
 -------------------------------------------------------------
