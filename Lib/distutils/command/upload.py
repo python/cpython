@@ -2,10 +2,6 @@
 
 Implements the Distutils 'upload' subcommand (upload package to PyPI)."""
 
-from distutils.errors import *
-from distutils.core import PyPIRCCommand
-from distutils.spawn import spawn
-from distutils import log
 import sys
 import os, io
 import socket
@@ -13,6 +9,10 @@ import platform
 from base64 import standard_b64encode
 from urllib.request import urlopen, Request, HTTPError
 from urllib.parse import urlparse
+from distutils.errors import DistutilsError, DistutilsOptionError
+from distutils.core import PyPIRCCommand
+from distutils.spawn import spawn
+from distutils import log
 
 # this keeps compatibility for 2.3 and 2.4
 if sys.version < "2.5":
@@ -184,7 +184,7 @@ class upload(PyPIRCCommand):
             reason = result.msg
         except OSError as e:
             self.announce(str(e), log.ERROR)
-            return
+            raise
         except HTTPError as e:
             status = e.code
             reason = e.msg
@@ -193,8 +193,9 @@ class upload(PyPIRCCommand):
             self.announce('Server response (%s): %s' % (status, reason),
                           log.INFO)
         else:
-            self.announce('Upload failed (%s): %s' % (status, reason),
-                          log.ERROR)
+            msg = 'Upload failed (%s): %s' % (status, reason)
+            self.announce(msg, log.ERROR)
+            raise DistutilsError(msg)
         if self.show_response:
             text = self._read_pypi_response(result)
             msg = '\n'.join(('-' * 75, text, '-' * 75))
