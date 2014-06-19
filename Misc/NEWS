@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21719: Added the ``st_file_attributes`` field to os.stat_result on
+  Windows.
+
 - Issue #21722: The distutils "upload" command now exits with a non-zero
   return code when uploading fails.  Patch by Martin Dengler.
 
