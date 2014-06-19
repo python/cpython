@@ -320,7 +320,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 "than the current one")
 
     def call_soon_threadsafe(self, callback, *args):
-        """XXX"""
+        """Like call_soon(), but thread safe."""
         handle = self._call_soon(callback, args, check_loop=False)
         self._write_to_self()
         return handle
@@ -358,7 +358,17 @@ class BaseEventLoop(events.AbstractEventLoop):
     def create_connection(self, protocol_factory, host=None, port=None, *,
                           ssl=None, family=0, proto=0, flags=0, sock=None,
                           local_addr=None, server_hostname=None):
-        """XXX"""
+        """Connect to a TCP server.
+
+        Create a streaming transport connection to a given Internet host and
+        port: socket family AF_INET or socket.AF_INET6 depending on host (or
+        family if specified), socket type SOCK_STREAM. protocol_factory must be
+        a callable returning a protocol instance.
+
+        This method is a coroutine which will try to establish the connection
+        in the background.  When successful, the coroutine returns a
+        (transport, protocol) pair.
+        """
         if server_hostname is not None and not ssl:
             raise ValueError('server_hostname is only meaningful with ssl')
 
@@ -557,7 +567,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                       backlog=100,
                       ssl=None,
                       reuse_address=None):
-        """XXX"""
+        """Create a TCP server bound to host and port.
+
+        Return an AbstractServer object which can be used to stop the service.
+
+        This method is a coroutine.
+        """
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
         if host is not None or port is not None:
