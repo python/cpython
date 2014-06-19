@@ -1,7 +1,8 @@
++++++++++++
 Python News
 +++++++++++
 
-What's New in Python 2.7.7?
+What's New in Python 2.7.8?
 ===========================
 
 *Release date: XXXX-XX-XX*
@@ -9,17 +10,145 @@ What's New in Python 2.7.7?
 Core and Builtins
 -----------------
 
+- Issue #1856: Avoid crashes and lockups when daemon threads run while the
+  interpreter is shutting down; instead, these threads are now killed when they
+  try to take the GIL.
+
+- Issue #19656: Running Python with the -3 option now also warns about
+  non-ascii bytes literals.
+
+- Issue #21642: If the conditional if-else expression, allow an integer written
+  with no space between itself and the ``else`` keyword (e.g. ``True if 42else
+  False``) to be valid syntax.
+
+- Issue #21523: Fix over-pessimistic computation of the stack effect of
+  some opcodes in the compiler.  This also fixes a quadratic compilation
+  time issue noticeable when compiling code with a large number of "and"
+  and "or" operators.
+
+Library
+-------
+
+- Issue #21722: The distutils "upload" command now exits with a non-zero
+  return code when uploading fails.  Patch by Martin Dengler.
+
+- Issue #21766: Prevent a security hole in CGIHTTPServer by URL unquoting paths
+  before checking for a CGI script at that path.
+
+- Issue #21310: Fixed possible resource leak in failed open().
+
+- Issue #21304: Backport the key derivation function hashlib.pbkdf2_hmac from
+  Python 3 per PEP 466.
+
+- Issue #11709: Fix the pydoc.help function to not fail when sys.stdin is not a
+  valid file.
+
+- Issue #13223: Fix pydoc.writedoc so that the HTML documentation for methods
+  that use 'self' in the example code is generated correctly.
+
+- Issue #21552: Fixed possible integer overflow of too long string lengths in
+  the tkinter module on 64-bit platforms.
+
+- Issue #14315: The zipfile module now ignores extra fields in the central
+  directory that are too short to be parsed instead of letting a struct.unpack
+  error bubble up as this "bad data" appears in many real world zip files in
+  the wild and is ignored by other zip tools.
+
+- Issue #21402: Tkinter.ttk now works when default root window is not set.
+
+- Issue #10203: sqlite3.Row now truly supports sequence protocol.  In particulr
+  it supports reverse() and negative indices.  Original patch by Claudiu Popa.
+
+- Issue #8743: Fix interoperability between set objects and the
+  collections.Set() abstract base class.
+
+- Issue #21481:  Argparse equality and inequality tests now return
+  NotImplemented when comparing to an unknown type.
+
+IDLE
+----
+
+- Issue #21686: add unittest for HyperParser. Original patch by Saimadhav
+  Heblikar.
+
+- Issue #12387: Add missing upper(lower)case versions of default Windows key
+  bindings for Idle so Caps Lock does not disable them. Patch by Roger Serwy.
+
+- Issue #21695: Closing a Find-in-files output window while the search is
+  still in progress no longer closes Idle.
+
+- Issue #18910: Add unittest for textView. Patch by Phil Webster.
+
+- Issue #18292: Add unittest for AutoExpand. Patch by Saihadhav Heblikar.
+
+- Issue #18409: Add unittest for AutoComplete. Patch by Phil Webster.
+
+Tests
+-----
+
+- Issue #19493: Refactored the ctypes test package to skip tests explicitly
+  rather than silently.
+
+- Issue #18492: All resources are now allowed when tests are not run by
+  regrtest.py.
+
+- Issue #21605: Added tests for Tkinter images.
+
+- Issue #21493: Added test for ntpath.expanduser().  Original patch by
+  Claudiu Popa.
+
+- Issue #19925: Added tests for the spwd module. Original patch by Vajrasky Kok.
+
+- Issue #13355: random.triangular() no longer fails with a ZeroDivisionError
+  when low equals high.
+
+- Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
+  PanedWindow.paneconfigure(), and Menu.entryconfigure().
+
+- Issue #20635: Added tests for Tk geometry managers.
+
+Windows
+-------
+
+- Issue #21671, CVE-2014-0224: The bundled version of OpenSSL has been
+  updated to 1.0.1h.
+
+What's New in Python 2.7.7
+==========================
+
+*Release date: 2014-05-31*
+
+Build
+-----
+
+- Issue #21462: Build the Windows installers with OpenSSL 1.0.1g.
+
+- Issue #19866: Include some test data in the Windows installers, so tests don't
+  fail.
+
+
+What's New in Python 2.7.7 release candidate 1?
+===============================================
+
+*Release date: 2014-05-17*
+
+Core and Builtins
+-----------------
+
+- Issue #21350: Fix file.writelines() to accept arbitrary buffer objects,
+  as advertised.  Patch by Brian Kearns.
+
+- Issue #20437: Fixed 43 potential bugs when deleting objects references.
+
+- Issue #21134: Fix segfault when str is called on an uninitialized
+  UnicodeEncodeError, UnicodeDecodeError, or UnicodeTranslateError object.
+
 - Issue #20494: Ensure that free()d memory arenas are really released on POSIX
   systems supporting anonymous memory mappings.  Patch by Charles-François
   Natali.
 
 - Issue #17825: Cursor "^" is correctly positioned for SyntaxError and
   IndentationError.
-
-- Issue #19081: When a zipimport .zip file in sys.path being imported from
-  is modified during the lifetime of the Python process after zipimport has
-  already cached the zip's table of contents we detect this and recover
-  rather than read bad data from the .zip (causing odd import errors).
 
 - Raise a better error when non-unicode codecs are used for a file's coding
   cookie.
@@ -39,8 +168,99 @@ Core and Builtins
 - Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
   billion characters) input strings in _Py_dg_strtod.
 
+- Issue #12546: Allow \x00 to be used as a fill character when using str, int,
+  float, and complex __format__ methods.
+
 Library
 -------
+
+- Issue #10744: Fix PEP 3118 format strings on ctypes objects with a nontrivial
+  shape.
+
+- Issue #7776: Backport Fix ``Host:'' header and reconnection when using
+  http.client.HTTPConnection.set_tunnel() from Python 3.  Patch by Nikolaus
+  Rath.
+
+- Issue #21306: Backport hmac.compare_digest from Python 3. This is part of PEP
+  466.
+
+- Issue #21470: Do a better job seeding the random number generator by
+  using enough bytes to span the full state space of the Mersenne Twister.
+
+- Issue #21469:  Reduced the risk of false positives in robotparser by
+  checking to make sure that robots.txt has been read or does not exist
+  prior to returning True in can_fetch().
+
+- Issue #21321: itertools.islice() now releases the reference to the source
+  iterator when the slice is exhausted.  Patch by Anton Afanasyev.
+
+- Issue #9291: Do not attempt to re-encode mimetype data read from registry in
+  ANSI mode. Initial patches by Dmitry Jemerov & Vladimir Iofik.
+
+- Issue #21349: Passing a memoryview to _winreg.SetValueEx now correctly raises
+  a TypeError where it previously crashed the interpreter. Patch by Brian Kearns
+
+- Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
+  parameter. Bug reported by Guido Vranken.
+
+- Issue #21172: isinstance check relaxed from dict to collections.Mapping.
+
+- Issue #21191: In os.fdopen, never close the file descriptor when an exception
+  happens.
+
+- Issue #21149: Improved thread-safety in logging cleanup during interpreter
+  shutdown. Thanks to Devin Jeanpierre for the patch.
+
+- Fix possible overflow bug in strop.expandtabs. You shouldn't be using this
+  module!
+
+- Issue #20145: `assertRaisesRegex` now raises a TypeError if the second
+  argument is not a string or compiled regex.
+
+- Issue #21058: Fix a leak of file descriptor in tempfile.NamedTemporaryFile(),
+  close the file descriptor if os.fdopen() fails
+
+- Issue #20283: RE pattern methods now accept the string keyword parameters
+  as documented.  The pattern and source keyword parameters are left as
+  deprecated aliases.
+
+- Issue #11599: When an external command (e.g. compiler) fails, distutils now
+  prints out the whole command line (instead of just the command name) if the
+  environment variable DISTUTILS_DEBUG is set.
+
+- Issue #4931: distutils should not produce unhelpful "error: None" messages
+  anymore.  distutils.util.grok_environment_error is kept but doc-deprecated.
+
+- Improve the random module's default seeding to use 256 bits of entropy
+  from os.urandom().  This was already done for Python 3, mildly improving
+  security with a bigger seed space.
+
+- Issue #15618: Make turtle.py compatible with 'from __future__ import
+  unicode_literals'.  Initial patch by Juancarlo Añez.
+
+- Issue #20501: fileinput module no longer reads whole file into memory when using
+  fileinput.hook_encoded.
+
+- Issue #6815: os.path.expandvars() now supports non-ASCII Unicode environment
+  variables names and values.
+
+- Issue #20635: Fixed grid_columnconfigure() and grid_rowconfigure() methods of
+  Tkinter widgets to work in wantobjects=True mode.
+
+- Issue #17671: Fixed a crash when use non-initialized io.BufferedRWPair.
+  Based on patch by Stephen Tu.
+
+- Issue #8478: Untokenizer.compat processes first token from iterator input.
+  Patch based on lines from Georg Brandl, Eric Snow, and Gareth Rees.
+
+- Issue #20594: Avoid name clash with the libc function posix_close.
+
+- Issue #19856: shutil.move() failed to move a directory to other directory
+  on Windows if source name ends with os.altsep.
+
+- Issue #14983: email.generator now always adds a line end after each MIME
+  boundary marker, instead of doing so only when there is an epilogue.  This
+  fixes an RFC compliance bug and solves an issue with signed MIME parts.
 
 - Issue #20013: Some imap servers disconnect if the current mailbox is
   deleted, and imaplib did not handle that case gracefully.  Now it
@@ -200,8 +420,24 @@ Library
 - Issue #19286: Directories in ``package_data`` are no longer added to
   the filelist, preventing failure outlined in the ticket.
 
+- Issue #6676: Ensure a meaningful exception is raised when attempting
+  to parse more than one XML document per pyexpat xmlparser instance.
+  (Original patches by Hirokazu Yamamoto and Amaury Forgeot d'Arc, with
+  suggested wording by David Gutteridge)
+
+- Issue #21311: Avoid exception in _osx_support with non-standard compiler
+  configurations.  Patch by John Szakmeister.
+
 Tools/Demos
 -----------
+
+- Issue #3561: The Windows installer now has an option, off by default, for
+  placing the Python installation into the system "Path" environment variable.
+  This was backported from Python 3.3.
+
+- Add support for ``yield from`` to 2to3.
+
+- Add support for the PEP 465 matrix multiplication operator to 2to3.
 
 - Issue #19936: Added executable bits or shebang lines to Python scripts which
   requires them.  Disable executable bits and shebang lines in test and
@@ -211,8 +447,20 @@ Tools/Demos
 IDLE
 ----
 
+- Issue #18104: Add idlelib/idle_test/htest.py with a few sample tests to begin
+  consolidating and improving human-validated tests of Idle. Change other files
+  as needed to work with htest.  Running the module as __main__ runs all tests.
+
+- Issue #21139: Change default paragraph width to 72, the PEP 8 recommendation.
+
+- Issue #21284: Paragraph reformat test passes after user changes reformat width.
+
 - Issue #20406: Use Python application icons for Idle window title bars.
   Patch mostly by Serhiy Storchaka.
+
+- Issue #21029: Occurrences of "print" are now consistently colored as
+  being a keyword (the colorizer doesn't know if print functions are
+  enabled in the source).
 
 - Issue #17721: Remove non-functional configuration dialog help button until we
   make it actually gives some help when clicked. Patch by Guilherme Simões.
@@ -228,8 +476,25 @@ IDLE
 - Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
   shell window is present.
 
+- Issue #17654: Ensure IDLE menus are customized properly on OS X for
+  non-framework builds and for all variants of Tk.
+
 Tests
 -----
+
+- Issue #17752: Fix distutils tests when run from the installed location.
+
+- Issue #18604: Consolidated checks for GUI availability.  All platforms now
+  at least check whether Tk can be instantiated when the GUI resource is
+  requested.
+
+- Issue #20946: Correct alignment assumptions of some ctypes tests.
+
+- Issue #20743: Fix a reference leak in test_tcl.
+
+- Issue #20510: Rewrote test_exit in test_sys to match existing comments,
+  use modern unittest features, and use helpers from test.script_helper
+  instead of using subprocess directly.  Initial patch by Gareth Rees.
 
 - Issue #20532: Tests which use _testcapi now are marked as CPython only.
 
@@ -268,6 +533,21 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
+- Issue #20605: Make test_socket getaddrinfo OS X segfault test more robust.
+
+- Issue #20939: Avoid various network test failures due to new
+  redirect of http://www.python.org/ to https://www.python.org:
+  use http://www.example.com instead.
+
+- Issue #21093: Prevent failures of ctypes test_macholib on OS X if a
+  copy of libz exists in $HOME/lib or /usr/local/lib.
+
+Build
+-----
+
+- Issue #21285: Refactor and fix curses configure check to always search
+  in a ncursesw directory.
+
 Documentation
 -------------
 
@@ -277,6 +557,26 @@ Documentation
   the pickle module.
 
 - Issue #19795: Improved markup of True/False constants.
+
+Windows
+-------
+
+- Issue #21303, #20565: Updated the version of Tcl/Tk included in the
+  installer from 8.5.2 to 8.5.15.
+
+Mac OS X
+--------
+
+- As of 2.7.8, the 32-bit-only installer will support OS X 10.5
+  and later systems as is currently done for Python 3.x installers.
+  For 2.7.7 only, we will provide three installers:
+  the legacy deprecated 10.3+ 32-bit-only format;
+  the newer 10.5+ 32-bit-only format;
+  and the unchanged 10.6+ 64-/32-bit format.
+  Although binary installers will no longer be available from
+  python.org as of 2.7.8, it will still be possible to build from
+  source on 10.3.9 and 10.4 systems if necessary.
+  See Mac/BuildScript/README.txt for more information.
 
 
 Whats' New in Python 2.7.6?

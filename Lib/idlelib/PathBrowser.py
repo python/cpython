@@ -4,10 +4,16 @@ import imp
 
 from idlelib.TreeWidget import TreeItem
 from idlelib.ClassBrowser import ClassBrowser, ModuleBrowserTreeItem
+from idlelib.PyShell import PyShellFileList
+
 
 class PathBrowser(ClassBrowser):
 
-    def __init__(self, flist):
+    def __init__(self, flist, _htest=False):
+        """
+        _htest - bool, change box location when running htest
+        """
+        self._htest = _htest
         self.init(flist)
 
     def settitle(self):
@@ -85,12 +91,14 @@ class DirBrowserTreeItem(TreeItem):
         sorted.sort()
         return sorted
 
-def main():
-    from idlelib import PyShell
-    PathBrowser(PyShell.flist)
-    if sys.stdin is sys.__stdin__:
-        mainloop()
+def _path_browser(parent):
+    flist = PyShellFileList(parent)
+    PathBrowser(flist, _htest=True)
+    parent.mainloop()
 
 if __name__ == "__main__":
     from unittest import main
     main('idlelib.idle_test.test_pathbrowser', verbosity=2, exit=False)
+
+    from idlelib.idle_test.htest import run
+    run(_path_browser)

@@ -79,45 +79,91 @@ bug/patch item for each change.
 The Future for Python 2.x
 =========================
 
-Python 2.7 is intended to be the last major release in the 2.x series.
-The Python maintainers are planning to focus their future efforts on
-the Python 3.x series.
+Python 2.7 is the last major release in the 2.x series, as the Python
+maintainers have shifted the focus of their new feature development efforts
+to the Python 3.x series. This means that while Python 2 continues to
+receive bug fixes, and to be updated to build correctly on new hardware and
+versions of supported operated systems, there will be no new full feature
+releases for the language or standard library.
 
-This means that 2.7 will remain in place for a long time, running
-production systems that have not been ported to Python 3.x.
-Two consequences of the long-term significance of 2.7 are:
+However, while there is a large common subset between Python 2.7 and Python
+3, and many of the changes involved in migrating to that common subset, or
+directly to Python 3, can be safely automated, some other changes (notably
+those associated with Unicode handling) may require careful consideration,
+and preferably robust automated regression test suites, to migrate
+effectively.
 
-* It's very likely the 2.7 release will have a longer period of
-  maintenance compared to earlier 2.x versions.  Python 2.7 will
-  continue to be maintained while the transition to 3.x continues, and
-  the developers are planning to support Python 2.7 with bug-fix
-  releases beyond the typical two years.
+This means that Python 2.7 will remain in place for a long time, providing a
+stable and supported base platform for production systems that have not yet
+been ported to Python 3. The full expected lifecycle of the Python 2.7
+series is detailed in :pep:`373`.
 
-* A policy decision was made to silence warnings only of interest to
-  developers.  :exc:`DeprecationWarning` and its
-  descendants are now ignored unless otherwise requested, preventing
-  users from seeing warnings triggered by an application.  This change
-  was also made in the branch that will become Python 3.2. (Discussed
-  on stdlib-sig and carried out in :issue:`7319`.)
+Some key consequences of the long-term significance of 2.7 are:
 
-  In previous releases, :exc:`DeprecationWarning` messages were
-  enabled by default, providing Python developers with a clear
-  indication of where their code may break in a future major version
-  of Python.
+* As noted above, the 2.7 release has a much longer period of maintenance
+  when compared to earlier 2.x versions. Python 2.7 is currently expected to
+  remain supported by the core development team (receiving security updates
+  and other bug fixes) until at least 2020 (10 years after its initial
+  release, compared to the more typical support period of 18-24 months).
 
-  However, there are increasingly many users of Python-based
-  applications who are not directly involved in the development of
-  those applications.  :exc:`DeprecationWarning` messages are
-  irrelevant to such users, making them worry about an application
-  that's actually working correctly and burdening application developers
-  with responding to these concerns.
+* As the Python 2.7 standard library ages, making effective use of the
+  Python Package Index (either directly or via a redistributor) becomes
+  more important for Python 2 users. In addition to a wide variety of third
+  party packages for various tasks, the available packages include backports
+  of new modules and features from the Python 3 standard library that are
+  compatible with Python 2, as well as various tools and libraries that can
+  make it easier to migrate to Python 3. The `Python Packaging User Guide
+  <https://packaging.python.org>`__ provides guidance on downloading and
+  installing software from the Python Package Index.
 
-  You can re-enable display of :exc:`DeprecationWarning` messages by
-  running Python with the :option:`-Wdefault <-W>` (short form:
-  :option:`-Wd <-W>`) switch, or by setting the :envvar:`PYTHONWARNINGS`
-  environment variable to ``"default"`` (or ``"d"``) before running
-  Python.  Python code can also re-enable them
-  by calling ``warnings.simplefilter('default')``.
+* While the preferred approach to enhancing Python 2 is now the publication
+  of new packages on the Python Package Index, this approach doesn't
+  necessarily work in all cases, especially those related to network
+  security. In exceptional cases that cannot be handled adequately by
+  publishing new or updated packages on PyPI, the Python Enhancement
+  Proposal process may be used to make the case for adding new features
+  directly to the Python 2 standard library. Any such additions, and the
+  maintenance releases where they were added, will be noted in the
+  :ref:`py27-maintenance-enhancements` section below.
+
+For projects wishing to migrate from Python 2 to Python 3, or for library
+and framework developers wishing to support users on both Python 2 and
+Python 3, there are a variety of tools and guides available to help decide
+on a suitable approach and manage some of the technical details involved.
+The recommended starting point is the :ref:`pyporting-howto` HOWTO guide.
+
+
+Changes to the Handling of Deprecation Warnings
+===============================================
+
+For Python 2.7, a policy decision was made to silence warnings only of
+interest to developers by default.  :exc:`DeprecationWarning` and its
+descendants are now ignored unless otherwise requested, preventing
+users from seeing warnings triggered by an application.  This change
+was also made in the branch that became Python 3.2. (Discussed
+on stdlib-sig and carried out in :issue:`7319`.)
+
+In previous releases, :exc:`DeprecationWarning` messages were
+enabled by default, providing Python developers with a clear
+indication of where their code may break in a future major version
+of Python.
+
+However, there are increasingly many users of Python-based
+applications who are not directly involved in the development of
+those applications.  :exc:`DeprecationWarning` messages are
+irrelevant to such users, making them worry about an application
+that's actually working correctly and burdening application developers
+with responding to these concerns.
+
+You can re-enable display of :exc:`DeprecationWarning` messages by
+running Python with the :option:`-Wdefault <-W>` (short form:
+:option:`-Wd <-W>`) switch, or by setting the :envvar:`PYTHONWARNINGS`
+environment variable to ``"default"`` (or ``"d"``) before running
+Python.  Python code can also re-enable them
+by calling ``warnings.simplefilter('default')``.
+
+The ``unittest`` module also automatically reenables deprecation warnings
+when running tests.
 
 
 Python 3.1 Features
@@ -2463,6 +2509,54 @@ For applications that embed Python:
 
 .. ======================================================================
 
+
+.. _py27-maintenance-enhancements:
+
+New Features Added to Python 2.7 Maintenance Releases
+=====================================================
+
+New features may be added to Python 2.7 maintenance releases when the
+situation genuinely calls for it. Any such additions must go through
+the Python Enhancement Proposal process, and make a compelling case for why
+they can't be adequately addressed by either adding the new feature solely to
+Python 3, or else by publishing it on the Python Package Index.
+
+In addition to the specific proposals listed below, there is a general
+exemption allowing new ``-3`` warnings to be added in any Python 2.7
+maintenance release.
+
+
+PEP 434: IDLE Enhancement Exception for All Branches
+----------------------------------------------------
+
+:pep:`434` describes a general exemption for changes made to the IDLE
+development environment shipped along with Python. This exemption makes it
+possible for the IDLE developers to provide a more consistent user
+experience across all supported versions of Python 2 and 3.
+
+For details of any IDLE changes, refer to the NEWS file for the specific
+release.
+
+
+PEP 466: Network Security Enhancements for Python 2.7
+-----------------------------------------------------
+
+:pep:`466` describes a number of network security enhancement proposals
+that have been approved for inclusion in Python 2.7 maintenance releases,
+with the first of those changes appearing in the Python 2.7.7 release.
+
+:pep:`466` related features added in Python 2.7.7:
+
+* :func:`hmac.compare_digest` was added to make a timing attack resistant
+  comparison operation broadly available to Python 2 applications
+  (backported by Alex Gaynor in :issue:`21306`)
+
+* the version of OpenSSL linked with the prebuilt Windows installers
+  published on python.org was updated to 1.0.1g (contributed by
+  Zachary Ware in :issue:`21462`)
+
+
+.. ======================================================================
 
 .. _acks27:
 

@@ -277,6 +277,9 @@ class FormatEventTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.root.destroy()
+        del cls.root
+        del cls.text
+        del cls.formatter
 
     def test_short_line(self):
         self.text.insert('1.0', "Short line\n")
@@ -290,7 +293,7 @@ class FormatEventTest(unittest.TestCase):
         # Set cursor ('insert' mark) to '1.0', within text.
         text.insert('1.0', self.test_string)
         text.mark_set('insert', '1.0')
-        self.formatter('ParameterDoesNothing')
+        self.formatter('ParameterDoesNothing', limit=70)
         result = text.get('1.0', 'insert')
         # find function includes \n
         expected = (
@@ -302,7 +305,7 @@ class FormatEventTest(unittest.TestCase):
         # Select from 1.11 to line end.
         text.insert('1.0', self.test_string)
         text.tag_add('sel', '1.11', '1.end')
-        self.formatter('ParameterDoesNothing')
+        self.formatter('ParameterDoesNothing', limit=70)
         result = text.get('1.0', 'insert')
         # selection excludes \n
         expected = (
@@ -316,7 +319,7 @@ class FormatEventTest(unittest.TestCase):
         #  Select 2 long lines.
         text.insert('1.0', self.multiline_test_string)
         text.tag_add('sel', '2.0', '4.0')
-        self.formatter('ParameterDoesNothing')
+        self.formatter('ParameterDoesNothing', limit=70)
         result = text.get('2.0', 'insert')
         expected = (
 "    The second line's length is way over the max width. It goes on and\n"
@@ -331,7 +334,7 @@ class FormatEventTest(unittest.TestCase):
 
         # Set cursor ('insert') to '1.0', within block.
         text.insert('1.0', self.multiline_test_comment)
-        self.formatter('ParameterDoesNothing')
+        self.formatter('ParameterDoesNothing', limit=70)
         result = text.get('1.0', 'insert')
         expected = (
 "# The first line is under the max width. The second line's length is\n"
@@ -345,7 +348,7 @@ class FormatEventTest(unittest.TestCase):
         # Select line 2, verify line 1 unaffected.
         text.insert('1.0', self.multiline_test_comment)
         text.tag_add('sel', '2.0', '3.0')
-        self.formatter('ParameterDoesNothing')
+        self.formatter('ParameterDoesNothing', limit=70)
         result = text.get('1.0', 'insert')
         expected = (
 "# The first line is under the max width.\n"

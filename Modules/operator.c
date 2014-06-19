@@ -235,6 +235,132 @@ op_delslice(PyObject *s, PyObject *a)
 #define spam2o(OP,ALTOP,DOC) {#OP, op_##OP, METH_O, PyDoc_STR(DOC)}, \
                            {#ALTOP, op_##OP, METH_O, PyDoc_STR(DOC)},
 
+
+
+/* compare_digest **********************************************************/
+
+/*
+ * timing safe compare
+ *
+ * Returns 1 of the strings are equal.
+ * In case of len(a) != len(b) the function tries to keep the timing
+ * dependent on the length of b. CPU cache locally may still alter timing
+ * a bit.
+ */
+static int
+_tscmp(const unsigned char *a, const unsigned char *b,
+        Py_ssize_t len_a, Py_ssize_t len_b)
+{
+    /* The volatile type declarations make sure that the compiler has no
+     * chance to optimize and fold the code in any way that may change
+     * the timing.
+     */
+    volatile Py_ssize_t length;
+    volatile const unsigned char *left;
+    volatile const unsigned char *right;
+    Py_ssize_t i;
+    unsigned char result;
+
+    /* loop count depends on length of b */
+    length = len_b;
+    left = NULL;
+    right = b;
+
+    /* don't use else here to keep the amount of CPU instructions constant,
+     * volatile forces re-evaluation
+     *  */
+    if (len_a == length) {
+        left = *((volatile const unsigned char**)&a);
+        result = 0;
+    }
+    if (len_a != length) {
+        left = b;
+        result = 1;
+    }
+
+    for (i=0; i < length; i++) {
+        result |= *left++ ^ *right++;
+    }
+
+    return (result == 0);
+}
+
+PyDoc_STRVAR(compare_digest__doc__,
+"compare_digest(a, b) -> bool\n"
+"\n"
+"Return 'a == b'.  This function uses an approach designed to prevent\n"
+"timing analysis, making it appropriate for cryptography.\n"
+"a and b must both be of the same type: either str (ASCII only),\n"
+"or any type that supports the buffer protocol (e.g. bytes).\n"
+"\n"
+"Note: If a and b are of different lengths, or if an error occurs,\n"
+"a timing attack could theoretically reveal information about the\n"
+"types and lengths of a and b--but not their values.\n");
+
+static PyObject*
+compare_digest(PyObject *self, PyObject *args)
+{
+    PyObject *a, *b;
+    int rc;
+
+    if (!PyArg_ParseTuple(args, "OO:compare_digest", &a, &b)) {
+        return NULL;
+    }
+
+    /* Unicode string */
+    if (PyUnicode_Check(a) && PyUnicode_Check(b)) {
+        rc = _tscmp((const unsigned char *)PyUnicode_AS_DATA(a),
+                    (const unsigned char *)PyUnicode_AS_DATA(b),
+                    PyUnicode_GET_DATA_SIZE(a),
+                    PyUnicode_GET_DATA_SIZE(b));
+    }
+    /* fallback to buffer interface for bytes, bytesarray and other */
+    else {
+        Py_buffer view_a;
+        Py_buffer view_b;
+
+        if (PyObject_CheckBuffer(a) == 0 && PyObject_CheckBuffer(b) == 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "unsupported operand types(s) or combination of types: "
+                         "'%.100s' and '%.100s'",
+                         Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+            return NULL;
+        }
+
+        if (PyObject_GetBuffer(a, &view_a, PyBUF_SIMPLE) == -1) {
+            return NULL;
+        }
+        if (view_a.ndim > 1) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Buffer must be single dimension");
+            PyBuffer_Release(&view_a);
+            return NULL;
+        }
+
+        if (PyObject_GetBuffer(b, &view_b, PyBUF_SIMPLE) == -1) {
+            PyBuffer_Release(&view_a);
+            return NULL;
+        }
+        if (view_b.ndim > 1) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Buffer must be single dimension");
+            PyBuffer_Release(&view_a);
+            PyBuffer_Release(&view_b);
+            return NULL;
+        }
+
+        rc = _tscmp((const unsigned char*)view_a.buf,
+                    (const unsigned char*)view_b.buf,
+                    view_a.len,
+                    view_b.len);
+
+        PyBuffer_Release(&view_a);
+        PyBuffer_Release(&view_b);
+    }
+
+    return PyBool_FromLong(rc);
+}
+
 static struct PyMethodDef operator_methods[] = {
 
 spam1o(isCallable,
@@ -318,6 +444,8 @@ spam2(ne,__ne__, "ne(a, b) -- Same as a!=b.")
 spam2(gt,__gt__, "gt(a, b) -- Same as a>b.")
 spam2(ge,__ge__, "ge(a, b) -- Same as a>=b.")
 
+    {"_compare_digest", (PyCFunction)compare_digest, METH_VARARGS,
+     compare_digest__doc__},
     {NULL,              NULL}           /* sentinel */
 
 };

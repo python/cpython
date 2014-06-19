@@ -64,6 +64,7 @@ class GetSelectionTest(unittest.TestCase):
 ##    @classmethod
 ##    def tearDownClass(cls):
 ##        cls.root.destroy()
+##        del cls.root
 
     def test_get_selection(self):
         # text = Text(master=self.root)
@@ -219,6 +220,7 @@ class SearchTest(unittest.TestCase):
 ##    @classmethod
 ##    def tearDownClass(cls):
 ##        cls.root.destroy()
+##        del cls.root
 
     def test_search(self):
         Equal = self.assertEqual
@@ -261,6 +263,7 @@ class ForwardBackwardTest(unittest.TestCase):
 ##    @classmethod
 ##    def tearDownClass(cls):
 ##        cls.root.destroy()
+##        del cls.root
 
     @classmethod
     def setUpClass(cls):

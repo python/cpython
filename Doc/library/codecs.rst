@@ -23,24 +23,26 @@ manages the codec and error handling lookup process.
 
 It defines the following functions:
 
-.. function:: encode(obj, encoding='ascii', errors='strict')
+.. function:: encode(obj, [encoding[, errors]])
 
-   Encodes *obj* using the codec registered for *encoding*.
+   Encodes *obj* using the codec registered for *encoding*. The default
+   encoding is ``'ascii'``.
 
    *Errors* may be given to set the desired error handling scheme. The
-   default error handler is ``strict`` meaning that encoding errors raise
+   default error handler is ``'strict'`` meaning that encoding errors raise
    :exc:`ValueError` (or a more codec specific subclass, such as
    :exc:`UnicodeEncodeError`). Refer to :ref:`codec-base-classes` for more
    information on codec error handling.
 
    .. versionadded:: 2.4
 
-.. function:: decode(obj, encoding='ascii', errors='strict')
+.. function:: decode(obj, [encoding[, errors]])
 
-   Decodes *obj* using the codec registered for *encoding*.
+   Decodes *obj* using the codec registered for *encoding*. The default
+   encoding is ``'ascii'``.
 
    *Errors* may be given to set the desired error handling scheme. The
-   default error handler is ``strict`` meaning that decoding errors raise
+   default error handler is ``'strict'`` meaning that decoding errors raise
    :exc:`ValueError` (or a more codec specific subclass, such as
    :exc:`UnicodeDecodeError`). Refer to :ref:`codec-base-classes` for more
    information on codec error handling.

@@ -397,18 +397,9 @@ Miscellaneous options
 
 .. cmdoption:: -3
 
-   Warn about Python 3.x incompatibilities which cannot be fixed trivially by
-   :ref:`2to3 <2to3-reference>`. Among these are:
-
-   * :meth:`dict.has_key`
-   * :func:`apply`
-   * :func:`callable`
-   * :func:`coerce`
-   * :func:`execfile`
-   * :func:`reduce`
-   * :func:`reload`
-
-   Using these will emit a :exc:`DeprecationWarning`.
+   Warn about Python 3.x possible incompatibilities by emitting a
+   :exc:`DeprecationWarning` for features that are removed or significantly
+   changed in Python 3.
 
    .. versionadded:: 2.6
 

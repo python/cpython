@@ -307,6 +307,11 @@ class TestPy3KWarnings(unittest.TestCase):
             w.reset()
             self.assertWarning(sequenceIncludes(range(3), 2), w, seq_warn)
 
+    def test_nonascii_bytes_literals(self):
+        expected = "non-ascii bytes literals not supported in 3.x"
+        with check_py3k_warnings((expected, SyntaxWarning)):
+            exec "b'\xbd'"
+
 
 class TestStdlibRemovals(unittest.TestCase):
 

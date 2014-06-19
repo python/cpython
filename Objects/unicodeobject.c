@@ -3520,8 +3520,7 @@ static void make_encode_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 
@@ -4826,8 +4825,7 @@ static void make_translate_exception(PyObject **exceptionObject,
             goto onError;
         return;
       onError:
-        Py_DECREF(*exceptionObject);
-        *exceptionObject = NULL;
+        Py_CLEAR(*exceptionObject);
     }
 }
 
@@ -5620,7 +5618,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     PyObject *item;
     Py_ssize_t i;
 
-    fseq = PySequence_Fast(seq, "");
+    fseq = PySequence_Fast(seq, "can only join an iterable");
     if (fseq == NULL) {
         return NULL;
     }

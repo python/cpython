@@ -423,6 +423,7 @@ class WatchedFileHandler(logging.FileHandler):
                 # we have an open file handle, clean it up
                 self.stream.flush()
                 self.stream.close()
+                self.stream = None  # See Issue #21742: _open () might fail.
                 # open a new file handle and get new stat info from that fd
                 self.stream = self._open()
                 self._statstream()
@@ -1067,7 +1068,7 @@ class HTTPHandler(logging.Handler):
         """
         Default implementation of mapping the log record into a dict
         that is sent as the CGI data. Overwrite in your class.
-        Contributed by Franz  Glasner.
+        Contributed by Franz Glasner.
         """
         return record.__dict__
 

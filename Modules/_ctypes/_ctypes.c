@@ -194,10 +194,8 @@ _DictRemover_call(PyObject *_self, PyObject *args, PyObject *kw)
         if (-1 == PyDict_DelItem(self->dict, self->key))
             /* XXX Error context */
             PyErr_WriteUnraisable(Py_None);
-        Py_DECREF(self->key);
-        self->key = NULL;
-        Py_DECREF(self->dict);
-        self->dict = NULL;
+        Py_CLEAR(self->key);
+        Py_CLEAR(self->dict);
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -320,6 +318,48 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
     else
         result[0] = '\0';
     strcat(result, suffix);
+    return result;
+}
+
+/*
+  Allocate a memory block for a pep3118 format string, adding
+  the given prefix (if non-null), an additional shape prefix, and a suffix.
+  Returns NULL on failure, with the error indicator set.  If called with
+  a suffix of NULL the error indicator must already be set.
+ */
+char *
+_ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
+                                       const char *prefix, const char *suffix)
+{
+    char *new_prefix;
+    char *result;
+    char buf[32];
+    int prefix_len;
+    int k;
+
+    prefix_len = 32 * ndim + 3;
+    if (prefix)
+        prefix_len += strlen(prefix);
+    new_prefix = PyMem_Malloc(prefix_len);
+    if (new_prefix == NULL)
+        return NULL;
+    new_prefix[0] = '\0';
+    if (prefix)
+        strcpy(new_prefix, prefix);
+    if (ndim > 0) {
+        /* Add the prefix "(shape[0],shape[1],...,shape[ndim-1])" */
+        strcat(new_prefix, "(");
+        for (k = 0; k < ndim; ++k) {
+            if (k < ndim-1) {
+                sprintf(buf, "%"PY_FORMAT_SIZE_T"d,", shape[k]);
+            } else {
+                sprintf(buf, "%"PY_FORMAT_SIZE_T"d)", shape[k]);
+            }
+            strcat(new_prefix, buf);
+        }
+    }
+    result = _ctypes_alloc_format_string(new_prefix, suffix);
+    PyMem_Free(new_prefix);
     return result;
 }
 
@@ -919,14 +959,21 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (proto) {
         StgDictObject *itemdict = PyType_stgdict(proto);
+        const char *current_format;
         assert(itemdict);
         /* If itemdict->format is NULL, then this is a pointer to an
            incomplete type.  We create a generic format string
            'pointer to bytes' in this case.  XXX Better would be to
            fix the format string later...
         */
-        stgdict->format = _ctypes_alloc_format_string("&",
-                      itemdict->format ? itemdict->format : "B");
+        current_format = itemdict->format ? itemdict->format : "B";
+        if (itemdict->shape != NULL) {
+            /* pointer to an array: the shape needs to be prefixed */
+            stgdict->format = _ctypes_alloc_format_string_with_shape(
+                itemdict->ndim, itemdict->shape, "&", current_format);
+        } else {
+            stgdict->format = _ctypes_alloc_format_string("&", current_format);
+        }
         if (stgdict->format == NULL) {
             Py_DECREF((PyObject *)stgdict);
             return NULL;
@@ -1328,7 +1375,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     long length;
 
     Py_ssize_t itemsize, itemalign;
-    char buf[32];
 
     typedict = PyTuple_GetItem(args, 2);
     if (!typedict)
@@ -1364,13 +1410,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     assert(itemdict->format);
-    if (itemdict->format[0] == '(') {
-        sprintf(buf, "(%ld,", length);
-        stgdict->format = _ctypes_alloc_format_string(buf, itemdict->format+1);
-    } else {
-        sprintf(buf, "(%ld)", length);
-        stgdict->format = _ctypes_alloc_format_string(buf, itemdict->format);
-    }
+    stgdict->format = _ctypes_alloc_format_string(NULL, itemdict->format);
     if (stgdict->format == NULL) {
         Py_DECREF((PyObject *)stgdict);
         return NULL;
@@ -3040,10 +3080,8 @@ static int
 PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob)
 {
     if (ob == NULL) {
-        Py_XDECREF(self->restype);
-        self->restype = NULL;
-        Py_XDECREF(self->checker);
-        self->checker = NULL;
+        Py_CLEAR(self->restype);
+        Py_CLEAR(self->checker);
         return 0;
     }
     if (ob != Py_None && !PyType_stgdict(ob) && !PyCallable_Check(ob)) {
@@ -3086,10 +3124,8 @@ PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob)
     PyObject *converters;
 
     if (ob == NULL || ob == Py_None) {
-        Py_XDECREF(self->converters);
-        self->converters = NULL;
-        Py_XDECREF(self->argtypes);
-        self->argtypes = NULL;
+        Py_CLEAR(self->converters);
+        Py_CLEAR(self->argtypes);
     } else {
         converters = converters_from_argtypes(ob);
         if (!converters)

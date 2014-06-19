@@ -76,8 +76,7 @@ int ListObj_Convert(PyObject *v, ListHandle *p_itself)
 
 static void ListObj_dealloc(ListObject *self)
 {
-    Py_XDECREF(self->ob_ldef_func);
-    self->ob_ldef_func = NULL;
+    Py_CLEAR(self->ob_ldef_func);
     SetListRefCon(self->ob_itself, (long)0);
     if (self->ob_must_be_disposed && self->ob_itself) LDispose(self->ob_itself);
     self->ob_type->tp_free((PyObject *)self);

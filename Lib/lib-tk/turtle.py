@@ -835,7 +835,7 @@ class Shape(object):
             if isinstance(data, list):
                 data = tuple(data)
         elif type_ == "image":
-            if isinstance(data, str):
+            if isinstance(data, basestring):
                 if data.lower().endswith(".gif") and isfile(data):
                     data = TurtleScreen._image(data)
                 # else data assumed to be Photoimage
@@ -1098,7 +1098,7 @@ class TurtleScreen(TurtleScreenBase):
         """
         if len(color) == 1:
             color = color[0]
-        if isinstance(color, str):
+        if isinstance(color, basestring):
             if self._iscolorstring(color) or color == "":
                 return color
             else:
@@ -2602,7 +2602,7 @@ class RawTurtle(TPen, TNavigator):
     def _cc(self, args):
         """Convert colortriples to hexstrings.
         """
-        if isinstance(args, str):
+        if isinstance(args, basestring):
             return args
         try:
             r, g, b = args
@@ -3228,7 +3228,7 @@ class RawTurtle(TPen, TNavigator):
         """
         #print "dot-1:", size, color
         if not color:
-            if isinstance(size, (str, tuple)):
+            if isinstance(size, (basestring, tuple)):
                 color = self._colorstr(size)
                 size = self._pensize + max(self._pensize, 4)
             else:
@@ -3913,7 +3913,7 @@ if __name__ == "__main__":
         down()
         # some text
         write("startstart", 1)
-        write("start", 1)
+        write(u"start", 1)
         color("red")
         # staircase
         for i in range(5):
@@ -3988,7 +3988,7 @@ if __name__ == "__main__":
         tri = getturtle()
         tri.resizemode("auto")
         turtle = Turtle()
-        turtle.resizemode("auto")
+        turtle.resizemode(u"auto")
         turtle.shape("turtle")
         turtle.reset()
         turtle.left(90)
@@ -3998,7 +3998,7 @@ if __name__ == "__main__":
         turtle.lt(30)
         turtle.down()
         turtle.speed(6)
-        turtle.color("blue","orange")
+        turtle.color("blue",u"orange")
         turtle.pensize(2)
         tri.speed(6)
         setheading(towards(turtle))
@@ -4013,9 +4013,9 @@ if __name__ == "__main__":
                 tri.stamp()
                 switchpen()
             count += 1
-        tri.write("CAUGHT! ", font=("Arial", 16, "bold"), align="right")
+        tri.write("CAUGHT! ", font=("Arial", 16, "bold"), align=u"right")
         tri.pencolor("black")
-        tri.pencolor("red")
+        tri.pencolor(u"red")
 
         def baba(xdummy, ydummy):
             clearscreen()

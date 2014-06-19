@@ -16,6 +16,9 @@ def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     builtinlist = [str(name) for name in dir(__builtin__)
                                         if not name.startswith('_')]
+    # We don't know whether "print" is a function or a keyword,
+    # so we always treat is as a keyword (the most common case).
+    builtinlist.remove('print')
     # self.file = file("file") :
     # 1st 'file' colorized normal, 2nd as builtin, 3rd as string
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
@@ -252,17 +255,21 @@ class ColorDelegator(Delegator):
         for tag in self.tagdefs.keys():
             self.tag_remove(tag, "1.0", "end")
 
-def main():
+def _color_delegator(parent):
     from idlelib.Percolator import Percolator
     root = Tk()
-    root.wm_protocol("WM_DELETE_WINDOW", root.quit)
-    text = Text(background="white")
+    root.title("Test ColorDelegator")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+    source = "if somename: x = 'abc' # comment\nprint"
+    text = Text(root, background="white")
+    text.insert("insert", source)
     text.pack(expand=1, fill="both")
-    text.focus_set()
     p = Percolator(text)
     d = ColorDelegator()
     p.insertfilter(d)
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    from idlelib.idle_test.htest import run
+    run(_color_delegator)

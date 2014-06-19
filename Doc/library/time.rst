@@ -236,7 +236,9 @@ The module defines the following functions and data items:
    :func:`gmtime` or :func:`localtime` to a string as specified by the *format*
    argument.  If *t* is not provided, the current time as returned by
    :func:`localtime` is used.  *format* must be a string.  :exc:`ValueError` is
-   raised if any field in *t* is outside of the allowed range.
+   raised if any field in *t* is outside of the allowed range. :func:`strftime`
+   returns a locale depedent byte string; the result may be converted to unicode
+   by doing ``strftime(<myformat>).decode(locale.getlocale()[1])``.
 
    .. versionchanged:: 2.1
       Allowed *t* to be omitted.

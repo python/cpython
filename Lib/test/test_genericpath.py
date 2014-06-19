@@ -199,12 +199,39 @@ class CommonTest(GenericTest):
             self.assertEqual(expandvars("$[foo]bar"), "$[foo]bar")
             self.assertEqual(expandvars("$bar bar"), "$bar bar")
             self.assertEqual(expandvars("$?bar"), "$?bar")
-            self.assertEqual(expandvars("${foo}bar"), "barbar")
             self.assertEqual(expandvars("$foo}bar"), "bar}bar")
             self.assertEqual(expandvars("${foo"), "${foo")
             self.assertEqual(expandvars("${{foo}}"), "baz1}")
             self.assertEqual(expandvars("$foo$foo"), "barbar")
             self.assertEqual(expandvars("$bar$bar"), "$bar$bar")
+
+    @unittest.skipUnless(test_support.FS_NONASCII, 'need test_support.FS_NONASCII')
+    def test_expandvars_nonascii(self):
+        if self.pathmodule.__name__ == 'macpath':
+            self.skipTest('macpath.expandvars is a stub')
+        expandvars = self.pathmodule.expandvars
+        def check(value, expected):
+            self.assertEqual(expandvars(value), expected)
+        encoding = sys.getfilesystemencoding()
+        with test_support.EnvironmentVarGuard() as env:
+            env.clear()
+            unonascii = test_support.FS_NONASCII
+            snonascii = unonascii.encode(encoding)
+            env['spam'] = snonascii
+            env[snonascii] = 'ham' + snonascii
+            check(snonascii, snonascii)
+            check('$spam bar', '%s bar' % snonascii)
+            check('${spam}bar', '%sbar' % snonascii)
+            check('${%s}bar' % snonascii, 'ham%sbar' % snonascii)
+            check('$bar%s bar' % snonascii, '$bar%s bar' % snonascii)
+            check('$spam}bar', '%s}bar' % snonascii)
+
+            check(unonascii, unonascii)
+            check(u'$spam bar', u'%s bar' % unonascii)
+            check(u'${spam}bar', u'%sbar' % unonascii)
+            check(u'${%s}bar' % unonascii, u'ham%sbar' % unonascii)
+            check(u'$bar%s bar' % unonascii, u'$bar%s bar' % unonascii)
+            check(u'$spam}bar', u'%s}bar' % unonascii)
 
     def test_abspath(self):
         self.assertIn("foo", self.pathmodule.abspath("foo"))

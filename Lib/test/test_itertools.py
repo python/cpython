@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 from itertools import *
-from weakref import proxy
+import weakref
 from decimal import Decimal
 from fractions import Fraction
 import sys
@@ -274,7 +274,7 @@ class TestBasicOps(unittest.TestCase):
                     self.assertEqual(result, list(permutations(values, None))) # test r as None
                     self.assertEqual(result, list(permutations(values)))       # test default r
 
-    @test_support.impl_detail("tuple resuse is CPython specific")
+    @test_support.impl_detail("tuple reuse is specific to CPython")
     def test_permutations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(permutations('abcde', 3))))), 1)
@@ -536,7 +536,7 @@ class TestBasicOps(unittest.TestCase):
                          zip('abc', 'def'))
 
     @test_support.impl_detail("tuple reuse is specific to CPython")
-    def test_izip_tuple_resuse(self):
+    def test_izip_tuple_reuse(self):
         ids = map(id, izip('abc', 'def'))
         self.assertEqual(min(ids), max(ids))
         ids = map(id, list(izip('abc', 'def')))
@@ -792,6 +792,15 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(islice(c, 1, 3, 50)), [1])
         self.assertEqual(next(c), 3)
 
+        # Issue #21321: check source iterator is not referenced
+        # from islice() after the latter has been exhausted
+        it = (x for x in (1, 2))
+        wr = weakref.ref(it)
+        it = islice(it, 1)
+        self.assertIsNotNone(wr())
+        list(it) # exhaust the iterator
+        self.assertIsNone(wr())
+
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
         underten = lambda x: x<10
@@ -901,7 +910,7 @@ class TestBasicOps(unittest.TestCase):
 
         # test that tee objects are weak referencable
         a, b = tee(xrange(10))
-        p = proxy(a)
+        p = weakref.proxy(a)
         self.assertEqual(getattr(p, '__class__'), type(b))
         del a
         self.assertRaises(ReferenceError, getattr, p, '__class__')

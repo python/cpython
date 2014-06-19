@@ -1,4 +1,3 @@
-import io
 import sys
 import os
 import marshal
@@ -56,27 +55,6 @@ TESTPACK2 = "ziptestpackage2"
 TEMP_ZIP = os.path.abspath("junk95142" + os.extsep + "zip")
 
 
-def _write_zip_package(zipname, files,
-                       data_to_prepend=b"", compression=ZIP_STORED):
-    z = ZipFile(zipname, "w")
-    try:
-        for name, (mtime, data) in files.items():
-            zinfo = ZipInfo(name, time.localtime(mtime))
-            zinfo.compress_type = compression
-            z.writestr(zinfo, data)
-    finally:
-        z.close()
-
-    if data_to_prepend:
-        # Prepend data to the start of the zipfile
-        with open(zipname, "rb") as f:
-            zip_data = f.read()
-
-        with open(zipname, "wb") as f:
-            f.write(data_to_prepend)
-            f.write(zip_data)
-
-
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     compression = ZIP_STORED
@@ -89,9 +67,26 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         ImportHooksBaseTestCase.setUp(self)
 
     def doTest(self, expected_ext, files, *modules, **kw):
-        _write_zip_package(TEMP_ZIP, files, data_to_prepend=kw.get("stuff"),
-                           compression=self.compression)
+        z = ZipFile(TEMP_ZIP, "w")
         try:
+            for name, (mtime, data) in files.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                z.writestr(zinfo, data)
+            z.close()
+
+            stuff = kw.get("stuff", None)
+            if stuff is not None:
+                # Prepend 'stuff' to the start of the zipfile
+                f = open(TEMP_ZIP, "rb")
+                data = f.read()
+                f.close()
+
+                f = open(TEMP_ZIP, "wb")
+                f.write(stuff)
+                f.write(data)
+                f.close()
+
             sys.path.insert(0, TEMP_ZIP)
 
             mod = __import__(".".join(modules), globals(), locals(),
@@ -106,6 +101,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 self.assertEqual(file, os.path.join(TEMP_ZIP,
                                  *modules) + expected_ext)
         finally:
+            z.close()
             os.remove(TEMP_ZIP)
 
     def testAFakeZlib(self):
@@ -127,7 +123,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # so we'll simply skip it then. Bug #765456.
         #
         if "zlib" in sys.builtin_module_names:
-            self.skipTest('zlib is a builtin module')
+            return
         if "zlib" in sys.modules:
             del sys.modules["zlib"]
         files = {"zlib.py": (NOW, test_src)}
@@ -391,152 +387,6 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
 
 
-class ZipFileModifiedAfterImportTestCase(ImportHooksBaseTestCase):
-    def setUp(self):
-        zipimport._zip_directory_cache.clear()
-        zipimport._zip_stat_cache.clear()
-        # save sys.modules so we can unimport everything done by our tests.
-        self._sys_modules_orig = dict(sys.modules)
-        ImportHooksBaseTestCase.setUp(self)
-
-    def tearDown(self):
-        ImportHooksBaseTestCase.tearDown(self)
-        # The closest we can come to un-importing our zipped up test modules.
-        sys.modules.clear()
-        sys.modules.update(self._sys_modules_orig)
-        if os.path.exists(TEMP_ZIP):
-            os.remove(TEMP_ZIP)
-
-    def setUpZipFileModuleAndTestImports(self):
-        # Create a .zip file to test with
-        self.zipfile_path = TEMP_ZIP
-        packdir = TESTPACK + os.sep
-        files = {packdir + "__init__" + pyc_ext: (NOW, test_pyc),
-                 packdir + TESTMOD + ".py": (NOW, "test_value = 38\n"),
-                 "ziptest_a.py": (NOW, "test_value = 23\n"),
-                 "ziptest_b.py": (NOW, "test_value = 42\n"),
-                 "ziptest_c.py": (NOW, "test_value = 1337\n")}
-        _write_zip_package(self.zipfile_path, files)
-        self.assertTrue(os.path.exists(self.zipfile_path))
-        sys.path.insert(0, self.zipfile_path)
-
-        self.testpack_testmod = TESTPACK + "." + TESTMOD
-
-        with io.open(self.zipfile_path, "rb") as orig_zip_file:
-            self.orig_zip_file_contents = orig_zip_file.read()
-
-        # Import something out of the zipfile and confirm it is correct.
-        testmod = __import__(self.testpack_testmod,
-                             globals(), locals(), ["__dummy__"])
-        self.assertEqual(testmod.test_value, 38)
-        del sys.modules[TESTPACK]
-        del sys.modules[self.testpack_testmod]
-
-        # Import something else out of the zipfile and confirm it is correct.
-        ziptest_b = __import__("ziptest_b", globals(), locals(), ["test_value"])
-        self.assertEqual(ziptest_b.test_value, 42)
-        del sys.modules["ziptest_b"]
-
-    def truncateAndFillZipWithNonZipGarbage(self):
-        with io.open(self.zipfile_path, "wb") as byebye_valid_zip_file:
-            byebye_valid_zip_file.write(b"Tear down this wall!\n"*1987)
-
-    def restoreZipFileWithDifferentHeaderOffsets(self):
-        """Make it a valid zipfile with some garbage at the start."""
-        # This alters all of the caches offsets within the file.
-        with io.open(self.zipfile_path, "wb") as new_zip_file:
-            new_zip_file.write(b"X"*1991)  # The year Python was created.
-            new_zip_file.write(self.orig_zip_file_contents)
-
-    def testZipFileChangesAfterFirstImport(self):
-        """Alter the zip file after caching its index and try an import."""
-        self.setUpZipFileModuleAndTestImports()
-        # The above call cached the .zip table of contents during its tests.
-        self.truncateAndFillZipWithNonZipGarbage()
-        # Now that the zipfile has been replaced, import something else from it
-        # which should fail as the file contents are now garbage.
-        with self.assertRaises(ImportError):
-            ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
-        # The code path used by the __import__ call is different than
-        # that used by import statements.  Try these as well.  Some of
-        # these may create new zipimporter instances.  We need to
-        # function properly using the global zipimport caches
-        # regardless of how many zipimporter instances for the same
-        # .zip file exist.
-        with self.assertRaises(ImportError):
-            import ziptest_a
-        with self.assertRaises(ImportError):
-            from ziptest_a import test_value
-        with self.assertRaises(ImportError):
-            exec("from {} import {}".format(TESTPACK, TESTMOD), {})
-
-        # Alters all of the offsets within the file
-        self.restoreZipFileWithDifferentHeaderOffsets()
-
-        # Now that the zip file has been "restored" to a valid but different
-        # zipfile all zipimporter instances should *successfully* re-read the
-        # new file's end of file central index and be able to import again.
-
-        # Importing a submodule triggers a different import code path.
-        test_ns = {}
-        exec("import " + self.testpack_testmod, test_ns)
-        self.assertEqual(getattr(test_ns[TESTPACK], TESTMOD).test_value, 38)
-        test_ns = {}
-        exec("from {} import {}".format(TESTPACK, TESTMOD), test_ns)
-        self.assertEqual(test_ns[TESTMOD].test_value, 38)
-
-        ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
-        self.assertEqual(ziptest_a.test_value, 23)
-        ziptest_c = __import__("ziptest_c", {}, {}, ["test_value"])
-        self.assertEqual(ziptest_c.test_value, 1337)
-
-    def testZipFileSubpackageImport(self):
-        """Import via multiple sys.path entries into parts of the zip."""
-        self.setUpZipFileModuleAndTestImports()
-        # Put a subdirectory within the zip file into the import path.
-        sys.path.insert(0, self.zipfile_path + os.sep + TESTPACK)
-
-        testmod = __import__(TESTMOD, {}, {}, ["test_value"])
-        self.assertEqual(testmod.test_value, 38)
-        del sys.modules[TESTMOD]
-        test_ns = {}
-        exec("from {} import test_value".format(TESTMOD), test_ns)
-        self.assertEqual(test_ns["test_value"], 38)
-        del sys.modules[TESTMOD]
-
-        # Confirm that imports from the top level of the zip file
-        # (already in sys.path from the setup call above) still work.
-        ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
-        self.assertEqual(ziptest_a.test_value, 23)
-        del sys.modules["ziptest_a"]
-        import ziptest_c
-        self.assertEqual(ziptest_c.test_value, 1337)
-        del sys.modules["ziptest_c"]
-
-        self.truncateAndFillZipWithNonZipGarbage()
-        # Imports should now fail.
-        with self.assertRaises(ImportError):
-            testmod = __import__(TESTMOD, {}, {}, ["test_value"])
-        with self.assertRaises(ImportError):
-            exec("from {} import test_value".format(TESTMOD), {})
-        with self.assertRaises(ImportError):
-            import ziptest_a
-
-        self.restoreZipFileWithDifferentHeaderOffsets()
-        # Imports should work again, the central directory TOC will be re-read.
-        testmod = __import__(TESTMOD, {}, {}, ["test_value"])
-        self.assertEqual(testmod.test_value, 38)
-        del sys.modules[TESTMOD]
-        test_ns = {}
-        exec("from {} import test_value".format(TESTMOD), test_ns)
-        self.assertEqual(test_ns['test_value'], 38)
-
-        ziptest_a = __import__("ziptest_a", {}, {}, ["test_value"])
-        self.assertEqual(ziptest_a.test_value, 23)
-        import ziptest_c
-        self.assertEqual(ziptest_c.test_value, 1337)
-
-
 class BadFileZipImportTestCase(unittest.TestCase):
     def assertZipFailure(self, filename):
         self.assertRaises(zipimport.ZipImportError,
@@ -614,7 +464,6 @@ def test_main():
               UncompressedZipImportTestCase,
               CompressedZipImportTestCase,
               BadFileZipImportTestCase,
-              ZipFileModifiedAfterImportTestCase,
             )
     finally:
         test_support.unlink(TESTMOD)

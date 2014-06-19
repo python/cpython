@@ -194,6 +194,14 @@ class PosixTester(unittest.TestCase):
         self.fdopen_helper('r')
         self.fdopen_helper('r', 100)
 
+    @unittest.skipUnless(hasattr(posix, 'fdopen') and
+                         not sys.platform.startswith("sunos"),
+                         'test needs posix.fdopen()')
+    def test_fdopen_keeps_fd_open_on_errors(self):
+        fd = os.open(test_support.TESTFN, os.O_RDONLY)
+        self.assertRaises(OSError, posix.fdopen, fd, 'w')
+        os.close(fd) # fd should not be closed.
+
     @unittest.skipUnless(hasattr(posix, 'O_EXLOCK'),
                          'test needs posix.O_EXLOCK')
     def test_osexlock(self):
@@ -546,7 +554,7 @@ class PosixGroupsTester(unittest.TestCase):
     def test_initgroups(self):
         # find missing group
 
-        g = max(self.saved_groups) + 1
+        g = max(self.saved_groups or [0]) + 1
         name = pwd.getpwuid(posix.getuid()).pw_name
         posix.initgroups(name, g)
         self.assertIn(g, posix.getgroups())

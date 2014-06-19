@@ -14,49 +14,6 @@ import test.test_support
 
 this_dir_path = os.path.abspath(os.path.dirname(__file__))
 
-_tk_unavailable = None
-
-def check_tk_availability():
-    """Check that Tk is installed and available."""
-    global _tk_unavailable
-
-    if _tk_unavailable is None:
-        _tk_unavailable = False
-        if sys.platform == 'darwin':
-            # The Aqua Tk implementations on OS X can abort the process if
-            # being called in an environment where a window server connection
-            # cannot be made, for instance when invoked by a buildbot or ssh
-            # process not running under the same user id as the current console
-            # user.  To avoid that, raise an exception if the window manager
-            # connection is not available.
-            from ctypes import cdll, c_int, pointer, Structure
-            from ctypes.util import find_library
-
-            app_services = cdll.LoadLibrary(find_library("ApplicationServices"))
-
-            if app_services.CGMainDisplayID() == 0:
-                _tk_unavailable = "cannot run without OS X window manager"
-            else:
-                class ProcessSerialNumber(Structure):
-                    _fields_ = [("highLongOfPSN", c_int),
-                                ("lowLongOfPSN", c_int)]
-                psn = ProcessSerialNumber()
-                psn_p = pointer(psn)
-                if (  (app_services.GetCurrentProcess(psn_p) < 0) or
-                      (app_services.SetFrontProcess(psn_p) < 0) ):
-                    _tk_unavailable = "cannot run without OS X gui process"
-        else:   # not OS X
-            import Tkinter
-            try:
-                Tkinter.Button()
-            except Tkinter.TclError as msg:
-                # assuming tk is not available
-                _tk_unavailable = "tk not available: %s" % msg
-
-    if _tk_unavailable:
-        raise unittest.SkipTest(_tk_unavailable)
-    return
-
 def is_package(path):
     for name in os.listdir(path):
         if name in ('__init__.py', '__init__.pyc', '__init.pyo'):
@@ -68,7 +25,7 @@ def get_tests_modules(basepath=this_dir_path, gui=True, packages=None):
     and are inside packages found in the path starting at basepath.
 
     If packages is specified it should contain package names that want
-    their tests colleted.
+    their tests collected.
     """
     py_ext = '.py'
 
@@ -110,5 +67,4 @@ def get_tests(text=True, gui=True, packages=None):
                 yield test
 
 if __name__ == "__main__":
-    test.test_support.use_resources = ['gui']
     test.test_support.run_unittest(*get_tests())

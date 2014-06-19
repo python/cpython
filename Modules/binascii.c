@@ -320,12 +320,10 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    if (_PyString_Resize(&rv,
+    /* rv is cleared on error */
+    (void)_PyString_Resize(&rv,
                        (ascii_data -
-                        (unsigned char *)PyString_AS_STRING(rv))) < 0) {
-        Py_DECREF(rv);
-        rv = NULL;
-    }
+                        (unsigned char *)PyString_AS_STRING(rv)));
     PyBuffer_Release(&pbin);
     return rv;
 }
@@ -452,10 +450,8 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
     ** string instead; _PyString_Resize() won't do this for us.
     */
     if (bin_len > 0) {
-        if (_PyString_Resize(&rv, bin_len) < 0) {
-            Py_DECREF(rv);
-            rv = NULL;
-        }
+        /* rv is cleared on error */
+        (void)_PyString_Resize(&rv, bin_len);
     }
     else {
         Py_DECREF(rv);
@@ -522,12 +518,10 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    if (_PyString_Resize(&rv,
+    /* rv is cleared on error */
+    (void)_PyString_Resize(&rv,
                        (ascii_data -
-                        (unsigned char *)PyString_AS_STRING(rv))) < 0) {
-        Py_DECREF(rv);
-        rv = NULL;
-    }
+                        (unsigned char *)PyString_AS_STRING(rv)));
     PyBuffer_Release(&pbuf);
     return rv;
 }
@@ -601,13 +595,10 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
         Py_DECREF(rv);
         return NULL;
     }
+    /* rv is cleared on error */
     if (_PyString_Resize(&rv,
                        (bin_data -
-                        (unsigned char *)PyString_AS_STRING(rv))) < 0) {
-        Py_DECREF(rv);
-        rv = NULL;
-    }
-    if (rv) {
+                        (unsigned char *)PyString_AS_STRING(rv))) == 0) {
         PyObject *rrv = Py_BuildValue("Oi", rv, done);
         PyBuffer_Release(&pascii);
         Py_DECREF(rv);
@@ -672,12 +663,10 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
             }
         }
     }
-    if (_PyString_Resize(&rv,
+    /* rv is cleared on error */
+    (void)_PyString_Resize(&rv,
                        (out_data -
-                        (unsigned char *)PyString_AS_STRING(rv))) < 0) {
-        Py_DECREF(rv);
-        rv = NULL;
-    }
+                        (unsigned char *)PyString_AS_STRING(rv)));
     PyBuffer_Release(&pbuf);
     return rv;
 }
@@ -729,12 +718,10 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
         leftchar <<= (6-leftbits);
         *ascii_data++ = table_b2a_hqx[leftchar & 0x3f];
     }
-    if (_PyString_Resize(&rv,
+    /* rv is cleared on error */
+    (void)_PyString_Resize(&rv,
                        (ascii_data -
-                        (unsigned char *)PyString_AS_STRING(rv))) < 0) {
-        Py_DECREF(rv);
-        rv = NULL;
-    }
+                        (unsigned char *)PyString_AS_STRING(rv)));
     PyBuffer_Release(&pbin);
     return rv;
 }
@@ -796,7 +783,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
              if ( --out_len_left < 0 ) { \
                       if ( out_len > PY_SSIZE_T_MAX / 2) return PyErr_NoMemory(); \
                       if (_PyString_Resize(&rv, 2*out_len) < 0) \
-                        { Py_DECREF(rv); PyBuffer_Release(&pin); return NULL; } \
+                        { PyBuffer_Release(&pin); return NULL; } \
                       out_data = (unsigned char *)PyString_AS_STRING(rv) \
                                                              + out_len; \
                       out_len_left = out_len-1; \
@@ -846,12 +833,10 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
             OUTBYTE(in_byte);
         }
     }
-    if (_PyString_Resize(&rv,
+    /* rv is cleared on error */
+    (void)_PyString_Resize(&rv,
                        (out_data -
-                        (unsigned char *)PyString_AS_STRING(rv))) < 0) {
-        Py_DECREF(rv);
-        rv = NULL;
-    }
+                        (unsigned char *)PyString_AS_STRING(rv)));
     PyBuffer_Release(&pin);
     return rv;
 }

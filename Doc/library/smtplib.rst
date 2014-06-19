@@ -32,7 +32,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    than a success code, an :exc:`SMTPConnectError` is raised. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
-   setting will be used).
+   setting will be used).  If the timeout expires, :exc:`socket.timeout`
+   is raised.
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
@@ -54,7 +55,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    formatted private key and certificate chain file for the SSL connection. The
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
-   timeout setting will be used).
+   timeout setting will be used).  If the timeout expires, :exc:`socket.timeout`
+   is raised.
 
    .. versionadded:: 2.6
 

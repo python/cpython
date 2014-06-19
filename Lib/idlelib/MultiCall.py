@@ -33,7 +33,6 @@ import sys
 import string
 import re
 import Tkinter
-from idlelib import macosxSupport
 
 # the event type constants, which define the meaning of mc_type
 MC_KEYPRESS=0; MC_KEYRELEASE=1; MC_BUTTONPRESS=2; MC_BUTTONRELEASE=3;
@@ -46,7 +45,7 @@ MC_SHIFT = 1<<0; MC_CONTROL = 1<<2; MC_ALT = 1<<3; MC_META = 1<<5
 MC_OPTION = 1<<6; MC_COMMAND = 1<<7
 
 # define the list of modifiers, to be used in complex event types.
-if macosxSupport.runningAsOSXApp():
+if sys.platform == "darwin":
     _modifiers = (("Shift",), ("Control",), ("Option",), ("Command",))
     _modifier_masks = (MC_SHIFT, MC_CONTROL, MC_OPTION, MC_COMMAND)
 else:
@@ -398,9 +397,12 @@ def MultiCallCreator(widget):
     _multicall_dict[widget] = MultiCall
     return MultiCall
 
-if __name__ == "__main__":
-    # Test
+
+def _multi_call(parent):
     root = Tkinter.Tk()
+    root.title("Test MultiCall")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
     text = MultiCallCreator(Tkinter.Text)(root)
     text.pack()
     def bindseq(seq, n=[0]):
@@ -416,8 +418,13 @@ if __name__ == "__main__":
     bindseq("<Alt-Control-Key-a>")
     bindseq("<Key-b>")
     bindseq("<Control-Button-1>")
+    bindseq("<Button-2>")
     bindseq("<Alt-Button-1>")
     bindseq("<FocusOut>")
     bindseq("<Enter>")
     bindseq("<Leave>")
     root.mainloop()
+
+if __name__ == "__main__":
+    from idlelib.idle_test.htest import run
+    run(_multi_call)

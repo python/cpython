@@ -122,7 +122,8 @@ _PyModule_Clear(PyObject *m)
             if (s[0] == '_' && s[1] != '_') {
                 if (Py_VerboseFlag > 1)
                     PySys_WriteStderr("#   clear[1] %s\n", s);
-                PyDict_SetItem(d, key, Py_None);
+                if (PyDict_SetItem(d, key, Py_None) != 0)
+                    PyErr_Clear();
             }
         }
     }
@@ -135,7 +136,8 @@ _PyModule_Clear(PyObject *m)
             if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
                 if (Py_VerboseFlag > 1)
                     PySys_WriteStderr("#   clear[2] %s\n", s);
-                PyDict_SetItem(d, key, Py_None);
+                if (PyDict_SetItem(d, key, Py_None) != 0)
+                    PyErr_Clear();
             }
         }
     }

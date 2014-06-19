@@ -303,7 +303,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
     int line_buffering;
     long isatty;
 
-    PyObject *raw, *modeobj = NULL, *buffer = NULL, *wrapper = NULL;
+    PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|sizzzi:open", kwlist,
                                      &file, &mode, &buffering,
@@ -416,6 +416,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 				"Osi", file, rawmode, closefd);
     if (raw == NULL)
         return NULL;
+    result = raw;
 
     modeobj = PyUnicode_FromString(mode);
     if (modeobj == NULL)
@@ -474,7 +475,7 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         Py_DECREF(modeobj);
-        return raw;
+        return result;
     }
 
     /* wraps into a buffered file */
@@ -495,15 +496,16 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
         buffer = PyObject_CallFunction(Buffered_class, "Oi", raw, buffering);
     }
-    Py_CLEAR(raw);
     if (buffer == NULL)
         goto error;
+    result = buffer;
+    Py_DECREF(raw);
 
 
     /* if binary, returns the buffered file */
     if (binary) {
         Py_DECREF(modeobj);
-        return buffer;
+        return result;
     }
 
     /* wraps into a TextIOWrapper */
@@ -512,20 +514,30 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 				    buffer,
 				    encoding, errors, newline,
 				    line_buffering);
-    Py_CLEAR(buffer);
     if (wrapper == NULL)
         goto error;
+    result = wrapper;
+    Py_DECREF(buffer);
 
     if (PyObject_SetAttrString(wrapper, "mode", modeobj) < 0)
         goto error;
     Py_DECREF(modeobj);
-    return wrapper;
+    return result;
 
   error:
-    Py_XDECREF(raw);
+    if (result != NULL) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        if (PyObject_CallMethod(result, "close", NULL) != NULL)
+            PyErr_Restore(exc, val, tb);
+        else {
+            Py_XDECREF(exc);
+            Py_XDECREF(val);
+            Py_XDECREF(tb);
+        }
+        Py_DECREF(result);
+    }
     Py_XDECREF(modeobj);
-    Py_XDECREF(buffer);
-    Py_XDECREF(wrapper);
     return NULL;
 }
 

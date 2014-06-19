@@ -10,7 +10,7 @@ import urlparse
 import cStringIO as StringIO
 from hashlib import md5
 
-from distutils.errors import DistutilsOptionError
+from distutils.errors import DistutilsError, DistutilsOptionError
 from distutils.core import PyPIRCCommand
 from distutils.spawn import spawn
 from distutils import log
@@ -181,7 +181,7 @@ class upload(PyPIRCCommand):
                 self.announce(msg, log.INFO)
         except socket.error, e:
             self.announce(str(e), log.ERROR)
-            return
+            raise
         except HTTPError, e:
             status = e.code
             reason = e.msg
@@ -190,5 +190,6 @@ class upload(PyPIRCCommand):
             self.announce('Server response (%s): %s' % (status, reason),
                           log.INFO)
         else:
-            self.announce('Upload failed (%s): %s' % (status, reason),
-                          log.ERROR)
+            msg = 'Upload failed (%s): %s' % (status, reason)
+            self.announce(msg, log.ERROR)
+            raise DistutilsError(msg)

@@ -549,14 +549,8 @@ fileio_readall(fileio *self)
         }
 
         if (PyBytes_GET_SIZE(result) < (Py_ssize_t)newsize) {
-            if (_PyBytes_Resize(&result, newsize) < 0) {
-                if (total == 0) {
-                    Py_DECREF(result);
-                    return NULL;
-                }
-                PyErr_Clear();
-                break;
-            }
+            if (_PyBytes_Resize(&result, newsize) < 0)
+                return NULL; /* result has been freed */
         }
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
@@ -599,7 +593,6 @@ fileio_readall(fileio *self)
     if (PyBytes_GET_SIZE(result) > total) {
         if (_PyBytes_Resize(&result, total) < 0) {
             /* This should never happen, but just in case */
-            Py_DECREF(result);
             return NULL;
         }
     }
@@ -656,10 +649,8 @@ fileio_read(fileio *self, PyObject *args)
     }
 
     if (n != size) {
-        if (_PyBytes_Resize(&bytes, n) < 0) {
-            Py_DECREF(bytes);
+        if (_PyBytes_Resize(&bytes, n) < 0)
             return NULL;
-        }
     }
 
     return (PyObject *) bytes;

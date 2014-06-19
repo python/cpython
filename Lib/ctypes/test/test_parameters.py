@@ -1,4 +1,5 @@
 import unittest, sys
+from ctypes.test import need_symbol
 
 class SimpleTypesTestCase(unittest.TestCase):
 
@@ -36,10 +37,9 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(CVOIDP.from_param("abc"), "abcabc")
         self.assertEqual(CCHARP.from_param("abc"), "abcabcabcabc")
 
-        try:
-            from ctypes import c_wchar_p
-        except ImportError:
-            return
+    @need_symbol('c_wchar_p')
+    def test_subclasses_c_wchar_p(self):
+        from ctypes import c_wchar_p
 
         class CWCHARP(c_wchar_p):
             def from_param(cls, value):
@@ -68,13 +68,9 @@ class SimpleTypesTestCase(unittest.TestCase):
         a = c_char_p("123")
         self.assertIs(c_char_p.from_param(a), a)
 
+    @need_symbol('c_wchar_p')
     def test_cw_strings(self):
-        from ctypes import byref
-        try:
-            from ctypes import c_wchar_p
-        except ImportError:
-##            print "(No c_wchar_p)"
-            return
+        from ctypes import byref, c_wchar_p
         s = u"123"
         if sys.platform == "win32":
             self.assertTrue(c_wchar_p.from_param(s)._obj is s)
@@ -143,9 +139,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, LPINT.from_param, c_short*3)
         self.assertRaises(TypeError, LPINT.from_param, c_long*3)
         self.assertRaises(TypeError, LPINT.from_param, c_uint*3)
-
-##    def test_performance(self):
-##        check_perf()
 
     def test_noctypes_argtype(self):
         import _ctypes_test

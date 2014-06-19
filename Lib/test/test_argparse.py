@@ -47,6 +47,9 @@ class TempDirMixin(object):
 
     def tearDown(self):
         os.chdir(self.old_dir)
+        for root, dirs, files in os.walk(self.temp_dir, topdown=False):
+            for name in files:
+                os.chmod(os.path.join(self.temp_dir, name), stat.S_IWRITE)
         shutil.rmtree(self.temp_dir, True)
 
     def create_readonly_file(self, filename):
@@ -4449,6 +4452,12 @@ class TestNamespace(TestCase):
         self.assertTrue(ns1 != ns4)
         self.assertTrue(ns2 != ns3)
         self.assertTrue(ns2 != ns4)
+
+    def test_equality_returns_notimplemeted(self):
+        # See issue 21481
+        ns = argparse.Namespace(a=1, b=2)
+        self.assertIs(ns.__eq__(None), NotImplemented)
+        self.assertIs(ns.__ne__(None), NotImplemented)
 
 
 # ===================

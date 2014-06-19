@@ -24,8 +24,9 @@ This module provides a class, an instance, and a function:
 .. class:: Repr()
 
    Class which provides formatting services useful in implementing functions
-   similar to the built-in :func:`repr`; size limits for  different object types
-   are added to avoid the generation of representations which are excessively long.
+   similar to the built-in :ref:`repr() <func-repr>`; size limits for different
+   object types are added to avoid the generation of representations which are
+   excessively long.
 
 
 .. data:: aRepr
@@ -96,8 +97,8 @@ which format specific object types.
 
 .. method:: Repr.repr(obj)
 
-   The equivalent to the built-in :func:`repr` that uses the formatting imposed by
-   the instance.
+   The equivalent to the built-in :ref:`repr() <func-repr>` that uses the
+   formatting imposed by the instance.
 
 
 .. method:: Repr.repr1(obj, level)

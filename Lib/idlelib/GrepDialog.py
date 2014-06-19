@@ -1,9 +1,14 @@
 import os
 import fnmatch
+import re  # for htest
 import sys
-from Tkinter import *
+from Tkinter import StringVar, BooleanVar, Checkbutton  # for GrepDialog
+from Tkinter import Tk, Text, Button, SEL, END  # for htest
 from idlelib import SearchEngine
+import itertools
 from idlelib.SearchDialogBase import SearchDialogBase
+# Importing OutputWindow fails due to import loop
+# EditorWindow -> GrepDialop -> OutputWindow -> EditorWindow
 
 def grep(text, io=None, flist=None):
     root = text._root()
@@ -63,7 +68,7 @@ class GrepDialog(SearchDialogBase):
         if not path:
             self.top.bell()
             return
-        from idlelib.OutputWindow import OutputWindow
+        from idlelib.OutputWindow import OutputWindow  # leave here!
         save = sys.stdout
         try:
             sys.stdout = OutputWindow(self.flist)
@@ -77,29 +82,34 @@ class GrepDialog(SearchDialogBase):
         list.sort()
         self.close()
         pat = self.engine.getpat()
-        print "Searching %r in %s ..." % (pat, path)
+        print("Searching %r in %s ..." % (pat, path))
         hits = 0
-        for fn in list:
-            try:
-                with open(fn) as f:
-                    for lineno, line in enumerate(f, 1):
-                        if line[-1:] == '\n':
-                            line = line[:-1]
-                        if prog.search(line):
-                            sys.stdout.write("%s: %s: %s\n" %
-                                             (fn, lineno, line))
-                            hits += 1
-            except IOError as msg:
-                print msg
-        print(("Hits found: %s\n"
-              "(Hint: right-click to open locations.)"
-              % hits) if hits else "No hits.")
+        try:
+            for fn in list:
+                try:
+                    with open(fn) as f:
+                        for lineno, line in enumerate(f, 1):
+                            if line[-1:] == '\n':
+                                line = line[:-1]
+                            if prog.search(line):
+                                sys.stdout.write("%s: %s: %s\n" %
+                                                 (fn, lineno, line))
+                                hits += 1
+                except IOError as msg:
+                    print(msg)
+            print(("Hits found: %s\n"
+                  "(Hint: right-click to open locations.)"
+                  % hits) if hits else "No hits.")
+        except AttributeError:
+            # Tk window has been closed, OutputWindow.text = None,
+            # so in OW.write, OW.text.insert fails.
+            pass
 
     def findfiles(self, dir, base, rec):
         try:
             names = os.listdir(dir or os.curdir)
         except os.error as msg:
-            print msg
+            print(msg)
             return []
         list = []
         subdirs = []
@@ -120,8 +130,30 @@ class GrepDialog(SearchDialogBase):
             self.top.grab_release()
             self.top.withdraw()
 
+
+def _grep_dialog(parent):  # for htest
+    from idlelib.PyShell import PyShellFileList
+    root = Tk()
+    root.title("Test GrepDialog")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+
+    flist = PyShellFileList(root)
+    text = Text(root, height=5)
+    text.pack()
+
+    def show_grep_dialog():
+        text.tag_add(SEL, "1.0", END)
+        grep(text, flist=flist)
+        text.tag_remove(SEL, "1.0", END)
+
+    button = Button(root, text="Show GrepDialog", command=show_grep_dialog)
+    button.pack()
+    root.mainloop()
+
 if __name__ == "__main__":
-    # A human test is a bit tricky since EditorWindow() imports this module.
-    # Hence Idle must be restarted after editing this file for a live test.
     import unittest
     unittest.main('idlelib.idle_test.test_grep', verbosity=2, exit=False)
+
+    from idlelib.idle_test.htest import run
+    run(_grep_dialog)

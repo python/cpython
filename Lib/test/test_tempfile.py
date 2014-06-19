@@ -771,6 +771,24 @@ class test_NamedTemporaryFile(TC):
                 pass
         self.assertRaises(ValueError, use_closed)
 
+    def test_no_leak_fd(self):
+        # Issue #21058: don't leak file descriptor when fdopen() fails
+        old_close = os.close
+        old_fdopen = os.fdopen
+        closed = []
+        def close(fd):
+            closed.append(fd)
+        def fdopen(*args):
+            raise ValueError()
+        os.close = close
+        os.fdopen = fdopen
+        try:
+            self.assertRaises(ValueError, tempfile.NamedTemporaryFile)
+            self.assertEqual(len(closed), 1)
+        finally:
+            os.close = old_close
+            os.fdopen = old_fdopen
+
     # How to test the mode and bufsize parameters?
 
 test_classes.append(test_NamedTemporaryFile)

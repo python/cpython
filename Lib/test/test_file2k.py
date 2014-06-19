@@ -89,6 +89,13 @@ class AutoFileTests(unittest.TestCase):
         self.assertRaises(TypeError, self.f.writelines,
                           [NonString(), NonString()])
 
+    def testWritelinesBuffer(self):
+        self.f.writelines([array('c', 'abc')])
+        self.f.close()
+        self.f = open(TESTFN, 'rb')
+        buf = self.f.read()
+        self.assertEqual(buf, 'abc')
+
     def testRepr(self):
         # verify repr works
         self.assertTrue(repr(self.f).startswith("<open file '" + TESTFN))

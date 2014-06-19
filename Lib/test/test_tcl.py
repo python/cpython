@@ -127,6 +127,53 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         self.assertRaises(TclError,tcl.unsetvar,'a')
 
+    def test_getint(self):
+        tcl = self.interp.tk
+        self.assertEqual(tcl.getint(' 42 '), 42)
+        self.assertEqual(tcl.getint(42), 42)
+        self.assertRaises(TypeError, tcl.getint)
+        self.assertRaises(TypeError, tcl.getint, '42', '10')
+        self.assertRaises(TypeError, tcl.getint, 42.0)
+        self.assertRaises(TclError, tcl.getint, 'a')
+        self.assertRaises((TypeError, ValueError, TclError),
+                          tcl.getint, '42\0')
+        if test_support.have_unicode:
+            self.assertEqual(tcl.getint(unicode('42')), 42)
+            self.assertRaises((UnicodeEncodeError, ValueError, TclError),
+                              tcl.getint, '42' + unichr(0xd800))
+
+    def test_getdouble(self):
+        tcl = self.interp.tk
+        self.assertEqual(tcl.getdouble(' 42 '), 42.0)
+        self.assertEqual(tcl.getdouble(' 42.5 '), 42.5)
+        self.assertEqual(tcl.getdouble(42.5), 42.5)
+        self.assertRaises(TypeError, tcl.getdouble)
+        self.assertRaises(TypeError, tcl.getdouble, '42.5', '10')
+        self.assertRaises(TypeError, tcl.getdouble, 42)
+        self.assertRaises(TclError, tcl.getdouble, 'a')
+        self.assertRaises((TypeError, ValueError, TclError),
+                          tcl.getdouble, '42.5\0')
+        if test_support.have_unicode:
+            self.assertEqual(tcl.getdouble(unicode('42.5')), 42.5)
+            self.assertRaises((UnicodeEncodeError, ValueError, TclError),
+                              tcl.getdouble, '42.5' + unichr(0xd800))
+
+    def test_getboolean(self):
+        tcl = self.interp.tk
+        self.assertIs(tcl.getboolean('on'), True)
+        self.assertIs(tcl.getboolean('1'), True)
+        self.assertEqual(tcl.getboolean(42), 42)
+        self.assertRaises(TypeError, tcl.getboolean)
+        self.assertRaises(TypeError, tcl.getboolean, 'on', '1')
+        self.assertRaises(TypeError, tcl.getboolean, 1.0)
+        self.assertRaises(TclError, tcl.getboolean, 'a')
+        self.assertRaises((TypeError, ValueError, TclError),
+                          tcl.getboolean, 'on\0')
+        if test_support.have_unicode:
+            self.assertIs(tcl.getboolean(unicode('on')), True)
+            self.assertRaises((UnicodeEncodeError, ValueError, TclError),
+                              tcl.getboolean, 'on' + unichr(0xd800))
+
     def testEvalFile(self):
         tcl = self.interp
         filename = "testEvalFile.tcl"
@@ -386,6 +433,7 @@ class TclTest(unittest.TestCase):
             result.append(arg)
             return arg
         self.interp.createcommand('testfunc', testfunc)
+        self.addCleanup(self.interp.tk.deletecommand, 'testfunc')
         def check(value, expected, expected2=None, eq=self.assertEqual):
             if expected2 is None:
                 expected2 = expected
@@ -521,6 +569,7 @@ class TclTest(unittest.TestCase):
         for arg, res in testcases:
             self.assertEqual(split(arg), res)
 
+character_size = 4 if sys.maxunicode > 0xFFFF else 2
 
 class BigmemTclTest(unittest.TestCase):
 
@@ -530,9 +579,58 @@ class BigmemTclTest(unittest.TestCase):
     @test_support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
     @test_support.precisionbigmemtest(size=INT_MAX + 1, memuse=5, dry_run=False)
-    def test_huge_string(self, size):
+    def test_huge_string_call(self, size):
         value = ' ' * size
         self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
+
+    @test_support.cpython_only
+    @unittest.skipUnless(test_support.have_unicode, 'requires unicode support')
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @test_support.precisionbigmemtest(size=INT_MAX + 1,
+                                      memuse=2*character_size + 2,
+                                      dry_run=False)
+    def test_huge_unicode_call(self, size):
+        value = unicode(' ') * size
+        self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
+
+
+    @test_support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @test_support.precisionbigmemtest(size=INT_MAX + 1, memuse=9, dry_run=False)
+    def test_huge_string_builtins(self, size):
+        value = '1' + ' ' * size
+        self.check_huge_string_builtins(value)
+
+    @test_support.cpython_only
+    @unittest.skipUnless(test_support.have_unicode, 'requires unicode support')
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @test_support.precisionbigmemtest(size=INT_MAX + 1,
+                                      memuse=2*character_size + 7,
+                                      dry_run=False)
+    def test_huge_unicode_builtins(self, size):
+        value = unicode('1' + ' ' * size)
+        self.check_huge_string_builtins(value)
+
+    def check_huge_string_builtins(self, value):
+        self.assertRaises(OverflowError, self.interp.tk.getint, value)
+        self.assertRaises(OverflowError, self.interp.tk.getdouble, value)
+        self.assertRaises(OverflowError, self.interp.tk.getboolean, value)
+        self.assertRaises(OverflowError, self.interp.eval, value)
+        self.assertRaises(OverflowError, self.interp.evalfile, value)
+        self.assertRaises(OverflowError, self.interp.record, value)
+        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
+        self.assertRaises(OverflowError, self.interp.setvar, value, 'x', 'a')
+        self.assertRaises(OverflowError, self.interp.setvar, 'x', value, 'a')
+        self.assertRaises(OverflowError, self.interp.unsetvar, value)
+        self.assertRaises(OverflowError, self.interp.unsetvar, 'x', value)
+        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
+        self.assertRaises(OverflowError, self.interp.exprstring, value)
+        self.assertRaises(OverflowError, self.interp.exprlong, value)
+        self.assertRaises(OverflowError, self.interp.exprboolean, value)
+        self.assertRaises(OverflowError, self.interp.splitlist, value)
+        self.assertRaises(OverflowError, self.interp.split, value)
+        self.assertRaises(OverflowError, self.interp.createcommand, value, max)
+        self.assertRaises(OverflowError, self.interp.deletecommand, value)
 
 
 def setUpModule():

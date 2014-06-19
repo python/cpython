@@ -356,8 +356,6 @@ Sequences
          object: mutable sequence
          object: mutable
          pair: assignment; statement
-         single: delete
-         statement: del
          single: subscription
          single: slicing
 
@@ -1422,7 +1420,7 @@ Basic customization
 
    User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods
    by default; with them, all objects compare unequal (except with themselves)
-   and ``x.__hash__()`` returns ``id(x)``.
+   and ``x.__hash__()`` returns a result derived from ``id(x)``.
 
    Classes which inherit a :meth:`__hash__` method from a parent class but
    change the meaning of :meth:`__cmp__` or :meth:`__eq__` such that the hash

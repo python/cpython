@@ -866,7 +866,7 @@ class PyShell(OutputWindow):
         ("help", "_Help"),
     ]
 
-    if macosxSupport.runningAsOSXApp():
+    if sys.platform == "darwin":
         menu_specs[-2] = ("windows", "_Window")
 
 
@@ -1566,7 +1566,7 @@ def main():
         shell = flist.open_shell()
         if not shell:
             return # couldn't open shell
-        if macosxSupport.runningAsOSXApp() and flist.dict:
+        if macosxSupport.isAquaTk() and flist.dict:
             # On OSX: when the user has double-clicked on a file that causes
             # IDLE to be launched the shell window will open just in front of
             # the file she wants to see. Lower the interpreter window when

@@ -71,8 +71,6 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         # ensure all entries actually come from the Windows registry
         self.original_types_map = mimetypes.types_map.copy()
         mimetypes.types_map.clear()
-        mimetypes.init()
-        self.db = mimetypes.MimeTypes()
 
     def tearDown(self):
         # restore default settings
@@ -84,14 +82,54 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         # Windows registry is undocumented AFAIK.
         # Use file types that should *always* exist:
         eq = self.assertEqual
-        eq(self.db.guess_type("foo.txt"), ("text/plain", None))
-        eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
-        eq(self.db.guess_type("image.png"), ("image/png", None))
+        mimetypes.init()
+        db = mimetypes.MimeTypes()
+        eq(db.guess_type("foo.txt"), ("text/plain", None))
+        eq(db.guess_type("image.jpg"), ("image/jpeg", None))
+        eq(db.guess_type("image.png"), ("image/png", None))
+
+    def test_non_latin_extension(self):
+        import _winreg
+
+        class MockWinreg(object):
+            def __getattr__(self, name):
+                if name == 'EnumKey':
+                    return lambda key, i: _winreg.EnumKey(key, i) + "\xa3"
+                elif name == "OpenKey":
+                    return lambda key, name: _winreg.OpenKey(key, name.rstrip("\xa3"))
+                elif name == 'QueryValueEx':
+                    return lambda subkey, label: (label + "\xa3", _winreg.REG_SZ)
+                return getattr(_winreg, name)
+
+        mimetypes._winreg = MockWinreg()
+        try:
+            # this used to throw an exception if registry contained non-Latin
+            # characters in extensions (issue #9291)
+            mimetypes.init()
+        finally:
+            mimetypes._winreg = _winreg
+
+    def test_non_latin_type(self):
+        import _winreg
+
+        class MockWinreg(object):
+            def __getattr__(self, name):
+                if name == 'QueryValueEx':
+                    return lambda subkey, label: (label + "\xa3", _winreg.REG_SZ)
+                return getattr(_winreg, name)
+
+        mimetypes._winreg = MockWinreg()
+        try:
+            # this used to throw an exception if registry contained non-Latin
+            # characters in content types (issue #9291)
+            mimetypes.init()
+        finally:
+            mimetypes._winreg = _winreg
 
 def test_main():
     test_support.run_unittest(MimeTypesTestCase,
         Win32MimeTypesTestCase
-        )
+    )
 
 
 if __name__ == "__main__":

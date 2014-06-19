@@ -346,6 +346,12 @@ I/O Base Classes
       is usual for each of the lines provided to have a line separator at the
       end.
 
+   .. method:: __del__()
+
+      Prepare for object destruction. :class:`IOBase` provides a default
+      implementation of this method that calls the instance's
+      :meth:`~IOBase.close` method.
+
 
 .. class:: RawIOBase
 
@@ -644,6 +650,7 @@ than raw I/O does.
    :exc:`UnsupportedOperation`.
 
    .. warning::
+
       :class:`BufferedRWPair` does not attempt to synchronize accesses to
       its underlying raw streams.  You should not pass it the same object
       as reader and writer; use :class:`BufferedRandom` instead.

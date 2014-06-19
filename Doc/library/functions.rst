@@ -596,8 +596,21 @@ available.  They are listed here in alphabetical order.
 
 .. function:: hex(x)
 
-   Convert an integer number (of any size) to a hexadecimal string. The result is a
-   valid Python expression.
+   Convert an integer number (of any size) to a lowercase hexadecimal string
+   prefixed with "0x", for example:
+
+      >>> hex(255)
+      '0xff'
+      >>> hex(-42)
+      '-0x2a'
+      >>> hex(1L)
+      '0x1L'
+
+   If x is not a Python :class:`int` or :class:`long` object, it has to
+   define an __index__() method that returns an integer.
+
+   See also :func:`int` for converting a hexadecimal string to an
+   integer using a base of 16.
 
    .. note::
 
@@ -713,7 +726,8 @@ available.  They are listed here in alphabetical order.
 .. function:: len(s)
 
    Return the length (the number of items) of an object.  The argument may be a
-   sequence (string, tuple or list) or a mapping (dictionary).
+   sequence (such as a string, bytes, tuple, list, or range) or a collection
+   (such as a dictionary, set, or frozen set).
 
 
 .. function:: list([iterable])
@@ -880,8 +894,8 @@ available.  They are listed here in alphabetical order.
    to use the system default, which is usually line buffered for tty devices and
    fully buffered for other files.  If omitted, the system default is used. [#]_
 
-   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note that
-   ``'w+'`` truncates the file).  Append ``'b'`` to the mode to open the file in
+   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (reading and writing);
+   note that ``'w+'`` truncates the file.  Append ``'b'`` to the mode to open the file in
    binary mode, on systems that differentiate between binary and text files; on
    systems that don't have this distinction, adding the ``'b'`` has no effect.
 

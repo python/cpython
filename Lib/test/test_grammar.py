@@ -75,6 +75,12 @@ class TokenTests(unittest.TestCase):
         x = .3e14
         x = 3.1e4
 
+    def test_float_exponent_tokenization(self):
+        # See issue 21642.
+        self.assertEqual(1 if 1else 0, 1)
+        self.assertEqual(1 if 0else 0, 0)
+        self.assertRaises(SyntaxError, eval, "0 if 1Else 0")
+
     def testStringLiterals(self):
         x = ''; y = ""; self.assertTrue(len(x) == 0 and x == y)
         x = '\''; y = "'"; self.assertTrue(len(x) == 1 and x == y and ord(x) == 39)

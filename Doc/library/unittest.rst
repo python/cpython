@@ -719,9 +719,9 @@ Test cases
    .. method:: setUp()
 
       Method called to prepare the test fixture.  This is called immediately
-      before calling the test method; any exception raised by this method will
-      be considered an error rather than a test failure. The default
-      implementation does nothing.
+      before calling the test method; other than :exc:`AssertionError` or :exc:`SkipTest`,
+      any exception raised by this method will be considered an error rather than
+      a test failure. The default implementation does nothing.
 
 
    .. method:: tearDown()
@@ -729,10 +729,10 @@ Test cases
       Method called immediately after the test method has been called and the
       result recorded.  This is called even if the test method raised an
       exception, so the implementation in subclasses may need to be particularly
-      careful about checking internal state.  Any exception raised by this
-      method will be considered an error rather than a test failure.  This
-      method will only be called if the :meth:`setUp` succeeds, regardless of
-      the outcome of the test method. The default implementation does nothing.
+      careful about checking internal state.  Any exception, other than :exc:`AssertionError`
+      or :exc:`SkipTest`, raised by this method will be considered an error rather than a
+      test failure.  This method will only be called if the :meth:`setUp` succeeds,
+      regardless of the outcome of the test method. The default implementation does nothing.
 
 
    .. method:: setUpClass()
@@ -1510,11 +1510,11 @@ Loading and running tests
 
    .. method:: discover(start_dir, pattern='test*.py', top_level_dir=None)
 
-      Find and return all test modules from the specified start directory,
-      recursing into subdirectories to find them. Only test files that match
-      *pattern* will be loaded. (Using shell style pattern matching.) Only
-      module names that are importable (i.e. are valid Python identifiers) will
-      be loaded.
+      Find all the test modules by recursing into subdirectories from the
+      specified start directory, and return a TestSuite object containing them.
+      Only test files that match *pattern* will be loaded. (Using shell style
+      pattern matching.) Only module names that are importable (i.e. are valid
+      Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
       the start directory is not the top level directory then the top level
@@ -1687,14 +1687,14 @@ Loading and running tests
       Called after the test case *test* has been executed, regardless of the
       outcome.
 
-   .. method:: startTestRun(test)
+   .. method:: startTestRun()
 
       Called once before any tests are executed.
 
       .. versionadded:: 2.7
 
 
-   .. method:: stopTestRun(test)
+   .. method:: stopTestRun()
 
       Called once after all tests are executed.
 

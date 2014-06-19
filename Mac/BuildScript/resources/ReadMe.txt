@@ -28,6 +28,32 @@ of the Tcl/Tk frameworks.  Visit http://www.python.org/download/mac/tcltk/
 for current information about supported and recommended versions of
 Tcl/Tk for this version of Python and of Mac OS X.
 
+               **** IMPORTANT ****
+
+Binary installer support for 10.4 and 10.3.9 to be discontinued
+===============================================================
+
+Python 2.7.7 is the last release for which binary installers will be
+released on python.org that support OS X 10.3.9 (Panther) and 10.4.x
+(Tiger) systems.  These systems were last updated by Apple in 2005
+and 2007.  As of 2.7.8, the 32-bit-only installer will support PPC
+and Intel Macs running OS X 10.5 (Leopard) and later.  10.5 was the
+last OS X release for PPC machines (G4 and G5).  (The 64-/32-bit
+installer configuration will remain unchanged.)  This aligns Python
+2.7.x installer configurations with those currently provided with
+Python 3.x.  Some of the reasons for making this change are:
+there were significant additions and compatibility improvements to
+the OS X POSIX system APIs in OS X 10.5 that Python users can now
+take advantage of; it is increasingly difficult to build and test
+on obsolete 10.3 and 10.4 systems and with the 10.3 ABI; and it is
+assumed that most remaining legacy PPC systems have upgraded to 10.5.
+To ease the transition, for Python 2.7.7 only we are providing three
+binary installers: (1) the legacy deprecated 32-bit-only 10.3+
+PPC/Intel format, (2) the newer 32-bit-only 10.5+ PPC/Intel format,
+and (3) the current 64-bit/32-bit 10.6+ Intel-only format.  While
+future releases will not provide the deprecated installer, it will
+still be possible to build Python from source on 10.3.9 and 10.4
+systems if needed.
 
 Using this version of Python on OS X
 ====================================

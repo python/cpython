@@ -10,6 +10,7 @@
 --------------
 
 .. note::
+
    The :mod:`getopt` module is a parser for command line options whose API is
    designed to be familiar to users of the C :c:func:`getopt` function. Users who
    are unfamiliar with the C :c:func:`getopt` function or who would like to write

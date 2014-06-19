@@ -207,13 +207,15 @@ length message::
                totalsent = totalsent + sent
 
        def myreceive(self):
-           msg = ''
-           while len(msg) < MSGLEN:
-               chunk = self.sock.recv(MSGLEN-len(msg))
+           chunks = []
+           bytes_recd = 0
+           while bytes_recd < MSGLEN:
+               chunk = self.sock.recv(min(MSGLEN - bytes_recd, 2048))
                if chunk == '':
                    raise RuntimeError("socket connection broken")
-               msg = msg + chunk
-           return msg
+               chunks.append(chunk)
+               bytes_recd = bytes_recd + len(chunk)
+           return ''.join(chunks)
 
 The sending code here is usable for almost any messaging scheme - in Python you
 send strings, and you can use ``len()`` to determine its length (even if it has

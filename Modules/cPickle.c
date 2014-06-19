@@ -324,8 +324,7 @@ Pdata_popList(Pdata *self, Py_ssize_t start)
 
 #define FREE_ARG_TUP(self) {                        \
     if (Py_REFCNT(self->arg) > 1) {                 \
-      Py_DECREF(self->arg);                         \
-      self->arg=NULL;                               \
+      Py_CLEAR(self->arg);                          \
     }                                               \
   }
 

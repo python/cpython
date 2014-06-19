@@ -12,7 +12,7 @@
 
 The :mod:`subprocess` module allows you to spawn new processes, connect to their
 input/output/error pipes, and obtain their return codes.  This module intends to
-replace several other, older modules and functions, such as::
+replace several older modules and functions::
 
    os.system
    os.spawn*
@@ -20,20 +20,26 @@ replace several other, older modules and functions, such as::
    popen2.*
    commands.*
 
-Information about how the :mod:`subprocess` module can be used to replace these
-modules and functions can be found in the following sections.
+Information about how this module can be used to replace the older
+functions can be found in the subprocess-replacements_ section.
 
 .. seealso::
 
+   POSIX users (Linux, BSD, etc.) are strongly encouraged to install
+   and use the much more recent subprocess32_ module instead of the
+   version included with python 2.7.  It is a drop in replacement with
+   better behavior in many situations.
+
    :pep:`324` -- PEP proposing the subprocess module
 
+.. _subprocess32: https://pypi.python.org/pypi/subprocess32/
 
 Using the :mod:`subprocess` Module
 ----------------------------------
 
-The recommended approach to invoking subprocesses is to use the following
-convenience functions for all use cases they can handle. For more advanced
-use cases, the underlying :class:`Popen` interface can be used directly.
+The recommended way to launch subprocesses is to use the following
+convenience functions.  For more advanced use cases when these do not
+meet your needs, use the underlying :class:`Popen` interface.
 
 
 .. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False)
@@ -57,16 +63,15 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
    .. warning::
 
-      Invoking the system shell with ``shell=True`` can be a security hazard
-      if combined with untrusted input. See the warning under
-      :ref:`frequently-used-arguments` for details.
+      Using ``shell=True`` can be a security hazard.  See the warning
+      under :ref:`frequently-used-arguments` for details.
 
    .. note::
 
-      Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this function. As
-      the pipes are not being read in the current process, the child
-      process may block if it generates enough output to a pipe to fill up
-      the OS pipe buffer.
+      Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this function
+      as that can deadlock based on the child process output volume.
+      Use :class:`Popen` with the :meth:`communicate` method when you
+      need pipes.
 
 
 .. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False)
@@ -96,16 +101,15 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
    .. warning::
 
-      Invoking the system shell with ``shell=True`` can be a security hazard
-      if combined with untrusted input. See the warning under
-      :ref:`frequently-used-arguments` for details.
+      Using ``shell=True`` can be a security hazard.  See the warning
+      under :ref:`frequently-used-arguments` for details.
 
    .. note::
 
-      Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this function. As
-      the pipes are not being read in the current process, the child
-      process may block if it generates enough output to a pipe to fill up
-      the OS pipe buffer.
+      Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this function
+      as that can deadlock based on the child process output volume.
+      Use :class:`Popen` with the :meth:`communicate` method when you
+      need pipes.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, universal_newlines=False)
@@ -145,19 +149,16 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
    .. versionadded:: 2.7
 
-   ..
-
    .. warning::
 
-      Invoking the system shell with ``shell=True`` can be a security hazard
-      if combined with untrusted input. See the warning under
-      :ref:`frequently-used-arguments` for details.
+      Using ``shell=True`` can be a security hazard.  See the warning
+      under :ref:`frequently-used-arguments` for details.
 
    .. note::
 
-      Do not use ``stderr=PIPE`` with this function. As the pipe is not being
-      read in the current process, the child process may block if it
-      generates enough output to the pipe to fill up the OS pipe buffer.
+      Do not use ``stderr=PIPE`` with this function as that can deadlock
+      based on the child process error volume.  Use :class:`Popen` with
+      the :meth:`communicate` method when you need a stderr pipe.
 
 
 .. data:: PIPE
@@ -740,9 +741,9 @@ Replacing :func:`os.system`
 
 ::
 
-   sts = os.system("mycmd" + " myarg")
+   status = os.system("mycmd" + " myarg")
    # becomes
-   sts = call("mycmd" + " myarg", shell=True)
+   status = subprocess.call("mycmd" + " myarg", shell=True)
 
 Notes:
 
@@ -865,7 +866,7 @@ Replacing functions from the :mod:`popen2` module
 
    (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
    ==>
-   p = Popen(["somestring"], shell=True, bufsize=bufsize,
+   p = Popen("somestring", shell=True, bufsize=bufsize,
              stdin=PIPE, stdout=PIPE, close_fds=True)
    (child_stdout, child_stdin) = (p.stdout, p.stdin)
 

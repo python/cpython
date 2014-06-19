@@ -1875,18 +1875,62 @@ pattern_dealloc(PatternObject* self)
     PyObject_DEL(self);
 }
 
+static int
+check_args_size(const char *name, PyObject* args, PyObject* kw, int n)
+{
+    Py_ssize_t m = PyTuple_GET_SIZE(args) + (kw ? PyDict_Size(kw) : 0);
+    if (m <= n)
+        return 1;
+    PyErr_Format(PyExc_TypeError,
+                 "%s() takes at most %d positional arguments (%zd given)",
+                 name, n, m);
+    return 0;
+}
+
+static PyObject*
+fix_string_param(PyObject *string, PyObject *string2, const char *oldname)
+{
+    if (string2 != NULL) {
+        char buf[100];
+        if (string != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "Argument given by name ('%s') and position (1)",
+                         oldname);
+            return NULL;
+        }
+        sprintf(buf, "The '%s' keyword parameter name is deprecated.  "
+                     "Use 'string' instead.", oldname);
+        if (PyErr_Warn(PyExc_DeprecationWarning, buf) < 0)
+            return NULL;
+        return string2;
+    }
+    if (string == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Required argument 'string' (pos 1) not found");
+        return NULL;
+    }
+    return string;
+}
+
 static PyObject*
 pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
 {
     SRE_STATE state;
     int status;
 
-    PyObject* string;
+    PyObject *string = NULL, *string2 = NULL;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:match", kwlist,
-                                     &string, &start, &end))
+    static char* kwlist[] = { "string", "pos", "endpos", "pattern", NULL };
+    if (!check_args_size("match", args, kw, 3))
+        return NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|OnnO:match", kwlist,
+                                     &string, &start, &end, &string2))
+        return NULL;
+
+    string = fix_string_param(string, string2, "pattern");
+    if (!string)
         return NULL;
 
     string = state_init(&state, self, string, start, end);
@@ -1920,12 +1964,19 @@ pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
     SRE_STATE state;
     int status;
 
-    PyObject* string;
+    PyObject *string = NULL, *string2 = NULL;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:search", kwlist,
-                                     &string, &start, &end))
+    static char* kwlist[] = { "string", "pos", "endpos", "pattern", NULL };
+    if (!check_args_size("search", args, kw, 3))
+        return NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|OnnO:search", kwlist,
+                                     &string, &start, &end, &string2))
+        return NULL;
+
+    string = fix_string_param(string, string2, "pattern");
+    if (!string)
         return NULL;
 
     string = state_init(&state, self, string, start, end);
@@ -2055,12 +2106,19 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
     int status;
     Py_ssize_t i, b, e;
 
-    PyObject* string;
+    PyObject *string = NULL, *string2 = NULL;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    static char* kwlist[] = { "source", "pos", "endpos", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:findall", kwlist,
-                                     &string, &start, &end))
+    static char* kwlist[] = { "string", "pos", "endpos", "source", NULL };
+    if (!check_args_size("findall", args, kw, 3))
+        return NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|OnnO:findall", kwlist,
+                                     &string, &start, &end, &string2))
+        return NULL;
+
+    string = fix_string_param(string, string2, "source");
+    if (!string)
         return NULL;
 
     string = state_init(&state, self, string, start, end);
@@ -2185,11 +2243,18 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
     Py_ssize_t i;
     void* last;
 
-    PyObject* string;
+    PyObject *string = NULL, *string2 = NULL;
     Py_ssize_t maxsplit = 0;
-    static char* kwlist[] = { "source", "maxsplit", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|n:split", kwlist,
-                                     &string, &maxsplit))
+    static char* kwlist[] = { "string", "maxsplit", "source", NULL };
+    if (!check_args_size("split", args, kw, 2))
+        return NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|OnO:split", kwlist,
+                                     &string, &maxsplit, &string2))
+        return NULL;
+
+    string = fix_string_param(string, string2, "source");
+    if (!string)
         return NULL;
 
     string = state_init(&state, self, string, 0, PY_SSIZE_T_MAX);

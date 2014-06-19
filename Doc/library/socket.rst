@@ -562,6 +562,7 @@ correspond to Unix system calls applicable to sockets.
    automatically closed when they are garbage-collected.
 
    .. note::
+
       :meth:`close()` releases the resource associated with a connection but
       does not necessarily close the connection immediately.  If you want
       to close the connection in a timely fashion, call :meth:`shutdown()`

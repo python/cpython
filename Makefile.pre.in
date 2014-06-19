@@ -1267,6 +1267,7 @@ TAGS::
 
 # Touch generated files
 touch:
+	cd $(srcdir); \
 	touch Include/Python-ast.h Python/Python-ast.c
 
 # Sanitation targets -- clean leaves libraries, executables and tags

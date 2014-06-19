@@ -748,8 +748,8 @@ PyObject *PyString_DecodeEscape(const char *s,
                              UTF-8 bytes may follow. */
         }
     }
-    if (p-buf < newlen && _PyString_Resize(&v, p - buf))
-        goto failed;
+    if (p-buf < newlen)
+        _PyString_Resize(&v, p - buf); /* v is cleared on error */
     return v;
   failed:
     Py_DECREF(v);
@@ -3091,24 +3091,25 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     i = 0; /* chars up to and including most recent \n or \r */
     j = 0; /* chars since most recent \n or \r (use in tab calculations) */
     e = PyString_AS_STRING(self) + PyString_GET_SIZE(self); /* end of input */
-    for (p = PyString_AS_STRING(self); p < e; p++)
-    if (*p == '\t') {
-        if (tabsize > 0) {
-            incr = tabsize - (j % tabsize);
-            if (j > PY_SSIZE_T_MAX - incr)
-                goto overflow1;
-            j += incr;
+    for (p = PyString_AS_STRING(self); p < e; p++) {
+        if (*p == '\t') {
+            if (tabsize > 0) {
+                incr = tabsize - (j % tabsize);
+                if (j > PY_SSIZE_T_MAX - incr)
+                    goto overflow1;
+                j += incr;
+            }
         }
-    }
-    else {
-        if (j > PY_SSIZE_T_MAX - 1)
-            goto overflow1;
-        j++;
-        if (*p == '\n' || *p == '\r') {
-            if (i > PY_SSIZE_T_MAX - j)
+        else {
+            if (j > PY_SSIZE_T_MAX - 1)
                 goto overflow1;
-            i += j;
-            j = 0;
+            j++;
+            if (*p == '\n' || *p == '\r') {
+                if (i > PY_SSIZE_T_MAX - j)
+                    goto overflow1;
+                i += j;
+                j = 0;
+            }
         }
     }
 
@@ -3124,25 +3125,26 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     q = PyString_AS_STRING(u); /* next output char */
     qe = PyString_AS_STRING(u) + PyString_GET_SIZE(u); /* end of output */
 
-    for (p = PyString_AS_STRING(self); p < e; p++)
-    if (*p == '\t') {
-        if (tabsize > 0) {
-            i = tabsize - (j % tabsize);
-            j += i;
-            while (i--) {
-                if (q >= qe)
-                    goto overflow2;
-                *q++ = ' ';
+    for (p = PyString_AS_STRING(self); p < e; p++) {
+        if (*p == '\t') {
+            if (tabsize > 0) {
+                i = tabsize - (j % tabsize);
+                j += i;
+                while (i--) {
+                    if (q >= qe)
+                        goto overflow2;
+                    *q++ = ' ';
+                }
             }
         }
-    }
-    else {
-        if (q >= qe)
-            goto overflow2;
-        *q++ = *p;
-        j++;
-        if (*p == '\n' || *p == '\r')
-            j = 0;
+        else {
+            if (q >= qe)
+                goto overflow2;
+            *q++ = *p;
+            j++;
+            if (*p == '\n' || *p == '\r')
+                j = 0;
+        }
     }
 
     return u;

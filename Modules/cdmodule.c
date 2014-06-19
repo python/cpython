@@ -535,10 +535,8 @@ CD_deleteparser(cdparserobject *self, PyObject *args)
 
     /* no sense in keeping the callbacks, so remove them */
     for (i = 0; i < NCALLBACKS; i++) {
-        Py_XDECREF(self->ob_cdcallbacks[i].ob_cdcallback);
-        self->ob_cdcallbacks[i].ob_cdcallback = NULL;
-        Py_XDECREF(self->ob_cdcallbacks[i].ob_cdcallbackarg);
-        self->ob_cdcallbacks[i].ob_cdcallbackarg = NULL;
+        Py_CLEAR(self->ob_cdcallbacks[i].ob_cdcallback);
+        Py_CLEAR(self->ob_cdcallbacks[i].ob_cdcallbackarg);
     }
 
     Py_INCREF(Py_None);
@@ -588,11 +586,9 @@ CD_removecallback(cdparserobject *self, PyObject *args)
 
     CDremovecallback(self->ob_cdparser, (CDDATATYPES) type);
 
-    Py_XDECREF(self->ob_cdcallbacks[type].ob_cdcallback);
-    self->ob_cdcallbacks[type].ob_cdcallback = NULL;
+    Py_CLEAR(self->ob_cdcallbacks[type].ob_cdcallback);
 
-    Py_XDECREF(self->ob_cdcallbacks[type].ob_cdcallbackarg);
-    self->ob_cdcallbacks[type].ob_cdcallbackarg = NULL;
+    Py_CLEAR(self->ob_cdcallbacks[type].ob_cdcallbackarg);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -668,10 +664,8 @@ cdparser_dealloc(cdparserobject *self)
     int i;
 
     for (i = 0; i < NCALLBACKS; i++) {
-        Py_XDECREF(self->ob_cdcallbacks[i].ob_cdcallback);
-        self->ob_cdcallbacks[i].ob_cdcallback = NULL;
-        Py_XDECREF(self->ob_cdcallbacks[i].ob_cdcallbackarg);
-        self->ob_cdcallbacks[i].ob_cdcallbackarg = NULL;
+        Py_CLEAR(self->ob_cdcallbacks[i].ob_cdcallback);
+        Py_CLEAR(self->ob_cdcallbacks[i].ob_cdcallbackarg);
     }
     CDdeleteparser(self->ob_cdparser);
     PyObject_Del(self);

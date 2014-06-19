@@ -9,6 +9,8 @@
 # XXX TO DO:
 # - for classes/modules, add "open source" to object browser
 
+import re
+
 from idlelib.TreeWidget import TreeItem, TreeNode, ScrolledCanvas
 
 from repr import Repr
@@ -132,12 +134,14 @@ def make_objecttreeitem(labeltext, object, setfunction=None):
         c = ObjectTreeItem
     return c(labeltext, object, setfunction)
 
-# Test script
 
-def _test():
+def _object_browser(parent):
     import sys
     from Tkinter import Tk
     root = Tk()
+    root.title("Test ObjectBrowser")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
     root.configure(bd=0, bg="yellow")
     root.focus_set()
     sc = ScrolledCanvas(root, bg="white", highlightthickness=0, takefocus=1)
@@ -148,4 +152,5 @@ def _test():
     root.mainloop()
 
 if __name__ == '__main__':
-    _test()
+    from idlelib.idle_test.htest import run
+    run(_object_browser)

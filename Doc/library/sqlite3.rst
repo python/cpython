@@ -617,7 +617,7 @@ Row Objects
 
    .. method:: keys
 
-      This method returns a tuple of column names. Immediately after a query,
+      This method returns a list of column names. Immediately after a query,
       it is the first member of each tuple in :attr:`Cursor.description`.
 
       .. versionadded:: 2.6
@@ -726,9 +726,6 @@ As described before, SQLite supports only a limited set of types natively. To
 use other Python types with SQLite, you must **adapt** them to one of the
 sqlite3 module's supported types for SQLite: one of NoneType, int, long, float,
 str, unicode, buffer.
-
-The :mod:`sqlite3` module uses Python object adaptation, as described in
-:pep:`246` for this.  The protocol to use is :class:`PrepareProtocol`.
 
 There are two ways to enable the :mod:`sqlite3` module to adapt a custom Python
 type to one of the supported ones.

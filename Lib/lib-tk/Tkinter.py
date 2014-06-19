@@ -1336,6 +1336,21 @@ class Misc:
         return self._getints(self.tk.call(*args)) or None
 
     bbox = grid_bbox
+
+    def _gridconvvalue(self, value):
+        if isinstance(value, (str, _tkinter.Tcl_Obj)):
+            try:
+                svalue = str(value)
+                if not svalue:
+                    return None
+                elif '.' in svalue:
+                    return getdouble(svalue)
+                else:
+                    return getint(svalue)
+            except ValueError:
+                pass
+        return value
+
     def _grid_configure(self, command, index, cnf, kw):
         """Internal function."""
         if type(cnf) is StringType and not kw:
@@ -1354,22 +1369,14 @@ class Misc:
             for i in range(0, len(words), 2):
                 key = words[i][1:]
                 value = words[i+1]
-                if not value:
-                    value = None
-                elif '.' in str(value):
-                    value = getdouble(value)
-                else:
-                    value = getint(value)
-                dict[key] = value
+                dict[key] = self._gridconvvalue(value)
             return dict
         res = self.tk.call(
                   ('grid', command, self._w, index)
                   + options)
         if len(options) == 1:
-            if not res: return None
-            # In Tk 7.5, -width can be a float
-            if '.' in res: return getdouble(res)
-            return getint(res)
+            return self._gridconvvalue(res)
+
     def grid_columnconfigure(self, index, cnf={}, **kw):
         """Configure column INDEX of a grid.
 
@@ -2562,22 +2569,19 @@ class Listbox(Widget, XView, YView):
     def activate(self, index):
         """Activate item identified by INDEX."""
         self.tk.call(self._w, 'activate', index)
-    def bbox(self, *args):
+    def bbox(self, index):
         """Return a tuple of X1,Y1,X2,Y2 coordinates for a rectangle
-        which encloses the item identified by index in ARGS."""
-        return self._getints(
-            self.tk.call((self._w, 'bbox') + args)) or None
+        which encloses the item identified by the given index."""
+        return self._getints(self.tk.call(self._w, 'bbox', index)) or None
     def curselection(self):
-        """Return list of indices of currently selected item."""
-        # XXX Ought to apply self._getints()...
-        return self.tk.splitlist(self.tk.call(
-            self._w, 'curselection'))
+        """Return the indices of currently selected item."""
+        return self._getints(self.tk.call(self._w, 'curselection')) or ()
     def delete(self, first, last=None):
-        """Delete items from FIRST to LAST (not included)."""
+        """Delete items from FIRST to LAST (included)."""
         self.tk.call(self._w, 'delete', first, last)
     def get(self, first, last=None):
-        """Get list of items from FIRST to LAST (not included)."""
-        if last:
+        """Get list of items from FIRST to LAST (included)."""
+        if last is not None:
             return self.tk.splitlist(self.tk.call(
                 self._w, 'get', first, last))
         else:
@@ -2610,7 +2614,7 @@ class Listbox(Widget, XView, YView):
         self.tk.call(self._w, 'selection', 'anchor', index)
     select_anchor = selection_anchor
     def selection_clear(self, first, last=None):
-        """Clear the selection from FIRST to LAST (not included)."""
+        """Clear the selection from FIRST to LAST (included)."""
         self.tk.call(self._w,
                  'selection', 'clear', first, last)
     select_clear = selection_clear
@@ -2620,7 +2624,7 @@ class Listbox(Widget, XView, YView):
             self._w, 'selection', 'includes', index))
     select_includes = selection_includes
     def selection_set(self, first, last=None):
-        """Set the selection from FIRST to LAST (not included) without
+        """Set the selection from FIRST to LAST (included) without
         changing the currently selected elements."""
         self.tk.call(self._w, 'selection', 'set', first, last)
     select_set = selection_set

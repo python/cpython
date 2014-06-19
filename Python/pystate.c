@@ -315,9 +315,9 @@ PyThreadState_DeleteCurrent()
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
     _PyThreadState_Current = NULL;
-    tstate_delete_common(tstate);
     if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
         PyThread_delete_key_value(autoTLSkey);
+    tstate_delete_common(tstate);
     PyEval_ReleaseLock();
 }
 #endif /* WITH_THREAD */

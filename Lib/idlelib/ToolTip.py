@@ -76,14 +76,22 @@ class ListboxToolTip(ToolTipBase):
         for item in self.items:
             listbox.insert(END, item)
 
-def main():
-    # Test code
+def _tooltip(parent):
     root = Tk()
-    b = Button(root, text="Hello", command=root.destroy)
-    b.pack()
-    root.update()
-    tip = ListboxToolTip(b, ["Hello", "world"])
+    root.title("Test tooltip")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    root.geometry("+%d+%d"%(x, y + 150))
+    label = Label(root, text="Place your mouse over buttons")
+    label.pack()
+    button1 = Button(root, text="Button 1")
+    button2 = Button(root, text="Button 2")
+    button1.pack()
+    button2.pack()
+    ToolTip(button1, "This is tooltip text for button1.")
+    ListboxToolTip(button2, ["This is","multiple line",
+                            "tooltip text","for button2"])
     root.mainloop()
 
 if __name__ == '__main__':
-    main()
+    from idlelib.idle_test.htest import run
+    run(_tooltip)

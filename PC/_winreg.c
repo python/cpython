@@ -888,7 +888,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
             else {
                 void *src_buf;
                 PyBufferProcs *pb = value->ob_type->tp_as_buffer;
-                if (pb==NULL) {
+                if (pb == NULL || pb->bf_getreadbuffer == NULL) {
                     PyErr_Format(PyExc_TypeError,
                         "Objects of type '%s' can not "
                         "be used as binary registry values",
@@ -896,9 +896,11 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     return FALSE;
                 }
                 *retDataSize = (*pb->bf_getreadbuffer)(value, 0, &src_buf);
-                *retDataBuf = (BYTE *)PyMem_NEW(char,
-                                                *retDataSize);
-                if (*retDataBuf==NULL){
+                if (*retDataSize < 0) {
+                    return FALSE;
+                }
+                *retDataBuf = (BYTE *)PyMem_NEW(char, *retDataSize);
+                if (*retDataBuf == NULL){
                     PyErr_NoMemory();
                     return FALSE;
                 }
@@ -948,8 +950,10 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
 
                 fixupMultiSZ(str, retDataBuf, retDataSize);
                 obData = PyList_New(s);
-                if (obData == NULL)
+                if (obData == NULL) {
+                    free(str);
                     return NULL;
+                }
                 for (index = 0; index < s; index++)
                 {
                     size_t len = _mbstrlen(str[index]);
@@ -957,6 +961,7 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
                         PyErr_SetString(PyExc_OverflowError,
                             "registry string is too long for a Python string");
                         Py_DECREF(obData);
+                        free(str);
                         return NULL;
                     }
                     PyList_SetItem(obData,

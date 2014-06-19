@@ -84,7 +84,7 @@ String = group(r"[uU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
 # recognized as two instances of =).
 Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"<>", r"!=",
                  r"//=?", r"->",
-                 r"[+\-*/%&|^=<>]=?",
+                 r"[+\-*/%&@|^=<>]=?",
                  r"~")
 
 Bracket = '[][(){}]'
