@@ -1905,6 +1905,11 @@ features:
    * :attr:`st_creator`
    * :attr:`st_type`
 
+   On Windows systems, the following attribute is also available:
+
+   * :attr:`st_file_attributes` - Windows file attribute bits (see the
+     ``FILE_ATTRIBUTE_*`` constants in the :mod:`stat` module)
+
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
@@ -1957,6 +1962,9 @@ features:
       specifying a file descriptor instead of a path,
       and the :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
       and :attr:`st_ctime_ns` members.
+
+   .. versionadded:: 3.5
+      Added the :attr:`st_file_attributes` member on Windows.
 
 
 .. function:: stat_float_times([newvalue])

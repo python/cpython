@@ -176,6 +176,15 @@ ipaddress
   network objects from existing addresses (contributed by Peter Moody
   and Antoine Pitrou in :issue:`16531`).
 
+os
+--
+
+* :class:`os.stat_result` now has a ``st_file_attributes`` field on Windows,
+  containing the ``dwFileAttributes`` member of the
+  ``BY_HANDLE_FILE_INFORMATION`` structure returned by
+  ``GetFileInformationByHandle()`` (contributed by Ben Hoyt in
+  :issue:`21719`).
+
 shutil
 ------
 
