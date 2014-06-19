@@ -83,10 +83,15 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self.add_reader(self._ssock.fileno(), self._read_from_self)
 
     def _read_from_self(self):
-        try:
-            self._ssock.recv(1)
-        except (BlockingIOError, InterruptedError):
-            pass
+        while True:
+            try:
+                data = self._ssock.recv(4096)
+                if not data:
+                    break
+            except InterruptedError:
+                continue
+            except BlockingIOError:
+                break
 
     def _write_to_self(self):
         # This may be called from a different thread, possibly after
