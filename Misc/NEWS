@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21722: The distutils "upload" command now exits with a non-zero
+  return code when uploading fails.  Patch by Martin Dengler.
+
 - Issue #21723: asyncio.Queue: support any type of number (ex: float) for the
   maximum size. Patch written by Vajrasky Kok.
 
