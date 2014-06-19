@@ -22,8 +22,8 @@ Create a subprocess: high-level API using Process
 
 .. function:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
-   Run the shell command *cmd* given as a string. Return a :class:`~asyncio.subprocess.Process`
-   instance.
+   Run the shell command *cmd*. See :meth:`BaseEventLoop.subprocess_shell` for
+   parameters. Return a :class:`~asyncio.subprocess.Process` instance.
 
    The optional *limit* parameter sets the buffer limit passed to the
    :class:`StreamReader`.
@@ -32,7 +32,8 @@ Create a subprocess: high-level API using Process
 
 .. function:: create_subprocess_exec(\*args, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
-   Create a subprocess. Return a :class:`~asyncio.subprocess.Process` instance.
+   Create a subprocess. See :meth:`BaseEventLoop.subprocess_exec` for
+   parameters. Return a :class:`~asyncio.subprocess.Process` instance.
 
    The optional *limit* parameter sets the buffer limit passed to the
    :class:`StreamReader`.
@@ -50,7 +51,9 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
 .. method:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
 
-   Create a subprocess from one or more string arguments, where the first string
+   Create a subprocess from one or more string arguments (character strings or
+   bytes strings encoded to the :ref:`filesystem encoding
+   <filesystem-encoding>`), where the first string
    specifies the program to execute, and the remaining strings specify the
    program's arguments. (Thus, together the string arguments form the
    ``sys.argv`` value of the program, assuming it is a Python script.) This is
@@ -94,8 +97,9 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
 .. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
 
-   Create a subprocess from *cmd*, which is a string using the platform's
-   "shell" syntax. This is similar to the standard library
+   Create a subprocess from *cmd*, which is a character string or a bytes
+   string encoded to the :ref:`filesystem encoding <filesystem-encoding>`,
+   using the platform's "shell" syntax. This is similar to the standard library
    :class:`subprocess.Popen` class called with ``shell=True``.
 
    See :meth:`~BaseEventLoop.subprocess_exec` for more details about
