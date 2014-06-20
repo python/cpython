@@ -1149,7 +1149,7 @@ order (MRO) for bases """
         except (TypeError, UnicodeEncodeError):
             pass
         else:
-            raise TestFailed("[chr(128)] slots not caught")
+            self.fail("[chr(128)] slots not caught")
 
         # Test leaks
         class Counted(object):
