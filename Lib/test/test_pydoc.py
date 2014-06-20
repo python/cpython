@@ -746,7 +746,7 @@ class TestDescriptions(unittest.TestCase):
             try:
                 pydoc.render_doc(name)
             except ImportError:
-                self.fail('finding the doc of {!r} failed'.format(o))
+                self.fail('finding the doc of {!r} failed'.format(name))
 
         for name in ('notbuiltins', 'strrr', 'strr.translate',
                      'str.trrrranslate', 'builtins.strrr',
