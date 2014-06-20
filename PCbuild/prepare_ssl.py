@@ -186,7 +186,7 @@ def main():
 
     ssl_dir = sys.argv[1]
 
-    if not os.path.exists(ssl_dir) and os.path.isdir(ssl_dir):
+    if not os.path.isdir(ssl_dir):
         print(ssl_dir, "is not an existing directory!")
         sys.exit(1)
 
