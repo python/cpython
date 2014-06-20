@@ -14,8 +14,8 @@ import types
 import test.test_support
 from collections import namedtuple
 from test.script_helper import assert_python_ok
-from test.test_support import (
-    TESTFN, rmtree, reap_children, captured_stdout, captured_stderr)
+from test.test_support import (TESTFN, rmtree, reap_children, captured_stdout,
+                               captured_stderr, requires_docstrings)
 
 from test import pydoc_mod
 
@@ -300,6 +300,7 @@ class PydocBaseTest(unittest.TestCase):
 
 class PydocDocTest(unittest.TestCase):
 
+    @requires_docstrings
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_html_doc(self):
@@ -317,6 +318,7 @@ class PydocDocTest(unittest.TestCase):
             print_diffs(expected_html, result)
             self.fail("outputs are not equal, see diff above")
 
+    @requires_docstrings
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_text_doc(self):
