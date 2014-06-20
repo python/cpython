@@ -969,6 +969,34 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         with self.assertRaises(TypeError):
             self.loop.run_in_executor(None, coroutine_function)
 
+    @mock.patch('asyncio.base_events.logger')
+    def test_log_slow_callbacks(self, m_logger):
+        def stop_loop_cb(loop):
+            loop.stop()
+
+        @asyncio.coroutine
+        def stop_loop_coro(loop):
+            yield from ()
+            loop.stop()
+
+        asyncio.set_event_loop(self.loop)
+        self.loop.set_debug(True)
+        self.loop.slow_callback_duration = 0.0
+
+        # slow callback
+        self.loop.call_soon(stop_loop_cb, self.loop)
+        self.loop.run_forever()
+        fmt, *args = m_logger.warning.call_args[0]
+        self.assertRegex(fmt % tuple(args),
+                         "^Executing Handle.*stop_loop_cb.* took .* seconds$")
+
+        # slow task
+        asyncio.async(stop_loop_coro(self.loop), loop=self.loop)
+        self.loop.run_forever()
+        fmt, *args = m_logger.warning.call_args[0]
+        self.assertRegex(fmt % tuple(args),
+                         "^Executing Task.*stop_loop_coro.* took .* seconds$")
+
 
 if __name__ == '__main__':
     unittest.main()
