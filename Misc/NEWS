@@ -103,6 +103,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21491: socketserver: Fix a race condition in child processes reaping.
+
 - Issue #21719: Added the ``st_file_attributes`` field to os.stat_result on
   Windows.
 
