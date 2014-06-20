@@ -155,8 +155,8 @@ def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     script_name = make_script(zip_dir, script_basename, source)
     unlink.append(script_name)
     if compiled:
-        init_name = py_compile(init_name, doraise=True)
-        script_name = py_compile(script_name, doraise=True)
+        init_name = py_compile.compile(init_name, doraise=True)
+        script_name = py_compile.compile(script_name, doraise=True)
         unlink.extend((init_name, script_name))
     pkg_names = [os.sep.join([pkg_name]*i) for i in range(1, depth+1)]
     script_name_in_zip = os.path.join(pkg_names[-1], os.path.basename(script_name))
