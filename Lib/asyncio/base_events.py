@@ -17,6 +17,7 @@ to modify the meaning of the API call itself.
 import collections
 import concurrent.futures
 import heapq
+import inspect
 import logging
 import socket
 import subprocess
@@ -35,6 +36,15 @@ __all__ = ['BaseEventLoop', 'Server']
 
 # Argument for default thread pool executor creation.
 _MAX_WORKERS = 5
+
+
+def _format_handle(handle):
+    cb = handle._callback
+    if inspect.ismethod(cb) and isinstance(cb.__self__, tasks.Task):
+        # format the task
+        return repr(cb.__self__)
+    else:
+        return str(handle)
 
 
 class _StopError(BaseException):
@@ -128,6 +138,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self._debug = False
+        # In debug mode, if the execution of a callback or a step of a task
+        # exceed this duration in seconds, the slow callback/task is logged.
+        self.slow_callback_duration = 0.1
 
     def __repr__(self):
         return ('<%s running=%s closed=%s debug=%s>'
@@ -823,16 +836,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         if logger.isEnabledFor(logging.INFO):
             t0 = self.time()
             event_list = self._selector.select(timeout)
-            t1 = self.time()
-            if t1-t0 >= 1:
+            dt = self.time() - t0
+            if dt >= 1:
                 level = logging.INFO
             else:
                 level = logging.DEBUG
             if timeout is not None:
                 logger.log(level, 'poll %.3f took %.3f seconds',
-                           timeout, t1-t0)
+                           timeout, dt)
             else:
-                logger.log(level, 'poll took %.3f seconds', t1-t0)
+                logger.log(level, 'poll took %.3f seconds', dt)
         else:
             event_list = self._selector.select(timeout)
         self._process_events(event_list)
@@ -855,7 +868,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         ntodo = len(self._ready)
         for i in range(ntodo):
             handle = self._ready.popleft()
-            if not handle._cancelled:
+            if handle._cancelled:
+                continue
+            if self._debug:
+                t0 = self.time()
+                handle._run()
+                dt = self.time() - t0
+                if dt >= self.slow_callback_duration:
+                    logger.warning('Executing %s took %.3f seconds',
+                                   _format_handle(handle), dt)
+            else:
                 handle._run()
         handle = None  # Needed to break cycles when an exception occurs.
 
