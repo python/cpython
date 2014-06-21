@@ -37,11 +37,12 @@ def list_to_buffer(l=()):
     return bytearray().join(l)
 
 
-class BaseSelectorEventLoopTests(unittest.TestCase):
+class BaseSelectorEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
         selector = mock.Mock()
         self.loop = TestBaseSelectorEventLoop(selector)
+        self.set_event_loop(self.loop, cleanup=False)
 
     def test_make_socket_transport(self):
         m = mock.Mock()
@@ -107,10 +108,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertRaises(RuntimeError, self.loop.add_writer, fd, callback)
 
     def test_close_no_selector(self):
-        ssock = self.loop._ssock
-        csock = self.loop._csock
-        remove_reader = self.loop.remove_reader = mock.Mock()
-
+        self.loop.remove_reader = mock.Mock()
         self.loop._selector.close()
         self.loop._selector = None
         self.loop.close()
@@ -597,10 +595,10 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop.remove_writer.assert_called_with(1)
 
 
-class SelectorTransportTests(unittest.TestCase):
+class SelectorTransportTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
+        self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
         self.sock.fileno.return_value = 7
@@ -684,14 +682,14 @@ class SelectorTransportTests(unittest.TestCase):
         self.assertEqual(2, sys.getrefcount(self.protocol),
                          pprint.pformat(gc.get_referrers(self.protocol)))
         self.assertIsNone(tr._loop)
-        self.assertEqual(2, sys.getrefcount(self.loop),
+        self.assertEqual(3, sys.getrefcount(self.loop),
                          pprint.pformat(gc.get_referrers(self.loop)))
 
 
-class SelectorSocketTransportTests(unittest.TestCase):
+class SelectorSocketTransportTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
+        self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
         self.sock_fd = self.sock.fileno.return_value = 7
@@ -1061,10 +1059,10 @@ class SelectorSocketTransportTests(unittest.TestCase):
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
-class SelectorSslTransportTests(unittest.TestCase):
+class SelectorSslTransportTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
+        self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
         self.sock.fileno.return_value = 7
@@ -1396,10 +1394,10 @@ class SelectorSslWithoutSslTransportTests(unittest.TestCase):
             _SelectorSslTransport(Mock(), Mock(), Mock(), Mock())
 
 
-class SelectorDatagramTransportTests(unittest.TestCase):
+class SelectorDatagramTransportTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
+        self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.DatagramProtocol)
         self.sock = mock.Mock(spec_set=socket.socket)
         self.sock.fileno.return_value = 7

@@ -10,6 +10,17 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21205: Add a new ``__qualname__`` attribute to generator, the
+  qualified name, and use it in the representation of a generator
+  (``repr(gen)``). The default name of the generator (``__name__`` attribute)
+  is now get from the function instead of the code. Use ``gen.gi_code.co_name``
+  to get the name of the code.
+
+- Issue #21669: With the aid of heuristics in SyntaxError.__init__, the
+  parser now attempts to generate more meaningful (or at least more search
+  engine friendly) error messages when "exec" and "print" are used as
+  statements.
+
 - Issue #21642: If the conditional if-else expression, allow an integer written
   with no space between itself and the ``else`` keyword (e.g. ``True if 42else
   False``) to be valid syntax.
@@ -92,6 +103,17 @@ Core and Builtins
 Library
 -------
 
+- Issue #21491: socketserver: Fix a race condition in child processes reaping.
+
+- Issue #21719: Added the ``st_file_attributes`` field to os.stat_result on
+  Windows.
+
+- Issue #21722: The distutils "upload" command now exits with a non-zero
+  return code when uploading fails.  Patch by Martin Dengler.
+
+- Issue #21723: asyncio.Queue: support any type of number (ex: float) for the
+  maximum size. Patch written by Vajrasky Kok.
+
 - Issue #21711: support for "site-python" directories has now been removed
   from the site module (it was deprecated in 3.4).
 
@@ -105,6 +127,9 @@ Library
 - Issue #21326: Add a new is_closed() method to asyncio.BaseEventLoop.
   run_forever() and run_until_complete() methods of asyncio.BaseEventLoop now
   raise an exception if the event loop was closed.
+
+- Issue #21766: Prevent a security hole in CGIHTTPServer by URL unquoting paths
+  before checking for a CGI script at that path.
 
 - Issue #21310: Fixed possible resource leak in failed open().
 
@@ -484,6 +509,15 @@ Extension Modules
 
 IDLE
 ----
+
+- Issue #21686: add unittest for HyperParser. Original patch by Saimadhav
+  Heblikar.
+
+- Issue #12387: Add missing upper(lower)case versions of default Windows key
+  bindings for Idle so Caps Lock does not disable them. Patch by Roger Serwy.
+
+- Issue #21695: Closing a Find-in-files output window while the search is
+  still in progress no longer closes Idle.
 
 - Issue #18910: Add unittest for textView. Patch by Phil Webster.
 

@@ -13,14 +13,10 @@ def _fakefunc(f):
     return f
 
 
-class FutureTests(unittest.TestCase):
+class FutureTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
+        self.loop = self.new_test_loop()
 
     def test_initial_state(self):
         f = asyncio.Future(loop=self.loop)
@@ -30,12 +26,9 @@ class FutureTests(unittest.TestCase):
         self.assertTrue(f.cancelled())
 
     def test_init_constructor_default_loop(self):
-        try:
-            asyncio.set_event_loop(self.loop)
-            f = asyncio.Future()
-            self.assertIs(f._loop, self.loop)
-        finally:
-            asyncio.set_event_loop(None)
+        asyncio.set_event_loop(self.loop)
+        f = asyncio.Future()
+        self.assertIs(f._loop, self.loop)
 
     def test_constructor_positional(self):
         # Make sure Future doesn't accept a positional argument
@@ -264,14 +257,10 @@ class FutureTests(unittest.TestCase):
         self.assertTrue(f2.cancelled())
 
 
-class FutureDoneCallbackTests(unittest.TestCase):
+class FutureDoneCallbackTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
+        self.loop = self.new_test_loop()
 
     def run_briefly(self):
         test_utils.run_briefly(self.loop)

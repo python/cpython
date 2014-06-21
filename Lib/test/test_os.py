@@ -530,6 +530,28 @@ class StatAttributeTests(unittest.TestCase):
             os.stat(r)
         self.assertEqual(ctx.exception.errno, errno.EBADF)
 
+    def check_file_attributes(self, result):
+        self.assertTrue(hasattr(result, 'st_file_attributes'))
+        self.assertTrue(isinstance(result.st_file_attributes, int))
+        self.assertTrue(0 <= result.st_file_attributes <= 0xFFFFFFFF)
+
+    @unittest.skipUnless(sys.platform == "win32",
+                         "st_file_attributes is Win32 specific")
+    def test_file_attributes(self):
+        # test file st_file_attributes (FILE_ATTRIBUTE_DIRECTORY not set)
+        result = os.stat(self.fname)
+        self.check_file_attributes(result)
+        self.assertEqual(
+            result.st_file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY,
+            0)
+
+        # test directory st_file_attributes (FILE_ATTRIBUTE_DIRECTORY set)
+        result = os.stat(support.TESTFN)
+        self.check_file_attributes(result)
+        self.assertEqual(
+            result.st_file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY,
+            stat.FILE_ATTRIBUTE_DIRECTORY)
+
 from test import mapping_tests
 
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):

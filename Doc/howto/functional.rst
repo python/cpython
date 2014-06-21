@@ -583,7 +583,7 @@ And here's an example of changing the counter:
 
 Because ``yield`` will often be returning ``None``, you should always check for
 this case.  Don't just use its value in expressions unless you're sure that the
-:meth:`~generator.send` method will be the only method used resume your
+:meth:`~generator.send` method will be the only method used to resume your
 generator function.
 
 In addition to :meth:`~generator.send`, there are two other methods on

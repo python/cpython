@@ -27,8 +27,20 @@ extern "C" {
 #endif /* HAVE_SYS_STAT_H */
 
 #ifdef MS_WINDOWS
+#include <windows.h>
 typedef unsigned short mode_t;
+
+/* FILE_ATTRIBUTE_INTEGRITY_STREAM and FILE_ATTRIBUTE_NO_SCRUB_DATA
+   are not present in VC2010, so define them manually */
+#ifndef FILE_ATTRIBUTE_INTEGRITY_STREAM
+#  define FILE_ATTRIBUTE_INTEGRITY_STREAM 0x8000
 #endif
+
+#ifndef FILE_ATTRIBUTE_NO_SCRUB_DATA
+#  define FILE_ATTRIBUTE_NO_SCRUB_DATA 0x20000
+#endif
+
+#endif /* MS_WINDOWS */
 
 /* From Python's stat.py */
 #ifndef S_IMODE
@@ -473,6 +485,10 @@ ST_SIZE\n\
 ST_ATIME\n\
 ST_MTIME\n\
 ST_CTIME\n\
+\n"
+
+"FILE_ATTRIBUTE_*: Windows file attribute constants\n\
+                   (only present on Windows)\n\
 ");
 
 
@@ -554,6 +570,26 @@ PyInit__stat(void)
     if (PyModule_AddIntConstant(m, "ST_ATIME", 7)) return NULL;
     if (PyModule_AddIntConstant(m, "ST_MTIME", 8)) return NULL;
     if (PyModule_AddIntConstant(m, "ST_CTIME", 9)) return NULL;
+
+#ifdef MS_WINDOWS
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_ARCHIVE)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_COMPRESSED)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_DEVICE)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_DIRECTORY)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_ENCRYPTED)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_HIDDEN)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_INTEGRITY_STREAM)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_NORMAL)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_NO_SCRUB_DATA)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_OFFLINE)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_READONLY)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_REPARSE_POINT)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_SPARSE_FILE)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_SYSTEM)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_TEMPORARY)) return NULL;
+    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_VIRTUAL)) return NULL;
+#endif
 
     return m;
 }

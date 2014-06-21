@@ -402,6 +402,7 @@ class PydocDocTest(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         mod_file = inspect.getabsfile(pydoc_mod)
@@ -421,6 +422,7 @@ class PydocDocTest(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_text_doc(self):
         result, doc_loc = get_pydoc_text(pydoc_mod)
         expected_text = expected_text_pattern % (
@@ -495,6 +497,7 @@ class PydocDocTest(unittest.TestCase):
                      'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_help_output_redirect(self):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
@@ -746,7 +749,7 @@ class TestDescriptions(unittest.TestCase):
             try:
                 pydoc.render_doc(name)
             except ImportError:
-                self.fail('finding the doc of {!r} failed'.format(o))
+                self.fail('finding the doc of {!r} failed'.format(name))
 
         for name in ('notbuiltins', 'strrr', 'strr.translate',
                      'str.trrrranslate', 'builtins.strrr',

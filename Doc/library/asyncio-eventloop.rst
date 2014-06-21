@@ -311,11 +311,10 @@ Creating listening connections
 
 .. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
-   A :ref:`coroutine <coroutine>` method which creates a TCP server bound to
-   host and port.
+   Create a TCP server bound to host and port. Return an
+   :class:`AbstractServer` object which can be used to stop the service.
 
-   The return value is a :class:`AbstractServer` object which can be used to stop
-   the service.
+   This method is a :ref:`coroutine <coroutine>`.
 
    If *host* is an empty string or None all interfaces are assumed
    and a list of multiple sockets will be returned (most likely
@@ -588,9 +587,13 @@ Debug mode
 
    Get the debug mode (:class:`bool`) of the event loop, ``False`` by default.
 
+   .. versionadded:: 3.4.2
+
 .. method:: BaseEventLoop.set_debug(enabled: bool)
 
    Set the debug mode of the event loop.
+
+   .. versionadded:: 3.4.2
 
 .. seealso::
 

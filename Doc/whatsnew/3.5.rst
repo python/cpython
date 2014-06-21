@@ -176,6 +176,15 @@ ipaddress
   network objects from existing addresses (contributed by Peter Moody
   and Antoine Pitrou in :issue:`16531`).
 
+os
+--
+
+* :class:`os.stat_result` now has a ``st_file_attributes`` field on Windows,
+  containing the ``dwFileAttributes`` member of the
+  ``BY_HANDLE_FILE_INFORMATION`` structure returned by
+  ``GetFileInformationByHandle()`` (contributed by Ben Hoyt in
+  :issue:`21719`).
+
 shutil
 ------
 
@@ -303,6 +312,12 @@ Changes in the Python API
 * :meth:`ssl.SSLSocket.send()` now raises either :exc:`ssl.SSLWantReadError`
   or :exc:`ssl.SSLWantWriteError` on a non-blocking socket if the operation
   would block. Previously, it would return 0.  See :issue:`20951`.
+
+* The ``__name__`` attribute of generator is now set from the function name,
+  instead of being set from the code name. Use ``gen.gi_code.co_name`` to
+  retrieve the code name. Generators also have a new ``__qualname__``
+  attribute, the qualified name, which is now used for the representation
+  of a generator (``repr(gen)``). See :issue:`21205`.
 
 Changes in the C API
 --------------------

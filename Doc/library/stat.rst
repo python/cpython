@@ -126,7 +126,7 @@ Example::
    if __name__ == '__main__':
        walktree(sys.argv[1], visitfile)
 
-An additional utility function is provided to covert a file's mode in a human
+An additional utility function is provided to convert a file's mode in a human
 readable string:
 
 .. function:: filemode(mode)
@@ -399,3 +399,29 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
    The file is a snapshot file.
 
 See the \*BSD or Mac OS systems man page :manpage:`chflags(2)` for more information.
+
+On Windows, the following file attribute constants are available for use when
+testing bits in the ``st_file_attributes`` member returned by :func:`os.stat`.
+See the `Windows API documentation
+<http://msdn.microsoft.com/en-us/library/windows/desktop/gg258117.aspx>`_
+for more detail on the meaning of these constants.
+
+.. data:: FILE_ATTRIBUTE_ARCHIVE
+          FILE_ATTRIBUTE_COMPRESSED
+          FILE_ATTRIBUTE_DEVICE
+          FILE_ATTRIBUTE_DIRECTORY
+          FILE_ATTRIBUTE_ENCRYPTED
+          FILE_ATTRIBUTE_HIDDEN
+          FILE_ATTRIBUTE_INTEGRITY_STREAM
+          FILE_ATTRIBUTE_NORMAL
+          FILE_ATTRIBUTE_NOT_CONTENT_INDEXED
+          FILE_ATTRIBUTE_NO_SCRUB_DATA
+          FILE_ATTRIBUTE_OFFLINE
+          FILE_ATTRIBUTE_READONLY
+          FILE_ATTRIBUTE_REPARSE_POINT
+          FILE_ATTRIBUTE_SPARSE_FILE
+          FILE_ATTRIBUTE_SYSTEM
+          FILE_ATTRIBUTE_TEMPORARY
+          FILE_ATTRIBUTE_VIRTUAL
+
+   .. versionadded:: 3.5

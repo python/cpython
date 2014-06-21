@@ -12,10 +12,10 @@ from asyncio.proactor_events import _ProactorDuplexPipeTransport
 from asyncio import test_utils
 
 
-class ProactorSocketTransportTests(unittest.TestCase):
+class ProactorSocketTransportTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = test_utils.TestLoop()
+        self.loop = self.new_test_loop()
         self.proactor = mock.Mock()
         self.loop._proactor = self.proactor
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
@@ -343,7 +343,7 @@ class ProactorSocketTransportTests(unittest.TestCase):
         tr.close()
 
 
-class BaseProactorEventLoopTests(unittest.TestCase):
+class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
         self.sock = mock.Mock(socket.socket)
@@ -356,6 +356,7 @@ class BaseProactorEventLoopTests(unittest.TestCase):
                 return (self.ssock, self.csock)
 
         self.loop = EventLoop(self.proactor)
+        self.set_event_loop(self.loop, cleanup=False)
 
     @mock.patch.object(BaseProactorEventLoop, 'call_soon')
     @mock.patch.object(BaseProactorEventLoop, '_socketpair')
