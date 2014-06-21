@@ -275,6 +275,9 @@ class simple_producer:
 
 class fifo:
     def __init__ (self, list=None):
+        import warnings
+        warnings.warn('fifo class will be removed in Python 3.6',
+                      DeprecationWarning, stacklevel=2)
         if not list:
             self.list = deque()
         else:

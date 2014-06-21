@@ -8,6 +8,7 @@ thread = support.import_module('_thread')
 import asyncore, asynchat, socket, time
 import unittest
 import sys
+import warnings
 try:
     import threading
 except ImportError:
@@ -260,7 +261,9 @@ class TestHelperFunctions(unittest.TestCase):
 
 class TestFifo(unittest.TestCase):
     def test_basic(self):
-        f = asynchat.fifo()
+        with warnings.catch_warnings(record=True) as w:
+            f = asynchat.fifo()
+            assert issubclass(w[0].category, DeprecationWarning)
         f.push(7)
         f.push(b'a')
         self.assertEqual(len(f), 2)
@@ -275,7 +278,9 @@ class TestFifo(unittest.TestCase):
         self.assertEqual(f.pop(), (0, None))
 
     def test_given_list(self):
-        f = asynchat.fifo([b'x', 17, 3])
+        with warnings.catch_warnings(record=True) as w:
+            f = asynchat.fifo([b'x', 17, 3])
+            assert issubclass(w[0].category, DeprecationWarning)
         self.assertEqual(len(f), 3)
         self.assertEqual(f.pop(), (1, b'x'))
         self.assertEqual(f.pop(), (1, 17))
