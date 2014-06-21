@@ -76,6 +76,15 @@ class TestSFbugs(unittest.TestCase):
         diff_gen = difflib.unified_diff([], [])
         self.assertRaises(StopIteration, next, diff_gen)
 
+    def test_matching_blocks_cache(self):
+        # Issue #21635
+        s = difflib.SequenceMatcher(None, "abxcd", "abcd")
+        first = s.get_matching_blocks()
+        second = s.get_matching_blocks()
+        self.assertEqual(second[0].size, 2)
+        self.assertEqual(second[1].size, 2)
+        self.assertEqual(second[2].size, 0)
+
     def test_added_tab_hint(self):
         # Check fix for bug #1488943
         diff = list(difflib.Differ().compare(["\tI am a buggy"],["\t\tI am a bug"]))
