@@ -2,7 +2,6 @@ import os
 import sys
 import builtins
 import contextlib
-import difflib
 import inspect
 import pydoc
 import keyword
@@ -356,15 +355,6 @@ def get_pydoc_text(module):
     output = patt.sub('', output)
     return output.strip(), loc
 
-def print_diffs(text1, text2):
-    "Prints unified diffs for two texts"
-    # XXX now obsolete, use unittest built-in support
-    lines1 = text1.splitlines(keepends=True)
-    lines2 = text2.splitlines(keepends=True)
-    diffs = difflib.unified_diff(lines1, lines2, n=0, fromfile='expected',
-                                 tofile='got')
-    print('\n' + ''.join(diffs))
-
 def get_html_title(text):
     # Bit of hack, but good enough for test purposes
     header, _, _ = text.partition("</head>")
@@ -414,9 +404,7 @@ class PydocDocTest(unittest.TestCase):
         expected_html = expected_html_pattern % (
                         (mod_url, mod_file, doc_loc) +
                         expected_html_data_docstrings)
-        if result != expected_html:
-            print_diffs(expected_html, result)
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(result, expected_html)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -429,9 +417,7 @@ class PydocDocTest(unittest.TestCase):
                         (doc_loc,) +
                         expected_text_data_docstrings +
                         (inspect.getabsfile(pydoc_mod),))
-        if result != expected_text:
-            print_diffs(expected_text, result)
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(expected_text, result)
 
     def test_text_enum_member_with_value_zero(self):
         # Test issue #20654 to ensure enum member with value 0 can be
@@ -887,9 +873,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         expected_text = expected_dynamicattribute_pattern % (
                 (__name__,) + expected_text_data_docstrings[:2])
         result = output.getvalue().strip()
-        if result != expected_text:
-            print_diffs(expected_text, result)
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(expected_text, result)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -910,9 +894,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         helper(Class)
         expected_text = expected_virtualattribute_pattern1 % __name__
         result = output.getvalue().strip()
-        if result != expected_text:
-            print_diffs(expected_text, result)
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(expected_text, result)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -952,19 +934,13 @@ class PydocWithMetaClasses(unittest.TestCase):
         helper(Class1)
         expected_text1 = expected_virtualattribute_pattern2 % __name__
         result1 = output.getvalue().strip()
-        if result1 != expected_text1:
-            print_diffs(expected_text1, result1)
-            fail1 = True
+        self.assertEqual(expected_text1, result1)
         output = StringIO()
         helper = pydoc.Helper(output=output)
         helper(Class2)
         expected_text2 = expected_virtualattribute_pattern3 % __name__
         result2 = output.getvalue().strip()
-        if result2 != expected_text2:
-            print_diffs(expected_text2, result2)
-            fail2 = True
-        if fail1 or fail2:
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(expected_text2, result2)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -981,9 +957,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         helper(C)
         expected_text = expected_missingattribute_pattern % __name__
         result = output.getvalue().strip()
-        if result != expected_text:
-            print_diffs(expected_text, result)
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(expected_text, result)
 
 
 @reap_threads
