@@ -19,12 +19,12 @@ MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
 
 
-class BaseEventLoopTests(unittest.TestCase):
+class BaseEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = base_events.BaseEventLoop()
         self.loop._selector = mock.Mock()
-        asyncio.set_event_loop(None)
+        self.set_event_loop(self.loop)
 
     def test_not_implemented(self):
         m = mock.Mock()
@@ -240,30 +240,23 @@ class BaseEventLoopTests(unittest.TestCase):
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
 
-    @mock.patch('asyncio.base_events.time')
     @mock.patch('asyncio.base_events.logger')
-    def test__run_once_logging(self, m_logger, m_time):
+    def test__run_once_logging(self, m_logger):
+        def slow_select(timeout):
+            time.sleep(1.0)
+            return []
+
         # Log to INFO level if timeout > 1.0 sec.
-        idx = -1
-        data = [10.0, 10.0, 12.0, 13.0]
-
-        def monotonic():
-            nonlocal data, idx
-            idx += 1
-            return data[idx]
-
-        m_time.monotonic = monotonic
-
-        self.loop._scheduled.append(
-            asyncio.TimerHandle(11.0, lambda: True, (), self.loop))
+        self.loop._selector.select = slow_select
         self.loop._process_events = mock.Mock()
         self.loop._run_once()
         self.assertEqual(logging.INFO, m_logger.log.call_args[0][0])
 
-        idx = -1
-        data = [10.0, 10.0, 10.3, 13.0]
-        self.loop._scheduled = [asyncio.TimerHandle(11.0, lambda: True, (),
-                                                    self.loop)]
+        def fast_select(timeout):
+            time.sleep(0.001)
+            return []
+
+        self.loop._selector.select = fast_select
         self.loop._run_once()
         self.assertEqual(logging.DEBUG, m_logger.log.call_args[0][0])
 
@@ -555,14 +548,11 @@ class MyDatagramProto(asyncio.DatagramProtocol):
             self.done.set_result(None)
 
 
-class BaseEventLoopWithSelectorTests(unittest.TestCase):
+class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
+        self.set_event_loop(self.loop)
 
     @mock.patch('asyncio.base_events.socket')
     def test_create_connection_multiple_errors(self, m_socket):
@@ -978,6 +968,34 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
             self.loop.call_at(self.loop.time() + 60, coroutine_function)
         with self.assertRaises(TypeError):
             self.loop.run_in_executor(None, coroutine_function)
+
+    @mock.patch('asyncio.base_events.logger')
+    def test_log_slow_callbacks(self, m_logger):
+        def stop_loop_cb(loop):
+            loop.stop()
+
+        @asyncio.coroutine
+        def stop_loop_coro(loop):
+            yield from ()
+            loop.stop()
+
+        asyncio.set_event_loop(self.loop)
+        self.loop.set_debug(True)
+        self.loop.slow_callback_duration = 0.0
+
+        # slow callback
+        self.loop.call_soon(stop_loop_cb, self.loop)
+        self.loop.run_forever()
+        fmt, *args = m_logger.warning.call_args[0]
+        self.assertRegex(fmt % tuple(args),
+                         "^Executing Handle.*stop_loop_cb.* took .* seconds$")
+
+        # slow task
+        asyncio.async(stop_loop_coro(self.loop), loop=self.loop)
+        self.loop.run_forever()
+        fmt, *args = m_logger.warning.call_args[0]
+        self.assertRegex(fmt % tuple(args),
+                         "^Executing Task.*stop_loop_coro.* took .* seconds$")
 
 
 if __name__ == '__main__':

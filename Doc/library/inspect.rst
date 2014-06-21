@@ -159,6 +159,16 @@ attributes:
 |           |                 | arguments and local       |
 |           |                 | variables                 |
 +-----------+-----------------+---------------------------+
+| generator | __name__        | name                      |
++-----------+-----------------+---------------------------+
+|           | __qualname__    | qualified name            |
++-----------+-----------------+---------------------------+
+|           | gi_frame        | frame                     |
++-----------+-----------------+---------------------------+
+|           | gi_running      | is the generator running? |
++-----------+-----------------+---------------------------+
+|           | gi_code         | code                      |
++-----------+-----------------+---------------------------+
 | builtin   | __doc__         | documentation string      |
 +-----------+-----------------+---------------------------+
 |           | __name__        | original name of this     |
@@ -168,6 +178,12 @@ attributes:
 |           |                 | method is bound, or       |
 |           |                 | ``None``                  |
 +-----------+-----------------+---------------------------+
+
+.. versionchanged:: 3.5
+
+   Add ``__qualname__`` attribute to generators. The ``__name__`` attribute of
+   generators is now set from the function name, instead of the code name, and
+   it can now be modified.
 
 
 .. function:: getmembers(object[, predicate])

@@ -65,6 +65,7 @@ Notes on the availability of these functions:
 
 
 .. _os-filenames:
+.. _filesystem-encoding:
 
 File Names, Command Line Arguments, and Environment Variables
 -------------------------------------------------------------
@@ -1094,7 +1095,8 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 
    .. note::
 
-      For a higher-level version of this see :mod:`socket.socket.sendfile`.
+      For a higher-level wrapper of :func:`sendfile`, see
+      :mod:`socket.socket.sendfile`.
 
    .. versionadded:: 3.3
 
@@ -1903,6 +1905,11 @@ features:
    * :attr:`st_creator`
    * :attr:`st_type`
 
+   On Windows systems, the following attribute is also available:
+
+   * :attr:`st_file_attributes` - Windows file attribute bits (see the
+     ``FILE_ATTRIBUTE_*`` constants in the :mod:`stat` module)
+
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
@@ -1955,6 +1962,9 @@ features:
       specifying a file descriptor instead of a path,
       and the :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
       and :attr:`st_ctime_ns` members.
+
+   .. versionadded:: 3.5
+      Added the :attr:`st_file_attributes` member on Windows.
 
 
 .. function:: stat_float_times([newvalue])
@@ -2235,9 +2245,11 @@ features:
 
    If optional argument *topdown* is ``True`` or not specified, the triple for a
    directory is generated before the triples for any of its subdirectories
-   (directories are generated top-down).  If *topdown* is ``False``, the triple for a
-   directory is generated after the triples for all of its subdirectories
-   (directories are generated bottom-up).
+   (directories are generated top-down).  If *topdown* is ``False``, the triple
+   for a directory is generated after the triples for all of its subdirectories
+   (directories are generated bottom-up). No matter the value of *topdown*, the
+   list of subdirectories is retrieved before the tuples for the directory and
+   its subdirectories are generated.
 
    When *topdown* is ``True``, the caller can modify the *dirnames* list in-place
    (perhaps using :keyword:`del` or slice assignment), and :func:`walk` will only
