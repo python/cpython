@@ -105,7 +105,7 @@ class Queue:
         if self._maxsize <= 0:
             return False
         else:
-            return self.qsize() == self._maxsize
+            return self.qsize() >= self._maxsize
 
     @coroutine
     def put(self, item):
@@ -126,7 +126,7 @@ class Queue:
             self._put(item)
             getter.set_result(self._get())
 
-        elif self._maxsize > 0 and self._maxsize == self.qsize():
+        elif self._maxsize > 0 and self._maxsize <= self.qsize():
             waiter = futures.Future(loop=self._loop)
 
             self._putters.append((item, waiter))
@@ -152,7 +152,7 @@ class Queue:
             self._put(item)
             getter.set_result(self._get())
 
-        elif self._maxsize > 0 and self._maxsize == self.qsize():
+        elif self._maxsize > 0 and self._maxsize <= self.qsize():
             raise QueueFull
         else:
             self._put(item)

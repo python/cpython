@@ -1528,9 +1528,7 @@ class TestStdLib(unittest.TestCase):
         helper = pydoc.Helper(output=output)
         helper(self.Color)
         result = output.getvalue().strip()
-        if result != expected_text:
-            print_diffs(expected_text, result)
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(result, expected_text)
 
     def test_inspect_getmembers(self):
         values = dict((

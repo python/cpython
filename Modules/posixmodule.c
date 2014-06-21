@@ -1417,6 +1417,7 @@ win32_wchdir(LPCWSTR path)
    Therefore, we implement our own stat, based on the Win32 API directly.
 */
 #define HAVE_STAT_NSEC 1
+#define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 
 struct win32_stat{
     unsigned long st_dev;
@@ -1433,6 +1434,7 @@ struct win32_stat{
     int st_mtime_nsec;
     time_t st_ctime;
     int st_ctime_nsec;
+    unsigned long st_file_attributes;
 };
 
 static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
@@ -1497,6 +1499,7 @@ attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, stru
         /* now set the bits that make this a symlink */
         result->st_mode |= S_IFLNK;
     }
+    result->st_file_attributes = info->dwFileAttributes;
 
     return 0;
 }
@@ -1961,6 +1964,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
     {"st_birthtime",   "time of creation"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
+    {"st_file_attributes", "Windows file attribute bits"},
+#endif
     {0}
 };
 
@@ -1998,6 +2004,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_BIRTHTIME_IDX (ST_GEN_IDX+1)
 #else
 #define ST_BIRTHTIME_IDX ST_GEN_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
+#define ST_FILE_ATTRIBUTES_IDX (ST_BIRTHTIME_IDX+1)
+#else
+#define ST_FILE_ATTRIBUTES_IDX ST_BIRTHTIME_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2266,6 +2278,10 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
     PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
                               PyLong_FromLong((long)st->st_flags));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
+    PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
+                              PyLong_FromUnsignedLong(st->st_file_attributes));
 #endif
 
     if (PyErr_Occurred()) {

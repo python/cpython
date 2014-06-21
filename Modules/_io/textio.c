@@ -224,8 +224,8 @@ typedef struct {
     PyObject_HEAD
     PyObject *decoder;
     PyObject *errors;
-    signed int pendingcr: 1;
-    signed int translate: 1;
+    unsigned int pendingcr: 1;
+    unsigned int translate: 1;
     unsigned int seennl: 3;
 } nldecoder_object;
 
@@ -546,7 +546,7 @@ incrementalnewlinedecoder_setstate(nldecoder_object *self, PyObject *state)
     if (!PyArg_Parse(state, "(OK)", &buffer, &flag))
         return NULL;
 
-    self->pendingcr = (int) flag & 1;
+    self->pendingcr = (int) (flag & 1);
     flag >>= 1;
 
     if (self->decoder != Py_None)
