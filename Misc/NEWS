@@ -31,6 +31,10 @@ Library
 
 - Issue #21491: SocketServer: Fix a race condition in child processes reaping.
 
+- Issue #21635:  The difflib SequenceMatcher.get_matching_blocks() method
+  cache didn't match the actual result.  The former was a list of tuples
+  and the latter was a list of named tuples.
+
 - Issue #21722: The distutils "upload" command now exits with a non-zero
   return code when uploading fails.  Patch by Martin Dengler.
 
