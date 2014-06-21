@@ -511,8 +511,8 @@ class SequenceMatcher:
             non_adjacent.append((i1, j1, k1))
 
         non_adjacent.append( (la, lb, 0) )
-        self.matching_blocks = non_adjacent
-        return map(Match._make, self.matching_blocks)
+        self.matching_blocks = list(map(Match._make, non_adjacent))
+        return self.matching_blocks
 
     def get_opcodes(self):
         """Return list of 5-tuples describing how to turn a into b.
