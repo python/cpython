@@ -137,7 +137,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._running = False
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
-        self._debug = False
+        self._debug = (not sys.flags.ignore_environment
+                       and bool(os.environ.get('PYTHONASYNCIODEBUG')))
         # In debug mode, if the execution of a callback or a step of a task
         # exceed this duration in seconds, the slow callback/task is logged.
         self.slow_callback_duration = 0.1
