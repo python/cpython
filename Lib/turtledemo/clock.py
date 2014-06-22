@@ -11,6 +11,7 @@ and time
   ------------------------------------
 """
 from turtle import *
+from turtle import Terminator  # not in __all__
 from datetime import datetime
 
 mode("logo")
@@ -102,22 +103,25 @@ def tick():
     sekunde = t.second + t.microsecond*0.000001
     minute = t.minute + sekunde/60.0
     stunde = t.hour + minute/60.0
-    tracer(False)
-    writer.clear()
-    writer.home()
-    writer.forward(65)
-    writer.write(wochentag(t),
-                 align="center", font=("Courier", 14, "bold"))
-    writer.back(150)
-    writer.write(datum(t),
-                 align="center", font=("Courier", 14, "bold"))
-    writer.forward(85)
-    tracer(True)
-    second_hand.setheading(6*sekunde)
-    minute_hand.setheading(6*minute)
-    hour_hand.setheading(30*stunde)
-    tracer(True)
-    ontimer(tick, 100)
+    try:
+        tracer(False)  # Terminator can occur here
+        writer.clear()
+        writer.home()
+        writer.forward(65)
+        writer.write(wochentag(t),
+                     align="center", font=("Courier", 14, "bold"))
+        writer.back(150)
+        writer.write(datum(t),
+                     align="center", font=("Courier", 14, "bold"))
+        writer.forward(85)
+        tracer(True)
+        second_hand.setheading(6*sekunde)  # or here
+        minute_hand.setheading(6*minute)
+        hour_hand.setheading(30*stunde)
+        tracer(True)
+        ontimer(tick, 100)
+    except Terminator:
+        pass  # turtledemo user pressed STOP
 
 def main():
     tracer(False)
