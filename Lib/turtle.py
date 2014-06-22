@@ -2945,7 +2945,7 @@ class RawTurtle(TPen, TNavigator):
         self._stretchfactor = a11, a22
         self._shearfactor = a12/a22
         self._tilt = alfa
-        self._update()
+        self.pen(resizemode="user")
 
 
     def _polytrafo(self, poly):
