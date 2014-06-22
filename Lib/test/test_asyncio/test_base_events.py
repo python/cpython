@@ -247,6 +247,9 @@ class BaseEventLoopTests(test_utils.TestCase):
             time.sleep(1.0)
             return []
 
+        # logging needs debug flag
+        self.loop.set_debug(True)
+
         # Log to INFO level if timeout > 1.0 sec.
         self.loop._selector.select = slow_select
         self.loop._process_events = mock.Mock()
