@@ -141,7 +141,7 @@ if sys.platform != 'win32':
             policy = asyncio.get_event_loop_policy()
             self.loop = policy.new_event_loop()
 
-            # ensure that the event loop is passed explicitly in the code
+            # ensure that the event loop is passed explicitly in asyncio
             policy.set_event_loop(None)
 
             watcher = self.Watcher()
@@ -172,7 +172,7 @@ else:
             policy = asyncio.get_event_loop_policy()
             self.loop = asyncio.ProactorEventLoop()
 
-            # ensure that the event loop is passed explicitly in the code
+            # ensure that the event loop is passed explicitly in asyncio
             policy.set_event_loop(None)
 
         def tearDown(self):
