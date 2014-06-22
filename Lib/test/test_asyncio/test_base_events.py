@@ -7,6 +7,7 @@ import sys
 import time
 import unittest
 from unittest import mock
+from test.script_helper import assert_python_ok
 from test.support import IPV6_ENABLED
 
 import asyncio
@@ -488,6 +489,29 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.assertIn('context', _context)
             self.assertIs(type(_context['context']['exception']),
                           ZeroDivisionError)
+
+    def test_env_var_debug(self):
+        code = '\n'.join((
+            'import asyncio',
+            'loop = asyncio.get_event_loop()',
+            'print(loop.get_debug())'))
+
+        # Test with -E to not fail if the unit test was run with
+        # PYTHONASYNCIODEBUG set to a non-empty string
+        sts, stdout, stderr = assert_python_ok('-E', '-c', code)
+        self.assertEqual(stdout.rstrip(), b'False')
+
+        sts, stdout, stderr = assert_python_ok('-c', code,
+                                               PYTHONASYNCIODEBUG='')
+        self.assertEqual(stdout.rstrip(), b'False')
+
+        sts, stdout, stderr = assert_python_ok('-c', code,
+                                               PYTHONASYNCIODEBUG='1')
+        self.assertEqual(stdout.rstrip(), b'True')
+
+        sts, stdout, stderr = assert_python_ok('-E', '-c', code,
+                                               PYTHONASYNCIODEBUG='1')
+        self.assertEqual(stdout.rstrip(), b'False')
 
 
 class MyProto(asyncio.Protocol):
