@@ -9,6 +9,29 @@ Asynchronous programming is different than classical "sequential" programming.
 This page lists common traps and explains how to avoid them.
 
 
+.. _asyncio-debug-mode:
+
+Debug mode of asyncio
+---------------------
+
+To enable the debug mode globally, set the environment variable
+:envvar:`PYTHONASYNCIODEBUG` to ``1``. Examples of effects of the debug mode:
+
+* Log :ref:`coroutines defined but never "yielded from"
+  <asyncio-coroutine-not-scheduled>`
+* :meth:`~BaseEventLoop.call_soon` and :meth:`~BaseEventLoop.call_at` methods
+  raise an exception if they are called from the wrong thread.
+* Log the execution time of the selector
+* Log callbacks taking more than 100 ms to be executed. The
+  :attr:`BaseEventLoop.slow_callback_duration` attribute is the minimum
+  duration in seconds of "slow" callbacks.
+
+.. seealso::
+
+   The :meth:`BaseEventLoop.set_debug` method and the :ref:`asyncio logger
+   <asyncio-logger>`.
+
+
 .. _asyncio-multithreading:
 
 Concurrency and multithreading
@@ -83,10 +106,10 @@ Detect coroutine objects never scheduled
 When a coroutine function is called but not passed to :func:`async` or to the
 :class:`Task` constructor, it is not scheduled and it is probably a bug.
 
-To detect such bug, set the environment variable :envvar:`PYTHONASYNCIODEBUG`
-to ``1``. When the coroutine object is destroyed by the garbage collector, a
-log will be emitted with the traceback where the coroutine function was called.
-See the :ref:`asyncio logger <asyncio-logger>`.
+To detect such bug, :ref:`enable the debug mode of asyncio
+<asyncio-debug-mode>`. When the coroutine object is destroyed by the garbage
+collector, a log will be emitted with the traceback where the coroutine
+function was called.  See the :ref:`asyncio logger <asyncio-logger>`.
 
 The debug flag changes the behaviour of the :func:`coroutine` decorator. The
 debug flag value is only used when then coroutine function is defined, not when
