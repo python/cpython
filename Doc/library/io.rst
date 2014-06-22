@@ -391,8 +391,8 @@ I/O Base Classes
    .. method:: readinto(b)
 
       Read up to ``len(b)`` bytes into :class:`bytearray` *b* and return the
-      number of bytes read.  If the object is in non-blocking mode and no
-      bytes are available, ``None`` is returned.
+      number of bytes read.  If the object is in non-blocking mode and no bytes
+      are available, ``None`` is returned.
 
    .. method:: write(b)
 
@@ -467,9 +467,9 @@ I/O Base Classes
 
       Read and return up to *size* bytes, with at most one call to the
       underlying raw stream's :meth:`~RawIOBase.read` (or
-      :meth:`~RawIOBase.readinto`) method.  This can be useful if you
-      are implementing your own buffering on top of a
-      :class:`BufferedIOBase` object.
+      :meth:`~RawIOBase.readinto`) method.  This can be useful if you are
+      implementing your own buffering on top of a :class:`BufferedIOBase`
+      object.
 
    .. method:: readinto(b)
 
@@ -479,18 +479,17 @@ I/O Base Classes
       Like :meth:`read`, multiple reads may be issued to the underlying raw
       stream, unless the latter is interactive.
 
-      A :exc:`BlockingIOError` is raised if the underlying raw stream is in
-      non blocking-mode, and has no data available at the moment.
+      A :exc:`BlockingIOError` is raised if the underlying raw stream is in non
+      blocking-mode, and has no data available at the moment.
 
    .. method:: readinto1(b)
 
-      Read up to ``len(b)`` bytes into bytearray *b*, ,using at most
-      one call to the underlying raw stream's :meth:`~RawIOBase.read`
-      (or :meth:`~RawIOBase.readinto`) method. Return the number of
-      bytes read.
+      Read up to ``len(b)`` bytes into bytearray *b*, ,using at most one call to
+      the underlying raw stream's :meth:`~RawIOBase.read` (or
+      :meth:`~RawIOBase.readinto`) method. Return the number of bytes read.
 
-      A :exc:`BlockingIOError` is raised if the underlying raw stream is in
-      non blocking-mode, and has no data available at the moment.
+      A :exc:`BlockingIOError` is raised if the underlying raw stream is in non
+      blocking-mode, and has no data available at the moment.
 
       .. versionadded:: 3.5
 
