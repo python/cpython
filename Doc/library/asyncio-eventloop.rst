@@ -601,7 +601,7 @@ Debug mode
 
 .. seealso::
 
-   The :ref:`Develop with asyncio <asyncio-dev>` section.
+   The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
 
 
 Server
