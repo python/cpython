@@ -29,6 +29,9 @@ Library
 
 - Issue #21491: socketserver: Fix a race condition in child processes reaping.
 
+- Issue #21812: turtle.shapetransform did not tranform the turtle on the
+  first call.  (Issue identified and fixed by Lita Cho.)
+
 - Issue #21635:  The difflib SequenceMatcher.get_matching_blocks() method
   cache didn't match the actual result.  The former was a list of tuples
   and the latter was a list of named tuples.
