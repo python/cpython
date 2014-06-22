@@ -1712,6 +1712,8 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertIs(fut._loop, self.one_loop)
         gen1.close()
         gen2.close()
+
+        self.set_event_loop(self.other_loop, cleanup=False)
         gen3 = coro()
         gen4 = coro()
         fut = asyncio.gather(gen3, gen4, loop=self.other_loop)

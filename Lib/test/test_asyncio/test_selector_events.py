@@ -682,8 +682,6 @@ class SelectorTransportTests(test_utils.TestCase):
         self.assertEqual(2, sys.getrefcount(self.protocol),
                          pprint.pformat(gc.get_referrers(self.protocol)))
         self.assertIsNone(tr._loop)
-        self.assertEqual(3, sys.getrefcount(self.loop),
-                         pprint.pformat(gc.get_referrers(self.loop)))
 
 
 class SelectorSocketTransportTests(test_utils.TestCase):
