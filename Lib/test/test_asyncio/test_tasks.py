@@ -1577,11 +1577,7 @@ class GatherTestsBase:
         self.assertEqual(fut.result(), [3, 1, exc, exc2])
 
     def test_env_var_debug(self):
-        path = os.path.dirname(asyncio.__file__)
-        path = os.path.normpath(os.path.join(path, '..'))
         code = '\n'.join((
-            'import sys',
-            'sys.path.insert(0, %r)' % path,
             'import asyncio.tasks',
             'print(asyncio.tasks._DEBUG)'))
 
