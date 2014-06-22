@@ -247,7 +247,11 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         This clears the queues and shuts down the executor,
         but does not wait for the executor to finish.
+
+        The event loop must not be running.
         """
+        if self._running:
+            raise RuntimeError("cannot close a running event loop")
         if self._closed:
             return
         self._closed = True
