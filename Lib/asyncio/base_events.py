@@ -834,8 +834,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             when = self._scheduled[0]._when
             timeout = max(0, when - self.time())
 
-        # TODO: Instrumentation only in debug mode?
-        if logger.isEnabledFor(logging.INFO):
+        if self._debug:
             t0 = self.time()
             event_list = self._selector.select(timeout)
             dt = self.time() - t0
