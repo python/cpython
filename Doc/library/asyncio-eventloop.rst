@@ -585,7 +585,11 @@ Debug mode
 
 .. method:: BaseEventLoop.get_debug()
 
-   Get the debug mode (:class:`bool`) of the event loop, ``False`` by default.
+   Get the debug mode (:class:`bool`) of the event loop.
+
+   The default value is ``True`` if the environment variable
+   :envvar:`PYTHONASYNCIODEBUG` is set to a non-empty string, ``False``
+   otherwise.
 
    .. versionadded:: 3.4.2
 
