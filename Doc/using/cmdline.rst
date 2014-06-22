@@ -616,8 +616,8 @@ conflict.
 
 .. envvar:: PYTHONASYNCIODEBUG
 
-   If this environment variable is set to a non-empty string, enable the debug
-   mode of the :mod:`asyncio` module.
+   If this environment variable is set to a non-empty string, enable the
+   :ref:`debug mode <asyncio-debug-mode>` of the :mod:`asyncio` module.
 
    .. versionadded:: 3.4
 
