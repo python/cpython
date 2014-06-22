@@ -5,10 +5,16 @@ import os
 from Tkinter import *
 from idlelib.Percolator import Percolator
 from idlelib.ColorDelegator import ColorDelegator
-from idlelib.textView import TextViewer
+from idlelib.textView import view_file
 
 import turtle
 import time
+
+demo_dir = os.getcwd()
+if "turtleDemo.py" not in os.listdir(demo_dir):
+    print "Directory of turtleDemo must be current working directory!"
+    print "But in your case this is", demo_dir
+    sys.exit()
 
 STARTUP = 1
 READY = 2
@@ -21,12 +27,7 @@ btnfont = ("Arial", 12, 'bold')
 txtfont = ('Lucida Console', 8, 'normal')
 
 def getExampleEntries():
-    cwd = os.getcwd()
-    if "turtleDemo.py" not in os.listdir(cwd):
-        print "Directory of turtleDemo must be current working directory!"
-        print "But in your case this is", cwd
-        sys.exit()
-    entries1 = [entry for entry in os.listdir(cwd) if
+    entries1 = [entry for entry in os.listdir(demo_dir) if
                      entry.startswith("tdemo_") and
                      not entry.endswith(".pyc")]
     entries2 = []
@@ -34,7 +35,7 @@ def getExampleEntries():
         if entry.endswith(".py"):
             entries2.append(entry)
         else:
-            path = os.path.join(cwd,entry)
+            path = os.path.join(demo_dir, entry)
             sys.path.append(path)
             subdir = [entry]
             scripts = [script for script in os.listdir(path) if
@@ -44,13 +45,16 @@ def getExampleEntries():
     return entries2
 
 def showDemoHelp():
-    TextViewer(demo.root, "Help on turtleDemo", "demohelp.txt")
+    view_file(demo.root, "Help on turtleDemo",
+              os.path.join(demo_dir, "demohelp.txt"))
 
 def showAboutDemo():
-    TextViewer(demo.root, "About turtleDemo", "about_turtledemo.txt")
+    view_file(demo.root, "About turtleDemo",
+              os.path.join(demo_dir, "about_turtledemo.txt"))
 
 def showAboutTurtle():
-    TextViewer(demo.root, "About the new turtle module", "about_turtle.txt")
+    view_file(demo.root, "About the new turtle module.",
+              os.path.join(demo_dir, "about_turtle.txt"))
 
 class DemoWindow(object):
 
