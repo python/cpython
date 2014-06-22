@@ -65,11 +65,15 @@
        be executed by the viewer (see provided example scripts)
        main() may return a string which will be displayed
        in the Label below the source code window (when execution
-       has finished.) 
+       has finished.)
 
-       !! For programs, which are EVENT DRIVEN, main must return
-       !! the string "EVENTLOOP". This informs the viewer, that the
-       !! script is still running and must be stopped by the user!
+       If the demo is EVENT DRIVEN, main must return the string
+       "EVENTLOOP". This informs the demo viewer that the script is
+       still running and must be stopped by the user!
 
-        
-  
+       If an "EVENTLOOP" demo runs by itself, as with clock, which uses
+       ontimer, or minimal_hanoi, which loops by recursion, then the
+       code should catch the turtle.Terminator exception that will be
+       raised when the user presses the STOP button.  (Paint is not such
+       a demo; it only acts in response to mouse clicks and movements.)
+

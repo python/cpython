@@ -18,6 +18,7 @@ stretched to rectangles by shapesize()
  ---------------------------------------
 """
 from turtle import *
+from turtle import Terminator  # not in __all__
 
 class Disc(Turtle):
     def __init__(self, n):
@@ -50,9 +51,12 @@ def hanoi(n, from_, with_, to_):
 def play():
     onkey(None,"space")
     clear()
-    hanoi(6, t1, t2, t3)
-    write("press STOP button to exit",
-          align="center", font=("Courier", 16, "bold"))
+    try:
+        hanoi(6, t1, t2, t3)
+        write("press STOP button to exit",
+              align="center", font=("Courier", 16, "bold"))
+    except Terminator:
+        pass  # turtledemo user pressed STOP
 
 def main():
     global t1, t2, t3
