@@ -327,7 +327,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         Should only be called when (self._debug == True). The caller is
         responsible for checking this condition for performance reasons.
         """
-        if events.get_event_loop() is not self:
+        current = events.get_event_loop()
+        if current is not None and current is not self:
             raise RuntimeError(
                 "non-threadsafe operation invoked on an event loop other "
                 "than the current one")
