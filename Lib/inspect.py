@@ -1939,6 +1939,10 @@ def _signature_from_callable(obj, *,
         pass
     else:
         if sig is not None:
+            if not isinstance(sig, Signature):
+                raise TypeError(
+                    'unexpected object {!r} in __signature__ '
+                    'attribute'.format(sig))
             return sig
 
     try:

@@ -498,6 +498,9 @@ Library
 - Issue #11571: Ensure that the turtle window becomes the topmost window
   when launched on OS X.
 
+- Issue #21801: Validate that __signature__ is None or an instance of Signature.
+
+
 Extension Modules
 -----------------
 
