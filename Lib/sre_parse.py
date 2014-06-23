@@ -616,7 +616,8 @@ def _parse(source, state):
                                         "%r" % name)
                         gid = state.groupdict.get(name)
                         if gid is None:
-                            raise error("unknown group name")
+                            msg = "unknown group name: {0!r}".format(name)
+                            raise error(msg)
                         subpatternappend((GROUPREF, gid))
                         continue
                     else:
@@ -669,7 +670,8 @@ def _parse(source, state):
                     if condname.isidentifier():
                         condgroup = state.groupdict.get(condname)
                         if condgroup is None:
-                            raise error("unknown group name")
+                            msg = "unknown group name: {0!r}".format(condname)
+                            raise error(msg)
                     else:
                         try:
                             condgroup = int(condname)
@@ -806,7 +808,8 @@ def parse_template(source, pattern):
                     try:
                         index = pattern.groupindex[name]
                     except KeyError:
-                        raise IndexError("unknown group name")
+                        msg = "unknown group name: {0!r}".format(name)
+                        raise IndexError(msg)
                 addgroup(index)
             elif c == "0":
                 if s.next in OCTDIGITS:
