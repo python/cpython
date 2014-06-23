@@ -3048,6 +3048,13 @@ class TestMain(unittest.TestCase):
         self.assertEqual(lines[:-1], inspect.getsource(module).splitlines())
         self.assertEqual(err, b'')
 
+    def test_custom_getattr(self):
+        def foo():
+            pass
+        foo.__signature__ = 42
+        with self.assertRaises(TypeError):
+            inspect.signature(foo)
+
     @unittest.skipIf(ThreadPoolExecutor is None,
             'threads required to test __qualname__ for source files')
     def test_qualname_source(self):

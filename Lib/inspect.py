@@ -1912,6 +1912,10 @@ def _signature_internal(obj, follow_wrapper_chains=True, skip_bound_arg=True):
         pass
     else:
         if sig is not None:
+            if not isinstance(sig, Signature):
+                raise TypeError(
+                    'unexpected object {!r} in __signature__ '
+                    'attribute'.format(sig))
             return sig
 
     try:
