@@ -82,6 +82,10 @@ def join(path, *paths):
         if result_path and result_path[-1] not in '\\/':
             result_path = result_path + '\\'
         result_path = result_path + p_path
+    ## add separator between UNC and non-absolute path
+    if (result_path and result_path[0] not in '\\/' and
+        result_drive and result_drive[-1:] != ':'):
+        return result_drive + sep + result_path
     return result_drive + result_path
 
 
@@ -89,12 +93,45 @@ def join(path, *paths):
 # colon) and the path specification.
 # It is always true that drivespec + pathspec == p
 def splitdrive(p):
-    """Split a pathname into drive and path specifiers. Returns a 2-tuple
-"(drive,path)";  either part may be empty"""
-    if p[1:2] == ':':
-        return p[0:2], p[2:]
-    return '', p
+    """Split a pathname into drive/UNC sharepoint and relative path specifiers.
+    Returns a 2-tuple (drive_or_unc, path); either part may be empty.
 
+    If you assign
+        result = splitdrive(p)
+    It is always true that:
+        result[0] + result[1] == p
+
+    If the path contained a drive letter, drive_or_unc will contain everything
+    up to and including the colon.  e.g. splitdrive("c:/dir") returns ("c:", "/dir")
+
+    If the path contained a UNC path, the drive_or_unc will contain the host name
+    and share up to but not including the fourth directory separator character.
+    e.g. splitdrive("//host/computer/dir") returns ("//host/computer", "/dir")
+
+    Paths cannot contain both a drive letter and a UNC path.
+
+    """
+    if len(p) > 1:
+        normp = p.replace(altsep, sep)
+        if (normp[0:2] == sep*2) and (normp[2] != sep):
+            # is a UNC path:
+            # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
+            # \\machine\mountpoint\directory\etc\...
+            #           directory ^^^^^^^^^^^^^^^
+            index = normp.find(sep, 2)
+            if index == -1:
+                return '', p
+            index2 = normp.find(sep, index + 1)
+            # a UNC path can't have two slashes in a row
+            # (after the initial two)
+            if index2 == index + 1:
+                return '', p
+            if index2 == -1:
+                index2 = len(p)
+            return p[:index2], p[index2:]
+        if normp[1] == ':':
+            return p[:2], p[2:]
+    return '', p
 
 # Parse UNC paths
 def splitunc(p):

@@ -1,3 +1,4 @@
+# coding: utf-8
 import ntpath
 import os
 import sys
@@ -34,6 +35,21 @@ class TestNtpath(unittest.TestCase):
                ('c:', '\\foo\\bar'))
         tester('ntpath.splitdrive("c:/foo/bar")',
                ('c:', '/foo/bar'))
+        tester('ntpath.splitdrive("\\\\conky\\mountpoint\\foo\\bar")',
+               ('\\\\conky\\mountpoint', '\\foo\\bar'))
+        tester('ntpath.splitdrive("//conky/mountpoint/foo/bar")',
+               ('//conky/mountpoint', '/foo/bar'))
+        tester('ntpath.splitdrive("\\\\\\conky\\mountpoint\\foo\\bar")',
+            ('', '\\\\\\conky\\mountpoint\\foo\\bar'))
+        tester('ntpath.splitdrive("///conky/mountpoint/foo/bar")',
+            ('', '///conky/mountpoint/foo/bar'))
+        tester('ntpath.splitdrive("\\\\conky\\\\mountpoint\\foo\\bar")',
+               ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
+        tester('ntpath.splitdrive("//conky//mountpoint/foo/bar")',
+               ('', '//conky//mountpoint/foo/bar'))
+        # Issue #19911: UNC part containing U+0130
+        self.assertEqual(ntpath.splitdrive(u'//conky/MOUNTPOİNT/foo/bar'),
+                         (u'//conky/MOUNTPOİNT', '/foo/bar'))
 
     def test_splitunc(self):
         tester('ntpath.splitunc("c:\\foo\\bar")',
@@ -62,10 +78,10 @@ class TestNtpath(unittest.TestCase):
 
         tester('ntpath.split("c:\\")', ('c:\\', ''))
         tester('ntpath.split("\\\\conky\\mountpoint\\")',
-               ('\\\\conky\\mountpoint', ''))
+               ('\\\\conky\\mountpoint\\', ''))
 
         tester('ntpath.split("c:/")', ('c:/', ''))
-        tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint', ''))
+        tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint/', ''))
 
     def test_isabs(self):
         tester('ntpath.isabs("c:\\")', 1)
@@ -114,9 +130,9 @@ class TestNtpath(unittest.TestCase):
         tester("ntpath.join('c:/', 'x/y')", 'c:/x/y')
         tester("ntpath.join('c:/a/b', 'x/y')", 'c:/a/b\\x/y')
         tester("ntpath.join('c:/a/b/', 'x/y')", 'c:/a/b/x/y')
-        #tester("ntpath.join('//computer/share', 'x/y')", '//computer/share\\x/y')
-        #tester("ntpath.join('//computer/share/', 'x/y')", '//computer/share/x/y')
-        #tester("ntpath.join('//computer/share/a/b', 'x/y')", '//computer/share/a/b\\x/y')
+        tester("ntpath.join('//computer/share', 'x/y')", '//computer/share\\x/y')
+        tester("ntpath.join('//computer/share/', 'x/y')", '//computer/share/x/y')
+        tester("ntpath.join('//computer/share/a/b', 'x/y')", '//computer/share/a/b\\x/y')
 
         tester("ntpath.join('a/b', '/x/y')", '/x/y')
         tester("ntpath.join('/a/b', '/x/y')", '/x/y')
@@ -124,9 +140,9 @@ class TestNtpath(unittest.TestCase):
         tester("ntpath.join('c:a/b', '/x/y')", 'c:/x/y')
         tester("ntpath.join('c:/', '/x/y')", 'c:/x/y')
         tester("ntpath.join('c:/a/b', '/x/y')", 'c:/x/y')
-        #tester("ntpath.join('//computer/share', '/x/y')", '//computer/share/x/y')
-        #tester("ntpath.join('//computer/share/', '/x/y')", '//computer/share/x/y')
-        #tester("ntpath.join('//computer/share/a', '/x/y')", '//computer/share/x/y')
+        tester("ntpath.join('//computer/share', '/x/y')", '//computer/share/x/y')
+        tester("ntpath.join('//computer/share/', '/x/y')", '//computer/share/x/y')
+        tester("ntpath.join('//computer/share/a', '/x/y')", '//computer/share/x/y')
 
         tester("ntpath.join('c:', 'C:x/y')", 'C:x/y')
         tester("ntpath.join('c:a/b', 'C:x/y')", 'C:a/b\\x/y')
