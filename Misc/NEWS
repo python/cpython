@@ -31,6 +31,9 @@ Library
 
 - Issue #21672: Fix the behavior of ntpath.join on UNC-style paths.
 
+- Issue #8343:  Named group error messages in the re module did not show
+  the name of the erroneous group.
+
 - Issue #21491: SocketServer: Fix a race condition in child processes reaping.
 
 - Issue #21635:  The difflib SequenceMatcher.get_matching_blocks() method
