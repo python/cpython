@@ -621,7 +621,7 @@ def _parse(source, state):
                     if isname(condname):
                         condgroup = state.groupdict.get(condname)
                         if condgroup is None:
-                            msg = "unknown group name: {0!r}".format(condgroup)
+                            msg = "unknown group name: {0!r}".format(condname)
                             raise error(msg)
                     else:
                         try:
