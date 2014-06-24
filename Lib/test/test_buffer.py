@@ -4,6 +4,7 @@ For now, tests just new or changed functionality.
 
 """
 
+import sys
 import unittest
 from test import test_support
 
@@ -28,6 +29,11 @@ class BufferTests(unittest.TestCase):
         b = buffer(s)
         m = memoryview(b) # Should not raise an exception
         self.assertEqual(m.tobytes(), s)
+
+    def test_large_buffer_size_and_offset(self):
+        data = bytearray('hola mundo')
+        buf = buffer(data, sys.maxsize, sys.maxsize)
+        self.assertEqual(buf[:4096], "")
 
 
 def test_main():

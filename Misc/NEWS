@@ -10,6 +10,9 @@ What's New in Python 2.7.8?
 Core and Builtins
 -----------------
 
+- Issue #21831: Avoid integer overflow when large sizes and offsets are given to
+  the buffer type.
+
 - Issue #1856: Avoid crashes and lockups when daemon threads run while the
   interpreter is shutting down; instead, these threads are now killed when they
   try to take the GIL.

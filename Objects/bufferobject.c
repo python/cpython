@@ -88,7 +88,7 @@ get_buf(PyBufferObject *self, void **ptr, Py_ssize_t *size,
             *size = count;
         else
             *size = self->b_size;
-        if (offset + *size > count)
+        if (*size > count - offset)
             *size = count - offset;
     }
     return 1;
