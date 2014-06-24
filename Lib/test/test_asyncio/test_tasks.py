@@ -148,12 +148,14 @@ class TaskTests(test_utils.TestCase):
         self.assertRaises(asyncio.CancelledError,
                           self.loop.run_until_complete, t)
         self.assertEqual(repr(t),
-                         'Task(<notmuch done at %s>)<CANCELLED>' % filename)
+                         'Task(<notmuch done at %s:%s>)<CANCELLED>'
+                         % (filename, lineno))
 
         t = asyncio.Task(notmuch(), loop=self.loop)
         self.loop.run_until_complete(t)
         self.assertEqual(repr(t),
-                         "Task(<notmuch done at %s>)<result='abc'>" % filename)
+                         "Task(<notmuch done at %s:%s>)<result='abc'>"
+                         % (filename, lineno))
 
     def test_task_repr_custom(self):
         @asyncio.coroutine
