@@ -314,6 +314,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     if isinstance(field_names, basestring):
         field_names = field_names.replace(',', ' ').split()
     field_names = map(str, field_names)
+    typename = str(typename)
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
@@ -326,6 +327,8 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                 field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
+        if type(name) != str:
+            raise TypeError('Type names and field names must be strings')
         if not all(c.isalnum() or c=='_' for c in name):
             raise ValueError('Type names and field names can only contain '
                              'alphanumeric characters and underscores: %r' % name)
