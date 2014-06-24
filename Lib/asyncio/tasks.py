@@ -32,6 +32,7 @@ from .log import logger
 _DEBUG = (not sys.flags.ignore_environment
           and bool(os.environ.get('PYTHONASYNCIODEBUG')))
 
+_PY34 = (sys.version_info >= (3, 4))
 _PY35 = (sys.version_info >= (3, 5))
 
 
@@ -180,6 +181,18 @@ class Task(futures.Future):
         self._must_cancel = False
         self._loop.call_soon(self._step)
         self.__class__._all_tasks.add(self)
+
+    # On Python 3.3 or older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks to
+    # the PEP 442.
+    if _PY34:
+        def __del__(self):
+            if self._state == futures._PENDING:
+                self._loop.call_exception_handler({
+                    'task': self,
+                    'message': 'Task was destroyed but it is pending!',
+                })
+            futures.Future.__del__(self)
 
     def __repr__(self):
         res = super().__repr__()
