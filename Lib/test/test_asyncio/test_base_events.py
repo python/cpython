@@ -244,7 +244,8 @@ class BaseEventLoopTests(test_utils.TestCase):
     @mock.patch('asyncio.base_events.logger')
     def test__run_once_logging(self, m_logger):
         def slow_select(timeout):
-            time.sleep(1.0)
+            # Sleep a bit longer than a second to avoid timer resolution issues.
+            time.sleep(1.1)
             return []
 
         # logging needs debug flag
