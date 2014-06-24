@@ -5,13 +5,16 @@ import sys
 import types
 import unittest
 import weakref
+from test import support
 from test.script_helper import assert_python_ok
+from unittest import mock
 
 import asyncio
 from asyncio import tasks
 from asyncio import test_utils
 
 
+PY34 = (sys.version_info >= (3, 4))
 PY35 = (sys.version_info >= (3, 5))
 
 
@@ -1501,9 +1504,45 @@ class TaskTests(test_utils.TestCase):
     def test_corowrapper_weakref(self):
         wd = weakref.WeakValueDictionary()
         def foo(): yield from []
-        cw = asyncio.tasks.CoroWrapper(foo(), foo)
-        wd['cw'] = cw  # Would fail without __weakref__ slot.
-        cw.gen = None  # Suppress warning from __del__.
+
+    @unittest.skipUnless(PY34,
+                         'need python 3.4 or later')
+    def test_log_destroyed_pending_task(self):
+        @asyncio.coroutine
+        def kill_me(loop):
+            future = asyncio.Future(loop=loop)
+            yield from future
+            # at this point, the only reference to kill_me() task is
+            # the Task._wakeup() method in future._callbacks
+            raise Exception("code never reached")
+
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+
+        # schedule the task
+        coro = kill_me(self.loop)
+        task = asyncio.async(coro, loop=self.loop)
+        self.assertEqual(asyncio.Task.all_tasks(loop=self.loop), {task})
+
+        # execute the task so it waits for future
+        self.loop._run_once()
+        self.assertEqual(len(self.loop._ready), 0)
+
+        # remove the future used in kill_me(), and references to the task
+        del coro.gi_frame.f_locals['future']
+        coro = None
+        task = None
+
+        # no more reference to kill_me() task: the task is destroyed by the GC
+        support.gc_collect()
+
+        self.assertEqual(asyncio.Task.all_tasks(loop=self.loop), set())
+
+        mock_handler.assert_called_with(self.loop, {
+            'message': 'Task was destroyed but it is pending!',
+            'task': mock.ANY,
+        })
+        mock_handler.reset_mock()
 
 
 class GatherTestsBase:
