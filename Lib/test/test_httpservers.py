@@ -189,7 +189,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
     def test_request_line_trimming(self):
         self.con._http_vsn_str = 'HTTP/1.1\n'
-        self.con.putrequest('GET', '/')
+        self.con.putrequest('XYZBOGUS', '/')
         self.con.endheaders()
         res = self.con.getresponse()
         self.assertEqual(res.status, 501)
@@ -216,8 +216,9 @@ class BaseHTTPServerTestCase(BaseTestCase):
         self.assertEqual(res.status, 501)
 
     def test_version_none(self):
+        # Test that a valid method is rejected when not HTTP/1.x
         self.con._http_vsn_str = ''
-        self.con.putrequest('PUT', '/')
+        self.con.putrequest('CUSTOM', '/')
         self.con.endheaders()
         res = self.con.getresponse()
         self.assertEqual(res.status, 400)

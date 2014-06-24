@@ -100,6 +100,10 @@ IDLE
 Tests
 -----
 
+- Issue #20155: Changed HTTP method names in failing tests in test_httpservers
+  so that packet filtering software (specifically Windows Base Filtering Engine)
+  does not interfere with the transaction semantics expected by the tests.
+
 - Issue #19493: Refactored the ctypes test package to skip tests explicitly
   rather than silently.
 
