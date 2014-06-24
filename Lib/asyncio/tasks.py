@@ -208,9 +208,11 @@ class Task(futures.Future):
         if iscoroutine(coro):
             filename = coro.gi_code.co_filename
             if coro.gi_frame is not None:
-                text += ' at %s:%s' % (filename, coro.gi_frame.f_lineno)
+                lineno = coro.gi_frame.f_lineno
+                text += ' at %s:%s' % (filename, lineno)
             else:
-                text += ' done at %s' % filename
+                lineno = coro.gi_code.co_firstlineno
+                text += ' done at %s:%s' % (filename, lineno)
         res = res[:i] + '(<{}>)'.format(text) + res[i:]
         return res
 
