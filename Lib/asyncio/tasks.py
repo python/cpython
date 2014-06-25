@@ -132,6 +132,22 @@ def iscoroutine(obj):
     return isinstance(obj, CoroWrapper) or inspect.isgenerator(obj)
 
 
+def _format_coroutine(coro):
+    assert iscoroutine(coro)
+    if _PY35:
+        coro_name = coro.__qualname__
+    else:
+        coro_name = coro.__name__
+
+    filename = coro.gi_code.co_filename
+    if coro.gi_frame is not None:
+        lineno = coro.gi_frame.f_lineno
+        return '%s() at %s:%s' % (coro_name, filename, lineno)
+    else:
+        lineno = coro.gi_code.co_firstlineno
+        return '%s() done at %s:%s' % (coro_name, filename, lineno)
+
+
 class Task(futures.Future):
     """A coroutine wrapped in a Future."""
 
@@ -195,26 +211,21 @@ class Task(futures.Future):
             futures.Future.__del__(self)
 
     def __repr__(self):
-        res = super().__repr__()
-        if (self._must_cancel and
-            self._state == futures._PENDING and
-            '<PENDING' in res):
-            res = res.replace('<PENDING', '<CANCELLING', 1)
-        i = res.find('<')
-        if i < 0:
-            i = len(res)
-        text = self._coro.__name__
-        coro = self._coro
-        if iscoroutine(coro):
-            filename = coro.gi_code.co_filename
-            if coro.gi_frame is not None:
-                lineno = coro.gi_frame.f_lineno
-                text += ' at %s:%s' % (filename, lineno)
-            else:
-                lineno = coro.gi_code.co_firstlineno
-                text += ' done at %s:%s' % (filename, lineno)
-        res = res[:i] + '(<{}>)'.format(text) + res[i:]
-        return res
+        info = []
+        if self._must_cancel:
+            info.append('cancelling')
+        else:
+            info.append(self._state.lower())
+
+        info.append(_format_coroutine(self._coro))
+
+        if self._state == futures._FINISHED:
+            info.append(self._format_result())
+
+        if self._callbacks:
+            info.append(self._format_callbacks())
+
+        return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
 
     def get_stack(self, *, limit=None):
         """Return the list of stack frames for this task's coroutine.

@@ -1016,14 +1016,14 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_forever()
         fmt, *args = m_logger.warning.call_args[0]
         self.assertRegex(fmt % tuple(args),
-                         "^Executing Handle.*stop_loop_cb.* took .* seconds$")
+                         "^Executing <Handle.*stop_loop_cb.*> took .* seconds$")
 
         # slow task
         asyncio.async(stop_loop_coro(self.loop), loop=self.loop)
         self.loop.run_forever()
         fmt, *args = m_logger.warning.call_args[0]
         self.assertRegex(fmt % tuple(args),
-                         "^Executing Task.*stop_loop_coro.* took .* seconds$")
+                         "^Executing <Task.*stop_loop_coro.*> took .* seconds$")
 
 
 if __name__ == '__main__':
