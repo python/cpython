@@ -34,6 +34,8 @@ Library
 
 - Issue #21672: Fix the behavior of ntpath.join on UNC-style paths.
 
+- Issue #21832:  Require named tuple inputs to be exact strings.
+
 - Issue #8343:  Named group error messages in the re module did not show
   the name of the erroneous group.
 
