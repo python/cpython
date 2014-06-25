@@ -109,7 +109,9 @@ class Test_OSXSupport(unittest.TestCase):
 
     def test__supports_universal_builds(self):
         import platform
-        self.assertEqual(platform.mac_ver()[0].split('.') >= ['10', '4'],
+        mac_ver_tuple = tuple(int(i) for i in
+                            platform.mac_ver()[0].split('.')[0:2])
+        self.assertEqual(mac_ver_tuple >= (10, 4),
                             _osx_support._supports_universal_builds())
 
     def test__find_appropriate_compiler(self):
