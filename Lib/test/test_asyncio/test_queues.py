@@ -362,16 +362,21 @@ class QueuePutTests(_QueueTestBase):
     def test_put_cancelled_race(self):
         q = asyncio.Queue(loop=self.loop, maxsize=1)
 
-        asyncio.Task(q.put('a'), loop=self.loop)
-        asyncio.Task(q.put('c'), loop=self.loop)
-        t = asyncio.Task(q.put('b'), loop=self.loop)
+        put_a = asyncio.Task(q.put('a'), loop=self.loop)
+        put_b = asyncio.Task(q.put('b'), loop=self.loop)
+        put_c = asyncio.Task(q.put('X'), loop=self.loop)
 
         test_utils.run_briefly(self.loop)
-        t.cancel()
+        self.assertTrue(put_a.done())
+        self.assertFalse(put_b.done())
+
+        put_c.cancel()
         test_utils.run_briefly(self.loop)
-        self.assertTrue(t.done())
+        self.assertTrue(put_c.done())
         self.assertEqual(q.get_nowait(), 'a')
-        self.assertEqual(q.get_nowait(), 'c')
+        self.assertEqual(q.get_nowait(), 'b')
+
+        self.loop.run_until_complete(put_b)
 
     def test_put_with_waiting_getters(self):
         q = asyncio.Queue(loop=self.loop)
@@ -431,18 +436,20 @@ class JoinableQueueTests(_QueueTestBase):
 
         @asyncio.coroutine
         def test():
-            for _ in range(2):
-                asyncio.Task(worker(), loop=self.loop)
+            tasks = [asyncio.Task(worker(), loop=self.loop)
+                     for index in range(2)]
 
             yield from q.join()
+            return tasks
 
-        self.loop.run_until_complete(test())
+        tasks = self.loop.run_until_complete(test())
         self.assertEqual(sum(range(100)), accumulator)
 
         # close running generators
         running = False
-        for i in range(2):
+        for i in range(len(tasks)):
             q.put_nowait(0)
+        self.loop.run_until_complete(asyncio.wait(tasks, loop=self.loop))
 
     def test_join_empty_queue(self):
         q = asyncio.JoinableQueue(loop=self.loop)
