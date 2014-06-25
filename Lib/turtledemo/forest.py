@@ -3,12 +3,12 @@
 
              tdemo_forest.py
 
-Displays a 'forest' of 3 'breadth-first-trees'
-similar to the one from example tree.
-For further remarks see xtx_tree.py
+Displays a 'forest' of 3 breadth-first-trees
+similar to the one in tree.
+For further remarks see tree.py
 
 This example is a 'breadth-first'-rewrite of
-a Logo program written by Erich Neuwirth. See:
+a Logo program written by Erich Neuwirth. See
 http://homepage.univie.ac.at/erich.neuwirth/
 """
 from turtle import Turtle, colormode, tracer, mainloop
@@ -104,6 +104,5 @@ def main():
     return "runtime: %.2f sec." % (b-a)
 
 if __name__ == '__main__':
-    msg = main()
-    print(msg)
+    main()
     mainloop()
