@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21729: Used the "with" statement in the dbm.dumb module to ensure
+  files closing.  Patch by Claudiu Popa.
+
 - Issue #21491: socketserver: Fix a race condition in child processes reaping.
 
 - Issue #21832:  Require named tuple inputs to be exact strings.
