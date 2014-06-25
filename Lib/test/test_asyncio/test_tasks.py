@@ -1763,16 +1763,14 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         gen2 = coro()
         fut = asyncio.gather(gen1, gen2)
         self.assertIs(fut._loop, self.one_loop)
-        gen1.close()
-        gen2.close()
+        self.one_loop.run_until_complete(fut)
 
         self.set_event_loop(self.other_loop, cleanup=False)
         gen3 = coro()
         gen4 = coro()
-        fut = asyncio.gather(gen3, gen4, loop=self.other_loop)
-        self.assertIs(fut._loop, self.other_loop)
-        gen3.close()
-        gen4.close()
+        fut2 = asyncio.gather(gen3, gen4, loop=self.other_loop)
+        self.assertIs(fut2._loop, self.other_loop)
+        self.other_loop.run_until_complete(fut2)
 
     def test_duplicate_coroutines(self):
         @asyncio.coroutine
