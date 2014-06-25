@@ -89,8 +89,8 @@ class Handle:
         try:
             self._callback(*self._args)
         except Exception as exc:
-            msg = 'Exception in callback {}{!r}'.format(self._callback,
-                                                        self._args)
+            cb = _format_callback(self._callback, self._args)
+            msg = 'Exception in callback {}'.format(cb)
             self._loop.call_exception_handler({
                 'message': msg,
                 'exception': exc,
