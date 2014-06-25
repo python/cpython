@@ -1318,10 +1318,16 @@ yes)
         # 4. If we are running on OS X 10.2 or earlier, good luck!
 
         AC_MSG_CHECKING(which MACOSX_DEPLOYMENT_TARGET to use)
-        cur_target=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
-        if test ${cur_target} '>' 10.2 && \
-           test ${cur_target} '<' 10.6
+        cur_target_major=`sw_vers -productVersion | \
+                sed 's/\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
+        cur_target_minor=`sw_vers -productVersion | \
+                sed 's/\([[0-9]]*\)\.\([[0-9]]*\).*/\2/'`
+        cur_target="${cur_target_major}.${cur_target_minor}"
+        if test ${cur_target_major} -eq 10 && \
+           test ${cur_target_minor} -ge 3 && \
+           test ${cur_target_minor} -le 5
         then
+            # OS X 10.3 through 10.5
             cur_target=10.3
             if test ${enable_universalsdk}
             then
@@ -2017,12 +2023,14 @@ then
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
 		# This allows an extension to be used in any Python
 
-		if test ${MACOSX_DEPLOYMENT_TARGET} '>' 10.2
+		dep_target_major=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
+				sed 's/\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
+		dep_target_minor=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
+				sed 's/\([[0-9]]*\)\.\([[0-9]]*\).*/\2/'`
+		if test ${dep_target_major} -eq 10 && \
+		   test ${dep_target_minor} -le 2
 		then
-			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
-			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
-			BLDSHARED="$LDSHARED"
-		else
+			# building for OS X 10.0 through 10.2
 			LDSHARED='$(CC) -bundle'
 			LDCXXSHARED='$(CXX) -bundle'
 			if test "$enable_framework" ; then
@@ -2036,6 +2044,11 @@ then
 				LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 				LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 			fi
+		else
+			# building for OS X 10.3 and later
+			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
+			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
+			BLDSHARED="$LDSHARED"
 		fi
 		;;
 	Linux*|GNU*|QNX*)
