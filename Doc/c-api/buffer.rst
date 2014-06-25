@@ -89,6 +89,16 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
 .. c:type:: Py_buffer
 
+   .. c:member:: void \*buf
+
+      A pointer to the start of the logical structure described by the buffer
+      fields. This can be any location within the underlying physical memory
+      block of the exporter. For example, with negative :c:member:`~Py_buffer.strides`
+      the value may point to the end of the memory block.
+
+      For contiguous arrays, the value points to the beginning of the memory
+      block.
+
    .. c:member:: void \*obj
 
       A new reference to the exporting object. The reference is owned by
@@ -100,16 +110,6 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       :c:func:`PyMemoryView_FromBuffer` or :c:func:`PyBuffer_FillInfo`
       this field is *NULL*. In general, exporting objects MUST NOT
       use this scheme.
-
-   .. c:member:: void \*buf
-
-      A pointer to the start of the logical structure described by the buffer
-      fields. This can be any location within the underlying physical memory
-      block of the exporter. For example, with negative :c:member:`~Py_buffer.strides`
-      the value may point to the end of the memory block.
-
-      For contiguous arrays, the value points to the beginning of the memory
-      block.
 
    .. c:member:: Py_ssize_t len
 
