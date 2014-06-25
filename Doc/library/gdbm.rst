@@ -116,6 +116,11 @@ methods:
    unwritten data to be written to the disk.
 
 
+.. function:: close()
+
+   Close the ``gdbm`` database.
+
+
 .. seealso::
 
    Module :mod:`anydbm`

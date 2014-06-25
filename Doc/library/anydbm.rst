@@ -92,6 +92,14 @@ then prints out the contents of the database::
    db.close()
 
 
+In addition to the dictionary-like methods, ``anydbm`` objects
+provide the following method:
+
+.. function:: close()
+
+   Close the ``anydbm`` database.
+
+
 .. seealso::
 
    Module :mod:`dbhash`

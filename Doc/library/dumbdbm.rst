@@ -49,6 +49,14 @@ The module defines the following:
    .. versionchanged:: 2.2
       The *mode* argument was ignored in earlier versions.
 
+In addition to the dictionary-like methods, ``dumbdm`` objects
+provide the following method:
+
+
+.. function:: close()
+
+   Close the ``dumbdm`` database.
+
 
 .. seealso::
 

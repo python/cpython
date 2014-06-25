@@ -64,6 +64,14 @@ The module defines the following:
    database has to be created.  It defaults to octal ``0666`` (and will be
    modified by the prevailing umask).
 
+   In addition to the dictionary-like methods, ``dbm`` objects
+   provide the following method:
+
+
+   .. function:: close()
+
+      Close the ``dbm`` database.
+
 
 .. seealso::
 
