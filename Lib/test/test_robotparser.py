@@ -4,6 +4,9 @@ import urllib.robotparser
 from urllib.error import URLError, HTTPError
 from urllib.request import urlopen
 from test import support
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 
 class RobotTestCase(unittest.TestCase):
     def __init__(self, index=None, parser=None, url=None, good=None, agent=None):
@@ -247,33 +250,51 @@ bad = ['/another/path?']
 RobotTest(16, doc, good, bad)
 
 
-class NetworkTestCase(unittest.TestCase):
+class RobotHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        self.send_error(403, "Forbidden access")
+
+    def log_message(self, format, *args):
+        pass
+
+
+class PasswordProtectedSiteTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.server = HTTPServer((support.HOST, 0), RobotHandler)
+
+        self.t = threading.Thread(
+            name='HTTPServer serving',
+            target=self.server.serve_forever,
+            # Short poll interval to make the test finish quickly.
+            # Time between requests is short enough that we won't wake
+            # up spuriously too many times.
+            kwargs={'poll_interval':0.01})
+        self.t.daemon = True  # In case this function raises.
+        self.t.start()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.t.join()
+        self.server.server_close()
+
+    def runTest(self):
+        self.testPasswordProtectedSite()
 
     def testPasswordProtectedSite(self):
-        support.requires('network')
-        with support.transient_internet('mueblesmoraleda.com'):
-            url = 'http://mueblesmoraleda.com'
-            robots_url = url + "/robots.txt"
-            # First check the URL is usable for our purposes, since the
-            # test site is a bit flaky.
-            try:
-                urlopen(robots_url)
-            except HTTPError as e:
-                if e.code not in {401, 403}:
-                    self.skipTest(
-                        "%r should return a 401 or 403 HTTP error, not %r"
-                        % (robots_url, e.code))
-            else:
-                self.skipTest(
-                    "%r should return a 401 or 403 HTTP error, not succeed"
-                    % (robots_url))
-            parser = urllib.robotparser.RobotFileParser()
-            parser.set_url(url)
-            try:
-                parser.read()
-            except URLError:
-                self.skipTest('%s is unavailable' % url)
-            self.assertEqual(parser.can_fetch("*", robots_url), False)
+        addr = self.server.server_address
+        url = 'http://' + support.HOST + ':' + str(addr[1])
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertFalse(parser.can_fetch("*", robots_url))
+
+    def __str__(self):
+        return '%s' % self.__class__.__name__
+
+class NetworkTestCase(unittest.TestCase):
 
     @unittest.skip('does not handle the gzip encoding delivered by pydotorg')
     def testPythonOrg(self):
@@ -288,6 +309,7 @@ class NetworkTestCase(unittest.TestCase):
 def load_tests(loader, suite, pattern):
     suite = unittest.makeSuite(NetworkTestCase)
     suite.addTest(tests)
+    suite.addTest(PasswordProtectedSiteTestCase())
     return suite
 
 if __name__=='__main__':
