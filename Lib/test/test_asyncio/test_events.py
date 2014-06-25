@@ -1747,7 +1747,7 @@ else:
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
 
 
-def noop():
+def noop(*args):
     pass
 
 
@@ -1797,49 +1797,51 @@ class HandleTests(unittest.TestCase):
         h = asyncio.Handle(lambda: None, (), self.loop)
         wd['h'] = h  # Would fail without __weakref__ slot.
 
-    def test_repr(self):
+    def test_handle_repr(self):
         # simple function
         h = asyncio.Handle(noop, (), self.loop)
         src = test_utils.get_function_source(noop)
         self.assertEqual(repr(h),
-                        'Handle(noop at %s:%s, ())' % src)
+                        '<Handle noop() at %s:%s>' % src)
 
         # cancelled handle
         h.cancel()
         self.assertEqual(repr(h),
-                        'Handle(noop at %s:%s, ())<cancelled>' % src)
+                        '<Handle cancelled noop() at %s:%s>' % src)
 
         # decorated function
         cb = asyncio.coroutine(noop)
         h = asyncio.Handle(cb, (), self.loop)
         self.assertEqual(repr(h),
-                        'Handle(noop at %s:%s, ())' % src)
+                        '<Handle noop() at %s:%s>' % src)
 
         # partial function
-        cb = functools.partial(noop)
-        h = asyncio.Handle(cb, (), self.loop)
+        cb = functools.partial(noop, 1, 2)
+        h = asyncio.Handle(cb, (3,), self.loop)
         filename, lineno = src
-        regex = (r'^Handle\(functools.partial\('
-                 r'<function noop .*>\) at %s:%s, '
-                 r'\(\)\)$' % (re.escape(filename), lineno))
+        regex = (r'^<Handle noop\(1, 2\)\(3\) at %s:%s>$'
+                 % (re.escape(filename), lineno))
         self.assertRegex(repr(h), regex)
 
         # partial method
         if sys.version_info >= (3, 4):
-            method = HandleTests.test_repr
+            method = HandleTests.test_handle_repr
             cb = functools.partialmethod(method)
             src = test_utils.get_function_source(method)
             h = asyncio.Handle(cb, (), self.loop)
 
             filename, lineno = src
-            regex = (r'^Handle\(functools.partialmethod\('
-                     r'<function HandleTests.test_repr .*>, , \) at %s:%s, '
-                     r'\(\)\)$' % (re.escape(filename), lineno))
+            cb_regex = r'<function HandleTests.test_handle_repr .*>'
+            cb_regex = (r'functools.partialmethod\(%s, , \)\(\)' % cb_regex)
+            regex = (r'^<Handle %s at %s:%s>$'
+                     % (cb_regex, re.escape(filename), lineno))
             self.assertRegex(repr(h), regex)
 
 
-
 class TimerTests(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = mock.Mock()
 
     def test_hash(self):
         when = time.monotonic()
@@ -1858,29 +1860,37 @@ class TimerTests(unittest.TestCase):
         self.assertIs(h._args, args)
         self.assertFalse(h._cancelled)
 
-        r = repr(h)
-        self.assertTrue(r.endswith('())'))
-
+        # cancel
         h.cancel()
         self.assertTrue(h._cancelled)
 
-        r = repr(h)
-        self.assertTrue(r.endswith('())<cancelled>'), r)
 
+        # when cannot be None
         self.assertRaises(AssertionError,
                           asyncio.TimerHandle, None, callback, args,
-                          mock.Mock())
+                          self.loop)
+
+    def test_timer_repr(self):
+        # simple function
+        h = asyncio.TimerHandle(123, noop, (), self.loop)
+        src = test_utils.get_function_source(noop)
+        self.assertEqual(repr(h),
+                        '<TimerHandle when=123 noop() at %s:%s>' % src)
+
+        # cancelled handle
+        h.cancel()
+        self.assertEqual(repr(h),
+                        '<TimerHandle cancelled when=123 noop() at %s:%s>'
+                        % src)
 
     def test_timer_comparison(self):
-        loop = mock.Mock()
-
         def callback(*args):
             return args
 
         when = time.monotonic()
 
-        h1 = asyncio.TimerHandle(when, callback, (), loop)
-        h2 = asyncio.TimerHandle(when, callback, (), loop)
+        h1 = asyncio.TimerHandle(when, callback, (), self.loop)
+        h2 = asyncio.TimerHandle(when, callback, (), self.loop)
         # TODO: Use assertLess etc.
         self.assertFalse(h1 < h2)
         self.assertFalse(h2 < h1)
@@ -1896,8 +1906,8 @@ class TimerTests(unittest.TestCase):
         h2.cancel()
         self.assertFalse(h1 == h2)
 
-        h1 = asyncio.TimerHandle(when, callback, (), loop)
-        h2 = asyncio.TimerHandle(when + 10.0, callback, (), loop)
+        h1 = asyncio.TimerHandle(when, callback, (), self.loop)
+        h2 = asyncio.TimerHandle(when + 10.0, callback, (), self.loop)
         self.assertTrue(h1 < h2)
         self.assertFalse(h2 < h1)
         self.assertTrue(h1 <= h2)
@@ -1909,7 +1919,7 @@ class TimerTests(unittest.TestCase):
         self.assertFalse(h1 == h2)
         self.assertTrue(h1 != h2)
 
-        h3 = asyncio.Handle(callback, (), loop)
+        h3 = asyncio.Handle(callback, (), self.loop)
         self.assertIs(NotImplemented, h1.__eq__(h3))
         self.assertIs(NotImplemented, h1.__ne__(h3))
 

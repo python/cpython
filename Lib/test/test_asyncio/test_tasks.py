@@ -26,7 +26,7 @@ def coroutine_function():
 class Dummy:
 
     def __repr__(self):
-        return 'Dummy()'
+        return '<Dummy>'
 
     def __call__(self, *args):
         pass
@@ -122,6 +122,7 @@ class TaskTests(test_utils.TestCase):
             yield from []
             return 'abc'
 
+        # test coroutine function
         self.assertEqual(notmuch.__name__, 'notmuch')
         if PY35:
             self.assertEqual(notmuch.__qualname__,
@@ -131,72 +132,87 @@ class TaskTests(test_utils.TestCase):
         filename, lineno = test_utils.get_function_source(notmuch)
         src = "%s:%s" % (filename, lineno)
 
+        # test coroutine object
         gen = notmuch()
+        if PY35:
+            coro_qualname = 'TaskTests.test_task_repr.<locals>.notmuch'
+        else:
+            coro_qualname = 'notmuch'
         self.assertEqual(gen.__name__, 'notmuch')
         if PY35:
             self.assertEqual(gen.__qualname__,
-                             'TaskTests.test_task_repr.<locals>.notmuch')
+                             coro_qualname)
 
+        # test pending Task
         t = asyncio.Task(gen, loop=self.loop)
         t.add_done_callback(Dummy())
+        coro = '%s() at %s' % (coro_qualname, src)
         self.assertEqual(repr(t),
-                         'Task(<notmuch at %s>)<PENDING, [Dummy()]>' % src)
+                         '<Task pending %s cb=[<Dummy>()]>' % coro)
 
+        # test cancelling Task
         t.cancel()  # Does not take immediate effect!
         self.assertEqual(repr(t),
-                         'Task(<notmuch at %s>)<CANCELLING, [Dummy()]>' % src)
+                         '<Task cancelling %s cb=[<Dummy>()]>' % coro)
+
+        # test cancelled Task
         self.assertRaises(asyncio.CancelledError,
                           self.loop.run_until_complete, t)
+        coro = '%s() done at %s' % (coro_qualname, src)
         self.assertEqual(repr(t),
-                         'Task(<notmuch done at %s:%s>)<CANCELLED>'
-                         % (filename, lineno))
+                         '<Task cancelled %s>' % coro)
 
+        # test finished Task
         t = asyncio.Task(notmuch(), loop=self.loop)
         self.loop.run_until_complete(t)
         self.assertEqual(repr(t),
-                         "Task(<notmuch done at %s:%s>)<result='abc'>"
-                         % (filename, lineno))
+                         "<Task finished %s result='abc'>" % coro)
 
-    def test_task_repr_custom(self):
+    def test_task_repr_coro_decorator(self):
         @asyncio.coroutine
         def notmuch():
-            pass
+            # notmuch() function doesn't use yield from: it will be wrapped by
+            # @coroutine decorator
+            return 123
 
+        # test coroutine function
         self.assertEqual(notmuch.__name__, 'notmuch')
-        self.assertEqual(notmuch.__module__, __name__)
         if PY35:
             self.assertEqual(notmuch.__qualname__,
-                             'TaskTests.test_task_repr_custom.<locals>.notmuch')
+                             'TaskTests.test_task_repr_coro_decorator.<locals>.notmuch')
+        self.assertEqual(notmuch.__module__, __name__)
 
-        class T(asyncio.Future):
-            def __repr__(self):
-                return 'T[]'
-
-        class MyTask(asyncio.Task, T):
-            def __repr__(self):
-                return super().__repr__()
-
+        # test coroutine object
         gen = notmuch()
-        if PY35 or tasks._DEBUG:
+        if PY35:
             # On Python >= 3.5, generators now inherit the name of the
             # function, as expected, and have a qualified name (__qualname__
-            # attribute). In debug mode, @coroutine decorator uses CoroWrapper
-            # which gets its name (__name__ attribute) from the wrapped
-            # coroutine function.
+            # attribute).
             coro_name = 'notmuch'
+            coro_qualname = 'TaskTests.test_task_repr_coro_decorator.<locals>.notmuch'
+        elif tasks._DEBUG:
+            # In debug mode, @coroutine decorator uses CoroWrapper which gets
+            # its name (__name__ attribute) from the wrapped coroutine
+            # function.
+            coro_name = coro_qualname = 'notmuch'
         else:
             # On Python < 3.5, generators inherit the name of the code, not of
             # the function. See: http://bugs.python.org/issue21205
-            coro_name = 'coro'
+            coro_name = coro_qualname = 'coro'
         self.assertEqual(gen.__name__, coro_name)
         if PY35:
-            self.assertEqual(gen.__qualname__,
-                             'TaskTests.test_task_repr_custom.<locals>.notmuch')
+            self.assertEqual(gen.__qualname__, coro_qualname)
 
-        t = MyTask(gen, loop=self.loop)
-        filename = gen.gi_code.co_filename
-        lineno = gen.gi_frame.f_lineno
-        self.assertEqual(repr(t), 'T[](<%s at %s:%s>)' % (coro_name, filename, lineno))
+        # format the coroutine object
+        code = gen.gi_code
+        coro = ('%s() at %s:%s'
+                % (coro_qualname, code.co_filename, code.co_firstlineno))
+
+        # test pending Task
+        t = asyncio.Task(gen, loop=self.loop)
+        t.add_done_callback(Dummy())
+        self.assertEqual(repr(t),
+                         '<Task pending %s cb=[<Dummy>()]>' % coro)
 
     def test_task_basics(self):
         @asyncio.coroutine
