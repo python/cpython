@@ -288,6 +288,12 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(TypeError,
             self.loop.run_until_complete, 'blah')
 
+    def test_run_until_complete_loop(self):
+        task = asyncio.Future(loop=self.loop)
+        other_loop = self.new_test_loop()
+        self.assertRaises(ValueError,
+            other_loop.run_until_complete, task)
+
     def test_subprocess_exec_invalid_args(self):
         args = [sys.executable, '-c', 'pass']
 
