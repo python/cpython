@@ -783,6 +783,7 @@ class SemaphoreTests(test_utils.TestCase):
 
         # cleanup locked semaphore
         sem.release()
+        self.loop.run_until_complete(t4)
 
     def test_acquire_cancel(self):
         sem = asyncio.Semaphore(loop=self.loop)
