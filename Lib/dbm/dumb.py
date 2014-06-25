@@ -79,9 +79,10 @@ class _Database(collections.MutableMapping):
         try:
             f = _io.open(self._datfile, 'r', encoding="Latin-1")
         except OSError:
-            f = _io.open(self._datfile, 'w', encoding="Latin-1")
-            self._chmod(self._datfile)
-        f.close()
+            with _io.open(self._datfile, 'w', encoding="Latin-1") as f:
+                self._chmod(self._datfile)
+        else:
+            f.close()
 
     # Read directory file into the in-memory index dict.
     def _update(self):
@@ -91,12 +92,12 @@ class _Database(collections.MutableMapping):
         except OSError:
             pass
         else:
-            for line in f:
-                line = line.rstrip()
-                key, pos_and_siz_pair = eval(line)
-                key = key.encode('Latin-1')
-                self._index[key] = pos_and_siz_pair
-            f.close()
+            with f:
+                for line in f:
+                    line = line.rstrip()
+                    key, pos_and_siz_pair = eval(line)
+                    key = key.encode('Latin-1')
+                    self._index[key] = pos_and_siz_pair
 
     # Write the index dict to the directory file.  The original directory
     # file (if any) is renamed with a .bak extension first.  If a .bak
@@ -118,13 +119,13 @@ class _Database(collections.MutableMapping):
         except OSError:
             pass
 
-        f = self._io.open(self._dirfile, 'w', encoding="Latin-1")
-        self._chmod(self._dirfile)
-        for key, pos_and_siz_pair in self._index.items():
-            # Use Latin-1 since it has no qualms with any value in any
-            # position; UTF-8, though, does care sometimes.
-            f.write("%r, %r\n" % (key.decode('Latin-1'), pos_and_siz_pair))
-        f.close()
+        with self._io.open(self._dirfile, 'w', encoding="Latin-1") as f:
+            self._chmod(self._dirfile)
+            for key, pos_and_siz_pair in self._index.items():
+                # Use Latin-1 since it has no qualms with any value in any
+                # position; UTF-8, though, does care sometimes.
+                entry = "%r, %r\n" % (key.decode('Latin-1'), pos_and_siz_pair)
+                f.write(entry)
 
     sync = _commit
 
@@ -137,10 +138,9 @@ class _Database(collections.MutableMapping):
             key = key.encode('utf-8')
         self._verify_open()
         pos, siz = self._index[key]     # may raise KeyError
-        f = _io.open(self._datfile, 'rb')
-        f.seek(pos)
-        dat = f.read(siz)
-        f.close()
+        with _io.open(self._datfile, 'rb') as f:
+            f.seek(pos)
+            dat = f.read(siz)
         return dat
 
     # Append val to the data file, starting at a _BLOCKSIZE-aligned
@@ -148,14 +148,13 @@ class _Database(collections.MutableMapping):
     # to get to an aligned offset.  Return pair
     #     (starting offset of val, len(val))
     def _addval(self, val):
-        f = _io.open(self._datfile, 'rb+')
-        f.seek(0, 2)
-        pos = int(f.tell())
-        npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
-        f.write(b'\0'*(npos-pos))
-        pos = npos
-        f.write(val)
-        f.close()
+        with _io.open(self._datfile, 'rb+') as f:
+            f.seek(0, 2)
+            pos = int(f.tell())
+            npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
+            f.write(b'\0'*(npos-pos))
+            pos = npos
+            f.write(val)
         return (pos, len(val))
 
     # Write val to the data file, starting at offset pos.  The caller
@@ -163,10 +162,9 @@ class _Database(collections.MutableMapping):
     # pos to hold val, without overwriting some other value.  Return
     # pair (pos, len(val)).
     def _setval(self, pos, val):
-        f = _io.open(self._datfile, 'rb+')
-        f.seek(pos)
-        f.write(val)
-        f.close()
+        with _io.open(self._datfile, 'rb+') as f:
+            f.seek(pos)
+            f.write(val)
         return (pos, len(val))
 
     # key is a new key whose associated value starts in the data file
@@ -174,10 +172,9 @@ class _Database(collections.MutableMapping):
     # the in-memory index dict, and append one to the directory file.
     def _addkey(self, key, pos_and_siz_pair):
         self._index[key] = pos_and_siz_pair
-        f = _io.open(self._dirfile, 'a', encoding="Latin-1")
-        self._chmod(self._dirfile)
-        f.write("%r, %r\n" % (key.decode("Latin-1"), pos_and_siz_pair))
-        f.close()
+        with _io.open(self._dirfile, 'a', encoding="Latin-1") as f:
+            self._chmod(self._dirfile)
+            f.write("%r, %r\n" % (key.decode("Latin-1"), pos_and_siz_pair))
 
     def __setitem__(self, key, val):
         if isinstance(key, str):
