@@ -1,8 +1,16 @@
-#!/usr/bin/env python3
-## DEMONSTRATES USE OF 2 CANVASES, SO CANNOT BE RUN IN DEMOVIEWER!
-"""turtle example: Using TurtleScreen and RawTurtle
-for drawing on two distinct canvases.
+"""turtledemo.two_canvases
+
+Use TurtleScreen and RawTurtle to draw on two
+distinct canvases.
 """
+#The final mainloop only serves to keep the window open.
+
+#TODO: This runs in its own two-canvas window when selected in the
+#demoviewer examples menu but the text is not loaded and the previous
+#example is left visible. If the ending mainloop is removed, the text
+#Eis loaded, this run again in a third window, and if start is pressed,
+#demoviewer raises an error because main is not found, and  then freezes.
+
 from turtle import TurtleScreen, RawTurtle, TK
 
 root = TK.Tk()
