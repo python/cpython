@@ -29,6 +29,8 @@ Library
 
 - Issue #21491: socketserver: Fix a race condition in child processes reaping.
 
+- Issue #21832:  Require named tuple inputs to be exact strings.
+
 - Issue #21812: turtle.shapetransform did not tranform the turtle on the
   first call.  (Issue identified and fixed by Lita Cho.)
 
