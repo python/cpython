@@ -967,6 +967,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, copy.deepcopy(c)), list('a' * 2))
         self.pickletest(repeat(object='a', times=10))
 
+    def test_repeat_with_negative_times(self):
+        self.assertEqual(repr(repeat('a', -1)), "repeat('a', 0)")
+        self.assertEqual(repr(repeat('a', -2)), "repeat('a', 0)")
+        self.assertEqual(repr(repeat('a', times=-1)), "repeat('a', 0)")
+        self.assertEqual(repr(repeat('a', times=-2)), "repeat('a', 0)")
+
     def test_map(self):
         self.assertEqual(list(map(operator.pow, range(3), range(1,7))),
                          [0**1, 1**2, 2**3])
@@ -1741,7 +1747,14 @@ class LengthTransparency(unittest.TestCase):
 
     def test_repeat(self):
         self.assertEqual(operator.length_hint(repeat(None, 50)), 50)
+        self.assertEqual(operator.length_hint(repeat(None, 0)), 0)
         self.assertEqual(operator.length_hint(repeat(None), 12), 12)
+
+    def test_repeat_with_negative_times(self):
+        self.assertEqual(operator.length_hint(repeat(None, -1)), 0)
+        self.assertEqual(operator.length_hint(repeat(None, -2)), 0)
+        self.assertEqual(operator.length_hint(repeat(None, times=-1)), 0)
+        self.assertEqual(operator.length_hint(repeat(None, times=-2)), 0)
 
 class RegressionTests(unittest.TestCase):
 

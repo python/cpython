@@ -31,6 +31,10 @@ Library
 
 - Issue #21832:  Require named tuple inputs to be exact strings.
 
+- Issue #19145:  The times argument for itertools.repeat now handles
+  negative values the same way for keyword arguments as it does for
+  positional arguments.
+
 - Issue #21812: turtle.shapetransform did not tranform the turtle on the
   first call.  (Issue identified and fixed by Lita Cho.)
 
