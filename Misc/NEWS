@@ -34,6 +34,10 @@ Library
 
 - Issue #21672: Fix the behavior of ntpath.join on UNC-style paths.
 
+- Issue #19145:  The times argument for itertools.repeat now handles
+  negative values the same way for keyword arguments as it does for
+  positional arguments.
+
 - Issue #21832:  Require named tuple inputs to be exact strings.
 
 - Issue #8343:  Named group error messages in the re module did not show

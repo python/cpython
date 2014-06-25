@@ -698,6 +698,9 @@ class TestBasicOps(unittest.TestCase):
 
     def test_repeat(self):
         self.assertEqual(list(repeat(object='a', times=3)), ['a', 'a', 'a'])
+        self.assertEqual(list(repeat(object='a', times=0)), [])
+        self.assertEqual(list(repeat(object='a', times=-1)), [])
+        self.assertEqual(list(repeat(object='a', times=-2)), [])
         self.assertEqual(zip(xrange(3),repeat('a')),
                          [(0, 'a'), (1, 'a'), (2, 'a')])
         self.assertEqual(list(repeat('a', 3)), ['a', 'a', 'a'])
@@ -713,6 +716,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(r), 'repeat((1+0j), 5)')
         list(r)
         self.assertEqual(repr(r), 'repeat((1+0j), 0)')
+
+    def test_repeat_with_negative_times(self):
+        self.assertEqual(repr(repeat('a', -1)), "repeat('a', 0)")
+        self.assertEqual(repr(repeat('a', -2)), "repeat('a', 0)")
+        self.assertEqual(repr(repeat('a', times=-1)), "repeat('a', 0)")
+        self.assertEqual(repr(repeat('a', times=-2)), "repeat('a', 0)")
 
     def test_imap(self):
         self.assertEqual(list(imap(operator.pow, range(3), range(1,7))),
