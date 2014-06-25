@@ -68,9 +68,10 @@ class _Database(UserDict.DictMixin):
         try:
             f = _open(self._datfile, 'r')
         except IOError:
-            f = _open(self._datfile, 'w')
-            self._chmod(self._datfile)
-        f.close()
+            with _open(self._datfile, 'w') as f:
+                self._chmod(self._datfile)
+        else:
+            f.close()
         self._update()
 
     # Read directory file into the in-memory index dict.
@@ -81,11 +82,11 @@ class _Database(UserDict.DictMixin):
         except IOError:
             pass
         else:
-            for line in f:
-                line = line.rstrip()
-                key, pos_and_siz_pair = eval(line)
-                self._index[key] = pos_and_siz_pair
-            f.close()
+            with f:
+                for line in f:
+                    line = line.rstrip()
+                    key, pos_and_siz_pair = eval(line)
+                    self._index[key] = pos_and_siz_pair
 
     # Write the index dict to the directory file.  The original directory
     # file (if any) is renamed with a .bak extension first.  If a .bak
@@ -107,20 +108,18 @@ class _Database(UserDict.DictMixin):
         except self._os.error:
             pass
 
-        f = self._open(self._dirfile, 'w')
-        self._chmod(self._dirfile)
-        for key, pos_and_siz_pair in self._index.iteritems():
-            f.write("%r, %r\n" % (key, pos_and_siz_pair))
-        f.close()
+        with self._open(self._dirfile, 'w') as f:
+            self._chmod(self._dirfile)
+            for key, pos_and_siz_pair in self._index.iteritems():
+                f.write("%r, %r\n" % (key, pos_and_siz_pair))
 
     sync = _commit
 
     def __getitem__(self, key):
         pos, siz = self._index[key]     # may raise KeyError
-        f = _open(self._datfile, 'rb')
-        f.seek(pos)
-        dat = f.read(siz)
-        f.close()
+        with _open(self._datfile, 'rb') as f:
+            f.seek(pos)
+            dat = f.read(siz)
         return dat
 
     # Append val to the data file, starting at a _BLOCKSIZE-aligned
@@ -128,14 +127,13 @@ class _Database(UserDict.DictMixin):
     # to get to an aligned offset.  Return pair
     #     (starting offset of val, len(val))
     def _addval(self, val):
-        f = _open(self._datfile, 'rb+')
-        f.seek(0, 2)
-        pos = int(f.tell())
-        npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
-        f.write('\0'*(npos-pos))
-        pos = npos
-        f.write(val)
-        f.close()
+        with _open(self._datfile, 'rb+') as f:
+            f.seek(0, 2)
+            pos = int(f.tell())
+            npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
+            f.write('\0'*(npos-pos))
+            pos = npos
+            f.write(val)
         return (pos, len(val))
 
     # Write val to the data file, starting at offset pos.  The caller
@@ -143,10 +141,9 @@ class _Database(UserDict.DictMixin):
     # pos to hold val, without overwriting some other value.  Return
     # pair (pos, len(val)).
     def _setval(self, pos, val):
-        f = _open(self._datfile, 'rb+')
-        f.seek(pos)
-        f.write(val)
-        f.close()
+        with _open(self._datfile, 'rb+') as f:
+            f.seek(pos)
+            f.write(val)
         return (pos, len(val))
 
     # key is a new key whose associated value starts in the data file
@@ -154,10 +151,9 @@ class _Database(UserDict.DictMixin):
     # the in-memory index dict, and append one to the directory file.
     def _addkey(self, key, pos_and_siz_pair):
         self._index[key] = pos_and_siz_pair
-        f = _open(self._dirfile, 'a')
-        self._chmod(self._dirfile)
-        f.write("%r, %r\n" % (key, pos_and_siz_pair))
-        f.close()
+        with _open(self._dirfile, 'a') as f:
+            self._chmod(self._dirfile)
+            f.write("%r, %r\n" % (key, pos_and_siz_pair))
 
     def __setitem__(self, key, val):
         if not type(key) == type('') == type(val):
