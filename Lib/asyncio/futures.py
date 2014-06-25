@@ -150,24 +150,40 @@ class Future:
             self._loop = loop
         self._callbacks = []
 
-    def __repr__(self):
-        res = self.__class__.__name__
-        if self._state == _FINISHED:
-            if self._exception is not None:
-                res += '<exception={!r}>'.format(self._exception)
-            else:
-                res += '<result={!r}>'.format(self._result)
-        elif self._callbacks:
-            size = len(self._callbacks)
-            if size > 2:
-                res += '<{}, [{}, <{} more>, {}]>'.format(
-                    self._state, self._callbacks[0],
-                    size-2, self._callbacks[-1])
-            else:
-                res += '<{}, {}>'.format(self._state, self._callbacks)
+    def _format_callbacks(self):
+        cb = self._callbacks
+        size = len(cb)
+        if not size:
+            cb = ''
+
+        def format_cb(callback):
+            return events._format_callback(callback, ())
+
+        if size == 1:
+            cb = format_cb(cb[0])
+        elif size == 2:
+            cb = '{}, {}'.format(format_cb(cb[0]), format_cb(cb[1]))
+        elif size > 2:
+            cb = '{}, <{} more>, {}'.format(format_cb(cb[0]),
+                                            size-2,
+                                            format_cb(cb[-1]))
+        return 'cb=[%s]' % cb
+
+    def _format_result(self):
+        if self._state != _FINISHED:
+            return None
+        elif self._exception is not None:
+            return 'exception={!r}'.format(self._exception)
         else:
-            res += '<{}>'.format(self._state)
-        return res
+            return 'result={!r}'.format(self._result)
+
+    def __repr__(self):
+        info = [self._state.lower()]
+        if self._state == _FINISHED:
+            info.append(self._format_result())
+        if self._callbacks:
+            info.append(self._format_callbacks())
+        return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
 
     # On Python 3.3 or older, objects with a destructor part of a reference
     # cycle are never destroyed. It's not more the case on Python 3.4 thanks to
