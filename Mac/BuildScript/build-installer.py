@@ -150,17 +150,19 @@ SRCDIR = os.path.dirname(
 # $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
 DEPTARGET = '10.3'
 
-target_cc_map = {
+def getDeptargetTuple():
+    return tuple([int(n) for n in DEPTARGET.split('.')[0:2]])
+
+def getTargetCompilers():
+    target_cc_map = {
         '10.3': ('gcc-4.0', 'g++-4.0'),
         '10.4': ('gcc-4.0', 'g++-4.0'),
         '10.5': ('gcc-4.2', 'g++-4.2'),
         '10.6': ('gcc-4.2', 'g++-4.2'),
-        '10.7': ('clang', 'clang++'),
-        '10.8': ('clang', 'clang++'),
-        '10.9': ('clang', 'clang++'),
-}
+    }
+    return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
 
-CC, CXX = target_cc_map[DEPTARGET]
+CC, CXX = getTargetCompilers()
 
 PYTHON_3 = getVersionTuple() >= (3, 0)
 
@@ -193,10 +195,10 @@ EXPECTED_SHARED_LIBS = {}
 def library_recipes():
     result = []
 
-    LT_10_5 = bool(DEPTARGET < '10.5')
+    LT_10_5 = bool(getDeptargetTuple() < (10, 5))
 
 #   Disable for now
-    if False:   # if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 5)):
+    if False:   # if (getDeptargetTuple() > (10, 5)) and (getVersionTuple() >= (3, 5)):
         result.extend([
           dict(
               name="Tcl 8.5.15",
@@ -304,7 +306,7 @@ def library_recipes():
           ),
         ])
 
-    if DEPTARGET < '10.5':
+    if getDeptargetTuple() < (10, 5):
         result.extend([
           dict(
               name="Bzip2 1.0.6",
@@ -458,7 +460,7 @@ def pkg_recipes():
             )
         )
 
-    if DEPTARGET < '10.4' and not PYTHON_3:
+    if getDeptargetTuple() < (10, 4) and not PYTHON_3:
         result.append(
             dict(
                 name="PythonSystemFixes",
@@ -679,7 +681,7 @@ def parseOptions(args=None):
     SDKPATH=os.path.abspath(SDKPATH)
     DEPSRC=os.path.abspath(DEPSRC)
 
-    CC, CXX=target_cc_map[DEPTARGET]
+    CC, CXX = getTargetCompilers()
 
     print("Settings:")
     print(" * Source directory:", SRCDIR)
