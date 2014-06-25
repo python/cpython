@@ -11,9 +11,9 @@ Uses:
 (1) a tree-generator, where the drawing is
 quasi the side-effect, whereas the generator
 always yields None.
-(2) Turtle-cloning: At each branching point the
-current pen is cloned. So in the end there
-are 1024 turtles.
+(2) Turtle-cloning: At each branching point
+the current pen is cloned. So in the end
+there are 1024 turtles.
 """
 from turtle import Turtle, mainloop
 from time import clock

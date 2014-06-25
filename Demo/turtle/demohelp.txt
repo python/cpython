@@ -2,7 +2,7 @@
 
   ----------------------------------------------
 
-      xturtleDemo - Help
+      turtleDemo - Help
 
   ----------------------------------------------
 
@@ -53,27 +53,29 @@
 
    (2) How to add your own demos to the demo repository
 
-   - scriptname: must begin with tdemo_ ,
+   - The script name must begin with tdemo_ ,
      so it must have the form tdemo_<your-script-name>.py
 
-   - place: same directory as xturtleDemo.py or some
-     subdirectory, the name of which must also begin with
-     tdemo_.....
+   - The code must contain a main() function which will
+     be executed by the viewer (see provided example scripts).
+     It may return a string which will be displayed in the Label below
+     the source code window (when execution has finished.)
+	   
+   - In order to run mydemo.py by itself, such as during development,
+     add the following at the end of the file:
 
-   - requirements on source code:
-       code must contain a main() function which will
-       be executed by the viewer (see provided example scripts)
-       main() may return a string which will be displayed
-       in the Label below the source code window (when execution
-       has finished.)
+    if __name__ == '__main__':
+        main()
+        mainloop()  # keep window 
 
-       If the demo is EVENT DRIVEN, main must return the string
-       "EVENTLOOP". This informs the demo viewer that the script is
-       still running and must be stopped by the user!
+    python -m turtledemo.mydemo  # will then run it
 
-       If an "EVENTLOOP" demo runs by itself, as with clock, which uses
-       ontimer, or minimal_hanoi, which loops by recursion, then the
-       code should catch the turtle.Terminator exception that will be
-       raised when the user presses the STOP button.  (Paint is not such
-       a demo; it only acts in response to mouse clicks and movements.)
+   - If the demo is EVENT DRIVEN, main must return the string
+     "EVENTLOOP". This informs the demo viewer that the script is
+     still running and must be stopped by the user!
 
+     If an "EVENTLOOP" demo runs by itself, as with clock, which uses
+     ontimer, or minimal_hanoi, which loops by recursion, then the
+     code should catch the turtle.Terminator exception that will be
+     raised when the user presses the STOP button.  (Paint is not such
+     a demo; it only acts in response to mouse clicks and movements.)

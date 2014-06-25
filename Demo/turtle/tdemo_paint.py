@@ -3,11 +3,15 @@
 
             tdemo_paint.py
 
-A simple  eventdriven paint program
+A simple  event-driven paint program
 
-- use left mouse button to move turtle
-- middle mouse button to change color
-- right mouse button do turn filling on/off
+- left mouse button moves turtle
+- middle mouse button changes color
+- right mouse button toogles betweem pen up
+(no line drawn when the turtle moves) and
+pen down (line is drawn). If pen up follows
+at least two pen-down moves, the polygon that
+includes the starting point is filled.
  -------------------------------------------
  Play around by clicking into the canvas
  using all three mouse buttons.
