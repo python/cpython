@@ -996,7 +996,7 @@ You can write code like this::
 so that if the logger's threshold is set above ``DEBUG``, the calls to
 :func:`expensive_func1` and :func:`expensive_func2` are never made.
 
-.. note:: In some cases, :meth:`~Logger.isEnabledFor` can iself be more
+.. note:: In some cases, :meth:`~Logger.isEnabledFor` can itself be more
    expensive than you'd like (e.g. for deeply nested loggers where an explicit
    level is only set high up in the logger hierarchy). In such cases (or if you
    want to avoid calling a method in tight loops), you can cache the result of a
