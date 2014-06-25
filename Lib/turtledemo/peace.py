@@ -3,14 +3,10 @@
 
               tdemo_peace.py
 
-A very simple drawing suitable as a beginner's
-programming example.
-
-Uses only commands, which are also available in
-old turtle.py.
-
-Intentionally no variables are used except for the
-colorloop:
+A simple drawing suitable as a beginner's
+programming example. Aside from the
+peacecolors assignment and the for loop,
+it only uses turtle commands.
 """
 
 from turtle import *
@@ -21,7 +17,7 @@ def main():
                    "royalblue1", "dodgerblue4")
 
     reset()
-    s = Screen()
+    Screen()
     up()
     goto(-320,-195)
     width(70)
@@ -58,7 +54,7 @@ def main():
     up()
 
     goto(0,300) # vanish if hideturtle() is not available ;-)
-    return "Done!!"
+    return "Done!"
 
 if __name__ == "__main__":
     main()
