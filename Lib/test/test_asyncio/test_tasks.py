@@ -51,6 +51,7 @@ class TaskTests(test_utils.TestCase):
         self.set_event_loop(loop)
         t = asyncio.Task(notmuch(), loop=loop)
         self.assertIs(t._loop, loop)
+        loop.run_until_complete(t)
         loop.close()
 
     def test_async_coroutine(self):
@@ -67,6 +68,7 @@ class TaskTests(test_utils.TestCase):
         self.set_event_loop(loop)
         t = asyncio.async(notmuch(), loop=loop)
         self.assertIs(t._loop, loop)
+        loop.run_until_complete(t)
         loop.close()
 
     def test_async_future(self):
@@ -213,6 +215,7 @@ class TaskTests(test_utils.TestCase):
         t.add_done_callback(Dummy())
         self.assertEqual(repr(t),
                          '<Task pending %s cb=[<Dummy>()]>' % coro)
+        self.loop.run_until_complete(t)
 
     def test_task_basics(self):
         @asyncio.coroutine
