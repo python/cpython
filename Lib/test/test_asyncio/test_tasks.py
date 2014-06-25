@@ -411,8 +411,10 @@ class TaskTests(test_utils.TestCase):
                     loop.stop()
 
         t = asyncio.Task(task(), loop=loop)
-        self.assertRaises(
-            RuntimeError, loop.run_until_complete, t)
+        with self.assertRaises(RuntimeError) as cm:
+            loop.run_until_complete(t)
+        self.assertEqual(str(cm.exception),
+                         'Event loop stopped before Future completed.')
         self.assertFalse(t.done())
         self.assertEqual(x, 2)
         self.assertAlmostEqual(0.3, loop.time())
@@ -420,6 +422,8 @@ class TaskTests(test_utils.TestCase):
         # close generators
         for w in waiters:
             w.close()
+        t.cancel()
+        self.assertRaises(asyncio.CancelledError, loop.run_until_complete, t)
 
     def test_wait_for(self):
 
