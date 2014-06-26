@@ -185,8 +185,8 @@ command line:
 
 .. code-block:: sh
 
-   $ python3 -m site --user-site
-   /home/user/.local/lib/python3.3/site-packages
+   $ python -m site --user-site
+   /home/user/.local/lib/python2.7/site-packages
 
 .. program:: site
 
