@@ -103,6 +103,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20295: imghdr now recognizes OpenEXR format images.
+
 - Issue #21729: Used the "with" statement in the dbm.dumb module to ensure
   files closing.  Patch by Claudiu Popa.
 
