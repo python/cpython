@@ -33,20 +33,11 @@ class Win_ValuesTestCase(unittest.TestCase):
     """This test only works when python itself is a dll/shared library"""
 
     def test_optimizeflag(self):
-        # This test accesses the Py_OptimizeFlag intger, which is
-        # exported by the Python dll.
+        # This test accesses the Py_OptimizeFlag integer, which is
+        # exported by the Python dll and should match the sys.flags value
 
-        # It's value is set depending on the -O and -OO flags:
-        # if not given, it is 0 and __debug__ is 1.
-        # If -O is given, the flag is 1, for -OO it is 2.
-        # docstrings are also removed in the latter case.
         opt = c_int.in_dll(pythonapi, "Py_OptimizeFlag").value
-        if __debug__:
-            self.assertEqual(opt, 0)
-        elif ValuesTestCase.__doc__ is not None:
-            self.assertEqual(opt, 1)
-        else:
-            self.assertEqual(opt, 2)
+        self.assertEqual(opt, sys.flags.optimize)
 
     def test_frozentable(self):
         # Python exports a PyImport_FrozenModules symbol. This is a
