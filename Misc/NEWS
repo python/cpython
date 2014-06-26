@@ -103,6 +103,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21858: Better handling of Python exceptions in the sqlite3 module.
+
 - Issue #21476: Make sure the email.parser.BytesParser TextIOWrapper is
   discarded after parsing, so the input file isn't unexpectedly closed.
 
