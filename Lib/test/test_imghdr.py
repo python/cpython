@@ -18,6 +18,7 @@ TEST_FILES = (
     ('python.tiff', 'tiff'),
     ('python.xbm', 'xbm'),
     ('python.webp', 'webp'),
+    ('python.exr', 'exr'),
 )
 
 class UnseekableIO(io.FileIO):

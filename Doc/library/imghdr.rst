@@ -50,6 +50,11 @@ from :func:`what`:
 +------------+-----------------------------------+
 | ``'webp'`` | WebP files                        |
 +------------+-----------------------------------+
+| ``'exr'``  | OpenEXR Files                     |
++------------+-----------------------------------+
+
+.. versionadded:: 3.5
+   The *exr* format was added.
 
 .. versionchanged:: 3.5
    The *webp* type was added.
