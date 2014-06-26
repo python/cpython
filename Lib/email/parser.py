@@ -106,8 +106,10 @@ class BytesParser:
         meaning it parses the entire contents of the file.
         """
         fp = TextIOWrapper(fp, encoding='ascii', errors='surrogateescape')
-        with fp:
+        try:
             return self.parser.parse(fp, headersonly)
+        finally:
+            fp.detach()
 
 
     def parsebytes(self, text, headersonly=False):

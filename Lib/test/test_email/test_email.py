@@ -3390,6 +3390,31 @@ class TestParsers(TestEmailBase):
         self.assertIsInstance(msg.get_payload(), str)
         self.assertIsInstance(msg.get_payload(decode=True), bytes)
 
+    def test_bytes_parser_does_not_close_file(self):
+        with openfile('msg_02.txt', 'rb') as fp:
+            email.parser.BytesParser().parse(fp)
+            self.assertFalse(fp.closed)
+
+    def test_bytes_parser_on_exception_does_not_close_file(self):
+        with openfile('msg_15.txt', 'rb') as fp:
+            bytesParser = email.parser.BytesParser
+            self.assertRaises(email.errors.StartBoundaryNotFoundDefect,
+                              bytesParser(policy=email.policy.strict).parse,
+                              fp)
+            self.assertFalse(fp.closed)
+
+    def test_parser_does_not_close_file(self):
+        with openfile('msg_02.txt', 'r') as fp:
+            email.parser.Parser().parse(fp)
+            self.assertFalse(fp.closed)
+
+    def test_parser_on_exception_does_not_close_file(self):
+        with openfile('msg_15.txt', 'r') as fp:
+            parser = email.parser.Parser
+            self.assertRaises(email.errors.StartBoundaryNotFoundDefect,
+                              parser(policy=email.policy.strict).parse, fp)
+            self.assertFalse(fp.closed)
+
     def test_whitespace_continuation(self):
         eq = self.assertEqual
         # This message contains a line after the Subject: header that has only
