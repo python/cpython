@@ -141,6 +141,12 @@ doctest
   *module* contains no docstrings instead of raising :exc:`ValueError`
   (contributed by Glenn Jones in :issue:`15916`).
 
+imghdr
+------
+
+* :func:`~imghdr.what` now recognizes the `OpenEXR <http://www.openexr.com>`_
+  format (contributed by Martin vignali and Cladui Popa in :issue:`20295`).
+
 importlib
 ---------
 
