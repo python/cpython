@@ -1,4 +1,4 @@
-r"""OS routines for Mac, NT, or Posix depending on what system we're on.
+r"""OS routines for NT or Posix depending on what system we're on.
 
 This exports:
   - all functions from posix, nt, os2, or ce, e.g. unlink, stat, etc.
