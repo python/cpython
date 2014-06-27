@@ -180,7 +180,7 @@ righter than others).
 Assuming you don't want to end the connection, the simplest solution is a fixed
 length message::
 
-   class mysocket:
+   class MySocket:
        """demonstration class only
          - coded for clarity, not efficiency
        """
@@ -189,8 +189,8 @@ length message::
            if sock is None:
                self.sock = socket.socket(
                                socket.AF_INET, socket.SOCK_STREAM)
-               else:
-                   self.sock = sock
+           else:
+               self.sock = sock
 
        def connect(self, host, port):
            self.sock.connect((host, port))
