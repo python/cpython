@@ -2205,9 +2205,8 @@ PyObject_CallMethod(PyObject *o, const char *name, const char *format, ...)
         return null_error();
 
     func = PyObject_GetAttrString(o, name);
-    if (func == NULL) {
-        return 0;
-    }
+    if (func == NULL)
+        return NULL;
 
     va_start(va, format);
     retval = callmethod(func, format, va, 0);
@@ -2227,9 +2226,8 @@ _PyObject_CallMethodId(PyObject *o, _Py_Identifier *name,
         return null_error();
 
     func = _PyObject_GetAttrId(o, name);
-    if (func == NULL) {
-        return 0;
-    }
+    if (func == NULL)
+        return NULL;
 
     va_start(va, format);
     retval = callmethod(func, format, va, 0);
@@ -2249,9 +2247,8 @@ _PyObject_CallMethod_SizeT(PyObject *o, const char *name,
         return null_error();
 
     func = PyObject_GetAttrString(o, name);
-    if (func == NULL) {
-        return 0;
-    }
+    if (func == NULL)
+        return NULL;
     va_start(va, format);
     retval = callmethod(func, format, va, 1);
     va_end(va);
