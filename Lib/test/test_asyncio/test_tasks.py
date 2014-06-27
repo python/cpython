@@ -1423,8 +1423,10 @@ class TaskTests(test_utils.TestCase):
         # as_completed() expects a list of futures, not a future instance
         self.assertRaises(TypeError, self.loop.run_until_complete,
             asyncio.as_completed(fut, loop=self.loop))
+        coro = coroutine_function()
         self.assertRaises(TypeError, self.loop.run_until_complete,
-            asyncio.as_completed(coroutine_function(), loop=self.loop))
+            asyncio.as_completed(coro, loop=self.loop))
+        coro.close()
 
     def test_wait_invalid_args(self):
         fut = asyncio.Future(loop=self.loop)
@@ -1432,8 +1434,10 @@ class TaskTests(test_utils.TestCase):
         # wait() expects a list of futures, not a future instance
         self.assertRaises(TypeError, self.loop.run_until_complete,
             asyncio.wait(fut, loop=self.loop))
+        coro = coroutine_function()
         self.assertRaises(TypeError, self.loop.run_until_complete,
-            asyncio.wait(coroutine_function(), loop=self.loop))
+            asyncio.wait(coro, loop=self.loop))
+        coro.close()
 
         # wait() expects at least a future
         self.assertRaises(ValueError, self.loop.run_until_complete,
