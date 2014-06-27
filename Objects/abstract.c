@@ -2617,10 +2617,8 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
         return null_error();
 
     func = PyObject_GetAttrString(o, name);
-    if (func == NULL) {
-        PyErr_SetString(PyExc_AttributeError, name);
-        return 0;
-    }
+    if (func == NULL)
+        return NULL;
 
     if (!PyCallable_Check(func)) {
         type_error("attribute of type '%.200s' is not callable", func);
@@ -2656,10 +2654,8 @@ _PyObject_CallMethod_SizeT(PyObject *o, char *name, char *format, ...)
         return null_error();
 
     func = PyObject_GetAttrString(o, name);
-    if (func == NULL) {
-        PyErr_SetString(PyExc_AttributeError, name);
-        return 0;
-    }
+    if (func == NULL)
+        return NULL;
 
     if (!PyCallable_Check(func)) {
         type_error("attribute of type '%.200s' is not callable", func);

@@ -10,6 +10,9 @@ What's New in Python 2.7.8?
 Core and Builtins
 -----------------
 
+- Issue #4346: In PyObject_CallMethod and PyObject_CallMethodObjArgs, don't
+  overwrite the error set in PyObject_GetAttr.
+
 - Issue #21831: Avoid integer overflow when large sizes and offsets are given to
   the buffer type.
 
