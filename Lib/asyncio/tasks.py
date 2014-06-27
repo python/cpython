@@ -195,6 +195,8 @@ class Task(futures.Future):
     def __init__(self, coro, *, loop=None):
         assert iscoroutine(coro), repr(coro)  # Not a coroutine function!
         super().__init__(loop=loop)
+        if self._source_traceback:
+            del self._source_traceback[-1]
         self._coro = iter(coro)  # Use the iterator just in case.
         self._fut_waiter = None
         self._must_cancel = False
@@ -207,10 +209,13 @@ class Task(futures.Future):
     if _PY34:
         def __del__(self):
             if self._state == futures._PENDING:
-                self._loop.call_exception_handler({
+                context = {
                     'task': self,
                     'message': 'Task was destroyed but it is pending!',
-                })
+                }
+                if self._source_traceback:
+                    context['source_traceback'] = self._source_traceback
+                self._loop.call_exception_handler(context)
             futures.Future.__del__(self)
 
     def __repr__(self):
@@ -620,7 +625,10 @@ def async(coro_or_future, *, loop=None):
             raise ValueError('loop argument must agree with Future')
         return coro_or_future
     elif iscoroutine(coro_or_future):
-        return Task(coro_or_future, loop=loop)
+        task = Task(coro_or_future, loop=loop)
+        if task._source_traceback:
+            del task._source_traceback[-1]
+        return task
     else:
         raise TypeError('A Future or coroutine is required')
 

@@ -406,19 +406,22 @@ class BaseEventLoopTests(test_utils.TestCase):
             1/0
 
         def run_loop():
-            self.loop.call_soon(zero_error)
+            handle = self.loop.call_soon(zero_error)
             self.loop._run_once()
+            return handle
 
+        self.loop.set_debug(True)
         self.loop._process_events = mock.Mock()
 
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
-        run_loop()
+        handle = run_loop()
         mock_handler.assert_called_with(self.loop, {
             'exception': MOCK_ANY,
             'message': test_utils.MockPattern(
                                 'Exception in callback.*zero_error'),
-            'handle': MOCK_ANY,
+            'handle': handle,
+            'source_traceback': handle._source_traceback,
         })
         mock_handler.reset_mock()
 

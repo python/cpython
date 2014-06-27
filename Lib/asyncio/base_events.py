@@ -21,6 +21,7 @@ import inspect
 import logging
 import socket
 import subprocess
+import traceback
 import time
 import os
 import sys
@@ -290,7 +291,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
-        return self.call_at(self.time() + delay, callback, *args)
+        timer = self.call_at(self.time() + delay, callback, *args)
+        if timer._source_traceback:
+            del timer._source_traceback[-1]
+        return timer
 
     def call_at(self, when, callback, *args):
         """Like call_later(), but uses an absolute time."""
@@ -299,6 +303,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._debug:
             self._assert_is_current_event_loop()
         timer = events.TimerHandle(when, callback, args, self)
+        if timer._source_traceback:
+            del timer._source_traceback[-1]
         heapq.heappush(self._scheduled, timer)
         return timer
 
@@ -312,7 +318,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
-        return self._call_soon(callback, args, check_loop=True)
+        handle = self._call_soon(callback, args, check_loop=True)
+        if handle._source_traceback:
+            del handle._source_traceback[-1]
+        return handle
 
     def _call_soon(self, callback, args, check_loop):
         if tasks.iscoroutinefunction(callback):
@@ -320,6 +329,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._debug and check_loop:
             self._assert_is_current_event_loop()
         handle = events.Handle(callback, args, self)
+        if handle._source_traceback:
+            del handle._source_traceback[-1]
         self._ready.append(handle)
         return handle
 
@@ -344,6 +355,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     def call_soon_threadsafe(self, callback, *args):
         """Like call_soon(), but thread safe."""
         handle = self._call_soon(callback, args, check_loop=False)
+        if handle._source_traceback:
+            del handle._source_traceback[-1]
         self._write_to_self()
         return handle
 
@@ -757,7 +770,14 @@ class BaseEventLoop(events.AbstractEventLoop):
         for key in sorted(context):
             if key in {'message', 'exception'}:
                 continue
-            log_lines.append('{}: {!r}'.format(key, context[key]))
+            value = context[key]
+            if key == 'source_traceback':
+                tb = ''.join(traceback.format_list(value))
+                value = 'Object created at (most recent call last):\n'
+                value += tb.rstrip()
+            else:
+                value = repr(value)
+            log_lines.append('{}: {}'.format(key, value))
 
         logger.error('\n'.join(log_lines), exc_info=exc_info)
 
