@@ -1751,10 +1751,11 @@ def noop(*args):
     pass
 
 
-class HandleTests(unittest.TestCase):
+class HandleTests(test_utils.TestCase):
 
     def setUp(self):
-        self.loop = None
+        self.loop = mock.Mock()
+        self.loop.get_debug.return_value = True
 
     def test_handle(self):
         def callback(*args):
@@ -1789,7 +1790,8 @@ class HandleTests(unittest.TestCase):
         self.loop.call_exception_handler.assert_called_with({
             'message': test_utils.MockPattern('Exception in callback.*'),
             'exception': mock.ANY,
-            'handle': h
+            'handle': h,
+            'source_traceback': h._source_traceback,
         })
 
     def test_handle_weakref(self):
@@ -1836,6 +1838,35 @@ class HandleTests(unittest.TestCase):
             regex = (r'^<Handle %s at %s:%s>$'
                      % (cb_regex, re.escape(filename), lineno))
             self.assertRegex(repr(h), regex)
+
+    def test_handle_source_traceback(self):
+        loop = asyncio.get_event_loop_policy().new_event_loop()
+        loop.set_debug(True)
+        self.set_event_loop(loop)
+
+        def check_source_traceback(h):
+            lineno = sys._getframe(1).f_lineno - 1
+            self.assertIsInstance(h._source_traceback, list)
+            self.assertEqual(h._source_traceback[-1][:3],
+                             (__file__,
+                              lineno,
+                              'test_handle_source_traceback'))
+
+        # call_soon
+        h = loop.call_soon(noop)
+        check_source_traceback(h)
+
+        # call_soon_threadsafe
+        h = loop.call_soon_threadsafe(noop)
+        check_source_traceback(h)
+
+        # call_later
+        h = loop.call_later(0, noop)
+        check_source_traceback(h)
+
+        # call_at
+        h = loop.call_later(0, noop)
+        check_source_traceback(h)
 
 
 class TimerTests(unittest.TestCase):

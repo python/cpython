@@ -11,6 +11,7 @@ __all__ = ['AbstractEventLoopPolicy',
 import functools
 import inspect
 import subprocess
+import traceback
 import threading
 import socket
 import sys
@@ -66,7 +67,8 @@ def _format_callback(func, args, suffix=''):
 class Handle:
     """Object returned by callback registration methods."""
 
-    __slots__ = ['_callback', '_args', '_cancelled', '_loop', '__weakref__']
+    __slots__ = ('_callback', '_args', '_cancelled', '_loop',
+                 '_source_traceback', '__weakref__')
 
     def __init__(self, callback, args, loop):
         assert not isinstance(callback, Handle), 'A Handle is not a callback'
@@ -74,6 +76,10 @@ class Handle:
         self._callback = callback
         self._args = args
         self._cancelled = False
+        if self._loop.get_debug():
+            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+        else:
+            self._source_traceback = None
 
     def __repr__(self):
         info = []
@@ -91,11 +97,14 @@ class Handle:
         except Exception as exc:
             cb = _format_callback(self._callback, self._args)
             msg = 'Exception in callback {}'.format(cb)
-            self._loop.call_exception_handler({
+            context = {
                 'message': msg,
                 'exception': exc,
                 'handle': self,
-            })
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
         self = None  # Needed to break cycles when an exception occurs.
 
 
@@ -107,7 +116,8 @@ class TimerHandle(Handle):
     def __init__(self, when, callback, args, loop):
         assert when is not None
         super().__init__(callback, args, loop)
-
+        if self._source_traceback:
+            del self._source_traceback[-1]
         self._when = when
 
     def __repr__(self):
