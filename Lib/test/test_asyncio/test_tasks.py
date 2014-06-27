@@ -1602,8 +1602,8 @@ class TaskTests(test_utils.TestCase):
                  r'  File "%s", line %s, in test_coroutine_never_yielded\n'
                  r'    coro = coro_noop\(\)$'
                  % (re.escape(coro_noop.__qualname__),
-                    func_filename, func_lineno,
-                    tb_filename, tb_lineno))
+                    re.escape(func_filename), func_lineno,
+                    re.escape(tb_filename), tb_lineno))
 
         self.assertRegex(message, re.compile(regex, re.DOTALL))
 
