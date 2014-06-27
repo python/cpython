@@ -103,6 +103,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11453: asyncore: emit a ResourceWarning when an unclosed file_wrapper
+  object is destroyed. The destructor now closes the file if needed. The
+  close() method can now be called twice: the second call does nothing.
+
 - Issue #21858: Better handling of Python exceptions in the sqlite3 module.
 
 - Issue #21476: Make sure the email.parser.BytesParser TextIOWrapper is

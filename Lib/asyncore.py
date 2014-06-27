@@ -600,6 +600,11 @@ if os.name == 'posix':
         def __init__(self, fd):
             self.fd = os.dup(fd)
 
+        def __del__(self):
+            if self.fd >= 0:
+                warnings.warn("unclosed file %r" % self, ResourceWarning)
+            self.close()
+
         def recv(self, *args):
             return os.read(self.fd, *args)
 
@@ -618,7 +623,10 @@ if os.name == 'posix':
         write = send
 
         def close(self):
+            if self.fd < 0:
+                return
             os.close(self.fd)
+            self.fd = -1
 
         def fileno(self):
             return self.fd
