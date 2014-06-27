@@ -1529,6 +1529,9 @@ class TaskTests(test_utils.TestCase):
     def test_corowrapper_weakref(self):
         wd = weakref.WeakValueDictionary()
         def foo(): yield from []
+        cw = asyncio.tasks.CoroWrapper(foo(), foo)
+        wd['cw'] = cw  # Would fail without __weakref__ slot.
+        cw.gen = None  # Suppress warning from __del__.
 
     @unittest.skipUnless(PY34,
                          'need python 3.4 or later')
