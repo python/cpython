@@ -413,6 +413,22 @@ class FileWrapperTest(unittest.TestCase):
         asyncore.loop(timeout=0.01, use_poll=True, count=2)
         self.assertEqual(b"".join(data), self.d)
 
+    def test_resource_warning(self):
+        # Issue #11453
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        f = asyncore.file_wrapper(fd)
+        with support.check_warnings(('', ResourceWarning)):
+            f = None
+            support.gc_collect()
+
+    def test_close_twice(self):
+        fd = os.open(support.TESTFN, os.O_RDONLY)
+        f = asyncore.file_wrapper(fd)
+        f.close()
+        self.assertEqual(f.fd, -1)
+        # calling close twice should not fail
+        f.close()
+
 
 class BaseTestHandler(asyncore.dispatcher):
 
