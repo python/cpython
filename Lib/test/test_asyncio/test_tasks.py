@@ -1,6 +1,7 @@
 """Tests for tasks.py."""
 
 import os.path
+import re
 import sys
 import types
 import unittest
@@ -1571,6 +1572,37 @@ class TaskTests(test_utils.TestCase):
             'task': mock.ANY,
         })
         mock_handler.reset_mock()
+
+    @mock.patch('asyncio.tasks.logger')
+    def test_coroutine_never_yielded(self, m_log):
+        debug = asyncio.tasks._DEBUG
+        try:
+            asyncio.tasks._DEBUG = True
+            @asyncio.coroutine
+            def coro_noop():
+                pass
+        finally:
+            asyncio.tasks._DEBUG = debug
+
+        tb_filename = __file__
+        tb_lineno = sys._getframe().f_lineno + 1
+        coro = coro_noop()
+        coro = None
+        support.gc_collect()
+
+        self.assertTrue(m_log.error.called)
+        message = m_log.error.call_args[0][0]
+        func_filename, func_lineno = test_utils.get_function_source(coro_noop)
+        regex = (r'^Coroutine %s\(\) at %s:%s was never yielded from\n'
+                 r'Coroutine object created at \(most recent call last\):\n'
+                 r'.*\n'
+                 r'  File "%s", line %s, in test_coroutine_never_yielded\n'
+                 r'    coro = coro_noop\(\)$'
+                 % (re.escape(coro_noop.__qualname__),
+                    func_filename, func_lineno,
+                    tb_filename, tb_lineno))
+
+        self.assertRegex(message, re.compile(regex, re.DOTALL))
 
 
 class GatherTestsBase:
