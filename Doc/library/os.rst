@@ -53,7 +53,7 @@ Notes on the availability of these functions:
 .. data:: name
 
    The name of the operating system dependent module imported.  The following
-   names have currently been registered: ``'posix'``, ``'nt'``, ``'mac'``,
+   names have currently been registered: ``'posix'``, ``'nt'``,
    ``'ce'``, ``'java'``.
 
    .. seealso::
@@ -1890,12 +1890,6 @@ features:
 
    * :attr:`st_gen` - file generation number
    * :attr:`st_birthtime` - time of file creation
-
-   On Mac OS systems, the following attributes may also be available:
-
-   * :attr:`st_rsize`
-   * :attr:`st_creator`
-   * :attr:`st_type`
 
    .. note::
 
