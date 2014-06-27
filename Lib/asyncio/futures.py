@@ -82,10 +82,11 @@ class _TracebackLogger:
     in a discussion about closing files when they are collected.
     """
 
-    __slots__ = ['exc', 'tb', 'loop']
+    __slots__ = ('loop', 'source_traceback', 'exc', 'tb')
 
-    def __init__(self, exc, loop):
-        self.loop = loop
+    def __init__(self, future, exc):
+        self.loop = future._loop
+        self.source_traceback = future._source_traceback
         self.exc = exc
         self.tb = None
 
@@ -102,11 +103,12 @@ class _TracebackLogger:
 
     def __del__(self):
         if self.tb:
-            msg = 'Future/Task exception was never retrieved:\n{tb}'
-            context = {
-                'message': msg.format(tb=''.join(self.tb)),
-            }
-            self.loop.call_exception_handler(context)
+            msg = 'Future/Task exception was never retrieved'
+            if self.source_traceback:
+                msg += '\nFuture/Task created at (most recent call last):\n'
+                msg += ''.join(traceback.format_list(self.source_traceback))
+            msg += ''.join(self.tb).rstrip()
+            self.loop.call_exception_handler({'message': msg})
 
 
 class Future:
@@ -149,6 +151,10 @@ class Future:
         else:
             self._loop = loop
         self._callbacks = []
+        if self._loop.get_debug():
+            self._source_traceback = traceback.extract_stack(sys._getframe(1))
+        else:
+            self._source_traceback = None
 
     def _format_callbacks(self):
         cb = self._callbacks
@@ -196,10 +202,13 @@ class Future:
                 return
             exc = self._exception
             context = {
-                'message': 'Future/Task exception was never retrieved',
+                'message': ('%s exception was never retrieved'
+                            % self.__class__.__name__),
                 'exception': exc,
                 'future': self,
             }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
 
     def cancel(self):
@@ -335,7 +344,7 @@ class Future:
         if _PY34:
             self._log_traceback = True
         else:
-            self._tb_logger = _TracebackLogger(exception, self._loop)
+            self._tb_logger = _TracebackLogger(self, exception)
             # Arrange for the logger to be activated after all callbacks
             # have had a chance to call result() or exception().
             self._loop.call_soon(self._tb_logger.activate)

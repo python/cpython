@@ -1546,6 +1546,7 @@ class TaskTests(test_utils.TestCase):
             raise Exception("code never reached")
 
         mock_handler = mock.Mock()
+        self.loop.set_debug(True)
         self.loop.set_exception_handler(mock_handler)
 
         # schedule the task
@@ -1560,6 +1561,7 @@ class TaskTests(test_utils.TestCase):
         # remove the future used in kill_me(), and references to the task
         del coro.gi_frame.f_locals['future']
         coro = None
+        source_traceback = task._source_traceback
         task = None
 
         # no more reference to kill_me() task: the task is destroyed by the GC
@@ -1570,6 +1572,7 @@ class TaskTests(test_utils.TestCase):
         mock_handler.assert_called_with(self.loop, {
             'message': 'Task was destroyed but it is pending!',
             'task': mock.ANY,
+            'source_traceback': source_traceback,
         })
         mock_handler.reset_mock()
 
@@ -1603,6 +1606,17 @@ class TaskTests(test_utils.TestCase):
                     tb_filename, tb_lineno))
 
         self.assertRegex(message, re.compile(regex, re.DOTALL))
+
+    def test_task_source_traceback(self):
+        self.loop.set_debug(True)
+
+        task = asyncio.Task(coroutine_function(), loop=self.loop)
+        lineno = sys._getframe().f_lineno - 1
+        self.assertIsInstance(task._source_traceback, list)
+        self.assertEqual(task._source_traceback[-1][:3],
+                         (__file__,
+                          lineno,
+                          'test_task_source_traceback'))
 
 
 class GatherTestsBase:
