@@ -322,9 +322,9 @@ class FutureTests(test_utils.TestCase):
                      r'source_traceback: Object created at \(most recent call last\):\n'
                      r'  File'
                      r'.*\n'
-                     r'  File "%s", line %s, in test_future_exception_never_retrieved\n'
+                     r'  File "{filename}", line {lineno}, in test_future_exception_never_retrieved\n'
                      r'    future = asyncio\.Future\(loop=self\.loop\)$'
-                     % (frame[0], frame[1]))
+                     ).format(filename=re.escape(frame[0]), lineno=frame[1])
             exc_info = (type(exc), exc, exc.__traceback__)
             m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
         else:
@@ -333,12 +333,12 @@ class FutureTests(test_utils.TestCase):
                      r'Future/Task created at \(most recent call last\):\n'
                      r'  File'
                      r'.*\n'
-                     r'  File "%s", line %s, in test_future_exception_never_retrieved\n'
+                     r'  File "{filename}", line {lineno}, in test_future_exception_never_retrieved\n'
                      r'    future = asyncio\.Future\(loop=self\.loop\)\n'
                      r'Traceback \(most recent call last\):\n'
                      r'.*\n'
                      r'MemoryError$'
-                     % (frame[0], frame[1]))
+                     ).format(filename=re.escape(frame[0]), lineno=frame[1])
             m_log.error.assert_called_once_with(mock.ANY, exc_info=False)
         message = m_log.error.call_args[0][0]
         self.assertRegex(message, re.compile(regex, re.DOTALL))
