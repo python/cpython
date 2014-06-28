@@ -43,7 +43,7 @@ The :mod:`urllib2` module defines the following functions:
    timeout setting will be used).  This actually only works for HTTP, HTTPS and
    FTP connections.
 
-   This function returns a file-like object with two additional methods:
+   This function returns a file-like object with three additional methods:
 
    * :meth:`geturl` --- return the URL of the resource retrieved, commonly used to
      determine if a redirect was followed
