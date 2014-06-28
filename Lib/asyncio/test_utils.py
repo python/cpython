@@ -27,6 +27,7 @@ from . import events
 from . import futures
 from . import selectors
 from . import tasks
+from .coroutines import coroutine
 
 
 if sys.platform == 'win32':  # pragma: no cover
@@ -43,7 +44,7 @@ def dummy_ssl_context():
 
 
 def run_briefly(loop):
-    @tasks.coroutine
+    @coroutine
     def once():
         pass
     gen = once()
