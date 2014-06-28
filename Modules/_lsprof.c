@@ -202,6 +202,8 @@ normalizeUserObj(PyObject *obj)
         */
         PyObject *self = fn->m_self;
         PyObject *name = PyUnicode_FromString(fn->m_ml->ml_name);
+        PyObject *modname = fn->m_module;
+
         if (name != NULL) {
             PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
             Py_XINCREF(mo);
@@ -213,9 +215,14 @@ normalizeUserObj(PyObject *obj)
                     return res;
             }
         }
+        /* Otherwise, use __module__ */
         PyErr_Clear();
-        return PyUnicode_FromFormat("<built-in method %s>",
-                                    fn->m_ml->ml_name);
+        if (modname != NULL && PyUnicode_Check(modname))
+            return PyUnicode_FromFormat("<built-in method %S.%s>",
+                                        modname,  fn->m_ml->ml_name);
+        else
+            return PyUnicode_FromFormat("<built-in method %s>",
+                                        fn->m_ml->ml_name);
     }
 }
 
