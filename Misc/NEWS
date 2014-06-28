@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21863: cProfile now displays the module name of C extension functions,
+  in addition to their own name.
+
 - Issue #11453: asyncore: emit a ResourceWarning when an unclosed file_wrapper
   object is destroyed. The destructor now closes the file if needed. The
   close() method can now be called twice: the second call does nothing.
