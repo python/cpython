@@ -11,7 +11,7 @@ from test.profilee import testfunc
 class CProfileTest(ProfileTest):
     profilerclass = cProfile.Profile
     profilermodule = cProfile
-    expected_max_output = "{built-in method max}"
+    expected_max_output = "{built-in method builtins.max}"
 
     def get_expected_output(self):
         return _ProfileOutput
@@ -72,9 +72,9 @@ profilee.py:84(helper2_indirect)                  <-       2    0.000    0.140  
 profilee.py:88(helper2)                           <-       6    0.234    0.300  profilee.py:55(helper)
                                                            2    0.078    0.100  profilee.py:84(helper2_indirect)
 profilee.py:98(subhelper)                         <-       8    0.064    0.080  profilee.py:88(helper2)
-{built-in method exc_info}                        <-       4    0.000    0.000  profilee.py:73(helper1)
-{built-in method hasattr}                         <-       4    0.000    0.004  profilee.py:73(helper1)
+{built-in method builtins.hasattr}                <-       4    0.000    0.004  profilee.py:73(helper1)
                                                            8    0.000    0.008  profilee.py:88(helper2)
+{built-in method sys.exc_info}                    <-       4    0.000    0.000  profilee.py:73(helper1)
 {method 'append' of 'list' objects}               <-       4    0.000    0.000  profilee.py:73(helper1)"""
 _ProfileOutput['print_callees'] = """\
 <string>:1(<module>)                              ->       1    0.270    1.000  profilee.py:25(testfunc)
@@ -87,12 +87,12 @@ profilee.py:48(mul)                               ->
 profilee.py:55(helper)                            ->       4    0.116    0.120  profilee.py:73(helper1)
                                                            2    0.000    0.140  profilee.py:84(helper2_indirect)
                                                            6    0.234    0.300  profilee.py:88(helper2)
-profilee.py:73(helper1)                           ->       4    0.000    0.000  {built-in method exc_info}
+profilee.py:73(helper1)                           ->       4    0.000    0.004  {built-in method builtins.hasattr}
 profilee.py:84(helper2_indirect)                  ->       2    0.006    0.040  profilee.py:35(factorial)
                                                            2    0.078    0.100  profilee.py:88(helper2)
 profilee.py:88(helper2)                           ->       8    0.064    0.080  profilee.py:98(subhelper)
 profilee.py:98(subhelper)                         ->      16    0.016    0.016  profilee.py:110(__getattr__)
-{built-in method hasattr}                         ->      12    0.012    0.012  profilee.py:110(__getattr__)"""
+{built-in method builtins.hasattr}                ->      12    0.012    0.012  profilee.py:110(__getattr__)"""
 
 if __name__ == "__main__":
     main()
