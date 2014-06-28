@@ -10,10 +10,12 @@ import socket
 if hasattr(socket, 'AF_UNIX'):
     __all__.extend(['open_unix_connection', 'start_unix_server'])
 
+from . import coroutines
 from . import events
 from . import futures
 from . import protocols
 from . import tasks
+from .coroutines import coroutine
 
 
 _DEFAULT_LIMIT = 2**16
@@ -33,7 +35,7 @@ class IncompleteReadError(EOFError):
         self.expected = expected
 
 
-@tasks.coroutine
+@coroutine
 def open_connection(host=None, port=None, *,
                     loop=None, limit=_DEFAULT_LIMIT, **kwds):
     """A wrapper for create_connection() returning a (reader, writer) pair.
@@ -63,7 +65,7 @@ def open_connection(host=None, port=None, *,
     return reader, writer
 
 
-@tasks.coroutine
+@coroutine
 def start_server(client_connected_cb, host=None, port=None, *,
                  loop=None, limit=_DEFAULT_LIMIT, **kwds):
     """Start a socket server, call back for each client connected.
@@ -102,7 +104,7 @@ def start_server(client_connected_cb, host=None, port=None, *,
 if hasattr(socket, 'AF_UNIX'):
     # UNIX Domain Sockets are supported on this platform
 
-    @tasks.coroutine
+    @coroutine
     def open_unix_connection(path=None, *,
                              loop=None, limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
@@ -116,7 +118,7 @@ if hasattr(socket, 'AF_UNIX'):
         return reader, writer
 
 
-    @tasks.coroutine
+    @coroutine
     def start_unix_server(client_connected_cb, path=None, *,
                           loop=None, limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `start_server` but works with UNIX Domain Sockets."""
@@ -210,7 +212,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                                                self._loop)
             res = self._client_connected_cb(self._stream_reader,
                                             self._stream_writer)
-            if tasks.iscoroutine(res):
+            if coroutines.iscoroutine(res):
                 tasks.Task(res, loop=self._loop)
 
     def connection_lost(self, exc):
@@ -373,7 +375,7 @@ class StreamReader:
                                'already waiting for incoming data' % func_name)
         return futures.Future(loop=self._loop)
 
-    @tasks.coroutine
+    @coroutine
     def readline(self):
         if self._exception is not None:
             raise self._exception
@@ -410,7 +412,7 @@ class StreamReader:
         self._maybe_resume_transport()
         return bytes(line)
 
-    @tasks.coroutine
+    @coroutine
     def read(self, n=-1):
         if self._exception is not None:
             raise self._exception
@@ -449,7 +451,7 @@ class StreamReader:
         self._maybe_resume_transport()
         return data
 
-    @tasks.coroutine
+    @coroutine
     def readexactly(self, n):
         if self._exception is not None:
             raise self._exception
