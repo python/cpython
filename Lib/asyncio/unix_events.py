@@ -16,8 +16,8 @@ from . import base_subprocess
 from . import constants
 from . import events
 from . import selector_events
-from . import tasks
 from . import transports
+from .coroutines import coroutine
 from .log import logger
 
 
@@ -147,7 +147,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                    extra=None):
         return _UnixWritePipeTransport(self, pipe, protocol, waiter, extra)
 
-    @tasks.coroutine
+    @coroutine
     def _make_subprocess_transport(self, protocol, args, shell,
                                    stdin, stdout, stderr, bufsize,
                                    extra=None, **kwargs):
@@ -164,7 +164,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _child_watcher_callback(self, pid, returncode, transp):
         self.call_soon_threadsafe(transp._process_exited, returncode)
 
-    @tasks.coroutine
+    @coroutine
     def create_unix_connection(self, protocol_factory, path, *,
                                ssl=None, sock=None,
                                server_hostname=None):
@@ -199,7 +199,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock, protocol_factory, ssl, server_hostname)
         return transport, protocol
 
-    @tasks.coroutine
+    @coroutine
     def create_unix_server(self, protocol_factory, path=None, *,
                            sock=None, backlog=100, ssl=None):
         if isinstance(ssl, bool):
