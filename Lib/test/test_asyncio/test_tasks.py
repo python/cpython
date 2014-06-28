@@ -11,7 +11,7 @@ from test.script_helper import assert_python_ok
 from unittest import mock
 
 import asyncio
-from asyncio import tasks
+from asyncio import coroutines
 from asyncio import test_utils
 
 
@@ -193,7 +193,7 @@ class TaskTests(test_utils.TestCase):
             # attribute).
             coro_name = 'notmuch'
             coro_qualname = 'TaskTests.test_task_repr_coro_decorator.<locals>.notmuch'
-        elif tasks._DEBUG:
+        elif coroutines._DEBUG:
             # In debug mode, @coroutine decorator uses CoroWrapper which gets
             # its name (__name__ attribute) from the wrapped coroutine
             # function.
@@ -1475,23 +1475,23 @@ class TaskTests(test_utils.TestCase):
             self.assertIsNone(gen.gi_frame)
 
         # Save debug flag.
-        old_debug = asyncio.tasks._DEBUG
+        old_debug = asyncio.coroutines._DEBUG
         try:
             # Test with debug flag cleared.
-            asyncio.tasks._DEBUG = False
+            asyncio.coroutines._DEBUG = False
             check()
 
             # Test with debug flag set.
-            asyncio.tasks._DEBUG = True
+            asyncio.coroutines._DEBUG = True
             check()
 
         finally:
             # Restore original debug flag.
-            asyncio.tasks._DEBUG = old_debug
+            asyncio.coroutines._DEBUG = old_debug
 
     def test_yield_from_corowrapper(self):
-        old_debug = asyncio.tasks._DEBUG
-        asyncio.tasks._DEBUG = True
+        old_debug = asyncio.coroutines._DEBUG
+        asyncio.coroutines._DEBUG = True
         try:
             @asyncio.coroutine
             def t1():
@@ -1511,7 +1511,7 @@ class TaskTests(test_utils.TestCase):
             val = self.loop.run_until_complete(task)
             self.assertEqual(val, (1, 2, 3))
         finally:
-            asyncio.tasks._DEBUG = old_debug
+            asyncio.coroutines._DEBUG = old_debug
 
     def test_yield_from_corowrapper_send(self):
         def foo():
@@ -1519,7 +1519,7 @@ class TaskTests(test_utils.TestCase):
             return a
 
         def call(arg):
-            cw = asyncio.tasks.CoroWrapper(foo(), foo)
+            cw = asyncio.coroutines.CoroWrapper(foo(), foo)
             cw.send(None)
             try:
                 cw.send(arg)
@@ -1534,7 +1534,7 @@ class TaskTests(test_utils.TestCase):
     def test_corowrapper_weakref(self):
         wd = weakref.WeakValueDictionary()
         def foo(): yield from []
-        cw = asyncio.tasks.CoroWrapper(foo(), foo)
+        cw = asyncio.coroutines.CoroWrapper(foo(), foo)
         wd['cw'] = cw  # Would fail without __weakref__ slot.
         cw.gen = None  # Suppress warning from __del__.
 
@@ -1580,16 +1580,16 @@ class TaskTests(test_utils.TestCase):
         })
         mock_handler.reset_mock()
 
-    @mock.patch('asyncio.tasks.logger')
+    @mock.patch('asyncio.coroutines.logger')
     def test_coroutine_never_yielded(self, m_log):
-        debug = asyncio.tasks._DEBUG
+        debug = asyncio.coroutines._DEBUG
         try:
-            asyncio.tasks._DEBUG = True
+            asyncio.coroutines._DEBUG = True
             @asyncio.coroutine
             def coro_noop():
                 pass
         finally:
-            asyncio.tasks._DEBUG = debug
+            asyncio.coroutines._DEBUG = debug
 
         tb_filename = __file__
         tb_lineno = sys._getframe().f_lineno + 1
@@ -1695,8 +1695,8 @@ class GatherTestsBase:
 
     def test_env_var_debug(self):
         code = '\n'.join((
-            'import asyncio.tasks',
-            'print(asyncio.tasks._DEBUG)'))
+            'import asyncio.coroutines',
+            'print(asyncio.coroutines._DEBUG)'))
 
         # Test with -E to not fail if the unit test was run with
         # PYTHONASYNCIODEBUG set to a non-empty string

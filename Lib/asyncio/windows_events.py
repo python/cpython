@@ -14,8 +14,9 @@ from . import proactor_events
 from . import selector_events
 from . import tasks
 from . import windows_utils
-from .log import logger
 from . import _overlapped
+from .coroutines import coroutine
+from .log import logger
 
 
 __all__ = ['SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
@@ -129,7 +130,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     def _socketpair(self):
         return windows_utils.socketpair()
 
-    @tasks.coroutine
+    @coroutine
     def create_pipe_connection(self, protocol_factory, address):
         f = self._proactor.connect_pipe(address)
         pipe = yield from f
@@ -138,7 +139,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                                                  extra={'addr': address})
         return trans, protocol
 
-    @tasks.coroutine
+    @coroutine
     def start_serving_pipe(self, protocol_factory, address):
         server = PipeServer(address)
 
@@ -172,7 +173,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         self.call_soon(loop)
         return [server]
 
-    @tasks.coroutine
+    @coroutine
     def _make_subprocess_transport(self, protocol, args, shell,
                                    stdin, stdout, stderr, bufsize,
                                    extra=None, **kwargs):
@@ -258,7 +259,7 @@ class IocpProactor:
             conn.settimeout(listener.gettimeout())
             return conn, conn.getpeername()
 
-        @tasks.coroutine
+        @coroutine
         def accept_coro(future, conn):
             # Coroutine closing the accept socket if the future is cancelled
             try:
