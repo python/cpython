@@ -326,16 +326,17 @@ class CoverageResults:
                 lnotab = _find_executable_linenos(filename)
             else:
                 lnotab = {}
+            if lnotab:
+                source = linecache.getlines(filename)
+                coverpath = os.path.join(dir, modulename + ".cover")
+                with open(filename, 'rb') as fp:
+                    encoding, _ = tokenize.detect_encoding(fp.readline)
+                n_hits, n_lines = self.write_results_file(coverpath, source,
+                                                          lnotab, count, encoding)
+                if summary and n_lines:
+                    percent = int(100 * n_hits / n_lines)
+                    sums[modulename] = n_lines, percent, modulename, filename
 
-            source = linecache.getlines(filename)
-            coverpath = os.path.join(dir, modulename + ".cover")
-            with open(filename, 'rb') as fp:
-                encoding, _ = tokenize.detect_encoding(fp.readline)
-            n_hits, n_lines = self.write_results_file(coverpath, source,
-                                                      lnotab, count, encoding)
-            if summary and n_lines:
-                percent = int(100 * n_hits / n_lines)
-                sums[modulename] = n_lines, percent, modulename, filename
 
         if summary and sums:
             print("lines   cov%   module   (path)")
