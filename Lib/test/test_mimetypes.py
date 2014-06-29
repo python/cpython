@@ -144,6 +144,23 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         finally:
             mimetypes._winreg = _winreg
 
+    def test_registry_read_error(self):
+        import _winreg
+
+        class MockWinreg(object):
+            def OpenKey(self, key, name):
+                if key != _winreg.HKEY_CLASSES_ROOT:
+                    raise WindowsError(5, "Access is denied")
+                return _winreg.OpenKey(key, name)
+            def __getattr__(self, name):
+                return getattr(_winreg, name)
+
+        mimetypes._winreg = MockWinreg()
+        try:
+            mimetypes.init()
+        finally:
+            mimetypes._winreg = _winreg
+
 def test_main():
     test_support.run_unittest(MimeTypesTestCase,
         Win32MimeTypesTestCase
