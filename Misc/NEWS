@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21652: Prevent mimetypes.type_map from containing unicode keys on
+  Windows.
+
 - Issue #21729: Used the "with" statement in the dbm.dumb module to ensure
   files closing.
 

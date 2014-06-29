@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import mimetypes
 import StringIO
 import unittest
@@ -95,10 +97,10 @@ class Win32MimeTypesTestCase(unittest.TestCase):
             def __getattr__(self, name):
                 if name == 'EnumKey':
                     return lambda key, i: _winreg.EnumKey(key, i) + "\xa3"
-                elif name == "OpenKey":
+                elif name == 'OpenKey':
                     return lambda key, name: _winreg.OpenKey(key, name.rstrip("\xa3"))
                 elif name == 'QueryValueEx':
-                    return lambda subkey, label: (label + "\xa3", _winreg.REG_SZ)
+                    return lambda subkey, label: (u'текст/простой' , _winreg.REG_SZ)
                 return getattr(_winreg, name)
 
         mimetypes._winreg = MockWinreg()
@@ -115,7 +117,7 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         class MockWinreg(object):
             def __getattr__(self, name):
                 if name == 'QueryValueEx':
-                    return lambda subkey, label: (label + "\xa3", _winreg.REG_SZ)
+                    return lambda subkey, label: (u'текст/простой', _winreg.REG_SZ)
                 return getattr(_winreg, name)
 
         mimetypes._winreg = MockWinreg()
@@ -123,6 +125,22 @@ class Win32MimeTypesTestCase(unittest.TestCase):
             # this used to throw an exception if registry contained non-Latin
             # characters in content types (issue #9291)
             mimetypes.init()
+        finally:
+            mimetypes._winreg = _winreg
+
+    def test_type_map_values(self):
+        import _winreg
+
+        class MockWinreg(object):
+            def __getattr__(self, name):
+                if name == 'QueryValueEx':
+                    return lambda subkey, label: (u'text/plain', _winreg.REG_SZ)
+                return getattr(_winreg, name)
+
+        mimetypes._winreg = MockWinreg()
+        try:
+            mimetypes.init()
+            self.assertTrue(isinstance(mimetypes.types_map.values()[0], str))
         finally:
             mimetypes._winreg = _winreg
 
