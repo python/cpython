@@ -489,8 +489,8 @@ Buffer-related functions
    :c:member:`view->obj` to *NULL* and return -1;
 
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,
-   *exporter* MUST be set to the exporting object. Otherwise, *exporter* MUST
-   be NULL.
+   *exporter* MUST be set to the exporting object and *flags* must be passed
+   unmodified. Otherwise, *exporter* MUST be NULL.
 
 
 
