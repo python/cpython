@@ -4,8 +4,11 @@ import urllib.robotparser
 from urllib.error import URLError, HTTPError
 from urllib.request import urlopen
 from test import support
-import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+try:
+    import threading
+except ImportError:
+    threading = None
 
 
 class RobotTestCase(unittest.TestCase):
@@ -259,6 +262,7 @@ class RobotHandler(BaseHTTPRequestHandler):
         pass
 
 
+@unittest.skipUnless(threading, 'threading required for this test')
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
