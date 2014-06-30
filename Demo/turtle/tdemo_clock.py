@@ -11,10 +11,7 @@ and time
   ------------------------------------
 """
 from turtle import *
-from turtle import Terminator  # not in __all__
 from datetime import datetime
-
-mode("logo")
 
 def jump(distanz, winkel=0):
     penup()
@@ -42,7 +39,6 @@ def make_hand_shape(name, laenge, spitze):
     end_poly()
     hand_form = get_poly()
     register_shape(name, hand_form)
-
 
 def clockface(radius):
     reset()
@@ -83,7 +79,6 @@ def setup():
     writer.ht()
     writer.pu()
     writer.bk(85)
-
 
 def wochentag(t):
     wochentag = ["Monday", "Tuesday", "Wednesday",
@@ -131,6 +126,7 @@ def main():
     return "EVENTLOOP"
 
 if __name__ == "__main__":
+    mode("logo")
     msg = main()
     print msg
-    mainloop()
+    mainloop()  # keep window open

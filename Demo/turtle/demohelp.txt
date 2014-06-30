@@ -52,6 +52,9 @@
 
 
    (2) How to add your own demos to the demo repository
+     IMPORTANT! When imported, the demo should not modify the system
+     by calling functions in other modules, such as sys, tkinter, or
+     turtle. Global variables should be initialized in main().
 
    - The script name must begin with tdemo_ ,
      so it must have the form tdemo_<your-script-name>.py

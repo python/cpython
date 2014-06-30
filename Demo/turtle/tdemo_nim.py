@@ -1,7 +1,7 @@
 """      turtle-example-suite:
 
             tdemo_nim.py
-         
+
 Play nim against the computer. The player
 who takes the last stick is the winner.
 
@@ -41,7 +41,7 @@ def computerzug(state):
             return move
 
 def randommove(state):
-    m = max(state)   
+    m = max(state)
     while True:
         z = random.randint(0,2)
         if state[z] > (m > 1):
@@ -62,7 +62,7 @@ class NimModel(object):
         self.winner = None
         self.game.view.setup()
         self.game.state = Nim.RUNNING
-        
+
     def move(self, row, col):
         maxspalte = self.sticks[row]
         self.sticks[row] = col
@@ -76,7 +76,7 @@ class NimModel(object):
             row, col = computerzug(self.sticks)
             self.move(row, col)
             self.player = 0
-        
+
     def game_over(self):
         return self.sticks == [0, 0, 0]
 
@@ -100,13 +100,13 @@ class Stick(turtle.Turtle):
         self.goto(x,y)
         self.color("white")
         self.showturtle()
-            
+
     def coords(self, row, col):
         packet, remainder = divmod(col, 5)
         x = (3 + 11 * packet + 2 * remainder) * WUNIT
         y = (2 + 3 * row) * HUNIT
         return x - SCREENWIDTH // 2 + WUNIT // 2, SCREENHEIGHT // 2 - y - HUNIT // 2
-        
+
     def makemove(self, x, y):
         if self.game.state != Nim.RUNNING:
             return
@@ -142,7 +142,7 @@ class NimView(object):
         self.writer.pencolor("black")
         self.writer.write(msg1, align="center", font=("Courier",14,"bold"))
         self.screen.tracer(True)
-        
+
 
     def setup(self):
         self.screen.tracer(False)
@@ -181,6 +181,7 @@ class NimView(object):
         if self.game.state == Nim.OVER:
             self.screen.clear()
 
+
 class NimController(object):
 
     def __init__(self, game):
@@ -200,28 +201,26 @@ class NimController(object):
         self.BUSY = True
         self.game.model.notify_move(row, col)
         self.BUSY = False
-                
+
 class Nim(object):
     CREATED = 0
     RUNNING = 1
     OVER = 2
     def __init__(self, screen):
-        self.state = Nim.CREATED 
+        self.state = Nim.CREATED
         self.screen = screen
         self.model = NimModel(self)
         self.view = NimView(self)
         self.controller = NimController(self)
-        
 
-mainscreen = turtle.Screen()
-mainscreen.mode("standard")
-mainscreen.setup(SCREENWIDTH, SCREENHEIGHT)
 
 def main():
+    mainscreen = turtle.Screen()
+    mainscreen.mode("standard")
+    mainscreen.setup(SCREENWIDTH, SCREENHEIGHT)
     nim = Nim(mainscreen)
     return "EVENTLOOP!"
 
 if __name__ == "__main__":
     main()
     turtle.mainloop()
-    

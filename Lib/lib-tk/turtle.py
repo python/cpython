@@ -142,7 +142,7 @@ _math_functions = ['acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'cosh',
         'log10', 'modf', 'pi', 'pow', 'sin', 'sinh', 'sqrt', 'tan', 'tanh']
 
 __all__ = (_tg_classes + _tg_screen_functions + _tg_turtle_functions +
-           _tg_utilities + _math_functions)
+           _tg_utilities + ['Terminator'] + _math_functions)
 
 _alias_list = ['addshape', 'backward', 'bk', 'fd', 'ht', 'lt', 'pd', 'pos',
                'pu', 'rt', 'seth', 'setpos', 'setposition', 'st',
