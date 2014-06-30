@@ -33,8 +33,8 @@ Module interface:
 - socket.ntohl(32 bit value) --> new int object
 - socket.htons(16 bit value) --> new int object
 - socket.htonl(32 bit value) --> new int object
-- socket.getaddrinfo(host, port [, family, socktype, proto, flags])
-    --> List of (family, socktype, proto, canonname, sockaddr)
+- socket.getaddrinfo(host, port [, family, type, proto, flags])
+    --> List of (family, type, proto, canonname, sockaddr)
 - socket.getnameinfo(sockaddr, flags) --> (host, port)
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
 - socket.has_ipv6: boolean value indicating if IPv6 is supported
@@ -5292,8 +5292,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 }
 
 PyDoc_STRVAR(getaddrinfo_doc,
-"getaddrinfo(host, port [, family, socktype, proto, flags])\n\
-    -> list of (family, socktype, proto, canonname, sockaddr)\n\
+"getaddrinfo(host, port [, family, type, proto, flags])\n\
+    -> list of (family, type, proto, canonname, sockaddr)\n\
 \n\
 Resolve host and port into addrinfo struct.");
 
