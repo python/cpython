@@ -130,6 +130,8 @@ Build
 
 - Issue #17095: Fix Modules/Setup *shared* support.
 
+- Issue #21811: Anticipated fixes to support OS X versions > 10.9.
+
 IDLE
 ----
 
