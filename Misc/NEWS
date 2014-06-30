@@ -152,6 +152,11 @@ Tests
 
 - Issue #20635: Added tests for Tk geometry managers.
 
+Build
+-----
+
+- Issue #21811: Anticipated fixes to support OS X versions > 10.9.
+
 Windows
 -------
 
