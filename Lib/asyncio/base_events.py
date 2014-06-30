@@ -19,11 +19,11 @@ import concurrent.futures
 import heapq
 import inspect
 import logging
+import os
 import socket
 import subprocess
-import traceback
 import time
-import os
+import traceback
 import sys
 
 from . import coroutines
