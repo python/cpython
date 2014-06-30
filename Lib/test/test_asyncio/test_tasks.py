@@ -1621,6 +1621,7 @@ class TaskTests(test_utils.TestCase):
                          (__file__,
                           lineno,
                           'test_task_source_traceback'))
+        self.loop.run_until_complete(task)
 
 
 class GatherTestsBase:
