@@ -237,8 +237,8 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL;
 
+    _Py_IDENTIFIER(_blksize);
     _Py_IDENTIFIER(isatty);
-    _Py_IDENTIFIER(fileno);
     _Py_IDENTIFIER(mode);
     _Py_IDENTIFIER(close);
 
@@ -380,24 +380,14 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
         line_buffering = 0;
 
     if (buffering < 0) {
-        buffering = DEFAULT_BUFFER_SIZE;
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-        {
-            struct stat st;
-            long fileno;
-            PyObject *res = _PyObject_CallMethodId(raw, &PyId_fileno, NULL);
-            if (res == NULL)
-                goto error;
-
-            fileno = PyLong_AsLong(res);
-            Py_DECREF(res);
-            if (fileno == -1 && PyErr_Occurred())
-                goto error;
-
-            if (fstat(fileno, &st) >= 0 && st.st_blksize > 1)
-                buffering = st.st_blksize;
-        }
-#endif
+        PyObject *blksize_obj;
+        blksize_obj = _PyObject_GetAttrId(raw, &PyId__blksize);
+        if (blksize_obj == NULL)
+            goto error;
+        buffering = PyLong_AsLong(blksize_obj);
+        Py_DECREF(blksize_obj);
+        if (buffering == -1 && PyErr_Occurred())
+            goto error;
     }
     if (buffering < 0) {
         PyErr_SetString(PyExc_ValueError,

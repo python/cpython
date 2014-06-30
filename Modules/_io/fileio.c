@@ -53,6 +53,7 @@ typedef struct {
     signed int seekable : 2; /* -1 means unknown */
     unsigned int closefd : 1;
     char finalizing;
+    unsigned int blksize;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -161,31 +162,12 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->writable = 0;
         self->appending = 0;
         self->seekable = -1;
+        self->blksize = 0;
         self->closefd = 1;
         self->weakreflist = NULL;
     }
 
     return (PyObject *) self;
-}
-
-/* On Unix, open will succeed for directories.
-   In Python, there should be no file objects referring to
-   directories, so we need a check.  */
-
-static int
-dircheck(fileio* self, PyObject *nameobj)
-{
-#if defined(HAVE_FSTAT) && defined(S_ISDIR) && defined(EISDIR)
-    struct stat buf;
-    if (self->fd < 0)
-        return 0;
-    if (fstat(self->fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
-        errno = EISDIR;
-        PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, nameobj);
-        return -1;
-    }
-#endif
-    return 0;
 }
 
 static int
@@ -232,6 +214,9 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     int *atomic_flag_works = &_Py_open_cloexec_works;
 #elif !defined(MS_WINDOWS)
     int *atomic_flag_works = NULL;
+#endif
+#ifdef HAVE_FSTAT
+    struct stat fdfstat;
 #endif
 
     assert(PyFileIO_Check(oself));
@@ -421,8 +406,26 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             goto error;
 #endif
     }
-    if (dircheck(self, nameobj) < 0)
+
+    self->blksize = DEFAULT_BUFFER_SIZE;
+#ifdef HAVE_FSTAT
+    if (fstat(self->fd, &fdfstat) < 0)
         goto error;
+#if defined(S_ISDIR) && defined(EISDIR)
+    /* On Unix, open will succeed for directories.
+       In Python, there should be no file objects referring to
+       directories, so we need a check.  */
+    if (S_ISDIR(fdfstat.st_mode)) {
+        errno = EISDIR;
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, nameobj);
+        goto error;
+    }
+#endif /* defined(S_ISDIR) */
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    if (fdfstat.st_blksize > 1)
+        self->blksize = fdfstat.st_blksize;
+#endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
+#endif /* HAVE_FSTAT */
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
     /* don't translate newlines (\r\n <=> \n) */
@@ -1216,6 +1219,7 @@ static PyGetSetDef fileio_getsetlist[] = {
 };
 
 static PyMemberDef fileio_members[] = {
+    {"_blksize", T_UINT, offsetof(fileio, blksize), 0},
     {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
     {NULL}
 };
