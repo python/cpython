@@ -229,7 +229,7 @@ def test_coverage(coverdir):
     trace = support.import_module('trace')
     tracer=trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
                         trace=0, count=1)
-    tracer.run('reload(cmd);test_main()')
+    tracer.run('import importlib; importlib.reload(cmd); test_main()')
     r=tracer.results()
     print("Writing coverage results...")
     r.write_results(show_missing=True, summary=True, coverdir=coverdir)
