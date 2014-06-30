@@ -227,7 +227,14 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return the Future's result, or raise its exception.
         """
         self._check_closed()
+
+        new_task = not isinstance(future, futures.Future)
         future = tasks.async(future, loop=self)
+        if new_task:
+            # An exception is raised if the future didn't complete, so there
+            # is no need to log the "destroy pending task" message
+            future._log_destroy_pending = False
+
         future.add_done_callback(_raise_stop_error)
         self.run_forever()
         future.remove_done_callback(_raise_stop_error)
