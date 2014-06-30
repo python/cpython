@@ -75,13 +75,16 @@ class Task(futures.Future):
         self._must_cancel = False
         self._loop.call_soon(self._step)
         self.__class__._all_tasks.add(self)
+        # If False, don't log a message if the task is destroyed whereas its
+        # status is still pending
+        self._log_destroy_pending = True
 
     # On Python 3.3 or older, objects with a destructor part of a reference
     # cycle are never destroyed. It's not more the case on Python 3.4 thanks to
     # the PEP 442.
     if _PY34:
         def __del__(self):
-            if self._state == futures._PENDING:
+            if self._state == futures._PENDING and self._log_destroy_pending:
                 context = {
                     'task': self,
                     'message': 'Task was destroyed but it is pending!',
