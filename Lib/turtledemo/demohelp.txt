@@ -54,6 +54,9 @@
    (2) How to add your own demos to the demo repository
 
    - Place the file in the same directory as turtledemo/__main__.py
+     IMPORTANT! When imported, the demo should not modify the system
+     by calling functions in other modules, such as sys, tkinter, or
+     turtle. Global variables should be initialized in main().
 
    - The code must contain a main() function which will
      be executed by the viewer (see provided example scripts).
@@ -65,7 +68,7 @@
 
     if __name__ == '__main__':
         main()
-        mainloop()  # keep window
+        mainloop()  # keep window open
 
     python -m turtledemo.mydemo  # will then run it
 
