@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21679: Prevent extraneous fstat() calls during open().  Patch by
+  Bohuslav Kabrda.
+
 - Issue #21863: cProfile now displays the module name of C extension functions,
   in addition to their own name.
 

@@ -60,6 +60,15 @@ class AutoFileTests(unittest.TestCase):
             self.assertRaises((AttributeError, TypeError),
                               setattr, f, attr, 'oops')
 
+    def testBlksize(self):
+        # test private _blksize attribute
+        blksize = io.DEFAULT_BUFFER_SIZE
+        # try to get preferred blksize from stat.st_blksize, if available
+        if hasattr(os, 'fstat'):
+            fst = os.fstat(self.f.fileno())
+            blksize = getattr(fst, 'st_blksize', blksize)
+        self.assertEqual(self.f._blksize, blksize)
+
     def testReadinto(self):
         # verify readinto
         self.f.write(bytes([1, 2]))
@@ -141,7 +150,7 @@ class AutoFileTests(unittest.TestCase):
     def testOpendir(self):
         # Issue 3703: opening a directory should fill the errno
         # Windows always returns "[Errno 13]: Permission denied
-        # Unix calls dircheck() and returns "[Errno 21]: Is a directory"
+        # Unix uses fstat and returns "[Errno 21]: Is a directory"
         try:
             _FileIO('.', 'r')
         except OSError as e:
