@@ -16,10 +16,12 @@ class SearchDialogBase:
     (make_button, create_command_buttons).
     These are bound to functions that execute the command.
 
-    Except for command buttons, this base class is not limited to
-    items common to all three subclasses.  Rather, it is the Find dialog
-    minus the "Find Next" command and its execution function.
-    The other dialogs override methods to replace and add widgets.
+    Except for command buttons, this base class is not limited to items
+    common to all three subclasses.  Rather, it is the Find dialog minus
+    the "Find Next" command, its execution function, and the
+    default_command attribute needed in create_widgets. The other
+    dialogs override attributes and methods, the latter to replace and
+    add widgets.
     '''
 
     title = "Search Dialog"  # replace in subclasses
@@ -30,9 +32,10 @@ class SearchDialogBase:
         '''Initialize root, engine, and top attributes.
 
         top (level widget): set in create_widgets() called from open().
-        text (Text being searched): set in open(), only used in subclasses().
+        text (Text searched): set in open(), only used in subclasses().
         ent (ry): created in make_entry() called from create_entry().
         row (of grid): 0 in create_widgets(), +1 in make_entry/frame().
+        default_command: set in subclasses, used in create_widgers().
 
         title (of dialog): class attribute, override in subclasses.
         icon (of dialog): ditto, use unclear if cannot minimize dialog.
@@ -93,25 +96,27 @@ class SearchDialogBase:
         e = Entry(self.top, textvariable=var, exportselection=0)
         e.grid(row=self.row, column=1, sticky="nwe")
         self.row = self.row + 1
-        return e
+        return l, e  # return label for testing
 
     def create_entries(self):
         "Create one or more entry lines with make_entry."
-        self.ent = self.make_entry("Find:", self.engine.patvar)
+        self.ent = self.make_entry("Find:", self.engine.patvar)[1]
 
     def make_frame(self,labeltext=None):
         "Return gridded labeled Frame for option or other buttons."
         if labeltext:
             l = Label(self.top, text=labeltext)
             l.grid(row=self.row, column=0, sticky="nw")
+        else:
+            l = ''
         f = Frame(self.top)
         f.grid(row=self.row, column=1, columnspan=1, sticky="nwe")
         self.row = self.row + 1
-        return f
+        return l, f
 
     def create_option_buttons(self):
         "Fill frame with Checkbuttons bound to SearchEngine booleanvars."
-        f = self.make_frame("Options")
+        f = self.make_frame("Options")[1]
 
         btn = Checkbutton(f, anchor="w",
                 variable=self.engine.revar,
@@ -144,7 +149,7 @@ class SearchDialogBase:
 
     def create_other_buttons(self):
         "Fill frame with buttons tied to other options."
-        f = self.make_frame("Direction")
+        f = self.make_frame("Direction")[1]
 
         btn = Radiobutton(f, anchor="w",
                 variable=self.engine.backvar, value=1,
