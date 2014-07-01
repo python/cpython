@@ -44,7 +44,7 @@ class SearchDialogBaseTest(unittest.TestCase):
 
     def test_open_and_close(self):
         # open calls create_widgets, which needs default_command
-        self.dialog.default_command = None  
+        self.dialog.default_command = None
 
         # Since text parameter of .open is not used in base class,
         # pass dummy 'text' instead of tk.Text().
