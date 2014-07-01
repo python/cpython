@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21781: ssl.RAND_add() now supports strings longer than 2 GB.
+
 - Issue #11453: asyncore: emit a ResourceWarning when an unclosed file_wrapper
   object is destroyed. The destructor now closes the file if needed. The
   close() method can now be called twice: the second call does nothing.
