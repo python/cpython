@@ -97,7 +97,7 @@ Data
 ----
 
 Sometimes you want to send data to a URL (often the URL will refer to a CGI
-(Common Gateway Interface) script [#]_ or other web application). With HTTP,
+(Common Gateway Interface) script or other web application). With HTTP,
 this is often done using what's known as a **POST** request. This is often what
 your browser does when you submit a HTML form that you filled in on the web. Not
 all POSTs have to come from forms: you can use a POST to transmit arbitrary data
@@ -572,8 +572,6 @@ Footnotes
 
 This document was reviewed and revised by John Lee.
 
-.. [#] For an introduction to the CGI protocol see
-       `Writing Web Applications in Python <http://www.pyzine.com/Issue008/Section_Articles/article_CGIOne.html>`_.
 .. [#] Like Google for example. The *proper* way to use google from a program
        is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course. See
        `Voidspace Google <http://www.voidspace.org.uk/python/recipebook.shtml#google>`_
