@@ -1011,17 +1011,19 @@ _PyUnicode_Dump(PyObject *op)
     }
     else
         data = unicode->data.any;
-    printf("%s: len=%zu, ",unicode_kind_name(op), ascii->length);
+    printf("%s: len=%" PY_FORMAT_SIZE_T "u, ",
+           unicode_kind_name(op), ascii->length);
 
     if (ascii->wstr == data)
         printf("shared ");
     printf("wstr=%p", ascii->wstr);
 
     if (!(ascii->state.ascii == 1 && ascii->state.compact == 1)) {
-        printf(" (%zu), ", compact->wstr_length);
+        printf(" (%" PY_FORMAT_SIZE_T "u), ", compact->wstr_length);
         if (!ascii->state.compact && compact->utf8 == unicode->data.any)
             printf("shared ");
-        printf("utf8=%p (%zu)", compact->utf8, compact->utf8_length);
+        printf("utf8=%p (%" PY_FORMAT_SIZE_T "u)",
+               compact->utf8, compact->utf8_length);
     }
     printf(", data=%p\n", data);
 }
@@ -1370,8 +1372,9 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     how_many = Py_MIN(PyUnicode_GET_LENGTH(from), how_many);
     if (to_start + how_many > PyUnicode_GET_LENGTH(to)) {
         PyErr_Format(PyExc_SystemError,
-                     "Cannot write %zi characters at %zi "
-                     "in a string of %zi characters",
+                     "Cannot write %" PY_FORMAT_SIZE_T "i characters at %"
+                     PY_FORMAT_SIZE_T "i in a string of %"
+                     PY_FORMAT_SIZE_T "i characters",
                      how_many, to_start, PyUnicode_GET_LENGTH(to));
         return -1;
     }
@@ -4080,7 +4083,9 @@ unicode_decode_call_errorhandler_wchar(
     if (newpos<0)
         newpos = insize+newpos;
     if (newpos<0 || newpos>insize) {
-        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", newpos);
+        PyErr_Format(PyExc_IndexError,
+                     "position %" PY_FORMAT_SIZE_T
+                     "d from error handler out of bounds", newpos);
         goto onError;
     }
 
@@ -4173,7 +4178,9 @@ unicode_decode_call_errorhandler_writer(
     if (newpos<0)
         newpos = insize+newpos;
     if (newpos<0 || newpos>insize) {
-        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", newpos);
+        PyErr_Format(PyExc_IndexError,
+                     "position %" PY_FORMAT_SIZE_T
+                     "d from error handler out of bounds", newpos);
         goto onError;
     }
 
@@ -6436,7 +6443,9 @@ unicode_encode_call_errorhandler(const char *errors,
     if (*newpos<0)
         *newpos = len + *newpos;
     if (*newpos<0 || *newpos>len) {
-        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", *newpos);
+        PyErr_Format(PyExc_IndexError,
+                     "position %" PY_FORMAT_SIZE_T
+                     "d from error handler out of bounds", *newpos);
         Py_DECREF(restuple);
         return NULL;
     }
@@ -8459,7 +8468,9 @@ unicode_translate_call_errorhandler(const char *errors,
     else
         *newpos = i_newpos;
     if (*newpos<0 || *newpos>PyUnicode_GET_LENGTH(unicode)) {
-        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", *newpos);
+        PyErr_Format(PyExc_IndexError,
+                     "position %" PY_FORMAT_SIZE_T
+                     "d from error handler out of bounds", *newpos);
         Py_DECREF(restuple);
         return NULL;
     }
@@ -9741,7 +9752,8 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         item = items[i];
         if (!PyUnicode_Check(item)) {
             PyErr_Format(PyExc_TypeError,
-                         "sequence item %zd: expected str instance,"
+                         "sequence item %" PY_FORMAT_SIZE_T
+                         "d: expected str instance,"
                          " %.80s found",
                          i, Py_TYPE(item)->tp_name);
             goto onError;
@@ -14440,7 +14452,7 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
     default:
         PyErr_Format(PyExc_ValueError,
                      "unsupported format character '%c' (0x%x) "
-                     "at index %zd",
+                     "at index %" PY_FORMAT_SIZE_T "d",
                      (31<=arg->ch && arg->ch<=126) ? (char)arg->ch : '?',
                      (int)arg->ch,
                      ctx->fmtpos - 1);
