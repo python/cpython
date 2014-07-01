@@ -76,7 +76,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.dialog.row = 0
         self.dialog.top = Toplevel(self.root)
         label, entry = self.dialog.make_entry("Test:", 'hello')
-        equal(label.cget('text'), 'Test:')
+        equal(label['text'], 'Test:')
 
         self.assertIn(entry.get(), 'hello')
         egi = entry.grid_info()
@@ -95,101 +95,68 @@ class SearchDialogBaseTest(unittest.TestCase):
     def test_make_frame(self):
         self.dialog.row = 0
         self.dialog.top = Toplevel(self.root)
-        label, frame = self.dialog.make_frame()
+        frame, label = self.dialog.make_frame()
         self.assertEqual(label, '')
         self.assertIsInstance(frame, Frame)
 
-        label, labelledframe = self.dialog.make_frame('testlabel')
-        self.assertEqual(label.cget('text'), 'testlabel')
-        self.assertIsInstance(labelledframe, Frame)
+        frame, label = self.dialog.make_frame('testlabel')
+        self.assertEqual(label['text'], 'testlabel')
+        self.assertIsInstance(frame, Frame)
 
-    def btn_test_setup(self, which):
-        self.dialog.row = 0
+    def btn_test_setup(self, meth):
         self.dialog.top = Toplevel(self.root)
-        if which == 'option':
-            self.dialog.create_option_buttons()
-        elif which == 'other':
-            self.dialog.create_other_buttons()
-        else:
-            raise ValueError('bad which arg %s' % which)
+        self.dialog.row = 0
+        return meth()
 
     def test_create_option_buttons(self):
-        self.btn_test_setup('option')
-        self.checkboxtests()
-
-    def test_create_option_buttons_flipped(self):
-        for var in ('revar', 'casevar', 'wordvar', 'wrapvar'):
-            Var = getattr(self.engine, var)
-            Var.set(not Var.get())
-        self.btn_test_setup('option')
-        self.checkboxtests(flip=1)
-
-    def checkboxtests(self, flip=0):
-        """Tests the four checkboxes in the search dialog window."""
-        engine = self.engine
-        for child in self.dialog.top.winfo_children():
-            for grandchild in child.winfo_children():
-                text = grandchild.config()['text'][-1]
-                if text == ('Regular', 'expression'):
-                    self.btnstatetest(grandchild, engine.revar, flip)
-                elif text == ('Match', 'case'):
-                    self.btnstatetest(grandchild, engine.casevar, flip)
-                elif text == ('Whole', 'word'):
-                    self.btnstatetest(grandchild, engine.wordvar, flip)
-                elif text == ('Wrap', 'around'):
-                    self.btnstatetest(grandchild, engine.wrapvar, not flip)
-
-    def btnstatetest(self, button, var, defaultstate):
-        self.assertEqual(var.get(), defaultstate)
-        if defaultstate == 1:
-            button.deselect()
-        else:
-            button.select()
-        self.assertEqual(var.get(), 1 - defaultstate)
+        e = self.engine
+        for state in (0, 1):
+            for var in (e.revar, e.casevar, e.wordvar, e.wrapvar):
+                var.set(state)
+            frame, options = self.btn_test_setup(
+                    self.dialog.create_option_buttons)
+            for spec, button in zip (options, frame.pack_slaves()):
+                var, label = spec
+                self.assertEqual(button['text'], label)
+                self.assertEqual(var.get(), state)
+                if state == 1:
+                    button.deselect()
+                else:
+                    button.select()
+                self.assertEqual(var.get(), 1 - state)
 
     def test_create_other_buttons(self):
-        self.btn_test_setup('other')
-        self.radiobuttontests()
-
-    def test_create_other_buttons_flipped(self):
-        self.engine.backvar.set(1)
-        self.btn_test_setup('other')
-        self.radiobuttontests(back=1)
-
-    def radiobuttontests(self, back=0):
-        searchupbtn = None
-        searchdownbtn = None
-
-        for child in self.dialog.top.winfo_children():
-            for grandchild in child.children.values():
-                text = grandchild.config()['text'][-1]
-                if text == 'Up':
-                    searchupbtn = grandchild
-                elif text == 'Down':
-                    searchdownbtn = grandchild
-
-        # Defaults to searching downward
-        self.assertEqual(self.engine.backvar.get(), back)
-        if back:
-            searchdownbtn.select()
-        else:
-            searchupbtn.select()
-        self.assertEqual(self.engine.backvar.get(), not back)
-        searchdownbtn.select()
+        for state in (False, True):
+            var = self.engine.backvar
+            var.set(state)
+            frame, others = self.btn_test_setup(
+                self.dialog.create_other_buttons)
+            buttons = frame.pack_slaves()
+            for spec, button in zip(others, buttons):
+                val, label = spec
+                self.assertEqual(button['text'], label)
+                if val == state:
+                    # hit other button, then this one
+                    # indexes depend on button order
+                    self.assertEqual(var.get(), state)
+                    buttons[val].select()
+                    self.assertEqual(var.get(), 1 - state)
+                    buttons[1-val].select()
+                    self.assertEqual(var.get(), state)
 
     def test_make_button(self):
         self.dialog.top = Toplevel(self.root)
         self.dialog.buttonframe = Frame(self.dialog.top)
         btn = self.dialog.make_button('Test', self.dialog.close)
-        self.assertEqual(btn.cget('text'), 'Test')
+        self.assertEqual(btn['text'], 'Test')
 
     def test_create_command_buttons(self):
         self.dialog.create_command_buttons()
         # Look for close button command in buttonframe
         closebuttoncommand = ''
         for child in self.dialog.buttonframe.winfo_children():
-            if child.config()['text'][-1] == 'close':
-                closebuttoncommand = child.config()['command'][-1]
+            if child['text'] == 'close':
+                closebuttoncommand = child['command']
         self.assertIn('close', closebuttoncommand)
 
 

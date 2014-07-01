@@ -105,65 +105,44 @@ class SearchDialogBase:
     def make_frame(self,labeltext=None):
         "Return gridded labeled Frame for option or other buttons."
         if labeltext:
-            l = Label(self.top, text=labeltext)
-            l.grid(row=self.row, column=0, sticky="nw")
+            label = Label(self.top, text=labeltext)
+            label.grid(row=self.row, column=0, sticky="nw")
         else:
-            l = ''
-        f = Frame(self.top)
-        f.grid(row=self.row, column=1, columnspan=1, sticky="nwe")
+            label = ''
+        frame = Frame(self.top)
+        frame.grid(row=self.row, column=1, columnspan=1, sticky="nwe")
         self.row = self.row + 1
-        return l, f
+        return frame, label  # label for test
 
     def create_option_buttons(self):
         "Fill frame with Checkbuttons bound to SearchEngine booleanvars."
-        f = self.make_frame("Options")[1]
-
-        btn = Checkbutton(f, anchor="w",
-                variable=self.engine.revar,
-                text="Regular expression")
-        btn.pack(side="left", fill="both")
-        if self.engine.isre():
-            btn.select()
-
-        btn = Checkbutton(f, anchor="w",
-                variable=self.engine.casevar,
-                text="Match case")
-        btn.pack(side="left", fill="both")
-        if self.engine.iscase():
-            btn.select()
-
-        btn = Checkbutton(f, anchor="w",
-                variable=self.engine.wordvar,
-                text="Whole word")
-        btn.pack(side="left", fill="both")
-        if self.engine.isword():
-            btn.select()
-
+        frame = self.make_frame("Options")[0]
+        engine = self.engine
+        options = [(engine.revar, "Regular expression"),
+                   (engine.casevar, "Match case"),
+                   (engine.wordvar, "Whole word")]
         if self.needwrapbutton:
-            btn = Checkbutton(f, anchor="w",
-                    variable=self.engine.wrapvar,
-                    text="Wrap around")
+            options.append((engine.wrapvar, "Wrap around"))
+        for var, label in options:
+            btn = Checkbutton(frame, anchor="w", variable=var, text=label)
             btn.pack(side="left", fill="both")
-            if self.engine.iswrap():
+            if var.get():
                 btn.select()
+        return frame, options  # for test
 
     def create_other_buttons(self):
         "Fill frame with buttons tied to other options."
-        f = self.make_frame("Direction")[1]
-
-        btn = Radiobutton(f, anchor="w",
-                variable=self.engine.backvar, value=1,
-                text="Up")
-        btn.pack(side="left", fill="both")
-        if self.engine.isback():
-            btn.select()
-
-        btn = Radiobutton(f, anchor="w",
-                variable=self.engine.backvar, value=0,
-                text="Down")
-        btn.pack(side="left", fill="both")
-        if not self.engine.isback():
-            btn.select()
+        frame = self.make_frame("Direction")[0]
+        var = self.engine.backvar
+        others = [(1, 'Up'), (0, 'Down')]
+        for val, label in others:
+            btn = Radiobutton(frame, anchor="w",
+                              variable=var, value=val, text=label)
+            btn.pack(side="left", fill="both")
+            #print(var.get(), val, label)
+            if var.get() == val:
+                btn.select()
+        return frame, others  # for test
 
     def make_button(self, label, command, isdef=0):
         "Return command button gridded in command frame."
