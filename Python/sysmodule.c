@@ -1546,7 +1546,7 @@ const char *_PySys_ImplName = NAME;
 #define STRIFY(name) QUOTE(name)
 #define MAJOR STRIFY(PY_MAJOR_VERSION)
 #define MINOR STRIFY(PY_MINOR_VERSION)
-#define TAG NAME "-" MAJOR MINOR;
+#define TAG NAME "-" MAJOR MINOR
 const char *_PySys_ImplCacheTag = TAG;
 #undef NAME
 #undef QUOTE
