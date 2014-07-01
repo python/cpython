@@ -13,7 +13,6 @@ from tkinter import *
 import tkinter.messagebox as tkMessageBox
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
-import copy
 
 from idlelib.configHandler import idleConf
 from idlelib.dynOptionMenuWidget import DynOptionMenu
@@ -679,7 +678,7 @@ class ConfigDialog(Toplevel):
         if self.listBindings.curselection():
             reselect=1
             listIndex=self.listBindings.index(ANCHOR)
-        keySet=idleConf.GetKeySet(keySetName)
+        # keySet=idleConf.GetKeySet(keySetName) # unused, delete?
         bindNames = list(keySet.keys())
         bindNames.sort()
         self.listBindings.delete(0,END)
