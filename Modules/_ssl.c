@@ -14,6 +14,8 @@
        http://bugs.python.org/issue8108#msg102867 ?
 */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 
 #ifdef WITH_THREAD
@@ -3233,12 +3235,17 @@ static PyObject *
 PySSL_RAND_add(PyObject *self, PyObject *args)
 {
     char *buf;
-    int len;
+    Py_ssize_t len, written;
     double entropy;
 
     if (!PyArg_ParseTuple(args, "s#d:RAND_add", &buf, &len, &entropy))
         return NULL;
-    RAND_add(buf, len, entropy);
+    do {
+        written = Py_MIN(len, INT_MAX);
+        RAND_add(buf, (int)written, entropy);
+        buf += written;
+        len -= written;
+    } while (len);
     Py_INCREF(Py_None);
     return Py_None;
 }
