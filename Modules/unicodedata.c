@@ -13,6 +13,8 @@
 
    ------------------------------------------------------------------------ */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "ucnhash.h"
 #include "structmember.h"
@@ -1271,12 +1273,16 @@ unicodedata_lookup(PyObject* self, PyObject* args)
     Py_UCS4 code;
 
     char* name;
-    int namelen;
+    Py_ssize_t namelen;
     unsigned int index;
     if (!PyArg_ParseTuple(args, "s#:lookup", &name, &namelen))
         return NULL;
+    if (namelen > INT_MAX) {
+        PyErr_SetString(PyExc_KeyError, "name too long");
+        return NULL;
+    }
 
-    if (!_getcode(self, name, namelen, &code, 1)) {
+    if (!_getcode(self, name, (int)namelen, &code, 1)) {
         PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
         return NULL;
     }
