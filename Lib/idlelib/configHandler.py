@@ -20,7 +20,7 @@ configuration problem notification and resolution.
 import os
 import sys
 import string
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from ConfigParser import ConfigParser
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass

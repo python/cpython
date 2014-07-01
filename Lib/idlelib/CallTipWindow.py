@@ -2,9 +2,8 @@
 
 After ToolTip.py, which uses ideas gleaned from PySol
 Used by the CallTips IDLE extension.
-
 """
-from Tkinter import *
+from Tkinter import Toplevel, Label, LEFT, SOLID, TclError
 
 HIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
@@ -133,13 +132,16 @@ class CallTip:
         return bool(self.tipwindow)
 
 
-def _calltip_window(parent):
+def _calltip_window(parent):  # htest #
+    import re
+    from Tkinter import Tk, Text, LEFT, BOTH
+
     root = Tk()
     root.title("Test calltips")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
     root.geometry("+%d+%d"%(x, y + 150))
 
-    class MyEditWin: # comparenceptually an editor_window
+    class MyEditWin: # conceptually an editor_window
         def __init__(self):
             text = self.text = Text(root)
             text.pack(side=LEFT, fill=BOTH, expand=1)
@@ -161,7 +163,7 @@ def _calltip_window(parent):
         def calltip_hide(self, event):
             self.calltip.hidetip()
 
-    editwin = MyEditWin()
+    MyEditWin()
 
 if __name__=='__main__':
     from idlelib.idle_test.htest import run
