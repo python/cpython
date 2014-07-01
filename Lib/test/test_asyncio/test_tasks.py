@@ -993,9 +993,9 @@ class TaskTests(test_utils.TestCase):
         handle = None
         orig_call_later = loop.call_later
 
-        def call_later(self, delay, callback, *args):
+        def call_later(delay, callback, *args):
             nonlocal handle
-            handle = orig_call_later(self, delay, callback, *args)
+            handle = orig_call_later(delay, callback, *args)
             return handle
 
         loop.call_later = call_later
