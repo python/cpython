@@ -262,8 +262,10 @@ that only one process prints to standard output at a time::
 
    def f(l, i):
        l.acquire()
-       print('hello world', i)
-       l.release()
+       try:
+           print('hello world', i)
+       finally:
+           l.release()
 
    if __name__ == '__main__':
        lock = Lock()
