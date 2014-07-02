@@ -4,7 +4,9 @@ Provides the Distribution class, which represents the module distribution
 being built/installed/distributed.
 """
 
-import sys, os, re
+import sys
+import os
+import re
 from email import message_from_file
 
 try:
@@ -22,7 +24,7 @@ from distutils.debug import DEBUG
 # the same as a Python NAME -- I don't allow leading underscores.  The fact
 # that they're very similar is no coincidence; the default naming scheme is
 # to look for a Python module named after the command.
-command_re = re.compile (r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
+command_re = re.compile(r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
 
 class Distribution:
@@ -39,7 +41,6 @@ class Distribution:
     See the code for 'setup()', in core.py, for details.
     """
 
-
     # 'global_options' describes the command-line options that may be
     # supplied to the setup script prior to any actual commands.
     # Eg. "./setup.py -n" or "./setup.py --quiet" both take advantage of
@@ -48,12 +49,13 @@ class Distribution:
     # don't want to pollute the commands with too many options that they
     # have minimal control over.
     # The fourth entry for verbose means that it can be repeated.
-    global_options = [('verbose', 'v', "run verbosely (default)", 1),
-                      ('quiet', 'q', "run quietly (turns verbosity off)"),
-                      ('dry-run', 'n', "don't actually do anything"),
-                      ('help', 'h', "show detailed help message"),
-                      ('no-user-cfg', None,
-                       'ignore pydistutils.cfg in your home directory'),
+    global_options = [
+        ('verbose', 'v', "run verbosely (default)", 1),
+        ('quiet', 'q', "run quietly (turns verbosity off)"),
+        ('dry-run', 'n', "don't actually do anything"),
+        ('help', 'h', "show detailed help message"),
+        ('no-user-cfg', None,
+            'ignore pydistutils.cfg in your home directory'),
     ]
 
     # 'common_usage' is a short (2-3 line) string describing the common
@@ -115,10 +117,9 @@ Common commands: (see '--help-commands' for more)
     # negative options are options that exclude other options
     negative_opt = {'quiet': 'verbose'}
 
-
     # -- Creation/initialization methods -------------------------------
 
-    def __init__ (self, attrs=None):
+    def __init__(self, attrs=None):
         """Construct a new Distribution instance: initialize all the
         attributes of a Distribution, and then use 'attrs' (a dictionary
         mapping attribute names to values) to assign some of those
@@ -532,15 +533,15 @@ Common commands: (see '--help-commands' for more)
         # to be sure that the basic "command" interface is implemented.
         if not issubclass(cmd_class, Command):
             raise DistutilsClassError(
-                  "command class %s must subclass Command" % cmd_class)
+                "command class %s must subclass Command" % cmd_class)
 
         # Also make sure that the command object provides a list of its
         # known options.
         if not (hasattr(cmd_class, 'user_options') and
                 isinstance(cmd_class.user_options, list)):
-            raise DistutilsClassError(("command class %s must provide " +
-                   "'user_options' attribute (a list of tuples)") % \
-                  cmd_class)
+            msg = ("command class %s must provide "
+                "'user_options' attribute (a list of tuples)")
+            raise DistutilsClassError(msg % cmd_class)
 
         # If the command class has a list of negative alias options,
         # merge it in with the global negative aliases.
@@ -552,11 +553,10 @@ Common commands: (see '--help-commands' for more)
         # Check for help_options in command class.  They have a different
         # format (tuple of four) so we need to preprocess them here.
         if (hasattr(cmd_class, 'help_options') and
-            isinstance(cmd_class.help_options, list)):
+                isinstance(cmd_class.help_options, list)):
             help_options = fix_help_options(cmd_class.help_options)
         else:
             help_options = []
-
 
         # All commands support the global options too, just by adding
         # in 'global_options'.
@@ -570,7 +570,7 @@ Common commands: (see '--help-commands' for more)
             return
 
         if (hasattr(cmd_class, 'help_options') and
-            isinstance(cmd_class.help_options, list)):
+                isinstance(cmd_class.help_options, list)):
             help_option_found=0
             for (help_option, short, desc, func) in cmd_class.help_options:
                 if hasattr(opts, parser.get_attr_name(help_option)):
@@ -647,7 +647,7 @@ Common commands: (see '--help-commands' for more)
             else:
                 klass = self.get_command_class(command)
             if (hasattr(klass, 'help_options') and
-                isinstance(klass.help_options, list)):
+                    isinstance(klass.help_options, list)):
                 parser.set_option_table(klass.user_options +
                                         fix_help_options(klass.help_options))
             else:
@@ -814,7 +814,7 @@ Common commands: (see '--help-commands' for more)
             klass_name = command
 
             try:
-                __import__ (module_name)
+                __import__(module_name)
                 module = sys.modules[module_name]
             except ImportError:
                 continue
@@ -823,8 +823,8 @@ Common commands: (see '--help-commands' for more)
                 klass = getattr(module, klass_name)
             except AttributeError:
                 raise DistutilsModuleError(
-                      "invalid command '%s' (no class '%s' in module '%s')"
-                      % (command, klass_name, module_name))
+                    "invalid command '%s' (no class '%s' in module '%s')"
+                    % (command, klass_name, module_name))
 
             self.cmdclass[command] = klass
             return klass
@@ -840,7 +840,7 @@ Common commands: (see '--help-commands' for more)
         cmd_obj = self.command_obj.get(command)
         if not cmd_obj and create:
             if DEBUG:
-                self.announce("Distribution.get_command_obj(): " \
+                self.announce("Distribution.get_command_obj(): "
                               "creating '%s' command object" % command)
 
             klass = self.get_command_class(command)
@@ -897,8 +897,8 @@ Common commands: (see '--help-commands' for more)
                     setattr(command_obj, option, value)
                 else:
                     raise DistutilsOptionError(
-                          "error in %s: command '%s' has no such option '%s'"
-                          % (source, command_name, option))
+                        "error in %s: command '%s' has no such option '%s'"
+                        % (source, command_name, option))
             except ValueError as msg:
                 raise DistutilsOptionError(msg)
 
@@ -973,7 +973,6 @@ Common commands: (see '--help-commands' for more)
         cmd_obj.ensure_finalized()
         cmd_obj.run()
         self.have_run[command] = 1
-
 
     # -- Distribution query methods ------------------------------------
 
@@ -1112,17 +1111,17 @@ class DistributionMetadata:
         """
         version = '1.0'
         if (self.provides or self.requires or self.obsoletes or
-            self.classifiers or self.download_url):
+                self.classifiers or self.download_url):
             version = '1.1'
 
         file.write('Metadata-Version: %s\n' % version)
-        file.write('Name: %s\n' % self.get_name() )
-        file.write('Version: %s\n' % self.get_version() )
-        file.write('Summary: %s\n' % self.get_description() )
-        file.write('Home-page: %s\n' % self.get_url() )
-        file.write('Author: %s\n' % self.get_contact() )
-        file.write('Author-email: %s\n' % self.get_contact_email() )
-        file.write('License: %s\n' % self.get_license() )
+        file.write('Name: %s\n' % self.get_name())
+        file.write('Version: %s\n' % self.get_version())
+        file.write('Summary: %s\n' % self.get_description())
+        file.write('Home-page: %s\n' % self.get_url())
+        file.write('Author: %s\n' % self.get_contact())
+        file.write('Author-email: %s\n' % self.get_contact_email())
+        file.write('License: %s\n' % self.get_license())
         if self.download_url:
             file.write('Download-URL: %s\n' % self.download_url)
 
@@ -1131,7 +1130,7 @@ class DistributionMetadata:
 
         keywords = ','.join(self.get_keywords())
         if keywords:
-            file.write('Keywords: %s\n' % keywords )
+            file.write('Keywords: %s\n' % keywords)
 
         self._write_list(file, 'Platform', self.get_platforms())
         self._write_list(file, 'Classifier', self.get_classifiers())
