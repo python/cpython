@@ -230,6 +230,12 @@ socket
   :meth:`socket.socket.send`.
   (contributed by Giampaolo Rodola' in :issue:`17552`)
 
+wsgiref
+-------
+
+* *headers* parameter of :class:`wsgiref.headers.Headers` is now optional.
+  (Contributed by Pablo Torres Navarrete and SilentGhost in :issue:`5800`.)
+
 xmlrpc
 ------
 

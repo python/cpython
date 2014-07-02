@@ -26,10 +26,10 @@ def _formatparam(param, value=None, quote=1):
 
 
 class Headers:
-
     """Manage a collection of HTTP response headers"""
 
-    def __init__(self,headers):
+    def __init__(self, headers=None):
+        headers = headers if headers is not None else []
         if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
         self._headers = headers
