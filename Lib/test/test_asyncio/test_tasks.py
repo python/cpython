@@ -218,6 +218,17 @@ class TaskTests(test_utils.TestCase):
                          '<Task pending %s cb=[<Dummy>()]>' % coro)
         self.loop.run_until_complete(t)
 
+    def test_task_repr_wait_for(self):
+        @asyncio.coroutine
+        def wait_for(fut):
+            return (yield from fut)
+
+        fut = asyncio.Future(loop=self.loop)
+        task = asyncio.Task(wait_for(fut), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertRegex(repr(task),
+                         '<Task .* wait_for=%s>' % re.escape(repr(fut)))
+
     def test_task_basics(self):
         @asyncio.coroutine
         def outer():

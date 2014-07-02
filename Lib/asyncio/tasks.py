@@ -109,6 +109,9 @@ class Task(futures.Future):
         if self._callbacks:
             info.append(self._format_callbacks())
 
+        if self._fut_waiter is not None:
+            info.append('wait_for=%r' % self._fut_waiter)
+
         return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
 
     def get_stack(self, *, limit=None):
