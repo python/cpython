@@ -1028,7 +1028,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
 (2)
    To override the comparisons (presumably for speed, as the
-   semantics are fixed), redefine :meth:`__le__` and
+   semantics are fixed), redefine :meth:`__le__` and :meth:`__ge__`,
    then the other operations will automatically follow suit.
 
 (3)
