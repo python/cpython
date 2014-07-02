@@ -131,8 +131,8 @@ def _stack_viewer(parent):
     root.geometry("+%d+%d"%(x, y + 150))
     flist = PyShellFileList(root)
     try: # to obtain a traceback object
-        a
-    except:
+        intentional_name_error
+    except NameError:
         exc_type, exc_value, exc_tb = sys.exc_info()
 
     # inject stack trace to sys
