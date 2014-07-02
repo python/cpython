@@ -12,7 +12,7 @@ requires('gui')
 
 import unittest
 import os
-from tkinter import Tk, Text, TclError
+from tkinter import Tk
 from idlelib import textView as tv
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox
@@ -23,7 +23,7 @@ def setUpModule():
 
 def tearDownModule():
     global root
-    root.destroy()
+    root.destroy()  # pyflakes falsely sees root as undefined
     del root
 
 
