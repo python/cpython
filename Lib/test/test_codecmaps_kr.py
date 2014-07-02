@@ -36,8 +36,5 @@ class TestJOHABMap(multibytecodec_support.TestBase_Mapping,
     pass_enctest = [(b'\\', '\u20a9')]
     pass_dectest = [(b'\\', '\u20a9')]
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

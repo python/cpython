@@ -25,8 +25,5 @@ class TestGB18030Map(multibytecodec_support.TestBase_Mapping,
                  'trunk/charset/data/xml/gb-18030-2000.xml'
 
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
