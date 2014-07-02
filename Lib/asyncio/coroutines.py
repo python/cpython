@@ -111,12 +111,14 @@ class CoroWrapper:
         frame = getattr(gen, 'gi_frame', None)
         if frame is not None and frame.f_lasti == -1:
             func = events._format_callback(self.func, ())
-            tb = ''.join(traceback.format_list(self._source_traceback))
-            message = ('Coroutine %s was never yielded from\n'
-                       'Coroutine object created at (most recent call last):\n'
-                       '%s'
-                       % (func, tb.rstrip()))
-            logger.error(message)
+            msg = 'Coroutine %s was never yielded from' % func
+            tb = getattr(self, '_source_traceback', ())
+            if tb:
+                tb = ''.join(traceback.format_list(tb))
+                msg += ('\nCoroutine object created at '
+                        '(most recent call last):\n')
+                msg += tb.rstrip()
+            logger.error(msg)
 
 
 def coroutine(func):
