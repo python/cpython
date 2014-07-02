@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21090: io.FileIO.readall() does not ignore I/O errors anymore. Before,
+  it ignored I/O errors if at least the first C call read() succeed.
+
 - Issue #21781: ssl.RAND_add() now supports strings longer than 2 GB.
 
 - Issue #11453: asyncore: emit a ResourceWarning when an unclosed file_wrapper
