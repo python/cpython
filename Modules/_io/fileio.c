@@ -577,9 +577,9 @@ fileio_readall(fileio *self)
                 }
                 continue;
             }
-            if (total > 0)
-                break;
             if (errno == EAGAIN) {
+                if (total > 0)
+                    break;
                 Py_DECREF(result);
                 Py_RETURN_NONE;
             }

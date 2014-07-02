@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21090: io.FileIO.readall() does not ignore I/O errors anymore. Before,
+  it ignored I/O errors if at least the first C call read() succeed.
+
 - Issue #19870: BaseCookie now parses 'secure' and 'httponly' flags.
   Backport of issue #16611.
 
