@@ -426,6 +426,8 @@ class Morsel(dict):
                    "version" : "Version",
                    }
 
+    _flags = {'secure', 'httponly'}
+
     def __init__(self):
         # Set defaults
         self.key = self.value = self.coded_value = None
@@ -532,6 +534,7 @@ _CookiePattern = re.compile(
     r"(?P<key>"                   # Start of group 'key'
     ""+ _LegalCharsPatt +"+?"     # Any word of at least one letter, nongreedy
     r")"                          # End of group 'key'
+    r"("                          # Optional group: there may not be a value.
     r"\s*=\s*"                    # Equal Sign
     r"(?P<val>"                   # Start of group 'val'
     r'"(?:[^\\"]|\\.)*"'            # Any doublequoted string
@@ -540,7 +543,9 @@ _CookiePattern = re.compile(
     r"|"                            # or
     ""+ _LegalCharsPatt +"*"        # Any word or empty string
     r")"                          # End of group 'val'
-    r"\s*;?"                      # Probably ending in a semi-colon
+    r")?"                         # End of optional value group
+    r"\s*"                        # Any number of spaces.
+    r"(\s+|;|$)"                  # Ending either at space, semicolon, or EOS.
     )
 
 
@@ -656,8 +661,12 @@ class BaseCookie(dict):
                     M[ K[1:] ] = V
             elif K.lower() in Morsel._reserved:
                 if M:
-                    M[ K ] = _unquote(V)
-            else:
+                    if V is None:
+                        if K.lower() in Morsel._flags:
+                            M[K] = True
+                    else:
+                        M[K] = _unquote(V)
+            elif V is not None:
                 rval, cval = self.value_decode(V)
                 self.__set(K, rval, cval)
                 M = self[K]
