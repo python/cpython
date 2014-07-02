@@ -338,6 +338,7 @@ class HeaderTests(TestCase):
 
     def testMappingInterface(self):
         test = [('x','y')]
+        self.assertEqual(len(Headers()), 0)
         self.assertEqual(len(Headers([])),0)
         self.assertEqual(len(Headers(test[:])),1)
         self.assertEqual(Headers(test[:]).keys(), ['x'])
@@ -345,7 +346,7 @@ class HeaderTests(TestCase):
         self.assertEqual(Headers(test[:]).items(), test)
         self.assertIsNot(Headers(test).items(), test)  # must be copy!
 
-        h=Headers([])
+        h = Headers()
         del h['foo']   # should not raise an error
 
         h['Foo'] = 'bar'
@@ -370,9 +371,8 @@ class HeaderTests(TestCase):
     def testRequireList(self):
         self.assertRaises(TypeError, Headers, "foo")
 
-
     def testExtras(self):
-        h = Headers([])
+        h = Headers()
         self.assertEqual(str(h),'\r\n')
 
         h.add_header('foo','bar',baz="spam")

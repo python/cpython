@@ -184,10 +184,11 @@ This module provides a single class, :class:`Headers`, for convenient
 manipulation of WSGI response headers using a mapping-like interface.
 
 
-.. class:: Headers(headers)
+.. class:: Headers([headers])
 
    Create a mapping-like object wrapping *headers*, which must be a list of header
-   name/value tuples as described in :pep:`3333`.
+   name/value tuples as described in :pep:`3333`. The default value of *headers* is
+   an empty list.
 
    :class:`Headers` objects support typical mapping operations including
    :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
@@ -249,6 +250,10 @@ manipulation of WSGI response headers using a mapping-like interface.
       The above will add a header that looks like this::
 
          Content-Disposition: attachment; filename="bud.gif"
+
+
+   .. versionchanged:: 3.5
+      *headers* parameter is optional.
 
 
 :mod:`wsgiref.simple_server` -- a simple WSGI HTTP server

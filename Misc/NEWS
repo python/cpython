@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5800: headers parameter of wsgiref.headers.Headers is now optional.
+  Initial patch by Pablo Torres Navarrete and SilentGhost.
+
 - Issue #21781: ssl.RAND_add() now supports strings longer than 2 GB.
 
 - Issue #21679: Prevent extraneous fstat() calls during open().  Patch by
