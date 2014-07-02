@@ -277,8 +277,7 @@ class TestBase_Mapping(unittest.TestCase):
     supmaps = []
     codectests = []
 
-    def __init__(self, *args, **kw):
-        unittest.TestCase.__init__(self, *args, **kw)
+    def setUp(self):
         try:
             self.open_mapping_file().close() # test it to report the error early
         except (OSError, HTTPException):
