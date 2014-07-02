@@ -494,7 +494,7 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             universal_newlines=False, bufsize=bufsize, **kwargs)
         if stdin_w is not None:
             stdin.close()
-            self._proc.stdin = open(stdin_w.detach(), 'rb', buffering=bufsize)
+            self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
 
 
 class AbstractChildWatcher:
