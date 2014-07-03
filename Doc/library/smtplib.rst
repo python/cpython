@@ -240,8 +240,7 @@ An :class:`SMTP` instance has the following methods:
    the server is stored as the :attr:`ehlo_resp` attribute, :attr:`does_esmtp`
    is set to true or false depending on whether the server supports ESMTP, and
    :attr:`esmtp_features` will be a dictionary containing the names of the
-   SMTP service extensions this server supports, and their
-   parameters (if any).
+   SMTP service extensions this server supports, and their parameters (if any).
 
    Unless you wish to use :meth:`has_extn` before sending mail, it should not be
    necessary to call this method explicitly.  It will be implicitly called by
@@ -290,6 +289,42 @@ An :class:`SMTP` instance has the following methods:
 
    :exc:`SMTPException`
       No suitable authentication method was found.
+
+   Each of the authentication methods supported by :mod:`smtplib` are tried in
+   turn if they are advertised as supported by the server (see :meth:`auth`
+   for a list of supported authentication methods).
+
+
+.. method:: SMTP.auth(mechanism, authobject)
+
+   Issue an ``SMTP`` ``AUTH`` command for the specified authentication
+   *mechanism*, and handle the challenge response via *authobject*.
+
+   *mechanism* specifies which authentication mechanism is to
+   be used as argument to the ``AUTH`` command; the valid values are
+   those listed in the ``auth`` element of :attr:`esmtp_features`.
+
+   *authobject* must be a callable object taking a single argument:
+
+     data = authobject(challenge)
+
+   It will be called to process the server's challenge response; the
+   *challenge* argument it is passed will be a ``bytes``.  It should return
+   ``bytes`` *data* that will be base64 encoded and sent to the server.
+
+   The ``SMTP`` class provides ``authobjects`` for the ``CRAM-MD5``, ``PLAIN``,
+   and ``LOGIN`` mechanisms; they are named ``SMTP.auth_cram_md5``,
+   ``SMTP.auth_plain``, and ``SMTP.auth_login`` respectively.  They all require
+   that the ``user`` and ``password`` properties of the ``SMTP`` instance are
+   set to appropriate values.
+
+   User code does not normally need to call ``auth`` directly, but can instead
+   call the :meth:`login` method, which will try each of the above mechanisms in
+   turn, in the order listed.  ``auth`` is exposed to facilitate the
+   implementation of authentication methods not (or not yet) supported directly
+   by :mod:`smtplib`.
+
+   .. versionadded:: 3.5
 
 
 .. method:: SMTP.starttls(keyfile=None, certfile=None, context=None)

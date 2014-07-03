@@ -221,6 +221,13 @@ smtpd
   addresses in the :class:`~smtpd.SMTPServer` constructor, and have it
   successfully connect.  (Contributed by Milan Oberkirch in :issue:`14758`.)
 
+smtplib
+-------
+
+* A new :meth:`~smtplib.SMTP.auth` method provides a convenient way to
+  implement custom authentication mechanisms (contributed by Milan Oberkirch in
+  :issue:`15014`).
+
 socket
 ------
 
