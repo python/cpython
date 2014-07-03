@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15014: Added 'auth' method to smtplib to make implementing auth
+  mechanisms simpler, and used it internally in the login method.
+
 - Issue #21151: Fixed a segfault in the winreg module when ``None`` is passed
   as a ``REG_BINARY`` value to SetValueEx.  Patch by John Ehresman.
 
