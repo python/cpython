@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21151: Fixed a segfault in the _winreg module when ``None`` is passed
+  as a ``REG_BINARY`` value to SetValueEx.  Patch by John Ehresman.
+
 - Issue #21090: io.FileIO.readall() does not ignore I/O errors anymore. Before,
   it ignored I/O errors if at least the first C call read() succeed.
 
