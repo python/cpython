@@ -571,12 +571,60 @@ class SMTP:
                 if not (200 <= code <= 299):
                     raise SMTPHeloError(code, resp)
 
+    def auth(self, mechanism, authobject):
+        """Authentication command - requires response processing.
+
+        'mechanism' specifies which authentication mechanism is to
+        be used - the valid values are those listed in the 'auth'
+        element of 'esmtp_features'.
+
+        'authobject' must be a callable object taking a single argument:
+
+                data = authobject(challenge)
+
+        It will be called to process the server's challenge response; the
+        challenge argument it is passed will be a bytes.  It should return
+        bytes data that will be base64 encoded and sent to the server.
+        """
+
+        mechanism = mechanism.upper()
+        (code, resp) = self.docmd("AUTH", mechanism)
+        # Server replies with 334 (challenge) or 535 (not supported)
+        if code == 334:
+            challenge = base64.decodebytes(resp)
+            response = encode_base64(
+                authobject(challenge).encode('ascii'), eol='')
+            (code, resp) = self.docmd(response)
+            if code in (235, 503):
+                return (code, resp)
+        raise SMTPAuthenticationError(code, resp)
+
+    def auth_cram_md5(self, challenge):
+        """ Authobject to use with CRAM-MD5 authentication. Requires self.user
+        and self.password to be set."""
+        return self.user + " " + hmac.HMAC(
+            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+
+    def auth_plain(self, challenge):
+        """ Authobject to use with PLAIN authentication. Requires self.user and
+        self.password to be set."""
+        return "\0%s\0%s" % (self.user, self.password)
+
+    def auth_login(self, challenge):
+        """ Authobject to use with LOGIN authentication. Requires self.user and
+        self.password to be set."""
+        (code, resp) = self.docmd(
+            encode_base64(self.user.encode('ascii'), eol=''))
+        if code == 334:
+            return self.password
+        raise SMTPAuthenticationError(code, resp)
+
     def login(self, user, password):
         """Log in on an SMTP server that requires authentication.
 
         The arguments are:
-            - user:     The user name to authenticate with.
-            - password: The password for the authentication.
+            - user:         The user name to authenticate with.
+            - password:     The password for the authentication.
 
         If there has been no previous EHLO or HELO command this session, this
         method tries ESMTP EHLO first.
@@ -593,63 +641,40 @@ class SMTP:
                                   found.
         """
 
-        def encode_cram_md5(challenge, user, password):
-            challenge = base64.decodebytes(challenge)
-            response = user + " " + hmac.HMAC(password.encode('ascii'),
-                                              challenge, 'md5').hexdigest()
-            return encode_base64(response.encode('ascii'), eol='')
-
-        def encode_plain(user, password):
-            s = "\0%s\0%s" % (user, password)
-            return encode_base64(s.encode('ascii'), eol='')
-
-        AUTH_PLAIN = "PLAIN"
-        AUTH_CRAM_MD5 = "CRAM-MD5"
-        AUTH_LOGIN = "LOGIN"
-
         self.ehlo_or_helo_if_needed()
-
         if not self.has_extn("auth"):
             raise SMTPException("SMTP AUTH extension not supported by server.")
 
         # Authentication methods the server claims to support
         advertised_authlist = self.esmtp_features["auth"].split()
 
-        # List of authentication methods we support: from preferred to
-        # less preferred methods. Except for the purpose of testing the weaker
-        # ones, we prefer stronger methods like CRAM-MD5:
-        preferred_auths = [AUTH_CRAM_MD5, AUTH_PLAIN, AUTH_LOGIN]
+        # Authentication methods we can handle in our preferred order:
+        preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
 
-        # We try the authentication methods the server advertises, but only the
-        # ones *we* support. And in our preferred order.
-        authlist = [auth for auth in preferred_auths if auth in advertised_authlist]
+        # We try the supported authentications in our preferred order, if
+        # the server supports them.
+        authlist = [auth for auth in preferred_auths
+                    if auth in advertised_authlist]
         if not authlist:
             raise SMTPException("No suitable authentication method found.")
 
         # Some servers advertise authentication methods they don't really
         # support, so if authentication fails, we continue until we've tried
         # all methods.
+        self.user, self.password = user, password
         for authmethod in authlist:
-            if authmethod == AUTH_CRAM_MD5:
-                (code, resp) = self.docmd("AUTH", AUTH_CRAM_MD5)
-                if code == 334:
-                    (code, resp) = self.docmd(encode_cram_md5(resp, user, password))
-            elif authmethod == AUTH_PLAIN:
-                (code, resp) = self.docmd("AUTH",
-                    AUTH_PLAIN + " " + encode_plain(user, password))
-            elif authmethod == AUTH_LOGIN:
-                (code, resp) = self.docmd("AUTH",
-                    "%s %s" % (AUTH_LOGIN, encode_base64(user.encode('ascii'), eol='')))
-                if code == 334:
-                    (code, resp) = self.docmd(encode_base64(password.encode('ascii'), eol=''))
+            method_name = 'auth_' + authmethod.lower().replace('-', '_')
+            try:
+                (code, resp) = self.auth(authmethod, getattr(self, method_name))
+                # 235 == 'Authentication successful'
+                # 503 == 'Error: already authenticated'
+                if code in (235, 503):
+                    return (code, resp)
+            except SMTPAuthenticationError as e:
+                last_exception = e
 
-            # 235 == 'Authentication successful'
-            # 503 == 'Error: already authenticated'
-            if code in (235, 503):
-                return (code, resp)
-
-        # We could not login sucessfully. Return result of last attempt.
-        raise SMTPAuthenticationError(code, resp)
+        # We could not login successfully.  Return result of last attempt.
+        raise last_exception
 
     def starttls(self, keyfile=None, certfile=None, context=None):
         """Puts the connection to the SMTP server into TLS mode.

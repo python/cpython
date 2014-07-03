@@ -10,6 +10,7 @@ import sys
 import time
 import select
 import errno
+import base64
 
 import unittest
 from test import support, mock_socket
@@ -605,7 +606,8 @@ sim_auth_credentials = {
     'cram-md5': ('TXIUQUBZB21LD2HLCMUUY29TIDG4OWQ0MJ'
                  'KWZGQ4ODNMNDA4NTGXMDRLZWMYZJDMODG1'),
     }
-sim_auth_login_password = 'C29TZXBHC3N3B3JK'
+sim_auth_login_user = 'TXIUQUBZB21LD2HLCMUUY29T'
+sim_auth_plain = 'AE1YLKFAC29TZXDOZXJLLMNVBQBZB21LCGFZC3DVCMQ='
 
 sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
              'list-2':['Ms.B@xn--fo-fka.com',],
@@ -659,18 +661,16 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             self.push('550 No access for you!')
 
     def smtp_AUTH(self, arg):
-        if arg.strip().lower()=='cram-md5':
+        mech = arg.strip().lower()
+        if mech=='cram-md5':
             self.push('334 {}'.format(sim_cram_md5_challenge))
-            return
-        mech, auth = arg.split()
-        mech = mech.lower()
-        if mech not in sim_auth_credentials:
+        elif mech not in sim_auth_credentials:
             self.push('504 auth type unimplemented')
             return
-        if mech == 'plain' and auth==sim_auth_credentials['plain']:
-            self.push('235 plain auth ok')
-        elif mech=='login' and auth==sim_auth_credentials['login']:
-            self.push('334 Password:')
+        elif mech=='plain':
+            self.push('334 ')
+        elif mech=='login':
+            self.push('334 ')
         else:
             self.push('550 No access for you!')
 
@@ -818,28 +818,28 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(smtp.expn(u), expected_unknown)
         smtp.quit()
 
-    def testAUTH_PLAIN(self):
-        self.serv.add_feature("AUTH PLAIN")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
-
-        expected_auth_ok = (235, b'plain auth ok')
-        self.assertEqual(smtp.login(sim_auth[0], sim_auth[1]), expected_auth_ok)
-        smtp.close()
-
-    # SimSMTPChannel doesn't fully support LOGIN or CRAM-MD5 auth because they
-    # require a synchronous read to obtain the credentials...so instead smtpd
+    # SimSMTPChannel doesn't fully support AUTH because it requires a
+    # synchronous read to obtain the credentials...so instead smtpd
     # sees the credential sent by smtplib's login method as an unknown command,
     # which results in smtplib raising an auth error.  Fortunately the error
     # message contains the encoded credential, so we can partially check that it
     # was generated correctly (partially, because the 'word' is uppercased in
     # the error message).
 
+    def testAUTH_PLAIN(self):
+        self.serv.add_feature("AUTH PLAIN")
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        try: smtp.login(sim_auth[0], sim_auth[1])
+        except smtplib.SMTPAuthenticationError as err:
+            self.assertIn(sim_auth_plain, str(err))
+        smtp.close()
+
     def testAUTH_LOGIN(self):
         self.serv.add_feature("AUTH LOGIN")
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         try: smtp.login(sim_auth[0], sim_auth[1])
         except smtplib.SMTPAuthenticationError as err:
-            self.assertIn(sim_auth_login_password, str(err))
+            self.assertIn(sim_auth_login_user, str(err))
         smtp.close()
 
     def testAUTH_CRAM_MD5(self):
@@ -857,7 +857,23 @@ class SMTPSimTests(unittest.TestCase):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         try: smtp.login(sim_auth[0], sim_auth[1])
         except smtplib.SMTPAuthenticationError as err:
-            self.assertIn(sim_auth_login_password, str(err))
+            self.assertIn(sim_auth_login_user, str(err))
+        smtp.close()
+
+    def test_auth_function(self):
+        smtp = smtplib.SMTP(HOST, self.port,
+                            local_hostname='localhost', timeout=15)
+        self.serv.add_feature("AUTH CRAM-MD5")
+        smtp.user, smtp.password = sim_auth[0], sim_auth[1]
+        supported = {'CRAM-MD5': smtp.auth_cram_md5,
+                     'PLAIN': smtp.auth_plain,
+                     'LOGIN': smtp.auth_login,
+                    }
+        for mechanism, method in supported.items():
+            try: smtp.auth(mechanism, method)
+            except smtplib.SMTPAuthenticationError as err:
+                self.assertIn(sim_auth_credentials[mechanism.lower()].upper(),
+                              str(err))
         smtp.close()
 
     def test_with_statement(self):
