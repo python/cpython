@@ -597,7 +597,9 @@ type objects) *must* have the :attr:`ob_size` field.
 .. c:member:: richcmpfunc PyTypeObject.tp_richcompare
 
    An optional pointer to the rich comparison function, whose signature is
-   ``PyObject *tp_richcompare(PyObject *a, PyObject *b, int op)``.
+   ``PyObject *tp_richcompare(PyObject *a, PyObject *b, int op)``. The first
+   parameter is guaranteed to be an instance of the type that is defined
+   by :c:type:`PyTypeObject`.
 
    The function should return the result of the comparison (usually ``Py_True``
    or ``Py_False``).  If the comparison is undefined, it must return
