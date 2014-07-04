@@ -410,6 +410,7 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
+.. index:: builtin: exec
 
 .. function:: exec(object[, globals[, locals]])
 
