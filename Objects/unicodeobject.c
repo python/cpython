@@ -1372,9 +1372,8 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     how_many = Py_MIN(PyUnicode_GET_LENGTH(from), how_many);
     if (to_start + how_many > PyUnicode_GET_LENGTH(to)) {
         PyErr_Format(PyExc_SystemError,
-                     "Cannot write %" PY_FORMAT_SIZE_T "i characters at %"
-                     PY_FORMAT_SIZE_T "i in a string of %"
-                     PY_FORMAT_SIZE_T "i characters",
+                     "Cannot write %zi characters at %zi "
+                     "in a string of %zi characters",
                      how_many, to_start, PyUnicode_GET_LENGTH(to));
         return -1;
     }
@@ -4083,9 +4082,7 @@ unicode_decode_call_errorhandler_wchar(
     if (newpos<0)
         newpos = insize+newpos;
     if (newpos<0 || newpos>insize) {
-        PyErr_Format(PyExc_IndexError,
-                     "position %" PY_FORMAT_SIZE_T
-                     "d from error handler out of bounds", newpos);
+        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", newpos);
         goto onError;
     }
 
@@ -4178,9 +4175,7 @@ unicode_decode_call_errorhandler_writer(
     if (newpos<0)
         newpos = insize+newpos;
     if (newpos<0 || newpos>insize) {
-        PyErr_Format(PyExc_IndexError,
-                     "position %" PY_FORMAT_SIZE_T
-                     "d from error handler out of bounds", newpos);
+        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", newpos);
         goto onError;
     }
 
@@ -6443,9 +6438,7 @@ unicode_encode_call_errorhandler(const char *errors,
     if (*newpos<0)
         *newpos = len + *newpos;
     if (*newpos<0 || *newpos>len) {
-        PyErr_Format(PyExc_IndexError,
-                     "position %" PY_FORMAT_SIZE_T
-                     "d from error handler out of bounds", *newpos);
+        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", *newpos);
         Py_DECREF(restuple);
         return NULL;
     }
@@ -8445,9 +8438,7 @@ unicode_translate_call_errorhandler(const char *errors,
     else
         *newpos = i_newpos;
     if (*newpos<0 || *newpos>PyUnicode_GET_LENGTH(unicode)) {
-        PyErr_Format(PyExc_IndexError,
-                     "position %" PY_FORMAT_SIZE_T
-                     "d from error handler out of bounds", *newpos);
+        PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", *newpos);
         Py_DECREF(restuple);
         return NULL;
     }
@@ -9775,8 +9766,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         item = items[i];
         if (!PyUnicode_Check(item)) {
             PyErr_Format(PyExc_TypeError,
-                         "sequence item %" PY_FORMAT_SIZE_T
-                         "d: expected str instance,"
+                         "sequence item %zd: expected str instance,"
                          " %.80s found",
                          i, Py_TYPE(item)->tp_name);
             goto onError;
@@ -14466,7 +14456,7 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
     default:
         PyErr_Format(PyExc_ValueError,
                      "unsupported format character '%c' (0x%x) "
-                     "at index %" PY_FORMAT_SIZE_T "d",
+                     "at index %zd",
                      (31<=arg->ch && arg->ch<=126) ? (char)arg->ch : '?',
                      (int)arg->ch,
                      ctx->fmtpos - 1);
