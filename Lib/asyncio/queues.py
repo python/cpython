@@ -173,7 +173,7 @@ class Queue:
             # run, we need to defer the put for a tick to ensure that
             # getters and putters alternate perfectly. See
             # ChannelTest.test_wait.
-            self._loop.call_soon(putter.set_result, None)
+            self._loop.call_soon(putter._set_result_unless_cancelled, None)
 
             return self._get()
 

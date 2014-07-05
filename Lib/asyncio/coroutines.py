@@ -64,6 +64,12 @@ class CoroWrapper:
         self.gen = gen
         self.func = func
         self._source_traceback = traceback.extract_stack(sys._getframe(1))
+        # __name__, __qualname__, __doc__ attributes are set by the coroutine()
+        # decorator
+
+    def __repr__(self):
+        return ('<%s %s>'
+                % (self.__class__.__name__, _format_coroutine(self)))
 
     def __iter__(self):
         return self
