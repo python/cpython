@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21897: Fix a crash with the f_locals attribute with closure
+  variables when frame.clear() has been called.
+
 - Issue #21205: Add a new ``__qualname__`` attribute to generator, the
   qualified name, and use it in the representation of a generator
   (``repr(gen)``). The default name of the generator (``__name__`` attribute)
