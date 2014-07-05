@@ -89,7 +89,10 @@ Print ``"Hello World"`` every two seconds using a coroutine::
             yield from asyncio.sleep(2)
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(greet_every_two_seconds())
+    try:
+        loop.run_until_complete(greet_every_two_seconds())
+    finally:
+        loop.close()
 
 .. seealso::
 
