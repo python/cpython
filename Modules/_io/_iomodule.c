@@ -526,11 +526,13 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
   error:
     if (result != NULL) {
-        PyObject *exc, *val, *tb;
+        PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        if (PyObject_CallMethod(result, "close", NULL) != NULL)
+        close_result = PyObject_CallMethod(result, "close", NULL);
+        if (close_result != NULL) {
+            Py_DECREF(close_result);
             PyErr_Restore(exc, val, tb);
-        else {
+        } else {
             Py_XDECREF(exc);
             Py_XDECREF(val);
             Py_XDECREF(tb);
