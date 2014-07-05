@@ -1,5 +1,6 @@
 import gc
 import sys
+import types
 import unittest
 import weakref
 
@@ -107,6 +108,57 @@ class ClearTest(unittest.TestCase):
             self.assertIsNot(None, wr())
             self.clear_traceback_frames(exc.__traceback__)
             self.assertIs(None, wr())
+
+
+class FrameLocalsTest(unittest.TestCase):
+    """
+    Tests for the .f_locals attribute.
+    """
+
+    def make_frames(self):
+        def outer():
+            x = 5
+            y = 6
+            def inner():
+                z = x + 2
+                1/0
+                t = 9
+            return inner()
+        try:
+            outer()
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+            frames = []
+            while tb:
+                frames.append(tb.tb_frame)
+                tb = tb.tb_next
+        return frames
+
+    def test_locals(self):
+        f, outer, inner = self.make_frames()
+        outer_locals = outer.f_locals
+        self.assertIsInstance(outer_locals.pop('inner'), types.FunctionType)
+        self.assertEqual(outer_locals, {'x': 5, 'y': 6})
+        inner_locals = inner.f_locals
+        self.assertEqual(inner_locals, {'x': 5, 'z': 7})
+
+    def test_clear_locals(self):
+        # Test f_locals after clear() (issue #21897)
+        f, outer, inner = self.make_frames()
+        outer.clear()
+        inner.clear()
+        self.assertEqual(outer.f_locals, {})
+        self.assertEqual(inner.f_locals, {})
+
+    def test_locals_clear_locals(self):
+        # Test f_locals before and after clear() (to exercise caching)
+        f, outer, inner = self.make_frames()
+        outer.f_locals
+        inner.f_locals
+        outer.clear()
+        inner.clear()
+        self.assertEqual(outer.f_locals, {})
+        self.assertEqual(inner.f_locals, {})
 
 
 def test_main():
