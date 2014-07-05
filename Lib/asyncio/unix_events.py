@@ -269,7 +269,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         self._loop.add_reader(self._fileno, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
-            self._loop.call_soon(waiter.set_result, None)
+            self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
     def _read_ready(self):
         try:
@@ -353,7 +353,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
-            self._loop.call_soon(waiter.set_result, None)
+            self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
     def get_write_buffer_size(self):
         return sum(len(data) for data in self._buffer)

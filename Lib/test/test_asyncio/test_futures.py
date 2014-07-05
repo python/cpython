@@ -343,6 +343,12 @@ class FutureTests(test_utils.TestCase):
         message = m_log.error.call_args[0][0]
         self.assertRegex(message, re.compile(regex, re.DOTALL))
 
+    def test_set_result_unless_cancelled(self):
+        fut = asyncio.Future(loop=self.loop)
+        fut.cancel()
+        fut._set_result_unless_cancelled(2)
+        self.assertTrue(fut.cancelled())
+
 
 class FutureDoneCallbackTests(test_utils.TestCase):
 
