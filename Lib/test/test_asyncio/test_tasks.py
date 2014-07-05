@@ -211,6 +211,10 @@ class TaskTests(test_utils.TestCase):
         coro = ('%s() at %s:%s'
                 % (coro_qualname, code.co_filename, code.co_firstlineno))
 
+        # test repr(CoroWrapper)
+        if coroutines._DEBUG:
+            self.assertEqual(repr(gen), '<CoroWrapper %s>' % coro)
+
         # test pending Task
         t = asyncio.Task(gen, loop=self.loop)
         t.add_done_callback(Dummy())
