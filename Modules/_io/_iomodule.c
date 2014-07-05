@@ -465,11 +465,13 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 
   error:
     if (result != NULL) {
-        PyObject *exc, *val, *tb;
+        PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        if (_PyObject_CallMethodId(result, &PyId_close, NULL) != NULL)
+        close_result = _PyObject_CallMethodId(result, &PyId_close, NULL);
+        if (close_result != NULL) {
+            Py_DECREF(close_result);
             PyErr_Restore(exc, val, tb);
-        else {
+        } else {
             PyObject *exc2, *val2, *tb2;
             PyErr_Fetch(&exc2, &val2, &tb2);
             PyErr_NormalizeException(&exc, &val, &tb);
