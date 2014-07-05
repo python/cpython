@@ -487,7 +487,8 @@ def as_completed(fs, *, loop=None, timeout=None):
 def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
     future = futures.Future(loop=loop)
-    h = future._loop.call_later(delay, future.set_result, result)
+    h = future._loop.call_later(delay,
+                                future._set_result_unless_cancelled, result)
     try:
         return (yield from future)
     finally:
