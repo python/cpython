@@ -651,7 +651,10 @@ Print ``Hello World`` every two seconds, using a callback::
 
     loop = asyncio.get_event_loop()
     loop.call_soon(print_and_repeat, loop)
-    loop.run_forever()
+    try:
+        loop.run_forever()
+    finally:
+        loop.close()
 
 .. seealso::
 
@@ -679,5 +682,8 @@ Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`::
 
     print("Event loop running forever, press CTRL+c to interrupt.")
     print("pid %s: send SIGINT or SIGTERM to exit." % os.getpid())
-    loop.run_forever()
+    try:
+        loop.run_forever()
+    finally:
+        loop.close()
 
