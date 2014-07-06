@@ -3,6 +3,9 @@ import os
 import test
 import unittest
 import shutil
+import subprocess
+import sys
+import textwrap
 
 from distutils import sysconfig
 from distutils.tests import support
@@ -99,6 +102,24 @@ class SysconfigTestCase(support.EnvironGuard,
         self.assertEqual(global_sysconfig.get_config_var('LDSHARED'), sysconfig.get_config_var('LDSHARED'))
         self.assertEqual(global_sysconfig.get_config_var('CC'), sysconfig.get_config_var('CC'))
 
+    def test_customize_compiler_before_get_config_vars(self):
+        # Issue #21923: test that a Distribution compiler
+        # instance can be called without an explicit call to
+        # get_config_vars().
+        with open(TESTFN, 'w') as f:
+            f.writelines(textwrap.dedent('''\
+                from distutils.core import Distribution
+                config = Distribution().get_command_obj('config')
+                # try_compile may pass or it may fail if no compiler
+                # is found but it should not raise an exception.
+                rc = config.try_compile('int x;')
+                '''))
+        p = subprocess.Popen([str(sys.executable), TESTFN],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True)
+        outs, errs = p.communicate()
+        self.assertEqual(0, p.returncode, "Subprocess failed: " + outs)
 
 
 def test_suite():
