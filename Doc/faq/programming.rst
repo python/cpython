@@ -499,6 +499,62 @@ the import inside the class but outside of any method still causes the import to
 occur when the module is initialized.
 
 
+Why are default values shared between objects?
+----------------------------------------------
+
+This type of bug commonly bites neophyte programmers.  Consider this function::
+
+   def foo(mydict={}):  # Danger: shared reference to one dict for all calls
+       ... compute something ...
+       mydict[key] = value
+       return mydict
+
+The first time you call this function, ``mydict`` contains a single item.  The
+second time, ``mydict`` contains two items because when ``foo()`` begins
+executing, ``mydict`` starts out with an item already in it.
+
+It is often expected that a function call creates new objects for default
+values. This is not what happens. Default values are created exactly once, when
+the function is defined.  If that object is changed, like the dictionary in this
+example, subsequent calls to the function will refer to this changed object.
+
+By definition, immutable objects such as numbers, strings, tuples, and ``None``,
+are safe from change. Changes to mutable objects such as dictionaries, lists,
+and class instances can lead to confusion.
+
+Because of this feature, it is good programming practice to not use mutable
+objects as default values.  Instead, use ``None`` as the default value and
+inside the function, check if the parameter is ``None`` and create a new
+list/dictionary/whatever if it is.  For example, don't write::
+
+   def foo(mydict={}):
+       ...
+
+but::
+
+   def foo(mydict=None):
+       if mydict is None:
+           mydict = {}  # create a new dict for local namespace
+
+This feature can be useful.  When you have a function that's time-consuming to
+compute, a common technique is to cache the parameters and the resulting value
+of each call to the function, and return the cached value if the same value is
+requested again.  This is called "memoizing", and can be implemented like this::
+
+   # Callers will never provide a third parameter for this function.
+   def expensive(arg1, arg2, _cache={}):
+       if (arg1, arg2) in _cache:
+           return _cache[(arg1, arg2)]
+
+       # Calculate the value
+       result = ... expensive computation ...
+       _cache[(arg1, arg2)] = result  # Store result in the cache
+       return result
+
+You could use a global variable containing a dictionary instead of the default
+value; it's a matter of taste.
+
+
 How can I pass optional or keyword parameters from one function to another?
 ---------------------------------------------------------------------------
 
