@@ -653,6 +653,9 @@ Documentation
 Tests
 -----
 
+- Issue #9554: Use modern unittest features in test_argparse. Initial patch by
+  Denver Coneybeare and Radu Voicilas.
+
 - Issue #20155: Changed HTTP method names in failing tests in test_httpservers
   so that packet filtering software (specifically Windows Base Filtering Engine)
   does not interfere with the transaction semantics expected by the tests.
