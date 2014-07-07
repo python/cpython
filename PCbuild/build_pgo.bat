@@ -9,12 +9,12 @@ setlocal
 set platf=Win32
 
 rem use the performance testsuite.  This is quick and simple
-set job1=..\tools\pybench\pybench.py -n 1 -C 1 --with-gc
-set path1=..\tools\pybench
+set job1=%~dp0..\tools\pybench\pybench.py -n 1 -C 1 --with-gc
+set path1=%~dp0..\tools\pybench
 
 rem or the whole testsuite for more thorough testing
-set job2=..\lib\test\regrtest.py
-set path2=..\lib
+set job2=%~dp0..\lib\test\regrtest.py
+set path2=%~dp0..\lib
 
 set job=%job1%
 set clrpath=%path1%
@@ -31,9 +31,9 @@ rem build the instrumented version
 call build -p %platf% -c PGInstrument
 
 rem remove .pyc files, .pgc files and execute the job
-%PGI%\python.exe rmpyc.py %clrpath%
+%PGI%\python.exe rmpyc.py "%clrpath%"
 del %PGI%\*.pgc
-%PGI%\python.exe %job%
+%PGI%\python.exe "%job%"
 
 rem finally build the optimized version
 if exist %PGO% del /s /q %PGO%
