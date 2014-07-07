@@ -316,6 +316,12 @@ class Future:
 
     # So-called internal methods (note: no set_running_or_notify_cancel()).
 
+    def _set_result_unless_cancelled(self, result):
+        """Helper setting the result only if the future was not cancelled."""
+        if self.cancelled():
+            return
+        self.set_result(result)
+
     def set_result(self, result):
         """Mark the future done and set its result.
 

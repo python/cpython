@@ -12,7 +12,7 @@ standard input, a script, or from an interactive prompt.
 A module can discover whether or not it is running in the main scope by
 checking its own ``__name__``, which allows a common idiom for conditionally
 executing code in a module when it is run as a script or with ``python
--m`` but not when it is imported:
+-m`` but not when it is imported::
 
    if __name__ == "__main__":
        # execute only if run as a script
