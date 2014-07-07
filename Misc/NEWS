@@ -746,6 +746,8 @@ Tools/Demos
 Windows
 -------
 
+- Issue #21907: Improved the batch scripts provided for building Python.
+
 - Issue #21671, CVE-2014-0224: The bundled version of OpenSSL has been
   updated to 1.0.1h.
 

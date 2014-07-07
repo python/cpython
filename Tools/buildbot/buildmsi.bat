@@ -1,21 +1,20 @@
 @rem Used by the buildbot "buildmsi" step.
+setlocal
 
-cmd /c Tools\buildbot\external.bat
+set cwd=%CD%
 @rem build release versions of things
-call "%VS100COMNTOOLS%vsvars32.bat"
-
-@rem build Python
-msbuild /p:useenv=true PCbuild\pcbuild.sln /p:Configuration=Release /p:Platform=Win32
+call "%~dp0build.bat" -c Release
 
 @rem build the documentation
-bash.exe -c 'cd Doc;make PYTHON=python2.5 update htmlhelp'
-"%ProgramFiles%\HTML Help Workshop\hhc.exe" Doc\build\htmlhelp\python26a3.hhp
+call "%~dp0..\..\Doc\make.bat" htmlhelp
 
 @rem build the MSI file
-cd PC
+call "%VS100COMNTOOLS%..\..\VC\vcvarsall.bat" x86
+cd "%~dp0..\..\PC"
 nmake /f icons.mak
 cd ..\Tools\msi
 del *.msi
 nmake /f msisupport.mak
 %HOST_PYTHON% msi.py
 
+cd "%cwd%"

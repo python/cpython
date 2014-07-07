@@ -1,3 +1,13 @@
+Quick Start Guide
+-----------------
+
+1.  Install Microsoft Visual C++ 2010 SP1, any edition.
+2.  Install Subversion, and make sure 'svn.exe' is on your PATH.
+3.  Install NASM, and make sure 'nasm.exe' is on your PATH.
+4.  Run "build.bat -e" to build Python in 32-bit Release configuration.
+5.  (Optional, but recommended) Run the test suite with "rt.bat -q".
+
+
 Building Python using Microsoft Visual C++
 ------------------------------------------
 
@@ -24,8 +34,8 @@ All you need to do to build is open the solution "pcbuild.sln" in Visual
 Studio, select the desired combination of configuration and platform,
 then build with "Build Solution" or the F7 keyboard shortcut.  You can
 also build from the command line using the "build.bat" script in this
-directory.  The solution is configured to build the projects in the
-correct order.
+directory; see below for details.  The solution is configured to build
+the projects in the correct order.
 
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into this
@@ -54,6 +64,26 @@ PGInstrument, PGUpdate
 Release
     Used to build Python as it is meant to be used in production
     settings, though without PGO.
+
+
+Building Python using the build.bat script
+----------------------------------------------
+
+In this directory you can find build.bat, a script designed to make
+building Python on Windows simpler.  The only absolute requirement for
+using this script is for the VS100COMNTOOLS environment variable to be
+properly set, which should be done by Microsoft Visual C++ 2010
+installation.
+
+By default, build.bat will build Python in Release configuration for
+the 32-bit Win32 platform.  It accepts several arguments to change
+this behavior:
+
+   -c <configuration>  Set the configuration (see above)
+   -d                  Shortcut for "-c Debug"
+   -p <platform>       Set the platform to build for ("Win32" or "x64")
+   -r                  Rebuild instead of just building
+   -e                  Use get_externals.bat to fetch external sources
 
 
 Legacy support
@@ -227,25 +257,18 @@ Getting External Sources
 The last category of sub-projects listed above wrap external projects
 Python doesn't control, and as such a little more work is required in
 order to download the relevant source files for each project before they
-can be built.  The buildbots must ensure that all libraries are present
-before building, so the easiest approach is to run either external.bat
-or external-amd64.bat (depending on platform) in the ..\Tools\buildbot
-directory from ..\, i.e.:
-
-    C:\python\cpython\PCbuild>cd ..
-    C:\python\cpython>Tools\buildbot\external.bat
-
-This extracts all the external sub-projects from
+can be built.  However, a simple script is provided to make this as
+painless as possible, called "get_externals.bat" and located in this
+directory.  This script extracts all the external sub-projects from
     http://svn.python.org/projects/external
-via Subversion (so you'll need an svn.exe on your PATH) and places them
+via Subversion (so you'll need svn.exe on your PATH) and places them
 in ..\.. (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
-though you may have to change the names of some folders in order to make
-things work.  For instance, if you were to download a version 5.0.7 of
-XZ Utils, you would need to extract the archive into ..\..\xz-5.0.5
-anyway, since that is where the solution is set to look for xz.  The
-same is true for all other external projects.
+though you may have to change folder names or pass the names to MSBuild
+as the values of certain properties in order for the build solution to
+find them.  This is an advanced topic and not necessarily fully
+supported.
 
 
 Building for AMD64

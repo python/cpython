@@ -48,7 +48,11 @@ def main(regrtest_args):
         args.extend(['-u', 'all,-largefile,-audio,-gui'])
     args.extend(regrtest_args)
     print(' '.join(args))
-    os.execv(sys.executable, args)
+    if sys.platform == 'win32':
+        from subprocess import call
+        call(args)
+    else:
+        os.execv(sys.executable, args)
 
 
 if __name__ == '__main__':

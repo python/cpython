@@ -1,6 +1,2 @@
-@rem Fetches (and builds if necessary) external dependencies
-
-@rem Assume we start inside the Python source directory
-call "Tools\buildbot\external-common.bat"
-
-
+@echo Please use PCbuild\get_externals.bat instead.
+@"%~dp0..\..\PCbuild\get_externals.bat" %*
