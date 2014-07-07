@@ -46,7 +46,7 @@ Debug
     development of CPython, you will most likely use this configuration.
 PGInstrument, PGUpdate
     Used to build Python in Release configuration using PGO, which
-    requires Professional Edition of Visual Studio.  See the "Profile
+    requires Premium Edition of Visual Studio.  See the "Profile
     Guided Optimization" section below for more information.  Build
     output from each of these configurations lands in its own
     sub-directory of this directory.  The official Python releases are
