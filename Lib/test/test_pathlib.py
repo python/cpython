@@ -540,6 +540,10 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('a/b').with_name, '')
+        self.assertRaises(ValueError, P('a/b').with_name, '/c')
+        self.assertRaises(ValueError, P('a/b').with_name, 'c/')
+        self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
 
     def test_with_suffix_common(self):
         P = self.cls
@@ -950,6 +954,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, P('c:').with_name, 'd.xml')
         self.assertRaises(ValueError, P('c:/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('//My/Share').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:')
+        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:e')
+        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:/e')
+        self.assertRaises(ValueError, P('c:a/b').with_name, '//My/Share')
 
     def test_with_suffix(self):
         P = self.cls
