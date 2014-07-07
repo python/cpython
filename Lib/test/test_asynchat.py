@@ -249,6 +249,22 @@ class TestAsynchat(unittest.TestCase):
         # (which could still result in the client not having received anything)
         self.assertGreater(len(s.buffer), 0)
 
+    def test_push(self):
+        # Issue #12523: push() should raise a TypeError if it doesn't get
+        # a bytes string
+        s, event = start_echo_server()
+        c = echo_client(b'\n', s.port)
+        data = b'bytes\n'
+        c.push(data)
+        c.push(bytearray(data))
+        c.push(memoryview(data))
+        self.assertRaises(TypeError, c.push, 10)
+        self.assertRaises(TypeError, c.push, 'unicode')
+        c.push(SERVER_QUIT)
+        asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
+        s.join(timeout=TIMEOUT)
+        self.assertEqual(c.contents, [b'bytes', b'bytes', b'bytes'])
+
 
 class TestAsynchat_WithPoll(TestAsynchat):
     usepoll = True
