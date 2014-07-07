@@ -87,7 +87,7 @@ class InspectLoaderTests:
     def test_is_package(self):
         # Cannot be a package.
         result = self.machinery.BuiltinImporter.is_package(builtin_util.NAME)
-        self.assertTrue(not result)
+        self.assertFalse(result)
 
     def test_not_builtin(self):
         # Modules not built-in should raise ImportError.
