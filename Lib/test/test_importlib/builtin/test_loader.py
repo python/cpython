@@ -88,7 +88,7 @@ class InspectLoaderTests:
     def test_is_package(self):
         # Cannot be a package.
         result = self.machinery.BuiltinImporter.is_package(util.BUILTINS.good_name)
-        self.assertTrue(not result)
+        self.assertFalse(result)
 
     @unittest.skipIf(util.BUILTINS.bad_name is None, 'all modules are built in')
     def test_not_builtin(self):
