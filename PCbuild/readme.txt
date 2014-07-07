@@ -19,8 +19,11 @@ requirements are as follows:
 
 Visual C++ 2010 Express Edition
     Required for building 32-bit Debug and Release configuration builds.
-    This edition does not support "solution folders", which pcbuild.sln
-    uses; this will not prevent building.
+    The Python build solution pcbuild.sln makes use of Solution Folders,
+    which this edition does not support.  Any time pcbuild.sln is opened
+    or reloaded by Visual C++, a warning about Solution Folders will be
+    displayed which can be safely dismissed with no impact on your
+    ability to build Python.
 Visual Studio 2010 Professional Edition
     Required for building 64-bit Debug and Release configuration builds
 Visual Studio 2010 Premium Edition
