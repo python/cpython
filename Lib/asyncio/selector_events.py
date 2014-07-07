@@ -481,7 +481,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._loop.add_reader(self._sock_fd, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
-            self._loop.call_soon(waiter._set_result_unless_cancelled, None)
+            waiter.set_result(None)
 
     def pause_reading(self):
         if self._closing:

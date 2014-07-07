@@ -166,11 +166,11 @@ def iscoroutinefunction(func):
     return getattr(func, '_is_coroutine', False)
 
 
-_COROUTINE_TYPES = (CoroWrapper, types.GeneratorType)
+_COROUTINE_TYPES = (types.GeneratorType, CoroWrapper)
 
 def iscoroutine(obj):
     """Return True if obj is a coroutine object."""
-    return isinstance(obj,  _COROUTINE_TYPES)
+    return isinstance(obj, _COROUTINE_TYPES)
 
 
 def _format_coroutine(coro):
