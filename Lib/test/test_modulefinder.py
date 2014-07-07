@@ -316,7 +316,7 @@ class ModuleFinderTest(unittest.TestCase):
             self._do_test(maybe_test, debug=2,
                           replace_paths=[(old_path, new_path)])
         output = output.getvalue()
-        expected = "co_filename '%s' changed to '%s'" % (old_path, new_path)
+        expected = "co_filename %r changed to %r" % (old_path, new_path)
         self.assertIn(expected, output)
 
 
