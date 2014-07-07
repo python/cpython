@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11259: asynchat.async_chat().set_terminator() now raises a ValueError
+  if the number of received bytes is negative.
+
 - Issue #12523: asynchat.async_chat.push() now raises a TypeError if it doesn't
   get a bytes string
 
