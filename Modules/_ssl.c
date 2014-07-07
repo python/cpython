@@ -3416,7 +3416,7 @@ asn1obj2py(ASN1_OBJECT *obj)
     int nid;
     const char *ln, *sn;
     char buf[100];
-    int buflen;
+    Py_ssize_t buflen;
 
     nid = OBJ_obj2nid(obj);
     if (nid == NID_undef) {
