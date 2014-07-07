@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21707: Add missing kwonlyargcount argument to
+  ModuleFinder.replace_paths_in_code().
+
 - Issue #20639: calling Path.with_suffix('') allows removing the suffix
   again.  Patch by July Tikhonov.
 
