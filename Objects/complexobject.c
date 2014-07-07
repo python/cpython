@@ -13,7 +13,7 @@
 static Py_complex c_1 = {1., 0.};
 
 Py_complex
-c_sum(Py_complex a, Py_complex b)
+_Py_c_sum(Py_complex a, Py_complex b)
 {
     Py_complex r;
     r.real = a.real + b.real;
@@ -22,7 +22,7 @@ c_sum(Py_complex a, Py_complex b)
 }
 
 Py_complex
-c_diff(Py_complex a, Py_complex b)
+_Py_c_diff(Py_complex a, Py_complex b)
 {
     Py_complex r;
     r.real = a.real - b.real;
@@ -31,7 +31,7 @@ c_diff(Py_complex a, Py_complex b)
 }
 
 Py_complex
-c_neg(Py_complex a)
+_Py_c_neg(Py_complex a)
 {
     Py_complex r;
     r.real = -a.real;
@@ -40,7 +40,7 @@ c_neg(Py_complex a)
 }
 
 Py_complex
-c_prod(Py_complex a, Py_complex b)
+_Py_c_prod(Py_complex a, Py_complex b)
 {
     Py_complex r;
     r.real = a.real*b.real - a.imag*b.imag;
@@ -49,7 +49,7 @@ c_prod(Py_complex a, Py_complex b)
 }
 
 Py_complex
-c_quot(Py_complex a, Py_complex b)
+_Py_c_quot(Py_complex a, Py_complex b)
 {
     /******************************************************************
     This was the original algorithm.  It's grossly prone to spurious
@@ -103,7 +103,7 @@ c_quot(Py_complex a, Py_complex b)
 }
 
 Py_complex
-c_pow(Py_complex a, Py_complex b)
+_Py_c_pow(Py_complex a, Py_complex b)
 {
     Py_complex r;
     double vabs,len,at,phase;
@@ -141,9 +141,9 @@ c_powu(Py_complex x, long n)
     p = x;
     while (mask > 0 && n >= mask) {
         if (n & mask)
-            r = c_prod(r,p);
+            r = _Py_c_prod(r,p);
         mask <<= 1;
-        p = c_prod(p,p);
+        p = _Py_c_prod(p,p);
     }
     return r;
 }
@@ -156,17 +156,17 @@ c_powi(Py_complex x, long n)
     if (n > 100 || n < -100) {
         cn.real = (double) n;
         cn.imag = 0.;
-        return c_pow(x,cn);
+        return _Py_c_pow(x,cn);
     }
     else if (n > 0)
         return c_powu(x,n);
     else
-        return c_quot(c_1,c_powu(x,-n));
+        return _Py_c_quot(c_1, c_powu(x,-n));
 
 }
 
 double
-c_abs(Py_complex z)
+_Py_c_abs(Py_complex z)
 {
     /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
     double result;
@@ -441,7 +441,7 @@ complex_add(PyObject *v, PyObject *w)
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
     PyFPE_START_PROTECT("complex_add", return 0)
-    result = c_sum(a, b);
+    result = _Py_c_sum(a, b);
     PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
@@ -454,7 +454,7 @@ complex_sub(PyObject *v, PyObject *w)
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
     PyFPE_START_PROTECT("complex_sub", return 0)
-    result = c_diff(a, b);
+    result = _Py_c_diff(a, b);
     PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
@@ -467,7 +467,7 @@ complex_mul(PyObject *v, PyObject *w)
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
     PyFPE_START_PROTECT("complex_mul", return 0)
-    result = c_prod(a, b);
+    result = _Py_c_prod(a, b);
     PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
@@ -481,7 +481,7 @@ complex_div(PyObject *v, PyObject *w)
     TO_COMPLEX(w, b);
     PyFPE_START_PROTECT("complex_div", return 0)
     errno = 0;
-    quot = c_quot(a, b);
+    quot = _Py_c_quot(a, b);
     PyFPE_END_PROTECT(quot)
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
@@ -528,7 +528,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     if (exponent.imag == 0. && exponent.real == int_exponent)
         p = c_powi(a, int_exponent);
     else
-        p = c_pow(a, exponent);
+        p = _Py_c_pow(a, exponent);
 
     PyFPE_END_PROTECT(p)
     Py_ADJUST_ERANGE2(p.real, p.imag);
@@ -579,7 +579,7 @@ complex_abs(PyComplexObject *v)
     double result;
 
     PyFPE_START_PROTECT("complex_abs", return 0)
-    result = c_abs(v->cval);
+    result = _Py_c_abs(v->cval);
     PyFPE_END_PROTECT(result)
 
     if (errno == ERANGE) {
