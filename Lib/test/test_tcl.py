@@ -420,8 +420,9 @@ class TclTest(unittest.TestCase):
             self.assertEqual(passValue(float('inf')), float('inf'))
             self.assertEqual(passValue(-float('inf')), -float('inf'))
         else:
-            f = float(passValue(float('nan')))
-            self.assertNotEqual(f, f)
+            f = passValue(float('nan'))
+            self.assertIsInstance(f, str)
+            self.assertEqual(f.lower()[:3], 'nan')
             self.assertEqual(float(passValue(float('inf'))), float('inf'))
             self.assertEqual(float(passValue(-float('inf'))), -float('inf'))
         self.assertEqual(passValue((1, '2', (3.4,))),
@@ -448,9 +449,8 @@ class TclTest(unittest.TestCase):
             expected = float(expected)
             self.assertAlmostEqual(float(actual), expected,
                                    delta=abs(expected) * 1e-10)
-        def nan_eq(actual, expected):
-            actual = float(actual)
-            self.assertNotEqual(actual, actual)
+        def starts_with(actual, expected):
+            self.assertEqual(actual.lower()[:len(expected)], expected)
 
         check(True, '1')
         check(False, '0')
@@ -474,7 +474,7 @@ class TclTest(unittest.TestCase):
             check(f, f, eq=float_eq)
         check(float('inf'), 'Inf', eq=float_eq)
         check(-float('inf'), '-Inf', eq=float_eq)
-        check(float('nan'), 'NaN', eq=nan_eq)
+        check(float('nan'), 'nan', eq=starts_with)
         check((), '')
         check((1, (2,), (3, 4), '5 6', ()), '1 2 {3 4} {5 6} {}')
 
