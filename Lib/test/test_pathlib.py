@@ -551,6 +551,9 @@ class _BasePurePathTest(object):
         self.assertEqual(P('/a/b').with_suffix('.gz'), P('/a/b.gz'))
         self.assertEqual(P('a/b.py').with_suffix('.gz'), P('a/b.gz'))
         self.assertEqual(P('/a/b.py').with_suffix('.gz'), P('/a/b.gz'))
+        # Stripping suffix
+        self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
+        self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
         # Path doesn't have a "filename" component
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
@@ -558,9 +561,12 @@ class _BasePurePathTest(object):
         # Invalid suffix
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
+        self.assertRaises(ValueError, P('a/b').with_suffix, '.')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/.gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, 'c/d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
+        self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
+        self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
 
     def test_relative_to_common(self):
         P = self.cls
