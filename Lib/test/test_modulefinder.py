@@ -245,11 +245,12 @@ def create_package(source):
 
 
 class ModuleFinderTest(unittest.TestCase):
-    def _do_test(self, info, report=False):
+    def _do_test(self, info, report=False, debug=0, replace_paths=[]):
         import_this, modules, missing, maybe_missing, source = info
         create_package(source)
         try:
-            mf = modulefinder.ModuleFinder(path=TEST_PATH)
+            mf = modulefinder.ModuleFinder(path=TEST_PATH, debug=debug,
+                                           replace_paths=replace_paths)
             mf.import_hook(import_this)
             if report:
                 mf.report()
@@ -308,9 +309,16 @@ class ModuleFinderTest(unittest.TestCase):
         os.remove(source_path)
         self._do_test(bytecode_test)
 
+    def test_replace_paths(self):
+        old_path = os.path.join(TEST_DIR, 'a', 'module.py')
+        new_path = os.path.join(TEST_DIR, 'a', 'spam.py')
+        with support.captured_stdout() as output:
+            self._do_test(maybe_test, debug=2,
+                          replace_paths=[(old_path, new_path)])
+        output = output.getvalue()
+        expected = "co_filename '%s' changed to '%s'" % (old_path, new_path)
+        self.assertIn(expected, output)
 
-def test_main():
-    support.run_unittest(ModuleFinderTest)
 
 if __name__ == "__main__":
     unittest.main()
