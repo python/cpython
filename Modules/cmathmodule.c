@@ -313,7 +313,7 @@ c_atanh(Py_complex z)
 
     /* Reduce to case where z.real >= 0., using atanh(z) = -atanh(-z). */
     if (z.real < 0.) {
-        return c_neg(c_atanh(c_neg(z)));
+        return _Py_c_neg(c_atanh(_Py_c_neg(z)));
     }
 
     ay = fabs(z.imag);
@@ -842,7 +842,7 @@ cmath_log(PyObject *self, PyObject *args)
     x = c_log(x);
     if (PyTuple_GET_SIZE(args) == 2) {
         y = c_log(y);
-        x = c_quot(x, y);
+        x = _Py_c_quot(x, y);
     }
     PyFPE_END_PROTECT(x)
     if (errno != 0)
@@ -943,7 +943,7 @@ cmath_polar(PyObject *self, PyObject *args)
         return NULL;
     PyFPE_START_PROTECT("polar function", return 0)
     phi = c_atan2(z); /* should not cause any exception */
-    r = c_abs(z); /* sets errno to ERANGE on overflow;  otherwise 0 */
+    r = _Py_c_abs(z); /* sets errno to ERANGE on overflow;  otherwise 0 */
     PyFPE_END_PROTECT(r)
     if (errno != 0)
         return math_error();
