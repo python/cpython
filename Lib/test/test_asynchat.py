@@ -304,5 +304,13 @@ class TestFifo(unittest.TestCase):
         self.assertEqual(f.pop(), (0, None))
 
 
+class TestNotConnected(unittest.TestCase):
+    def test_disallow_negative_terminator(self):
+        # Issue #11259
+        client = asynchat.async_chat()
+        self.assertRaises(ValueError, client.set_terminator, -1)
+
+
+
 if __name__ == "__main__":
     unittest.main()

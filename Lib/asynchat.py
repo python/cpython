@@ -99,6 +99,8 @@ class async_chat(asyncore.dispatcher):
         """
         if isinstance(term, str) and self.use_encoding:
             term = bytes(term, self.encoding)
+        elif isinstance(term, int) and term < 0:
+            raise ValueError('the number of received bytes must be positive')
         self.terminator = term
 
     def get_terminator(self):
