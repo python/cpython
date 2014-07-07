@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12523: asynchat.async_chat.push() now raises a TypeError if it doesn't
+  get a bytes string
+
 - Issue #21707: Add missing kwonlyargcount argument to
   ModuleFinder.replace_paths_in_code().
 
