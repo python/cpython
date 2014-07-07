@@ -79,8 +79,9 @@ class UnicodeDatabaseTest(unittest.TestCase):
 
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
-    # update this, if the database changes
-    expectedchecksum = '0f44b670846279c608f20e5b6eeb26e6a8ab1f07'
+    # Update this if the database changes. Make sure to do a full rebuild
+    # (e.g. 'make distclean && make') to get the correct checksum.
+    expectedchecksum = '585302895deead0c1c8478c51da9241d4efedca9'
     def test_function_checksum(self):
         data = []
         h = hashlib.sha1()
