@@ -749,17 +749,20 @@ class PurePath(object):
         """Return a new path with the file name changed."""
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
+        drv, root, parts = self._flavour.parse_parts((name,))
+        if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
+            or drv or root or len(parts) != 1):
+            raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed (or added, if none)."""
         # XXX if suffix is None, should the current suffix be removed?
-        drv, root, parts = self._flavour.parse_parts((suffix,))
-        if drv or root or len(parts) != 1:
+        f = self._flavour
+        if f.sep in suffix or f.altsep and f.altsep in suffix:
             raise ValueError("Invalid suffix %r" % (suffix))
-        suffix = parts[0]
-        if not suffix.startswith('.'):
+        if suffix and not suffix.startswith('.') or suffix == '.':
             raise ValueError("Invalid suffix %r" % (suffix))
         name = self.name
         if not name:

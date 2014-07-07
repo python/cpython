@@ -108,6 +108,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #20639: calling Path.with_suffix('') allows removing the suffix
+  again.  Patch by July Tikhonov.
+
+- Issue #21714: Disallow the construction of invalid paths using
+  Path.with_name().  Original patch by Antony Lee.
+
 - Issue #15014: Added 'auth' method to smtplib to make implementing auth
   mechanisms simpler, and used it internally in the login method.
 
