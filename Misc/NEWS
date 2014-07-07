@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21714: Disallow the construction of invalid paths using
+  Path.with_name().  Original patch by Antony Lee.
+
 - Issue #21897: Fix a crash with the f_locals attribute with closure
   variables when frame.clear() has been called.
 
