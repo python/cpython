@@ -248,7 +248,7 @@ The module defines the following functions and data items:
 
    .. versionchanged:: 2.5
       0 is now a legal argument for any position in the time tuple; if it is normally
-      illegal the value is forced to a correct one..
+      illegal the value is forced to a correct one.
 
    The following directives can be embedded in the *format* string. They are shown
    without the optional field width and precision specification, and are replaced
