@@ -27,6 +27,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #20639: calling Path.with_suffix('') allows removing the suffix
+  again.  Patch by July Tikhonov.
+
+- Issue #21714: Disallow the construction of invalid paths using
+  Path.with_name().  Original patch by Antony Lee.
+
+- Issue #21897: Fix a crash with the f_locals attribute with closure
+  variables when frame.clear() has been called.
+
 - Issue #21151: Fixed a segfault in the winreg module when ``None`` is passed
   as a ``REG_BINARY`` value to SetValueEx.  Patch by John Ehresman.
 
@@ -132,6 +141,9 @@ Library
   when reference or offset size is not a power of two.
 
 - Issue #21801: Validate that __signature__ is None or an instance of Signature.
+
+- Issue #21923: Prevent AttributeError in distutils.sysconfig.customize_compiler
+  due to possible uninitialized _config_vars.
 
 Build
 -----
