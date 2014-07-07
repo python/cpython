@@ -190,12 +190,12 @@ class ImportTests(unittest.TestCase):
         # import x.y.z binds x in the current namespace
         import test as x
         import test.support
-        self.assertTrue(x is test, x.__name__)
+        self.assertIs(x, test, x.__name__)
         self.assertTrue(hasattr(test.support, "__file__"))
 
         # import x.y.z as w binds z as w
         import test.support as y
-        self.assertTrue(y is test.support, y.__name__)
+        self.assertIs(y, test.support, y.__name__)
 
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
@@ -223,7 +223,7 @@ class ImportTests(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, importlib.reload, mod)
             # But we still expect the module to be in sys.modules.
             mod = sys.modules.get(TESTFN)
-            self.assertIsNot(mod, None, "expected module to be in sys.modules")
+            self.assertIsNotNone(mod, "expected module to be in sys.modules")
 
             # We should have replaced a w/ 10, but the old b value should
             # stick.

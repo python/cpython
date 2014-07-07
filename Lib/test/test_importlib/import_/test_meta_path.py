@@ -96,7 +96,7 @@ class CallSignature:
                 args = log[1][0]
                 kwargs = log[1][1]
                 # Assuming all arguments are positional.
-                self.assertTrue(not kwargs)
+                self.assertFalse(kwargs)
                 self.assertEqual(args[0], mod_name)
                 self.assertIs(args[1], path)
 

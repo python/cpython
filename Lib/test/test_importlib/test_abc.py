@@ -783,7 +783,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
                 warnings.simplefilter('ignore', DeprecationWarning)
                 module = self.loader.load_module(self.name)
             self.verify_module(module)
-            self.assertTrue(not hasattr(module, '__path__'))
+            self.assertFalse(hasattr(module, '__path__'))
 
     def test_get_source_encoding(self):
         # Source is considered encoded in UTF-8 by default unless otherwise
