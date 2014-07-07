@@ -50,7 +50,7 @@ def main(regrtest_args):
     print(' '.join(args))
     if sys.platform == 'win32':
         from subprocess import call
-        call(args)
+        sys.exit(call(args))
     else:
         os.execv(sys.executable, args)
 
