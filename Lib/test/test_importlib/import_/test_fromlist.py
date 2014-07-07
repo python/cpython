@@ -61,7 +61,7 @@ class HandlingFromlist:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('module', fromlist=['non_existent'])
                 self.assertEqual(module.__name__, 'module')
-                self.assertTrue(not hasattr(module, 'non_existent'))
+                self.assertFalse(hasattr(module, 'non_existent'))
 
     def test_module_from_package(self):
         # [module]
