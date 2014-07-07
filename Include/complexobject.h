@@ -14,21 +14,13 @@ typedef struct {
 
 /* Operations on complex numbers from complexmodule.c */
 
-#define c_sum _Py_c_sum
-#define c_diff _Py_c_diff
-#define c_neg _Py_c_neg
-#define c_prod _Py_c_prod
-#define c_quot _Py_c_quot
-#define c_pow _Py_c_pow
-#define c_abs _Py_c_abs
-
-PyAPI_FUNC(Py_complex) c_sum(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) c_diff(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) c_neg(Py_complex);
-PyAPI_FUNC(Py_complex) c_prod(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) c_quot(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) c_pow(Py_complex, Py_complex);
-PyAPI_FUNC(double) c_abs(Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_sum(Py_complex, Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_diff(Py_complex, Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_neg(Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_prod(Py_complex, Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_quot(Py_complex, Py_complex);
+PyAPI_FUNC(Py_complex) _Py_c_pow(Py_complex, Py_complex);
+PyAPI_FUNC(double) _Py_c_abs(Py_complex);
 #endif
 
 /* Complex object interface */
