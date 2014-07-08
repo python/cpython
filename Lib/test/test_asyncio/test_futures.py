@@ -301,12 +301,12 @@ class FutureTests(test_utils.TestCase):
     def test_future_exception_never_retrieved(self, m_log):
         self.loop.set_debug(True)
 
-        def memroy_error():
+        def memory_error():
             try:
                 raise MemoryError()
             except BaseException as exc:
                 return exc
-        exc = memroy_error()
+        exc = memory_error()
 
         future = asyncio.Future(loop=self.loop)
         source_traceback = future._source_traceback
