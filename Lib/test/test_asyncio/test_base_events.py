@@ -12,6 +12,7 @@ from test.support import IPV6_ENABLED
 
 import asyncio
 from asyncio import base_events
+from asyncio import events
 from asyncio import constants
 from asyncio import test_utils
 
@@ -525,6 +526,29 @@ class BaseEventLoopTests(test_utils.TestCase):
         sts, stdout, stderr = assert_python_ok('-E', '-c', code,
                                                PYTHONASYNCIODEBUG='1')
         self.assertEqual(stdout.rstrip(), b'False')
+
+    def test_create_task(self):
+        class MyTask(asyncio.Task):
+            pass
+
+        @asyncio.coroutine
+        def test():
+            pass
+
+        class EventLoop(base_events.BaseEventLoop):
+            def create_task(self, coro):
+                return MyTask(coro, loop=loop)
+
+        loop = EventLoop()
+        self.set_event_loop(loop)
+
+        coro = test()
+        task = asyncio.async(coro, loop=loop)
+        self.assertIsInstance(task, MyTask)
+
+        # make warnings quiet
+        task._log_destroy_pending = False
+        coro.close()
 
 
 class MyProto(asyncio.Protocol):
