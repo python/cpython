@@ -169,7 +169,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         raise NotImplementedError
 
     def _make_datagram_transport(self, sock, protocol,
-                                 address=None, extra=None):
+                                 address=None, waiter=None, extra=None):
         """Create datagram transport."""
         raise NotImplementedError
 
@@ -605,7 +605,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise exceptions[0]
 
         protocol = protocol_factory()
-        transport = self._make_datagram_transport(sock, protocol, r_addr)
+        waiter = futures.Future(loop=self)
+        transport = self._make_datagram_transport(sock, protocol, r_addr,
+                                                  waiter)
+        yield from waiter
         return transport, protocol
 
     @coroutine
