@@ -20,3 +20,6 @@ for %%k in (kill_python.exe
 echo Purging all non-tracked files with `hg purge`
 echo on
 hg -R "%root%" --config extensions.purge= purge --all -X "%root%\Lib\test\data"
+
+@rem Clean is best effort, so we "always succeed"
+@exit /b 0
