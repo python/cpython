@@ -151,6 +151,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 % (self.__class__.__name__, self.is_running(),
                    self.is_closed(), self.get_debug()))
 
+    def create_task(self, coro):
+        """Schedule a coroutine object.
+
+        Return a task object."""
+        return tasks.Task(coro, loop=self)
+
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
         """Create socket transport."""

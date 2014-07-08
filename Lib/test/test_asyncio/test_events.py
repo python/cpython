@@ -1969,7 +1969,11 @@ class AbstractEventLoopTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, loop.is_running)
         self.assertRaises(
+            NotImplementedError, loop.is_closed)
+        self.assertRaises(
             NotImplementedError, loop.close)
+        self.assertRaises(
+            NotImplementedError, loop.create_task, None)
         self.assertRaises(
             NotImplementedError, loop.call_later, None, None)
         self.assertRaises(
@@ -2027,6 +2031,16 @@ class AbstractEventLoopTests(unittest.TestCase):
             mock.sentinel)
         self.assertRaises(
             NotImplementedError, loop.subprocess_exec, f)
+        self.assertRaises(
+            NotImplementedError, loop.set_exception_handler, f)
+        self.assertRaises(
+            NotImplementedError, loop.default_exception_handler, f)
+        self.assertRaises(
+            NotImplementedError, loop.call_exception_handler, f)
+        self.assertRaises(
+            NotImplementedError, loop.get_debug)
+        self.assertRaises(
+            NotImplementedError, loop.set_debug, f)
 
 
 class ProtocolsAbsTests(unittest.TestCase):

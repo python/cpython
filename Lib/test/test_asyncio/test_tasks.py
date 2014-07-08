@@ -233,6 +233,9 @@ class TaskTests(test_utils.TestCase):
         self.assertRegex(repr(task),
                          '<Task .* wait_for=%s>' % re.escape(repr(fut)))
 
+        fut.set_result(None)
+        self.loop.run_until_complete(task)
+
     def test_task_basics(self):
         @asyncio.coroutine
         def outer():
