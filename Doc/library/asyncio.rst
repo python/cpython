@@ -45,6 +45,7 @@ Table of content:
    :maxdepth: 3
 
    asyncio-eventloop.rst
+   asyncio-eventloops.rst
    asyncio-task.rst
    asyncio-protocol.rst
    asyncio-stream.rst

@@ -2,8 +2,8 @@
 
 .. _asyncio-event-loop:
 
-Event loops
-===========
+Base Event Loop
+===============
 
 The event loop is the central execution device provided by :mod:`asyncio`.
 It provides multiple facilities, amongst which:
@@ -18,78 +18,9 @@ It provides multiple facilities, amongst which:
 
 * Delegating costly function calls to a pool of threads.
 
-Event loop policies and the default policy
-------------------------------------------
+.. class:: BaseEventLoop
 
-Event loop management is abstracted with a *policy* pattern, to provide maximal
-flexibility for custom platforms and frameworks. Throughout the execution of a
-process, a single global policy object manages the event loops available to the
-process based on the calling context. A policy is an object implementing the
-:class:`AbstractEventLoopPolicy` interface.
-
-For most users of :mod:`asyncio`, policies never have to be dealt with
-explicitly, since the default global policy is sufficient.
-
-The default policy defines context as the current thread, and manages an event
-loop per thread that interacts with :mod:`asyncio`. The module-level functions
-:func:`get_event_loop` and :func:`set_event_loop` provide convenient access to
-event loops managed by the default policy.
-
-Event loop functions
---------------------
-
-The following functions are convenient shortcuts to accessing the methods of the
-global policy. Note that this provides access to the default policy, unless an
-alternative policy was set by calling :func:`set_event_loop_policy` earlier in
-the execution of the process.
-
-.. function:: get_event_loop()
-
-   Equivalent to calling ``get_event_loop_policy().get_event_loop()``.
-
-.. function:: set_event_loop(loop)
-
-   Equivalent to calling ``get_event_loop_policy().set_event_loop(loop)``.
-
-.. function:: new_event_loop()
-
-   Equivalent to calling ``get_event_loop_policy().new_event_loop()``.
-
-Event loop policy interface
----------------------------
-
-An event loop policy must implement the following interface:
-
-.. class:: AbstractEventLoopPolicy
-
-   .. method:: get_event_loop()
-
-   Get the event loop for the current context. Returns an event loop object
-   implementing the :class:`BaseEventLoop` interface, or raises an exception in case
-   no event loop has been set for the current context and the current policy
-   does not specify to create one. It should never return ``None``.
-
-   .. method:: set_event_loop(loop)
-
-   Set the event loop for the current context to *loop*.
-
-   .. method:: new_event_loop()
-
-   Create and return a new event loop object according to this policy's rules.
-   If there's need to set this loop as the event loop for the current context,
-   :meth:`set_event_loop` must be called explicitly.
-
-Access to the global loop policy
---------------------------------
-
-.. function:: get_event_loop_policy()
-
-   Get the current event loop policy.
-
-.. function:: set_event_loop_policy(policy)
-
-   Set the current event loop policy. If *policy* is ``None``, the default
-   policy is restored.
+   Base class of event loops.
 
 Run an event loop
 -----------------
@@ -375,7 +306,6 @@ Creating listening connections
    Availability: UNIX.
 
 
-
 Watch file descriptors
 ----------------------
 
@@ -624,7 +554,6 @@ Debug mode
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
 
-
 Server
 ------
 
@@ -652,7 +581,8 @@ Handle
 
    .. method:: cancel()
 
-   Cancel the call.
+      Cancel the call.
+
 
 
 .. _asyncio-hello-world-callback:

@@ -3,18 +3,18 @@
 Subprocess
 ==========
 
-Operating system support
-------------------------
+Windows event loop
+------------------
 
-On Windows, the default event loop uses :class:`selectors.SelectSelector`
-which only supports sockets. The :class:`ProactorEventLoop` should be used to
-support subprocesses. However, the latter does not support SSL.
+On Windows, the default event loop is :class:`SelectorEventLoop` which does not
+support subprocesses. :class:`ProactorEventLoop` should be used instead.
+Example to use it on Windows::
 
-On Mac OS X older than 10.9 (Mavericks), :class:`selectors.KqueueSelector`
-does not support character devices like PTY, whereas it is used by the
-default event loop. The :class:`SelectorEventLoop` can be used with
-:class:`SelectSelector` or :class:`PollSelector` to handle character
-devices on Mac OS X 10.6 (Snow Leopard) and later.
+    import asyncio, os
+
+    if os.name == 'nt':
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
 
 
 Create a subprocess: high-level API using Process
