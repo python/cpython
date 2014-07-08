@@ -102,8 +102,8 @@ Run an event loop
 
    Run until the :class:`Future` is done.
 
-   If the argument is a :ref:`coroutine <coroutine>`, it is wrapped
-   in a :class:`Task`.
+   If the argument is a :ref:`coroutine object <coroutine>`, it is wrapped by
+   :func:`async`.
 
    Return the Future's result, or raise its exception.
 
@@ -203,6 +203,25 @@ a different clock than :func:`time.time`.
 .. seealso::
 
    The :func:`asyncio.sleep` function.
+
+
+Coroutines
+----------
+
+.. method:: BaseEventLoop.create_task(coro)
+
+   Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
+   a future. Return a :class:`Task` object.
+
+   Third-party event loops can use their own subclass of :class:`Task` for
+   interoperability. In this case, the result type is a subclass of
+   :class:`Task`.
+
+   .. seealso::
+
+      The :meth:`async` function.
+
+   .. versionadded:: 3.4.2
 
 
 Creating connections
