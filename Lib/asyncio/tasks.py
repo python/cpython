@@ -505,7 +505,9 @@ def async(coro_or_future, *, loop=None):
             raise ValueError('loop argument must agree with Future')
         return coro_or_future
     elif coroutines.iscoroutine(coro_or_future):
-        task = Task(coro_or_future, loop=loop)
+        if loop is None:
+            loop = events.get_event_loop()
+        task = loop.create_task(coro_or_future)
         if task._source_traceback:
             del task._source_traceback[-1]
         return task
