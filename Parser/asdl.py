@@ -112,7 +112,7 @@ class Product(AST):
 # interesting node.
 # We also define a Check visitor that makes sure the parsed ASDL is well-formed.
 
-class VisitorBase:
+class VisitorBase(object):
     """Generic tree visitor for ASTs."""
     def __init__(self):
         self.cache = {}
@@ -137,7 +137,7 @@ class Check(VisitorBase):
     Errors are printed and accumulated.
     """
     def __init__(self):
-        super().__init__()
+        super(Check, self).__init__()
         self.cons = {}
         self.errors = 0
         self.types = {}
