@@ -377,11 +377,7 @@ failed_throw:
 static PyObject *
 gen_iternext(PyGenObject *gen)
 {
-    PyObject *val = NULL;
-    PyObject *ret;
-    ret = gen_send_ex(gen, val, 0);
-    Py_XDECREF(val);
-    return ret;
+    return gen_send_ex(gen, NULL, 0);
 }
 
 /*
