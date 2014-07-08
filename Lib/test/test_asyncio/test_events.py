@@ -522,6 +522,7 @@ class EventLoopTestsMixin:
         tr, pr = self.loop.run_until_complete(connection_fut)
         self.assertIsInstance(tr, asyncio.Transport)
         self.assertIsInstance(pr, asyncio.Protocol)
+        self.assertIs(pr.transport, tr)
         if check_sockname:
             self.assertIsNotNone(tr.get_extra_info('sockname'))
         self.loop.run_until_complete(pr.done)
@@ -1045,12 +1046,21 @@ class EventLoopTestsMixin:
         s_transport, server = self.loop.run_until_complete(coro)
         host, port = s_transport.get_extra_info('sockname')
 
+        self.assertIsInstance(s_transport, asyncio.Transport)
+        self.assertIsInstance(server, TestMyDatagramProto)
+        self.assertEqual('INITIALIZED', server.state)
+        self.assertIs(server.transport, s_transport)
+
         coro = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(loop=self.loop),
             remote_addr=(host, port))
         transport, client = self.loop.run_until_complete(coro)
 
+        self.assertIsInstance(transport, asyncio.Transport)
+        self.assertIsInstance(client, MyDatagramProto)
         self.assertEqual('INITIALIZED', client.state)
+        self.assertIs(client.transport, transport)
+
         transport.sendto(b'xxx')
         test_utils.run_until(self.loop, lambda: server.nbytes)
         self.assertEqual(3, server.nbytes)
