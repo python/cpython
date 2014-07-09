@@ -282,10 +282,10 @@ class TestHelperFunctions(unittest.TestCase):
 
 class TestFifo(unittest.TestCase):
     def test_basic(self):
-        with warnings.catch_warnings(record=True) as w:
+        with self.assertWarns(DeprecationWarning) as cm:
             f = asynchat.fifo()
-            if w:
-                assert issubclass(w[0].category, DeprecationWarning)
+        self.assertEqual(str(cm.warning),
+                         "fifo class will be removed in Python 3.6")
         f.push(7)
         f.push(b'a')
         self.assertEqual(len(f), 2)
@@ -300,10 +300,10 @@ class TestFifo(unittest.TestCase):
         self.assertEqual(f.pop(), (0, None))
 
     def test_given_list(self):
-        with warnings.catch_warnings(record=True) as w:
+        with self.assertWarns(DeprecationWarning) as cm:
             f = asynchat.fifo([b'x', 17, 3])
-            if w:
-                assert issubclass(w[0].category, DeprecationWarning)
+        self.assertEqual(str(cm.warning),
+                         "fifo class will be removed in Python 3.6")
         self.assertEqual(len(f), 3)
         self.assertEqual(f.pop(), (1, b'x'))
         self.assertEqual(f.pop(), (1, 17))
