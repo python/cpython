@@ -56,7 +56,7 @@ more on that later.
    >>> C = Cookie.SmartCookie()
 
 [Note: Long-time users of Cookie.py will remember using
-Cookie.Cookie() to create an Cookie object.  Although deprecated, it
+Cookie.Cookie() to create a Cookie object.  Although deprecated, it
 is still supported by the code.  See the Backward Compatibility notes
 for more information.]
 
