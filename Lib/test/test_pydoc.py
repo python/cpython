@@ -14,6 +14,7 @@ import test.support
 import time
 import types
 import unittest
+import urllib.parse
 import xml.etree
 import textwrap
 from io import StringIO
@@ -406,11 +407,7 @@ class PydocDocTest(unittest.TestCase):
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         mod_file = inspect.getabsfile(pydoc_mod)
-        if sys.platform == 'win32':
-            import nturl2path
-            mod_url = nturl2path.pathname2url(mod_file)
-        else:
-            mod_url = mod_file
+        mod_url = urllib.parse.quote(mod_file)
         expected_html = expected_html_pattern % (
                         (mod_url, mod_file, doc_loc) +
                         expected_html_data_docstrings)
