@@ -21,7 +21,6 @@ from .coroutines import coroutine
 from .log import logger
 
 _PY34 = (sys.version_info >= (3, 4))
-_PY35 = (sys.version_info >= (3, 5))
 
 
 class Task(futures.Future):
