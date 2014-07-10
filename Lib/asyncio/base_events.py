@@ -155,7 +155,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Schedule a coroutine object.
 
         Return a task object."""
-        return tasks.Task(coro, loop=self)
+        task = tasks.Task(coro, loop=self)
+        if task._source_traceback:
+            del task._source_traceback[-1]
+        return task
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
