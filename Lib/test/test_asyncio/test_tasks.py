@@ -150,7 +150,7 @@ class TaskTests(test_utils.TestCase):
 
         # test coroutine object
         gen = notmuch()
-        if PY35:
+        if coroutines._DEBUG or PY35:
             coro_qualname = 'TaskTests.test_task_repr.<locals>.notmuch'
         else:
             coro_qualname = 'notmuch'
@@ -205,17 +205,12 @@ class TaskTests(test_utils.TestCase):
 
         # test coroutine object
         gen = notmuch()
-        if PY35:
+        if coroutines._DEBUG or PY35:
             # On Python >= 3.5, generators now inherit the name of the
             # function, as expected, and have a qualified name (__qualname__
             # attribute).
             coro_name = 'notmuch'
             coro_qualname = 'TaskTests.test_task_repr_coro_decorator.<locals>.notmuch'
-        elif coroutines._DEBUG:
-            # In debug mode, @coroutine decorator uses CoroWrapper which gets
-            # its name (__name__ attribute) from the wrapped coroutine
-            # function.
-            coro_name = coro_qualname = 'notmuch'
         else:
             # On Python < 3.5, generators inherit the name of the code, not of
             # the function. See: http://bugs.python.org/issue21205
@@ -1653,7 +1648,7 @@ class TaskTests(test_utils.TestCase):
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
         func_filename, func_lineno = test_utils.get_function_source(coro_noop)
-        regex = (r'^Coroutine %s\(\) at %s:%s was never yielded from\n'
+        regex = (r'^<CoroWrapper %s\(\) .* at %s:%s, .*> was never yielded from\n'
                  r'Coroutine object created at \(most recent call last\):\n'
                  r'.*\n'
                  r'  File "%s", line %s, in test_coroutine_never_yielded\n'
