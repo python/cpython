@@ -108,6 +108,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21942: Fixed source file viewing in pydoc's server mode on Windows.
+
 - Issue #11259: asynchat.async_chat().set_terminator() now raises a ValueError
   if the number of received bytes is negative.
 
