@@ -101,7 +101,12 @@ class Task(futures.Future):
         else:
             info.append(self._state.lower())
 
-        info.append(coroutines._format_coroutine(self._coro))
+        coro = coroutines._format_coroutine(self._coro)
+        info.append('coro=<%s>' % coro)
+
+        if self._source_traceback:
+            frame = self._source_traceback[-1]
+            info.append('created at %s:%s' % (frame[0], frame[1]))
 
         if self._state == futures._FINISHED:
             info.append(self._format_result())
