@@ -24,6 +24,19 @@ def coroutine_function():
     pass
 
 
+def format_coroutine(qualname, state, src, source_traceback, generator=False):
+    if generator:
+        state = '%s' % state
+    else:
+        state = '%s, defined' % state
+    if source_traceback is not None:
+        frame = source_traceback[-1]
+        return ('coro=<%s() %s at %s> created at %s:%s'
+                % (qualname, state, src, frame[0], frame[1]))
+    else:
+        return 'coro=<%s() %s at %s>' % (qualname, state, src)
+
+
 class Dummy:
 
     def __repr__(self):
@@ -149,7 +162,9 @@ class TaskTests(test_utils.TestCase):
         # test pending Task
         t = asyncio.Task(gen, loop=self.loop)
         t.add_done_callback(Dummy())
-        coro = '%s() at %s' % (coro_qualname, src)
+
+        coro = format_coroutine(coro_qualname, 'running', src,
+                                t._source_traceback, generator=True)
         self.assertEqual(repr(t),
                          '<Task pending %s cb=[<Dummy>()]>' % coro)
 
@@ -161,13 +176,16 @@ class TaskTests(test_utils.TestCase):
         # test cancelled Task
         self.assertRaises(asyncio.CancelledError,
                           self.loop.run_until_complete, t)
-        coro = '%s() done at %s' % (coro_qualname, src)
+        coro = format_coroutine(coro_qualname, 'done', src,
+                                t._source_traceback)
         self.assertEqual(repr(t),
                          '<Task cancelled %s>' % coro)
 
         # test finished Task
         t = asyncio.Task(notmuch(), loop=self.loop)
         self.loop.run_until_complete(t)
+        coro = format_coroutine(coro_qualname, 'done', src,
+                                t._source_traceback)
         self.assertEqual(repr(t),
                          "<Task finished %s result='abc'>" % coro)
 
@@ -206,18 +224,35 @@ class TaskTests(test_utils.TestCase):
         if PY35:
             self.assertEqual(gen.__qualname__, coro_qualname)
 
-        # format the coroutine object
-        code = gen.gi_code
-        coro = ('%s() at %s:%s'
-                % (coro_qualname, code.co_filename, code.co_firstlineno))
-
         # test repr(CoroWrapper)
         if coroutines._DEBUG:
+            # format the coroutine object
+            if coroutines._DEBUG:
+                filename, lineno = test_utils.get_function_source(notmuch)
+                frame = gen._source_traceback[-1]
+                coro = ('%s() running, defined at %s:%s, created at %s:%s'
+                        % (coro_qualname, filename, lineno,
+                           frame[0], frame[1]))
+            else:
+                code = gen.gi_code
+                coro = ('%s() running at %s:%s'
+                        % (coro_qualname, code.co_filename, code.co_firstlineno))
+
             self.assertEqual(repr(gen), '<CoroWrapper %s>' % coro)
 
         # test pending Task
         t = asyncio.Task(gen, loop=self.loop)
         t.add_done_callback(Dummy())
+
+        # format the coroutine object
+        if coroutines._DEBUG:
+            src = '%s:%s' % test_utils.get_function_source(notmuch)
+        else:
+            code = gen.gi_code
+            src = '%s:%s' % (code.co_filename, code.co_firstlineno)
+        coro = format_coroutine(coro_qualname, 'running', src,
+                                t._source_traceback,
+                                generator=not coroutines._DEBUG)
         self.assertEqual(repr(t),
                          '<Task pending %s cb=[<Dummy>()]>' % coro)
         self.loop.run_until_complete(t)
