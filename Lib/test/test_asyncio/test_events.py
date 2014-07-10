@@ -1810,27 +1810,30 @@ class HandleTests(test_utils.TestCase):
         wd['h'] = h  # Would fail without __weakref__ slot.
 
     def test_handle_repr(self):
+        self.loop.get_debug.return_value = False
+
         # simple function
-        h = asyncio.Handle(noop, (), self.loop)
-        src = test_utils.get_function_source(noop)
+        h = asyncio.Handle(noop, (1, 2), self.loop)
+        filename, lineno = test_utils.get_function_source(noop)
         self.assertEqual(repr(h),
-                        '<Handle noop() at %s:%s>' % src)
+                        '<Handle noop(1, 2) at %s:%s>'
+                        % (filename, lineno))
 
         # cancelled handle
         h.cancel()
         self.assertEqual(repr(h),
-                        '<Handle cancelled noop() at %s:%s>' % src)
+                        '<Handle cancelled>')
 
         # decorated function
         cb = asyncio.coroutine(noop)
         h = asyncio.Handle(cb, (), self.loop)
         self.assertEqual(repr(h),
-                        '<Handle noop() at %s:%s>' % src)
+                        '<Handle noop() at %s:%s>'
+                        % (filename, lineno))
 
         # partial function
         cb = functools.partial(noop, 1, 2)
         h = asyncio.Handle(cb, (3,), self.loop)
-        filename, lineno = src
         regex = (r'^<Handle noop\(1, 2\)\(3\) at %s:%s>$'
                  % (re.escape(filename), lineno))
         self.assertRegex(repr(h), regex)
@@ -1839,15 +1842,32 @@ class HandleTests(test_utils.TestCase):
         if sys.version_info >= (3, 4):
             method = HandleTests.test_handle_repr
             cb = functools.partialmethod(method)
-            src = test_utils.get_function_source(method)
+            filename, lineno = test_utils.get_function_source(method)
             h = asyncio.Handle(cb, (), self.loop)
 
-            filename, lineno = src
             cb_regex = r'<function HandleTests.test_handle_repr .*>'
             cb_regex = (r'functools.partialmethod\(%s, , \)\(\)' % cb_regex)
             regex = (r'^<Handle %s at %s:%s>$'
                      % (cb_regex, re.escape(filename), lineno))
             self.assertRegex(repr(h), regex)
+
+    def test_handle_repr_debug(self):
+        self.loop.get_debug.return_value = True
+
+        # simple function
+        create_filename = __file__
+        create_lineno = sys._getframe().f_lineno + 1
+        h = asyncio.Handle(noop, (1, 2), self.loop)
+        filename, lineno = test_utils.get_function_source(noop)
+        self.assertEqual(repr(h),
+                        '<Handle noop(1, 2) at %s:%s created at %s:%s>'
+                        % (filename, lineno, create_filename, create_lineno))
+
+        # cancelled handle
+        h.cancel()
+        self.assertEqual(repr(h),
+                        '<Handle cancelled created at %s:%s>'
+                        % (create_filename, create_lineno))
 
     def test_handle_source_traceback(self):
         loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -1894,7 +1914,7 @@ class TimerTests(unittest.TestCase):
         def callback(*args):
             return args
 
-        args = ()
+        args = (1, 2, 3)
         when = time.monotonic()
         h = asyncio.TimerHandle(when, callback, args, mock.Mock())
         self.assertIs(h._callback, callback)
@@ -1904,7 +1924,8 @@ class TimerTests(unittest.TestCase):
         # cancel
         h.cancel()
         self.assertTrue(h._cancelled)
-
+        self.assertIsNone(h._callback)
+        self.assertIsNone(h._args)
 
         # when cannot be None
         self.assertRaises(AssertionError,
@@ -1912,6 +1933,8 @@ class TimerTests(unittest.TestCase):
                           self.loop)
 
     def test_timer_repr(self):
+        self.loop.get_debug.return_value = False
+
         # simple function
         h = asyncio.TimerHandle(123, noop, (), self.loop)
         src = test_utils.get_function_source(noop)
@@ -1921,8 +1944,27 @@ class TimerTests(unittest.TestCase):
         # cancelled handle
         h.cancel()
         self.assertEqual(repr(h),
-                        '<TimerHandle cancelled when=123 noop() at %s:%s>'
-                        % src)
+                        '<TimerHandle cancelled when=123>')
+
+    def test_timer_repr_debug(self):
+        self.loop.get_debug.return_value = True
+
+        # simple function
+        create_filename = __file__
+        create_lineno = sys._getframe().f_lineno + 1
+        h = asyncio.TimerHandle(123, noop, (), self.loop)
+        filename, lineno = test_utils.get_function_source(noop)
+        self.assertEqual(repr(h),
+                        '<TimerHandle when=123 noop() '
+                        'at %s:%s created at %s:%s>'
+                        % (filename, lineno, create_filename, create_lineno))
+
+        # cancelled handle
+        h.cancel()
+        self.assertEqual(repr(h),
+                        '<TimerHandle cancelled when=123 created at %s:%s>'
+                        % (create_filename, create_lineno))
+
 
     def test_timer_comparison(self):
         def callback(*args):
