@@ -299,6 +299,12 @@ class FutureTests(test_utils.TestCase):
 
     @mock.patch('asyncio.base_events.logger')
     def test_future_exception_never_retrieved(self, m_log):
+        # FIXME: Python issue #21163, other tests may "leak" pending task which
+        # emit a warning when they are destroyed by the GC
+        support.gc_collect()
+        m_log.error.reset_mock()
+        # ---
+
         self.loop.set_debug(True)
 
         def memory_error():
