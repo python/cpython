@@ -89,43 +89,44 @@ def _raise_stop_error(*args):
 class Server(events.AbstractServer):
 
     def __init__(self, loop, sockets):
-        self.loop = loop
+        self._loop = loop
         self.sockets = sockets
-        self.active_count = 0
-        self.waiters = []
+        self._active_count = 0
+        self._waiters = []
 
-    def attach(self, transport):
+    def _attach(self):
         assert self.sockets is not None
-        self.active_count += 1
+        self._active_count += 1
 
-    def detach(self, transport):
-        assert self.active_count > 0
-        self.active_count -= 1
-        if self.active_count == 0 and self.sockets is None:
+    def _detach(self):
+        assert self._active_count > 0
+        self._active_count -= 1
+        if self._active_count == 0 and self.sockets is None:
             self._wakeup()
 
     def close(self):
         sockets = self.sockets
-        if sockets is not None:
-            self.sockets = None
-            for sock in sockets:
-                self.loop._stop_serving(sock)
-            if self.active_count == 0:
-                self._wakeup()
+        if sockets is None:
+            return
+        self.sockets = None
+        for sock in sockets:
+            self._loop._stop_serving(sock)
+        if self._active_count == 0:
+            self._wakeup()
 
     def _wakeup(self):
-        waiters = self.waiters
-        self.waiters = None
+        waiters = self._waiters
+        self._waiters = None
         for waiter in waiters:
             if not waiter.done():
                 waiter.set_result(waiter)
 
     @coroutine
     def wait_closed(self):
-        if self.sockets is None or self.waiters is None:
+        if self.sockets is None or self._waiters is None:
             return
-        waiter = futures.Future(loop=self.loop)
-        self.waiters.append(waiter)
+        waiter = futures.Future(loop=self._loop)
+        self._waiters.append(waiter)
         yield from waiter
 
 
