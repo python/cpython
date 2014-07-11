@@ -9,7 +9,7 @@ fnfilter = None
 rmode = 'rb'
 
 usage = """
-usage: sum5 [-b] [-t] [-l] [-s bufsize] [file ...]
+usage: md5sum.py [-b] [-t] [-l] [-s bufsize] [file ...]
 -b        : read files in binary mode (default)
 -t        : read files in text mode (you almost certainly don't want this!)
 -l        : print last pathname component only
@@ -17,6 +17,7 @@ usage: sum5 [-b] [-t] [-l] [-s bufsize] [file ...]
 file ...  : files to sum; '-' or no files means stdin
 """ % bufsize
 
+import io
 import sys
 import os
 import getopt
@@ -24,7 +25,7 @@ from hashlib import md5
 
 def sum(*files):
     sts = 0
-    if files and isinstance(files[-1], file):
+    if files and isinstance(files[-1], io.IOBase):
         out, files = files[-1], files[:-1]
     else:
         out = sys.stdout
@@ -53,12 +54,14 @@ def printsum(filename, out=sys.stdout):
     return sts
 
 def printsumfp(fp, filename, out=sys.stdout):
-    m = md5.new()
+    m = md5()
     try:
         while 1:
             data = fp.read(bufsize)
             if not data:
                 break
+            if isinstance(data, str):
+                data = data.encode(fp.encoding)
             m.update(data)
     except IOError as msg:
         sys.stderr.write('%s: I/O error: %s\n' % (filename, msg))
