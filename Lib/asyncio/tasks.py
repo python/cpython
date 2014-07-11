@@ -18,7 +18,6 @@ from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
-from .log import logger
 
 _PY34 = (sys.version_info >= (3, 4))
 
