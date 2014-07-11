@@ -715,7 +715,7 @@ class EventLoopTestsMixin:
             with self.assertRaisesRegex(ValueError,
                                         'path and sock can not be specified '
                                         'at the same time'):
-                server = self.loop.run_until_complete(f)
+                self.loop.run_until_complete(f)
 
     def _create_ssl_context(self, certfile, keyfile=None):
         sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
