@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16382: Improve exception message of warnings.warn() for bad
+  category. Initial patch by Phil Elson.
+
 - Issue #21932: os.read() now uses a :c:func:`Py_ssize_t` type instead of
   :c:type:`int` for the size to support reading more than 2 GB at once. On
   Windows, the size is truncted to INT_MAX. As any call to os.read(), the OS

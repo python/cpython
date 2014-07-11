@@ -162,7 +162,9 @@ def warn(message, category=None, stacklevel=1):
     # Check category argument
     if category is None:
         category = UserWarning
-    assert issubclass(category, Warning)
+    if not (isinstance(category, type) and issubclass(category, Warning)):
+        raise TypeError("category must be a Warning subclass, "
+                        "not '{:s}'".format(type(category).__name__))
     # Get context information
     try:
         caller = sys._getframe(stacklevel)
