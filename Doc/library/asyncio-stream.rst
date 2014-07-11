@@ -34,28 +34,25 @@ Stream functions
 
 .. function:: start_server(client_connected_cb, host=None, port=None, \*, loop=None, limit=None, **kwds)
 
-   Start a socket server, with a callback for each client connected.
+   Start a socket server, with a callback for each client connected. The return
+   value is the same as :meth:`~BaseEventLoop.create_server()`.
 
-   The first parameter, *client_connected_cb*, takes two parameters:
+   The *client_connected_cb* parameter is called with two parameters:
    *client_reader*, *client_writer*.  *client_reader* is a
    :class:`StreamReader` object, while *client_writer* is a
-   :class:`StreamWriter` object.  This parameter can either be a plain callback
-   function or a :ref:`coroutine function <coroutine>`; if it is a coroutine
-   function, it will be automatically wrapped in a future using the
-   :meth:`BaseEventLoop.create_task` method.
+   :class:`StreamWriter` object.  The *client_connected_cb* parameter can
+   either be a plain callback function or a :ref:`coroutine function
+   <coroutine>`; if it is a coroutine function, it will be automatically
+   wrapped in a future using the :meth:`BaseEventLoop.create_task` method.
 
    The rest of the arguments are all the usual arguments to
    :meth:`~BaseEventLoop.create_server()` except *protocol_factory*; most
-   common are positional host and port, with various optional keyword arguments
-   following.  The return value is the same as
-   :meth:`~BaseEventLoop.create_server()`.
+   common are positional *host* and *port*, with various optional keyword
+   arguments following.
 
    Additional optional keyword arguments are *loop* (to set the event loop
    instance to use) and *limit* (to set the buffer limit passed to the
    :class:`StreamReader`).
-
-   The return value is the same as :meth:`~BaseEventLoop.create_server()`, i.e.
-   a :class:`AbstractServer` object which can be used to stop the service.
 
    This function is a :ref:`coroutine <coroutine>`.
 

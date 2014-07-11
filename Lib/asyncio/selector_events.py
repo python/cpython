@@ -417,7 +417,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
         self._closing = False  # Set when close() called.
         if self._server is not None:
-            self._server.attach(self)
+            self._server._attach()
 
     def abort(self):
         self._force_close(None)
@@ -464,7 +464,7 @@ class _SelectorTransport(transports._FlowControlMixin,
             self._loop = None
             server = self._server
             if server is not None:
-                server.detach(self)
+                server._detach()
                 self._server = None
 
     def get_write_buffer_size(self):
