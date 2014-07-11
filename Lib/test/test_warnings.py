@@ -370,6 +370,41 @@ class WarnTests(BaseTest):
         with self.assertRaises(ValueError):
             self.module.warn(BadStrWarning())
 
+    def test_warning_classes(self):
+        class MyWarningClass(Warning):
+            pass
+
+        class NonWarningSubclass:
+            pass
+
+        # passing a non-subclass of Warning should raise a TypeError
+        with self.assertRaises(TypeError) as cm:
+            self.module.warn('bad warning category', '')
+        self.assertIn('category must be a Warning subclass, not ',
+                      str(cm.exception))
+
+        with self.assertRaises(TypeError) as cm:
+            self.module.warn('bad warning category', NonWarningSubclass)
+        self.assertIn('category must be a Warning subclass, not ',
+                      str(cm.exception))
+
+        # check that warning instances also raise a TypeError
+        with self.assertRaises(TypeError) as cm:
+            self.module.warn('bad warning category', MyWarningClass())
+        self.assertIn('category must be a Warning subclass, not ',
+                      str(cm.exception))
+
+        with self.assertWarns(MyWarningClass) as cm:
+            self.module.warn('good warning category', MyWarningClass)
+        self.assertEqual('good warning category', str(cm.warning))
+
+        with self.assertWarns(UserWarning) as cm:
+            self.module.warn('good warning category', None)
+        self.assertEqual('good warning category', str(cm.warning))
+
+        with self.assertWarns(MyWarningClass) as cm:
+            self.module.warn('good warning category', MyWarningClass)
+        self.assertIsInstance(cm.warning, Warning)
 
 class CWarnTests(WarnTests, unittest.TestCase):
     module = c_warnings

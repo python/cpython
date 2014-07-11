@@ -619,16 +619,17 @@ get_category(PyObject *message, PyObject *category)
 
     if (rc == 1)
         category = (PyObject*)message->ob_type;
-    else if (category == NULL)
+    else if (category == NULL || category == Py_None)
         category = PyExc_UserWarning;
 
     /* Validate category. */
     rc = PyObject_IsSubclass(category, PyExc_Warning);
-    if (rc == -1)
-        return NULL;
-    if (rc == 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "category is not a subclass of Warning");
+    /* category is not a subclass of PyExc_Warning or
+       PyObject_IsSubclass raised an error */
+    if (rc == -1 || rc == 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "category must be a Warning subclass, not '%s'",
+                     Py_TYPE(category)->tp_name);
         return NULL;
     }
 
