@@ -24,6 +24,8 @@ the execution of the process.
    Equivalent to calling ``get_event_loop_policy().new_event_loop()``.
 
 
+.. _asyncio-event-loops:
+
 Available event loops
 ---------------------
 
@@ -57,6 +59,7 @@ Example to use a :class:`ProactorEventLoop` on Windows::
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
 
+.. _asyncio-platform-support:
 
 Platform support
 ----------------
@@ -70,21 +73,27 @@ Windows
 Common limits of Windows event loops:
 
 - :meth:`~BaseEventLoop.create_unix_server` and
-  :meth:`~BaseEventLoop.create_unix_server` are not supported: specific to UNIX
+  :meth:`~BaseEventLoop.create_unix_server` are not supported: the socket
+  family :data:`socket.AF_UNIX` is specific to UNIX
 - :meth:`~BaseEventLoop.add_signal_handler` and
   :meth:`~BaseEventLoop.remove_signal_handler` are not supported
-- Pipes are not supported: :meth:`~BaseEventLoop.connect_read_pipe` and
-  :meth:`~BaseEventLoop.connect_write_pipe`
-- :meth:`EventLoopPolicy.set_child_watcher` is not supported
+- :meth:`EventLoopPolicy.set_child_watcher` is not supported.
+  :class:`ProactorEventLoop` supports subprocesses. It has only one
+  implementation to watch child processes, there is no need to configure it.
 
 :class:`SelectorEventLoop` specific limits:
 
 - :class:`~selectors.SelectSelector` is used but it only supports sockets,
   see the `MSDN documentation of select
-  <http://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_.
-- it is not possible to execute subprocesses
+  <http://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_
 - :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` only
   accept file descriptors of sockets
+- Pipes are not supported
+  (ex: :meth:`~BaseEventLoop.connect_read_pipe`,
+  :meth:`~BaseEventLoop.connect_write_pipe`)
+- :ref:`Subprocesses <asyncio-subprocess>` are not supported
+  (ex: :meth:`~BaseEventLoop.subprocess_exec`,
+  :meth:`~BaseEventLoop.subprocess_shell`)
 
 :class:`ProactorEventLoop` specific limits:
 
@@ -95,9 +104,10 @@ Common limits of Windows event loops:
   not supported
 
 The resolution of the monotonic clock on Windows is usually around 15.6 msec.
-The best resolution is 0.5 msec. The exact resolution depends on the hardware
-(availability of HPET) and the Windows configuration. See :ref:`asyncio delayed
-calls <asyncio-delayed-calls>`.
+The best resolution is 0.5 msec. The resolution depends on the hardware
+(availability of `HPET
+<http://fr.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
+configuration. See :ref:`asyncio delayed calls <asyncio-delayed-calls>`.
 
 
 Mac OS X
