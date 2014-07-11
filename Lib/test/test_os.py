@@ -123,14 +123,15 @@ class FileTests(unittest.TestCase):
             self.assertEqual(type(s), bytes)
             self.assertEqual(s, b"spam")
 
-    def test_large_read(self):
+    @support.cpython_only
+    @support.bigmemtest(size=INT_MAX + 10, memuse=1, dry_run=False)
+    def test_large_read(self, size):
         with open(support.TESTFN, "wb") as fp:
             fp.write(b'test')
         self.addCleanup(support.unlink, support.TESTFN)
 
         # Issue #21932: Make sure that os.read() does not raise an
         # OverflowError for size larger than INT_MAX
-        size = INT_MAX + 10
         with open(support.TESTFN, "rb") as fp:
             data = os.read(fp.fileno(), size)
 
