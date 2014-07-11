@@ -35,7 +35,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._closing = False  # Set when close() called.
         self._eof_written = False
         if self._server is not None:
-            self._server.attach(self)
+            self._server._attach()
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
             # wait until protocol.connection_made() has been called
@@ -91,7 +91,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._sock.close()
             server = self._server
             if server is not None:
-                server.detach(self)
+                server._detach()
                 self._server = None
 
     def get_write_buffer_size(self):
