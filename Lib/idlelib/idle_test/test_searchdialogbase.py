@@ -80,10 +80,10 @@ class SearchDialogBaseTest(unittest.TestCase):
 
         self.assertIn(entry.get(), 'hello')
         egi = entry.grid_info()
-        equal(egi['row'], '0')
-        equal(egi['column'], '1')
-        equal(egi['rowspan'], '1')
-        equal(egi['columnspan'], '1')
+        equal(int(egi['row']), 0)
+        equal(int(egi['column']), 1)
+        equal(int(egi['rowspan']), 1)
+        equal(int(egi['columnspan']), 1)
         equal(self.dialog.row, 1)
 
     def test_create_entries(self):
