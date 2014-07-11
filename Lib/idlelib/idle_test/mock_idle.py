@@ -26,7 +26,10 @@ class Func:
         self.called = True
         self.args = args
         self.kwds = kwds
-        return self.result
+        if isinstance(self.result, BaseException):
+            raise self.result
+        else:
+            return self.result
 
 
 class Editor:
