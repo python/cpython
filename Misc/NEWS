@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -226,6 +226,9 @@ Windows
 
 Tools/Demos
 -----------
+
+- Issue #21906: Make Tools/scripts/md5sum.py work in Python 3.
+  Patch by Zachary Ware.
 
 - Issue #21629: Fix Argument Clinic's "--converters" feature.
 
