@@ -7989,11 +7989,18 @@ Read a file descriptor.");
 static PyObject *
 posix_read(PyObject *self, PyObject *args)
 {
-    int fd, size;
+    int fd;
+    Py_ssize_t size;
     Py_ssize_t n;
     PyObject *buffer;
-    if (!PyArg_ParseTuple(args, "ii:read", &fd, &size))
+    if (!PyArg_ParseTuple(args, "in:read", &fd, &size))
         return NULL;
+    if (!_PyVerify_fd(fd))
+        return posix_error();
+#ifdef MS_WINDOWS
+    if (size > INT_MAX)
+        size = INT_MAX;
+#endif
     if (size < 0) {
         errno = EINVAL;
         return posix_error();
@@ -8001,12 +8008,12 @@ posix_read(PyObject *self, PyObject *args)
     buffer = PyBytes_FromStringAndSize((char *)NULL, size);
     if (buffer == NULL)
         return NULL;
-    if (!_PyVerify_fd(fd)) {
-        Py_DECREF(buffer);
-        return posix_error();
-    }
     Py_BEGIN_ALLOW_THREADS
+#ifdef MS_WINDOWS
+    n = read(fd, PyBytes_AS_STRING(buffer), (int)size);
+#else
     n = read(fd, PyBytes_AS_STRING(buffer), size);
+#endif
     Py_END_ALLOW_THREADS
     if (n < 0) {
         Py_DECREF(buffer);
