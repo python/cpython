@@ -12,7 +12,6 @@ from test.support import IPV6_ENABLED
 
 import asyncio
 from asyncio import base_events
-from asyncio import events
 from asyncio import constants
 from asyncio import test_utils
 
@@ -26,6 +25,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def setUp(self):
         self.loop = base_events.BaseEventLoop()
         self.loop._selector = mock.Mock()
+        self.loop._selector.select.return_value = ()
         self.set_event_loop(self.loop)
 
     def test_not_implemented(self):
