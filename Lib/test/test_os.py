@@ -43,6 +43,10 @@ try:
     import _winapi
 except ImportError:
     _winapi = None
+try:
+    from _testcapi import INT_MAX
+except ImportError:
+    INT_MAX = 2 ** 31 - 1
 
 from test.script_helper import assert_python_ok
 
@@ -118,6 +122,21 @@ class FileTests(unittest.TestCase):
             s = os.read(fd, 4)
             self.assertEqual(type(s), bytes)
             self.assertEqual(s, b"spam")
+
+    def test_large_read(self):
+        with open(support.TESTFN, "wb") as fp:
+            fp.write(b'test')
+        self.addCleanup(support.unlink, support.TESTFN)
+
+        # Issue #21932: Make sure that os.read() does not raise an
+        # OverflowError for size larger than INT_MAX
+        size = INT_MAX + 10
+        with open(support.TESTFN, "rb") as fp:
+            data = os.read(fp.fileno(), size)
+
+        # The test does not try to read more than 2 GB at once because the
+        # operating system is free to return less bytes than requested.
+        self.assertEqual(data, b'test')
 
     def test_write(self):
         # os.write() accepts bytes- and buffer-like objects but not strings
