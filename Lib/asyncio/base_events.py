@@ -110,6 +110,8 @@ class Server(events.AbstractServer):
             return
         self.sockets = None
         for sock in sockets:
+            # closing sockets will call asynchronously the _detach() method
+            # which calls _wakeup() for the last socket
             self._loop._stop_serving(sock)
         if self._active_count == 0:
             self._wakeup()
@@ -626,7 +628,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                       reuse_address=None):
         """Create a TCP server bound to host and port.
 
-        Return an AbstractServer object which can be used to stop the service.
+        Return an Server object which can be used to stop the service.
 
         This method is a coroutine.
         """
