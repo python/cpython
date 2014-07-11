@@ -1,6 +1,5 @@
 """Tests for tasks.py."""
 
-import os.path
 import re
 import sys
 import types
@@ -1640,9 +1639,9 @@ class TaskTests(test_utils.TestCase):
             asyncio.coroutines._DEBUG = debug
 
         tb_filename = __file__
-        tb_lineno = sys._getframe().f_lineno + 1
-        coro = coro_noop()
-        coro = None
+        tb_lineno = sys._getframe().f_lineno + 2
+        # create a coroutine object but don't use it
+        coro_noop()
         support.gc_collect()
 
         self.assertTrue(m_log.error.called)
@@ -1652,7 +1651,7 @@ class TaskTests(test_utils.TestCase):
                  r'Coroutine object created at \(most recent call last\):\n'
                  r'.*\n'
                  r'  File "%s", line %s, in test_coroutine_never_yielded\n'
-                 r'    coro = coro_noop\(\)$'
+                 r'    coro_noop\(\)$'
                  % (re.escape(coro_noop.__qualname__),
                     re.escape(func_filename), func_lineno,
                     re.escape(tb_filename), tb_lineno))
