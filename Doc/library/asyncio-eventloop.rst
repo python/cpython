@@ -263,8 +263,9 @@ Creating listening connections
 
 .. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
-   Create a TCP server bound to host and port. Return an
-   :class:`AbstractServer` object which can be used to stop the service.
+   Create a TCP server bound to host and port. Return a :class:`Server` object,
+   its :attr:`~Server.sockets` attribute contains created sockets. Use the
+   :meth:`Server.close` method to stop the server: close listening sockets.
 
    This method is a :ref:`coroutine <coroutine>`.
 
@@ -557,17 +558,31 @@ Debug mode
 Server
 ------
 
-.. class:: AbstractServer
+.. class:: Server
 
-   Abstract server returned by :func:`BaseEventLoop.create_server`.
+   Server listening on sockets.
+
+   Object created by the :meth:`BaseEventLoop.create_server` method and the
+   :func:`start_server` function. Don't instanciate the class directly.
 
    .. method:: close()
 
-      Stop serving.  This leaves existing connections open.
+      Stop serving: close all sockets and set the :attr:`sockets` attribute to
+      ``None``.
+
+      The server is closed asynchonously, use the :meth:`wait_closed` coroutine
+      to wait until the server is closed.
 
    .. method:: wait_closed()
 
-      A :ref:`coroutine <coroutine>` to wait until service is closed.
+      Wait until the :meth:`close` method completes.
+
+      This method is a :ref:`coroutine <coroutine>`.
+
+   .. attribute:: sockets
+
+      List of :class:`socket.socket` objects the server is listening to, or
+      ``None`` if the server is closed.
 
 
 Handle
