@@ -1,5 +1,7 @@
 .. currentmodule:: asyncio
 
+.. _asyncio-subprocess:
+
 Subprocess
 ==========
 
@@ -15,6 +17,11 @@ Example to use it on Windows::
     if os.name == 'nt':
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
+
+.. seealso::
+
+   :ref:`Available event loops <asyncio-event-loops>` and :ref:`Platform
+   support <asyncio-platform-support>`.
 
 
 Create a subprocess: high-level API using Process
