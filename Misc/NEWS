@@ -121,6 +121,13 @@ Library
 IDLE
 ----
 
+- Issue #21940: Add unittest for WidgetRedirector. Initial patch by Saimadhav
+  Heblikar.
+
+- Issue #18592: Add unittest for SearchDialogBase. Patch by Phil Webster.
+
+- Issue #21694: Add unittest for ParenMatch. Patch by Saimadhav Heblikar.
+
 - Issue #21686: add unittest for HyperParser. Original patch by Saimadhav
   Heblikar.
 
