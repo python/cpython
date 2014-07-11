@@ -14,7 +14,6 @@ from . import coroutines
 from . import events
 from . import futures
 from . import protocols
-from . import tasks
 from .coroutines import coroutine
 
 
