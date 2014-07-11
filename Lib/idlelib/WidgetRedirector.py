@@ -3,19 +3,21 @@ from Tkinter import TclError
 class WidgetRedirector:
     """Support for redirecting arbitrary widget subcommands.
 
-    Some Tk operations don't normally pass through Tkinter.  For example, if a
+    Some Tk operations don't normally pass through tkinter.  For example, if a
     character is inserted into a Text widget by pressing a key, a default Tk
     binding to the widget's 'insert' operation is activated, and the Tk library
-    processes the insert without calling back into Tkinter.
+    processes the insert without calling back into tkinter.
 
-    Although a binding to <Key> could be made via Tkinter, what we really want
-    to do is to hook the Tk 'insert' operation itself.
+    Although a binding to <Key> could be made via tkinter, what we really want
+    to do is to hook the Tk 'insert' operation itself.  For one thing, we want
+    a text.insert call in idle code to have the same effect as a key press.
 
     When a widget is instantiated, a Tcl command is created whose name is the
     same as the pathname widget._w.  This command is used to invoke the various
     widget operations, e.g. insert (for a Text widget). We are going to hook
     this command and provide a facility ('register') to intercept the widget
-    operation.
+    operation.  We will also intercept method calls on the Tkinter class
+    instance that represents the tk widget.
 
     In IDLE, WidgetRedirector is used in Percolator to intercept Text
     commands.  The function being registered provides access to the top
@@ -64,9 +66,13 @@ class WidgetRedirector:
     def register(self, operation, function):
         '''Return OriginalCommand(operation) after registering function.
 
-        Registration adds an instance function attribute that masks the
-        class instance method attribute. If a second function is
-        registered for the same operation, the first function is replaced.
+        Registration adds an operation: function pair to ._operations.
+        It also adds an widget function attribute that masks the Tkinter
+        class instance method.  Method masking operates independently
+        from command dispatch.
+
+        If a second function is registered for the same operation, the
+        first function is replaced in both places.
         '''
         self._operations[operation] = function
         setattr(self.widget, operation, function)
@@ -80,8 +86,10 @@ class WidgetRedirector:
         if operation in self._operations:
             function = self._operations[operation]
             del self._operations[operation]
-            if hasattr(self.widget, operation):
+            try:
                 delattr(self.widget, operation)
+            except AttributeError:
+                pass
             return function
         else:
             return None
@@ -160,7 +168,7 @@ def _widget_redirector(parent):  # htest #
 
 if __name__ == "__main__":
     import unittest
-##    unittest.main('idlelib.idle_test.test_widgetredir',
-##                  verbosity=2, exit=False)
+    unittest.main('idlelib.idle_test.test_widgetredir',
+                  verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
     run(_widget_redirector)
