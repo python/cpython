@@ -41,6 +41,23 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # wait until protocol.connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
+    def __repr__(self):
+        info = [self.__class__.__name__, 'fd=%s' % self._sock.fileno()]
+        if self._read_fut is not None:
+            ov = "pending" if self._read_fut.ov.pending else "completed"
+            info.append('read=%s' % ov)
+        if self._write_fut is not None:
+            if self._write_fut.ov.pending:
+                info.append("write=pending=%s" % self._pending_write)
+            else:
+                info.append("write=completed")
+        if self._buffer:
+            bufsize = len(self._buffer)
+            info.append('write_bufsize=%s' % bufsize)
+        if self._eof_written:
+            info.append('EOF written')
+        return '<%s>' % ' '.join(info)
+
     def _set_extra(self, sock):
         self._extra['pipe'] = sock
 
@@ -55,7 +72,10 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._read_fut.cancel()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
-        if not isinstance(exc, (BrokenPipeError, ConnectionResetError)):
+        if isinstance(exc, (BrokenPipeError, ConnectionResetError)):
+            if self._loop.get_debug():
+                logger.debug("%r: %s", self, message, exc_info=True)
+        else:
             self._loop.call_exception_handler({
                 'message': message,
                 'exception': exc,
@@ -108,7 +128,6 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, waiter, extra, server)
-        self._read_fut = None
         self._paused = False
         self._loop.call_soon(self._loop_reading)
 
@@ -118,6 +137,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._paused:
             raise RuntimeError('Already paused')
         self._paused = True
+        if self._loop.get_debug():
+            logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
         if not self._paused:
@@ -126,6 +147,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._closing:
             return
         self._loop.call_soon(self._loop_reading, self._read_fut)
+        if self._loop.get_debug():
+            logger.debug("%r resumes reading", self)
 
     def _loop_reading(self, fut=None):
         if self._paused:
@@ -166,6 +189,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             if data:
                 self._protocol.data_received(data)
             elif data is not None:
+                if self._loop.get_debug():
+                    logger.debug("%r received EOF", self)
                 keep_open = self._protocol.eof_received()
                 if not keep_open:
                     self.close()
@@ -401,7 +426,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._ssock.setblocking(False)
         self._csock.setblocking(False)
         self._internal_fds += 1
-        self.call_soon(self._loop_self_reading)
+        # don't check the current loop because _make_self_pipe() is called
+        # from the event loop constructor
+        self._call_soon(self._loop_self_reading, (), check_loop=False)
 
     def _loop_self_reading(self, f=None):
         try:
@@ -426,6 +453,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             try:
                 if f is not None:
                     conn, addr = f.result()
+                    if self._debug:
+                        logger.debug("%r got a new connection from %r: %r",
+                                     server, addr, conn)
                     protocol = protocol_factory()
                     self._make_socket_transport(
                         conn, protocol,

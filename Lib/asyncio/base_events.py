@@ -94,6 +94,9 @@ class Server(events.AbstractServer):
         self._active_count = 0
         self._waiters = []
 
+    def __repr__(self):
+        return '<%s sockets=%r>' % (self.__class__.__name__, self.sockets)
+
     def _attach(self):
         assert self.sockets is not None
         self._active_count += 1
@@ -110,8 +113,6 @@ class Server(events.AbstractServer):
             return
         self.sockets = None
         for sock in sockets:
-            # closing sockets will call asynchronously the _detach() method
-            # which calls _wakeup() for the last socket
             self._loop._stop_serving(sock)
         if self._active_count == 0:
             self._wakeup()
@@ -276,6 +277,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise RuntimeError("cannot close a running event loop")
         if self._closed:
             return
+        if self._debug:
+            logger.debug("Close %r", self)
         self._closed = True
         self._ready.clear()
         self._scheduled.clear()
@@ -402,10 +405,39 @@ class BaseEventLoop(events.AbstractEventLoop):
     def set_default_executor(self, executor):
         self._default_executor = executor
 
+    def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
+        msg = ["%s:%r" % (host, port)]
+        if family:
+            msg.append('family=%r' % family)
+        if type:
+            msg.append('type=%r' % type)
+        if proto:
+            msg.append('proto=%r' % proto)
+        if flags:
+            msg.append('flags=%r' % flags)
+        msg = ', '.join(msg)
+        logger.debug('Get addresss info %s', msg)
+
+        t0 = self.time()
+        addrinfo = socket.getaddrinfo(host, port, family, type, proto, flags)
+        dt = self.time() - t0
+
+        msg = ('Getting addresss info %s took %.3f ms: %r'
+               % (msg, dt * 1e3, addrinfo))
+        if dt >= self.slow_callback_duration:
+            logger.info(msg)
+        else:
+            logger.debug(msg)
+        return addrinfo
+
     def getaddrinfo(self, host, port, *,
                     family=0, type=0, proto=0, flags=0):
-        return self.run_in_executor(None, socket.getaddrinfo,
-                                    host, port, family, type, proto, flags)
+        if self._debug:
+            return self.run_in_executor(None, self._getaddrinfo_debug,
+                                        host, port, family, type, proto, flags)
+        else:
+            return self.run_in_executor(None, socket.getaddrinfo,
+                                        host, port, family, type, proto, flags)
 
     def getnameinfo(self, sockaddr, flags=0):
         return self.run_in_executor(None, socket.getnameinfo, sockaddr, flags)
@@ -492,6 +524,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                             sock.close()
                             sock = None
                             continue
+                    if self._debug:
+                        logger.debug("connect %r to %r", sock, address)
                     yield from self.sock_connect(sock, address)
                 except OSError as exc:
                     if sock is not None:
@@ -524,6 +558,9 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         transport, protocol = yield from self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
+        if self._debug:
+            logger.debug("connected to %s:%r: (%r, %r)",
+                         host, port, transport, protocol)
         return transport, protocol
 
     @coroutine
@@ -614,6 +651,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         waiter = futures.Future(loop=self)
         transport = self._make_datagram_transport(sock, protocol, r_addr,
                                                   waiter)
+        if self._debug:
+            if local_addr:
+                logger.info("Datagram endpoint local_addr=%r remote_addr=%r "
+                            "created: (%r, %r)",
+                            local_addr, remote_addr, transport, protocol)
+            else:
+                logger.debug("Datagram endpoint remote_addr=%r created: "
+                             "(%r, %r)",
+                             remote_addr, transport, protocol)
         yield from waiter
         return transport, protocol
 
@@ -694,6 +740,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             sock.listen(backlog)
             sock.setblocking(False)
             self._start_serving(protocol_factory, sock, ssl, server)
+        if self._debug:
+            logger.info("%r is serving", server)
         return server
 
     @coroutine
