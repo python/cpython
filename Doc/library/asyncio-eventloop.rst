@@ -567,8 +567,11 @@ Server
 
    .. method:: close()
 
-      Stop serving: close all sockets and set the :attr:`sockets` attribute to
-      ``None``.
+      Stop serving: close listening sockets and set the :attr:`sockets`
+      attribute to ``None``.
+
+      The sockets that represent existing incoming client connections are
+      leaved open.
 
       The server is closed asynchonously, use the :meth:`wait_closed` coroutine
       to wait until the server is closed.
