@@ -44,9 +44,9 @@ try:
 except ImportError:
     _winapi = None
 try:
-    from _testcapi import INT_MAX
+    from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 except ImportError:
-    INT_MAX = 2 ** 31 - 1
+    INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 from test.script_helper import assert_python_ok
 
@@ -124,6 +124,10 @@ class FileTests(unittest.TestCase):
             self.assertEqual(s, b"spam")
 
     @support.cpython_only
+    # Skip the test on 32-bit platforms: the number of bytes must fit in a
+    # Py_ssize_t type
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX,
+                         "needs INT_MAX < PY_SSIZE_T_MAX")
     @support.bigmemtest(size=INT_MAX + 10, memuse=1, dry_run=False)
     def test_large_read(self, size):
         with open(support.TESTFN, "wb") as fp:
