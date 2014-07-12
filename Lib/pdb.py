@@ -673,7 +673,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # now set the break point
             err = self.set_break(filename, line, temporary, cond, funcname)
             if err:
-                self.error(err, file=self.stdout)
+                self.error(err)
             else:
                 bp = self.get_breaks(filename, line)[-1]
                 self.message("Breakpoint %d at %s:%d" %
