@@ -40,6 +40,18 @@ class _OverlappedFuture(futures.Future):
         super().__init__(loop=loop)
         self.ov = ov
 
+    def __repr__(self):
+        info = [self._state.lower()]
+        if self.ov.pending:
+            info.append('overlapped=pending')
+        else:
+            info.append('overlapped=completed')
+        if self._state == futures._FINISHED:
+            info.append(self._format_result())
+        if self._callbacks:
+            info.append(self._format_callbacks())
+        return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
+
     def cancel(self):
         try:
             self.ov.cancel()
