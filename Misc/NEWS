@@ -108,6 +108,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21966: Respect -q command-line option when code module is ran.
+
 - Issue #19076: Don't pass the redundant 'file' argument to self.error().
 
 - Issue #16382: Improve exception message of warnings.warn() for bad
