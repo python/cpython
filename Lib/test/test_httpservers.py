@@ -324,10 +324,13 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.cwd = os.getcwd()
         self.parent_dir = tempfile.mkdtemp()
         self.cgi_dir = os.path.join(self.parent_dir, 'cgi-bin')
+        self.cgi_child_dir = os.path.join(self.cgi_dir, 'child-dir')
         os.mkdir(self.cgi_dir)
+        os.mkdir(self.cgi_child_dir)
         self.nocgi_path = None
         self.file1_path = None
         self.file2_path = None
+        self.file3_path = None
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
@@ -361,6 +364,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file2.write(cgi_file2 % self.pythonexe)
         os.chmod(self.file2_path, 0o777)
 
+        self.file3_path = os.path.join(self.cgi_child_dir, 'file3.py')
+        with open(self.file3_path, 'w', encoding='utf-8') as file3:
+            file3.write(cgi_file1 % self.pythonexe)
+        os.chmod(self.file3_path, 0o777)
+
         os.chdir(self.parent_dir)
 
     def tearDown(self):
@@ -374,6 +382,9 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 os.remove(self.file1_path)
             if self.file2_path:
                 os.remove(self.file2_path)
+            if self.file3_path:
+                os.remove(self.file3_path)
+            os.rmdir(self.cgi_child_dir)
             os.rmdir(self.cgi_dir)
             os.rmdir(self.parent_dir)
         finally:
@@ -466,6 +477,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
     def test_urlquote_decoding_in_cgi_check(self):
         res = self.request('/cgi-bin%2ffile1.py')
+        self.assertEqual((b'Hello World' + self.linesep, 'text/html', 200),
+                (res.read(), res.getheader('Content-type'), res.status))
+
+    def test_nested_cgi_path_issue21323(self):
+        res = self.request('/cgi-bin/child-dir/file3.py')
         self.assertEqual((b'Hello World' + self.linesep, 'text/html', 200),
                 (res.read(), res.getheader('Content-type'), res.status))
 
