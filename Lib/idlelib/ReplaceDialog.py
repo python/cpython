@@ -40,7 +40,7 @@ class ReplaceDialog(SearchDialogBase):
 
     def create_entries(self):
         SearchDialogBase.create_entries(self)
-        self.replent = self.make_entry("Replace with:", self.replvar)
+        self.replent = self.make_entry("Replace with:", self.replvar)[0]
 
     def create_command_buttons(self):
         SearchDialogBase.create_command_buttons(self)

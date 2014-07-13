@@ -75,7 +75,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         equal = self.assertEqual
         self.dialog.row = 0
         self.dialog.top = Toplevel(self.root)
-        label, entry = self.dialog.make_entry("Test:", 'hello')
+        entry, label = self.dialog.make_entry("Test:", 'hello')
         equal(label['text'], 'Test:')
 
         self.assertIn(entry.get(), 'hello')
