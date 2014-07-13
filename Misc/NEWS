@@ -38,6 +38,9 @@ Library
   as documented.  The pattern and source keyword parameters are left as
   deprecated aliases.
 
+- Issue #21323: Fix http.server to again handle scripts in CGI subdirectories,
+  broken by the fix for security issue #19435.  Patch by Zach Byrne.
+
 Tests
 -----
 
