@@ -36,6 +36,9 @@ Library
 - Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
   service using certificates with many wildcards (CVE-2013-2099).
 
+- Issue #21323: Fix http.server to again handle scripts in CGI subdirectories,
+  broken by the fix for security issue #19435.  Patch by Zach Byrne.
+
 
 What's New in Python 3.2.5?
 ===========================
