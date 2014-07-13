@@ -25,6 +25,9 @@ Library
 - Issue #21923: Prevent AttributeError in distutils.sysconfig.customize_compiler
   due to possible uninitialized _config_vars.
 
+- Issue #21323: Fix CGIHTTPServer to again handle scripts in CGI subdirectories,
+  broken by the fix for security issue #19435.  Patch by Zach Byrne.
+
 
 What's New in Python 2.7.8?
 ===========================

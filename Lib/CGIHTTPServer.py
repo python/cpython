@@ -106,16 +106,16 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def run_cgi(self):
         """Execute a CGI script."""
         dir, rest = self.cgi_info
-
-        i = rest.find('/')
+        path = dir + '/' + rest
+        i = path.find('/', len(dir)+1)
         while i >= 0:
-            nextdir = rest[:i]
-            nextrest = rest[i+1:]
+            nextdir = path[:i]
+            nextrest = path[i+1:]
 
             scriptdir = self.translate_path(nextdir)
             if os.path.isdir(scriptdir):
                 dir, rest = nextdir, nextrest
-                i = rest.find('/')
+                i = path.find('/', len(dir)+1)
             else:
                 break
 
