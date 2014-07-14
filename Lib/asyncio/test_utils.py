@@ -3,6 +3,7 @@
 import collections
 import contextlib
 import io
+import logging
 import os
 import re
 import socket
@@ -28,6 +29,7 @@ from . import futures
 from . import selectors
 from . import tasks
 from .coroutines import coroutine
+from .log import logger
 
 
 if sys.platform == 'win32':  # pragma: no cover
@@ -401,3 +403,17 @@ class TestCase(unittest.TestCase):
 
     def tearDown(self):
         events.set_event_loop(None)
+
+
+@contextlib.contextmanager
+def disable_logger():
+    """Context manager to disable asyncio logger.
+
+    For example, it can be used to ignore warnings in debug mode.
+    """
+    old_level = logger.level
+    try:
+        logger.setLevel(logging.CRITICAL+1)
+        yield
+    finally:
+        logger.setLevel(old_level)
