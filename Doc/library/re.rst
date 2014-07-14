@@ -1340,9 +1340,9 @@ successive matches::
             ('ASSIGN',  r':='),          # Assignment operator
             ('END',     r';'),           # Statement terminator
             ('ID',      r'[A-Za-z]+'),   # Identifiers
-            ('OP',      r'[+*\/\-]'),    # Arithmetic operators
+            ('OP',      r'[+\-*/]'),     # Arithmetic operators
             ('NEWLINE', r'\n'),          # Line endings
-            ('SKIP',    r'[ \t]'),       # Skip over spaces and tabs
+            ('SKIP',    r'[ \t]+'),      # Skip over spaces and tabs
         ]
         tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
         get_token = re.compile(tok_regex).match
