@@ -4,6 +4,7 @@ import subprocess
 from . import protocols
 from . import transports
 from .coroutines import coroutine
+from .log import logger
 
 
 class BaseSubprocessTransport(transports.SubprocessTransport):
@@ -14,6 +15,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         super().__init__(extra)
         self._protocol = protocol
         self._loop = loop
+        self._pid = None
 
         self._pipes = {}
         if stdin == subprocess.PIPE:
@@ -27,7 +29,36 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._returncode = None
         self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
                     stderr=stderr, bufsize=bufsize, **kwargs)
+        self._pid = self._proc.pid
         self._extra['subprocess'] = self._proc
+        if self._loop.get_debug():
+            if isinstance(args, (bytes, str)):
+                program = args
+            else:
+                program = args[0]
+            logger.debug('process %r created: pid %s',
+                         program, self._pid)
+
+    def __repr__(self):
+        info = [self.__class__.__name__, 'pid=%s' % self._pid]
+        if self._returncode is not None:
+            info.append('returncode=%s' % self._returncode)
+
+        stdin = self._pipes.get(0)
+        if stdin is not None:
+            info.append('stdin=%s' % stdin.pipe)
+
+        stdout = self._pipes.get(1)
+        stderr = self._pipes.get(2)
+        if stdout is not None and stderr is stdout:
+            info.append('stdout=stderr=%s' % stdout.pipe)
+        else:
+            if stdout is not None:
+                info.append('stdout=%s' % stdout.pipe)
+            if stderr is not None:
+                info.append('stderr=%s' % stderr.pipe)
+
+        return '<%s>' % ' '.join(info)
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         raise NotImplementedError
@@ -45,7 +76,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             self.terminate()
 
     def get_pid(self):
-        return self._proc.pid
+        return self._pid
 
     def get_returncode(self):
         return self._returncode
@@ -108,6 +139,9 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
     def _process_exited(self, returncode):
         assert returncode is not None, returncode
         assert self._returncode is None, self._returncode
+        if self._loop.get_debug():
+            logger.info('%r exited with return code %r',
+                        self, returncode)
         self._returncode = returncode
         self._call(self._protocol.process_exited)
         self._try_finish()
@@ -140,6 +174,10 @@ class WriteSubprocessPipeProto(protocols.BaseProtocol):
 
     def connection_made(self, transport):
         self.pipe = transport
+
+    def __repr__(self):
+        return ('<%s fd=%s pipe=%r>'
+                % (self.__class__.__name__, self.fd, self.pipe))
 
     def connection_lost(self, exc):
         self.disconnected = True

@@ -9,6 +9,7 @@ from . import protocols
 from . import streams
 from . import tasks
 from .coroutines import coroutine
+from .log import logger
 
 
 PIPE = subprocess.PIPE
@@ -27,6 +28,16 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         self.waiter = futures.Future(loop=loop)
         self._waiters = collections.deque()
         self._transport = None
+
+    def __repr__(self):
+        info = [self.__class__.__name__]
+        if self.stdin is not None:
+            info.append('stdin=%r' % self.stdin)
+        if self.stdout is not None:
+            info.append('stdout=%r' % self.stdout)
+        if self.stderr is not None:
+            info.append('stderr=%r' % self.stderr)
+        return '<%s>' % ' '.join(info)
 
     def connection_made(self, transport):
         self._transport = transport
@@ -91,6 +102,9 @@ class Process:
         self.stderr = protocol.stderr
         self.pid = transport.get_pid()
 
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.pid)
+
     @property
     def returncode(self):
         return self._transport.get_returncode()
@@ -126,7 +140,13 @@ class Process:
     @coroutine
     def _feed_stdin(self, input):
         self.stdin.write(input)
+        if self._loop.get_debug():
+            logger.debug('%r communicate: feed stdin (%s bytes)',
+                        self, len(input))
         yield from self.stdin.drain()
+
+        if self._loop.get_debug():
+            logger.debug('%r communicate: close stdin', self)
         self.stdin.close()
 
     @coroutine
@@ -141,7 +161,13 @@ class Process:
         else:
             assert fd == 1
             stream = self.stdout
+        if self._loop.get_debug():
+            name = 'stdout' if fd == 1 else 'stderr'
+            logger.debug('%r communicate: read %s', self, name)
         output = yield from stream.read()
+        if self._loop.get_debug():
+            name = 'stdout' if fd == 1 else 'stderr'
+            logger.debug('%r communicate: close %s', self, name)
         transport.close()
         return output
 
