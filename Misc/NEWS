@@ -1212,6 +1212,9 @@ IDLE
 
 - Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
 
+- Issue #17390: Display Python version on Idle title bar.
+  Initial patch by Edmond Burnett.
+
 Documentation
 -------------
 
@@ -2093,6 +2096,19 @@ IDLE
 
 - Issue #5219: Prevent event handler cascade in IDLE.
 
+- Issue #15318: Prevent writing to sys.stdin.
+
+- Issue #13532, #15319: Check that arguments to sys.stdout.write are strings.
+
+- Issue #10365: File open dialog now works instead of crashing even when
+  parent window is closed while dialog is open.
+
+- Issue #14018: Update checks for unstable system Tcl/Tk versions on OS X
+  to include versions shipped with OS X 10.7 and 10.8 in addition to 10.6.
+
+- Issue #15853: Prevent IDLE crash on OS X when opening Preferences menu
+  with certain versions of Tk 8.5.  Initial patch by Kevin Walzer.
+
 Tests
 -----
 
@@ -2847,6 +2863,14 @@ IDLE
 - Issue #13296: Fix IDLE to clear compile __future__ flags on shell restart.
   (Patch by Roger Serwy)
 
+- Issue #14409: IDLE now properly executes commands in the Shell window
+  when it cannot read the normal config files on startup and
+  has to use the built-in default key bindings.
+  There was previously a bug in one of the defaults.
+
+- Issue #3573: IDLE hangs when passing invalid command line args
+  (directory(ies) instead of file(s)).
+
 Build
 -----
 
@@ -3415,6 +3439,15 @@ IDLE
 
 - Issue #10406: Enable Rstrip IDLE extension on OSX (just like on other
   platforms).
+
+- Issue #6378: Further adjust idle.bat to start associated Python
+
+- Issue #11896: Save on Close failed despite selecting "Yes" in dialog.
+
+- Issue #4676: <Home> toggle failing on Tk 8.5, causing IDLE exits and
+  strange selection behavior.  Improve selection extension behaviour.
+
+- Issue #3851 <Home> toggle non-functional when NumLock set on Windows.
 
 Build
 -----
@@ -6862,6 +6895,27 @@ IDLE
   whitespace.
 
 - Issue #5847: Remove -n switch on "Edit with IDLE" menu item.
+
+- idle.py modified and simplified to better support developing experimental
+  versions of IDLE which are not installed in the standard location.
+
+- Issue #5559: OutputWindow/PyShell right click menu "Go to file/line"
+  wasn't working with file paths containing spaces.
+
+- Issue #5783: Windows: Version string for the .chm help file changed,
+  file not being accessed  Patch by Guilherme Polo/
+
+- Issue #1529142: Allow multiple IDLE GUI/subprocess pairs to exist
+  simultaneously. Thanks to David Scherer for suggesting the use of an
+  ephemeral port for the GUI.  Patch by Weeble.
+
+- Remove port spec from run.py and fix bug where subprocess fails to
+  extract port from command line when warnings are present.
+
+- Issue #5129: Tk 8.5 Text widget requires 'wordprocessor' tabstyle attr
+  to handle mixed space/tab properly. Patch by Guilherme Polo.
+
+- Issue #3549: On MacOS the preferences menu was not present
 
 Tools/Demos
 -----------
