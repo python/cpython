@@ -44,8 +44,6 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(
             NotImplementedError, self.loop._write_to_self)
         self.assertRaises(
-            NotImplementedError, self.loop._read_from_self)
-        self.assertRaises(
             NotImplementedError,
             self.loop._make_read_pipe_transport, m, m)
         self.assertRaises(
