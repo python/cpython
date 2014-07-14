@@ -468,8 +468,10 @@ unicode_FromTclStringAndSize(const char *s, Py_ssize_t size)
             const char *e = s + size;
             PyErr_Clear();
             q = buf = (char *)PyMem_Malloc(size);
-            if (buf == NULL)
+            if (buf == NULL) {
+                PyErr_NoMemory();
                 return NULL;
+            }
             while (s != e) {
                 if (s + 1 != e && s[0] == '\xc0' && s[1] == '\x80') {
                     *q++ = '\0';
