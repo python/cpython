@@ -615,7 +615,7 @@ os.close(fd)
         logger = logging.getLogger('asyncio')
         log_level = logger.level
         try:
-            log_handler = logging.StreamHandler(sys.stderr)
+            log_handler = logging.StreamHandler(sys.__stderr__)
             logger.addHandler(log_handler)
             logger.setLevel(logging.DEBUG)
             # FIXME: Debug code for issue #21645 ---
