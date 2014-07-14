@@ -1,7 +1,7 @@
 """Base implementation of event loop.
 
 The event loop can be broken up into a multiplexer (the part
-responsible for notifying us of IO events) and the event loop proper,
+responsible for notifying us of I/O events) and the event loop proper,
 which wraps a multiplexer with functionality for scheduling callbacks,
 immediately or at a given time in the future.
 
@@ -50,6 +50,15 @@ def _format_handle(handle):
         return str(handle)
 
 
+def _format_pipe(fd):
+    if fd == subprocess.PIPE:
+        return '<pipe>'
+    elif fd == subprocess.STDOUT:
+        return '<stdout>'
+    else:
+        return repr(fd)
+
+
 class _StopError(BaseException):
     """Raised to stop the event loop."""
 
@@ -70,7 +79,7 @@ def _check_resolved_address(sock, address):
         type_mask |= socket.SOCK_NONBLOCK
     if hasattr(socket, 'SOCK_CLOEXEC'):
         type_mask |= socket.SOCK_CLOEXEC
-    # Use getaddrinfo(AI_NUMERICHOST) to ensure that the address is
+    # Use getaddrinfo(flags=AI_NUMERICHOST) to ensure that the address is
     # already resolved.
     try:
         socket.getaddrinfo(host, port,
@@ -158,7 +167,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     def create_task(self, coro):
         """Schedule a coroutine object.
 
-        Return a task object."""
+        Return a task object.
+        """
         task = tasks.Task(coro, loop=self)
         if task._source_traceback:
             del task._source_traceback[-1]
@@ -197,12 +207,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create subprocess transport."""
         raise NotImplementedError
 
-    def _read_from_self(self):
-        """XXX"""
-        raise NotImplementedError
-
     def _write_to_self(self):
-        """XXX"""
+        """Write a byte to self-pipe, to wake up the event loop.
+
+        This may be called from a different thread.
+
+        The subclass is responsible for implementing the self-pipe.
+        """
         raise NotImplementedError
 
     def _process_events(self, event_list):
@@ -233,7 +244,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         If the argument is a coroutine, it is wrapped in a Task.
 
-        XXX TBD: It would be disastrous to call run_until_complete()
+        WARNING: It would be disastrous to call run_until_complete()
         with the same coroutine twice -- it would wrap it in two
         different Tasks and that can't be good.
 
@@ -261,7 +272,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Every callback scheduled before stop() is called will run.
         Callback scheduled after stop() is called won't.  However,
-        those callbacks will run if run() is called again later.
+        those callbacks will run if run_*() is called again later.
         """
         self.call_soon(_raise_stop_error)
 
@@ -274,7 +285,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         The event loop must not be running.
         """
         if self._running:
-            raise RuntimeError("cannot close a running event loop")
+            raise RuntimeError("Cannot close a running event loop")
         if self._closed:
             return
         if self._debug:
@@ -292,11 +303,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         return self._closed
 
     def is_running(self):
-        """Returns running status of event loop."""
+        """Returns True if the event loop is running."""
         return self._running
 
     def time(self):
-        """Return the time according to the event loop's clock."""
+        """Return the time according to the event loop's clock.
+
+        This is a float expressed in seconds since an epoch, but the
+        epoch, precision, accuracy and drift are unspecified and may
+        differ per event loop.
+        """
         return time.monotonic()
 
     def call_later(self, delay, callback, *args):
@@ -306,7 +322,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         can be used to cancel the call.
 
         The delay can be an int or float, expressed in seconds.  It is
-        always a relative time.
+        always relative to the current time.
 
         Each callback will be called exactly once.  If two callbacks
         are scheduled for exactly the same time, it undefined which
@@ -321,7 +337,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         return timer
 
     def call_at(self, when, callback, *args):
-        """Like call_later(), but uses an absolute time."""
+        """Like call_later(), but uses an absolute time.
+
+        Absolute time corresponds to the event loop's time() method.
+        """
         if coroutines.iscoroutinefunction(callback):
             raise TypeError("coroutines cannot be used with call_at()")
         if self._debug:
@@ -335,7 +354,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def call_soon(self, callback, *args):
         """Arrange for a callback to be called as soon as possible.
 
-        This operates as a FIFO queue, callbacks are called in the
+        This operates as a FIFO queue: callbacks are called in the
         order in which they are registered.  Each callback will be
         called exactly once.
 
@@ -361,10 +380,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _assert_is_current_event_loop(self):
         """Asserts that this event loop is the current event loop.
 
-        Non-threadsafe methods of this class make this assumption and will
+        Non-thread-safe methods of this class make this assumption and will
         likely behave incorrectly when the assumption is violated.
 
-        Should only be called when (self._debug == True). The caller is
+        Should only be called when (self._debug == True).  The caller is
         responsible for checking this condition for performance reasons.
         """
         try:
@@ -373,11 +392,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             return
         if current is not self:
             raise RuntimeError(
-                "non-threadsafe operation invoked on an event loop other "
+                "Non-thread-safe operation invoked on an event loop other "
                 "than the current one")
 
     def call_soon_threadsafe(self, callback, *args):
-        """Like call_soon(), but thread safe."""
+        """Like call_soon(), but thread-safe."""
         handle = self._call_soon(callback, args, check_loop=False)
         if handle._source_traceback:
             del handle._source_traceback[-1]
@@ -386,7 +405,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def run_in_executor(self, executor, callback, *args):
         if coroutines.iscoroutinefunction(callback):
-            raise TypeError("coroutines cannot be used with run_in_executor()")
+            raise TypeError("Coroutines cannot be used with run_in_executor()")
         if isinstance(callback, events.Handle):
             assert not args
             assert not isinstance(callback, events.TimerHandle)
@@ -416,13 +435,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         if flags:
             msg.append('flags=%r' % flags)
         msg = ', '.join(msg)
-        logger.debug('Get addresss info %s', msg)
+        logger.debug('Get address info %s', msg)
 
         t0 = self.time()
         addrinfo = socket.getaddrinfo(host, port, family, type, proto, flags)
         dt = self.time() - t0
 
-        msg = ('Getting addresss info %s took %.3f ms: %r'
+        msg = ('Getting address info %s took %.3f ms: %r'
                % (msg, dt * 1e3, addrinfo))
         if dt >= self.slow_callback_duration:
             logger.info(msg)
@@ -559,8 +578,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport, protocol = yield from self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
         if self._debug:
-            logger.debug("connected to %s:%r: (%r, %r)",
-                         host, port, transport, protocol)
+            logger.debug("%r connected to %s:%r: (%r, %r)",
+                         sock, host, port, transport, protocol)
         return transport, protocol
 
     @coroutine
@@ -589,7 +608,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError('unexpected address family')
             addr_pairs_info = (((family, proto), (None, None)),)
         else:
-            # join addresss by (family, protocol)
+            # join address by (family, protocol)
             addr_infos = collections.OrderedDict()
             for idx, addr in ((0, local_addr), (1, remote_addr)):
                 if addr is not None:
@@ -674,7 +693,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                       reuse_address=None):
         """Create a TCP server bound to host and port.
 
-        Return an Server object which can be used to stop the service.
+        Return a Server object which can be used to stop the service.
 
         This method is a coroutine.
         """
@@ -731,8 +750,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         sock.close()
         else:
             if sock is None:
-                raise ValueError(
-                    'host and port was not specified and no sock specified')
+                raise ValueError('Neither host/port nor sock were specified')
             sockets = [sock]
 
         server = Server(self, sockets)
@@ -750,6 +768,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         waiter = futures.Future(loop=self)
         transport = self._make_read_pipe_transport(pipe, protocol, waiter)
         yield from waiter
+        if self._debug:
+            logger.debug('Read pipe %r connected: (%r, %r)',
+                         pipe.fileno(), transport, protocol)
         return transport, protocol
 
     @coroutine
@@ -758,7 +779,23 @@ class BaseEventLoop(events.AbstractEventLoop):
         waiter = futures.Future(loop=self)
         transport = self._make_write_pipe_transport(pipe, protocol, waiter)
         yield from waiter
+        if self._debug:
+            logger.debug('Write pipe %r connected: (%r, %r)',
+                         pipe.fileno(), transport, protocol)
         return transport, protocol
+
+    def _log_subprocess(self, msg, stdin, stdout, stderr):
+        info = [msg]
+        if stdin is not None:
+            info.append('stdin=%s' % _format_pipe(stdin))
+        if stdout is not None and stderr == subprocess.STDOUT:
+            info.append('stdout=stderr=%s' % _format_pipe(stdout))
+        else:
+            if stdout is not None:
+                info.append('stdout=%s' % _format_pipe(stdout))
+            if stderr is not None:
+                info.append('stderr=%s' % _format_pipe(stderr))
+        logger.debug(' '.join(info))
 
     @coroutine
     def subprocess_shell(self, protocol_factory, cmd, *, stdin=subprocess.PIPE,
@@ -774,8 +811,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
         protocol = protocol_factory()
+        if self._debug:
+            # don't log parameters: they may contain sensitive information
+            # (password) and may be too long
+            debug_log = 'run shell command %r' % cmd
+            self._log_subprocess(debug_log, stdin, stdout, stderr)
         transport = yield from self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
+        if self._debug:
+            logger.info('%s: %r' % (debug_log, transport))
         return transport, protocol
 
     @coroutine
@@ -796,9 +840,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                                 "a bytes or text string, not %s"
                                 % type(arg).__name__)
         protocol = protocol_factory()
+        if self._debug:
+            # don't log parameters: they may contain sensitive information
+            # (password) and may be too long
+            debug_log = 'execute program %r' % program
+            self._log_subprocess(debug_log, stdin, stdout, stderr)
         transport = yield from self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
+        if self._debug:
+            logger.info('%s: %r' % (debug_log, transport))
         return transport, protocol
 
     def set_exception_handler(self, handler):
@@ -808,7 +859,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         be set.
 
         If handler is a callable object, it should have a
-        matching signature to '(loop, context)', where 'loop'
+        signature matching '(loop, context)', where 'loop'
         will be a reference to the active event loop, 'context'
         will be a dict object (see `call_exception_handler()`
         documentation for details about context).
@@ -825,7 +876,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         handler is set, and can be called by a custom exception
         handler that wants to defer to the default behavior.
 
-        context parameter has the same meaning as in
+        The context parameter has the same meaning as in
         `call_exception_handler()`.
         """
         message = context.get('message')
@@ -854,10 +905,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         logger.error('\n'.join(log_lines), exc_info=exc_info)
 
     def call_exception_handler(self, context):
-        """Call the current event loop exception handler.
+        """Call the current event loop's exception handler.
 
-        context is a dict object containing the following keys
-        (new keys maybe introduced later):
+        The context argument is a dict containing the following keys:
+
         - 'message': Error message;
         - 'exception' (optional): Exception object;
         - 'future' (optional): Future instance;
@@ -866,8 +917,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         - 'transport' (optional): Transport instance;
         - 'socket' (optional): Socket instance.
 
-        Note: this method should not be overloaded in subclassed
-        event loops.  For any custom exception handling, use
+        New keys maybe introduced in the future.
+
+        Note: do not overload this method in an event loop subclass.
+        For custom exception handling, use the
         `set_exception_handler()` method.
         """
         if self._exception_handler is None:
@@ -892,7 +945,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         'context': context,
                     })
                 except Exception:
-                    # Guard 'default_exception_handler' in case it's
+                    # Guard 'default_exception_handler' in case it is
                     # overloaded.
                     logger.error('Exception in default exception handler '
                                  'while handling an unexpected error '
@@ -900,7 +953,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                  exc_info=True)
 
     def _add_callback(self, handle):
-        """Add a Handle to ready or scheduled."""
+        """Add a Handle to _scheduled (TimerHandle) or _ready."""
         assert isinstance(handle, events.Handle), 'A Handle is required here'
         if handle._cancelled:
             return
@@ -971,7 +1024,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Note: We run all currently scheduled callbacks, but not any
         # callbacks scheduled by callbacks run this time around --
         # they will be run the next time (after another I/O poll).
-        # Use an idiom that is threadsafe without using locks.
+        # Use an idiom that is thread-safe without using locks.
         ntodo = len(self._ready)
         for i in range(ntodo):
             handle = self._ready.popleft()
