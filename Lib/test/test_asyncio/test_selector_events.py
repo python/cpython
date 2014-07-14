@@ -1105,13 +1105,13 @@ class SelectorSslTransportTests(test_utils.TestCase):
     def test_on_handshake_exc(self):
         exc = ValueError()
         self.sslsock.do_handshake.side_effect = exc
-        transport = _SelectorSslTransport(
-            self.loop, self.sock, self.protocol, self.sslcontext)
-        transport._waiter = asyncio.Future(loop=self.loop)
-        transport._on_handshake(None)
+        with test_utils.disable_logger():
+            waiter = asyncio.Future(loop=self.loop)
+            transport = _SelectorSslTransport(
+                self.loop, self.sock, self.protocol, self.sslcontext, waiter)
+        self.assertTrue(waiter.done())
+        self.assertIs(exc, waiter.exception())
         self.assertTrue(self.sslsock.close.called)
-        self.assertTrue(transport._waiter.done())
-        self.assertIs(exc, transport._waiter.exception())
 
     def test_on_handshake_base_exc(self):
         transport = _SelectorSslTransport(
@@ -1119,7 +1119,8 @@ class SelectorSslTransportTests(test_utils.TestCase):
         transport._waiter = asyncio.Future(loop=self.loop)
         exc = BaseException()
         self.sslsock.do_handshake.side_effect = exc
-        self.assertRaises(BaseException, transport._on_handshake, None)
+        with test_utils.disable_logger():
+            self.assertRaises(BaseException, transport._on_handshake, None)
         self.assertTrue(self.sslsock.close.called)
         self.assertTrue(transport._waiter.done())
         self.assertIs(exc, transport._waiter.exception())
