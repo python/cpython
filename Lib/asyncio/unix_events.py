@@ -565,7 +565,7 @@ class AbstractChildWatcher:
         process 'pid' terminates. Specifying another callback for the same
         process replaces the previous handler.
 
-        Note: callback() must be thread-safe
+        Note: callback() must be thread-safe.
         """
         raise NotImplementedError()
 
@@ -721,6 +721,9 @@ class SafeChildWatcher(BaseChildWatcher):
                 return
 
             returncode = self._compute_returncode(status)
+            if self._loop.get_debug():
+                logger.debug('process %s exited with returncode %s',
+                             expected_pid, returncode)
 
         try:
             callback, args = self._callbacks.pop(pid)
@@ -818,8 +821,16 @@ class FastChildWatcher(BaseChildWatcher):
                     if self._forks:
                         # It may not be registered yet.
                         self._zombies[pid] = returncode
+                        if self._loop.get_debug():
+                            logger.debug('unknown process %s exited '
+                                         'with returncode %s',
+                                         pid, returncode)
                         continue
                     callback = None
+                else:
+                    if self._loop.get_debug():
+                        logger.debug('process %s exited with returncode %s',
+                                     pid, returncode)
 
             if callback is None:
                 logger.warning(
