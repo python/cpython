@@ -23,9 +23,10 @@ from idlelib import macosxSupport
 
 class ConfigDialog(Toplevel):
 
-    def __init__(self,parent,title,_htest=False):
+    def __init__(self, parent, title, _htest=False, _utest=False):
         """
         _htest - bool, change box location when running htest
+        _utest - bool, don't wait_window when running unittest
         """
         Toplevel.__init__(self, parent)
         self.wm_withdraw()
@@ -68,8 +69,9 @@ class ConfigDialog(Toplevel):
         self.LoadConfigs()
         self.AttachVarCallbacks() #avoid callbacks during LoadConfigs
 
-        self.wm_deiconify()
-        self.wait_window()
+        if not _utest:
+            self.wm_deiconify()
+            self.wait_window()
 
     def CreateWidgets(self):
         self.tabPages = TabbedPageSet(self,
@@ -1156,5 +1158,9 @@ class ConfigDialog(Toplevel):
         pass
 
 if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_configdialog',
+                  verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(ConfigDialog)
