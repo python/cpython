@@ -914,10 +914,9 @@ ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 def getargspec(func):
     """Get the names and default values of a function's arguments.
 
-    A tuple of four things is returned: (args, varargs, varkw, defaults).
-    'args' is a list of the argument names.
-    'args' will include keyword-only argument names.
-    'varargs' and 'varkw' are the names of the * and ** arguments or None.
+    A tuple of four things is returned: (args, varargs, keywords, defaults).
+    'args' is a list of the argument names, including keyword-only argument names.
+    'varargs' and 'keywords' are the names of the * and ** arguments or None.
     'defaults' is an n-tuple of the default values of the last n arguments.
 
     Use the getfullargspec() API for Python 3 code, as annotations
