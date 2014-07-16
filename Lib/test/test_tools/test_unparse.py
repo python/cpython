@@ -1,11 +1,21 @@
+"""Tests for the unparse.py script in the Tools/parser directory."""
+
 import unittest
 import test.support
 import io
 import os
 import random
 import tokenize
-import unparse
 import ast
+
+from test.test_tools import basepath, toolsdir, skip_if_missing
+
+skip_if_missing()
+
+parser_path = os.path.join(toolsdir, "parser")
+
+with test.support.DirsOnSysPath(parser_path):
+    import unparse
 
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
@@ -249,11 +259,10 @@ class DirectoryTestCase(ASTTestCase):
 
     def test_files(self):
         # get names of files to test
-        dist_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
 
         names = []
         for d in self.test_directories:
-            test_dir = os.path.join(dist_dir, d)
+            test_dir = os.path.join(basepath, d)
             for n in os.listdir(test_dir):
                 if n.endswith('.py') and not n.startswith('bad'):
                     names.append(os.path.join(test_dir, n))
@@ -269,8 +278,5 @@ class DirectoryTestCase(ASTTestCase):
             self.check_roundtrip(source)
 
 
-def test_main():
-    test.support.run_unittest(UnparseTestCase, DirectoryTestCase)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
