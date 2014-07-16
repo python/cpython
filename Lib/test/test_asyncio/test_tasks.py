@@ -851,6 +851,8 @@ class TaskTests(test_utils.TestCase):
             yield 0
 
         loop = self.new_test_loop(gen)
+        # disable "slow callback" warning
+        loop.slow_callback_duration = 1.0
         completed = set()
         time_shifted = False
 
