@@ -351,10 +351,16 @@ class CommonReadTest(ReadTest):
 
 
 class MiscReadTestBase(CommonReadTest):
+    def requires_name_attribute(self):
+        pass
+
     def test_no_name_argument(self):
+        self.requires_name_attribute()
         with open(self.tarname, "rb") as fobj:
-            tar = tarfile.open(fileobj=fobj, mode=self.mode)
-            self.assertEqual(tar.name, os.path.abspath(fobj.name))
+            self.assertIsInstance(fobj.name, str)
+            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+                self.assertIsInstance(tar.name, str)
+                self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
     def test_no_name_attribute(self):
         with open(self.tarname, "rb") as fobj:
@@ -362,7 +368,7 @@ class MiscReadTestBase(CommonReadTest):
         fobj = io.BytesIO(data)
         self.assertRaises(AttributeError, getattr, fobj, "name")
         tar = tarfile.open(fileobj=fobj, mode=self.mode)
-        self.assertEqual(tar.name, None)
+        self.assertIsNone(tar.name)
 
     def test_empty_name_attribute(self):
         with open(self.tarname, "rb") as fobj:
@@ -370,7 +376,25 @@ class MiscReadTestBase(CommonReadTest):
         fobj = io.BytesIO(data)
         fobj.name = ""
         with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
-            self.assertEqual(tar.name, None)
+            self.assertIsNone(tar.name)
+
+    def test_int_name_attribute(self):
+        # Issue 21044: tarfile.open() should handle fileobj with an integer
+        # 'name' attribute.
+        fd = os.open(self.tarname, os.O_RDONLY)
+        with open(fd, 'rb') as fobj:
+            self.assertIsInstance(fobj.name, int)
+            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+                self.assertIsNone(tar.name)
+
+    def test_bytes_name_attribute(self):
+        self.requires_name_attribute()
+        tarname = os.fsencode(self.tarname)
+        with open(tarname, 'rb') as fobj:
+            self.assertIsInstance(fobj.name, bytes)
+            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+                self.assertIsInstance(tar.name, bytes)
+                self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
     def test_illegal_mode_arg(self):
         with open(tmpname, 'wb'):
@@ -548,11 +572,11 @@ class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase):
     pass
 
 class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
-    def test_no_name_argument(self):
+    def requires_name_attribute(self):
         self.skipTest("BZ2File have no name attribute")
 
 class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase):
-    def test_no_name_argument(self):
+    def requires_name_attribute(self):
         self.skipTest("LZMAFile have no name attribute")
 
 
