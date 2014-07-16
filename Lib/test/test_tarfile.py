@@ -1,6 +1,7 @@
 # -*- coding: iso-8859-15 -*-
 
 import sys
+import io
 import os
 import shutil
 import StringIO
@@ -289,24 +290,49 @@ class CommonReadTest(ReadTest):
 class MiscReadTest(CommonReadTest):
     taropen = tarfile.TarFile.taropen
 
+    def requires_name_attribute(self):
+        pass
+
     def test_no_name_argument(self):
-        fobj = open(self.tarname, "rb")
-        tar = tarfile.open(fileobj=fobj, mode=self.mode)
-        self.assertEqual(tar.name, os.path.abspath(fobj.name))
+        self.requires_name_attribute()
+        with open(self.tarname, "rb") as fobj:
+            self.assertIsInstance(fobj.name, str)
+            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+                self.assertIsInstance(tar.name, str)
+                self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
     def test_no_name_attribute(self):
         data = open(self.tarname, "rb").read()
         fobj = StringIO.StringIO(data)
         self.assertRaises(AttributeError, getattr, fobj, "name")
         tar = tarfile.open(fileobj=fobj, mode=self.mode)
-        self.assertEqual(tar.name, None)
+        self.assertIsNone(tar.name)
 
     def test_empty_name_attribute(self):
         data = open(self.tarname, "rb").read()
         fobj = StringIO.StringIO(data)
         fobj.name = ""
         tar = tarfile.open(fileobj=fobj, mode=self.mode)
-        self.assertEqual(tar.name, None)
+        self.assertIsNone(tar.name)
+
+    def test_int_name_attribute(self):
+        # Issue 21044: tarfile.open() should handle fileobj with an integer
+        # 'name' attribute.
+        fd = os.open(self.tarname, os.O_RDONLY)
+        with io.open(fd, 'rb') as fobj:
+            self.assertIsInstance(fobj.name, int)
+            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+                self.assertIsNone(tar.name)
+
+    @test_support.requires_unicode
+    def test_unicode_name_attribute(self):
+        self.requires_name_attribute()
+        tarname = unicode(self.tarname, test_support.TESTFN_ENCODING)
+        with io.open(tarname, 'rb') as fobj:
+            self.assertIsInstance(fobj.name, unicode)
+            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+                self.assertIsInstance(tar.name, unicode)
+                self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
     def test_illegal_mode_arg(self):
         with open(tmpname, 'wb'):
@@ -1668,6 +1694,8 @@ class Bz2MiscReadTest(MiscReadTest):
     tarname = bz2name
     mode = "r:bz2"
     taropen = tarfile.TarFile.bz2open
+    def requires_name_attribute(self):
+        self.skipTest("BZ2File have no name attribute")
 class Bz2UstarReadTest(UstarReadTest):
     tarname = bz2name
     mode = "r:bz2"
