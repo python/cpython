@@ -171,6 +171,8 @@ Build
 IDLE
 ----
 
+- Issue #21765: Add support for non-ascii identifiers to HyperParser.
+
 - Issue #21940: Add unittest for WidgetRedirector. Initial patch by Saimadhav
   Heblikar.
 
