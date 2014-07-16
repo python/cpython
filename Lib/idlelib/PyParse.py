@@ -1,5 +1,7 @@
 import re
 import sys
+from collections import Mapping
+from functools import partial
 
 # Reason last stmt is continued (or C_NONE if it's not).
 (C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,
@@ -91,19 +93,48 @@ _chew_ordinaryre = re.compile(r"""
     [^[\](){}#'"\\]+
 """, re.VERBOSE).match
 
-# Build translation table to map uninteresting chars to "x", open
-# brackets to "(", and close brackets to ")".
 
-_tran = {}
-for i in range(256):
-    _tran[i] = 'x'
-for ch in "({[":
-    _tran[ord(ch)] = '('
-for ch in ")}]":
-    _tran[ord(ch)] = ')'
-for ch in "\"'\\\n#":
-    _tran[ord(ch)] = ch
-del i, ch
+class StringTranslatePseudoMapping(Mapping):
+    r"""Utility class to be used with str.translate()
+
+    This Mapping class wraps a given dict. When a value for a key is
+    requested via __getitem__() or get(), the key is looked up in the
+    given dict. If found there, the value from the dict is returned.
+    Otherwise, the default value given upon initialization is returned.
+
+    This allows using str.translate() to make some replacements, and to
+    replace all characters for which no replacement was specified with
+    a given character instead of leaving them as-is.
+
+    For example, to replace everything except whitespace with 'x':
+
+    >>> whitespace_chars = ' \t\n\r'
+    >>> preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
+    >>> mapping = StringTranslatePseudoMapping(preserve_dict, ord('x'))
+    >>> text = "a + b\tc\nd"
+    >>> text.translate(mapping)
+    'x x x\tx\nx'
+    """
+    def __init__(self, non_defaults, default_value):
+        self._non_defaults = non_defaults
+        self._default_value = default_value
+
+        def _get(key, _get=non_defaults.get, _default=default_value):
+            return _get(key, _default)
+        self._get = _get
+
+    def __getitem__(self, item):
+        return self._get(item)
+
+    def __len__(self):
+        return len(self._non_defaults)
+
+    def __iter__(self):
+        return iter(self._non_defaults)
+
+    def get(self, key, default=None):
+        return self._get(key)
+
 
 class Parser:
 
@@ -113,19 +144,6 @@ class Parser:
 
     def set_str(self, s):
         assert len(s) == 0 or s[-1] == '\n'
-        if isinstance(s, str):
-            # The parse functions have no idea what to do with Unicode, so
-            # replace all Unicode characters with "x".  This is "safe"
-            # so long as the only characters germane to parsing the structure
-            # of Python are 7-bit ASCII.  It's *necessary* because Unicode
-            # strings don't have a .translate() method that supports
-            # deletechars.
-            uniphooey = s
-            s = []
-            push = s.append
-            for raw in map(ord, uniphooey):
-                push(raw < 127 and chr(raw) or "x")
-            s = "".join(s)
         self.str = s
         self.study_level = 0
 
@@ -197,6 +215,16 @@ class Parser:
         if lo > 0:
             self.str = self.str[lo:]
 
+    # Build a translation table to map uninteresting chars to 'x', open
+    # brackets to '(', close brackets to ')' while preserving quotes,
+    # backslashes, newlines and hashes. This is to be passed to
+    # str.translate() in _study1().
+    _tran = {}
+    _tran.update((ord(c), ord('(')) for c in "({[")
+    _tran.update((ord(c), ord(')')) for c in ")}]")
+    _tran.update((ord(c), ord(c)) for c in "\"'\\\n#")
+    _tran = StringTranslatePseudoMapping(_tran, default_value=ord('x'))
+
     # As quickly as humanly possible <wink>, find the line numbers (0-
     # based) of the non-continuation lines.
     # Creates self.{goodlines, continuation}.
@@ -211,7 +239,7 @@ class Parser:
         # uninteresting characters.  This can cut the number of chars
         # by a factor of 10-40, and so greatly speed the following loop.
         str = self.str
-        str = str.translate(_tran)
+        str = str.translate(self._tran)
         str = str.replace('xxxxxxxx', 'x')
         str = str.replace('xxxx', 'x')
         str = str.replace('xx', 'x')
