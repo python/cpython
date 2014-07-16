@@ -6,11 +6,24 @@ the structure of code.
 """
 
 import string
-import keyword
+from keyword import iskeyword
 from idlelib import PyParse
 
-class HyperParser:
 
+# all ASCII chars that may be in an identifier
+_ASCII_ID_CHARS = frozenset(string.ascii_letters + string.digits + "_")
+# all ASCII chars that may be the first char of an identifier
+_ASCII_ID_FIRST_CHARS = frozenset(string.ascii_letters + "_")
+
+# lookup table for whether 7-bit ASCII chars are valid in a Python identifier
+_IS_ASCII_ID_CHAR = [(chr(x) in _ASCII_ID_CHARS) for x in range(128)]
+# lookup table for whether 7-bit ASCII chars are valid as the first
+# char in a Python identifier
+_IS_ASCII_ID_FIRST_CHAR = \
+    [(chr(x) in _ASCII_ID_FIRST_CHARS) for x in range(128)]
+
+
+class HyperParser:
     def __init__(self, editwin, index):
         "To initialize, analyze the surroundings of the given index."
 
@@ -143,25 +156,69 @@ class HyperParser:
 
         return beforeindex, afterindex
 
-    # Ascii chars that may be in a white space
-    _whitespace_chars = " \t\n\\"
-    # Ascii chars that may be in an identifier
-    _id_chars = string.ascii_letters + string.digits + "_"
-    # Ascii chars that may be the first char of an identifier
-    _id_first_chars = string.ascii_letters + "_"
+    # the set of built-in identifiers which are also keywords,
+    # i.e. keyword.iskeyword() returns True for them
+    _ID_KEYWORDS = frozenset({"True", "False", "None"})
 
-    # Given a string and pos, return the number of chars in the
-    # identifier which ends at pos, or 0 if there is no such one. Saved
-    # words are not identifiers.
-    def _eat_identifier(self, str, limit, pos):
+    @classmethod
+    def _eat_identifier(cls, str, limit, pos):
+        """Given a string and pos, return the number of chars in the
+        identifier which ends at pos, or 0 if there is no such one.
+
+        This ignores non-identifier eywords are not identifiers.
+        """
+        is_ascii_id_char = _IS_ASCII_ID_CHAR
+
+        # Start at the end (pos) and work backwards.
         i = pos
-        while i > limit and str[i-1] in self._id_chars:
+
+        # Go backwards as long as the characters are valid ASCII
+        # identifier characters. This is an optimization, since it
+        # is faster in the common case where most of the characters
+        # are ASCII.
+        while i > limit and (
+                ord(str[i - 1]) < 128 and
+                is_ascii_id_char[ord(str[i - 1])]
+        ):
             i -= 1
-        if (i < pos and (str[i] not in self._id_first_chars or
-            (keyword.iskeyword(str[i:pos]) and
-             str[i:pos] not in {'None', 'False', 'True'}))):
-            i = pos
+
+        # If the above loop ended due to reaching a non-ASCII
+        # character, continue going backwards using the most generic
+        # test for whether a string contains only valid identifier
+        # characters.
+        if i > limit and ord(str[i - 1]) >= 128:
+            while i - 4 >= limit and ('a' + str[i - 4:pos]).isidentifier():
+                i -= 4
+            if i - 2 >= limit and ('a' + str[i - 2:pos]).isidentifier():
+                i -= 2
+            if i - 1 >= limit and ('a' + str[i - 1:pos]).isidentifier():
+                i -= 1
+
+            # The identifier candidate starts here. If it isn't a valid
+            # identifier, don't eat anything. At this point that is only
+            # possible if the first character isn't a valid first
+            # character for an identifier.
+            if not str[i:pos].isidentifier():
+                return 0
+        elif i < pos:
+            # All characters in str[i:pos] are valid ASCII identifier
+            # characters, so it is enough to check that the first is
+            # valid as the first character of an identifier.
+            if not _IS_ASCII_ID_FIRST_CHAR[ord(str[i])]:
+                return 0
+
+        # All keywords are valid identifiers, but should not be
+        # considered identifiers here, except for True, False and None.
+        if i < pos and (
+                iskeyword(str[i:pos]) and
+                str[i:pos] not in cls._ID_KEYWORDS
+        ):
+            return 0
+
         return pos - i
+
+    # This string includes all chars that may be in a white space
+    _whitespace_chars = " \t\n\\"
 
     def get_expression(self):
         """Return a string with the Python expression which ends at the
