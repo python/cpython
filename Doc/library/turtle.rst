@@ -1859,7 +1859,7 @@ Methods specific to Screen, not inherited from TurtleScreen
    :param startx: if positive, starting position in pixels from the left
                   edge of the screen, if negative from the right edge, if None,
                   center window horizontally
-   :param startx: if positive, starting position in pixels from the top
+   :param starty: if positive, starting position in pixels from the top
                   edge of the screen, if negative from the bottom edge, if None,
                   center window vertically
 
