@@ -698,6 +698,9 @@ Documentation
 Tests
 -----
 
+- Issue #21918: Converted test_tools from a module to a package containing
+  separate test files for each tested script.
+
 - Issue #9554: Use modern unittest features in test_argparse. Initial patch by
   Denver Coneybeare and Radu Voicilas.
 
