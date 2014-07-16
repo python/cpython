@@ -264,8 +264,6 @@ Library
 - Issue #21455: Add a default backlog to socket.listen().
 
 - Issue #21525: Most Tkinter methods which accepted tuples now accept lists too.
-- Issue #21765: Add support for non-ascii identifiers to HyperParser.
-
 
 - Issue #10744: Fix PEP 3118 format strings on ctypes objects with a nontrivial
   shape.
@@ -589,6 +587,8 @@ Extension Modules
 
 IDLE
 ----
+
+- Issue #21765: Add support for non-ascii identifiers to HyperParser.
 
 - Issue #21940: Add unittest for WidgetRedirector. Initial patch by Saimadhav
   Heblikar.
