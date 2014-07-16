@@ -623,10 +623,13 @@ class TaskTests(test_utils.TestCase):
             ValueError, self.loop.run_until_complete,
             asyncio.wait(set(), loop=self.loop))
 
-        self.assertRaises(
-            ValueError, self.loop.run_until_complete,
-            asyncio.wait([asyncio.sleep(10.0, loop=self.loop)],
-                         return_when=-1, loop=self.loop))
+        # -1 is an invalid return_when value
+        sleep_coro = asyncio.sleep(10.0, loop=self.loop)
+        wait_coro = asyncio.wait([sleep_coro], return_when=-1, loop=self.loop)
+        self.assertRaises(ValueError,
+                          self.loop.run_until_complete, wait_coro)
+
+        sleep_coro.close()
 
     def test_wait_first_completed(self):
 
