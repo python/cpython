@@ -198,6 +198,9 @@ IDLE
 Tests
 -----
 
+- Issue #21918: Converted test_tools from a module to a package containing
+  separate test files for each tested script.
+
 - Issue #20155: Changed HTTP method names in failing tests in test_httpservers
   so that packet filtering software (specifically Windows Base Filtering Engine)
   does not interfere with the transaction semantics expected by the tests.
