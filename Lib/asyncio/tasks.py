@@ -330,14 +330,14 @@ def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
         raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
     if not fs:
         raise ValueError('Set of coroutines/Futures is empty.')
+    if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
+        raise ValueError('Invalid return_when value: {}'.format(return_when))
 
     if loop is None:
         loop = events.get_event_loop()
 
     fs = {async(f, loop=loop) for f in set(fs)}
 
-    if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
-        raise ValueError('Invalid return_when value: {}'.format(return_when))
     return (yield from _wait(fs, timeout, return_when, loop))
 
 
