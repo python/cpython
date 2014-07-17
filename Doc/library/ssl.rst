@@ -1220,8 +1220,8 @@ to speed up repeated connections from the same clients.
       context.load_default_certs()
 
       s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      ssl_sock = context.wrap_socket(s, server_hostname='www.verisign.com'):
-         ssl_sock.connect(('www.verisign.com', 443))
+      ssl_sock = context.wrap_socket(s, server_hostname='www.verisign.com')
+      ssl_sock.connect(('www.verisign.com', 443))
 
    .. versionadded:: 3.4
 
