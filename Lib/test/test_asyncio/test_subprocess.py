@@ -11,9 +11,6 @@ if sys.platform != 'win32':
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
 
-# Program sleeping during 1 second
-PROGRAM_SLEEP_1SEC = [sys.executable, '-c', 'import time; time.sleep(1)']
-
 # Program copying input to output
 PROGRAM_CAT = [
     sys.executable, '-c',
@@ -118,16 +115,32 @@ class SubprocessMixin:
         returncode = self.loop.run_until_complete(proc.wait())
         self.assertEqual(-signal.SIGHUP, returncode)
 
-    def test_broken_pipe(self):
+    def prepare_broken_pipe_test(self):
+        # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
 
+        # the program ends before the stdin can be feeded
         create = asyncio.create_subprocess_exec(
-                             *PROGRAM_SLEEP_1SEC,
+                             sys.executable, '-c', 'pass',
                              stdin=subprocess.PIPE,
                              loop=self.loop)
         proc = self.loop.run_until_complete(create)
-        with self.assertRaises(BrokenPipeError):
-            self.loop.run_until_complete(proc.communicate(large_data))
+        return (proc, large_data)
+
+    def test_stdin_broken_pipe(self):
+        proc, large_data = self.prepare_broken_pipe_test()
+
+        # drain() must raise BrokenPipeError
+        proc.stdin.write(large_data)
+        self.assertRaises(BrokenPipeError,
+                          self.loop.run_until_complete, proc.stdin.drain())
+        self.loop.run_until_complete(proc.wait())
+
+    def test_communicate_ignore_broken_pipe(self):
+        proc, large_data = self.prepare_broken_pipe_test()
+
+        # communicate() must ignore BrokenPipeError when feeding stdin
+        self.loop.run_until_complete(proc.communicate(large_data))
         self.loop.run_until_complete(proc.wait())
 
 

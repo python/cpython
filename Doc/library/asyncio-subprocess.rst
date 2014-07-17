@@ -191,6 +191,10 @@ Process
       process, or ``None``, if no data should be sent to the child.  The type
       of *input* must be bytes.
 
+      If a :exc:`BrokenPipeError` is raised when writing *input* into stdin,
+      the exception is ignored. It occurs when the process exits before all
+      data are written into stdin.
+
       :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
 
       Note that if you want to send data to the process's stdin, you need to
@@ -204,6 +208,9 @@ Process
          data size is large or unlimited.
 
       This method is a :ref:`coroutine <coroutine>`.
+
+      .. versionchanged:: 3.4.2
+         The method now ignores :exc:`BrokenPipeError`.
 
    .. method:: kill()
 
