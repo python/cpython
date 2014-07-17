@@ -443,7 +443,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             f.add_done_callback(self._loop_self_reading)
 
     def _write_to_self(self):
-        self._csock.send(b'x')
+        self._csock.send(b'\0')
 
     def _start_serving(self, protocol_factory, sock, ssl=None, server=None):
         if ssl:
