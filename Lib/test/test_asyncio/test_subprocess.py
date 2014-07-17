@@ -130,9 +130,9 @@ class SubprocessMixin:
     def test_stdin_broken_pipe(self):
         proc, large_data = self.prepare_broken_pipe_test()
 
-        # drain() must raise BrokenPipeError
+        # drain() must raise BrokenPipeError or ConnectionResetError
         proc.stdin.write(large_data)
-        self.assertRaises(BrokenPipeError,
+        self.assertRaises((BrokenPipeError, ConnectionResetError),
                           self.loop.run_until_complete, proc.stdin.drain())
         self.loop.run_until_complete(proc.wait())
 
