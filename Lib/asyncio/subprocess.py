@@ -143,7 +143,11 @@ class Process:
         if self._loop.get_debug():
             logger.debug('%r communicate: feed stdin (%s bytes)',
                         self, len(input))
-        yield from self.stdin.drain()
+        try:
+            yield from self.stdin.drain()
+        except BrokenPipeError:
+            # ignore BrokenPipeError
+            pass
 
         if self._loop.get_debug():
             logger.debug('%r communicate: close stdin', self)
