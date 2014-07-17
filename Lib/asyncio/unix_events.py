@@ -31,6 +31,11 @@ if sys.platform == 'win32':  # pragma: no cover
     raise ImportError('Signals are not really supported on Windows')
 
 
+def _sighandler_noop(signum, frame):
+    """Dummy signal handler."""
+    pass
+
+
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Unix event loop.
 
@@ -48,6 +53,13 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         super().close()
         for sig in list(self._signal_handlers):
             self.remove_signal_handler(sig)
+
+    def _process_self_data(self, data):
+        for signum in data:
+            if not signum:
+                # ignore null bytes written by _write_to_self()
+                continue
+            self._handle_signal(signum)
 
     def add_signal_handler(self, sig, callback, *args):
         """Add a handler for a signal.  UNIX only.
@@ -69,7 +81,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self._signal_handlers[sig] = handle
 
         try:
-            signal.signal(sig, self._handle_signal)
+            # Register a dummy signal handler to ask Python to write the signal
+            # number in the wakup file descriptor. _process_self_data() will
+            # read signal numbers from this file descriptor to handle signals.
+            signal.signal(sig, _sighandler_noop)
+
             # Set SA_RESTART to limit EINTR occurrences.
             signal.siginterrupt(sig, False)
         except OSError as exc:
@@ -85,7 +101,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             else:
                 raise
 
-    def _handle_signal(self, sig, arg):
+    def _handle_signal(self, sig):
         """Internal helper that is the actual signal handler."""
         handle = self._signal_handlers.get(sig)
         if handle is None:

@@ -435,7 +435,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def test_write_to_self(self):
         self.loop._write_to_self()
-        self.csock.send.assert_called_with(b'x')
+        self.csock.send.assert_called_with(b'\0')
 
     def test_process_events(self):
         self.loop._process_events([])

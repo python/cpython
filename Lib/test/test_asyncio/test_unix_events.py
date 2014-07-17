@@ -42,7 +42,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             ValueError, self.loop._check_signal, signal.NSIG + 1)
 
     def test_handle_signal_no_handler(self):
-        self.loop._handle_signal(signal.NSIG + 1, ())
+        self.loop._handle_signal(signal.NSIG + 1)
 
     def test_handle_signal_cancelled_handler(self):
         h = asyncio.Handle(mock.Mock(), (),
@@ -50,7 +50,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         h.cancel()
         self.loop._signal_handlers[signal.NSIG + 1] = h
         self.loop.remove_signal_handler = mock.Mock()
-        self.loop._handle_signal(signal.NSIG + 1, ())
+        self.loop._handle_signal(signal.NSIG + 1)
         self.loop.remove_signal_handler.assert_called_with(signal.NSIG + 1)
 
     @mock.patch('asyncio.unix_events.signal')
