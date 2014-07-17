@@ -139,17 +139,19 @@ class Process:
 
     @coroutine
     def _feed_stdin(self, input):
+        debug = self._loop.get_debug()
         self.stdin.write(input)
-        if self._loop.get_debug():
+        if debug:
             logger.debug('%r communicate: feed stdin (%s bytes)',
                         self, len(input))
         try:
             yield from self.stdin.drain()
-        except BrokenPipeError:
-            # ignore BrokenPipeError
-            pass
+        except (BrokenPipeError, ConnectionResetError) as exc:
+            # communicate() ignores BrokenPipeError and ConnectionResetError
+            if debug:
+                logger.debug('%r communicate: stdin got %r', self, exc)
 
-        if self._loop.get_debug():
+        if debug:
             logger.debug('%r communicate: close stdin', self)
         self.stdin.close()
 
