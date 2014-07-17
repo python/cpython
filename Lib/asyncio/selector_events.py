@@ -94,12 +94,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._internal_fds += 1
         self.add_reader(self._ssock.fileno(), self._read_from_self)
 
+    def _process_self_data(self, data):
+        pass
+
     def _read_from_self(self):
         while True:
             try:
                 data = self._ssock.recv(4096)
                 if not data:
                     break
+                self._process_self_data(data)
             except InterruptedError:
                 continue
             except BlockingIOError:
@@ -114,7 +118,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         csock = self._csock
         if csock is not None:
             try:
-                csock.send(b'x')
+                csock.send(b'\0')
             except OSError:
                 pass
 
