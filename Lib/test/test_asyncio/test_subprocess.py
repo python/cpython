@@ -108,11 +108,22 @@ class SubprocessMixin:
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
     def test_send_signal(self):
-        args = PROGRAM_BLOCKED
-        create = asyncio.create_subprocess_exec(*args, loop=self.loop)
+        code = 'import time; print("sleeping", flush=True); time.sleep(3600)'
+        args = [sys.executable, '-c', code]
+        create = asyncio.create_subprocess_exec(*args, loop=self.loop, stdout=subprocess.PIPE)
         proc = self.loop.run_until_complete(create)
-        proc.send_signal(signal.SIGHUP)
-        returncode = self.loop.run_until_complete(proc.wait())
+
+        @asyncio.coroutine
+        def send_signal(proc):
+            # basic synchronization to wait until the program is sleeping
+            line = yield from proc.stdout.readline()
+            self.assertEqual(line, b'sleeping\n')
+
+            proc.send_signal(signal.SIGHUP)
+            returncode = (yield from proc.wait())
+            return returncode
+
+        returncode = self.loop.run_until_complete(send_signal(proc))
         self.assertEqual(-signal.SIGHUP, returncode)
 
     def prepare_broken_pipe_test(self):
