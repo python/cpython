@@ -289,7 +289,7 @@ I/O Base Classes
       most *size* bytes will be read.
 
       The line terminator is always ``b'\n'`` for binary files; for text files,
-      the *newlines* argument to :func:`open` can be used to select the line
+      the *newline* argument to :func:`open` can be used to select the line
       terminator(s) recognized.
 
    .. method:: readlines(hint=-1)
