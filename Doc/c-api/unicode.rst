@@ -1108,7 +1108,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
 .. c:function:: PyObject* PyUnicode_Format(PyObject *format, PyObject *args)
 
    Return a new string object from *format* and *args*; this is analogous to
-   ``format % args``.  The *args* argument must be a tuple.
+   ``format % args``.
 
 
 .. c:function:: int PyUnicode_Contains(PyObject *container, PyObject *element)
