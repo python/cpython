@@ -176,10 +176,6 @@ In addition to these methods, lock objects can also be used via the
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`_thread.exit`.
 
-* Not all built-in functions that may block waiting for I/O allow other threads
-  to run.  (The most popular ones (:func:`time.sleep`, :meth:`io.FileIO.read`,
-  :func:`select.select`) work as expected.)
-
 * It is not possible to interrupt the :meth:`acquire` method on a lock --- the
   :exc:`KeyboardInterrupt` exception will happen after the lock has been acquired.
 
