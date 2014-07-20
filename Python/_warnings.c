@@ -905,6 +905,7 @@ _PyWarnings_Init(void)
     _default_action = PyString_FromString("default");
     if (_default_action == NULL)
         return;
+    Py_INCREF(_default_action);
     if (PyModule_AddObject(m, "default_action", _default_action) < 0)
         return;
 }
