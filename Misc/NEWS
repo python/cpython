@@ -704,6 +704,9 @@ Documentation
 Tests
 -----
 
+- Issue #21976: Fix test_ssl to accept LibreSSL version strings.  Thanks
+  to William Orr.
+
 - Issue #21918: Converted test_tools from a module to a package containing
   separate test files for each tested script.
 
