@@ -281,11 +281,11 @@ class BasicSocketTests(unittest.TestCase):
         # Some sanity checks follow
         # >= 0.9
         self.assertGreaterEqual(n, 0x900000)
-        # < 2.0
-        self.assertLess(n, 0x20000000)
+        # < 3.0
+        self.assertLess(n, 0x30000000)
         major, minor, fix, patch, status = t
         self.assertGreaterEqual(major, 0)
-        self.assertLess(major, 2)
+        self.assertLess(major, 3)
         self.assertGreaterEqual(minor, 0)
         self.assertLess(minor, 256)
         self.assertGreaterEqual(fix, 0)
@@ -294,9 +294,13 @@ class BasicSocketTests(unittest.TestCase):
         self.assertLessEqual(patch, 26)
         self.assertGreaterEqual(status, 0)
         self.assertLessEqual(status, 15)
-        # Version string as returned by OpenSSL, the format might change
-        self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
-                        (s, t))
+        # Version string as returned by {Open,Libre}SSL, the format might change
+        if "LibreSSL" in s:
+            self.assertTrue(s.startswith("LibreSSL {:d}.{:d}".format(major, minor)),
+                            (s, t))
+        else:
+            self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
+                            (s, t))
 
     @support.cpython_only
     def test_refcycle(self):
