@@ -37,6 +37,12 @@ Library
 - Issue #21323: Fix CGIHTTPServer to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
 
+Tests
+-----
+
+- Issue #21976: Fix test_ssl to accept LibreSSL version strings.  Thanks
+  to William Orr.
+
 
 What's New in Python 2.7.8?
 ===========================
