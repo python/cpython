@@ -30,6 +30,8 @@ Library
 - Issue #21044: tarfile.open() now handles fileobj with an integer 'name'
   attribute.  Based on patch by Martin Panter.
 
+- Issue #21867:  Prevent turtle crash due to invalid undo buffer size.
+
 - Issue #19076: Don't pass the redundant 'file' argument to self.error().
 
 - Issue #21942: Fixed source file viewing in pydoc's server mode on Windows.
