@@ -16,6 +16,10 @@ try:
     HAVE_THREADS = True
 except ImportError:
     HAVE_THREADS = False
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 TIMEOUT = 0.5
 
@@ -133,26 +137,32 @@ faulthandler._sigfpe()
             3,
             'Floating point exception')
 
-    @unittest.skipIf(not hasattr(faulthandler, '_sigbus'),
-                     "need faulthandler._sigbus()")
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
     def test_sigbus(self):
         self.check_fatal_error("""
+import _testcapi
 import faulthandler
+import signal
+
 faulthandler.enable()
-faulthandler._sigbus()
+_testcapi.raise_signal(signal.SIGBUS)
 """.strip(),
-            3,
+            6,
             'Bus error')
 
-    @unittest.skipIf(not hasattr(faulthandler, '_sigill'),
-                     "need faulthandler._sigill()")
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
     def test_sigill(self):
         self.check_fatal_error("""
+import _testcapi
 import faulthandler
+import signal
+
 faulthandler.enable()
-faulthandler._sigill()
+_testcapi.raise_signal(signal.SIGILL)
 """.strip(),
-            3,
+            6,
             'Illegal instruction')
 
     def test_fatal_error(self):
