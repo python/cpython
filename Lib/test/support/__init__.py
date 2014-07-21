@@ -316,7 +316,13 @@ if sys.platform.startswith("win"):
         def _rmtree_inner(path):
             for name in os.listdir(path):
                 fullname = os.path.join(path, name)
-                if os.path.isdir(fullname):
+                try:
+                    mode = os.lstat(fullname).st_mode
+                except OSError as exc:
+                    print("support.rmtree(): os.lstat(%r) failed with %s" % (fullname, exc),
+                          file=sys.__stderr__)
+                    mode = 0
+                if stat.S_ISDIR(mode):
                     _waitfor(_rmtree_inner, fullname, waitall=True)
                     os.rmdir(fullname)
                 else:
