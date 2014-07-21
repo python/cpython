@@ -1214,7 +1214,7 @@ class _BasePathTest(object):
 
     def setUp(self):
         os.mkdir(BASE)
-        self.addCleanup(shutil.rmtree, BASE)
+        self.addCleanup(support.rmtree, BASE)
         os.mkdir(join('dirA'))
         os.mkdir(join('dirB'))
         os.mkdir(join('dirC'))
@@ -1419,7 +1419,7 @@ class _BasePathTest(object):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB'))
         # Now create absolute symlinks
         d = tempfile.mkdtemp(suffix='-dirD')
-        self.addCleanup(shutil.rmtree, d)
+        self.addCleanup(support.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
         p = P(BASE, 'dirA', 'linkX', 'linkY', 'fileB')
