@@ -3,28 +3,29 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
+import collections.abc
 import contextlib
 import errno
+import fnmatch
 import functools
 import gc
-import socket
-import sys
-import os
-import platform
-import shutil
-import warnings
-import unittest
 import importlib
 import importlib.util
-import collections.abc
-import re
-import subprocess
-import time
-import sysconfig
-import fnmatch
 import logging.handlers
+import os
+import platform
+import re
+import shutil
+import socket
+import stat
 import struct
+import subprocess
+import sys
+import sysconfig
 import tempfile
+import time
+import unittest
+import warnings
 
 try:
     import _thread, threading
