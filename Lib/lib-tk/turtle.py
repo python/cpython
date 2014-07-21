@@ -2499,7 +2499,7 @@ class RawTurtle(TPen, TNavigator):
         Example (for a Turtle instance named turtle):
         >>> turtle.setundobuffer(42)
         """
-        if size is None:
+        if size is None or size <= 0:
             self.undobuffer = None
         else:
             self.undobuffer = Tbuffer(size)

@@ -16,6 +16,9 @@ Library
 - Issue #22017: Correct reference counting errror in the initialization of the
   _warnings module.
 
+- Issue #21868: Prevent turtle crash when undo buffer set to a value less
+  than one.
+
 - Issue #21044: tarfile.open() now handles fileobj with an integer 'name'
   attribute.  Based on patch by Martin Panter.
 
