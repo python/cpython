@@ -252,7 +252,8 @@ class WakeupFDTests(unittest.TestCase):
 
     def test_invalid_fd(self):
         fd = support.make_bad_fd()
-        self.assertRaises(OSError, signal.set_wakeup_fd, fd)
+        self.assertRaises((ValueError, OSError),
+                          signal.set_wakeup_fd, fd)
 
     def test_set_wakeup_fd_result(self):
         r1, w1 = os.pipe()
