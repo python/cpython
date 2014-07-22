@@ -287,7 +287,7 @@ class DateTimeTestCase(unittest.TestCase):
     def test_repr(self):
         d = datetime.datetime(2007,1,2,3,4,5)
         t = xmlrpclib.DateTime(d)
-        val ="<DateTime '20070102T03:04:05' at %x>" % id(t)
+        val ="<DateTime '20070102T03:04:05' at %#x>" % id(t)
         self.assertEqual(repr(t), val)
 
     def test_decode(self):

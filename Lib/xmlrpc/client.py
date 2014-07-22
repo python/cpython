@@ -354,7 +354,7 @@ class DateTime:
         return self.value
 
     def __repr__(self):
-        return "<DateTime %r at %x>" % (self.value, id(self))
+        return "<DateTime %r at %#x>" % (self.value, id(self))
 
     def decode(self, data):
         self.value = str(data).strip()
@@ -846,7 +846,7 @@ class MultiCall:
         self.__call_list = []
 
     def __repr__(self):
-        return "<MultiCall at %x>" % id(self)
+        return "<MultiCall at %#x>" % id(self)
 
     __str__ = __repr__
 
