@@ -123,7 +123,7 @@ class ReprTests(unittest.TestCase):
         eq(r(i2), expected)
 
         i3 = ClassWithFailingRepr()
-        eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%id(i3)))
+        eq(r(i3), ("<ClassWithFailingRepr instance at %#x>"%id(i3)))
 
         s = r(ClassWithFailingRepr)
         self.assertTrue(s.startswith("<class "))
