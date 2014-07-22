@@ -378,7 +378,7 @@ class ScalableSelectorMixIn:
             resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
             self.addCleanup(resource.setrlimit, resource.RLIMIT_NOFILE,
                             (soft, hard))
-            NUM_FDS = hard
+            NUM_FDS = min(hard, 2**16)
         except (OSError, ValueError):
             NUM_FDS = soft
 
