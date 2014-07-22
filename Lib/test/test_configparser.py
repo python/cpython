@@ -579,7 +579,7 @@ boolean {0[0]} NO
             return e
         else:
             self.fail("expected exception type %s.%s"
-                      % (exc.__module__, exc.__name__))
+                      % (exc.__module__, exc.__qualname__))
 
     def test_boolean(self):
         cf = self.fromstring(

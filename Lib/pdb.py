@@ -1316,7 +1316,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         # Is it a class?
         if value.__class__ is type:
-            self.message('Class %s.%s' % (value.__module__, value.__name__))
+            self.message('Class %s.%s' % (value.__module__, value.__qualname__))
             return
         # None of the above...
         self.message(type(value))

@@ -778,7 +778,7 @@ class CommonBufferedTests:
     def test_repr(self):
         raw = self.MockRawIO()
         b = self.tp(raw)
-        clsname = "%s.%s" % (self.tp.__module__, self.tp.__name__)
+        clsname = "%s.%s" % (self.tp.__module__, self.tp.__qualname__)
         self.assertEqual(repr(b), "<%s>" % clsname)
         raw.name = "dummy"
         self.assertEqual(repr(b), "<%s name='dummy'>" % clsname)

@@ -277,7 +277,7 @@ class partialmethod(object):
                                  for k, v in self.keywords.items())
         format_string = "{module}.{cls}({func}, {args}, {keywords})"
         return format_string.format(module=self.__class__.__module__,
-                                    cls=self.__class__.__name__,
+                                    cls=self.__class__.__qualname__,
                                     func=self.func,
                                     args=args,
                                     keywords=keywords)

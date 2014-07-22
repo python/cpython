@@ -141,7 +141,7 @@ class socket(_socket.socket):
         closed = getattr(self, '_closed', False)
         s = "<%s.%s%s fd=%i, family=%s, type=%s, proto=%i" \
             % (self.__class__.__module__,
-               self.__class__.__name__,
+               self.__class__.__qualname__,
                " [closed]" if closed else "",
                self.fileno(),
                self.family,
