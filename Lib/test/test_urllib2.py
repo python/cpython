@@ -678,7 +678,7 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
-        import email.utils, socket
+        import email.utils
         h = urllib.request.FileHandler()
         o = h.parent = MockOpener()
 
@@ -725,6 +725,7 @@ class HandlerTests(unittest.TestCase):
         for url in [
             "file://localhost:80%s" % urlpath,
             "file:///file_does_not_exist.txt",
+            "file://not-a-local-host.com//dir/file.txt",
             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
                                    os.getcwd(), TESTFN),
             "file://somerandomhost.ontheinternet.com%s/%s" %
