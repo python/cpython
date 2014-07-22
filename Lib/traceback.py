@@ -205,7 +205,7 @@ def _format_exception_only_iter(etype, value):
         yield _format_final_exc_line(etype, value)
         return
 
-    stype = etype.__name__
+    stype = etype.__qualname__
     smod = etype.__module__
     if smod not in ("__main__", "builtins"):
         stype = smod + '.' + stype

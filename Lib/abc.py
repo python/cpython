@@ -168,7 +168,7 @@ class ABCMeta(type):
 
     def _dump_registry(cls, file=None):
         """Debug helper to print the ABC registry."""
-        print("Class: %s.%s" % (cls.__module__, cls.__name__), file=file)
+        print("Class: %s.%s" % (cls.__module__, cls.__qualname__), file=file)
         print("Inv.counter: %s" % ABCMeta._abc_invalidation_counter, file=file)
         for name in sorted(cls.__dict__.keys()):
             if name.startswith("_abc_"):

@@ -39,7 +39,7 @@ def _run_object_doctest(obj, module):
     # Use the object's fully qualified name if it has one
     # Otherwise, use the module's name
     try:
-        name = "%s.%s" % (obj.__module__, obj.__name__)
+        name = "%s.%s" % (obj.__module__, obj.__qualname__)
     except AttributeError:
         name = module.__name__
     for example in finder.find(obj, name, module):

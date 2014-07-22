@@ -92,9 +92,9 @@ class SyntaxTracebackCases(unittest.TestCase):
         self.assertEqual(len(err), 1)
         str_value = '<unprintable %s object>' % X.__name__
         if X.__module__ in ('__main__', 'builtins'):
-            str_name = X.__name__
+            str_name = X.__qualname__
         else:
-            str_name = '.'.join([X.__module__, X.__name__])
+            str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
     def test_without_exception(self):
