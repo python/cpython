@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22031: Reprs now always use hexadecimal format with the "0x" prefix
+  when contain an id in form " at 0x...".
+
 - Issue #22018: signal.set_wakeup_fd() now raises an OSError instead of a
   ValueError on ``fstat()`` failure.
 
