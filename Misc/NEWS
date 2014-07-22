@@ -43,6 +43,12 @@ Tests
 - Issue #21976: Fix test_ssl to accept LibreSSL version strings.  Thanks
   to William Orr.
 
+Build
+-----
+
+- Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
+  now display special message when and only when there are failures.
+
 
 What's New in Python 2.7.8?
 ===========================

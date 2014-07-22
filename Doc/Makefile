@@ -86,24 +86,30 @@ changes: build
 	@echo "The overview file is in build/changes."
 
 linkcheck: BUILDER = linkcheck
-linkcheck: build
-	@echo "Link check complete; look for any errors in the above output" \
-	      "or in build/$(BUILDER)/output.txt"
+linkcheck:
+	@$(MAKE) build BUILDER=$(BUILDER) || { \
+	echo "Link check complete; look for any errors in the above output" \
+	     "or in build/$(BUILDER)/output.txt"; \
+	false; }
 
 suspicious: BUILDER = suspicious
-suspicious: build
-	@echo "Suspicious check complete; look for any errors in the above output" \
-	      "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
-	      "positives, append that file to tools/sphinxext/susp-ignored.csv."
+suspicious:
+	@$(MAKE) build BUILDER=$(BUILDER) || { \
+	echo "Suspicious check complete; look for any errors in the above output" \
+	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
+	     "positives, append that file to tools/sphinxext/susp-ignored.csv."; \
+	false; }
 
 coverage: BUILDER = coverage
 coverage: build
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
 
 doctest: BUILDER = doctest
-doctest: build
-	@echo "Testing of doctests in the sources finished, look at the" \
-	      "results in build/doctest/output.txt"
+doctest:
+	@$(MAKE) build BUILDER=$(BUILDER) || { \
+	echo "Testing of doctests in the sources finished, look at the" \
+	     "results in build/doctest/output.txt"; \
+	false; }
 
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
