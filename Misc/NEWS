@@ -169,6 +169,9 @@ Library
 Build
 -----
 
+- Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
+  now display special message when and only when there are failures.
+
 - Issue #17095: Fix Modules/Setup *shared* support.
 
 - Issue #21811: Anticipated fixes to support OS X versions > 10.9.
