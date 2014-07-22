@@ -635,6 +635,9 @@ IDLE
 Build
 -----
 
+- Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
+  now display special message when and only when there are failures.
+
 - Issue #21141: The Windows build process no longer attempts to find Perl,
   instead relying on OpenSSL source being configured and ready to build.  The
   ``PCbuild\build_ssl.py`` script has been re-written and re-named to
