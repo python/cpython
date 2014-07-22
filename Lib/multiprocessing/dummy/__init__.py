@@ -138,7 +138,7 @@ class Value(object):
         self._value = value
     value = property(_get, _set)
     def __repr__(self):
-        return '<%r(%r, %r)>'%(type(self).__name__,self._typecode,self._value)
+        return '<%s(%r, %r)>'%(type(self).__name__,self._typecode,self._value)
 
 def Manager():
     return sys.modules[__name__]
