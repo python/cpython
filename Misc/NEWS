@@ -19,9 +19,6 @@ Library
 - Issue #21868: Prevent turtle crash when undo buffer set to a value less
   than one.
 
-- Issue #21044: tarfile.open() now handles fileobj with an integer 'name'
-  attribute.  Based on patch by Martin Panter.
-
 - Issue #21151: Fixed a segfault in the _winreg module when ``None`` is passed
   as a ``REG_BINARY`` value to SetValueEx.  Patch by John Ehresman.
 
