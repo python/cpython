@@ -28,7 +28,7 @@ Library
 -------
 
 - Issue #21044: tarfile.open() now handles fileobj with an integer 'name'
-  attribute.  Based on patch by Martin Panter.
+  attribute.  Based on patch by Antoine Pietri.
 
 - Issue #21867:  Prevent turtle crash due to invalid undo buffer size.
 
