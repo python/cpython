@@ -42,23 +42,12 @@ class TestCTest(CTest):
                          '_json')
 
 
-here = os.path.dirname(__file__)
-
-def load_tests(*args):
-    suite = additional_tests()
-    loader = unittest.TestLoader()
-    for fn in os.listdir(here):
-        if fn.startswith("test") and fn.endswith(".py"):
-            modname = "test.test_json." + fn[:-3]
-            __import__(modname)
-            module = sys.modules[modname]
-            suite.addTests(loader.loadTestsFromModule(module))
-    return suite
-
-def additional_tests():
+def load_tests(loader, _, pattern):
     suite = unittest.TestSuite()
     for mod in (json, json.encoder, json.decoder):
         suite.addTest(doctest.DocTestSuite(mod))
     suite.addTest(TestPyTest('test_pyjson'))
     suite.addTest(TestCTest('test_cjson'))
-    return suite
+
+    pkg_dir = os.path.dirname(__file__)
+    return support.load_package_tests(pkg_dir, loader, suite, pattern)
