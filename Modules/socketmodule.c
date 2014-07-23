@@ -548,6 +548,9 @@ set_gaierror(int error)
 static int
 internal_setblocking(PySocketSockObject *s, int block)
 {
+#ifdef MS_WINDOWS
+    u_long arg;
+#endif
 #if !defined(MS_WINDOWS) \
     && !((defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)))
     int delay_flag, new_delay_flag;
@@ -574,8 +577,8 @@ internal_setblocking(PySocketSockObject *s, int block)
         fcntl(s->sock_fd, F_SETFL, new_delay_flag);
 #endif
 #else /* MS_WINDOWS */
-    block = !block;
-    ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
+    arg = !block;
+    ioctlsocket(s->sock_fd, FIONBIO, &arg);
 #endif /* MS_WINDOWS */
     Py_END_ALLOW_THREADS
 
