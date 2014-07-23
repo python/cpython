@@ -32,47 +32,11 @@ if 'ce' in sys.builtin_module_names:
     defpath = '\\Windows'
 devnull = 'nul'
 
-def _get_empty(path):
-    if isinstance(path, bytes):
-        return b''
-    else:
-        return ''
-
-def _get_sep(path):
-    if isinstance(path, bytes):
-        return b'\\'
-    else:
-        return '\\'
-
-def _get_altsep(path):
-    if isinstance(path, bytes):
-        return b'/'
-    else:
-        return '/'
-
 def _get_bothseps(path):
     if isinstance(path, bytes):
         return b'\\/'
     else:
         return '\\/'
-
-def _get_dot(path):
-    if isinstance(path, bytes):
-        return b'.'
-    else:
-        return '.'
-
-def _get_colon(path):
-    if isinstance(path, bytes):
-        return b':'
-    else:
-        return ':'
-
-def _get_special(path):
-    if isinstance(path, bytes):
-        return (b'\\\\.\\', b'\\\\?\\')
-    else:
-        return ('\\\\.\\', '\\\\?\\')
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
@@ -82,10 +46,16 @@ def normcase(s):
     """Normalize case of pathname.
 
     Makes all characters lowercase and all slashes into backslashes."""
-    if not isinstance(s, (bytes, str)):
-        raise TypeError("normcase() argument must be str or bytes, "
-                        "not '{}'".format(s.__class__.__name__))
-    return s.replace(_get_altsep(s), _get_sep(s)).lower()
+    try:
+        if isinstance(s, bytes):
+            return s.replace(b'/', b'\\').lower()
+        else:
+            return s.replace('/', '\\').lower()
+    except (TypeError, AttributeError):
+        if not isinstance(s, (bytes, str)):
+            raise TypeError("normcase() argument must be str or bytes, "
+                            "not %r" % s.__class__.__name__) from None
+        raise
 
 
 # Return whether a path is absolute.
@@ -97,14 +67,19 @@ def normcase(s):
 def isabs(s):
     """Test whether a path is absolute"""
     s = splitdrive(s)[1]
-    return len(s) > 0 and s[:1] in _get_bothseps(s)
+    return len(s) > 0 and s[0] in _get_bothseps(s)
 
 
 # Join two (or more) paths.
 def join(path, *paths):
-    sep = _get_sep(path)
-    seps = _get_bothseps(path)
-    colon = _get_colon(path)
+    if isinstance(path, bytes):
+        sep = b'\\'
+        seps = b'\\/'
+        colon = b':'
+    else:
+        sep = '\\'
+        seps = '\\/'
+        colon = ':'
     result_drive, result_path = splitdrive(path)
     for p in paths:
         p_drive, p_path = splitdrive(p)
@@ -155,10 +130,16 @@ def splitdrive(p):
     Paths cannot contain both a drive letter and a UNC path.
 
     """
-    empty = _get_empty(p)
-    if len(p) > 1:
-        sep = _get_sep(p)
-        normp = p.replace(_get_altsep(p), sep)
+    if len(p) >= 2:
+        if isinstance(p, bytes):
+            sep = b'\\'
+            altsep = b'/'
+            colon = b':'
+        else:
+            sep = '\\'
+            altsep = '/'
+            colon = ':'
+        normp = p.replace(altsep, sep)
         if (normp[0:2] == sep*2) and (normp[2:3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
@@ -166,18 +147,18 @@ def splitdrive(p):
             #           directory ^^^^^^^^^^^^^^^
             index = normp.find(sep, 2)
             if index == -1:
-                return empty, p
+                return p[:0], p
             index2 = normp.find(sep, index + 1)
             # a UNC path can't have two slashes in a row
             # (after the initial two)
             if index2 == index + 1:
-                return empty, p
+                return p[:0], p
             if index2 == -1:
                 index2 = len(p)
             return p[:index2], p[index2:]
-        if normp[1:2] == _get_colon(p):
+        if normp[1:2] == colon:
             return p[:2], p[2:]
-    return empty, p
+    return p[:0], p
 
 
 # Parse UNC paths
@@ -221,10 +202,7 @@ def split(p):
         i -= 1
     head, tail = p[:i], p[i:]  # now tail has no slashes
     # remove trailing slashes from head, unless it's all slashes
-    head2 = head
-    while head2 and head2[-1:] in seps:
-        head2 = head2[:-1]
-    head = head2 or head
+    head = head.rstrip(seps) or head
     return d + head, tail
 
 
@@ -234,8 +212,10 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
-    return genericpath._splitext(p, _get_sep(p), _get_altsep(p),
-                                 _get_dot(p))
+    if isinstance(p, bytes):
+        return genericpath._splitext(p, b'\\', b'/', b'.')
+    else:
+        return genericpath._splitext(p, '\\', '/', '.')
 splitext.__doc__ = genericpath._splitext.__doc__
 
 
@@ -343,7 +323,7 @@ def expanduser(path):
         userhome = join(drive, os.environ['HOMEPATH'])
 
     if isinstance(path, bytes):
-        userhome = userhome.encode(sys.getfilesystemencoding())
+        userhome = os.fsencode(userhome)
 
     if i != 1: #~user
         userhome = join(dirname(userhome), path[1:i])
@@ -369,13 +349,14 @@ def expandvars(path):
 
     Unknown variables are left unchanged."""
     if isinstance(path, bytes):
-        if ord('$') not in path and ord('%') not in path:
+        if b'$' not in path and b'%' not in path:
             return path
         import string
         varchars = bytes(string.ascii_letters + string.digits + '_-', 'ascii')
         quote = b'\''
         percent = b'%'
         brace = b'{'
+        rbrace = b'}'
         dollar = b'$'
         environ = getattr(os, 'environb', None)
     else:
@@ -386,6 +367,7 @@ def expandvars(path):
         quote = '\''
         percent = '%'
         brace = '{'
+        rbrace = '}'
         dollar = '$'
         environ = os.environ
     res = path[:0]
@@ -432,15 +414,9 @@ def expandvars(path):
                 path = path[index+2:]
                 pathlen = len(path)
                 try:
-                    if isinstance(path, bytes):
-                        index = path.index(b'}')
-                    else:
-                        index = path.index('}')
+                    index = path.index(rbrace)
                 except ValueError:
-                    if isinstance(path, bytes):
-                        res += b'${' + path
-                    else:
-                        res += '${' + path
+                    res += dollar + brace + path
                     index = pathlen - 1
                 else:
                     var = path[:index]
@@ -450,10 +426,7 @@ def expandvars(path):
                         else:
                             value = environ[var]
                     except KeyError:
-                        if isinstance(path, bytes):
-                            value = b'${' + var + b'}'
-                        else:
-                            value = '${' + var + '}'
+                        value = dollar + brace + var + rbrace
                     res += value
             else:
                 var = path[:0]
@@ -485,16 +458,25 @@ def expandvars(path):
 
 def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
-    sep = _get_sep(path)
-    dotdot = _get_dot(path) * 2
-    special_prefixes = _get_special(path)
+    if isinstance(path, bytes):
+        sep = b'\\'
+        altsep = b'/'
+        curdir = b'.'
+        pardir = b'..'
+        special_prefixes = (b'\\\\.\\', b'\\\\?\\')
+    else:
+        sep = '\\'
+        altsep = '/'
+        curdir = '.'
+        pardir = '..'
+        special_prefixes = ('\\\\.\\', '\\\\?\\')
     if path.startswith(special_prefixes):
         # in the case of paths with these prefixes:
         # \\.\ -> device names
         # \\?\ -> literal paths
         # do not do any normalization, but return the path unchanged
         return path
-    path = path.replace(_get_altsep(path), sep)
+    path = path.replace(altsep, sep)
     prefix, path = splitdrive(path)
 
     # collapse initial backslashes
@@ -505,13 +487,13 @@ def normpath(path):
     comps = path.split(sep)
     i = 0
     while i < len(comps):
-        if not comps[i] or comps[i] == _get_dot(path):
+        if not comps[i] or comps[i] == curdir:
             del comps[i]
-        elif comps[i] == dotdot:
-            if i > 0 and comps[i-1] != dotdot:
+        elif comps[i] == pardir:
+            if i > 0 and comps[i-1] != pardir:
                 del comps[i-1:i+1]
                 i -= 1
-            elif i == 0 and prefix.endswith(_get_sep(path)):
+            elif i == 0 and prefix.endswith(sep):
                 del comps[i]
             else:
                 i += 1
@@ -519,7 +501,7 @@ def normpath(path):
             i += 1
     # If the path is now empty, substitute '.'
     if not prefix and not comps:
-        comps.append(_get_dot(path))
+        comps.append(curdir)
     return prefix + sep.join(comps)
 
 
@@ -559,12 +541,19 @@ realpath = abspath
 supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
                               sys.getwindowsversion()[3] >= 2)
 
-def relpath(path, start=curdir):
+def relpath(path, start=None):
     """Return a relative version of a path"""
-    sep = _get_sep(path)
+    if isinstance(path, bytes):
+        sep = b'\\'
+        curdir = b'.'
+        pardir = b'..'
+    else:
+        sep = '\\'
+        curdir = '.'
+        pardir = '..'
 
-    if start is curdir:
-        start = _get_dot(path)
+    if start is None:
+        start = curdir
 
     if not path:
         raise ValueError("no path specified")
@@ -574,9 +563,8 @@ def relpath(path, start=curdir):
     start_drive, start_rest = splitdrive(start_abs)
     path_drive, path_rest = splitdrive(path_abs)
     if normcase(start_drive) != normcase(path_drive):
-        error = "path is on mount '{0}', start on mount '{1}'".format(
-            path_drive, start_drive)
-        raise ValueError(error)
+        raise ValueError("path is on mount %r, start on mount %r" % (
+            path_drive, start_drive))
 
     start_list = [x for x in start_rest.split(sep) if x]
     path_list = [x for x in path_rest.split(sep) if x]
@@ -587,13 +575,9 @@ def relpath(path, start=curdir):
             break
         i += 1
 
-    if isinstance(path, bytes):
-        pardir = b'..'
-    else:
-        pardir = '..'
     rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
     if not rel_list:
-        return _get_dot(path)
+        return curdir
     return join(*rel_list)
 
 
