@@ -318,27 +318,11 @@ class DemoWindow(object):
 
     def _destroy(self):
         self.root.destroy()
-        sys.exit()
 
+
+def main():
+    demo = DemoWindow()
+    demo.root.mainloop()
 
 if __name__ == '__main__':
-    demo = DemoWindow()
-    RUN = True
-    while RUN:
-        try:
-            #print("ENTERING mainloop")
-            demo.root.mainloop()
-        except AttributeError:
-            #print("AttributeError!- WAIT A MOMENT!")
-            time.sleep(0.3)
-            print("GOING ON ..")
-            demo.ckearCanvas()
-        except TypeError:
-            demo.screen._delete("all")
-            #print("CRASH!!!- WAIT A MOMENT!")
-            time.sleep(0.3)
-            #print("GOING ON ..")
-            demo.clearCanvas()
-        except:
-            print("BYE!")
-            RUN = False
+    main()
