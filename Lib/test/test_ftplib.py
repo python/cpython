@@ -137,7 +137,7 @@ class DummyFTPHandler(asynchat.async_chat):
     def cmd_pasv(self, arg):
         with socket.socket() as sock:
             sock.bind((self.socket.getsockname()[0], 0))
-            sock.listen(5)
+            sock.listen()
             sock.settimeout(TIMEOUT)
             ip, port = sock.getsockname()[:2]
             ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
@@ -155,7 +155,7 @@ class DummyFTPHandler(asynchat.async_chat):
     def cmd_epsv(self, arg):
         with socket.socket(socket.AF_INET6) as sock:
             sock.bind((self.socket.getsockname()[0], 0))
-            sock.listen(5)
+            sock.listen()
             sock.settimeout(TIMEOUT)
             port = sock.getsockname()[1]
             self.push('229 entering extended passive mode (|||%d|)' %port)
@@ -983,7 +983,7 @@ class TestTimeouts(TestCase):
         #  1) when the connection is ready to be accepted.
         #  2) when it is safe for the caller to close the connection
         #  3) when we have closed the socket
-        self.sock.listen(5)
+        self.sock.listen()
         # (1) Signal the caller that we are ready to accept the connection.
         self.evt.set()
         try:

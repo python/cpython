@@ -72,7 +72,7 @@ class SocketTCPTest(unittest.TestCase):
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.port = support.bind_port(self.serv)
-        self.serv.listen(1)
+        self.serv.listen()
 
     def tearDown(self):
         self.serv.close()
@@ -441,7 +441,7 @@ class SocketListeningTestMixin(SocketTestBase):
 
     def setUp(self):
         super().setUp()
-        self.serv.listen(1)
+        self.serv.listen()
 
 
 class ThreadedSocketTestMixin(ThreadSafeCleanupTestCase, SocketTestBase,
@@ -3784,7 +3784,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
                                                   socket.SOCK_NONBLOCK)
         self.port = support.bind_port(self.serv)
-        self.serv.listen(1)
+        self.serv.listen()
         # actual testing
         start = time.time()
         try:
@@ -4559,7 +4559,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
         address = b"\x00python-test-hello\x00\xff"
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s1:
             s1.bind(address)
-            s1.listen(1)
+            s1.listen()
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s2:
                 s2.connect(s1.getsockname())
                 with s1.accept()[0] as s3:
@@ -4791,7 +4791,7 @@ class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
         srvaddr = (socket.TIPC_ADDR_NAMESEQ, TIPC_STYPE,
                 TIPC_LOWER, TIPC_UPPER)
         self.srv.bind(srvaddr)
-        self.srv.listen(5)
+        self.srv.listen()
         self.serverExplicitReady()
         self.conn, self.connaddr = self.srv.accept()
         self.addCleanup(self.conn.close)

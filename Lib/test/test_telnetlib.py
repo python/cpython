@@ -11,7 +11,7 @@ threading = support.import_module('threading')
 HOST = support.HOST
 
 def server(evt, serv):
-    serv.listen(5)
+    serv.listen()
     evt.set()
     try:
         conn, addr = serv.accept()

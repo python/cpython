@@ -919,7 +919,7 @@ class SourceAddressTest(TestCase):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.port = support.bind_port(self.serv)
         self.source_port = support.find_unused_port()
-        self.serv.listen(5)
+        self.serv.listen()
         self.conn = None
 
     def tearDown(self):
@@ -951,7 +951,7 @@ class TimeoutTest(TestCase):
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TimeoutTest.PORT = support.bind_port(self.serv)
-        self.serv.listen(5)
+        self.serv.listen()
 
     def tearDown(self):
         self.serv.close()

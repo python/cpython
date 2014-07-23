@@ -24,7 +24,7 @@ else:
     def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
         with socket.socket(family, type, proto) as l:
             l.bind((support.HOST, 0))
-            l.listen(3)
+            l.listen()
             c = socket.socket(family, type, proto)
             try:
                 c.connect(l.getsockname())

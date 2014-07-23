@@ -1211,7 +1211,7 @@ class SSLErrorTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         with socket.socket() as s:
             s.bind(("127.0.0.1", 0))
-            s.listen(5)
+            s.listen()
             c = socket.socket()
             c.connect(s.getsockname())
             c.setblocking(False)
@@ -1736,7 +1736,7 @@ else:
 
         def run(self):
             self.sock.settimeout(0.05)
-            self.sock.listen(5)
+            self.sock.listen()
             self.active = True
             if self.flag:
                 # signal an event
@@ -2162,7 +2162,7 @@ else:
             # and sets Event `listener_gone` to let the main thread know
             # the socket is gone.
             def listener():
-                s.listen(5)
+                s.listen()
                 listener_ready.set()
                 newsock, addr = s.accept()
                 newsock.close()
@@ -2590,7 +2590,7 @@ else:
             finish = False
 
             def serve():
-                server.listen(5)
+                server.listen()
                 started.set()
                 conns = []
                 while not finish:
@@ -2647,7 +2647,7 @@ else:
             peer = None
             def serve():
                 nonlocal remote, peer
-                server.listen(5)
+                server.listen()
                 # Block on the accept and wait on the connection to close.
                 evt.set()
                 remote, peer = server.accept()

@@ -64,7 +64,7 @@ class crashingdummy:
 # used when testing senders; just collects what it gets until newline is sent
 def capture_server(evt, buf, serv):
     try:
-        serv.listen(5)
+        serv.listen()
         conn, addr = serv.accept()
     except socket.timeout:
         pass

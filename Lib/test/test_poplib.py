@@ -451,7 +451,7 @@ class TestTimeouts(TestCase):
         del self.thread  # Clear out any dangling Thread objects.
 
     def server(self, evt, serv):
-        serv.listen(5)
+        serv.listen()
         evt.set()
         try:
             conn, addr = serv.accept()
