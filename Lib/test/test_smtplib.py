@@ -31,7 +31,7 @@ if sys.platform == 'darwin':
 
 
 def server(evt, buf, serv):
-    serv.listen(5)
+    serv.listen()
     evt.set()
     try:
         conn, addr = serv.accept()

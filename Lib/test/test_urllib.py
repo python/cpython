@@ -1333,7 +1333,7 @@ class URLopener_Tests(unittest.TestCase):
 #     serv.settimeout(3)
 #     serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 #     serv.bind(("", 9093))
-#     serv.listen(5)
+#     serv.listen()
 #     try:
 #         conn, addr = serv.accept()
 #         conn.send("1 Hola mundo\n")

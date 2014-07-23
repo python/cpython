@@ -37,7 +37,7 @@ if threading:
             self.start_resend_event = None
 
         def run(self):
-            self.sock.listen(1)
+            self.sock.listen()
             self.event.set()
             conn, client = self.sock.accept()
             self.buffer = b""

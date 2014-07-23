@@ -243,14 +243,14 @@ class TCPTimeoutTestCase(TimeoutTestCase):
     def testAcceptTimeout(self):
         # Test accept() timeout
         support.bind_port(self.sock, self.localhost)
-        self.sock.listen(5)
+        self.sock.listen()
         self._sock_operation(1, 1.5, 'accept')
 
     def testSend(self):
         # Test send() timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serv:
             support.bind_port(serv, self.localhost)
-            serv.listen(5)
+            serv.listen()
             self.sock.connect(serv.getsockname())
             # Send a lot of data in order to bypass buffering in the TCP stack.
             self._sock_operation(100, 1.5, 'send', b"X" * 200000)
@@ -259,7 +259,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # Test sendto() timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serv:
             support.bind_port(serv, self.localhost)
-            serv.listen(5)
+            serv.listen()
             self.sock.connect(serv.getsockname())
             # The address argument is ignored since we already connected.
             self._sock_operation(100, 1.5, 'sendto', b"X" * 200000,
@@ -269,7 +269,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # Test sendall() timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serv:
             support.bind_port(serv, self.localhost)
-            serv.listen(5)
+            serv.listen()
             self.sock.connect(serv.getsockname())
             # Send a lot of data in order to bypass buffering in the TCP stack.
             self._sock_operation(100, 1.5, 'sendall', b"X" * 200000)

@@ -44,7 +44,7 @@ class TestEPoll(unittest.TestCase):
     def setUp(self):
         self.serverSocket = socket.socket()
         self.serverSocket.bind(('127.0.0.1', 0))
-        self.serverSocket.listen(1)
+        self.serverSocket.listen()
         self.connections = [self.serverSocket]
 
     def tearDown(self):
