@@ -58,72 +58,47 @@ def showAboutTurtle():
 
 class DemoWindow(object):
 
-    def __init__(self, filename=None):   #, root=None):
+    def __init__(self, filename=None):
         self.root = root = turtle._root = Tk()
+        root.title('Python turtle-graphics examples')
         root.wm_protocol("WM_DELETE_WINDOW", self._destroy)
 
-        #################
-        self.mBar = Frame(root, relief=RAISED, borderwidth=2)
-        self.mBar.pack(fill=X)
+        root.grid_rowconfigure(1, weight=1)
+        root.grid_columnconfigure(0, weight=1)
+        root.grid_columnconfigure(1, minsize=90, weight=1)
+        root.grid_columnconfigure(2, minsize=90, weight=1)
+        root.grid_columnconfigure(3, minsize=90, weight=1)
 
+        self.mBar = Frame(root, relief=RAISED, borderwidth=2)
         self.ExamplesBtn = self.makeLoadDemoMenu()
         self.OptionsBtn = self.makeHelpMenu()
-        self.mBar.tk_menuBar(self.ExamplesBtn, self.OptionsBtn) #, QuitBtn)
+        self.mBar.tk_menuBar(self.ExamplesBtn, self.OptionsBtn)
+        self.mBar.grid(row=0, columnspan=4, sticky='news')
 
-        root.title('Python turtle-graphics examples')
-        #################
-        self.left_frame = left_frame = Frame(root)
-        self.text_frame = text_frame = Frame(left_frame)
-        self.vbar = vbar =Scrollbar(text_frame, name='vbar')
-        self.text = text = Text(text_frame,
-                                name='text', padx=5, wrap='none',
-                                width=45)
-        vbar['command'] = text.yview
-        vbar.pack(side=LEFT, fill=Y)
-        #####################
-        self.hbar = hbar =Scrollbar(text_frame, name='hbar', orient=HORIZONTAL)
-        hbar['command'] = text.xview
-        hbar.pack(side=BOTTOM, fill=X)
-        #####################
-        text['yscrollcommand'] = vbar.set
-        text.config(font=txtfont)
-        text.config(xscrollcommand=hbar.set)
-        text.pack(side=LEFT, fill=Y, expand=1)
-        #####################
-        self.output_lbl = Label(left_frame, height= 1,text=" --- ", bg = "#ddf",
-                                font = ("Arial", 16, 'normal'))
-        self.output_lbl.pack(side=BOTTOM, expand=0, fill=X)
-        #####################
-        text_frame.pack(side=LEFT, fill=BOTH, expand=0)
-        left_frame.pack(side=LEFT, fill=BOTH, expand=0)
-        self.graph_frame = g_frame = Frame(root)
+        pane = PanedWindow(orient=HORIZONTAL, sashwidth=5,
+                           sashrelief=SOLID, bg='#ddd')
+        pane.add(self.makeTextFrame(pane))
+        pane.add(self.makeGraphFrame(pane))
+        pane.grid(row=1, columnspan=4, sticky='news')
 
-        turtle._Screen._root = g_frame
-        turtle._Screen._canvas = turtle.ScrolledCanvas(g_frame, 800, 600, 1000, 800)
-        #xturtle.Screen._canvas.pack(expand=1, fill="both")
-        self.screen = _s_ = turtle.Screen()
-        turtle.TurtleScreen.__init__(_s_, _s_._canvas)
-        self.scanvas = _s_._canvas
-        #xturtle.RawTurtle.canvases = [self.scanvas]
-        turtle.RawTurtle.screens = [_s_]
+        self.output_lbl = Label(root, height= 1, text=" --- ", bg="#ddf",
+                                font=("Arial", 16, 'normal'), borderwidth=2,
+                                relief=RIDGE)
+        self.start_btn = Button(root, text=" START ", font=btnfont,
+                                fg="white", disabledforeground = "#fed",
+                                command=self.startDemo)
+        self.stop_btn = Button(root, text=" STOP ", font=btnfont,
+                               fg="white", disabledforeground = "#fed",
+                               command=self.stopIt)
+        self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
+                                fg="white", disabledforeground="#fed",
+                                command = self.clearCanvas)
+        self.output_lbl.grid(row=2, column=0, sticky='news', padx=(0,5))
+        self.start_btn.grid(row=2, column=1, sticky='ew')
+        self.stop_btn.grid(row=2, column=2, sticky='ew')
+        self.clear_btn.grid(row=2, column=3, sticky='ew')
 
-        self.scanvas.pack(side=TOP, fill=BOTH, expand=1)
-
-        self.btn_frame = btn_frame = Frame(g_frame, height=100)
-        self.start_btn = Button(btn_frame, text=" START ", font=btnfont, fg = "white",
-                                disabledforeground = "#fed", command=self.startDemo)
-        self.start_btn.pack(side=LEFT, fill=X, expand=1)
-        self.stop_btn = Button(btn_frame, text=" STOP ",  font=btnfont, fg = "white",
-                                disabledforeground = "#fed", command = self.stopIt)
-        self.stop_btn.pack(side=LEFT, fill=X, expand=1)
-        self.clear_btn = Button(btn_frame, text=" CLEAR ",  font=btnfont, fg = "white",
-                                disabledforeground = "#fed", command = self.clearCanvas)
-        self.clear_btn.pack(side=LEFT, fill=X, expand=1)
-
-        self.btn_frame.pack(side=TOP, fill=BOTH, expand=0)
-        self.graph_frame.pack(side=TOP, fill=BOTH, expand=1)
-
-        Percolator(text).insertfilter(ColorDelegator())
+        Percolator(self.text).insertfilter(ColorDelegator())
         self.dirty = False
         self.exitflag = False
         if filename:
@@ -132,9 +107,46 @@ class DemoWindow(object):
                        "Choose example from menu", "black")
         self.state = STARTUP
 
-    def _destroy(self):
-        self.root.destroy()
-        sys.exit()
+
+    def onResize(self, event):
+        cwidth = self._canvas.winfo_width()
+        cheight = self._canvas.winfo_height()
+        self._canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
+        self._canvas.yview_moveto(0.5*(self.canvheight-cheight)/self.canvheight)
+
+    def makeTextFrame(self, root):
+        self.text_frame = text_frame = Frame(root)
+        self.text = text = Text(text_frame, name='text', padx=5,
+                                wrap='none', width=45)
+
+        self.vbar = vbar = Scrollbar(text_frame, name='vbar')
+        vbar['command'] = text.yview
+        vbar.pack(side=LEFT, fill=Y)
+        self.hbar = hbar = Scrollbar(text_frame, name='hbar', orient=HORIZONTAL)
+        hbar['command'] = text.xview
+        hbar.pack(side=BOTTOM, fill=X)
+
+        text['font'] = txtfont
+        text['yscrollcommand'] = vbar.set
+        text['xscrollcommand'] = hbar.set
+        text.pack(side=LEFT, fill=BOTH, expand=1)
+        return text_frame
+
+    def makeGraphFrame(self, root):
+        turtle._Screen._root = root
+        self.canvwidth = 1000
+        self.canvheight = 800
+        turtle._Screen._canvas = self._canvas = canvas = turtle.ScrolledCanvas(
+                root, 800, 600, self.canvwidth, self.canvheight)
+        canvas.adjustScrolls()
+        canvas._rootwindow.bind('<Configure>', self.onResize)
+        canvas._canvas['borderwidth'] = 0
+
+        self.screen = _s_ = turtle.Screen()
+        turtle.TurtleScreen.__init__(_s_, _s_._canvas)
+        self.scanvas = _s_._canvas
+        turtle.RawTurtle.screens = [_s_]
+        return canvas
 
     def configGUI(self, menu, start, stop, clear, txt="", color="blue"):
         self.ExamplesBtn.config(state=menu)
@@ -160,9 +172,9 @@ class DemoWindow(object):
 
         self.output_lbl.config(text=txt, fg=color)
 
-
     def makeLoadDemoMenu(self):
-        CmdBtn = Menubutton(self.mBar, text='Examples', underline=0, font=menufont)
+        CmdBtn = Menubutton(self.mBar, text='Examples',
+                            underline=0, font=menufont)
         CmdBtn.pack(side=LEFT, padx="2m")
         CmdBtn.menu = Menu(CmdBtn)
 
@@ -172,17 +184,18 @@ class DemoWindow(object):
                     self.loadfile(x)
                 return emit
             if isinstance(entry,str):
-                CmdBtn.menu.add_command(label=entry[6:-3], underline=0, font=menufont,
+                CmdBtn.menu.add_command(label=entry[6:-3], underline=0,
+                                        font=menufont,
                                         command=loadexample(entry))
             else:
                 _dir, entries = entry[0], entry[1:]
                 CmdBtn.menu.choices = Menu(CmdBtn.menu)
                 for e in entries:
-                    CmdBtn.menu.choices.add_command(label=e[6:-3], underline=0, font=menufont,
-                              command = loadexample(os.path.join(_dir,e)))
-
-                CmdBtn.menu.add_cascade(label=_dir[6:],
-                                        menu = CmdBtn.menu.choices, font=menufont )
+                    CmdBtn.menu.choices.add_command(
+                            label=e[6:-3], underline=0, font=menufont,
+                            command = loadexample(os.path.join(_dir,e)))
+                CmdBtn.menu.add_cascade(
+                    label=_dir[6:], menu = CmdBtn.menu.choices, font=menufont)
 
         CmdBtn['menu'] = CmdBtn.menu
         return CmdBtn
@@ -193,9 +206,12 @@ class DemoWindow(object):
         CmdBtn.pack(side=LEFT, padx='2m')
         CmdBtn.menu = Menu(CmdBtn)
 
-        CmdBtn.menu.add_command(label='About turtle.py', font=menufont, command=showAboutTurtle)
-        CmdBtn.menu.add_command(label='turtleDemo - Help', font=menufont, command=showDemoHelp)
-        CmdBtn.menu.add_command(label='About turtleDemo', font=menufont, command=showAboutDemo)
+        CmdBtn.menu.add_command(label='About turtle.py', font=menufont,
+                                command=showAboutTurtle)
+        CmdBtn.menu.add_command(label='turtleDemo - Help', font=menufont,
+                                command=showDemoHelp)
+        CmdBtn.menu.add_command(label='About turtleDemo', font=menufont,
+                                command=showAboutDemo)
 
         CmdBtn['menu'] = CmdBtn.menu
         return CmdBtn
@@ -203,7 +219,6 @@ class DemoWindow(object):
     def refreshCanvas(self):
         if not self.dirty: return
         self.screen.clear()
-        #self.screen.mode("standard")
         self.dirty=False
 
     def loadfile(self,filename):
@@ -262,10 +277,12 @@ class DemoWindow(object):
             self.configGUI(NORMAL, NORMAL, DISABLED, DISABLED,
                            "STOPPED!", "red")
             turtle.TurtleScreen._RUNNING = False
-            #print "stopIT: exitflag = True"
         else:
             turtle.TurtleScreen._RUNNING = False
-            #print "stopIt: exitflag = False"
+
+    def _destroy(self):
+        self.root.destroy()
+        sys.exit()
 
 if __name__ == '__main__':
     demo = DemoWindow()
