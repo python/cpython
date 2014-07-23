@@ -428,7 +428,7 @@ class EventLoopTestsMixin:
         listener = socket.socket()
         listener.setblocking(False)
         listener.bind(('127.0.0.1', 0))
-        listener.listen(1)
+        listener.listen()
         client = socket.socket()
         client.connect(listener.getsockname())
 

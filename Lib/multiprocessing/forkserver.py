@@ -107,7 +107,7 @@ class ForkServer(object):
                 address = connection.arbitrary_address('AF_UNIX')
                 listener.bind(address)
                 os.chmod(address, 0o600)
-                listener.listen(100)
+                listener.listen()
 
                 # all client processes own the write end of the "alive" pipe;
                 # when they all terminate the read end becomes ready.

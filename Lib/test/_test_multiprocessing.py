@@ -2543,7 +2543,7 @@ class _TestPicklingConnections(BaseTestCase):
 
         l = socket.socket()
         l.bind((test.support.HOST, 0))
-        l.listen(1)
+        l.listen()
         conn.send(l.getsockname())
         new_conn, addr = l.accept()
         conn.send(new_conn)
@@ -3190,7 +3190,7 @@ class TestWait(unittest.TestCase):
         from multiprocessing.connection import wait
         l = socket.socket()
         l.bind((test.support.HOST, 0))
-        l.listen(4)
+        l.listen()
         addr = l.getsockname()
         readers = []
         procs = []

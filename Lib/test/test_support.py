@@ -84,7 +84,7 @@ class TestSupport(unittest.TestCase):
     def test_bind_port(self):
         s = socket.socket()
         support.bind_port(s)
-        s.listen(1)
+        s.listen()
         s.close()
 
     # Tests for temp_dir()
