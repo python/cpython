@@ -435,6 +435,8 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
     def test__call_connection_lost(self):
         tr = unix_events._UnixReadPipeTransport(
             self.loop, self.pipe, self.protocol)
+        self.assertIsNotNone(tr._protocol)
+        self.assertIsNotNone(tr._loop)
 
         err = None
         tr._call_connection_lost(err)
@@ -442,13 +444,13 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.pipe.close.assert_called_with()
 
         self.assertIsNone(tr._protocol)
-        self.assertEqual(2, sys.getrefcount(self.protocol),
-                         pprint.pformat(gc.get_referrers(self.protocol)))
         self.assertIsNone(tr._loop)
 
     def test__call_connection_lost_with_err(self):
         tr = unix_events._UnixReadPipeTransport(
             self.loop, self.pipe, self.protocol)
+        self.assertIsNotNone(tr._protocol)
+        self.assertIsNotNone(tr._loop)
 
         err = OSError()
         tr._call_connection_lost(err)
@@ -456,9 +458,6 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.pipe.close.assert_called_with()
 
         self.assertIsNone(tr._protocol)
-
-        self.assertEqual(2, sys.getrefcount(self.protocol),
-                         pprint.pformat(gc.get_referrers(self.protocol)))
         self.assertIsNone(tr._loop)
 
 
@@ -717,6 +716,8 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
     def test__call_connection_lost(self):
         tr = unix_events._UnixWritePipeTransport(
             self.loop, self.pipe, self.protocol)
+        self.assertIsNotNone(tr._protocol)
+        self.assertIsNotNone(tr._loop)
 
         err = None
         tr._call_connection_lost(err)
@@ -724,13 +725,13 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.pipe.close.assert_called_with()
 
         self.assertIsNone(tr._protocol)
-        self.assertEqual(2, sys.getrefcount(self.protocol),
-                         pprint.pformat(gc.get_referrers(self.protocol)))
         self.assertIsNone(tr._loop)
 
     def test__call_connection_lost_with_err(self):
         tr = unix_events._UnixWritePipeTransport(
             self.loop, self.pipe, self.protocol)
+        self.assertIsNotNone(tr._protocol)
+        self.assertIsNotNone(tr._loop)
 
         err = OSError()
         tr._call_connection_lost(err)
@@ -738,8 +739,6 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.pipe.close.assert_called_with()
 
         self.assertIsNone(tr._protocol)
-        self.assertEqual(2, sys.getrefcount(self.protocol),
-                         pprint.pformat(gc.get_referrers(self.protocol)))
         self.assertIsNone(tr._loop)
 
     def test_close(self):
