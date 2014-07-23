@@ -2875,10 +2875,14 @@ class Scrollbar(Widget):
         relief, repeatdelay, repeatinterval, takefocus,
         troughcolor, width."""
         Widget.__init__(self, master, 'scrollbar', cnf, kw)
-    def activate(self, index):
-        """Display the element at INDEX with activebackground and activerelief.
-        INDEX can be "arrow1","slider" or "arrow2"."""
-        self.tk.call(self._w, 'activate', index)
+    def activate(self, index=None):
+        """Marks the element indicated by index as active.
+        The only index values understood by this method are "arrow1",
+        "slider", or "arrow2".  If any other value is specified then no
+        element of the scrollbar will be active.  If index is not specified,
+        the method returns the name of the element that is currently active,
+        or None if no element is active."""
+        return self.tk.call(self._w, 'activate', index) or None
     def delta(self, deltax, deltay):
         """Return the fractional change of the scrollbar setting if it
         would be moved by DELTAX or DELTAY pixels."""
@@ -2896,10 +2900,10 @@ class Scrollbar(Widget):
         """Return the current fractional values (upper and lower end)
         of the slider position."""
         return self._getdoubles(self.tk.call(self._w, 'get'))
-    def set(self, *args):
+    def set(self, first, last):
         """Set the fractional values of the slider position (upper and
         lower ends as value between 0 and 1)."""
-        self.tk.call((self._w, 'set') + args)
+        self.tk.call(self._w, 'set', first, last)
 
 
 
