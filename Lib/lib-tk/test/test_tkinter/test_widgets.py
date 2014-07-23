@@ -913,6 +913,24 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         self.checkEnumParam(widget, 'orient', 'vertical', 'horizontal',
                 errmsg='bad orientation "{}": must be vertical or horizontal')
 
+    def test_activate(self):
+        sb = self.create()
+        for e in ('arrow1', 'slider', 'arrow2'):
+            sb.activate(e)
+        sb.activate('')
+        self.assertRaises(TypeError, sb.activate)
+        self.assertRaises(TypeError, sb.activate, 'arrow1', 'arrow2')
+
+    def test_set(self):
+        sb = self.create()
+        sb.set(0.2, 0.4)
+        self.assertEqual(sb.get(), (0.2, 0.4))
+        self.assertRaises(TclError, sb.set, 'abc', 'def')
+        self.assertRaises(TclError, sb.set, 0.6, 'def')
+        self.assertRaises(TclError, sb.set, 0.6, None)
+        self.assertRaises(TclError, sb.set, 0.6)
+        self.assertRaises(TclError, sb.set, 0.6, 0.7, 0.8)
+
 
 @add_standard_options(StandardOptionsTests)
 class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
