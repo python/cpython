@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21888: plistlib's load() and loads() now work if the fmt parameter is
+  specified.
+
 - Issue #22032: __qualname__ instead of __name__ is now always used to format
   fully qualified class names of Python implemented classes.
 
