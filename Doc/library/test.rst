@@ -461,7 +461,7 @@ The :mod:`test.support` module defines the following functions:
 .. function:: make_bad_fd()
 
    Create an invalid file descriptor by opening and closing a temporary file,
-   and returning its descripor.
+   and returning its descriptor.
 
 
 .. function:: import_module(name, deprecated=False)
@@ -552,6 +552,21 @@ The :mod:`test.support` module defines the following functions:
    :func:`find_unused_port` where possible.  Using a hard coded port is
    discouraged since it can makes multiple instances of the test impossible to
    run simultaneously, which is a problem for buildbots.
+
+
+.. function:: load_package_tests(pkg_dir, loader, standard_tests, pattern)
+
+   Generic implementation of the :mod:`unittest` ``load_tests`` protocol for
+   use in test packages.  *pkg_dir* is the root directory of the package;
+   *loader*, *standard_tests*, and *pattern* are the arguments expected by
+   ``load_tests``.  In simple cases, the test package's ``__init__.py``
+   can be the following::
+
+      import os
+      from test.support import load_package_tests
+
+      def load_tests(*args):
+          return load_package_tests(os.path.dirname(__file__), *args)
 
 
 The :mod:`test.support` module defines the following classes:

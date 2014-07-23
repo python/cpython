@@ -209,6 +209,10 @@ IDLE
 Tests
 -----
 
+- Issue #22002: Added ``load_package_tests`` function to test.support and used
+  it to implement/augment test discovery in test_asyncio, test_email,
+  test_importlib, test_json, and test_tools.
+
 - Issue #21976: Fix test_ssl to accept LibreSSL version strings.  Thanks
   to William Orr.
 
