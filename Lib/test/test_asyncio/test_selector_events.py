@@ -672,6 +672,8 @@ class SelectorTransportTests(test_utils.TestCase):
     def test_connection_lost(self):
         exc = OSError()
         tr = _SelectorTransport(self.loop, self.sock, self.protocol, None)
+        self.assertIsNotNone(tr._protocol)
+        self.assertIsNotNone(tr._loop)
         tr._call_connection_lost(exc)
 
         self.protocol.connection_lost.assert_called_with(exc)
@@ -679,8 +681,6 @@ class SelectorTransportTests(test_utils.TestCase):
         self.assertIsNone(tr._sock)
 
         self.assertIsNone(tr._protocol)
-        self.assertEqual(2, sys.getrefcount(self.protocol),
-                         pprint.pformat(gc.get_referrers(self.protocol)))
         self.assertIsNone(tr._loop)
 
 
