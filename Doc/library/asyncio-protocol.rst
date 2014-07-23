@@ -459,7 +459,7 @@ The event loop is running twice. The
 example to raise an exception if the server is not listening, instead of
 having to write a short coroutine to handle the exception and stop the
 running loop. At :meth:`~BaseEventLoop.run_until_complete` exit, the loop is
-no more running, so there is no need to stop the loop in case of an error.
+no longer running, so there is no need to stop the loop in case of an error.
 
 Echo server
 -----------
