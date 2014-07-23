@@ -118,7 +118,7 @@ Library
   ValueError on ``fstat()`` failure.
 
 - Issue #21044: tarfile.open() now handles fileobj with an integer 'name'
-  attribute.  Based on patch by Martin Panter.
+  attribute.  Based on patch by Antoine Pietri.
 
 - Issue #21966: Respect -q command-line option when code module is ran.
 
