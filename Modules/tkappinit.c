@@ -26,9 +26,6 @@ static int tk_load_failed;
 int
 Tcl_AppInit(Tcl_Interp *interp)
 {
-#ifdef WITH_MOREBUTTONS
-    Tk_Window main_window;
-#endif
     const char *_tkinter_skip_tk_init;
 #ifdef TKINTER_PROTECT_LOADTK
     const char *_tkinter_tk_failed;
@@ -113,27 +110,11 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_ERROR;
     }
 
-#ifdef WITH_MOREBUTTONS
-    main_window = Tk_MainWindow(interp);
-#else
     Tk_MainWindow(interp);
-#endif
 
 #ifdef TK_AQUA
     TkMacOSXInitAppleEvents(interp);
     TkMacOSXInitMenus(interp);
-#endif
-
-#ifdef WITH_MOREBUTTONS
-    {
-        extern Tcl_CmdProc studButtonCmd;
-        extern Tcl_CmdProc triButtonCmd;
-
-        Tcl_CreateCommand(interp, "studbutton", studButtonCmd,
-                          (ClientData) main_window, NULL);
-        Tcl_CreateCommand(interp, "tributton", triButtonCmd,
-                          (ClientData) main_window, NULL);
-    }
 #endif
 
 #ifdef WITH_PIL /* 0.2b5 and later -- not yet released as of May 14 */

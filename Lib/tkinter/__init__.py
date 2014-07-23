@@ -419,9 +419,6 @@ class Misc:
         disabledForeground, insertBackground, troughColor."""
         self.tk.call(('tk_setPalette',)
               + _flatten(args) + _flatten(list(kw.items())))
-    def tk_menuBar(self, *args):
-        """Do not use. Needed in Tk 3.6 and earlier."""
-        pass # obsolete since Tk 4.0
     def wait_variable(self, name='PY_VAR'):
         """Wait until the variable is modified.
 
@@ -719,9 +716,6 @@ class Misc:
         """Raise this widget in the stacking order."""
         self.tk.call('raise', self._w, aboveThis)
     lift = tkraise
-    def colormodel(self, value=None):
-        """Useless. Not implemented in Tk."""
-        return self.tk.call('tk', 'colormodel', self._w, value)
     def winfo_atom(self, name, displayof=0):
         """Return integer which represents atom NAME."""
         args = ('winfo', 'atom') + self._displayof(displayof) + (name,)
@@ -2165,21 +2159,6 @@ class Button(Widget):
         """
         Widget.__init__(self, master, 'button', cnf, kw)
 
-    def tkButtonEnter(self, *dummy):
-        self.tk.call('tkButtonEnter', self._w)
-
-    def tkButtonLeave(self, *dummy):
-        self.tk.call('tkButtonLeave', self._w)
-
-    def tkButtonDown(self, *dummy):
-        self.tk.call('tkButtonDown', self._w)
-
-    def tkButtonUp(self, *dummy):
-        self.tk.call('tkButtonUp', self._w)
-
-    def tkButtonInvoke(self, *dummy):
-        self.tk.call('tkButtonInvoke', self._w)
-
     def flash(self):
         """Flash the button.
 
@@ -2678,28 +2657,6 @@ class Menu(Widget):
         disabledforeground, fg, font, foreground, postcommand, relief,
         selectcolor, takefocus, tearoff, tearoffcommand, title, type."""
         Widget.__init__(self, master, 'menu', cnf, kw)
-    def tk_bindForTraversal(self):
-        pass # obsolete since Tk 4.0
-    def tk_mbPost(self):
-        self.tk.call('tk_mbPost', self._w)
-    def tk_mbUnpost(self):
-        self.tk.call('tk_mbUnpost')
-    def tk_traverseToMenu(self, char):
-        self.tk.call('tk_traverseToMenu', self._w, char)
-    def tk_traverseWithinMenu(self, char):
-        self.tk.call('tk_traverseWithinMenu', self._w, char)
-    def tk_getMenuButtons(self):
-        return self.tk.call('tk_getMenuButtons', self._w)
-    def tk_nextMenu(self, count):
-        self.tk.call('tk_nextMenu', count)
-    def tk_nextMenuEntry(self, count):
-        self.tk.call('tk_nextMenuEntry', count)
-    def tk_invokeMenu(self):
-        self.tk.call('tk_invokeMenu', self._w)
-    def tk_firstMenu(self):
-        self.tk.call('tk_firstMenu', self._w)
-    def tk_mbButtonDown(self):
-        self.tk.call('tk_mbButtonDown', self._w)
     def tk_popup(self, x, y, entry=""):
         """Post the menu at position X,Y with entry ENTRY."""
         self.tk.call('tk_popup', self._w, x, y, entry)
@@ -2938,14 +2895,6 @@ class Text(Widget, XView, YView):
         box of the visible part of the character at the given index."""
         return self._getints(
                 self.tk.call(self._w, 'bbox', index)) or None
-    def tk_textSelectTo(self, index):
-        self.tk.call('tk_textSelectTo', self._w, index)
-    def tk_textBackspace(self):
-        self.tk.call('tk_textBackspace', self._w)
-    def tk_textIndexCloser(self, a, b, c):
-        self.tk.call('tk_textIndexCloser', self._w, a, b, c)
-    def tk_textResetAnchor(self, index):
-        self.tk.call('tk_textResetAnchor', self._w, index)
     def compare(self, index1, op, index2):
         """Return whether between index INDEX1 and index INDEX2 the
         relation OP is satisfied. OP is one of <, <=, ==, >=, >, or !=."""
@@ -3823,28 +3772,6 @@ class PanedWindow(Widget):
         """Returns an ordered list of the child panes."""
         return self.tk.splitlist(self.tk.call(self._w, 'panes'))
 
-######################################################################
-# Extensions:
-
-class Studbutton(Button):
-    def __init__(self, master=None, cnf={}, **kw):
-        Widget.__init__(self, master, 'studbutton', cnf, kw)
-        self.bind('<Any-Enter>',       self.tkButtonEnter)
-        self.bind('<Any-Leave>',       self.tkButtonLeave)
-        self.bind('<1>',               self.tkButtonDown)
-        self.bind('<ButtonRelease-1>', self.tkButtonUp)
-
-class Tributton(Button):
-    def __init__(self, master=None, cnf={}, **kw):
-        Widget.__init__(self, master, 'tributton', cnf, kw)
-        self.bind('<Any-Enter>',       self.tkButtonEnter)
-        self.bind('<Any-Leave>',       self.tkButtonLeave)
-        self.bind('<1>',               self.tkButtonDown)
-        self.bind('<ButtonRelease-1>', self.tkButtonUp)
-        self['fg']               = self['bg']
-        self['activebackground'] = self['bg']
-
-######################################################################
 # Test:
 
 def _test():
