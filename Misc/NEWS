@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4350: Removed a number of out-of-dated and non-working for a long time
+  Tkinter methods.
+
 - Issue #6167: Scrollbar.activate() now returns the name of active element if
   the argument is not specified.  Scrollbar.set() now always accepts only 2
   arguments.
