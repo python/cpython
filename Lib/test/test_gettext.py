@@ -77,7 +77,7 @@ class GettextBaseTest(unittest.TestCase):
     def tearDown(self):
         self.env.__exit__()
         del self.env
-        shutil.rmtree(os.path.split(LOCALEDIR)[0])
+        support.rmtree(os.path.split(LOCALEDIR)[0])
 
 
 class GettextTestCase1(GettextBaseTest):
