@@ -765,8 +765,14 @@ as internal buffering of data.
 
 .. function:: fstat(fd)
 
-   Return status for file descriptor *fd*, like :func:`~os.stat`.  As of Python
-   3.3, this is equivalent to ``os.stat(fd)``.
+   Get the status of the file descriptor *fd*. Return a :class:`stat_result`
+   object.
+
+   As of Python 3.3, this is equivalent to ``os.stat(fd)``.
+
+   .. seealso::
+
+      The :func:`stat` function.
 
    Availability: Unix, Windows.
 
@@ -1578,16 +1584,24 @@ features:
       Added support for specifying an open file descriptor for *path*.
 
 
-.. function:: lstat(path, *, dir_fd=None)
+.. function:: lstat(path, \*, dir_fd=None)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
-   Similar to :func:`~os.stat`, but does not follow symbolic links.  On
-   platforms that do not support symbolic links, this is an alias for
-   :func:`~os.stat`.  As of Python 3.3, this is equivalent to ``os.stat(path,
-   dir_fd=dir_fd, follow_symlinks=False)``.
+   Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
+   :class:`stat_result` object.
+
+   On platforms that do not support symbolic links, this is an alias for
+   :func:`~os.stat`.
+
+   As of Python 3.3, this is equivalent to ``os.stat(path, dir_fd=dir_fd,
+   follow_symlinks=False)``.
 
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
+
+   .. seealso::
+
+      The :func:`stat` function.
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
@@ -1855,54 +1869,116 @@ features:
       The *dir_fd* parameter.
 
 
-.. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
+.. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
 
-   Perform the equivalent of a :c:func:`stat` system call on the given path.
-   *path* may be specified as either a string or as an open file descriptor.
-   (This function normally follows symlinks; to stat a symlink add the argument
-   ``follow_symlinks=False``, or use :func:`lstat`.)
+   Get the status of a file or a file descriptor. Perform the equivalent of a
+   :c:func:`stat` system call on the given path. *path* may be specified as
+   either a string or as an open file descriptor. Return a :class:`stat_result`
+   object.
 
-   The return value is an object whose attributes correspond roughly
-   to the members of the :c:type:`stat` structure, namely:
+   This function normally follows symlinks; to stat a symlink add the argument
+   ``follow_symlinks=False``, or use :func:`lstat`.
 
-   * :attr:`st_mode` - protection bits,
-   * :attr:`st_ino` - inode number,
-   * :attr:`st_dev` - device,
-   * :attr:`st_nlink` - number of hard links,
-   * :attr:`st_uid` - user id of owner,
-   * :attr:`st_gid` - group id of owner,
-   * :attr:`st_size` - size of file, in bytes,
-   * :attr:`st_atime` - time of most recent access expressed in seconds,
-   * :attr:`st_mtime` - time of most recent content modification
-     expressed in seconds,
-   * :attr:`st_ctime` - platform dependent; time of most recent metadata
-     change on Unix, or the time of creation on Windows, expressed in seconds
-   * :attr:`st_atime_ns` - time of most recent access
-     expressed in nanoseconds as an integer,
-   * :attr:`st_mtime_ns` - time of most recent content modification
-     expressed in nanoseconds as an integer,
-   * :attr:`st_ctime_ns` - platform dependent; time of most recent metadata
-     change on Unix, or the time of creation on Windows,
-     expressed in nanoseconds as an integer
+   This function can support :ref:`specifying a file descriptor <path_fd>` and
+   :ref:`not following symlinks <follow_symlinks>`.
 
-   On some Unix systems (such as Linux), the following attributes may also be
-   available:
+   .. index:: module: stat
 
-   * :attr:`st_blocks` - number of 512-byte blocks allocated for file
-   * :attr:`st_blksize` - filesystem blocksize for efficient file system I/O
-   * :attr:`st_rdev` - type of device if an inode device
-   * :attr:`st_flags` - user defined flags for file
+   Example::
 
-   On other Unix systems (such as FreeBSD), the following attributes may be
-   available (but may be only filled out if root tries to use them):
+      >>> import os
+      >>> statinfo = os.stat('somefile.txt')
+      >>> statinfo
+      os.stat_result(st_mode=33188, st_ino=7876932, st_dev=234881026,
+      st_nlink=1, st_uid=501, st_gid=501, st_size=264, st_atime=1297230295,
+      st_mtime=1297230027, st_ctime=1297230027)
+      >>> statinfo.st_size
+      264
 
-   * :attr:`st_gen` - file generation number
-   * :attr:`st_birthtime` - time of file creation
+   Availability: Unix, Windows.
 
-   On Windows systems, the following attribute is also available:
+   .. seealso::
 
-   * :attr:`st_file_attributes` - Windows file attribute bits (see the
-     ``FILE_ATTRIBUTE_*`` constants in the :mod:`stat` module)
+      :func:`fstat` and :func:`lstat` functions.
+
+   .. versionadded:: 3.3
+      Added the *dir_fd* and *follow_symlinks* arguments, specifying a file
+      descriptor instead of a path.
+
+
+.. class:: stat_result
+
+   Object whose attributes correspond roughly to the members of the
+   :c:type:`stat` structure. It is used for the result of :func:`os.stat`,
+   :func:`os.fstat` and :func:`os.lstat`.
+
+   Attributes:
+
+   .. attribute:: st_mode
+
+      File mode: file type and file mode bits (permissions).
+
+   .. attribute:: st_ino
+
+      Inode number.
+
+   .. attribute:: st_dev
+
+      Identifier of the device on which this file resides.
+
+   .. attribute:: st_nlink
+
+      Number of hard links.
+
+   .. attribute:: st_uid
+
+      User identifier of the file owner.
+
+   .. attribute:: st_gid
+
+      Group identifier of the file owner.
+
+   .. attribute:: st_size
+
+      Size of the file in bytes, if it is a regular file or a symbolic link.
+      The size of a symbolic link is the length of the pathname it contains,
+      without a terminating null byte.
+
+   Timestamps:
+
+   .. attribute:: st_atime
+
+      Time of most recent access expressed in seconds.
+
+   .. attribute:: st_mtime
+
+      Time of most recent content modification expressed in seconds.
+
+   .. attribute:: st_ctime
+
+      Platform dependent:
+
+      * the time of most recent metadata change on Unix,
+      * the time of creation on Windows, expressed in seconds.
+
+   .. attribute:: st_atime_ns
+
+      Time of most recent access expressed in nanoseconds as an integer.
+
+   .. attribute:: st_mtime_ns
+
+      Time of most recent content modification expressed in nanoseconds as an
+      integer.
+
+   .. attribute:: st_ctime_ns
+
+      Platform dependent:
+
+      * the time of most recent metadata change on Unix,
+      * the time of creation on Windows, expressed in nanoseconds as an
+        integer.
+
+   See also the :func:`stat_float_times` function.
 
    .. note::
 
@@ -1912,6 +1988,7 @@ features:
       or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
       :attr:`st_atime` has only 1-day resolution.  See your operating system
       documentation for details.
+
       Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
       and :attr:`st_ctime_ns` are always expressed in nanoseconds, many
       systems do not provide nanosecond precision.  On systems that do
@@ -1921,41 +1998,77 @@ features:
       If you need the exact timestamps you should always use
       :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and :attr:`st_ctime_ns`.
 
-   For backward compatibility, the return value of :func:`~os.stat` is also
+   On some Unix systems (such as Linux), the following attributes may also be
+   available:
+
+   .. attribute:: st_blocks
+
+      Number of 512-byte blocks allocated for file.
+      This may be smaller than :attr:`st_size`/512 when the file has holes.
+
+   .. attribute:: st_blksize
+
+      "Preferred" blocksize for efficient file system I/O. Writing to a file in
+      smaller chunks may cause an inefficient read-modify-rewrite.
+
+   .. attribute:: st_rdev
+
+      Type of device if an inode device.
+
+   .. attribute:: st_flags
+
+      User defined flags for file.
+
+   On other Unix systems (such as FreeBSD), the following attributes may be
+   available (but may be only filled out if root tries to use them):
+
+   .. attribute:: st_gen
+
+      File generation number.
+
+   .. attribute:: st_birthtime
+
+      Time of file creation.
+
+   On Mac OS systems, the following attributes may also be available:
+
+   .. attribute:: st_rsize
+
+      Real size of the file.
+
+   .. attribute:: st_creator
+
+      Creator of the file.
+
+   .. attribute:: st_type
+
+      File type.
+
+   On Windows systems, the following attribute is also available:
+
+   .. attribute:: st_file_attributes
+
+      Windows file attributes: ``dwFileAttributes`` member of the
+      ``BY_HANDLE_FILE_INFORMATION`` structure returned by
+      :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
+      constants in the :mod:`stat` module.
+
+   The standard module :mod:`stat` defines functions and constants that are
+   useful for extracting information from a :c:type:`stat` structure. (On
+   Windows, some items are filled with dummy values.)
+
+   For backward compatibility, a :class:`stat_result` instance is also
    accessible as a tuple of at least 10 integers giving the most important (and
    portable) members of the :c:type:`stat` structure, in the order
    :attr:`st_mode`, :attr:`st_ino`, :attr:`st_dev`, :attr:`st_nlink`,
    :attr:`st_uid`, :attr:`st_gid`, :attr:`st_size`, :attr:`st_atime`,
    :attr:`st_mtime`, :attr:`st_ctime`. More items may be added at the end by
-   some implementations.
-
-   This function can support :ref:`specifying a file descriptor <path_fd>` and
-   :ref:`not following symlinks <follow_symlinks>`.
-
-   .. index:: module: stat
-
-   The standard module :mod:`stat` defines functions and constants that are useful
-   for extracting information from a :c:type:`stat` structure. (On Windows, some
-   items are filled with dummy values.)
-
-   Example::
-
-      >>> import os
-      >>> statinfo = os.stat('somefile.txt')
-      >>> statinfo
-      posix.stat_result(st_mode=33188, st_ino=7876932, st_dev=234881026,
-      st_nlink=1, st_uid=501, st_gid=501, st_size=264, st_atime=1297230295,
-      st_mtime=1297230027, st_ctime=1297230027)
-      >>> statinfo.st_size
-      264
-
-   Availability: Unix, Windows.
+   some implementations. For compatibility with older Python versions,
+   accessing :class:`stat_result` as a tuple always returns integers.
 
    .. versionadded:: 3.3
-      Added the *dir_fd* and *follow_symlinks* arguments,
-      specifying a file descriptor instead of a path,
-      and the :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
-      and :attr:`st_ctime_ns` members.
+      Added the :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and
+      :attr:`st_ctime_ns` members.
 
    .. versionadded:: 3.5
       Added the :attr:`st_file_attributes` member on Windows.

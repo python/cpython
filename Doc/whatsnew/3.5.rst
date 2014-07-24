@@ -185,11 +185,8 @@ ipaddress
 os
 --
 
-* :class:`os.stat_result` now has a ``st_file_attributes`` field on Windows,
-  containing the ``dwFileAttributes`` member of the
-  ``BY_HANDLE_FILE_INFORMATION`` structure returned by
-  ``GetFileInformationByHandle()`` (contributed by Ben Hoyt in
-  :issue:`21719`).
+* :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
+  attribute on Windows (contributed by Ben Hoyt in :issue:`21719`).
 
 shutil
 ------
