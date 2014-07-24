@@ -97,7 +97,7 @@ class Font:
         return self.name
 
     def __eq__(self, other):
-        return self.name == other.name and isinstance(other, Font)
+        return isinstance(other, Font) and self.name == other.name
 
     def __getitem__(self, key):
         return self.cget(key)
