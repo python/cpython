@@ -108,6 +108,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #19884: readline: Disable the meta modifier key if stdout is not
+  a terminal to not write the ANSI sequence "\033[1034h" into stdout. This
+  sequence is used on some terminal (ex: TERM=xterm-256color") to enable
+  support of 8 bit characters.
+
 - Issue #4350: Removed a number of out-of-dated and non-working for a long time
   Tkinter methods.
 
