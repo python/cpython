@@ -216,6 +216,10 @@ any that have been added to the map during asynchronous service) is closed.
       empty bytes object implies that the channel has been closed from the
       other end.
 
+      Note that :meth:`recv` may raise :exc:`BlockingIOError` , even though
+      :func:`select.select` or :func:`select.poll` has reported the socket
+      ready for reading.
+
 
    .. method:: listen(backlog)
 
