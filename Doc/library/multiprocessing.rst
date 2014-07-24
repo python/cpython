@@ -398,7 +398,7 @@ For example::
            print(res.get(timeout=1))             # prints "100"
 
            # make worker sleep for 10 secs
-           res = pool.apply_async(sleep, 10)
+           res = pool.apply_async(sleep, [10])
            print(res.get(timeout=1))             # raises multiprocessing.TimeoutError
 
        # exiting the 'with'-block has stopped the pool
