@@ -94,14 +94,14 @@ class ProactorTests(test_utils.TestCase):
         event = _overlapped.CreateEvent(None, True, False, None)
         self.addCleanup(_winapi.CloseHandle, event)
 
-        # Wait for unset event with 0.2s timeout;
+        # Wait for unset event with 0.5s timeout;
         # result should be False at timeout
-        f = self.loop._proactor.wait_for_handle(event, 0.2)
+        f = self.loop._proactor.wait_for_handle(event, 0.5)
         start = self.loop.time()
         self.loop.run_until_complete(f)
         elapsed = self.loop.time() - start
         self.assertFalse(f.result())
-        self.assertTrue(0.18 < elapsed < 0.9, elapsed)
+        self.assertTrue(0.48 < elapsed < 0.9, elapsed)
 
         _overlapped.SetEvent(event)
 
@@ -112,7 +112,7 @@ class ProactorTests(test_utils.TestCase):
         self.loop.run_until_complete(f)
         elapsed = self.loop.time() - start
         self.assertTrue(f.result())
-        self.assertTrue(0 <= elapsed < 0.1, elapsed)
+        self.assertTrue(0 <= elapsed < 0.3, elapsed)
 
         _overlapped.ResetEvent(event)
 
