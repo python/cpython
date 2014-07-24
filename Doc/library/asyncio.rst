@@ -39,7 +39,7 @@ Here is a more detailed list of the package contents:
   you absolutely, positively have to use a library that makes blocking
   I/O calls.
 
-Table of content:
+Table of contents:
 
 .. toctree::
    :maxdepth: 3
@@ -55,6 +55,6 @@ Table of content:
 
 .. seealso::
 
-   The :mod:`asyncio` module was designed in the :PEP:`3156`. For a
+   The :mod:`asyncio` module was designed in :PEP:`3156`. For a
    motivational primer on transports and protocols, see :PEP:`3153`.
 

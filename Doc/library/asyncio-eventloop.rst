@@ -58,12 +58,10 @@ Run an event loop
 
 .. method:: BaseEventLoop.close()
 
-   Close the event loop. The loop should not be running.
+   Close the event loop. The loop must not be running.
 
    This clears the queues and shuts down the executor, but does not wait for
    the executor to finish.
-
-   The event loop must not be running.
 
    This is idempotent and irreversible. No other methods should be called after
    this one.
