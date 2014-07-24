@@ -264,9 +264,9 @@ class WakeupFDTests(unittest.TestCase):
         self.addCleanup(os.close, w2)
 
         signal.set_wakeup_fd(w1)
-        self.assertIs(signal.set_wakeup_fd(w2), w1)
-        self.assertIs(signal.set_wakeup_fd(-1), w2)
-        self.assertIs(signal.set_wakeup_fd(-1), -1)
+        self.assertEqual(signal.set_wakeup_fd(w2), w1)
+        self.assertEqual(signal.set_wakeup_fd(-1), w2)
+        self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
