@@ -115,6 +115,8 @@ class async_chat(asyncore.dispatcher):
 
         try:
             data = self.recv(self.ac_in_buffer_size)
+        except BlockingIOError:
+            return
         except OSError as why:
             self.handle_error()
             return
