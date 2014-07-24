@@ -1,4 +1,4 @@
-bits shared by the stringobject and unicodeobject implementations (and
+bits shared by the bytesobject and unicodeobject implementations (and
 possibly other modules, in a not too distant future).
 
 the stuff in here is included into relevant places; see the individual
