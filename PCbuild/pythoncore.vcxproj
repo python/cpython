@@ -176,7 +176,7 @@
       <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(PyDllName).dll</OutputFile>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
@@ -212,7 +212,7 @@ IF %ERRORLEVEL% NEQ 0 (
       <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
@@ -247,7 +247,7 @@ IF %ERRORLEVEL% NEQ 0 (
       <Command>"$(SolutionDir)make_buildinfo.exe" Debug "$(IntDir)"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
@@ -285,7 +285,7 @@ IF %ERRORLEVEL% NEQ 0 (
       <Command>"$(SolutionDir)make_buildinfo.exe" Debug "$(IntDir)"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
@@ -317,7 +317,7 @@ IF %ERRORLEVEL% NEQ 0 (
       <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(PyDllName).dll</OutputFile>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
@@ -353,7 +353,7 @@ IF %ERRORLEVEL% NEQ 0 (
       <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
@@ -386,7 +386,7 @@ IF %ERRORLEVEL% NEQ 0 (
       <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(PyDllName).dll</OutputFile>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
@@ -422,7 +422,7 @@ IF %ERRORLEVEL% NEQ 0 (
       <Command>"$(SolutionDir)make_buildinfo.exe" Release "$(IntDir)\"</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>$(IntDir)getbuildinfo.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(IntDir)getbuildinfo.o;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
