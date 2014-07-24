@@ -270,9 +270,9 @@ class BaseEventLoop(events.AbstractEventLoop):
     def stop(self):
         """Stop running the event loop.
 
-        Every callback scheduled before stop() is called will run.
-        Callback scheduled after stop() is called won't.  However,
-        those callbacks will run if run_*() is called again later.
+        Every callback scheduled before stop() is called will run. Callbacks
+        scheduled after stop() is called will not run. However, those callbacks
+        will run if run_forever is called again later.
         """
         self.call_soon(_raise_stop_error)
 
