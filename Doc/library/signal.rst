@@ -308,8 +308,6 @@ The :mod:`signal` module defines the following functions:
    a library to wakeup a poll or select call, allowing the signal to be fully
    processed.
 
-   On Windows, the function only supports socket handles.
-
    The old wakeup fd is returned.  *fd* must be non-blocking.  It is up to the
    library to remove any bytes before calling poll or select again.
 
@@ -319,9 +317,6 @@ The :mod:`signal` module defines the following functions:
    When threads are enabled, this function can only be called from the main thread;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
-
-   .. versionchanged:: 3.5
-      On Windows, the function now only supports socket handles.
 
 
 .. function:: siginterrupt(signalnum, flag)
