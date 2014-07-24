@@ -46,11 +46,16 @@ method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
 
-import socket
 import asyncore
+import errno
+import socket
 from collections import deque
 from sys import py3kwarning
 from warnings import filterwarnings, catch_warnings
+
+_BLOCKING_IO_ERRORS = (errno.EAGAIN, errno.EALREADY, errno.EINPROGRESS,
+                       errno.EWOULDBLOCK)
+
 
 class async_chat (asyncore.dispatcher):
     """This is an abstract class.  You must derive from this class, and add
@@ -109,6 +114,8 @@ class async_chat (asyncore.dispatcher):
         try:
             data = self.recv (self.ac_in_buffer_size)
         except socket.error, why:
+            if why.args[0] in _BLOCKING_IO_ERRORS:
+                return
             self.handle_error()
             return
 

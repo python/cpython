@@ -1,6 +1,10 @@
 # test asynchat
 
-import asyncore, asynchat, socket, time
+import errno
+import asyncore
+import asynchat
+import socket
+import time
 import unittest
 import sys
 from test import test_support
@@ -235,6 +239,31 @@ class TestAsynchat(unittest.TestCase):
 class TestAsynchat_WithPoll(TestAsynchat):
     usepoll = True
 
+
+class TestAsynchatMocked(unittest.TestCase):
+    def test_blockingioerror(self):
+        # Issue #16133: handle_read() must ignore blocking I/O errors like
+        # EAGAIN
+        class fake_socket:
+            def fileno(self):
+                return 0
+
+            def recv(self, size):
+                raise socket.error(errno.EAGAIN, "EAGAIN")
+
+        class MyChat(asynchat.async_chat):
+            def handle_error(self):
+                raise Exception("error")
+
+        sock = fake_socket()
+        dispatcher = MyChat()
+        dispatcher.set_socket(sock)
+        self.addCleanup(dispatcher.del_channel)
+
+        # must not call handle_error()
+        dispatcher.handle_read()
+
+
 class TestHelperFunctions(unittest.TestCase):
     def test_find_prefix_at_end(self):
         self.assertEqual(asynchat.find_prefix_at_end("qwerty\r", "\r\n"), 1)
@@ -267,6 +296,7 @@ class TestFifo(unittest.TestCase):
 
 def test_main(verbose=None):
     test_support.run_unittest(TestAsynchat, TestAsynchat_WithPoll,
+                              TestAsynchatMocked,
                               TestHelperFunctions, TestFifo)
 
 if __name__ == "__main__":

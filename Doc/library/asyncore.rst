@@ -193,6 +193,11 @@ any that have been added to the map during asynchronous service) is closed.
       Read at most *buffer_size* bytes from the socket's remote end-point.  An
       empty string implies that the channel has been closed from the other end.
 
+      Note that :meth:`recv` may raise :exc:`socket.error` with
+      :data:`~errno.EAGAIN` or :data:`~errno.EWOULDBLOCK`, even though
+      :func:`select.select` or :func:`select.poll` has reported the socket
+      ready for reading.
+
 
    .. method:: listen(backlog)
 
