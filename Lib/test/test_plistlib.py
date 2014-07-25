@@ -207,6 +207,9 @@ class TestPlistlib(unittest.TestCase):
         for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
                 pl = self._create(fmt=fmt)
+                pl2 = plistlib.loads(TESTDATA[fmt], fmt=fmt)
+                self.assertEqual(dict(pl), dict(pl2),
+                    "generated data was not identical to Apple's output")
                 pl2 = plistlib.loads(TESTDATA[fmt])
                 self.assertEqual(dict(pl), dict(pl2),
                     "generated data was not identical to Apple's output")
@@ -217,6 +220,8 @@ class TestPlistlib(unittest.TestCase):
                 b = BytesIO()
                 pl = self._create(fmt=fmt)
                 plistlib.dump(pl, b, fmt=fmt)
+                pl2 = plistlib.load(BytesIO(b.getvalue()), fmt=fmt)
+                self.assertEqual(dict(pl), dict(pl2))
                 pl2 = plistlib.load(BytesIO(b.getvalue()))
                 self.assertEqual(dict(pl), dict(pl2))
 

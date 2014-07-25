@@ -7,10 +7,12 @@ thread = support.import_module('_thread')
 
 import asynchat
 import asyncore
+import errno
 import socket
 import sys
 import time
 import unittest
+import unittest.mock
 try:
     import threading
 except ImportError:
@@ -271,6 +273,21 @@ class TestAsynchat(unittest.TestCase):
 
 class TestAsynchat_WithPoll(TestAsynchat):
     usepoll = True
+
+
+class TestAsynchatMocked(unittest.TestCase):
+    def test_blockingioerror(self):
+        # Issue #16133: handle_read() must ignore BlockingIOError
+        sock = unittest.mock.Mock()
+        sock.recv.side_effect = BlockingIOError(errno.EAGAIN)
+
+        dispatcher = asynchat.async_chat()
+        dispatcher.set_socket(sock)
+        self.addCleanup(dispatcher.del_channel)
+
+        with unittest.mock.patch.object(dispatcher, 'handle_error') as error:
+            dispatcher.handle_read()
+        self.assertFalse(error.called)
 
 
 class TestHelperFunctions(unittest.TestCase):
