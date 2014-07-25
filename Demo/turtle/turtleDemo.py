@@ -44,17 +44,11 @@ def getExampleEntries():
             entries2.append(subdir+scripts)
     return entries2
 
-def showDemoHelp():
-    view_file(demo.root, "Help on turtleDemo",
-              os.path.join(demo_dir, "demohelp.txt"))
-
-def showAboutDemo():
-    view_file(demo.root, "About turtleDemo",
-              os.path.join(demo_dir, "about_turtledemo.txt"))
-
-def showAboutTurtle():
-    view_file(demo.root, "About the new turtle module.",
-              os.path.join(demo_dir, "about_turtle.txt"))
+help_entries = (  # (help_label,  help_file)
+    ('Turtledemo help', "demohelp.txt"),
+    ('About turtledemo', "about_turtledemo.txt"),
+    ('About turtle module', "about_turtle.txt"),
+    )
 
 class DemoWindow(object):
 
@@ -200,18 +194,15 @@ class DemoWindow(object):
         CmdBtn['menu'] = CmdBtn.menu
         return CmdBtn
 
-
     def makeHelpMenu(self):
         CmdBtn = Menubutton(self.mBar, text='Help', underline=0, font = menufont)
         CmdBtn.pack(side=LEFT, padx='2m')
         CmdBtn.menu = Menu(CmdBtn)
 
-        CmdBtn.menu.add_command(label='About turtle.py', font=menufont,
-                                command=showAboutTurtle)
-        CmdBtn.menu.add_command(label='turtleDemo - Help', font=menufont,
-                                command=showDemoHelp)
-        CmdBtn.menu.add_command(label='About turtleDemo', font=menufont,
-                                command=showAboutDemo)
+        for help_label, help_file in help_entries:
+            def show(help_label=help_label, help_file=help_file):
+                view_file(self.root, help_label, os.path.join(demo_dir, help_file))
+            CmdBtn.menu.add_command(label=help_label, font=menufont, command=show)
 
         CmdBtn['menu'] = CmdBtn.menu
         return CmdBtn
