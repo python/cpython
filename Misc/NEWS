@@ -664,6 +664,9 @@ IDLE
 Build
 -----
 
+- Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
+  above.  Patch by Zachary Turner.
+
 - Issue #18093: the programs that embed the CPython runtime are now in a
   separate "Programs" directory, rather than being kept in the Modules
   directory.
