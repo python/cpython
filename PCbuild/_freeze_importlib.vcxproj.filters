@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_freeze_importlib.c">
+    <ClCompile Include="..\Programs\_freeze_importlib.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

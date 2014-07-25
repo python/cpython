@@ -2,7 +2,7 @@
 # Define dependencies of generated files that are checked into hg.
 # The syntax of this file uses make rule dependencies, without actions
 
-Python/importlib.h: Lib/importlib/_bootstrap.py Modules/_freeze_importlib.c
+Python/importlib.h: Lib/importlib/_bootstrap.py Programs/_freeze_importlib.c
 
 Include/opcode.h:  Lib/opcode.py Tools/scripts/generate_opcode_h.py
 
