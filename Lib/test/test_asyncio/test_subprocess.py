@@ -42,7 +42,7 @@ class SubprocessMixin:
             return (exitcode, data)
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 10.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0, loop=self.loop)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -61,7 +61,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 10.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0, loop=self.loop)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
