@@ -510,7 +510,7 @@ echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.ba
     <ResourceCompile Include="..\PC\python_exe.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\python.c" />
+    <ClCompile Include="..\Programs\python.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">

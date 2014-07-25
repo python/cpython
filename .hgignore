@@ -89,8 +89,8 @@ Tools/unicode/build/
 Tools/unicode/MAPPINGS/
 BuildLog.htm
 __pycache__
-Modules/_freeze_importlib
-Modules/_testembed
+Programs/_freeze_importlib
+Programs/_testembed
 .coverage
 coverage/
 htmlcov/
