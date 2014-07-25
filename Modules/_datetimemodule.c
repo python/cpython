@@ -897,11 +897,11 @@ call_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg)
         }
     }
     else {
-        Py_DECREF(offset);
         PyErr_Format(PyExc_TypeError,
                      "tzinfo.%s() must return None or "
                      "timedelta, not '%.200s'",
                      name, Py_TYPE(offset)->tp_name);
+        Py_DECREF(offset);
         return NULL;
     }
 
@@ -2153,7 +2153,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
              * is odd. Note that x is odd when it's last bit is 1. The
              * code below uses bitwise and operation to check the last
              * bit. */
-	    temp = PyNumber_And(x, one);  /* temp <- x & 1 */
+            temp = PyNumber_And(x, one);  /* temp <- x & 1 */
             if (temp == NULL) {
                 Py_DECREF(x);
                 goto Done;
@@ -3224,10 +3224,10 @@ timezone_richcompare(PyDateTime_TimeZone *self,
     if (op != Py_EQ && op != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
     if (Py_TYPE(other) != &PyDateTime_TimeZoneType) {
-	if (op == Py_EQ)
-	    Py_RETURN_FALSE;
-	else
-	    Py_RETURN_TRUE;
+        if (op == Py_EQ)
+            Py_RETURN_FALSE;
+        else
+            Py_RETURN_TRUE;
     }
     return delta_richcompare(self->offset, other->offset, op);
 }
@@ -4814,7 +4814,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     static char *keywords[] = {"tz", NULL};
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:astimezone", keywords,
-				      &tzinfo))
+                                      &tzinfo))
         return NULL;
 
     if (check_tzinfo_subclass(tzinfo) == -1)
