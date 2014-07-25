@@ -229,6 +229,9 @@ dis_traceback = """\
        TRACEBACK_CODE.co_firstlineno + 4,
        TRACEBACK_CODE.co_firstlineno + 5)
 
+def _g(x):
+    yield x
+
 class DisTests(unittest.TestCase):
 
     def get_disassembly(self, func, lasti=-1, wrapper=True):
@@ -313,6 +316,11 @@ class DisTests(unittest.TestCase):
     def test_disassemble_method_bytes(self):
         method_bytecode = _C(1).__init__.__code__.co_code
         self.do_disassembly_test(method_bytecode, dis_c_instance_method_bytes)
+
+    def test_disassemble_generator(self):
+        gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
+        gen_disas = self.get_disassembly(_g(1))  # Disassemble generator itself
+        self.assertEqual(gen_disas, gen_func_disas)
 
     def test_dis_none(self):
         try:
