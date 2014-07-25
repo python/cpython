@@ -44,13 +44,9 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
     def __repr__(self):
         info = [self.__class__.__name__, 'fd=%s' % self._sock.fileno()]
         if self._read_fut is not None:
-            ov = "pending" if self._read_fut.ov.pending else "completed"
-            info.append('read=%s' % ov)
+            info.append('read=%s' % self._read_fut)
         if self._write_fut is not None:
-            if self._write_fut.ov.pending:
-                info.append("write=pending=%s" % self._pending_write)
-            else:
-                info.append("write=completed")
+            info.append("write=%r" % self._write_fut)
         if self._buffer:
             bufsize = len(self._buffer)
             info.append('write_bufsize=%s' % bufsize)
