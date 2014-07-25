@@ -58,6 +58,9 @@ Tests
 Build
 -----
 
+- Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
+  above.  Patch by Zachary Turner.
+
 - Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
   now display special message when and only when there are failures.
 
