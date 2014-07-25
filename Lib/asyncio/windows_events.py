@@ -77,6 +77,10 @@ class _OverlappedFuture(futures.Future):
         super().set_exception(exception)
         self._cancel_overlapped()
 
+    def set_result(self, result):
+        super().set_result(result)
+        self._ov = None
+
 
 class _WaitHandleFuture(futures.Future):
     """Subclass of Future which represents a wait handle."""
@@ -478,6 +482,13 @@ class IocpProactor:
                     _winapi.CloseHandle(key)
                 ms = 0
                 continue
+
+            if ov.pending:
+                # False alarm: the overlapped operation is not completed.
+                # FIXME: why do we get false alarms?
+                self._cache[address] = (f, ov, obj, callback)
+                continue
+
             if obj in self._stopped_serving:
                 f.cancel()
             elif not f.cancelled():
@@ -489,11 +500,6 @@ class IocpProactor:
                 else:
                     f.set_result(value)
                     self._results.append(f)
-                    # FIXME, tulip issue #196: add _OverlappedFuture.set_result()
-                    # method to clear the refrence, don't do it here (f may
-                    # by a _WaitHandleFuture). Problem: clearing the reference
-                    # in _register() if ov.pedding is False leads to weird bugs.
-                    f._ov = None
             ms = 0
 
     def _stop_serving(self, obj):
