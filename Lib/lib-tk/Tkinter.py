@@ -425,7 +425,10 @@ class Misc:
               + _flatten(args) + _flatten(kw.items()))
     def tk_menuBar(self, *args):
         """Do not use. Needed in Tk 3.6 and earlier."""
-        pass # obsolete since Tk 4.0
+        # obsolete since Tk 4.0
+        import warnings
+        warnings.warn('tk_menuBar() does nothing and will be removed in 3.6',
+                      DeprecationWarning, stacklevel=2)
     def wait_variable(self, name='PY_VAR'):
         """Wait until the variable is modified.
 
@@ -2657,7 +2660,11 @@ class Menu(Widget):
         selectcolor, takefocus, tearoff, tearoffcommand, title, type."""
         Widget.__init__(self, master, 'menu', cnf, kw)
     def tk_bindForTraversal(self):
-        pass # obsolete since Tk 4.0
+        # obsolete since Tk 4.0
+        import warnings
+        warnings.warn('tk_bindForTraversal() does nothing and '
+                      'will be removed in 3.6',
+                      DeprecationWarning, stacklevel=2)
     def tk_mbPost(self):
         self.tk.call('tk_mbPost', self._w)
     def tk_mbUnpost(self):
