@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21947: The dis module can now disassemble generator-iterator
+  objects based on their gi_code attribute. Patch by Clement Rouault.
+
 - Issue #16133: The asynchat.async_chat.handle_read() method now ignores
   BlockingIOError exceptions.
 

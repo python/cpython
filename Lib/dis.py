@@ -29,7 +29,7 @@ def _try_compile(source, name):
     return c
 
 def dis(x=None, *, file=None):
-    """Disassemble classes, methods, functions, or code.
+    """Disassemble classes, methods, functions, generators, or code.
 
     With no argument, disassemble the last traceback.
 
@@ -41,6 +41,8 @@ def dis(x=None, *, file=None):
         x = x.__func__
     if hasattr(x, '__code__'):  # Function
         x = x.__code__
+    if hasattr(x, 'gi_code'):  # Generator
+        x = x.gi_code
     if hasattr(x, '__dict__'):  # Class or module
         items = sorted(x.__dict__.items())
         for name, x1 in items:
@@ -99,11 +101,13 @@ def pretty_flags(flags):
     return ", ".join(names)
 
 def _get_code_object(x):
-    """Helper to handle methods, functions, strings and raw code objects"""
+    """Helper to handle methods, functions, generators, strings and raw code objects"""
     if hasattr(x, '__func__'): # Method
         x = x.__func__
     if hasattr(x, '__code__'): # Function
         x = x.__code__
+    if hasattr(x, 'gi_code'):  # Generator
+        x = x.gi_code
     if isinstance(x, str):     # Source code
         x = _try_compile(x, "<disassembly>")
     if hasattr(x, 'co_code'):  # Code object
