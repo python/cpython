@@ -108,6 +108,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22033: Reprs of most Python implemened classes now contain actual
+  class name instead of hardcoded one.
+
 - Issue #21947: The dis module can now disassemble generator-iterator
   objects based on their gi_code attribute. Patch by Clement Rouault.
 

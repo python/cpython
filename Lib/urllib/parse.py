@@ -641,7 +641,7 @@ class Quoter(collections.defaultdict):
 
     def __repr__(self):
         # Without this, will just display as a defaultdict
-        return "<Quoter %r>" % dict(self)
+        return "<%s %r>" % (self.__class__.__name__, dict(self))
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.

@@ -87,7 +87,7 @@ class MaybeEncodingError(Exception):
                                                              self.exc)
 
     def __repr__(self):
-        return "<MaybeEncodingError: %s>" % str(self)
+        return "<%s: %s>" % (self.__class__.__name__, self)
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,

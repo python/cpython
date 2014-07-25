@@ -144,7 +144,7 @@ class WeakValueDictionary(collections.MutableMapping):
         return o is not None
 
     def __repr__(self):
-        return "<WeakValueDictionary at %#x>" % id(self)
+        return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
     def __setitem__(self, key, value):
         if self._pending_removals:
@@ -348,7 +348,7 @@ class WeakKeyDictionary(collections.MutableMapping):
         return len(self.data) - len(self._pending_removals)
 
     def __repr__(self):
-        return "<WeakKeyDictionary at %#x>" % id(self)
+        return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
     def __setitem__(self, key, value):
         self.data[ref(key, self._remove)] = value

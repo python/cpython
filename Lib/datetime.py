@@ -414,15 +414,19 @@ class timedelta:
 
     def __repr__(self):
         if self._microseconds:
-            return "%s(%d, %d, %d)" % ('datetime.' + self.__class__.__name__,
-                                       self._days,
-                                       self._seconds,
-                                       self._microseconds)
+            return "%s.%s(%d, %d, %d)" % (self.__class__.__module__,
+                                          self.__class__.__qualname__,
+                                          self._days,
+                                          self._seconds,
+                                          self._microseconds)
         if self._seconds:
-            return "%s(%d, %d)" % ('datetime.' + self.__class__.__name__,
-                                   self._days,
-                                   self._seconds)
-        return "%s(%d)" % ('datetime.' + self.__class__.__name__, self._days)
+            return "%s.%s(%d, %d)" % (self.__class__.__module__,
+                                      self.__class__.__qualname__,
+                                      self._days,
+                                      self._seconds)
+        return "%s.%s(%d)" % (self.__class__.__module__,
+                              self.__class__.__qualname__,
+                              self._days)
 
     def __str__(self):
         mm, ss = divmod(self._seconds, 60)
@@ -700,10 +704,11 @@ class date:
         >>> repr(dt)
         'datetime.datetime(2010, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)'
         """
-        return "%s(%d, %d, %d)" % ('datetime.' + self.__class__.__name__,
-                                   self._year,
-                                   self._month,
-                                   self._day)
+        return "%s.%s(%d, %d, %d)" % (self.__class__.__module__,
+                                      self.__class__.__qualname__,
+                                      self._year,
+                                      self._month,
+                                      self._day)
     # XXX These shouldn't depend on time.localtime(), because that
     # clips the usable dates to [1970 .. 2038).  At least ctime() is
     # easily done without using strftime() -- that's better too because
@@ -1155,8 +1160,9 @@ class time:
             s = ", %d" % self._second
         else:
             s = ""
-        s= "%s(%d, %d%s)" % ('datetime.' + self.__class__.__name__,
-                             self._hour, self._minute, s)
+        s= "%s.%s(%d, %d%s)" % (self.__class__.__module__,
+                                self.__class__.__qualname__,
+                                self._hour, self._minute, s)
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
@@ -1569,8 +1575,9 @@ class datetime(date):
             del L[-1]
         if L[-1] == 0:
             del L[-1]
-        s = ", ".join(map(str, L))
-        s = "%s(%s)" % ('datetime.' + self.__class__.__name__, s)
+        s = "%s.%s(%s)" % (self.__class__.__module__,
+                           self.__class__.__qualname__,
+                           ", ".join(map(str, L)))
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
@@ -1857,10 +1864,12 @@ class timezone(tzinfo):
         if self is self.utc:
             return 'datetime.timezone.utc'
         if self._name is None:
-            return "%s(%r)" % ('datetime.' + self.__class__.__name__,
-                               self._offset)
-        return "%s(%r, %r)" % ('datetime.' + self.__class__.__name__,
-                               self._offset, self._name)
+            return "%s.%s(%r)" % (self.__class__.__module__,
+                                  self.__class__.__qualname__,
+                                  self._offset)
+        return "%s.%s(%r, %r)" % (self.__class__.__module__,
+                                  self.__class__.__qualname__,
+                                  self._offset, self._name)
 
     def __str__(self):
         return self.tzname(None)

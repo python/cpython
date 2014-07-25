@@ -533,8 +533,9 @@ class DocTest:
             examples = '1 example'
         else:
             examples = '%d examples' % len(self.examples)
-        return ('<DocTest %s from %s:%s (%s)>' %
-                (self.name, self.filename, self.lineno, examples))
+        return ('<%s %s from %s:%s (%s)>' %
+                (self.__class__.__name__,
+                 self.name, self.filename, self.lineno, examples))
 
     def __eq__(self, other):
         if type(self) is not type(other):

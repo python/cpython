@@ -1811,7 +1811,8 @@ class Helper:
         if inspect.stack()[1][3] == '?':
             self()
             return ''
-        return '<pydoc.Helper instance>'
+        return '<%s.%s instance>' % (self.__class__.__module__,
+                                     self.__class__.__qualname__)
 
     _GoInteractive = object()
     def __call__(self, request=_GoInteractive):

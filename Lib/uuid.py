@@ -222,7 +222,7 @@ class UUID(object):
         return self.int
 
     def __repr__(self):
-        return 'UUID(%r)' % str(self)
+        return '%s(%r)' % (self.__class__.__name__, str(self))
 
     def __setattr__(self, name, value):
         raise TypeError('UUID objects are immutable')
