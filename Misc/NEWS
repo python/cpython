@@ -661,6 +661,10 @@ IDLE
 Build
 -----
 
+- Issue #18093: the programs that embed the CPython runtime are now in a
+  separate "Programs" directory, rather than being kept in the Modules
+  directory.
+
 - Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
   now display special message when and only when there are failures.
 
