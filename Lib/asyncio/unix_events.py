@@ -74,7 +74,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # event loop running in another thread cannot add a signal
             # handler.
             signal.set_wakeup_fd(self._csock.fileno())
-        except ValueError as exc:
+        except (ValueError, OSError) as exc:
             raise RuntimeError(str(exc))
 
         handle = events.Handle(callback, args, self)
@@ -93,7 +93,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if not self._signal_handlers:
                 try:
                     signal.set_wakeup_fd(-1)
-                except ValueError as nexc:
+                except (ValueError, OSError) as nexc:
                     logger.info('set_wakeup_fd(-1) failed: %s', nexc)
 
             if exc.errno == errno.EINVAL:
@@ -138,7 +138,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if not self._signal_handlers:
             try:
                 signal.set_wakeup_fd(-1)
-            except ValueError as exc:
+            except (ValueError, OSError) as exc:
                 logger.info('set_wakeup_fd(-1) failed: %s', exc)
 
         return True

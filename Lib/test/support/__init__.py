@@ -85,7 +85,7 @@ __all__ = [
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
-    "anticipate_failure",
+    "anticipate_failure", "load_package_tests",
     # sys
     "is_jython", "check_impl_detail",
     # network
@@ -187,6 +187,25 @@ def anticipate_failure(condition):
     if condition:
         return unittest.expectedFailure
     return lambda f: f
+
+def load_package_tests(pkg_dir, loader, standard_tests, pattern):
+    """Generic load_tests implementation for simple test packages.
+
+    Most packages can implement load_tests using this function as follows:
+
+       def load_tests(*args):
+           return load_package_tests(os.path.dirname(__file__), *args)
+    """
+    if pattern is None:
+        pattern = "test*"
+    top_dir = os.path.dirname(              # Lib
+                  os.path.dirname(              # test
+                      os.path.dirname(__file__)))   # support
+    package_tests = loader.discover(start_dir=pkg_dir,
+                                    top_level_dir=top_dir,
+                                    pattern=pattern)
+    standard_tests.addTests(package_tests)
+    return standard_tests
 
 
 def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):

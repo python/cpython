@@ -261,7 +261,7 @@ Example combining a :class:`Future` and a :ref:`coroutine function
     print(future.result())
     loop.close()
 
-The coroutine function is responsible of the computation (which takes 1 second)
+The coroutine function is responsible for the computation (which takes 1 second)
 and it stores the result into the future. The
 :meth:`~BaseEventLoop.run_until_complete` method waits for the completion of
 the future.

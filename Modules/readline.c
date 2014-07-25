@@ -1019,6 +1019,21 @@ setup_readline(readlinestate *mod_state)
 
     mod_state->begidx = PyLong_FromLong(0L);
     mod_state->endidx = PyLong_FromLong(0L);
+
+#ifndef __APPLE__
+    if (!isatty(STDOUT_FILENO)) {
+        /* Issue #19884: stdout is no a terminal. Disable meta modifier
+           keys to not write the ANSI sequence "\033[1034h" into stdout. On
+           terminals supporting 8 bit characters like TERM=xterm-256color
+           (which is now the default Fedora since Fedora 18), the meta key is
+           used to enable support of 8 bit characters (ANSI sequence
+           "\033[1034h").
+
+           With libedit, this call makes readline() crash. */
+        rl_variable_bind ("enable-meta-key", "off");
+    }
+#endif
+
     /* Initialize (allows .inputrc to override)
      *
      * XXX: A bug in the readline-2.2 library causes a memory leak
