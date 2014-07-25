@@ -207,8 +207,8 @@ class ProtocolError(Error):
         self.headers = headers
     def __repr__(self):
         return (
-            "<ProtocolError for %s: %s %s>" %
-            (self.url, self.errcode, self.errmsg)
+            "<%s for %s: %s %s>" %
+            (self.__class__.__name__, self.url, self.errcode, self.errmsg)
             )
 
 ##
@@ -236,7 +236,8 @@ class Fault(Error):
         self.faultCode = faultCode
         self.faultString = faultString
     def __repr__(self):
-        return "<Fault %s: %r>" % (self.faultCode, self.faultString)
+        return "<%s %s: %r>" % (self.__class__.__name__,
+                                self.faultCode, self.faultString)
 
 # --------------------------------------------------------------------
 # Special values
@@ -354,7 +355,7 @@ class DateTime:
         return self.value
 
     def __repr__(self):
-        return "<DateTime %r at %#x>" % (self.value, id(self))
+        return "<%s %r at %#x>" % (self.__class__.__name__, self.value, id(self))
 
     def decode(self, data):
         self.value = str(data).strip()
@@ -846,7 +847,7 @@ class MultiCall:
         self.__call_list = []
 
     def __repr__(self):
-        return "<MultiCall at %#x>" % id(self)
+        return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
     __str__ = __repr__
 
@@ -1426,8 +1427,8 @@ class ServerProxy:
 
     def __repr__(self):
         return (
-            "<ServerProxy for %s%s>" %
-            (self.__host, self.__handler)
+            "<%s for %s%s>" %
+            (self.__class__.__name__, self.__host, self.__handler)
             )
 
     __str__ = __repr__

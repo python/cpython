@@ -47,8 +47,9 @@ class WidgetRedirector:
         tk.createcommand(w, self.dispatch)
 
     def __repr__(self):
-        return "WidgetRedirector(%s<%s>)" % (self.widget.__class__.__name__,
-                                             self.widget._w)
+        return "%s(%s<%s>)" % (self.__class__.__name__,
+                               self.widget.__class__.__name__,
+                               self.widget._w)
 
     def close(self):
         "Unregister operations and revert redirection created by .__init__."
@@ -142,7 +143,8 @@ class OriginalCommand:
         self.orig_and_operation = (redir.orig, operation)
 
     def __repr__(self):
-        return "OriginalCommand(%r, %r)" % (self.redir, self.operation)
+        return "%s(%r, %r)" % (self.__class__.__name__,
+                               self.redir, self.operation)
 
     def __call__(self, *args):
         return self.tk_call(self.orig_and_operation + args)

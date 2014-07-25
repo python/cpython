@@ -280,7 +280,8 @@ class Fraction(numbers.Rational):
 
     def __repr__(self):
         """repr(self)"""
-        return ('Fraction(%s, %s)' % (self._numerator, self._denominator))
+        return '%s(%s, %s)' % (self.__class__.__name__,
+                               self._numerator, self._denominator)
 
     def __str__(self):
         """str(self)"""

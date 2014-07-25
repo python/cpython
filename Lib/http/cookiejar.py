@@ -805,7 +805,7 @@ class Cookie:
             args.append("%s=%s" % (name, repr(attr)))
         args.append("rest=%s" % repr(self._rest))
         args.append("rfc2109=%s" % repr(self.rfc2109))
-        return "Cookie(%s)" % ", ".join(args)
+        return "%s(%s)" % (self.__class__.__name__, ", ".join(args))
 
 
 class CookiePolicy:

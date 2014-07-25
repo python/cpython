@@ -134,7 +134,7 @@ class Semaphore(SemLock):
             value = self._semlock._get_value()
         except Exception:
             value = 'unknown'
-        return '<Semaphore(value=%s)>' % value
+        return '<%s(value=%s)>' % (self.__class__.__name__, value)
 
 #
 # Bounded semaphore
@@ -150,8 +150,8 @@ class BoundedSemaphore(Semaphore):
             value = self._semlock._get_value()
         except Exception:
             value = 'unknown'
-        return '<BoundedSemaphore(value=%s, maxvalue=%s)>' % \
-               (value, self._semlock.maxvalue)
+        return '<%s(value=%s, maxvalue=%s)>' % \
+               (self.__class__.__name__, value, self._semlock.maxvalue)
 
 #
 # Non-recursive lock
@@ -176,7 +176,7 @@ class Lock(SemLock):
                 name = 'SomeOtherProcess'
         except Exception:
             name = 'unknown'
-        return '<Lock(owner=%s)>' % name
+        return '<%s(owner=%s)>' % (self.__class__.__name__, name)
 
 #
 # Recursive lock
@@ -202,7 +202,7 @@ class RLock(SemLock):
                 name, count = 'SomeOtherProcess', 'nonzero'
         except Exception:
             name, count = 'unknown', 'unknown'
-        return '<RLock(%s, %s)>' % (name, count)
+        return '<%s(%s, %s)>' % (self.__class__.__name__, name, count)
 
 #
 # Condition variable
@@ -243,7 +243,7 @@ class Condition(object):
                            self._woken_count._semlock._get_value())
         except Exception:
             num_waiters = 'unknown'
-        return '<Condition(%s, %s)>' % (self._lock, num_waiters)
+        return '<%s(%s, %s)>' % (self.__class__.__name__, self._lock, num_waiters)
 
     def wait(self, timeout=None):
         assert self._lock._semlock._is_mine(), \
