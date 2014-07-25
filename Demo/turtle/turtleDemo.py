@@ -66,7 +66,6 @@ class DemoWindow(object):
         self.mBar = Frame(root, relief=RAISED, borderwidth=2)
         self.ExamplesBtn = self.makeLoadDemoMenu()
         self.OptionsBtn = self.makeHelpMenu()
-        self.mBar.tk_menuBar(self.ExamplesBtn, self.OptionsBtn)
         self.mBar.grid(row=0, columnspan=4, sticky='news')
 
         pane = PanedWindow(orient=HORIZONTAL, sashwidth=5,
