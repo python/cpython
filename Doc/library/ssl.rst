@@ -808,7 +808,7 @@ SSL sockets also have the following additional methods and attributes:
    Perform the SSL setup handshake.
 
    .. versionchanged:: 3.4
-      The handshake method also performce :func:`match_hostname` when the
+      The handshake method also performs :func:`match_hostname` when the
       :attr:`~SSLContext.check_hostname` attribute of the socket's
       :attr:`~SSLSocket.context` is true.
 
@@ -1132,7 +1132,7 @@ to speed up repeated connections from the same clients.
    returned.  Other return values will result in a TLS fatal error with
    :const:`ALERT_DESCRIPTION_INTERNAL_ERROR`.
 
-   If there is a IDNA decoding error on the server name, the TLS connection
+   If there is an IDNA decoding error on the server name, the TLS connection
    will terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
    alert message to the client.
 
