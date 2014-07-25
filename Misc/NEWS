@@ -17,6 +17,9 @@ Library
   socket.error() exceptions with blocking I/O errors: EAGAIN, EALREADY,
   EINPROGRESS, or EWOULDBLOCK.
 
+- Issue #21990: Clean-up unnecessary and slow inner class definition in
+  saxutils (Contributed by Alex Gaynor).
+
 - Issue #1730136: Fix the comparison between a tkFont.Font and an object of
   another kind.
 

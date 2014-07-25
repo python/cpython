@@ -98,13 +98,16 @@ def _gettextwriter(out, encoding):
         except AttributeError:
             pass
     # wrap a binary writer with TextIOWrapper
-    class UnbufferedTextIOWrapper(io.TextIOWrapper):
-        def write(self, s):
-            super(UnbufferedTextIOWrapper, self).write(s)
-            self.flush()
-    return UnbufferedTextIOWrapper(buffer, encoding=encoding,
+    return _UnbufferedTextIOWrapper(buffer, encoding=encoding,
                                    errors='xmlcharrefreplace',
                                    newline='\n')
+
+
+class _UnbufferedTextIOWrapper(io.TextIOWrapper):
+    def write(self, s):
+        super(_UnbufferedTextIOWrapper, self).write(s)
+        self.flush()
+
 
 class XMLGenerator(handler.ContentHandler):
 
