@@ -120,7 +120,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             try:
                 csock.send(b'\0')
             except OSError:
-                pass
+                if self._debug:
+                    logger.debug("Fail to write a null byte into the "
+                                 "self-pipe socket",
+                                 exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None):
