@@ -648,9 +648,10 @@ class TypeInfo(object):
 
     def __repr__(self):
         if self.namespace:
-            return "<TypeInfo %r (from %r)>" % (self.name, self.namespace)
+            return "<%s %r (from %r)>" % (self.__class__.__name__, self.name,
+                                          self.namespace)
         else:
-            return "<TypeInfo %r>" % self.name
+            return "<%s %r>" % (self.__class__.__name__, self.name)
 
     def _get_name(self):
         return self.name

@@ -65,8 +65,8 @@ class Token(object):
         (self.typeid, self.address, self.id) = state
 
     def __repr__(self):
-        return 'Token(typeid=%r, address=%r, id=%r)' % \
-               (self.typeid, self.address, self.id)
+        return '%s(typeid=%r, address=%r, id=%r)' % \
+               (self.__class__.__name__, self.typeid, self.address, self.id)
 
 #
 # Function for communication with a manager's server process
@@ -803,8 +803,8 @@ class BaseProxy(object):
         return self._getvalue()
 
     def __repr__(self):
-        return '<%s object, typeid %r at %s>' % \
-               (type(self).__name__, self._token.typeid, '0x%x' % id(self))
+        return '<%s object, typeid %r at %#x>' % \
+               (type(self).__name__, self._token.typeid, id(self))
 
     def __str__(self):
         '''
@@ -901,7 +901,7 @@ class Namespace(object):
             if not name.startswith('_'):
                 temp.append('%s=%r' % (name, value))
         temp.sort()
-        return 'Namespace(%s)' % str.join(', ', temp)
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(temp))
 
 class Value(object):
     def __init__(self, typecode, value, lock=True):

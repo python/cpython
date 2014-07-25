@@ -808,13 +808,14 @@ class _BufferedIOMixin(BufferedIOBase):
                         .format(self.__class__.__name__))
 
     def __repr__(self):
-        clsname = self.__class__.__name__
+        modname = self.__class__.__module__
+        clsname = self.__class__.__qualname__
         try:
             name = self.name
         except AttributeError:
-            return "<_pyio.{0}>".format(clsname)
+            return "<{}.{}>".format(modname, clsname)
         else:
-            return "<_pyio.{0} name={1!r}>".format(clsname, name)
+            return "<{}.{} name={!r}>".format(modname, clsname, name)
 
     ### Lower-level APIs ###
 
@@ -1635,7 +1636,8 @@ class TextIOWrapper(TextIOBase):
     #   - "chars_..." for integer variables that count decoded characters
 
     def __repr__(self):
-        result = "<_pyio.TextIOWrapper"
+        result = "<{}.{}".format(self.__class__.__module__,
+                                 self.__class__.__qualname__)
         try:
             name = self.name
         except AttributeError:

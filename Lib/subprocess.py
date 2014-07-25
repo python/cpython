@@ -464,7 +464,7 @@ if mswindows:
             raise ValueError("already closed")
 
         def __repr__(self):
-            return "Handle(%d)" % int(self)
+            return "%s(%d)" % (self.__class__.__name__, int(self))
 
         __del__ = Close
         __str__ = __repr__

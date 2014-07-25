@@ -212,10 +212,11 @@ class Finalize(object):
             obj = None
 
         if obj is None:
-            return '<Finalize object, dead>'
+            return '<%s object, dead>' % self.__class__.__name__
 
-        x = '<Finalize object, callback=%s' % \
-            getattr(self._callback, '__name__', self._callback)
+        x = '<%s object, callback=%s' % (
+                self.__class__.__name__,
+                getattr(self._callback, '__name__', self._callback))
         if self._args:
             x += ', args=' + str(self._args)
         if self._kwargs:

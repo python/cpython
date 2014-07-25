@@ -1334,7 +1334,8 @@ class IncompleteRead(HTTPException):
             e = ', %i more expected' % self.expected
         else:
             e = ''
-        return 'IncompleteRead(%i bytes read%s)' % (len(self.partial), e)
+        return '%s(%i bytes read%s)' % (self.__class__.__name__,
+                                        len(self.partial), e)
     def __str__(self):
         return repr(self)
 
