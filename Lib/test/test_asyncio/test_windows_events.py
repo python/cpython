@@ -94,37 +94,47 @@ class ProactorTests(test_utils.TestCase):
         event = _overlapped.CreateEvent(None, True, False, None)
         self.addCleanup(_winapi.CloseHandle, event)
 
-        # Wait for unset event with 0.2s timeout;
+        # Wait for unset event with 0.5s timeout;
         # result should be False at timeout
-        f = self.loop._proactor.wait_for_handle(event, 0.2)
+        fut = self.loop._proactor.wait_for_handle(event, 0.5)
         start = self.loop.time()
-        self.loop.run_until_complete(f)
+        self.loop.run_until_complete(fut)
         elapsed = self.loop.time() - start
-        self.assertFalse(f.result())
-        self.assertTrue(0.18 < elapsed < 0.9, elapsed)
+        self.assertFalse(fut.result())
+        self.assertTrue(0.48 < elapsed < 0.9, elapsed)
 
         _overlapped.SetEvent(event)
 
         # Wait for for set event;
         # result should be True immediately
-        f = self.loop._proactor.wait_for_handle(event, 10)
+        fut = self.loop._proactor.wait_for_handle(event, 10)
         start = self.loop.time()
-        self.loop.run_until_complete(f)
+        self.loop.run_until_complete(fut)
         elapsed = self.loop.time() - start
-        self.assertTrue(f.result())
-        self.assertTrue(0 <= elapsed < 0.1, elapsed)
+        self.assertTrue(fut.result())
+        self.assertTrue(0 <= elapsed < 0.3, elapsed)
 
-        _overlapped.ResetEvent(event)
+        # Tulip issue #195: cancelling a done _WaitHandleFuture must not crash
+        fut.cancel()
+
+    def test_wait_for_handle_cancel(self):
+        event = _overlapped.CreateEvent(None, True, False, None)
+        self.addCleanup(_winapi.CloseHandle, event)
 
         # Wait for unset event with a cancelled future;
         # CancelledError should be raised immediately
-        f = self.loop._proactor.wait_for_handle(event, 10)
-        f.cancel()
+        fut = self.loop._proactor.wait_for_handle(event, 10)
+        fut.cancel()
         start = self.loop.time()
         with self.assertRaises(asyncio.CancelledError):
-            self.loop.run_until_complete(f)
+            self.loop.run_until_complete(fut)
         elapsed = self.loop.time() - start
         self.assertTrue(0 <= elapsed < 0.1, elapsed)
+
+        # Tulip issue #195: cancelling a _WaitHandleFuture twice must not crash
+        fut = self.loop._proactor.wait_for_handle(event)
+        fut.cancel()
+        fut.cancel()
 
 
 if __name__ == '__main__':

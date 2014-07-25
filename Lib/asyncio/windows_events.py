@@ -38,42 +38,85 @@ class _OverlappedFuture(futures.Future):
 
     def __init__(self, ov, *, loop=None):
         super().__init__(loop=loop)
-        self.ov = ov
+        if self._source_traceback:
+            del self._source_traceback[-1]
+        self._ov = ov
 
     def __repr__(self):
         info = [self._state.lower()]
-        if self.ov.pending:
-            info.append('overlapped=pending')
-        else:
-            info.append('overlapped=completed')
+        if self._ov is not None:
+            state = 'pending' if self._ov.pending else 'completed'
+            info.append('overlapped=<%s, %#x>' % (state, self._ov.address))
         if self._state == futures._FINISHED:
             info.append(self._format_result())
         if self._callbacks:
             info.append(self._format_callbacks())
         return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
 
-    def cancel(self):
+    def _cancel_overlapped(self):
+        if self._ov is None:
+            return
         try:
-            self.ov.cancel()
-        except OSError:
-            pass
+            self._ov.cancel()
+        except OSError as exc:
+            context = {
+                'message': 'Cancelling an overlapped future failed',
+                'exception': exc,
+                'future': self,
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+        self._ov = None
+
+    def cancel(self):
+        self._cancel_overlapped()
         return super().cancel()
+
+    def set_exception(self, exception):
+        super().set_exception(exception)
+        self._cancel_overlapped()
 
 
 class _WaitHandleFuture(futures.Future):
     """Subclass of Future which represents a wait handle."""
 
-    def __init__(self, wait_handle, *, loop=None):
+    def __init__(self, handle, wait_handle, *, loop=None):
         super().__init__(loop=loop)
+        self._handle = handle
         self._wait_handle = wait_handle
 
-    def cancel(self):
-        super().cancel()
+    def _poll(self):
+        # non-blocking wait: use a timeout of 0 millisecond
+        return (_winapi.WaitForSingleObject(self._handle, 0) ==
+                _winapi.WAIT_OBJECT_0)
+
+    def __repr__(self):
+        info = [self._state.lower()]
+        if self._wait_handle:
+            state = 'pending' if self._poll() else 'completed'
+            info.append('wait_handle=<%s, %#x>' % (state, self._wait_handle))
+        info.append('handle=<%#x>' % self._handle)
+        if self._state == futures._FINISHED:
+            info.append(self._format_result())
+        if self._callbacks:
+            info.append(self._format_callbacks())
+        return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
+
+    def _unregister(self):
+        if self._wait_handle is None:
+            return
         try:
             _overlapped.UnregisterWait(self._wait_handle)
         except OSError as e:
             if e.winerror != _overlapped.ERROR_IO_PENDING:
                 raise
+            # ERROR_IO_PENDING is not an error, the wait was unregistered
+        self._wait_handle = None
+
+    def cancel(self):
+        self._unregister()
+        return super().cancel()
 
 
 class PipeServer(object):
@@ -207,6 +250,11 @@ class IocpProactor:
         self._cache = {}
         self._registered = weakref.WeakSet()
         self._stopped_serving = weakref.WeakSet()
+
+    def __repr__(self):
+        return ('<%s overlapped#=%s result#=%s>'
+                % (self.__class__.__name__, len(self._cache),
+                   len(self._results)))
 
     def set_loop(self, loop):
         self._loop = loop
@@ -350,23 +398,19 @@ class IocpProactor:
         ov = _overlapped.Overlapped(NULL)
         wh = _overlapped.RegisterWaitWithQueue(
             handle, self._iocp, ov.address, ms)
-        f = _WaitHandleFuture(wh, loop=self._loop)
+        f = _WaitHandleFuture(handle, wh, loop=self._loop)
 
         def finish_wait_for_handle(trans, key, ov):
-            if not f.cancelled():
-                try:
-                    _overlapped.UnregisterWait(wh)
-                except OSError as e:
-                    if e.winerror != _overlapped.ERROR_IO_PENDING:
-                        raise
             # Note that this second wait means that we should only use
             # this with handles types where a successful wait has no
             # effect.  So events or processes are all right, but locks
             # or semaphores are not.  Also note if the handle is
             # signalled and then quickly reset, then we may return
             # False even though we have not timed out.
-            return (_winapi.WaitForSingleObject(handle, 0) ==
-                    _winapi.WAIT_OBJECT_0)
+            try:
+                return f._poll()
+            finally:
+                f._unregister()
 
         self._cache[ov.address] = (f, ov, None, finish_wait_for_handle)
         return f
@@ -455,7 +499,7 @@ class IocpProactor:
 
     def close(self):
         # Cancel remaining registered operations.
-        for address, (f, ov, obj, callback) in list(self._cache.items()):
+        for address, (fut, ov, obj, callback) in list(self._cache.items()):
             if obj is None:
                 # The operation was started with connect_pipe() which
                 # queues a task to Windows' thread pool.  This cannot
@@ -463,9 +507,17 @@ class IocpProactor:
                 del self._cache[address]
             else:
                 try:
-                    ov.cancel()
-                except OSError:
-                    pass
+                    fut.cancel()
+                except OSError as exc:
+                    if self._loop is not None:
+                        context = {
+                            'message': 'Cancelling a future failed',
+                            'exception': exc,
+                            'future': fut,
+                        }
+                        if fut._source_traceback:
+                            context['source_traceback'] = fut._source_traceback
+                        self._loop.call_exception_handler(context)
 
         while self._cache:
             if not self._poll(1):
@@ -475,6 +527,9 @@ class IocpProactor:
         if self._iocp is not None:
             _winapi.CloseHandle(self._iocp)
             self._iocp = None
+
+    def __del__(self):
+        self.close()
 
 
 class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):

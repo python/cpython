@@ -984,18 +984,16 @@ def load(fp, *, fmt=None, use_builtin_types=True, dict_type=dict):
         fp.seek(0)
         for info in _FORMATS.values():
             if info['detect'](header):
-                p = info['parser'](
-                    use_builtin_types=use_builtin_types,
-                    dict_type=dict_type,
-                )
+                P = info['parser']
                 break
 
         else:
             raise InvalidFileException()
 
     else:
-        p = _FORMATS[fmt]['parser'](use_builtin_types=use_builtin_types)
+        P = _FORMATS[fmt]['parser']
 
+    p = P(use_builtin_types=use_builtin_types, dict_type=dict_type)
     return p.parse(fp)
 
 
