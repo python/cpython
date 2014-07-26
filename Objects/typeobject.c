@@ -6509,7 +6509,7 @@ update_slots_callback(PyTypeObject *type, void *data)
 }
 
 /* Initialize the slotdefs table by adding interned string objects for the
-   names and sorting the entries. */
+   names. */
 static void
 init_slotdefs(void)
 {
