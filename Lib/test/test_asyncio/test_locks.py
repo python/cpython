@@ -656,6 +656,18 @@ class ConditionTests(test_utils.TestCase):
 
         self.assertFalse(cond.locked())
 
+    def test_explicit_lock(self):
+        lock = asyncio.Lock(loop=self.loop)
+        cond = asyncio.Condition(lock, loop=self.loop)
+
+        self.assertIs(lock._loop, cond._loop)
+
+    def test_ambiguous_loops(self):
+        loop = self.new_test_loop()
+        lock = asyncio.Lock(loop=self.loop)
+        with self.assertRaises(ValueError):
+            asyncio.Condition(lock, loop=loop)
+
 
 class SemaphoreTests(test_utils.TestCase):
 

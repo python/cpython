@@ -255,14 +255,17 @@ class Condition:
     A new Lock object is created and used as the underlying lock.
     """
 
-    def __init__(self, *, loop=None):
+    def __init__(self, lock=None, *, loop=None):
         if loop is not None:
             self._loop = loop
         else:
             self._loop = events.get_event_loop()
 
-        # Lock as an attribute as in threading.Condition.
-        lock = Lock(loop=self._loop)
+        if lock is None:
+            lock = Lock(loop=self._loop)
+        elif lock._loop is not self._loop:
+            raise ValueError("loop argument must agree with lock")
+
         self._lock = lock
         # Export the lock's locked(), acquire() and release() methods.
         self.locked = lock.locked
