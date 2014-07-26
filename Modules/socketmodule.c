@@ -94,6 +94,10 @@ Local naming conventions:
 #include "structmember.h"
 #include "timefuncs.h"
 
+#ifndef INVALID_SOCKET /* MS defines this */
+#define INVALID_SOCKET (-1)
+#endif
+
 #undef MAX
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 
@@ -1705,11 +1709,7 @@ sock_accept(PySocketSockObject *s)
         return NULL;
     memset(&addrbuf, 0, addrlen);
 
-#ifdef MS_WINDOWS
     newfd = INVALID_SOCKET;
-#else
-    newfd = -1;
-#endif
 
     if (!IS_SELECTABLE(s))
         return select_error();
@@ -1727,11 +1727,7 @@ sock_accept(PySocketSockObject *s)
     }
     END_SELECT_LOOP(s)
 
-#ifdef MS_WINDOWS
     if (newfd == INVALID_SOCKET)
-#else
-    if (newfd < 0)
-#endif
         return s->errorhandler();
 
     /* Create the new object with unspecified family,
@@ -3185,12 +3181,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
     fd = socket(family, type, proto);
     Py_END_ALLOW_THREADS
 
-#ifdef MS_WINDOWS
-    if (fd == INVALID_SOCKET)
-#else
-    if (fd < 0)
-#endif
-    {
+    if (fd == INVALID_SOCKET) {
         set_error();
         return -1;
     }
