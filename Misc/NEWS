@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22082: Clear interned strings in slotdefs.
+
 - Upgrade Unicode database to Unicode 7.0.0.
 
 - Issue #21897: Fix a crash with the f_locals attribute with closure
