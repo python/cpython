@@ -54,6 +54,9 @@ _Py_IDENTIFIER(builtins);
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
+static void
+clear_slotdefs();
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -177,6 +180,7 @@ void
 _PyType_Fini(void)
 {
     PyType_ClearCache();
+    clear_slotdefs();
 }
 
 void
@@ -6508,15 +6512,15 @@ update_slots_callback(PyTypeObject *type, void *data)
     return 0;
 }
 
+static int slotdefs_initialized = 0;
 /* Initialize the slotdefs table by adding interned string objects for the
    names. */
 static void
 init_slotdefs(void)
 {
     slotdef *p;
-    static int initialized = 0;
 
-    if (initialized)
+    if (slotdefs_initialized)
         return;
     for (p = slotdefs; p->name; p++) {
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
@@ -6525,7 +6529,17 @@ init_slotdefs(void)
         if (!p->name_strobj)
             Py_FatalError("Out of memory interning slotdef names");
     }
-    initialized = 1;
+    slotdefs_initialized = 1;
+}
+
+/* Undo init_slotdefs, releasing the interned strings. */
+static void clear_slotdefs()
+{
+    slotdef *p;
+    for (p = slotdefs; p->name; p++) {
+        Py_CLEAR(p->name_strobj);
+    }
+    slotdefs_initialized = 0;
 }
 
 /* Update the slots after assignment to a class (type) attribute. */
