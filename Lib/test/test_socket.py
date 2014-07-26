@@ -40,6 +40,11 @@ try:
 except ImportError:
     thread = None
     threading = None
+try:
+    import _socket
+except ImportError:
+    _socket = None
+
 
 def _have_socket_can():
     """Check whether CAN sockets are supported on this host."""
@@ -659,6 +664,19 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertIn(str(s.getsockname()), repr(s))
         self.assertIn('[closed]', repr(s))
         self.assertNotIn('laddr', repr(s))
+
+    @unittest.skipUnless(_socket is not None, 'need _socket module')
+    def test_csocket_repr(self):
+        s = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+        try:
+            expected = ('<socket object, fd=%s, family=%s, type=%s, proto=%s>'
+                        % (s.fileno(), s.family, s.type, s.proto))
+            self.assertEqual(repr(s), expected)
+        finally:
+            s.close()
+        expected = ('<socket object, fd=-1, family=%s, type=%s, proto=%s>'
+                    % (s.family, s.type, s.proto))
+        self.assertEqual(repr(s), expected)
 
     def test_weakref(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
