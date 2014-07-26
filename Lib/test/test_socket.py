@@ -2,6 +2,7 @@ import unittest
 from test import test_support
 
 import errno
+import itertools
 import socket
 import select
 import time
@@ -600,17 +601,24 @@ class GeneralModuleTests(unittest.TestCase):
         sock.close()
 
     def test_getsockaddrarg(self):
-        host = '0.0.0.0'
-        port = self._get_unused_port(bind_address=host)
+        sock = socket.socket()
+        self.addCleanup(sock.close)
+        port = test_support.find_unused_port()
         big_port = port + 65536
         neg_port = port - 65536
-        sock = socket.socket()
-        try:
-            self.assertRaises(OverflowError, sock.bind, (host, big_port))
-            self.assertRaises(OverflowError, sock.bind, (host, neg_port))
-            sock.bind((host, port))
-        finally:
-            sock.close()
+        self.assertRaises(OverflowError, sock.bind, (HOST, big_port))
+        self.assertRaises(OverflowError, sock.bind, (HOST, neg_port))
+        # Since find_unused_port() is inherently subject to race conditions, we
+        # call it a couple times if necessary.
+        for i in itertools.count():
+            port = test_support.find_unused_port()
+            try:
+                sock.bind((HOST, port))
+            except OSError as e:
+                if e.errno != errno.EADDRINUSE or i == 5:
+                    raise
+            else:
+                break
 
     @unittest.skipUnless(os.name == "nt", "Windows specific")
     def test_sock_ioctl(self):
