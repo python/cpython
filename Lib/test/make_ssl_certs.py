@@ -115,7 +115,7 @@ def make_ca():
     with open(os.path.join('cadir','index.txt'),'a+') as f:
         pass # empty file
     with open(os.path.join('cadir','crl.txt'),'a+') as f:
-        r.write("00")
+        f.write("00")
     with open(os.path.join('cadir','index.txt.attr'),'w+') as f:
         f.write('unique_subject = no')
 
