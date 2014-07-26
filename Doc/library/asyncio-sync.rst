@@ -130,7 +130,7 @@ Event
 Condition
 ^^^^^^^^^
 
-.. class:: Condition(\*, loop=None)
+.. class:: Condition(lock=None, \*, loop=None)
 
    A Condition implementation, asynchronous equivalent to
    :class:`threading.Condition`.
@@ -139,7 +139,9 @@ Condition
    allows one or more coroutines to wait until they are notified by another
    coroutine.
 
-   A new :class:`Lock` object is created and used as the underlying lock.
+   If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
+   object, and it is used as the underlying lock.  Otherwise,
+   a new :class:`Lock` object is created and used as the underlying lock.
 
    .. method:: acquire()
 
