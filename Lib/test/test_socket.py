@@ -15,6 +15,11 @@ import contextlib
 from weakref import proxy
 import signal
 import math
+try:
+    import _socket
+except ImportError:
+    _socket = None
+
 
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
@@ -243,6 +248,19 @@ class SocketPairTest(unittest.TestCase, ThreadableTest):
 ## Begin Tests
 
 class GeneralModuleTests(unittest.TestCase):
+
+    @unittest.skipUnless(_socket is not None, 'need _socket module')
+    def test_csocket_repr(self):
+        s = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+        try:
+            expected = ('<socket object, fd=%s, family=%s, type=%s, protocol=%s>'
+                        % (s.fileno(), s.family, s.type, s.proto))
+            self.assertEqual(repr(s), expected)
+        finally:
+            s.close()
+        expected = ('<socket object, fd=-1, family=%s, type=%s, protocol=%s>'
+                    % (s.family, s.type, s.proto))
+        self.assertEqual(repr(s), expected)
 
     def test_weakref(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

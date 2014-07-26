@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Fix repr(_socket.socket) on Windows 64-bit: don't fail with OverflowError
+  on closed socket.
+
 - Issue #16133: The asynchat.async_chat.handle_read() method now ignores
   socket.error() exceptions with blocking I/O errors: EAGAIN, EALREADY,
   EINPROGRESS, or EWOULDBLOCK.
