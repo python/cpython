@@ -79,28 +79,26 @@ class ConfigDialog(Toplevel):
                 page_names=['Fonts/Tabs','Highlighting','Keys','General'])
         frameActionButtons = Frame(self,pady=2)
         #action buttons
-
         if macosxSupport.isAquaTk():
-            # Surpress the padx and pady arguments when
-            # running as IDLE.app, otherwise the text
-            # on these buttons will not be readable.
-            extraKwds={}
+            # Changing the default padding on OSX results in unreadable
+            # text in the buttons
+            paddingArgs={}
         else:
-            extraKwds=dict(padx=6, pady=3)
+            paddingArgs={'padx':6, 'pady':3}
 
 # Comment out button creation and packing until implement self.Help
 ##        self.buttonHelp = Button(frameActionButtons,text='Help',
 ##                command=self.Help,takefocus=FALSE,
-##                **extraKwds)
+##                **paddingArgs)
         self.buttonOk = Button(frameActionButtons,text='Ok',
                 command=self.Ok,takefocus=FALSE,
-                **extraKwds)
+                **paddingArgs)
         self.buttonApply = Button(frameActionButtons,text='Apply',
                 command=self.Apply,takefocus=FALSE,
-                **extraKwds)
+                **paddingArgs)
         self.buttonCancel = Button(frameActionButtons,text='Cancel',
                 command=self.Cancel,takefocus=FALSE,
-                **extraKwds)
+                **paddingArgs)
         self.CreatePageFontTab()
         self.CreatePageHighlight()
         self.CreatePageKeys()
