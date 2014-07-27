@@ -55,7 +55,7 @@ static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static void
-clear_slotdefs();
+clear_slotdefs(void);
 
 /*
  * finds the beginning of the docstring's introspection signature.
@@ -6533,7 +6533,7 @@ init_slotdefs(void)
 }
 
 /* Undo init_slotdefs, releasing the interned strings. */
-static void clear_slotdefs()
+static void clear_slotdefs(void)
 {
     slotdef *p;
     for (p = slotdefs; p->name; p++) {
