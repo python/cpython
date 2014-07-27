@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20179: Apply Argument Clinic to bytes and bytearray.
+  Patch by Tal Einat.
+
 - Issue #22082: Clear interned strings in slotdefs.
 
 - Upgrade Unicode database to Unicode 7.0.0.
