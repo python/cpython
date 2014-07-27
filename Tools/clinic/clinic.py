@@ -1252,10 +1252,11 @@ class BlockParser:
         match = self.start_re.match(line.lstrip())
         return match.group(1) if match else None
 
-    def _line(self):
+    def _line(self, lookahead=False):
         self.line_number += 1
         line = self.input.pop()
-        self.language.parse_line(line)
+        if not lookahead:
+            self.language.parse_line(line)
         return line
 
     def parse_verbatim_block(self):
@@ -1311,7 +1312,7 @@ class BlockParser:
         output_add, output_output = text_accumulator()
         arguments = None
         while self.input:
-            line = self._line()
+            line = self._line(lookahead=True)
             match = checksum_re.match(line.lstrip())
             arguments = match.group(1) if match else None
             if arguments:
