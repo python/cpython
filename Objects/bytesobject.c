@@ -7,6 +7,11 @@
 #include "bytes_methods.h"
 #include <stddef.h>
 
+/*[clinic input]
+class bytes
+[clinic start generated code]*/
+/*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 static Py_ssize_t
 _getbuffer(PyObject *obj, Py_buffer *view)
 {
@@ -1034,37 +1039,70 @@ static PyBufferProcs bytes_as_buffer = {
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2
 
-/* Arrays indexed by above */
-static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
+/*[clinic input]
+bytes.split
 
-#define STRIPNAME(i) (stripformat[i]+3)
+    sep: object = None
+        The delimiter according which to split the bytes.
+        None (the default value) means split on ASCII whitespace characters
+        (space, tab, return, newline, formfeed, vertical tab).
+    maxsplit: Py_ssize_t = -1
+        Maximum number of splits to do.
+        -1 (the default value) means no limit.
 
-PyDoc_STRVAR(split__doc__,
-"B.split(sep=None, maxsplit=-1) -> list of bytes\n\
-\n\
-Return a list of the sections in B, using sep as the delimiter.\n\
-If sep is not specified or is None, B is split on ASCII whitespace\n\
-characters (space, tab, return, newline, formfeed, vertical tab).\n\
-If maxsplit is given, at most maxsplit splits are done.");
+Return a list of the sections in the bytes, using sep as the delimiter.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_split__doc__,
+"split(sep=None, maxsplit=-1)\n"
+"Return a list of the sections in the bytes, using sep as the delimiter.\n"
+"\n"
+"  sep\n"
+"    The delimiter according which to split the bytes.\n"
+"    None (the default value) means split on ASCII whitespace characters\n"
+"    (space, tab, return, newline, formfeed, vertical tab).\n"
+"  maxsplit\n"
+"    Maximum number of splits to do.\n"
+"    -1 (the default value) means no limit.");
+
+#define BYTES_SPLIT_METHODDEF    \
+    {"split", (PyCFunction)bytes_split, METH_VARARGS|METH_KEYWORDS, bytes_split__doc__},
 
 static PyObject *
-bytes_split(PyBytesObject *self, PyObject *args, PyObject *kwds)
+bytes_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
+
+static PyObject *
+bytes_split(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"sep", "maxsplit", 0};
-    Py_ssize_t len = PyBytes_GET_SIZE(self), n;
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"sep", "maxsplit", NULL};
+    PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "|On:split", _keywords,
+        &sep, &maxsplit))
+        goto exit;
+    return_value = bytes_split_impl(self, sep, maxsplit);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
+/*[clinic end generated code: checksum=0c1bf4dba4fc7e03254d9c2f670d8e2682b38785]*/
+{
+    Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
     Py_buffer vsub;
-    PyObject *list, *subobj = Py_None;
+    PyObject *list;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|On:split",
-                                     kwlist, &subobj, &maxsplit))
-        return NULL;
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
-    if (subobj == Py_None)
+    if (sep == Py_None)
         return stringlib_split_whitespace((PyObject*) self, s, len, maxsplit);
-    if (_getbuffer(subobj, &vsub) < 0)
+    if (_getbuffer(sep, &vsub) < 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
@@ -1074,89 +1112,170 @@ bytes_split(PyBytesObject *self, PyObject *args, PyObject *kwds)
     return list;
 }
 
-PyDoc_STRVAR(partition__doc__,
-"B.partition(sep) -> (head, sep, tail)\n\
-\n\
-Search for the separator sep in B, and return the part before it,\n\
-the separator itself, and the part after it.  If the separator is not\n\
-found, returns B and two empty bytes objects.");
+/*[clinic input]
+bytes.partition
+
+    self: self(type="PyBytesObject *")
+    sep: object
+    /
+
+Partition the bytes into three parts using the given separator.
+
+This will search for the separator sep in the bytes. If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original bytes
+object and two empty bytes objects.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_partition__doc__,
+"partition(sep)\n"
+"Partition the bytes into three parts using the given separator.\n"
+"\n"
+"This will search for the separator sep in the bytes. If the separator is found,\n"
+"returns a 3-tuple containing the part before the separator, the separator\n"
+"itself, and the part after it.\n"
+"\n"
+"If the separator is not found, returns a 3-tuple containing the original bytes\n"
+"object and two empty bytes objects.");
+
+#define BYTES_PARTITION_METHODDEF    \
+    {"partition", (PyCFunction)bytes_partition, METH_O, bytes_partition__doc__},
 
 static PyObject *
-bytes_partition(PyBytesObject *self, PyObject *sep_obj)
+bytes_partition(PyBytesObject *self, PyObject *sep)
+/*[clinic end generated code: checksum=02ddd49338037b02d203b165fb2e48c6eb779983]*/
 {
-    const char *sep;
+    const char *sep_chars;
     Py_ssize_t sep_len;
 
-    if (PyBytes_Check(sep_obj)) {
-        sep = PyBytes_AS_STRING(sep_obj);
-        sep_len = PyBytes_GET_SIZE(sep_obj);
+    if (PyBytes_Check(sep)) {
+        sep_chars = PyBytes_AS_STRING(sep);
+        sep_len = PyBytes_GET_SIZE(sep);
     }
-    else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
+    else if (PyObject_AsCharBuffer(sep, &sep_chars, &sep_len))
         return NULL;
 
     return stringlib_partition(
         (PyObject*) self,
         PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-        sep_obj, sep, sep_len
+        sep, sep_chars, sep_len
         );
 }
 
-PyDoc_STRVAR(rpartition__doc__,
-"B.rpartition(sep) -> (head, sep, tail)\n\
-\n\
-Search for the separator sep in B, starting at the end of B,\n\
-and return the part before it, the separator itself, and the\n\
-part after it.  If the separator is not found, returns two empty\n\
-bytes objects and B.");
+/*[clinic input]
+bytes.rpartition
+
+    self: self(type="PyBytesObject *")
+    sep: object
+    /
+
+Partition the bytes into three parts using the given separator.
+
+This will search for the separator sep in the bytes, starting and the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty bytes
+objects and the original bytes object.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_rpartition__doc__,
+"rpartition(sep)\n"
+"Partition the bytes into three parts using the given separator.\n"
+"\n"
+"This will search for the separator sep in the bytes, starting and the end. If\n"
+"the separator is found, returns a 3-tuple containing the part before the\n"
+"separator, the separator itself, and the part after it.\n"
+"\n"
+"If the separator is not found, returns a 3-tuple containing two empty bytes\n"
+"objects and the original bytes object.");
+
+#define BYTES_RPARTITION_METHODDEF    \
+    {"rpartition", (PyCFunction)bytes_rpartition, METH_O, bytes_rpartition__doc__},
 
 static PyObject *
-bytes_rpartition(PyBytesObject *self, PyObject *sep_obj)
+bytes_rpartition(PyBytesObject *self, PyObject *sep)
+/*[clinic end generated code: checksum=af06be67ab873c2792db9961f504350bc99f126a]*/
 {
-    const char *sep;
+    const char *sep_chars;
     Py_ssize_t sep_len;
 
-    if (PyBytes_Check(sep_obj)) {
-        sep = PyBytes_AS_STRING(sep_obj);
-        sep_len = PyBytes_GET_SIZE(sep_obj);
+    if (PyBytes_Check(sep)) {
+        sep_chars = PyBytes_AS_STRING(sep);
+        sep_len = PyBytes_GET_SIZE(sep);
     }
-    else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
+    else if (PyObject_AsCharBuffer(sep, &sep_chars, &sep_len))
         return NULL;
 
     return stringlib_rpartition(
         (PyObject*) self,
         PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-        sep_obj, sep, sep_len
+        sep, sep_chars, sep_len
         );
 }
 
-PyDoc_STRVAR(rsplit__doc__,
-"B.rsplit(sep=None, maxsplit=-1) -> list of bytes\n\
-\n\
-Return a list of the sections in B, using sep as the delimiter,\n\
-starting at the end of B and working to the front.\n\
-If sep is not given, B is split on ASCII whitespace characters\n\
-(space, tab, return, newline, formfeed, vertical tab).\n\
-If maxsplit is given, at most maxsplit splits are done.");
+/*[clinic input]
+bytes.rsplit = bytes.split
 
+Return a list of the sections in the bytes, using sep as the delimiter.
+
+Splitting is done starting at the end of the bytes and working to the front.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_rsplit__doc__,
+"rsplit(sep=None, maxsplit=-1)\n"
+"Return a list of the sections in the bytes, using sep as the delimiter.\n"
+"\n"
+"  sep\n"
+"    The delimiter according which to split the bytes.\n"
+"    None (the default value) means split on ASCII whitespace characters\n"
+"    (space, tab, return, newline, formfeed, vertical tab).\n"
+"  maxsplit\n"
+"    Maximum number of splits to do.\n"
+"    -1 (the default value) means no limit.\n"
+"\n"
+"Splitting is done starting at the end of the bytes and working to the front.");
+
+#define BYTES_RSPLIT_METHODDEF    \
+    {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS|METH_KEYWORDS, bytes_rsplit__doc__},
 
 static PyObject *
-bytes_rsplit(PyBytesObject *self, PyObject *args, PyObject *kwds)
+bytes_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
+
+static PyObject *
+bytes_rsplit(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"sep", "maxsplit", 0};
-    Py_ssize_t len = PyBytes_GET_SIZE(self), n;
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"sep", "maxsplit", NULL};
+    PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "|On:rsplit", _keywords,
+        &sep, &maxsplit))
+        goto exit;
+    return_value = bytes_rsplit_impl(self, sep, maxsplit);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
+/*[clinic end generated code: checksum=f5bcee1d73b31b9df8821731f4ed3a8d1bc78588]*/
+{
+    Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
     Py_buffer vsub;
-    PyObject *list, *subobj = Py_None;
+    PyObject *list;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|On:rsplit",
-                                     kwlist, &subobj, &maxsplit))
-        return NULL;
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
-    if (subobj == Py_None)
+    if (sep == Py_None)
         return stringlib_rsplit_whitespace((PyObject*) self, s, len, maxsplit);
-    if (_getbuffer(subobj, &vsub) < 0)
+    if (_getbuffer(sep, &vsub) < 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
@@ -1167,16 +1286,39 @@ bytes_rsplit(PyBytesObject *self, PyObject *args, PyObject *kwds)
 }
 
 
-PyDoc_STRVAR(join__doc__,
-"B.join(iterable_of_bytes) -> bytes\n\
-\n\
-Concatenate any number of bytes objects, with B in between each pair.\n\
-Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.");
+/*[clinic input]
+bytes.join
+
+    iterable_of_bytes: object
+    /
+
+Concatenate any number of bytes objects.
+
+The bytes whose method is called is inserted in between each pair.
+
+The result is returned as a new bytes object.
+
+Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_join__doc__,
+"join(iterable_of_bytes)\n"
+"Concatenate any number of bytes objects.\n"
+"\n"
+"The bytes whose method is called is inserted in between each pair.\n"
+"\n"
+"The result is returned as a new bytes object.\n"
+"\n"
+"Example: b\'.\'.join([b\'ab\', b\'pq\', b\'rs\']) -> b\'ab.pq.rs\'.");
+
+#define BYTES_JOIN_METHODDEF    \
+    {"join", (PyCFunction)bytes_join, METH_O, bytes_join__doc__},
 
 static PyObject *
-bytes_join(PyObject *self, PyObject *iterable)
+bytes_join(PyObject *self, PyObject *iterable_of_bytes)
+/*[clinic end generated code: checksum=3fa2b5fc3b1494ba4db416303571f4ecd055090b]*/
 {
-    return stringlib_bytes_join(self, iterable);
+    return stringlib_bytes_join(self, iterable_of_bytes);
 }
 
 PyObject *
@@ -1395,62 +1537,153 @@ do_strip(PyBytesObject *self, int striptype)
 
 
 Py_LOCAL_INLINE(PyObject *)
-do_argstrip(PyBytesObject *self, int striptype, PyObject *args)
+do_argstrip(PyBytesObject *self, int striptype, PyObject *bytes)
 {
-    PyObject *sep = NULL;
-
-    if (!PyArg_ParseTuple(args, stripformat[striptype], &sep))
-        return NULL;
-
-    if (sep != NULL && sep != Py_None) {
-        return do_xstrip(self, striptype, sep);
+    if (bytes != NULL && bytes != Py_None) {
+        return do_xstrip(self, striptype, bytes);
     }
     return do_strip(self, striptype);
 }
 
+/*[clinic input]
+bytes.strip
 
-PyDoc_STRVAR(strip__doc__,
-"B.strip([bytes]) -> bytes\n\
-\n\
-Strip leading and trailing bytes contained in the argument.\n\
-If the argument is omitted, strip leading and trailing ASCII whitespace.");
+    self: self(type="PyBytesObject *")
+    bytes: object = None
+    /
+
+Strip leading and trailing bytes contained in the argument.
+
+If the argument is omitted or None, strip leading and trailing ASCII whitespace.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_strip__doc__,
+"strip(bytes=None)\n"
+"Strip leading and trailing bytes contained in the argument.\n"
+"\n"
+"If the argument is omitted or None, strip leading and trailing ASCII whitespace.");
+
+#define BYTES_STRIP_METHODDEF    \
+    {"strip", (PyCFunction)bytes_strip, METH_VARARGS, bytes_strip__doc__},
+
 static PyObject *
-bytes_strip(PyBytesObject *self, PyObject *args)
+bytes_strip_impl(PyBytesObject *self, PyObject *bytes);
+
+static PyObject *
+bytes_strip(PyObject *self, PyObject *args)
 {
-    if (PyTuple_GET_SIZE(args) == 0)
-        return do_strip(self, BOTHSTRIP); /* Common case */
-    else
-        return do_argstrip(self, BOTHSTRIP, args);
+    PyObject *return_value = NULL;
+    PyObject *bytes = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "strip",
+        0, 1,
+        &bytes))
+        goto exit;
+    return_value = bytes_strip_impl((PyBytesObject *)self, bytes);
+
+exit:
+    return return_value;
 }
 
-
-PyDoc_STRVAR(lstrip__doc__,
-"B.lstrip([bytes]) -> bytes\n\
-\n\
-Strip leading bytes contained in the argument.\n\
-If the argument is omitted, strip leading ASCII whitespace.");
 static PyObject *
-bytes_lstrip(PyBytesObject *self, PyObject *args)
+bytes_strip_impl(PyBytesObject *self, PyObject *bytes)
+/*[clinic end generated code: checksum=3c59229e9332a1782987f047d43a9526a3b3c90f]*/
 {
-    if (PyTuple_GET_SIZE(args) == 0)
-        return do_strip(self, LEFTSTRIP); /* Common case */
-    else
-        return do_argstrip(self, LEFTSTRIP, args);
+    return do_argstrip(self, BOTHSTRIP, bytes);
 }
 
+/*[clinic input]
+bytes.lstrip
 
-PyDoc_STRVAR(rstrip__doc__,
-"B.rstrip([bytes]) -> bytes\n\
-\n\
-Strip trailing bytes contained in the argument.\n\
-If the argument is omitted, strip trailing ASCII whitespace.");
+    self: self(type="PyBytesObject *")
+    bytes: object = None
+    /
+
+Strip leading bytes contained in the argument.
+
+If the argument is omitted or None, strip leading  ASCII whitespace.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_lstrip__doc__,
+"lstrip(bytes=None)\n"
+"Strip leading bytes contained in the argument.\n"
+"\n"
+"If the argument is omitted or None, strip leading  ASCII whitespace.");
+
+#define BYTES_LSTRIP_METHODDEF    \
+    {"lstrip", (PyCFunction)bytes_lstrip, METH_VARARGS, bytes_lstrip__doc__},
+
 static PyObject *
-bytes_rstrip(PyBytesObject *self, PyObject *args)
+bytes_lstrip_impl(PyBytesObject *self, PyObject *bytes);
+
+static PyObject *
+bytes_lstrip(PyObject *self, PyObject *args)
 {
-    if (PyTuple_GET_SIZE(args) == 0)
-        return do_strip(self, RIGHTSTRIP); /* Common case */
-    else
-        return do_argstrip(self, RIGHTSTRIP, args);
+    PyObject *return_value = NULL;
+    PyObject *bytes = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "lstrip",
+        0, 1,
+        &bytes))
+        goto exit;
+    return_value = bytes_lstrip_impl((PyBytesObject *)self, bytes);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_lstrip_impl(PyBytesObject *self, PyObject *bytes)
+/*[clinic end generated code: checksum=34a0a2cae35c06ad984c5657659d4d28ec0e407a]*/
+{
+    return do_argstrip(self, LEFTSTRIP, bytes);
+}
+
+/*[clinic input]
+bytes.rstrip
+
+    self: self(type="PyBytesObject *")
+    bytes: object = None
+    /
+
+Strip trailing bytes contained in the argument.
+
+If the argument is omitted or None, strip trailing ASCII whitespace.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_rstrip__doc__,
+"rstrip(bytes=None)\n"
+"Strip trailing bytes contained in the argument.\n"
+"\n"
+"If the argument is omitted or None, strip trailing ASCII whitespace.");
+
+#define BYTES_RSTRIP_METHODDEF    \
+    {"rstrip", (PyCFunction)bytes_rstrip, METH_VARARGS, bytes_rstrip__doc__},
+
+static PyObject *
+bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes);
+
+static PyObject *
+bytes_rstrip(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *bytes = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "rstrip",
+        0, 1,
+        &bytes))
+        goto exit;
+    return_value = bytes_rstrip_impl((PyBytesObject *)self, bytes);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes)
+/*[clinic end generated code: checksum=eeb1b0cff2f4bfbad7324eea81dd9dec2a872ad6]*/
+{
+    return do_argstrip(self, RIGHTSTRIP, bytes);
 }
 
 
@@ -1502,40 +1735,88 @@ bytes_count(PyBytesObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(translate__doc__,
-"B.translate(table[, deletechars]) -> bytes\n\
-\n\
-Return a copy of B, where all characters occurring in the\n\
-optional argument deletechars are removed, and the remaining\n\
-characters have been mapped through the given translation\n\
-table, which must be a bytes object of length 256.");
+/*[clinic input]
+bytes.translate
+
+    self: self(type="PyBytesObject *")
+    table: object   
+        Translation table, which must be a bytes object of length 256.
+    [
+    deletechars: object
+    ]
+    /
+
+Return a copy with each character mapped by the given translation table.
+
+All characters occurring in the optional argument deletechars are removed.
+The remaining characters are mapped through the given translation table.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_translate__doc__,
+"translate(table, [deletechars])\n"
+"Return a copy with each character mapped by the given translation table.\n"
+"\n"
+"  table\n"
+"    Translation table, which must be a bytes object of length 256.\n"
+"\n"
+"All characters occurring in the optional argument deletechars are removed.\n"
+"The remaining characters are mapped through the given translation table.");
+
+#define BYTES_TRANSLATE_METHODDEF    \
+    {"translate", (PyCFunction)bytes_translate, METH_VARARGS, bytes_translate__doc__},
 
 static PyObject *
-bytes_translate(PyBytesObject *self, PyObject *args)
+bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, PyObject *deletechars);
+
+static PyObject *
+bytes_translate(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *table;
+    int group_right_1 = 0;
+    PyObject *deletechars = NULL;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:translate", &table))
+                return NULL;
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:translate", &table, &deletechars))
+                return NULL;
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "bytes.translate requires 1 to 2 arguments");
+            return NULL;
+    }
+    return_value = bytes_translate_impl((PyBytesObject *)self, table, group_right_1, deletechars);
+
+    return return_value;
+}
+
+static PyObject *
+bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, PyObject *deletechars)
+/*[clinic end generated code: checksum=5ebfc00fffd8122849d1e02ee784c29a7228f0bb]*/
 {
     char *input, *output;
-    const char *table;
+    const char *table_chars;
     Py_ssize_t i, c, changed = 0;
     PyObject *input_obj = (PyObject*)self;
-    const char *output_start, *del_table=NULL;
+    const char *output_start, *del_table_chars=NULL;
     Py_ssize_t inlen, tablen, dellen = 0;
     PyObject *result;
     int trans_table[256];
-    PyObject *tableobj, *delobj = NULL;
 
-    if (!PyArg_UnpackTuple(args, "translate", 1, 2,
-                          &tableobj, &delobj))
-        return NULL;
-
-    if (PyBytes_Check(tableobj)) {
-        table = PyBytes_AS_STRING(tableobj);
-        tablen = PyBytes_GET_SIZE(tableobj);
+    if (PyBytes_Check(table)) {
+        table_chars = PyBytes_AS_STRING(table);
+        tablen = PyBytes_GET_SIZE(table);
     }
-    else if (tableobj == Py_None) {
-        table = NULL;
+    else if (table == Py_None) {
+        table_chars = NULL;
         tablen = 256;
     }
-    else if (PyObject_AsCharBuffer(tableobj, &table, &tablen))
+    else if (PyObject_AsCharBuffer(table, &table_chars, &tablen))
         return NULL;
 
     if (tablen != 256) {
@@ -1544,16 +1825,16 @@ bytes_translate(PyBytesObject *self, PyObject *args)
         return NULL;
     }
 
-    if (delobj != NULL) {
-        if (PyBytes_Check(delobj)) {
-            del_table = PyBytes_AS_STRING(delobj);
-            dellen = PyBytes_GET_SIZE(delobj);
+    if (deletechars != NULL) {
+        if (PyBytes_Check(deletechars)) {
+            del_table_chars = PyBytes_AS_STRING(deletechars);
+            dellen = PyBytes_GET_SIZE(deletechars);
         }
-        else if (PyObject_AsCharBuffer(delobj, &del_table, &dellen))
+        else if (PyObject_AsCharBuffer(deletechars, &del_table_chars, &dellen))
             return NULL;
     }
     else {
-        del_table = NULL;
+        del_table_chars = NULL;
         dellen = 0;
     }
 
@@ -1564,11 +1845,11 @@ bytes_translate(PyBytesObject *self, PyObject *args)
     output_start = output = PyBytes_AsString(result);
     input = PyBytes_AS_STRING(input_obj);
 
-    if (dellen == 0 && table != NULL) {
+    if (dellen == 0 && table_chars != NULL) {
         /* If no deletions are required, use faster code */
         for (i = inlen; --i >= 0; ) {
             c = Py_CHARMASK(*input++);
-            if (Py_CHARMASK((*output++ = table[c])) != c)
+            if (Py_CHARMASK((*output++ = table_chars[c])) != c)
                 changed = 1;
         }
         if (changed || !PyBytes_CheckExact(input_obj))
@@ -1578,16 +1859,16 @@ bytes_translate(PyBytesObject *self, PyObject *args)
         return input_obj;
     }
 
-    if (table == NULL) {
+    if (table_chars == NULL) {
         for (i = 0; i < 256; i++)
             trans_table[i] = Py_CHARMASK(i);
     } else {
         for (i = 0; i < 256; i++)
-            trans_table[i] = Py_CHARMASK(table[i]);
+            trans_table[i] = Py_CHARMASK(table_chars[i]);
     }
 
     for (i = 0; i < dellen; i++)
-        trans_table[(int) Py_CHARMASK(del_table[i])] = -1;
+        trans_table[(int) Py_CHARMASK(del_table_chars[i])] = -1;
 
     for (i = inlen; --i >= 0; ) {
         c = Py_CHARMASK(*input++);
@@ -1608,10 +1889,60 @@ bytes_translate(PyBytesObject *self, PyObject *args)
 }
 
 
+/*[clinic input]
+
+@staticmethod
+bytes.maketrans
+
+    frm: object
+    to: object
+    /
+
+Return a translation table useable for the bytes or bytearray translate method.
+
+The returned table will be one where each byte in frm is mapped to the byte at
+the same position in to.
+
+The bytes objects frm and to must be of the same length.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_maketrans__doc__,
+"maketrans(frm, to)\n"
+"Return a translation table useable for the bytes or bytearray translate method.\n"
+"\n"
+"The returned table will be one where each byte in frm is mapped to the byte at\n"
+"the same position in to.\n"
+"\n"
+"The bytes objects frm and to must be of the same length.");
+
+#define BYTES_MAKETRANS_METHODDEF    \
+    {"maketrans", (PyCFunction)bytes_maketrans, METH_VARARGS|METH_STATIC, bytes_maketrans__doc__},
+
 static PyObject *
-bytes_maketrans(PyObject *null, PyObject *args)
+bytes_maketrans_impl(void *null, PyObject *frm, PyObject *to);
+
+static PyObject *
+bytes_maketrans(void *null, PyObject *args)
 {
-    return _Py_bytes_maketrans(args);
+    PyObject *return_value = NULL;
+    PyObject *frm;
+    PyObject *to;
+
+    if (!PyArg_UnpackTuple(args, "maketrans",
+        2, 2,
+        &frm, &to))
+        goto exit;
+    return_value = bytes_maketrans_impl(null, frm, to);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_maketrans_impl(void *null, PyObject *frm, PyObject *to)
+/*[clinic end generated code: checksum=79a066bfdc71b55bd4bc8bce540e34a57ac53a8d]*/
+{
+    return _Py_bytes_maketrans(frm, to);
 }
 
 /* find and count characters and substrings */
@@ -2106,41 +2437,82 @@ replace(PyBytesObject *self,
     }
 }
 
-PyDoc_STRVAR(replace__doc__,
-"B.replace(old, new[, count]) -> bytes\n\
-\n\
-Return a copy of B with all occurrences of subsection\n\
-old replaced by new.  If the optional argument count is\n\
-given, only first count occurances are replaced.");
+
+/*[clinic input]
+bytes.replace
+
+    old: object
+    new: object
+    count: Py_ssize_t = -1
+        Maximum number of occurrences to replace.
+        -1 (the default value) means replace all occurrences.
+    /
+
+Return a copy with all occurrences of substring old replaced by new.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_replace__doc__,
+"replace(old, new, count=-1)\n"
+"Return a copy with all occurrences of substring old replaced by new.\n"
+"\n"
+"  count\n"
+"    Maximum number of occurrences to replace.\n"
+"    -1 (the default value) means replace all occurrences.\n"
+"\n"
+"If the optional argument count is given, only the first count occurrences are\n"
+"replaced.");
+
+#define BYTES_REPLACE_METHODDEF    \
+    {"replace", (PyCFunction)bytes_replace, METH_VARARGS, bytes_replace__doc__},
 
 static PyObject *
-bytes_replace(PyBytesObject *self, PyObject *args)
+bytes_replace_impl(PyObject *self, PyObject *old, PyObject *new, Py_ssize_t count);
+
+static PyObject *
+bytes_replace(PyObject *self, PyObject *args)
 {
+    PyObject *return_value = NULL;
+    PyObject *old;
+    PyObject *new;
     Py_ssize_t count = -1;
-    PyObject *from, *to;
-    const char *from_s, *to_s;
-    Py_ssize_t from_len, to_len;
 
-    if (!PyArg_ParseTuple(args, "OO|n:replace", &from, &to, &count))
+    if (!PyArg_ParseTuple(args,
+        "OO|n:replace",
+        &old, &new, &count))
+        goto exit;
+    return_value = bytes_replace_impl(self, old, new, count);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_replace_impl(PyObject *self, PyObject *old, PyObject *new, Py_ssize_t count)
+/*[clinic end generated code: checksum=a4dfe745baf7f8a8e6d98d3ed6cb838c588c4caa]*/
+{
+    const char *old_s, *new_s;
+    Py_ssize_t old_len, new_len;
+
+    if (PyBytes_Check(old)) {
+        old_s = PyBytes_AS_STRING(old);
+        old_len = PyBytes_GET_SIZE(old);
+    }
+    else if (PyObject_AsCharBuffer(old, &old_s, &old_len))
         return NULL;
 
-    if (PyBytes_Check(from)) {
-        from_s = PyBytes_AS_STRING(from);
-        from_len = PyBytes_GET_SIZE(from);
+    if (PyBytes_Check(new)) {
+        new_s = PyBytes_AS_STRING(new);
+        new_len = PyBytes_GET_SIZE(new);
     }
-    else if (PyObject_AsCharBuffer(from, &from_s, &from_len))
-        return NULL;
-
-    if (PyBytes_Check(to)) {
-        to_s = PyBytes_AS_STRING(to);
-        to_len = PyBytes_GET_SIZE(to);
-    }
-    else if (PyObject_AsCharBuffer(to, &to_s, &to_len))
+    else if (PyObject_AsCharBuffer(new, &new_s, &new_len))
         return NULL;
 
     return (PyObject *)replace((PyBytesObject *) self,
-                               from_s, from_len,
-                               to_s, to_len, count);
+                               old_s, old_len,
+                               new_s, new_len, count);
 }
 
 /** End DALKE **/
@@ -2274,59 +2646,116 @@ bytes_endswith(PyBytesObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(decode__doc__,
-"B.decode(encoding='utf-8', errors='strict') -> str\n\
-\n\
-Decode B using the codec registered for encoding. Default encoding\n\
-is 'utf-8'. errors may be given to set a different error\n\
-handling scheme.  Default is 'strict' meaning that encoding errors raise\n\
-a UnicodeDecodeError.  Other possible values are 'ignore' and 'replace'\n\
-as well as any other name registerd with codecs.register_error that is\n\
-able to handle UnicodeDecodeErrors.");
+/*[clinic input]
+bytes.decode
+
+    encoding: str(c_default="NULL") = 'utf-8'
+        The encoding with which to decode the bytes.
+    errors: str(c_default="NULL") = 'strict'
+        The error handling scheme to use for the handling of decoding errors.
+        The default is 'strict' meaning that decoding errors raise a
+        UnicodeDecodeError. Other possible values are 'ignore' and 'replace'
+        as well as any other name registered with codecs.register_error that
+        can handle UnicodeDecodeErrors.
+
+Decode the bytes using the codec registered for encoding.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_decode__doc__,
+"decode(encoding=\'utf-8\', errors=\'strict\')\n"
+"Decode the bytes using the codec registered for encoding.\n"
+"\n"
+"  encoding\n"
+"    The encoding with which to decode the bytes.\n"
+"  errors\n"
+"    The error handling scheme to use for the handling of decoding errors.\n"
+"    The default is \'strict\' meaning that decoding errors raise a\n"
+"    UnicodeDecodeError. Other possible values are \'ignore\' and \'replace\'\n"
+"    as well as any other name registered with codecs.register_error that\n"
+"    can handle UnicodeDecodeErrors.");
+
+#define BYTES_DECODE_METHODDEF    \
+    {"decode", (PyCFunction)bytes_decode, METH_VARARGS|METH_KEYWORDS, bytes_decode__doc__},
+
+static PyObject *
+bytes_decode_impl(PyObject *self, const char *encoding, const char *errors);
 
 static PyObject *
 bytes_decode(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"encoding", "errors", NULL};
     const char *encoding = NULL;
     const char *errors = NULL;
-    static char *kwlist[] = {"encoding", "errors", 0};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode", kwlist, &encoding, &errors))
-        return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "|ss:decode", _keywords,
+        &encoding, &errors))
+        goto exit;
+    return_value = bytes_decode_impl(self, encoding, errors);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_decode_impl(PyObject *self, const char *encoding, const char *errors)
+/*[clinic end generated code: checksum=b6efcc4420539a09d08df3aa733696a7119a22c7]*/
+{
     return PyUnicode_FromEncodedObject(self, encoding, errors);
 }
 
 
-PyDoc_STRVAR(splitlines__doc__,
-"B.splitlines([keepends]) -> list of lines\n\
-\n\
-Return a list of the lines in B, breaking at line boundaries.\n\
-Line breaks are not included in the resulting list unless keepends\n\
-is given and true.");
+/*[clinic input]
+bytes.splitlines
 
-static PyObject*
-bytes_splitlines(PyObject *self, PyObject *args, PyObject *kwds)
+    keepends: int(py_default="False") = 0
+
+Return a list of the lines in the bytes, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_splitlines__doc__,
+"splitlines(keepends=False)\n"
+"Return a list of the lines in the bytes, breaking at line boundaries.\n"
+"\n"
+"Line breaks are not included in the resulting list unless keepends is given and\n"
+"true.");
+
+#define BYTES_SPLITLINES_METHODDEF    \
+    {"splitlines", (PyCFunction)bytes_splitlines, METH_VARARGS|METH_KEYWORDS, bytes_splitlines__doc__},
+
+static PyObject *
+bytes_splitlines_impl(PyObject *self, int keepends);
+
+static PyObject *
+bytes_splitlines(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"keepends", 0};
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"keepends", NULL};
     int keepends = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:splitlines",
-                                     kwlist, &keepends))
-        return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "|i:splitlines", _keywords,
+        &keepends))
+        goto exit;
+    return_value = bytes_splitlines_impl(self, keepends);
 
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_splitlines_impl(PyObject *self, int keepends)
+/*[clinic end generated code: checksum=462dd01b87dcda72c538d8d89a310fcdab58cc8c]*/
+{
     return stringlib_splitlines(
         (PyObject*) self, PyBytes_AS_STRING(self),
         PyBytes_GET_SIZE(self), keepends
         );
 }
-
-
-PyDoc_STRVAR(fromhex_doc,
-"bytes.fromhex(string) -> bytes\n\
-\n\
-Create a bytes object from a string of hexadecimal numbers.\n\
-Spaces between two numbers are accepted.\n\
-Example: bytes.fromhex('B9 01EF') -> b'\\xb9\\x01\\xef'.");
 
 static int
 hex_digit_to_int(Py_UCS4 c)
@@ -2344,24 +2773,65 @@ hex_digit_to_int(Py_UCS4 c)
     return -1;
 }
 
+/*[clinic input]
+@classmethod
+bytes.fromhex
+
+    string: unicode
+    /
+
+Create a bytes object from a string of hexadecimal numbers.
+
+Spaces between two numbers are accepted.
+Example: bytes.fromhex('B9 01EF') -> b'\\xb9\\x01\\xef'.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_fromhex__doc__,
+"fromhex(string)\n"
+"Create a bytes object from a string of hexadecimal numbers.\n"
+"\n"
+"Spaces between two numbers are accepted.\n"
+"Example: bytes.fromhex(\'B9 01EF\') -> b\'\\xb9\\x01\\xef\'.");
+
+#define BYTES_FROMHEX_METHODDEF    \
+    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS, bytes_fromhex__doc__},
+
 static PyObject *
-bytes_fromhex(PyObject *cls, PyObject *args)
+bytes_fromhex_impl(PyTypeObject *cls, PyObject *string);
+
+static PyObject *
+bytes_fromhex(PyTypeObject *cls, PyObject *args)
 {
-    PyObject *newstring, *hexobj;
+    PyObject *return_value = NULL;
+    PyObject *string;
+
+    if (!PyArg_ParseTuple(args,
+        "U:fromhex",
+        &string))
+        goto exit;
+    return_value = bytes_fromhex_impl(cls, string);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytes_fromhex_impl(PyTypeObject *cls, PyObject *string)
+/*[clinic end generated code: checksum=0b6825075af40e95429328af699b6aae26ecaf94]*/
+{
+    PyObject *newstring;
     char *buf;
     Py_ssize_t hexlen, byteslen, i, j;
     int top, bot;
     void *data;
     unsigned int kind;
 
-    if (!PyArg_ParseTuple(args, "U:fromhex", &hexobj))
+    assert(PyUnicode_Check(string));
+    if (PyUnicode_READY(string))
         return NULL;
-    assert(PyUnicode_Check(hexobj));
-    if (PyUnicode_READY(hexobj))
-        return NULL;
-    kind = PyUnicode_KIND(hexobj);
-    data = PyUnicode_DATA(hexobj);
-    hexlen = PyUnicode_GET_LENGTH(hexobj);
+    kind = PyUnicode_KIND(string);
+    data = PyUnicode_DATA(string);
+    hexlen = PyUnicode_GET_LENGTH(string);
 
     byteslen = hexlen/2; /* This overestimates if there are spaces */
     newstring = PyBytes_FromStringAndSize(NULL, byteslen);
@@ -2393,14 +2863,36 @@ bytes_fromhex(PyObject *cls, PyObject *args)
     return NULL;
 }
 
-PyDoc_STRVAR(sizeof__doc__,
-"B.__sizeof__() -> size of B in memory, in bytes");
+/*[clinic input]
+bytes.__sizeof__ as bytes_sizeof
+
+    self: self(type="PyBytesObject *")
+
+Returns the size of the bytes object in memory, in bytes.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bytes_sizeof__doc__,
+"__sizeof__()\n"
+"Returns the size of the bytes object in memory, in bytes.");
+
+#define BYTES_SIZEOF_METHODDEF    \
+    {"__sizeof__", (PyCFunction)bytes_sizeof, METH_NOARGS, bytes_sizeof__doc__},
 
 static PyObject *
-bytes_sizeof(PyBytesObject *v)
+bytes_sizeof_impl(PyBytesObject *self);
+
+static PyObject *
+bytes_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return bytes_sizeof_impl((PyBytesObject *)self);
+}
+
+static PyObject *
+bytes_sizeof_impl(PyBytesObject *self)
+/*[clinic end generated code: checksum=354ce9f0aa31e0fc76fa4d8ca5df234c8b78f49a]*/
 {
     Py_ssize_t res;
-    res = PyBytesObject_SIZE + Py_SIZE(v) * Py_TYPE(v)->tp_itemsize;
+    res = PyBytesObject_SIZE + Py_SIZE(self) * Py_TYPE(self)->tp_itemsize;
     return PyLong_FromSsize_t(res);
 }
 
@@ -2419,14 +2911,13 @@ bytes_methods[] = {
      _Py_capitalize__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
     {"count", (PyCFunction)bytes_count, METH_VARARGS, count__doc__},
-    {"decode", (PyCFunction)bytes_decode, METH_VARARGS | METH_KEYWORDS, decode__doc__},
+    BYTES_DECODE_METHODDEF
     {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS,
      endswith__doc__},
     {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS | METH_KEYWORDS,
      expandtabs__doc__},
     {"find", (PyCFunction)bytes_find, METH_VARARGS, find__doc__},
-    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,
-     fromhex_doc},
+    BYTES_FROMHEX_METHODDEF
     {"index", (PyCFunction)bytes_index, METH_VARARGS, index__doc__},
     {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
      _Py_isalnum__doc__},
@@ -2442,36 +2933,31 @@ bytes_methods[] = {
      _Py_istitle__doc__},
     {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
-    {"join", (PyCFunction)bytes_join, METH_O, join__doc__},
+    BYTES_JOIN_METHODDEF
     {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
-    {"lstrip", (PyCFunction)bytes_lstrip, METH_VARARGS, lstrip__doc__},
-    {"maketrans", (PyCFunction)bytes_maketrans, METH_VARARGS|METH_STATIC,
-     _Py_maketrans__doc__},
-    {"partition", (PyCFunction)bytes_partition, METH_O, partition__doc__},
-    {"replace", (PyCFunction)bytes_replace, METH_VARARGS, replace__doc__},
+    BYTES_LSTRIP_METHODDEF
+    BYTES_MAKETRANS_METHODDEF
+    BYTES_PARTITION_METHODDEF
+    BYTES_REPLACE_METHODDEF
     {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, rfind__doc__},
     {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, rindex__doc__},
     {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
-    {"rpartition", (PyCFunction)bytes_rpartition, METH_O,
-     rpartition__doc__},
-    {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS | METH_KEYWORDS, rsplit__doc__},
-    {"rstrip", (PyCFunction)bytes_rstrip, METH_VARARGS, rstrip__doc__},
-    {"split", (PyCFunction)bytes_split, METH_VARARGS | METH_KEYWORDS, split__doc__},
-    {"splitlines", (PyCFunction)bytes_splitlines, METH_VARARGS | METH_KEYWORDS,
-     splitlines__doc__},
+    BYTES_RPARTITION_METHODDEF
+    BYTES_RSPLIT_METHODDEF
+    BYTES_RSTRIP_METHODDEF
+    BYTES_SPLIT_METHODDEF
+    BYTES_SPLITLINES_METHODDEF
     {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS,
      startswith__doc__},
-    {"strip", (PyCFunction)bytes_strip, METH_VARARGS, strip__doc__},
+    BYTES_STRIP_METHODDEF
     {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},
     {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
-    {"translate", (PyCFunction)bytes_translate, METH_VARARGS,
-     translate__doc__},
+    BYTES_TRANSLATE_METHODDEF
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
-    {"__sizeof__", (PyCFunction)bytes_sizeof, METH_NOARGS,
-     sizeof__doc__},
+    BYTES_SIZEOF_METHODDEF
     {NULL,     NULL}                         /* sentinel */
 };
 

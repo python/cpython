@@ -21,8 +21,8 @@ extern void _Py_bytes_title(char *result, char *s, Py_ssize_t len);
 extern void _Py_bytes_capitalize(char *result, char *s, Py_ssize_t len);
 extern void _Py_bytes_swapcase(char *result, char *s, Py_ssize_t len);
 
-/* This one gets the raw argument list. */
-extern PyObject* _Py_bytes_maketrans(PyObject *args);
+/* The maketrans() static method. */
+extern PyObject* _Py_bytes_maketrans(PyObject *frm, PyObject *to);
 
 /* Shared __doc__ strings. */
 extern const char _Py_isspace__doc__[];

@@ -382,9 +382,9 @@ _getbuffer(PyObject *obj, Py_buffer *view)
 }
 
 PyObject *
-_Py_bytes_maketrans(PyObject *args)
+_Py_bytes_maketrans(PyObject *frm, PyObject *to)
 {
-    PyObject *frm, *to, *res = NULL;
+    PyObject *res = NULL;
     Py_buffer bfrm, bto;
     Py_ssize_t i;
     char *p;
@@ -392,8 +392,6 @@ _Py_bytes_maketrans(PyObject *args)
     bfrm.len = -1;
     bto.len = -1;
 
-    if (!PyArg_ParseTuple(args, "OO:maketrans", &frm, &to))
-        return NULL;
     if (_getbuffer(frm, &bfrm) < 0)
         return NULL;
     if (_getbuffer(to, &bto) < 0)
