@@ -19,6 +19,11 @@
 #include "Python.h"
 #include "hashlib.h"
 
+/*[clinic input]
+module _md5
+class MD5Type "MD5object *" "&PyType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
 
 /* Some useful types */
 
@@ -332,10 +337,33 @@ MD5_dealloc(PyObject *ptr)
 
 /* External methods for a hash object */
 
-PyDoc_STRVAR(MD5_copy__doc__, "Return a copy of the hash object.");
+/*[clinic input]
+MD5Type.copy
+
+Return a copy of the hash object.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(MD5Type_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"Return a copy of the hash object.");
+
+#define MD5TYPE_COPY_METHODDEF    \
+    {"copy", (PyCFunction)MD5Type_copy, METH_NOARGS, MD5Type_copy__doc__},
 
 static PyObject *
-MD5_copy(MD5object *self, PyObject *unused)
+MD5Type_copy_impl(MD5object *self);
+
+static PyObject *
+MD5Type_copy(MD5object *self, PyObject *Py_UNUSED(ignored))
+{
+    return MD5Type_copy_impl(self);
+}
+
+static PyObject *
+MD5Type_copy_impl(MD5object *self)
+/*[clinic end generated code: output=3b3a88920b3dc7f4 input=2c09e6d2493f3079]*/
 {
     MD5object *newobj;
 
@@ -351,11 +379,33 @@ MD5_copy(MD5object *self, PyObject *unused)
     return (PyObject *)newobj;
 }
 
-PyDoc_STRVAR(MD5_digest__doc__,
+/*[clinic input]
+MD5Type.digest
+
+Return the digest value as a string of binary data.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(MD5Type_digest__doc__,
+"digest($self, /)\n"
+"--\n"
+"\n"
 "Return the digest value as a string of binary data.");
 
+#define MD5TYPE_DIGEST_METHODDEF    \
+    {"digest", (PyCFunction)MD5Type_digest, METH_NOARGS, MD5Type_digest__doc__},
+
 static PyObject *
-MD5_digest(MD5object *self, PyObject *unused)
+MD5Type_digest_impl(MD5object *self);
+
+static PyObject *
+MD5Type_digest(MD5object *self, PyObject *Py_UNUSED(ignored))
+{
+    return MD5Type_digest_impl(self);
+}
+
+static PyObject *
+MD5Type_digest_impl(MD5object *self)
+/*[clinic end generated code: output=7a796b28fa89485f input=7b96e65389412a34]*/
 {
     unsigned char digest[MD5_DIGESTSIZE];
     struct md5_state temp;
@@ -365,11 +415,33 @@ MD5_digest(MD5object *self, PyObject *unused)
     return PyBytes_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
 }
 
-PyDoc_STRVAR(MD5_hexdigest__doc__,
+/*[clinic input]
+MD5Type.hexdigest
+
+Return the digest value as a string of hexadecimal digits.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(MD5Type_hexdigest__doc__,
+"hexdigest($self, /)\n"
+"--\n"
+"\n"
 "Return the digest value as a string of hexadecimal digits.");
 
+#define MD5TYPE_HEXDIGEST_METHODDEF    \
+    {"hexdigest", (PyCFunction)MD5Type_hexdigest, METH_NOARGS, MD5Type_hexdigest__doc__},
+
 static PyObject *
-MD5_hexdigest(MD5object *self, PyObject *unused)
+MD5Type_hexdigest_impl(MD5object *self);
+
+static PyObject *
+MD5Type_hexdigest(MD5object *self, PyObject *Py_UNUSED(ignored))
+{
+    return MD5Type_hexdigest_impl(self);
+}
+
+static PyObject *
+MD5Type_hexdigest_impl(MD5object *self)
+/*[clinic end generated code: output=daa73609f94f92e1 input=b60b19de644798dd]*/
 {
     unsigned char digest[MD5_DIGESTSIZE];
     struct md5_state temp;
@@ -401,17 +473,29 @@ MD5_hexdigest(MD5object *self, PyObject *unused)
     return retval;
 }
 
-PyDoc_STRVAR(MD5_update__doc__,
-"Update this hash object's state with the provided string.");
+/*[clinic input]
+MD5Type.update
+
+    obj: object
+    /
+
+Update this hash object's state with the provided string.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(MD5Type_update__doc__,
+"update($self, obj, /)\n"
+"--\n"
+"\n"
+"Update this hash object\'s state with the provided string.");
+
+#define MD5TYPE_UPDATE_METHODDEF    \
+    {"update", (PyCFunction)MD5Type_update, METH_O, MD5Type_update__doc__},
 
 static PyObject *
-MD5_update(MD5object *self, PyObject *args)
+MD5Type_update(MD5object *self, PyObject *obj)
+/*[clinic end generated code: output=9d09b6c6cdc6cac3 input=6e1efcd9ecf17032]*/
 {
-    PyObject *obj;
     Py_buffer buf;
-
-    if (!PyArg_ParseTuple(args, "O:update", &obj))
-        return NULL;
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
@@ -423,10 +507,10 @@ MD5_update(MD5object *self, PyObject *args)
 }
 
 static PyMethodDef MD5_methods[] = {
-    {"copy",      (PyCFunction)MD5_copy,      METH_NOARGS,  MD5_copy__doc__},
-    {"digest",    (PyCFunction)MD5_digest,    METH_NOARGS,  MD5_digest__doc__},
-    {"hexdigest", (PyCFunction)MD5_hexdigest, METH_NOARGS,  MD5_hexdigest__doc__},
-    {"update",    (PyCFunction)MD5_update,    METH_VARARGS, MD5_update__doc__},
+    MD5TYPE_COPY_METHODDEF
+    MD5TYPE_DIGEST_METHODDEF
+    MD5TYPE_HEXDIGEST_METHODDEF
+    MD5TYPE_UPDATE_METHODDEF
     {NULL,        NULL}         /* sentinel */
 };
 
@@ -502,27 +586,55 @@ static PyTypeObject MD5type = {
 
 /* The single module-level function: new() */
 
-PyDoc_STRVAR(MD5_new__doc__,
+/*[clinic input]
+_md5.md5
+
+    string: object(c_default="NULL") = b''
+
+Return a new MD5 hash object; optionally initialized with a string.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(_md5_md5__doc__,
+"md5($module, /, string=b\'\')\n"
+"--\n"
+"\n"
 "Return a new MD5 hash object; optionally initialized with a string.");
 
+#define _MD5_MD5_METHODDEF    \
+    {"md5", (PyCFunction)_md5_md5, METH_VARARGS|METH_KEYWORDS, _md5_md5__doc__},
+
 static PyObject *
-MD5_new(PyObject *self, PyObject *args, PyObject *kwdict)
+_md5_md5_impl(PyModuleDef *module, PyObject *string);
+
+static PyObject *
+_md5_md5(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"string", NULL};
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"string", NULL};
+    PyObject *string = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "|O:md5", _keywords,
+        &string))
+        goto exit;
+    return_value = _md5_md5_impl(module, string);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+_md5_md5_impl(PyModuleDef *module, PyObject *string)
+/*[clinic end generated code: output=1039e912d919880e input=d12ef8f72d684f7b]*/
+{
     MD5object *new;
-    PyObject *data_obj = NULL;
     Py_buffer buf;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|O:new", kwlist,
-                                     &data_obj)) {
-        return NULL;
-    }
-
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &buf);
+    if (string)
+        GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
 
     if ((new = newMD5object()) == NULL) {
-        if (data_obj)
+        if (string)
             PyBuffer_Release(&buf);
         return NULL;
     }
@@ -531,11 +643,11 @@ MD5_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
-        if (data_obj)
+        if (string)
             PyBuffer_Release(&buf);
         return NULL;
     }
-    if (data_obj) {
+    if (string) {
         md5_process(&new->hash_state, buf.buf, buf.len);
         PyBuffer_Release(&buf);
     }
@@ -547,7 +659,7 @@ MD5_new(PyObject *self, PyObject *args, PyObject *kwdict)
 /* List of functions exported by this module */
 
 static struct PyMethodDef MD5_functions[] = {
-    {"md5", (PyCFunction)MD5_new, METH_VARARGS|METH_KEYWORDS, MD5_new__doc__},
+    _MD5_MD5_METHODDEF
     {NULL,      NULL}            /* Sentinel */
 };
 

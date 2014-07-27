@@ -110,6 +110,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20173: Convert sha1, sha256, sha512 and md5 to ArgumentClinic.
+  Patch by Vajrasky Kok.
+
 - Fix repr(_socket.socket) on Windows 64-bit: don't fail with OverflowError
   on closed socket. repr(socket.socket) already works fine.
 
