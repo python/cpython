@@ -3263,7 +3263,7 @@ bytearray_decode_impl(PyByteArrayObject *self, const char *encoding, const char 
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
-    return PyUnicode_FromEncodedObject(self, encoding, errors);
+    return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
 }
 
 PyDoc_STRVAR(alloc_doc,
@@ -3307,7 +3307,7 @@ static PyObject *
 bytearray_join(PyByteArrayObject *self, PyObject *iterable_of_bytes)
 /*[clinic end generated code: output=544e7430032dfdf4 input=aba6b1f9b30fcb8e]*/
 {
-    return stringlib_bytes_join(self, iterable_of_bytes);
+    return stringlib_bytes_join((PyObject*)self, iterable_of_bytes);
 }
 
 /*[clinic input]
