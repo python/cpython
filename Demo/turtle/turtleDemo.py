@@ -144,25 +144,12 @@ class DemoWindow(object):
     def configGUI(self, menu, start, stop, clear, txt="", color="blue"):
         self.ExamplesBtn.config(state=menu)
 
-        self.start_btn.config(state=start)
-        if start==NORMAL:
-            self.start_btn.config(bg="#d00")
-        else:
-            self.start_btn.config(bg="#fca")
-
-        self.stop_btn.config(state=stop)
-        if stop==NORMAL:
-            self.stop_btn.config(bg="#d00")
-        else:
-            self.stop_btn.config(bg="#fca")
-        self.clear_btn.config(state=clear)
-
-        self.clear_btn.config(state=clear)
-        if clear==NORMAL:
-            self.clear_btn.config(bg="#d00")
-        else:
-            self.clear_btn.config(bg="#fca")
-
+        self.start_btn.config(state=start,
+                              bg="#d00" if start == NORMAL else "#fca")
+        self.stop_btn.config(state=stop,
+                             bg="#d00" if stop == NORMAL else "#fca")
+        self.clear_btn.config(state=clear,
+                              bg="#d00" if clear == NORMAL else"#fca")
         self.output_lbl.config(text=txt, fg=color)
 
     def makeLoadDemoMenu(self):
