@@ -248,7 +248,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
             len = PyUnicode_GetLength(src);
             if (len > 1) {
                 PyErr_Format(PyExc_TypeError,
-                    "\"%s\" must be an 1-character string",
+                    "\"%s\" must be a 1-character string",
                     name);
                 return -1;
             }
@@ -432,7 +432,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto err;
     if (self->delimiter == 0) {
         PyErr_SetString(PyExc_TypeError,
-                        "\"delimiter\" must be an 1-character string");
+                        "\"delimiter\" must be a 1-character string");
         goto err;
     }
     if (quotechar == Py_None && quoting == NULL)
