@@ -762,8 +762,10 @@ class TestNamedTemporaryFile(BaseTestCase):
     def test_no_leak_fd(self):
         # Issue #21058: don't leak file descriptor when io.open() fails
         closed = []
+        os_close = os.close
         def close(fd):
             closed.append(fd)
+            os_close(fd)
 
         with mock.patch('os.close', side_effect=close):
             with mock.patch('io.open', side_effect=ValueError):
@@ -1076,8 +1078,10 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
         def test_no_leak_fd(self):
             # Issue #21058: don't leak file descriptor when io.open() fails
             closed = []
+            os_close = os.close
             def close(fd):
                 closed.append(fd)
+                os_close(fd)
 
             with mock.patch('os.close', side_effect=close):
                 with mock.patch('io.open', side_effect=ValueError):
