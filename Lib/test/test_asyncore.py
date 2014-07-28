@@ -440,6 +440,8 @@ class FileWrapperTest(unittest.TestCase):
         # Issue #11453
         fd = os.open(support.TESTFN, os.O_RDONLY)
         f = asyncore.file_wrapper(fd)
+
+        os.close(fd)
         with support.check_warnings(('', ResourceWarning)):
             f = None
             support.gc_collect()
@@ -447,6 +449,8 @@ class FileWrapperTest(unittest.TestCase):
     def test_close_twice(self):
         fd = os.open(support.TESTFN, os.O_RDONLY)
         f = asyncore.file_wrapper(fd)
+        os.close(fd)
+
         f.close()
         self.assertEqual(f.fd, -1)
         # calling close twice should not fail
