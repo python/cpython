@@ -700,7 +700,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
     def test_buffer_is_readonly(self):
-        fd = os.dup(sys.stdin.fileno())
+        fd = os.open(__file__, os.O_RDONLY)
         with open(fd, "rb", buffering=0) as f:
             self.assertRaises(TypeError, f.readinto, b"")
 
