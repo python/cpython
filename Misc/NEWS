@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21704: Fix build error for _multiprocessing when semaphores
+  are not available.  Patch by Arfrever Frehtes Taifersar Arahesis.
+
 - Fix repr(_socket.socket) on Windows 64-bit: don't fail with OverflowError
   on closed socket. repr(socket.socket) already works fine.
 

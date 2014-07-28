@@ -128,7 +128,9 @@ static PyMethodDef module_methods[] = {
     {"recv", multiprocessing_recv, METH_VARARGS, ""},
     {"send", multiprocessing_send, METH_VARARGS, ""},
 #endif
+#ifndef POSIX_SEMAPHORES_NOT_ENABLED
     {"sem_unlink", _PyMp_sem_unlink, METH_VARARGS, ""},
+#endif
     {NULL}
 };
 
