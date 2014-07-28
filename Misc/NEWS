@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21704: Fix build error for _multiprocessing when semaphores
+  are not available.  Patch by Arfrever Frehtes Taifersar Arahesis.
+
 - Issue #20173: Convert sha1, sha256, sha512 and md5 to ArgumentClinic.
   Patch by Vajrasky Kok.
 
