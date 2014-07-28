@@ -56,17 +56,6 @@ if not os.path.supports_unicode_filenames:
                                 "Unicode-friendly filesystem encoding")
 
 
-# Destroy directory dirname and all files under it, to one level.
-def deltree(dirname):
-    # Don't hide legitimate errors:  if one of these suckers exists, it's
-    # an error if we can't remove it.
-    if os.path.exists(dirname):
-        # must pass unicode to os.listdir() so we get back unicode results.
-        for fname in os.listdir(str(dirname)):
-            os.unlink(os.path.join(dirname, fname))
-        os.rmdir(dirname)
-
-
 class UnicodeFileTests(unittest.TestCase):
     files = set(filenames)
     normal_form = None
@@ -76,6 +65,8 @@ class UnicodeFileTests(unittest.TestCase):
             os.mkdir(support.TESTFN)
         except FileExistsError:
             pass
+        self.addCleanup(support.rmtree, support.TESTFN)
+
         files = set()
         for name in self.files:
             name = os.path.join(support.TESTFN, self.norm(name))
@@ -84,9 +75,6 @@ class UnicodeFileTests(unittest.TestCase):
             os.stat(name)
             files.add(name)
         self.files = files
-
-    def tearDown(self):
-        deltree(support.TESTFN)
 
     def norm(self, s):
         if self.normal_form:
@@ -200,16 +188,13 @@ class UnicodeNFKDFileTests(UnicodeFileTests):
 
 
 def test_main():
-    try:
-        support.run_unittest(
-            UnicodeFileTests,
-            UnicodeNFCFileTests,
-            UnicodeNFDFileTests,
-            UnicodeNFKCFileTests,
-            UnicodeNFKDFileTests,
-        )
-    finally:
-        deltree(support.TESTFN)
+    support.run_unittest(
+        UnicodeFileTests,
+        UnicodeNFCFileTests,
+        UnicodeNFDFileTests,
+        UnicodeNFKCFileTests,
+        UnicodeNFKDFileTests,
+    )
 
 
 if __name__ == "__main__":
