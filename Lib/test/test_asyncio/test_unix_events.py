@@ -306,7 +306,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        blocking_patcher = mock.patch('os.set_blocking')
+        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
         blocking_patcher.start()
         self.addCleanup(blocking_patcher.stop)
 
@@ -469,7 +469,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        blocking_patcher = mock.patch('os.set_blocking')
+        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
         blocking_patcher.start()
         self.addCleanup(blocking_patcher.stop)
 

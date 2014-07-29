@@ -256,6 +256,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         self._sock_recv(fut, False, sock, n)
         return fut
@@ -292,6 +294,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         if data:
             self._sock_sendall(fut, False, sock, data)
@@ -333,6 +337,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         try:
             base_events._check_resolved_address(sock, address)
@@ -374,6 +380,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         self._sock_accept(fut, False, sock)
         return fut

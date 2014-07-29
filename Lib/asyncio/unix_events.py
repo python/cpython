@@ -258,6 +258,16 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return server
 
 
+if hasattr(os, 'set_blocking'):
+    def _set_nonblocking(fd):
+        os.set_blocking(fd, False)
+else:
+    def _set_nonblocking(fd):
+        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+        flags = flags | os.O_NONBLOCK
+        fcntl.fcntl(fd, fcntl.F_SETFL, flags)
+
+
 class _UnixReadPipeTransport(transports.ReadTransport):
 
     max_size = 256 * 1024  # max bytes we read in one event loop iteration
@@ -273,7 +283,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 stat.S_ISSOCK(mode) or
                 stat.S_ISCHR(mode)):
             raise ValueError("Pipe transport is for pipes/sockets only.")
-        os.set_blocking(self._fileno, False)
+        _set_nonblocking(self._fileno)
         self._protocol = protocol
         self._closing = False
         self._loop.add_reader(self._fileno, self._read_ready)
@@ -366,7 +376,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                 stat.S_ISCHR(mode)):
             raise ValueError("Pipe transport is only for "
                              "pipes, sockets and character devices")
-        os.set_blocking(self._fileno, False)
+        _set_nonblocking(self._fileno)
         self._protocol = protocol
         self._buffer = []
         self._conn_lost = 0
