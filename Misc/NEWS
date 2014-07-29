@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22018: On Windows, signal.set_wakeup_fd() now also supports sockets.
+  A side effect is that Python depends to the WinSock library.
+
 - Issue #22054: Add os.get_blocking() and os.set_blocking() functions to get
   and set the blocking mode of a file descriptor (False if the O_NONBLOCK flag
   is set, True otherwise). These functions are not available on Windows.
