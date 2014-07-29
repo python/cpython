@@ -1,7 +1,6 @@
 """Selector event loop for Unix with signal handling."""
 
 import errno
-import fcntl
 import os
 import signal
 import socket
@@ -259,12 +258,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return server
 
 
-def _set_nonblocking(fd):
-    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-    flags = flags | os.O_NONBLOCK
-    fcntl.fcntl(fd, fcntl.F_SETFL, flags)
-
-
 class _UnixReadPipeTransport(transports.ReadTransport):
 
     max_size = 256 * 1024  # max bytes we read in one event loop iteration
@@ -280,7 +273,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 stat.S_ISSOCK(mode) or
                 stat.S_ISCHR(mode)):
             raise ValueError("Pipe transport is for pipes/sockets only.")
-        _set_nonblocking(self._fileno)
+        os.set_blocking(self._fileno, False)
         self._protocol = protocol
         self._closing = False
         self._loop.add_reader(self._fileno, self._read_ready)
@@ -373,7 +366,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                 stat.S_ISCHR(mode)):
             raise ValueError("Pipe transport is only for "
                              "pipes, sockets and character devices")
-        _set_nonblocking(self._fileno)
+        os.set_blocking(self._fileno, False)
         self._protocol = protocol
         self._buffer = []
         self._conn_lost = 0

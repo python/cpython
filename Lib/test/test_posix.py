@@ -9,7 +9,6 @@ import errno
 import sys
 import time
 import os
-import fcntl
 import platform
 import pwd
 import shutil
@@ -355,7 +354,7 @@ class PosixTester(unittest.TestCase):
     def test_oscloexec(self):
         fd = os.open(support.TESTFN, os.O_RDONLY|os.O_CLOEXEC)
         self.addCleanup(os.close, fd)
-        self.assertTrue(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
+        self.assertFalse(os.get_inheritable(fd))
 
     @unittest.skipUnless(hasattr(posix, 'O_EXLOCK'),
                          'test needs posix.O_EXLOCK')
@@ -605,8 +604,8 @@ class PosixTester(unittest.TestCase):
         self.addCleanup(os.close, w)
         self.assertFalse(os.get_inheritable(r))
         self.assertFalse(os.get_inheritable(w))
-        self.assertTrue(fcntl.fcntl(r, fcntl.F_GETFL) & os.O_NONBLOCK)
-        self.assertTrue(fcntl.fcntl(w, fcntl.F_GETFL) & os.O_NONBLOCK)
+        self.assertFalse(os.get_blocking(r))
+        self.assertFalse(os.get_blocking(w))
         # try reading from an empty pipe: this should fail, not block
         self.assertRaises(OSError, os.read, r, 1)
         # try a write big enough to fill-up the pipe: this should either

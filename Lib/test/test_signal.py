@@ -276,7 +276,6 @@ class WakeupSignalTests(unittest.TestCase):
         # use a subprocess to have only one thread
         code = """if 1:
         import _testcapi
-        import fcntl
         import os
         import signal
         import struct
@@ -299,10 +298,7 @@ class WakeupSignalTests(unittest.TestCase):
 
         signal.signal(signal.SIGALRM, handler)
         read, write = os.pipe()
-        for fd in (read, write):
-            flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)
-            flags = flags | os.O_NONBLOCK
-            fcntl.fcntl(fd, fcntl.F_SETFL, flags)
+        os.set_blocking(write, False)
         signal.set_wakeup_fd(write)
 
         test()
@@ -322,7 +318,6 @@ class WakeupSignalTests(unittest.TestCase):
         code = """if 1:
         import _testcapi
         import errno
-        import fcntl
         import os
         import signal
         import sys
@@ -333,8 +328,7 @@ class WakeupSignalTests(unittest.TestCase):
 
         signal.signal(signal.SIGALRM, handler)
         r, w = os.pipe()
-        flags = fcntl.fcntl(r, fcntl.F_GETFL, 0)
-        fcntl.fcntl(r, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+        os.set_blocking(r, False)
 
         # Set wakeup_fd a read-only file descriptor to trigger the error
         signal.set_wakeup_fd(r)

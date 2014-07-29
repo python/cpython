@@ -1045,3 +1045,56 @@ _Py_dup(int fd)
     return fd;
 }
 
+#ifndef MS_WINDOWS
+/* Get the blocking mode of the file descriptor.
+   Return 0 if the O_NONBLOCK flag is set, 1 if the flag is cleared,
+   raise an exception and return -1 on error. */
+int
+_Py_get_blocking(int fd)
+{
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+
+    return !(flags & O_NONBLOCK);
+}
+
+/* Set the blocking mode of the specified file descriptor.
+
+   Set the O_NONBLOCK flag if blocking is False, clear the O_NONBLOCK flag
+   otherwise.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+int
+_Py_set_blocking(int fd, int blocking)
+{
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)
+    int arg = !blocking;
+    if (ioctl(fd, FIONBIO, &arg) < 0)
+        goto error;
+#else
+    int flags, res;
+
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0)
+        goto error;
+
+    if (blocking)
+        flags = flags & (~O_NONBLOCK);
+    else
+        flags = flags | O_NONBLOCK;
+
+    res = fcntl(fd, F_SETFL, flags);
+    if (res < 0)
+        goto error;
+#endif
+    return 0;
+
+error:
+    PyErr_SetFromErrno(PyExc_OSError);
+    return -1;
+}
+#endif
+

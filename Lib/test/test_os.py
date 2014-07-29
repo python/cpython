@@ -1376,6 +1376,16 @@ class TestInvalidFD(unittest.TestCase):
     def test_writev(self):
         self.check(os.writev, [b'abc'])
 
+    def test_inheritable(self):
+        self.check(os.get_inheritable)
+        self.check(os.set_inheritable, True)
+
+    @unittest.skipUnless(hasattr(os, 'get_blocking'),
+                         'needs os.get_blocking() and os.set_blocking()')
+    def test_blocking(self):
+        self.check(os.get_blocking)
+        self.check(os.set_blocking, True)
+
 
 class LinkTests(unittest.TestCase):
     def setUp(self):
@@ -2591,6 +2601,21 @@ class FDInheritanceTests(unittest.TestCase):
         self.assertEqual(os.get_inheritable(slave_fd), False)
 
 
+@unittest.skipUnless(hasattr(os, 'get_blocking'),
+                     'needs os.get_blocking() and os.set_blocking()')
+class BlockingTests(unittest.TestCase):
+    def test_blocking(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        self.assertEqual(os.get_blocking(fd), True)
+
+        os.set_blocking(fd, False)
+        self.assertEqual(os.get_blocking(fd), False)
+
+        os.set_blocking(fd, True)
+        self.assertEqual(os.get_blocking(fd), True)
+
+
 @support.reap_threads
 def test_main():
     support.run_unittest(
@@ -2626,6 +2651,7 @@ def test_main():
         CPUCountTests,
         FDInheritanceTests,
         Win32JunctionTests,
+        BlockingTests,
     )
 
 if __name__ == "__main__":
