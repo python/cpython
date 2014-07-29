@@ -11146,6 +11146,56 @@ posix_set_handle_inheritable(PyObject *self, PyObject *args)
 #endif   /* MS_WINDOWS */
 
 
+#ifndef MS_WINDOWS
+PyDoc_STRVAR(get_blocking__doc__,
+    "get_blocking(fd) -> bool\n" \
+    "\n" \
+    "Get the blocking mode of the file descriptor:\n" \
+    "False if the O_NONBLOCK flag is set, True if the flag is cleared.");
+
+static PyObject*
+posix_get_blocking(PyObject *self, PyObject *args)
+{
+    int fd;
+    int blocking;
+
+    if (!PyArg_ParseTuple(args, "i:get_blocking", &fd))
+        return NULL;
+
+    if (!_PyVerify_fd(fd))
+        return posix_error();
+
+    blocking = _Py_get_blocking(fd);
+    if (blocking < 0)
+        return NULL;
+    return PyBool_FromLong(blocking);
+}
+
+PyDoc_STRVAR(set_blocking__doc__,
+    "set_blocking(fd, blocking)\n" \
+    "\n" \
+    "Set the blocking mode of the specified file descriptor.\n" \
+    "Set the O_NONBLOCK flag if blocking is False,\n" \
+    "clear the O_NONBLOCK flag otherwise.");
+
+static PyObject*
+posix_set_blocking(PyObject *self, PyObject *args)
+{
+    int fd, blocking;
+
+    if (!PyArg_ParseTuple(args, "ii:set_blocking", &fd, &blocking))
+        return NULL;
+
+    if (!_PyVerify_fd(fd))
+        return posix_error();
+
+    if (_Py_set_blocking(fd, blocking) < 0)
+        return NULL;
+    Py_RETURN_NONE;
+}
+#endif   /* !MS_WINDOWS */
+
+
 /*[clinic input]
 dump buffer
 [clinic start generated code]*/
@@ -11605,6 +11655,10 @@ static PyMethodDef posix_methods[] = {
      METH_VARARGS, get_handle_inheritable__doc__},
     {"set_handle_inheritable", posix_set_handle_inheritable,
      METH_VARARGS, set_handle_inheritable__doc__},
+#endif
+#ifndef MS_WINDOWS
+    {"get_blocking", posix_get_blocking, METH_VARARGS, get_blocking__doc__},
+    {"set_blocking", posix_set_blocking, METH_VARARGS, set_blocking__doc__},
 #endif
     {NULL,              NULL}            /* Sentinel */
 };

@@ -807,6 +807,17 @@ as internal buffering of data.
    Availability: Unix.
 
 
+.. function:: get_blocking(fd)
+
+   Get the blocking mode of the file descriptor: ``False`` if the
+   :data:`O_NONBLOCK` flag is set, ``True`` if the flag is cleared.
+
+   See also :func:`set_blocking` and :meth:`socket.socket.setblocking`.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.5
+
 .. function:: isatty(fd)
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
@@ -1105,6 +1116,18 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
       :mod:`socket.socket.sendfile`.
 
    .. versionadded:: 3.3
+
+
+.. function:: set_blocking(fd, blocking)
+
+   Set the blocking mode of the specified file descriptor. Set the
+   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
+
+   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.5
 
 
 .. data:: SF_NODISKIO

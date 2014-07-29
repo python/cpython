@@ -113,6 +113,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22054: Add os.get_blocking() and os.set_blocking() functions to get
+  and set the blocking mode of a file descriptor (False if the O_NONBLOCK flag
+  is set, True otherwise). These functions are not available on Windows.
+
 - Issue #17172: Make turtledemo start as active on Mac even when run with
   subprocess.  Patch by Ned Daily and Lita Cho.
 
