@@ -90,6 +90,22 @@ class TestSpecifics(unittest.TestCase):
         with self.assertRaises(TypeError):
             exec("a = b + 1", g, l) in g, l
 
+    def test_nested_qualified_exec(self):
+        # Can use qualified exec in nested functions.
+        code = ["""
+def g():
+    def f():
+        if True:
+            exec "" in {}, {}
+        """, """
+def g():
+    def f():
+        if True:
+            exec("", {}, {})
+        """]
+        for c in code:
+            compile(c, "<code>", "exec")
+
     def test_exec_with_general_mapping_for_locals(self):
 
         class M:
