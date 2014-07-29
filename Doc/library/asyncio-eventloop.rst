@@ -337,6 +337,8 @@ Low-level socket operations
    representing the data received.  The maximum amount of data to be received
    at once is specified by *nbytes*.
 
+   The socket *sock* must be non-blocking.
+
    This method is a :ref:`coroutine <coroutine>`.
 
    .. seealso::
@@ -350,6 +352,8 @@ Low-level socket operations
    been sent or an error occurs.  ``None`` is returned on success.  On error,
    an exception is raised, and there is no way to determine how much data, if
    any, was successfully processed by the receiving end of the connection.
+
+   The socket *sock* must be non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
 
@@ -367,6 +371,8 @@ Low-level socket operations
    :py:data:`~socket.AF_INET` and :py:data:`~socket.AF_INET6` address families.
    Use :meth:`getaddrinfo` to resolve the hostname asynchronously.
 
+   The socket *sock* must be non-blocking.
+
    This method is a :ref:`coroutine <coroutine>`.
 
    .. seealso::
@@ -383,6 +389,8 @@ Low-level socket operations
    is a *new* socket object usable to send and receive data on the connection,
    and *address* is the address bound to the socket on the other end of the
    connection.
+
+   The socket *sock* must be non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
 
