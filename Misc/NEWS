@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17172: Make turtledemo start as active on Mac even when run with
+  subprocess.  Patch by Ned Daily and Lita Cho.
+
 - Issue #21704: Fix build error for _multiprocessing when semaphores
   are not available.  Patch by Arfrever Frehtes Taifersar Arahesis.
 
@@ -642,6 +645,10 @@ Extension Modules
 
 IDLE
 ----
+
+- Issue #17172: Add the ability to run turtledemo from Idle.
+  Currently, the entry is on the Help menu, but it may move to Run.
+  Patch by Ramchandra Apt and Lita Cho.
 
 - Issue #21765: Add support for non-ascii identifiers to HyperParser.
 
