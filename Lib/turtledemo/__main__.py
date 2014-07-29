@@ -112,6 +112,22 @@ class DemoWindow(object):
         root.title('Python turtle-graphics examples')
         root.wm_protocol("WM_DELETE_WINDOW", self._destroy)
 
+        if sys.platform == 'darwin':
+            import subprocess
+            # Make sure we are the currently activated OS X application
+            # so that our menu bar appears.
+            p = subprocess.Popen(
+                    [
+                        'osascript',
+                        '-e', 'tell application "System Events"',
+                        '-e', 'set frontmost of the first process whose '
+                              'unix id is {} to true'.format(os.getpid()),
+                        '-e', 'end tell',
+                    ],
+                    stderr=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                )
+
         root.grid_rowconfigure(1, weight=1)
         root.grid_columnconfigure(0, weight=1)
         root.grid_columnconfigure(1, minsize=90, weight=1)

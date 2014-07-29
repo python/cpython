@@ -222,6 +222,7 @@ class EditorWindow(object):
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
             text.bind("<<open-class-browser>>", self.open_class_browser)
             text.bind("<<open-path-browser>>", self.open_path_browser)
+            text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
         vbar['command'] = text.yview
@@ -704,6 +705,14 @@ class EditorWindow(object):
     def open_path_browser(self, event=None):
         from idlelib import PathBrowser
         PathBrowser.PathBrowser(self.flist)
+
+    def open_turtle_demo(self, event = None):
+        import subprocess
+
+        cmd = [sys.executable,
+               '-c',
+               'from turtledemo.__main__ import main; main()']
+        p = subprocess.Popen(cmd, shell=False)
 
     def gotoline(self, lineno):
         if lineno is not None and lineno > 0:
