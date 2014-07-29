@@ -92,30 +92,19 @@ class Task(futures.Future):
                 self._loop.call_exception_handler(context)
             futures.Future.__del__(self)
 
-    def __repr__(self):
-        info = []
+    def _repr_info(self):
+        info = super()._repr_info()
+
         if self._must_cancel:
-            info.append('cancelling')
-        else:
-            info.append(self._state.lower())
+            # replace status
+            info[0] = 'cancelling'
 
         coro = coroutines._format_coroutine(self._coro)
-        info.append('coro=<%s>' % coro)
-
-        if self._source_traceback:
-            frame = self._source_traceback[-1]
-            info.append('created at %s:%s' % (frame[0], frame[1]))
-
-        if self._state == futures._FINISHED:
-            info.append(self._format_result())
-
-        if self._callbacks:
-            info.append(self._format_callbacks())
+        info.insert(1, 'coro=<%s>' % coro)
 
         if self._fut_waiter is not None:
-            info.append('wait_for=%r' % self._fut_waiter)
-
-        return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
+            info.insert(2, 'wait_for=%r' % self._fut_waiter)
+        return info
 
     def get_stack(self, *, limit=None):
         """Return the list of stack frames for this task's coroutine.

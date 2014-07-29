@@ -660,10 +660,13 @@ class ConditionTests(test_utils.TestCase):
         lock = asyncio.Lock(loop=self.loop)
         cond = asyncio.Condition(lock, loop=self.loop)
 
-        self.assertIs(lock._loop, cond._loop)
+        self.assertIs(cond._lock, lock)
+        self.assertIs(cond._loop, lock._loop)
 
     def test_ambiguous_loops(self):
         loop = self.new_test_loop()
+        self.addCleanup(loop.close)
+
         lock = asyncio.Lock(loop=self.loop)
         with self.assertRaises(ValueError):
             asyncio.Condition(lock, loop=loop)

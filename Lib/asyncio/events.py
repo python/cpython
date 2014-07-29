@@ -10,11 +10,12 @@ __all__ = ['AbstractEventLoopPolicy',
 
 import functools
 import inspect
-import subprocess
-import traceback
-import threading
+import reprlib
 import socket
+import subprocess
 import sys
+import threading
+import traceback
 
 
 _PY34 = sys.version_info >= (3, 4)
@@ -36,8 +37,12 @@ def _get_function_source(func):
 
 
 def _format_args(args):
-    # function formatting ('hello',) as ('hello')
-    args_repr = repr(args)
+    """Format function arguments.
+
+    Special case for a single parameter: ('hello',) is formatted as ('hello').
+    """
+    # use reprlib to limit the length of the output
+    args_repr = reprlib.repr(args)
     if len(args) == 1 and args_repr.endswith(',)'):
         args_repr = args_repr[:-2] + ')'
     return args_repr
