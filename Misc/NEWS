@@ -27,9 +27,9 @@ Core and Builtins
 Library
 -------
 
-- Issue #17172: Make turtledemo start as active on Mac even when run with
-  subprocess.  Patch by Ned Daily and Lita Cho.
-  
+- Issue #17172: Make turtledemo start as active on OS X even when run with
+  subprocess.  Patch by Lita Cho.
+
 - Issue #21704: Fix build error for _multiprocessing when semaphores
   are not available.  Patch by Arfrever Frehtes Taifersar Arahesis.
 
