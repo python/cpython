@@ -306,9 +306,9 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        fcntl_patcher = mock.patch('fcntl.fcntl')
-        fcntl_patcher.start()
-        self.addCleanup(fcntl_patcher.stop)
+        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
+        blocking_patcher.start()
+        self.addCleanup(blocking_patcher.stop)
 
         fstat_patcher = mock.patch('os.fstat')
         m_fstat = fstat_patcher.start()
@@ -469,9 +469,9 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
         self.pipe.fileno.return_value = 5
 
-        fcntl_patcher = mock.patch('fcntl.fcntl')
-        fcntl_patcher.start()
-        self.addCleanup(fcntl_patcher.stop)
+        blocking_patcher = mock.patch('asyncio.unix_events._set_nonblocking')
+        blocking_patcher.start()
+        self.addCleanup(blocking_patcher.stop)
 
         fstat_patcher = mock.patch('os.fstat')
         m_fstat = fstat_patcher.start()

@@ -259,10 +259,14 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return server
 
 
-def _set_nonblocking(fd):
-    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-    flags = flags | os.O_NONBLOCK
-    fcntl.fcntl(fd, fcntl.F_SETFL, flags)
+if hasattr(os, 'set_blocking'):
+    def _set_nonblocking(fd):
+        os.set_blocking(fd, False)
+else:
+    def _set_nonblocking(fd):
+        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+        flags = flags | os.O_NONBLOCK
+        fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):
