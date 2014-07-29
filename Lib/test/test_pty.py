@@ -1,7 +1,6 @@
 from test.support import verbose, run_unittest, import_module, reap_children
 
-#Skip these tests if either fcntl or termios is not available
-fcntl = import_module('fcntl')
+# Skip these tests if termios is not available
 import_module('termios')
 
 import errno
@@ -84,16 +83,18 @@ class PtyTest(unittest.TestCase):
         # in master_open(), we need to read the EOF.
 
         # Ensure the fd is non-blocking in case there's nothing to read.
-        orig_flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
-        fcntl.fcntl(master_fd, fcntl.F_SETFL, orig_flags | os.O_NONBLOCK)
+        blocking = os.get_blocking(master_fd)
         try:
-            s1 = os.read(master_fd, 1024)
-            self.assertEqual(b'', s1)
-        except OSError as e:
-            if e.errno != errno.EAGAIN:
-                raise
-        # Restore the original flags.
-        fcntl.fcntl(master_fd, fcntl.F_SETFL, orig_flags)
+            os.set_blocking(master_fd, False)
+            try:
+                s1 = os.read(master_fd, 1024)
+                self.assertEqual(b'', s1)
+            except OSError as e:
+                if e.errno != errno.EAGAIN:
+                    raise
+        finally:
+            # Restore the original flags.
+            os.set_blocking(master_fd, blocking)
 
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)

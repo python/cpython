@@ -70,7 +70,14 @@ PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
 
 PyAPI_FUNC(int) _Py_dup(int fd);
-#endif
+
+#ifndef MS_WINDOWS
+PyAPI_FUNC(int) _Py_get_blocking(int fd);
+
+PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
+#endif   /* !MS_WINDOWS */
+
+#endif   /* Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

@@ -590,8 +590,6 @@ def close_all(map=None, ignore_all=False):
 # Regardless, this is useful for pipes, and stdin/stdout...
 
 if os.name == 'posix':
-    import fcntl
-
     class file_wrapper:
         # Here we override just enough to make a file
         # look like a socket for the purposes of asyncore.
@@ -642,9 +640,7 @@ if os.name == 'posix':
                 pass
             self.set_file(fd)
             # set it to non-blocking mode
-            flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)
-            flags = flags | os.O_NONBLOCK
-            fcntl.fcntl(fd, fcntl.F_SETFL, flags)
+            os.set_blocking(fd, False)
 
         def set_file(self, fd):
             self.socket = file_wrapper(fd)
