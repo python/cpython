@@ -7,6 +7,7 @@ __all__ = ['CancelledError', 'TimeoutError',
 
 import concurrent.futures._base
 import logging
+import reprlib
 import sys
 import traceback
 
@@ -175,20 +176,25 @@ class Future:
                                             format_cb(cb[-1]))
         return 'cb=[%s]' % cb
 
-    def _format_result(self):
-        if self._state != _FINISHED:
-            return None
-        elif self._exception is not None:
-            return 'exception={!r}'.format(self._exception)
-        else:
-            return 'result={!r}'.format(self._result)
-
-    def __repr__(self):
+    def _repr_info(self):
         info = [self._state.lower()]
         if self._state == _FINISHED:
-            info.append(self._format_result())
+            if self._exception is not None:
+                info.append('exception={!r}'.format(self._exception))
+            else:
+                # use reprlib to limit the length of the output, especially
+                # for very long strings
+                result = reprlib.repr(self._result)
+                info.append('result={}'.format(result))
         if self._callbacks:
             info.append(self._format_callbacks())
+        if self._source_traceback:
+            frame = self._source_traceback[-1]
+            info.append('created at %s:%s' % (frame[0], frame[1]))
+        return info
+
+    def __repr__(self):
+        info = self._repr_info()
         return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
 
     # On Python 3.3 or older, objects with a destructor part of a reference
