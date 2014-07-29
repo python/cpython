@@ -318,6 +318,9 @@ The :mod:`signal` module defines the following functions:
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
+   .. versionchanged:: 3.5
+      On Windows, the function now also supports socket handles.
+
 
 .. function:: siginterrupt(signalnum, flag)
 
