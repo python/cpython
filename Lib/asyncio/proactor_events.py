@@ -385,12 +385,18 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._selector = None
 
     def sock_recv(self, sock, n):
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return self._proactor.recv(sock, n)
 
     def sock_sendall(self, sock, data):
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return self._proactor.send(sock, data)
 
     def sock_connect(self, sock, address):
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         try:
             base_events._check_resolved_address(sock, address)
         except ValueError as err:
@@ -401,6 +407,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             return self._proactor.connect(sock, address)
 
     def sock_accept(self, sock):
+        if self.get_debug() and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return self._proactor.accept(sock)
 
     def _socketpair(self):
