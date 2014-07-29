@@ -383,6 +383,24 @@ class EventLoopTestsMixin:
         self.assertEqual(read, data)
 
     def _basetest_sock_client_ops(self, httpd, sock):
+        # in debug mode, socket operations must fail
+        # if the socket is not in blocking mode
+        self.loop.set_debug(True)
+        sock.setblocking(True)
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(
+                self.loop.sock_connect(sock, httpd.address))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(
+                self.loop.sock_sendall(sock, b'GET / HTTP/1.0\r\n\r\n'))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(
+                self.loop.sock_recv(sock, 1024))
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(
+                self.loop.sock_accept(sock))
+
+        # test in non-blocking mode
         sock.setblocking(False)
         self.loop.run_until_complete(
             self.loop.sock_connect(sock, httpd.address))
