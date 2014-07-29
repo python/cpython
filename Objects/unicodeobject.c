@@ -690,7 +690,12 @@ makefmt(char *fmt, int longflag, int size_tflag, int zeropad, int width, int pre
     *fmt = '\0';
 }
 
-#define appendstring(string) {for (copy = string;*copy;) *s++ = *copy++;}
+#define appendstring(string) \
+    do { \
+        for (copy = string;*copy; copy++) { \
+            *s++ = (unsigned char)*copy; \
+        } \
+    } while (0)
 
 PyObject *
 PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -845,7 +850,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 str = PyObject_Str(obj);
                 if (!str)
                     goto fail;
-                n += PyUnicode_GET_SIZE(str);
+                n += PyString_GET_SIZE(str);
                 /* Remember the str and switch to the next slot */
                 *callresult++ = str;
                 break;
@@ -1006,15 +1011,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             case 'S':
             case 'R':
             {
-                Py_UNICODE *ucopy;
-                Py_ssize_t usize;
-                Py_ssize_t upos;
+                const char *str = PyString_AS_STRING(*callresult);
                 /* unused, since we already have the result */
                 (void) va_arg(vargs, PyObject *);
-                ucopy = PyUnicode_AS_UNICODE(*callresult);
-                usize = PyUnicode_GET_SIZE(*callresult);
-                for (upos = 0; upos<usize;)
-                    *s++ = ucopy[upos++];
+                appendstring(str);
                 /* We're done with the unicode()/repr() => forget it */
                 Py_DECREF(*callresult);
                 /* switch to next unicode()/repr() result */

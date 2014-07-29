@@ -1659,6 +1659,118 @@ class UnicodeTest(
         self.assertEqual("%s" % u, u'__unicode__ overridden')
         self.assertEqual("{}".format(u), '__unicode__ overridden')
 
+    # Test PyUnicode_FromFormat()
+    def test_from_format(self):
+        test_support.import_module('ctypes')
+        from ctypes import (
+            pythonapi, py_object, sizeof,
+            c_int, c_long, c_longlong, c_ssize_t,
+            c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p)
+        if sys.maxunicode == 0xffff:
+            name = "PyUnicodeUCS2_FromFormat"
+        else:
+            name = "PyUnicodeUCS4_FromFormat"
+        _PyUnicode_FromFormat = getattr(pythonapi, name)
+        _PyUnicode_FromFormat.restype = py_object
+
+        def PyUnicode_FromFormat(format, *args):
+            cargs = tuple(
+                py_object(arg) if isinstance(arg, unicode) else arg
+                for arg in args)
+            return _PyUnicode_FromFormat(format, *cargs)
+
+        def check_format(expected, format, *args):
+            text = PyUnicode_FromFormat(format, *args)
+            self.assertEqual(expected, text)
+
+        # ascii format, non-ascii argument
+        check_format(u'ascii\x7f=unicode\xe9',
+                     b'ascii\x7f=%U', u'unicode\xe9')
+
+        # non-ascii format, ascii argument: ensure that PyUnicode_FromFormatV()
+        # raises an error
+        #self.assertRaisesRegex(ValueError,
+        #    '^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
+        #    'string, got a non-ASCII byte: 0xe9$',
+        #    PyUnicode_FromFormat, b'unicode\xe9=%s', u'ascii')
+
+        # test "%c"
+        check_format(u'\uabcd',
+                     b'%c', c_int(0xabcd))
+        if sys.maxunicode > 0xffff:
+            check_format(u'\U0010ffff',
+                         b'%c', c_int(0x10ffff))
+        with self.assertRaises(OverflowError):
+            PyUnicode_FromFormat(b'%c', c_int(0x110000))
+        # Issue #18183
+        if sys.maxunicode > 0xffff:
+            check_format(u'\U00010000\U00100000',
+                         b'%c%c', c_int(0x10000), c_int(0x100000))
+
+        # test "%"
+        check_format(u'%',
+                     b'%')
+        check_format(u'%',
+                     b'%%')
+        check_format(u'%s',
+                     b'%%s')
+        check_format(u'[%]',
+                     b'[%%]')
+        check_format(u'%abc',
+                     b'%%%s', b'abc')
+
+        # test %S
+        check_format(u"repr=abc",
+                     b'repr=%S', u'abc')
+
+        # test %R
+        check_format(u"repr=u'abc'",
+                     b'repr=%R', u'abc')
+
+        # test integer formats (%i, %d, %u)
+        check_format(u'010',
+                     b'%03i', c_int(10))
+        check_format(u'0010',
+                     b'%0.4i', c_int(10))
+        check_format(u'-123',
+                     b'%i', c_int(-123))
+
+        check_format(u'-123',
+                     b'%d', c_int(-123))
+        check_format(u'-123',
+                     b'%ld', c_long(-123))
+        check_format(u'-123',
+                     b'%zd', c_ssize_t(-123))
+
+        check_format(u'123',
+                     b'%u', c_uint(123))
+        check_format(u'123',
+                     b'%lu', c_ulong(123))
+        check_format(u'123',
+                     b'%zu', c_size_t(123))
+
+        # test long output
+        PyUnicode_FromFormat(b'%p', c_void_p(-1))
+
+        # test %V
+        check_format(u'repr=abc',
+                     b'repr=%V', u'abc', b'xyz')
+        check_format(u'repr=\xe4\xba\xba\xe6\xb0\x91',
+                     b'repr=%V', None, b'\xe4\xba\xba\xe6\xb0\x91')
+        check_format(u'repr=abc\xff',
+                     b'repr=%V', None, b'abc\xff')
+
+        # not supported: copy the raw format string. these tests are just here
+        # to check for crashs and should not be considered as specifications
+        check_format(u'%s',
+                     b'%1%s', b'abc')
+        check_format(u'%1abc',
+                     b'%1abc')
+        check_format(u'%+i',
+                     b'%+i', c_int(10))
+        check_format(u'%s',
+                     b'%.%s', b'abc')
+
     @test_support.cpython_only
     def test_encode_decimal(self):
         from _testcapi import unicode_encodedecimal

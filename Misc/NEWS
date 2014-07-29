@@ -10,6 +10,9 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
+- Issue #22023: Fix ``%S``, ``%R`` and ``%V`` formats of
+  :c:func:`PyUnicode_FromFormat`.
+
 - Issue #21591: Correctly handle qualified exec statements in tuple form by
   moving compatibility layer from run-time to AST transformation.
 
