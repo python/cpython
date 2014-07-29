@@ -132,6 +132,8 @@ class TaskTests(test_utils.TestCase):
             asyncio.async('ok')
 
     def test_task_repr(self):
+        self.loop.set_debug(False)
+
         @asyncio.coroutine
         def notmuch():
             yield from []
@@ -189,6 +191,8 @@ class TaskTests(test_utils.TestCase):
                          "<Task finished %s result='abc'>" % coro)
 
     def test_task_repr_coro_decorator(self):
+        self.loop.set_debug(False)
+
         @asyncio.coroutine
         def notmuch():
             # notmuch() function doesn't use yield from: it will be wrapped by
@@ -252,6 +256,8 @@ class TaskTests(test_utils.TestCase):
         self.loop.run_until_complete(t)
 
     def test_task_repr_wait_for(self):
+        self.loop.set_debug(False)
+
         @asyncio.coroutine
         def wait_for(fut):
             return (yield from fut)
