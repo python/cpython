@@ -412,6 +412,7 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue((1, '2', (3.4,))),
                          (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
 
+    @unittest.skipIf(sys.platform.startswith("aix"), 'Issue #21951: crashes on AIX')
     def test_user_command(self):
         result = None
         def testfunc(arg):
