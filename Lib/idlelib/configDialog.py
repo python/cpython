@@ -28,6 +28,7 @@ class ConfigDialog(Toplevel):
         _utest - bool, don't wait_window when running unittest
         """
         Toplevel.__init__(self, parent)
+        self.parent = parent
         self.wm_withdraw()
 
         self.configure(borderwidth=5)
@@ -59,7 +60,6 @@ class ConfigDialog(Toplevel):
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.Cancel)
-        self.parent = parent
         self.tabPages.focus_set()
         #key bindings for this dialog
         #self.bind('<Escape>',self.Cancel) #dismiss dialog, no save
@@ -110,12 +110,13 @@ class ConfigDialog(Toplevel):
         self.tabPages.pack(side=TOP,expand=TRUE,fill=BOTH)
 
     def CreatePageFontTab(self):
-        #tkVars
-        self.fontSize=StringVar(self)
-        self.fontBold=BooleanVar(self)
-        self.fontName=StringVar(self)
-        self.spaceNum=IntVar(self)
-        self.editFont=tkFont.Font(self,('courier',10,'normal'))
+        parent = self.parent
+        self.fontSize = StringVar(parent)
+        self.fontBold = BooleanVar(parent)
+        self.fontName = StringVar(parent)
+        self.spaceNum = IntVar(parent)
+        self.editFont = tkFont.Font(parent,('courier',10,'normal'))
+
         ##widget creation
         #body frame
         frame=self.tabPages.pages['Fonts/Tabs'].frame
@@ -151,6 +152,7 @@ class ConfigDialog(Toplevel):
         self.scaleSpaceNum=Scale(frameIndentSize, variable=self.spaceNum,
                                  orient='horizontal',
                                  tickinterval=2, from_=2, to=16)
+
         #widget packing
         #body
         frameFont.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
@@ -173,13 +175,15 @@ class ConfigDialog(Toplevel):
         return frame
 
     def CreatePageHighlight(self):
-        self.builtinTheme=StringVar(self)
-        self.customTheme=StringVar(self)
-        self.fgHilite=BooleanVar(self)
-        self.colour=StringVar(self)
-        self.fontName=StringVar(self)
-        self.themeIsBuiltin=BooleanVar(self)
-        self.highlightTarget=StringVar(self)
+        parent = self.parent
+        self.builtinTheme = StringVar(parent)
+        self.customTheme = StringVar(parent)
+        self.fgHilite = BooleanVar(parent)
+        self.colour = StringVar(parent)
+        self.fontName = StringVar(parent)
+        self.themeIsBuiltin = BooleanVar(parent)
+        self.highlightTarget = StringVar(parent)
+
         ##widget creation
         #body frame
         frame=self.tabPages.pages['Highlighting'].frame
@@ -238,6 +242,7 @@ class ConfigDialog(Toplevel):
             self.customTheme,None,command=None)
         self.buttonDeleteCustomTheme=Button(frameTheme,text='Delete Custom Theme',
                 command=self.DeleteCustomTheme)
+
         ##widget packing
         #body
         frameCustom.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
@@ -262,12 +267,13 @@ class ConfigDialog(Toplevel):
         return frame
 
     def CreatePageKeys(self):
-        #tkVars
-        self.bindingTarget=StringVar(self)
-        self.builtinKeys=StringVar(self)
-        self.customKeys=StringVar(self)
-        self.keysAreBuiltin=BooleanVar(self)
-        self.keyBinding=StringVar(self)
+        parent = self.parent
+        self.bindingTarget = StringVar(parent)
+        self.builtinKeys = StringVar(parent)
+        self.customKeys = StringVar(parent)
+        self.keysAreBuiltin = BooleanVar(parent)
+        self.keyBinding = StringVar(parent)
+
         ##widget creation
         #body frame
         frame=self.tabPages.pages['Keys'].frame
@@ -305,6 +311,7 @@ class ConfigDialog(Toplevel):
                 command=self.DeleteCustomKeys)
         buttonSaveCustomKeys=Button(frames[1],
                 text='Save as New Custom Key Set',command=self.SaveAsNewKeySet)
+
         ##widget packing
         #body
         frameCustom.pack(side=BOTTOM,padx=5,pady=5,expand=TRUE,fill=BOTH)
@@ -331,15 +338,16 @@ class ConfigDialog(Toplevel):
         return frame
 
     def CreatePageGeneral(self):
-        #tkVars
-        self.winWidth=StringVar(self)
-        self.winHeight=StringVar(self)
-        self.paraWidth=StringVar(self)
-        self.startupEdit=IntVar(self)
-        self.autoSave=IntVar(self)
-        self.encoding=StringVar(self)
-        self.userHelpBrowser=BooleanVar(self)
-        self.helpBrowser=StringVar(self)
+        parent = self.parent
+        self.winWidth = StringVar(parent)
+        self.winHeight = StringVar(parent)
+        self.paraWidth = StringVar(parent)
+        self.startupEdit = IntVar(parent)
+        self.autoSave = IntVar(parent)
+        self.encoding = StringVar(parent)
+        self.userHelpBrowser = BooleanVar(parent)
+        self.helpBrowser = StringVar(parent)
+
         #widget creation
         #body
         frame=self.tabPages.pages['General'].frame
@@ -402,6 +410,7 @@ class ConfigDialog(Toplevel):
                 width=8,command=self.HelpListItemAdd)
         self.buttonHelpListRemove=Button(frameHelpListButtons,text='Remove',
                 state=DISABLED,width=8,command=self.HelpListItemRemove)
+
         #widget packing
         #body
         frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
