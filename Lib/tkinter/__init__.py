@@ -245,7 +245,7 @@ class Variable:
         Return the name of the callback.
         """
         cbname = self._master._register(callback)
-        self._tk.call("trace", "variable", self._name, mode, cbname)
+        self._tk.call("trace", "add", "variable", self._name, mode, cbname)
         return cbname
     trace = trace_variable
     def trace_vdelete(self, mode, cbname):
@@ -254,12 +254,12 @@ class Variable:
         MODE is one of "r", "w", "u" for read, write, undefine.
         CBNAME is the name of the callback returned from trace_variable or trace.
         """
-        self._tk.call("trace", "vdelete", self._name, mode, cbname)
+        self._tk.call("trace", "remove", "variable", self._name, mode, cbname)
         self._master.deletecommand(cbname)
     def trace_vinfo(self):
         """Return all trace callback information."""
         return [self._tk.split(x) for x in self._tk.splitlist(
-            self._tk.call("trace", "vinfo", self._name))]
+            self._tk.call("trace", "info", "variable", self._name))]
     def __eq__(self, other):
         """Comparison for equality (==).
 
@@ -3789,8 +3789,7 @@ class PanedWindow(Widget):
 def _test():
     root = Tk()
     text = "This is Tcl/Tk version %s" % TclVersion
-    if TclVersion >= 8.1:
-        text += "\nThis should be a cedilla: \xe7"
+    text += "\nThis should be a cedilla: \xe7"
     label = Label(root, text=text)
     label.pack()
     test = Button(root, text="Click me!",
