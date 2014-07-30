@@ -286,9 +286,9 @@ class WakeupFDTests(unittest.TestCase):
         fd2 = sock2.fileno()
 
         signal.set_wakeup_fd(fd1)
-        self.assertIs(signal.set_wakeup_fd(fd2), fd1)
-        self.assertIs(signal.set_wakeup_fd(-1), fd2)
-        self.assertIs(signal.set_wakeup_fd(-1), -1)
+        self.assertEqual(signal.set_wakeup_fd(fd2), fd1)
+        self.assertEqual(signal.set_wakeup_fd(-1), fd2)
+        self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
