@@ -881,8 +881,8 @@ AsObj(PyObject *value)
     int overflow;
 
     if (PyBytes_Check(value))
-        return Tcl_NewStringObj(PyBytes_AS_STRING(value),
-                                PyBytes_GET_SIZE(value));
+        return Tcl_NewByteArrayObj((unsigned char *)PyBytes_AS_STRING(value),
+                                   PyBytes_GET_SIZE(value));
     else if (PyBool_Check(value))
         return Tcl_NewBooleanObj(PyObject_IsTrue(value));
     else if (PyLong_CheckExact(value) &&
