@@ -389,8 +389,12 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue('str\x00ing'), 'str\x00ing')
         self.assertEqual(passValue('str\x00ing\xbd'), 'str\x00ing\xbd')
         self.assertEqual(passValue('str\x00ing\u20ac'), 'str\x00ing\u20ac')
-        self.assertEqual(passValue(b'str\x00ing'), 'str\x00ing')
-        self.assertEqual(passValue(b'str\xc0\x80ing'), 'str\x00ing')
+        self.assertEqual(passValue(b'str\x00ing'),
+                         b'str\x00ing' if self.wantobjects else 'str\x00ing')
+        self.assertEqual(passValue(b'str\xc0\x80ing'),
+                         b'str\xc0\x80ing' if self.wantobjects else 'str\xc0\x80ing')
+        self.assertEqual(passValue(b'str\xbding'),
+                         b'str\xbding' if self.wantobjects else 'str\xbding')
         for i in (0, 1, -1, 2**31-1, -2**31):
             self.assertEqual(passValue(i), i if self.wantobjects else str(i))
         for f in (0.0, 1.0, -1.0, 1/3,
@@ -438,12 +442,14 @@ class TclTest(unittest.TestCase):
         check('string\xbd', 'string\xbd')
         check('string\u20ac', 'string\u20ac')
         check(b'string', 'string')
-        check(b'string\xe2\x82\xac', 'string\u20ac')
+        check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
+        check(b'string\xbd', 'string\xbd')
         check('str\x00ing', 'str\x00ing')
         check('str\x00ing\xbd', 'str\x00ing\xbd')
         check('str\x00ing\u20ac', 'str\x00ing\u20ac')
-        check(b'str\xc0\x80ing', 'str\x00ing')
-        check(b'str\xc0\x80ing\xe2\x82\xac', 'str\x00ing\u20ac')
+        check(b'str\x00ing', 'str\x00ing')
+        check(b'str\xc0\x80ing', 'str\xc0\x80ing')
+        check(b'str\xc0\x80ing\xe2\x82\xac', 'str\xc0\x80ing\xe2\x82\xac')
         for i in (0, 1, -1, 2**31-1, -2**31):
             check(i, str(i))
         for f in (0.0, 1.0, -1.0):
@@ -488,9 +494,9 @@ class TclTest(unittest.TestCase):
         if tcl_version >= (8, 5):
             if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
                 # Before 8.5.5 dicts were converted to lists through string
-                expected = ('12', '\u20ac', '\u20ac', '3.4')
+                expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
             else:
-                expected = (12, '\u20ac', '\u20ac', (3.4,))
+                expected = (12, '\u20ac', b'\xe2\x82\xac', (3.4,))
             testcases += [
                 (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
                     expected),
@@ -535,9 +541,9 @@ class TclTest(unittest.TestCase):
         if tcl_version >= (8, 5):
             if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
                 # Before 8.5.5 dicts were converted to lists through string
-                expected = ('12', '\u20ac', '\u20ac', '3.4')
+                expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
             else:
-                expected = (12, '\u20ac', '\u20ac', (3.4,))
+                expected = (12, '\u20ac', b'\xe2\x82\xac', (3.4,))
             testcases += [
                 (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
                     expected),
