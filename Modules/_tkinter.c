@@ -9,8 +9,8 @@ Copyright (C) 1994 Steen Lumholt.
 
 /* TCL/TK VERSION INFO:
 
-    Only Tcl/Tk 8.3.1 and later are supported.  Older versions are not
-    supported. Use Python 2.6 or older if you cannot upgrade your
+    Only Tcl/Tk 8.4 and later are supported.  Older versions are not
+    supported. Use Python 3.4 or older if you cannot upgrade your
     Tcl/Tk libraries.
 */
 
@@ -36,13 +36,6 @@ Copyright (C) 1994 Steen Lumholt.
 #define CHECK_SIZE(size, elemsize) \
     ((size_t)(size) <= Py_MAX((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
 
-/* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
-   making _tkinter correct for this API means to break earlier
-   versions. USE_COMPAT_CONST allows to make _tkinter work with both 8.4 and
-   earlier versions. Once Tcl releases before 8.4 don't need to be supported
-   anymore, this should go. */
-#define USE_COMPAT_CONST
-
 /* If Tcl is compiled for threads, we must also define TCL_THREAD. We define
    it always; if Tcl is not threaded, the thread functions in
    Tcl are empty.  */
@@ -58,15 +51,8 @@ Copyright (C) 1994 Steen Lumholt.
 
 #include "tkinter.h"
 
-/* For Tcl 8.2 and 8.3, CONST* is not defined (except on Cygwin). */
-#ifndef CONST84_RETURN
-#define CONST84_RETURN
-#undef CONST
-#define CONST
-#endif
-
-#if TK_VERSION_HEX < 0x08030102
-#error "Tk older than 8.3.1 not supported"
+#if TK_VERSION_HEX < 0x08040002
+#error "Tk older than 8.4 not supported"
 #endif
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
@@ -376,10 +362,10 @@ unicodeFromTclObj(Tcl_Obj *value)
 
 
 static PyObject *
-Split(char *list)
+Split(const char *list)
 {
     int argc;
-    char **argv;
+    const char **argv;
     PyObject *v;
 
     if (list == NULL) {
@@ -481,7 +467,7 @@ SplitObj(PyObject *arg)
     }
     else if (PyUnicode_Check(arg)) {
         int argc;
-        char **argv;
+        const char **argv;
         char *list = PyUnicode_AsUTF8(arg);
 
         if (list == NULL ||
@@ -496,7 +482,7 @@ SplitObj(PyObject *arg)
     }
     else if (PyBytes_Check(arg)) {
         int argc;
-        char **argv;
+        const char **argv;
         char *list = PyBytes_AsString(arg);
 
         if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
@@ -563,8 +549,9 @@ static void EnableEventHook(void); /* Forward */
 static void DisableEventHook(void); /* Forward */
 
 static TkappObject *
-Tkapp_New(char *screenName, char *className,
-          int interactive, int wantobjects, int wantTk, int sync, char *use)
+Tkapp_New(const char *screenName, const char *className,
+          int interactive, int wantobjects, int wantTk, int sync,
+          const char *use)
 {
     TkappObject *v;
     char *argv0;
@@ -1857,7 +1844,7 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
 {
     char *list;
     int argc;
-    char **argv;
+    const char **argv;
     PyObject *arg, *v;
     int i;
 
@@ -1984,7 +1971,7 @@ PythonCmd_Error(Tcl_Interp *interp)
  * function or method.
  */
 static int
-PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *argv[])
 {
     PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
     PyObject *func, *arg, *res;
