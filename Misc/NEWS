@@ -113,6 +113,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21580: Now Tkinter correctly handles bytes arguments passed to Tk.
+  In particular this allows to initialize images from binary data.
+
 - Issue #22003: When initialized from a bytes object, io.BytesIO() now
   defers making a copy until it is mutated, improving performance and
   memory use on some use cases.  Patch by David Wilson.

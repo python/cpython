@@ -161,21 +161,18 @@ class PhotoImageTest(unittest.TestCase):
     def test_create_from_ppm_file(self):
         self.check_create_from_file('ppm')
 
-    @unittest.skip('issue #21580')
     def test_create_from_ppm_data(self):
         self.check_create_from_data('ppm')
 
     def test_create_from_pgm_file(self):
         self.check_create_from_file('pgm')
 
-    @unittest.skip('issue #21580')
     def test_create_from_pgm_data(self):
         self.check_create_from_data('pgm')
 
     def test_create_from_gif_file(self):
         self.check_create_from_file('gif')
 
-    @unittest.skip('issue #21580')
     def test_create_from_gif_data(self):
         self.check_create_from_data('gif')
 
@@ -183,12 +180,10 @@ class PhotoImageTest(unittest.TestCase):
     def test_create_from_png_file(self):
         self.check_create_from_file('png')
 
-    @unittest.skip('issue #21580')
     @requires_tcl(8, 6)
     def test_create_from_png_data(self):
         self.check_create_from_data('png')
 
-    @unittest.skip('issue #21580')
     def test_configure_data(self):
         image = tkinter.PhotoImage('::img::test', master=self.root)
         self.assertEqual(image['data'], '')
