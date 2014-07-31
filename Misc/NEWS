@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21580: Now Tkinter correctly handles binary "data" and "maskdata"
+  configure options of tkinter.PhotoImage.
+
 - Issue #19612: subprocess.communicate() now also ignores EINVAL when using at
   least two pipes.
 

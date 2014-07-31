@@ -3282,6 +3282,8 @@ class Image:
         for k, v in cnf.items():
             if hasattr(v, '__call__'):
                 v = self._register(v)
+            elif k in ('data', 'maskdata'):
+                v = self.tk._createbytearray(v)
             options = options + ('-'+k, v)
         self.tk.call(('image', 'create', imgtype, name,) + options)
         self.name = name
@@ -3305,6 +3307,8 @@ class Image:
                 if k[-1] == '_': k = k[:-1]
                 if hasattr(v, '__call__'):
                     v = self._register(v)
+                elif k in ('data', 'maskdata'):
+                    v = self.tk._createbytearray(v)
                 res = res + ('-'+k, v)
         self.tk.call((self.name, 'config') + res)
     config = configure

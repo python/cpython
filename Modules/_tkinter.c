@@ -2939,6 +2939,33 @@ Tkapp_WillDispatch(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+/* Convert Python string or any buffer compatible object to Tcl byte-array
+ * object.  Use it to pass binary data (e.g. image's data) to Tcl/Tk commands.
+ */
+static PyObject *
+Tkapp_CreateByteArray(PyObject *self, PyObject *args)
+{
+    Py_buffer view;
+    Tcl_Obj* obj;
+    PyObject *res = NULL;
+
+    if (!PyArg_ParseTuple(args, "s*:_createbytearray", &view))
+        return NULL;
+
+    if (view.len >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        return NULL;
+    }
+    obj = Tcl_NewByteArrayObj(view.buf, (int)view.len);
+    if (obj == NULL) {
+        PyBuffer_Release(&view);
+        return Tkinter_Error(self);
+    }
+    res = newPyTclObject(obj);
+    PyBuffer_Release(&view);
+    return res;
+}
+
 
 /**** Tkapp Method List ****/
 
@@ -2981,6 +3008,7 @@ static PyMethodDef Tkapp_methods[] =
     {"quit",                   Tkapp_Quit, METH_VARARGS},
     {"interpaddr",         Tkapp_InterpAddr, METH_VARARGS},
     {"loadtk",                 Tkapp_TkInit, METH_NOARGS},
+    {"_createbytearray",       Tkapp_CreateByteArray, METH_VARARGS},
     {NULL,                     NULL}
 };
 
