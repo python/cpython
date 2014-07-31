@@ -169,7 +169,7 @@ time_clock_gettime(PyObject *self, PyObject *args)
 
     ret = clock_gettime((clockid_t)clk_id, &tp);
     if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
@@ -200,7 +200,7 @@ time_clock_settime(PyObject *self, PyObject *args)
 
     ret = clock_settime((clockid_t)clk_id, &tp);
     if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -223,7 +223,7 @@ time_clock_getres(PyObject *self, PyObject *args)
 
     ret = clock_getres((clockid_t)clk_id, &tp);
     if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1591,7 +1591,7 @@ floatsleep(double secs)
         else
 #endif
         {
-            PyErr_SetFromErrno(PyExc_IOError);
+            PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
     }
@@ -1625,7 +1625,7 @@ floatsleep(double secs)
             if (rc == WAIT_OBJECT_0) {
                 Py_BLOCK_THREADS
                 errno = EINTR;
-                PyErr_SetFromErrno(PyExc_IOError);
+                PyErr_SetFromErrno(PyExc_OSError);
                 return -1;
             }
         }
