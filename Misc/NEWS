@@ -786,6 +786,8 @@ Documentation
 Tests
 -----
 
+- Issue #22111: Assorted cleanups in test_imaplib.  Patch by Milan Oberkirch.
+
 - Issue #22002: Added ``load_package_tests`` function to test.support and used
   it to implement/augment test discovery in test_asyncio, test_email,
   test_importlib, test_json, and test_tools.
