@@ -58,12 +58,18 @@ perform some operation on a file. ::
    int
    main(int argc, char *argv[])
    {
-     Py_SetProgramName(argv[0]);  /* optional but recommended */
-     Py_Initialize();
-     PyRun_SimpleString("from time import time,ctime\n"
-                        "print('Today is', ctime(time()))\n");
-     Py_Finalize();
-     return 0;
+       wchar_t *program = Py_DecodeLocale(argv[0], NULL);
+       if (program == NULL) {
+           fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
+           exit(1);
+       }
+       Py_SetProgramName(program);  /* optional but recommended */
+       Py_Initialize();
+       PyRun_SimpleString("from time import time,ctime\n"
+                          "print('Today is', ctime(time()))\n");
+       Py_Finalize();
+       PyMem_RawFree(program);
+       return 0;
    }
 
 The :c:func:`Py_SetProgramName` function should be called before
@@ -160,7 +166,7 @@ for data conversion between Python and C, and for error reporting.  The
 interesting part with respect to embedding Python starts with ::
 
    Py_Initialize();
-   pName = PyUnicode_FromString(argv[1]);
+   pName = PyUnicode_DecodeFSDefault(argv[1]);
    /* Error checking of pName left out */
    pModule = PyImport_Import(pName);
 
