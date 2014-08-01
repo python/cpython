@@ -13,7 +13,7 @@ main(int argc, char *argv[])
     }
 
     Py_Initialize();
-    pName = PyUnicode_FromString(argv[1]);
+    pName = PyUnicode_DecodeFSDefault(argv[1]);
     /* Error checking of pName left out */
 
     pModule = PyImport_Import(pName);
