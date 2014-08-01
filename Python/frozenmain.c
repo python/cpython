@@ -52,7 +52,7 @@ Py_FrozenMain(int argc, char **argv)
 
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
-        argv_copy[i] = _Py_char2wchar(argv[i], NULL);
+        argv_copy[i] = Py_DecodeLocale(argv[i], NULL);
         argv_copy2[i] = argv_copy[i];
         if (!argv_copy[i]) {
             fprintf(stderr, "Unable to decode the command line argument #%i\n",

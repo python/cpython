@@ -47,6 +47,60 @@ Operating System Utilities
    not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
    alias for :c:type:`void (\*)(int)`.
 
+.. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
+
+   Decode a byte string from the locale encoding with the :ref:`surrogateescape
+   error handler <surrogateescape>`: undecodable bytes are decoded as
+   characters in range U+DC80..U+DCFF. If a byte sequence can be decoded as a
+   surrogate character, escape the bytes using the surrogateescape error
+   handler instead of decoding them.
+
+   Return a pointer to a newly allocated wide character string, use
+   :c:func:`PyMem_RawFree` to free the memory. If size is not ``NULL``, write
+   the number of wide characters excluding the null character into ``*size``
+
+   Return ``NULL`` on decoding error or memory allocation error. If *size* is
+   not ``NULL``, ``*size`` is set to ``(size_t)-1`` on memory error or set to
+   ``(size_t)-2`` on decoding error.
+
+   Decoding errors should never happen, unless there is a bug in the C
+   library.
+
+   Use the :c:func:`Py_EncodeLocale` function to encode the character string
+   back to a byte string.
+
+   .. seealso::
+
+      The :c:func:`PyUnicode_DecodeFSDefaultAndSize` and
+      :c:func:`PyUnicode_DecodeLocaleAndSize` functions.
+
+   .. versionadded:: 3.5
+
+
+.. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
+
+   Encode a wide character string to the locale encoding with the
+   :ref:`surrogateescape error handler <surrogateescape>`: surrogate characters
+   in the range U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
+
+   Return a pointer to a newly allocated byte string, use :c:func:`PyMem_Free`
+   to free the memory. Return ``NULL`` on encoding error or memory allocation
+   error
+
+   If error_pos is not ``NULL``, ``*error_pos`` is set to the index of the
+   invalid character on encoding error, or set to ``(size_t)-1`` otherwise.
+
+   Use the :c:func:`Py_DecodeLocale` function to decode the bytes string back
+   to a wide character string.
+
+   .. seealso::
+
+      The :c:func:`PyUnicode_EncodeFSDefault` and
+      :c:func:`PyUnicode_EncodeLocale` functions.
+
+   .. versionadded:: 3.5
+
+
 .. _systemfunctions:
 
 System Functions

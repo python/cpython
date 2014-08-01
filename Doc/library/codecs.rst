@@ -318,6 +318,7 @@ and writing to platform dependent files:
    encodings.
 
 
+.. _surrogateescape:
 .. _codec-base-classes:
 
 Codec Base Classes

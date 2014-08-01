@@ -82,11 +82,11 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
 
    Values of force_ascii:
 
-       1: the workaround is used: _Py_wchar2char() uses
-          encode_ascii_surrogateescape() and _Py_char2wchar() uses
+       1: the workaround is used: Py_EncodeLocale() uses
+          encode_ascii_surrogateescape() and Py_DecodeLocale() uses
           decode_ascii_surrogateescape()
-       0: the workaround is not used: _Py_wchar2char() uses wcstombs() and
-          _Py_char2wchar() uses mbstowcs()
+       0: the workaround is not used: Py_EncodeLocale() uses wcstombs() and
+          Py_DecodeLocale() uses mbstowcs()
       -1: unknown, need to call check_force_ascii() to get the value
 */
 static int force_ascii = -1;
@@ -241,24 +241,26 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
 
 
 /* Decode a byte string from the locale encoding with the
-   surrogateescape error handler (undecodable bytes are decoded as characters
-   in range U+DC80..U+DCFF). If a byte sequence can be decoded as a surrogate
+   surrogateescape error handler: undecodable bytes are decoded as characters
+   in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
    character, escape the bytes using the surrogateescape error handler instead
    of decoding them.
 
-   Use _Py_wchar2char() to encode the character string back to a byte string.
+   Return a pointer to a newly allocated wide character string, use
+   PyMem_RawFree() to free the memory. If size is not NULL, write the number of
+   wide characters excluding the null character into *size
 
-   Return a pointer to a newly allocated wide character string (use
-   PyMem_RawFree() to free the memory) and write the number of written wide
-   characters excluding the null character into *size if size is not NULL, or
-   NULL on error (decoding or memory allocation error). If size is not NULL,
-   *size is set to (size_t)-1 on memory error and (size_t)-2 on decoding
-   error.
+   Return NULL on decoding error or memory allocation error. If *size* is not
+   NULL, *size is set to (size_t)-1 on memory error or set to (size_t)-2 on
+   decoding error.
 
-   Conversion errors should never happen, unless there is a bug in the C
-   library. */
+   Decoding errors should never happen, unless there is a bug in the C
+   library.
+
+   Use the Py_EncodeLocale() function to encode the character string back to a
+   byte string. */
 wchar_t*
-_Py_char2wchar(const char* arg, size_t *size)
+Py_DecodeLocale(const char* arg, size_t *size)
 {
 #ifdef __APPLE__
     wchar_t *wstr;
@@ -389,19 +391,20 @@ oom:
 #endif   /* __APPLE__ */
 }
 
-/* Encode a (wide) character string to the locale encoding with the
-   surrogateescape error handler (characters in range U+DC80..U+DCFF are
-   converted to bytes 0x80..0xFF).
+/* Encode a wide character string to the locale encoding with the
+   surrogateescape error handler: surrogate characters in the range
+   U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
 
-   This function is the reverse of _Py_char2wchar().
+   Return a pointer to a newly allocated byte string, use PyMem_Free() to free
+   the memory. Return NULL on encoding or memory allocation error.
 
-   Return a pointer to a newly allocated byte string (use PyMem_Free() to free
-   the memory), or NULL on encoding or memory allocation error.
+   If error_pos is not NULL, *error_pos is set to the index of the invalid
+   character on encoding error, or set to (size_t)-1 otherwise.
 
-   If error_pos is not NULL: *error_pos is the index of the invalid character
-   on encoding error, or (size_t)-1 otherwise. */
+   Use the Py_DecodeLocale() function to decode the bytes string back to a wide
+   character string. */
 char*
-_Py_wchar2char(const wchar_t *text, size_t *error_pos)
+Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
 #ifdef __APPLE__
     Py_ssize_t len;
@@ -520,7 +523,7 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
     char *fname;
-    fname = _Py_wchar2char(path, NULL);
+    fname = Py_EncodeLocale(path, NULL);
     if (fname == NULL) {
         errno = EINVAL;
         return -1;
@@ -784,7 +787,7 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
         errno = EINVAL;
         return NULL;
     }
-    cpath = _Py_wchar2char(path, NULL);
+    cpath = Py_EncodeLocale(path, NULL);
     if (cpath == NULL)
         return NULL;
     f = fopen(cpath, cmode);
@@ -875,7 +878,7 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
     int res;
     size_t r1;
 
-    cpath = _Py_wchar2char(path, NULL);
+    cpath = Py_EncodeLocale(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return -1;
@@ -889,7 +892,7 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         return -1;
     }
     cbuf[res] = '\0'; /* buf will be null terminated */
-    wbuf = _Py_char2wchar(cbuf, &r1);
+    wbuf = Py_DecodeLocale(cbuf, &r1);
     if (wbuf == NULL) {
         errno = EINVAL;
         return -1;
@@ -920,7 +923,7 @@ _Py_wrealpath(const wchar_t *path,
     wchar_t *wresolved_path;
     char *res;
     size_t r;
-    cpath = _Py_wchar2char(path, NULL);
+    cpath = Py_EncodeLocale(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return NULL;
@@ -930,7 +933,7 @@ _Py_wrealpath(const wchar_t *path,
     if (res == NULL)
         return NULL;
 
-    wresolved_path = _Py_char2wchar(cresolved_path, &r);
+    wresolved_path = Py_DecodeLocale(cresolved_path, &r);
     if (wresolved_path == NULL) {
         errno = EINVAL;
         return NULL;
@@ -963,7 +966,7 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
 
     if (getcwd(fname, Py_ARRAY_LENGTH(fname)) == NULL)
         return NULL;
-    wname = _Py_char2wchar(fname, &len);
+    wname = Py_DecodeLocale(fname, &len);
     if (wname == NULL)
         return NULL;
     if (size <= len) {
