@@ -1234,6 +1234,52 @@ yes)
       BASECFLAGS="$BASECFLAGS -Werror=declaration-after-statement"
     fi
 
+    AC_MSG_CHECKING(if we can turn on $CC mixed sign comparison warning)
+     ac_save_cc="$CC"
+     CC="$CC -Wsign-compare"
+     save_CFLAGS="$CFLAGS"
+     AC_CACHE_VAL(ac_cv_enable_sign_compare_warning,
+       AC_COMPILE_IFELSE(
+         [
+	   AC_LANG_PROGRAM([[]], [[]])
+	 ],[
+           ac_cv_enable_sign_compare_warning=yes
+	 ],[
+           ac_cv_enable_sign_compare_warning=no
+	 ]))
+     CFLAGS="$save_CFLAGS"
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_sign_compare_warning)
+
+    if test $ac_cv_enable_sign_compare_warning = yes
+    then
+      BASECFLAGS="$BASECFLAGS -Wsign-compare"
+    fi
+
+    AC_MSG_CHECKING(if we can turn on $CC unreachable code warning)
+     ac_save_cc="$CC"
+     CC="$CC -Wunreachable-code"
+     save_CFLAGS="$CFLAGS"
+     AC_CACHE_VAL(ac_cv_enable_unreachable_code_warning,
+       AC_COMPILE_IFELSE(
+         [
+	   AC_LANG_PROGRAM([[]], [[]])
+	 ],[
+           ac_cv_enable_unreachable_code_warning=yes
+	 ],[
+           ac_cv_enable_unreachable_code_warning=no
+	 ]))
+     CFLAGS="$save_CFLAGS"
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
+
+    # Don't enable unreachable code warning in debug mode, since it usually
+    # results in non-standard code paths.
+    if test $ac_cv_enable_unreachable_code_warning = yes && test "$Py_DEBUG" != "true"
+    then
+      BASECFLAGS="$BASECFLAGS -Wunreachable-code"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
