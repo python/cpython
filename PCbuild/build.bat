@@ -16,13 +16,13 @@ set target=Build
 set dir=%~dp0
 
 :CheckOpts
-if "%1"=="-c" (set conf=%2) & shift & shift & goto CheckOpts
-if "%1"=="-p" (set platf=%2) & shift & shift & goto CheckOpts
-if "%1"=="-r" (set target=Rebuild) & shift & goto CheckOpts
-if "%1"=="-d" (set conf=Debug) & shift & goto CheckOpts
-if "%1"=="-e" call "%dir%get_externals.bat" & shift & goto CheckOpts
+if '%1'=='-c' (set conf=%2) & shift & shift & goto CheckOpts
+if '%1'=='-p' (set platf=%2) & shift & shift & goto CheckOpts
+if '%1'=='-r' (set target=Rebuild) & shift & goto CheckOpts
+if '%1'=='-d' (set conf=Debug) & shift & goto CheckOpts
+if '%1'=='-e' call "%dir%get_externals.bat" & shift & goto CheckOpts
 
-if "%platf%"=="x64" (set vs_platf=x86_amd64)
+if '%platf%'=='x64' (set vs_platf=x86_amd64)
 
 rem Setup the environment
 call "%VS100COMNTOOLS%..\..\VC\vcvarsall.bat" %vs_platf%
