@@ -1,8 +1,8 @@
 #! /bin/sh
 # Attempt to guess a canonical system name.
-#   Copyright 1992-2013 Free Software Foundation, Inc.
+#   Copyright 1992-2014 Free Software Foundation, Inc.
 
-timestamp='2013-06-10'
+timestamp='2014-03-23'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ version="\
 GNU config.guess ($timestamp)
 
 Originally written by Per Bothner.
-Copyright 1992-2013 Free Software Foundation, Inc.
+Copyright 1992-2014 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -149,7 +149,7 @@ Linux|GNU|GNU/*)
 	LIBC=gnu
 	#endif
 	EOF
-	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep '^LIBC'`
+	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep '^LIBC' | sed 's, ,,g'`
 	;;
 esac
 
@@ -826,7 +826,7 @@ EOF
     *:MINGW*:*)
 	echo ${UNAME_MACHINE}-pc-mingw32
 	exit ;;
-    i*:MSYS*:*)
+    *:MSYS*:*)
 	echo ${UNAME_MACHINE}-pc-msys
 	exit ;;
     i*:windows32*:*)
@@ -969,10 +969,10 @@ EOF
 	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep '^CPU'`
 	test x"${CPU}" != x && { echo "${CPU}-unknown-linux-${LIBC}"; exit; }
 	;;
-    or1k:Linux:*:*)
-	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
+    openrisc*:Linux:*:*)
+	echo or1k-unknown-linux-${LIBC}
 	exit ;;
-    or32:Linux:*:*)
+    or32:Linux:*:* | or1k*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
 	exit ;;
     padre:Linux:*:*)
@@ -1260,16 +1260,26 @@ EOF
 	if test "$UNAME_PROCESSOR" = unknown ; then
 	    UNAME_PROCESSOR=powerpc
 	fi
-	if [ "$CC_FOR_BUILD" != 'no_compiler_found' ]; then
-	    if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
-		(CCOPTS= $CC_FOR_BUILD -E - 2>/dev/null) | \
-		grep IS_64BIT_ARCH >/dev/null
-	    then
-		case $UNAME_PROCESSOR in
-		    i386) UNAME_PROCESSOR=x86_64 ;;
-		    powerpc) UNAME_PROCESSOR=powerpc64 ;;
-		esac
+	if test `echo "$UNAME_RELEASE" | sed -e 's/\..*//'` -le 10 ; then
+	    if [ "$CC_FOR_BUILD" != 'no_compiler_found' ]; then
+		if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
+		    (CCOPTS= $CC_FOR_BUILD -E - 2>/dev/null) | \
+		    grep IS_64BIT_ARCH >/dev/null
+		then
+		    case $UNAME_PROCESSOR in
+			i386) UNAME_PROCESSOR=x86_64 ;;
+			powerpc) UNAME_PROCESSOR=powerpc64 ;;
+		    esac
+		fi
 	    fi
+	elif test "$UNAME_PROCESSOR" = i386 ; then
+	    # Avoid executing cc on OS X 10.9, as it ships with a stub
+	    # that puts up a graphical alert prompting to install
+	    # developer tools.  Any system running Mac OS X 10.7 or
+	    # later (Darwin 11 and later) is required to have a 64-bit
+	    # processor. This is not true of the ARM version of Darwin
+	    # that Apple uses in portable devices.
+	    UNAME_PROCESSOR=x86_64
 	fi
 	echo ${UNAME_PROCESSOR}-apple-darwin${UNAME_RELEASE}
 	exit ;;
@@ -1360,154 +1370,6 @@ EOF
 	echo ${UNAME_MACHINE}-unknown-esx
 	exit ;;
 esac
-
-eval $set_cc_for_build
-cat >$dummy.c <<EOF
-#ifdef _SEQUENT_
-# include <sys/types.h>
-# include <sys/utsname.h>
-#endif
-main ()
-{
-#if defined (sony)
-#if defined (MIPSEB)
-  /* BFD wants "bsd" instead of "newsos".  Perhaps BFD should be changed,
-     I don't know....  */
-  printf ("mips-sony-bsd\n"); exit (0);
-#else
-#include <sys/param.h>
-  printf ("m68k-sony-newsos%s\n",
-#ifdef NEWSOS4
-	"4"
-#else
-	""
-#endif
-	); exit (0);
-#endif
-#endif
-
-#if defined (__arm) && defined (__acorn) && defined (__unix)
-  printf ("arm-acorn-riscix\n"); exit (0);
-#endif
-
-#if defined (hp300) && !defined (hpux)
-  printf ("m68k-hp-bsd\n"); exit (0);
-#endif
-
-#if defined (NeXT)
-#if !defined (__ARCHITECTURE__)
-#define __ARCHITECTURE__ "m68k"
-#endif
-  int version;
-  version=`(hostinfo | sed -n 's/.*NeXT Mach \([0-9]*\).*/\1/p') 2>/dev/null`;
-  if (version < 4)
-    printf ("%s-next-nextstep%d\n", __ARCHITECTURE__, version);
-  else
-    printf ("%s-next-openstep%d\n", __ARCHITECTURE__, version);
-  exit (0);
-#endif
-
-#if defined (MULTIMAX) || defined (n16)
-#if defined (UMAXV)
-  printf ("ns32k-encore-sysv\n"); exit (0);
-#else
-#if defined (CMU)
-  printf ("ns32k-encore-mach\n"); exit (0);
-#else
-  printf ("ns32k-encore-bsd\n"); exit (0);
-#endif
-#endif
-#endif
-
-#if defined (__386BSD__)
-  printf ("i386-pc-bsd\n"); exit (0);
-#endif
-
-#if defined (sequent)
-#if defined (i386)
-  printf ("i386-sequent-dynix\n"); exit (0);
-#endif
-#if defined (ns32000)
-  printf ("ns32k-sequent-dynix\n"); exit (0);
-#endif
-#endif
-
-#if defined (_SEQUENT_)
-    struct utsname un;
-
-    uname(&un);
-
-    if (strncmp(un.version, "V2", 2) == 0) {
-	printf ("i386-sequent-ptx2\n"); exit (0);
-    }
-    if (strncmp(un.version, "V1", 2) == 0) { /* XXX is V1 correct? */
-	printf ("i386-sequent-ptx1\n"); exit (0);
-    }
-    printf ("i386-sequent-ptx\n"); exit (0);
-
-#endif
-
-#if defined (vax)
-# if !defined (ultrix)
-#  include <sys/param.h>
-#  if defined (BSD)
-#   if BSD == 43
-      printf ("vax-dec-bsd4.3\n"); exit (0);
-#   else
-#    if BSD == 199006
-      printf ("vax-dec-bsd4.3reno\n"); exit (0);
-#    else
-      printf ("vax-dec-bsd\n"); exit (0);
-#    endif
-#   endif
-#  else
-    printf ("vax-dec-bsd\n"); exit (0);
-#  endif
-# else
-    printf ("vax-dec-ultrix\n"); exit (0);
-# endif
-#endif
-
-#if defined (alliant) && defined (i860)
-  printf ("i860-alliant-bsd\n"); exit (0);
-#endif
-
-  exit (1);
-}
-EOF
-
-$CC_FOR_BUILD -o $dummy $dummy.c 2>/dev/null && SYSTEM_NAME=`$dummy` &&
-	{ echo "$SYSTEM_NAME"; exit; }
-
-# Apollos put the system type in the environment.
-
-test -d /usr/apollo && { echo ${ISP}-apollo-${SYSTYPE}; exit; }
-
-# Convex versions that predate uname can use getsysinfo(1)
-
-if [ -x /usr/convex/getsysinfo ]
-then
-    case `getsysinfo -f cpu_type` in
-    c1*)
-	echo c1-convex-bsd
-	exit ;;
-    c2*)
-	if getsysinfo -f scalar_acc
-	then echo c32-convex-bsd
-	else echo c2-convex-bsd
-	fi
-	exit ;;
-    c34*)
-	echo c34-convex-bsd
-	exit ;;
-    c38*)
-	echo c38-convex-bsd
-	exit ;;
-    c4*)
-	echo c4-convex-bsd
-	exit ;;
-    esac
-fi
 
 cat >&2 <<EOF
 $0: unable to guess system type
