@@ -336,7 +336,7 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix,
     joinpath(prefix, L"Modules/Setup");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
-        vpath = _Py_char2wchar(VPATH, NULL);
+        vpath = Py_DecodeLocale(VPATH, NULL);
         if (vpath != NULL) {
             wcsncpy(prefix, argv0_path, MAXPATHLEN);
             prefix[MAXPATHLEN] = L'\0';
@@ -491,10 +491,10 @@ calculate_path(void)
     wchar_t *_pythonpath, *_prefix, *_exec_prefix;
     wchar_t *lib_python;
 
-    _pythonpath = _Py_char2wchar(PYTHONPATH, NULL);
-    _prefix = _Py_char2wchar(PREFIX, NULL);
-    _exec_prefix = _Py_char2wchar(EXEC_PREFIX, NULL);
-    lib_python = _Py_char2wchar("lib/python" VERSION, NULL);
+    _pythonpath = Py_DecodeLocale(PYTHONPATH, NULL);
+    _prefix = Py_DecodeLocale(PREFIX, NULL);
+    _exec_prefix = Py_DecodeLocale(EXEC_PREFIX, NULL);
+    lib_python = Py_DecodeLocale("lib/python" VERSION, NULL);
 
     if (!_pythonpath || !_prefix || !_exec_prefix || !lib_python) {
         Py_FatalError(
@@ -503,7 +503,7 @@ calculate_path(void)
     }
 
     if (_path) {
-        path_buffer = _Py_char2wchar(_path, NULL);
+        path_buffer = Py_DecodeLocale(_path, NULL);
         path = path_buffer;
     }
 
@@ -584,7 +584,7 @@ calculate_path(void)
         ** be running the interpreter in the build directory, so we use the
         ** build-directory-specific logic to find Lib and such.
         */
-        wchar_t* wbuf = _Py_char2wchar(modPath, NULL);
+        wchar_t* wbuf = Py_DecodeLocale(modPath, NULL);
         if (wbuf == NULL) {
             Py_FatalError("Cannot decode framework location");
         }
@@ -709,7 +709,7 @@ calculate_path(void)
 
     if (_rtpypath && _rtpypath[0] != '\0') {
         size_t rtpypath_len;
-        rtpypath = _Py_char2wchar(_rtpypath, &rtpypath_len);
+        rtpypath = Py_DecodeLocale(_rtpypath, &rtpypath_len);
         if (rtpypath != NULL)
             bufsz += rtpypath_len + 1;
     }

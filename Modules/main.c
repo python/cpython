@@ -647,7 +647,7 @@ Py_Main(int argc, wchar_t **argv)
             /* Used by Mac/Tools/pythonw.c to forward
              * the argv0 of the stub executable
              */
-            wchar_t* wbuf = _Py_char2wchar(pyvenv_launcher, NULL);
+            wchar_t* wbuf = Py_DecodeLocale(pyvenv_launcher, NULL);
 
             if (wbuf == NULL) {
                 Py_FatalError("Cannot decode __PYVENV_LAUNCHER__");
@@ -730,7 +730,7 @@ Py_Main(int argc, wchar_t **argv)
                 char *cfilename_buffer;
                 const char *cfilename;
                 int err = errno;
-                cfilename_buffer = _Py_wchar2char(filename, NULL);
+                cfilename_buffer = Py_EncodeLocale(filename, NULL);
                 if (cfilename_buffer != NULL)
                     cfilename = cfilename_buffer;
                 else

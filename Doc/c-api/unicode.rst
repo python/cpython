@@ -758,11 +758,13 @@ system.
    *errors* is ``NULL``.  *str* must end with a null character but
    cannot contain embedded null characters.
 
+   Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` to decode a string from
+   :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
+   Python startup).
+
    .. seealso::
 
-      Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` to decode a string from
-      :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
-      Python startup).
+      The :c:func:`Py_DecodeLocale` function.
 
    .. versionadded:: 3.3
 
@@ -783,11 +785,13 @@ system.
    *errors* is ``NULL``. Return a :class:`bytes` object. *str* cannot
    contain embedded null characters.
 
+   Use :c:func:`PyUnicode_EncodeFSDefault` to encode a string to
+   :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
+   Python startup).
+
    .. seealso::
 
-      Use :c:func:`PyUnicode_EncodeFSDefault` to encode a string to
-      :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
-      Python startup).
+      The :c:func:`Py_EncodeLocale` function.
 
    .. versionadded:: 3.3
 
@@ -832,12 +836,14 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
 
+   :c:data:`Py_FileSystemDefaultEncoding` is initialized at startup from the
+   locale encoding and cannot be modified later. If you need to decode a string
+   from the current locale encoding, use
+   :c:func:`PyUnicode_DecodeLocaleAndSize`.
+
    .. seealso::
 
-      :c:data:`Py_FileSystemDefaultEncoding` is initialized at startup from the
-      locale encoding and cannot be modified later. If you need to decode a
-      string from the current locale encoding, use
-      :c:func:`PyUnicode_DecodeLocaleAndSize`.
+      The :c:func:`Py_DecodeLocale` function.
 
    .. versionchanged:: 3.2
       Use ``"strict"`` error handler on Windows.
@@ -867,12 +873,13 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
 
+   :c:data:`Py_FileSystemDefaultEncoding` is initialized at startup from the
+   locale encoding and cannot be modified later. If you need to encode a string
+   to the current locale encoding, use :c:func:`PyUnicode_EncodeLocale`.
+
    .. seealso::
 
-      :c:data:`Py_FileSystemDefaultEncoding` is initialized at startup from the
-      locale encoding and cannot be modified later. If you need to encode a
-      string to the current locale encoding, use
-      :c:func:`PyUnicode_EncodeLocale`.
+      The :c:func:`Py_EncodeLocale` function.
 
    .. versionadded:: 3.2
 

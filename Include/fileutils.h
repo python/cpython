@@ -7,11 +7,11 @@ extern "C" {
 
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
-PyAPI_FUNC(wchar_t *) _Py_char2wchar(
+PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
     const char *arg,
     size_t *size);
 
-PyAPI_FUNC(char*) _Py_wchar2char(
+PyAPI_FUNC(char*) Py_EncodeLocale(
     const wchar_t *text,
     size_t *error_pos);
 

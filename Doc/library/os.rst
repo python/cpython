@@ -78,9 +78,10 @@ uses the file system encoding to perform this conversion (see
 
 .. versionchanged:: 3.1
    On some systems, conversion using the file system encoding may fail. In this
-   case, Python uses the ``surrogateescape`` encoding error handler, which means
-   that undecodable bytes are replaced by a Unicode character U+DCxx on
-   decoding, and these are again translated to the original byte on encoding.
+   case, Python uses the :ref:`surrogateescape encoding error handler
+   <surrogateescape>`, which means that undecodable bytes are replaced by a
+   Unicode character U+DCxx on decoding, and these are again translated to the
+   original byte on encoding.
 
 
 The file system encoding must guarantee to successfully decode all bytes
