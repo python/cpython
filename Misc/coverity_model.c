@@ -85,7 +85,7 @@ PyObject *PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
 }
 
 /* Python/fileutils.c */
-wchar_t *_Py_char2wchar(const char* arg, size_t *size)
+wchar_t *Py_DecodeLocale(const char* arg, size_t *size)
 {
    wchar_t *w;
     __coverity_tainted_data_sink__(arg);

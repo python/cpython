@@ -3255,7 +3255,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
         /* "surrogateescape" error handler */
         char *str;
 
-        str = _Py_wchar2char(wstr, &error_pos);
+        str = Py_EncodeLocale(wstr, &error_pos);
         if (str == NULL) {
             if (error_pos == (size_t)-1) {
                 PyErr_NoMemory();
@@ -3308,7 +3308,7 @@ encode_error:
 
     if (errmsg != NULL) {
         size_t errlen;
-        wstr = _Py_char2wchar(errmsg, &errlen);
+        wstr = Py_DecodeLocale(errmsg, &errlen);
         if (wstr != NULL) {
             reason = PyUnicode_FromWideChar(wstr, errlen);
             PyMem_RawFree(wstr);
@@ -3526,7 +3526,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
 
     if (surrogateescape) {
         /* "surrogateescape" error handler */
-        wstr = _Py_char2wchar(str, &wlen);
+        wstr = Py_DecodeLocale(str, &wlen);
         if (wstr == NULL) {
             if (wlen == (size_t)-1)
                 PyErr_NoMemory();
@@ -3581,7 +3581,7 @@ decode_error:
     error_pos = mbstowcs_errorpos(str, len);
     if (errmsg != NULL) {
         size_t errlen;
-        wstr = _Py_char2wchar(errmsg, &errlen);
+        wstr = Py_DecodeLocale(errmsg, &errlen);
         if (wstr != NULL) {
             reason = PyUnicode_FromWideChar(wstr, errlen);
             PyMem_RawFree(wstr);
