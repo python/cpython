@@ -6510,6 +6510,94 @@ $as_echo "$ac_cv_declaration_after_statement_warning" >&6; }
       BASECFLAGS="$BASECFLAGS -Werror=declaration-after-statement"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC mixed sign comparison warning" >&5
+$as_echo_n "checking if we can turn on $CC mixed sign comparison warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wsign-compare"
+     save_CFLAGS="$CFLAGS"
+     if ${ac_cv_enable_sign_compare_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_enable_sign_compare_warning=yes
+
+else
+
+           ac_cv_enable_sign_compare_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CFLAGS="$save_CFLAGS"
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_sign_compare_warning" >&5
+$as_echo "$ac_cv_enable_sign_compare_warning" >&6; }
+
+    if test $ac_cv_enable_sign_compare_warning = yes
+    then
+      BASECFLAGS="$BASECFLAGS -Wsign-compare"
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC unreachable code warning" >&5
+$as_echo_n "checking if we can turn on $CC unreachable code warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wunreachable-code"
+     save_CFLAGS="$CFLAGS"
+     if ${ac_cv_enable_unreachable_code_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_enable_unreachable_code_warning=yes
+
+else
+
+           ac_cv_enable_unreachable_code_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CFLAGS="$save_CFLAGS"
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
+$as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
+
+    # Don't enable unreachable code warning in debug mode, since it usually
+    # results in non-standard code paths.
+    if test $ac_cv_enable_unreachable_code_warning = yes && test "$Py_DEBUG" != "true"
+    then
+      BASECFLAGS="$BASECFLAGS -Wunreachable-code"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
