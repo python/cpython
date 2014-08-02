@@ -121,6 +121,8 @@ Core and Builtins
 Library
 -------
 
+- Add an __all__ to html.entities.
+
 - Issue #15114: the strict mode and argument of HTMLParser, HTMLParser.error,
   and the HTMLParserError exception have been removed.
 

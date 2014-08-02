@@ -1,5 +1,8 @@
 """HTML character entity references."""
 
+__all__ = ['html5', 'name2codepoint', 'codepoint2name', 'entitydefs']
+
+
 # maps the HTML entity name to the Unicode codepoint
 name2codepoint = {
     'AElig':    0x00c6, # latin capital letter AE = latin capital ligature AE, U+00C6 ISOlat1
