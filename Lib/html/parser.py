@@ -59,7 +59,6 @@ endendtag = re.compile('>')
 endtagfind = re.compile('</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 
 
-_default_sentinel = object()
 
 class HTMLParser(_markupbase.ParserBase):
     """Find tags and other markup and call handler functions.
@@ -85,17 +84,12 @@ class HTMLParser(_markupbase.ParserBase):
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
 
-    def __init__(self, *, convert_charrefs=_default_sentinel):
+    def __init__(self, *, convert_charrefs=True):
         """Initialize and reset this instance.
 
-        If convert_charrefs is True (default: False), all character references
+        If convert_charrefs is True (the default), all character references
         are automatically converted to the corresponding Unicode characters.
         """
-        if convert_charrefs is _default_sentinel:
-            convert_charrefs = False  # default
-            warnings.warn("The value of convert_charrefs will become True in "
-                          "3.5. You are encouraged to set the value explicitly.",
-                          DeprecationWarning, stacklevel=2)
         self.convert_charrefs = convert_charrefs
         self.reset()
 
