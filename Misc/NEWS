@@ -121,6 +121,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21047: set the default value for the *convert_charrefs* argument
+  of HTMLParser to True.  Patch by Berker Peksag.
+
 - Add an __all__ to html.entities.
 
 - Issue #15114: the strict mode and argument of HTMLParser, HTMLParser.error,

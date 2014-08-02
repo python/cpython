@@ -346,7 +346,8 @@ text
         self._run_check(html, expected)
 
     def test_convert_charrefs(self):
-        collector = lambda: EventCollectorCharrefs(convert_charrefs=True)
+        # default value for convert_charrefs is now True
+        collector = lambda: EventCollectorCharrefs()
         self.assertTrue(collector().convert_charrefs)
         charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
         # check charrefs in the middle of the text/attributes
@@ -382,10 +383,6 @@ text
         # check a string with no charrefs
         self._run_check('no charrefs here', [('data', 'no charrefs here')],
                         collector=collector())
-
-    def test_deprecation_warnings(self):
-        with self.assertWarns(DeprecationWarning):
-            EventCollector()  # convert_charrefs not passed explicitly
 
     # the remaining tests were for the "tolerant" parser (which is now
     # the default), and check various kind of broken markup
