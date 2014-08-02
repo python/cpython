@@ -335,6 +335,12 @@ Changes in the Python API
   attribute, the qualified name, which is now used for the representation
   of a generator (``repr(gen)``). See :issue:`21205`.
 
+* The deprecated "strict" mode and argument of :class:`~html.parser.HTMLParser`,
+  :meth:`HTMLParser.error`, and the :exc:`HTMLParserError` exception have been
+  removed (contributed by Ezio Melotti in :issue:`15114`).
+  The *convert_charrefs* argument of :class:`~html.parser.HTMLParser` is
+  now ``True`` by default (contributed by Berker Peksag in :issue:`21047`).
+
 Changes in the C API
 --------------------
 
