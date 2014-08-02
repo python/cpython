@@ -16,15 +16,13 @@
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
-.. class:: HTMLParser(*, convert_charrefs=False)
+.. class:: HTMLParser(*, convert_charrefs=True)
 
    Create a parser instance able to parse invalid markup.
 
-   If *convert_charrefs* is ``True`` (default: ``False``), all character
+   If *convert_charrefs* is ``True`` (the default), all character
    references (except the ones in ``script``/``style`` elements) are
    automatically converted to the corresponding Unicode characters.
-   The use of ``convert_charrefs=True`` is encouraged and will become
-   the default in Python 3.5.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are
@@ -36,6 +34,9 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
    .. versionchanged:: 3.4
       *convert_charrefs* keyword argument added.
+
+   .. versionchanged:: 3.5
+      The default value for argument *convert_charrefs* is now ``True``.
 
 
 Example HTML Parser Application
