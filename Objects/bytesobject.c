@@ -999,7 +999,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "byte indices must be integers, not %.200s",
+                     "byte indices must be integers or slices, not %.200s",
                      Py_TYPE(item)->tp_name);
         return NULL;
     }

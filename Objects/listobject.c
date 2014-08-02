@@ -2444,7 +2444,7 @@ list_subscript(PyListObject* self, PyObject* item)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "list indices must be integers, not %.200s",
+                     "list indices must be integers or slices, not %.200s",
                      item->ob_type->tp_name);
         return NULL;
     }
@@ -2608,7 +2608,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "list indices must be integers, not %.200s",
+                     "list indices must be integers or slices, not %.200s",
                      item->ob_type->tp_name);
         return -1;
     }
