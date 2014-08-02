@@ -85,7 +85,7 @@ class EventCollectorCharrefs(EventCollector):
 class TestCaseBase(unittest.TestCase):
 
     def get_collector(self):
-        raise NotImplementedError
+        return EventCollector(convert_charrefs=False)
 
     def _run_check(self, source, expected_events, collector=None):
         if collector is None:
@@ -105,21 +105,8 @@ class TestCaseBase(unittest.TestCase):
         self._run_check(source, events,
                         EventCollectorExtra(convert_charrefs=False))
 
-    def _parse_error(self, source):
-        def parse(source=source):
-            parser = self.get_collector()
-            parser.feed(source)
-            parser.close()
-        with self.assertRaises(html.parser.HTMLParseError):
-            with self.assertWarns(DeprecationWarning):
-                parse()
 
-
-class HTMLParserStrictTestCase(TestCaseBase):
-
-    def get_collector(self):
-        with support.check_warnings(("", DeprecationWarning), quite=False):
-            return EventCollector(strict=True, convert_charrefs=False)
+class HTMLParserTestCase(TestCaseBase):
 
     def test_processing_instruction_only(self):
         self._run_check("<?processing instruction>", [
@@ -201,9 +188,6 @@ text
             ("data", "this < text > contains < bare>pointy< brackets"),
             ])
 
-    def test_illegal_declarations(self):
-        self._parse_error('<!spacer type="block" height="25">')
-
     def test_starttag_end_boundary(self):
         self._run_check("""<a b='<'>""", [("starttag", "a", [("b", "<")])])
         self._run_check("""<a b='>'>""", [("starttag", "a", [("b", ">")])])
@@ -238,25 +222,6 @@ text
         self._run_check(["<!--abc--", ">"], output)
         self._run_check(["<!--abc-->", ""], output)
 
-    def test_starttag_junk_chars(self):
-        self._parse_error("</>")
-        self._parse_error("</$>")
-        self._parse_error("</")
-        self._parse_error("</a")
-        self._parse_error("<a<a>")
-        self._parse_error("</a<a>")
-        self._parse_error("<!")
-        self._parse_error("<a")
-        self._parse_error("<a foo='bar'")
-        self._parse_error("<a foo='bar")
-        self._parse_error("<a foo='>'")
-        self._parse_error("<a foo='>")
-        self._parse_error("<a$>")
-        self._parse_error("<a$b>")
-        self._parse_error("<a$b/>")
-        self._parse_error("<a$b  >")
-        self._parse_error("<a$b  />")
-
     def test_valid_doctypes(self):
         # from http://www.w3.org/QA/2002/04/valid-dtd-list.html
         dtds = ['HTML',  # HTML5 doctype
@@ -280,9 +245,6 @@ text
         for dtd in dtds:
             self._run_check("<!DOCTYPE %s>" % dtd,
                             [('decl', 'DOCTYPE ' + dtd)])
-
-    def test_declaration_junk_chars(self):
-        self._parse_error("<!DOCTYPE foo $ >")
 
     def test_startendtag(self):
         self._run_check("<p/>", [
@@ -421,23 +383,12 @@ text
         self._run_check('no charrefs here', [('data', 'no charrefs here')],
                         collector=collector())
 
-
-class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
-
-    def get_collector(self):
-        return EventCollector(convert_charrefs=False)
-
     def test_deprecation_warnings(self):
         with self.assertWarns(DeprecationWarning):
             EventCollector()  # convert_charrefs not passed explicitly
-        with self.assertWarns(DeprecationWarning):
-            EventCollector(strict=True)
-        with self.assertWarns(DeprecationWarning):
-            EventCollector(strict=False)
-        with self.assertRaises(html.parser.HTMLParseError):
-            with self.assertWarns(DeprecationWarning):
-                EventCollector().error('test')
 
+    # the remaining tests were for the "tolerant" parser (which is now
+    # the default), and check various kind of broken markup
     def test_tolerant_parsing(self):
         self._run_check('<html <html>te>>xt&a<<bc</a></html>\n'
                         '<img src="URL><//img></html</html>', [
@@ -686,11 +637,7 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self._run_check(html, expected)
 
 
-class AttributesStrictTestCase(TestCaseBase):
-
-    def get_collector(self):
-        with support.check_warnings(("", DeprecationWarning), quite=False):
-            return EventCollector(strict=True, convert_charrefs=False)
+class AttributesTestCase(TestCaseBase):
 
     def test_attr_syntax(self):
         output = [
@@ -746,12 +693,6 @@ class AttributesStrictTestCase(TestCaseBase):
             "<html foo='&euro;&amp;&#97;&#x61;&unsupported;'>",
             [("starttag", "html", [("foo", "\u20AC&aa&unsupported;")])])
 
-
-
-class AttributesTolerantTestCase(AttributesStrictTestCase):
-
-    def get_collector(self):
-        return EventCollector(convert_charrefs=False)
 
     def test_attr_funky_names2(self):
         self._run_check(
