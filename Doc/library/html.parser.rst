@@ -16,21 +16,15 @@
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
-.. class:: HTMLParser(strict=False, *, convert_charrefs=False)
+.. class:: HTMLParser(*, convert_charrefs=False)
 
-   Create a parser instance.
+   Create a parser instance able to parse invalid markup.
 
    If *convert_charrefs* is ``True`` (default: ``False``), all character
    references (except the ones in ``script``/``style`` elements) are
    automatically converted to the corresponding Unicode characters.
    The use of ``convert_charrefs=True`` is encouraged and will become
    the default in Python 3.5.
-
-   If *strict* is ``False`` (the default), the parser will accept and parse
-   invalid markup.  If *strict* is ``True`` the parser will raise an
-   :exc:`~html.parser.HTMLParseError` exception instead [#]_ when it's not
-   able to parse the markup.  The use of ``strict=True`` is discouraged and
-   the *strict* argument is deprecated.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are
@@ -40,31 +34,8 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    This parser does not check that end tags match start tags or call the end-tag
    handler for elements which are closed implicitly by closing an outer element.
 
-   .. versionchanged:: 3.2
-      *strict* argument added.
-
-   .. deprecated-removed:: 3.3 3.5
-      The *strict* argument and the strict mode have been deprecated.
-      The parser is now able to accept and parse invalid markup too.
-
    .. versionchanged:: 3.4
       *convert_charrefs* keyword argument added.
-
-An exception is defined as well:
-
-
-.. exception:: HTMLParseError
-
-   Exception raised by the :class:`HTMLParser` class when it encounters an error
-   while parsing and *strict* is ``True``.  This exception provides three
-   attributes: :attr:`msg` is a brief message explaining the error,
-   :attr:`lineno` is the number of the line on which the broken construct was
-   detected, and :attr:`offset` is the number of characters into the line at
-   which the construct starts.
-
-   .. deprecated-removed:: 3.3 3.5
-      This exception has been deprecated because it's never raised by the parser
-      (when the default non-strict mode is used).
 
 
 Example HTML Parser Application
@@ -246,8 +217,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
    The *data* parameter will be the entire contents of the declaration inside
    the ``<![...]>`` markup.  It is sometimes useful to be overridden by a
-   derived class.  The base class implementation raises an :exc:`HTMLParseError`
-   when *strict* is ``True``.
+   derived class.  The base class implementation does nothing.
 
 
 .. _htmlparser-examples:
@@ -358,9 +328,3 @@ Parsing invalid HTML (e.g. unquoted attributes) also works::
    Data     : tag soup
    End tag  : p
    End tag  : a
-
-.. rubric:: Footnotes
-
-.. [#] For backward compatibility reasons *strict* mode does not raise
-       exceptions for all non-compliant HTML.  That is, some invalid HTML
-       is tolerated even in *strict* mode.
