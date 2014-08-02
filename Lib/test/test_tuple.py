@@ -6,6 +6,11 @@ import pickle
 class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
+    def test_getitem_error(self):
+        msg = "tuple indices must be integers or slices"
+        with self.assertRaisesRegex(TypeError, msg):
+            ()['a']
+
     def test_constructors(self):
         super().test_constructors()
         # calling built-in types without argument must return empty

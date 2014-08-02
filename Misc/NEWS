@@ -10,6 +10,10 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22077: Improve index error messages for bytearrays, bytes, lists,
+  and tuples by adding 'or slices'. Added ', not <typename' for bytearrays.
+  Original patch by Claudiu Popa.
+
 - Issue #18395: Rename ``_Py_char2wchar()`` to :c:func:`Py_DecodeLocale`,
   rename ``_Py_wchar2char()`` to :c:func:`Py_EncodeLocale`, and document
   these functions.

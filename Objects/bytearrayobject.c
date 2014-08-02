@@ -445,7 +445,9 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
         }
     }
     else {
-        PyErr_SetString(PyExc_TypeError, "bytearray indices must be integers");
+        PyErr_Format(PyExc_TypeError,
+                     "bytearray indices must be integers or slices, not %.200s",
+                     Py_TYPE(index)->tp_name);
         return NULL;
     }
 }
@@ -650,7 +652,9 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         }
     }
     else {
-        PyErr_SetString(PyExc_TypeError, "bytearray indices must be integer");
+        PyErr_Format(PyExc_TypeError,
+                     "bytearray indices must be integers or slices, not %.200s",
+                      Py_TYPE(index)->tp_name);
         return -1;
     }
 

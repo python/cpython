@@ -699,6 +699,11 @@ class BaseBytesTest:
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
+    def test_getitem_error(self):
+        msg = "byte indices must be integers or slices"
+        with self.assertRaisesRegex(TypeError, msg):
+            b'python'['a']
+
     def test_buffer_is_readonly(self):
         fd = os.open(__file__, os.O_RDONLY)
         with open(fd, "rb", buffering=0) as f:
@@ -752,6 +757,17 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
+
+    def test_getitem_error(self):
+        msg = "bytearray indices must be integers or slices"
+        with self.assertRaisesRegex(TypeError, msg):
+            bytearray(b'python')['a']
+
+    def test_setitem_error(self):
+        msg = "bytearray indices must be integers or slices"
+        with self.assertRaisesRegex(TypeError, msg):
+            b = bytearray(b'python')
+            b['a'] = "python"
 
     def test_nohash(self):
         self.assertRaises(TypeError, hash, bytearray())
