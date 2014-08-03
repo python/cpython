@@ -49,8 +49,8 @@ string instead.
 
         >>> class MyList(list):
         ...     @recursive_repr()
-        ...      def __repr__(self):
-        ...          return '<' + '|'.join(map(repr, self)) + '>'
+        ...     def __repr__(self):
+        ...         return '<' + '|'.join(map(repr, self)) + '>'
         ...
         >>> m = MyList('abc')
         >>> m.append(m)
