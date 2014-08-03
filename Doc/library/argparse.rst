@@ -715,7 +715,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface.  The recommended way to do
-this is to extend :class:`argparse.Action`, overriding the ``__call__`` method
+this is to extend :class:`Action`, overriding the ``__call__`` method
 and optionally the ``__init__`` method.
 
 An example of a custom action::
@@ -738,7 +738,7 @@ An example of a custom action::
    >>> args
    Namespace(bar='1', foo='2')
 
-For more details, see :class:`argparse.Action`.
+For more details, see :class:`Action`.
 
 nargs
 ^^^^^
