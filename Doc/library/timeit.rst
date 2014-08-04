@@ -28,22 +28,23 @@ can be used to compare three different expressions:
 
 .. code-block:: sh
 
-   $ python -m timeit '"-".join(str(n) for n in range(100))'
-   10000 loops, best of 3: 40.3 usec per loop
-   $ python -m timeit '"-".join([str(n) for n in range(100)])'
-   10000 loops, best of 3: 33.4 usec per loop
-   $ python -m timeit '"-".join(map(str, range(100)))'
-   10000 loops, best of 3: 25.2 usec per loop
+   $ python3 -m timeit '"-".join(str(n) for n in range(100))'
+   10000 loops, best of 3: 30.2 usec per loop
+   $ python3 -m timeit '"-".join([str(n) for n in range(100)])'
+   10000 loops, best of 3: 27.5 usec per loop
+   $ python3 -m timeit '"-".join(map(str, range(100)))'
+   10000 loops, best of 3: 23.2 usec per loop
 
 This can be achieved from the :ref:`python-interface` with::
 
    >>> import timeit
    >>> timeit.timeit('"-".join(str(n) for n in range(100))', number=10000)
-   0.8187260627746582
+   0.3018611848820001
    >>> timeit.timeit('"-".join([str(n) for n in range(100)])', number=10000)
-   0.7288308143615723
+   0.2727368790656328
    >>> timeit.timeit('"-".join(map(str, range(100)))', number=10000)
-   0.5858950614929199
+   0.23702679807320237
+
 
 Note however that :mod:`timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.  In the
