@@ -1448,10 +1448,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             # are a concatenation of the first character of each of the 4 lines
             # so we can do some very readable comparisons.
             while len(lines) < 4:
-                try:
-                    lines.append(next(diff_lines_iterator))
-                except StopIteration:
-                    lines.append('X')
+                lines.append(next(diff_lines_iterator, 'X'))
             s = ''.join([line[0] for line in lines])
             if s.startswith('X'):
                 # When no more lines, pump out any remaining blank lines so the
@@ -1514,7 +1511,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 num_blanks_to_yield -= 1
                 yield ('','\n'),None,True
             if s.startswith('X'):
-                raise StopIteration
+                return
             else:
                 yield from_line,to_line,True
 
