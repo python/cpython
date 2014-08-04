@@ -235,8 +235,8 @@ class ParserTesterMetaclass(type):
                 parser = self._get_parser(tester)
                 for args_str in tester.failures:
                     args = args_str.split()
-                    raises = tester.assertRaises
-                    raises(ArgumentParserError, parser.parse_args, args)
+                    with tester.assertRaises(ArgumentParserError, msg=args):
+                        parser.parse_args(args)
 
             def test_successes(self, tester):
                 parser = self._get_parser(tester)
