@@ -1410,7 +1410,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             change_re.sub(record_sub_info,markers)
             # process each tuple inserting our special marks that won't be
             # noticed by an xml/html escaper.
-            for key,(begin,end) in sub_info[::-1]:
+            for key,(begin,end) in reversed(sub_info):
                 text = text[0:begin]+'\0'+key+text[begin:end]+'\1'+text[end:]
             text = text[2:]
         # Handle case of add/delete entire line
