@@ -802,6 +802,9 @@ Documentation
 Tests
 -----
 
+- Issue #22104: regrtest.py no longer holds a reference to the suite of tests
+  loaded from test modules that don't define test_main().
+
 - Issue #22111: Assorted cleanups in test_imaplib.  Patch by Milan Oberkirch.
 
 - Issue #22002: Added ``load_package_tests`` function to test.support and used
