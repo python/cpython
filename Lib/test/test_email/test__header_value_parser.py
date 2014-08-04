@@ -2443,6 +2443,18 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(str(address_list.addresses[1]),
                          str(address_list.mailboxes[2]))
 
+    def test_invalid_content_disposition(self):
+        content_disp = self._test_parse_x(
+            parser.parse_content_disposition_header,
+            ";attachment", "; attachment", ";attachment",
+            [errors.InvalidHeaderDefect]*2
+        )
+
+    def test_invalid_content_transfer_encoding(self):
+        cte = self._test_parse_x(
+            parser.parse_content_transfer_encoding_header,
+            ";foo", ";foo", ";foo", [errors.InvalidHeaderDefect]*3
+        )
 
 @parameterize
 class Test_parse_mime_version(TestParserMixin, TestEmailBase):
