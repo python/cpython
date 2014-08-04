@@ -1346,7 +1346,6 @@ successive matches::
             ('MISMATCH',r'.'),           # Any other character
         ]
         tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
-        get_token = re.compile(tok_regex).match
         line_num = 1
         line_start = 0
         for mo in re.finditer(tok_regex, code):
