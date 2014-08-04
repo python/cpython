@@ -1925,19 +1925,10 @@ These solutions are not mutually exclusive.
 __import__('x.y.z') returns <module 'x'>; how do I get z?
 ---------------------------------------------------------
 
-Try::
+Consider using the convenience function :func:`~importlib.import_module` from
+:mod:`importlib` instead::
 
-   __import__('x.y.z').y.z
-
-For more realistic situations, you may have to do something like ::
-
-   m = __import__(s)
-   for i in s.split(".")[1:]:
-       m = getattr(m, i)
-
-See :mod:`importlib` for a convenience function called
-:func:`~importlib.import_module`.
-
+   z = importlib.import_module('x.y.z')
 
 
 When I edit an imported module and reimport it, the changes don't show up.  Why does this happen?
