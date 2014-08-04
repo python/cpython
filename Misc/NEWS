@@ -239,6 +239,9 @@ IDLE
 Tests
 -----
 
+- Issue #22104: regrtest.py no longer holds a reference to the suite of tests
+  loaded from test modules that don't define test_main().
+
 - Issue #22002: Added ``load_package_tests`` function to test.support and used
   it to implement/augment test discovery in test_asyncio, test_email,
   test_importlib, test_json, and test_tools.
