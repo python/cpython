@@ -1273,8 +1273,10 @@ def runtest_inner(test, verbose, quiet,
             # tests.  If not, use normal unittest test loading.
             test_runner = getattr(the_module, "test_main", None)
             if test_runner is None:
-                tests = unittest.TestLoader().loadTestsFromModule(the_module)
-                test_runner = lambda: support.run_unittest(tests)
+                def test_runner():
+                    loader = unittest.TestLoader()
+                    tests = loader.loadTestsFromModule(the_module)
+                    support.run_unittest(tests)
             test_runner()
             if huntrleaks:
                 refleak = dash_R(the_module, test, test_runner, huntrleaks)
