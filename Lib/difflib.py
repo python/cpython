@@ -30,7 +30,7 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'HtmlDiff', 'Match']
 
-import heapq
+from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
 
 Match = _namedtuple('Match', 'a b size')
@@ -729,7 +729,7 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
             result.append((s.ratio(), x))
 
     # Move the best scorers to head of list
-    result = heapq.nlargest(n, result)
+    result = _nlargest(n, result)
     # Strip scores for the best n matches
     return [x for score, x in result]
 
