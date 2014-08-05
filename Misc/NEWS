@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16037: HTTPMessage.readheaders() raises an HTTPException when more
+  than 100 headers are read. Patch by Jyrki Pulliainen and Daniel Eriksson.
+
 - Issue #21580: Now Tkinter correctly handles binary "data" and "maskdata"
   configure options of tkinter.PhotoImage.
 
