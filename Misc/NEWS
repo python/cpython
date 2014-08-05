@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20170: Convert posixmodule to use Argument Clinic.
+
 - Issue #22077: Improve index error messages for bytearrays, bytes, lists,
   and tuples by adding 'or slices'. Added ', not <typename' for bytearrays.
   Original patch by Claudiu Popa.
