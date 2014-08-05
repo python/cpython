@@ -4,13 +4,10 @@ import os
 import errno
 import pathlib
 import pickle
-import shutil
 import socket
 import stat
-import sys
 import tempfile
 import unittest
-from contextlib import contextmanager
 
 from test import support
 TESTFN = support.TESTFN
@@ -743,7 +740,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('//Some/SHARE/a/B'), P('//somE/share/A/b'))
 
     def test_as_uri(self):
-        from urllib.parse import quote_from_bytes
         P = self.cls
         with self.assertRaises(ValueError):
             P('/a/b').as_uri()
@@ -1617,6 +1613,59 @@ class _BasePathTest(object):
         # the parent's permissions follow the default process settings
         self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), mode)
 
+    def test_mkdir_exist_ok(self):
+        p = self.cls(BASE, 'dirB')
+        st_ctime_first = p.stat().st_ctime
+        self.assertTrue(p.exists())
+        self.assertTrue(p.is_dir())
+        with self.assertRaises(FileExistsError) as cm:
+            p.mkdir()
+        self.assertEqual(cm.exception.errno, errno.EEXIST)
+        p.mkdir(exist_ok=True)
+        self.assertTrue(p.exists())
+        self.assertEqual(p.stat().st_ctime, st_ctime_first)
+
+    def test_mkdir_exist_ok_with_parent(self):
+        p = self.cls(BASE, 'dirC')
+        self.assertTrue(p.exists())
+        with self.assertRaises(FileExistsError) as cm:
+            p.mkdir()
+        self.assertEqual(cm.exception.errno, errno.EEXIST)
+        p = p / 'newdirC'
+        p.mkdir(parents=True)
+        st_ctime_first = p.stat().st_ctime
+        self.assertTrue(p.exists())
+        with self.assertRaises(FileExistsError) as cm:
+            p.mkdir(parents=True)
+        self.assertEqual(cm.exception.errno, errno.EEXIST)
+        p.mkdir(parents=True, exist_ok=True)
+        self.assertTrue(p.exists())
+        self.assertEqual(p.stat().st_ctime, st_ctime_first)
+
+    def test_mkdir_with_child_file(self):
+        p = self.cls(BASE, 'dirB', 'fileB')
+        self.assertTrue(p.exists())
+        # An exception is raised when the last path component is an existing
+        # regular file, regardless of whether exist_ok is true or not.
+        with self.assertRaises(FileExistsError) as cm:
+            p.mkdir(parents=True)
+        self.assertEqual(cm.exception.errno, errno.EEXIST)
+        with self.assertRaises(FileExistsError) as cm:
+            p.mkdir(parents=True, exist_ok=True)
+        self.assertEqual(cm.exception.errno, errno.EEXIST)
+
+    def test_mkdir_no_parents_file(self):
+        p = self.cls(BASE, 'fileA')
+        self.assertTrue(p.exists())
+        # An exception is raised when the last path component is an existing
+        # regular file, regardless of whether exist_ok is true or not.
+        with self.assertRaises(FileExistsError) as cm:
+            p.mkdir()
+        self.assertEqual(cm.exception.errno, errno.EEXIST)
+        with self.assertRaises(FileExistsError) as cm:
+            p.mkdir(exist_ok=True)
+        self.assertEqual(cm.exception.errno, errno.EEXIST)
+
     @with_symlinks
     def test_symlink_to(self):
         P = self.cls(BASE)
@@ -1852,7 +1901,6 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
     @with_symlinks
     def test_resolve_loop(self):
         # Loop detection for broken symlinks under POSIX
-        P = self.cls
         # Loops with relative symlinks
         os.symlink('linkX/inside', join('linkX'))
         self._check_symlink_loop(BASE, 'linkX')
