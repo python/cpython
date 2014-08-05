@@ -1263,7 +1263,7 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
             return 0;
         }
         if (!PyBytes_Check(obj3)) {
-            Py_DECREF(obj2);
+            Py_DECREF(obj3);
             PyErr_SetString(PyExc_TypeError, "encoding of hostname failed to return bytes");
             return 0;
         }
