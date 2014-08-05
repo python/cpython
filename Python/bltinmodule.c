@@ -69,7 +69,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     func = PyTuple_GET_ITEM(args, 0); /* Better be callable */
     if (!PyFunction_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
-                        "__build__class__: func must be a function");
+                        "__build_class__: func must be a function");
         return NULL;
     }
     name = PyTuple_GET_ITEM(args, 1);
