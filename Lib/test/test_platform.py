@@ -307,7 +307,7 @@ class PlatformTest(unittest.TestCase):
             with mock.patch('platform._UNIXCONFDIR', tempdir):
                 distname, version, distid = platform.linux_distribution()
 
-            self.assertEqual(distname, 'Fedora')
+                self.assertEqual(distname, 'Fedora')
             self.assertEqual(version, '19')
             self.assertEqual(distid, 'Schr\xf6dinger\u2019s Cat')
 
