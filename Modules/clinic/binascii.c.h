@@ -320,7 +320,7 @@ binascii_crc32(PyModuleDef *module, PyObject *args)
         &data, &crc))
         goto exit;
     _return_value = binascii_crc32_impl(module, &data, crc);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
         goto exit;
     return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
 
@@ -475,4 +475,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=68e2bcc6956b6213 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=53cd6b379c745220 input=a9049054013a1b77]*/

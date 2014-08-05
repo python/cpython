@@ -12465,7 +12465,7 @@ os_major(PyModuleDef *module, PyObject *args)
         &device))
         goto exit;
     _return_value = os_major_impl(module, device);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
         goto exit;
     return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
 
@@ -12475,7 +12475,7 @@ exit:
 
 static unsigned int
 os_major_impl(PyModuleDef *module, int device)
-/*[clinic end generated code: output=f60d3cc3d5d20325 input=ea48820b7e10d310]*/
+/*[clinic end generated code: output=52e6743300dcf4ad input=ea48820b7e10d310]*/
 {
     return major(device);
 }
@@ -12514,7 +12514,7 @@ os_minor(PyModuleDef *module, PyObject *args)
         &device))
         goto exit;
     _return_value = os_minor_impl(module, device);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
         goto exit;
     return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
 
@@ -12524,7 +12524,7 @@ exit:
 
 static unsigned int
 os_minor_impl(PyModuleDef *module, int device)
-/*[clinic end generated code: output=71eca1d5149c2a07 input=089733ebbf9754e8]*/
+/*[clinic end generated code: output=aebe4bd7f455b755 input=089733ebbf9754e8]*/
 {
     return minor(device);
 }
@@ -12565,7 +12565,7 @@ os_makedev(PyModuleDef *module, PyObject *args)
         &major, &minor))
         goto exit;
     _return_value = os_makedev_impl(module, major, minor);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
         goto exit;
     return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
 
@@ -12575,7 +12575,7 @@ exit:
 
 static unsigned int
 os_makedev_impl(PyModuleDef *module, int major, int minor)
-/*[clinic end generated code: output=e04dc5723a98cd3b input=f55bf7cffb028a08]*/
+/*[clinic end generated code: output=5cb79d9c9eac58b0 input=f55bf7cffb028a08]*/
 {
     return makedev(major, minor);
 }

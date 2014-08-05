@@ -882,6 +882,10 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #22120: For functions using an unsigned integer return converter,
+  Argument Clinic now generates a cast to that type for the comparison
+  to -1 in the generated code.  (This supresses a compilation warning.)
+
 - Issue #18974: Tools/scripts/diff.py now uses argparse instead of optparse.
 
 - Issue #21906: Make Tools/scripts/md5sum.py work in Python 3.
