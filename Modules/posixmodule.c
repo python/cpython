@@ -3455,7 +3455,6 @@ os_fchmod_impl(PyModuleDef *module, int fd, int mode)
 
 
 #ifdef HAVE_LCHMOD
-PyDoc_STRVAR(posix_lchmod__doc__,
 /*[clinic input]
 os.lchmod
 
