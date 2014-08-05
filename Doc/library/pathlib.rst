@@ -791,7 +791,7 @@ call fails (for example because the path doesn't exist):
    the symbolic link's information rather than its target's.
 
 
-.. method:: Path.mkdir(mode=0o777, parents=False)
+.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process' ``umask`` value to determine the file mode
@@ -804,6 +804,16 @@ call fails (for example because the path doesn't exist):
 
    If *parents* is false (the default), a missing parent raises
    :exc:`FileNotFoundError`.
+
+   If *exist_ok* is false (the default), an :exc:`FileExistsError` is
+   raised if the target directory already exists.
+
+   If *exist_ok* is true, :exc:`FileExistsError` exceptions will be
+   ignored (same behavior as the POSIX ``mkdir -p`` command), but only if the
+   last path component is not an existing non-directory file.
+
+   .. versionchanged:: 3.5
+      The *exist_ok* parameter was added.
 
 
 .. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)

@@ -1106,14 +1106,21 @@ class Path(PurePath):
         fd = self._raw_open(flags, mode)
         os.close(fd)
 
-    def mkdir(self, mode=0o777, parents=False):
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         if self._closed:
             self._raise_closed()
         if not parents:
-            self._accessor.mkdir(self, mode)
+            try:
+                self._accessor.mkdir(self, mode)
+            except FileExistsError:
+                if not exist_ok or not self.is_dir():
+                    raise
         else:
             try:
                 self._accessor.mkdir(self, mode)
+            except FileExistsError:
+                if not exist_ok or not self.is_dir():
+                    raise
             except OSError as e:
                 if e.errno != ENOENT:
                     raise

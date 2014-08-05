@@ -123,6 +123,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21539: Add a *exists_ok* argument to `Pathlib.mkdir()` to mimic
+  `mkdir -p` and `os.makedirs()` functionality.  When true, ignore
+  FileExistsErrors.  Patch by Berker Peksag.
+
 - Issue #21047: set the default value for the *convert_charrefs* argument
   of HTMLParser to True.  Patch by Berker Peksag.
 
