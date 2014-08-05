@@ -228,13 +228,13 @@ typedef struct {
     int dispatching;
     /* We cannot include tclInt.h, as this is internal.
        So we cache interesting types here. */
-    Tcl_ObjType *BooleanType;
-    Tcl_ObjType *ByteArrayType;
-    Tcl_ObjType *DoubleType;
-    Tcl_ObjType *IntType;
-    Tcl_ObjType *ListType;
-    Tcl_ObjType *ProcBodyType;
-    Tcl_ObjType *StringType;
+    const Tcl_ObjType *BooleanType;
+    const Tcl_ObjType *ByteArrayType;
+    const Tcl_ObjType *DoubleType;
+    const Tcl_ObjType *IntType;
+    const Tcl_ObjType *ListType;
+    const Tcl_ObjType *ProcBodyType;
+    const Tcl_ObjType *StringType;
 } TkappObject;
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
