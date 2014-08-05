@@ -1213,6 +1213,71 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 }
 
+/* Helper for getsockaddrarg: bypass IDNA for ASCII-only host names
+   (in particular, numeric IP addresses). */
+struct maybe_idna {
+    PyObject *obj;
+    char *buf;
+};
+
+static void
+idna_cleanup(struct maybe_idna *data)
+{
+    Py_CLEAR(data->obj);
+}
+
+static int
+idna_converter(PyObject *obj, struct maybe_idna *data)
+{
+    size_t len;
+    PyObject *obj2, *obj3;
+    if (obj == NULL) {
+        idna_cleanup(data);
+        return 1;
+    }
+    data->obj = NULL;
+    len = -1;
+    if (PyBytes_Check(obj)) {
+        data->buf = PyBytes_AsString(obj);
+        len = PyBytes_Size(obj);
+    }
+    else if (PyByteArray_Check(obj)) {
+        data->buf = PyByteArray_AsString(obj);
+        len = PyByteArray_Size(obj);
+    }
+    else if (PyUnicode_Check(obj) && PyUnicode_READY(obj) == 0 && PyUnicode_IS_COMPACT_ASCII(obj)) {
+        data->buf = PyUnicode_DATA(obj);
+        len = PyUnicode_GET_LENGTH(obj);
+    }
+    else {
+        obj2 = PyUnicode_FromObject(obj);
+        if (!obj2) {
+            PyErr_Format(PyExc_TypeError, "string or unicode text buffer expected, not %s",
+                         obj->ob_type->tp_name);
+            return 0;
+        }
+        obj3 = PyUnicode_AsEncodedString(obj2, "idna", NULL);
+        Py_DECREF(obj2);
+        if (!obj3) {
+            PyErr_SetString(PyExc_TypeError, "encoding of hostname failed");
+            return 0;
+        }
+        if (!PyBytes_Check(obj3)) {
+            Py_DECREF(obj2);
+            PyErr_SetString(PyExc_TypeError, "encoding of hostname failed to return bytes");
+            return 0;
+        }
+        data->obj = obj3;
+        data->buf = PyBytes_AS_STRING(obj3);
+        len = PyBytes_GET_SIZE(obj3);
+    }
+    if (strlen(data->buf) != len) {
+        Py_CLEAR(data->obj);
+        PyErr_SetString(PyExc_TypeError, "host name must not contain NUL character");
+        return 0;
+    }
+    return Py_CLEANUP_SUPPORTED;
+}       
 
 /* Parse a socket address argument according to the socket object's
    address family.  Return 1 if the address was in the proper format,
@@ -1307,7 +1372,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_INET:
     {
         struct sockaddr_in* addr;
-        char *host;
+        struct maybe_idna host = {NULL, NULL};
         int port, result;
         if (!PyTuple_Check(args)) {
             PyErr_Format(
@@ -1317,13 +1382,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "eti:getsockaddrarg",
-                              "idna", &host, &port))
+        if (!PyArg_ParseTuple(args, "O&i:getsockaddrarg",
+                              idna_converter, &host, &port))
             return 0;
         addr=(struct sockaddr_in*)addr_ret;
-        result = setipaddr(host, (struct sockaddr *)addr,
+        result = setipaddr(host.buf, (struct sockaddr *)addr,
                            sizeof(*addr),  AF_INET);
-        PyMem_Free(host);
+        idna_cleanup(&host);
         if (result < 0)
             return 0;
         if (port < 0 || port > 0xffff) {
@@ -1342,7 +1407,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_INET6:
     {
         struct sockaddr_in6* addr;
-        char *host;
+        struct maybe_idna host = {NULL, NULL};
         int port, result;
         unsigned int flowinfo, scope_id;
         flowinfo = scope_id = 0;
@@ -1354,15 +1419,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "eti|II",
-                              "idna", &host, &port, &flowinfo,
+        if (!PyArg_ParseTuple(args, "O&i|II",
+                              idna_converter, &host, &port, &flowinfo,
                               &scope_id)) {
             return 0;
         }
         addr = (struct sockaddr_in6*)addr_ret;
-        result = setipaddr(host, (struct sockaddr *)addr,
+        result = setipaddr(host.buf, (struct sockaddr *)addr,
                            sizeof(*addr), AF_INET6);
-        PyMem_Free(host);
+        idna_cleanup(&host);
         if (result < 0)
             return 0;
         if (port < 0 || port > 0xffff) {
