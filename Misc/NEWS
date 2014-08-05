@@ -671,7 +671,7 @@ Library
 Extension Modules
 -----------------
 
-- Issue #22127: Bypass IDNA for pure-ASCII host names 
+- Issue #22127: Bypass IDNA for pure-ASCII host names in the socket module
   (in particular for numeric IPs).
 
 - Issue #21407: _decimal: The module now supports function signatures.
