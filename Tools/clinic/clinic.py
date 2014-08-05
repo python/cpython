@@ -2865,10 +2865,11 @@ class long_return_converter(CReturnConverter):
     type = 'long'
     conversion_fn = 'PyLong_FromLong'
     cast = ''
+    unsigned_cast = ''
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1", data)
+        self.err_occurred_if("_return_value == {}-1".format(self.unsigned_cast), data)
         data.return_conversion.append(
             ''.join(('return_value = ', self.conversion_fn, '(', self.cast, '_return_value);\n')))
 
@@ -2889,10 +2890,12 @@ class init_return_converter(long_return_converter):
 class unsigned_long_return_converter(long_return_converter):
     type = 'unsigned long'
     conversion_fn = 'PyLong_FromUnsignedLong'
+    unsigned_cast = '(unsigned long)'
 
 class unsigned_int_return_converter(unsigned_long_return_converter):
     type = 'unsigned int'
     cast = '(unsigned long)'
+    unsigned_cast = '(unsigned int)'
 
 class Py_ssize_t_return_converter(long_return_converter):
     type = 'Py_ssize_t'
@@ -2901,6 +2904,7 @@ class Py_ssize_t_return_converter(long_return_converter):
 class size_t_return_converter(long_return_converter):
     type = 'size_t'
     conversion_fn = 'PyLong_FromSize_t'
+    unsigned_cast = '(size_t)'
 
 
 class double_return_converter(CReturnConverter):
