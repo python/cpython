@@ -3509,7 +3509,7 @@ os_lchmod_impl(PyModuleDef *module, path_t *path, int mode)
 {
     int res;
     Py_BEGIN_ALLOW_THREADS
-    res = lchmod(path.narrow, i);
+    res = lchmod(path->narrow, mode);
     Py_END_ALLOW_THREADS
     if (res < 0) {
         path_error(path);
@@ -3661,7 +3661,7 @@ os_lchflags_impl(PyModuleDef *module, path_t *path, unsigned long flags)
 {
     int res;
     Py_BEGIN_ALLOW_THREADS
-    res = lchflags(path.narrow, flags);
+    res = lchflags(path->narrow, flags);
     Py_END_ALLOW_THREADS
     if (res < 0) {
         return path_error(path);
