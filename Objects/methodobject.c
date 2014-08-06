@@ -37,6 +37,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
         if (op == NULL)
             return NULL;
     }
+    op->m_weakreflist = NULL;
     op->m_ml = ml;
     Py_XINCREF(self);
     op->m_self = self;
@@ -147,6 +148,9 @@ static void
 meth_dealloc(PyCFunctionObject *m)
 {
     _PyObject_GC_UNTRACK(m);
+    if (m->m_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject*) m);
+    }
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
     if (numfree < PyCFunction_MAXFREELIST) {
@@ -352,7 +356,7 @@ PyTypeObject PyCFunction_Type = {
     (traverseproc)meth_traverse,                /* tp_traverse */
     0,                                          /* tp_clear */
     meth_richcompare,                           /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    offsetof(PyCFunctionObject, m_weakreflist), /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     meth_methods,                               /* tp_methods */
