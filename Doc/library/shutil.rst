@@ -469,7 +469,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
-   "zip", "tar", "bztar" (if the :mod:`bz2` module is available) or "gztar".
+   "zip", "tar", "bztar" (if the :mod:`bz2` module is available), "xztar"
+   (if the :mod:`lzma` module is available) or "gztar".
 
    *root_dir* is a directory that will be the root directory of the
    archive; for example, we typically chdir into *root_dir* before creating the
@@ -487,6 +488,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *logger* must be an object compatible with :pep:`282`, usually an instance of
    :class:`logging.Logger`.
 
+   .. versionchanged:: 3.4
+   Added support for the *xztar* format.
+
 
 .. function:: get_archive_formats()
 
@@ -497,6 +501,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    - *gztar*: gzip'ed tar-file
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
+   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available.)
    - *tar*: uncompressed tar file
    - *zip*: ZIP file
 
@@ -567,6 +572,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    - *gztar*: gzip'ed tar-file
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
+   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available.)
    - *tar*: uncompressed tar file
    - *zip*: ZIP file
 
