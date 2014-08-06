@@ -32,6 +32,12 @@ try:
 except ImportError:
     BZ2_SUPPORTED = False
 
+try:
+    import lzma
+    LZMA_SUPPORTED = True
+except ImportError:
+    LZMA_SUPPORTED = False
+
 TESTFN2 = TESTFN + "2"
 
 try:
@@ -1156,6 +1162,8 @@ class TestShutil(unittest.TestCase):
         formats = ['tar', 'gztar', 'zip']
         if BZ2_SUPPORTED:
             formats.append('bztar')
+        if LZMA_SUPPORTED:
+            formats.append('xztar')
 
         for format in formats:
             tmpdir = self.mkdtemp()
