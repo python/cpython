@@ -112,6 +112,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21975: Fixed crash when using uninitialized sqlite3.Row (in particular
+  when unpickling pickled sqlite3.Row).  sqlite3.Row is now initialized in the
+  __new__() method.
+
 - Issue #20170: Convert posixmodule to use Argument Clinic.
 
 - Issue #21539: Add a *exists_ok* argument to `Pathlib.mkdir()` to mimic
