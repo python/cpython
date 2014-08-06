@@ -10,15 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
-- Issue #20170: Convert posixmodule to use Argument Clinic.
-
 - Issue #22077: Improve index error messages for bytearrays, bytes, lists,
   and tuples by adding 'or slices'. Added ', not <typename' for bytearrays.
   Original patch by Claudiu Popa.
-
-- Issue #18395: Rename ``_Py_char2wchar()`` to :c:func:`Py_DecodeLocale`,
-  rename ``_Py_wchar2char()`` to :c:func:`Py_EncodeLocale`, and document
-  these functions.
 
 - Issue #20179: Apply Argument Clinic to bytes and bytearray.
   Patch by Tal Einat.
@@ -59,11 +53,6 @@ Core and Builtins
 - Issue #21435: In rare cases, when running finalizers on objects in cyclic
   trash a bad pointer dereference could occur due to a subtle flaw in
   internal iteration logic.
-
-- Issue #21233: Add new C functions: PyMem_RawCalloc(), PyMem_Calloc(),
-  PyObject_Calloc(), _PyObject_GC_Calloc(). bytes(int) is now using
-  ``calloc()`` instead of ``malloc()`` for large objects which is faster and
-  use less memory.
 
 - Issue #21377: PyBytes_Concat() now tries to concatenate in-place when the
   first argument has a reference count of 1.  Patch by Nikolaus Rath.
@@ -123,9 +112,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #20170: Convert posixmodule to use Argument Clinic.
+
 - Issue #21539: Add a *exists_ok* argument to `Pathlib.mkdir()` to mimic
   `mkdir -p` and `os.makedirs()` functionality.  When true, ignore
   FileExistsErrors.  Patch by Berker Peksag.
+
+- Issue #22127: Bypass IDNA for pure-ASCII host names in the socket module
+  (in particular for numeric IPs).
 
 - Issue #21047: set the default value for the *convert_charrefs* argument
   of HTMLParser to True.  Patch by Berker Peksag.
@@ -384,6 +378,9 @@ Library
 - Issue #19775: Add a samefile() method to pathlib Path objects.  Initial
   patch by Vajrasky Kok.
 
+- Issue #21226: Set up modules properly in PyImport_ExecCodeModuleObject
+  (and friends).
+
 - Issue #21398: Fix an unicode error in the pydoc pager when the documentation
   contains characters not encodable to the stdout encoding.
 
@@ -404,6 +401,8 @@ Library
 
 - Issue #21088: Bugfix for curses.window.addch() regression in 3.4.0.
   In porting to Argument Clinic, the first two arguments were reversed.
+
+- Issue #21407: _decimal: The module now supports function signatures.
 
 - Issue #10650: Remove the non-standard 'watchexp' parameter from the
   Decimal.quantize() method in the Python version.  It had never been
@@ -467,6 +466,8 @@ Library
   support spaces in URIs instead of letting a 'split' ValueError bubble up.
 
 - Issue #21068: The ssl.PROTOCOL* constants are now enum members.
+
+- Issue #21276: posixmodule: Don't define USE_XATTRS on KFreeBSD and the Hurd.
 
 - Issue #21262: New method assert_not_called for Mock.
   It raises AssertionError if the mock has been called.
@@ -672,18 +673,6 @@ Library
 - Issue #21323: Fix http.server to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
 
-Extension Modules
------------------
-
-- Issue #22127: Bypass IDNA for pure-ASCII host names in the socket module
-  (in particular for numeric IPs).
-
-- Issue #21407: _decimal: The module now supports function signatures.
-
-- Issue #21276: posixmodule: Don't define USE_XATTRS on KFreeBSD and the Hurd.
-- Issue #21226: Set up modules properly in PyImport_ExecCodeModuleObject
-  (and friends).
-
 IDLE
 ----
 
@@ -779,6 +768,16 @@ Build
 
 C API
 -----
+
+- Issue #18395: Rename ``_Py_char2wchar()`` to :c:func:`Py_DecodeLocale`,
+  rename ``_Py_wchar2char()`` to :c:func:`Py_EncodeLocale`, and document
+  these functions.
+
+- Issue #21233: Add new C functions: PyMem_RawCalloc(), PyMem_Calloc(),
+  PyObject_Calloc(), _PyObject_GC_Calloc(). bytes(int) is now using
+  ``calloc()`` instead of ``malloc()`` for large objects which is faster and
+  use less memory.
+
 - Issue #20942: PyImport_ImportFrozenModuleObject() no longer sets __file__ to
   match what importlib does; this affects _frozen_importlib as well as any
   module loaded using imp.init_frozen().
