@@ -74,6 +74,9 @@ Library
 Tests
 -----
 
+- Issue #18004: test_overflow in test_list by mistake consumed 40 GiB of memory
+  on 64-bit systems.
+
 - Issue #21976: Fix test_ssl to accept LibreSSL version strings.  Thanks
   to William Orr.
 
