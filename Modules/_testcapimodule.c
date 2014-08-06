@@ -2653,6 +2653,21 @@ with_tp_del(PyObject *self, PyObject *args)
     return obj;
 }
 
+static PyMethodDef ml;
+
+static PyObject *
+create_cfunction(PyObject *self, PyObject *args)
+{
+    return PyCFunction_NewEx(&ml, self, NULL);
+}
+
+static PyMethodDef ml = {
+    "create_cfunction",
+    create_cfunction,
+    METH_NOARGS,
+    NULL
+};
+
 static PyObject *
 _test_incref(PyObject *ob)
 {
@@ -3186,6 +3201,7 @@ static PyMethodDef TestMethods[] = {
     {"pytime_object_to_timeval", test_pytime_object_to_timeval,  METH_VARARGS},
     {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
     {"with_tp_del",             with_tp_del,                     METH_VARARGS},
+    {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"test_pymem_alloc0",
      (PyCFunction)test_pymem_alloc0, METH_NOARGS},
     {"test_pymem_setrawallocators",
