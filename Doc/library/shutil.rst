@@ -488,7 +488,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *logger* must be an object compatible with :pep:`282`, usually an instance of
    :class:`logging.Logger`.
 
-   .. versionchanged:: 3.4
+   .. versionchanged:: 3.5
    Added support for the *xztar* format.
 
 
