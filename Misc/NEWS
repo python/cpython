@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21975: Fixed crash when using uninitialized sqlite3.Row (in particular
+  when unpickling pickled sqlite3.Row).  sqlite3.Row is now initialized in the
+  __new__() method.
+
 - Issue #21580: Now Tkinter correctly handles bytes arguments passed to Tk.
   In particular this allows to initialize images from binary data.
 
