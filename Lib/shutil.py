@@ -21,6 +21,13 @@ except ImportError:
     _BZ2_SUPPORTED = False
 
 try:
+    import lzma
+    del lzma
+    _LZMA_SUPPORTED = True
+except ImportError:
+    _LZMA_SUPPORTED = False
+
+try:
     from pwd import getpwnam
 except ImportError:
     getpwnam = None
@@ -580,14 +587,14 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     """Create a (possibly compressed) tar file from all the files under
     'base_dir'.
 
-    'compress' must be "gzip" (the default), "bzip2", or None.
+    'compress' must be "gzip" (the default), "bzip2", "xz", or None.
 
     'owner' and 'group' can be used to define an owner and a group for the
     archive that is being built. If not provided, the current owner and group
     will be used.
 
     The output tar file will be named 'base_name' +  ".tar", possibly plus
-    the appropriate compression extension (".gz", or ".bz2").
+    the appropriate compression extension (".gz", ".bz2", or ".xz").
 
     Returns the output filename.
     """
@@ -597,6 +604,10 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     if _BZ2_SUPPORTED:
         tar_compression['bzip2'] = 'bz2'
         compress_ext['bzip2'] = '.bz2'
+
+    if _LZMA_SUPPORTED:
+        tar_compression['xz'] = 'xz'
+        compress_ext['xz'] = '.xz'
 
     # flags for compression program, each element of list will be an argument
     if compress is not None and compress not in compress_ext:
@@ -683,6 +694,10 @@ _ARCHIVE_FORMATS = {
 if _BZ2_SUPPORTED:
     _ARCHIVE_FORMATS['bztar'] = (_make_tarball, [('compress', 'bzip2')],
                                 "bzip2'ed tar-file")
+
+if _LZMA_SUPPORTED:
+    _ARCHIVE_FORMATS['xztar'] = (_make_tarball, [('compress', 'xz')],
+                                "xz'ed tar-file")
 
 def get_archive_formats():
     """Returns a list of supported formats for archiving and unarchiving.
@@ -872,7 +887,7 @@ def _unpack_zipfile(filename, extract_dir):
         zip.close()
 
 def _unpack_tarfile(filename, extract_dir):
-    """Unpack tar/tar.gz/tar.bz2 `filename` to `extract_dir`
+    """Unpack tar/tar.gz/tar.bz2/tar.xz `filename` to `extract_dir`
     """
     try:
         tarobj = tarfile.open(filename)
@@ -891,8 +906,12 @@ _UNPACK_FORMATS = {
     }
 
 if _BZ2_SUPPORTED:
-    _UNPACK_FORMATS['bztar'] = (['.bz2'], _unpack_tarfile, [],
+    _UNPACK_FORMATS['bztar'] = (['.tar.bz2', '.tbz2'], _unpack_tarfile, [],
                                 "bzip2'ed tar-file")
+
+if _LZMA_SUPPORTED:
+    _UNPACK_FORMATS['xztar'] = (['.tar.xz', '.txz'], _unpack_tarfile, [],
+                                "xz'ed tar-file")
 
 def _find_unpack_format(filename):
     for name, info in _UNPACK_FORMATS.items():
