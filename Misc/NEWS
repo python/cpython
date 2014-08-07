@@ -89,6 +89,11 @@ Build
 - Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
   now display special message when and only when there are failures.
 
+Windows
+-------
+
+- Issue #22160: The bundled version of OpenSSL has been updated to 1.0.1i.
+
 
 What's New in Python 2.7.8?
 ===========================
