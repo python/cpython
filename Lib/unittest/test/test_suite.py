@@ -3,7 +3,7 @@ import unittest
 import gc
 import sys
 import weakref
-from .support import LoggingResult, TestEquality
+from unittest.test.support import LoggingResult, TestEquality
 
 
 ### Support code for Test_TestSuite
