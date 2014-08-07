@@ -9,7 +9,7 @@ from test import test_support
 
 import unittest
 
-from .support import (
+from unittest.test.support import (
     TestEquality, TestHashing, LoggingResult, ResultWithNoStartTestRunStopTestRun
 )
 

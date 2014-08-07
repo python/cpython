@@ -3,7 +3,8 @@ import unittest
 from cStringIO import StringIO
 import pickle
 
-from .support import LoggingResult, ResultWithNoStartTestRunStopTestRun
+from unittest.test.support import (LoggingResult,
+                                   ResultWithNoStartTestRunStopTestRun)
 
 
 class TestCleanUp(unittest.TestCase):
