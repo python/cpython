@@ -689,7 +689,7 @@ Operators
 
 The following tokens are operators::
 
-   +       -       *       **      /       //      %
+   +       -       *       **      /       //      %      @
    <<      >>      &       |       ^       ~
    <       >       <=      >=      ==      !=
 
@@ -705,7 +705,7 @@ The following tokens serve as delimiters in the grammar::
 
    (       )       [       ]       {       }
    ,       :       .       ;       @       =       ->
-   +=      -=      *=      /=      //=     %=
+   +=      -=      *=      /=      //=     %=      @=
    &=      |=      ^=      >>=     <<=     **=
 
 The period can also occur in floating-point and imaginary literals.  A sequence
