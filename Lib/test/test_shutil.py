@@ -10,6 +10,7 @@ import os.path
 import errno
 import functools
 import subprocess
+from contextlib import ExitStack
 from test import support
 from test.support import TESTFN
 from os.path import splitdrive
@@ -116,7 +117,9 @@ class TestShutil(unittest.TestCase):
         write_file(os.path.join(victim, 'somefile'), 'foo')
         victim = os.fsencode(victim)
         self.assertIsInstance(victim, bytes)
-        shutil.rmtree(victim)
+        win = (os.name == 'nt')
+        with self.assertWarns(DeprecationWarning) if win else ExitStack():
+            shutil.rmtree(victim)
 
     @support.skip_unless_symlink
     def test_rmtree_fails_on_symlink(self):
