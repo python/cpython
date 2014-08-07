@@ -7,7 +7,8 @@ import subprocess
 import unittest
 from unittest.case import _Outcome
 
-from .support import LoggingResult, ResultWithNoStartTestRunStopTestRun
+from unittest.test.support import (LoggingResult,
+                                   ResultWithNoStartTestRunStopTestRun)
 
 
 class TestCleanUp(unittest.TestCase):
