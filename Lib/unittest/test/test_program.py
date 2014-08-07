@@ -4,6 +4,7 @@ import os
 import sys
 from test import support
 import unittest
+import unittest.test
 
 
 class Test_TestProgram(unittest.TestCase):

@@ -6,6 +6,7 @@ import builtins
 from test import support
 
 import unittest
+import unittest.test
 
 
 class TestableTestProgram(unittest.TestProgram):
