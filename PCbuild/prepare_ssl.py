@@ -81,6 +81,35 @@ def create_makefile64(makefile, m32):
                 fout.write(line)
     os.unlink(m32)
 
+def create_asms(makefile):
+    #create a custom makefile out of the provided one
+    asm_makefile = os.path.splitext(makefile)[0] + '.asm.mak'
+    with open(makefile) as fin:
+        with open(asm_makefile, 'w') as fout:
+            for line in fin:
+                # Keep everything up to the install target (it's convenient)
+                if line.startswith('install: all'):
+                    break
+                else:
+                    fout.write(line)
+            asms = []
+            for line in fin:
+                if '.asm' in line and line.strip().endswith('.pl'):
+                    asms.append(line.split(':')[0])
+                    while line.strip():
+                        fout.write(line)
+                        line = next(fin)
+                    fout.write('\n')
+
+            fout.write('asms: $(TMP_D) ')
+            fout.write(' '.join(asms))
+            fout.write('\n')
+
+    os.system('nmake /f {} PERL=perl asms'.format(asm_makefile))
+    os.unlink(asm_makefile)
+
+
+
 def fix_makefile(makefile):
     """Fix some stuff in all makefiles
     """
@@ -164,14 +193,8 @@ def prep(arch):
     else:
         print(makefile, 'already exists!')
 
-    # If the assembler files don't exist in tmpXX, copy them there
-    if os.path.exists("asm"+dirsuffix):
-        if not os.path.exists("tmp"+dirsuffix):
-            os.mkdir("tmp"+dirsuffix)
-        for f in os.listdir("asm"+dirsuffix):
-            if not f.endswith(".asm"): continue
-            if os.path.isfile(r"tmp%s\%s" % (dirsuffix, f)): continue
-            shutil.copy(r"asm%s\%s" % (dirsuffix, f), "tmp"+dirsuffix)
+    print('creating asms...')
+    create_asms(makefile)
 
 def main():
     if len(sys.argv) == 1:
