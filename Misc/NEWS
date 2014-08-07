@@ -283,8 +283,8 @@ Tests
 Windows
 -------
 
-- Issue #21671, CVE-2014-0224: The bundled version of OpenSSL has been
-  updated to 1.0.1h.
+- Issue #21671, #22160, CVE-2014-0224: The bundled version of OpenSSL has been
+  updated to 1.0.1i.
 
 - Issue #10747: Use versioned labels in the Windows start menu.
   Patch by Olive Kilburn.
