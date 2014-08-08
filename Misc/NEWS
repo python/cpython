@@ -243,6 +243,9 @@ IDLE
 Tests
 -----
 
+- Issue #22060: test_ctypes has been somewhat cleaned up and simplified; it
+  now uses unittest test discovery to find its tests.
+
 - Issue #22104: regrtest.py no longer holds a reference to the suite of tests
   loaded from test modules that don't define test_main().
 
