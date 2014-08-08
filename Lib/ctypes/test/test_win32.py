@@ -1,7 +1,6 @@
 # Windows specific tests
 
 from ctypes import *
-from ctypes.test import requires
 import unittest, sys
 from test import support
 
@@ -42,7 +41,6 @@ class FunctionCallTestCase(unittest.TestCase):
     @unittest.skipIf(sys.executable.endswith('_d.exe'),
                      "SEH not enabled in debug builds")
     def test_SEH(self):
-        requires("SEH")
         # Call functions with invalid arguments, and make sure
         # that access violations are trapped and raise an
         # exception.

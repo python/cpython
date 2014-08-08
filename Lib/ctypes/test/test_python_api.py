@@ -1,7 +1,6 @@
 from ctypes import *
 import unittest, sys
 from test import support
-from ctypes.test import requires
 
 ################################################################
 # This section should be moved into ctypes\__init__.py, when it's ready.
@@ -39,12 +38,8 @@ class PythonAPITestCase(unittest.TestCase):
         del pyob
         self.assertEqual(grc(s), refcnt)
 
-    # This test is unreliable, because it is possible that code in
-    # unittest changes the refcount of the '42' integer.  So, it
-    # is disabled by default.
     @support.refcount_test
     def test_PyLong_Long(self):
-        requires("refcount")
         ref42 = grc(42)
         pythonapi.PyLong_FromLong.restype = py_object
         self.assertEqual(pythonapi.PyLong_FromLong(42), 42)
