@@ -1,37 +1,42 @@
 from ctypes import *
-import sys, unittest
 import os
+import sys
+import unittest
+import test.support
 from ctypes.util import find_library
-from ctypes.test import is_resource_enabled
 
 libc_name = None
-if os.name == "nt":
-    libc_name = find_library("c")
-elif os.name == "ce":
-    libc_name = "coredll"
-elif sys.platform == "cygwin":
-    libc_name = "cygwin1.dll"
-else:
-    libc_name = find_library("c")
 
-if is_resource_enabled("printing"):
-    print("libc_name is", libc_name)
+def setUpModule():
+    global libc_name
+    if os.name == "nt":
+        libc_name = find_library("c")
+    elif os.name == "ce":
+        libc_name = "coredll"
+    elif sys.platform == "cygwin":
+        libc_name = "cygwin1.dll"
+    else:
+        libc_name = find_library("c")
+
+    if test.support.verbose:
+        print("libc_name is", libc_name)
 
 class LoaderTest(unittest.TestCase):
 
     unknowndll = "xxrandomnamexx"
 
-    @unittest.skipUnless(libc_name is not None, 'could not find libc')
     def test_load(self):
+        if libc_name is None:
+            self.skipTest('could not find libc')
         CDLL(libc_name)
         CDLL(os.path.basename(libc_name))
         self.assertRaises(OSError, CDLL, self.unknowndll)
 
-    @unittest.skipUnless(libc_name is not None, 'could not find libc')
-    @unittest.skipUnless(libc_name is not None and
-                         os.path.basename(libc_name) == "libc.so.6",
-                         'wrong libc path for test')
     def test_load_version(self):
+        if libc_name is None:
+            self.skipTest('could not find libc')
+        if os.path.basename(libc_name) != 'libc.so.6':
+            self.skipTest('wrong libc path for test')
         cdll.LoadLibrary("libc.so.6")
         # linux uses version, libc 9 should not exist
         self.assertRaises(OSError, cdll.LoadLibrary, "libc.so.9")
@@ -48,7 +53,7 @@ class LoaderTest(unittest.TestCase):
                          'test specific to Windows (NT/CE)')
     def test_load_library(self):
         self.assertIsNotNone(libc_name)
-        if is_resource_enabled("printing"):
+        if test.support.verbose:
             print(find_library("kernel32"))
             print(find_library("user32"))
 
