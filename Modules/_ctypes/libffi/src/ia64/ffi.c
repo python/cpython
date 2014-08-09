@@ -401,7 +401,7 @@ ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
    the closure (in the "trampoline" area), but we replace the gp
    pointer with a pointer to the closure itself.  We also add the real
    gp pointer to the closure.  This allows the function entry code to
-   both retrieve the user data, and to restire the correct gp pointer.  */
+   both retrieve the user data, and to restore the correct gp pointer.  */
 
 extern void ffi_closure_unix ();
 
