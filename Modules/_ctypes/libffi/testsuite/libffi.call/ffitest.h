@@ -15,22 +15,25 @@
 
 #define MAX_ARGS 256
 
-#define CHECK(x) !(x) ? (abort(), 1) : 0
+#define CHECK(x) (void)(!(x) ? (abort(), 1) : 0)
 
-/* Define __UNUSED__ that also other compilers than gcc can run the tests.  */
+/* Define macros so that compilers other than gcc can run the tests.  */
 #undef __UNUSED__
 #if defined(__GNUC__)
 #define __UNUSED__ __attribute__((__unused__))
+#define __STDCALL__ __attribute__((stdcall))
+#define __THISCALL__ __attribute__((thiscall))
+#define __FASTCALL__ __attribute__((fastcall))
 #else
 #define __UNUSED__
+#define __STDCALL__ __stdcall
+#define __THISCALL__ __thiscall
+#define __FASTCALL__ __fastcall
 #endif
 
-/* Define __FASTCALL__ so that other compilers than gcc can run the tests.  */
-#undef __FASTCALL__
-#if defined _MSC_VER
-#define __FASTCALL__ __fastcall
-#else
-#define __FASTCALL__ __attribute__((fastcall))
+#ifndef ABI_NUM
+#define ABI_NUM FFI_DEFAULT_ABI
+#define ABI_ATTR
 #endif
 
 /* Prefer MAP_ANON(YMOUS) to /dev/zero, since we don't need to keep a

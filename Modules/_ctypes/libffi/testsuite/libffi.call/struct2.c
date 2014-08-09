@@ -13,7 +13,7 @@ typedef struct
   double d2;
 } test_structure_2;
 
-static test_structure_2 struct2(test_structure_2 ts)
+static test_structure_2 ABI_ATTR struct2(test_structure_2 ts)
 {
   ts.d1--;
   ts.d2--;
@@ -46,7 +46,7 @@ int main (void)
   values[0] = &ts2_arg;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ts2_type, args) == FFI_OK);
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 1, &ts2_type, args) == FFI_OK);
   
   ts2_arg.d1 = 5.55;
   ts2_arg.d2 = 6.66;

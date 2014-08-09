@@ -115,6 +115,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22176: Update the ctypes module's libffi to v3.1.  This release
+  adds support for the Linux AArch64 and POWERPC ELF ABIv2 little endian
+  architectures.
+
 - Issue #5411: Added support for the "xztar" format in the shutil module.
 
 - Issue #21975: Fixed crash when using uninitialized sqlite3.Row (in particular

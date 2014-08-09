@@ -1,6 +1,7 @@
 # lt~obsolete.m4 -- aclocal satisfying obsolete definitions.    -*-Autoconf-*-
 #
-#   Copyright (C) 2004, 2005, 2007, 2009 Free Software Foundation, Inc.
+#   Copyright (C) 2004-2005, 2007, 2009, 2011-2013 Free Software
+#   Foundation, Inc.
 #   Written by Scott James Remnant, 2004.
 #
 # This file is free software; the Free Software Foundation gives
@@ -11,7 +12,7 @@
 
 # These exist entirely to fool aclocal when bootstrapping libtool.
 #
-# In the past libtool.m4 has provided macros via AC_DEFUN (or AU_DEFUN)
+# In the past libtool.m4 has provided macros via AC_DEFUN (or AU_DEFUN),
 # which have later been changed to m4_define as they aren't part of the
 # exported API, or moved to Autoconf or Automake where they belong.
 #
@@ -25,7 +26,7 @@
 # included after everything else.  This provides aclocal with the
 # AC_DEFUNs it wants, but when m4 processes it, it doesn't do anything
 # because those macros already exist, or will be overwritten later.
-# We use AC_DEFUN over AU_DEFUN for compatibility with aclocal-1.6. 
+# We use AC_DEFUN over AU_DEFUN for compatibility with aclocal-1.6.
 #
 # Anytime we withdraw an AC_DEFUN or AU_DEFUN, remember to add it here.
 # Yes, that means every name once taken will need to remain here until
