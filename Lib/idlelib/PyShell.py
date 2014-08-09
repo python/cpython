@@ -143,6 +143,7 @@ class PyShellEditorWindow(EditorWindow):
         self.io.set_filename_change_hook(filename_changed_hook)
         if self.io.filename:
             self.restore_file_breaks()
+        self.color_breakpoint_text()
 
     rmenu_specs = [
         ("Cut", "<<cut>>", "rmenu_check_cut"),
@@ -151,6 +152,15 @@ class PyShellEditorWindow(EditorWindow):
         ("Set Breakpoint", "<<set-breakpoint-here>>", None),
         ("Clear Breakpoint", "<<clear-breakpoint-here>>", None)
     ]
+
+    def color_breakpoint_text(self, color=True):
+        "Turn colorizing of breakpoint text on or off"
+        if color:
+            theme = idleConf.GetOption('main','Theme','name')
+            cfg = idleConf.GetHighlight(theme, "break")
+        else:
+            cfg = {'foreground': '', 'background': ''}
+        self.text.tag_config('BREAK', cfg)
 
     def set_breakpoint(self, lineno):
         text = self.text
