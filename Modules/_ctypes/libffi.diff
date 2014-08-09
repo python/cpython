@@ -184,3 +184,26 @@ diff -urN libffi-3.1/src/dlmalloc.c libffi/src/dlmalloc.c
      set_lock(m, locked);
    }
    return (mspace)m;
+diff -urN libffi-3.1/src/arm/ffi.c libffi/src/arm/ffi.c
+--- libffi-3.1/src/arm/ffi.c	Sat Aug 09 23:52:34 2014 +0200
++++ libffi/src/arm/ffi.c	Sat Aug 09 23:58:38 2014 +0200
+@@ -154,9 +154,6 @@
+ 
+ int ffi_prep_args_VFP(char *stack, extended_cif *ecif, float *vfp_space)
+ {
+-  // make sure we are using FFI_VFP
+-  FFI_ASSERT(ecif->cif->abi == FFI_VFP);
+-
+   register unsigned int i, vi = 0;
+   register void **p_argv;
+   register char *argp, *regp, *eo_regp;
+@@ -165,6 +162,9 @@
+   char done_with_regs = 0;
+   char is_vfp_type;
+ 
++  // make sure we are using FFI_VFP
++  FFI_ASSERT(ecif->cif->abi == FFI_VFP);
++
+   /* the first 4 words on the stack are used for values passed in core
+    * registers. */
+   regp = stack;
