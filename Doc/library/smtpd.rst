@@ -20,7 +20,8 @@ specific mail-sending strategies.
 Additionally the SMTPChannel may be extended to implement very specific
 interaction behaviour with SMTP clients.
 
-The code supports :RFC:`5321`, plus the :rfc:`1870` SIZE extension.
+The code supports :RFC:`5321`, plus the :rfc:`1870` SIZE and :rfc:`6531`
+SMTPUTF8 extensions.
 
 
 SMTPServer Objects
@@ -28,7 +29,7 @@ SMTPServer Objects
 
 
 .. class:: SMTPServer(localaddr, remoteaddr, data_size_limit=33554432,\
-                      map=None, decode_data=True)
+                      map=None, enable_SMTPUTF8=False, decode_data=True)
 
    Create a new :class:`SMTPServer` object, which binds to local address
    *localaddr*.  It will treat *remoteaddr* as an upstream SMTP relayer.  It
@@ -39,6 +40,12 @@ SMTPServer Objects
    accepted in a ``DATA`` command.  A value of ``None`` or ``0`` means no
    limit.
 
+   *enable_SMTPUTF8* determins whether the ``SMTPUTF8`` extension (as defined
+   in :RFC:`6531`) should be enabled.  The default is ``False``.  If
+   *enable_SMTPUTF* is set to ``True``, the :meth:`process_smtputf8_message`
+   method must be defined.  A :exc:`ValueError` is raised if both
+   *enable_SMTPUTF8* and *decode_data* are set to ``True`` at the same time.
+
    A dictionary can be specified in *map* to avoid using a global socket map.
 
    *decode_data* specifies whether the data portion of the SMTP transaction
@@ -48,17 +55,31 @@ SMTPServer Objects
 
    .. method:: process_message(peer, mailfrom, rcpttos, data)
 
-      Raise :exc:`NotImplementedError` exception. Override this in subclasses to
+      Raise a :exc:`NotImplementedError` exception. Override this in subclasses to
       do something useful with this message. Whatever was passed in the
       constructor as *remoteaddr* will be available as the :attr:`_remoteaddr`
       attribute. *peer* is the remote host's address, *mailfrom* is the envelope
       originator, *rcpttos* are the envelope recipients and *data* is a string
-      containing the contents of the e-mail (which should be in :rfc:`2822`
+      containing the contents of the e-mail (which should be in :rfc:`5321`
       format).
 
       If the *decode_data* constructor keyword is set to ``True``, the *data*
       argument will be a unicode string.  If it is set to ``False``, it
       will be a bytes object.
+
+      Return ``None`` to request a normal ``250 Ok`` response; otherwise
+      return the desired response string in :RFC:`5321` format.
+
+   .. method:: process_smtputf8_message(peer, mailfrom, rcpttos, data)
+
+      Raise a :exc:`NotImplementedError` exception.  Override this in
+      subclasses to do something useful with messages when *enable_SMTPUTF8*
+      has been set to ``True`` and the SMTP client requested ``SMTPUTF8``,
+      since this method is called rather than :meth:`process_message` when the
+      client actively requests ``SMTPUTF8``.  The *data* argument will always
+      be a bytes object, and any non-``None`` return value should conform to
+      :rfc:`6531`; otherwise, the API is the same as for
+      :meth:`process_message`.
 
    .. attribute:: channel_class
 
@@ -68,8 +89,12 @@ SMTPServer Objects
    .. versionchanged:: 3.4
       The *map* argument was added.
 
-   .. versionchanged:: 3.5 the *decode_data* argument was added, and *localaddr*
-      and *remoteaddr* may now contain IPv6 addresses.
+   .. versionchanged:: 3.5
+      *localaddr* and *remoteaddr* may now contain IPv6 addresses.
+
+   .. versionadded:: 3.5
+      the *decode_data* and *enable_SMTPUTF8* constructor arguments, and the
+      :meth:`process_smtputf8_message` method.
 
 
 DebuggingServer Objects
@@ -109,7 +134,7 @@ SMTPChannel Objects
 -------------------
 
 .. class:: SMTPChannel(server, conn, addr, data_size_limit=33554432,\
-                       map=None, decode_data=True)
+                       map=None, enable_SMTPUTF8=False, decode_data=True)
 
    Create a new :class:`SMTPChannel` object which manages the communication
    between the server and a single SMTP client.
@@ -119,6 +144,11 @@ SMTPChannel Objects
    *data_size_limit* specifies the maximum number of bytes that will be
    accepted in a ``DATA`` command.  A value of ``None`` or ``0`` means no
    limit.
+
+   *enable_SMTPUTF8* determins whether the ``SMTPUTF8`` extension (as defined
+   in :RFC:`6531`) should be enabled.  The default is ``False``.  A
+   :exc:`ValueError` is raised if both *enable_SMTPUTF8* and *decode_data* are
+   set to ``True`` at the same time.
 
    A dictionary can be specified in *map* to avoid using a global socket map.
 
@@ -131,7 +161,7 @@ SMTPChannel Objects
    :attr:`SMTPServer.channel_class` of your :class:`SMTPServer`.
 
    .. versionchanged:: 3.5
-      the *decode_data* argument was added.
+      the *decode_data* and *enable_SMTPUTF8* arguments were added.
 
    The :class:`SMTPChannel` has the following instance variables:
 

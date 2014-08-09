@@ -218,6 +218,10 @@ smtpd
   addresses in the :class:`~smtpd.SMTPServer` constructor, and have it
   successfully connect.  (Contributed by Milan Oberkirch in :issue:`14758`.)
 
+* :mod:`~smtpd.SMTPServer` now supports :rfc:`6531` via the *enable_SMTPUTF8*
+  constructor argument and a user-provided
+  :meth:`~smtpd.SMTPServer.process_smtputf8_message` method.
+
 smtplib
 -------
 

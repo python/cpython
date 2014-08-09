@@ -102,7 +102,7 @@ class MockSocket:
         return len(data)
 
     def getpeername(self):
-        return 'peer'
+        return ('peer-address', 'peer-port')
 
     def close(self):
         pass

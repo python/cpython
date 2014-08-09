@@ -115,6 +115,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21725: Added support for RFC 6531 (SMTPUTF8) in smtpd.
+
 - Issue #22176: Update the ctypes module's libffi to v3.1.  This release
   adds support for the Linux AArch64 and POWERPC ELF ABIv2 little endian
   architectures.
