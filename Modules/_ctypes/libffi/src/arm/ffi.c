@@ -154,9 +154,6 @@ int ffi_prep_args_SYSV(char *stack, extended_cif *ecif, float *vfp_space)
 
 int ffi_prep_args_VFP(char *stack, extended_cif *ecif, float *vfp_space)
 {
-  // make sure we are using FFI_VFP
-  FFI_ASSERT(ecif->cif->abi == FFI_VFP);
-
   register unsigned int i, vi = 0;
   register void **p_argv;
   register char *argp, *regp, *eo_regp;
@@ -164,6 +161,9 @@ int ffi_prep_args_VFP(char *stack, extended_cif *ecif, float *vfp_space)
   char stack_used = 0;
   char done_with_regs = 0;
   char is_vfp_type;
+
+  // make sure we are using FFI_VFP
+  FFI_ASSERT(ecif->cif->abi == FFI_VFP);
 
   /* the first 4 words on the stack are used for values passed in core
    * registers. */
