@@ -1493,7 +1493,9 @@ expression support in the :mod:`re` module).
 .. method:: str.center(width[, fillchar])
 
    Return centered in a string of length *width*. Padding is done using the
-   specified *fillchar* (default is a space).
+   specified *fillchar* (default is an ASCII space). The original string is
+   returned if *width* is less than or equal to ``len(s)``.
+
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1598,7 +1600,8 @@ expression support in the :mod:`re` module).
 
 .. method:: str.index(sub[, start[, end]])
 
-   Like :meth:`find`, but raise :exc:`ValueError` when the substring is not found.
+   Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
+   not found.
 
 
 .. method:: str.isalnum()
@@ -1701,9 +1704,9 @@ expression support in the :mod:`re` module).
 
 .. method:: str.ljust(width[, fillchar])
 
-   Return the string left justified in a string of length *width*. Padding is done
-   using the specified *fillchar* (default is a space).  The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   Return the string left justified in a string of length *width*. Padding is
+   done using the specified *fillchar* (default is an ASCII space). The
+   original string is returned if *width* is less than or equal to ``len(s)``.
 
 
 .. method:: str.lower()
@@ -1720,7 +1723,7 @@ expression support in the :mod:`re` module).
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a prefix; rather, all combinations of its values are stripped:
+   argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
       'spacious   '
@@ -1773,9 +1776,9 @@ expression support in the :mod:`re` module).
 
 .. method:: str.rjust(width[, fillchar])
 
-   Return the string right justified in a string of length *width*. Padding is done
-   using the specified *fillchar* (default is a space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   Return the string right justified in a string of length *width*. Padding is
+   done using the specified *fillchar* (default is an ASCII space). The
+   original string is returned if *width* is less than or equal to ``len(s)``.
 
 
 .. method:: str.rpartition(sep)
@@ -1800,7 +1803,7 @@ expression support in the :mod:`re` module).
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a suffix; rather, all combinations of its values are stripped:
+   argument is not a suffix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.rstrip()
       '   spacious'
@@ -1822,6 +1825,15 @@ expression support in the :mod:`re` module).
    (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
    Splitting an empty string with a specified separator returns ``['']``.
 
+   For example::
+
+      >>> '1,2,3'.split(',')
+      ['1', '2', '3']
+      >>> '1,2,3'.split(',', maxsplit=1)
+      ['1', '2 3']
+      >>> '1,2,,3,'.split(',')
+      ['1', '2', '', '3', '']
+
    If *sep* is not specified or is ``None``, a different splitting algorithm is
    applied: runs of consecutive whitespace are regarded as a single separator,
    and the result will contain no empty strings at the start or end if the
@@ -1829,8 +1841,14 @@ expression support in the :mod:`re` module).
    string or a string consisting of just whitespace with a ``None`` separator
    returns ``[]``.
 
-   For example, ``' 1  2   3  '.split()`` returns ``['1', '2', '3']``, and
-   ``'  1  2   3  '.split(None, 1)`` returns ``['1', '2   3  ']``.
+   For example::
+
+      >>> '1 2 3'.split()
+      ['1', '2', '3']
+      >>> '1 2 3'.split(maxsplit=1)
+      ['1', '2 3']
+      >>> '   1   2   3   '.split()
+      ['1', '2', '3']
 
 
 .. index::
@@ -1843,13 +1861,28 @@ expression support in the :mod:`re` module).
    Line breaks are not included in the resulting list unless *keepends* is
    given and true.
 
-   For example, ``'ab c\n\nde fg\rkl\r\n'.splitlines()`` returns
-   ``['ab c', '', 'de fg', 'kl']``, while the same call with ``splitlines(True)``
-   returns ``['ab c\n', '\n', 'de fg\r', 'kl\r\n']``.
+   For example::
+
+      >>> 'ab c\n\nde fg\rkl\r\n'.splitlines()
+      ['ab c', '', 'de fg', 'kl']``
+      >>> 'ab c\n\nde fg\rkl\r\n'.splitlines(keepends=True)
+      ['ab c\n', '\n', 'de fg\r', 'kl\r\n']
 
    Unlike :meth:`~str.split` when a delimiter string *sep* is given, this
    method returns an empty list for the empty string, and a terminal line
-   break does not result in an extra line.
+   break does not result in an extra line::
+
+      >>> "".splitlines()
+      []
+      >>> "One line\n".splitlines()
+      ['One line']
+
+   For comparison, ``split('\n')`` gives::
+
+      >>> ''.split('\n')
+      ['']
+      >>> 'Two lines\n'.split('\n')
+      ['Two lines', '']
 
 
 .. method:: str.startswith(prefix[, start[, end]])
@@ -1866,7 +1899,7 @@ expression support in the :mod:`re` module).
    The *chars* argument is a string specifying the set of characters to be removed.
    If omitted or ``None``, the *chars* argument defaults to removing whitespace.
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped:
+   values are stripped::
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -1885,6 +1918,11 @@ expression support in the :mod:`re` module).
 
    Return a titlecased version of the string where words start with an uppercase
    character and the remaining characters are lowercase.
+
+   For example::
+
+      >>> 'Hello world'.title()
+      'Hello World'
 
    The algorithm uses a simple language-independent definition of a word as
    groups of consecutive letters.  The definition works in many contexts but
@@ -1938,9 +1976,18 @@ expression support in the :mod:`re` module).
 
 .. method:: str.zfill(width)
 
-   Return the numeric string left filled with zeros in a string of length
-   *width*.  A sign prefix is handled correctly.  The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   Return a copy of the string left filled with ASCII ``'0'`` digits to
+   make a string of length *width*. A leading sign prefix (``'+'``/``'-'``
+   is handled by inserting the padding *after* the sign character rather
+   than before. The original string is returned if *width* is less than
+   or equal to ``len(s)``.
+
+   For example::
+
+      >>> "42".zfill(5)
+      '00042'
+      >>> "-42".zfill(5)
+      '-0042'
 
 
 
@@ -2198,15 +2245,27 @@ other ways:
 
 Also see the :ref:`bytes <func-bytes>` built-in.
 
-Since bytes objects are sequences of integers, for a bytes object *b*,
-``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes object of
-length 1.  (This contrasts with text strings, where both indexing and
-slicing will produce a string of length 1)
+Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
+numbers are a commonly used format for describing binary data. Accordingly,
+the bytes type has an additional class method to read data in that format:
+
+.. classmethod:: bytes.fromhex(string)
+
+   This :class:`bytes` class method returns a bytes object, decoding the
+   given string object.  The string must contain two hexadecimal digits per
+   byte, with ASCII spaces being ignored.
+
+   >>> bytes.fromhex('2Ef0 F1f2  ')
+   b'.\xf0\xf1\xf2'
+
+Since bytes objects are sequences of integers (akin to a tuple), for a bytes
+object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
+object of length 1.  (This contrasts with text strings, where both indexing
+and slicing will produce a string of length 1)
 
 The representation of bytes objects uses the literal format (``b'...'``)
 since it is often more useful than e.g. ``bytes([46, 46, 46])``.  You can
 always convert a bytes object into a list of integers using ``list(b)``.
-
 
 .. note::
    For Python 2.x users: In the Python 2.x series, a variety of implicit
@@ -2241,6 +2300,29 @@ common bytes and bytearray operations described in :ref:`bytes-methods`.
 
 Also see the :ref:`bytearray <func-bytearray>` built-in.
 
+Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
+numbers are a commonly used format for describing binary data. Accordingly,
+the bytearray type has an additional class method to read data in that format:
+
+.. classmethod:: bytearray.fromhex(string)
+
+   This :class:`bytearray` class method returns bytearray object, decoding
+   the given string object.  The string must contain two hexadecimal digits
+   per byte, with ASCII spaces being ignored.
+
+   >>> bytearray.fromhex('2Ef0 F1f2  ')
+   bytearray(b'.\xf0\xf1\xf2')
+
+Since bytearray objects are sequences of integers (akin to a list), for a
+bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
+a bytearray object of length 1.  (This contrasts with text strings, where
+both indexing and slicing will produce a string of length 1)
+
+The representation of bytearray objects uses the bytes literal format
+(``bytearray(b'...')``) since it is often more useful than e.g.
+``bytearray([46, 46, 46])``.  You can always convert a bytearray object into
+a list of integers using ``list(b)``.
+
 
 .. _bytes-methods:
 
@@ -2252,24 +2334,9 @@ Bytes and Bytearray Operations
 
 Both bytes and bytearray objects support the :ref:`common <typesseq-common>`
 sequence operations. They interoperate not just with operands of the same
-type, but with any object that supports the
-:ref:`buffer protocol <bufferobjects>`. Due to this flexibility, they can be
+type, but with any :term:`bytes-like object`. Due to this flexibility, they can be
 freely mixed in operations without causing errors. However, the return type
 of the result may depend on the order of operands.
-
-Due to the common use of ASCII text as the basis for binary protocols, bytes
-and bytearray objects provide almost all methods found on text strings, with
-the exceptions of:
-
-* :meth:`str.encode` (which converts text strings to bytes objects)
-* :meth:`str.format` and :meth:`str.format_map` (which are used to format
-  text for display to users)
-* :meth:`str.isidentifier`, :meth:`str.isnumeric`, :meth:`str.isdecimal`,
-  :meth:`str.isprintable` (which are used to check various properties of
-  text strings which are not typically applicable to binary protocols).
-
-All other string methods are supported, although sometimes with slight
-differences in functionality and semantics (as described below).
 
 .. note::
 
@@ -2285,25 +2352,30 @@ differences in functionality and semantics (as described below).
       a = b"abc"
       b = a.replace(b"a", b"f")
 
-Whenever a bytes or bytearray method needs to interpret the bytes as
-characters (e.g. the :meth:`is...` methods, :meth:`split`, :meth:`strip`),
-the ASCII character set is assumed (text strings use Unicode semantics).
+Some bytes and bytearray operations assume the use of ASCII compatible
+binary formats, and hence should be avoided when working with arbitrary
+binary data. These restrictions are covered below.
 
 .. note::
-   Using these ASCII based methods to manipulate binary data that is not
+   Using these ASCII based operations to manipulate binary data that is not
    stored in an ASCII based format may lead to data corruption.
 
-The search operations (:keyword:`in`, :meth:`count`, :meth:`find`,
-:meth:`index`, :meth:`rfind` and :meth:`rindex`) all accept both integers
-in the range 0 to 255 (inclusive) as well as bytes and byte array sequences.
+The following methods on bytes and bytearray objects can be used with
+arbitrary binary data.
 
-.. versionchanged:: 3.3
-   All of the search methods also accept an integer in the range 0 to 255
-   (inclusive) as their first argument.
+.. method:: bytes.count(sub[, start[, end]])
+            bytearray.count(sub[, start[, end]])
 
+   Return the number of non-overlapping occurrences of subsequence *sub* in
+   the range [*start*, *end*].  Optional arguments *start* and *end* are
+   interpreted as in slice notation.
 
-Each bytes and bytearray instance provides a :meth:`~bytes.decode` convenience
-method that is the inverse of :meth:`str.encode`:
+   The subsequence to search for may be any :term:`bytes-like object` or an
+   integer in the range 0 to 255.
+
+   .. versionchanged:: 3.3
+      Also accept an integer in the range 0 to 255 as the subsequence.
+
 
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
@@ -2316,37 +2388,175 @@ method that is the inverse of :meth:`str.encode`:
    :func:`codecs.register_error`, see section :ref:`codec-base-classes`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   .. note::
+
+      Passing the *encoding* argument to :class:`str` allows decoding any
+      :term:`bytes-like object` directly, without needing to make a temporary
+      bytes or bytearray object.
+
    .. versionchanged:: 3.1
       Added support for keyword arguments.
 
-Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
-numbers are a commonly used format for describing binary data. Accordingly,
-the bytes and bytearray types have an additional class method to read data in
-that format:
 
-.. classmethod:: bytes.fromhex(string)
-                 bytearray.fromhex(string)
+.. method:: bytes.endswith(suffix[, start[, end]])
+            bytearray.endswith(suffix[, start[, end]])
 
-   This :class:`bytes` class method returns a bytes or bytearray object,
-   decoding the given string object.  The string must contain two hexadecimal
-   digits per byte, spaces are ignored.
+   Return ``True`` if the binary data ends with the specified *suffix*,
+   otherwise return ``False``.  *suffix* can also be a tuple of suffixes to
+   look for.  With optional *start*, test beginning at that position.  With
+   optional *end*, stop comparing at that position.
 
-   >>> bytes.fromhex('2Ef0 F1f2  ')
-   b'.\xf0\xf1\xf2'
+   The suffix(es) to search for may be any :term:`bytes-like object`.
 
 
-The maketrans and translate methods differ in semantics from the versions
-available on strings:
+.. method:: bytes.find(sub[, start[, end]])
+            bytearray.find(sub[, start[, end]])
+
+   Return the lowest index in the data where the subsequence *sub* is found,
+   such that *sub* is contained in the slice ``s[start:end]``.  Optional
+   arguments *start* and *end* are interpreted as in slice notation.  Return
+   ``-1`` if *sub* is not found.
+
+   The subsequence to search for may be any :term:`bytes-like object` or an
+   integer in the range 0 to 255.
+
+   .. note::
+
+      The :meth:`~bytes.find` method should be used only if you need to know the
+      position of *sub*.  To check if *sub* is a substring or not, use the
+      :keyword:`in` operator::
+
+         >>> b'Py' in b'Python'
+         True
+
+   .. versionchanged:: 3.3
+      Also accept an integer in the range 0 to 255 as the subsequence.
+
+
+.. method:: bytes.index(sub[, start[, end]])
+            bytearray.index(sub[, start[, end]])
+
+   Like :meth:`~bytes.find`, but raise :exc:`ValueError` when the
+   subsequence is not found.
+
+   The subsequence to search for may be any :term:`bytes-like object` or an
+   integer in the range 0 to 255.
+
+   .. versionchanged:: 3.3
+      Also accept an integer in the range 0 to 255 as the subsequence.
+
+
+.. method:: bytes.join(iterable)
+            bytearray.join(iterable)
+
+   Return a bytes or bytearray object which is the concatenation of the
+   binary data sequences in the :term:`iterable` *iterable*.  A
+   :exc:`TypeError` will be raised if there are any values in *iterable*
+   that are note :term:`bytes-like objects <bytes-like object>`, including
+   :class:`str` objects.  The separator between elements is the contents
+   of the bytes or bytearray object providing this method.
+
+
+.. staticmethod:: bytes.maketrans(from, to)
+                  bytearray.maketrans(from, to)
+
+   This static method returns a translation table usable for
+   :meth:`bytes.translate` that will map each character in *from* into the
+   character at the same position in *to*; *from* and *to* must both be
+   :term:`bytes-like objects <bytes-like object>` and have the same length.
+
+   .. versionadded:: 3.1
+
+
+.. method:: bytes.partition(sep)
+            bytearray.partition(sep)
+
+   Split the sequence at the first occurrence of *sep*, and return a 3-tuple
+   containing the part before the separator, the separator, and the part
+   after the separator.  If the separator is not found, return a 3-tuple
+   containing a copy of the original sequence, followed by two empty bytes or
+   bytearray objects.
+
+   The separator to search for may be any :term:`bytes-like object`.
+
+
+.. method:: bytes.replace(old, new[, count])
+            bytearray.replace(old, new[, count])
+
+   Return a copy of the sequence with all occurrences of subsequence *old*
+   replaced by *new*.  If the optional argument *count* is given, only the
+   first *count* occurrences are replaced.
+
+   The subsequence to search for and its replacement may be any
+   :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.rfind(sub[, start[, end]])
+            bytearray.rfind(sub[, start[, end]])
+
+   Return the highest index in the sequence where the subsequence *sub* is
+   found, such that *sub* is contained within ``s[start:end]``.  Optional
+   arguments *start* and *end* are interpreted as in slice notation. Return
+   ``-1`` on failure.
+
+   The subsequence to search for may be any :term:`bytes-like object` or an
+   integer in the range 0 to 255.
+
+   .. versionchanged:: 3.3
+      Also accept an integer in the range 0 to 255 as the subsequence.
+
+
+.. method:: bytes.rindex(sub[, start[, end]])
+            bytearray.rindex(sub[, start[, end]])
+
+   Like :meth:`~bytes.rfind` but raises :exc:`ValueError` when the
+   subsequence *sub* is not found.
+
+   The subsequence to search for may be any :term:`bytes-like object` or an
+   integer in the range 0 to 255.
+
+   .. versionchanged:: 3.3
+      Also accept an integer in the range 0 to 255 as the subsequence.
+
+
+.. method:: bytes.rpartition(sep)
+            bytearray.rpartition(sep)
+
+   Split the sequence at the last occurrence of *sep*, and return a 3-tuple
+   containing the part before the separator, the separator, and the part
+   after the separator.  If the separator is not found, return a 3-tuple
+   containing a copy of the original sequence, followed by two empty bytes or
+   bytearray objects.
+
+   The separator to search for may be any :term:`bytes-like object`.
+
+
+.. method:: bytes.startswith(prefix[, start[, end]])
+            bytearray.startswith(prefix[, start[, end]])
+
+   Return ``True`` if the binary data starts with the specified *prefix*,
+   otherwise return ``False``.  *prefix* can also be a tuple of prefixes to
+   look for.  With optional *start*, test beginning at that position.  With
+   optional *end*, stop comparing at that position.
+
+   The prefix(es) to search for may be any :term:`bytes-like object`.
+
 
 .. method:: bytes.translate(table[, delete])
             bytearray.translate(table[, delete])
 
    Return a copy of the bytes or bytearray object where all bytes occurring in
-   the optional argument *delete* are removed, and the remaining bytes have been
-   mapped through the given translation table, which must be a bytes object of
-   length 256.
+   the optional argument *delete* are removed, and the remaining bytes have
+   been mapped through the given translation table, which must be a bytes
+   object of length 256.
 
-   You can use the :func:`bytes.maketrans` method to create a translation table.
+   You can use the :func:`bytes.maketrans` method to create a translation
+   table.
 
    Set the *table* argument to ``None`` for translations that only delete
    characters::
@@ -2355,15 +2565,497 @@ available on strings:
       b'rd ths shrt txt'
 
 
-.. staticmethod:: bytes.maketrans(from, to)
-                  bytearray.maketrans(from, to)
+The following methods on bytes and bytearray objects have default behaviours
+that assume the use of ASCII compatible binary formats, but can still be used
+with arbitrary binary data by passing appropriate arguments. Note that all of
+the bytearray methods in this section do *not* operate in place, and instead
+produce new objects.
 
-   This static method returns a translation table usable for
-   :meth:`bytes.translate` that will map each character in *from* into the
-   character at the same position in *to*; *from* and *to* must be bytes objects
-   and have the same length.
+.. method:: bytes.center(width[, fillbyte])
+            bytearray.center(width[, fillbyte])
 
-   .. versionadded:: 3.1
+   Return a copy of the object centered in a sequence of length *width*.
+   Padding is done using the specified *fillbyte* (default is an ASCII
+   space). For :class:`bytes` objects, the original sequence is returned if
+   *width* is less than or equal to ``len(s)``.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.ljust(width[, fillbyte])
+            bytearray.ljust(width[, fillbyte])
+
+   Return a copy of the object left justified in a sequence of length *width*.
+   Padding is done using the specified *fillbyte* (default is an ASCII
+   space). For :class:`bytes` objects, the original sequence is returned if
+   *width* is less than or equal to ``len(s)``.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.lstrip([chars])
+            bytearray.lstrip([chars])
+
+   Return a copy of the sequence with specified leading bytes removed.  The
+   *chars* argument is a binary sequence specifying the set of byte values to
+   be removed - the name refers to the fact this method is usually used with
+   ASCII characters.  If omitted or ``None``, the *chars* argument defaults
+   to removing ASCII whitespace.  The *chars* argument is not a prefix;
+   rather, all combinations of its values are stripped::
+
+      >>> b'   spacious   '.lstrip()
+      b'spacious   '
+      >>> b'www.example.com'.lstrip(b'cmowz.')
+      b'example.com'
+
+   The binary sequence of byte values to remove may be any
+   :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.rjust(width[, fillbyte])
+            bytearray.rjust(width[, fillbyte])
+
+   Return a copy of the object right justified in a sequence of length *width*.
+   Padding is done using the specified *fillbyte* (default is an ASCII
+   space). For :class:`bytes` objects, the original sequence is returned if
+   *width* is less than or equal to ``len(s)``.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.rsplit(sep=None, maxsplit=-1)
+            bytearray.rsplit(sep=None, maxsplit=-1)
+
+   Split the binary sequence into subsequences of the same type, using *sep*
+   as the delimiter string. If *maxsplit* is given, at most *maxsplit* splits
+   are done, the *rightmost* ones.  If *sep* is not specified or ``None``,
+   any subsequence consisting solely of ASCII whitespace is a separator.
+   Except for splitting from the right, :meth:`rsplit` behaves like
+   :meth:`split` which is described in detail below.
+
+
+.. method:: bytes.rstrip([chars])
+            bytearray.rstrip([chars])
+
+   Return a copy of the sequence with specified trailing bytes removed.  The
+   *chars* argument is a binary sequence specifying the set of byte values to
+   be removed - the name refers to the fact this method is usually used with
+   ASCII characters.  If omitted or ``None``, the *chars* argument defaults to
+   removing ASCII whitespace.  The *chars* argument is not a suffix; rather,
+   all combinations of its values are stripped::
+
+      >>> b'   spacious   '.rstrip()
+      b'   spacious'
+      >>> b'mississippi'.rstrip(b'ipz')
+      b'mississ'
+
+   The binary sequence of byte values to remove may be any
+   :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.split(sep=None, maxsplit=-1)
+            bytearray.split(sep=None, maxsplit=-1)
+
+   Split the binary sequence into subsequences of the same type, using *sep*
+   as the delimiter string. If *maxsplit* is given and non-negative, at most
+   *maxsplit* splits are done (thus, the list will have at most ``maxsplit+1``
+   elements).  If *maxsplit* is not specified or is ``-1``, then there is no
+   limit on the number of splits (all possible splits are made).
+
+   If *sep* is given, consecutive delimiters are not grouped together and are
+   deemed to delimit empty subsequences (for example, ``b'1,,2'.split(b',')``
+   returns ``[b'1', b'', b'2']``).  The *sep* argument may consist of a
+   multibyte sequence (for example, ``b'1<>2<>3'.split(b'<>')`` returns
+   ``[b'1', b'2', b'3']``). Splitting an empty sequence with a specified
+   separator returns ``[b'']`` or ``[bytearray(b'')]`` depending on the type
+   of object being split.  The *sep* argument may be any
+   :term:`bytes-like object`.
+
+   For example::
+
+      >>> b'1,2,3'.split(b',')
+      [b'1', b'2', b'3']
+      >>> b'1,2,3'.split(b',', maxsplit=1)
+      [b'1', b'2 3']
+      >>> b'1,2,,3,'.split(b',')
+      [b'1', b'2', b'', b'3', b'']
+
+   If *sep* is not specified or is ``None``, a different splitting algorithm
+   is applied: runs of consecutive ASCII whitespace are regarded as a single
+   separator, and the result will contain no empty strings at the start or
+   end if the sequence has leading or trailing whitespace.  Consequently,
+   splitting an empty sequence or a sequence consisting solely of ASCII
+   whitespace without a specified separator returns ``[]``.
+
+   For example::
+
+
+      >>> b'1 2 3'.split()
+      [b'1', b'2', b'3']
+      >>> b'1 2 3'.split(maxsplit=1)
+      [b'1', b'2 3']
+      >>> b'   1   2   3   '.split()
+      [b'1', b'2', b'3']
+
+
+.. method:: bytes.strip([chars])
+            bytearray.strip([chars])
+
+   Return a copy of the sequence with specified leading and trailing bytes
+   removed. The *chars* argument is a binary sequence specifying the set of
+   byte values to be removed - the name refers to the fact this method is
+   usually used with ASCII characters.  If omitted or ``None``, the *chars*
+   argument defaults to removing ASCII whitespace. The *chars* argument is
+   not a prefix or suffix; rather, all combinations of its values are
+   stripped::
+
+      >>> b'   spacious   '.strip()
+      b'spacious'
+      >>> b'www.example.com'.strip(b'cmowz.')
+      b'example'
+
+   The binary sequence of byte values to remove may be any
+   :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+
+The following methods on bytes and bytearray objects assume the use of ASCII
+compatible binary formats and should not be applied to arbitrary binary data.
+Note that all of the bytearray methods in this section do *not* operate in
+place, and instead produce new objects.
+
+.. method:: bytes.capitalize()
+            bytearray.capitalize()
+
+   Return a copy of the sequence with each byte interpreted as an ASCII
+   character, and the first byte capitalized and the rest lowercased.
+   Non-ASCII byte values are passed through unchanged.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.expandtabs(tabsize=8)
+            bytearray.expandtabs(tabsize=8)
+
+   Return a copy of the sequence where all ASCII tab characters are replaced
+   by one or more ASCII spaces, depending on the current column and the given
+   tab size.  Tab positions occur every *tabsize* bytes (default is 8,
+   giving tab positions at columns 0, 8, 16 and so on).  To expand the
+   sequence, the current column is set to zero and the sequence is examined
+   byte by byte.  If the byte is an ASCII tab character (``b'\t'``), one or
+   more space characters are inserted in the result until the current column
+   is equal to the next tab position. (The tab character itself is not
+   copied.)  If the current byte is an ASCII newline (``b'\n'``) or
+   carriage return (``b'\r'``), it is copied and the current column is reset
+   to zero.  Any other byte value is copied unchanged and the current column
+   is incremented by one regardless of how the byte value is represented when
+   printed::
+
+      >>> b'01\t012\t0123\t01234'.expandtabs()
+      b'01      012     0123    01234'
+      >>> b'01\t012\t0123\t01234'.expandtabs(4)
+      b'01  012 0123    01234'
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.isalnum()
+            bytearray.isalnum()
+
+   Return true if all bytes in the sequence are alphabetical ASCII characters
+   or ASCII decimal digits and the sequence is not empty, false otherwise.
+   Alphabetic ASCII characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'``. ASCII decimal
+   digits are those byte values in the sequence ``b'0123456789'``.
+
+   For example::
+
+      >>> b'ABCabc1'.isalnum()
+      True
+      >>> b'ABC abc1'.isalnum()
+      False
+
+
+.. method:: bytes.isalpha()
+            bytearray.isalpha()
+
+   Return true if all bytes in the sequence are alphabetic ASCII characters
+   and the sequence is not empty, false otherwise.  Alphabetic ASCII
+   characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
+
+   For example::
+
+      >>> b'ABCabc'.isalpha()
+      True
+      >>> b'ABCabc1'.isalpha()
+      False
+
+
+.. method:: bytes.isdigit()
+            bytearray.isdigit()
+
+   Return true if all bytes in the sequence are ASCII decimal digits
+   and the sequence is not empty, false otherwise. ASCII decimal digits are
+   those byte values in the sequence ``b'0123456789'``.
+
+   For example::
+
+      >>> b'1234'.isdigit()
+      True
+      >>> b'1.23'.isdigit()
+      False
+
+
+.. method:: bytes.islower()
+            bytearray.islower()
+
+   Return true if there is at least one lowercase ASCII character
+   in the sequence and no uppercase ASCII characters, false otherwise.
+
+   For example::
+
+      >>> b'hello world'.islower()
+      True
+      >>> b'Hello world'.islower()
+      False
+
+   Lowercase ASCII characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
+   are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
+
+
+.. method:: bytes.isspace()
+            bytearray.isspace()
+
+   Return true if all bytes in the sequence are ASCII whitespace and the
+   sequence is not empty, false otherwise.  ASCII whitespace characters are
+   those byte values in the sequence b' \t\n\r\x0b\f' (space, tab, newline,
+   carriage return, vertical tab, form feed).
+
+
+.. method:: bytes.istitle()
+            bytearray.istitle()
+
+   Return true if the sequence is ASCII titlecase and the sequence is not
+   empty, false otherwise. See :meth:`bytes.title` for more details on the
+   definition of "titlecase".
+
+   For example::
+
+      >>> b'Hello World'.istitle()
+      True
+      >>> b'Hello world'.istitle()
+      False
+
+
+.. method:: bytes.isupper()
+            bytearray.isupper()
+
+   Return true if there is at least one lowercase alphabetic ASCII character
+   in the sequence and no uppercase ASCII characters, false otherwise.
+
+   For example::
+
+      >>> b'HELLO WORLD'.isupper()
+      True
+      >>> b'Hello world'.isupper()
+      False
+
+   Lowercase ASCII characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
+   are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
+
+
+.. method:: bytes.lower()
+            bytearray.lower()
+
+   Return a copy of the sequence with all the uppercase ASCII characters
+   converted to their corresponding lowercase counterpart.
+
+   For example::
+
+      >>> b'Hello World'.lower()
+      b'hello world'
+
+   Lowercase ASCII characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
+   are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
+
+
+.. index::
+   single: universal newlines; bytes.splitlines method
+   single: universal newlines; bytearray.splitlines method
+
+.. method:: bytes.splitlines(keepends=False)
+            bytearray.splitlines(keepends=False)
+
+   Return a list of the lines in the binary sequence, breaking at ASCII
+   line boundaries. This method uses the :term:`universal newlines` approach
+   to splitting lines. Line breaks are not included in the resulting list
+   unless *keepends* is given and true.
+
+   For example::
+
+      >>> b'ab c\n\nde fg\rkl\r\n'.splitlines()
+      [b'ab c', b'', b'de fg', b'kl']``
+      >>> b'ab c\n\nde fg\rkl\r\n'.splitlines(keepends=True)
+      [b'ab c\n', b'\n', b'de fg\r', b'kl\r\n']
+
+   Unlike :meth:`~bytes.split` when a delimiter string *sep* is given, this
+   method returns an empty list for the empty string, and a terminal line
+   break does not result in an extra line::
+
+      >>> b"".split(b'\n'), b"Two lines\n".split(b'\n')
+      ([b''], [b'Two lines', b''])
+      >>> b"".splitlines(), b"One line\n".splitlines()
+      ([], [b'One line'])
+
+
+.. method:: bytes.swapcase()
+            bytearray.swapcase()
+
+   Return a copy of the sequence with all the lowercase ASCII characters
+   converted to their corresponding uppercase counterpart and vice-versa.
+
+   For example::
+
+      >>> b'Hello World'.swapcase()
+      b'hELLO wORLD'
+
+   Lowercase ASCII characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
+   are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
+
+   Unlike :func:`str.swapcase()`, it is always the case that
+   ``bin.swapcase().swapcase() == bin`` for the binary versions. Case
+   conversions are symmetrical in ASCII, even though that is not generally
+   true for arbitrary Unicode code points.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.title()
+            bytearray.title()
+
+   Return a titlecased version of the binary sequence where words start with
+   an uppercase ASCII character and the remaining characters are lowercase.
+   Uncased byte values are left unmodified.
+
+   For example::
+
+      >>> b'Hello world'.title()
+      b'Hello World'
+
+   Lowercase ASCII characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
+   are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
+   All other byte values are uncased.
+
+   The algorithm uses a simple language-independent definition of a word as
+   groups of consecutive letters.  The definition works in many contexts but
+   it means that apostrophes in contractions and possessives form word
+   boundaries, which may not be the desired result::
+
+        >>> b"they're bill's friends from the UK".title()
+        b"They'Re Bill'S Friends From The Uk"
+
+   A workaround for apostrophes can be constructed using regular expressions::
+
+        >>> import re
+        >>> def titlecase(s):
+        ...     return re.sub(rb"[A-Za-z]+('[A-Za-z]+)?",
+        ...                   lambda mo: mo.group(0)[0:1].upper() +
+        ...                              mo.group(0)[1:].lower(),
+        ...                   s)
+        ...
+        >>> titlecase(b"they're bill's friends.")
+        b"They're Bill's Friends."
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.upper()
+            bytearray.upper()
+
+   Return a copy of the sequence with all the lowercase ASCII characters
+   converted to their corresponding uppercase counterpart.
+
+   For example::
+
+      >>> b'Hello World'.upper()
+      b'HELLO WORLD'
+
+   Lowercase ASCII characters are those byte values in the sequence
+   ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
+   are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
+
+
+.. method:: bytes.zfill(width)
+            bytearray.zfill(width)
+
+   Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
+   make a sequence of length *width*. A leading sign prefix (``b'+'``/
+   ``b'-'`` is handled by inserting the padding *after* the sign character
+   rather than before. For :class:`bytes` objects, the original sequence is
+   returned if *width* is less than or equal to ``len(seq)``.
+
+   For example::
+
+      >>> b"42".zfill(5)
+      b'00042'
+      >>> b"-42".zfill(5)
+      b'-0042'
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place - it
+      always produces a new object, even if no changes were made.
 
 
 .. _typememoryview:
