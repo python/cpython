@@ -593,7 +593,7 @@ darwin_adjust_aggregate_sizes (ffi_type *s)
       /* Natural alignment for all items.  */
       align = p->alignment;
 #else
-      /* Natrual alignment for the first item... */
+      /* Natural alignment for the first item... */
       if (i == 0)
 	align = p->alignment;
       else if (p->alignment == 16 || p->alignment < 4)

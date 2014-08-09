@@ -3,11 +3,11 @@
 % Load plain if necessary, i.e., if running under initex.
 \expandafter\ifx\csname fmtname\endcsname\relax\input plain\fi
 %
-\def\texinfoversion{2012-06-05.14}
+\def\texinfoversion{2013-02-01.11}
 %
 % Copyright 1985, 1986, 1988, 1990, 1991, 1992, 1993, 1994, 1995,
 % 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-% 2007, 2008, 2009, 2010, 2011, 2012 Free Software Foundation, Inc.
+% 2007, 2008, 2009, 2010, 2011, 2012, 2013 Free Software Foundation, Inc.
 %
 % This texinfo.tex file is free software: you can redistribute it and/or
 % modify it under the terms of the GNU General Public License as
@@ -24,7 +24,8 @@
 %
 % As a special exception, when this file is read by TeX when processing
 % a Texinfo source document, you may use the result without
-% restriction.  (This has been our intent since Texinfo was invented.)
+% restriction. This Exception is an additional permission under section 7
+% of the GNU General Public License, version 3 ("GPLv3").
 %
 % Please try the latest version of texinfo.tex before submitting bug
 % reports; you can get the latest version from:
@@ -594,7 +595,7 @@
 \def\:{\spacefactor=1000 }
 
 % @* forces a line break.
-\def\*{\hfil\break\hbox{}\ignorespaces}
+\def\*{\unskip\hfil\break\hbox{}\ignorespaces}
 
 % @/ allows a line break.
 \let\/=\allowbreak
@@ -2272,8 +2273,6 @@ end
 
 \gdef\markupsetcodequoteleft{\let`\codequoteleft}
 \gdef\markupsetcodequoteright{\let'\codequoteright}
-
-\gdef\markupsetnoligaturesquoteleft{\let`\noligaturesquoteleft}
 }
 
 \let\markupsetuplqcode \markupsetcodequoteleft
@@ -2281,6 +2280,9 @@ end
 %
 \let\markupsetuplqexample \markupsetcodequoteleft
 \let\markupsetuprqexample \markupsetcodequoteright
+%
+\let\markupsetuplqkbd     \markupsetcodequoteleft
+\let\markupsetuprqkbd     \markupsetcodequoteright
 %
 \let\markupsetuplqsamp \markupsetcodequoteleft
 \let\markupsetuprqsamp \markupsetcodequoteright
@@ -2290,8 +2292,6 @@ end
 %
 \let\markupsetuplqverbatim \markupsetcodequoteleft
 \let\markupsetuprqverbatim \markupsetcodequoteright
-
-\let\markupsetuplqkbd \markupsetnoligaturesquoteleft
 
 % Allow an option to not use regular directed right quote/apostrophe
 % (char 0x27), but instead the undirected quote from cmtt (char 0x0d).
@@ -2382,8 +2382,7 @@ end
   \aftersmartic
 }
 
-% like \smartslanted except unconditionally uses \ttsl, and no ic.
-% @var is set to this for defun arguments.
+% Unconditional use \ttsl, and no ic.  @var is set to this for defuns.
 \def\ttslanted#1{{\ttsl #1}}
 
 % @cite is like \smartslanted except unconditionally use \sl.  We never want
@@ -2448,34 +2447,12 @@ end
 % @samp.
 \def\samp#1{{\setupmarkupstyle{samp}\lq\tclose{#1}\rq\null}}
 
-% definition of @key that produces a lozenge.  Doesn't adjust to text size.
-%\setfont\keyrm\rmshape{8}{1000}{OT1}
-%\font\keysy=cmsy9
-%\def\key#1{{\keyrm\textfont2=\keysy \leavevmode\hbox{%
-%  \raise0.4pt\hbox{\angleleft}\kern-.08em\vtop{%
-%    \vbox{\hrule\kern-0.4pt
-%     \hbox{\raise0.4pt\hbox{\vphantom{\angleleft}}#1}}%
-%    \kern-0.4pt\hrule}%
-%  \kern-.06em\raise0.4pt\hbox{\angleright}}}}
+% @indicateurl is \samp, that is, with quotes.
+\let\indicateurl=\samp
 
-% definition of @key with no lozenge.  If the current font is already
-% monospace, don't change it; that way, we respect @kbdinputstyle.  But
-% if it isn't monospace, then use \tt.
-%
-\def\key#1{{\setupmarkupstyle{key}%
-  \nohyphenation
-  \ifmonospace\else\tt\fi
-  #1}\null}
-
-% ctrl is no longer a Texinfo command.
-\def\ctrl #1{{\tt \rawbackslash \hat}#1}
-
-% @file, @option are the same as @samp.
-\let\file=\samp
-\let\option=\samp
-
-% @code is a modification of @t,
-% which makes spaces the same size as normal in the surrounding text.
+% @code (and similar) prints in typewriter, but with spaces the same
+% size as normal in the surrounding text, without hyphenation, etc.
+% This is a subroutine for that.
 \def\tclose#1{%
   {%
     % Change normal interword space to be same as for the current font.
@@ -2500,7 +2477,7 @@ end
 % We *must* turn on hyphenation at `-' and `_' in @code.
 % Otherwise, it is too hard to avoid overfull hboxes
 % in the Emacs manual, the Library manual, etc.
-
+%
 % Unfortunately, TeX uses one parameter (\hyphenchar) to control
 % both hyphenation at - and hyphenation within words.
 % We must therefore turn them both off (\tclose does that)
@@ -2519,7 +2496,7 @@ end
      \let-\codedash
      \let_\codeunder
     \else
-     \let-\realdash
+     \let-\normaldash
      \let_\realunder
     \fi
     \codex
@@ -2528,7 +2505,7 @@ end
 
 \def\codex #1{\tclose{#1}\endgroup}
 
-\def\realdash{-}
+\def\normaldash{-}
 \def\codedash{-\discretionary{}{}{}}
 \def\codeunder{%
   % this is all so @math{@code{var_name}+1} can work.  In math mode, _
@@ -2543,9 +2520,9 @@ end
 }
 
 % An additional complication: the above will allow breaks after, e.g.,
-% each of the four underscores in __typeof__.  This is undesirable in
-% some manuals, especially if they don't have long identifiers in
-% general.  @allowcodebreaks provides a way to control this.
+% each of the four underscores in __typeof__.  This is bad.
+% @allowcodebreaks provides a document-level way to turn breaking at -
+% and _ on and off.
 %
 \newif\ifallowcodebreaks  \allowcodebreakstrue
 
@@ -2563,6 +2540,13 @@ end
     \errmessage{Unknown @allowcodebreaks option `\txiarg', must be true|false}%
   \fi\fi
 }
+
+% For @command, @env, @file, @option quotes seem unnecessary,
+% so use \code rather than \samp.
+\let\command=\code
+\let\env=\code
+\let\file=\code
+\let\option=\code
 
 % @uref (abbreviation for `urlref') takes an optional (comma-separated)
 % second argument specifying the text to display and an optional third
@@ -2710,10 +2694,6 @@ end
   \let\email=\uref
 \fi
 
-% @kbd is like @code, except that if the argument is just one @key command,
-% then @kbd has no effect.
-\def\kbd#1{{\setupmarkupstyle{kbd}\def\look{#1}\expandafter\kbdfoo\look??\par}}
-
 % @kbdinputstyle -- arg is `distinct' (@kbd uses slanted tty font always),
 %   `example' (@kbd uses ttsl only inside of @example and friends),
 %   or `code' (@kbd uses normal tty font always).
@@ -2737,16 +2717,36 @@ end
 % Default is `distinct'.
 \kbdinputstyle distinct
 
-\def\xkey{\key}
-\def\kbdfoo#1#2#3\par{\def\one{#1}\def\three{#3}\def\threex{??}%
-\ifx\one\xkey\ifx\threex\three \key{#2}%
-\else{\tclose{\kbdfont\setupmarkupstyle{kbd}\look}}\fi
-\else{\tclose{\kbdfont\setupmarkupstyle{kbd}\look}}\fi}
+% @kbd is like @code, except that if the argument is just one @key command,
+% then @kbd has no effect.
+\def\kbd#1{{\def\look{#1}\expandafter\kbdsub\look??\par}}
 
-% For @indicateurl, @env, @command quotes seem unnecessary, so use \code.
-\let\indicateurl=\code
-\let\env=\code
-\let\command=\code
+\def\xkey{\key}
+\def\kbdsub#1#2#3\par{%
+  \def\one{#1}\def\three{#3}\def\threex{??}%
+  \ifx\one\xkey\ifx\threex\three \key{#2}%
+  \else{\tclose{\kbdfont\setupmarkupstyle{kbd}\look}}\fi
+  \else{\tclose{\kbdfont\setupmarkupstyle{kbd}\look}}\fi
+}
+
+% definition of @key that produces a lozenge.  Doesn't adjust to text size.
+%\setfont\keyrm\rmshape{8}{1000}{OT1}
+%\font\keysy=cmsy9
+%\def\key#1{{\keyrm\textfont2=\keysy \leavevmode\hbox{%
+%  \raise0.4pt\hbox{\angleleft}\kern-.08em\vtop{%
+%    \vbox{\hrule\kern-0.4pt
+%     \hbox{\raise0.4pt\hbox{\vphantom{\angleleft}}#1}}%
+%    \kern-0.4pt\hrule}%
+%  \kern-.06em\raise0.4pt\hbox{\angleright}}}}
+
+% definition of @key with no lozenge.  If the current font is already
+% monospace, don't change it; that way, we respect @kbdinputstyle.  But
+% if it isn't monospace, then use \tt.
+%
+\def\key#1{{\setupmarkupstyle{key}%
+  \nohyphenation
+  \ifmonospace\else\tt\fi
+  #1}\null}
 
 % @clicksequence{File @click{} Open ...}
 \def\clicksequence#1{\begingroup #1\endgroup}
@@ -2853,6 +2853,9 @@ end
     \let' = \ptexquoteright
   }
 }
+
+% ctrl is no longer a Texinfo command, but leave this definition for fun.
+\def\ctrl #1{{\tt \rawbackslash \hat}#1}
 
 % @inlinefmt{FMTNAME,PROCESSED-TEXT} and @inlineraw{FMTNAME,RAW-TEXT}.
 % Ignore unless FMTNAME == tex; then it is like @iftex and @tex,
@@ -3144,12 +3147,17 @@ end
   % hopefully nobody will notice/care.
   \edef\ecsize{\csname\curfontsize ecsize\endcsname}%
   \edef\nominalsize{\csname\curfontsize nominalsize\endcsname}%
-  \ifx\curfontstyle\bfstylename
-    % bold:
-    \font\thisecfont = ecb\ifusingit{i}{x}\ecsize \space at \nominalsize
+  \ifmonospace
+    % typewriter:
+    \font\thisecfont = ectt\ecsize \space at \nominalsize
   \else
-    % regular:
-    \font\thisecfont = ec\ifusingit{ti}{rm}\ecsize \space at \nominalsize
+    \ifx\curfontstyle\bfstylename
+      % bold:
+      \font\thisecfont = ecb\ifusingit{i}{x}\ecsize \space at \nominalsize
+    \else
+      % regular:
+      \font\thisecfont = ec\ifusingit{ti}{rm}\ecsize \space at \nominalsize
+    \fi
   \fi
   \thisecfont
 }
@@ -3262,6 +3270,20 @@ end
   \finishedtitlepagetrue
 }
 
+% Settings used for typesetting titles: no hyphenation, no indentation,
+% don't worry much about spacing, ragged right.  This should be used
+% inside a \vbox, and fonts need to be set appropriately first.  Because
+% it is always used for titles, nothing else, we call \rmisbold.  \par
+% should be specified before the end of the \vbox, since a vbox is a group.
+% 
+\def\raggedtitlesettings{%
+  \rmisbold
+  \hyphenpenalty=10000
+  \parindent=0pt
+  \tolerance=5000
+  \ptexraggedright
+}
+
 % Macros to be used within @titlepage:
 
 \let\subtitlerm=\tenrm
@@ -3269,7 +3291,7 @@ end
 
 \parseargdef\title{%
   \checkenv\titlepage
-  \leftline{\titlefonts\rmisbold #1}
+  \vbox{\titlefonts \raggedtitlesettings #1\par}%
   % print a rule at the page bottom also.
   \finishedtitlepagefalse
   \vskip4pt \hrule height 4pt width \hsize \vskip4pt
@@ -4166,7 +4188,7 @@ end
     % ..., but we might end up with active ones in the argument if
     % we're called from @code, as @code{@value{foo-bar_}}, though.
     % So \let them to their normal equivalents.
-    \let-\realdash \let_\normalunderscore
+    \let-\normaldash \let_\normalunderscore
   }
 }
 
@@ -4206,7 +4228,7 @@ end
 }
 \def\ifsetfail{\doignore{ifset}}
 
-% @ifclear VAR ... @end ifclear reads the `...' iff VAR has never been
+% @ifclear VAR ... @end executes the `...' iff VAR has never been
 % defined with @set, or has been undefined with @clear.
 %
 % The `\else' inside the `\doifset' parameter is a trick to reuse the
@@ -4216,6 +4238,35 @@ end
 \makecond{ifclear}
 \def\ifclear{\parsearg{\doifset{\else \let\next=\ifclearfail}}}
 \def\ifclearfail{\doignore{ifclear}}
+
+% @ifcommandisdefined CMD ... @end executes the `...' if CMD (written
+% without the @) is in fact defined.  We can only feasibly check at the
+% TeX level, so something like `mathcode' is going to considered
+% defined even though it is not a Texinfo command.
+% 
+\makecond{ifcommanddefined}
+\def\ifcommanddefined{\parsearg{\doifcmddefined{\let\next=\ifcmddefinedfail}}}
+%
+\def\doifcmddefined#1#2{{%
+    \makevalueexpandable
+    \let\next=\empty
+    \expandafter\ifx\csname #2\endcsname\relax
+      #1% If not defined, \let\next as above.
+    \fi
+    \expandafter
+  }\next
+}
+\def\ifcmddefinedfail{\doignore{ifcommanddefined}}
+
+% @ifcommandnotdefined CMD ... handled similar to @ifclear above.
+\makecond{ifcommandnotdefined}
+\def\ifcommandnotdefined{%
+  \parsearg{\doifcmddefined{\else \let\next=\ifcmdnotdefinedfail}}}
+\def\ifcmdnotdefinedfail{\doignore{ifcommandnotdefined}}
+
+% Set the `txicommandconditionals' variable, so documents have a way to
+% test if the @ifcommand...defined conditionals are available.
+\set txicommandconditionals
 
 % @dircategory CATEGORY  -- specify a category of the dir file
 % which this file should belong to.  Ignore this in TeX.
@@ -5543,14 +5594,6 @@ end
 
 % Define @majorheading, @heading and @subheading
 
-% NOTE on use of \vbox for chapter headings, section headings, and such:
-%       1) We use \vbox rather than the earlier \line to permit
-%          overlong headings to fold.
-%       2) \hyphenpenalty is set to 10000 because hyphenation in a
-%          heading is obnoxious; this forbids it.
-%       3) Likewise, headings look best if no \parindent is used, and
-%          if justification is not attempted.  Hence \raggedright.
-
 \def\majorheading{%
   {\advance\chapheadingskip by 10pt \chapbreak }%
   \parsearg\chapheadingzzz
@@ -5558,10 +5601,8 @@ end
 
 \def\chapheading{\chapbreak \parsearg\chapheadingzzz}
 \def\chapheadingzzz#1{%
-  {\chapfonts \vbox{\hyphenpenalty=10000\tolerance=5000
-                    \parindent=0pt\ptexraggedright
-                    \rmisbold #1\hfill}}%
-  \bigskip \par\penalty 200\relax
+  \vbox{\chapfonts \raggedtitlesettings #1\par}%
+  \nobreak\bigskip \nobreak
   \suppressfirstparagraphindent
 }
 
@@ -5720,8 +5761,7 @@ end
     %
     % Typeset the actual heading.
     \nobreak % Avoid page breaks at the interline glue.
-    \vbox{\hyphenpenalty=10000 \tolerance=5000 \parindent=0pt \ptexraggedright
-          \hangindent=\wd0 \centerparametersmaybe
+    \vbox{\raggedtitlesettings \hangindent=\wd0 \centerparametersmaybe
           \unhbox0 #1\par}%
   }%
   \nobreak\bigskip % no page break after a chapter title
@@ -5743,18 +5783,18 @@ end
 \def\setchapterstyle #1 {\csname CHAPF#1\endcsname}
 %
 \def\unnchfopen #1{%
-\chapoddpage {\chapfonts \vbox{\hyphenpenalty=10000\tolerance=5000
-                       \parindent=0pt\ptexraggedright
-                       \rmisbold #1\hfill}}\bigskip \par\nobreak
+  \chapoddpage
+  \vbox{\chapfonts \raggedtitlesettings #1\par}%
+  \nobreak\bigskip\nobreak
 }
 \def\chfopen #1#2{\chapoddpage {\chapfonts
 \vbox to 3in{\vfil \hbox to\hsize{\hfil #2} \hbox to\hsize{\hfil #1} \vfil}}%
 \par\penalty 5000 %
 }
 \def\centerchfopen #1{%
-\chapoddpage {\chapfonts \vbox{\hyphenpenalty=10000\tolerance=5000
-                       \parindent=0pt
-                       \hfill {\rmisbold #1}\hfill}}\bigskip \par\nobreak
+  \chapoddpage
+  \vbox{\chapfonts \raggedtitlesettings \hfill #1\hfill}%
+  \nobreak\bigskip \nobreak
 }
 \def\CHAPFopen{%
   \global\let\chapmacro=\chfopen
@@ -6520,16 +6560,9 @@ end
 \makedispenvdef{quotation}{\quotationstart}
 %
 \def\quotationstart{%
-  {\parskip=0pt \aboveenvbreak}% because \aboveenvbreak inserts \parskip
-  \parindent=0pt
-  %
-  % @cartouche defines \nonarrowing to inhibit narrowing at next level down.
+  \indentedblockstart % same as \indentedblock, but increase right margin too.
   \ifx\nonarrowing\relax
-    \advance\leftskip by \lispnarrowing
     \advance\rightskip by \lispnarrowing
-    \exdentamount = \lispnarrowing
-  \else
-    \let\nonarrowing = \relax
   \fi
   \parsearg\quotationlabel
 }
@@ -6554,6 +6587,32 @@ end
     {\bf #1: }%
   \fi
 }
+
+% @indentedblock is like @quotation, but indents only on the left and
+% has no optional argument.
+% 
+\makedispenvdef{indentedblock}{\indentedblockstart}
+%
+\def\indentedblockstart{%
+  {\parskip=0pt \aboveenvbreak}% because \aboveenvbreak inserts \parskip
+  \parindent=0pt
+  %
+  % @cartouche defines \nonarrowing to inhibit narrowing at next level down.
+  \ifx\nonarrowing\relax
+    \advance\leftskip by \lispnarrowing
+    \exdentamount = \lispnarrowing
+  \else
+    \let\nonarrowing = \relax
+  \fi
+}
+
+% Keep a nonzero parskip for the environment, since we're doing normal filling.
+%
+\def\Eindentedblock{%
+  \par
+  {\parskip=0pt \afterenvbreak}%
+}
+\def\Esmallindentedblock{\Eindentedblock}
 
 
 % LaTeX-like @verbatim...@end verbatim and @verb{<char>...<char>}
@@ -7033,7 +7092,10 @@ end
   \df \sl \hyphenchar\font=0
   %
   % On the other hand, if an argument has two dashes (for instance), we
-  % want a way to get ttsl.  Let's try @var for that.
+  % want a way to get ttsl.  We used to recommend @var for that, so
+  % leave the code in, but it's strange for @var to lead to typewriter.
+  % Nowadays we recommend @code, since the difference between a ttsl hyphen
+  % and a tt hyphen is pretty tiny.  @code also disables ?` !`.
   \def\var##1{{\setupmarkupstyle{var}\ttslanted{##1}}}%
   #1%
   \sl\hyphenchar\font=45
@@ -9931,22 +9993,26 @@ directory should work if nowhere else does.}
 @gdef@otherbackslash{@let\=@realbackslash}
 
 % Same as @turnoffactive except outputs \ as {\tt\char`\\} instead of
-% the literal character `\'.
+% the literal character `\'.  Also revert - to its normal character, in
+% case the active - from code has slipped in.
 %
-@def@normalturnoffactive{%
-  @let"=@normaldoublequote
-  @let$=@normaldollar %$ font-lock fix
-  @let+=@normalplus
-  @let<=@normalless
-  @let>=@normalgreater
-  @let\=@normalbackslash
-  @let^=@normalcaret
-  @let_=@normalunderscore
-  @let|=@normalverticalbar
-  @let~=@normaltilde
-  @markupsetuplqdefault
-  @markupsetuprqdefault
-  @unsepspaces
+{@catcode`- = @active
+ @gdef@normalturnoffactive{%
+   @let-=@normaldash
+   @let"=@normaldoublequote
+   @let$=@normaldollar %$ font-lock fix
+   @let+=@normalplus
+   @let<=@normalless
+   @let>=@normalgreater
+   @let\=@normalbackslash
+   @let^=@normalcaret
+   @let_=@normalunderscore
+   @let|=@normalverticalbar
+   @let~=@normaltilde
+   @markupsetuplqdefault
+   @markupsetuprqdefault
+   @unsepspaces
+ }
 }
 
 % Make _ and + \other characters, temporarily.

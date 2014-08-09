@@ -1,14 +1,14 @@
 /* Area:	ffi_call
-   Purpose:	Check fastcall f call on X86_WIN32 systems.
+   Purpose:	Check strlen function call with additional arguments.
    Limitations:	none.
    PR:		none.
    Originator:	From the original ffitest.c  */
 
-/* { dg-do run { target i?86-*-cygwin* i?86-*-mingw* } } */
+/* { dg-do run } */
 
 #include "ffitest.h"
 
-static size_t __FASTCALL__ my_fastcall_f(float a, char *s, int i)
+static size_t ABI_ATTR my_f(float a, char *s, int i)
 {
   return (size_t) ((int) strlen(s) + (int) a + i);
 }
@@ -30,27 +30,26 @@ int main (void)
   values[0] = (void*) &v2;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_FASTCALL, 3,
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 3,
 		       &ffi_type_sint, args) == FFI_OK);
   
   s = "a";
   v1 = 1;
   v2 = 0.0;
-  ffi_call(&cif, FFI_FN(my_fastcall_f), &rint, values);
+  ffi_call(&cif, FFI_FN(my_f), &rint, values);
   CHECK(rint == 2);
   
   s = "1234567";
   v2 = -1.0;
   v1 = -2;
-  ffi_call(&cif, FFI_FN(my_fastcall_f), &rint, values);
+  ffi_call(&cif, FFI_FN(my_f), &rint, values);
   CHECK(rint == 4);
   
   s = "1234567890123456789012345";
   v2 = 1.0;
   v1 = 2;
-  ffi_call(&cif, FFI_FN(my_fastcall_f), &rint, values);
+  ffi_call(&cif, FFI_FN(my_f), &rint, values);
   CHECK(rint == 28);
   
-  printf("fastcall fct3 tests passed\n");
   exit(0);
 }

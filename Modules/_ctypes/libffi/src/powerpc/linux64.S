@@ -29,18 +29,25 @@
 #include <fficonfig.h>
 #include <ffi.h>
 
-#ifdef __powerpc64__
+#ifdef POWERPC64
 	.hidden	ffi_call_LINUX64
 	.globl	ffi_call_LINUX64
+# if _CALL_ELF == 2
+	.text
+ffi_call_LINUX64:
+	addis	%r2, %r12, .TOC.-ffi_call_LINUX64@ha
+	addi	%r2, %r2, .TOC.-ffi_call_LINUX64@l
+	.localentry ffi_call_LINUX64, . - ffi_call_LINUX64
+# else
 	.section	".opd","aw"
 	.align	3
 ffi_call_LINUX64:
-#ifdef _CALL_LINUX
+#  ifdef _CALL_LINUX
 	.quad	.L.ffi_call_LINUX64,.TOC.@tocbase,0
 	.type	ffi_call_LINUX64,@function
 	.text
 .L.ffi_call_LINUX64:
-#else
+#  else
 	.hidden	.ffi_call_LINUX64
 	.globl	.ffi_call_LINUX64
 	.quad	.ffi_call_LINUX64,.TOC.@tocbase,0
@@ -48,7 +55,8 @@ ffi_call_LINUX64:
 	.type	.ffi_call_LINUX64,@function
 	.text
 .ffi_call_LINUX64:
-#endif
+#  endif
+# endif
 .LFB1:
 	mflr	%r0
 	std	%r28, -32(%r1)
@@ -63,26 +71,35 @@ ffi_call_LINUX64:
 	mr	%r31, %r5	/* flags, */
 	mr	%r30, %r6	/* rvalue, */
 	mr	%r29, %r7	/* function address.  */
+/* Save toc pointer, not for the ffi_prep_args64 call, but for the later
+   bctrl function call.  */
+# if _CALL_ELF == 2
+	std	%r2, 24(%r1)
+# else
 	std	%r2, 40(%r1)
+# endif
 
 	/* Call ffi_prep_args64.  */
 	mr	%r4, %r1
-#ifdef _CALL_LINUX
+# if defined _CALL_LINUX || _CALL_ELF == 2
 	bl	ffi_prep_args64
-#else
+# else
 	bl	.ffi_prep_args64
-#endif
+# endif
 
-	ld	%r0, 0(%r29)
+# if _CALL_ELF == 2
+	mr	%r12, %r29
+# else
+	ld	%r12, 0(%r29)
 	ld	%r2, 8(%r29)
 	ld	%r11, 16(%r29)
-
+# endif
 	/* Now do the call.  */
 	/* Set up cr1 with bits 4-7 of the flags.  */
 	mtcrf	0x40, %r31
 
 	/* Get the address to call into CTR.  */
-	mtctr	%r0
+	mtctr	%r12
 	/* Load all those argument registers.  */
 	ld	%r3, -32-(8*8)(%r28)
 	ld	%r4, -32-(7*8)(%r28)
@@ -117,12 +134,17 @@ ffi_call_LINUX64:
 
 	/* This must follow the call immediately, the unwinder
 	   uses this to find out if r2 has been saved or not.  */
+# if _CALL_ELF == 2
+	ld	%r2, 24(%r1)
+# else
 	ld	%r2, 40(%r1)
+# endif
 
 	/* Now, deal with the return value.  */
 	mtcrf	0x01, %r31
-	bt-	30, .Ldone_return_value
-	bt-	29, .Lfp_return_value
+	bt	31, .Lstruct_return_value
+	bt	30, .Ldone_return_value
+	bt	29, .Lfp_return_value
 	std	%r3, 0(%r30)
 	/* Fall through...  */
 
@@ -130,7 +152,7 @@ ffi_call_LINUX64:
 	/* Restore the registers we used and return.  */
 	mr	%r1, %r28
 	ld	%r0, 16(%r28)
-	ld	%r28, -32(%r1)
+	ld	%r28, -32(%r28)
 	mtlr	%r0
 	ld	%r29, -24(%r1)
 	ld	%r30, -16(%r1)
@@ -147,14 +169,48 @@ ffi_call_LINUX64:
 .Lfloat_return_value:
 	stfs	%f1, 0(%r30)
 	b	.Ldone_return_value
+
+.Lstruct_return_value:
+	bf	29, .Lsmall_struct
+	bf	28, .Lfloat_homog_return_value
+	stfd	%f1, 0(%r30)
+	stfd	%f2, 8(%r30)
+	stfd	%f3, 16(%r30)
+	stfd	%f4, 24(%r30)
+	stfd	%f5, 32(%r30)
+	stfd	%f6, 40(%r30)
+	stfd	%f7, 48(%r30)
+	stfd	%f8, 56(%r30)
+	b	.Ldone_return_value
+
+.Lfloat_homog_return_value:
+	stfs	%f1, 0(%r30)
+	stfs	%f2, 4(%r30)
+	stfs	%f3, 8(%r30)
+	stfs	%f4, 12(%r30)
+	stfs	%f5, 16(%r30)
+	stfs	%f6, 20(%r30)
+	stfs	%f7, 24(%r30)
+	stfs	%f8, 28(%r30)
+	b	.Ldone_return_value
+
+.Lsmall_struct:
+	std	%r3, 0(%r30)
+	std	%r4, 8(%r30)
+	b	.Ldone_return_value
+
 .LFE1:
 	.long	0
 	.byte	0,12,0,1,128,4,0,0
-#ifdef _CALL_LINUX
+# if _CALL_ELF == 2
+	.size	ffi_call_LINUX64,.-ffi_call_LINUX64
+# else
+#  ifdef _CALL_LINUX
 	.size	ffi_call_LINUX64,.-.L.ffi_call_LINUX64
-#else
+#  else
 	.size	.ffi_call_LINUX64,.-.ffi_call_LINUX64
-#endif
+#  endif
+# endif
 
 	.section	.eh_frame,EH_FRAME_FLAGS,@progbits
 .Lframe1:
@@ -197,8 +253,8 @@ ffi_call_LINUX64:
 	.uleb128 0x4
 	.align 3
 .LEFDE1:
-#endif
 
-#if defined __ELF__ && defined __linux__
+# if (defined __ELF__ && defined __linux__) || _CALL_ELF == 2
 	.section	.note.GNU-stack,"",@progbits
+# endif
 #endif

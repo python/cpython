@@ -39,16 +39,18 @@
 
 #include <stdlib.h>
 
+
 /* ffi_prep_args is called by the assembly routine once stack space
    has been allocated for the function's arguments */
 
+void ffi_prep_args(char *stack, extended_cif *ecif);
 void ffi_prep_args(char *stack, extended_cif *ecif)
 {
   register unsigned int i;
   register void **p_argv;
   register char *argp;
   register ffi_type **p_arg;
-#ifdef X86_WIN32
+#ifndef X86_WIN64
   size_t p_stack_args[2];
   void *p_stack_data[2];
   char *argp2 = stack;
@@ -67,7 +69,7 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
       )
     {
       *(void **) argp = ecif->rvalue;
-#ifdef X86_WIN32
+#ifndef X86_WIN64
       /* For fastcall/thiscall this is first register-passed
          argument.  */
       if (cabi == FFI_THISCALL || cabi == FFI_FASTCALL)
@@ -153,7 +155,7 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
           memcpy(argp, *p_argv, z);
         }
 
-#ifdef X86_WIN32
+#ifndef X86_WIN64
     /* For thiscall/fastcall convention register-passed arguments
        are the first two none-floating-point arguments with a size
        smaller or equal to sizeof (void*).  */
@@ -178,7 +180,7 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
 #endif
     }
 
-#ifdef X86_WIN32
+#ifndef X86_WIN64
   /* We need to move the register-passed arguments for thiscall/fastcall
      on top of stack, so that those can be moved to registers ecx/edx by
      call-handler.  */
@@ -307,7 +309,7 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
     {
       if (((*ptr)->alignment - 1) & cif->bytes)
         cif->bytes = ALIGN(cif->bytes, (*ptr)->alignment);
-      cif->bytes += ALIGN((*ptr)->size, FFI_SIZEOF_ARG);
+      cif->bytes += (unsigned)ALIGN((*ptr)->size, FFI_SIZEOF_ARG);
     }
 
 #ifdef X86_WIN64
@@ -315,7 +317,12 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   cif->bytes += 4 * sizeof(ffi_arg);
 #endif
 
-  cif->bytes = (cif->bytes + 15) & ~0xF;
+#ifndef X86_WIN32
+#ifndef X86_WIN64
+  if (cif->abi != FFI_STDCALL && cif->abi != FFI_THISCALL && cif->abi != FFI_FASTCALL)
+#endif
+    cif->bytes = (cif->bytes + 15) & ~0xF;
+#endif
 
   return FFI_OK;
 }
@@ -324,11 +331,10 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 extern int
 ffi_call_win64(void (*)(char *, extended_cif *), extended_cif *,
                unsigned, unsigned, unsigned *, void (*fn)(void));
-#elif defined(X86_WIN32)
+#else
 extern void
 ffi_call_win32(void (*)(char *, extended_cif *), extended_cif *,
                unsigned, unsigned, unsigned, unsigned *, void (*fn)(void));
-#else
 extern void ffi_call_SYSV(void (*)(char *, extended_cif *), extended_cif *,
                           unsigned, unsigned, unsigned *, void (*fn)(void));
 #endif
@@ -370,10 +376,17 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
       ffi_call_win64(ffi_prep_args, &ecif, cif->bytes,
                      cif->flags, ecif.rvalue, fn);
       break;
-#elif defined(X86_WIN32)
+#else
+#ifndef X86_WIN32
     case FFI_SYSV:
-    case FFI_STDCALL:
+      ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, cif->flags, ecif.rvalue,
+                    fn);
+      break;
+#else
+    case FFI_SYSV:
     case FFI_MS_CDECL:
+#endif
+    case FFI_STDCALL:
       ffi_call_win32(ffi_prep_args, &ecif, cif->abi, cif->bytes, cif->flags,
 		     ecif.rvalue, fn);
       break;
@@ -406,11 +419,6 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
                        ecif.rvalue, fn);
       }
       break;
-#else
-    case FFI_SYSV:
-      ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, cif->flags, ecif.rvalue,
-                    fn);
-      break;
 #endif
     default:
       FFI_ASSERT(0);
@@ -434,12 +442,15 @@ void FFI_HIDDEN ffi_closure_raw_SYSV (ffi_raw_closure *)
 #ifdef X86_WIN32
 void FFI_HIDDEN ffi_closure_raw_THISCALL (ffi_raw_closure *)
      __attribute__ ((regparm(1)));
+#endif
+#ifndef X86_WIN64
 void FFI_HIDDEN ffi_closure_STDCALL (ffi_closure *)
      __attribute__ ((regparm(1)));
 void FFI_HIDDEN ffi_closure_THISCALL (ffi_closure *)
      __attribute__ ((regparm(1)));
-#endif
-#ifdef X86_WIN64
+void FFI_HIDDEN ffi_closure_FASTCALL (ffi_closure *)
+     __attribute__ ((regparm(1)));
+#else
 void FFI_HIDDEN ffi_closure_win64 (ffi_closure *);
 #endif
 
@@ -598,7 +609,7 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue, void **avalue,
    *(unsigned int*)  &__tramp[6] = __dis; /* jmp __fun  */ \
  }
 
-#define FFI_INIT_TRAMPOLINE_THISCALL(TRAMP,FUN,CTX,SIZE) \
+#define FFI_INIT_TRAMPOLINE_RAW_THISCALL(TRAMP,FUN,CTX,SIZE) \
 { unsigned char *__tramp = (unsigned char*)(TRAMP); \
    unsigned int  __fun = (unsigned int)(FUN); \
    unsigned int  __ctx = (unsigned int)(CTX); \
@@ -625,18 +636,15 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue, void **avalue,
    *(unsigned short*)  &__tramp[50] = (__size + 8); /* ret (__size + 8)  */ \
  }
 
-#define FFI_INIT_TRAMPOLINE_STDCALL(TRAMP,FUN,CTX,SIZE)  \
+#define FFI_INIT_TRAMPOLINE_STDCALL(TRAMP,FUN,CTX)  \
 { unsigned char *__tramp = (unsigned char*)(TRAMP); \
    unsigned int  __fun = (unsigned int)(FUN); \
    unsigned int  __ctx = (unsigned int)(CTX); \
    unsigned int  __dis = __fun - (__ctx + 10); \
-   unsigned short __size = (unsigned short)(SIZE); \
    *(unsigned char*) &__tramp[0] = 0xb8; \
    *(unsigned int*)  &__tramp[1] = __ctx; /* movl __ctx, %eax */ \
    *(unsigned char *)  &__tramp[5] = 0xe8; \
    *(unsigned int*)  &__tramp[6] = __dis; /* call __fun  */ \
-   *(unsigned char *)  &__tramp[10] = 0xc2; \
-   *(unsigned short*)  &__tramp[11] = __size; /* ret __size  */ \
  }
 
 /* the cif must already be prep'ed */
@@ -666,20 +674,25 @@ ffi_prep_closure_loc (ffi_closure* closure,
                            &ffi_closure_SYSV,
                            (void*)codeloc);
     }
-#ifdef X86_WIN32
+  else if (cif->abi == FFI_FASTCALL)
+    {
+      FFI_INIT_TRAMPOLINE_STDCALL (&closure->tramp[0],
+				   &ffi_closure_FASTCALL,
+				   (void*)codeloc);
+    }
   else if (cif->abi == FFI_THISCALL)
     {
-      FFI_INIT_TRAMPOLINE_THISCALL (&closure->tramp[0],
-				    &ffi_closure_THISCALL,
-				    (void*)codeloc,
-				    cif->bytes);
+      FFI_INIT_TRAMPOLINE_STDCALL (&closure->tramp[0],
+				   &ffi_closure_THISCALL,
+				   (void*)codeloc);
     }
   else if (cif->abi == FFI_STDCALL)
     {
       FFI_INIT_TRAMPOLINE_STDCALL (&closure->tramp[0],
                                    &ffi_closure_STDCALL,
-                                   (void*)codeloc, cif->bytes);
+                                   (void*)codeloc);
     }
+#ifdef X86_WIN32
   else if (cif->abi == FFI_MS_CDECL)
     {
       FFI_INIT_TRAMPOLINE (&closure->tramp[0],
@@ -713,12 +726,12 @@ ffi_prep_raw_closure_loc (ffi_raw_closure* closure,
 {
   int i;
 
-  if (cif->abi != FFI_SYSV) {
+  if (cif->abi != FFI_SYSV
 #ifdef X86_WIN32
-    if (cif->abi != FFI_THISCALL)
+      && cif->abi != FFI_THISCALL
 #endif
+     )
     return FFI_BAD_ABI;
-  }
 
   /* we currently don't support certain kinds of arguments for raw
      closures.  This should be implemented by a separate assembly
@@ -741,8 +754,7 @@ ffi_prep_raw_closure_loc (ffi_raw_closure* closure,
     }
   else if (cif->abi == FFI_THISCALL)
     {
-      FFI_INIT_TRAMPOLINE_THISCALL (&closure->tramp[0], &ffi_closure_raw_THISCALL,
-				    codeloc, cif->bytes);
+      FFI_INIT_TRAMPOLINE_RAW_THISCALL (&closure->tramp[0], &ffi_closure_raw_THISCALL, codeloc, cif->bytes);
     }
 #endif
   closure->cif  = cif;
@@ -787,10 +799,17 @@ ffi_raw_call(ffi_cif *cif, void (*fn)(void), void *rvalue, ffi_raw *fake_avalue)
   
   switch (cif->abi) 
     {
-#ifdef X86_WIN32
+#ifndef X86_WIN32
     case FFI_SYSV:
-    case FFI_STDCALL:
+      ffi_call_SYSV(ffi_prep_args_raw, &ecif, cif->bytes, cif->flags,
+                    ecif.rvalue, fn);
+      break;
+#else
+    case FFI_SYSV:
     case FFI_MS_CDECL:
+#endif
+#ifndef X86_WIN64
+    case FFI_STDCALL:
       ffi_call_win32(ffi_prep_args_raw, &ecif, cif->abi, cif->bytes, cif->flags,
 		     ecif.rvalue, fn);
       break;
@@ -822,11 +841,6 @@ ffi_raw_call(ffi_cif *cif, void (*fn)(void), void *rvalue, ffi_raw *fake_avalue)
         ffi_call_win32(ffi_prep_args_raw, &ecif, abi, cif->bytes, cif->flags,
                        ecif.rvalue, fn);
       }
-      break;
-#else
-    case FFI_SYSV:
-      ffi_call_SYSV(ffi_prep_args_raw, &ecif, cif->bytes, cif->flags,
-                    ecif.rvalue, fn);
       break;
 #endif
     default:
