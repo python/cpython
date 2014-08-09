@@ -283,6 +283,13 @@ Tests
 - Issue #21522: Added Tkinter tests for Listbox.itemconfigure(),
   PanedWindow.paneconfigure(), and Menu.entryconfigure().
 
+Documentation
+-------------
+
+- Issue #21777: The binary sequence methods on bytes and bytearray are now
+  documented explicitly, rather than assuming users will be able to derive
+  the expected behaviour from the behaviour of the corresponding str methods.
+
 Windows
 -------
 
