@@ -322,7 +322,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(cls, RuntimeError)
         self.assertEqual(msg,
                              "(Phone) <class 'TypeError'>: "
-                             "expected string, int found")
+                             "expected bytes, int found")
 
         cls, msg = self.get_except(Person, b"Someone", (b"a", b"b", b"c"))
         self.assertEqual(cls, RuntimeError)
