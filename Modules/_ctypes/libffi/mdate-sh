@@ -1,10 +1,9 @@
 #!/bin/sh
 # Get modification time of a file or directory and pretty-print it.
 
-scriptversion=2005-06-29.22
+scriptversion=2010-08-21.06; # UTC
 
-# Copyright (C) 1995, 1996, 1997, 2003, 2004, 2005 Free Software
-# Foundation, Inc.
+# Copyright (C) 1995-2013 Free Software Foundation, Inc.
 # written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, June 1995
 #
 # This program is free software; you can redistribute it and/or modify
@@ -18,8 +17,7 @@ scriptversion=2005-06-29.22
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -30,16 +28,26 @@ scriptversion=2005-06-29.22
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
+if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
+  emulate sh
+  NULLCMD=:
+  # Pre-4.2 versions of Zsh do word splitting on ${1+"$@"}, which
+  # is contrary to our usage.  Disable this feature.
+  alias -g '${1+"$@"}'='"$@"'
+  setopt NO_GLOB_SUBST
+fi
+
 case $1 in
   '')
-     echo "$0: No file.  Try \`$0 --help' for more information." 1>&2
+     echo "$0: No file.  Try '$0 --help' for more information." 1>&2
      exit 1;
      ;;
   -h | --h*)
     cat <<\EOF
 Usage: mdate-sh [--help] [--version] FILE
 
-Pretty-print the modification time of FILE.
+Pretty-print the modification day of FILE, in the format:
+1 January 1970
 
 Report bugs to <bug-automake@gnu.org>.
 EOF
@@ -51,6 +59,13 @@ EOF
     ;;
 esac
 
+error ()
+{
+  echo "$0: $1" >&2
+  exit 1
+}
+
+
 # Prevent date giving response in another language.
 LANG=C
 export LANG
@@ -60,7 +75,7 @@ LC_TIME=C
 export LC_TIME
 
 # GNU ls changes its time format in response to the TIME_STYLE
-# variable.  Since we cannot assume `unset' works, revert this
+# variable.  Since we cannot assume 'unset' works, revert this
 # variable to its documented default.
 if test "${TIME_STYLE+set}" = set; then
   TIME_STYLE=posix-long-iso
@@ -75,27 +90,32 @@ if ls -L /dev/null 1>/dev/null 2>&1; then
 else
   ls_command='ls -l -d'
 fi
+# Avoid user/group names that might have spaces, when possible.
+if ls -n /dev/null 1>/dev/null 2>&1; then
+  ls_command="$ls_command -n"
+fi
 
-# A `ls -l' line looks as follows on OS/2.
+# A 'ls -l' line looks as follows on OS/2.
 #  drwxrwx---        0 Aug 11  2001 foo
 # This differs from Unix, which adds ownership information.
 #  drwxrwx---   2 root  root      4096 Aug 11  2001 foo
 #
 # To find the date, we split the line on spaces and iterate on words
 # until we find a month.  This cannot work with files whose owner is a
-# user named `Jan', or `Feb', etc.  However, it's unlikely that `/'
+# user named "Jan", or "Feb", etc.  However, it's unlikely that '/'
 # will be owned by a user whose name is a month.  So we first look at
 # the extended ls output of the root directory to decide how many
 # words should be skipped to get the date.
 
 # On HPUX /bin/sh, "set" interprets "-rw-r--r--" as options, so the "x" below.
-set x`ls -l -d /`
+set x`$ls_command /`
 
 # Find which argument is the month.
 month=
 command=
 until test $month
 do
+  test $# -gt 0 || error "failed parsing '$ls_command /' output"
   shift
   # Add another shift to the command.
   command="$command shift;"
@@ -115,8 +135,10 @@ do
   esac
 done
 
+test -n "$month" || error "failed parsing '$ls_command /' output"
+
 # Get the extended ls output of the file or directory.
-set dummy x`eval "$ls_command \"\$save_arg1\""`
+set dummy x`eval "$ls_command \"\\\$save_arg1\""`
 
 # Remove all preceding arguments
 eval $command
@@ -197,5 +219,6 @@ echo $day $month $year
 # eval: (add-hook 'write-file-hooks 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
-# time-stamp-end: "$"
+# time-stamp-time-zone: "UTC"
+# time-stamp-end: "; # UTC"
 # End:

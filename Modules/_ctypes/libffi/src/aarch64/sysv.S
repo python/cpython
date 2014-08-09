@@ -23,14 +23,33 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include <fficonfig.h>
 #include <ffi.h>
 
+#ifdef HAVE_MACHINE_ASM_H
+#include <machine/asm.h>
+#else
+#ifdef __USER_LABEL_PREFIX__
+#define CONCAT1(a, b) CONCAT2(a, b)
+#define CONCAT2(a, b) a ## b
+
+/* Use the right prefix for global labels.  */
+#define CNAME(x) CONCAT1 (__USER_LABEL_PREFIX__, x)
+#else
+#define CNAME(x) x
+#endif
+#endif
+
 #define cfi_adjust_cfa_offset(off)	.cfi_adjust_cfa_offset off
 #define cfi_rel_offset(reg, off)	.cfi_rel_offset reg, off
 #define cfi_restore(reg)		.cfi_restore reg
 #define cfi_def_cfa_register(reg)	.cfi_def_cfa_register reg
 
         .text
-        .globl ffi_call_SYSV
-        .type ffi_call_SYSV, #function
+        .globl CNAME(ffi_call_SYSV)
+#ifdef __ELF__
+        .type CNAME(ffi_call_SYSV), #function
+#endif
+#ifdef __APPLE__
+        .align 2
+#endif
 
 /* ffi_call_SYSV()
 
@@ -53,7 +72,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 			   extended_cif *),
                   struct call_context *context,
                   extended_cif *,
-                  unsigned required_stack_size,
+                  size_t required_stack_size,
                   void (*fn)(void));
 
    Therefore on entry we have:
@@ -82,7 +101,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #define ffi_call_SYSV_FS (8 * 4)
 
         .cfi_startproc
-ffi_call_SYSV:
+CNAME(ffi_call_SYSV):
         stp     x29, x30, [sp, #-16]!
 	cfi_adjust_cfa_offset (16)
         cfi_rel_offset (x29, 0)
@@ -92,11 +111,11 @@ ffi_call_SYSV:
 	cfi_def_cfa_register (x29)
         sub     sp, sp, #ffi_call_SYSV_FS
 
-        stp     x21, x22, [sp, 0]
+        stp     x21, x22, [sp, #0]
         cfi_rel_offset (x21, 0 - ffi_call_SYSV_FS)
         cfi_rel_offset (x22, 8 - ffi_call_SYSV_FS)
 
-        stp     x23, x24, [sp, 16]
+        stp     x23, x24, [sp, #16]
         cfi_rel_offset (x23, 16 - ffi_call_SYSV_FS)
         cfi_rel_offset (x24, 24 - ffi_call_SYSV_FS)
 
@@ -180,7 +199,9 @@ ffi_call_SYSV:
         ret
 
         .cfi_endproc
-        .size ffi_call_SYSV, .-ffi_call_SYSV
+#ifdef __ELF__
+        .size CNAME(ffi_call_SYSV), .-CNAME(ffi_call_SYSV)
+#endif
 
 #define ffi_closure_SYSV_FS (8 * 2 + AARCH64_CALL_CONTEXT_SIZE)
 
@@ -222,22 +243,25 @@ ffi_call_SYSV:
    Voila!  */
 
         .text
-        .globl ffi_closure_SYSV
+        .globl CNAME(ffi_closure_SYSV)
+#ifdef __APPLE__
+        .align 2
+#endif
         .cfi_startproc
-ffi_closure_SYSV:
+CNAME(ffi_closure_SYSV):
         stp     x29, x30, [sp, #-16]!
 	cfi_adjust_cfa_offset (16)
         cfi_rel_offset (x29, 0)
         cfi_rel_offset (x30, 8)
 
         mov     x29, sp
+        cfi_def_cfa_register (x29)
 
         sub     sp, sp, #ffi_closure_SYSV_FS
-	cfi_adjust_cfa_offset (ffi_closure_SYSV_FS)
 
         stp     x21, x22, [x29, #-16]
-        cfi_rel_offset (x21, 0)
-        cfi_rel_offset (x22, 8)
+        cfi_rel_offset (x21, -16)
+        cfi_rel_offset (x22, -8)
 
         /* Load x21 with &call_context.  */
         mov     x21, sp
@@ -270,7 +294,7 @@ ffi_closure_SYSV:
            trampoline was called.  */
         add     x2, x29, #16
 
-        bl      ffi_closure_SYSV_inner
+        bl      CNAME(ffi_closure_SYSV_inner)
 
         /* Figure out if we should touch the vector registers.  */
         ldr     x0, [x22, #8]
@@ -287,7 +311,7 @@ ffi_closure_SYSV:
         ldp     x2, x3, [x21, #16]
         ldp     x4, x5, [x21, #32]
         ldp     x6, x7, [x21, #48]
-        /* Note nothing usefull is returned in x8.  */
+        /* Note nothing useful is returned in x8.  */
 
         /* We are done, unwind our frame.  */
         ldp     x21, x22, [x29,  #-16]
@@ -295,7 +319,7 @@ ffi_closure_SYSV:
         cfi_restore (x22)
 
         mov     sp, x29
-	cfi_adjust_cfa_offset (-ffi_closure_SYSV_FS)
+        cfi_def_cfa_register (sp)
 
         ldp     x29, x30, [sp], #16
 	cfi_adjust_cfa_offset (-16)
@@ -304,4 +328,6 @@ ffi_closure_SYSV:
 
         ret
         .cfi_endproc
-        .size ffi_closure_SYSV, .-ffi_closure_SYSV
+#ifdef __ELF__
+        .size CNAME(ffi_closure_SYSV), .-CNAME(ffi_closure_SYSV)
+#endif

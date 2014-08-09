@@ -1,7 +1,7 @@
 /* Area:	ffi_call, closure_call
    Purpose:	Check parameter passing with nested structs
 		of a single type.  This tests the special cases
-		for homogenous floating-point aggregates in the
+		for homogeneous floating-point aggregates in the
 		AArch64 PCS.
    Limitations:	none.
    PR:		none.

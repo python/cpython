@@ -1,8 +1,7 @@
-diff -r -N -u libffi.orig/autom4te.cache/output.0 libffi/autom4te.cache/output.0
-diff -r -N -u libffi.orig/configure libffi/configure
---- libffi.orig/configure	2013-03-17 15:37:50.000000000 -0700
-+++ libffi/configure	2013-03-18 15:11:39.611575163 -0700
-@@ -13368,6 +13368,10 @@
+diff -urN libffi-3.1/configure libffi/configure
+--- libffi-3.1/configure	2014-05-19 15:44:03.000000000 +0200
++++ libffi/configure	2014-08-09 21:51:07.877871443 +0200
+@@ -17236,6 +17236,10 @@
  	fi
  	;;
  
@@ -13,22 +12,22 @@ diff -r -N -u libffi.orig/configure libffi/configure
    x86_64-*-darwin*)
  	TARGET=X86_DARWIN; TARGETDIR=x86
  	;;
-@@ -13426,12 +13430,12 @@
+@@ -17298,12 +17302,12 @@
  	;;
  
    mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
 -	TARGET=MIPS; TARGETDIR=mips
 +	TARGET=MIPS_IRIX; TARGETDIR=mips
  	;;
-   mips*-*-linux* | mips*-*-openbsd*)
+   mips*-*linux* | mips*-*-openbsd*)
  	# Support 128-bit long double for NewABI.
  	HAVE_LONG_DOUBLE='defined(__mips64)'
 -	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
++	TARGET=MIPS_LINUX; TARGETDIR=mips
  	;;
  
-   powerpc*-*-linux* | powerpc-*-sysv*)
-@@ -13491,7 +13495,7 @@
+   nios2*-linux*)
+@@ -17373,7 +17377,7 @@
    as_fn_error $? "\"libffi has not been ported to $host.\"" "$LINENO" 5
  fi
  
@@ -37,7 +36,7 @@ diff -r -N -u libffi.orig/configure libffi/configure
    MIPS_TRUE=
    MIPS_FALSE='#'
  else
-@@ -14862,6 +14866,12 @@
+@@ -18814,6 +18818,12 @@
  ac_config_files="$ac_config_files include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc"
  
  
@@ -50,7 +49,7 @@ diff -r -N -u libffi.orig/configure libffi/configure
  cat >confcache <<\_ACEOF
  # This file is a shell script that caches the results of configure
  # tests run on this system so they can be shared between configure
-@@ -16047,6 +16057,8 @@
+@@ -20126,6 +20136,8 @@
      "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
      "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
      "libffi.pc") CONFIG_FILES="$CONFIG_FILES libffi.pc" ;;
@@ -59,9 +58,9 @@ diff -r -N -u libffi.orig/configure libffi/configure
  
    *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
    esac
-diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
---- libffi.orig/configure.ac	2013-03-17 15:37:50.000000000 -0700
-+++ libffi/configure.ac	2013-03-18 15:11:11.392989136 -0700
+diff -urN libffi-3.1/configure.ac libffi/configure.ac
+--- libffi-3.1/configure.ac	2014-05-11 15:57:49.000000000 +0200
++++ libffi/configure.ac	2014-08-09 21:51:07.877871443 +0200
 @@ -1,4 +1,7 @@
  dnl Process this with autoconf to create configure
 +#
@@ -70,33 +69,32 @@ diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
  
  AC_PREREQ(2.68)
  
-@@ -146,6 +149,10 @@
- 	fi	  
+@@ -144,6 +147,9 @@
+ 	  AM_LTLDFLAGS='-no-undefined -bindir "$(bindir)"';
+ 	fi
  	;;
- 
 +  i*86-*-nto-qnx*) 
 +        TARGET=X86; TARGETDIR=x86
 +        ;;
-+
-   x86_64-*-darwin*)
+   i?86-*-darwin*)
  	TARGET=X86_DARWIN; TARGETDIR=x86
  	;;
-@@ -204,12 +211,12 @@
+@@ -218,12 +224,12 @@
  	;;
  
    mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
 -	TARGET=MIPS; TARGETDIR=mips
 +	TARGET=MIPS_IRIX; TARGETDIR=mips
  	;;
-   mips*-*-linux* | mips*-*-openbsd*)
+   mips*-*linux* | mips*-*-openbsd*)
  	# Support 128-bit long double for NewABI.
  	HAVE_LONG_DOUBLE='defined(__mips64)'
 -	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
++	TARGET=MIPS_LINUX; TARGETDIR=mips
  	;;
  
-   powerpc*-*-linux* | powerpc-*-sysv*)
-@@ -269,7 +276,7 @@
+   nios2*-linux*)
+@@ -293,7 +299,7 @@
    AC_MSG_ERROR(["libffi has not been ported to $host."])
  fi
  
@@ -105,7 +103,7 @@ diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
  AM_CONDITIONAL(BFIN, test x$TARGET = xBFIN)
  AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
  AM_CONDITIONAL(X86, test x$TARGET = xX86)
-@@ -567,4 +574,8 @@
+@@ -617,4 +623,8 @@
  
  AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
  
@@ -114,13 +112,13 @@ diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
 +AC_CONFIG_FILES(fficonfig.py)
 +
  AC_OUTPUT
---- libffi-3.0.11/fficonfig.py.in	1970-01-01 01:00:00.000000000 +0100
-+++ libffi/fficonfig.py.in	2012-03-15 01:04:27.000000000 +0100
+diff -urN libffi-3.1/fficonfig.py.in libffi/fficonfig.py.in
+--- libffi-3.1/fficonfig.py.in	1970-01-01 01:00:00.000000000 +0100
++++ libffi/fficonfig.py.in	2014-08-09 21:43:25.229871827 +0200
 @@ -0,0 +1,35 @@
 +ffi_sources = """
 +src/prep_cif.c
 +src/closures.c
-+src/dlmalloc.c
 +""".split()
 +
 +ffi_platforms = {
@@ -134,9 +132,10 @@ diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
 +    'IA64': ['src/ia64/ffi.c', 'src/ia64/unix.S'],
 +    'M32R': ['src/m32r/sysv.S', 'src/m32r/ffi.c'],
 +    'M68K': ['src/m68k/ffi.c', 'src/m68k/sysv.S'],
-+    'POWERPC': ['src/powerpc/ffi.c', 'src/powerpc/sysv.S', 'src/powerpc/ppc_closure.S', 'src/powerpc/linux64.S', 'src/powerpc/linux64_closure.S'],
++    'POWERPC': ['src/powerpc/ffi.c', 'src/powerpc/ffi_sysv.c', 'src/powerpc/ffi_linux64.c', 'src/powerpc/sysv.S', 'src/powerpc/ppc_closure.S', 'src/powerpc/linux64.S', 'src/powerpc/linux64_closure.S'],
 +    'POWERPC_AIX': ['src/powerpc/ffi_darwin.c', 'src/powerpc/aix.S', 'src/powerpc/aix_closure.S'],
 +    'POWERPC_FREEBSD': ['src/powerpc/ffi.c', 'src/powerpc/sysv.S', 'src/powerpc/ppc_closure.S'],
++    'AARCH64': ['src/aarch64/sysv.S', 'src/aarch64/ffi.c'],
 +    'ARM': ['src/arm/sysv.S', 'src/arm/ffi.c'],
 +    'LIBFFI_CRIS': ['src/cris/sysv.S', 'src/cris/ffi.c'],
 +    'FRV': ['src/frv/eabi.S', 'src/frv/ffi.c'],
@@ -152,9 +151,9 @@ diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
 +ffi_sources += ffi_platforms['@TARGET@']
 +
 +ffi_cflags = '@CFLAGS@'
-diff -urN libffi-3.0.11/src/dlmalloc.c libffi/src/dlmalloc.c
---- libffi-3.0.11/src/dlmalloc.c	2012-04-12 04:46:06.000000000 +0200
-+++ libffi/src/dlmalloc.c	2012-06-26 15:15:58.949547461 +0200
+diff -urN libffi-3.1/src/dlmalloc.c libffi/src/dlmalloc.c
+--- libffi-3.1/src/dlmalloc.c	2014-04-25 19:45:13.000000000 +0200
++++ libffi/src/dlmalloc.c	2014-08-09 21:51:07.881871443 +0200
 @@ -457,6 +457,11 @@
  #define LACKS_ERRNO_H
  #define MALLOC_FAILURE_ACTION
@@ -167,25 +166,7 @@ diff -urN libffi-3.0.11/src/dlmalloc.c libffi/src/dlmalloc.c
  #endif  /* WIN32 */
  
  #ifdef __OS2__
-@@ -3393,7 +3393,7 @@
-   *ss = m->seg; /* Push current record */
-   m->seg.base = tbase;
-   m->seg.size = tsize;
--  set_segment_flags(&m->seg, mmapped);
-+  (void)set_segment_flags(&m->seg, mmapped);
-   m->seg.next = ss;
- 
-   /* Insert trailing fenceposts */
-@@ -3553,7 +3553,7 @@
-     if (!is_initialized(m)) { /* first-time initialization */
-       m->seg.base = m->least_addr = tbase;
-       m->seg.size = tsize;
--      set_segment_flags(&m->seg, mmap_flag);
-+      (void)set_segment_flags(&m->seg, mmap_flag);
-       m->magic = mparams.magic;
-       init_bins(m);
-       if (is_global(m)) 
-@@ -4502,7 +4502,7 @@
+@@ -4497,7 +4502,7 @@
      char* tbase = (char*)(CALL_MMAP(tsize));
      if (tbase != CMFAIL) {
        m = init_user_mstate(tbase, tsize);
@@ -194,7 +175,7 @@ diff -urN libffi-3.0.11/src/dlmalloc.c libffi/src/dlmalloc.c
        set_lock(m, locked);
      }
    }
-@@ -4517,7 +4517,7 @@
+@@ -4512,7 +4517,7 @@
    if (capacity > msize + TOP_FOOT_SIZE &&
        capacity < (size_t) -(msize + TOP_FOOT_SIZE + mparams.page_size)) {
      m = init_user_mstate((char*)base, capacity);

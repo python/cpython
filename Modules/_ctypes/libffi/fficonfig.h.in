@@ -26,10 +26,10 @@
 /* Cannot use malloc on this target, so, we revert to alternative means */
 #undef FFI_MMAP_EXEC_WRIT
 
-/* Define this is you do not want support for the raw API. */
+/* Define this if you do not want support for the raw API. */
 #undef FFI_NO_RAW_API
 
-/* Define this is you do not want support for aggregate types. */
+/* Define this if you do not want support for aggregate types. */
 #undef FFI_NO_STRUCTS
 
 /* Define to 1 if you have `alloca', as a function or macro. */
@@ -72,6 +72,9 @@
 
 /* Define if you have the long double type and it is bigger than a double */
 #undef HAVE_LONG_DOUBLE
+
+/* Define if you support more than one size of the long double type */
+#undef HAVE_LONG_DOUBLE_VARIANT
 
 /* Define to 1 if you have the `memcpy' function. */
 #undef HAVE_MEMCPY
@@ -118,8 +121,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
@@ -151,6 +153,9 @@
 
 /* The size of `long double', as computed by sizeof. */
 #undef SIZEOF_LONG_DOUBLE
+
+/* The size of `size_t', as computed by sizeof. */
+#undef SIZEOF_SIZE_T
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
