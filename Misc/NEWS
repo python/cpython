@@ -794,6 +794,10 @@ C API
 Documentation
 -------------
 
+- Issue #21777: The binary sequence methods on bytes and bytearray are now
+  documented explicitly, rather than assuming users will be able to derive
+  the expected behaviour from the behaviour of the corresponding str methods.
+
 - Issue #6916: undocument deprecated asynchat.fifo class.
 
 - Issue #17386: Expanded functionality of the ``Doc/make.bat`` script to make
