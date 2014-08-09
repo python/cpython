@@ -1080,7 +1080,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
     ptr = view.buf;
     if (size > self->b_size) {
         PyErr_SetString(PyExc_ValueError,
-                        "string too long");
+                        "byte string too long");
         goto fail;
     }
 
@@ -1132,7 +1132,7 @@ CharArray_set_value(CDataObject *self, PyObject *value)
     size = PyBytes_GET_SIZE(value);
     if (size > self->b_size) {
         PyErr_SetString(PyExc_ValueError,
-                        "string too long");
+                        "byte string too long");
         Py_DECREF(value);
         return -1;
     }
@@ -1471,7 +1471,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    if (PyUnicode_Check(value) || PyBytes_Check(value)) {
+    if (PyUnicode_Check(value)) {
         PyCArgObject *parg;
         struct fielddesc *fd = _ctypes_get_fielddesc("Z");
 
@@ -1623,25 +1623,8 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return (PyObject *)parg;
     }
     /* XXX struni: remove later */
-/* string */
-    if (PyBytes_Check(value)) {
-        PyCArgObject *parg;
-        struct fielddesc *fd = _ctypes_get_fielddesc("z");
-
-        parg = PyCArgObject_new();
-        if (parg == NULL)
-            return NULL;
-        parg->pffi_type = &ffi_type_pointer;
-        parg->tag = 'z';
-        parg->obj = fd->setfunc(&parg->value, value, 0);
-        if (parg->obj == NULL) {
-            Py_DECREF(parg);
-            return NULL;
-        }
-        return (PyObject *)parg;
-    }
 /* bytes */
-    if (PyByteArray_Check(value)) {
+    if (PyBytes_Check(value)) {
         PyCArgObject *parg;
         struct fielddesc *fd = _ctypes_get_fielddesc("z");
 
@@ -3218,7 +3201,7 @@ _get_name(PyObject *obj, char **pname)
         return *pname ? 1 : 0;
     }
     PyErr_SetString(PyExc_TypeError,
-                    "function name must be string or integer");
+                    "function name must be string, bytes object or integer");
     return 0;
 }
 
