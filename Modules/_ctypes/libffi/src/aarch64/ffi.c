@@ -27,7 +27,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include <stdlib.h>
 
 /* Stack alignment requirement in bytes */
+#if defined (__APPLE__)
+#define AARCH64_STACK_ALIGN 1
+#else
 #define AARCH64_STACK_ALIGN 16
+#endif
 
 #define N_X_ARG_REG 8
 #define N_V_ARG_REG 8
@@ -48,6 +52,23 @@ struct call_context
     union _d d[2];
   } v [AARCH64_N_VREG];
 };
+
+#if defined (__clang__) && defined (__APPLE__)
+extern void
+sys_icache_invalidate (void *start, size_t len);
+#endif
+
+static inline void
+ffi_clear_cache (void *start, void *end)
+{
+#if defined (__clang__) && defined (__APPLE__)
+	sys_icache_invalidate (start, (char *)end - (char *)start);
+#elif defined (__GNUC__)
+	__builtin___clear_cache (start, end);
+#else
+#error "Missing builtin to flush instruction cache"
+#endif
+}
 
 static void *
 get_x_addr (struct call_context *context, unsigned n)
@@ -94,8 +115,10 @@ get_basic_type_addr (unsigned short type, struct call_context *context,
       return get_s_addr (context, n);
     case FFI_TYPE_DOUBLE:
       return get_d_addr (context, n);
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
     case FFI_TYPE_LONGDOUBLE:
       return get_v_addr (context, n);
+#endif
     case FFI_TYPE_UINT8:
     case FFI_TYPE_SINT8:
     case FFI_TYPE_UINT16:
@@ -107,6 +130,8 @@ get_basic_type_addr (unsigned short type, struct call_context *context,
     case FFI_TYPE_UINT64:
     case FFI_TYPE_SINT64:
       return get_x_addr (context, n);
+    case FFI_TYPE_VOID:
+      return NULL;
     default:
       FFI_ASSERT (0);
       return NULL;
@@ -123,15 +148,26 @@ get_basic_type_alignment (unsigned short type)
     case FFI_TYPE_FLOAT:
     case FFI_TYPE_DOUBLE:
       return sizeof (UINT64);
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
     case FFI_TYPE_LONGDOUBLE:
       return sizeof (long double);
+#endif
     case FFI_TYPE_UINT8:
     case FFI_TYPE_SINT8:
+#if defined (__APPLE__)
+	  return sizeof (UINT8);
+#endif
     case FFI_TYPE_UINT16:
     case FFI_TYPE_SINT16:
+#if defined (__APPLE__)
+	  return sizeof (UINT16);
+#endif
     case FFI_TYPE_UINT32:
     case FFI_TYPE_INT:
     case FFI_TYPE_SINT32:
+#if defined (__APPLE__)
+	  return sizeof (UINT32);
+#endif
     case FFI_TYPE_POINTER:
     case FFI_TYPE_UINT64:
     case FFI_TYPE_SINT64:
@@ -154,8 +190,10 @@ get_basic_type_size (unsigned short type)
       return sizeof (UINT32);
     case FFI_TYPE_DOUBLE:
       return sizeof (UINT64);
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
     case FFI_TYPE_LONGDOUBLE:
       return sizeof (long double);
+#endif
     case FFI_TYPE_UINT8:
       return sizeof (UINT8);
     case FFI_TYPE_SINT8:
@@ -186,7 +224,7 @@ ffi_call_SYSV (unsigned (*)(struct call_context *context, unsigned char *,
 			    extended_cif *),
                struct call_context *context,
                extended_cif *,
-               unsigned,
+               size_t,
                void (*fn)(void));
 
 extern void
@@ -305,7 +343,9 @@ is_register_candidate (ffi_type *ty)
     case FFI_TYPE_VOID:
     case FFI_TYPE_FLOAT:
     case FFI_TYPE_DOUBLE:
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
     case FFI_TYPE_LONGDOUBLE:
+#endif
     case FFI_TYPE_UINT8:
     case FFI_TYPE_UINT16:
     case FFI_TYPE_UINT32:
@@ -367,16 +407,24 @@ struct arg_state
 {
   unsigned ngrn;                /* Next general-purpose register number. */
   unsigned nsrn;                /* Next vector register number. */
-  unsigned nsaa;                /* Next stack offset. */
+  size_t nsaa;                  /* Next stack offset. */
+
+#if defined (__APPLE__)
+  unsigned allocating_variadic;
+#endif
 };
 
 /* Initialize a procedure call argument marshalling state.  */
 static void
-arg_init (struct arg_state *state, unsigned call_frame_size)
+arg_init (struct arg_state *state, size_t call_frame_size)
 {
   state->ngrn = 0;
   state->nsrn = 0;
   state->nsaa = 0;
+
+#if defined (__APPLE__)
+  state->allocating_variadic = 0;
+#endif
 }
 
 /* Return the number of available consecutive core argument
@@ -400,35 +448,35 @@ available_v (struct arg_state *state)
 static void *
 allocate_to_x (struct call_context *context, struct arg_state *state)
 {
-  FFI_ASSERT (state->ngrn < N_X_ARG_REG)
+  FFI_ASSERT (state->ngrn < N_X_ARG_REG);
   return get_x_addr (context, (state->ngrn)++);
 }
 
 static void *
 allocate_to_s (struct call_context *context, struct arg_state *state)
 {
-  FFI_ASSERT (state->nsrn < N_V_ARG_REG)
+  FFI_ASSERT (state->nsrn < N_V_ARG_REG);
   return get_s_addr (context, (state->nsrn)++);
 }
 
 static void *
 allocate_to_d (struct call_context *context, struct arg_state *state)
 {
-  FFI_ASSERT (state->nsrn < N_V_ARG_REG)
+  FFI_ASSERT (state->nsrn < N_V_ARG_REG);
   return get_d_addr (context, (state->nsrn)++);
 }
 
 static void *
 allocate_to_v (struct call_context *context, struct arg_state *state)
 {
-  FFI_ASSERT (state->nsrn < N_V_ARG_REG)
+  FFI_ASSERT (state->nsrn < N_V_ARG_REG);
   return get_v_addr (context, (state->nsrn)++);
 }
 
 /* Allocate an aligned slot on the stack and return a pointer to it.  */
 static void *
-allocate_to_stack (struct arg_state *state, void *stack, unsigned alignment,
-		   unsigned size)
+allocate_to_stack (struct arg_state *state, void *stack, size_t alignment,
+		   size_t size)
 {
   void *allocation;
 
@@ -436,7 +484,12 @@ allocate_to_stack (struct arg_state *state, void *stack, unsigned alignment,
      alignment of the argument's type.  */
   state->nsaa = ALIGN (state->nsaa, alignment);
   state->nsaa = ALIGN (state->nsaa, alignment);
+#if defined (__APPLE__)
+  if (state->allocating_variadic)
+    state->nsaa = ALIGN (state->nsaa, 8);
+#else
   state->nsaa = ALIGN (state->nsaa, 8);
+#endif
 
   allocation = stack + state->nsaa;
 
@@ -447,7 +500,7 @@ allocate_to_stack (struct arg_state *state, void *stack, unsigned alignment,
 static void
 copy_basic_type (void *dest, void *source, unsigned short type)
 {
-  /* This is neccessary to ensure that basic types are copied
+  /* This is necessary to ensure that basic types are copied
      sign extended to 64-bits as libffi expects.  */
   switch (type)
     {
@@ -457,9 +510,11 @@ copy_basic_type (void *dest, void *source, unsigned short type)
     case FFI_TYPE_DOUBLE:
       *(double *) dest = *(double *) source;
       break;
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
     case FFI_TYPE_LONGDOUBLE:
       *(long double *) dest = *(long double *) source;
       break;
+#endif
     case FFI_TYPE_UINT8:
       *(ffi_arg *) dest = *(UINT8 *) source;
       break;
@@ -485,6 +540,8 @@ copy_basic_type (void *dest, void *source, unsigned short type)
       break;
     case FFI_TYPE_SINT64:
       *(ffi_sarg *) dest = *(SINT64 *) source;
+      break;
+    case FFI_TYPE_VOID:
       break;
 
     default:
@@ -514,7 +571,6 @@ copy_hfa_to_reg_or_stack (void *memory,
     {
       int i;
       unsigned short type = get_homogeneous_type (ty);
-      unsigned elems = element_count (ty);
       for (i = 0; i < elems; i++)
 	{
 	  void *reg = allocate_to_v (context, state);
@@ -548,11 +604,13 @@ allocate_to_register_or_stack (struct call_context *context,
 	return allocate_to_d (context, state);
       state->nsrn = N_V_ARG_REG;
       break;
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
     case FFI_TYPE_LONGDOUBLE:
       if (state->nsrn < N_V_ARG_REG)
 	return allocate_to_v (context, state);
       state->nsrn = N_V_ARG_REG;
       break;
+#endif
     case FFI_TYPE_UINT8:
     case FFI_TYPE_SINT8:
     case FFI_TYPE_UINT16:
@@ -615,7 +673,9 @@ aarch64_prep_args (struct call_context *context, unsigned char *stack,
 	   appropriate register, or if none are available, to the stack.  */
 	case FFI_TYPE_FLOAT:
 	case FFI_TYPE_DOUBLE:
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
 	case FFI_TYPE_LONGDOUBLE:
+#endif
 	case FFI_TYPE_UINT8:
 	case FFI_TYPE_SINT8:
 	case FFI_TYPE_UINT16:
@@ -676,6 +736,16 @@ aarch64_prep_args (struct call_context *context, unsigned char *stack,
 	  FFI_ASSERT (0);
 	  break;
 	}
+
+#if defined (__APPLE__)
+      if (i + 1 == ecif->cif->aarch64_nfixedargs)
+	{
+	  state.ngrn = N_X_ARG_REG;
+	  state.nsrn = N_V_ARG_REG;
+
+	  state.allocating_variadic = 1;
+	}
+#endif
     }
 
   return ecif->cif->aarch64_flags;
@@ -712,6 +782,20 @@ ffi_prep_cif_machdep (ffi_cif *cif)
   return FFI_OK;
 }
 
+#if defined (__APPLE__)
+
+/* Perform Apple-specific cif processing for variadic calls */
+ffi_status ffi_prep_cif_machdep_var(ffi_cif *cif,
+				    unsigned int nfixedargs,
+				    unsigned int ntotalargs)
+{
+  cif->aarch64_nfixedargs = nfixedargs;
+
+  return ffi_prep_cif_machdep(cif);
+}
+
+#endif
+
 /* Call a function with the provided arguments and capture the return
    value.  */
 void
@@ -728,7 +812,7 @@ ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
     case FFI_SYSV:
       {
         struct call_context context;
-	unsigned stack_bytes;
+	size_t stack_bytes;
 
 	/* Figure out the total amount of stack space we need, the
 	   above call frame space needs to be 16 bytes aligned to
@@ -745,7 +829,9 @@ ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
               case FFI_TYPE_VOID:
               case FFI_TYPE_FLOAT:
               case FFI_TYPE_DOUBLE:
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
               case FFI_TYPE_LONGDOUBLE:
+#endif
               case FFI_TYPE_UINT8:
               case FFI_TYPE_SINT8:
               case FFI_TYPE_UINT16:
@@ -778,7 +864,7 @@ ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 		  }
                 else if ((cif->rtype->size + 7) / 8 < N_X_ARG_REG)
                   {
-                    unsigned size = ALIGN (cif->rtype->size, sizeof (UINT64));
+                    size_t size = ALIGN (cif->rtype->size, sizeof (UINT64));
                     memcpy (rvalue, get_x_addr (&context, 0), size);
                   }
                 else
@@ -824,7 +910,7 @@ static unsigned char trampoline [] =
     memcpy (__tramp + 12, &__fun, sizeof (__fun));			\
     memcpy (__tramp + 20, &__ctx, sizeof (__ctx));			\
     memcpy (__tramp + 28, &__flags, sizeof (__flags));			\
-    __clear_cache(__tramp, __tramp + FFI_TRAMPOLINE_SIZE);		\
+    ffi_clear_cache(__tramp, __tramp + FFI_TRAMPOLINE_SIZE);		\
   })
 
 ffi_status
@@ -857,13 +943,13 @@ ffi_prep_closure_loc (ffi_closure* closure,
    the stack at the point ffi_closure_SYSV() was invoked.
 
    On the return path the assembler wrapper will reload call context
-   regsiters.
+   registers.
 
    ffi_closure_SYSV_inner() marshalls the call context into ffi value
-   desriptors, invokes the wrapped function, then marshalls the return
+   descriptors, invokes the wrapped function, then marshalls the return
    value back into the call context.  */
 
-void
+void FFI_HIDDEN
 ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
 			void *stack)
 {
@@ -897,10 +983,12 @@ ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
 	case FFI_TYPE_SINT64:
 	case  FFI_TYPE_FLOAT:
 	case  FFI_TYPE_DOUBLE:
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
 	case  FFI_TYPE_LONGDOUBLE:
 	  avalue[i] = allocate_to_register_or_stack (context, stack,
 						     &state, ty->type);
 	  break;
+#endif
 
 	case FFI_TYPE_STRUCT:
 	  if (is_hfa (ty))
@@ -924,7 +1012,7 @@ ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
 			   therefore the structure is not represented as
 			   a contiguous sequence of bytes in our saved
 			   register context. We need to fake up a copy
-			   of the structure layed out in memory
+			   of the structure laid out in memory
 			   correctly. The fake can be tossed once the
 			   closure function has returned hence alloca()
 			   is sufficient. */
@@ -945,7 +1033,7 @@ ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
 			   therefore the structure is not represented as
 			   a contiguous sequence of bytes in our saved
 			   register context. We need to fake up a copy
-			   of the structure layed out in memory
+			   of the structure laid out in memory
 			   correctly. The fake can be tossed once the
 			   closure function has returned hence alloca()
 			   is sufficient. */
@@ -958,11 +1046,13 @@ ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
 			break;
 		      }
 
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
 		    case FFI_TYPE_LONGDOUBLE:
 			  memcpy (&avalue[i],
 				  allocate_to_v (context, &state),
 				  sizeof (*avalue));
 		      break;
+#endif
 
 		    default:
 		      FFI_ASSERT (0);
@@ -1033,7 +1123,9 @@ ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
         case FFI_TYPE_SINT64:
         case FFI_TYPE_FLOAT:
         case FFI_TYPE_DOUBLE:
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
         case FFI_TYPE_LONGDOUBLE:
+#endif
 	  {
 	    void *addr = get_basic_type_addr (cif->rtype->type, context, 0);
 	    copy_basic_type (addr, rvalue, cif->rtype->type);
@@ -1042,19 +1134,19 @@ ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
         case FFI_TYPE_STRUCT:
           if (is_hfa (cif->rtype))
 	    {
-	      int i;
+	      int j;
 	      unsigned short type = get_homogeneous_type (cif->rtype);
 	      unsigned elems = element_count (cif->rtype);
-	      for (i = 0; i < elems; i++)
+	      for (j = 0; j < elems; j++)
 		{
-		  void *reg = get_basic_type_addr (type, context, i);
+		  void *reg = get_basic_type_addr (type, context, j);
 		  copy_basic_type (reg, rvalue, type);
 		  rvalue += get_basic_type_size (type);
 		}
 	    }
           else if ((cif->rtype->size + 7) / 8 < N_X_ARG_REG)
             {
-              unsigned size = ALIGN (cif->rtype->size, sizeof (UINT64)) ;
+              size_t size = ALIGN (cif->rtype->size, sizeof (UINT64)) ;
               memcpy (get_x_addr (context, 0), rvalue, size);
             }
           else
