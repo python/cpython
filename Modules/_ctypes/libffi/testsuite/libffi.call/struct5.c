@@ -12,7 +12,7 @@ typedef struct
   char c2;
 } test_structure_5;
 
-static test_structure_5 struct5(test_structure_5 ts1, test_structure_5 ts2)
+static test_structure_5 ABI_ATTR struct5(test_structure_5 ts1, test_structure_5 ts2)
 {
   ts1.c1 += ts2.c1;
   ts1.c2 -= ts2.c2;
@@ -48,7 +48,7 @@ int main (void)
   values[1] = &ts5_arg2;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ts5_type, args) == FFI_OK);
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 2, &ts5_type, args) == FFI_OK);
   
   ts5_arg1.c1 = 2;
   ts5_arg1.c2 = 6;

@@ -12,7 +12,7 @@ typedef struct
   int si;
 } test_structure_3;
 
-static test_structure_3 struct3(test_structure_3 ts)
+static test_structure_3 ABI_ATTR struct3(test_structure_3 ts)
 {
   ts.si = -(ts.si*2);
 
@@ -43,7 +43,7 @@ int main (void)
   values[0] = &ts3_arg;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, 
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 1,
 		     &ts3_type, args) == FFI_OK);
   
   ts3_arg.si = -123;
