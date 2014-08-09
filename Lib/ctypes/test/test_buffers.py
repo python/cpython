@@ -21,6 +21,8 @@ class StringBufferTestCase(unittest.TestCase):
         self.assertEqual(b[::2], b"ac")
         self.assertEqual(b[::5], b"a")
 
+        self.assertRaises(TypeError, create_string_buffer, "abc")
+
     def test_buffer_interface(self):
         self.assertEqual(len(bytearray(create_string_buffer(0))), 0)
         self.assertEqual(len(bytearray(create_string_buffer(1))), 1)
@@ -42,6 +44,8 @@ class StringBufferTestCase(unittest.TestCase):
         self.assertEqual(b[::-1], "\0cba")
         self.assertEqual(b[::2], "ac")
         self.assertEqual(b[::5], "a")
+
+        self.assertRaises(TypeError, create_unicode_buffer, b"abc")
 
     @need_symbol('c_wchar')
     def test_unicode_conversion(self):
