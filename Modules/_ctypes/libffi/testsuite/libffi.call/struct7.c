@@ -13,7 +13,7 @@ typedef struct
   double d;
 } test_structure_7;
 
-static test_structure_7 struct7 (test_structure_7 ts)
+static test_structure_7 ABI_ATTR struct7 (test_structure_7 ts)
 {
   ts.f1 += 1;
   ts.f2 += 1;
@@ -49,7 +49,7 @@ int main (void)
   values[0] = &ts7_arg;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ts7_type, args) == FFI_OK);
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 1, &ts7_type, args) == FFI_OK);
   
   ts7_arg.f1 = 5.55f;
   ts7_arg.f2 = 55.5f;

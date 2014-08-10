@@ -60,7 +60,7 @@
                        void (*fnaddr)(void));
 
         On entry, REG_ARGS contain the outgoing register values,
-        and STACK_ARGS containts STACK_ARG_BYTES of additional values
+        and STACK_ARGS contains STACK_ARG_BYTES of additional values
         to be passed on the stack. If STACK_ARG_BYTES is zero, then
         STACK_ARGS is ignored.
 

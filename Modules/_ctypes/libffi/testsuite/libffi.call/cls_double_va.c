@@ -38,7 +38,7 @@ int main (void)
 
 	/* This printf call is variadic */
 	CHECK(ffi_prep_cif_var(&cif, FFI_DEFAULT_ABI, 1, 2, &ffi_type_sint,
-		arg_types) == FFI_OK);
+			       arg_types) == FFI_OK);
 
 	args[0] = &format;
 	args[1] = &doubleArg;
@@ -49,12 +49,10 @@ int main (void)
 	printf("res: %d\n", (int) res);
 	/* { dg-output "\nres: 4" } */
 
-	/* The call to cls_double_va_fn is static, so have to use a normal prep_cif */
-	CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 2, &ffi_type_sint, arg_types) == FFI_OK);
+	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_double_va_fn, NULL,
+				   code) == FFI_OK);
 
-	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_double_va_fn, NULL, code) == FFI_OK);
-
-	res	= ((int(*)(char*, double))(code))(format, doubleArg);
+	res = ((int(*)(char*, ...))(code))(format, doubleArg);
 	/* { dg-output "\n7.0" } */
 	printf("res: %d\n", (int) res);
 	/* { dg-output "\nres: 4" } */

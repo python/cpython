@@ -13,9 +13,9 @@ typedef unsigned int T;
 static void cls_ret_T_fn(ffi_cif* cif __UNUSED__, void* resp, void** args,
 			 void* userdata __UNUSED__)
  {
-   *(T *)resp = *(T *)args[0];
+   *(ffi_arg *)resp = *(T *)args[0];
 
-   printf("%d: %d %d\n", *(T *)resp, *(T *)args[0], *(T *)args[1]);
+   printf("%d: %d %d\n", (int)*(ffi_arg *)resp, *(T *)args[0], *(T *)args[1]);
  }
 
 typedef T (*cls_ret_T)(T, ...);

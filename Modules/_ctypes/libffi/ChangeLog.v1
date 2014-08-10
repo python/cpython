@@ -2,7 +2,7 @@ The libffi version 1 ChangeLog archive.
 
 Version 1 of libffi had per-directory ChangeLogs.  Current and future
 versions have a single ChangeLog file in the root directory.  The
-version 1 ChangeLogs have all been concatonated into this file for
+version 1 ChangeLogs have all been concatenated into this file for
 future reference only.
 
 --- libffi ----------------------------------------------------------------

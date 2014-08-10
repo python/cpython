@@ -71,6 +71,13 @@ Library
 - Issue #21323: Fix CGIHTTPServer to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
 
+Extension Modules
+-----------------
+
+- Issue #22176: Update the ctypes module's libffi to v3.1.  This release
+  adds support for the Linux AArch64 and POWERPC ELF ABIv2 little endian
+  architectures.
+
 Tests
 -----
 

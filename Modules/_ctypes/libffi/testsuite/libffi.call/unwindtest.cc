@@ -6,17 +6,9 @@
 
 /* { dg-do run } */
 
-#include "ffitestcxx.h"
+#include "ffitest.h"
 
-#if defined HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
-#if defined HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-
-void
+void ABI_ATTR
 closure_test_fn(ffi_cif* cif __UNUSED__, void* resp __UNUSED__,
 		void** args __UNUSED__, void* userdata __UNUSED__)
 {

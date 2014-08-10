@@ -170,7 +170,14 @@ static void ffi_prep_args(char *stack,
 		break;
 		  
 	      case FFI_TYPE_UINT32:
+#ifdef FFI_MIPS_N32
+		/* The N32 ABI requires that 32-bit integers
+		   be sign-extended to 64-bits, regardless of
+		   whether they are signed or unsigned. */
+		*(ffi_arg *)argp = *(SINT32 *)(* p_argv);
+#else
 		*(ffi_arg *)argp = *(UINT32 *)(* p_argv);
+#endif
 		break;
 
 	      /* This can only happen with 64bit slots.  */

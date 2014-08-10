@@ -1,8 +1,8 @@
 Status
 ======
 
-libffi-3.0.13 was released on March 17, 2013.  Check the libffi web
-page for updates: <URL:http://sourceware.org/libffi/>.
+libffi-3.1 was released on May 19, 2014.  Check the libffi web page
+for updates: <URL:http://sourceware.org/libffi/>.
 
 
 What is libffi?
@@ -43,7 +43,7 @@ Libffi has been ported to many different platforms.
 For specific configuration details and testing status, please
 refer to the wiki page here:
 
- http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.13
+ http://www.moxielogic.org/wiki/index.php?title=Libffi_3.1
 
 At the time of release, the following basic configurations have been
 tested:
@@ -51,9 +51,11 @@ tested:
 |-----------------+------------------+-------------------------|
 | Architecture    | Operating System | Compiler                |
 |-----------------+------------------+-------------------------|
+| AArch64 (ARM64) | iOS              | Clang                   |
 | AArch64         | Linux            | GCC                     |
 | Alpha           | Linux            | GCC                     |
 | Alpha           | Tru64            | GCC                     |
+| ARC             | Linux            | GCC                     |
 | ARM             | Linux            | GCC                     |
 | ARM             | iOS              | GCC                     |
 | AVR32           | Linux            | GCC                     |
@@ -61,15 +63,17 @@ tested:
 | HPPA            | HPUX             | GCC                     |
 | IA-64           | Linux            | GCC                     |
 | M68K            | FreeMiNT         | GCC                     |
-| M68K            | Linux	     | GCC                     |
+| M68K            | Linux            | GCC                     |
 | M68K            | RTEMS            | GCC                     |
+| M88K            | OpenBSD/mvme88k  | GCC                     |
 | Meta            | Linux            | GCC                     |
 | MicroBlaze      | Linux            | GCC                     |
 | MIPS            | IRIX             | GCC                     |
 | MIPS            | Linux            | GCC                     |
 | MIPS            | RTEMS            | GCC                     |
 | MIPS64          | Linux            | GCC                     |
-| Moxie		  | Bare metal	     | GCC
+| Moxie           | Bare metal       | GCC                     |
+| Nios II         | Linux            | GCC                     |
 | PowerPC 32-bit  | AIX              | IBM XL C                |
 | PowerPC 64-bit  | AIX              | IBM XL C                |
 | PowerPC         | AMIGA            | GCC                     |
@@ -77,7 +81,8 @@ tested:
 | PowerPC         | Mac OSX          | GCC                     |
 | PowerPC         | FreeBSD          | GCC                     |
 | PowerPC 64-bit  | FreeBSD          | GCC                     |
-| PowerPC 64-bit  | Linux            | GCC                     |
+| PowerPC 64-bit  | Linux ELFv1      | GCC                     |
+| PowerPC 64-bit  | Linux ELFv2      | GCC                     |
 | S390            | Linux            | GCC                     |
 | S390X           | Linux            | GCC                     |
 | SPARC           | Linux            | GCC                     |
@@ -87,6 +92,7 @@ tested:
 | SPARC64         | FreeBSD          | GCC                     |
 | SPARC64         | Solaris          | Oracle Solaris Studio C |
 | TILE-Gx/TILEPro | Linux            | GCC                     |
+| VAX             | OpenBSD/vax      | GCC                     |
 | X86             | FreeBSD          | GCC                     |
 | X86             | GNU HURD         | GCC                     |
 | X86             | Interix          | GCC                     |
@@ -120,6 +126,9 @@ system. Go to the directory you wish to build libffi in and run the
 "configure" program found in the root directory of the libffi source
 distribution.
 
+If you're building libffi directly from version control, configure won't
+exist yet; run ./autogen.sh first.
+
 You may want to tell configure where to install the libffi library and
 header files. To do that, use the --prefix configure switch.  Libffi
 will install under /usr/local by default. 
@@ -137,13 +146,16 @@ It's also possible to build libffi on Windows platforms with
 Microsoft's Visual C++ compiler.  In this case, use the msvcc.sh
 wrapper script during configuration like so:
 
-path/to/configure CC=path/to/msvcc.sh LD=link CPP=\"cl -nologo -EP\"
+path/to/configure CC=path/to/msvcc.sh CXX=path/to/msvcc.sh LD=link CPP=\"cl -nologo -EP\"
 
-For 64-bit Windows builds, use CC="path/to/msvcc.sh -m64".
-You may also need to specify --build appropriately. When building with MSVC
-under a MingW environment, you may need to remove the line in configure
-that sets 'fix_srcfile_path' to a 'cygpath' command. ('cygpath' is not
-present in MingW, and is not required when using MingW-style paths.)
+For 64-bit Windows builds, use CC="path/to/msvcc.sh -m64" and
+CXX="path/to/msvcc.sh -m64".  You may also need to specify --build
+appropriately.
+
+When building with MSVC under a MingW environment, you may need to
+remove the line in configure that sets 'fix_srcfile_path' to a 'cygpath'
+command.  ('cygpath' is not present in MingW, and is not required when
+using MingW-style paths.)
 
 For iOS builds, the 'libffi.xcodeproj' Xcode project is available.
 
@@ -161,7 +173,20 @@ To install the library and header files, type "make install".
 History
 =======
 
-See the ChangeLog files for details.
+See the git log for details at http://github.com/atgreen/libffi.
+
+3.1 May-19-14
+        Add AArch64 (ARM64) iOS support.
+        Add Nios II support.
+        Add m88k and DEC VAX support.
+	Add support for stdcall, thiscall, and fastcall on non-Windows
+	  32-bit x86 targets such as Linux.
+	Various Android, MIPS N32, x86, FreeBSD and UltraSPARC IIi
+	  fixes.
+	Make the testsuite more robust: eliminate several spurious
+	  failures, and respect the $CC and $CXX environment variables.
+	Archive off the manually maintained ChangeLog in favor of git
+	  log.
 
 3.0.13 Mar-17-13
 	Add Meta support.
@@ -187,7 +212,6 @@ See the ChangeLog files for details.
 
 3.0.11 Apr-11-12
         Lots of build fixes.
-	Add Amiga newer MacOS support.
 	Add support for variadic functions (ffi_prep_cif_var).
 	Add Linux/x32 support.
 	Add thiscall, fastcall and MSVC cdecl support on Windows.
@@ -339,7 +363,7 @@ See the ChangeLog files for details.
 Authors & Credits
 =================
 
-libffi was originally written by Anthony Green <green@redhat.com>.
+libffi was originally written by Anthony Green <green@moxielogic.com>.
 
 The developers of the GNU Compiler Collection project have made
 innumerable valuable contributions.  See the ChangeLog file for
@@ -363,10 +387,12 @@ frv		Anthony Green
 ia64		Hans Boehm
 m32r		Kazuhiro Inaoka
 m68k		Andreas Schwab
+m88k		Miod Vallat
 microblaze	Nathan Rossi
 mips		Anthony Green, Casey Marshall
 mips64		David Daney
 moxie		Anthony Green
+nios ii		Sandra Loosemore
 pa		Randolph Chung, Dave Anglin, Andreas Tobler
 powerpc		Geoffrey Keating, Andreas Tobler, 
 			 David Edelsohn, John Hornkvist
@@ -376,6 +402,7 @@ sh		Kaz Kojima
 sh64		Kaz Kojima
 sparc		Anthony Green, Gordon Irlam
 tile-gx/tilepro Walter Lee
+vax		Miod Vallat
 x86		Anthony Green, Jon Beniston
 x86-64		Bo Thorsen
 xtensa		Chris Zankel

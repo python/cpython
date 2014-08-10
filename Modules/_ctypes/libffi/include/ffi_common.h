@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   ffi_common.h - Copyright (C) 2011, 2012  Anthony Green
+   ffi_common.h - Copyright (C) 2011, 2012, 2013  Anthony Green
                   Copyright (C) 2007  Free Software Foundation, Inc
                   Copyright (c) 1996  Red Hat, Inc.
                   
@@ -19,10 +19,14 @@ extern "C" {
 /* Do not move this. Some versions of AIX are very picky about where
    this is positioned. */
 #ifdef __GNUC__
-/* mingw64 defines this already in malloc.h. */
-#ifndef alloca
-# define alloca __builtin_alloca
-#endif
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
+# else
+  /* mingw64 defines this already in malloc.h. */
+#  ifndef alloca
+#    define alloca __builtin_alloca
+#  endif
+# endif
 # define MAYBE_UNUSED __attribute__((__unused__))
 #else
 # define MAYBE_UNUSED
@@ -30,16 +34,16 @@ extern "C" {
 #  include <alloca.h>
 # else
 #  ifdef _AIX
- #pragma alloca
+#   pragma alloca
 #  else
 #   ifndef alloca /* predefined by HP cc +Olibcalls */
 #    ifdef _MSC_VER
 #     define alloca _alloca
 #    else
 char *alloca ();
-#    endif
 #   endif
 #  endif
+# endif
 # endif
 #endif
 

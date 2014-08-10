@@ -13,7 +13,7 @@ typedef struct
   int i;
 } test_structure_9;
 
-static test_structure_9 struct9 (test_structure_9 ts)
+static test_structure_9 ABI_ATTR struct9 (test_structure_9 ts)
 {
   ts.f += 1;
   ts.i += 1;
@@ -47,7 +47,7 @@ int main (void)
   values[0] = &ts9_arg;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ts9_type, args) == FFI_OK);
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 1, &ts9_type, args) == FFI_OK);
   
   ts9_arg.f = 5.55f;
   ts9_arg.i = 5;

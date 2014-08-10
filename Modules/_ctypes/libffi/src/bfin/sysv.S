@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   sysv.S - Copyright (c) 2012  Alexandre K. I. de Mendonca <alexandre.keunecke@gmail.com>
+   sysv.S - Copyright (c) 2012  Alexandre K. I. de Mendonca <alexandre.keunecke@gmail.com>,
+                                Paulo Pizarro <paulo.pizarro@gmail.com>
 
    Blackfin Foreign Function Interface
 
@@ -32,7 +33,7 @@
 .align 4
 
 	/*
-	 There is a "feature" in the bfin toolchain that it puts a _ before funcion names
+	 There is a "feature" in the bfin toolchain that it puts a _ before function names
 	 that's why the function here it's called _ffi_call_SYSV and not ffi_call_SYSV
 	 */
 	.global _ffi_call_SYSV;
@@ -40,25 +41,26 @@
 	.func ffi_call_SYSV
 
 	/*
-	cif->bytes  	= R0	(fp+8)
-	&ecif			= R1	(fp+12)
-	ffi_prep_args	= R2	(fp+16)
-	ret_type		= stack (fp+20)
-	ecif.rvalue		= stack (fp+24)
-	fn				= stack	(fp+28)
-					  got	(fp+32)
-    There is room for improvement here (we can use temporary registers
-        instead of saving the values in the memory)
-	REGS:
-		P5 => Stack pointer (function arguments)
-		R5 => cif->bytes
-		R4 => ret->type
+         cif->bytes    = R0    (fp+8)
+         &ecif         = R1    (fp+12)
+         ffi_prep_args = R2    (fp+16)
+         ret_type      = stack (fp+20)
+         ecif.rvalue   = stack (fp+24)
+         fn            = stack (fp+28)
+                           got (fp+32)
 
-		FP-20 = P3
-		FP-16 = SP (parameters area)
-		FP-12 = SP (temp)
-		FP-08 = function return part 1 [R0]
-		FP-04 = function return part 2 [R1]
+        There is room for improvement here (we can use temporary registers
+        instead of saving the values in the memory)
+        REGS:
+        P5 => Stack pointer (function arguments)
+        R5 => cif->bytes
+        R4 => ret->type
+
+        FP-20 = P3
+        FP-16 = SP (parameters area)
+        FP-12 = SP (temp)
+        FP-08 = function return part 1 [R0]
+        FP-04 = function return part 2 [R1]
 	*/
 
 _ffi_call_SYSV:

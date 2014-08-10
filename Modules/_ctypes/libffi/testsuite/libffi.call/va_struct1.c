@@ -61,7 +61,7 @@ main (void)
   struct large_tag l1;
 
   int n;
-  int res;
+  ffi_arg res;
 
   s_type.size = 0;
   s_type.alignment = 0;

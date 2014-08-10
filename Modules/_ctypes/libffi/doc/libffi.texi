@@ -184,11 +184,11 @@ This calls the function @var{fn} according to the description given in
 
 @var{rvalue} is a pointer to a chunk of memory that will hold the
 result of the function call.  This must be large enough to hold the
-result and must be suitably aligned; it is the caller's responsibility
+result, no smaller than the system register size (generally 32 or 64
+bits), and must be suitably aligned; it is the caller's responsibility
 to ensure this.  If @var{cif} declares that the function returns
 @code{void} (using @code{ffi_type_void}), then @var{rvalue} is
-ignored.  If @var{rvalue} is @samp{NULL}, then the return value is
-discarded.
+ignored.
 
 @var{avalues} is a vector of @code{void *} pointers that point to the
 memory locations holding the argument values for a call.  If @var{cif}
@@ -214,7 +214,7 @@ int main()
   ffi_type *args[1];
   void *values[1];
   char *s;
-  int rc;
+  ffi_arg rc;
   
   /* Initialize the argument info vectors */    
   args[0] = &ffi_type_pointer;
@@ -222,7 +222,7 @@ int main()
   
   /* Initialize the cif */
   if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, 
-		       &ffi_type_uint, args) == FFI_OK)
+		       &ffi_type_sint, args) == FFI_OK)
     @{
       s = "Hello World!";
       ffi_call(&cif, puts, &rc, values);
@@ -414,6 +414,7 @@ Here is the corresponding code to describe this struct to
       int i;
 
       tm_type.size = tm_type.alignment = 0;
+      tm_type.type = FFI_TYPE_STRUCT;
       tm_type.elements = &tm_type_elements;
     
       for (i = 0; i < 9; i++)
@@ -533,18 +534,20 @@ writable and executable addresses.
 @section Closure Example
 
 A trivial example that creates a new @code{puts} by binding 
-@code{fputs} with @code{stdin}.
+@code{fputs} with @code{stdout}.
 
 @example
 #include <stdio.h>
 #include <ffi.h>
 
 /* Acts like puts with the file given at time of enclosure. */
-void puts_binding(ffi_cif *cif, unsigned int *ret, void* args[], 
-                  FILE *stream)
+void puts_binding(ffi_cif *cif, void *ret, void* args[],
+                  void *stream)
 @{
-  *ret = fputs(*(char **)args[0], stream);
+  *(ffi_arg *)ret = fputs(*(char **)args[0], (FILE *)stream);
 @}
+
+typedef int (*puts_t)(char *);
 
 int main()
 @{
@@ -552,9 +555,9 @@ int main()
   ffi_type *args[1];
   ffi_closure *closure;
 
-  int (*bound_puts)(char *);
+  void *bound_puts;
   int rc;
-  
+
   /* Allocate closure and bound_puts */
   closure = ffi_closure_alloc(sizeof(ffi_closure), &bound_puts);
 
@@ -565,13 +568,13 @@ int main()
 
       /* Initialize the cif */
       if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
-                       &ffi_type_uint, args) == FFI_OK)
+                       &ffi_type_sint, args) == FFI_OK)
         @{
           /* Initialize the closure, setting stream to stdout */
-          if (ffi_prep_closure_loc(closure, &cif, puts_binding, 
+          if (ffi_prep_closure_loc(closure, &cif, puts_binding,
                                    stdout, bound_puts) == FFI_OK)
             @{
-              rc = bound_puts("Hello World!");
+              rc = ((puts_t)bound_puts)("Hello World!");
               /* rc now holds the result of the call to fputs */
             @}
         @}
