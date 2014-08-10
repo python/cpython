@@ -662,6 +662,7 @@ SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
+CFLAGS_NODIST
 BASECFLAGS
 OPT
 ABIFLAGS
@@ -6347,6 +6348,7 @@ fi
 
 
 
+
 # The -arch flags for universal builds on OSX
 UNIVERSAL_ARCH_FLAGS=
 
@@ -6507,7 +6509,7 @@ $as_echo "$ac_cv_declaration_after_statement_warning" >&6; }
 
     if test $ac_cv_declaration_after_statement_warning = yes
     then
-      BASECFLAGS="$BASECFLAGS -Werror=declaration-after-statement"
+      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=declaration-after-statement"
     fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC mixed sign comparison warning" >&5
