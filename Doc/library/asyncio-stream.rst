@@ -43,7 +43,7 @@ Stream functions
    :class:`StreamWriter` object.  The *client_connected_cb* parameter can
    either be a plain callback function or a :ref:`coroutine function
    <coroutine>`; if it is a coroutine function, it will be automatically
-   wrapped in a future using the :meth:`BaseEventLoop.create_task` method.
+   converted into a :class:`Task`.
 
    The rest of the arguments are all the usual arguments to
    :meth:`~BaseEventLoop.create_server()` except *protocol_factory*; most

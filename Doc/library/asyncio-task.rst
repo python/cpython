@@ -52,7 +52,9 @@ generator object, which doesn't do anything until you iterate over it.
 In the case of a coroutine object, there are two basic ways to start
 it running: call ``yield from coroutine`` from another coroutine
 (assuming the other coroutine is already running!), or schedule its execution
-using the :meth:`BaseEventLoop.create_task` method.
+using the :func:`async` function or the :meth:`BaseEventLoop.create_task`
+method.
+
 
 Coroutines (and tasks) can only run when the event loop is running.
 
@@ -256,7 +258,7 @@ Example combining a :class:`Future` and a :ref:`coroutine function
 
     loop = asyncio.get_event_loop()
     future = asyncio.Future()
-    loop.create_task(slow_operation(future))
+    asyncio.async(slow_operation(future))
     loop.run_until_complete(future)
     print(future.result())
     loop.close()
@@ -292,7 +294,7 @@ flow::
 
     loop = asyncio.get_event_loop()
     future = asyncio.Future()
-    loop.create_task(slow_operation(future))
+    asyncio.async(slow_operation(future))
     future.add_done_callback(got_result)
     try:
         loop.run_forever()
@@ -339,8 +341,8 @@ Task
    <coroutine>` did not complete. It is probably a bug and a warning is
    logged: see :ref:`Pending task destroyed <asyncio-pending-task-destroyed>`.
 
-   Don't create directly :class:`Task` instances: use the
-   :meth:`BaseEventLoop.create_task` method.
+   Don't create directly :class:`Task` instances: use the :func:`async`
+   function or the :meth:`BaseEventLoop.create_task` method.
 
    .. classmethod:: all_tasks(loop=None)
 
@@ -424,9 +426,9 @@ Example executing 3 tasks (A, B, C) in parallel::
 
     loop = asyncio.get_event_loop()
     tasks = [
-        loop.create_task(factorial("A", 2)),
-        loop.create_task(factorial("B", 3)),
-        loop.create_task(factorial("C", 4))]
+        asyncio.async(factorial("A", 2)),
+        asyncio.async(factorial("B", 3)),
+        asyncio.async(factorial("C", 4))]
     loop.run_until_complete(asyncio.wait(tasks))
     loop.close()
 
@@ -475,10 +477,13 @@ Task functions
 
 .. function:: async(coro_or_future, \*, loop=None)
 
-   Wrap a :ref:`coroutine object <coroutine>` in a future using the
-   :meth:`BaseEventLoop.create_task` method.
+   Wrap a :ref:`coroutine object <coroutine>` in a future.
 
    If the argument is a :class:`Future`, it is returned directly.
+
+   .. seealso::
+
+      The :meth:`BaseEventLoop.create_task` method.
 
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 
@@ -595,8 +600,7 @@ Task functions
    to complete with timeout. If *timeout* is ``None``, block until the future
    completes.
 
-   Coroutine objects are wrapped in a future using the
-   :meth:`BaseEventLoop.create_task` method.
+   Coroutine will be wrapped in :class:`Task`.
 
    Returns result of the Future or coroutine.  When a timeout occurs, it
    cancels the task and raises :exc:`asyncio.TimeoutError`. To avoid the task
