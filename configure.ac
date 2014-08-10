@@ -1138,6 +1138,7 @@ then
 fi
 
 AC_SUBST(BASECFLAGS)
+AC_SUBST(CFLAGS_NODIST)
 
 # The -arch flags for universal builds on OSX
 UNIVERSAL_ARCH_FLAGS=
@@ -1222,7 +1223,7 @@ yes)
 
     if test $ac_cv_declaration_after_statement_warning = yes
     then
-      BASECFLAGS="$BASECFLAGS -Werror=declaration-after-statement"
+      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=declaration-after-statement"
     fi
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
