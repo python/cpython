@@ -236,15 +236,6 @@ Operations which work with sequences (some of them with mappings too) include:
 
    Set the value of *a* at index *b* to *c*.
 
-Example: Build a dictionary that maps the ordinals from ``0`` to ``255`` to
-their character equivalents.
-
-   >>> d = {}
-   >>> keys = range(256)
-   >>> vals = map(chr, keys)
-   >>> map(operator.setitem, [d]*len(keys), keys, vals)   # doctest: +SKIP
-
-.. XXX: find a better, readable, example
 
 .. function:: length_hint(obj, default=0)
 
