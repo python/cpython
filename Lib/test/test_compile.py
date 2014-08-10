@@ -102,6 +102,11 @@ def g():
     def f():
         if True:
             exec("", {}, {})
+        """, """
+def g():
+    def f():
+        if True:
+            exec("", {})
         """]
         for c in code:
             compile(c, "<code>", "exec")
