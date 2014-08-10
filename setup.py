@@ -19,6 +19,12 @@ from distutils.spawn import find_executable
 
 cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
 
+# Add special CFLAGS reserved for building the interpreter and the stdlib
+# modules (Issue #21121).
+cflags = sysconfig.get_config_var('CFLAGS')
+py_cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST')
+sysconfig.get_config_vars()['CFLAGS'] = cflags + ' ' + py_cflags_nodist
+
 def get_platform():
     # cross build
     if "_PYTHON_HOST_PLATFORM" in os.environ:

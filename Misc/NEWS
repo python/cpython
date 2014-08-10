@@ -121,6 +121,9 @@ Library
 
 - Issue #5411: Added support for the "xztar" format in the shutil module.
 
+- Issue #21121: Don't force 3rd party C extensions to be built with
+  -Werror=declaration-after-statement.
+
 - Issue #21975: Fixed crash when using uninitialized sqlite3.Row (in particular
   when unpickling pickled sqlite3.Row).  sqlite3.Row is now initialized in the
   __new__() method.
