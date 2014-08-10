@@ -147,9 +147,8 @@ Coroutines
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
-   .. seealso::
-
-      The :meth:`async` function.
+   This method was added in Python 3.4.2. Use the :func:`async` function to
+   support also older Python versions.
 
    .. versionadded:: 3.4.2
 
