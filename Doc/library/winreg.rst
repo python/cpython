@@ -322,7 +322,7 @@ This module offers the following functions:
    +-------+---------------------------------------------+
    | ``2`` | An integer giving when the key was last     |
    |       | modified (if available) as 100's of         |
-   |       | nanoseconds since Jan 1, 1600.              |
+   |       | nanoseconds since Jan 1, 1601.              |
    +-------+---------------------------------------------+
 
 
