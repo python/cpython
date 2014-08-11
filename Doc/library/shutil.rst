@@ -489,7 +489,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    :class:`logging.Logger`.
 
    .. versionchanged:: 3.5
-   Added support for the *xztar* format.
+      Added support for the *xztar* format.
 
 
 .. function:: get_archive_formats()
