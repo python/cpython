@@ -1070,6 +1070,13 @@ class TestLRU(unittest.TestCase):
         self.assertEqual(test_func(DoubleEq(2)),    # Trigger a re-entrant __eq__ call
                          DoubleEq(2))               # Verify the correct return value
 
+    def test_early_detection_of_bad_call(self):
+        # Issue #22184
+        with self.assertRaises(TypeError):
+            @functools.lru_cache
+            def f():
+                pass
+
 
 class TestSingleDispatch(unittest.TestCase):
     def test_simple_overloads(self):
