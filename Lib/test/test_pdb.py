@@ -614,6 +614,8 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
+    >>> from bdb import Breakpoint
+    >>> Breakpoint.next = 1
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
