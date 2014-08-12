@@ -26,11 +26,16 @@ def iglob(pathname):
     patterns.
 
     """
-    if not has_magic(pathname):
-        if os.path.lexists(pathname):
-            yield pathname
-        return
     dirname, basename = os.path.split(pathname)
+    if not has_magic(pathname):
+        if basename:
+            if os.path.lexists(pathname):
+                yield pathname
+        else:
+            # Patterns ending with a slash should match only directories
+            if os.path.isdir(dirname):
+                yield pathname
+        return
     if not dirname:
         yield from glob1(None, basename)
         return
