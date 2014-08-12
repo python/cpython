@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21448: Changed FeedParser feed() to avoid O(N**2) behavior when
+  parsing long line.  Original patch by Raymond Hettinger.
+
 - Issue #17923: glob() patterns ending with a slash no longer match non-dirs on
   AIX.  Based on patch by Delhallt.
 
