@@ -253,6 +253,9 @@ IDLE
 Tests
 -----
 
+- Issue #20746: Fix test_pdb to run in refleak mode (-R).  Patch by Xavier
+  de Gaye.
+
 - Issue #22060: test_ctypes has been somewhat cleaned up and simplified; it
   now uses unittest test discovery to find its tests.
 
