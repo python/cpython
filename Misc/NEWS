@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17923: glob() patterns ending with a slash no longer match non-dirs on
+  AIX.  Based on patch by Delhallt.
+
 - Issue #21975: Fixed crash when using uninitialized sqlite3.Row (in particular
   when unpickling pickled sqlite3.Row).  sqlite3.Row is now initialized in the
   __new__() method.
