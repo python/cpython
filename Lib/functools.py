@@ -392,6 +392,12 @@ def lru_cache(maxsize=128, typed=False):
     # The internals of the lru_cache are encapsulated for thread safety and
     # to allow the implementation to change (including a possible C version).
 
+    # Early detection of an erroneous call to @lru_cache without any arguments
+    # resulting in the inner function being passed to maxsize instead of an
+    # integer or None.
+    if maxsize is not None and not isinstance(maxsize, int):
+        raise TypeError('Expected maxsize to be an integer or None')
+
     # Constants shared by all lru cache instances:
     sentinel = object()          # unique object used to signal cache misses
     make_key = _make_key         # build a key from the function arguments
