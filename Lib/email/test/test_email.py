@@ -2627,7 +2627,8 @@ class TestFeedParsers(TestEmailBase):
         self.assertEqual(m.keys(), ['a', 'b'])
 
     def test_long_lines(self):
-        M, N = 1000, 100000
+        # Expected peak memory use on 32-bit platform: 4*N*M bytes.
+        M, N = 1000, 20000
         m = self.parse(['a:b\n\n'] + ['x'*M] * N)
         self.assertEqual(m.items(), [('a', 'b')])
         self.assertEqual(m.get_payload(), 'x'*M*N)
