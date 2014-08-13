@@ -300,7 +300,7 @@ class TestMailbox(TestBase):
 
     def test_iterkeys(self):
         # Get keys using iterkeys()
-        self._check_iteration(self._box.keys, do_keys=True, do_values=False)
+        self._check_iteration(self._box.iterkeys, do_keys=True, do_values=False)
 
     def test_keys(self):
         # Get keys using keys()
@@ -308,7 +308,7 @@ class TestMailbox(TestBase):
 
     def test_itervalues(self):
         # Get values using itervalues()
-        self._check_iteration(self._box.values, do_keys=False,
+        self._check_iteration(self._box.itervalues, do_keys=False,
                               do_values=True)
 
     def test_iter(self):
@@ -322,7 +322,7 @@ class TestMailbox(TestBase):
 
     def test_iteritems(self):
         # Get keys and values using iteritems()
-        self._check_iteration(self._box.items, do_keys=True,
+        self._check_iteration(self._box.iteritems, do_keys=True,
                               do_values=True)
 
     def test_items(self):
@@ -564,12 +564,12 @@ class TestMailboxSuperclass(TestBase, unittest.TestCase):
         self.assertRaises(NotImplementedError, lambda: box.__delitem__(''))
         self.assertRaises(NotImplementedError, lambda: box.discard(''))
         self.assertRaises(NotImplementedError, lambda: box.__setitem__('', ''))
+        self.assertRaises(NotImplementedError, lambda: box.iterkeys())
         self.assertRaises(NotImplementedError, lambda: box.keys())
-        self.assertRaises(NotImplementedError, lambda: box.keys())
-        self.assertRaises(NotImplementedError, lambda: box.values().__next__())
+        self.assertRaises(NotImplementedError, lambda: box.itervalues().__next__())
         self.assertRaises(NotImplementedError, lambda: box.__iter__().__next__())
         self.assertRaises(NotImplementedError, lambda: box.values())
-        self.assertRaises(NotImplementedError, lambda: box.items().next())
+        self.assertRaises(NotImplementedError, lambda: box.iteritems().__next__())
         self.assertRaises(NotImplementedError, lambda: box.items())
         self.assertRaises(NotImplementedError, lambda: box.get(''))
         self.assertRaises(NotImplementedError, lambda: box.__getitem__(''))
@@ -1020,7 +1020,7 @@ class _TestMboxMMDF(_TestSingleFile):
         mtime = os.path.getmtime(self._path)
         self._box = self._factory(self._path)
         self.assertEqual(len(self._box), 3)
-        for key in self._box.keys():
+        for key in self._box.iterkeys():
             self.assertIn(self._box.get_string(key), values)
         self._box.close()
         self.assertEqual(mtime, os.path.getmtime(self._path))
