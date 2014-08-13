@@ -103,7 +103,7 @@ class Mailbox:
 
     def itervalues(self):
         """Return an iterator over all messages."""
-        for key in self.keys():
+        for key in self.iterkeys():
             try:
                 value = self[key]
             except KeyError:
@@ -119,7 +119,7 @@ class Mailbox:
 
     def iteritems(self):
         """Return an iterator over (key, message) tuples."""
-        for key in self.keys():
+        for key in self.iterkeys():
             try:
                 value = self[key]
             except KeyError:
@@ -154,7 +154,7 @@ class Mailbox:
 
     def popitem(self):
         """Delete an arbitrary (key, message) pair and return it."""
-        for key in self.keys():
+        for key in self.iterkeys():
             return (key, self.pop(key))     # This is only run once.
         else:
             raise KeyError('No messages in mailbox')
@@ -162,7 +162,7 @@ class Mailbox:
     def update(self, arg=None):
         """Change the messages that correspond to certain keys."""
         if hasattr(arg, 'iteritems'):
-            source = arg.items()
+            source = arg.iteritems()
         elif hasattr(arg, 'items'):
             source = arg.items()
         else:
@@ -559,7 +559,7 @@ class Maildir(Mailbox):
     def next(self):
         """Return the next message in a one-time iteration."""
         if not hasattr(self, '_onetime_keys'):
-            self._onetime_keys = iter(self.keys())
+            self._onetime_keys = self.iterkeys()
         while True:
             try:
                 return self[next(self._onetime_keys)]
@@ -1078,7 +1078,7 @@ class MH(Mailbox):
 
     def __len__(self):
         """Return a count of messages in the mailbox."""
-        return len(list(self.keys()))
+        return len(list(self.iterkeys()))
 
     def lock(self):
         """Lock the mailbox."""
@@ -1192,7 +1192,7 @@ class MH(Mailbox):
         sequences = self.get_sequences()
         prev = 0
         changes = []
-        for key in self.keys():
+        for key in self.iterkeys():
             if key - 1 != prev:
                 changes.append((key, prev + 1))
                 if hasattr(os, 'link'):
