@@ -684,32 +684,20 @@ sys_mdebug(PyObject *self, PyObject *args)
 }
 #endif /* USE_MALLOPT */
 
-static PyObject *
-sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
+size_t
+_PySys_GetSizeOf(PyObject *o)
 {
+    static PyObject *str__sizeof__ = NULL;
     PyObject *res = NULL;
-    static PyObject *str__sizeof__ = NULL, *gc_head_size = NULL;
-    static char *kwlist[] = {"object", "default", 0};
-    PyObject *o, *dflt = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
-                                     kwlist, &o, &dflt))
-        return NULL;
-
-    /* Initialize static variable for GC head size */
-    if (gc_head_size == NULL) {
-        gc_head_size = PyInt_FromSsize_t(sizeof(PyGC_Head));
-        if (gc_head_size == NULL)
-            return NULL;
-    }
+    size_t size;
 
     /* Make sure the type is initialized. float gets initialized late */
     if (PyType_Ready(Py_TYPE(o)) < 0)
-        return NULL;
+        return (size_t)-1;
 
     /* Instance of old-style class */
     if (PyInstance_Check(o))
-        res = PyInt_FromSsize_t(PyInstance_Type.tp_basicsize);
+        size = PyInstance_Type.tp_basicsize;
     /* all other objects */
     else {
         PyObject *method = _PyObject_LookupSpecial(o, "__sizeof__",
@@ -724,26 +712,47 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
             res = PyObject_CallFunctionObjArgs(method, NULL);
             Py_DECREF(method);
         }
-    }
 
-    /* Has a default value been given? */
-    if ((res == NULL) && (dflt != NULL) &&
-        PyErr_ExceptionMatches(PyExc_TypeError))
-    {
-        PyErr_Clear();
-        Py_INCREF(dflt);
-        return dflt;
+        if (res == NULL)
+            return (size_t)-1;
+
+        size = (size_t)PyInt_AsSsize_t(res);
+        Py_DECREF(res);
+        if (size == (size_t)-1 && PyErr_Occurred())
+            return (size_t)-1;
     }
-    else if (res == NULL)
-        return res;
 
     /* add gc_head size */
-    if (PyObject_IS_GC(o)) {
-        PyObject *tmp = res;
-        res = PyNumber_Add(tmp, gc_head_size);
-        Py_DECREF(tmp);
+    if (PyObject_IS_GC(o))
+        size += sizeof(PyGC_Head);
+    return size;
+}
+
+static PyObject *
+sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"object", "default", 0};
+    size_t size;
+    PyObject *o, *dflt = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
+                                     kwlist, &o, &dflt))
+        return NULL;
+
+    size = _PySys_GetSizeOf(o);
+
+    if (size == (size_t)-1 && PyErr_Occurred()) {
+        /* Has a default value been given */
+        if (dflt != NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+            Py_INCREF(dflt);
+            return dflt;
+        }
+        else
+            return NULL;
     }
-    return res;
+
+    return PyInt_FromSize_t(size);
 }
 
 PyDoc_STRVAR(getsizeof_doc,
