@@ -27,13 +27,13 @@ class FileCompareTestCase(unittest.TestCase):
         os.unlink(self.name_diff)
 
     def test_matching(self):
-        self.assertTrue(filecmp.cmp(self.name, self.name_same),
-                        "Comparing file to itself fails")
-        self.assertTrue(filecmp.cmp(self.name, self.name_same, shallow=False),
+        self.assertTrue(filecmp.cmp(self.name, self.name),
                         "Comparing file to itself fails")
         self.assertTrue(filecmp.cmp(self.name, self.name, shallow=False),
+                        "Comparing file to itself fails")
+        self.assertTrue(filecmp.cmp(self.name, self.name_same),
                         "Comparing file to identical file fails")
-        self.assertTrue(filecmp.cmp(self.name, self.name),
+        self.assertTrue(filecmp.cmp(self.name, self.name_same, shallow=False),
                         "Comparing file to identical file fails")
 
     def test_different(self):
