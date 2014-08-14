@@ -33,6 +33,10 @@ PyAPI_FUNC(int) PySys_HasWarnOptions(void);
 PyAPI_FUNC(void) PySys_AddXOption(const wchar_t *);
 PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
 
+#ifndef Py_LIMITED_API
+PyAPI_DATA(size_t) _PySys_GetSizeOf(PyObject *);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
