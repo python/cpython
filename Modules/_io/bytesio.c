@@ -81,31 +81,28 @@ unshare(bytesio *self, size_t preferred_size, int truncate)
    object. Returns the length between the current position to the
    next newline character. */
 static Py_ssize_t
-get_line(bytesio *self, char **output)
+scan_eol(bytesio *self, Py_ssize_t len)
 {
-    char *n;
-    const char *str_end;
-    Py_ssize_t len;
+    const char *start, *n;
+    Py_ssize_t maxlen;
 
     assert(self->buf != NULL);
 
     /* Move to the end of the line, up to the end of the string, s. */
-    str_end = self->buf + self->string_size;
-    for (n = self->buf + self->pos;
-         n < str_end && *n != '\n';
-         n++);
+    start = self->buf + self->pos;
+    maxlen = self->string_size - self->pos;
+    if (len < 0 || len > maxlen)
+        len = maxlen;
 
-    /* Skip the newline character */
-    if (n < str_end)
-        n++;
-
-    /* Get the length from the current position to the end of the line. */
-    len = n - (self->buf + self->pos);
-    *output = self->buf + self->pos;
-
+    if (len) {
+        n = memchr(start, '\n', len);
+        if (n)
+            /* Get the length from the current position to the end of
+               the line. */
+            len = n - start + 1;
+    }
     assert(len >= 0);
     assert(self->pos < PY_SSIZE_T_MAX - len);
-    self->pos += len;
 
     return len;
 }
@@ -477,14 +474,10 @@ bytesio_readline(bytesio *self, PyObject *args)
         return NULL;
     }
 
-    n = get_line(self, &output);
+    n = scan_eol(self, size);
 
-    if (size >= 0 && size < n) {
-        size = n - size;
-        n -= size;
-        self->pos -= size;
-    }
-
+    output = self->buf + self->pos;
+    self->pos += n;
     return PyBytes_FromStringAndSize(output, n);
 }
 
@@ -528,7 +521,9 @@ bytesio_readlines(bytesio *self, PyObject *args)
     if (!result)
         return NULL;
 
-    while ((n = get_line(self, &output)) != 0) {
+    output = self->buf + self->pos;
+    while ((n = scan_eol(self, -1)) != 0) {
+        self->pos += n;
         line = PyBytes_FromStringAndSize(output, n);
         if (!line)
             goto on_error;
@@ -540,6 +535,7 @@ bytesio_readlines(bytesio *self, PyObject *args)
         size += n;
         if (maxsize > 0 && size >= maxsize)
             break;
+        output += n;
     }
     return result;
 
@@ -636,16 +632,18 @@ bytesio_truncate(bytesio *self, PyObject *args)
 static PyObject *
 bytesio_iternext(bytesio *self)
 {
-    char *next;
+    const char *next;
     Py_ssize_t n;
 
     CHECK_CLOSED(self, NULL);
 
-    n = get_line(self, &next);
+    n = scan_eol(self, -1);
 
-    if (!next || n == 0)
+    if (n == 0)
         return NULL;
 
+    next = self->buf + self->pos;
+    self->pos += n;
     return PyBytes_FromStringAndSize(next, n);
 }
 
