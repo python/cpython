@@ -3519,7 +3519,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
     if (locale_error_handler(errors, &surrogateescape) < 0)
         return NULL;
 
-    if (str[len] != '\0' || len != strlen(str)) {
+    if (str[len] != '\0' || (size_t)len != strlen(str)) {
         PyErr_SetString(PyExc_TypeError, "embedded null character");
         return NULL;
     }
@@ -3696,7 +3696,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     }
     size = PyBytes_GET_SIZE(output);
     data = PyBytes_AS_STRING(output);
-    if (size != strlen(data)) {
+    if ((size_t)size != strlen(data)) {
         PyErr_SetString(PyExc_TypeError, "embedded NUL character");
         Py_DECREF(output);
         return 0;
@@ -8874,7 +8874,7 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
 
     maxchar = 127;
     for (i = 0; i < length; i++) {
-        Py_UNICODE ch = s[i];
+        Py_UCS4 ch = s[i];
         if (ch > 127) {
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal >= 0)
@@ -8891,7 +8891,7 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
     data = PyUnicode_DATA(decimal);
     /* Iterate over code points */
     for (i = 0; i < length; i++) {
-        Py_UNICODE ch = s[i];
+        Py_UCS4 ch = s[i];
         if (ch > 127) {
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal >= 0)
@@ -10833,7 +10833,7 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
         void *data = PyUnicode_DATA(uni);
         /* Compare Unicode string and source character set string */
         for (i = 0; (chr = PyUnicode_READ(kind, data, i)) && str[i]; i++)
-            if (chr != str[i])
+            if (chr != (unsigned char)str[i])
                 return (chr < (unsigned char)(str[i])) ? -1 : 1;
         /* This check keeps Python strings that end in '\0' from comparing equal
          to C strings identical up to that point. */
