@@ -1738,7 +1738,7 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
         return;
 
     if (offset >= 0) {
-        if (offset > 0 && offset == strlen(text) && text[offset - 1] == '\n')
+        if (offset > 0 && (size_t)offset == strlen(text) && text[offset - 1] == '\n')
             offset--;
         for (;;) {
             nl = strchr(text, '\n');
