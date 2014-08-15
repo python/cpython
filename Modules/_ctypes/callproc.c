@@ -1606,7 +1606,7 @@ resize(PyObject *self, PyObject *args)
                      "Memory cannot be resized because this object doesn't own it");
         return NULL;
     }
-    if (size <= sizeof(obj->b_value)) {
+    if ((size_t)size <= sizeof(obj->b_value)) {
         /* internal default buffer is large enough */
         obj->b_size = size;
         goto done;
