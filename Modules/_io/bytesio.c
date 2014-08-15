@@ -53,10 +53,12 @@ unshare(bytesio *self, size_t preferred_size, int truncate)
         Py_ssize_t copy_size;
         char *new_buf;
 
-        if((! truncate) && preferred_size < self->string_size) {
+        if((! truncate) && preferred_size < (size_t)self->string_size) {
             preferred_size = self->string_size;
         }
 
+        /* PyMem_Malloc() returns NULL if preferred_size is bigger
+           than PY_SSIZE_T_MAX */
         new_buf = (char *)PyMem_Malloc(preferred_size);
         if (new_buf == NULL) {
             PyErr_NoMemory();
@@ -64,7 +66,7 @@ unshare(bytesio *self, size_t preferred_size, int truncate)
         }
 
         copy_size = self->string_size;
-        if (copy_size > preferred_size) {
+        if ((size_t)copy_size > preferred_size) {
             copy_size = preferred_size;
         }
 

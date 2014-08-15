@@ -2000,7 +2000,7 @@ array_reconstructor(PyObject *self, PyObject *args)
          */
         for (descr = descriptors; descr->typecode != '\0'; descr++) {
             if (descr->is_integer_type &&
-                descr->itemsize == mf_descr.size &&
+                (size_t)descr->itemsize == mf_descr.size &&
                 descr->is_signed == mf_descr.is_signed)
                 typecode = descr->typecode;
         }

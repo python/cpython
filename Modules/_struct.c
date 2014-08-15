@@ -1263,7 +1263,8 @@ prepare_s(PyStructObject *self)
     const char *s;
     const char *fmt;
     char c;
-    Py_ssize_t size, len, ncodes, num, itemsize;
+    Py_ssize_t size, len, num, itemsize;
+    size_t ncodes;
 
     fmt = PyBytes_AS_STRING(self->s_format);
 
@@ -1319,7 +1320,7 @@ prepare_s(PyStructObject *self)
     }
 
     /* check for overflow */
-    if ((ncodes + 1) > (PY_SSIZE_T_MAX / sizeof(formatcode))) {
+    if ((ncodes + 1) > ((size_t)PY_SSIZE_T_MAX / sizeof(formatcode))) {
         PyErr_NoMemory();
         return -1;
     }

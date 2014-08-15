@@ -1236,7 +1236,7 @@ pattern_repr(PatternObject *obj)
     };
     PyObject *result = NULL;
     PyObject *flag_items;
-    int i;
+    size_t i;
     int flags = obj->flags;
 
     /* Omit re.UNICODE for valid string patterns. */

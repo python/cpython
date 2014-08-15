@@ -290,7 +290,7 @@ dialect_check_quoting(int quoting)
     StyleDesc *qs;
 
     for (qs = quote_styles; qs->name; qs++) {
-        if (qs->style == quoting)
+        if ((int)qs->style == quoting)
             return 0;
     }
     PyErr_Format(PyExc_TypeError, "bad \"quoting\" value");
