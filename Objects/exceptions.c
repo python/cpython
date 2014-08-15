@@ -2714,7 +2714,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
     same_basic_size = (
         caught_type_size == base_exc_size ||
         (PyType_SUPPORTS_WEAKREFS(caught_type) &&
-            (caught_type_size == base_exc_size + sizeof(PyObject *))
+            (caught_type_size == base_exc_size + (Py_ssize_t)sizeof(PyObject *))
         )
     );
     if (caught_type->tp_init != (initproc)BaseException_init ||
