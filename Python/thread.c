@@ -431,7 +431,7 @@ PyThread_GetInfo(void)
      && defined(_CS_GNU_LIBPTHREAD_VERSION))
     value = NULL;
     len = confstr(_CS_GNU_LIBPTHREAD_VERSION, buffer, sizeof(buffer));
-    if (1 < len && len < sizeof(buffer)) {
+    if (1 < len && (size_t)len < sizeof(buffer)) {
         value = PyUnicode_DecodeFSDefaultAndSize(buffer, len-1);
         if (value == NULL)
             PyErr_Clear();
