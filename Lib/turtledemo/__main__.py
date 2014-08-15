@@ -139,22 +139,24 @@ class DemoWindow(object):
                     stdout=subprocess.DEVNULL,
                 )
 
-        root.grid_rowconfigure(1, weight=1)
+        root.grid_rowconfigure(0, weight=1)
         root.grid_columnconfigure(0, weight=1)
         root.grid_columnconfigure(1, minsize=90, weight=1)
         root.grid_columnconfigure(2, minsize=90, weight=1)
         root.grid_columnconfigure(3, minsize=90, weight=1)
 
-        self.mBar = Frame(root, relief=RAISED, borderwidth=2)
-        self.ExamplesBtn = self.makeLoadDemoMenu()
-        self.OptionsBtn = self.makeHelpMenu()
-        self.mBar.grid(row=0, columnspan=4, sticky='news')
+        self.mBar = Menu(root, relief=RAISED, borderwidth=2)
+        self.mBar.add_cascade(menu=self.makeLoadDemoMenu(self.mBar),
+                              label='Examples', underline=0, font=menufont)
+        self.mBar.add_cascade(menu=self.makeHelpMenu(self.mBar),
+                              label='Help', underline=0, font=menufont)
+        root['menu'] = self.mBar
 
         pane = PanedWindow(orient=HORIZONTAL, sashwidth=5,
                            sashrelief=SOLID, bg='#ddd')
         pane.add(self.makeTextFrame(pane))
         pane.add(self.makeGraphFrame(pane))
-        pane.grid(row=1, columnspan=4, sticky='news')
+        pane.grid(row=0, columnspan=4, sticky='news')
 
         self.output_lbl = Label(root, height= 1, text=" --- ", bg="#ddf",
                                 font=("Arial", 16, 'normal'), borderwidth=2,
@@ -168,10 +170,10 @@ class DemoWindow(object):
         self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
                                 fg="white", disabledforeground="#fed",
                                 command = self.clearCanvas)
-        self.output_lbl.grid(row=2, column=0, sticky='news', padx=(0,5))
-        self.start_btn.grid(row=2, column=1, sticky='ew')
-        self.stop_btn.grid(row=2, column=2, sticky='ew')
-        self.clear_btn.grid(row=2, column=3, sticky='ew')
+        self.output_lbl.grid(row=1, column=0, sticky='news', padx=(0,5))
+        self.start_btn.grid(row=1, column=1, sticky='ew')
+        self.stop_btn.grid(row=1, column=2, sticky='ew')
+        self.clear_btn.grid(row=1, column=3, sticky='ew')
 
         Percolator(self.text).insertfilter(ColorDelegator())
         self.dirty = False
@@ -224,7 +226,7 @@ class DemoWindow(object):
         return canvas
 
     def configGUI(self, menu, start, stop, clear, txt="", color="blue"):
-        self.ExamplesBtn.config(state=menu)
+        self.mBar.entryconfigure(0, state=menu)
 
         self.start_btn.config(state=start,
                               bg="#d00" if start == NORMAL else "#fca")
@@ -234,35 +236,28 @@ class DemoWindow(object):
                               bg="#d00" if clear == NORMAL else"#fca")
         self.output_lbl.config(text=txt, fg=color)
 
-    def makeLoadDemoMenu(self):
-        CmdBtn = Menubutton(self.mBar, text='Examples',
-                            underline=0, font=menufont)
-        CmdBtn.pack(side=LEFT, padx="2m")
-        CmdBtn.menu = Menu(CmdBtn)
+    def makeLoadDemoMenu(self, master):
+        menu = Menu(master)
 
         for entry in getExampleEntries():
             def loadexample(x):
                 def emit():
                     self.loadfile(x)
                 return emit
-            CmdBtn.menu.add_command(label=entry, underline=0,
-                                    font=menufont, command=loadexample(entry))
+            menu.add_command(label=entry, underline=0,
+                             font=menufont, command=loadexample(entry))
 
-        CmdBtn['menu'] = CmdBtn.menu
-        return CmdBtn
+        return menu
 
-    def makeHelpMenu(self):
-        CmdBtn = Menubutton(self.mBar, text='Help', underline=0, font=menufont)
-        CmdBtn.pack(side=LEFT, padx='2m')
-        CmdBtn.menu = Menu(CmdBtn)
+    def makeHelpMenu(self, master):
+        menu = Menu(master)
 
         for help_label, help_file in help_entries:
             def show(help_label=help_label, help_file=help_file):
                 view_text(self.root, help_label, help_file)
-            CmdBtn.menu.add_command(label=help_label, font=menufont, command=show)
+            menu.add_command(label=help_label, font=menufont, command=show)
 
-        CmdBtn['menu'] = CmdBtn.menu
-        return CmdBtn
+        return menu
 
     def refreshCanvas(self):
         if not self.dirty: return
