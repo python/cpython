@@ -2,9 +2,7 @@
 
 """
   ----------------------------------------------
-
-      turtledemo - Help
-
+      turtleDemo - Help
   ----------------------------------------------
 
   This document has two sections:
@@ -54,18 +52,34 @@
 
    (2) How to add your own demos to the demo repository
 
-   - place: same directory as turtledemo/__main__.py
+   - Place the file in the same directory as turtledemo/__main__.py
+     IMPORTANT! When imported, the demo should not modify the system
+     by calling functions in other modules, such as sys, tkinter, or
+     turtle. Global variables should be initialized in main().
 
-   - requirements on source code:
-       code must contain a main() function which will
-       be executed by the viewer (see provided example scripts)
-       main() may return a string which will be displayed
-       in the Label below the source code window (when execution
-       has finished.)
+   - The code must contain a main() function which will
+     be executed by the viewer (see provided example scripts).
+     It may return a string which will be displayed in the Label below
+     the source code window (when execution has finished.)
 
-       !! For programs, which are EVENT DRIVEN, main must return
-       !! the string "EVENTLOOP". This informs the viewer, that the
-       !! script is still running and must be stopped by the user!
+   - In order to run mydemo.py by itself, such as during development,
+     add the following at the end of the file:
+
+    if __name__ == '__main__':
+        main()
+        mainloop()  # keep window open
+
+    python -m turtledemo.mydemo  # will then run it
+
+   - If the demo is EVENT DRIVEN, main must return the string
+     "EVENTLOOP". This informs the demo viewer that the script is
+     still running and must be stopped by the user!
+
+     If an "EVENTLOOP" demo runs by itself, as with clock, which uses
+     ontimer, or minimal_hanoi, which loops by recursion, then the
+     code should catch the turtle.Terminator exception that will be
+     raised when the user presses the STOP button.  (Paint is not such
+     a demo; it only acts in response to mouse clicks and movements.)
 """
 import sys
 import os
@@ -96,14 +110,11 @@ def getExampleEntries():
     return [entry[:-3] for entry in os.listdir(demo_dir) if
             entry.endswith(".py") and entry[0] != '_']
 
-def showDemoHelp():
-    view_text(demo.root, "Help on turtledemo", __doc__)
-
-def showAboutDemo():
-    view_text(demo.root, "About turtledemo", about_turtledemo)
-
-def showAboutTurtle():
-    view_text(demo.root, "About the turtle module.", turtle.__doc__)
+help_entries = (  # (help_label,  help_doc)
+    ('Turtledemo help', __doc__),
+    ('About turtledemo', about_turtledemo),
+    ('About turtle module', turtle.__doc__),
+    )
 
 class DemoWindow(object):
 
@@ -245,12 +256,10 @@ class DemoWindow(object):
         CmdBtn.pack(side=LEFT, padx='2m')
         CmdBtn.menu = Menu(CmdBtn)
 
-        CmdBtn.menu.add_command(label='About turtle.py', font=menufont,
-                                command=showAboutTurtle)
-        CmdBtn.menu.add_command(label='turtleDemo - Help', font=menufont,
-                                command=showDemoHelp)
-        CmdBtn.menu.add_command(label='About turtleDemo', font=menufont,
-                                command=showAboutDemo)
+        for help_label, help_file in help_entries:
+            def show(help_label=help_label, help_file=help_file):
+                view_text(self.root, help_label, help_file)
+            CmdBtn.menu.add_command(label=help_label, font=menufont, command=show)
 
         CmdBtn['menu'] = CmdBtn.menu
         return CmdBtn
@@ -323,7 +332,6 @@ class DemoWindow(object):
 
 
 def main():
-    global demo
     demo = DemoWindow()
     demo.root.mainloop()
 
