@@ -188,7 +188,7 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
         if (action == BZ_FINISH && bzerror == BZ_STREAM_END)
             break;
     }
-    if (data_size != PyBytes_GET_SIZE(result))
+    if (data_size != (size_t)PyBytes_GET_SIZE(result))
         if (_PyBytes_Resize(&result, data_size) < 0)
             goto error;
     return result;
@@ -457,7 +457,7 @@ decompress(BZ2Decompressor *d, char *data, size_t len)
             d->bzs.avail_out = (unsigned int)Py_MIN(buffer_left, UINT_MAX);
         }
     }
-    if (data_size != PyBytes_GET_SIZE(result))
+    if (data_size != (size_t)PyBytes_GET_SIZE(result))
         if (_PyBytes_Resize(&result, data_size) < 0)
             goto error;
     return result;

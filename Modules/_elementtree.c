@@ -3741,7 +3741,7 @@ PyInit__elementtree(void)
     if (expat_capi) {
         /* check that it's usable */
         if (strcmp(expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
-            expat_capi->size < sizeof(struct PyExpat_CAPI) ||
+            (size_t)expat_capi->size < sizeof(struct PyExpat_CAPI) ||
             expat_capi->MAJOR_VERSION != XML_MAJOR_VERSION ||
             expat_capi->MINOR_VERSION != XML_MINOR_VERSION ||
             expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {

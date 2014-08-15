@@ -1414,7 +1414,7 @@ varname_converter(PyObject *in, void *_out)
             return 0;
         }
         s = PyBytes_AsString(in);
-        if (strlen(s) != PyBytes_Size(in)) {
+        if (strlen(s) != (size_t)PyBytes_Size(in)) {
             PyErr_SetString(PyExc_ValueError, "null byte in bytes object");
             return 0;
         }
@@ -1431,7 +1431,7 @@ varname_converter(PyObject *in, void *_out)
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return 0;
         }
-        if (strlen(s) != size) {
+        if (strlen(s) != (size_t)size) {
             PyErr_SetString(PyExc_ValueError, "null character in string");
             return 0;
         }
