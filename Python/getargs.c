@@ -872,7 +872,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             STORE_SIZE(count);
             format++;
         } else {
-            if (strlen(*p) != count)
+            if (strlen(*p) != (size_t)count)
                 return converterr(
                     "bytes without null bytes",
                     arg, msgbuf, bufsize);
@@ -994,7 +994,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 *p = PyUnicode_AsUnicodeAndSize(arg, &len);
                 if (*p == NULL)
                     RETURN_ERR_OCCURRED;
-                if (Py_UNICODE_strlen(*p) != len)
+                if (Py_UNICODE_strlen(*p) != (size_t)len)
                     return converterr(
                         "str without null characters or None",
                         arg, msgbuf, bufsize);
