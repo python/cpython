@@ -2622,7 +2622,8 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     type->tp_itemsize = spec->itemsize;
 
     for (slot = spec->slots; slot->slot; slot++) {
-        if (slot->slot >= Py_ARRAY_LENGTH(slotoffsets)) {
+        if (slot->slot < 0
+            || (size_t)slot->slot >= Py_ARRAY_LENGTH(slotoffsets)) {
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
             goto fail;
         }
@@ -2682,11 +2683,11 @@ PyType_FromSpec(PyType_Spec *spec)
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
-    if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+    if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE) || slot < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (slot >= Py_ARRAY_LENGTH(slotoffsets)) {
+    if ((size_t)slot >= Py_ARRAY_LENGTH(slotoffsets)) {
         /* Extension module requesting slot from a future version */
         return NULL;
     }

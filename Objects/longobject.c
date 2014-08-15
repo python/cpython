@@ -5094,13 +5094,13 @@ _PyLong_Init(void)
              * to the original refcnt + 1 */
             Py_REFCNT(op) = refcnt + 1;
             assert(Py_SIZE(op) == size);
-            assert(v->ob_digit[0] == abs(ival));
+            assert(v->ob_digit[0] == (digit)abs(ival));
         }
         else {
             (void)PyObject_INIT(v, &PyLong_Type);
         }
         Py_SIZE(v) = size;
-        v->ob_digit[0] = abs(ival);
+        v->ob_digit[0] = (digit)abs(ival);
     }
 #endif
     /* initialize int_info */
