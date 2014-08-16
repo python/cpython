@@ -22,7 +22,7 @@ from test import support
 from test.support import run_unittest, findfile, python_is_optimized
 
 try:
-    gdb_version, _ = subprocess.Popen(["gdb", "--version"],
+    gdb_version, _ = subprocess.Popen(["gdb", "-nx", "--version"],
                                       stdout=subprocess.PIPE).communicate()
 except OSError:
     # This is what "no gdb" looks like.  There may, however, be other
@@ -54,7 +54,9 @@ def run_gdb(*args, **env_vars):
         env.update(env_vars)
     else:
         env = None
-    base_cmd = ('gdb', '--batch')
+    # -nx: Do not execute commands from any .gdbinit initialization files
+    #      (issue #22188)
+    base_cmd = ('gdb', '--batch', '-nx')
     if (gdb_major_version, gdb_minor_version) >= (7, 4):
         base_cmd += ('-iex', 'add-auto-load-safe-path ' + checkout_hook_path)
     out, err = subprocess.Popen(base_cmd + args,
@@ -130,7 +132,7 @@ class DebuggerTests(unittest.TestCase):
         # print commands
 
         # Use "commands" to generate the arguments with which to invoke "gdb":
-        args = ["gdb", "--batch"]
+        args = ["gdb", "--batch", "-nx"]
         args += ['--eval-command=%s' % cmd for cmd in commands]
         args += ["--args",
                  sys.executable]
