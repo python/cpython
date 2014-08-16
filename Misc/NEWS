@@ -115,6 +115,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8797: Raise HTTPError on failed Basic Authentication immediately.
+  Initial patch by Sam Bull.
+
 - Issue #15381: Optimized line reading in io.BytesIO.
 
 - Issue #20729: Restored the use of lazy iterkeys()/itervalues()/iteritems()
