@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8797: Raise HTTPError on failed Basic Authentication immediately.
+  Initial patch by Sam Bull.
+
 - Issue #21448: Changed FeedParser feed() to avoid O(N**2) behavior when
   parsing long line.  Original patch by Raymond Hettinger.
 
