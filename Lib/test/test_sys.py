@@ -657,6 +657,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
 
+    @test.support.cpython_only
     def test_debugmallocstats(self):
         # Test sys._debugmallocstats()
         from test.script_helper import assert_python_ok
