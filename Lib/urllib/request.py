@@ -846,23 +846,12 @@ class AbstractBasicAuthHandler:
             password_mgr = HTTPPasswordMgr()
         self.passwd = password_mgr
         self.add_password = self.passwd.add_password
-        self.retried = 0
-
-    def reset_retry_count(self):
-        self.retried = 0
 
     def http_error_auth_reqed(self, authreq, host, req, headers):
         # host may be an authority (without userinfo) or a URL with an
         # authority
         # XXX could be multiple headers
         authreq = headers.get(authreq, None)
-
-        if self.retried > 5:
-            # retry sending the username:password 5 times before failing.
-            raise HTTPError(req.get_full_url(), 401, "basic auth failed",
-                    headers, None)
-        else:
-            self.retried += 1
 
         if authreq:
             scheme = authreq.split()[0]
@@ -878,17 +867,14 @@ class AbstractBasicAuthHandler:
                         warnings.warn("Basic Auth Realm was unquoted",
                                       UserWarning, 2)
                     if scheme.lower() == 'basic':
-                        response = self.retry_http_basic_auth(host, req, realm)
-                        if response and response.code != 401:
-                            self.retried = 0
-                        return response
+                        return self.retry_http_basic_auth(host, req, realm)
 
     def retry_http_basic_auth(self, host, req, realm):
         user, pw = self.passwd.find_user_password(realm, host)
         if pw is not None:
             raw = "%s:%s" % (user, pw)
             auth = "Basic " + base64.b64encode(raw.encode()).decode("ascii")
-            if req.headers.get(self.auth_header, None) == auth:
+            if req.get_header(self.auth_header, None) == auth:
                 return None
             req.add_unredirected_header(self.auth_header, auth)
             return self.parent.open(req, timeout=req.timeout)
@@ -904,7 +890,6 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         url = req.full_url
         response = self.http_error_auth_reqed('www-authenticate',
                                           url, req, headers)
-        self.reset_retry_count()
         return response
 
 
@@ -920,7 +905,6 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         authority = req.host
         response = self.http_error_auth_reqed('proxy-authenticate',
                                           authority, req, headers)
-        self.reset_retry_count()
         return response
 
 
