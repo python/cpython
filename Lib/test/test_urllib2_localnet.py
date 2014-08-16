@@ -1,8 +1,6 @@
-import base64
 import urlparse
 import urllib2
 import BaseHTTPServer
-import SimpleHTTPServer
 import unittest
 import hashlib
 
@@ -67,48 +65,6 @@ class LoopbackHttpServerThread(threading.Thread):
             self.httpd.handle_request()
 
 # Authentication infrastructure
-
-
-class BasicAuthHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-    """Handler for performing Basic Authentication."""
-    # Server side values
-    USER = "testUser"
-    PASSWD = "testPass"
-    REALM = "Test"
-    USER_PASSWD = "%s:%s" % (USER, PASSWD)
-    ENCODED_AUTH = base64.b64encode(USER_PASSWD)
-
-    def __init__(self, *args, **kwargs):
-        SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, *args,
-                                                           **kwargs)
-
-    def log_message(self, format, *args):
-        # Supress the HTTP Console log output
-        pass
-
-    def do_HEAD(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
-    def do_AUTHHEAD(self):
-        self.send_response(401)
-        self.send_header("WWW-Authenticate", "Basic realm=\"%s\"" % self.REALM)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
-    def do_GET(self):
-        if self.headers.getheader("Authorization") == None:
-            self.do_AUTHHEAD()
-            self.wfile.write("No Auth Header Received")
-        elif self.headers.getheader(
-                "Authorization") == "Basic " + self.ENCODED_AUTH:
-            SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
-        else:
-            self.do_AUTHHEAD()
-            self.wfile.write(self.headers.getheader("Authorization"))
-            self.wfile.write("Not Authenticated")
-
 
 class DigestAuthHandler:
     """Handler for performing digest authentication."""
@@ -272,45 +228,6 @@ class BaseTestCase(unittest.TestCase):
         test_support.threading_cleanup(*self._threads)
 
 
-class BasicAuthTests(BaseTestCase):
-    USER = "testUser"
-    PASSWD = "testPass"
-    INCORRECT_PASSWD = "Incorrect"
-    REALM = "Test"
-
-    def setUp(self):
-        super(BasicAuthTests, self).setUp()
-        # With Basic Authentication
-        def http_server_with_basic_auth_handler(*args, **kwargs):
-            return BasicAuthHandler(*args, **kwargs)
-        self.server = LoopbackHttpServerThread(http_server_with_basic_auth_handler)
-        self.server_url = 'http://127.0.0.1:%s' % self.server.port
-        self.server.start()
-        self.server.ready.wait()
-
-    def tearDown(self):
-        self.server.stop()
-        super(BasicAuthTests, self).tearDown()
-
-    def test_basic_auth_success(self):
-        ah = urllib2.HTTPBasicAuthHandler()
-        ah.add_password(self.REALM, self.server_url, self.USER, self.PASSWD)
-        urllib2.install_opener(urllib2.build_opener(ah))
-        try:
-            self.assertTrue(urllib2.urlopen(self.server_url))
-        except urllib2.HTTPError:
-            self.fail("Basic Auth Failed for url: %s" % self.server_url)
-        except Exception as e:
-            raise e
-
-    def test_basic_auth_httperror(self):
-        ah = urllib2.HTTPBasicAuthHandler()
-        ah.add_password(self.REALM, self.server_url, self.USER,
-                        self.INCORRECT_PASSWD)
-        urllib2.install_opener(urllib2.build_opener(ah))
-        self.assertRaises(urllib2.HTTPError, urllib2.urlopen, self.server_url)
-
-
 class ProxyAuthTests(BaseTestCase):
     URL = "http://localhost"
 
@@ -323,7 +240,6 @@ class ProxyAuthTests(BaseTestCase):
         self.digest_auth_handler = DigestAuthHandler()
         self.digest_auth_handler.set_users({self.USER: self.PASSWD})
         self.digest_auth_handler.set_realm(self.REALM)
-        # With Digest Authentication
         def create_fake_proxy_handler(*args, **kwargs):
             return FakeProxyHandler(self.digest_auth_handler, *args, **kwargs)
 
@@ -628,7 +544,7 @@ def test_main():
     # the next line.
     #test_support.requires("network")
 
-    test_support.run_unittest(BasicAuthTests, ProxyAuthTests, TestUrlopen)
+    test_support.run_unittest(ProxyAuthTests, TestUrlopen)
 
 if __name__ == "__main__":
     test_main()
