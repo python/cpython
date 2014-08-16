@@ -79,7 +79,7 @@ typedef struct {
         (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
 
 #define MAX_NFRAME \
-        (((size_t)INT_MAX - sizeof(traceback_t)) / sizeof(frame_t) + 1)
+        ((INT_MAX - (int)sizeof(traceback_t)) / (int)sizeof(frame_t) + 1)
 
 static PyObject *unknown_filename = NULL;
 static traceback_t tracemalloc_empty_traceback;
@@ -874,7 +874,7 @@ tracemalloc_start(int max_nframe)
         return 0;
     }
 
-    assert(1 <= max_nframe && (size_t)max_nframe <= MAX_NFRAME);
+    assert(1 <= max_nframe && max_nframe <= MAX_NFRAME);
     tracemalloc_config.max_nframe = max_nframe;
 
     /* allocate a buffer to store a new traceback */
@@ -1226,10 +1226,10 @@ py_tracemalloc_start(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|n:start", &nframe))
         return NULL;
 
-    if (nframe < 1 || (size_t)nframe > MAX_NFRAME) {
+    if (nframe < 1 || nframe > MAX_NFRAME) {
         PyErr_Format(PyExc_ValueError,
                      "the number of frames must be in range [1; %i]",
-                     (int)MAX_NFRAME);
+                     MAX_NFRAME);
         return NULL;
     }
     nframe_int = Py_SAFE_DOWNCAST(nframe, Py_ssize_t, int);
@@ -1388,7 +1388,7 @@ parse_sys_xoptions(PyObject *value)
     if (nframe == -1 && PyErr_Occurred())
         return -1;
 
-    if (nframe < 1 || (size_t)nframe > MAX_NFRAME)
+    if (nframe < 1 || nframe > MAX_NFRAME)
         return -1;
 
     return Py_SAFE_DOWNCAST(nframe, long, int);
@@ -1412,7 +1412,7 @@ _PyTraceMalloc_Init(void)
         value = strtol(p, &endptr, 10);
         if (*endptr != '\0'
             || value < 1
-            || (size_t)value > MAX_NFRAME
+            || value > MAX_NFRAME
             || errno == ERANGE)
         {
             Py_FatalError("PYTHONTRACEMALLOC: invalid number of frames");
