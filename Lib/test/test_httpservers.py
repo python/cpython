@@ -272,6 +272,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     @unittest.skipUnless(support.TESTFN_UNDECODABLE,
                          'need support.TESTFN_UNDECODABLE')
     def test_undecodable_filename(self):
+        enc = sys.getfilesystemencoding()
         filename = os.fsdecode(support.TESTFN_UNDECODABLE) + '.txt'
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
             f.write(support.TESTFN_UNDECODABLE)
@@ -279,9 +280,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         body = self.check_status_and_reason(response, 200)
         quotedname = urllib.parse.quote(filename, errors='surrogatepass')
         self.assertIn(('href="%s"' % quotedname)
-                      .encode('utf-8', 'surrogateescape'), body)
+                      .encode(enc, 'surrogateescape'), body)
         self.assertIn(('>%s<' % html.escape(filename))
-                      .encode('utf-8', 'surrogateescape'), body)
+                      .encode(enc, 'surrogateescape'), body)
         response = self.request(self.tempdir_name + '/' + quotedname)
         self.check_status_and_reason(response, 200,
                                      data=support.TESTFN_UNDECODABLE)
