@@ -84,6 +84,12 @@ Extension Modules
   adds support for the Linux AArch64 and POWERPC ELF ABIv2 little endian
   architectures.
 
+Tools/Demos
+-----------
+
+- Issue #22201: Command-line interface of the zipfile module now correctly
+  extracts ZIP files with directory entries.  Patch by Ryan Wilson.
+
 Tests
 -----
 
