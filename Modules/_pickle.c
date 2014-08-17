@@ -2050,7 +2050,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
 static PyObject *
 raw_unicode_escape(PyObject *obj)
 {
-    PyObject *repr, *result;
+    PyObject *repr;
     char *p;
     Py_ssize_t i, size, expandsize;
     void *data;
@@ -2069,13 +2069,14 @@ raw_unicode_escape(PyObject *obj)
 
     if (size > PY_SSIZE_T_MAX / expandsize)
         return PyErr_NoMemory();
-    repr = PyByteArray_FromStringAndSize(NULL, expandsize * size);
+    repr = PyBytes_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)
         return NULL;
     if (size == 0)
-        goto done;
+        return repr;
+    assert(Py_REFCNT(repr) == 1);
 
-    p = PyByteArray_AS_STRING(repr);
+    p = PyBytes_AS_STRING(repr);
     for (i=0; i < size; i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
@@ -2104,12 +2105,10 @@ raw_unicode_escape(PyObject *obj)
         else
             *p++ = (char) ch;
     }
-    size = p - PyByteArray_AS_STRING(repr);
-
-done:
-    result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(repr), size);
-    Py_DECREF(repr);
-    return result;
+    size = p - PyBytes_AS_STRING(repr);
+    if (_PyBytes_Resize(&repr, size) < 0)
+        return NULL;
+    return repr;
 }
 
 static int
