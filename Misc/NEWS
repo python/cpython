@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22068: Avoided reference loops with Variables and Fonts in Tkinter.
+
 - Issue #21448: Changed FeedParser feed() to avoid O(N**2) behavior when
   parsing long line.  Original patch by Raymond Hettinger.
 
