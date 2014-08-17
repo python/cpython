@@ -2052,7 +2052,8 @@ raw_unicode_escape(PyObject *obj)
 {
     PyObject *repr;
     char *p;
-    Py_ssize_t i, size, expandsize;
+    Py_ssize_t i, size;
+    size_t expandsize;
     void *data;
     unsigned int kind;
 
@@ -2067,7 +2068,7 @@ raw_unicode_escape(PyObject *obj)
     else
         expandsize = 6;
 
-    if (size > PY_SSIZE_T_MAX / expandsize)
+    if ((size_t)size > (size_t)PY_SSIZE_T_MAX / expandsize)
         return PyErr_NoMemory();
     repr = PyBytes_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)

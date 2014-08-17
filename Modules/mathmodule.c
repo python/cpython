@@ -1010,7 +1010,7 @@ _fsum_realloc(double **p_ptr, Py_ssize_t  n,
     Py_ssize_t m = *m_ptr;
 
     m += m;  /* double */
-    if (n < m && m < (PY_SSIZE_T_MAX / sizeof(double))) {
+    if (n < m && (size_t)m < ((size_t)PY_SSIZE_T_MAX / sizeof(double))) {
         double *p = *p_ptr;
         if (p == ps) {
             v = PyMem_Malloc(sizeof(double) * m);

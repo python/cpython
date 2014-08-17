@@ -699,7 +699,7 @@ unicode_internal_encode(PyObject *self,
         u = PyUnicode_AsUnicodeAndSize(obj, &len);
         if (u == NULL)
             return NULL;
-        if (len > PY_SSIZE_T_MAX / sizeof(Py_UNICODE))
+        if ((size_t)len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_UNICODE))
             return PyErr_NoMemory();
         size = len * sizeof(Py_UNICODE);
         return codec_tuple(PyBytes_FromStringAndSize((const char*)u, size),
