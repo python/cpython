@@ -97,7 +97,7 @@ PyTuple_New(Py_ssize_t size)
 #endif
     {
         /* Check for overflow */
-        if (size > (PY_SSIZE_T_MAX - sizeof(PyTupleObject) -
+        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - sizeof(PyTupleObject) -
                     sizeof(PyObject *)) / sizeof(PyObject *)) {
             return PyErr_NoMemory();
         }

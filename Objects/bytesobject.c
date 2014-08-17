@@ -81,6 +81,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
 {
     PyBytesObject *op;
     assert(size >= 0);
+
     if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
         null_strings++;
@@ -89,7 +90,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         return (PyObject *)op;
     }
 
-    if (size > PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
+    if ((size_t)size > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
         PyErr_SetString(PyExc_OverflowError,
                         "byte string is too large");
         return NULL;
@@ -1755,7 +1756,7 @@ bytes_count(PyBytesObject *self, PyObject *args)
 bytes.translate
 
     self: self(type="PyBytesObject *")
-    table: object   
+    table: object
         Translation table, which must be a bytes object of length 256.
     [
     deletechars: object
@@ -3328,7 +3329,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         /* Only one reference, so we can resize in place */
         Py_ssize_t oldsize;
         Py_buffer wb;
-        
+
         wb.len = -1;
         if (_getbuffer(w, &wb) < 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",

@@ -42,7 +42,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 
     if (PyArg_ParseTuple(args, "O&is#:fcntl",
                          conv_descriptor, &fd, &code, &str, &len)) {
-        if (len > sizeof buf) {
+        if ((size_t)len > sizeof buf) {
             PyErr_SetString(PyExc_ValueError,
                             "fcntl string arg too long");
             return NULL;

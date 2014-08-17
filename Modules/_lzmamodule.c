@@ -533,7 +533,7 @@ compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
             c->lzs.avail_out = PyBytes_GET_SIZE(result) - data_size;
         }
     }
-    if (data_size != PyBytes_GET_SIZE(result))
+    if (data_size != (size_t)PyBytes_GET_SIZE(result))
         if (_PyBytes_Resize(&result, data_size) == -1)
             goto error;
     return result;
@@ -931,7 +931,7 @@ decompress(Decompressor *d, uint8_t *data, size_t len)
             d->lzs.avail_out = PyBytes_GET_SIZE(result) - data_size;
         }
     }
-    if (data_size != PyBytes_GET_SIZE(result))
+    if (data_size != (size_t)PyBytes_GET_SIZE(result))
         if (_PyBytes_Resize(&result, data_size) == -1)
             goto error;
     return result;
