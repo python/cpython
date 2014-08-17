@@ -1277,7 +1277,7 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
         return 0;
     }
     return Py_CLEANUP_SUPPORTED;
-}       
+}
 
 /* Parse a socket address argument according to the socket object's
    address family.  Return 1 if the address was in the proper format,
@@ -1308,12 +1308,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             Py_INCREF(args);
         if (!PyArg_Parse(args, "y#", &path, &len))
             goto unix_out;
+        assert(len >= 0);
 
         addr = (struct sockaddr_un*)addr_ret;
 #ifdef linux
         if (len > 0 && path[0] == 0) {
             /* Linux abstract namespace extension */
-            if (len > sizeof addr->sun_path) {
+            if ((size_t)len > sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
                 goto unix_out;
@@ -1323,7 +1324,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #endif /* linux */
         {
             /* regular NULL-terminated string */
-            if (len >= sizeof addr->sun_path) {
+            if ((size_t)len >= sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
                 goto unix_out;
@@ -1675,7 +1676,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
             if (len == 0) {
                 ifr.ifr_ifindex = 0;
-            } else if (len < sizeof(ifr.ifr_name)) {
+            } else if ((size_t)len < sizeof(ifr.ifr_name)) {
                 strncpy(ifr.ifr_name, PyBytes_AS_STRING(interfaceName), sizeof(ifr.ifr_name));
                 ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
                 if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
@@ -4290,7 +4291,7 @@ Return the IP address (a string of the form '255.255.255.255') for a host.");
 /* Convenience function common to gethostbyname_ex and gethostbyaddr */
 
 static PyObject *
-gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
+gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 {
     char **pch;
     PyObject *rtn_tuple = (PyObject *)NULL;
