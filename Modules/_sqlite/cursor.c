@@ -46,7 +46,7 @@ static pysqlite_StatementKind detect_statement_type(const char* statement)
 
     dst = buf;
     *dst = 0;
-    while (Py_ISALPHA(*src) && dst - buf < sizeof(buf) - 2) {
+    while (Py_ISALPHA(*src) && (dst - buf) < ((Py_ssize_t)sizeof(buf) - 2)) {
         *dst++ = Py_TOLOWER(*src++);
     }
 
