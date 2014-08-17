@@ -23,9 +23,7 @@ PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
 PyAPI_FUNC(void) PySys_AddWarnOption(char *);
 PyAPI_FUNC(int) PySys_HasWarnOptions(void);
 
-#ifndef Py_LIMITED_API
 PyAPI_DATA(size_t) _PySys_GetSizeOf(PyObject *);
-#endif
 
 #ifdef __cplusplus
 }
