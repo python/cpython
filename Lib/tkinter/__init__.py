@@ -191,6 +191,7 @@ class Variable:
     that constrain the type of the value returned from get()."""
     _default = ""
     _tk = None
+    _tclCommands = None
     def __init__(self, master=None, value=None, name=None):
         """Construct a variable
 
@@ -209,7 +210,7 @@ class Variable:
         global _varnum
         if not master:
             master = _default_root
-        self._master = master
+        self._root = master._root()
         self._tk = master.tk
         if name:
             self._name = name
@@ -222,9 +223,15 @@ class Variable:
             self.initialize(self._default)
     def __del__(self):
         """Unset the variable in Tcl."""
-        if (self._tk is not None and
-            self._tk.getboolean(self._tk.call("info", "exists", self._name))):
+        if self._tk is None:
+            return
+        if self._tk.getboolean(self._tk.call("info", "exists", self._name)):
             self._tk.globalunsetvar(self._name)
+        if self._tclCommands is not None:
+            for name in self._tclCommands:
+                #print '- Tkinter: deleted command', name
+                self._tk.deletecommand(name)
+            self._tclCommands = None
     def __str__(self):
         """Return the name of the variable in Tcl."""
         return self._name
@@ -244,7 +251,20 @@ class Variable:
 
         Return the name of the callback.
         """
-        cbname = self._master._register(callback)
+        f = CallWrapper(callback, None, self).__call__
+        cbname = repr(id(f))
+        try:
+            callback = callback.__func__
+        except AttributeError:
+            pass
+        try:
+            cbname = cbname + callback.__name__
+        except AttributeError:
+            pass
+        self._tk.createcommand(cbname, f)
+        if self._tclCommands is None:
+            self._tclCommands = []
+        self._tclCommands.append(cbname)
         self._tk.call("trace", "variable", self._name, mode, cbname)
         return cbname
     trace = trace_variable
@@ -255,7 +275,11 @@ class Variable:
         CBNAME is the name of the callback returned from trace_variable or trace.
         """
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
-        self._master.deletecommand(cbname)
+        self._tk.deletecommand(cbname)
+        try:
+            self._tclCommands.remove(cbname)
+        except ValueError:
+            pass
     def trace_vinfo(self):
         """Return all trace callback information."""
         return [self._tk.split(x) for x in self._tk.splitlist(
