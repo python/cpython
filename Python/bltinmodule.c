@@ -46,6 +46,7 @@ _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
 
+/* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -229,25 +230,62 @@ absolute or relative imports. 0 is absolute while a positive number\n\
 is the number of parent directories to search relative to the current module.");
 
 
+/*[clinic input]
+abs as builtin_abs
+
+    x: 'O'
+    /
+
+Return the absolute value of the argument.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_abs__doc__,
+"abs($module, x, /)\n"
+"--\n"
+"\n"
+"Return the absolute value of the argument.");
+
+#define BUILTIN_ABS_METHODDEF    \
+    {"abs", (PyCFunction)builtin_abs, METH_O, builtin_abs__doc__},
+
 static PyObject *
-builtin_abs(PyObject *self, PyObject *v)
+builtin_abs(PyModuleDef *module, PyObject *x)
+/*[clinic end generated code: output=f85095528ce7e2e5 input=aa29cc07869b4732]*/
 {
-    return PyNumber_Absolute(v);
+    return PyNumber_Absolute(x);
 }
 
-PyDoc_STRVAR(abs_doc,
-"abs(number) -> number\n\
-\n\
-Return the absolute value of the argument.");
+/*[clinic input]
+all as builtin_all
+
+    iterable: 'O'
+    /
+
+Return True if bool(x) is True for all values x in the iterable.
+
+If the iterable is empty, return True.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_all__doc__,
+"all($module, iterable, /)\n"
+"--\n"
+"\n"
+"Return True if bool(x) is True for all values x in the iterable.\n"
+"\n"
+"If the iterable is empty, return True.");
+
+#define BUILTIN_ALL_METHODDEF    \
+    {"all", (PyCFunction)builtin_all, METH_O, builtin_all__doc__},
 
 static PyObject *
-builtin_all(PyObject *self, PyObject *v)
+builtin_all(PyModuleDef *module, PyObject *iterable)
+/*[clinic end generated code: output=d001db739ba83b46 input=dd506dc9998d42bd]*/
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
     int cmp;
 
-    it = PyObject_GetIter(v);
+    it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
     iternext = *Py_TYPE(it)->tp_iternext;
@@ -277,20 +315,37 @@ builtin_all(PyObject *self, PyObject *v)
     Py_RETURN_TRUE;
 }
 
-PyDoc_STRVAR(all_doc,
-"all(iterable) -> bool\n\
-\n\
-Return True if bool(x) is True for all values x in the iterable.\n\
-If the iterable is empty, return True.");
+/*[clinic input]
+any as builtin_any
+
+    iterable: 'O'
+    /
+
+Return True if bool(x) is True for any x in the iterable.
+
+If the iterable is empty, return False.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_any__doc__,
+"any($module, iterable, /)\n"
+"--\n"
+"\n"
+"Return True if bool(x) is True for any x in the iterable.\n"
+"\n"
+"If the iterable is empty, return False.");
+
+#define BUILTIN_ANY_METHODDEF    \
+    {"any", (PyCFunction)builtin_any, METH_O, builtin_any__doc__},
 
 static PyObject *
-builtin_any(PyObject *self, PyObject *v)
+builtin_any(PyModuleDef *module, PyObject *iterable)
+/*[clinic end generated code: output=3a4b6dbe6a0d6f61 input=8fe8460f3fbbced8]*/
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
     int cmp;
 
-    it = PyObject_GetIter(v);
+    it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
     iternext = *Py_TYPE(it)->tp_iternext;
@@ -320,55 +375,104 @@ builtin_any(PyObject *self, PyObject *v)
     Py_RETURN_FALSE;
 }
 
-PyDoc_STRVAR(any_doc,
-"any(iterable) -> bool\n\
-\n\
-Return True if bool(x) is True for any x in the iterable.\n\
-If the iterable is empty, return False.");
+/*[clinic input]
+ascii as builtin_ascii
+
+    obj: 'O'
+    /
+
+Return an ASCII-only representation of an object.
+
+As repr(), return a string containing a printable representation of an
+object, but escape the non-ASCII characters in the string returned by
+repr() using \\x, \\u or \\U escapes. This generates a string similar
+to that returned by repr() in Python 2.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_ascii__doc__,
+"ascii($module, obj, /)\n"
+"--\n"
+"\n"
+"Return an ASCII-only representation of an object.\n"
+"\n"
+"As repr(), return a string containing a printable representation of an\n"
+"object, but escape the non-ASCII characters in the string returned by\n"
+"repr() using \\\\x, \\\\u or \\\\U escapes. This generates a string similar\n"
+"to that returned by repr() in Python 2.");
+
+#define BUILTIN_ASCII_METHODDEF    \
+    {"ascii", (PyCFunction)builtin_ascii, METH_O, builtin_ascii__doc__},
 
 static PyObject *
-builtin_ascii(PyObject *self, PyObject *v)
+builtin_ascii(PyModuleDef *module, PyObject *obj)
+/*[clinic end generated code: output=f0e6754154c2d30b input=0cbdc1420a306325]*/
 {
-    return PyObject_ASCII(v);
+    return PyObject_ASCII(obj);
 }
 
-PyDoc_STRVAR(ascii_doc,
-"ascii(object) -> string\n\
-\n\
-As repr(), return a string containing a printable representation of an\n\
-object, but escape the non-ASCII characters in the string returned by\n\
-repr() using \\x, \\u or \\U escapes.  This generates a string similar\n\
-to that returned by repr() in Python 2.");
 
+/*[clinic input]
+bin as builtin_bin
+
+    number: 'O'
+    /
+
+Return the binary representation of an integer.
+
+   >>> bin(2796202)
+   '0b1010101010101010101010'
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_bin__doc__,
+"bin($module, number, /)\n"
+"--\n"
+"\n"
+"Return the binary representation of an integer.\n"
+"\n"
+"   >>> bin(2796202)\n"
+"   \'0b1010101010101010101010\'");
+
+#define BUILTIN_BIN_METHODDEF    \
+    {"bin", (PyCFunction)builtin_bin, METH_O, builtin_bin__doc__},
 
 static PyObject *
-builtin_bin(PyObject *self, PyObject *v)
+builtin_bin(PyModuleDef *module, PyObject *number)
+/*[clinic end generated code: output=18fed0e943650da1 input=2a6362ae9a9c9203]*/
 {
-    return PyNumber_ToBase(v, 2);
+    return PyNumber_ToBase(number, 2);
 }
 
-PyDoc_STRVAR(bin_doc,
-"bin(number) -> string\n\
-\n\
-Return the binary representation of an integer.\n\
-\n\
-   >>> bin(2796202)\n\
-   '0b1010101010101010101010'\n\
-");
 
+/*[clinic input]
+callable as builtin_callable
+
+    obj: 'O'
+    /
+
+Return whether the object is callable (i.e., some kind of function).
+
+Note that classes are callable, as are instances of classes with a
+__call__() method.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_callable__doc__,
+"callable($module, obj, /)\n"
+"--\n"
+"\n"
+"Return whether the object is callable (i.e., some kind of function).\n"
+"\n"
+"Note that classes are callable, as are instances of classes with a\n"
+"__call__() method.");
+
+#define BUILTIN_CALLABLE_METHODDEF    \
+    {"callable", (PyCFunction)builtin_callable, METH_O, builtin_callable__doc__},
 
 static PyObject *
-builtin_callable(PyObject *self, PyObject *v)
+builtin_callable(PyModuleDef *module, PyObject *obj)
+/*[clinic end generated code: output=b3a92cbe635f32af input=bb3bb528fffdade4]*/
 {
-    return PyBool_FromLong((long)PyCallable_Check(v));
+    return PyBool_FromLong((long)PyCallable_Check(obj));
 }
-
-PyDoc_STRVAR(callable_doc,
-"callable(object) -> bool\n\
-\n\
-Return whether the object is callable (i.e., some kind of function).\n\
-Note that classes are callable, as are instances of classes with a\n\
-__call__() method.");
 
 
 typedef struct {
@@ -524,39 +628,99 @@ PyTypeObject PyFilter_Type = {
 };
 
 
+/*[clinic input]
+format as builtin_format
+
+    value: 'O'
+    format_spec: unicode(c_default="NULL") = ''
+    /
+
+Return value.__format__(format_spec)
+
+format_spec defaults to the empty string
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_format__doc__,
+"format($module, value, format_spec=\'\', /)\n"
+"--\n"
+"\n"
+"Return value.__format__(format_spec)\n"
+"\n"
+"format_spec defaults to the empty string");
+
+#define BUILTIN_FORMAT_METHODDEF    \
+    {"format", (PyCFunction)builtin_format, METH_VARARGS, builtin_format__doc__},
+
 static PyObject *
-builtin_format(PyObject *self, PyObject *args)
+builtin_format_impl(PyModuleDef *module, PyObject *value, PyObject *format_spec);
+
+static PyObject *
+builtin_format(PyModuleDef *module, PyObject *args)
 {
+    PyObject *return_value = NULL;
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|U:format", &value, &format_spec))
-        return NULL;
+    if (!PyArg_ParseTuple(args,
+        "O|U:format",
+        &value, &format_spec))
+        goto exit;
+    return_value = builtin_format_impl(module, value, format_spec);
 
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_format_impl(PyModuleDef *module, PyObject *value, PyObject *format_spec)
+/*[clinic end generated code: output=39723a58c72e8871 input=e23f2f11e0098c64]*/
+{
     return PyObject_Format(value, format_spec);
 }
 
-PyDoc_STRVAR(format_doc,
-"format(value[, format_spec]) -> string\n\
-\n\
-Returns value.__format__(format_spec)\n\
-format_spec defaults to \"\"");
+/*[clinic input]
+chr as builtin_chr
+
+    i: 'i'
+    /
+
+Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_chr__doc__,
+"chr($module, i, /)\n"
+"--\n"
+"\n"
+"Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
+
+#define BUILTIN_CHR_METHODDEF    \
+    {"chr", (PyCFunction)builtin_chr, METH_VARARGS, builtin_chr__doc__},
 
 static PyObject *
-builtin_chr(PyObject *self, PyObject *args)
+builtin_chr_impl(PyModuleDef *module, int i);
+
+static PyObject *
+builtin_chr(PyModuleDef *module, PyObject *args)
 {
-    int x;
+    PyObject *return_value = NULL;
+    int i;
 
-    if (!PyArg_ParseTuple(args, "i:chr", &x))
-        return NULL;
+    if (!PyArg_ParseTuple(args,
+        "i:chr",
+        &i))
+        goto exit;
+    return_value = builtin_chr_impl(module, i);
 
-    return PyUnicode_FromOrdinal(x);
+exit:
+    return return_value;
 }
 
-PyDoc_STRVAR(chr_doc,
-"chr(i) -> Unicode character\n\
-\n\
-Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
+static PyObject *
+builtin_chr_impl(PyModuleDef *module, int i)
+/*[clinic end generated code: output=4d6bbe948f56e2ae input=9b1ced29615adf66]*/
+{
+    return PyUnicode_FromOrdinal(i);
+}
 
 
 static char *
@@ -589,34 +753,90 @@ source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
     return str;
 }
 
+/*[clinic input]
+compile as builtin_compile
+
+    source: 'O'
+    filename: object(converter="PyUnicode_FSDecoder")
+    mode: 's'
+    flags: 'i' = 0
+    dont_inherit: 'i' = 0
+    optimize: 'i' = -1
+
+Compile source into a code object that can be executed by exec() or eval().
+
+The source code may represent a Python module, statement or expression.
+The filename will be used for run-time error messages.
+The mode must be 'exec' to compile a module, 'single' to compile a
+single (interactive) statement, or 'eval' to compile an expression.
+The flags argument, if present, controls which future statements influence
+the compilation of the code.
+The dont_inherit argument, if non-zero, stops the compilation inheriting
+the effects of any future statements in effect in the code calling
+compile; if absent or zero these statements do influence the compilation,
+in addition to any features explicitly specified.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_compile__doc__,
+"compile($module, /, source, filename, mode, flags=0, dont_inherit=0,\n"
+"        optimize=-1)\n"
+"--\n"
+"\n"
+"Compile source into a code object that can be executed by exec() or eval().\n"
+"\n"
+"The source code may represent a Python module, statement or expression.\n"
+"The filename will be used for run-time error messages.\n"
+"The mode must be \'exec\' to compile a module, \'single\' to compile a\n"
+"single (interactive) statement, or \'eval\' to compile an expression.\n"
+"The flags argument, if present, controls which future statements influence\n"
+"the compilation of the code.\n"
+"The dont_inherit argument, if non-zero, stops the compilation inheriting\n"
+"the effects of any future statements in effect in the code calling\n"
+"compile; if absent or zero these statements do influence the compilation,\n"
+"in addition to any features explicitly specified.");
+
+#define BUILTIN_COMPILE_METHODDEF    \
+    {"compile", (PyCFunction)builtin_compile, METH_VARARGS|METH_KEYWORDS, builtin_compile__doc__},
+
 static PyObject *
-builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
+builtin_compile_impl(PyModuleDef *module, PyObject *source, PyObject *filename, const char *mode, int flags, int dont_inherit, int optimize);
+
+static PyObject *
+builtin_compile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", NULL};
+    PyObject *source;
+    PyObject *filename;
+    const char *mode;
+    int flags = 0;
+    int dont_inherit = 0;
+    int optimize = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "OO&s|iii:compile", _keywords,
+        &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize))
+        goto exit;
+    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_compile_impl(PyModuleDef *module, PyObject *source, PyObject *filename, const char *mode, int flags, int dont_inherit, int optimize)
+/*[clinic end generated code: output=c72d197809d178fc input=c6212a9d21472f7e]*/
 {
     char *str;
-    PyObject *filename;
-    char *startstr;
-    int mode = -1;
-    int dont_inherit = 0;
-    int supplied_flags = 0;
-    int optimize = -1;
+    int compile_mode = -1;
     int is_ast;
     PyCompilerFlags cf;
-    PyObject *cmd;
-    static char *kwlist[] = {"source", "filename", "mode", "flags",
-                             "dont_inherit", "optimize", NULL};
     int start[] = {Py_file_input, Py_eval_input, Py_single_input};
     PyObject *result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO&s|iii:compile",  kwlist,
-                                     &cmd,
-                                     PyUnicode_FSDecoder, &filename,
-                                     &startstr, &supplied_flags,
-                                     &dont_inherit, &optimize))
-        return NULL;
+    cf.cf_flags = flags | PyCF_SOURCE_IS_UTF8;
 
-    cf.cf_flags = supplied_flags | PyCF_SOURCE_IS_UTF8;
-
-    if (supplied_flags &
+    if (flags &
         ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST))
     {
         PyErr_SetString(PyExc_ValueError,
@@ -635,25 +855,25 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
         PyEval_MergeCompilerFlags(&cf);
     }
 
-    if (strcmp(startstr, "exec") == 0)
-        mode = 0;
-    else if (strcmp(startstr, "eval") == 0)
-        mode = 1;
-    else if (strcmp(startstr, "single") == 0)
-        mode = 2;
+    if (strcmp(mode, "exec") == 0)
+        compile_mode = 0;
+    else if (strcmp(mode, "eval") == 0)
+        compile_mode = 1;
+    else if (strcmp(mode, "single") == 0)
+        compile_mode = 2;
     else {
         PyErr_SetString(PyExc_ValueError,
-                        "compile() arg 3 must be 'exec', 'eval' or 'single'");
+                        "compile() mode must be 'exec', 'eval' or 'single'");
         goto error;
     }
 
-    is_ast = PyAST_Check(cmd);
+    is_ast = PyAST_Check(source);
     if (is_ast == -1)
         goto error;
     if (is_ast) {
-        if (supplied_flags & PyCF_ONLY_AST) {
-            Py_INCREF(cmd);
-            result = cmd;
+        if (flags & PyCF_ONLY_AST) {
+            Py_INCREF(source);
+            result = source;
         }
         else {
             PyArena *arena;
@@ -662,7 +882,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
             arena = PyArena_New();
             if (arena == NULL)
                 goto error;
-            mod = PyAST_obj2mod(cmd, arena, mode);
+            mod = PyAST_obj2mod(source, arena, compile_mode);
             if (mod == NULL) {
                 PyArena_Free(arena);
                 goto error;
@@ -678,11 +898,11 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
         goto finally;
     }
 
-    str = source_as_string(cmd, "compile", "string, bytes or AST", &cf);
+    str = source_as_string(source, "compile", "string, bytes or AST", &cf);
     if (str == NULL)
         goto error;
 
-    result = Py_CompileStringObject(str, filename, start[mode], &cf, optimize);
+    result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
     goto finally;
 
 error:
@@ -692,21 +912,7 @@ finally:
     return result;
 }
 
-PyDoc_STRVAR(compile_doc,
-"compile(source, filename, mode[, flags[, dont_inherit]]) -> code object\n\
-\n\
-Compile the source (a Python module, statement or expression)\n\
-into a code object that can be executed by exec() or eval().\n\
-The filename will be used for run-time error messages.\n\
-The mode must be 'exec' to compile a module, 'single' to compile a\n\
-single (interactive) statement, or 'eval' to compile an expression.\n\
-The flags argument, if present, controls which future statements influence\n\
-the compilation of the code.\n\
-The dont_inherit argument, if non-zero, stops the compilation inheriting\n\
-the effects of any future statements in effect in the code calling\n\
-compile; if absent or zero these statements do influence the compilation,\n\
-in addition to any features explicitly specified.");
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
 builtin_dir(PyObject *self, PyObject *args)
 {
@@ -731,32 +937,114 @@ PyDoc_STRVAR(dir_doc,
 "  for any other object: its attributes, its class's attributes, and\n"
 "    recursively the attributes of its class's base classes.");
 
-static PyObject *
-builtin_divmod(PyObject *self, PyObject *args)
-{
-    PyObject *v, *w;
+/*[clinic input]
+divmod as builtin_divmod
 
-    if (!PyArg_UnpackTuple(args, "divmod", 2, 2, &v, &w))
-        return NULL;
-    return PyNumber_Divmod(v, w);
+    x: 'O'
+    y: 'O'
+    /
+
+Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_divmod__doc__,
+"divmod($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.");
+
+#define BUILTIN_DIVMOD_METHODDEF    \
+    {"divmod", (PyCFunction)builtin_divmod, METH_VARARGS, builtin_divmod__doc__},
+
+static PyObject *
+builtin_divmod_impl(PyModuleDef *module, PyObject *x, PyObject *y);
+
+static PyObject *
+builtin_divmod(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!PyArg_UnpackTuple(args, "divmod",
+        2, 2,
+        &x, &y))
+        goto exit;
+    return_value = builtin_divmod_impl(module, x, y);
+
+exit:
+    return return_value;
 }
 
-PyDoc_STRVAR(divmod_doc,
-"divmod(x, y) -> (div, mod)\n\
-\n\
-Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.");
+static PyObject *
+builtin_divmod_impl(PyModuleDef *module, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=77e8d408b1338886 input=c9c617b7bb74c615]*/
+{
+    return PyNumber_Divmod(x, y);
+}
 
+
+/*[clinic input]
+eval as builtin_eval
+
+    source: 'O'
+    globals: 'O' = None
+    locals: 'O' = None
+    /
+
+Evaluate the given source in the context of globals and locals.
+
+The source may be a string representing a Python expression
+or a code object as returned by compile().
+The globals must be a dictionary and locals can be any mapping,
+defaulting to the current globals and locals.
+If only globals is given, locals defaults to it.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_eval__doc__,
+"eval($module, source, globals=None, locals=None, /)\n"
+"--\n"
+"\n"
+"Evaluate the given source in the context of globals and locals.\n"
+"\n"
+"The source may be a string representing a Python expression\n"
+"or a code object as returned by compile().\n"
+"The globals must be a dictionary and locals can be any mapping,\n"
+"defaulting to the current globals and locals.\n"
+"If only globals is given, locals defaults to it.");
+
+#define BUILTIN_EVAL_METHODDEF    \
+    {"eval", (PyCFunction)builtin_eval, METH_VARARGS, builtin_eval__doc__},
 
 static PyObject *
-builtin_eval(PyObject *self, PyObject *args)
+builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals);
+
+static PyObject *
+builtin_eval(PyModuleDef *module, PyObject *args)
 {
-    PyObject *cmd, *result, *tmp = NULL;
-    PyObject *globals = Py_None, *locals = Py_None;
+    PyObject *return_value = NULL;
+    PyObject *source;
+    PyObject *globals = Py_None;
+    PyObject *locals = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "eval",
+        1, 3,
+        &source, &globals, &locals))
+        goto exit;
+    return_value = builtin_eval_impl(module, source, globals, locals);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals)
+/*[clinic end generated code: output=644fd59012538ce6 input=31e42c1d2125b50b]*/
+{
+    PyObject *result, *tmp = NULL;
     char *str;
     PyCompilerFlags cf;
 
-    if (!PyArg_UnpackTuple(args, "eval", 1, 3, &cmd, &globals, &locals))
-        return NULL;
     if (locals != Py_None && !PyMapping_Check(locals)) {
         PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
         return NULL;
@@ -791,17 +1079,17 @@ builtin_eval(PyObject *self, PyObject *args)
             return NULL;
     }
 
-    if (PyCode_Check(cmd)) {
-        if (PyCode_GetNumFree((PyCodeObject *)cmd) > 0) {
+    if (PyCode_Check(source)) {
+        if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
             PyErr_SetString(PyExc_TypeError,
         "code object passed to eval() may not contain free variables");
             return NULL;
         }
-        return PyEval_EvalCode(cmd, globals, locals);
+        return PyEval_EvalCode(source, globals, locals);
     }
 
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-    str = source_as_string(cmd, "eval", "string, bytes or code", &cf);
+    str = source_as_string(source, "eval", "string, bytes or code", &cf);
     if (str == NULL)
         return NULL;
 
@@ -814,24 +1102,64 @@ builtin_eval(PyObject *self, PyObject *args)
     return result;
 }
 
-PyDoc_STRVAR(eval_doc,
-"eval(source[, globals[, locals]]) -> value\n\
-\n\
-Evaluate the source in the context of globals and locals.\n\
-The source may be a string representing a Python expression\n\
-or a code object as returned by compile().\n\
-The globals must be a dictionary and locals can be any mapping,\n\
-defaulting to the current globals and locals.\n\
-If only globals is given, locals defaults to it.\n");
+/*[clinic input]
+exec as builtin_exec
+
+    source: 'O'
+    globals: 'O' = None
+    locals: 'O' = None
+    /
+
+Execute the given source in the context of globals and locals.
+
+The source may be a string representing one or more Python statements
+or a code object as returned by compile().
+The globals must be a dictionary and locals can be any mapping,
+defaulting to the current globals and locals.
+If only globals is given, locals defaults to it.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_exec__doc__,
+"exec($module, source, globals=None, locals=None, /)\n"
+"--\n"
+"\n"
+"Execute the given source in the context of globals and locals.\n"
+"\n"
+"The source may be a string representing one or more Python statements\n"
+"or a code object as returned by compile().\n"
+"The globals must be a dictionary and locals can be any mapping,\n"
+"defaulting to the current globals and locals.\n"
+"If only globals is given, locals defaults to it.");
+
+#define BUILTIN_EXEC_METHODDEF    \
+    {"exec", (PyCFunction)builtin_exec, METH_VARARGS, builtin_exec__doc__},
 
 static PyObject *
-builtin_exec(PyObject *self, PyObject *args)
+builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals);
+
+static PyObject *
+builtin_exec(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *source;
+    PyObject *globals = Py_None;
+    PyObject *locals = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "exec",
+        1, 3,
+        &source, &globals, &locals))
+        goto exit;
+    return_value = builtin_exec_impl(module, source, globals, locals);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals)
+/*[clinic end generated code: output=0281b48bfa8e3c87 input=536e057b5e00d89e]*/
 {
     PyObject *v;
-    PyObject *prog, *globals = Py_None, *locals = Py_None;
-
-    if (!PyArg_UnpackTuple(args, "exec", 1, 3, &prog, &globals, &locals))
-        return NULL;
 
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
@@ -850,13 +1178,13 @@ builtin_exec(PyObject *self, PyObject *args)
         locals = globals;
 
     if (!PyDict_Check(globals)) {
-        PyErr_Format(PyExc_TypeError, "exec() arg 2 must be a dict, not %.100s",
+        PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
                      globals->ob_type->tp_name);
         return NULL;
     }
     if (!PyMapping_Check(locals)) {
         PyErr_Format(PyExc_TypeError,
-            "arg 3 must be a mapping or None, not %.100s",
+            "locals must be a mapping or None, not %.100s",
             locals->ob_type->tp_name);
         return NULL;
     }
@@ -866,21 +1194,21 @@ builtin_exec(PyObject *self, PyObject *args)
             return NULL;
     }
 
-    if (PyCode_Check(prog)) {
-        if (PyCode_GetNumFree((PyCodeObject *)prog) > 0) {
+    if (PyCode_Check(source)) {
+        if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
             PyErr_SetString(PyExc_TypeError,
                 "code object passed to exec() may not "
                 "contain free variables");
             return NULL;
         }
-        v = PyEval_EvalCode(prog, globals, locals);
+        v = PyEval_EvalCode(source, globals, locals);
     }
     else {
         char *str;
         PyCompilerFlags cf;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-        str = source_as_string(prog, "exec",
-                                     "string, bytes or code", &cf);
+        str = source_as_string(source, "exec",
+                                       "string, bytes or code", &cf);
         if (str == NULL)
             return NULL;
         if (PyEval_MergeCompilerFlags(&cf))
@@ -895,15 +1223,8 @@ builtin_exec(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(exec_doc,
-"exec(object[, globals[, locals]])\n\
-\n\
-Read and execute code from an object, which can be a string or a code\n\
-object.\n\
-The globals and locals are dictionaries, defaulting to the current\n\
-globals and locals.  If only globals is given, locals defaults to it.");
 
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
 builtin_getattr(PyObject *self, PyObject *args)
 {
@@ -937,8 +1258,39 @@ When a default argument is given, it is returned when the attribute doesn't\n\
 exist; without it, an exception is raised in that case.");
 
 
+/*[clinic input]
+globals as builtin_globals
+
+Return the dictionary containing the current scope's global variables.
+
+NOTE: Updates to this dictionary *will* affect name lookups in the current
+global scope and vice-versa.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_globals__doc__,
+"globals($module, /)\n"
+"--\n"
+"\n"
+"Return the dictionary containing the current scope\'s global variables.\n"
+"\n"
+"NOTE: Updates to this dictionary *will* affect name lookups in the current\n"
+"global scope and vice-versa.");
+
+#define BUILTIN_GLOBALS_METHODDEF    \
+    {"globals", (PyCFunction)builtin_globals, METH_NOARGS, builtin_globals__doc__},
+
 static PyObject *
-builtin_globals(PyObject *self)
+builtin_globals_impl(PyModuleDef *module);
+
+static PyObject *
+builtin_globals(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+{
+    return builtin_globals_impl(module);
+}
+
+static PyObject *
+builtin_globals_impl(PyModuleDef *module)
+/*[clinic end generated code: output=048640f58b1f20ad input=9327576f92bb48ba]*/
 {
     PyObject *d;
 
@@ -947,26 +1299,62 @@ builtin_globals(PyObject *self)
     return d;
 }
 
-PyDoc_STRVAR(globals_doc,
-"globals() -> dictionary\n\
-\n\
-Return the dictionary containing the current scope's global variables.");
 
+/*[clinic input]
+hasattr as builtin_hasattr
+
+    obj: 'O'
+    name: 'O'
+    /
+
+Return whether the object has an attribute with the given name.
+
+This is done by calling getattr(obj, name) and catching AttributeError.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_hasattr__doc__,
+"hasattr($module, obj, name, /)\n"
+"--\n"
+"\n"
+"Return whether the object has an attribute with the given name.\n"
+"\n"
+"This is done by calling getattr(obj, name) and catching AttributeError.");
+
+#define BUILTIN_HASATTR_METHODDEF    \
+    {"hasattr", (PyCFunction)builtin_hasattr, METH_VARARGS, builtin_hasattr__doc__},
 
 static PyObject *
-builtin_hasattr(PyObject *self, PyObject *args)
+builtin_hasattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name);
+
+static PyObject *
+builtin_hasattr(PyModuleDef *module, PyObject *args)
 {
-    PyObject *v;
+    PyObject *return_value = NULL;
+    PyObject *obj;
     PyObject *name;
 
-    if (!PyArg_UnpackTuple(args, "hasattr", 2, 2, &v, &name))
-        return NULL;
+    if (!PyArg_UnpackTuple(args, "hasattr",
+        2, 2,
+        &obj, &name))
+        goto exit;
+    return_value = builtin_hasattr_impl(module, obj, name);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_hasattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name)
+/*[clinic end generated code: output=e0bd996ef73d1217 input=b50bad5f739ea10d]*/
+{
+    PyObject *v;
+
     if (!PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
                         "hasattr(): attribute name must be string");
         return NULL;
     }
-    v = PyObject_GetAttr(v, name);
+    v = PyObject_GetAttr(obj, name);
     if (v == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
             PyErr_Clear();
@@ -978,24 +1366,42 @@ builtin_hasattr(PyObject *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 
-PyDoc_STRVAR(hasattr_doc,
-"hasattr(object, name) -> bool\n\
-\n\
-Return whether the object has an attribute with the given name.\n\
-(This is done by calling getattr(object, name) and catching AttributeError.)");
 
+/* AC: gdb's integration with CPython relies on builtin_id having
+ * the *exact* parameter names of "self" and "v", so we ensure we
+ * preserve those name rather than using the AC defaults.
+ */
+/*[clinic input]
+id as builtin_id
+
+    self: self(type="PyModuleDef *")
+    obj as v: 'O'
+    /
+
+Return the identity of an object.
+
+This is guaranteed to be unique among simultaneously existing objects.
+(CPython uses the object's memory address.)
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_id__doc__,
+"id($module, obj, /)\n"
+"--\n"
+"\n"
+"Return the identity of an object.\n"
+"\n"
+"This is guaranteed to be unique among simultaneously existing objects.\n"
+"(CPython uses the object\'s memory address.)");
+
+#define BUILTIN_ID_METHODDEF    \
+    {"id", (PyCFunction)builtin_id, METH_O, builtin_id__doc__},
 
 static PyObject *
-builtin_id(PyObject *self, PyObject *v)
+builtin_id(PyModuleDef *self, PyObject *v)
+/*[clinic end generated code: output=f54da09c91992e63 input=a1f988d98357341d]*/
 {
     return PyLong_FromVoidPtr(v);
 }
-
-PyDoc_STRVAR(id_doc,
-"id(object) -> integer\n\
-\n\
-Return the identity of an object.  This is guaranteed to be unique among\n\
-simultaneously existing objects.  (Hint: it's the object's memory address.)");
 
 
 /* map object ************************************************************/
@@ -1169,6 +1575,8 @@ PyTypeObject PyMap_Type = {
     PyObject_GC_Del,                    /* tp_free */
 };
 
+
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
 builtin_next(PyObject *self, PyObject *args)
 {
@@ -1210,83 +1618,186 @@ Return the next item from the iterator. If default is given and the iterator\n\
 is exhausted, it is returned instead of raising StopIteration.");
 
 
+/*[clinic input]
+setattr as builtin_setattr
+
+    obj: 'O'
+    name: 'O'
+    value: 'O'
+    /
+
+Sets the named attribute on the given object to the specified value.
+
+setattr(x, 'y', v) is equivalent to ``x.y = v''
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_setattr__doc__,
+"setattr($module, obj, name, value, /)\n"
+"--\n"
+"\n"
+"Sets the named attribute on the given object to the specified value.\n"
+"\n"
+"setattr(x, \'y\', v) is equivalent to ``x.y = v\'\'");
+
+#define BUILTIN_SETATTR_METHODDEF    \
+    {"setattr", (PyCFunction)builtin_setattr, METH_VARARGS, builtin_setattr__doc__},
+
 static PyObject *
-builtin_setattr(PyObject *self, PyObject *args)
+builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name, PyObject *value);
+
+static PyObject *
+builtin_setattr(PyModuleDef *module, PyObject *args)
 {
-    PyObject *v;
+    PyObject *return_value = NULL;
+    PyObject *obj;
     PyObject *name;
     PyObject *value;
 
-    if (!PyArg_UnpackTuple(args, "setattr", 3, 3, &v, &name, &value))
-        return NULL;
-    if (PyObject_SetAttr(v, name, value) != 0)
+    if (!PyArg_UnpackTuple(args, "setattr",
+        3, 3,
+        &obj, &name, &value))
+        goto exit;
+    return_value = builtin_setattr_impl(module, obj, name, value);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name, PyObject *value)
+/*[clinic end generated code: output=4336dcbbf7691d2d input=fbe7e53403116b93]*/
+{
+    if (PyObject_SetAttr(obj, name, value) != 0)
         return NULL;
     Py_INCREF(Py_None);
     return Py_None;
 }
 
-PyDoc_STRVAR(setattr_doc,
-"setattr(object, name, value)\n\
-\n\
-Set a named attribute on an object; setattr(x, 'y', v) is equivalent to\n\
-``x.y = v''.");
 
+/*[clinic input]
+delattr as builtin_delattr
+
+    obj: 'O'
+    name: 'O'
+    /
+
+Deletes the named attribute from the given object.
+
+delattr(x, 'y') is equivalent to ``del x.y''
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_delattr__doc__,
+"delattr($module, obj, name, /)\n"
+"--\n"
+"\n"
+"Deletes the named attribute from the given object.\n"
+"\n"
+"delattr(x, \'y\') is equivalent to ``del x.y\'\'");
+
+#define BUILTIN_DELATTR_METHODDEF    \
+    {"delattr", (PyCFunction)builtin_delattr, METH_VARARGS, builtin_delattr__doc__},
 
 static PyObject *
-builtin_delattr(PyObject *self, PyObject *args)
+builtin_delattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name);
+
+static PyObject *
+builtin_delattr(PyModuleDef *module, PyObject *args)
 {
-    PyObject *v;
+    PyObject *return_value = NULL;
+    PyObject *obj;
     PyObject *name;
 
-    if (!PyArg_UnpackTuple(args, "delattr", 2, 2, &v, &name))
-        return NULL;
-    if (PyObject_SetAttr(v, name, (PyObject *)NULL) != 0)
+    if (!PyArg_UnpackTuple(args, "delattr",
+        2, 2,
+        &obj, &name))
+        goto exit;
+    return_value = builtin_delattr_impl(module, obj, name);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_delattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name)
+/*[clinic end generated code: output=319c2d884aa769cf input=647af2ce9183a823]*/
+{
+    if (PyObject_SetAttr(obj, name, (PyObject *)NULL) != 0)
         return NULL;
     Py_INCREF(Py_None);
     return Py_None;
 }
 
-PyDoc_STRVAR(delattr_doc,
-"delattr(object, name)\n\
-\n\
-Delete a named attribute on an object; delattr(x, 'y') is equivalent to\n\
-``del x.y''.");
 
+/*[clinic input]
+hash as builtin_hash
+
+    obj: 'O'
+    /
+
+Return the hash value for the given object.
+
+Two objects that compare equal must also have the same hash value, but the
+reverse is not necessarily true.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_hash__doc__,
+"hash($module, obj, /)\n"
+"--\n"
+"\n"
+"Return the hash value for the given object.\n"
+"\n"
+"Two objects that compare equal must also have the same hash value, but the\n"
+"reverse is not necessarily true.");
+
+#define BUILTIN_HASH_METHODDEF    \
+    {"hash", (PyCFunction)builtin_hash, METH_O, builtin_hash__doc__},
 
 static PyObject *
-builtin_hash(PyObject *self, PyObject *v)
+builtin_hash(PyModuleDef *module, PyObject *obj)
+/*[clinic end generated code: output=1ec467611c13468b input=ccc4d2b9a351df4e]*/
 {
     Py_hash_t x;
 
-    x = PyObject_Hash(v);
+    x = PyObject_Hash(obj);
     if (x == -1)
         return NULL;
     return PyLong_FromSsize_t(x);
 }
 
-PyDoc_STRVAR(hash_doc,
-"hash(object) -> integer\n\
-\n\
-Return a hash value for the object.  Two objects with the same value have\n\
-the same hash value.  The reverse is not necessarily true, but likely.");
 
+/*[clinic input]
+hex as builtin_hex
+
+    number: 'O'
+    /
+
+Return the hexadecimal representation of an integer.
+
+   >>> hex(12648430)
+   '0xc0ffee'
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_hex__doc__,
+"hex($module, number, /)\n"
+"--\n"
+"\n"
+"Return the hexadecimal representation of an integer.\n"
+"\n"
+"   >>> hex(12648430)\n"
+"   \'0xc0ffee\'");
+
+#define BUILTIN_HEX_METHODDEF    \
+    {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
 static PyObject *
-builtin_hex(PyObject *self, PyObject *v)
+builtin_hex(PyModuleDef *module, PyObject *number)
+/*[clinic end generated code: output=f18e9439aeaa2c6c input=e816200b0a728ebe]*/
 {
-    return PyNumber_ToBase(v, 16);
+    return PyNumber_ToBase(number, 16);
 }
 
-PyDoc_STRVAR(hex_doc,
-"hex(number) -> string\n\
-\n\
-Return the hexadecimal representation of an integer.\n\
-\n\
-   >>> hex(3735928559)\n\
-   '0xdeadbeef'\n\
-");
 
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
 builtin_iter(PyObject *self, PyObject *args)
 {
@@ -1313,25 +1824,72 @@ supply its own iterator, or be a sequence.\n\
 In the second form, the callable is called until it returns the sentinel.");
 
 
+/*[clinic input]
+len as builtin_len
+
+    obj: 'O'
+    /
+
+Return the number of items in a container.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_len__doc__,
+"len($module, obj, /)\n"
+"--\n"
+"\n"
+"Return the number of items in a container.");
+
+#define BUILTIN_LEN_METHODDEF    \
+    {"len", (PyCFunction)builtin_len, METH_O, builtin_len__doc__},
+
 static PyObject *
-builtin_len(PyObject *self, PyObject *v)
+builtin_len(PyModuleDef *module, PyObject *obj)
+/*[clinic end generated code: output=5a38b0db40761705 input=2e5ff15db9a2de22]*/
 {
     Py_ssize_t res;
 
-    res = PyObject_Size(v);
+    res = PyObject_Size(obj);
     if (res < 0 && PyErr_Occurred())
         return NULL;
     return PyLong_FromSsize_t(res);
 }
 
-PyDoc_STRVAR(len_doc,
-"len(object)\n\
-\n\
-Return the number of items of a sequence or collection.");
 
+/*[clinic input]
+locals as builtin_locals
+
+Return a dictionary containing the current scope's local variables.
+
+NOTE: Whether or not updates to this dictionary will affect name lookups in
+the local scope and vice-versa is *implementation dependent* and not
+covered by any backwards compatibility guarantees.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_locals__doc__,
+"locals($module, /)\n"
+"--\n"
+"\n"
+"Return a dictionary containing the current scope\'s local variables.\n"
+"\n"
+"NOTE: Whether or not updates to this dictionary will affect name lookups in\n"
+"the local scope and vice-versa is *implementation dependent* and not\n"
+"covered by any backwards compatibility guarantees.");
+
+#define BUILTIN_LOCALS_METHODDEF    \
+    {"locals", (PyCFunction)builtin_locals, METH_NOARGS, builtin_locals__doc__},
 
 static PyObject *
-builtin_locals(PyObject *self)
+builtin_locals_impl(PyModuleDef *module);
+
+static PyObject *
+builtin_locals(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+{
+    return builtin_locals_impl(module);
+}
+
+static PyObject *
+builtin_locals_impl(PyModuleDef *module)
+/*[clinic end generated code: output=8ac52522924346e2 input=7874018d478d5c4b]*/
 {
     PyObject *d;
 
@@ -1339,11 +1897,6 @@ builtin_locals(PyObject *self)
     Py_XINCREF(d);
     return d;
 }
-
-PyDoc_STRVAR(locals_doc,
-"locals() -> dictionary\n\
-\n\
-Update and return a dictionary containing the current scope's local variables.");
 
 
 static PyObject *
@@ -1447,6 +2000,7 @@ Fail_it:
     return NULL;
 }
 
+/* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 builtin_min(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1463,6 +2017,7 @@ the provided iterable is empty.\n\
 With two or more arguments, return the smallest argument.");
 
 
+/* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 builtin_max(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1479,56 +2034,91 @@ the provided iterable is empty.\n\
 With two or more arguments, return the largest argument.");
 
 
+/*[clinic input]
+oct as builtin_oct
+
+    number: 'O'
+    /
+
+Return the octal representation of an integer.
+
+   >>> oct(342391)
+   '0o1234567'
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_oct__doc__,
+"oct($module, number, /)\n"
+"--\n"
+"\n"
+"Return the octal representation of an integer.\n"
+"\n"
+"   >>> oct(342391)\n"
+"   \'0o1234567\'");
+
+#define BUILTIN_OCT_METHODDEF    \
+    {"oct", (PyCFunction)builtin_oct, METH_O, builtin_oct__doc__},
+
 static PyObject *
-builtin_oct(PyObject *self, PyObject *v)
+builtin_oct(PyModuleDef *module, PyObject *number)
+/*[clinic end generated code: output=b99234d1d70a6673 input=a3a372b521b3dd13]*/
 {
-    return PyNumber_ToBase(v, 8);
+    return PyNumber_ToBase(number, 8);
 }
 
-PyDoc_STRVAR(oct_doc,
-"oct(number) -> string\n\
-\n\
-Return the octal representation of an integer.\n\
-\n\
-   >>> oct(342391)\n\
-   '0o1234567'\n\
-");
 
+/*[clinic input]
+ord as builtin_ord
+
+    c: 'O'
+    /
+
+Return the Unicode code point for a one-character string.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_ord__doc__,
+"ord($module, c, /)\n"
+"--\n"
+"\n"
+"Return the Unicode code point for a one-character string.");
+
+#define BUILTIN_ORD_METHODDEF    \
+    {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
 
 static PyObject *
-builtin_ord(PyObject *self, PyObject* obj)
+builtin_ord(PyModuleDef *module, PyObject *c)
+/*[clinic end generated code: output=a8466d23bd76db3f input=762355f87451efa3]*/
 {
     long ord;
     Py_ssize_t size;
 
-    if (PyBytes_Check(obj)) {
-        size = PyBytes_GET_SIZE(obj);
+    if (PyBytes_Check(c)) {
+        size = PyBytes_GET_SIZE(c);
         if (size == 1) {
-            ord = (long)((unsigned char)*PyBytes_AS_STRING(obj));
+            ord = (long)((unsigned char)*PyBytes_AS_STRING(c));
             return PyLong_FromLong(ord);
         }
     }
-    else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_READY(obj) == -1)
+    else if (PyUnicode_Check(c)) {
+        if (PyUnicode_READY(c) == -1)
             return NULL;
-        size = PyUnicode_GET_LENGTH(obj);
+        size = PyUnicode_GET_LENGTH(c);
         if (size == 1) {
-            ord = (long)PyUnicode_READ_CHAR(obj, 0);
+            ord = (long)PyUnicode_READ_CHAR(c, 0);
             return PyLong_FromLong(ord);
         }
     }
-    else if (PyByteArray_Check(obj)) {
+    else if (PyByteArray_Check(c)) {
         /* XXX Hopefully this is temporary */
-        size = PyByteArray_GET_SIZE(obj);
+        size = PyByteArray_GET_SIZE(c);
         if (size == 1) {
-            ord = (long)((unsigned char)*PyByteArray_AS_STRING(obj));
+            ord = (long)((unsigned char)*PyByteArray_AS_STRING(c));
             return PyLong_FromLong(ord);
         }
     }
     else {
         PyErr_Format(PyExc_TypeError,
                      "ord() expected string of length 1, but " \
-                     "%.200s found", obj->ob_type->tp_name);
+                     "%.200s found", c->ob_type->tp_name);
         return NULL;
     }
 
@@ -1539,31 +2129,63 @@ builtin_ord(PyObject *self, PyObject* obj)
     return NULL;
 }
 
-PyDoc_VAR(ord_doc) = PyDoc_STR(
-"ord(c) -> integer\n\
-\n\
-Return the integer ordinal of a one-character string."
-);
 
+/*[clinic input]
+pow as builtin_pow
+
+    x: 'O'
+    y: 'O'
+    z: 'O' = None
+    /
+
+Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+
+Some types, such as ints, are able to use a more efficient algorithm when
+invoked using the three argument form.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_pow__doc__,
+"pow($module, x, y, z=None, /)\n"
+"--\n"
+"\n"
+"Equivalent to x**y (with two arguments) or x**y % z (with three arguments)\n"
+"\n"
+"Some types, such as ints, are able to use a more efficient algorithm when\n"
+"invoked using the three argument form.");
+
+#define BUILTIN_POW_METHODDEF    \
+    {"pow", (PyCFunction)builtin_pow, METH_VARARGS, builtin_pow__doc__},
 
 static PyObject *
-builtin_pow(PyObject *self, PyObject *args)
-{
-    PyObject *v, *w, *z = Py_None;
+builtin_pow_impl(PyModuleDef *module, PyObject *x, PyObject *y, PyObject *z);
 
-    if (!PyArg_UnpackTuple(args, "pow", 2, 3, &v, &w, &z))
-        return NULL;
-    return PyNumber_Power(v, w, z);
+static PyObject *
+builtin_pow(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+    PyObject *z = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "pow",
+        2, 3,
+        &x, &y, &z))
+        goto exit;
+    return_value = builtin_pow_impl(module, x, y, z);
+
+exit:
+    return return_value;
 }
 
-PyDoc_STRVAR(pow_doc,
-"pow(x, y[, z]) -> number\n\
-\n\
-With two arguments, equivalent to x**y.  With three arguments,\n\
-equivalent to (x**y) % z, but may be more efficient (e.g. for ints).");
+static PyObject *
+builtin_pow_impl(PyModuleDef *module, PyObject *x, PyObject *y, PyObject *z)
+/*[clinic end generated code: output=d0cdf314311dedba input=561a942d5f5c1899]*/
+{
+    return PyNumber_Power(x, y, z);
+}
 
 
-
+/* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1659,20 +2281,65 @@ end:   string appended after the last value, default a newline.\n\
 flush: whether to forcibly flush the stream.");
 
 
+/*[clinic input]
+input as builtin_input
+
+    prompt: object(c_default="NULL") = None
+    /
+
+Read a string from standard input.  The trailing newline is stripped.
+
+The prompt string, if given, is printed to standard output without a
+trailing newline before reading input.
+
+If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise EOFError.
+On *nix systems, readline is used if available.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_input__doc__,
+"input($module, prompt=None, /)\n"
+"--\n"
+"\n"
+"Read a string from standard input.  The trailing newline is stripped.\n"
+"\n"
+"The prompt string, if given, is printed to standard output without a\n"
+"trailing newline before reading input.\n"
+"\n"
+"If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise EOFError.\n"
+"On *nix systems, readline is used if available.");
+
+#define BUILTIN_INPUT_METHODDEF    \
+    {"input", (PyCFunction)builtin_input, METH_VARARGS, builtin_input__doc__},
+
 static PyObject *
-builtin_input(PyObject *self, PyObject *args)
+builtin_input_impl(PyModuleDef *module, PyObject *prompt);
+
+static PyObject *
+builtin_input(PyModuleDef *module, PyObject *args)
 {
-    PyObject *promptarg = NULL;
+    PyObject *return_value = NULL;
+    PyObject *prompt = NULL;
+
+    if (!PyArg_UnpackTuple(args, "input",
+        0, 1,
+        &prompt))
+        goto exit;
+    return_value = builtin_input_impl(module, prompt);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_input_impl(PyModuleDef *module, PyObject *prompt)
+/*[clinic end generated code: output=69323bf5695f7c9c input=5e8bb70c2908fe3c]*/
+{
     PyObject *fin = _PySys_GetObjectId(&PyId_stdin);
     PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
     PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
     PyObject *tmp;
     long fd;
     int tty;
-
-    /* Parse arguments */
-    if (!PyArg_UnpackTuple(args, "input", 0, 1, &promptarg))
-        return NULL;
 
     /* Check that stdin/out/err are intact */
     if (fin == NULL || fin == Py_None) {
@@ -1729,7 +2396,7 @@ builtin_input(PyObject *self, PyObject *args)
     /* If we're interactive, use (GNU) readline */
     if (tty) {
         PyObject *po = NULL;
-        char *prompt;
+        char *promptstr;
         char *s = NULL;
         PyObject *stdin_encoding = NULL, *stdin_errors = NULL;
         PyObject *stdout_encoding = NULL, *stdout_errors = NULL;
@@ -1752,7 +2419,7 @@ builtin_input(PyObject *self, PyObject *args)
             PyErr_Clear();
         else
             Py_DECREF(tmp);
-        if (promptarg != NULL) {
+        if (prompt != NULL) {
             /* We have a prompt, encode it as stdout would */
             char *stdout_encoding_str, *stdout_errors_str;
             PyObject *stringpo;
@@ -1764,7 +2431,7 @@ builtin_input(PyObject *self, PyObject *args)
             stdout_errors_str = _PyUnicode_AsString(stdout_errors);
             if (!stdout_encoding_str || !stdout_errors_str)
                 goto _readline_errors;
-            stringpo = PyObject_Str(promptarg);
+            stringpo = PyObject_Str(prompt);
             if (stringpo == NULL)
                 goto _readline_errors;
             po = PyUnicode_AsEncodedString(stringpo,
@@ -1774,15 +2441,15 @@ builtin_input(PyObject *self, PyObject *args)
             Py_CLEAR(stringpo);
             if (po == NULL)
                 goto _readline_errors;
-            prompt = PyBytes_AsString(po);
-            if (prompt == NULL)
+            promptstr = PyBytes_AsString(po);
+            if (promptstr == NULL)
                 goto _readline_errors;
         }
         else {
             po = NULL;
-            prompt = "";
+            promptstr = "";
         }
-        s = PyOS_Readline(stdin, stdout, prompt);
+        s = PyOS_Readline(stdin, stdout, promptstr);
         if (s == NULL) {
             PyErr_CheckSignals();
             if (!PyErr_Occurred())
@@ -1824,8 +2491,8 @@ builtin_input(PyObject *self, PyObject *args)
     }
 
     /* Fallback if we're not interactive */
-    if (promptarg != NULL) {
-        if (PyFile_WriteObject(promptarg, fout, Py_PRINT_RAW) != 0)
+    if (prompt != NULL) {
+        if (PyFile_WriteObject(prompt, fout, Py_PRINT_RAW) != 0)
             return NULL;
     }
     tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
@@ -1836,28 +2503,40 @@ builtin_input(PyObject *self, PyObject *args)
     return PyFile_GetLine(fin, -1);
 }
 
-PyDoc_STRVAR(input_doc,
-"input([prompt]) -> string\n\
-\n\
-Read a string from standard input.  The trailing newline is stripped.\n\
-If the user hits EOF (Unix: Ctl-D, Windows: Ctl-Z+Return), raise EOFError.\n\
-On Unix, GNU readline is used if enabled.  The prompt string, if given,\n\
-is printed without a trailing newline before reading.");
 
+/*[clinic input]
+repr as builtin_repr
+
+    obj: 'O'
+    /
+
+Return the canonical string representation of the object.
+
+For many object types, including most builtins, eval(repr(obj)) == obj.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_repr__doc__,
+"repr($module, obj, /)\n"
+"--\n"
+"\n"
+"Return the canonical string representation of the object.\n"
+"\n"
+"For many object types, including most builtins, eval(repr(obj)) == obj.");
+
+#define BUILTIN_REPR_METHODDEF    \
+    {"repr", (PyCFunction)builtin_repr, METH_O, builtin_repr__doc__},
 
 static PyObject *
-builtin_repr(PyObject *self, PyObject *v)
+builtin_repr(PyModuleDef *module, PyObject *obj)
+/*[clinic end generated code: output=988980120f39e2fa input=a2bca0f38a5a924d]*/
 {
-    return PyObject_Repr(v);
+    return PyObject_Repr(obj);
 }
 
-PyDoc_STRVAR(repr_doc,
-"repr(object) -> string\n\
-\n\
-Return the canonical string representation of the object.\n\
-For most object types, eval(repr(object)) == object.");
 
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect
+ *     or a semantic change to accept None for "ndigits"
+ */
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1898,6 +2577,35 @@ Round a number to a given precision in decimal digits (default 0 digits).\n\
 This returns an int when called with one argument, otherwise the\n\
 same type as the number. ndigits may be negative.");
 
+
+/*AC: we need to keep the kwds dict intact to easily call into the
+ * list.sort method, which isn't currently supported in AC. So we just use
+ * the initially generated signature with a custom implementation.
+ */
+/* [disabled clinic input]
+sorted as builtin_sorted
+
+    iterable as seq: 'O'
+    key as keyfunc: 'O' = None
+    reverse: 'O' = False
+
+Return a new list containing all items from the iterable in ascending order.
+
+A custom key function can be supplied to customise the sort order, and the
+reverse flag can be set to request the result in descending order.
+[end disabled clinic input]*/
+
+PyDoc_STRVAR(builtin_sorted__doc__,
+"sorted($module, iterable, key=None, reverse=False)\n"
+"--\n"
+"\n"
+"Return a new list containing all items from the iterable in ascending order.\n"
+"\n"
+"A custom key function can be supplied to customise the sort order, and the\n"
+"reverse flag can be set to request the result in descending order.");
+
+#define BUILTIN_SORTED_METHODDEF    \
+    {"sorted", (PyCFunction)builtin_sorted, METH_VARARGS|METH_KEYWORDS, builtin_sorted__doc__},
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1940,9 +2648,8 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
     return newlist;
 }
 
-PyDoc_STRVAR(sorted_doc,
-"sorted(iterable, key=None, reverse=False) --> new sorted list");
 
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
 builtin_vars(PyObject *self, PyObject *args)
 {
@@ -1974,17 +2681,62 @@ PyDoc_STRVAR(vars_doc,
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
-static PyObject*
-builtin_sum(PyObject *self, PyObject *args)
+
+/*[clinic input]
+sum as builtin_sum
+
+    iterable: 'O'
+    start: object(c_default="NULL") = 0
+    /
+
+Return the sum of a 'start' value (default: 0) plus an iterable of numbers
+
+When the iterable is empty, return the start value.
+This function is intended specifically for use with numeric values and may
+reject non-numeric types.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_sum__doc__,
+"sum($module, iterable, start=0, /)\n"
+"--\n"
+"\n"
+"Return the sum of a \'start\' value (default: 0) plus an iterable of numbers\n"
+"\n"
+"When the iterable is empty, return the start value.\n"
+"This function is intended specifically for use with numeric values and may\n"
+"reject non-numeric types.");
+
+#define BUILTIN_SUM_METHODDEF    \
+    {"sum", (PyCFunction)builtin_sum, METH_VARARGS, builtin_sum__doc__},
+
+static PyObject *
+builtin_sum_impl(PyModuleDef *module, PyObject *iterable, PyObject *start);
+
+static PyObject *
+builtin_sum(PyModuleDef *module, PyObject *args)
 {
-    PyObject *seq;
-    PyObject *result = NULL;
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+    PyObject *start = NULL;
+
+    if (!PyArg_UnpackTuple(args, "sum",
+        1, 2,
+        &iterable, &start))
+        goto exit;
+    return_value = builtin_sum_impl(module, iterable, start);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_sum_impl(PyModuleDef *module, PyObject *iterable, PyObject *start)
+/*[clinic end generated code: output=b42652a0d5f64f6b input=90ae7a242cfcf025]*/
+{
+    PyObject *result = start;
     PyObject *temp, *item, *iter;
 
-    if (!PyArg_UnpackTuple(args, "sum", 1, 2, &seq, &result))
-        return NULL;
-
-    iter = PyObject_GetIter(seq);
+    iter = PyObject_GetIter(iterable);
     if (iter == NULL)
         return NULL;
 
@@ -2014,7 +2766,6 @@ builtin_sum(PyObject *self, PyObject *args)
             Py_DECREF(iter);
             return NULL;
         }
-
         Py_INCREF(result);
     }
 
@@ -2140,61 +2891,125 @@ builtin_sum(PyObject *self, PyObject *args)
     return result;
 }
 
-PyDoc_STRVAR(sum_doc,
-"sum(iterable[, start]) -> value\n\
-\n\
-Return the sum of an iterable of numbers (NOT strings) plus the value\n\
-of parameter 'start' (which defaults to 0).  When the iterable is\n\
-empty, return start.");
 
+/*[clinic input]
+isinstance as builtin_isinstance
+
+    obj: 'O'
+    class_or_tuple: 'O'
+    /
+
+Return whether an object is an instance of a class or of a subclass thereof.
+
+A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the target to
+check against. This is equivalent to ``isinstance(x, A) or isinstance(x, B)
+or ...`` etc.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_isinstance__doc__,
+"isinstance($module, obj, class_or_tuple, /)\n"
+"--\n"
+"\n"
+"Return whether an object is an instance of a class or of a subclass thereof.\n"
+"\n"
+"A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the target to\n"
+"check against. This is equivalent to ``isinstance(x, A) or isinstance(x, B)\n"
+"or ...`` etc.");
+
+#define BUILTIN_ISINSTANCE_METHODDEF    \
+    {"isinstance", (PyCFunction)builtin_isinstance, METH_VARARGS, builtin_isinstance__doc__},
 
 static PyObject *
-builtin_isinstance(PyObject *self, PyObject *args)
+builtin_isinstance_impl(PyModuleDef *module, PyObject *obj, PyObject *class_or_tuple);
+
+static PyObject *
+builtin_isinstance(PyModuleDef *module, PyObject *args)
 {
-    PyObject *inst;
-    PyObject *cls;
+    PyObject *return_value = NULL;
+    PyObject *obj;
+    PyObject *class_or_tuple;
+
+    if (!PyArg_UnpackTuple(args, "isinstance",
+        2, 2,
+        &obj, &class_or_tuple))
+        goto exit;
+    return_value = builtin_isinstance_impl(module, obj, class_or_tuple);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_isinstance_impl(PyModuleDef *module, PyObject *obj, PyObject *class_or_tuple)
+/*[clinic end generated code: output=847df57fef8ddea7 input=cf9eb0ad6bb9bad6]*/
+{
     int retval;
 
-    if (!PyArg_UnpackTuple(args, "isinstance", 2, 2, &inst, &cls))
-        return NULL;
-
-    retval = PyObject_IsInstance(inst, cls);
+    retval = PyObject_IsInstance(obj, class_or_tuple);
     if (retval < 0)
         return NULL;
     return PyBool_FromLong(retval);
 }
 
-PyDoc_STRVAR(isinstance_doc,
-"isinstance(object, class-or-type-or-tuple) -> bool\n\
-\n\
-Return whether an object is an instance of a class or of a subclass thereof.\n\
-With a type as second argument, return whether that is the object's type.\n\
-The form using a tuple, isinstance(x, (A, B, ...)), is a shortcut for\n\
-isinstance(x, A) or isinstance(x, B) or ... (etc.).");
 
+/*[clinic input]
+issubclass as builtin_issubclass
+
+    cls: 'O'
+    class_or_tuple: 'O'
+    /
+
+Return whether 'cls' is a derived from another class or is the same class.
+
+A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to
+check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)
+or ...`` etc.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(builtin_issubclass__doc__,
+"issubclass($module, cls, class_or_tuple, /)\n"
+"--\n"
+"\n"
+"Return whether \'cls\' is a derived from another class or is the same class.\n"
+"\n"
+"A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to\n"
+"check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)\n"
+"or ...`` etc.");
+
+#define BUILTIN_ISSUBCLASS_METHODDEF    \
+    {"issubclass", (PyCFunction)builtin_issubclass, METH_VARARGS, builtin_issubclass__doc__},
 
 static PyObject *
-builtin_issubclass(PyObject *self, PyObject *args)
+builtin_issubclass_impl(PyModuleDef *module, PyObject *cls, PyObject *class_or_tuple);
+
+static PyObject *
+builtin_issubclass(PyModuleDef *module, PyObject *args)
 {
-    PyObject *derived;
+    PyObject *return_value = NULL;
     PyObject *cls;
+    PyObject *class_or_tuple;
+
+    if (!PyArg_UnpackTuple(args, "issubclass",
+        2, 2,
+        &cls, &class_or_tuple))
+        goto exit;
+    return_value = builtin_issubclass_impl(module, cls, class_or_tuple);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+builtin_issubclass_impl(PyModuleDef *module, PyObject *cls, PyObject *class_or_tuple)
+/*[clinic end generated code: output=a0f8c03692e35474 input=923d03fa41fc352a]*/
+{
     int retval;
 
-    if (!PyArg_UnpackTuple(args, "issubclass", 2, 2, &derived, &cls))
-        return NULL;
-
-    retval = PyObject_IsSubclass(derived, cls);
+    retval = PyObject_IsSubclass(cls, class_or_tuple);
     if (retval < 0)
         return NULL;
     return PyBool_FromLong(retval);
 }
-
-PyDoc_STRVAR(issubclass_doc,
-"issubclass(C, B) -> bool\n\
-\n\
-Return whether class C is a subclass (i.e., a derived class) of class B.\n\
-When using a tuple as the second argument issubclass(X, (A, B, ...)),\n\
-is a shortcut for issubclass(X, A) or issubclass(X, B) or ... (etc.).");
 
 
 typedef struct {
@@ -2390,44 +3205,44 @@ static PyMethodDef builtin_methods[] = {
     {"__build_class__", (PyCFunction)builtin___build_class__,
      METH_VARARGS | METH_KEYWORDS, build_class_doc},
     {"__import__",      (PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
-    {"abs",             builtin_abs,        METH_O, abs_doc},
-    {"all",             builtin_all,        METH_O, all_doc},
-    {"any",             builtin_any,        METH_O, any_doc},
-    {"ascii",           builtin_ascii,      METH_O, ascii_doc},
-    {"bin",             builtin_bin,        METH_O, bin_doc},
-    {"callable",        builtin_callable,   METH_O, callable_doc},
-    {"chr",             builtin_chr,        METH_VARARGS, chr_doc},
-    {"compile",         (PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
-    {"delattr",         builtin_delattr,    METH_VARARGS, delattr_doc},
+    BUILTIN_ABS_METHODDEF
+    BUILTIN_ALL_METHODDEF
+    BUILTIN_ANY_METHODDEF
+    BUILTIN_ASCII_METHODDEF
+    BUILTIN_BIN_METHODDEF
+    BUILTIN_CALLABLE_METHODDEF
+    BUILTIN_CHR_METHODDEF
+    BUILTIN_COMPILE_METHODDEF
+    BUILTIN_DELATTR_METHODDEF
     {"dir",             builtin_dir,        METH_VARARGS, dir_doc},
-    {"divmod",          builtin_divmod,     METH_VARARGS, divmod_doc},
-    {"eval",            builtin_eval,       METH_VARARGS, eval_doc},
-    {"exec",        builtin_exec,       METH_VARARGS, exec_doc},
-    {"format",          builtin_format,     METH_VARARGS, format_doc},
+    BUILTIN_DIVMOD_METHODDEF
+    BUILTIN_EVAL_METHODDEF
+    BUILTIN_EXEC_METHODDEF
+    BUILTIN_FORMAT_METHODDEF
     {"getattr",         builtin_getattr,    METH_VARARGS, getattr_doc},
-    {"globals",         (PyCFunction)builtin_globals,    METH_NOARGS, globals_doc},
-    {"hasattr",         builtin_hasattr,    METH_VARARGS, hasattr_doc},
-    {"hash",            builtin_hash,       METH_O, hash_doc},
-    {"hex",             builtin_hex,        METH_O, hex_doc},
-    {"id",              builtin_id,         METH_O, id_doc},
-    {"input",           builtin_input,      METH_VARARGS, input_doc},
-    {"isinstance",  builtin_isinstance, METH_VARARGS, isinstance_doc},
-    {"issubclass",  builtin_issubclass, METH_VARARGS, issubclass_doc},
+    BUILTIN_GLOBALS_METHODDEF
+    BUILTIN_HASATTR_METHODDEF
+    BUILTIN_HASH_METHODDEF
+    BUILTIN_HEX_METHODDEF
+    BUILTIN_ID_METHODDEF
+    BUILTIN_INPUT_METHODDEF
+    BUILTIN_ISINSTANCE_METHODDEF
+    BUILTIN_ISSUBCLASS_METHODDEF
     {"iter",            builtin_iter,       METH_VARARGS, iter_doc},
-    {"len",             builtin_len,        METH_O, len_doc},
-    {"locals",          (PyCFunction)builtin_locals,     METH_NOARGS, locals_doc},
+    BUILTIN_LEN_METHODDEF
+    BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)builtin_next,       METH_VARARGS, next_doc},
-    {"oct",             builtin_oct,        METH_O, oct_doc},
-    {"ord",             builtin_ord,        METH_O, ord_doc},
-    {"pow",             builtin_pow,        METH_VARARGS, pow_doc},
+    BUILTIN_OCT_METHODDEF
+    BUILTIN_ORD_METHODDEF
+    BUILTIN_POW_METHODDEF
     {"print",           (PyCFunction)builtin_print,      METH_VARARGS | METH_KEYWORDS, print_doc},
-    {"repr",            builtin_repr,       METH_O, repr_doc},
+    BUILTIN_REPR_METHODDEF
     {"round",           (PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
-    {"setattr",         builtin_setattr,    METH_VARARGS, setattr_doc},
-    {"sorted",          (PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
-    {"sum",             builtin_sum,        METH_VARARGS, sum_doc},
+    BUILTIN_SETATTR_METHODDEF
+    BUILTIN_SORTED_METHODDEF
+    BUILTIN_SUM_METHODDEF
     {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
     {NULL,              NULL},
 };
