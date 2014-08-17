@@ -420,22 +420,22 @@ static int
 Pdata_grow(Pdata *self)
 {
     PyObject **data = self->data;
-    Py_ssize_t allocated = self->allocated;
-    Py_ssize_t new_allocated;
+    size_t allocated = (size_t)self->allocated;
+    size_t new_allocated;
 
     new_allocated = (allocated >> 3) + 6;
     /* check for integer overflow */
-    if (new_allocated > PY_SSIZE_T_MAX - allocated)
+    if (new_allocated > (size_t)PY_SSIZE_T_MAX - allocated)
         goto nomemory;
     new_allocated += allocated;
-    if (new_allocated > (PY_SSIZE_T_MAX / sizeof(PyObject *)))
+    if (new_allocated > ((size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)))
         goto nomemory;
     data = PyMem_REALLOC(data, new_allocated * sizeof(PyObject *));
     if (data == NULL)
         goto nomemory;
 
     self->data = data;
-    self->allocated = new_allocated;
+    self->allocated = (Py_ssize_t)new_allocated;
     return 0;
 
   nomemory:
@@ -850,7 +850,7 @@ _Pickler_ClearBuffer(PicklerObject *self)
 static void
 _write_size64(char *out, size_t value)
 {
-    int i;
+    size_t i;
 
     assert(sizeof(size_t) <= 8);
 
@@ -2118,12 +2118,13 @@ write_utf8(PicklerObject *self, char *data, Py_ssize_t size)
     char header[9];
     Py_ssize_t len;
 
+    assert(size >= 0);
     if (size <= 0xff && self->proto >= 4) {
         header[0] = SHORT_BINUNICODE;
         header[1] = (unsigned char)(size & 0xff);
         len = 2;
     }
-    else if (size <= 0xffffffffUL) {
+    else if ((size_t)size <= 0xffffffffUL) {
         header[0] = BINUNICODE;
         header[1] = (unsigned char)(size & 0xff);
         header[2] = (unsigned char)((size >> 8) & 0xff);
@@ -4505,10 +4506,10 @@ static Py_ssize_t
 calc_binsize(char *bytes, int nbytes)
 {
     unsigned char *s = (unsigned char *)bytes;
-    int i;
+    Py_ssize_t i;
     size_t x = 0;
 
-    for (i = 0; i < nbytes && i < sizeof(size_t); i++) {
+    for (i = 0; i < nbytes && (size_t)i < sizeof(size_t); i++) {
         x |= (size_t) s[i] << (8 * i);
     }
 
@@ -4527,7 +4528,7 @@ static long
 calc_binint(char *bytes, int nbytes)
 {
     unsigned char *s = (unsigned char *)bytes;
-    int i;
+    Py_ssize_t i;
     long x = 0;
 
     for (i = 0; i < nbytes; i++) {
