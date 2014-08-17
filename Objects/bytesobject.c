@@ -3174,10 +3174,12 @@ PyBytes_FromObject(PyObject *x)
        returning a shared empty bytes string. This required because we
        want to call _PyBytes_Resize() the returned object, which we can
        only do on bytes objects with refcount == 1. */
-    size += 1;
+    if (size == 0)
+        size = 1;
     new = PyBytes_FromStringAndSize(NULL, size);
     if (new == NULL)
         return NULL;
+    assert(Py_REFCNT(new) == 1);
 
     /* Get the iterator */
     it = PyObject_GetIter(x);
