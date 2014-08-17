@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20184: Argument Clinic based signature introspection added for
+  30 of the builtin functions.
+
 - Issue #22116: C functions and methods (of the 'builtin_function_or_method'
   type) can now be weakref'ed.  Patch by Wei Wu.
 
