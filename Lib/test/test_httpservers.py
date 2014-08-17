@@ -277,6 +277,13 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
             f.write(support.TESTFN_UNDECODABLE)
         response = self.request(self.tempdir_name + '/')
+        if sys.platform == 'darwin':
+            # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
+            # UTF-8 into a percent-encoded value.
+            for name in os.listdir(self.tempdir):
+                if name != 'test': # Ignore a filename created in setUp().
+                    filename = name
+                    break
         body = self.check_status_and_reason(response, 200)
         quotedname = urllib.parse.quote(filename, errors='surrogatepass')
         self.assertIn(('href="%s"' % quotedname)
