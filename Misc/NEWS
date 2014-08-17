@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22206: Using pthread, PyThread_create_key() now sets errno to ENOMEM
+  and returns -1 (error) on integer overflow.
+
 - Issue #20184: Argument Clinic based signature introspection added for
   30 of the builtin functions.
 
