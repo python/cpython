@@ -935,6 +935,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #22201: Command-line interface of the zipfile module now correctly
+  extracts ZIP files with directory entries.  Patch by Ryan Wilson.
+
 - Issue #22120: For functions using an unsigned integer return converter,
   Argument Clinic now generates a cast to that type for the comparison
   to -1 in the generated code.  (This supresses a compilation warning.)
