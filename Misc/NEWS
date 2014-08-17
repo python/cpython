@@ -329,6 +329,9 @@ Windows
 Tools/Demos
 -----------
 
+- Issue #22201: Command-line interface of the zipfile module now correctly
+  extracts ZIP files with directory entries.  Patch by Ryan Wilson.
+
 - Issue #21906: Make Tools/scripts/md5sum.py work in Python 3.
   Patch by Zachary Ware.
 
