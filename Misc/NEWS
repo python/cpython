@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22165: SimpleHTTPRequestHandler now supports undecodable file names.
+
 - Issue #20729: Restored the use of lazy iterkeys()/itervalues()/iteritems()
   in the mailbox module.
 
