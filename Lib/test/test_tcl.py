@@ -425,28 +425,31 @@ class TclTest(unittest.TestCase):
             return arg
         self.interp.createcommand('testfunc', testfunc)
         self.addCleanup(self.interp.tk.deletecommand, 'testfunc')
-        def check(value, expected, eq=self.assertEqual):
+        def check(value, expected=None, *, eq=self.assertEqual):
+            if expected is None:
+                expected = value
+            nonlocal result
+            result = None
             r = self.interp.call('testfunc', value)
             self.assertIsInstance(result, str)
             eq(result, expected)
             self.assertIsInstance(r, str)
             eq(r, expected)
         def float_eq(actual, expected):
-            expected = float(expected)
             self.assertAlmostEqual(float(actual), expected,
                                    delta=abs(expected) * 1e-10)
 
         check(True, '1')
         check(False, '0')
-        check('string', 'string')
-        check('string\xbd', 'string\xbd')
-        check('string\u20ac', 'string\u20ac')
+        check('string')
+        check('string\xbd')
+        check('string\u20ac')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
         check(b'string\xbd', 'string\xbd')
-        check('str\x00ing', 'str\x00ing')
-        check('str\x00ing\xbd', 'str\x00ing\xbd')
-        check('str\x00ing\u20ac', 'str\x00ing\u20ac')
+        check('str\x00ing')
+        check('str\x00ing\xbd')
+        check('str\x00ing\u20ac')
         check(b'str\x00ing', 'str\x00ing')
         check(b'str\xc0\x80ing', 'str\xc0\x80ing')
         check(b'str\xc0\x80ing\xe2\x82\xac', 'str\xc0\x80ing\xe2\x82\xac')
@@ -456,9 +459,9 @@ class TclTest(unittest.TestCase):
             check(f, repr(f))
         for f in (1/3.0, sys.float_info.min, sys.float_info.max,
                   -sys.float_info.min, -sys.float_info.max):
-            check(f, f, eq=float_eq)
-        check(float('inf'), 'Inf', eq=float_eq)
-        check(-float('inf'), '-Inf', eq=float_eq)
+            check(f, eq=float_eq)
+        check(float('inf'), eq=float_eq)
+        check(-float('inf'), eq=float_eq)
         # XXX NaN representation can be not parsable by float()
         check((), '')
         check((1, (2,), (3, 4), '5 6', ()), '1 2 {3 4} {5 6} {}')
