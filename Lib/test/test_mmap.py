@@ -612,8 +612,8 @@ class MmapTests(unittest.TestCase):
         m1 = mmap.mmap(-1, 100)
         tagname = "foo"
         m2 = mmap.mmap(-1, 100, tagname=tagname)
-        self.assertEqual(sys.getsize(m2),
-                         sys.getsize(m1) + len(tagname) + 1)
+        self.assertEqual(sys.getsizeof(m2),
+                         sys.getsizeof(m1) + len(tagname) + 1)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_crasher_on_windows(self):
