@@ -34,7 +34,6 @@ def make_pat():
 
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
-asprog = re.compile(r".*?\b(as)\b")
 
 class ColorDelegator(Delegator):
 
@@ -213,22 +212,6 @@ class ColorDelegator(Delegator):
                                 if m1:
                                     a, b = m1.span(1)
                                     self.tag_add("DEFINITION",
-                                                 head + "+%dc" % a,
-                                                 head + "+%dc" % b)
-                            elif value == "import":
-                                # color all the "as" words on same line, except
-                                # if in a comment; cheap approximation to the
-                                # truth
-                                if '#' in chars:
-                                    endpos = chars.index('#')
-                                else:
-                                    endpos = len(chars)
-                                while True:
-                                    m1 = self.asprog.match(chars, b, endpos)
-                                    if not m1:
-                                        break
-                                    a, b = m1.span(1)
-                                    self.tag_add("KEYWORD",
                                                  head + "+%dc" % a,
                                                  head + "+%dc" % b)
                     m = self.prog.search(chars, m.end())
