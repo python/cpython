@@ -273,6 +273,40 @@ class CommandLineTests(unittest.TestCase):
         self.assertCompiled(subinitfn)
         self.assertCompiled(hamfn)
 
+    def test_recursion_limit(self):
+        subpackage = os.path.join(self.pkgdir, 'spam')
+        subpackage2 = os.path.join(subpackage, 'ham')
+        subpackage3 = os.path.join(subpackage2, 'eggs')
+        for pkg in (subpackage, subpackage2, subpackage3):
+            script_helper.make_pkg(pkg)
+
+        subinitfn = os.path.join(subpackage, '__init__.py')
+        hamfn = script_helper.make_script(subpackage, 'ham', '')
+        spamfn = script_helper.make_script(subpackage2, 'spam', '')
+        eggfn = script_helper.make_script(subpackage3, 'egg', '')
+
+        self.assertRunOK('-q', '-r 0', self.pkgdir)
+        self.assertNotCompiled(subinitfn)
+        self.assertFalse(
+            os.path.exists(os.path.join(subpackage, '__pycache__')))
+
+        self.assertRunOK('-q', '-r 1', self.pkgdir)
+        self.assertCompiled(subinitfn)
+        self.assertCompiled(hamfn)
+        self.assertNotCompiled(spamfn)
+
+        self.assertRunOK('-q', '-r 2', self.pkgdir)
+        self.assertCompiled(subinitfn)
+        self.assertCompiled(hamfn)
+        self.assertCompiled(spamfn)
+        self.assertNotCompiled(eggfn)
+
+        self.assertRunOK('-q', '-r 5', self.pkgdir)
+        self.assertCompiled(subinitfn)
+        self.assertCompiled(hamfn)
+        self.assertCompiled(spamfn)
+        self.assertCompiled(eggfn)
+
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
         quiet = self.assertRunOK('-q', self.pkgdir)

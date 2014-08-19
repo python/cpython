@@ -169,6 +169,10 @@ def main():
     parser.add_argument('-l', action='store_const', const=0,
                         default=10, dest='maxlevels',
                         help="don't recurse into subdirectories")
+    parser.add_argument('-r', type=int, dest='recursion',
+                        help=('control the maximum recursion level. '
+                              'if `-l` and `-r` options are specified, '
+                              'then `-r` takes precedence.'))
     parser.add_argument('-f', action='store_true', dest='force',
                         help='force rebuild even if timestamps are up to date')
     parser.add_argument('-q', action='store_true', dest='quiet',
@@ -203,6 +207,12 @@ def main():
         import re
         args.rx = re.compile(args.rx)
 
+
+    if args.recursion is not None:
+        maxlevels = args.recursion
+    else:
+        maxlevels = args.maxlevels
+
     # if flist is provided then load it
     if args.flist:
         try:
@@ -222,7 +232,7 @@ def main():
                                         args.quiet, args.legacy):
                         success = False
                 else:
-                    if not compile_dir(dest, args.maxlevels, args.ddir,
+                    if not compile_dir(dest, maxlevels, args.ddir,
                                        args.force, args.rx, args.quiet,
                                        args.legacy):
                         success = False
