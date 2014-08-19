@@ -1,5 +1,5 @@
 from test.support import (TESTFN, run_unittest, import_module, unlink,
-                          requires, _2G, _4G, gc_collect)
+                          requires, _2G, _4G, gc_collect, cpython_only)
 import unittest
 import os
 import re
@@ -638,6 +638,15 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m2[:], data2)
         m2.close()
         m1.close()
+
+    @cpython_only
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_sizeof(self):
+        m1 = mmap.mmap(-1, 100)
+        tagname = "foo"
+        m2 = mmap.mmap(-1, 100, tagname=tagname)
+        self.assertEqual(sys.getsize(m2),
+                         sys.getsize(m1) + len(tagname) + 1)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_crasher_on_windows(self):
