@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15696: Add a __sizeof__ implementation for mmap objects on Windows.
+
 - Issue #22068: Avoided reference loops with Variables and Fonts in Tkinter.
 
 - Issue #22165: SimpleHTTPRequestHandler now supports undecodable file names.
