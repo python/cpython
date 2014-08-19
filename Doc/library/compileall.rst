@@ -66,8 +66,19 @@ compile Python sources.
    is to write files to their :pep:`3147` locations and names, which allows
    byte-code files from multiple versions of Python to coexist.
 
+.. cmdoption:: -r
+
+   Control the maximum recursion level for subdirectories.
+   If this is given, then ``-l`` option will not be taken into account.
+   :program:`python -m compileall <directory> -r 0` is equivalent to
+   :program:`python -m compileall <directory> -l`.
+
+
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.
+
+.. versionchanged:: 3.5
+   Added the ``-r`` option.
 
 There is no command-line option to control the optimization level used by the
 :func:`compile` function, because the Python interpreter itself already

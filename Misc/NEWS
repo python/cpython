@@ -121,6 +121,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19628: Allow compileall recursion depth to be specified with a -r
+  option.
+
 - Issue #15696: Add a __sizeof__ implementation for mmap objects on Windows.
 
 - Issue #22068: Avoided reference loops with Variables and Fonts in Tkinter.
