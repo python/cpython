@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21389: Displaying the __qualname__ of the underlying function in the
+  repr of a bound method.
+
 - Issue #22206: Using pthread, PyThread_create_key() now sets errno to ENOMEM
   and returns -1 (error) on integer overflow.
 
