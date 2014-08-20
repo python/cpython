@@ -39,7 +39,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "threading_cleanup", "reap_children", "cpython_only",
            "check_impl_detail", "get_attribute", "py3k_bytes",
            "import_fresh_module", "threading_cleanup", "reap_children",
-           "strip_python_stderr"]
+           "strip_python_stderr", "IPV6_ENABLED"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -464,6 +464,23 @@ def bind_port(sock, host=HOST):
     sock.bind((host, 0))
     port = sock.getsockname()[1]
     return port
+
+def _is_ipv6_enabled():
+    """Check whether IPv6 is enabled on this host."""
+    if socket.has_ipv6:
+        sock = None
+        try:
+            sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            sock.bind((HOSTv6, 0))
+            return True
+        except OSError:
+            pass
+        finally:
+            if sock:
+                sock.close()
+    return False
+
+IPV6_ENABLED = _is_ipv6_enabled()
 
 FUZZ = 1e-6
 
