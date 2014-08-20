@@ -157,8 +157,9 @@ class TestDefaultDict(unittest.TestCase):
             def _factory(self):
                 return []
         d = sub()
-        self.assertTrue(repr(d).startswith(
-            "defaultdict(<bound method sub._factory of defaultdict(..."))
+        self.assertRegex(repr(d),
+            r"defaultdict\(<bound method .*sub\._factory "
+            r"of defaultdict\(\.\.\., \{\}\)>, \{\}\)")
 
         # NOTE: printing a subclass of a builtin type does not call its
         # tp_print slot. So this part is essentially the same test as above.
