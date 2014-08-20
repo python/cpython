@@ -21,6 +21,9 @@ Library
 
 - Issue #15696: Add a __sizeof__ implementation for mmap objects on Windows.
 
+- Issue #8797: Raise HTTPError on failed Basic Authentication immediately.
+  Initial patch by Sam Bull.
+
 - Issue #22068: Avoided reference loops with Variables and Fonts in Tkinter.
 
 - Issue #21448: Changed FeedParser feed() to avoid O(N**2) behavior when
