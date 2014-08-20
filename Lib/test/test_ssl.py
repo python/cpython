@@ -2134,7 +2134,7 @@ else:
                     listener_gone.wait()
                     try:
                         ssl_sock = ssl.wrap_socket(c)
-                    except ssl.SSLError:
+                    except socket.error:
                         pass
                     else:
                         self.fail('connecting to closed SSL socket should have failed')
