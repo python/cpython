@@ -473,7 +473,7 @@ def _is_ipv6_enabled():
             sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             sock.bind((HOSTv6, 0))
             return True
-        except OSError:
+        except socket.error:
             pass
         finally:
             if sock:
