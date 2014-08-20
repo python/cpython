@@ -3417,12 +3417,12 @@ certEncodingType(DWORD encodingType)
     static PyObject *pkcs_7_asn = NULL;
 
     if (x509_asn == NULL) {
-        x509_asn = PyUnicode_InternFromString("x509_asn");
+        x509_asn = PyString_InternFromString("x509_asn");
         if (x509_asn == NULL)
             return NULL;
     }
     if (pkcs_7_asn == NULL) {
-        pkcs_7_asn = PyUnicode_InternFromString("pkcs_7_asn");
+        pkcs_7_asn = PyString_InternFromString("pkcs_7_asn");
         if (pkcs_7_asn == NULL)
             return NULL;
     }
@@ -3434,7 +3434,7 @@ certEncodingType(DWORD encodingType)
         Py_INCREF(pkcs_7_asn);
         return pkcs_7_asn;
     default:
-        return PyLong_FromLong(encodingType);
+        return PyInt_FromLong(encodingType);
     }
 }
 
@@ -3475,7 +3475,7 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
         if (usage->rgpszUsageIdentifier[i]) {
             PyObject *oid;
             int err;
-            oid = PyUnicode_FromString(usage->rgpszUsageIdentifier[i]);
+            oid = PyString_FromString(usage->rgpszUsageIdentifier[i]);
             if (oid == NULL) {
                 Py_CLEAR(retval);
                 goto error;
