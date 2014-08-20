@@ -57,7 +57,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -120,7 +120,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -183,7 +183,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -247,7 +247,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -310,7 +310,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -374,7 +374,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -438,7 +438,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -502,7 +502,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib crypt32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 				TargetMachine="17"
 			/>
 			<Tool
