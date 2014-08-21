@@ -325,11 +325,15 @@ be finalized; only the internally used file object will be closed. See the
    returned by :meth:`getmembers`.
 
 
-.. method:: TarFile.list(verbose=True)
+.. method:: TarFile.list(verbose=True, *, members=None)
 
    Print a table of contents to ``sys.stdout``. If *verbose* is :const:`False`,
    only the names of the members are printed. If it is :const:`True`, output
-   similar to that of :program:`ls -l` is produced.
+   similar to that of :program:`ls -l` is produced. If optional *members* is
+   given, it must be a subset of the list returned by :meth:`getmembers`.
+
+   .. versionchanged:: 3.5
+      Added the *members* parameter.
 
 
 .. method:: TarFile.next()
