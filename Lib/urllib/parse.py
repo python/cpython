@@ -409,11 +409,13 @@ def urljoin(base, url, allow_fragments=True):
         return url
     if not url:
         return base
+
     base, url, _coerce_result = _coerce_args(base, url)
     bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
             urlparse(base, '', allow_fragments)
     scheme, netloc, path, params, query, fragment = \
             urlparse(url, bscheme, allow_fragments)
+
     if scheme != bscheme or scheme not in uses_relative:
         return _coerce_result(url)
     if scheme in uses_netloc:
@@ -421,9 +423,7 @@ def urljoin(base, url, allow_fragments=True):
             return _coerce_result(urlunparse((scheme, netloc, path,
                                               params, query, fragment)))
         netloc = bnetloc
-    if path[:1] == '/':
-        return _coerce_result(urlunparse((scheme, netloc, path,
-                                          params, query, fragment)))
+
     if not path and not params:
         path = bpath
         params = bparams
@@ -431,29 +431,42 @@ def urljoin(base, url, allow_fragments=True):
             query = bquery
         return _coerce_result(urlunparse((scheme, netloc, path,
                                           params, query, fragment)))
-    segments = bpath.split('/')[:-1] + path.split('/')
-    # XXX The stuff below is bogus in various ways...
-    if segments[-1] == '.':
-        segments[-1] = ''
-    while '.' in segments:
-        segments.remove('.')
-    while 1:
-        i = 1
-        n = len(segments) - 1
-        while i < n:
-            if (segments[i] == '..'
-                and segments[i-1] not in ('', '..')):
-                del segments[i-1:i+1]
-                break
-            i = i+1
+
+    base_parts = bpath.split('/')
+    if base_parts[-1] != '':
+        # the last item is not a directory, so will not be taken into account
+        # in resolving the relative path
+        del base_parts[-1]
+
+    # for rfc3986, ignore all base path should the first character be root.
+    if path[:1] == '/':
+        segments = path.split('/')
+    else:
+        segments = base_parts + path.split('/')
+
+    resolved_path = []
+
+    for seg in segments:
+        if seg == '..':
+            try:
+                resolved_path.pop()
+            except IndexError:
+                # ignore any .. segments that would otherwise cause an IndexError
+                # when popped from resolved_path if resolving for rfc3986
+                pass
+        elif seg == '.':
+            continue
         else:
-            break
-    if segments == ['', '..']:
-        segments[-1] = ''
-    elif len(segments) >= 2 and segments[-1] == '..':
-        segments[-2:] = ['']
-    return _coerce_result(urlunparse((scheme, netloc, '/'.join(segments),
-                                      params, query, fragment)))
+            resolved_path.append(seg)
+
+    if segments[-1] in ('.', '..'):
+        # do some post-processing here. if the last segment was a relative dir,
+        # then we need to append the trailing '/'
+        resolved_path.append('')
+
+    return _coerce_result(urlunparse((scheme, netloc, '/'.join(
+        resolved_path), params, query, fragment)))
+
 
 def urldefrag(url):
     """Removes any existing fragment from URL.
