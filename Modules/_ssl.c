@@ -2855,8 +2855,12 @@ set_ecdh_curve(PySSLContext *self, PyObject *name)
     }
     nid = OBJ_sn2nid(name_bytes);
     if (nid == 0) {
+        PyObject *r = PyObject_Repr(name);
+        if (!r)
+            return NULL;
         PyErr_Format(PyExc_ValueError,
-                     "unknown elliptic curve name %R", name);
+                     "unknown elliptic curve name %s", PyString_AS_STRING(r));
+        Py_DECREF(r);
         return NULL;
     }
     key = EC_KEY_new_by_curve_name(nid);
