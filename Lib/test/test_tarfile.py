@@ -285,6 +285,18 @@ class ListTest(ReadTest, unittest.TestCase):
         self.assertIn(b'pax' + (b'/123' * 125) + b'/longlink link to pax' +
                       (b'/123' * 125) + b'/longname', out)
 
+    def test_list_members(self):
+        tio = io.TextIOWrapper(io.BytesIO(), 'ascii', newline='\n')
+        def members(tar):
+            for tarinfo in tar.getmembers():
+                if 'reg' in tarinfo.name:
+                    yield tarinfo
+        with support.swap_attr(sys, 'stdout', tio):
+            self.tar.list(verbose=False, members=members(self.tar))
+        out = tio.detach().getvalue()
+        self.assertIn(b'ustar/regtype', out)
+        self.assertNotIn(b'ustar/conttype', out)
+
 
 class GzipListTest(GzipTest, ListTest):
     pass
