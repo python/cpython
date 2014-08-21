@@ -19,7 +19,7 @@ class FontTest(unittest.TestCase):
         fontname = "TkDefaultFont"
         try:
             f = font.Font(name=fontname, exists=True)
-        except tkinter._tkinter.TclError:
+        except Tkinter._tkinter.TclError:
             f = font.Font(name=fontname, exists=False)
         font1 = font.nametofont(fontname)
         font2 = font.nametofont(fontname)
