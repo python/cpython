@@ -267,6 +267,11 @@ or on combining URL components into a URL string.
    :func:`urlunsplit`, removing possible *scheme* and *netloc* parts.
 
 
+   .. versionchanged:: 3.5
+
+      Behaviour updated to match the semantics defined in :rfc:`3986`.
+
+
 .. function:: urldefrag(url)
 
    If *url* contains a fragment identifier, return a modified version of *url*
