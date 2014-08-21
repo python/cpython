@@ -1,6 +1,6 @@
 import sys
 import unittest
-import Tkinter
+import Tkinter as tkinter
 import ttk
 from test.test_support import requires, run_unittest
 
@@ -22,10 +22,10 @@ class LabeledScaleTest(unittest.TestCase):
         x = ttk.LabeledScale()
         var = x._variable._name
         x.destroy()
-        self.assertRaises(Tkinter.TclError, x.tk.globalgetvar, var)
+        self.assertRaises(tkinter.TclError, x.tk.globalgetvar, var)
 
         # manually created variable
-        myvar = Tkinter.DoubleVar()
+        myvar = tkinter.DoubleVar()
         name = myvar._name
         x = ttk.LabeledScale(variable=myvar)
         x.destroy()
@@ -34,10 +34,10 @@ class LabeledScaleTest(unittest.TestCase):
         else:
             self.assertEqual(float(x.tk.globalgetvar(name)), myvar.get())
         del myvar
-        self.assertRaises(Tkinter.TclError, x.tk.globalgetvar, name)
+        self.assertRaises(tkinter.TclError, x.tk.globalgetvar, name)
 
         # checking that the tracing callback is properly removed
-        myvar = Tkinter.IntVar()
+        myvar = tkinter.IntVar()
         # LabeledScale will start tracing myvar
         x = ttk.LabeledScale(variable=myvar)
         x.destroy()
@@ -48,15 +48,15 @@ class LabeledScaleTest(unittest.TestCase):
         # it tries calling instance attributes not yet defined.
         ttk.LabeledScale(variable=myvar)
         if hasattr(sys, 'last_type'):
-            self.assertNotEqual(sys.last_type, Tkinter.TclError)
+            self.assertNotEqual(sys.last_type, tkinter.TclError)
 
 
     def test_initialization(self):
         # master passing
         x = ttk.LabeledScale()
-        self.assertEqual(x.master, Tkinter._default_root)
+        self.assertEqual(x.master, tkinter._default_root)
         x.destroy()
-        master = Tkinter.Frame()
+        master = tkinter.Frame()
         x = ttk.LabeledScale(master)
         self.assertEqual(x.master, master)
         x.destroy()
@@ -77,7 +77,7 @@ class LabeledScaleTest(unittest.TestCase):
         self.assertRaises(ValueError, x._variable.get)
         x.destroy()
         # variable should have its default value set to the from_ value
-        myvar = Tkinter.DoubleVar(value=20)
+        myvar = tkinter.DoubleVar(value=20)
         x = ttk.LabeledScale(variable=myvar)
         self.assertEqual(x.value, 0)
         x.destroy()
@@ -105,7 +105,7 @@ class LabeledScaleTest(unittest.TestCase):
         x.destroy()
 
         # extra, and invalid, kwargs
-        self.assertRaises(Tkinter.TclError, ttk.LabeledScale, a='b')
+        self.assertRaises(tkinter.TclError, ttk.LabeledScale, a='b')
 
 
     def test_horizontal_range(self):
@@ -194,7 +194,7 @@ class OptionMenuTest(unittest.TestCase):
 
     def setUp(self):
         support.root_deiconify()
-        self.textvar = Tkinter.StringVar()
+        self.textvar = tkinter.StringVar()
 
     def tearDown(self):
         del self.textvar
@@ -202,18 +202,18 @@ class OptionMenuTest(unittest.TestCase):
 
 
     def test_widget_destroy(self):
-        var = Tkinter.StringVar()
+        var = tkinter.StringVar()
         optmenu = ttk.OptionMenu(None, var)
         name = var._name
         optmenu.update_idletasks()
         optmenu.destroy()
         self.assertEqual(optmenu.tk.globalgetvar(name), var.get())
         del var
-        self.assertRaises(Tkinter.TclError, optmenu.tk.globalgetvar, name)
+        self.assertRaises(tkinter.TclError, optmenu.tk.globalgetvar, name)
 
 
     def test_initialization(self):
-        self.assertRaises(Tkinter.TclError,
+        self.assertRaises(tkinter.TclError,
             ttk.OptionMenu, None, self.textvar, invalid='thing')
 
         optmenu = ttk.OptionMenu(None, self.textvar, 'b', 'a', 'b')
@@ -259,7 +259,7 @@ class OptionMenuTest(unittest.TestCase):
         self.assertEqual(optmenu._variable.get(), items[0])
 
         # changing to an invalid index shouldn't change the variable
-        self.assertRaises(Tkinter.TclError, optmenu['menu'].invoke, -1)
+        self.assertRaises(tkinter.TclError, optmenu['menu'].invoke, -1)
         self.assertEqual(optmenu._variable.get(), items[0])
 
         optmenu.destroy()

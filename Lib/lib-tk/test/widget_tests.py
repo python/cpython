@@ -2,7 +2,7 @@
 
 import unittest
 import sys
-import Tkinter
+import Tkinter as tkinter
 from ttk import setup_master, Scale
 from test_ttk.support import (tcl_version, requires_tcl, get_tk_patchlevel,
                               pixels_conv, tcl_obj_eq)
@@ -67,7 +67,7 @@ class AbstractWidgetTest(object):
             expected = conv(expected)
         if not self.wantobjects:
             if isinstance(expected, tuple):
-                expected = Tkinter._join(expected)
+                expected = tkinter._join(expected)
             else:
                 expected = str(expected)
         if eq is None:
@@ -85,7 +85,7 @@ class AbstractWidgetTest(object):
         orig = widget[name]
         if errmsg is not None:
             errmsg = errmsg.format(value)
-        with self.assertRaises(Tkinter.TclError) as cm:
+        with self.assertRaises(tkinter.TclError) as cm:
             widget[name] = value
         if errmsg is not None:
             self.assertEqual(str(cm.exception), errmsg)
@@ -93,7 +93,7 @@ class AbstractWidgetTest(object):
             self.assertEqual(widget[name], orig)
         else:
             widget[name] = orig
-        with self.assertRaises(Tkinter.TclError) as cm:
+        with self.assertRaises(tkinter.TclError) as cm:
             widget.configure({name: value})
         if errmsg is not None:
             self.assertEqual(str(cm.exception), errmsg)
@@ -212,7 +212,7 @@ class AbstractWidgetTest(object):
                 errmsg=errmsg)
 
     def checkImageParam(self, widget, name):
-        image = Tkinter.PhotoImage('image1')
+        image = tkinter.PhotoImage('image1')
         self.checkParam(widget, name, image, conv=str)
         self.checkInvalidParam(widget, name, 'spam',
                 errmsg='image "spam" doesn\'t exist')
@@ -433,7 +433,7 @@ class StandardOptionsTests(object):
 
     def test_textvariable(self):
         widget = self.create()
-        var = Tkinter.StringVar()
+        var = tkinter.StringVar()
         self.checkVariableParam(widget, 'textvariable', var)
 
     def test_troughcolor(self):
@@ -494,7 +494,7 @@ class StandardOptionsTests(object):
 
     def test_variable(self):
         widget = self.create()
-        var = Tkinter.DoubleVar()
+        var = tkinter.DoubleVar()
         self.checkVariableParam(widget, 'variable', var)
 
 
@@ -543,5 +543,5 @@ def add_standard_options(*source_classes):
 
 def setUpModule():
     if test.test_support.verbose:
-        tcl = Tkinter.Tcl()
+        tcl = tkinter.Tcl()
         print 'patchlevel =', tcl.call('info', 'patchlevel')

@@ -1,5 +1,5 @@
 import unittest
-import Tkinter
+import Tkinter as tkinter
 from Tkinter import TclError
 import os
 import sys
@@ -64,11 +64,11 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Toplevel(self.root, **kwargs)
+        return tkinter.Toplevel(self.root, **kwargs)
 
     def test_menu(self):
         widget = self.create()
-        menu = Tkinter.Menu(self.root)
+        menu = tkinter.Menu(self.root)
         self.checkParam(widget, 'menu', menu, eq=widget_eq)
         self.checkParam(widget, 'menu', '')
 
@@ -103,7 +103,7 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Frame(self.root, **kwargs)
+        return tkinter.Frame(self.root, **kwargs)
 
 
 @add_standard_options(StandardOptionsTests)
@@ -118,7 +118,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.LabelFrame(self.root, **kwargs)
+        return tkinter.LabelFrame(self.root, **kwargs)
 
     def test_labelanchor(self):
         widget = self.create()
@@ -129,7 +129,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
     def test_labelwidget(self):
         widget = self.create()
-        label = Tkinter.Label(self.root, text='Mupp', name='foo')
+        label = tkinter.Label(self.root, text='Mupp', name='foo')
         self.checkParam(widget, 'labelwidget', label, expected='.foo')
         label.destroy()
 
@@ -156,7 +156,7 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Label(self.root, **kwargs)
+        return tkinter.Label(self.root, **kwargs)
 
 
 @add_standard_options(StandardOptionsTests)
@@ -173,7 +173,7 @@ class ButtonTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'width', 'wraplength')
 
     def _create(self, **kwargs):
-        return Tkinter.Button(self.root, **kwargs)
+        return tkinter.Button(self.root, **kwargs)
 
     def test_default(self):
         widget = self.create()
@@ -197,7 +197,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Checkbutton(self.root, **kwargs)
+        return tkinter.Checkbutton(self.root, **kwargs)
 
 
     def test_offvalue(self):
@@ -225,7 +225,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Radiobutton(self.root, **kwargs)
+        return tkinter.Radiobutton(self.root, **kwargs)
 
     def test_value(self):
         widget = self.create()
@@ -248,7 +248,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     _conv_pixels = staticmethod(pixels_round)
 
     def _create(self, **kwargs):
-        return Tkinter.Menubutton(self.root, **kwargs)
+        return tkinter.Menubutton(self.root, **kwargs)
 
     def test_direction(self):
         widget = self.create()
@@ -265,21 +265,21 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
                      'crashes with Cocoa Tk (issue19733)')
     def test_image(self):
         widget = self.create()
-        image = Tkinter.PhotoImage('image1')
+        image = tkinter.PhotoImage('image1')
         self.checkParam(widget, 'image', image, conv=str)
         errmsg = 'image "spam" doesn\'t exist'
-        with self.assertRaises(Tkinter.TclError) as cm:
+        with self.assertRaises(tkinter.TclError) as cm:
             widget['image'] = 'spam'
         if errmsg is not None:
             self.assertEqual(str(cm.exception), errmsg)
-        with self.assertRaises(Tkinter.TclError) as cm:
+        with self.assertRaises(tkinter.TclError) as cm:
             widget.configure({'image': 'spam'})
         if errmsg is not None:
             self.assertEqual(str(cm.exception), errmsg)
 
     def test_menu(self):
         widget = self.create()
-        menu = Tkinter.Menu(widget, name='menu')
+        menu = tkinter.Menu(widget, name='menu')
         self.checkParam(widget, 'menu', menu, eq=widget_eq)
         menu.destroy()
 
@@ -301,7 +301,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 class OptionMenuTest(MenubuttonTest, unittest.TestCase):
 
     def _create(self, default='b', values=('a', 'b', 'c'), **kwargs):
-        return Tkinter.OptionMenu(self.root, None, default, *values, **kwargs)
+        return tkinter.OptionMenu(self.root, None, default, *values, **kwargs)
 
 
 @add_standard_options(IntegerSizeTests, StandardOptionsTests)
@@ -320,7 +320,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Entry(self.root, **kwargs)
+        return tkinter.Entry(self.root, **kwargs)
 
     def test_disabledbackground(self):
         widget = self.create()
@@ -394,7 +394,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Spinbox(self.root, **kwargs)
+        return tkinter.Spinbox(self.root, **kwargs)
 
     test_show = None
 
@@ -465,8 +465,8 @@ class SpinboxTest(EntryTest, unittest.TestCase):
     def test_bbox(self):
         widget = self.create()
         self.assertIsBoundingBox(widget.bbox(0))
-        self.assertRaises(Tkinter.TclError, widget.bbox, 'noindex')
-        self.assertRaises(Tkinter.TclError, widget.bbox, None)
+        self.assertRaises(tkinter.TclError, widget.bbox, 'noindex')
+        self.assertRaises(tkinter.TclError, widget.bbox, None)
         self.assertRaises(TypeError, widget.bbox)
         self.assertRaises(TypeError, widget.bbox, 0, 1)
 
@@ -490,7 +490,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         wantobjects = False
 
     def _create(self, **kwargs):
-        return Tkinter.Text(self.root, **kwargs)
+        return tkinter.Text(self.root, **kwargs)
 
     def test_autoseparators(self):
         widget = self.create()
@@ -619,10 +619,10 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.assertIsBoundingBox(widget.bbox('1.1'))
         self.assertIsNone(widget.bbox('end'))
-        self.assertRaises(Tkinter.TclError, widget.bbox, 'noindex')
-        self.assertRaises(Tkinter.TclError, widget.bbox, None)
-        self.assertRaises(Tkinter.TclError, widget.bbox)
-        self.assertRaises(Tkinter.TclError, widget.bbox, '1.1', 'end')
+        self.assertRaises(tkinter.TclError, widget.bbox, 'noindex')
+        self.assertRaises(tkinter.TclError, widget.bbox, None)
+        self.assertRaises(tkinter.TclError, widget.bbox)
+        self.assertRaises(tkinter.TclError, widget.bbox, '1.1', 'end')
 
 
 @add_standard_options(PixelSizeTests, StandardOptionsTests)
@@ -644,7 +644,7 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
     wantobjects = False
 
     def _create(self, **kwargs):
-        return Tkinter.Canvas(self.root, **kwargs)
+        return tkinter.Canvas(self.root, **kwargs)
 
     def test_closeenough(self):
         widget = self.create()
@@ -697,7 +697,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
     )
 
     def _create(self, **kwargs):
-        return Tkinter.Listbox(self.root, **kwargs)
+        return tkinter.Listbox(self.root, **kwargs)
 
     def test_activestyle(self):
         widget = self.create()
@@ -706,7 +706,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_listvariable(self):
         widget = self.create()
-        var = Tkinter.DoubleVar()
+        var = tkinter.DoubleVar()
         self.checkVariableParam(widget, 'listvariable', var)
 
     def test_selectmode(self):
@@ -789,7 +789,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
     def test_curselection(self):
         lb = self.create()
         lb.insert(0, *('el%d' % i for i in range(8)))
-        lb.selection_clear(0, Tkinter.END)
+        lb.selection_clear(0, tkinter.END)
         lb.selection_set(2, 4)
         lb.selection_set(6)
         self.assertEqual(lb.curselection(), (2, 3, 4, 6))
@@ -829,7 +829,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     default_orient = 'vertical'
 
     def _create(self, **kwargs):
-        return Tkinter.Scale(self.root, **kwargs)
+        return tkinter.Scale(self.root, **kwargs)
 
     def test_bigincrement(self):
         widget = self.create()
@@ -898,7 +898,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     default_orient = 'vertical'
 
     def _create(self, **kwargs):
-        return Tkinter.Scrollbar(self.root, **kwargs)
+        return tkinter.Scrollbar(self.root, **kwargs)
 
     def test_activerelief(self):
         widget = self.create()
@@ -944,7 +944,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     default_orient = 'horizontal'
 
     def _create(self, **kwargs):
-        return Tkinter.PanedWindow(self.root, **kwargs)
+        return tkinter.PanedWindow(self.root, **kwargs)
 
     def test_handlepad(self):
         widget = self.create()
@@ -992,8 +992,8 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def create2(self):
         p = self.create()
-        b = Tkinter.Button(p)
-        c = Tkinter.Button(p)
+        b = tkinter.Button(p)
+        c = tkinter.Button(p)
         p.add(b)
         p.add(c)
         return p, b, c
@@ -1102,7 +1102,7 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
     _conv_pixels = noconv_meth
 
     def _create(self, **kwargs):
-        return Tkinter.Menu(self.root, **kwargs)
+        return tkinter.Menu(self.root, **kwargs)
 
     def test_postcommand(self):
         widget = self.create()
@@ -1150,8 +1150,8 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_entryconfigure_variable(self):
         m1 = self.create()
-        v1 = Tkinter.BooleanVar(self.root)
-        v2 = Tkinter.BooleanVar(self.root)
+        v1 = tkinter.BooleanVar(self.root)
+        v2 = tkinter.BooleanVar(self.root)
         m1.add_checkbutton(variable=v1, onvalue=True, offvalue=False,
                            label='Nonsense')
         self.assertEqual(str(m1.entrycget(1, 'variable')), str(v1))
@@ -1171,7 +1171,7 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     _conv_pad_pixels = noconv_meth
 
     def _create(self, **kwargs):
-        return Tkinter.Message(self.root, **kwargs)
+        return tkinter.Message(self.root, **kwargs)
 
     def test_aspect(self):
         widget = self.create()

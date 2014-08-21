@@ -1,9 +1,9 @@
 import unittest
-import Tkinter
+import Tkinter as tkinter
 
 def get_tk_root():
     try:
-        root = Tkinter._default_root
+        root = tkinter._default_root
     except AttributeError:
         # it is possible to disable default root in Tkinter, although
         # I haven't seen people doing it (but apparently someone did it
@@ -12,7 +12,7 @@ def get_tk_root():
 
     if root is None:
         # create a new master only if there isn't one already
-        root = Tkinter.Tk()
+        root = tkinter.Tk()
 
     return root
 
@@ -45,7 +45,7 @@ _tk_patchlevel = None
 def get_tk_patchlevel():
     global _tk_patchlevel
     if _tk_patchlevel is None:
-        tcl = Tkinter.Tcl()
+        tcl = tkinter.Tcl()
         patchlevel = []
         for x in tcl.call('info', 'patchlevel').split('.'):
             try:
@@ -82,7 +82,7 @@ def tcl_obj_eq(actual, expected):
 def widget_eq(actual, expected):
     if actual == expected:
         return True
-    if isinstance(actual, (str, Tkinter.Widget)):
-        if isinstance(expected, (str, Tkinter.Widget)):
+    if isinstance(actual, (str, tkinter.Widget)):
+        if isinstance(expected, (str, tkinter.Widget)):
             return str(actual) == str(expected)
     return False
