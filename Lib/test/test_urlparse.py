@@ -211,10 +211,6 @@ class UrlParseTestCase(unittest.TestCase):
 
         # "abnormal" cases from RFC 1808:
         self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
-        self.checkJoin(RFC1808_BASE, '../../../g', 'http://a/../g')
-        self.checkJoin(RFC1808_BASE, '../../../../g', 'http://a/../../g')
-        self.checkJoin(RFC1808_BASE, '/./g', 'http://a/./g')
-        self.checkJoin(RFC1808_BASE, '/../g', 'http://a/../g')
         self.checkJoin(RFC1808_BASE, 'g.', 'http://a/b/c/g.')
         self.checkJoin(RFC1808_BASE, '.g', 'http://a/b/c/.g')
         self.checkJoin(RFC1808_BASE, 'g..', 'http://a/b/c/g..')
@@ -228,6 +224,13 @@ class UrlParseTestCase(unittest.TestCase):
         # so we'll not actually run these tests (which expect 1808 behavior).
         #self.checkJoin(RFC1808_BASE, 'http:g', 'http:g')
         #self.checkJoin(RFC1808_BASE, 'http:', 'http:')
+
+        # XXX: The following tests are no longer compatible with RFC3986
+        # self.checkJoin(RFC1808_BASE, '../../../g', 'http://a/../g')
+        # self.checkJoin(RFC1808_BASE, '../../../../g', 'http://a/../../g')
+        # self.checkJoin(RFC1808_BASE, '/./g', 'http://a/./g')
+        # self.checkJoin(RFC1808_BASE, '/../g', 'http://a/../g')
+
 
     def test_RFC2368(self):
         # Issue 11467: path that starts with a number is not parsed correctly
@@ -259,10 +262,6 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC2396_BASE, '../../', 'http://a/')
         self.checkJoin(RFC2396_BASE, '../../g', 'http://a/g')
         self.checkJoin(RFC2396_BASE, '', RFC2396_BASE)
-        self.checkJoin(RFC2396_BASE, '../../../g', 'http://a/../g')
-        self.checkJoin(RFC2396_BASE, '../../../../g', 'http://a/../../g')
-        self.checkJoin(RFC2396_BASE, '/./g', 'http://a/./g')
-        self.checkJoin(RFC2396_BASE, '/../g', 'http://a/../g')
         self.checkJoin(RFC2396_BASE, 'g.', 'http://a/b/c/g.')
         self.checkJoin(RFC2396_BASE, '.g', 'http://a/b/c/.g')
         self.checkJoin(RFC2396_BASE, 'g..', 'http://a/b/c/g..')
@@ -278,10 +277,17 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC2396_BASE, 'g#s/./x', 'http://a/b/c/g#s/./x')
         self.checkJoin(RFC2396_BASE, 'g#s/../x', 'http://a/b/c/g#s/../x')
 
+        # XXX: The following tests are no longer compatible with RFC3986
+        # self.checkJoin(RFC2396_BASE, '../../../g', 'http://a/../g')
+        # self.checkJoin(RFC2396_BASE, '../../../../g', 'http://a/../../g')
+        # self.checkJoin(RFC2396_BASE, '/./g', 'http://a/./g')
+        # self.checkJoin(RFC2396_BASE, '/../g', 'http://a/../g')
+
+
     def test_RFC3986(self):
         # Test cases from RFC3986
         self.checkJoin(RFC3986_BASE, '?y','http://a/b/c/d;p?y')
-        self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
+        self.checkJoin(RFC3986_BASE, ';x', 'http://a/b/c/;x')
         self.checkJoin(RFC3986_BASE, 'g:h','g:h')
         self.checkJoin(RFC3986_BASE, 'g','http://a/b/c/g')
         self.checkJoin(RFC3986_BASE, './g','http://a/b/c/g')
@@ -305,17 +311,17 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC3986_BASE, '../..','http://a/')
         self.checkJoin(RFC3986_BASE, '../../','http://a/')
         self.checkJoin(RFC3986_BASE, '../../g','http://a/g')
+        self.checkJoin(RFC3986_BASE, '../../../g', 'http://a/g')
 
         #Abnormal Examples
 
         # The 'abnormal scenarios' are incompatible with RFC2986 parsing
         # Tests are here for reference.
 
-        #self.checkJoin(RFC3986_BASE, '../../../g','http://a/g')
-        #self.checkJoin(RFC3986_BASE, '../../../../g','http://a/g')
-        #self.checkJoin(RFC3986_BASE, '/./g','http://a/g')
-        #self.checkJoin(RFC3986_BASE, '/../g','http://a/g')
-
+        self.checkJoin(RFC3986_BASE, '../../../g','http://a/g')
+        self.checkJoin(RFC3986_BASE, '../../../../g','http://a/g')
+        self.checkJoin(RFC3986_BASE, '/./g','http://a/g')
+        self.checkJoin(RFC3986_BASE, '/../g','http://a/g')
         self.checkJoin(RFC3986_BASE, 'g.','http://a/b/c/g.')
         self.checkJoin(RFC3986_BASE, '.g','http://a/b/c/.g')
         self.checkJoin(RFC3986_BASE, 'g..','http://a/b/c/g..')
@@ -355,10 +361,8 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(SIMPLE_BASE, '../g','http://a/b/g')
         self.checkJoin(SIMPLE_BASE, '../..','http://a/')
         self.checkJoin(SIMPLE_BASE, '../../g','http://a/g')
-        self.checkJoin(SIMPLE_BASE, '../../../g','http://a/../g')
         self.checkJoin(SIMPLE_BASE, './../g','http://a/b/g')
         self.checkJoin(SIMPLE_BASE, './g/.','http://a/b/c/g/')
-        self.checkJoin(SIMPLE_BASE, '/./g','http://a/./g')
         self.checkJoin(SIMPLE_BASE, 'g/./h','http://a/b/c/g/h')
         self.checkJoin(SIMPLE_BASE, 'g/../h','http://a/b/c/h')
         self.checkJoin(SIMPLE_BASE, 'http:g','http://a/b/c/g')
@@ -371,6 +375,10 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin('', 'http://a/./g', 'http://a/./g')
         self.checkJoin('svn://pathtorepo/dir1', 'dir2', 'svn://pathtorepo/dir2')
         self.checkJoin('svn+ssh://pathtorepo/dir1', 'dir2', 'svn+ssh://pathtorepo/dir2')
+
+        # XXX: The following tests are no longer compatible with RFC3986
+        # self.checkJoin(SIMPLE_BASE, '../../../g','http://a/../g')
+        # self.checkJoin(SIMPLE_BASE, '/./g','http://a/./g')
 
     def test_RFC2732(self):
         str_cases = [
