@@ -92,6 +92,10 @@ class PyCompileTests(unittest.TestCase):
         finally:
             os.chmod(self.directory, mode.st_mode)
 
+    def test_bad_coding(self):
+        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        self.assertIsNone(py_compile.compile(bad_coding, doraise=False))
+        self.assertFalse(os.path.exists(bad_coding + 'c'))
 
 if __name__ == "__main__":
     unittest.main()
