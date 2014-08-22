@@ -180,7 +180,10 @@ class DeprecatedRemoved(Directive):
         elif not SPHINX11:
             para = nodes.paragraph('', '',
                 nodes.inline('', '%s.' % text, classes=['versionmodified']))
-            node.append(para)
+            if len(node):
+                node.insert(0, para)
+            else:
+                node.append(para)
         env = self.state.document.settings.env
         env.note_versionchange('deprecated', version[0], node, self.lineno)
         return [node] + messages
