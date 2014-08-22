@@ -242,6 +242,9 @@ Build
 
 - Issue #21811: Anticipated fixes to support OS X versions > 10.9.
 
+- Issue #21166: Prevent possible segfaults and other random failures of
+  python --generate-posix-vars in pybuilddir.txt build target.
+
 IDLE
 ----
 
