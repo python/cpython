@@ -89,6 +89,9 @@ Library
 - Issue #21323: Fix CGIHTTPServer to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
 
+- Issue #22199: Make get_makefile_filename() available in Lib/sysconfig.py
+  for 2.7 to match other versions of sysconfig.
+
 Extension Modules
 -----------------
 
