@@ -10,6 +10,8 @@
 #include <shadow.h>
 #endif
 
+#include "clinic/spwdmodule.c.h"
+
 /*[clinic input]
 output preset file
 module spwd
