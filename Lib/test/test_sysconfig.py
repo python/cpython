@@ -243,6 +243,14 @@ class TestSysConfig(unittest.TestCase):
                   'posix_home', 'posix_prefix', 'posix_user')
         self.assertEqual(get_scheme_names(), wanted)
 
+    @unittest.skipIf(sys.platform.startswith('win'),
+                     'Test is not Windows compatible')
+    def test_get_makefile_filename(self):
+        makefile = sysconfig.get_makefile_filename()
+        self.assertTrue(os.path.isfile(makefile), makefile)
+        # Issue 22199
+        self.assertEqual(sysconfig._get_makefile_filename(), makefile)
+
     def test_symlink(self):
         # Issue 7880
         symlink = get_attribute(os, "symlink")

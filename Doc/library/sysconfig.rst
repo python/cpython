@@ -221,3 +221,7 @@ Other functions
 .. function:: get_config_h_filename()
 
    Return the path of :file:`pyconfig.h`.
+
+.. function:: get_makefile_filename()
+
+   Return the path of :file:`Makefile`.
