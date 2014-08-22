@@ -73,7 +73,7 @@ class AllTest(unittest.TestCase):
             # than an AttributeError somewhere deep in CGIHTTPServer.
             import _socket
 
-        # rlcompleter needs special consideration; it import readline which
+        # rlcompleter needs special consideration; it imports readline which
         # initializes GNU readline which calls setlocale(LC_CTYPE, "")... :-(
         try:
             import rlcompleter

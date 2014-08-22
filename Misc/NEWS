@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22191: Fixed warnings.__all__.
+
 - Issue #21308: Backport numerous features from Python's ssl module. This is
   part of PEP 466.
 
