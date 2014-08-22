@@ -16,6 +16,9 @@ AC_CANONICAL_HOST
 AC_SUBST(build)
 AC_SUBST(host)
 
+# pybuilddir.txt will be created by --generate-posix-vars in the Makefile
+rm -f pybuilddir.txt
+
 if test "$cross_compiling" = yes; then
     AC_MSG_CHECKING([for python interpreter for cross build])
     if test -z "$PYTHON_FOR_BUILD"; then

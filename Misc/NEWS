@@ -120,6 +120,9 @@ Build
 - Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
   now display special message when and only when there are failures.
 
+- Issue #21166: Prevent possible segfaults and other random failures of
+  python --generate-posix-vars in pybuilddir.txt build target.
+
 Windows
 -------
 
