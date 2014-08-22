@@ -2,7 +2,8 @@
 
 import sys
 
-__all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
+__all__ = ["warn", "warn_explicit", "showwarning",
+           "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings"]
 
 
