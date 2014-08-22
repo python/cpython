@@ -238,7 +238,6 @@ class BasicAuthHandler(http.server.BaseHTTPRequestHandler):
         else:
             # Request Unauthorized
             self.do_AUTHHEAD()
-        self.wfile.close()
 
 
 
