@@ -344,6 +344,7 @@ dl.glossary dt {
 
 div.deprecated p, div.deprecated-removed p {
     margin-bottom: 0;
+    margin-top: 0;
 }
 
 .system-message {
