@@ -218,7 +218,7 @@ for a group of statements:
 .. productionlist::
    try_stmt: try1_stmt | try2_stmt
    try1_stmt: "try" ":" `suite`
-            : ("except" [`expression` [("as" | ",") `target`]] ":" `suite`)+
+            : ("except" [`expression` [("as" | ",") `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
             : ["finally" ":" `suite`]
    try2_stmt: "try" ":" `suite`
