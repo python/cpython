@@ -2547,13 +2547,23 @@ with the first of those changes appearing in the Python 2.7.7 release.
 
 :pep:`466` related features added in Python 2.7.7:
 
-* :func:`hmac.compare_digest` was added to make a timing attack resistant
-  comparison operation broadly available to Python 2 applications
-  (backported by Alex Gaynor in :issue:`21306`)
+* :func:`hmac.compare_digest` was backported from Python 3 to make a timing
+  attack resistant comparison operation broadly available to Python 2
+  applications (backported by Alex Gaynor in :issue:`21306`)
 
-* the version of OpenSSL linked with the prebuilt Windows installers
-  published on python.org was updated to 1.0.1g (contributed by
-  Zachary Ware in :issue:`21462`)
+* upgraded to OpenSSL 1.0.1g for the prebuilt Windows installers published
+  on python.org (contributed by Zachary Ware in :issue:`21462`)
+
+
+:pep:`466` related features added in Python 2.7.8:
+
+* :func:`hashlib.pbkdf2_hmac` was backported from Python 3 to make a hashing
+  algorithm suitable for secure password storage broadly available to Python
+  2 applications (backported by Alex Gaynor in :issue:`21304`)
+
+* upgraded to OpenSSL 1.0.1h for the prebuilt Windows installers published
+  on python.org (contributed by Zachary Ware in :issue:`21671` for
+  CVE-2014-0224)
 
 
 .. ======================================================================
