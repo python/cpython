@@ -39,7 +39,6 @@ class ColorDelegator(Delegator):
         Delegator.__init__(self)
         self.prog = prog
         self.idprog = idprog
-        self.asprog = asprog
         self.LoadTagDefs()
 
     def setdelegate(self, delegate):
