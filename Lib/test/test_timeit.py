@@ -86,9 +86,10 @@ class TestTimeit(unittest.TestCase):
     def fake_callable_stmt(self):
         self.fake_timer.inc()
 
-    def timeit(self, stmt, setup, number=None):
+    def timeit(self, stmt, setup, number=None, globals=None):
         self.fake_timer = FakeTimer()
-        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer)
+        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer,
+                globals=globals)
         kwargs = {}
         if number is None:
             number = DEFAULT_NUMBER
@@ -126,6 +127,17 @@ class TestTimeit(unittest.TestCase):
         delta_time = timeit.timeit(self.fake_stmt, self.fake_setup, number=0,
                 timer=FakeTimer())
         self.assertEqual(delta_time, 0)
+
+    def test_timeit_globals_args(self):
+        global _global_timer
+        _global_timer = FakeTimer()
+        t = timeit.Timer(stmt='_global_timer.inc()', timer=_global_timer)
+        self.assertRaises(NameError, t.timeit, number=3)
+        timeit.timeit(stmt='_global_timer.inc()', timer=_global_timer,
+                      globals=globals(), number=3)
+        local_timer = FakeTimer()
+        timeit.timeit(stmt='local_timer.inc()', timer=local_timer,
+                      globals=locals(), number=3)
 
     def repeat(self, stmt, setup, repeat=None, number=None):
         self.fake_timer = FakeTimer()
