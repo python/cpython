@@ -59,10 +59,15 @@ Python Interface
 The module defines three convenience functions and a public class:
 
 
-.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000)
+.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000, globals=None)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.timeit` method with *number* executions.
+   The optional *globals* argument specifies a namespace in which to execute the
+   code.
+
+   .. versionchanged:: 3.5
+      The optional *globals* parameter was added.
 
    .. note::
 
@@ -71,12 +76,15 @@ The module defines three convenience functions and a public class:
         It will instead return the data specified by your return statement.
 
 
-.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000)
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000, globals=None)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.repeat` method with the given *repeat*
-   count and *number* executions.
+   count and *number* executions.  The optional *globals* argument specifies a
+   namespace in which to execute the code.
 
+   .. versionchanged:: 3.5
+      The optional *globals* parameter was added.
 
 .. function:: default_timer()
 
@@ -86,7 +94,7 @@ The module defines three convenience functions and a public class:
       :func:`time.perf_counter` is now the default timer.
 
 
-.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>)
+.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None)
 
    Class for timing execution speed of small code snippets.
 
@@ -94,7 +102,9 @@ The module defines three convenience functions and a public class:
    for setup, and a timer function.  Both statements default to ``'pass'``;
    the timer function is platform-dependent (see the module doc string).
    *stmt* and *setup* may also contain multiple statements separated by ``;``
-   or newlines, as long as they don't contain multi-line string literals.
+   or newlines, as long as they don't contain multi-line string literals.  The
+   statement will by default be executed within timeit's namespace; this behavior
+   can be controlled by passing a namespace to *globals*.
 
    To measure the execution time of the first statement, use the :meth:`.timeit`
    method.  The :meth:`.repeat` method is a convenience to call :meth:`.timeit`
@@ -105,6 +115,8 @@ The module defines three convenience functions and a public class:
    will then be executed by :meth:`.timeit`.  Note that the timing overhead is a
    little larger in this case because of the extra function calls.
 
+   .. versionchanged:: 3.5
+      The optional *globals* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
 
@@ -324,3 +336,17 @@ To give the :mod:`timeit` module access to functions you define, you can pass a
    if __name__ == '__main__':
        import timeit
        print(timeit.timeit("test()", setup="from __main__ import test"))
+
+Another option is to pass :func:`globals` to the  *globals* parameter, which will cause the code
+to be executed within your current global namespace.  This can be more convenient
+than individually specifying imports::
+
+   def f(x):
+       return x**2
+   def g(x):
+       return x**4
+   def h(x):
+       return x**8
+
+   import timeit
+   print(timeit.timeit('[func(42) for func in (f,g,h)]', globals=globals()))
