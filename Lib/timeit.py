@@ -60,6 +60,8 @@ default_number = 1000000
 default_repeat = 3
 default_timer = time.perf_counter
 
+_globals = globals
+
 # Don't change the indentation of the template; the reindent() calls
 # in Timer.__init__() depend on setup being indented 4 spaces and stmt
 # being indented 8 spaces.
@@ -94,7 +96,9 @@ class Timer:
     The constructor takes a statement to be timed, an additional
     statement used for setup, and a timer function.  Both statements
     default to 'pass'; the timer function is platform-dependent (see
-    module doc string).
+    module doc string).  If 'globals' is specified, the code will be
+    executed within that namespace (as opposed to inside timeit's
+    namespace).
 
     To measure the execution time of the first statement, use the
     timeit() method.  The repeat() method is a convenience to call
@@ -104,10 +108,12 @@ class Timer:
     multi-line string literals.
     """
 
-    def __init__(self, stmt="pass", setup="pass", timer=default_timer):
+    def __init__(self, stmt="pass", setup="pass", timer=default_timer,
+                 globals=None):
         """Constructor.  See class doc string."""
         self.timer = timer
-        ns = {}
+        local_ns = {}
+        global_ns = _globals() if globals is None else globals
         if isinstance(stmt, str):
             stmt = reindent(stmt, 8)
             if isinstance(setup, str):
@@ -115,19 +121,19 @@ class Timer:
                 src = template.format(stmt=stmt, setup=setup)
             elif callable(setup):
                 src = template.format(stmt=stmt, setup='_setup()')
-                ns['_setup'] = setup
+                local_ns['_setup'] = setup
             else:
                 raise ValueError("setup is neither a string nor callable")
-            self.src = src # Save for traceback display
+            self.src = src  # Save for traceback display
             code = compile(src, dummy_src_name, "exec")
-            exec(code, globals(), ns)
-            self.inner = ns["inner"]
+            exec(code, global_ns, local_ns)
+            self.inner = local_ns["inner"]
         elif callable(stmt):
             self.src = None
             if isinstance(setup, str):
                 _setup = setup
                 def setup():
-                    exec(_setup, globals(), ns)
+                    exec(_setup, global_ns, local_ns)
             elif not callable(setup):
                 raise ValueError("setup is neither a string nor callable")
             self.inner = _template_func(setup, stmt)
@@ -208,14 +214,14 @@ class Timer:
         return r
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
-           number=default_number):
+           number=default_number, globals=None):
     """Convenience function to create Timer object and call timeit method."""
-    return Timer(stmt, setup, timer).timeit(number)
+    return Timer(stmt, setup, timer, globals).timeit(number)
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
-           repeat=default_repeat, number=default_number):
+           repeat=default_repeat, number=default_number, globals=None):
     """Convenience function to create Timer object and call repeat method."""
-    return Timer(stmt, setup, timer).repeat(repeat, number)
+    return Timer(stmt, setup, timer, globals).repeat(repeat, number)
 
 def main(args=None, *, _wrap_timer=None):
     """Main program, used when run as a script.
