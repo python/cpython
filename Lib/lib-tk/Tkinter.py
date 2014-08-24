@@ -563,6 +563,7 @@ class Misc:
                         self.deletecommand(name)
                     except TclError:
                         pass
+            callit.__name__ = func.__name__
             name = self._register(callit)
             return self.tk.call('after', ms, name)
     def after_idle(self, func, *args):
@@ -3293,7 +3294,7 @@ class Image:
             master = _default_root
             if not master:
                 raise RuntimeError, 'Too early to create image'
-        self.tk = master.tk
+        self.tk = getattr(master, 'tk', master)
         if not name:
             Image._last_id += 1
             name = "pyimage%r" % (Image._last_id,) # tk itself would use image<x>
@@ -3368,20 +3369,20 @@ class PhotoImage(Image):
     # XXX copy -from, -to, ...?
     def copy(self):
         """Return a new PhotoImage with the same image as this widget."""
-        destImage = PhotoImage()
+        destImage = PhotoImage(master=self.tk)
         self.tk.call(destImage, 'copy', self.name)
         return destImage
     def zoom(self,x,y=''):
         """Return a new PhotoImage with the same image as this widget
         but zoom it with X and Y."""
-        destImage = PhotoImage()
+        destImage = PhotoImage(master=self.tk)
         if y=='': y=x
         self.tk.call(destImage, 'copy', self.name, '-zoom',x,y)
         return destImage
     def subsample(self,x,y=''):
         """Return a new PhotoImage based on the same image as this widget
         but use only every Xth or Yth pixel."""
-        destImage = PhotoImage()
+        destImage = PhotoImage(master=self.tk)
         if y=='': y=x
         self.tk.call(destImage, 'copy', self.name, '-subsample',x,y)
         return destImage

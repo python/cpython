@@ -1,18 +1,15 @@
 import unittest
 import Tkinter as tkinter
 from test.test_support import requires, run_unittest
-from ttk import setup_master
+from test_ttk.support import AbstractTkTest
 
 requires('gui')
 
-class TextTest(unittest.TestCase):
+class TextTest(AbstractTkTest, unittest.TestCase):
 
     def setUp(self):
-        self.root = setup_master()
+        super(TextTest, self).setUp()
         self.text = tkinter.Text(self.root)
-
-    def tearDown(self):
-        self.text.destroy()
 
     def test_debug(self):
         text = self.text

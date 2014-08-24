@@ -278,7 +278,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 
     def create2(self):
         t = tkinter.Toplevel(self.root, width=300, height=200, bd=0)
-        t.wm_geometry('+0+0')
+        t.wm_geometry('300x200+0+0')
         f = tkinter.Frame(t, width=154, height=84, bd=2, relief='raised')
         f.place_configure(x=48, y=38)
         f2 = tkinter.Frame(t, width=30, height=60, bd=2, relief='raised')
@@ -479,17 +479,16 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     def tearDown(self):
-        super(GridTest, self).tearDown()
         cols, rows = self.root.grid_size()
         for i in range(cols + 1):
             self.root.grid_columnconfigure(i, weight=0, minsize=0, pad=0, uniform='')
         for i in range(rows + 1):
             self.root.grid_rowconfigure(i, weight=0, minsize=0, pad=0, uniform='')
         self.root.grid_propagate(1)
+        super(GridTest, self).tearDown()
 
     def test_grid_configure(self):
         b = tkinter.Button(self.root)
-        self.addCleanup(b.destroy)
         self.assertEqual(b.grid_info(), {})
         b.grid_configure()
         self.assertEqual(b.grid_info()['in'], self.root)
@@ -576,7 +575,6 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_grid_configure_row(self):
         b = tkinter.Button(self.root)
-        self.addCleanup(b.destroy)
         with self.assertRaisesRegexp(TclError, 'bad (row|grid) value "-1": '
                                      'must be a non-negative integer'):
             b.grid_configure(row=-1)
@@ -782,7 +780,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
             self.root.grid_bbox(0, 0, 0, 'x')
         with self.assertRaises(TypeError):
             self.root.grid_bbox(0, 0, 0, 0, 0)
-        t = tkinter.Toplevel(self.root)
+        t = self.root
         # de-maximize
         t.wm_geometry('1x1+0+0')
         t.wm_geometry('')
@@ -810,7 +808,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
             self.root.grid_location('x', 'y')
         with self.assertRaisesRegexp(TclError, 'bad screen distance "y"'):
             self.root.grid_location('1c', 'y')
-        t = tkinter.Toplevel(self.root)
+        t = self.root
         # de-maximize
         t.wm_geometry('1x1+0+0')
         t.wm_geometry('')

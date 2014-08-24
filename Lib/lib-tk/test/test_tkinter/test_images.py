@@ -2,15 +2,12 @@ import unittest
 import Tkinter as tkinter
 import ttk
 import test.test_support as support
-from test_ttk.support import requires_tcl
+from test_ttk.support import AbstractTkTest, requires_tcl
 
 support.requires('gui')
 
 
-class MiscTest(unittest.TestCase):
-
-    def setUp(self):
-        self.root = ttk.setup_master()
+class MiscTest(AbstractTkTest, unittest.TestCase):
 
     def test_image_types(self):
         image_types = self.root.image_types()
@@ -23,14 +20,12 @@ class MiscTest(unittest.TestCase):
         self.assertIsInstance(image_names, tuple)
 
 
-class BitmapImageTest(unittest.TestCase):
+class BitmapImageTest(AbstractTkTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        AbstractTkTest.setUpClass.__func__(cls)
         cls.testfile = support.findfile('python.xbm', subdir='imghdrdata')
-
-    def setUp(self):
-        self.root = ttk.setup_master()
 
     def test_create_from_file(self):
         image = tkinter.BitmapImage('::img::test', master=self.root,
@@ -107,15 +102,12 @@ class BitmapImageTest(unittest.TestCase):
                          '-foreground {} {} #000000 yellow')
 
 
-class PhotoImageTest(unittest.TestCase):
+class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        AbstractTkTest.setUpClass.__func__(cls)
         cls.testfile = support.findfile('python.gif', subdir='imghdrdata')
-
-    def setUp(self):
-        self.root = ttk.setup_master()
-        self.wantobjects = self.root.wantobjects()
 
     def create(self):
         return tkinter.PhotoImage('::img::test', master=self.root,

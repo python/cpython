@@ -1,15 +1,15 @@
 import unittest
 
-from Tkinter import Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tk, TclError
+from Tkinter import Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl, TclError
 
 
 class TestBase(unittest.TestCase):
 
     def setUp(self):
-        self.root = Tk()
+        self.root = Tcl()
 
     def tearDown(self):
-        self.root.destroy()
+        del self.root
 
 
 class TestVariable(TestBase):

@@ -63,7 +63,7 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
         'takefocus', 'use', 'visual', 'width',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Toplevel(self.root, **kwargs)
 
     def test_menu(self):
@@ -102,7 +102,7 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
         'relief', 'takefocus', 'visual', 'width',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Frame(self.root, **kwargs)
 
 
@@ -117,7 +117,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
         'takefocus', 'text', 'visual', 'width',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.LabelFrame(self.root, **kwargs)
 
     def test_labelanchor(self):
@@ -155,7 +155,7 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'width', 'wraplength',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Label(self.root, **kwargs)
 
 
@@ -172,7 +172,7 @@ class ButtonTest(AbstractLabelTest, unittest.TestCase):
         'state', 'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength')
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Button(self.root, **kwargs)
 
     def test_default(self):
@@ -196,7 +196,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'variable', 'width', 'wraplength',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Checkbutton(self.root, **kwargs)
 
 
@@ -224,7 +224,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'value', 'variable', 'width', 'wraplength',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Radiobutton(self.root, **kwargs)
 
     def test_value(self):
@@ -247,7 +247,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     )
     _conv_pixels = staticmethod(pixels_round)
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)
 
     def test_direction(self):
@@ -265,7 +265,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
                      'crashes with Cocoa Tk (issue19733)')
     def test_image(self):
         widget = self.create()
-        image = tkinter.PhotoImage('image1')
+        image = tkinter.PhotoImage(master=self.root, name='image1')
         self.checkParam(widget, 'image', image, conv=str)
         errmsg = 'image "spam" doesn\'t exist'
         with self.assertRaises(tkinter.TclError) as cm:
@@ -300,7 +300,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
 class OptionMenuTest(MenubuttonTest, unittest.TestCase):
 
-    def _create(self, default='b', values=('a', 'b', 'c'), **kwargs):
+    def create(self, default='b', values=('a', 'b', 'c'), **kwargs):
         return tkinter.OptionMenu(self.root, None, default, *values, **kwargs)
 
 
@@ -319,7 +319,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         'validate', 'validatecommand', 'width', 'xscrollcommand',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Entry(self.root, **kwargs)
 
     def test_disabledbackground(self):
@@ -393,7 +393,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         'width', 'wrap', 'xscrollcommand',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Spinbox(self.root, **kwargs)
 
     test_show = None
@@ -487,9 +487,9 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         'xscrollcommand', 'yscrollcommand',
     )
     if tcl_version < (8, 5):
-        wantobjects = False
+        _stringify = True
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Text(self.root, **kwargs)
 
     def test_autoseparators(self):
@@ -641,9 +641,9 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
     )
 
     _conv_pixels = staticmethod(int_round)
-    wantobjects = False
+    _stringify = True
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Canvas(self.root, **kwargs)
 
     def test_closeenough(self):
@@ -696,7 +696,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'width', 'xscrollcommand', 'yscrollcommand',
     )
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Listbox(self.root, **kwargs)
 
     def test_activestyle(self):
@@ -706,7 +706,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_listvariable(self):
         widget = self.create()
-        var = tkinter.DoubleVar()
+        var = tkinter.DoubleVar(self.root)
         self.checkVariableParam(widget, 'listvariable', var)
 
     def test_selectmode(self):
@@ -828,7 +828,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     )
     default_orient = 'vertical'
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Scale(self.root, **kwargs)
 
     def test_bigincrement(self):
@@ -894,10 +894,10 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'troughcolor', 'width',
     )
     _conv_pixels = staticmethod(int_round)
-    wantobjects = False
+    _stringify = True
     default_orient = 'vertical'
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Scrollbar(self.root, **kwargs)
 
     def test_activerelief(self):
@@ -943,7 +943,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     )
     default_orient = 'horizontal'
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.PanedWindow(self.root, **kwargs)
 
     def test_handlepad(self):
@@ -1101,7 +1101,7 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
     )
     _conv_pixels = noconv_meth
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Menu(self.root, **kwargs)
 
     def test_postcommand(self):
@@ -1170,7 +1170,7 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     )
     _conv_pad_pixels = noconv_meth
 
-    def _create(self, **kwargs):
+    def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
 
     def test_aspect(self):

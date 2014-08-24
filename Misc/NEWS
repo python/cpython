@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22236: Fixed Tkinter images copying operations in NoDefaultRoot mode.
+
 - Issue #22191: Fixed warnings.__all__.
 
 - Issue #21308: Backport numerous features from Python's ssl module. This is
@@ -107,6 +109,9 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #22236: Tkinter tests now don't reuse default root window.  New root
+  window is created for every test class.
 
 - Issue #18004: test_overflow in test_list by mistake consumed 40 GiB of memory
   on 64-bit systems.
