@@ -448,7 +448,7 @@ platform: $(BUILDPYTHON) pybuilddir.txt
 # pybuilddir.txt contains the name of the build dir and is used for
 # sys.path fixup -- see Modules/getpath.c.
 # Since this step runs before shared modules are built, try to avoid bootstrap
-# problems by creating a dummy pybuildstr.txt just to allow interpreter
+# problems by creating a dummy pybuilddir.txt just to allow interpreter
 # initialization to succeed.  It will be overwritten by generate-posix-vars
 # or removed in case of failure.
 pybuilddir.txt: $(BUILDPYTHON)
