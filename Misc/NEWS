@@ -27,7 +27,9 @@ Core and Builtins
 Library
 -------
 
--- Issue #22191: Fix warnings.__all__.
+- Issue #22236: Fixed Tkinter images copying operations in NoDefaultRoot mode.
+
+- Issue #22191: Fix warnings.__all__.
 
 - Issue #15696: Add a __sizeof__ implementation for mmap objects on Windows.
 
@@ -278,6 +280,9 @@ IDLE
 
 Tests
 -----
+
+- Issue #22236: Tkinter tests now don't reuse default root window.  New root
+  window is created for every test class.
 
 - Issue #20746: Fix test_pdb to run in refleak mode (-R).  Patch by Xavier
   de Gaye.
