@@ -3,9 +3,9 @@
 import unittest
 import sys
 import tkinter
-from tkinter.ttk import setup_master, Scale
-from tkinter.test.support import (tcl_version, requires_tcl, get_tk_patchlevel,
-                                  pixels_conv, tcl_obj_eq)
+from tkinter.ttk import Scale
+from tkinter.test.support import (AbstractTkTest, tcl_version, requires_tcl,
+                                  get_tk_patchlevel, pixels_conv, tcl_obj_eq)
 import test.support
 
 
@@ -22,32 +22,25 @@ if get_tk_patchlevel()[:3] == (8, 5, 11):
 
 _sentinel = object()
 
-class AbstractWidgetTest:
+class AbstractWidgetTest(AbstractTkTest):
     _conv_pixels = staticmethod(pixels_round)
     _conv_pad_pixels = None
-    wantobjects = True
+    _stringify = False
 
-    def setUp(self):
-        self.root = setup_master()
-        self.scaling = float(self.root.call('tk', 'scaling'))
-        if not self.root.wantobjects():
-            self.wantobjects = False
-
-    def tearDown(self):
-        for w in self.root.winfo_children():
-            w.destroy()
+    @property
+    def scaling(self):
+        try:
+            return self._scaling
+        except AttributeError:
+            self._scaling = float(self.root.call('tk', 'scaling'))
+            return self._scaling
 
     def _str(self, value):
-        if self.wantobjects and tcl_version >= (8, 6):
+        if not self._stringify and self.wantobjects and tcl_version >= (8, 6):
             return value
         if isinstance(value, tuple):
             return ' '.join(map(self._str, value))
         return str(value)
-
-    def create(self, **kwargs):
-        widget = self._create(**kwargs)
-        self.addCleanup(widget.destroy)
-        return widget
 
     def assertEqual2(self, actual, expected, msg=None, eq=object.__eq__):
         if eq(actual, expected):
@@ -61,7 +54,7 @@ class AbstractWidgetTest:
             expected = value
         if conv:
             expected = conv(expected)
-        if not self.wantobjects:
+        if self._stringify or not self.wantobjects:
             if isinstance(expected, tuple):
                 expected = tkinter._join(expected)
             else:
@@ -193,7 +186,7 @@ class AbstractWidgetTest:
                 errmsg=errmsg)
 
     def checkImageParam(self, widget, name):
-        image = tkinter.PhotoImage('image1')
+        image = tkinter.PhotoImage(master=self.root, name='image1')
         self.checkParam(widget, name, image, conv=str)
         self.checkInvalidParam(widget, name, 'spam',
                 errmsg='image "spam" doesn\'t exist')
@@ -414,7 +407,7 @@ class StandardOptionsTests:
 
     def test_textvariable(self):
         widget = self.create()
-        var = tkinter.StringVar()
+        var = tkinter.StringVar(self.root)
         self.checkVariableParam(widget, 'textvariable', var)
 
     def test_troughcolor(self):
@@ -475,7 +468,7 @@ class StandardOptionsTests:
 
     def test_variable(self):
         widget = self.create()
-        var = tkinter.DoubleVar()
+        var = tkinter.DoubleVar(self.root)
         self.checkVariableParam(widget, 'variable', var)
 
 
