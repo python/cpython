@@ -82,14 +82,13 @@ def join(a, *p):
                 path += b
             else:
                 path += sep + b
-    except TypeError:
-        valid_types = all(isinstance(s, (str, bytes, bytearray))
-                          for s in (a, ) + p)
-        if valid_types:
-            # Must have a mixture of text and binary data
-            raise TypeError("Can't mix strings and bytes in path "
-                            "components.") from None
-        raise
+    except (TypeError, AttributeError):
+        for s in (a,) + p:
+            if not isinstance(s, (str, bytes)):
+                raise TypeError('join() argument must be str or bytes, not %r' %
+                                s.__class__.__name__) from None
+        # Must have a mixture of text and binary data
+        raise TypeError("Can't mix strings and bytes in path components") from None
     return path
 
 
