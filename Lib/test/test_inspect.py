@@ -182,6 +182,14 @@ class TestInterpreterStack(IsTestBase):
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
         self.assertEqual(revise(*mod.st[3][1:]),
              (modfile, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0))
+        # Test named tuple fields
+        record = mod.st[0]
+        self.assertIs(record.frame, mod.fr)
+        self.assertEqual(record.lineno, 16)
+        self.assertEqual(record.filename, mod.__file__)
+        self.assertEqual(record.function, 'eggs')
+        self.assertIn('inspect.stack()', record.code_context[0])
+        self.assertEqual(record.index, 0)
 
     def test_trace(self):
         self.assertEqual(len(git.tr), 3)
