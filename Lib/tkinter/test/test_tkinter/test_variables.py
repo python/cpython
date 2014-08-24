@@ -1,6 +1,6 @@
 import unittest
 
-from tkinter import Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tk
+from tkinter import Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl
 
 
 class Var(Variable):
@@ -16,10 +16,10 @@ class Var(Variable):
 class TestBase(unittest.TestCase):
 
     def setUp(self):
-        self.root = Tk()
+        self.root = Tcl()
 
     def tearDown(self):
-        self.root.destroy()
+        del self.root
 
 
 class TestVariable(TestBase):
@@ -81,7 +81,7 @@ class TestVariable(TestBase):
             self.root.setvar(b'var\x00name', "value")
 
     def test_initialize(self):
-        v = Var()
+        v = Var(self.root)
         self.assertFalse(v.side_effect)
         v.set("value")
         self.assertTrue(v.side_effect)
