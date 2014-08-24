@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22259: Fix segfault when attempting to fopen a file descriptor
+  corresponding to a directory.
+
 - Issue #22236: Fixed Tkinter images copying operations in NoDefaultRoot mode.
 
 - Issue #22191: Fixed warnings.__all__.
