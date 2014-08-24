@@ -1312,6 +1312,8 @@ def getlineno(frame):
     # FrameType.f_lineno is now a descriptor that grovels co_lnotab
     return frame.f_lineno
 
+FrameInfo = namedtuple('FrameInfo', ('frame',) + Traceback._fields)
+
 def getouterframes(frame, context=1):
     """Get a list of records for a frame and all higher (calling) frames.
 
@@ -1319,7 +1321,8 @@ def getouterframes(frame, context=1):
     name, a list of lines of context, and index within the context."""
     framelist = []
     while frame:
-        framelist.append((frame,) + getframeinfo(frame, context))
+        frameinfo = (frame,) + getframeinfo(frame, context)
+        framelist.append(FrameInfo(*frameinfo))
         frame = frame.f_back
     return framelist
 
@@ -1330,7 +1333,8 @@ def getinnerframes(tb, context=1):
     name, a list of lines of context, and index within the context."""
     framelist = []
     while tb:
-        framelist.append((tb.tb_frame,) + getframeinfo(tb, context))
+        frameinfo = (tb.tb_frame,) + getframeinfo(tb, context)
+        framelist.append(FrameInfo(*frameinfo))
         tb = tb.tb_next
     return framelist
 
