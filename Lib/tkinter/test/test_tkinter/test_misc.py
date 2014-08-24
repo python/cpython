@@ -1,14 +1,11 @@
 import unittest
 import tkinter
-from tkinter import ttk
 from test import support
+from tkinter.test.support import AbstractTkTest
 
 support.requires('gui')
 
-class MiscTest(unittest.TestCase):
-
-    def setUp(self):
-        self.root = ttk.setup_master()
+class MiscTest(AbstractTkTest, unittest.TestCase):
 
     def test_tk_setPalette(self):
         root = self.root
