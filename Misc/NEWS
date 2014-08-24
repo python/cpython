@@ -124,6 +124,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22236: Fixed Tkinter images copying operations in NoDefaultRoot mode.
+
 - Issue #2527: Add a *globals* argument to timeit functions, in order to
   override the globals namespace in which the timed code is executed.
   Patch by Ben Roberts.
@@ -417,6 +419,9 @@ Library
 - Issue #21455: Add a default backlog to socket.listen().
 
 - Issue #21525: Most Tkinter methods which accepted tuples now accept lists too.
+
+- Issue #22236: Tkinter tests now don't reuse default root window.  New root
+  window is created for every test class.
 
 - Issue #10744: Fix PEP 3118 format strings on ctypes objects with a nontrivial
   shape.
