@@ -881,10 +881,16 @@ Classes and functions
 The interpreter stack
 ---------------------
 
-When the following functions return "frame records," each record is a tuple of
-six items: the frame object, the filename, the line number of the current line,
+When the following functions return "frame records," each record is a
+:term:`named tuple`
+``FrameInfo(frame, filename, lineno, function, code_context, index)``.
+The tuple contains the frame object, the filename, the line number of the
+current line,
 the function name, a list of lines of context from the source code, and the
 index of the current line within that list.
+
+.. versionchanged:: 3.5
+   Return a named tuple instead of a tuple.
 
 .. note::
 

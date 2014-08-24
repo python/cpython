@@ -124,6 +124,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16808: inspect.stack() now returns a named tuple instead of a tuple.
+  Patch by Daniel Shahaf.
+
 - Issue #22236: Fixed Tkinter images copying operations in NoDefaultRoot mode.
 
 - Issue #2527: Add a *globals* argument to timeit functions, in order to
