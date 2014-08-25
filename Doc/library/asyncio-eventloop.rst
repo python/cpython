@@ -336,7 +336,8 @@ Low-level socket operations
    representing the data received.  The maximum amount of data to be received
    at once is specified by *nbytes*.
 
-   The socket *sock* must be non-blocking.
+   With :class:`SelectorEventLoop` event loop, the socket *sock* must be
+   non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
 
@@ -352,7 +353,8 @@ Low-level socket operations
    an exception is raised, and there is no way to determine how much data, if
    any, was successfully processed by the receiving end of the connection.
 
-   The socket *sock* must be non-blocking.
+   With :class:`SelectorEventLoop` event loop, the socket *sock* must be
+   non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
 
@@ -370,7 +372,8 @@ Low-level socket operations
    :py:data:`~socket.AF_INET` and :py:data:`~socket.AF_INET6` address families.
    Use :meth:`getaddrinfo` to resolve the hostname asynchronously.
 
-   The socket *sock* must be non-blocking.
+   With :class:`SelectorEventLoop` event loop, the socket *sock* must be
+   non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
 
@@ -418,12 +421,15 @@ Connect pipes
 
 .. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
-   Register read pipe in eventloop. Set the *pipe* to non-blocking mode.
+   Register read pipe in eventloop.
 
    *protocol_factory* should instantiate object with :class:`Protocol`
    interface.  *pipe* is a :term:`file-like object <file object>`.
    Return pair ``(transport, protocol)``, where *transport* supports the
    :class:`ReadTransport` interface.
+
+   With :class:`SelectorEventLoop` event loop, the *pipe* is set to
+   non-blocking mode.
 
    This method is a :ref:`coroutine <coroutine>`.
 
@@ -432,9 +438,12 @@ Connect pipes
    Register write pipe in eventloop.
 
    *protocol_factory* should instantiate object with :class:`BaseProtocol`
-   interface.  Pipe is file-like object already switched to nonblocking.
+   interface. *pipe* is file-like object.
    Return pair (transport, protocol), where transport support
    :class:`WriteTransport` interface.
+
+   With :class:`SelectorEventLoop` event loop, the *pipe* is set to
+   non-blocking mode.
 
    This method is a :ref:`coroutine <coroutine>`.
 
