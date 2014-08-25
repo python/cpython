@@ -148,15 +148,17 @@ class SubprocessMixin:
 
         coro = write_stdin(proc, large_data)
         # drain() must raise BrokenPipeError or ConnectionResetError
-        self.assertRaises((BrokenPipeError, ConnectionResetError),
-                          self.loop.run_until_complete, coro)
+        with test_utils.disable_logger():
+            self.assertRaises((BrokenPipeError, ConnectionResetError),
+                              self.loop.run_until_complete, coro)
         self.loop.run_until_complete(proc.wait())
 
     def test_communicate_ignore_broken_pipe(self):
         proc, large_data = self.prepare_broken_pipe_test()
 
         # communicate() must ignore BrokenPipeError when feeding stdin
-        self.loop.run_until_complete(proc.communicate(large_data))
+        with test_utils.disable_logger():
+            self.loop.run_until_complete(proc.communicate(large_data))
         self.loop.run_until_complete(proc.wait())
 
 

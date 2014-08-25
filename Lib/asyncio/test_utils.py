@@ -417,3 +417,9 @@ def disable_logger():
         yield
     finally:
         logger.setLevel(old_level)
+
+def mock_nonblocking_socket():
+    """Create a mock of a non-blocking socket."""
+    sock = mock.Mock(socket.socket)
+    sock.gettimeout.return_value = 0.0
+    return sock
