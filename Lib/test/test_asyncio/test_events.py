@@ -27,6 +27,7 @@ from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
 
 
 import asyncio
+from asyncio import proactor_events
 from asyncio import selector_events
 from asyncio import test_utils
 
@@ -383,22 +384,23 @@ class EventLoopTestsMixin:
         self.assertEqual(read, data)
 
     def _basetest_sock_client_ops(self, httpd, sock):
-        # in debug mode, socket operations must fail
-        # if the socket is not in blocking mode
-        self.loop.set_debug(True)
-        sock.setblocking(True)
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(
-                self.loop.sock_connect(sock, httpd.address))
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(
-                self.loop.sock_sendall(sock, b'GET / HTTP/1.0\r\n\r\n'))
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(
-                self.loop.sock_recv(sock, 1024))
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(
-                self.loop.sock_accept(sock))
+        if not isinstance(self.loop, proactor_events.BaseProactorEventLoop):
+            # in debug mode, socket operations must fail
+            # if the socket is not in blocking mode
+            self.loop.set_debug(True)
+            sock.setblocking(True)
+            with self.assertRaises(ValueError):
+                self.loop.run_until_complete(
+                    self.loop.sock_connect(sock, httpd.address))
+            with self.assertRaises(ValueError):
+                self.loop.run_until_complete(
+                    self.loop.sock_sendall(sock, b'GET / HTTP/1.0\r\n\r\n'))
+            with self.assertRaises(ValueError):
+                self.loop.run_until_complete(
+                    self.loop.sock_recv(sock, 1024))
+            with self.assertRaises(ValueError):
+                self.loop.run_until_complete(
+                    self.loop.sock_accept(sock))
 
         # test in non-blocking mode
         sock.setblocking(False)
@@ -1229,6 +1231,7 @@ class EventLoopTestsMixin:
                          "Don't support pipes for Windows")
     def test_write_pipe_disconnect_on_close(self):
         rsock, wsock = test_utils.socketpair()
+        rsock.setblocking(False)
         pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
         proto = MyWritePipeProto(loop=self.loop)
@@ -1366,6 +1369,7 @@ class EventLoopTestsMixin:
             for sock_type in (socket.SOCK_STREAM, socket.SOCK_DGRAM):
                 sock = socket.socket(family, sock_type)
                 with sock:
+                    sock.setblocking(False)
                     connect = self.loop.sock_connect(sock, address)
                     with self.assertRaises(ValueError) as cm:
                         self.loop.run_until_complete(connect)
