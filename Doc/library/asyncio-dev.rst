@@ -15,7 +15,15 @@ Debug mode of asyncio
 ---------------------
 
 To enable the debug mode globally, set the environment variable
-:envvar:`PYTHONASYNCIODEBUG` to ``1``. Examples of effects of the debug mode:
+:envvar:`PYTHONASYNCIODEBUG` to ``1``. To see debug traces, set the log level
+of the :ref:`asyncio logger <asyncio-logger>` to :py:data:`logging.DEBUG`.  The
+simplest configuration is::
+
+   import logging
+   # ...
+   logging.basicConfig(level=logging.DEBUG)
+
+Examples of effects of the debug mode:
 
 * Log :ref:`coroutines defined but never "yielded from"
   <asyncio-coroutine-not-scheduled>`
