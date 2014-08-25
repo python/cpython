@@ -172,17 +172,16 @@ StreamWriter
 
       Wait until the write buffer of the underlying transport is flushed.
 
-      This method has an unusual return value. The intended use is to write::
+      The intended use is to write::
 
           w.write(data)
           yield from w.drain()
 
-      When there's nothing to wait for, :meth:`drain()` returns ``()``, and the
-      yield-from continues immediately.  When the transport buffer is full (the
-      protocol is paused), :meth:`drain` creates and returns a
-      :class:`Future` and the yield-from will block until
-      that Future is completed, which will happen when the buffer is
-      (partially) drained and the protocol is resumed.
+      When the transport buffer is full (the protocol is paused), block until
+      the buffer is (partially) drained and the protocol is resumed. When there
+      is nothing to wait for, the yield-from continues immediately.
+
+      This method is a :ref:`coroutine <coroutine>`.
 
    .. method:: get_extra_info(name, default=None)
 
