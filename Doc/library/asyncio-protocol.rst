@@ -121,6 +121,16 @@ WriteTransport
 
       Return the current size of the output buffer used by the transport.
 
+   .. method:: get_write_buffer_limits()
+
+      Get the *high*- and *low*-water limits for write flow control. Return a
+      tuple ``(low, high)`` where *low* and *high* are positive number of
+      bytes.
+
+      Use :meth:`set_write_buffer_limits` to set the limits.
+
+      .. versionadded:: 3.4.2
+
    .. method:: set_write_buffer_limits(high=None, low=None)
 
       Set the *high*- and *low*-water limits for write flow control.
@@ -140,6 +150,8 @@ WriteTransport
       Use of zero for either limit is generally sub-optimal as it
       reduces opportunities for doing I/O and computation
       concurrently.
+
+      Use :meth:`get_write_buffer_limits` to get the limits.
 
    .. method:: write(data)
 
