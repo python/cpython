@@ -172,6 +172,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         except ConnectionAbortedError as exc:
             if not self._closing:
                 self._fatal_error(exc, 'Fatal read error on pipe transport')
+            elif self._loop.get_debug():
+                logger.debug("Read error on pipe transport while closing",
+                             exc_info=True)
         except ConnectionResetError as exc:
             self._force_close(exc)
         except OSError as exc:
@@ -324,12 +327,16 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
         try:
             self._extra['sockname'] = sock.getsockname()
         except (socket.error, AttributeError):
-            pass
+            if self._loop.get_debug():
+                logger.warning("getsockname() failed on %r",
+                             sock, exc_info=True)
         if 'peername' not in self._extra:
             try:
                 self._extra['peername'] = sock.getpeername()
             except (socket.error, AttributeError):
-                pass
+                if self._loop.get_debug():
+                    logger.warning("getpeername() failed on %r",
+                                   sock, exc_info=True)
 
     def can_write_eof(self):
         return True
@@ -385,18 +392,12 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._selector = None
 
     def sock_recv(self, sock, n):
-        if self.get_debug() and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
         return self._proactor.recv(sock, n)
 
     def sock_sendall(self, sock, data):
-        if self.get_debug() and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
         return self._proactor.send(sock, data)
 
     def sock_connect(self, sock, address):
-        if self.get_debug() and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
         try:
             base_events._check_resolved_address(sock, address)
         except ValueError as err:
@@ -407,8 +408,6 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             return self._proactor.connect(sock, address)
 
     def sock_accept(self, sock):
-        if self.get_debug() and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
         return self._proactor.accept(sock)
 
     def _socketpair(self):
@@ -470,11 +469,14 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             except OSError as exc:
                 if sock.fileno() != -1:
                     self.call_exception_handler({
-                        'message': 'Accept failed',
+                        'message': 'Accept failed on a socket',
                         'exception': exc,
                         'socket': sock,
                     })
                     sock.close()
+                elif self._debug:
+                    logger.debug("Accept failed on socket %r",
+                                 sock, exc_info=True)
             except futures.CancelledError:
                 sock.close()
             else:
