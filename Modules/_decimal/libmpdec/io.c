@@ -446,7 +446,7 @@ _mpd_to_string(char **result, const mpd_t *dec, int flags, mpd_ssize_t dplace)
 
     if (mpd_isspecial(dec)) {
 
-        mem = sizeof "-Infinity";
+        mem = sizeof "-Infinity%";
         if (mpd_isnan(dec) && dec->len > 0) {
             /* diagnostic code */
             mem += dec->digits;
@@ -609,10 +609,10 @@ _mpd_to_string(char **result, const mpd_t *dec, int flags, mpd_ssize_t dplace)
             *cp++ = (flags&MPD_FMT_UPPER) ? 'E' : 'e';
             cp = exp_to_string(cp, ldigits-dplace);
         }
+    }
 
-        if (flags&MPD_FMT_PERCENT) {
-            *cp++ = '%';
-        }
+    if (flags&MPD_FMT_PERCENT) {
+        *cp++ = '%';
     }
 
     assert(cp < decstring+mem);
@@ -1259,6 +1259,9 @@ mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec,
             stackspec.fill[1] = '\0';
             stackspec.align = '>';
             spec = &stackspec;
+        }
+        if (type == '%') {
+            flags |= MPD_FMT_PERCENT;
         }
     }
     else {
