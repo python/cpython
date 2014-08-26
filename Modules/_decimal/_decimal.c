@@ -39,8 +39,8 @@
 #include "memory.h"
 
 
-#if MPD_MAJOR_VERSION != 2
-  #error "libmpdec major version 2 required"
+#if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02040100
+  #error "libmpdec version >= 2.4.1 required"
 #endif
 
 
