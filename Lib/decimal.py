@@ -3665,6 +3665,8 @@ class Decimal(object):
         if self._is_special:
             sign = _format_sign(self._sign, spec)
             body = str(self.copy_abs())
+            if spec['type'] == '%':
+                body += '%'
             return _format_align(sign, body, spec)
 
         # a type of None defaults to 'g' or 'G', depending on context
