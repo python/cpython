@@ -271,8 +271,9 @@ class WakeupFDTests(unittest.TestCase):
         self.addCleanup(os.close, r2)
         self.addCleanup(os.close, w2)
 
-        os.set_blocking(w1, False)
-        os.set_blocking(w2, False)
+        if hasattr(os, 'set_blocking'):
+            os.set_blocking(w1, False)
+            os.set_blocking(w2, False)
 
         signal.set_wakeup_fd(w1)
         self.assertEqual(signal.set_wakeup_fd(w2), w1)
