@@ -219,7 +219,7 @@ def main():
     mainscreen.mode("standard")
     mainscreen.setup(SCREENWIDTH, SCREENHEIGHT)
     nim = Nim(mainscreen)
-    return "EVENTLOOP!"
+    return "EVENTLOOP"
 
 if __name__ == "__main__":
     main()
