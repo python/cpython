@@ -271,6 +271,9 @@ class WakeupFDTests(unittest.TestCase):
         self.addCleanup(os.close, r2)
         self.addCleanup(os.close, w2)
 
+        os.set_blocking(w1, False)
+        os.set_blocking(w2, False)
+
         signal.set_wakeup_fd(w1)
         self.assertEqual(signal.set_wakeup_fd(w2), w1)
         self.assertEqual(signal.set_wakeup_fd(-1), w2)
@@ -279,16 +282,38 @@ class WakeupFDTests(unittest.TestCase):
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
         self.addCleanup(sock1.close)
+        sock1.setblocking(False)
         fd1 = sock1.fileno()
 
         sock2 = socket.socket()
         self.addCleanup(sock2.close)
+        sock2.setblocking(False)
         fd2 = sock2.fileno()
 
         signal.set_wakeup_fd(fd1)
         self.assertEqual(signal.set_wakeup_fd(fd2), fd1)
         self.assertEqual(signal.set_wakeup_fd(-1), fd2)
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
+
+    # On Windows, files are always blocking and Windows does not provide a
+    # function to test if a socket is in non-blocking mode.
+    @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
+    def test_set_wakeup_fd_blocking(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+
+        # fd must be non-blocking
+        os.set_blocking(wfd, True)
+        with self.assertRaises(ValueError) as cm:
+            signal.set_wakeup_fd(wfd)
+        self.assertEqual(str(cm.exception),
+                         "the fd %s must be in non-blocking mode" % wfd)
+
+        # non-blocking is ok
+        os.set_blocking(wfd, False)
+        signal.set_wakeup_fd(wfd)
+        signal.set_wakeup_fd(-1)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")

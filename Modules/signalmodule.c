@@ -561,9 +561,15 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
                 PyErr_SetFromErrno(PyExc_OSError);
                 return NULL;
             }
+
+            /* on Windows, a file cannot be set to non-blocking mode */
         }
-        else
+        else {
             is_socket = 1;
+
+            /* Windows does not provide a function to test if a socket
+               is in non-blocking mode */
+        }
     }
 
     old_fd = wakeup.fd;
@@ -576,6 +582,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         return PyLong_FromLong(-1);
 #else
     if (fd != -1) {
+        int blocking;
+
         if (!_PyVerify_fd(fd)) {
             PyErr_SetString(PyExc_ValueError, "invalid fd");
             return NULL;
@@ -583,6 +591,16 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 
         if (fstat(fd, &st) != 0) {
             PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+
+        blocking = _Py_get_blocking(fd);
+        if (blocking < 0)
+            return NULL;
+        if (blocking) {
+            PyErr_Format(PyExc_ValueError,
+                         "the fd %i must be in non-blocking mode",
+                         fd);
             return NULL;
         }
     }
