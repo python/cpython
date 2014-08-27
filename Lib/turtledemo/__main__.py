@@ -260,12 +260,13 @@ class DemoWindow(object):
         return menu
 
     def refreshCanvas(self):
-        if not self.dirty: return
-        self.screen.clear()
-        self.dirty=False
+        if self.dirty:
+            self.screen.clear()
+            self.dirty=False
 
     def loadfile(self, filename):
-        self.refreshCanvas()
+        self.clearCanvas()
+        turtle.TurtleScreen._RUNNING = False
         modname = 'turtledemo.' + filename
         __import__(modname)
         self.module = sys.modules[modname]
@@ -318,9 +319,7 @@ class DemoWindow(object):
             self.exitflag = False
             self.configGUI(NORMAL, NORMAL, DISABLED, DISABLED,
                            "STOPPED!", "red")
-            turtle.TurtleScreen._RUNNING = False
-        else:
-            turtle.TurtleScreen._RUNNING = False
+        turtle.TurtleScreen._RUNNING = False
 
     def _destroy(self):
         self.root.destroy()
