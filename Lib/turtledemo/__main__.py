@@ -180,7 +180,7 @@ class DemoWindow(object):
         self.exitflag = False
         if filename:
             self.loadfile(filename)
-        self.configGUI(NORMAL, DISABLED, DISABLED, DISABLED,
+        self.configGUI(DISABLED, DISABLED, DISABLED,
                        "Choose example from menu", "black")
         self.state = STARTUP
 
@@ -225,9 +225,7 @@ class DemoWindow(object):
         turtle.RawTurtle.screens = [_s_]
         return canvas
 
-    def configGUI(self, menu, start, stop, clear, txt="", color="blue"):
-        self.mBar.entryconfigure(0, state=menu)
-
+    def configGUI(self, start, stop, clear, txt="", color="blue"):
         self.start_btn.config(state=start,
                               bg="#d00" if start == NORMAL else "#fca")
         self.stop_btn.config(state=stop,
@@ -276,7 +274,7 @@ class DemoWindow(object):
         self.text.insert("1.0", chars)
         self.root.title(filename + " - a Python turtle graphics example")
         reload(self.module)
-        self.configGUI(NORMAL, NORMAL, DISABLED, DISABLED,
+        self.configGUI(NORMAL, DISABLED, DISABLED,
                        "Press start button", "red")
         self.state = READY
 
@@ -284,7 +282,7 @@ class DemoWindow(object):
         self.refreshCanvas()
         self.dirty = True
         turtle.TurtleScreen._RUNNING = True
-        self.configGUI(DISABLED, DISABLED, NORMAL, DISABLED,
+        self.configGUI(DISABLED, NORMAL, DISABLED,
                        "demo running...", "black")
         self.screen.clear()
         self.screen.mode("standard")
@@ -300,24 +298,24 @@ class DemoWindow(object):
             self.state = DONE
             result = "stopped!"
         if self.state == DONE:
-            self.configGUI(NORMAL, NORMAL, DISABLED, NORMAL,
+            self.configGUI(NORMAL, DISABLED, NORMAL,
                            result)
         elif self.state == EVENTDRIVEN:
             self.exitflag = True
-            self.configGUI(DISABLED, DISABLED, NORMAL, DISABLED,
+            self.configGUI(DISABLED, NORMAL, DISABLED,
                            "use mouse/keys or STOP", "red")
 
     def clearCanvas(self):
         self.refreshCanvas()
         self.screen._delete("all")
         self.scanvas.config(cursor="")
-        self.configGUI(NORMAL, NORMAL, DISABLED, DISABLED)
+        self.configGUI(NORMAL, DISABLED, DISABLED)
 
     def stopIt(self):
         if self.exitflag:
             self.clearCanvas()
             self.exitflag = False
-            self.configGUI(NORMAL, NORMAL, DISABLED, DISABLED,
+            self.configGUI(NORMAL, DISABLED, DISABLED,
                            "STOPPED!", "red")
         turtle.TurtleScreen._RUNNING = False
 
