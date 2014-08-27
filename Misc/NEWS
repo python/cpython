@@ -124,6 +124,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22042: signal.set_wakeup_fd(fd) now raises an exception if the file
+  descriptor is in blocking mode.
+
 - Issue #16808: inspect.stack() now returns a named tuple instead of a tuple.
   Patch by Daniel Shahaf.
 
