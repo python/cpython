@@ -2628,17 +2628,33 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
     }
 
     if (cafile) {
-        cafile_bytes = PyString_AsEncodedObject(
-            cafile, Py_FileSystemDefaultEncoding, "strict");
-        if (!cafile_bytes) {
-            goto error;
+        if (PyString_Check(cafile)) {
+            Py_INCREF(cafile);
+            cafile_bytes = cafile;
+        } else {
+            PyObject *u = PyUnicode_FromObject(cafile);
+            if (!u)
+                goto error;
+            cafile_bytes = PyUnicode_AsEncodedString(
+                u, Py_FileSystemDefaultEncoding, NULL);
+            Py_DECREF(u);
+            if (!cafile_bytes)
+                goto error;
         }
     }
     if (capath) {
-        capath_bytes = PyString_AsEncodedObject(
-            capath, Py_FileSystemDefaultEncoding, "strict");
-        if (!capath_bytes) {
-            goto error;
+        if (PyString_Check(capath)) {
+            Py_INCREF(capath);
+            capath_bytes = capath;
+        } else {
+            PyObject *u = PyUnicode_FromObject(capath);
+            if (!u)
+                goto error;
+            capath_bytes = PyUnicode_AsEncodedString(
+                u, Py_FileSystemDefaultEncoding, NULL);
+            Py_DECREF(u);
+            if (!capath_bytes)
+                goto error;
         }
     }
 

@@ -850,11 +850,14 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(cafile=CERTFILE, capath=None)
         ctx.load_verify_locations(BYTES_CERTFILE)
         ctx.load_verify_locations(cafile=BYTES_CERTFILE, capath=None)
+        ctx.load_verify_locations(cafile=BYTES_CERTFILE.decode('utf-8'))
         self.assertRaises(TypeError, ctx.load_verify_locations)
         self.assertRaises(TypeError, ctx.load_verify_locations, None, None, None)
         with self.assertRaises(IOError) as cm:
             ctx.load_verify_locations(WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
+        with self.assertRaises(IOError):
+            ctx.load_verify_locations(u'')
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_verify_locations(BADCERT)
         ctx.load_verify_locations(CERTFILE, CAPATH)
