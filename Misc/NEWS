@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21307: As part of PEP 466, backport hashlib.algorithms_guaranteed and
+  hashlib.algorithms_available.
+
 - Issue #22259: Fix segfault when attempting to fopen a file descriptor
   corresponding to a directory.
 

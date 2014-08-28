@@ -15,8 +15,9 @@ than using new():
 
 md5(), sha1(), sha224(), sha256(), sha384(), and sha512()
 
-More algorithms may be available on your platform but the above are
-guaranteed to exist.
+More algorithms may be available on your platform but the above are guaranteed
+to exist.  See the algorithms_guaranteed and algorithms_available attributes
+to find out what algorithm names can be passed to new().
 
 NOTE: If you want the adler32 or crc32 hash functions they are available in
 the zlib module.
@@ -58,9 +59,14 @@ More condensed:
 # always available algorithm is added.
 __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
 
+algorithms_guaranteed = set(__always_supported)
+algorithms_available = set(__always_supported)
+
 algorithms = __always_supported
 
-__all__ = __always_supported + ('new', 'algorithms', 'pbkdf2_hmac')
+__all__ = __always_supported + ('new', 'algorithms_guaranteed',
+                                'algorithms_available', 'algorithms',
+                                'pbkdf2_hmac')
 
 
 def __get_builtin_constructor(name):
@@ -128,6 +134,8 @@ try:
     import _hashlib
     new = __hash_new
     __get_hash = __get_openssl_constructor
+    algorithms_available = algorithms_available.union(
+        _hashlib.openssl_md_meth_names)
 except ImportError:
     new = __py_new
     __get_hash = __get_builtin_constructor

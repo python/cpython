@@ -88,6 +88,24 @@ This module provides the following constant attribute:
 
    .. versionadded:: 2.7
 
+.. data:: algorithms_guaranteed
+
+   A set containing the names of the hash algorithms guaranteed to be supported
+   by this module on all platforms.
+
+   .. versionadded:: 2.7.9
+
+.. data:: algorithms_available
+
+   A set containing the names of the hash algorithms that are available in the
+   running Python interpreter.  These names will be recognized when passed to
+   :func:`new`.  :attr:`algorithms_guaranteed` will always be a subset.  The
+   same algorithm may appear multiple times in this set under different names
+   (thanks to OpenSSL).
+
+   .. versionadded:: 2.7.9
+
+
 The following values are provided as constant attributes of the hash objects
 returned by the constructors:
 

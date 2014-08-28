@@ -109,6 +109,15 @@ class HashLibTestCase(unittest.TestCase):
             tuple([_algo for _algo in self.supported_hash_names if
                                                 _algo.islower()]))
 
+    def test_algorithms_guaranteed(self):
+        self.assertEqual(hashlib.algorithms_guaranteed,
+            set(_algo for _algo in self.supported_hash_names
+                  if _algo.islower()))
+
+    def test_algorithms_available(self):
+        self.assertTrue(set(hashlib.algorithms_guaranteed).
+                            issubset(hashlib.algorithms_available))
+
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
         self.assertRaises(TypeError, hashlib.new, 1)
