@@ -689,7 +689,7 @@ series of :term:`arguments <argument>`:
                 :   ["," "**" `expression`]
                 : | `keyword_arguments` ["," "*" `expression`]
                 :   ["," "**" `expression`]
-                : | "*" `expression` ["," "*" `expression`] ["," "**" `expression`]
+                : | "*" `expression` ["," `keyword_arguments`] ["," "**" `expression`]
                 : | "**" `expression`
    positional_arguments: `expression` ("," `expression`)*
    keyword_arguments: `keyword_item` ("," `keyword_item`)*
