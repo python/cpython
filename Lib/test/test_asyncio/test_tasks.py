@@ -552,6 +552,21 @@ class TaskTests(test_utils.TestCase):
         self.assertTrue(fut.done())
         self.assertTrue(fut.cancelled())
 
+    def test_wait_for_race_condition(self):
+
+        def gen():
+            yield 0.1
+            yield 0.1
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+
+        fut = asyncio.Future(loop=loop)
+        task = asyncio.wait_for(fut, timeout=0.2, loop=loop)
+        loop.call_later(0.1, fut.set_result, "ok")
+        res = loop.run_until_complete(task)
+        self.assertEqual(res, "ok")
+
     def test_wait(self):
 
         def gen():
