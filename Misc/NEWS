@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21305: os.urandom now caches a fd to /dev/urandom. This is a PEP 466
+  backport from Python 3.
+
 - Issue #21307: As part of PEP 466, backport hashlib.algorithms_guaranteed and
   hashlib.algorithms_available.
 

@@ -536,6 +536,7 @@ Py_Finalize(void)
     PyInt_Fini();
     PyFloat_Fini();
     PyDict_Fini();
+    _PyRandom_Fini();
 
 #ifdef Py_USING_UNICODE
     /* Cleanup Unicode implementation */
