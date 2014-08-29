@@ -124,6 +124,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22182: Use e.args to unpack exceptions correctly in
+  distutils.file_util.move_file. Patch by Claudiu Popa.
+
 - The webbrowser module now uses subprocess's start_new_session=True rather
   than a potentially risky preexec_fn=os.setsid call.
 
