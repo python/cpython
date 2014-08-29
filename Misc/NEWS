@@ -124,6 +124,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22098: ctypes' BigEndianStructure and LittleEndianStructure now
+  define an empty __slots__ so that subclasses don't always get an instance
+  dict.  Patch by Claudiu Popa.
+
 - Issue #22185: Fix an occasional RuntimeError in threading.Condition.wait()
   caused by mutation of the waiters queue without holding the lock.  Patch
   by Doug Zongker.
