@@ -96,8 +96,8 @@ floatclock(_Py_clock_info_t *info)
 #define WIN32_PERF_COUNTER
 /* Win32 has better clock replacement; we have our own version, due to Mark
    Hammond and Tim Peters */
-static int
-win_perf_counter(_Py_clock_info_t *info, PyObject **result)
+static PyObject*
+win_perf_counter(_Py_clock_info_t *info)
 {
     static LONGLONG cpu_frequency = 0;
     static LONGLONG ctrStart;
@@ -109,10 +109,8 @@ win_perf_counter(_Py_clock_info_t *info, PyObject **result)
         QueryPerformanceCounter(&now);
         ctrStart = now.QuadPart;
         if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
-            /* Unlikely to happen - this works on all intel
-               machines at least!  Revert to clock() */
-            *result = NULL;
-            return -1;
+            PyErr_SetFromWindowsErr(0);
+            return NULL;
         }
         cpu_frequency = freq.QuadPart;
     }
@@ -124,8 +122,7 @@ win_perf_counter(_Py_clock_info_t *info, PyObject **result)
         info->monotonic = 1;
         info->adjustable = 0;
     }
-    *result = PyFloat_FromDouble(diff / (double)cpu_frequency);
-    return 0;
+    return PyFloat_FromDouble(diff / (double)cpu_frequency);
 }
 #endif
 
@@ -135,11 +132,10 @@ static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
 #ifdef WIN32_PERF_COUNTER
-    PyObject *res;
-    if (win_perf_counter(info, &res) == 0)
-        return res;
-#endif
+    return win_perf_counter(info);
+#else
     return floatclock(info);
+#endif
 }
 
 static PyObject *
@@ -1036,35 +1032,25 @@ Monotonic clock, cannot go backward.");
 static PyObject*
 perf_counter(_Py_clock_info_t *info)
 {
-#if defined(WIN32_PERF_COUNTER) || defined(PYMONOTONIC)
-    PyObject *res;
-#endif
-#if defined(WIN32_PERF_COUNTER)
-    static int use_perf_counter = 1;
-#endif
+#ifdef WIN32_PERF_COUNTER
+    return win_perf_counter(info);
+#else
+
 #ifdef PYMONOTONIC
     static int use_monotonic = 1;
-#endif
 
-#ifdef WIN32_PERF_COUNTER
-    if (use_perf_counter) {
-        if (win_perf_counter(info, &res) == 0)
-            return res;
-        use_perf_counter = 0;
-    }
-#endif
-
-#ifdef PYMONOTONIC
     if (use_monotonic) {
-        res = pymonotonic(info);
+        PyObject *res = pymonotonic(info);
         if (res != NULL)
             return res;
         use_monotonic = 0;
         PyErr_Clear();
     }
+#else
+    return floattime(info);
 #endif
 
-    return floattime(info);
+#endif
 }
 
 static PyObject *
