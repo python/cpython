@@ -1535,7 +1535,10 @@ static PyObject*
 floattime(_Py_clock_info_t *info)
 {
     _PyTime_timeval t;
-    _PyTime_gettimeofday_info(&t, info);
+    if (_PyTime_gettimeofday_info(&t, info) < 0) {
+        assert(info != NULL);
+        return NULL;
+    }
     return PyFloat_FromDouble((double)t.tv_sec + t.tv_usec * 1e-6);
 }
 
