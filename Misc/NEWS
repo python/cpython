@@ -124,6 +124,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22185: Fix an occasional RuntimeError in threading.Condition.wait()
+  caused by mutation of the waiters queue without holding the lock.  Patch
+  by Doug Zongker.
+
 - Issue #22287: On UNIX, _PyTime_gettimeofday() now uses
   clock_gettime(CLOCK_REALTIME) if available. As a side effect, Python now
   depends on the librt library on Solaris and on Linux (only with glibc older
