@@ -3,28 +3,15 @@
 #include <windows.h>
 #endif
 
-#if defined(__APPLE__) && defined(HAVE_GETTIMEOFDAY) && defined(HAVE_FTIME)
-  /*
-   * _PyTime_gettimeofday falls back to ftime when getttimeofday fails because the latter
-   * might fail on some platforms. This fallback is unwanted on MacOSX because
-   * that makes it impossible to use a binary build on OSX 10.4 on earlier
-   * releases of the OS. Therefore claim we don't support ftime.
-   */
-# undef HAVE_FTIME
-#endif
-
-#if defined(HAVE_FTIME) && !defined(MS_WINDOWS)
-#include <sys/timeb.h>
-extern int ftime(struct timeb *);
-#endif
-
-static void
-pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
+static int
+pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
 {
 #ifdef MS_WINDOWS
     FILETIME system_time;
     ULARGE_INTEGER large;
     ULONGLONG microseconds;
+
+    assert(info == NULL || raise);
 
     GetSystemTimeAsFileTime(&system_time);
     large.u.LowPart = system_time.dwLowDateTime;
@@ -37,55 +24,51 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
     tp->tv_usec = microseconds % 1000000;
     if (info) {
         DWORD timeAdjustment, timeIncrement;
-        BOOL isTimeAdjustmentDisabled;
+        BOOL isTimeAdjustmentDisabled, ok;
 
         info->implementation = "GetSystemTimeAsFileTime()";
         info->monotonic = 0;
-        (void) GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                                       &isTimeAdjustmentDisabled);
+        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
+                                     &isTimeAdjustmentDisabled);
+        if (!ok) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
         info->resolution = timeIncrement * 1e-7;
         info->adjustable = 1;
     }
-#else
-    /* There are three ways to get the time:
-      (1) gettimeofday() -- resolution in microseconds
-      (2) ftime() -- resolution in milliseconds
-      (3) time() -- resolution in seconds
-      In all cases the return value in a timeval struct.
-      Since on some systems (e.g. SCO ODT 3.0) gettimeofday() may
-      fail, so we fall back on ftime() or time().
-      Note: clock resolution does not imply clock accuracy! */
+    return 0;
 
-#if (defined(HAVE_CLOCK_GETTIME) || defined(HAVE_GETTIMEOFDAY) \
-     || defined(HAVE_FTIME))
+#else   /* MS_WINDOWS */
     int err;
-#endif
 #ifdef HAVE_CLOCK_GETTIME
     struct timespec ts;
 #endif
-#ifdef HAVE_FTIME
-    struct timeb t;
-#endif
 
-    /* test clock_gettime(CLOCK_REALTIME) */
+    assert(info == NULL || raise);
+
 #ifdef HAVE_CLOCK_GETTIME
-    err  = clock_gettime(CLOCK_REALTIME, &ts);
-    if (err == 0) {
-        if (info) {
-            struct timespec res;
-            info->implementation = "clock_gettime(CLOCK_REALTIME)";
-            info->monotonic = 0;
-            info->adjustable = 1;
-            if (clock_getres(CLOCK_REALTIME, &res) == 0)
-                info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-            else
-                info->resolution = 1e-9;
-        }
-        tp->tv_sec = ts.tv_sec;
-        tp->tv_usec = ts.tv_nsec / 1000;
-        return;
+    err = clock_gettime(CLOCK_REALTIME, &ts);
+    if (err) {
+        if (raise)
+            PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
     }
-#endif
+    tp->tv_sec = ts.tv_sec;
+    tp->tv_usec = ts.tv_nsec / 1000;
+
+    if (info) {
+        struct timespec res;
+        info->implementation = "clock_gettime(CLOCK_REALTIME)";
+        info->monotonic = 0;
+        info->adjustable = 1;
+        if (clock_getres(CLOCK_REALTIME, &res) == 0)
+            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+        else
+            info->resolution = 1e-9;
+    }
+    return 0;
+#else   /* HAVE_CLOCK_GETTIME */
 
      /* test gettimeofday() */
 #ifdef HAVE_GETTIMEOFDAY
@@ -94,51 +77,39 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
 #else
     err = gettimeofday(tp, (struct timezone *)NULL);
 #endif
-    if (err == 0) {
-        if (info) {
-            info->implementation = "gettimeofday()";
-            info->resolution = 1e-6;
-            info->monotonic = 0;
-            info->adjustable = 1;
-        }
-        return;
+    if (err) {
+        if (raise)
+            PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
     }
+
+    if (info) {
+        info->implementation = "gettimeofday()";
+        info->resolution = 1e-6;
+        info->monotonic = 0;
+        info->adjustable = 1;
+    }
+    return 0;
 #endif   /* HAVE_GETTIMEOFDAY */
-
-#ifdef HAVE_FTIME
-    ftime(&t);
-    tp->tv_sec = t.time;
-    tp->tv_usec = t.millitm * 1000;
-    if (info) {
-        info->implementation = "ftime()";
-        info->resolution = 1e-3;
-        info->monotonic = 0;
-        info->adjustable = 1;
-    }
-#else /* !HAVE_FTIME */
-    tp->tv_sec = time(NULL);
-    tp->tv_usec = 0;
-    if (info) {
-        info->implementation = "time()";
-        info->resolution = 1.0;
-        info->monotonic = 0;
-        info->adjustable = 1;
-    }
-#endif /* !HAVE_FTIME */
-
-#endif /* MS_WINDOWS */
+#endif   /* !HAVE_CLOCK_GETTIME */
+#endif   /* !MS_WINDOWS */
 }
 
 void
 _PyTime_gettimeofday(_PyTime_timeval *tp)
 {
-    pygettimeofday(tp, NULL);
+    if (pygettimeofday(tp, NULL, 0) < 0) {
+        /* cannot happen, _PyTime_Init() checks that pygettimeofday() works */
+        assert(0);
+        tp->tv_sec = 0;
+        tp->tv_usec = 0;
+    }
 }
 
-void
+int
 _PyTime_gettimeofday_info(_PyTime_timeval *tp, _Py_clock_info_t *info)
 {
-    pygettimeofday(tp, info);
+    return pygettimeofday(tp, info, 1);
 }
 
 static void
@@ -273,8 +244,12 @@ _PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec,
     return _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
 }
 
-void
-_PyTime_Init()
+int
+_PyTime_Init(void)
 {
-    /* Do nothing.  Needed to force linking. */
+    _PyTime_timeval tv;
+    /* ensure that the system clock works */
+    if (_PyTime_gettimeofday_info(&tv, NULL) < 0)
+        return -1;
+    return 0;
 }

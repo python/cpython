@@ -13,6 +13,8 @@ functions and constants
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
+
 #ifdef HAVE_GETTIMEOFDAY
 typedef struct timeval _PyTime_timeval;
 #else
@@ -37,7 +39,7 @@ PyAPI_FUNC(void) _PyTime_gettimeofday(_PyTime_timeval *tp);
 
 /* Similar to _PyTime_gettimeofday() but retrieve also information on the
  * clock used to get the current time. */
-PyAPI_FUNC(void) _PyTime_gettimeofday_info(
+PyAPI_FUNC(int) _PyTime_gettimeofday_info(
     _PyTime_timeval *tp,
     _Py_clock_info_t *info);
 
@@ -51,8 +53,6 @@ do { \
 #define _PyTime_INTERVAL(tv_start, tv_end) \
     ((tv_end.tv_sec - tv_start.tv_sec) + \
      (tv_end.tv_usec - tv_start.tv_usec) * 0.000001)
-
-#ifndef Py_LIMITED_API
 
 typedef enum {
     /* Round towards zero. */
@@ -92,10 +92,11 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
     time_t *sec,
     long *nsec,
     _PyTime_round_t);
-#endif
 
-/* Dummy to force linking. */
-PyAPI_FUNC(void) _PyTime_Init(void);
+/* Initialize time.
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int) _PyTime_Init(void);
+#endif   /* Py_LIMITED_API */
 
 #ifdef __cplusplus
 }
