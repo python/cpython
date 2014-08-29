@@ -22,6 +22,26 @@ class Test(unittest.TestCase):
             setattr(bits, "i%s" % i, 1)
             dump(bits)
 
+    def test_slots(self):
+        class BigPoint(BigEndianStructure):
+            __slots__ = ()
+            _fields_ = [("x", c_int), ("y", c_int)]
+
+        class LowPoint(LittleEndianStructure):
+            __slots__ = ()
+            _fields_ = [("x", c_int), ("y", c_int)]
+
+        big = BigPoint()
+        little = LowPoint()
+        big.x = 4
+        big.y = 2
+        little.x = 2
+        little.y = 4
+        with self.assertRaises(AttributeError):
+            big.z = 42
+        with self.assertRaises(AttributeError):
+            little.z = 24
+
     def test_endian_short(self):
         if sys.byteorder == "little":
             self.assertIs(c_short.__ctype_le__, c_short)

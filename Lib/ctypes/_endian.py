@@ -45,6 +45,7 @@ if sys.byteorder == "little":
 
     class BigEndianStructure(Structure, metaclass=_swapped_meta):
         """Structure with big endian byte order"""
+        __slots__ = ()
         _swappedbytes_ = None
 
 elif sys.byteorder == "big":
@@ -53,6 +54,7 @@ elif sys.byteorder == "big":
     BigEndianStructure = Structure
     class LittleEndianStructure(Structure, metaclass=_swapped_meta):
         """Structure with little endian byte order"""
+        __slots__ = ()
         _swappedbytes_ = None
 
 else:
