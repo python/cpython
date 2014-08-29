@@ -284,6 +284,7 @@ class Condition:
         waiter.acquire()
         self._waiters.append(waiter)
         saved_state = self._release_save()
+        gotit = False
         try:    # restore state no matter what (e.g., KeyboardInterrupt)
             if timeout is None:
                 waiter.acquire()
@@ -293,14 +294,14 @@ class Condition:
                     gotit = waiter.acquire(True, timeout)
                 else:
                     gotit = waiter.acquire(False)
-                if not gotit:
-                    try:
-                        self._waiters.remove(waiter)
-                    except ValueError:
-                        pass
             return gotit
         finally:
             self._acquire_restore(saved_state)
+            if not gotit:
+                try:
+                    self._waiters.remove(waiter)
+                except ValueError:
+                    pass
 
     def wait_for(self, predicate, timeout=None):
         """Wait until a condition evaluates to True.
