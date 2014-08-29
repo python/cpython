@@ -124,6 +124,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #22287: On UNIX, _PyTime_gettimeofday() now uses
+  clock_gettime(CLOCK_REALTIME) if available. As a side effect, Python now
+  depends on the librt library on Solaris and on Linux (only with glibc older
+  than 2.17).
+
 - Issue #22182: Use e.args to unpack exceptions correctly in
   distutils.file_util.move_file. Patch by Claudiu Popa.
 
