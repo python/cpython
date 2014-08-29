@@ -1046,9 +1046,8 @@ perf_counter(_Py_clock_info_t *info)
         use_monotonic = 0;
         PyErr_Clear();
     }
-#else
-    return floattime(info);
 #endif
+    return floattime(info);
 
 #endif
 }
