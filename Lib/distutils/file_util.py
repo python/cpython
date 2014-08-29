@@ -194,7 +194,7 @@ def move_file (src, dst,
     try:
         os.rename(src, dst)
     except OSError as e:
-        (num, msg) = e
+        (num, msg) = e.args
         if num == errno.EXDEV:
             copy_it = True
         else:
@@ -206,7 +206,7 @@ def move_file (src, dst,
         try:
             os.unlink(src)
         except OSError as e:
-            (num, msg) = e
+            (num, msg) = e.args
             try:
                 os.unlink(dst)
             except OSError:
