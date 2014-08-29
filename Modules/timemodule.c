@@ -1535,28 +1535,6 @@ static PyObject*
 floattime(_Py_clock_info_t *info)
 {
     _PyTime_timeval t;
-#ifdef HAVE_CLOCK_GETTIME
-    struct timespec tp;
-    int ret;
-
-    /* _PyTime_gettimeofday() does not use clock_gettime()
-       because it would require to link Python to the rt (real-time)
-       library, at least on Linux */
-    ret = clock_gettime(CLOCK_REALTIME, &tp);
-    if (ret == 0) {
-        if (info) {
-            struct timespec res;
-            info->implementation = "clock_gettime(CLOCK_REALTIME)";
-            info->monotonic = 0;
-            info->adjustable = 1;
-            if (clock_getres(CLOCK_REALTIME, &res) == 0)
-                info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-            else
-                info->resolution = 1e-9;
-        }
-        return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
-    }
-#endif
     _PyTime_gettimeofday_info(&t, info);
     return PyFloat_FromDouble((double)t.tv_sec + t.tv_usec * 1e-6);
 }

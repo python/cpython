@@ -11904,6 +11904,7 @@ fi
 $as_echo "$ac_cv_lib_rt_clock_gettime" >&6; }
 if test "x$ac_cv_lib_rt_clock_gettime" = xyes; then :
 
+        LIBS="$LIBS -lrt"
         $as_echo "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 
 

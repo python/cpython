@@ -56,8 +56,39 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
       fail, so we fall back on ftime() or time().
       Note: clock resolution does not imply clock accuracy! */
 
-#ifdef HAVE_GETTIMEOFDAY
+#if (defined(HAVE_CLOCK_GETTIME) || defined(HAVE_GETTIMEOFDAY) \
+     || defined(HAVE_FTIME))
     int err;
+#endif
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+#endif
+#ifdef HAVE_FTIME
+    struct timeb t;
+#endif
+
+    /* test clock_gettime(CLOCK_REALTIME) */
+#ifdef HAVE_CLOCK_GETTIME
+    err  = clock_gettime(CLOCK_REALTIME, &ts);
+    if (err == 0) {
+        if (info) {
+            struct timespec res;
+            info->implementation = "clock_gettime(CLOCK_REALTIME)";
+            info->monotonic = 0;
+            info->adjustable = 1;
+            if (clock_getres(CLOCK_REALTIME, &res) == 0)
+                info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            else
+                info->resolution = 1e-9;
+        }
+        tp->tv_sec = ts.tv_sec;
+        tp->tv_usec = ts.tv_nsec / 1000;
+        return;
+    }
+#endif
+
+     /* test gettimeofday() */
+#ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_NO_TZ
     err = gettimeofday(tp);
 #else
@@ -74,18 +105,15 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info)
     }
 #endif   /* HAVE_GETTIMEOFDAY */
 
-#if defined(HAVE_FTIME)
-    {
-        struct timeb t;
-        ftime(&t);
-        tp->tv_sec = t.time;
-        tp->tv_usec = t.millitm * 1000;
-        if (info) {
-            info->implementation = "ftime()";
-            info->resolution = 1e-3;
-            info->monotonic = 0;
-            info->adjustable = 1;
-        }
+#ifdef HAVE_FTIME
+    ftime(&t);
+    tp->tv_sec = t.time;
+    tp->tv_usec = t.millitm * 1000;
+    if (info) {
+        info->implementation = "ftime()";
+        info->resolution = 1e-3;
+        info->monotonic = 0;
+        info->adjustable = 1;
     }
 #else /* !HAVE_FTIME */
     tp->tv_sec = time(NULL);
