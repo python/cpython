@@ -858,6 +858,21 @@ class SMTPSimTests(unittest.TestCase):
             self.assertIn(sim_auth_login_password, str(err))
         smtp.close()
 
+    def test_quit_resets_greeting(self):
+        smtp = smtplib.SMTP(HOST, self.port,
+                            local_hostname='localhost',
+                            timeout=15)
+        code, message = smtp.ehlo()
+        self.assertEqual(code, 250)
+        self.assertIn('size', smtp.esmtp_features)
+        smtp.quit()
+        self.assertNotIn('size', smtp.esmtp_features)
+        smtp.connect(HOST, self.port)
+        self.assertNotIn('size', smtp.esmtp_features)
+        smtp.ehlo_or_helo_if_needed()
+        self.assertIn('size', smtp.esmtp_features)
+        smtp.quit()
+
     def test_with_statement(self):
         with smtplib.SMTP(HOST, self.port) as smtp:
             code, message = smtp.noop()
