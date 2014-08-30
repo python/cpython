@@ -19,6 +19,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22216: smtplib now resets its state more completely after a quit.  The
+  most obvious consequence of the previous behavior was a STARTTLS failure
+  during a connect/starttls/quit/connect/starttls sequence.
+
 - Issue #21305: os.urandom now caches a fd to /dev/urandom. This is a PEP 466
   backport from Python 3.
 
