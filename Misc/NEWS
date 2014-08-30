@@ -124,6 +124,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22216: smtplib now resets its state more completely after a quit.  The
+  most obvious consequence of the previous behavior was a STARTTLS failure
+  during a connect/starttls/quit/connect/starttls sequence.
+
 - Issue #22098: ctypes' BigEndianStructure and LittleEndianStructure now
   define an empty __slots__ so that subclasses don't always get an instance
   dict.  Patch by Claudiu Popa.
