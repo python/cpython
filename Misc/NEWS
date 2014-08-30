@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22216: smtplib now resets its state more completely after a quit.  The
+  most obvious consequence of the previous behavior was a STARTTLS failure
+  during a connect/starttls/quit/connect/starttls sequence.
+
 - Issue #22185: Fix an occasional RuntimeError in threading.Condition.wait()
   caused by mutation of the waiters queue without holding the lock.  Patch
   by Doug Zongker.
