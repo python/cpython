@@ -2,7 +2,6 @@
 import unittest
 import os
 import stat
-import shutil
 import sys
 
 from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
