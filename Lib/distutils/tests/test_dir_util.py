@@ -3,13 +3,29 @@ import unittest
 import os
 import stat
 import sys
+import contextlib
 
+from distutils import dir_util, errors
 from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
                                 ensure_relative)
 
 from distutils import log
 from distutils.tests import support
 from test.support import run_unittest
+
+
+@contextlib.context_manager
+def patch_obj(obj, attr, replacement):
+    """
+    A poor man's mock.patch.object
+    """
+    orig = getattr(obj, attr)
+    try:
+        setattr(obj, attr, replacement)
+        yield
+    finally:
+        setattr(obj, attr, orig)
+
 
 class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
@@ -118,6 +134,19 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
         else:   # \\
             self.assertEqual(ensure_relative('c:\\home\\foo'), 'c:home\\foo')
             self.assertEqual(ensure_relative('home\\foo'), 'home\\foo')
+
+    def test_copy_tree_exception_in_listdir(self):
+        """
+        An exception in listdir should raise a DistutilsFileError
+        """
+        def new_listdir(path):
+            raise OSError()
+        # simulate a transient network error or other failure invoking listdir
+        with patch_obj(os, 'listdir', new_listdir):
+            args = 'src', None
+            exc = errors.DistutilsFileError
+            self.assertRaises(exc, dir_util.copy_tree, *args)
+
 
 def test_suite():
     return unittest.makeSuite(DirUtilTestCase)
