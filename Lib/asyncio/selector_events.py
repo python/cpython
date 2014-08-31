@@ -8,6 +8,7 @@ __all__ = ['BaseSelectorEventLoop']
 
 import collections
 import errno
+import functools
 import socket
 try:
     import ssl
@@ -345,26 +346,43 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         except ValueError as err:
             fut.set_exception(err)
         else:
-            self._sock_connect(fut, False, sock, address)
+            self._sock_connect(fut, sock, address)
         return fut
 
-    def _sock_connect(self, fut, registered, sock, address):
+    def _sock_connect(self, fut, sock, address):
         fd = sock.fileno()
-        if registered:
-            self.remove_writer(fd)
+        try:
+            while True:
+                try:
+                    sock.connect(address)
+                except InterruptedError:
+                    continue
+                else:
+                    break
+        except BlockingIOError:
+            fut.add_done_callback(functools.partial(self._sock_connect_done,
+                                                    sock))
+            self.add_writer(fd, self._sock_connect_cb, fut, sock, address)
+        except Exception as exc:
+            fut.set_exception(exc)
+        else:
+            fut.set_result(None)
+
+    def _sock_connect_done(self, sock, fut):
+        self.remove_writer(sock.fileno())
+
+    def _sock_connect_cb(self, fut, sock, address):
         if fut.cancelled():
             return
+
         try:
-            if not registered:
-                # First time around.
-                sock.connect(address)
-            else:
-                err = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
-                if err != 0:
-                    # Jump to the except clause below.
-                    raise OSError(err, 'Connect call failed %s' % (address,))
+            err = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+            if err != 0:
+                # Jump to any except clause below.
+                raise OSError(err, 'Connect call failed %s' % (address,))
         except (BlockingIOError, InterruptedError):
-            self.add_writer(fd, self._sock_connect, fut, True, sock, address)
+            # socket is still registered, the callback will be retried later
+            pass
         except Exception as exc:
             fut.set_exception(exc)
         else:
