@@ -13,8 +13,6 @@ functions and constants
 extern "C" {
 #endif
 
-#ifndef Py_LIMITED_API
-
 #ifdef HAVE_GETTIMEOFDAY
 typedef struct timeval _PyTime_timeval;
 #else
@@ -96,7 +94,6 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
 /* Initialize time.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_Init(void);
-#endif   /* Py_LIMITED_API */
 
 #ifdef __cplusplus
 }
