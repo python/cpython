@@ -221,6 +221,8 @@ Creating connections
      to bind the socket to locally.  The *local_host* and *local_port*
      are looked up using getaddrinfo(), similarly to *host* and *port*.
 
+   On Windows with :class:`ProactorEventLoop`, SSL/TLS is not supported.
+
    .. seealso::
 
       The :func:`open_connection` function can be used to get a pair of
@@ -239,6 +241,8 @@ Creating connections
 
    See the :meth:`BaseEventLoop.create_connection` method for parameters.
 
+   On Windows with :class:`ProactorEventLoop`, this method is not supported.
+
 
 .. method:: BaseEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
 
@@ -251,6 +255,8 @@ Creating connections
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
+   On Windows with :class:`ProactorEventLoop`, SSL/TLS is not supported.
+
    See the :meth:`BaseEventLoop.create_connection` method for parameters.
 
    Availability: UNIX.
@@ -261,19 +267,19 @@ Creating listening connections
 
 .. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
-   Create a TCP server bound to host and port. Return a :class:`Server` object,
+   Create a TCP server bound to *host* and *port*. Return a :class:`Server` object,
    its :attr:`~Server.sockets` attribute contains created sockets. Use the
    :meth:`Server.close` method to stop the server: close listening sockets.
 
    This method is a :ref:`coroutine <coroutine>`.
 
-   If *host* is an empty string or None all interfaces are assumed
+   If *host* is an empty string or ``None``, all interfaces are assumed
    and a list of multiple sockets will be returned (most likely
    one for IPv4 and another one for IPv6).
 
-   *family* can be set to either :data:`~socket.AF_INET` or
+   *family* can be set to either :data:`socket.AF_INET` or
    :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6. If not set
-   it will be determined from host (defaults to :data:`~socket.AF_UNSPEC`).
+   it will be determined from host (defaults to :data:`socket.AF_UNSPEC`).
 
    *flags* is a bitmask for :meth:`getaddrinfo`.
 
@@ -283,13 +289,15 @@ Creating listening connections
    *backlog* is the maximum number of queued connections passed to
    :meth:`~socket.socket.listen` (defaults to 100).
 
-   ssl can be set to an :class:`~ssl.SSLContext` to enable SSL over the
+   *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over the
    accepted connections.
 
    *reuse_address* tells the kernel to reuse a local socket in
    TIME_WAIT state, without waiting for its natural timeout to
    expire. If not specified will automatically be set to True on
    UNIX.
+
+   On Windows with :class:`ProactorEventLoop`, SSL/TLS is not supported.
 
    .. seealso::
 
@@ -307,6 +315,11 @@ Creating listening connections
 
 Watch file descriptors
 ----------------------
+
+On Windows with :class:`SelectorEventLoop`, only socket handles are supported
+(ex: pipe file descriptors are not supported).
+
+On Windows with :class:`ProactorEventLoop`, these methods are not supported.
 
 .. method:: BaseEventLoop.add_reader(fd, callback, \*args)
 
@@ -418,6 +431,9 @@ Resolve host name
 
 Connect pipes
 -------------
+
+On Windows with :class:`SelectorEventLoop`, these methods are not supported.
+Use :class:`ProactorEventLoop` to support pipes on Windows.
 
 .. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
