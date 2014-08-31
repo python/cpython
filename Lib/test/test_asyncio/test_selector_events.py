@@ -40,8 +40,9 @@ def list_to_buffer(l=()):
 class BaseSelectorEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
-        selector = mock.Mock()
-        self.loop = TestBaseSelectorEventLoop(selector)
+        self.selector = mock.Mock()
+        self.selector.select.return_value = []
+        self.loop = TestBaseSelectorEventLoop(self.selector)
         self.set_event_loop(self.loop, cleanup=False)
 
     def test_make_socket_transport(self):
@@ -303,8 +304,31 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         f = self.loop.sock_connect(sock, ('127.0.0.1', 8080))
         self.assertIsInstance(f, asyncio.Future)
         self.assertEqual(
-            (f, False, sock, ('127.0.0.1', 8080)),
+            (f, sock, ('127.0.0.1', 8080)),
             self.loop._sock_connect.call_args[0])
+
+    def test_sock_connect_timeout(self):
+        # Tulip issue #205: sock_connect() must unregister the socket on
+        # timeout error
+
+        # prepare mocks
+        self.loop.add_writer = mock.Mock()
+        self.loop.remove_writer = mock.Mock()
+        sock = test_utils.mock_nonblocking_socket()
+        sock.connect.side_effect = BlockingIOError
+
+        # first call to sock_connect() registers the socket
+        fut = self.loop.sock_connect(sock, ('127.0.0.1', 80))
+        self.assertTrue(sock.connect.called)
+        self.assertTrue(self.loop.add_writer.called)
+        self.assertEqual(len(fut._callbacks), 1)
+
+        # on timeout, the socket must be unregistered
+        sock.connect.reset_mock()
+        fut.set_exception(asyncio.TimeoutError)
+        with self.assertRaises(asyncio.TimeoutError):
+            self.loop.run_until_complete(fut)
+        self.assertTrue(self.loop.remove_writer.called)
 
     def test__sock_connect(self):
         f = asyncio.Future(loop=self.loop)
@@ -312,54 +336,60 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock = mock.Mock()
         sock.fileno.return_value = 10
 
-        self.loop._sock_connect(f, False, sock, ('127.0.0.1', 8080))
+        self.loop._sock_connect(f, sock, ('127.0.0.1', 8080))
         self.assertTrue(f.done())
         self.assertIsNone(f.result())
         self.assertTrue(sock.connect.called)
 
-    def test__sock_connect_canceled_fut(self):
+    def test__sock_connect_cb_cancelled_fut(self):
         sock = mock.Mock()
+        self.loop.remove_writer = mock.Mock()
 
         f = asyncio.Future(loop=self.loop)
         f.cancel()
 
-        self.loop._sock_connect(f, False, sock, ('127.0.0.1', 8080))
-        self.assertFalse(sock.connect.called)
+        self.loop._sock_connect_cb(f, sock, ('127.0.0.1', 8080))
+        self.assertFalse(sock.getsockopt.called)
 
-    def test__sock_connect_unregister(self):
+    def test__sock_connect_writer(self):
+        # check that the fd is registered and then unregistered
+        self.loop._process_events = mock.Mock()
+        self.loop.add_writer = mock.Mock()
+        self.loop.remove_writer = mock.Mock()
+
         sock = mock.Mock()
         sock.fileno.return_value = 10
+        sock.connect.side_effect = BlockingIOError
+        sock.getsockopt.return_value = 0
+        address = ('127.0.0.1', 8080)
 
         f = asyncio.Future(loop=self.loop)
-        f.cancel()
+        self.loop._sock_connect(f, sock, address)
+        self.assertTrue(self.loop.add_writer.called)
+        self.assertEqual(10, self.loop.add_writer.call_args[0][0])
 
-        self.loop.remove_writer = mock.Mock()
-        self.loop._sock_connect(f, True, sock, ('127.0.0.1', 8080))
+        self.loop._sock_connect_cb(f, sock, address)
+        # need to run the event loop to execute _sock_connect_done() callback
+        self.loop.run_until_complete(f)
         self.assertEqual((10,), self.loop.remove_writer.call_args[0])
 
-    def test__sock_connect_tryagain(self):
+    def test__sock_connect_cb_tryagain(self):
         f = asyncio.Future(loop=self.loop)
         sock = mock.Mock()
         sock.fileno.return_value = 10
         sock.getsockopt.return_value = errno.EAGAIN
 
-        self.loop.add_writer = mock.Mock()
-        self.loop.remove_writer = mock.Mock()
+        # check that the exception is handled
+        self.loop._sock_connect_cb(f, sock, ('127.0.0.1', 8080))
 
-        self.loop._sock_connect(f, True, sock, ('127.0.0.1', 8080))
-        self.assertEqual(
-            (10, self.loop._sock_connect, f,
-             True, sock, ('127.0.0.1', 8080)),
-            self.loop.add_writer.call_args[0])
-
-    def test__sock_connect_exception(self):
+    def test__sock_connect_cb_exception(self):
         f = asyncio.Future(loop=self.loop)
         sock = mock.Mock()
         sock.fileno.return_value = 10
         sock.getsockopt.return_value = errno.ENOTCONN
 
         self.loop.remove_writer = mock.Mock()
-        self.loop._sock_connect(f, True, sock, ('127.0.0.1', 8080))
+        self.loop._sock_connect_cb(f, sock, ('127.0.0.1', 8080))
         self.assertIsInstance(f.exception(), OSError)
 
     def test_sock_accept(self):
