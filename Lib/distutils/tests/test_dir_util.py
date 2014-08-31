@@ -2,7 +2,6 @@
 import unittest
 import os
 import stat
-import shutil
 import sys
 
 from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
@@ -52,7 +51,7 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
         self.assertEqual(self._logs, wanted)
 
     @unittest.skipIf(sys.platform.startswith('win'),
-                        "This test is only appropriate for POSIX-like systems.")
+        "This test is only appropriate for POSIX-like systems.")
     def test_mkpath_with_custom_mode(self):
         # Get and set the current umask value for testing mode bits.
         umask = os.umask(0o002)
