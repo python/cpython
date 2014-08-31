@@ -125,12 +125,11 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1,
     try:
         names = os.listdir(src)
     except OSError as e:
-        (errno, errstr) = e
         if dry_run:
             names = []
         else:
             raise DistutilsFileError(
-                  "error listing files in '%s': %s" % (src, errstr))
+                  "error listing files in '%s': %s" % (src, e.strerror))
 
     if not dry_run:
         mkpath(dst, verbose=verbose)

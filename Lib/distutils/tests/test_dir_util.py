@@ -3,13 +3,16 @@ import unittest
 import os
 import stat
 import sys
+from unittest.mock import patch
 
+from distutils import dir_util, errors
 from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
                                 ensure_relative)
 
 from distutils import log
 from distutils.tests import support
 from test.support import run_unittest
+
 
 class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
@@ -118,6 +121,16 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
         else:   # \\
             self.assertEqual(ensure_relative('c:\\home\\foo'), 'c:home\\foo')
             self.assertEqual(ensure_relative('home\\foo'), 'home\\foo')
+
+    @patch('os.listdir', side_effect=OSError())
+    def test_copy_tree_exception_in_listdir(self, listdir):
+        """
+        An exception in listdir should raise a DistutilsFileError
+        """
+        with self.assertRaises(errors.DistutilsFileError):
+            src = self.tempdirs[-1]
+            dir_util.copy_tree(src, None)
+
 
 def test_suite():
     return unittest.makeSuite(DirUtilTestCase)
