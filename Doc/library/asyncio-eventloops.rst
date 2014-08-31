@@ -39,6 +39,10 @@ asyncio currently provides two implementations of event loops:
 
    Use the most efficient selector available on the platform.
 
+   On Windows, only sockets are supported (ex: pipes are not supported):
+   see the `MSDN documentation of select
+   <http://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_.
+
 .. class:: ProactorEventLoop
 
    Proactor event loop for Windows using "I/O Completion Ports" aka IOCP.
@@ -83,9 +87,7 @@ Common limits of Windows event loops:
 
 :class:`SelectorEventLoop` specific limits:
 
-- :class:`~selectors.SelectSelector` is used but it only supports sockets,
-  see the `MSDN documentation of select
-  <http://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_
+- :class:`~selectors.SelectSelector` is used but it only supports sockets
 - :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` only
   accept file descriptors of sockets
 - Pipes are not supported
