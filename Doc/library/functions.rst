@@ -158,8 +158,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return the string representing a character whose Unicode codepoint is the
    integer *i*.  For example, ``chr(97)`` returns the string ``'a'``, while
-   ``chr(12491)`` returns the string ``'ニ'``. This is the inverse of
-   :func:`ord`.
+   ``chr(9731)`` returns the string ``'☃'``. This is the inverse of :func:`ord`.
 
    The valid range for the argument is from 0 through 1,114,111 (0x10FFFF in
    base 16).  :exc:`ValueError` will be raised if *i* is outside that range.
