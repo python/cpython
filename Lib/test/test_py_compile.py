@@ -94,7 +94,8 @@ class PyCompileTests(unittest.TestCase):
 
     def test_bad_coding(self):
         bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
-        self.assertIsNone(py_compile.compile(bad_coding, doraise=False))
+        with support.captured_stderr():
+            self.assertIsNone(py_compile.compile(bad_coding, doraise=False))
         self.assertFalse(os.path.exists(
             importlib.util.cache_from_source(bad_coding)))
 
