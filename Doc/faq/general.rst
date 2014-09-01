@@ -167,7 +167,8 @@ Sphinx-formatted documentation, Python library modules, example programs, and
 several useful pieces of freely distributable software.  The source will compile
 and run out of the box on most UNIX platforms.
 
-Consult the `Developer FAQ <http://docs.python.org/devguide/faq>`__ for more
+Consult the `Getting Started section of the Python Developer's Guide
+<https://docs.python.org/devguide/setup.html>`__ for more
 information on getting the source code and compiling it.
 
 
