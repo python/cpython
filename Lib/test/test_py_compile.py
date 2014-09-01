@@ -3,11 +3,11 @@ import os
 import py_compile
 import shutil
 import stat
-import sys
 import tempfile
 import unittest
 
-from test import support, script_helper
+from test import support
+
 
 class PyCompileTests(unittest.TestCase):
 
