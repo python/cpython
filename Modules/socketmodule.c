@@ -680,7 +680,7 @@ internal_select(PySocketSockObject *s, int writing)
         double interval = s->sock_timeout; \
         int has_timeout = s->sock_timeout > 0.0; \
         if (has_timeout) { \
-            _PyTime_gettimeofday(&now); \
+            _PyTime_monotonic(&now); \
             deadline = now; \
             _PyTime_ADD_SECONDS(deadline, s->sock_timeout); \
         } \
@@ -691,7 +691,7 @@ internal_select(PySocketSockObject *s, int writing)
             if (!has_timeout || \
                 (!CHECK_ERRNO(EWOULDBLOCK) && !CHECK_ERRNO(EAGAIN))) \
                 break; \
-            _PyTime_gettimeofday(&now); \
+            _PyTime_monotonic(&now); \
             interval = _PyTime_INTERVAL(now, deadline); \
         } \
     } \

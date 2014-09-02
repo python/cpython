@@ -365,10 +365,7 @@ import signal
 import builtins
 import warnings
 import errno
-try:
-    from time import monotonic as _time
-except ImportError:
-    from time import time as _time
+from time import monotonic as _time
 
 # Exception classes used by this module.
 class SubprocessError(Exception): pass

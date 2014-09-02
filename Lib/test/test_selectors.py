@@ -8,10 +8,7 @@ from test import support
 from time import sleep
 import unittest
 import unittest.mock
-try:
-    from time import monotonic as time
-except ImportError:
-    from time import time as time
+from time import monotonic as time
 try:
     import resource
 except ImportError:

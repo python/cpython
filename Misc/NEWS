@@ -129,6 +129,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #22043: time.monotonic() is now always available.
+  ``threading.Lock.acquire()``, ``threading.RLock.acquire()`` and socket
+  operations now use a monotonic clock, instead of the system clock, when a
+  timeout is used.
+
 - Issue #21527: Add a default number of workers to ThreadPoolExecutor equal
   to 5 times the number of CPUs.  Patch by Claudiu Popa.
 
