@@ -37,7 +37,6 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
         info->resolution = timeIncrement * 1e-7;
         info->adjustable = 1;
     }
-    return 0;
 
 #else   /* MS_WINDOWS */
     int err;
@@ -67,11 +66,9 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
         else
             info->resolution = 1e-9;
     }
-    return 0;
 #else   /* HAVE_CLOCK_GETTIME */
 
      /* test gettimeofday() */
-#ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_NO_TZ
     err = gettimeofday(tp);
 #else
@@ -89,10 +86,10 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
         info->monotonic = 0;
         info->adjustable = 1;
     }
-    return 0;
-#endif   /* HAVE_GETTIMEOFDAY */
 #endif   /* !HAVE_CLOCK_GETTIME */
 #endif   /* !MS_WINDOWS */
+    assert(0 <= tp->tv_usec && tp->tv_usec < 1000 * 1000);
+    return 0;
 }
 
 void
