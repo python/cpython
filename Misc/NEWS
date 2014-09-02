@@ -10,6 +10,11 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #22258: Fix the the internal function set_inheritable() on Illumos.
+  This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
+  with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()
+  now falls back to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
+
 - Issue #21669: With the aid of heuristics in SyntaxError.__init__, the
   parser now attempts to generate more meaningful (or at least more search
   engine friendly) error messages when "exec" and "print" are used as
