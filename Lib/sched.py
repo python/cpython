@@ -35,10 +35,7 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
-try:
-    from time import monotonic as _time
-except ImportError:
-    from time import time as _time
+from time import monotonic as _time
 
 __all__ = ["scheduler"]
 

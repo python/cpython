@@ -3,10 +3,7 @@
 import sys as _sys
 import _thread
 
-try:
-    from time import monotonic as _time
-except ImportError:
-    from time import time as _time
+from time import monotonic as _time
 from traceback import format_exc as _format_exc
 from _weakrefset import WeakSet
 from itertools import islice as _islice

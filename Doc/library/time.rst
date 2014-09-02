@@ -315,9 +315,9 @@ The module defines the following functions and data items:
    processes running for more than 49 days. On more recent versions of Windows
    and on other operating systems, :func:`monotonic` is system-wide.
 
-   Availability: Windows, Mac OS X, Linux, FreeBSD, OpenBSD, Solaris.
-
    .. versionadded:: 3.3
+   .. versionchanged:: 3.5
+      The function is now always available.
 
 
 .. function:: perf_counter()

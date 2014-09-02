@@ -59,10 +59,7 @@ import gc
 import dis
 import pickle
 from warnings import warn as _warn
-try:
-    from time import monotonic as _time
-except ImportError:
-    from time import time as _time
+from time import monotonic as _time
 
 try:
     import threading

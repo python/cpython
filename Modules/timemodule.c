@@ -37,10 +37,6 @@
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(__APPLE__)
-#include <mach/mach_time.h>
-#endif
-
 /* Forward declarations */
 static int floatsleep(double);
 static PyObject* floattime(_Py_clock_info_t *info);
@@ -899,122 +895,15 @@ the local timezone used by methods such as localtime, but this behaviour\n\
 should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
-#if defined(MS_WINDOWS) || defined(__APPLE__) \
-    || (defined(HAVE_CLOCK_GETTIME) \
-        && (defined(CLOCK_HIGHRES) || defined(CLOCK_MONOTONIC)))
-#define PYMONOTONIC
-#endif
-
-#ifdef PYMONOTONIC
-static PyObject*
+static PyObject *
 pymonotonic(_Py_clock_info_t *info)
 {
-#if defined(MS_WINDOWS)
-    static ULONGLONG (*GetTickCount64) (void) = NULL;
-    static ULONGLONG (CALLBACK *Py_GetTickCount64)(void);
-    static int has_getickcount64 = -1;
-    double result;
-
-    if (has_getickcount64 == -1) {
-        /* GetTickCount64() was added to Windows Vista */
-        if (winver.dwMajorVersion >= 6) {
-            HINSTANCE hKernel32;
-            hKernel32 = GetModuleHandleW(L"KERNEL32");
-            *(FARPROC*)&Py_GetTickCount64 = GetProcAddress(hKernel32,
-                                                           "GetTickCount64");
-            has_getickcount64 = (Py_GetTickCount64 != NULL);
-        }
-        else
-            has_getickcount64 = 0;
-    }
-
-    if (has_getickcount64) {
-        ULONGLONG ticks;
-        ticks = Py_GetTickCount64();
-        result = (double)ticks * 1e-3;
-    }
-    else {
-        static DWORD last_ticks = 0;
-        static DWORD n_overflow = 0;
-        DWORD ticks;
-
-        ticks = GetTickCount();
-        if (ticks < last_ticks)
-            n_overflow++;
-        last_ticks = ticks;
-
-        result = ldexp(n_overflow, 32);
-        result += ticks;
-        result *= 1e-3;
-    }
-
-    if (info) {
-        DWORD timeAdjustment, timeIncrement;
-        BOOL isTimeAdjustmentDisabled, ok;
-        if (has_getickcount64)
-            info->implementation = "GetTickCount64()";
-        else
-            info->implementation = "GetTickCount()";
-        info->monotonic = 1;
-        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                                     &isTimeAdjustmentDisabled);
-        if (!ok) {
-            PyErr_SetFromWindowsErr(0);
-            return NULL;
-        }
-        info->resolution = timeIncrement * 1e-7;
-        info->adjustable = 0;
-    }
-    return PyFloat_FromDouble(result);
-
-#elif defined(__APPLE__)
-    static mach_timebase_info_data_t timebase;
-    uint64_t time;
-    double secs;
-
-    if (timebase.denom == 0) {
-        /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
-           fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
-        (void)mach_timebase_info(&timebase);
-    }
-
-    time = mach_absolute_time();
-    secs = (double)time * timebase.numer / timebase.denom * 1e-9;
-    if (info) {
-        info->implementation = "mach_absolute_time()";
-        info->resolution = (double)timebase.numer / timebase.denom * 1e-9;
-        info->monotonic = 1;
-        info->adjustable = 0;
-    }
-    return PyFloat_FromDouble(secs);
-
-#elif defined(HAVE_CLOCK_GETTIME) && (defined(CLOCK_HIGHRES) || defined(CLOCK_MONOTONIC))
-    struct timespec tp;
-#ifdef CLOCK_HIGHRES
-    const clockid_t clk_id = CLOCK_HIGHRES;
-    const char *function = "clock_gettime(CLOCK_HIGHRES)";
-#else
-    const clockid_t clk_id = CLOCK_MONOTONIC;
-    const char *function = "clock_gettime(CLOCK_MONOTONIC)";
-#endif
-
-    if (clock_gettime(clk_id, &tp) != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+    _PyTime_timeval tv;
+    if (_PyTime_monotonic_info(&tv, info) < 0) {
+        assert(info != NULL);
         return NULL;
     }
-
-    if (info) {
-        struct timespec res;
-        info->monotonic = 1;
-        info->implementation = function;
-        info->adjustable = 0;
-        if (clock_getres(clk_id, &res) == 0)
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-        else
-            info->resolution = 1e-9;
-    }
-    return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
-#endif
+    return PyFloat_FromDouble((double)tv.tv_sec + tv.tv_usec * 1e-6);
 }
 
 static PyObject *
@@ -1027,7 +916,6 @@ PyDoc_STRVAR(monotonic_doc,
 "monotonic() -> float\n\
 \n\
 Monotonic clock, cannot go backward.");
-#endif   /* PYMONOTONIC */
 
 static PyObject*
 perf_counter(_Py_clock_info_t *info)
@@ -1035,20 +923,7 @@ perf_counter(_Py_clock_info_t *info)
 #ifdef WIN32_PERF_COUNTER
     return win_perf_counter(info);
 #else
-
-#ifdef PYMONOTONIC
-    static int use_monotonic = 1;
-
-    if (use_monotonic) {
-        PyObject *res = pymonotonic(info);
-        if (res != NULL)
-            return res;
-        use_monotonic = 0;
-        PyErr_Clear();
-    }
-#endif
-    return floattime(info);
-
+    return pymonotonic(info);
 #endif
 }
 
@@ -1216,10 +1091,8 @@ time_get_clock_info(PyObject *self, PyObject *args)
     else if (strcmp(name, "clock") == 0)
         obj = pyclock(&info);
 #endif
-#ifdef PYMONOTONIC
     else if (strcmp(name, "monotonic") == 0)
         obj = pymonotonic(&info);
-#endif
     else if (strcmp(name, "perf_counter") == 0)
         obj = perf_counter(&info);
     else if (strcmp(name, "process_time") == 0)
@@ -1411,9 +1284,7 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_WORKING_TZSET
     {"tzset",           time_tzset, METH_NOARGS, tzset_doc},
 #endif
-#ifdef PYMONOTONIC
     {"monotonic",       time_monotonic, METH_NOARGS, monotonic_doc},
-#endif
     {"process_time",    time_process_time, METH_NOARGS, process_time_doc},
     {"perf_counter",    time_perf_counter, METH_NOARGS, perf_counter_doc},
     {"get_clock_info",  time_get_clock_info, METH_VARARGS, get_clock_info_doc},

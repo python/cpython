@@ -91,6 +91,24 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
     long *nsec,
     _PyTime_round_t);
 
+/* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
+   The clock is not affected by system clock updates. The reference point of
+   the returned value is undefined, so that only the difference between the
+   results of consecutive calls is valid.
+
+   The function never fails. _PyTime_Init() ensures that a monotonic clock
+   is available and works. */
+PyAPI_FUNC(void) _PyTime_monotonic(
+    _PyTime_timeval *tp);
+
+/* Similar to _PyTime_monotonic(), fill also info (if set) with information of
+   the function used to get the time.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int) _PyTime_monotonic_info(
+    _PyTime_timeval *tp,
+    _Py_clock_info_t *info);
+
 /* Initialize time.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_Init(void);

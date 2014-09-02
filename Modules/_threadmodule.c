@@ -57,7 +57,7 @@ acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
 
 
     if (microseconds > 0) {
-        _PyTime_gettimeofday(&endtime);
+        _PyTime_monotonic(&endtime);
         endtime.tv_sec += microseconds / (1000 * 1000);
         endtime.tv_usec += microseconds % (1000 * 1000);
     }
@@ -83,7 +83,7 @@ acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
             /* If we're using a timeout, recompute the timeout after processing
              * signals, since those can take time.  */
             if (microseconds > 0) {
-                _PyTime_gettimeofday(&curtime);
+                _PyTime_monotonic(&curtime);
                 microseconds = ((endtime.tv_sec - curtime.tv_sec) * 1000000 +
                                 (endtime.tv_usec - curtime.tv_usec));
 
