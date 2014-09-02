@@ -6,10 +6,7 @@ except ImportError:
     import dummy_threading as threading
 from collections import deque
 from heapq import heappush, heappop
-try:
-    from time import monotonic as time
-except ImportError:
-    from time import time
+from time import monotonic as time
 
 __all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue']
 

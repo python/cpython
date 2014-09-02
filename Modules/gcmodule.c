@@ -25,7 +25,7 @@
 
 #include "Python.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
-#include "pytime.h"           /* for _PyTime_gettimeofday, _PyTime_INTERVAL */
+#include "pytime.h"             /* for _PyTime_monotonic, _PyTime_INTERVAL */
 
 /* Get an object's GC head */
 #define AS_GC(o) ((PyGC_Head *)(o)-1)
@@ -919,7 +919,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
         for (i = 0; i < NUM_GENERATIONS; i++)
             PySys_FormatStderr(" %zd",
                               gc_list_size(GEN_HEAD(i)));
-        _PyTime_gettimeofday(&t1);
+        _PyTime_monotonic(&t1);
 
         PySys_WriteStderr("\n");
     }
@@ -1025,7 +1025,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
     }
     if (debug & DEBUG_STATS) {
         _PyTime_timeval t2;
-        _PyTime_gettimeofday(&t2);
+        _PyTime_monotonic(&t2);
 
         if (m == 0 && n == 0)
             PySys_WriteStderr("gc: done");

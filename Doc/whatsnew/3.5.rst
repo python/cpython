@@ -238,6 +238,11 @@ socket
   :meth:`socket.socket.send`.
   (contributed by Giampaolo Rodola' in :issue:`17552`)
 
+time
+----
+
+The :func:`time.monotonic` function is now always available (:issue`22043`).
+
 wsgiref
 -------
 

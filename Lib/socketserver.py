@@ -136,10 +136,7 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
-try:
-    from time import monotonic as time
-except ImportError:
-    from time import time as time
+from time import monotonic as time
 
 __all__ = ["TCPServer","UDPServer","ForkingUDPServer","ForkingTCPServer",
            "ThreadingUDPServer","ThreadingTCPServer","BaseRequestHandler",
