@@ -11,6 +11,7 @@ test.support.import_module('threading')
 
 from test.script_helper import assert_python_ok
 
+import os
 import sys
 import threading
 import time
@@ -443,6 +444,11 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, unittest.TestCase):
         self.executor.map(record_finished, range(10))
         self.executor.shutdown(wait=True)
         self.assertCountEqual(finished, range(10))
+
+    def test_default_workers(self):
+        executor = self.executor_type()
+        self.assertEqual(executor._max_workers,
+                         (os.cpu_count() or 1) * 5)
 
 
 class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, unittest.TestCase):

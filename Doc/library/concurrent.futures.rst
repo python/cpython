@@ -115,10 +115,18 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers)
+.. class:: ThreadPoolExecutor(max_workers=None)
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
+
+   .. versionchanged:: 3.5
+      If *max_workers* is ``None`` or
+      not given, it will default to the number of processors on the machine,
+      multiplied by ``5``, assuming that :class:`ThreadPoolExecutor` is often
+      used to overlap I/O instead of CPU work and the number of workers
+      should be higher than the number of workers
+      for :class:`ProcessPoolExecutor`.
 
 
 .. _threadpoolexecutor-example:
