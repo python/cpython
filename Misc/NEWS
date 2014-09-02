@@ -10,6 +10,11 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22258: Fix the the internal function set_inheritable() on Illumos.
+  This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
+  with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()
+  now falls back to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
+
 - Issue #21389: Displaying the __qualname__ of the underlying function in the
   repr of a bound method.
 
