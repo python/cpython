@@ -46,7 +46,7 @@ _ Issue #21597: The separator between the turtledemo text pane and the drawing
   can be widened on small screens.  Original patches by Jan Kanis and Lita Cho.
 
 - Issue #18132: Turtledemo buttons no longer disappear when the window is
-  shrunk.  Original patches by Jan Kanis and Lita Cho. 
+  shrunk.  Original patches by Jan Kanis and Lita Cho.
 
 - Issue #22216: smtplib now resets its state more completely after a quit.  The
   most obvious consequence of the previous behavior was a STARTTLS failure
@@ -285,7 +285,13 @@ Build
 IDLE
 ----
 
-- Issue #17172: Add the ability to run turtledemo from Idle.
+- Issue #17390: Adjust Editor window title; remove 'Python',
+  move version to end.
+
+- Issue #14105: Idle debugger breakpoints no longer disappear
+  when inseting or deleting lines.
+
+- Issue #17172: Turtledemo can now be run from Idle.
   Currently, the entry is on the Help menu, but it may move to Run.
   Patch by Ramchandra Apt and Lita Cho.
 
