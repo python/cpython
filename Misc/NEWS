@@ -32,6 +32,22 @@ Core and Builtins
 Library
 -------
 
+- Issue #22051: turtledemo no longer reloads examples to re-run them.
+  Initialization of variables and gui setup should be done in main(),
+  which is called each time a demo is run, but not on import.
+
+- Issue #21933: Turtledemo users can change the code font size with a menu
+  selection or control(command) '-' or '+' or control-mousewheel.
+  Original patch by Lita Cho.
+
+_ Issue #21597: The separator between the turtledemo text pane and the drawing
+  canvas can now be grabbed and dragged with a mouse.  The code text pane can
+  be widened to easily view or copy the full width of the text.  The canvas
+  can be widened on small screens.  Original patches by Jan Kanis and Lita Cho.
+
+- Issue #18132: Turtledemo buttons no longer disappear when the window is
+  shrunk.  Original patches by Jan Kanis and Lita Cho. 
+
 - Issue #22216: smtplib now resets its state more completely after a quit.  The
   most obvious consequence of the previous behavior was a STARTTLS failure
   during a connect/starttls/quit/connect/starttls sequence.
