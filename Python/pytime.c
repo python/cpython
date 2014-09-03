@@ -121,7 +121,7 @@ static int
 pymonotonic(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
 {
 #ifdef Py_DEBUG
-    static _PyTime_timeval last = {-1, -1};
+    static _PyTime_timeval last = {0, -1};
 #endif
 #if defined(MS_WINDOWS)
     static ULONGLONG (*GetTickCount64) (void) = NULL;
@@ -247,7 +247,8 @@ pymonotonic(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
     assert(0 <= tp->tv_usec && tp->tv_usec < 1000 * 1000);
 #ifdef Py_DEBUG
     /* monotonic clock cannot go backward */
-    assert(tp->tv_sec > last.tv_sec
+    assert(last.tv_usec == -1
+           || tp->tv_sec > last.tv_sec
            || (tp->tv_sec == last.tv_sec && tp->tv_usec >= last.tv_usec));
     last = *tp;
 #endif
