@@ -121,6 +121,15 @@ _ Issue #21597: The separator between the turtledemo text pane and the drawing
 - Issue #22199: Make get_makefile_filename() available in Lib/sysconfig.py
   for 2.7 to match other versions of sysconfig.
 
+IDLE
+----
+
+- Issue #17390: Adjust Editor window title; remove 'Python',
+  move version to end.
+
+- Issue #14105: Idle debugger breakpoints no longer disappear
+  when inseting or deleting lines.
+
 Extension Modules
 -----------------
 
