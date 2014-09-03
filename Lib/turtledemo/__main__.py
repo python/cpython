@@ -91,7 +91,6 @@ from tkinter import *
 from idlelib.Percolator import Percolator
 from idlelib.ColorDelegator import ColorDelegator
 from idlelib.textView import view_text
-from importlib import reload
 from turtledemo import __doc__ as about_turtledemo
 
 import turtle
@@ -322,7 +321,6 @@ class DemoWindow(object):
         self.text.delete("1.0", "end")
         self.text.insert("1.0", chars)
         self.root.title(filename + " - a Python turtle graphics example")
-        reload(self.module)
         self.configGUI(NORMAL, DISABLED, DISABLED,
                        "Press start button", "red")
         self.state = READY
