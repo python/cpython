@@ -52,7 +52,7 @@ class ForkWait(unittest.TestCase):
         deadline = time.monotonic() + 10.0
         while len(self.alive) < NUM_THREADS:
             time.sleep(0.1)
-            if time.monotonic() <= deadline:
+            if deadline < time.monotonic():
                 break
 
         a = sorted(self.alive.keys())
