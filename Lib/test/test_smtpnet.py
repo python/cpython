@@ -42,7 +42,6 @@ class SmtpTest(unittest.TestCase):
 class SmtpSSLTest(unittest.TestCase):
     testServer = 'smtp.gmail.com'
     remotePort = 465
-    can_verify = check_ssl_verifiy(testServer, remotePort)
 
     def test_connect(self):
         support.get_attribute(smtplib, 'SMTP_SSL')
@@ -66,8 +65,12 @@ class SmtpSSLTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
-    @unittest.skipUnless(can_verify, "SSL certificate can't be verified")
     def test_connect_using_sslcontext_verified(self):
+        with support.transient_internet(self.testServer):
+            can_verify = check_ssl_verifiy(self.testServer, self.remotePort)
+            if not can_verify:
+                self.skipTest("SSL certificate can't be verified")
+
         support.get_attribute(smtplib, 'SMTP_SSL')
         context = ssl.create_default_context()
         with support.transient_internet(self.testServer):
