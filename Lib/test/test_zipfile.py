@@ -717,7 +717,7 @@ class PyZipFileTests(unittest.TestCase):
             with open(TESTFN, 'w') as f:
                 f.write('most definitely not a python file')
             self.assertRaises(RuntimeError, zipfp.writepy, TESTFN)
-            os.remove(TESTFN)
+            unlink(TESTFN)
 
     def test_write_pyfile_bad_syntax(self):
         os.mkdir(TESTFN2)
@@ -763,7 +763,7 @@ class ExtractTests(unittest.TestCase):
                 with open(writtenfile, "rb") as f:
                     self.assertEqual(fdata.encode(), f.read())
 
-                os.remove(writtenfile)
+                unlink(writtenfile)
 
         # remove the test file subdirectories
         rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
@@ -781,7 +781,7 @@ class ExtractTests(unittest.TestCase):
                 with open(outfile, "rb") as f:
                     self.assertEqual(fdata.encode(), f.read())
 
-                os.remove(outfile)
+                unlink(outfile)
 
         # remove the test file subdirectories
         rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
@@ -887,7 +887,7 @@ class ExtractTests(unittest.TestCase):
             self.check_file(correctfile, content)
             rmtree(fixedname.split('/')[0])
 
-            os.remove(TESTFN2)
+            unlink(TESTFN2)
 
 
 class OtherTests(unittest.TestCase):
@@ -1755,7 +1755,7 @@ class AbstractUniversalNewlineTests:
 
     def tearDown(self):
         for sep, fn in self.arcfiles.items():
-            os.remove(fn)
+            unlink(fn)
         unlink(TESTFN)
         unlink(TESTFN2)
 
