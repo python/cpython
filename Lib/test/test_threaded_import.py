@@ -118,8 +118,10 @@ class ThreadedImportTests(unittest.TestCase):
                 t = threading.Thread(target=task,
                                      args=(N, done, done_tasks, errors,))
                 t.start()
-            self.assertTrue(done.wait(60))
-            self.assertFalse(errors)
+            completed = done.wait(60)
+            dbg_info = 'done: %s/%s' % (len(done_tasks), N)
+            self.assertFalse(errors, dbg_info)
+            self.assertTrue(completed, dbg_info)
             if verbose:
                 print("OK.")
 
