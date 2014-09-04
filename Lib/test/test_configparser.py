@@ -1763,6 +1763,58 @@ class InlineCommentStrippingTestCase(unittest.TestCase):
         self.assertEqual(s['k2'], 'v2')
         self.assertEqual(s['k3'], 'v3;#//still v3# and still v3')
 
+class ExceptionContextTestCase(unittest.TestCase):
+    """ Test that implementation details doesn't leak
+    through raising exceptions. """
+
+    def test_get_basic_interpolation(self):
+        parser = configparser.ConfigParser()
+        parser.read_string("""
+        [Paths]
+        home_dir: /Users
+        my_dir: %(home_dir1)s/lumberjack
+        my_pictures: %(my_dir)s/Pictures
+        """)
+        cm = self.assertRaises(configparser.InterpolationMissingOptionError)
+        with cm:
+            parser.get('Paths', 'my_dir')
+        self.assertIs(cm.exception.__suppress_context__, True)
+
+    def test_get_extended_interpolation(self):
+        parser = configparser.ConfigParser(
+          interpolation=configparser.ExtendedInterpolation())
+        parser.read_string("""
+        [Paths]
+        home_dir: /Users
+        my_dir: ${home_dir1}/lumberjack
+        my_pictures: ${my_dir}/Pictures
+        """)
+        cm = self.assertRaises(configparser.InterpolationMissingOptionError)
+        with cm:
+            parser.get('Paths', 'my_dir')
+        self.assertIs(cm.exception.__suppress_context__, True)
+
+    def test_missing_options(self):
+        parser = configparser.ConfigParser()
+        parser.read_string("""
+        [Paths]
+        home_dir: /Users
+        """)
+        with self.assertRaises(configparser.NoSectionError) as cm:
+            parser.options('test')
+        self.assertIs(cm.exception.__suppress_context__, True)
+
+    def test_missing_section(self):
+        config = configparser.ConfigParser()
+        with self.assertRaises(configparser.NoSectionError) as cm:
+            config.set('Section1', 'an_int', '15')
+        self.assertIs(cm.exception.__suppress_context__, True)
+
+    def test_remove_option(self):
+        config = configparser.ConfigParser()
+        with self.assertRaises(configparser.NoSectionError) as cm:
+            config.remove_option('Section1', 'an_int')
+        self.assertIs(cm.exception.__suppress_context__, True)
 
 if __name__ == '__main__':
     unittest.main()
