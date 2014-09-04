@@ -499,8 +499,9 @@ class TclTest(unittest.TestCase):
                 (1, '2', (3.4,)) if self.wantobjects else
                 ('1', '2', '3.4')),
         ]
+        tk_patchlevel = get_tk_patchlevel()
         if tcl_version >= (8, 5):
-            if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
+            if not self.wantobjects or tk_patchlevel < (8, 5, 5):
                 # Before 8.5.5 dicts were converted to lists through string
                 expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
             else:
@@ -509,8 +510,11 @@ class TclTest(unittest.TestCase):
                 (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
                     expected),
             ]
+        dbg_info = ('want objects? %s, Tcl version: %s, Tk patchlevel: %s'
+                    % (self.wantobjects, tcl_version, tk_patchlevel))
         for arg, res in testcases:
-            self.assertEqual(splitlist(arg), res, msg=arg)
+            self.assertEqual(splitlist(arg), res,
+                             'arg=%a, %s' % (arg, dbg_info))
         self.assertRaises(TclError, splitlist, '{')
 
     def test_split(self):
