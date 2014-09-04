@@ -2074,6 +2074,11 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
 {
     ternaryfunc call;
 
+    /* PyObject_Call() must not be called with an exception set,
+       because it may clear it (directly or indirectly) and so the
+       caller looses its exception */
+    assert(!PyErr_Occurred());
+
     if ((call = func->ob_type->tp_call) != NULL) {
         PyObject *result;
         if (Py_EnterRecursiveCall(" while calling a Python object"))
