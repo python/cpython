@@ -129,6 +129,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20421: Add a .version() method to SSL sockets exposing the actual
+  protocol version in use.
+
 - Issue #19546: configparser exceptions no longer expose implementation details.
   Chained KeyErrors are removed, which leads to cleaner tracebacks.  Patch by
   Claudiu Popa.
