@@ -862,6 +862,15 @@ class SSLSocket(socket):
             return None
         return self._sslobj.tls_unique_cb()
 
+    def version(self):
+        """
+        Return a string identifying the protocol version used by the
+        current SSL channel, or None if there is no established channel.
+        """
+        if self._sslobj is None:
+            return None
+        return self._sslobj.version()
+
 
 def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,

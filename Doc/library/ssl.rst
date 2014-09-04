@@ -867,10 +867,10 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.selected_npn_protocol()
 
-   Returns the protocol that was selected during the TLS/SSL handshake. If
-   :meth:`SSLContext.set_npn_protocols` was not called, or if the other party
-   does not support NPN, or if the handshake has not yet happened, this will
-   return ``None``.
+   Returns the higher-level protocol that was selected during the TLS/SSL
+   handshake. If :meth:`SSLContext.set_npn_protocols` was not called, or
+   if the other party does not support NPN, or if the handshake has not yet
+   happened, this will return ``None``.
 
    .. versionadded:: 2.7.9
 
@@ -881,6 +881,16 @@ SSL sockets also have the following additional methods and attributes:
    used to go from encrypted operation over a connection to unencrypted.  The
    returned socket should always be used for further communication with the
    other side of the connection, rather than the original socket.
+
+.. method:: SSLSocket.version()
+
+   Return the actual SSL protocol version negotiated by the connection
+   as a string, or ``None`` is no secure connection is established.
+   As of this writing, possible return values include ``"SSLv2"``,
+   ``"SSLv3"``, ``"TLSv1"``, ``"TLSv1.1"`` and ``"TLSv1.2"``.
+   Recent OpenSSL versions may define more return values.
+
+   .. versionadded:: 3.5
 
 .. attribute:: SSLSocket.context
 
