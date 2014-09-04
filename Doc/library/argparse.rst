@@ -1213,19 +1213,17 @@ Action classes
 ^^^^^^^^^^^^^^
 
 Action classes implement the Action API, a callable which returns a callable
-which processes arguments from the command-line. Any object which follows
-this API may be passed as the ``action`` parameter to
-:method:`add_argument`.
+which processes arguments from the command-line. Any object which follows this
+API may be passed as the ``action`` parameter to :meth:`add_argument`.
 
 .. class:: Action(option_strings, dest, nargs=None, const=None, default=None,
                   type=None, choices=None, required=False, help=None,
                   metavar=None)
 
-Action objects are used by an ArgumentParser to represent the information
-needed to parse a single argument from one or more strings from the
-command line. The Action class must accept the two positional arguments
-plus any keyword arguments passed to :method:`ArgumentParser.add_argument`
-except for the ``action`` itself.
+Action objects are used by an ArgumentParser to represent the information needed
+to parse a single argument from one or more strings from the command line. The
+Action class must accept the two positional arguments plus any keyword arguments
+passed to :meth:`ArgumentParser.add_argument` except for the ``action`` itself.
 
 Instances of Action (or return value of any callable to the ``action``
 parameter) should have attributes "dest", "option_strings", "default", "type",
