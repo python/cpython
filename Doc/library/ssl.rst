@@ -890,7 +890,7 @@ SSL sockets also have the following additional methods and attributes:
    ``"SSLv3"``, ``"TLSv1"``, ``"TLSv1.1"`` and ``"TLSv1.2"``.
    Recent OpenSSL versions may define more return values.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 2.7.9
 
 .. attribute:: SSLSocket.context
 
