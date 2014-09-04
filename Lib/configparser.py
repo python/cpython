@@ -410,7 +410,7 @@ class BasicInterpolation(Interpolation):
                     v = map[var]
                 except KeyError:
                     raise InterpolationMissingOptionError(
-                        option, section, rest, var)
+                        option, section, rest, var) from None
                 if "%" in v:
                     self._interpolate_some(parser, option, accum, v,
                                            section, map, depth + 1)
@@ -482,7 +482,7 @@ class ExtendedInterpolation(Interpolation):
                             "More than one ':' found: %r" % (rest,))
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
-                        option, section, rest, ":".join(path))
+                        option, section, rest, ":".join(path)) from None
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
                                            dict(parser.items(sect, raw=True)),
@@ -515,7 +515,7 @@ class LegacyInterpolation(Interpolation):
                     value = value % vars
                 except KeyError as e:
                     raise InterpolationMissingOptionError(
-                        option, section, rawval, e.args[0])
+                        option, section, rawval, e.args[0]) from None
             else:
                 break
         if value and "%(" in value:
@@ -647,7 +647,7 @@ class RawConfigParser(MutableMapping):
         try:
             opts = self._sections[section].copy()
         except KeyError:
-            raise NoSectionError(section)
+            raise NoSectionError(section) from None
         opts.update(self._defaults)
         return list(opts.keys())
 
@@ -876,7 +876,7 @@ class RawConfigParser(MutableMapping):
             try:
                 sectdict = self._sections[section]
             except KeyError:
-                raise NoSectionError(section)
+                raise NoSectionError(section) from None
         sectdict[self.optionxform(option)] = value
 
     def write(self, fp, space_around_delimiters=True):
@@ -917,7 +917,7 @@ class RawConfigParser(MutableMapping):
             try:
                 sectdict = self._sections[section]
             except KeyError:
-                raise NoSectionError(section)
+                raise NoSectionError(section) from None
         option = self.optionxform(option)
         existed = option in sectdict
         if existed:
