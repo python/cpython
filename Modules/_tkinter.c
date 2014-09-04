@@ -913,8 +913,10 @@ AsObj(PyObject *value)
             return NULL;
         }
         argv = (Tcl_Obj **) ckalloc(((size_t)size) * sizeof(Tcl_Obj *));
-        if(!argv)
-          return 0;
+        if(!argv) {
+          PyErr_NoMemory();
+          return NULL;
+        }
         for (i = 0; i < size; i++)
           argv[i] = AsObj(PySequence_Fast_GET_ITEM(value,i));
         result = Tcl_NewListObj(size, argv);
