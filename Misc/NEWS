@@ -158,6 +158,9 @@ Tests
 Build
 -----
 
+- The documentation Makefile no longer automatically downloads Sphinx. Users are
+  now required to have Sphinx already installed to build the documentation.
+
 - Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
   above.  Patch by Zachary Turner.
 
