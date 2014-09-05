@@ -11,9 +11,9 @@ and ``scripts`` and placed that on a ``.dmg`` disk image.
 For Python 2.7.x and 3.x, PSF practice is to build two installer variants
 for each release.
 
-Beginning with Python 2.7.8, we plan to drop binary installer support for
+Beginning with Python 2.7.9, we plan to drop binary installer support for
 Mac OS X 10.3.9 and 10.4.x systems.  To ease the transition, for Python 2.7.7
-only there will be three installers provided:
+and 2.7.8 there were three installers provided:
 
 1.  DEPRECATED - 32-bit-only, i386 and PPC universal, capable on running on all
     machines supported by Mac OS X 10.3.9 through (at least) 10.9::
@@ -41,7 +41,8 @@ only there will be three installers provided:
         * ``MacOSX10.4u`` SDK (later SDKs do not support PPC G3 processors)
         * ``MACOSX_DEPLOYMENT_TARGET=10.3``
         * Apple ``gcc-4.0``
-        * system Python 2.5 for documentation build with Sphinx
+        * bootstrap non-framework Python 2.7 for documentation build with
+          Sphinx (as of 2.7.9)
 
     - alternate build environments:
 
@@ -76,7 +77,8 @@ only there will be three installers provided:
         * ``MacOSX10.5`` SDK
         * ``MACOSX_DEPLOYMENT_TARGET=10.5``
         * Apple ``gcc-4.2``
-        * system Python 2.5+ for documentation build with Sphinx
+        * bootstrap non-framework Python 2.7 for documentation build with
+          Sphinx (as of 2.7.9)
 
     - alternate build environments:
 
@@ -110,7 +112,8 @@ only there will be three installers provided:
         * ``MacOSX10.6`` SDK
         * ``MACOSX_DEPLOYMENT_TARGET=10.6``
         * Apple ``gcc-4.2``
-        * system Python 2.6 for documentation build with Sphinx
+        * bootstrap non-framework Python 2.7 for documentation build with
+          Sphinx (as of 2.7.9)
 
     - alternate build environments:
 
@@ -134,7 +137,13 @@ General Prerequisites
   interfere with the build.
 
 * The documentation for the release is built using Sphinx
-  because it is included in the installer.
+  because it is included in the installer.  For 2.7.x up to and including
+  2.7.8, the ``Doc/Makefile`` used ``svn`` to download repos of
+  ``Sphinx`` and its dependencies.  Beginning with 2.7.9, the ``Doc/Makefile``
+  assumes there is an externally-provided ``sphinx-build`` and requires at
+  least Python 2.6 to run.  Because of this, it is no longer possible to
+  build a 2.7.9 or later installer on OS X 10.5 using the Apple-supplied
+  Python 2.5.
 
 * It is safest to start each variant build with an empty source directory
   populated with a fresh copy of the untarred source.
