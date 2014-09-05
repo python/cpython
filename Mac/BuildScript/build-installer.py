@@ -615,8 +615,7 @@ def checkEnvironment():
     # Ensure ws have access to hg and to sphinx-build.
     # You may have to create links in /usr/bin for them.
     runCommand('hg --version')
-    if getVersionTuple() >= (3, 4):
-        runCommand('sphinx-build --version')
+    runCommand('sphinx-build --version')
 
 def parseOptions(args=None):
     """
@@ -929,15 +928,10 @@ def buildPythonDocs():
     docdir = os.path.join(rootDir, 'pydocs')
     curDir = os.getcwd()
     os.chdir(buildDir)
-    # The Doc build changed for 3.4 (technically, for 3.4.1)
-    if getVersionTuple() < (3, 4):
-        # This step does an svn checkout of sphinx and its dependencies
-        runCommand('make update')
-        runCommand("make html PYTHON='%s'" % os.path.abspath(sys.executable))
-    else:
-        runCommand('make clean')
-        # Assume sphinx-build is on our PATH, checked in checkEnvironment
-        runCommand('make html')
+    # The Doc build changed for 3.4 (technically, for 3.4.1) and for 2.7.9
+    runCommand('make clean')
+    # Assume sphinx-build is on our PATH, checked in checkEnvironment
+    runCommand('make html')
     os.chdir(curDir)
     if not os.path.exists(docdir):
         os.mkdir(docdir)
