@@ -14,8 +14,8 @@ from collections import Sized, Container, Callable
 from collections import Set, MutableSet
 from collections import Mapping, MutableMapping
 from collections import Sequence, MutableSequence
-with test_support.check_warnings(('', DeprecationWarning)):
-    import sets
+# Silence deprecation warning
+sets = test_support.import_module('sets', deprecated=True)
 
 TestNT = namedtuple('TestNT', 'x y z')    # type used for pickle tests
 
