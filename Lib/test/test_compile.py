@@ -412,9 +412,24 @@ if 1:
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
 
-    def test_unicode_encoding(self):
+    @test_support.requires_unicode
+    def test_encoding(self):
+        code = b'# -*- coding: badencoding -*-\npass\n'
+        self.assertRaises(SyntaxError, compile, code, 'tmp', 'exec')
         code = u"# -*- coding: utf-8 -*-\npass\n"
         self.assertRaises(SyntaxError, compile, code, "tmp", "exec")
+        code = 'u"\xc2\xa4"\n'
+        self.assertEqual(eval(code), u'\xc2\xa4')
+        code = u'u"\xc2\xa4"\n'
+        self.assertEqual(eval(code), u'\xc2\xa4')
+        code = '# -*- coding: latin1 -*-\nu"\xc2\xa4"\n'
+        self.assertEqual(eval(code), u'\xc2\xa4')
+        code = '# -*- coding: utf-8 -*-\nu"\xc2\xa4"\n'
+        self.assertEqual(eval(code), u'\xa4')
+        code = '# -*- coding: iso8859-15 -*-\nu"\xc2\xa4"\n'
+        self.assertEqual(eval(code), test_support.u(r'\xc2\u20ac'))
+        code = 'u"""\\\n# -*- coding: utf-8 -*-\n\xc2\xa4"""\n'
+        self.assertEqual(eval(code), u'# -*- coding: utf-8 -*-\n\xc2\xa4')
 
     def test_subscripts(self):
         # SF bug 1448804

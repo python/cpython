@@ -10,6 +10,9 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
+- Issue #22221: Now the source encoding declaration on the second line isn't
+  effective if the first line contains anything except a comment.
+
 - Issue #22023: Fix ``%S``, ``%R`` and ``%V`` formats of
   :c:func:`PyUnicode_FromFormat`.
 
@@ -124,6 +127,9 @@ _ Issue #21597: The separator between the turtledemo text pane and the drawing
 IDLE
 ----
 
+- Issue #22221: IDLE now ignores the source encoding declaration on the second
+  line if the first line contains anything except a comment.
+
 - Issue #17390: Adjust Editor window title; remove 'Python',
   move version to end.
 
@@ -139,6 +145,10 @@ Extension Modules
 
 Tools/Demos
 -----------
+
+- Issue #22221: 2to3 and the findnocoding.py script now ignore the source
+  encoding declaration on the second line if the first line contains anything
+  except a comment.
 
 - Issue #22201: Command-line interface of the zipfile module now correctly
   extracts ZIP files with directory entries.  Patch by Ryan Wilson.

@@ -33,6 +33,7 @@ except ImportError:
 
 
 decl_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
+blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)')
 
 def get_declaration(line):
     match = decl_re.match(line)
@@ -57,7 +58,8 @@ def needs_declaration(fullpath):
     line1 = infile.readline()
     line2 = infile.readline()
 
-    if get_declaration(line1) or get_declaration(line2):
+    if (get_declaration(line1) or
+        blank_re.match(line1) and get_declaration(line2)):
         # the file does have an encoding declaration, so trust it
         infile.close()
         return False

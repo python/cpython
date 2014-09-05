@@ -72,6 +72,7 @@ else:
 encoding = encoding.lower()
 
 coding_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
+blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)')
 
 class EncodingMessage(SimpleDialog):
     "Inform user that an encoding declaration is needed."
@@ -130,6 +131,8 @@ def coding_spec(str):
         match = coding_re.match(line)
         if match is not None:
             break
+        if not blank_re.match(line):
+            return None
     else:
         return None
     name = match.group(1)
