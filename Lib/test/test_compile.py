@@ -304,9 +304,26 @@ if 1:
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
 
-##     def test_unicode_encoding(self):
-##         code = "# -*- coding: utf-8 -*-\npass\n"
-##         self.assertRaises(SyntaxError, compile, code, "tmp", "exec")
+    def test_encoding(self):
+        code = b'# -*- coding: badencoding -*-\npass\n'
+        self.assertRaises(SyntaxError, compile, code, 'tmp', 'exec')
+        code = '# -*- coding: badencoding -*-\n"\xc2\xa4"\n'
+        compile(code, 'tmp', 'exec')
+        self.assertEqual(eval(code), '\xc2\xa4')
+        code = '"\xc2\xa4"\n'
+        self.assertEqual(eval(code), '\xc2\xa4')
+        code = b'"\xc2\xa4"\n'
+        self.assertEqual(eval(code), '\xa4')
+        code = b'# -*- coding: latin1 -*-\n"\xc2\xa4"\n'
+        self.assertEqual(eval(code), '\xc2\xa4')
+        code = b'# -*- coding: utf-8 -*-\n"\xc2\xa4"\n'
+        self.assertEqual(eval(code), '\xa4')
+        code = b'# -*- coding: iso8859-15 -*-\n"\xc2\xa4"\n'
+        self.assertEqual(eval(code), '\xc2\u20ac')
+        code = '"""\\\n# -*- coding: iso8859-15 -*-\n\xc2\xa4"""\n'
+        self.assertEqual(eval(code), '# -*- coding: iso8859-15 -*-\n\xc2\xa4')
+        code = b'"""\\\n# -*- coding: iso8859-15 -*-\n\xc2\xa4"""\n'
+        self.assertEqual(eval(code), '# -*- coding: iso8859-15 -*-\n\xa4')
 
     def test_subscripts(self):
         # SF bug 1448804
