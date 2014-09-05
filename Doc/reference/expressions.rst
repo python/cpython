@@ -400,7 +400,6 @@ Note that calling any of the generator methods below when the generator
 is already executing raises a :exc:`ValueError` exception.
 
 .. index:: exception: StopIteration
-.. class:: generator
 
 
 .. method:: generator.__next__()
@@ -410,7 +409,7 @@ is already executing raises a :exc:`ValueError` exception.
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
-   :token:`expression_list` is returned to :meth:`next`'s caller.  If the
+   :token:`expression_list` is returned to :meth:`__next__`'s caller.  If the
    generator exits without yielding another value, a :exc:`StopIteration`
    exception is raised.
 
@@ -449,8 +448,6 @@ is already executing raises a :exc:`ValueError` exception.
    yields a value, a :exc:`RuntimeError` is raised.  If the generator raises any
    other exception, it is propagated to the caller.  :meth:`close` does nothing
    if the generator has already exited due to an exception or normal exit.
-
-.. class:: .
 
 .. index:: single: yield; examples
 
