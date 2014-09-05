@@ -1456,7 +1456,7 @@ memo_get(PicklerObject *self, PyObject *key)
             pdata[1] = (unsigned char)(*value & 0xff);
             len = 2;
         }
-        else if (*value <= 0xffffffffL) {
+        else if ((size_t)*value <= 0xffffffffUL) {
             pdata[0] = LONG_BINGET;
             pdata[1] = (unsigned char)(*value & 0xff);
             pdata[2] = (unsigned char)((*value >> 8) & 0xff);
@@ -1513,7 +1513,7 @@ memo_put(PicklerObject *self, PyObject *obj)
             pdata[1] = (unsigned char)idx;
             len = 2;
         }
-        else if (idx <= 0xffffffffL) {
+        else if ((size_t)idx <= 0xffffffffUL) {
             pdata[0] = LONG_BINPUT;
             pdata[1] = (unsigned char)(idx & 0xff);
             pdata[2] = (unsigned char)((idx >> 8) & 0xff);
@@ -2013,7 +2013,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
             header[1] = (unsigned char)size;
             len = 2;
         }
-        else if (size <= 0xffffffffL) {
+        else if ((size_t)size <= 0xffffffffUL) {
             header[0] = BINBYTES;
             header[1] = (unsigned char)(size & 0xff);
             header[2] = (unsigned char)((size >> 8) & 0xff);

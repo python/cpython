@@ -70,8 +70,8 @@ fancy_roundup(int n)
  * Note that this would be straightforward if a node stored its current
  * capacity.  The code is tricky to avoid that.
  */
-#define XXXROUNDUP(n) ((n) <= 1 ? (n) :                 \
-               (n) <= 128 ? _Py_SIZE_ROUND_UP((n), 4) : \
+#define XXXROUNDUP(n) ((n) <= 1 ? (n) :                         \
+               (n) <= 128 ? (int)_Py_SIZE_ROUND_UP((n), 4) :    \
                fancy_roundup(n))
 
 
