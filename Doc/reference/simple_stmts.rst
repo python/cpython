@@ -506,16 +506,16 @@ create a generator function instead of a normal function.
 
 When a generator function is called, it returns an iterator known as a generator
 iterator, or more commonly, a generator.  The body of the generator function is
-executed by calling the generator's :meth:`next` method repeatedly until it
-raises an exception.
+executed by calling the generator's :meth:`~generator.next` method repeatedly
+until it raises an exception.
 
 When a :keyword:`yield` statement is executed, the state of the generator is
-frozen and the value of :token:`expression_list` is returned to :meth:`next`'s
-caller.  By "frozen" we mean that all local state is retained, including the
-current bindings of local variables, the instruction pointer, and the internal
-evaluation stack: enough information is saved so that the next time :meth:`next`
-is invoked, the function can proceed exactly as if the :keyword:`yield`
-statement were just another external call.
+frozen and the value of :token:`expression_list` is returned to
+:meth:`~generator.next`'s caller.  By "frozen" we mean that all local state is
+retained, including the current bindings of local variables, the instruction
+pointer, and the internal evaluation stack: enough information is saved so that
+the next time :meth:`~generator.next` is invoked, the function can proceed
+exactly as if the :keyword:`yield` statement were just another external call.
 
 As of Python version 2.5, the :keyword:`yield` statement is now allowed in the
 :keyword:`try` clause of a :keyword:`try` ...  :keyword:`finally` construct.  If

@@ -408,10 +408,10 @@ Glossary
 
    iterator
       An object representing a stream of data.  Repeated calls to the iterator's
-      :meth:`next` method return successive items in the stream.  When no more
+      :meth:`~generator.next` method return successive items in the stream.  When no more
       data are available a :exc:`StopIteration` exception is raised instead.  At
       this point, the iterator object is exhausted and any further calls to its
-      :meth:`next` method just raise :exc:`StopIteration` again.  Iterators are
+      :meth:`~generator.next` method just raise :exc:`StopIteration` again.  Iterators are
       required to have an :meth:`__iter__` method that returns the iterator
       object itself so every iterator is also iterable and may be used in most
       places where other iterables are accepted.  One notable exception is code

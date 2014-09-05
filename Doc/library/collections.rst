@@ -954,8 +954,8 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
 .. class:: Iterator
 
-   ABC for classes that provide the :meth:`__iter__` and :meth:`next` methods.
-   See also the definition of :term:`iterator`.
+   ABC for classes that provide the :meth:`~iterator.__iter__` and
+   :meth:`~iterator.next` methods.  See also the definition of :term:`iterator`.
 
 .. class:: Sequence
            MutableSequence

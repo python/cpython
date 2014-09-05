@@ -431,21 +431,20 @@ Note that calling any of the generator methods below when the generator
 is already executing raises a :exc:`ValueError` exception.
 
 .. index:: exception: StopIteration
-.. class:: generator
 
 
 .. method:: generator.next()
 
    Starts the execution of a generator function or resumes it at the last executed
    :keyword:`yield` expression.  When a generator function is resumed with a
-   :meth:`next` method, the current :keyword:`yield` expression always evaluates to
+   :meth:`~generator.next` method, the current :keyword:`yield` expression
+   always evaluates to
    :const:`None`.  The execution then continues to the next :keyword:`yield`
    expression, where the generator is suspended again, and the value of the
-   :token:`expression_list` is returned to :meth:`next`'s caller. If the generator
+   :token:`expression_list` is returned to :meth:`~generator.next`'s caller.
+   If the generator
    exits without yielding another value, a :exc:`StopIteration` exception is
    raised.
-
-.. class:: .
 
 .. method:: generator.send(value)
 
