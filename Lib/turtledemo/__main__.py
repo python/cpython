@@ -19,8 +19,9 @@
 
   The demo viewer windows can be resized. The divider between text
   and canvas can be moved by grabbing it with the mouse. The text font
-  size can be changed from the menu and with Control/Command- '-'/'+'.
-  It can also be changed on most systems with Control-mousewheel.
+  size can be changed from the menu and with Control/Command '-'/'+'.
+  It can also be changed on most systems with Control-mousewheel
+  when the mouse is over the text.
 
   Press START button to start the demo.
   Stop execution by pressing the STOP button.
@@ -210,10 +211,19 @@ class DemoWindow(object):
         self.hbar = hbar = Scrollbar(text_frame, name='hbar', orient=HORIZONTAL)
         hbar['command'] = text.xview
         hbar.pack(side=BOTTOM, fill=X)
-
-        text['font'] = tuple(txtfont)
         text['yscrollcommand'] = vbar.set
         text['xscrollcommand'] = hbar.set
+
+        text['font'] = tuple(txtfont)
+        shortcut = 'Command' if darwin else 'Control'
+        text.bind_all('<%s-minus>' % shortcut, self.decrease_size)
+        text.bind_all('<%s-underscore>' % shortcut, self.decrease_size)
+        text.bind_all('<%s-equal>' % shortcut, self.increase_size)
+        text.bind_all('<%s-plus>' % shortcut, self.increase_size)
+        text.bind('<Control-MouseWheel>', self.update_mousewheel)
+        text.bind('<Control-Button-4>', self.increase_size)
+        text.bind('<Control-Button-5>', self.decrease_size)
+
         text.pack(side=LEFT, fill=BOTH, expand=1)
         return text_frame
 
@@ -224,7 +234,7 @@ class DemoWindow(object):
         turtle._Screen._canvas = self._canvas = canvas = turtle.ScrolledCanvas(
                 root, 800, 600, self.canvwidth, self.canvheight)
         canvas.adjustScrolls()
-        self.makeBindings(canvas._rootwindow)
+        canvas._rootwindow.bind('<Configure>', self.onResize)
         canvas._canvas['borderwidth'] = 0
 
         self.screen = _s_ = turtle.Screen()
@@ -233,18 +243,6 @@ class DemoWindow(object):
         turtle.RawTurtle.screens = [_s_]
         return canvas
 
-    def makeBindings(self, widget):
-        widget.bind('<Configure>', self.onResize)
-
-        shortcut = 'Command' if darwin else 'Control'
-        widget.bind_all('<%s-minus>' % shortcut, self.decrease_size)
-        widget.bind_all('<%s-underscore>' % shortcut, self.decrease_size)
-        widget.bind_all('<%s-equal>' % shortcut, self.increase_size)
-        widget.bind_all('<%s-plus>' % shortcut, self.increase_size)
-        widget.bind_all('<Control-MouseWheel>', self.update_mousewheel)
-        widget.bind('<Control-Button-4>', self.increase_size)
-        widget.bind('<Control-Button-5>', self.decrease_size)
-
     def set_txtsize(self, size):
         txtfont[1] = size
         self.text['font'] = tuple(txtfont)
@@ -252,15 +250,19 @@ class DemoWindow(object):
 
     def decrease_size(self, dummy=None):
         self.set_txtsize(max(txtfont[1] - 1, MINIMUM_FONT_SIZE))
+        return 'break'
 
     def increase_size(self, dummy=None):
         self.set_txtsize(min(txtfont[1] + 1, MAXIMUM_FONT_SIZE))
+        return 'break'
 
     def update_mousewheel(self, event):
         # For wheel up, event.delte = 120 on Windows, -1 on darwin.
         # X-11 sends Control-Button-4 event instead.
-        (self.decrease_size() if (event.delta < 0 and not darwin)
-            else self.increase_size())
+        if (event.delta < 0) == (not darwin):
+            return self.decrease_size()
+        else:
+            return self.increase_size()
 
     def configGUI(self, start, stop, clear, txt="", color="blue"):
         self.start_btn.config(state=start,
