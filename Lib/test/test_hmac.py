@@ -389,10 +389,11 @@ class CompareDigestTestCase(unittest.TestCase):
         a, b = "fooä", "fooä"
         self.assertTrue(hmac.compare_digest(a, b))
 
-        # subclasses are supported by ignore __eq__
-        class mystr(str):
-            def __eq__(self, other):
-                return False
+        with test_support.check_py3k_warnings():
+            # subclasses are supported by ignore __eq__
+            class mystr(str):
+                def __eq__(self, other):
+                    return False
 
         a, b = mystr("foobar"), mystr("foobar")
         self.assertTrue(hmac.compare_digest(a, b))
@@ -401,9 +402,10 @@ class CompareDigestTestCase(unittest.TestCase):
         a, b = mystr("foobar"), mystr("foobaz")
         self.assertFalse(hmac.compare_digest(a, b))
 
-        class mybytes(bytes):
-            def __eq__(self, other):
-                return False
+        with test_support.check_py3k_warnings():
+            class mybytes(bytes):
+                def __eq__(self, other):
+                    return False
 
         a, b = mybytes(b"foobar"), mybytes(b"foobar")
         self.assertTrue(hmac.compare_digest(a, b))

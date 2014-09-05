@@ -2365,7 +2365,8 @@ else:
             # now fetch the same data from the HTTPS server
             url = 'https://%s:%d/%s' % (
                 HOST, server.port, os.path.split(CERTFILE)[1])
-            f = urllib.urlopen(url)
+            with support.check_py3k_warnings():
+                f = urllib.urlopen(url)
             try:
                 dlen = f.info().getheader("content-length")
                 if dlen and (int(dlen) > 0):
