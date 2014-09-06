@@ -1,5 +1,6 @@
 import unittest
 from test import test_support
+from test import test_urllib
 
 import os
 import socket

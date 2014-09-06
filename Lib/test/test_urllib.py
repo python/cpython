@@ -3,12 +3,12 @@
 import collections
 import urllib
 import httplib
+import io
 import unittest
 import os
 import sys
 import mimetools
 import tempfile
-import StringIO
 
 from test import test_support
 from base64 import b64encode
@@ -22,37 +22,42 @@ def hexescape(char):
     return "%" + hex_repr
 
 
+def fakehttp(fakedata):
+    class FakeSocket(io.BytesIO):
+
+        def sendall(self, data):
+            FakeHTTPConnection.buf = data
+
+        def makefile(self, *args, **kwds):
+            return self
+
+        def read(self, amt=None):
+            if self.closed:
+                return b""
+            return io.BytesIO.read(self, amt)
+
+        def readline(self, length=None):
+            if self.closed:
+                return b""
+            return io.BytesIO.readline(self, length)
+
+    class FakeHTTPConnection(httplib.HTTPConnection):
+
+        # buffer to store data for verification in urlopen tests.
+        buf = ""
+        fakesock = FakeSocket(fakedata)
+
+        def connect(self):
+            self.sock = self.fakesock
+
+    return FakeHTTPConnection
+
+
 class FakeHTTPMixin(object):
     def fakehttp(self, fakedata):
-        class FakeSocket(StringIO.StringIO):
-
-            def sendall(self, data):
-                FakeHTTPConnection.buf = data
-
-            def makefile(self, *args, **kwds):
-                return self
-
-            def read(self, amt=None):
-                if self.closed:
-                    return ""
-                return StringIO.StringIO.read(self, amt)
-
-            def readline(self, length=None):
-                if self.closed:
-                    return ""
-                return StringIO.StringIO.readline(self, length)
-
-        class FakeHTTPConnection(httplib.HTTPConnection):
-
-            # buffer to store data for verification in urlopen tests.
-            buf = ""
-
-            def connect(self):
-                self.sock = FakeSocket(fakedata)
-
         assert httplib.HTTP._connection_class == httplib.HTTPConnection
 
-        httplib.HTTP._connection_class = FakeHTTPConnection
+        httplib.HTTP._connection_class = fakehttp(fakedata)
 
     def unfakehttp(self):
         httplib.HTTP._connection_class = httplib.HTTPConnection
