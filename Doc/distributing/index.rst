@@ -93,9 +93,18 @@ is important to have standard tools that work consistently, even on older
 versions of Python.
 
 The currently recommended build and distribution tools can be installed
-using ``pip``::
+by invoking the ``pip`` module at the command line::
 
-    pip install setuptools wheel twine
+    python -m pip install setuptools wheel twine
+
+.. note::
+
+   For POSIX users (including Mac OS X and Linux users), these instructions
+   assume the use of a :term:`virtual environment`.
+
+   For Windows users, these instructions assume that the option to
+   adjust the system PATH environment variable was selected when installing
+   Python.
 
 The Python Packaging User Guide includes more details on the `currently
 recommended tools`_.
