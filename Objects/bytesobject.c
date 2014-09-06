@@ -593,8 +593,8 @@ PyBytes_AsStringAndSize(PyObject *obj,
     if (len != NULL)
         *len = PyBytes_GET_SIZE(obj);
     else if (strlen(*s) != (size_t)PyBytes_GET_SIZE(obj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "expected bytes with no null");
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null byte");
         return -1;
     }
     return 0;

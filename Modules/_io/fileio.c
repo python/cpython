@@ -256,7 +256,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
         int rv = _PyUnicode_HasNULChars(nameobj);
         if (rv) {
             if (rv != -1)
-                PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
             return -1;
         }
         widename = PyUnicode_AsUnicode(nameobj);

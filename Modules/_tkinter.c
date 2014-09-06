@@ -1417,7 +1417,7 @@ varname_converter(PyObject *in, void *_out)
         }
         s = PyBytes_AsString(in);
         if (strlen(s) != (size_t)PyBytes_Size(in)) {
-            PyErr_SetString(PyExc_ValueError, "null byte in bytes object");
+            PyErr_SetString(PyExc_ValueError, "embedded null byte");
             return 0;
         }
         *out = s;
@@ -1434,7 +1434,7 @@ varname_converter(PyObject *in, void *_out)
             return 0;
         }
         if (strlen(s) != (size_t)size) {
-            PyErr_SetString(PyExc_ValueError, "null character in string");
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             return 0;
         }
         *out = s;

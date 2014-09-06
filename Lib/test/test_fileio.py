@@ -361,8 +361,8 @@ class OtherFileTests(unittest.TestCase):
 
     def testConstructorHandlesNULChars(self):
         fn_with_NUL = 'foo\0bar'
-        self.assertRaises(TypeError, _FileIO, fn_with_NUL, 'w')
-        self.assertRaises(TypeError, _FileIO, bytes(fn_with_NUL, 'ascii'), 'w')
+        self.assertRaises(ValueError, _FileIO, fn_with_NUL, 'w')
+        self.assertRaises(ValueError, _FileIO, bytes(fn_with_NUL, 'ascii'), 'w')
 
     def testInvalidFd(self):
         self.assertRaises(ValueError, _FileIO, -10)

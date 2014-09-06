@@ -3247,7 +3247,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
     wlen2 = wcslen(wstr);
     if (wlen2 != wlen) {
         PyMem_Free(wstr);
-        PyErr_SetString(PyExc_TypeError, "embedded null character");
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
 
@@ -3519,8 +3519,8 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
     if (locale_error_handler(errors, &surrogateescape) < 0)
         return NULL;
 
-    if (str[len] != '\0' || (size_t)len != strlen(str)) {
-        PyErr_SetString(PyExc_TypeError, "embedded null character");
+    if (str[len] != '\0' || (size_t)len != strlen(str))  {
+        PyErr_SetString(PyExc_ValueError, "embedded null byte");
         return NULL;
     }
 
@@ -3697,7 +3697,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     size = PyBytes_GET_SIZE(output);
     data = PyBytes_AS_STRING(output);
     if ((size_t)size != strlen(data)) {
-        PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+        PyErr_SetString(PyExc_ValueError, "embedded null byte");
         Py_DECREF(output);
         return 0;
     }
@@ -3741,7 +3741,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     }
     if (findchar(PyUnicode_DATA(output), PyUnicode_KIND(output),
                  PyUnicode_GET_LENGTH(output), 0, 1) >= 0) {
-        PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         Py_DECREF(output);
         return 0;
     }

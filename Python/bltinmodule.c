@@ -745,8 +745,8 @@ source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
         return NULL;
     }
 
-    if (strlen(str) != (size_t)size) {
-        PyErr_SetString(PyExc_TypeError,
+    if (strlen(str) != (size_t)size)  {
+        PyErr_SetString(PyExc_ValueError,
                         "source code string cannot contain null bytes");
         return NULL;
     }
