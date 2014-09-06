@@ -872,10 +872,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             STORE_SIZE(count);
             format++;
         } else {
-            if (strlen(*p) != (size_t)count)
-                return converterr(
-                    "bytes without null bytes",
-                    arg, msgbuf, bufsize);
+            if (strlen(*p) != (size_t)count) {
+                PyErr_SetString(PyExc_ValueError, "embedded null byte");
+                RETURN_ERR_OCCURRED;
+            }
         }
         break;
     }
@@ -948,16 +948,15 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 if (sarg == NULL)
                     return converterr(CONV_UNICODE,
                                       arg, msgbuf, bufsize);
+                if (strlen(sarg) != (size_t)len) {
+                    PyErr_SetString(PyExc_ValueError, "embedded null character");
+                    RETURN_ERR_OCCURRED;
+                }
                 *p = sarg;
             }
             else
                 return converterr(c == 'z' ? "str or None" : "str",
                                   arg, msgbuf, bufsize);
-            if (*p != NULL && sarg != NULL && (Py_ssize_t) strlen(*p) != len)
-                return converterr(
-                    c == 'z' ? "str without null characters or None"
-                             : "str without null characters",
-                    arg, msgbuf, bufsize);
         }
         break;
     }
@@ -994,10 +993,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 *p = PyUnicode_AsUnicodeAndSize(arg, &len);
                 if (*p == NULL)
                     RETURN_ERR_OCCURRED;
-                if (Py_UNICODE_strlen(*p) != (size_t)len)
-                    return converterr(
-                        "str without null characters or None",
-                        arg, msgbuf, bufsize);
+                if (Py_UNICODE_strlen(*p) != (size_t)len) {
+                    PyErr_SetString(PyExc_ValueError, "embedded null character");
+                    RETURN_ERR_OCCURRED;
+                }
             } else
                 return converterr(c == 'Z' ? "str or None" : "str",
                                   arg, msgbuf, bufsize);

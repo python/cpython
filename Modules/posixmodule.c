@@ -903,7 +903,7 @@ path_converter(PyObject *o, void *p) {
 
     narrow = PyBytes_AS_STRING(bytes);
     if ((size_t)length != strlen(narrow)) {
-        FORMAT_EXCEPTION(PyExc_ValueError, "embedded NUL character in %s");
+        FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
         Py_DECREF(bytes);
         return 0;
     }

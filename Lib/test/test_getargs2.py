@@ -482,7 +482,7 @@ class Bytes_TestCase(unittest.TestCase):
     def test_s(self):
         from _testcapi import getargs_s
         self.assertEqual(getargs_s('abc\xe9'), b'abc\xc3\xa9')
-        self.assertRaises(TypeError, getargs_s, 'nul:\0')
+        self.assertRaises(ValueError, getargs_s, 'nul:\0')
         self.assertRaises(TypeError, getargs_s, b'bytes')
         self.assertRaises(TypeError, getargs_s, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_s, memoryview(b'memoryview'))
@@ -509,7 +509,7 @@ class Bytes_TestCase(unittest.TestCase):
     def test_z(self):
         from _testcapi import getargs_z
         self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')
-        self.assertRaises(TypeError, getargs_z, 'nul:\0')
+        self.assertRaises(ValueError, getargs_z, 'nul:\0')
         self.assertRaises(TypeError, getargs_z, b'bytes')
         self.assertRaises(TypeError, getargs_z, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_z, memoryview(b'memoryview'))
@@ -537,7 +537,7 @@ class Bytes_TestCase(unittest.TestCase):
         from _testcapi import getargs_y
         self.assertRaises(TypeError, getargs_y, 'abc\xe9')
         self.assertEqual(getargs_y(b'bytes'), b'bytes')
-        self.assertRaises(TypeError, getargs_y, b'nul:\0')
+        self.assertRaises(ValueError, getargs_y, b'nul:\0')
         self.assertRaises(TypeError, getargs_y, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_y, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_y, None)
@@ -577,7 +577,7 @@ class Unicode_TestCase(unittest.TestCase):
     def test_u(self):
         from _testcapi import getargs_u
         self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
-        self.assertRaises(TypeError, getargs_u, 'nul:\0')
+        self.assertRaises(ValueError, getargs_u, 'nul:\0')
         self.assertRaises(TypeError, getargs_u, b'bytes')
         self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
@@ -595,7 +595,7 @@ class Unicode_TestCase(unittest.TestCase):
     def test_Z(self):
         from _testcapi import getargs_Z
         self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
-        self.assertRaises(TypeError, getargs_Z, 'nul:\0')
+        self.assertRaises(ValueError, getargs_Z, 'nul:\0')
         self.assertRaises(TypeError, getargs_Z, b'bytes')
         self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
