@@ -40,6 +40,10 @@ Key terms
 * ``pyvenv`` is the standard tool for creating virtual environments, and has
   been part of Python since Python 3.3. Starting with Python 3.4, it
   defaults to installing ``pip`` into all created virtual environments
+* ``virtualenv`` is a third party alternative (and predecessor) to
+  ``pyvenv``. It allows virtual environments to be used on versions of
+  Python prior to 3.4, which either don't provide ``pyvenv`` at all, or
+  aren't able to automatically install ``pip`` into created environments.
 * the `Python Package Index <https://pypi.python.org/pypi>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users
@@ -63,27 +67,33 @@ Basic usage
 ===========
 
 The standard packaging tools are all designed to be used from the command
-line. For Windows users, the examples below assume that the option to
-adjust the system PATH environment variable was selected when installing
-Python. For Linux users, the command to install into the system version of
-Python 3 is likely to be ``pip3`` rather than ``pip``.
+line.
 
 The following command will install the latest version of a module and its
 dependencies from the Python Package Index::
 
-    pip install SomePackage
+    python -m pip install SomePackage
+
+.. note::
+
+   For POSIX users (including Mac OS X and Linux users), the examples in
+   this guide assume the use of a :term:`virtual environment`.
+
+   For Windows users, the examples in this guide assume that the option to
+   adjust the system PATH environment variable was selected when installing
+   Python.
 
 It's also possible to specify an exact or minimum version directly on the
 command line::
 
-    pip install SomePackage==1.0.4    # specific version
-    pip install 'SomePackage>=1.0.4'  # minimum version
+    python -m pip install SomePackage==1.0.4    # specific version
+    python -m pip install 'SomePackage>=1.0.4'  # minimum version
 
 Normally, if a suitable module is already installed, attempting to install
 it again will have no effect. Upgrading existing modules must be requested
 explicitly::
 
-    pip install --upgrade SomePackage
+    python -m pip install --upgrade SomePackage
 
 More information and resources regarding ``pip`` and its capabilities can be
 found in the `Python Packaging User Guide <http://packaging.python.org>`__.
@@ -120,8 +130,8 @@ User Guide.
 ... install packages just for the current user?
 -----------------------------------------------
 
-Passing the ``--user`` option to ``pip install`` will install a package
-just for the current user, rather than for all users of the system.
+Passing the ``--user`` option to ``python -m pip install`` will install a
+package just for the current user, rather than for all users of the system.
 
 
 ... install scientific Python packages?
