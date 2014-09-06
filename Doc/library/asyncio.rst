@@ -4,6 +4,13 @@
 .. module:: asyncio
    :synopsis: Asynchronous I/O, event loop, coroutines and tasks.
 
+.. note::
+
+   The asyncio package has been included in the standard library on a
+   :term:`provisional basis <provisional package>`. Backwards incompatible
+   changes (up to and including removal of the module) may occur if deemed
+   necessary by the core developers.
+
 .. versionadded:: 3.4
 
 **Source code:** :source:`Lib/asyncio/`
