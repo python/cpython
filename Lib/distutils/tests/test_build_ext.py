@@ -31,12 +31,11 @@ class BuildExtTestCase(TempdirManager,
         self.tmp_dir = self.mkdtemp()
         self.sys_path = sys.path, sys.path[:]
         sys.path.append(self.tmp_dir)
-        if sys.version > "2.6":
-            import site
-            self.old_user_base = site.USER_BASE
-            site.USER_BASE = self.mkdtemp()
-            from distutils.command import build_ext
-            build_ext.USER_BASE = site.USER_BASE
+        import site
+        self.old_user_base = site.USER_BASE
+        site.USER_BASE = self.mkdtemp()
+        from distutils.command import build_ext
+        build_ext.USER_BASE = site.USER_BASE
 
     def test_build_ext(self):
         global ALREADY_TESTED
@@ -84,11 +83,10 @@ class BuildExtTestCase(TempdirManager,
         support.unload('xx')
         sys.path = self.sys_path[0]
         sys.path[:] = self.sys_path[1]
-        if sys.version > "2.6":
-            import site
-            site.USER_BASE = self.old_user_base
-            from distutils.command import build_ext
-            build_ext.USER_BASE = self.old_user_base
+        import site
+        site.USER_BASE = self.old_user_base
+        from distutils.command import build_ext
+        build_ext.USER_BASE = self.old_user_base
         super(BuildExtTestCase, self).tearDown()
 
     def test_solaris_enable_shared(self):
