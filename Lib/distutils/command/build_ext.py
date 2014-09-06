@@ -14,13 +14,7 @@ from distutils.extension import Extension
 from distutils.util import get_platform
 from distutils import log
 
-# this keeps compatibility from 2.3 to 2.5
-if sys.version < "2.6":
-    USER_BASE = None
-    HAS_USER_SITE = False
-else:
-    from site import USER_BASE
-    HAS_USER_SITE = True
+from site import USER_BASE
 
 if os.name == 'nt':
     from distutils.msvccompiler import get_build_version
@@ -97,14 +91,11 @@ class build_ext(Command):
          "list of SWIG command line options"),
         ('swig=', None,
          "path to the SWIG executable"),
+        ('user', None,
+         "add user include, library and rpath")
         ]
 
-    boolean_options = ['inplace', 'debug', 'force', 'swig-cpp']
-
-    if HAS_USER_SITE:
-        user_options.append(('user', None,
-                             "add user include, library and rpath"))
-        boolean_options.append('user')
+    boolean_options = ['inplace', 'debug', 'force', 'swig-cpp', 'user']
 
     help_options = [
         ('help-compiler', None,
