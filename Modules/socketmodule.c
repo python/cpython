@@ -1273,7 +1273,7 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
     }
     if (strlen(data->buf) != len) {
         Py_CLEAR(data->obj);
-        PyErr_SetString(PyExc_TypeError, "host name must not contain NUL character");
+        PyErr_SetString(PyExc_TypeError, "host name must not contain null character");
         return 0;
     }
     return Py_CLEANUP_SUPPORTED;

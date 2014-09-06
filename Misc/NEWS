@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22215: Now ValueError is raised instead of TypeError when str or bytes
+  argument contains not permitted null character or byte.
+
 - Issue #22258: Fix the internal function set_inheritable() on Illumos.
   This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
   with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()

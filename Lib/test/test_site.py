@@ -147,7 +147,7 @@ class HelperFunctionsTests(unittest.TestCase):
             re.escape(os.path.join(pth_dir, pth_fn)))
         # XXX: ditto previous XXX comment.
         self.assertRegex(err_out.getvalue(), 'Traceback')
-        self.assertRegex(err_out.getvalue(), 'TypeError')
+        self.assertRegex(err_out.getvalue(), 'ValueError')
 
     def test_addsitedir(self):
         # Same tests for test_addpackage since addsitedir() essentially just
