@@ -151,10 +151,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
         if standard_lib:
             return os.path.join(prefix, "Lib")
         else:
-            if get_python_version() < "2.2":
-                return prefix
-            else:
-                return os.path.join(prefix, "Lib", "site-packages")
+            return os.path.join(prefix, "Lib", "site-packages")
     else:
         raise DistutilsPlatformError(
             "I don't know where Python installs its library "
@@ -244,12 +241,8 @@ def get_config_h_filename():
             inc_dir = _sys_home or project_base
     else:
         inc_dir = get_python_inc(plat_specific=1)
-    if get_python_version() < '2.2':
-        config_h = 'config.h'
-    else:
-        # The name of the config.h file changed in 2.2
-        config_h = 'pyconfig.h'
-    return os.path.join(inc_dir, config_h)
+
+    return os.path.join(inc_dir, 'pyconfig.h')
 
 
 def get_makefile_filename():
@@ -460,17 +453,6 @@ def _init_posix():
     # the scripts are in another directory.
     if python_build:
         g['LDSHARED'] = g['BLDSHARED']
-
-    elif get_python_version() < '2.1':
-        # The following two branches are for 1.5.2 compatibility.
-        if sys.platform == 'aix4':          # what about AIX 3.x ?
-            # Linker script is in the config directory, not in Modules as the
-            # Makefile says.
-            python_lib = get_python_lib(standard_lib=1)
-            ld_so_aix = os.path.join(python_lib, 'config', 'ld_so_aix')
-            python_exp = os.path.join(python_lib, 'config', 'python.exp')
-
-            g['LDSHARED'] = "%s %s -bI:%s" % (ld_so_aix, g['CC'], python_exp)
 
     global _config_vars
     _config_vars = g
