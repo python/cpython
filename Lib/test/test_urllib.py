@@ -48,43 +48,48 @@ def urlopen(url, data=None, proxies=None):
         return opener.open(url, data)
 
 
+def fakehttp(fakedata):
+    class FakeSocket(io.BytesIO):
+        io_refs = 1
+
+        def sendall(self, data):
+            FakeHTTPConnection.buf = data
+
+        def makefile(self, *args, **kwds):
+            self.io_refs += 1
+            return self
+
+        def read(self, amt=None):
+            if self.closed:
+                return b""
+            return io.BytesIO.read(self, amt)
+
+        def readline(self, length=None):
+            if self.closed:
+                return b""
+            return io.BytesIO.readline(self, length)
+
+        def close(self):
+            self.io_refs -= 1
+            if self.io_refs == 0:
+                io.BytesIO.close(self)
+
+    class FakeHTTPConnection(http.client.HTTPConnection):
+
+        # buffer to store data for verification in urlopen tests.
+        buf = None
+        fakesock = FakeSocket(fakedata)
+
+        def connect(self):
+            self.sock = self.fakesock
+
+    return FakeHTTPConnection
+
+
 class FakeHTTPMixin(object):
     def fakehttp(self, fakedata):
-        class FakeSocket(io.BytesIO):
-            io_refs = 1
-
-            def sendall(self, data):
-                FakeHTTPConnection.buf = data
-
-            def makefile(self, *args, **kwds):
-                self.io_refs += 1
-                return self
-
-            def read(self, amt=None):
-                if self.closed:
-                    return b""
-                return io.BytesIO.read(self, amt)
-
-            def readline(self, length=None):
-                if self.closed:
-                    return b""
-                return io.BytesIO.readline(self, length)
-
-            def close(self):
-                self.io_refs -= 1
-                if self.io_refs == 0:
-                    io.BytesIO.close(self)
-
-        class FakeHTTPConnection(http.client.HTTPConnection):
-
-            # buffer to store data for verification in urlopen tests.
-            buf = None
-
-            def connect(self):
-                self.sock = FakeSocket(fakedata)
-
         self._connection_class = http.client.HTTPConnection
-        http.client.HTTPConnection = FakeHTTPConnection
+        http.client.HTTPConnection = fakehttp(fakedata)
 
     def unfakehttp(self):
         http.client.HTTPConnection = self._connection_class
