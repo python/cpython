@@ -132,6 +132,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22226: First letter no longer is stripped from the "status" key in
+  the result of Treeview.heading().
+
 - Issue #19524: Fixed resource leak in the HTTP connection when an invalid
   response is received.  Patch by Martin Panter.
 
