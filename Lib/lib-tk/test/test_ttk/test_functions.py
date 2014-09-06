@@ -324,26 +324,13 @@ class InternalFunctionsTest(unittest.TestCase):
             "-opt {3 2m}")
 
 
-    def test_dict_from_tcltuple(self):
-        fakettuple = ('-a', '{1 2 3}', '-something', 'foo')
-
-        self.assertEqual(ttk._dict_from_tcltuple(fakettuple, False),
-            {'-a': '{1 2 3}', '-something': 'foo'})
-
-        self.assertEqual(ttk._dict_from_tcltuple(fakettuple),
-            {'a': '{1 2 3}', 'something': 'foo'})
-
-        # passing a tuple with a single item should return an empty dict,
-        # since it tries to break the tuple by pairs.
-        self.assertFalse(ttk._dict_from_tcltuple(('single', )))
-
-        sspec = MockStateSpec('a', 'b')
-        self.assertEqual(ttk._dict_from_tcltuple(('-a', (sspec, 'val'))),
-            {'a': [('a', 'b', 'val')]})
-
-        self.assertEqual(ttk._dict_from_tcltuple((MockTclObj('-padding'),
-            [MockTclObj('1'), 2, MockTclObj('3m')])),
-            {'padding': [1, 2, '3m']})
+    def test_tclobj_to_py(self):
+        self.assertEqual(
+            ttk._tclobj_to_py((MockStateSpec('a', 'b'), 'val')),
+            [('a', 'b', 'val')])
+        self.assertEqual(
+            ttk._tclobj_to_py([MockTclObj('1'), 2, MockTclObj('3m')]),
+            [1, 2, '3m'])
 
 
     def test_list_from_statespec(self):

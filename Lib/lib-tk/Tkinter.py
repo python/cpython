@@ -123,6 +123,29 @@ def _cnfmerge(cnfs):
 try: _cnfmerge = _tkinter._cnfmerge
 except AttributeError: pass
 
+def _splitdict(tk, v, cut_minus=True, conv=None):
+    """Return a properly formatted dict built from Tcl list pairs.
+
+    If cut_minus is True, the supposed '-' prefix will be removed from
+    keys. If conv is specified, it is used to convert values.
+
+    Tcl list is expected to contain an even number of elements.
+    """
+    t = tk.splitlist(v)
+    if len(t) % 2:
+        raise RuntimeError('Tcl list representing a dict is expected '
+                           'to contain an even number of elements')
+    it = iter(t)
+    dict = {}
+    for key, value in zip(it, it):
+        key = str(key)
+        if cut_minus and key[0] == '-':
+            key = key[1:]
+        if conv:
+            value = conv(value)
+        dict[key] = value
+    return dict
+
 class Event:
     """Container for the properties of an event.
 
@@ -1390,15 +1413,10 @@ class Misc:
         else:
             options = self._options(cnf, kw)
         if not options:
-            res = self.tk.call('grid',
-                       command, self._w, index)
-            words = self.tk.splitlist(res)
-            dict = {}
-            for i in range(0, len(words), 2):
-                key = words[i][1:]
-                value = words[i+1]
-                dict[key] = self._gridconvvalue(value)
-            return dict
+            return _splitdict(
+                self.tk,
+                self.tk.call('grid', command, self._w, index),
+                conv=self._gridconvvalue)
         res = self.tk.call(
                   ('grid', command, self._w, index)
                   + options)
@@ -1921,16 +1939,10 @@ class Pack:
     def pack_info(self):
         """Return information about the packing options
         for this widget."""
-        words = self.tk.splitlist(
-            self.tk.call('pack', 'info', self._w))
-        dict = {}
-        for i in range(0, len(words), 2):
-            key = words[i][1:]
-            value = words[i+1]
-            if str(value)[:1] == '.':
-                value = self._nametowidget(value)
-            dict[key] = value
-        return dict
+        d = _splitdict(self.tk, self.tk.call('pack', 'info', self._w))
+        if 'in' in d:
+            d['in'] = self.nametowidget(d['in'])
+        return d
     info = pack_info
     propagate = pack_propagate = Misc.pack_propagate
     slaves = pack_slaves = Misc.pack_slaves
@@ -1972,16 +1984,10 @@ class Place:
     def place_info(self):
         """Return information about the placing options
         for this widget."""
-        words = self.tk.splitlist(
-            self.tk.call('place', 'info', self._w))
-        dict = {}
-        for i in range(0, len(words), 2):
-            key = words[i][1:]
-            value = words[i+1]
-            if str(value)[:1] == '.':
-                value = self._nametowidget(value)
-            dict[key] = value
-        return dict
+        d = _splitdict(self.tk, self.tk.call('place', 'info', self._w))
+        if 'in' in d:
+            d['in'] = self.nametowidget(d['in'])
+        return d
     info = place_info
     slaves = place_slaves = Misc.place_slaves
 
@@ -2021,16 +2027,10 @@ class Grid:
     def grid_info(self):
         """Return information about the options
         for positioning this widget in a grid."""
-        words = self.tk.splitlist(
-            self.tk.call('grid', 'info', self._w))
-        dict = {}
-        for i in range(0, len(words), 2):
-            key = words[i][1:]
-            value = words[i+1]
-            if str(value)[:1] == '.':
-                value = self._nametowidget(value)
-            dict[key] = value
-        return dict
+        d = _splitdict(self.tk, self.tk.call('grid', 'info', self._w))
+        if 'in' in d:
+            d['in'] = self.nametowidget(d['in'])
+        return d
     info = grid_info
     location = grid_location = Misc.grid_location
     propagate = grid_propagate = Misc.grid_propagate

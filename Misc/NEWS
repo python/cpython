@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22226: First letter no longer is stripped from the "status" key in
+  the result of Treeview.heading().
+
 - Issue #22051: turtledemo no longer reloads examples to re-run them.
   Initialization of variables and gui setup should be done in main(),
   which is called each time a demo is run, but not on import.
