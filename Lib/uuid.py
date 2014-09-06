@@ -139,10 +139,8 @@ class UUID(object):
         if bytes_le is not None:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
-            bytes = (bytes_(reversed(bytes_le[0:4])) +
-                     bytes_(reversed(bytes_le[4:6])) +
-                     bytes_(reversed(bytes_le[6:8])) +
-                     bytes_le[8:])
+            bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
+                     bytes_le[8-1:6-1:-1] + bytes_le[8:])
         if bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
@@ -234,17 +232,12 @@ class UUID(object):
 
     @property
     def bytes(self):
-        bytes = bytearray()
-        for shift in range(0, 128, 8):
-            bytes.insert(0, (self.int >> shift) & 0xff)
-        return bytes_(bytes)
+        return self.int.to_bytes(16, 'big')
 
     @property
     def bytes_le(self):
         bytes = self.bytes
-        return (bytes_(reversed(bytes[0:4])) +
-                bytes_(reversed(bytes[4:6])) +
-                bytes_(reversed(bytes[6:8])) +
+        return (bytes[4-1::-1] + bytes[6-1:4-1:-1] + bytes[8-1:6-1:-1] +
                 bytes[8:])
 
     @property
@@ -383,13 +376,11 @@ def _ipconfig_getnode():
             pipe = os.popen(os.path.join(dir, 'ipconfig') + ' /all')
         except OSError:
             continue
-        else:
+        with pipe:
             for line in pipe:
                 value = line.split(':')[-1].strip().lower()
                 if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
                     return int(value.replace('-', ''), 16)
-        finally:
-            pipe.close()
 
 def _netbios_getnode():
     """Get the hardware address on Windows using NetBIOS calls.
@@ -416,9 +407,10 @@ def _netbios_getnode():
         if win32wnet.Netbios(ncb) != 0:
             continue
         status._unpack()
-        bytes = status.adapter_address
-        return ((bytes[0]<<40) + (bytes[1]<<32) + (bytes[2]<<24) +
-                (bytes[3]<<16) + (bytes[4]<<8) + bytes[5])
+        bytes = status.adapter_address[:6]
+        if len(bytes) != 6:
+            continue
+        return int.from_bytes(bytes, 'big')
 
 # Thanks to Thomas Heller for ctypes and for his help with its use here.
 
@@ -487,7 +479,7 @@ def _windll_getnode():
 def _random_getnode():
     """Get a random node ID, with eighth bit set as suggested by RFC 4122."""
     import random
-    return random.randrange(0, 1<<48) | 0x010000000000
+    return random.getrandbits(48) | 0x010000000000
 
 _node = None
 
@@ -544,7 +536,7 @@ def uuid1(node=None, clock_seq=None):
     _last_timestamp = timestamp
     if clock_seq is None:
         import random
-        clock_seq = random.randrange(1<<14) # instead of stable storage
+        clock_seq = random.getrandbits(14) # instead of stable storage
     time_low = timestamp & 0xffffffff
     time_mid = (timestamp >> 32) & 0xffff
     time_hi_version = (timestamp >> 48) & 0x0fff
@@ -576,8 +568,7 @@ def uuid4():
         return UUID(bytes=os.urandom(16), version=4)
     except:
         import random
-        bytes = bytes_(random.randrange(256) for i in range(16))
-        return UUID(bytes=bytes, version=4)
+        return UUID(int=random.getrandbits(128), version=4)
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
