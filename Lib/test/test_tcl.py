@@ -7,7 +7,7 @@ from test import support
 _tkinter = support.import_module('_tkinter')
 
 # Make sure tkinter._fix runs to set up the environment
-support.import_fresh_module('tkinter')
+tkinter = support.import_fresh_module('tkinter')
 
 from tkinter import Tcl
 from _tkinter import TclError
@@ -565,6 +565,41 @@ class TclTest(unittest.TestCase):
             ]
         for arg, res in testcases:
             self.assertEqual(split(arg), res, msg=arg)
+
+    def test_splitdict(self):
+        splitdict = tkinter._splitdict
+        tcl = self.interp.tk
+
+        arg = '-a {1 2 3} -something foo status {}'
+        self.assertEqual(splitdict(tcl, arg, False),
+            {'-a': '1 2 3', '-something': 'foo', 'status': ''})
+        self.assertEqual(splitdict(tcl, arg),
+            {'a': '1 2 3', 'something': 'foo', 'status': ''})
+
+        arg = ('-a', (1, 2, 3), '-something', 'foo', 'status', '{}')
+        self.assertEqual(splitdict(tcl, arg, False),
+            {'-a': (1, 2, 3), '-something': 'foo', 'status': '{}'})
+        self.assertEqual(splitdict(tcl, arg),
+            {'a': (1, 2, 3), 'something': 'foo', 'status': '{}'})
+
+        self.assertRaises(RuntimeError, splitdict, tcl, '-a b -c ')
+        self.assertRaises(RuntimeError, splitdict, tcl, ('-a', 'b', '-c'))
+
+        arg = tcl.call('list',
+                        '-a', (1, 2, 3), '-something', 'foo', 'status', ())
+        self.assertEqual(splitdict(tcl, arg),
+            {'a': (1, 2, 3) if self.wantobjects else '1 2 3',
+             'something': 'foo', 'status': ''})
+
+        if tcl_version >= (8, 5):
+            arg = tcl.call('dict', 'create',
+                           '-a', (1, 2, 3), '-something', 'foo', 'status', ())
+            if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
+                # Before 8.5.5 dicts were converted to lists through string
+                expected = {'a': '1 2 3', 'something': 'foo', 'status': ''}
+            else:
+                expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
+            self.assertEqual(splitdict(tcl, arg), expected)
 
 
 class BigmemTclTest(unittest.TestCase):
