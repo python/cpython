@@ -1170,18 +1170,21 @@ class AbstractHTTPHandler(BaseHandler):
             h.set_tunnel(req._tunnel_host, headers=tunnel_headers)
 
         try:
-            h.request(req.get_method(), req.selector, req.data, headers)
-        except OSError as err: # timeout error
-            h.close()
-            raise URLError(err)
-        else:
+            try:
+                h.request(req.get_method(), req.selector, req.data, headers)
+            except OSError as err: # timeout error
+                raise URLError(err)
             r = h.getresponse()
-            # If the server does not send us a 'Connection: close' header,
-            # HTTPConnection assumes the socket should be left open. Manually
-            # mark the socket to be closed when this response object goes away.
-            if h.sock:
-                h.sock.close()
-                h.sock = None
+        except:
+            h.close()
+            raise
+
+        # If the server does not send us a 'Connection: close' header,
+        # HTTPConnection assumes the socket should be left open. Manually
+        # mark the socket to be closed when this response object goes away.
+        if h.sock:
+            h.sock.close()
+            h.sock = None
 
         r.url = req.get_full_url()
         # This line replaces the .msg attribute of the HTTPResponse
