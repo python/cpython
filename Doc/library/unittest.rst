@@ -1561,7 +1561,7 @@ Loading and running tests
       :class:`testCaseClass`.
 
 
-   .. method:: loadTestsFromModule(module)
+   .. method:: loadTestsFromModule(module, pattern=None)
 
       Return a suite of all tests cases contained in the given module. This
       method searches *module* for classes derived from :class:`TestCase` and
@@ -1578,10 +1578,17 @@ Loading and running tests
 
       If a module provides a ``load_tests`` function it will be called to
       load the tests. This allows modules to customize test loading.
-      This is the `load_tests protocol`_.
+      This is the `load_tests protocol`_.  The *pattern* argument is passed as
+      the third argument to ``load_tests``.
 
       .. versionchanged:: 3.2
          Support for ``load_tests`` added.
+
+      .. versionchanged:: 3.5
+         The undocumented and unofficial *use_load_tests* default argument is
+         deprecated and ignored, although it is still accepted for backward
+         compatibility.  The method also now accepts a keyword-only argument
+         *pattern* which is passed to ``load_tests`` as the third argument.
 
 
    .. method:: loadTestsFromName(name, module=None)
@@ -1634,18 +1641,18 @@ Loading and running tests
       the start directory is not the top level directory then the top level
       directory must be specified separately.
 
-      If importing a module fails, for example due to a syntax error, then this
-      will be recorded as a single error and discovery will continue.  If the
-      import failure is due to :exc:`SkipTest` being raised, it will be recorded
-      as a skip instead of an error.
+      If importing a module fails, for example due to a syntax error, then
+      this will be recorded as a single error and discovery will continue.  If
+      the import failure is due to :exc:`SkipTest` being raised, it will be
+      recorded as a skip instead of an error.
 
-      If a test package name (directory with :file:`__init__.py`) matches the
-      pattern then the package will be checked for a ``load_tests``
-      function. If this exists then it will be called with *loader*, *tests*,
-      *pattern*.
+      If a package (a directory containing a file named :file:`__init__.py`) is
+      found, the package will be checked for a ``load_tests`` function. If this
+      exists then it will be called with *loader*, *tests*, *pattern*.
 
-      If load_tests exists then discovery does *not* recurse into the package,
-      ``load_tests`` is responsible for loading all tests in the package.
+      If ``load_tests`` exists then discovery does *not* recurse into the
+      package, ``load_tests`` is responsible for loading all tests in the
+      package.
 
       The pattern is deliberately not stored as a loader attribute so that
       packages can continue discovery themselves. *top_level_dir* is stored so
@@ -1663,6 +1670,11 @@ Loading and running tests
          Paths are sorted before being imported so that execution order is
            the same even if the underlying file system's ordering is not
            dependent on file name.
+
+      .. versionchanged:: 3.5
+         Found packages are now checked for ``load_tests`` regardless of
+         whether their path matches *pattern*, because it is impossible for
+         a package name to match the default pattern.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by
@@ -2032,7 +2044,10 @@ test runs or test discovery by implementing a function called ``load_tests``.
 If a test module defines ``load_tests`` it will be called by
 :meth:`TestLoader.loadTestsFromModule` with the following arguments::
 
-    load_tests(loader, standard_tests, None)
+    load_tests(loader, standard_tests, pattern)
+
+where *pattern* is passed straight through from ``loadTestsFromModule``.  It
+defaults to ``None``.
 
 It should return a :class:`TestSuite`.
 
@@ -2054,21 +2069,12 @@ A typical ``load_tests`` function that loads tests from a specific set of
             suite.addTests(tests)
         return suite
 
-If discovery is started, either from the command line or by calling
-:meth:`TestLoader.discover`, with a pattern that matches a package
-name then the package :file:`__init__.py` will be checked for ``load_tests``.
-
-.. note::
-
-   The default pattern is ``'test*.py'``. This matches all Python files
-   that start with ``'test'`` but *won't* match any test directories.
-
-   A pattern like ``'test*'`` will match test packages as well as
-   modules.
-
-If the package :file:`__init__.py` defines ``load_tests`` then it will be
-called and discovery not continued into the package. ``load_tests``
-is called with the following arguments::
+If discovery is started in a directory containing a package, either from the
+command line or by calling :meth:`TestLoader.discover`, then the package
+:file:`__init__.py` will be checked for ``load_tests``.  If that function does
+not exist, discovery will recurse into the package as though it were just
+another directory.  Otherwise, discovery of the package's tests will be left up
+to ``load_tests`` which is called with the following arguments::
 
     load_tests(loader, standard_tests, pattern)
 
@@ -2086,6 +2092,11 @@ continue (and potentially modify) test discovery. A 'do nothing'
         package_tests = loader.discover(start_dir=this_dir, pattern=pattern)
         standard_tests.addTests(package_tests)
         return standard_tests
+
+.. versionchanged:: 3.5
+   Discovery no longer checks package names for matching *pattern* due to the
+   impossibility of package names matching the default pattern.
+
 
 
 Class and Module Fixtures

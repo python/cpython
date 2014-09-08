@@ -132,6 +132,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #16662: load_tests() is now unconditionally run when it is present in
+  a package's __init__.py.  TestLoader.loadTestsFromModule() still accepts
+  use_load_tests, but it is deprecated and ignored.  A new keyword-only
+  attribute `pattern` is added and documented.  Patch given by Robert Collins,
+  tweaked by Barry Warsaw.
+
 - Issue #22226: First letter no longer is stripped from the "status" key in
   the result of Treeview.heading().
 
