@@ -1,8 +1,25 @@
 import sys
 import types
-
+import warnings
 
 import unittest
+
+# Decorator used in the deprecation tests to reset the warning registry for
+# test isolation and reproducibility.
+def warningregistry(func):
+    def wrapper(*args, **kws):
+        missing = object()
+        saved = getattr(warnings, '__warningregistry__', missing).copy()
+        try:
+            return func(*args, **kws)
+        finally:
+            if saved is missing:
+                try:
+                    del warnings.__warningregistry__
+                except AttributeError:
+                    pass
+            else:
+                warnings.__warningregistry__ = saved
 
 
 class Test_TestLoader(unittest.TestCase):
@@ -150,6 +167,7 @@ class Test_TestLoader(unittest.TestCase):
 
     # Check that loadTestsFromModule honors (or not) a module
     # with a load_tests function.
+    @warningregistry
     def test_loadTestsFromModule__load_tests(self):
         m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
@@ -168,10 +186,139 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromModule(m)
         self.assertIsInstance(suite, unittest.TestSuite)
         self.assertEqual(load_tests_args, [loader, suite, None])
+        # With Python 3.5, the undocumented and unofficial use_load_tests is
+        # ignored (and deprecated).
+        load_tests_args = []
+        with warnings.catch_warnings(record=False):
+            warnings.simplefilter('never')
+            suite = loader.loadTestsFromModule(m, use_load_tests=False)
+            self.assertEqual(load_tests_args, [loader, suite, None])
+
+    @warningregistry
+    def test_loadTestsFromModule__use_load_tests_deprecated_positional(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            m = types.ModuleType('m')
+            class MyTestCase(unittest.TestCase):
+                def test(self):
+                    pass
+            m.testcase_1 = MyTestCase
+
+            load_tests_args = []
+            def load_tests(loader, tests, pattern):
+                self.assertIsInstance(tests, unittest.TestSuite)
+                load_tests_args.extend((loader, tests, pattern))
+                return tests
+            m.load_tests = load_tests
+            # The method still works.
+            loader = unittest.TestLoader()
+            # use_load_tests=True as a positional argument.
+            suite = loader.loadTestsFromModule(m, False)
+            self.assertIsInstance(suite, unittest.TestSuite)
+            # load_tests was still called because use_load_tests is deprecated
+            # and ignored.
+            self.assertEqual(load_tests_args, [loader, suite, None])
+        # We got a warning.
+        self.assertIs(w[-1].category, DeprecationWarning)
+        self.assertEqual(str(w[-1].message),
+                             'use_load_tests is deprecated and ignored')
+
+    @warningregistry
+    def test_loadTestsFromModule__use_load_tests_deprecated_keyword(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            m = types.ModuleType('m')
+            class MyTestCase(unittest.TestCase):
+                def test(self):
+                    pass
+            m.testcase_1 = MyTestCase
+
+            load_tests_args = []
+            def load_tests(loader, tests, pattern):
+                self.assertIsInstance(tests, unittest.TestSuite)
+                load_tests_args.extend((loader, tests, pattern))
+                return tests
+            m.load_tests = load_tests
+            # The method still works.
+            loader = unittest.TestLoader()
+            suite = loader.loadTestsFromModule(m, use_load_tests=False)
+            self.assertIsInstance(suite, unittest.TestSuite)
+            # load_tests was still called because use_load_tests is deprecated
+            # and ignored.
+            self.assertEqual(load_tests_args, [loader, suite, None])
+            # We got a warning.
+            self.assertIs(w[-1].category, DeprecationWarning)
+            self.assertEqual(str(w[-1].message),
+                                 'use_load_tests is deprecated and ignored')
+
+    def test_loadTestsFromModule__too_many_positional_args(self):
+        m = types.ModuleType('m')
+        class MyTestCase(unittest.TestCase):
+            def test(self):
+                pass
+        m.testcase_1 = MyTestCase
 
         load_tests_args = []
-        suite = loader.loadTestsFromModule(m, use_load_tests=False)
-        self.assertEqual(load_tests_args, [])
+        def load_tests(loader, tests, pattern):
+            self.assertIsInstance(tests, unittest.TestSuite)
+            load_tests_args.extend((loader, tests, pattern))
+            return tests
+        m.load_tests = load_tests
+        loader = unittest.TestLoader()
+        with self.assertRaises(TypeError) as cm:
+            loader.loadTestsFromModule(m, False, 'testme.*')
+        self.assertEqual(type(cm.exception), TypeError)
+        # The error message names the first bad argument alphabetically,
+        # however use_load_tests (which sorts first) is ignored.
+        self.assertEqual(
+            str(cm.exception),
+            'loadTestsFromModule() takes 1 positional argument but 2 were given')
+
+    @warningregistry
+    def test_loadTestsFromModule__use_load_tests_other_bad_keyword(self):
+        m = types.ModuleType('m')
+        class MyTestCase(unittest.TestCase):
+            def test(self):
+                pass
+        m.testcase_1 = MyTestCase
+
+        load_tests_args = []
+        def load_tests(loader, tests, pattern):
+            self.assertIsInstance(tests, unittest.TestSuite)
+            load_tests_args.extend((loader, tests, pattern))
+            return tests
+        m.load_tests = load_tests
+        loader = unittest.TestLoader()
+        with warnings.catch_warnings():
+            warnings.simplefilter('never')
+            with self.assertRaises(TypeError) as cm:
+                loader.loadTestsFromModule(
+                    m, use_load_tests=False, very_bad=True, worse=False)
+        self.assertEqual(type(cm.exception), TypeError)
+        # The error message names the first bad argument alphabetically,
+        # however use_load_tests (which sorts first) is ignored.
+        self.assertEqual(
+            str(cm.exception),
+            "loadTestsFromModule() got an unexpected keyword argument 'very_bad'")
+
+    def test_loadTestsFromModule__pattern(self):
+        m = types.ModuleType('m')
+        class MyTestCase(unittest.TestCase):
+            def test(self):
+                pass
+        m.testcase_1 = MyTestCase
+
+        load_tests_args = []
+        def load_tests(loader, tests, pattern):
+            self.assertIsInstance(tests, unittest.TestSuite)
+            load_tests_args.extend((loader, tests, pattern))
+            return tests
+        m.load_tests = load_tests
+
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromModule(m, pattern='testme.*')
+        self.assertIsInstance(suite, unittest.TestSuite)
+        self.assertEqual(load_tests_args, [loader, suite, 'testme.*'])
 
     def test_loadTestsFromModule__faulty_load_tests(self):
         m = types.ModuleType('m')

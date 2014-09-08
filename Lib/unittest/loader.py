@@ -6,6 +6,7 @@ import sys
 import traceback
 import types
 import functools
+import warnings
 
 from fnmatch import fnmatch
 
@@ -70,8 +71,27 @@ class TestLoader(object):
         loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return loaded_suite
 
-    def loadTestsFromModule(self, module, use_load_tests=True):
+    # XXX After Python 3.5, remove backward compatibility hacks for
+    # use_load_tests deprecation via *args and **kws.  See issue 16662.
+    def loadTestsFromModule(self, module, *args, pattern=None, **kws):
         """Return a suite of all tests cases contained in the given module"""
+        # This method used to take an undocumented and unofficial
+        # use_load_tests argument.  For backward compatibility, we still
+        # accept the argument (which can also be the first position) but we
+        # ignore it and issue a deprecation warning if it's present.
+        if len(args) == 1 or 'use_load_tests' in kws:
+            warnings.warn('use_load_tests is deprecated and ignored',
+                          DeprecationWarning)
+            kws.pop('use_load_tests', None)
+        if len(args) > 1:
+            raise TypeError('loadTestsFromModule() takes 1 positional argument but {} were given'.format(len(args)))
+        if len(kws) != 0:
+            # Since the keyword arguments are unsorted (see PEP 468), just
+            # pick the alphabetically sorted first argument to complain about,
+            # if multiple were given.  At least the error message will be
+            # predictable.
+            complaint = sorted(kws)[0]
+            raise TypeError("loadTestsFromModule() got an unexpected keyword argument '{}'".format(complaint))
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
@@ -80,9 +100,9 @@ class TestLoader(object):
 
         load_tests = getattr(module, 'load_tests', None)
         tests = self.suiteClass(tests)
-        if use_load_tests and load_tests is not None:
+        if load_tests is not None:
             try:
-                return load_tests(self, tests, None)
+                return load_tests(self, tests, pattern)
             except Exception as e:
                 return _make_failed_load_tests(module.__name__, e,
                                                self.suiteClass)
@@ -325,7 +345,7 @@ class TestLoader(object):
                         msg = ("%r module incorrectly imported from %r. Expected %r. "
                                "Is this module globally installed?")
                         raise ImportError(msg % (mod_name, module_dir, expected_dir))
-                    yield self.loadTestsFromModule(module)
+                    yield self.loadTestsFromModule(module, pattern=pattern)
             elif os.path.isdir(full_path):
                 if (not namespace and
                     not os.path.isfile(os.path.join(full_path, '__init__.py'))):
@@ -333,26 +353,27 @@ class TestLoader(object):
 
                 load_tests = None
                 tests = None
-                if fnmatch(path, pattern):
-                    # only check load_tests if the package directory itself matches the filter
-                    name = self._get_name_from_path(full_path)
+                name = self._get_name_from_path(full_path)
+                try:
                     package = self._get_module_from_name(name)
+                except case.SkipTest as e:
+                    yield _make_skipped_test(name, e, self.suiteClass)
+                except:
+                    yield _make_failed_import_test(name, self.suiteClass)
+                else:
                     load_tests = getattr(package, 'load_tests', None)
-                    tests = self.loadTestsFromModule(package, use_load_tests=False)
-
-                if load_tests is None:
+                    tests = self.loadTestsFromModule(package, pattern=pattern)
                     if tests is not None:
                         # tests loaded from package file
                         yield tests
+
+                    if load_tests is not None:
+                        # loadTestsFromModule(package) has load_tests for us.
+                        continue
                     # recurse into the package
                     yield from self._find_tests(full_path, pattern,
                                                 namespace=namespace)
-                else:
-                    try:
-                        yield load_tests(self, tests, pattern)
-                    except Exception as e:
-                        yield _make_failed_load_tests(package.__name__, e,
-                                                      self.suiteClass)
+
 
 defaultTestLoader = TestLoader()
 
