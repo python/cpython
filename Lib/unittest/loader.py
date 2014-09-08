@@ -79,12 +79,15 @@ class TestLoader(object):
         # use_load_tests argument.  For backward compatibility, we still
         # accept the argument (which can also be the first position) but we
         # ignore it and issue a deprecation warning if it's present.
-        if len(args) == 1 or 'use_load_tests' in kws:
+        if len(args) > 0 or 'use_load_tests' in kws:
             warnings.warn('use_load_tests is deprecated and ignored',
                           DeprecationWarning)
             kws.pop('use_load_tests', None)
         if len(args) > 1:
-            raise TypeError('loadTestsFromModule() takes 1 positional argument but {} were given'.format(len(args)))
+            # Complain about the number of arguments, but don't forget the
+            # required `module` argument.
+            complaint = len(args) + 1
+            raise TypeError('loadTestsFromModule() takes 1 positional argument but {} were given'.format(complaint))
         if len(kws) != 0:
             # Since the keyword arguments are unsorted (see PEP 468), just
             # pick the alphabetically sorted first argument to complain about,
