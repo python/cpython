@@ -141,6 +141,14 @@ doctest
   *module* contains no docstrings instead of raising :exc:`ValueError`
   (contributed by Glenn Jones in :issue:`15916`).
 
+imaplib
+-------
+
+* :class:`IMAP4` now supports the context management protocol.  When used in a
+  :keyword:`with` statement, the IMAP4 ``LOGOUT`` command will be called
+  automatically at the end of the block.  (Contributed by Tarek Ziadé and
+  Serhiy Storchaka in :issue:`4972`).
+
 imghdr
 ------
 

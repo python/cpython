@@ -132,6 +132,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12410: imaplib.IMAP4 now supports the context manager protocol.
+  Original patch by Tarek Ziadé.
+
 - Issue #16662: load_tests() is now unconditionally run when it is present in
   a package's __init__.py.  TestLoader.loadTestsFromModule() still accepts
   use_load_tests, but it is deprecated and ignored.  A new keyword-only
