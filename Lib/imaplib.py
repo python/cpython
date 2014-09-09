@@ -238,6 +238,14 @@ class IMAP4:
             return getattr(self, attr.lower())
         raise AttributeError("Unknown IMAP4 command: '%s'" % attr)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        try:
+            self.logout()
+        except OSError:
+            pass
 
 
     #       Overridable methods
