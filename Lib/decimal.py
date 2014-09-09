@@ -116,6 +116,9 @@ __all__ = [
     # Two major classes
     'Decimal', 'Context',
 
+    # Named tuple representation
+    'DecimalTuple',
+
     # Contexts
     'DefaultContext', 'BasicContext', 'ExtendedContext',
 
@@ -123,6 +126,9 @@ __all__ = [
     'DecimalException', 'Clamped', 'InvalidOperation', 'DivisionByZero',
     'Inexact', 'Rounded', 'Subnormal', 'Overflow', 'Underflow',
     'FloatOperation',
+
+    # Exceptional conditions that trigger InvalidOperation
+    'DivisionImpossible', 'InvalidContext', 'ConversionSyntax', 'DivisionUndefined',
 
     # Constants for use in setting up contexts
     'ROUND_DOWN', 'ROUND_HALF_UP', 'ROUND_HALF_EVEN', 'ROUND_CEILING',
