@@ -37,6 +37,19 @@ base class:
    initialized. If *host* is not specified, ``''`` (the local host) is used. If
    *port* is omitted, the standard IMAP4 port (143) is used.
 
+   The :class:`IMAP4` class supports the :keyword:`with` statement.  When used
+   like this, the IMAP4 ``LOGOUT`` command is issued automatically when the
+   :keyword:`with` statement exits.  E.g.::
+
+    >>> from imaplib import IMAP4
+    >>> with IMAP4("domain.org") as M:
+    ...     M.noop()
+    ...
+    ('OK', [b'Nothing Accomplished. d25if65hy903weo.87'])
+
+   .. versionchanged:: 3.5
+      Support for the :keyword:`with` statement was added.
+
 Three exceptions are defined as attributes of the :class:`IMAP4` class:
 
 

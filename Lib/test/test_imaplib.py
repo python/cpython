@@ -98,6 +98,10 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     continuation = None
     capabilities = ''
 
+    def setup(self):
+        super().setup()
+        self.server.logged = None
+
     def _send(self, message):
         if verbose:
             print("SENT: %r" % message.strip())
@@ -162,8 +166,13 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
         self._send_tagged(tag, 'OK', 'CAPABILITY completed')
 
     def cmd_LOGOUT(self, tag, args):
+        self.server.logged = None
         self._send_textline('* BYE IMAP4ref1 Server logging out')
         self._send_tagged(tag, 'OK', 'LOGOUT completed')
+
+    def cmd_LOGIN(self, tag, args):
+        self.server.logged = args[0]
+        self._send_tagged(tag, 'OK', 'LOGIN completed')
 
 
 class ThreadedNetworkedTests(unittest.TestCase):
@@ -344,6 +353,32 @@ class ThreadedNetworkedTests(unittest.TestCase):
         with self.reaped_server(TooLongHandler) as server:
             self.assertRaises(imaplib.IMAP4.error,
                               self.imap_class, *server.server_address)
+
+    @reap_threads
+    def test_simple_with_statement(self):
+        # simplest call
+        with self.reaped_server(SimpleIMAPHandler) as server:
+            with self.imap_class(*server.server_address):
+                pass
+
+    @reap_threads
+    def test_with_statement(self):
+        with self.reaped_server(SimpleIMAPHandler) as server:
+            with self.imap_class(*server.server_address) as imap:
+                imap.login('user', 'pass')
+                self.assertEqual(server.logged, 'user')
+            self.assertIsNone(server.logged)
+
+    @reap_threads
+    def test_with_statement_logout(self):
+        # what happens if already logout in the block?
+        with self.reaped_server(SimpleIMAPHandler) as server:
+            with self.imap_class(*server.server_address) as imap:
+                imap.login('user', 'pass')
+                self.assertEqual(server.logged, 'user')
+                imap.logout()
+                self.assertIsNone(server.logged)
+            self.assertIsNone(server.logged)
 
 
 @unittest.skipUnless(ssl, "SSL not available")
