@@ -1980,7 +1980,7 @@ class _ProxyFile:
         return result
 
     def __enter__(self):
-        """Context manager protocol support."""
+        """Context management protocol support."""
         return self
 
     def __exit__(self, *exc):
