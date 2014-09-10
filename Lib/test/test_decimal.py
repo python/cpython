@@ -4173,9 +4173,7 @@ class CheckAttributes(unittest.TestCase):
         self.assertEqual(C.__version__, P.__version__)
         self.assertEqual(C.__libmpdec_version__, P.__libmpdec_version__)
 
-        x = dir(C)
-        y = [s for s in dir(P) if '__' in s or not s.startswith('_')]
-        self.assertEqual(set(x) - set(y), set())
+        self.assertEqual(dir(C), dir(P))
 
     def test_context_attributes(self):
 
