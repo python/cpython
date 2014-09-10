@@ -522,7 +522,7 @@ Some smaller changes made to the core Python language are:
   (Proposed and implemented by Mark Dickinson; :issue:`9337`.)
 
 * :class:`memoryview` objects now have a :meth:`~memoryview.release()` method
-  and they also now support the context manager protocol.  This allows timely
+  and they also now support the context management protocol.  This allows timely
   release of any resources that were acquired when requesting a buffer from the
   original object.
 
@@ -1315,7 +1315,7 @@ contexts that correspond to the decimal interchange formats specified in IEEE
 ftp
 ---
 
-The :class:`ftplib.FTP` class now supports the context manager protocol to
+The :class:`ftplib.FTP` class now supports the context management protocol to
 unconditionally consume :exc:`socket.error` exceptions and to close the FTP
 connection when done::
 
@@ -1595,7 +1595,7 @@ The :mod:`socket` module has two new improvements.
   descriptor.  The latter can then be reused for other purposes.
   (Added by Antoine Pitrou; :issue:`8524`.)
 
-* :func:`socket.create_connection` now supports the context manager protocol
+* :func:`socket.create_connection` now supports the context management protocol
   to unconditionally consume :exc:`socket.error` exceptions and to close the
   socket when done.
   (Contributed by Giampaolo Rodolà; :issue:`9794`.)

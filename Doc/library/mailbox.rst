@@ -202,7 +202,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       .. versionchanged:: 3.2
          The file object really is a binary file; previously it was incorrectly
          returned in text mode.  Also, the file-like object now supports the
-         context manager protocol: you can use a :keyword:`with` statement to
+         context management protocol: you can use a :keyword:`with` statement to
          automatically close it.
 
       .. note::
