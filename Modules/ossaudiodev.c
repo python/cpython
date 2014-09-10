@@ -894,7 +894,7 @@ static PyMethodDef oss_methods[] = {
     /* Aliases for backwards compatibility */
     { "flush",          (PyCFunction)oss_sync, METH_VARARGS },
 
-    /* Support for the context manager protocol */
+    /* Support for the context management protocol */
     { "__enter__",      oss_self, METH_NOARGS },
     { "__exit__",       oss_exit, METH_VARARGS },
 
@@ -906,7 +906,7 @@ static PyMethodDef oss_mixer_methods[] = {
     { "close",          (PyCFunction)oss_mixer_close, METH_NOARGS },
     { "fileno",         (PyCFunction)oss_mixer_fileno, METH_NOARGS },
 
-    /* Support for the context manager protocol */
+    /* Support for the context management protocol */
     { "__enter__",      oss_self, METH_NOARGS },
     { "__exit__",       oss_exit, METH_VARARGS },
 

@@ -608,7 +608,7 @@ aifc
 The :meth:`~aifc.aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
-:func:`aifc.open` now supports the context manager protocol: when used in a
+:func:`aifc.open` now supports the context management protocol: when used in a
 :keyword:`with` block, the :meth:`~aifc.aifc.close` method of the returned
 object will be called automatically at the end of the block.  (Contributed by
 Serhiy Storchacha in :issue:`16486`.)
@@ -1521,7 +1521,7 @@ sunau
 The :meth:`~sunau.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 
-:meth:`sunau.open` now supports the context manager protocol: when used in a
+:meth:`sunau.open` now supports the context management protocol: when used in a
 :keyword:`with` block, the ``close`` method of the returned object will be
 called automatically at the end of the block.  (Contributed by Serhiy Storchaka
 in :issue:`18878`.)
@@ -1723,7 +1723,7 @@ wave
 The :meth:`~wave.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 
-:meth:`wave.open` now supports the context manager protocol.  (Contributed
+:meth:`wave.open` now supports the context management protocol.  (Contributed
 by Claudiu Popa in :issue:`17616`.)
 
 :mod:`wave` can now :ref:`write output to unseekable files

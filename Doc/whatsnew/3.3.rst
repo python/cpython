@@ -1556,7 +1556,7 @@ Schlawack in :issue:`12708`.)
 nntplib
 -------
 
-The :class:`nntplib.NNTP` class now supports the context manager protocol to
+The :class:`nntplib.NNTP` class now supports the context management protocol to
 unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
 connection when done::
 
@@ -1861,7 +1861,7 @@ to specify the ``(host, port)`` to use as the source address in the bind call
 when creating the outgoing socket.  (Contributed by Paulo Scardine in
 :issue:`11281`.)
 
-:class:`~smtplib.SMTP` now supports the context manager protocol, allowing an
+:class:`~smtplib.SMTP` now supports the context management protocol, allowing an
 ``SMTP`` instance to be used in a ``with`` statement.  (Contributed
 by Giampaolo Rodolà in :issue:`11289`.)
 
