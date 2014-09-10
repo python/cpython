@@ -354,7 +354,7 @@ called in the locked state; it changes the state to unlocked and returns
 immediately. If an attempt is made to release an unlocked lock, a
 :exc:`RuntimeError` will be raised.
 
-Locks also support the :ref:`context manager protocol <with-locks>`.
+Locks also support the :ref:`context management protocol <with-locks>`.
 
 When more than one thread is blocked in :meth:`~Lock.acquire` waiting for the
 state to turn to unlocked, only one thread proceeds when a :meth:`~Lock.release`
@@ -433,7 +433,7 @@ call pairs may be nested; only the final :meth:`~Lock.release` (the
 :meth:`~Lock.release` of the outermost pair) resets the lock to unlocked and
 allows another thread blocked in :meth:`~Lock.acquire` to proceed.
 
-Reentrant locks also support the :ref:`context manager protocol <with-locks>`.
+Reentrant locks also support the :ref:`context management protocol <with-locks>`.
 
 
 .. class:: RLock()
@@ -501,7 +501,7 @@ passed in or one will be created by default.  Passing one in is useful when
 several condition variables must share the same lock.  The lock is part of
 the condition object: you don't have to track it separately.
 
-A condition variable obeys the :ref:`context manager protocol <with-locks>`:
+A condition variable obeys the :ref:`context management protocol <with-locks>`:
 using the ``with`` statement acquires the associated lock for the duration of
 the enclosed block.  The :meth:`~Condition.acquire` and
 :meth:`~Condition.release` methods also call the corresponding methods of
@@ -677,7 +677,7 @@ call.  The counter can never go below zero; when :meth:`~Semaphore.acquire`
 finds that it is zero, it blocks, waiting until some other thread calls
 :meth:`~Semaphore.release`.
 
-Semaphores also support the :ref:`context manager protocol <with-locks>`.
+Semaphores also support the :ref:`context management protocol <with-locks>`.
 
 
 .. class:: Semaphore(value=1)
