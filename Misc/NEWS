@@ -132,7 +132,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #12410: imaplib.IMAP4 now supports the context manager protocol.
+- Issue #12410: imaplib.IMAP4 now supports the context management protocol.
   Original patch by Tarek Ziadé.
 
 - Issue #16662: load_tests() is now unconditionally run when it is present in
@@ -2286,7 +2286,7 @@ Library
 - Issue #19448: Add private API to SSL module to lookup ASN.1 objects by OID,
   NID, short name and long name.
 
-- Issue #19282: dbm.open now supports the context manager protocol. (Inital
+- Issue #19282: dbm.open now supports the context management protocol. (Inital
   patch by Claudiu Popa)
 
 - Issue #8311: Added support for writing any bytes-like objects in the aifc,
@@ -2995,7 +2995,7 @@ Library
 - Issue #18830: inspect.getclasstree() no longer produces duplicate entries even
   when input list contains duplicates.
 
-- Issue #18878: sunau.open now supports the context manager protocol.  Based on
+- Issue #18878: sunau.open now supports the context management protocol.  Based on
   patches by Claudiu Popa and R. David Murray.
 
 - Issue #18909: Fix _tkinter.tkapp.interpaddr() on Windows 64-bit, don't cast
@@ -3635,7 +3635,7 @@ Library
   initialization, so as to reclaim allocated resources (Python callbacks)
   at shutdown.  Original patch by Robin Schreiber.
 
-- Issue #17616: wave.open now supports the context manager protocol.
+- Issue #17616: wave.open now supports the context management protocol.
 
 - Issue #18599: Fix name attribute of _sha1.sha1() object. It now returns
   'SHA1' instead of 'SHA'.

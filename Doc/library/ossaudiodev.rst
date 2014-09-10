@@ -165,7 +165,7 @@ and (read-only) attributes:
    data written is always equal to the amount of data supplied.
 
 .. versionchanged:: 3.2
-   Audio device objects also support the context manager protocol, i.e. they can
+   Audio device objects also support the context management protocol, i.e. they can
    be used in a :keyword:`with` statement.
 
 
@@ -357,7 +357,7 @@ The mixer object provides two file-like methods:
    Returns the file handle number of the open mixer device file.
 
 .. versionchanged:: 3.2
-   Mixer objects also support the context manager protocol.
+   Mixer objects also support the context management protocol.
 
 
 The remaining methods are specific to audio mixing:
