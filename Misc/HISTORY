@@ -811,7 +811,7 @@ Library
 
 - Issue #14772: Return destination values from some shutil functions.
 
-- Issue #15064: Implement context manager protocol for multiprocessing types
+- Issue #15064: Implement context management protocol for multiprocessing types
 
 - Issue #15101: Make pool finalizer avoid joining current thread.
 
@@ -3606,7 +3606,7 @@ Library
   ``mmap.PROT_READ|mmap.PROT_EXEC`` would segfault instead of raising a
   TypeError.  Patch by Charles-François Natali.
 
-- Issue #9795: add context manager protocol support for nntplib.NNTP class.
+- Issue #9795: add context management protocol support for nntplib.NNTP class.
 
 - Issue #11306: mailbox in certain cases adapts to an inability to open
   certain files in read-write mode.  Previously it detected this by
@@ -4804,7 +4804,7 @@ Library
 - Issue #1486713: HTMLParser now has an optional tolerant mode where it tries to
   guess at the correct parsing of invalid html.
 
-- Issue #10554: Add context manager support to subprocess.Popen objects.
+- Issue #10554: Add context management protocol support to subprocess.Popen objects.
 
 - Issue #8989: email.utils.make_msgid now has a domain parameter that can
   override the domain name used in the generated msgid.
@@ -5166,7 +5166,7 @@ Library
 - Issue #10253: FileIO leaks a file descriptor when trying to open a file for
   append that isn't seekable.  Patch by Brian Brazil.
 
-- Support context manager protocol for file-like objects returned by mailbox
+- Support context management protocol for file-like objects returned by mailbox
   ``get_file()`` methods.
 
 - Issue #10246: uu.encode didn't close file objects explicitly when filenames
@@ -5300,7 +5300,7 @@ Extension Modules
 
 - Issue #10143: Update "os.pathconf" values.
 
-- Issue #6518: Support context manager protcol for ossaudiodev types.
+- Issue #6518: Support context management protocol for ossaudiodev types.
 
 - Issue #678250: Make mmap flush a noop on ACCESS_READ and ACCESS_COPY.
 
@@ -5909,7 +5909,7 @@ Extension Modules
 
 - Issue #8105: Validate file descriptor passed to mmap.mmap on Windows.
 
-- Issue #8046: Add context manager protocol support and .closed property to mmap
+- Issue #8046: Add context management protocol support and .closed property to mmap
   objects.
 
 Library
@@ -6916,7 +6916,7 @@ Library
 - The audioop module now supports sound fragments of length greater than 2**31
   bytes on 64-bit machines, and is PY_SSIZE_T_CLEAN.
 
-- Issue #4972: Add support for the context manager protocol to the ftplib.FTP
+- Issue #4972: Add support for the context management protocol to the ftplib.FTP
   class.
 
 - Issue #8664: In py_compile, create __pycache__ when the compiled path is
@@ -7204,7 +7204,7 @@ Library
 - Issue #7494: fix a crash in _lsprof (cProfile) after clearing the profiler,
   reset also the pointer to the current pointer context.
 
-- Issue #7232: Add support for the context manager protocol to the TarFile
+- Issue #7232: Add support for the context management protocol to the TarFile
   class.
 
 - Issue #7250: Fix info leak of os.environ across multi-run uses of
@@ -9242,7 +9242,7 @@ Library
 - Issue #1696199:  Add collections.Counter() for rapid and convenient
   counting.
 
-- Issue #3860: GzipFile and BZ2File now support the context manager protocol.
+- Issue #3860: GzipFile and BZ2File now support the context management protocol.
 
 - Issue #4867: Fixed a crash in ctypes when passing a string to a
   function without defining argtypes.

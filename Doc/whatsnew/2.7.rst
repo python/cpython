@@ -1612,7 +1612,7 @@ changes, or look through the Subversion logs for all the details.
   resulting archive.  This is more powerful than the existing
   *exclude* argument, which has therefore been deprecated.
   (Added by Lars Gustäbel; :issue:`6856`.)
-  The :class:`~tarfile.TarFile` class also now supports the context manager protocol.
+  The :class:`~tarfile.TarFile` class also now supports the context management protocol.
   (Added by Lars Gustäbel; :issue:`7232`.)
 
 * The :meth:`~threading.Event.wait` method of the :class:`threading.Event` class
