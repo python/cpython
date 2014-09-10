@@ -247,7 +247,7 @@ be finalized; only the internally used file object will be closed. See the
 :ref:`tar-examples` section for a use case.
 
 .. versionadded:: 2.7
-   Added support for the context manager protocol.
+   Added support for the context management protocol.
 
 .. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors=None, pax_headers=None, debug=0, errorlevel=0)
 

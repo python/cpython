@@ -5120,7 +5120,7 @@ Library
 - Issue #7494: Fix a crash in ``_lsprof`` (cProfile) after clearing the profiler,
   reset also the pointer to the current pointer context.
 
-- Issue #7232: Add support for the context manager protocol to the
+- Issue #7232: Add support for the context management protocol to the
   ``tarfile.TarFile`` class.
 
 - Issue #7250: Fix info leak of os.environ across multi-run uses of
@@ -6870,7 +6870,7 @@ Library
 
 - Issue #1696199: Add collections.Counter() for rapid and convenient counting.
 
-- Issue #3860: GzipFile and BZ2File now support the context manager protocol.
+- Issue #3860: GzipFile and BZ2File now support the context management protocol.
 
 - Issue #4272: Add an optional argument to the GzipFile constructor to override
   the timestamp in the gzip stream.  The default value remains the current time.
@@ -10039,7 +10039,7 @@ Extension Modules
   parameter.
 
 - _winreg's HKEY object has gained __enter__ and __exit__ methods to
-  support the context manager protocol.  The _winreg module also
+  support the context management protocol.  The _winreg module also
   gained a new function ``ExpandEnvironmentStrings`` to expand
   REG_EXPAND_SZ keys.
 
