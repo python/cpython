@@ -287,7 +287,7 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
             } \
         } \
         if (PyList_Append(chunks, chunk)) { \
-            Py_DECREF(chunk); \
+            Py_CLEAR(chunk); \
             goto bail; \
         } \
         Py_CLEAR(chunk); \
@@ -1555,6 +1555,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
             if (item == NULL)
                 goto bail;
             PyList_SET_ITEM(items, i, item);
+            item = NULL;
             Py_DECREF(key);
         }
     }
