@@ -5,7 +5,7 @@ import sys
 import unittest
 
 from test.support import (TESTFN, skip_unless_symlink,
-                          can_symlink, create_empty_file)
+                          can_symlink, create_empty_file, change_cwd)
 
 
 class GlobTests(unittest.TestCase):
@@ -266,44 +266,46 @@ class SymlinkLoopGlobTests(unittest.TestCase):
     def test_selflink(self):
         tempdir = TESTFN + "_dir"
         os.makedirs(tempdir)
-        create_empty_file(os.path.join(tempdir, 'file'))
-        os.symlink(os.curdir, os.path.join(tempdir, 'link'))
         self.addCleanup(shutil.rmtree, tempdir)
+        with change_cwd(tempdir):
+            os.makedirs('dir')
+            create_empty_file(os.path.join('dir', 'file'))
+            os.symlink(os.curdir, os.path.join('dir', 'link'))
 
-        results = glob.glob('**', recursive=True)
-        self.assertEqual(len(results), len(set(results)))
-        results = set(results)
-        depth = 0
-        while results:
-            path = os.path.join(*([tempdir] + ['link'] * depth))
-            self.assertIn(path, results)
-            results.remove(path)
-            if not results:
-                break
-            path = os.path.join(path, 'file')
-            self.assertIn(path, results)
-            results.remove(path)
-            depth += 1
+            results = glob.glob('**', recursive=True)
+            self.assertEqual(len(results), len(set(results)))
+            results = set(results)
+            depth = 0
+            while results:
+                path = os.path.join(*(['dir'] + ['link'] * depth))
+                self.assertIn(path, results)
+                results.remove(path)
+                if not results:
+                    break
+                path = os.path.join(path, 'file')
+                self.assertIn(path, results)
+                results.remove(path)
+                depth += 1
 
-        results = glob.glob(os.path.join('**', 'file'), recursive=True)
-        self.assertEqual(len(results), len(set(results)))
-        results = set(results)
-        depth = 0
-        while results:
-            path = os.path.join(*([tempdir] + ['link'] * depth + ['file']))
-            self.assertIn(path, results)
-            results.remove(path)
-            depth += 1
+            results = glob.glob(os.path.join('**', 'file'), recursive=True)
+            self.assertEqual(len(results), len(set(results)))
+            results = set(results)
+            depth = 0
+            while results:
+                path = os.path.join(*(['dir'] + ['link'] * depth + ['file']))
+                self.assertIn(path, results)
+                results.remove(path)
+                depth += 1
 
-        results = glob.glob(os.path.join('**', ''), recursive=True)
-        self.assertEqual(len(results), len(set(results)))
-        results = set(results)
-        depth = 0
-        while results:
-            path = os.path.join(*([tempdir] + ['link'] * depth + ['']))
-            self.assertIn(path, results)
-            results.remove(path)
-            depth += 1
+            results = glob.glob(os.path.join('**', ''), recursive=True)
+            self.assertEqual(len(results), len(set(results)))
+            results = set(results)
+            depth = 0
+            while results:
+                path = os.path.join(*(['dir'] + ['link'] * depth + ['']))
+                self.assertIn(path, results)
+                results.remove(path)
+                depth += 1
 
 
 if __name__ == "__main__":
