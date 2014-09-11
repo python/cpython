@@ -63,6 +63,10 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;
     }
+    if (strlen(sql_cstr) != (size_t)sql_cstr_len) {
+        PyErr_SetString(PyExc_ValueError, "the query contains a null character");
+        return PYSQLITE_SQL_WRONG_TYPE;
+    }
 
     self->in_weakreflist = NULL;
     Py_INCREF(sql);
