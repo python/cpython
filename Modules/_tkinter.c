@@ -605,7 +605,7 @@ Tkapp_New(const char *screenName, const char *className,
         Tcl_SetVar(v->interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
 
     /* This is used to get the application class for Tk 4.1 and up */
-    argv0 = (char*)attemptckalloc(strlen(className) + 1);
+    argv0 = (char*)PyMem_Malloc(strlen(className) + 1);
     if (!argv0) {
         PyErr_NoMemory();
         Py_DECREF(v);
@@ -616,7 +616,7 @@ Tkapp_New(const char *screenName, const char *className,
     if (Py_ISUPPER(Py_CHARMASK(argv0[0])))
         argv0[0] = Py_TOLOWER(Py_CHARMASK(argv0[0]));
     Tcl_SetVar(v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
-    ckfree(argv0);
+    PyMem_Free(argv0);
 
     if (! wantTk) {
         Tcl_SetVar(v->interp,
@@ -639,7 +639,7 @@ Tkapp_New(const char *screenName, const char *className,
         if (use)
             len += strlen(use) + sizeof "-use ";
 
-        args = (char*)attemptckalloc(len);
+        args = (char*)PyMem_Malloc(len);
         if (!args) {
             PyErr_NoMemory();
             Py_DECREF(v);
@@ -657,7 +657,7 @@ Tkapp_New(const char *screenName, const char *className,
         }
 
         Tcl_SetVar(v->interp, "argv", args, TCL_GLOBAL_ONLY);
-        ckfree(args);
+        PyMem_Free(args);
     }
 
     if (Tcl_AppInit(v->interp) != TCL_OK) {
@@ -914,15 +914,15 @@ AsObj(PyObject *value)
                                                    "list is too long");
             return NULL;
         }
-        argv = (Tcl_Obj **) attemptckalloc(((size_t)size) * sizeof(Tcl_Obj *));
-        if(!argv) {
+        argv = (Tcl_Obj **) PyMem_Malloc(((size_t)size) * sizeof(Tcl_Obj *));
+        if (!argv) {
           PyErr_NoMemory();
           return NULL;
         }
         for (i = 0; i < size; i++)
           argv[i] = AsObj(PySequence_Fast_GET_ITEM(value,i));
         result = Tcl_NewListObj(size, argv);
-        ckfree(FREECAST argv);
+        PyMem_Free(argv);
         return result;
     }
     else if (PyUnicode_Check(value)) {
@@ -948,7 +948,7 @@ AsObj(PyObject *value)
         if (kind == sizeof(Tcl_UniChar))
             return Tcl_NewUnicodeObj(inbuf, size);
         allocsize = ((size_t)size) * sizeof(Tcl_UniChar);
-        outbuf = (Tcl_UniChar*)attemptckalloc(allocsize);
+        outbuf = (Tcl_UniChar*)PyMem_Malloc(allocsize);
         /* Else overflow occurred, and we take the next exit */
         if (!outbuf) {
             PyErr_NoMemory();
@@ -965,14 +965,14 @@ AsObj(PyObject *value)
                              "character U+%x is above the range "
                              "(U+0000-U+FFFF) allowed by Tcl",
                              ch);
-                ckfree(FREECAST outbuf);
+                PyMem_Free(outbuf);
                 return NULL;
             }
 #endif
             outbuf[i] = ch;
         }
         result = Tcl_NewUnicodeObj(outbuf, size);
-        ckfree(FREECAST outbuf);
+        PyMem_Free(outbuf);
         return result;
     }
     else if(PyTclObject_Check(value)) {
@@ -1084,7 +1084,7 @@ Tkapp_CallDeallocArgs(Tcl_Obj** objv, Tcl_Obj** objStore, int objc)
     for (i = 0; i < objc; i++)
         Tcl_DecrRefCount(objv[i]);
     if (objv != objStore)
-        ckfree(FREECAST objv);
+        PyMem_Free(objv);
 }
 
 /* Convert Python objects to Tcl objects. This must happen in the
@@ -1115,7 +1115,7 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
                                                       "list is too long");
                 return NULL;
             }
-            objv = (Tcl_Obj **)attemptckalloc(((size_t)objc) * sizeof(Tcl_Obj *));
+            objv = (Tcl_Obj **)PyMem_Malloc(((size_t)objc) * sizeof(Tcl_Obj *));
             if (objv == NULL) {
                 PyErr_NoMemory();
                 objc = 0;
