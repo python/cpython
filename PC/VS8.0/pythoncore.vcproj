@@ -1218,7 +1218,19 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Modules\zlib\gzio.c"
+					RelativePath="..\..\Modules\zlib\gzclose.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\zlib\gzlib.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\zlib\gzread.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\zlib\gzwrite.c"
 					>
 				</File>
 				<File
