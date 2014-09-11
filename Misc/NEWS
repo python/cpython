@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21951: Fixed a crash in Tkinter on AIX when called Tcl command with
+  empty string or tuple argument.
+
 - Issue #21951: Tkinter now most likely raises MemoryError instead of crash
   if the memory allocation fails.
 
