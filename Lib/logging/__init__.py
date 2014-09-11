@@ -129,7 +129,8 @@ def getLevelName(level):
 
     Otherwise, the string "Level %s" % level is returned.
     """
-    return _levelToName.get(level, ("Level %s" % level))
+    # See Issue #22386 for the reason for this convoluted expression
+    return _levelToName.get(level, _nameToLevel.get(level, ("Level %s" % level)))
 
 def addLevelName(level, levelName):
     """
