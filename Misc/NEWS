@@ -132,6 +132,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21951: Tkinter now most likely raises MemoryError instead of crash
+  if the memory allocation fails.
+
 - Issue #22338: Fix a crash in the json module on memory allocation failure.
 
 - Issue #12410: imaplib.IMAP4 now supports the context management protocol.
