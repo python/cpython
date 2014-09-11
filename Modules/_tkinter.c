@@ -906,6 +906,8 @@ AsObj(PyObject *value)
         Py_ssize_t size, i;
 
         size = PySequence_Fast_GET_SIZE(value);
+        if (size == 0)
+            return Tcl_NewListObj(0, NULL);
         if (!CHECK_SIZE(size, sizeof(Tcl_Obj *))) {
             PyErr_SetString(PyExc_OverflowError,
                             PyTuple_Check(value) ? "tuple is too long" :
@@ -936,6 +938,8 @@ AsObj(PyObject *value)
 
         inbuf = PyUnicode_DATA(value);
         size = PyUnicode_GET_LENGTH(value);
+        if (size == 0)
+            return Tcl_NewUnicodeObj((const void *)"", 0);
         if (!CHECK_SIZE(size, sizeof(Tcl_UniChar))) {
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return NULL;
