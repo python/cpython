@@ -141,6 +141,13 @@ doctest
   *module* contains no docstrings instead of raising :exc:`ValueError`
   (contributed by Glenn Jones in :issue:`15916`).
 
+glob
+----
+
+* :func:`~glob.iglob` and :func:`~glob.glob` now support recursive search in
+  subdirectories using the "``**``" pattern.
+  (Contributed by Serhiy Storchaka in :issue:`13968`.)
+
 imaplib
 -------
 
