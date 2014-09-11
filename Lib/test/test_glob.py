@@ -4,7 +4,7 @@ import shutil
 import sys
 import unittest
 
-from test.support import (run_unittest, TESTFN, skip_unless_symlink,
+from test.support import (TESTFN, skip_unless_symlink,
                           can_symlink, create_empty_file)
 
 
@@ -12,6 +12,9 @@ class GlobTests(unittest.TestCase):
 
     def norm(self, *parts):
         return os.path.normpath(os.path.join(self.tempdir, *parts))
+
+    def joins(self, *tuples):
+        return [os.path.join(self.tempdir, *parts) for parts in tuples]
 
     def mktemp(self, *parts):
         filename = self.norm(*parts)
@@ -38,17 +41,17 @@ class GlobTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def glob(self, *parts):
+    def glob(self, *parts, **kwargs):
         if len(parts) == 1:
             pattern = parts[0]
         else:
             pattern = os.path.join(*parts)
         p = os.path.join(self.tempdir, pattern)
-        res = glob.glob(p)
-        self.assertEqual(list(glob.iglob(p)), res)
+        res = glob.glob(p, **kwargs)
+        self.assertEqual(list(glob.iglob(p, **kwargs)), res)
         bres = [os.fsencode(x) for x in res]
-        self.assertEqual(glob.glob(os.fsencode(p)), bres)
-        self.assertEqual(list(glob.iglob(os.fsencode(p))), bres)
+        self.assertEqual(glob.glob(os.fsencode(p), **kwargs), bres)
+        self.assertEqual(list(glob.iglob(os.fsencode(p), **kwargs)), bres)
         return res
 
     def assertSequencesEqual_noorder(self, l1, l2):
@@ -192,9 +195,116 @@ class GlobTests(unittest.TestCase):
         check('//?/c:/?', '//?/c:/[?]')
         check('//*/*/*', '//*/*/[*]')
 
-def test_main():
-    run_unittest(GlobTests)
+    def rglob(self, *parts, **kwargs):
+        return self.glob(*parts, recursive=True, **kwargs)
+
+    def test_recursive_glob(self):
+        eq = self.assertSequencesEqual_noorder
+        full = [('ZZZ',),
+                ('a',), ('a', 'D'),
+                ('a', 'bcd'),
+                ('a', 'bcd', 'EF'),
+                ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'),
+                ('aaa',), ('aaa', 'zzzF'),
+                ('aab',), ('aab', 'F'),
+               ]
+        if can_symlink():
+            full += [('sym1',), ('sym2',),
+                     ('sym3',),
+                     ('sym3', 'EF'),
+                     ('sym3', 'efg'),
+                     ('sym3', 'efg', 'ha'),
+                    ]
+        eq(self.rglob('**'), self.joins(('',), *full))
+        eq(self.rglob('.', '**'), self.joins(('.',''),
+            *(('.',) + i for i in full)))
+        dirs = [('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),
+                ('aaa', ''), ('aab', '')]
+        if can_symlink():
+            dirs += [('sym3', ''), ('sym3', 'efg', '')]
+        eq(self.rglob('**', ''), self.joins(('',), *dirs))
+
+        eq(self.rglob('a', '**'), self.joins(
+            ('a', ''), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
+            ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha')))
+        eq(self.rglob('a**'), self.joins(('a',), ('aaa',), ('aab',)))
+        expect = [('a', 'bcd', 'EF')]
+        if can_symlink():
+            expect += [('sym3', 'EF')]
+        eq(self.rglob('**', 'EF'), self.joins(*expect))
+        expect = [('a', 'bcd', 'EF'), ('aaa', 'zzzF'), ('aab', 'F')]
+        if can_symlink():
+            expect += [('sym3', 'EF')]
+        eq(self.rglob('**', '*F'), self.joins(*expect))
+        eq(self.rglob('**', '*F', ''), [])
+        eq(self.rglob('**', 'bcd', '*'), self.joins(
+            ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')))
+        eq(self.rglob('a', '**', 'bcd'), self.joins(('a', 'bcd')))
+
+        predir = os.path.abspath(os.curdir)
+        try:
+            os.chdir(self.tempdir)
+            join = os.path.join
+            eq(glob.glob('**', recursive=True), [join(*i) for i in full])
+            eq(glob.glob(join('**', ''), recursive=True),
+                [join(*i) for i in dirs])
+            eq(glob.glob(join('**','zz*F'), recursive=True),
+                [join('aaa', 'zzzF')])
+            eq(glob.glob('**zz*F', recursive=True), [])
+            expect = [join('a', 'bcd', 'EF')]
+            if can_symlink():
+                expect += [join('sym3', 'EF')]
+            eq(glob.glob(join('**', 'EF'), recursive=True), expect)
+        finally:
+            os.chdir(predir)
+
+
+@skip_unless_symlink
+class SymlinkLoopGlobTests(unittest.TestCase):
+
+    def test_selflink(self):
+        tempdir = TESTFN + "_dir"
+        os.makedirs(tempdir)
+        create_empty_file(os.path.join(tempdir, 'file'))
+        os.symlink(os.curdir, os.path.join(tempdir, 'link'))
+        self.addCleanup(shutil.rmtree, tempdir)
+
+        results = glob.glob('**', recursive=True)
+        self.assertEqual(len(results), len(set(results)))
+        results = set(results)
+        depth = 0
+        while results:
+            path = os.path.join(*([tempdir] + ['link'] * depth))
+            self.assertIn(path, results)
+            results.remove(path)
+            if not results:
+                break
+            path = os.path.join(path, 'file')
+            self.assertIn(path, results)
+            results.remove(path)
+            depth += 1
+
+        results = glob.glob(os.path.join('**', 'file'), recursive=True)
+        self.assertEqual(len(results), len(set(results)))
+        results = set(results)
+        depth = 0
+        while results:
+            path = os.path.join(*([tempdir] + ['link'] * depth + ['file']))
+            self.assertIn(path, results)
+            results.remove(path)
+            depth += 1
+
+        results = glob.glob(os.path.join('**', ''), recursive=True)
+        self.assertEqual(len(results), len(set(results)))
+        results = set(results)
+        depth = 0
+        while results:
+            path = os.path.join(*([tempdir] + ['link'] * depth + ['']))
+            self.assertIn(path, results)
+            results.remove(path)
+            depth += 1
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

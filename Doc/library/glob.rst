@@ -29,7 +29,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    The :mod:`pathlib` module offers high-level path objects.
 
 
-.. function:: glob(pathname)
+.. function:: glob(pathname, *, recursive=False)
 
    Return a possibly-empty list of path names that match *pathname*, which must be
    a string containing a path specification. *pathname* can be either absolute
@@ -37,8 +37,19 @@ For example, ``'[?]'`` matches the character ``'?'``.
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
    symlinks are included in the results (as in the shell).
 
+   If *recursive* is true, the pattern "``**``" will match any files and zero or
+   more directories and subdirectories.  If the pattern is followed by a
+   ``os.sep``, only directories and subdirectories match.
 
-.. function:: iglob(pathname)
+   .. note::
+      Using the "``**``" pattern in large directory trees may consume
+      an inordinate amount of time.
+
+   .. versionchanged:: 3.5
+      Support for recursive globs using "``**``".
+
+
+.. function:: iglob(pathname, recursive=False)
 
    Return an :term:`iterator` which yields the same values as :func:`glob`
    without actually storing them all simultaneously.
@@ -55,8 +66,9 @@ For example, ``'[?]'`` matches the character ``'?'``.
    .. versionadded:: 3.4
 
 
-For example, consider a directory containing only the following files:
-:file:`1.gif`, :file:`2.txt`, and :file:`card.gif`.  :func:`glob` will produce
+For example, consider a directory containing the following files:
+:file:`1.gif`, :file:`2.txt`, :file:`card.gif` and a subdirectory :file:`sub`
+which contains only the file :file:`3.txt`.  :func:`glob` will produce
 the following results.  Notice how any leading components of the path are
 preserved. ::
 
@@ -67,6 +79,10 @@ preserved. ::
    ['1.gif', 'card.gif']
    >>> glob.glob('?.gif')
    ['1.gif']
+   >>> glob.glob('**/*.txt', recursive=True)
+   ['2.txt', 'sub/3.txt']
+   >>> glob.glob('./**/', recursive=True)
+   ['./', './sub/']
 
 If the directory contains files starting with ``.`` they won't be matched by
 default. For example, consider a directory containing :file:`card.gif` and
