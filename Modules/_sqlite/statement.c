@@ -74,11 +74,14 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;
     }
+    sql_cstr = PyString_AsString(sql_str);
+    if (strlen(sql_cstr) != (size_t)PyString_GET_SIZE(sql_str)) {
+        PyErr_SetString(PyExc_ValueError, "the query contains a null character");
+        return PYSQLITE_SQL_WRONG_TYPE;
+    }
 
     self->in_weakreflist = NULL;
     self->sql = sql_str;
-
-    sql_cstr = PyString_AsString(sql_str);
 
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare(connection->db,

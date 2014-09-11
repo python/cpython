@@ -319,6 +319,16 @@ class RegressionTests(unittest.TestCase):
                           sqlite.connect, ":memory:", isolation_level=123)
 
 
+    def CheckNullCharacter(self):
+        # Issue #21147
+        con = sqlite.connect(":memory:")
+        self.assertRaises(ValueError, con, "\0select 1")
+        self.assertRaises(ValueError, con, "select 1\0")
+        cur = con.cursor()
+        self.assertRaises(ValueError, cur.execute, " \0select 2")
+        self.assertRaises(ValueError, cur.execute, "select 2\0")
+
+
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
     return unittest.TestSuite((regression_suite,))

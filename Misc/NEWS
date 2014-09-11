@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21147: sqlite3 now raises an exception if the request contains a null
+  character instead of truncate it.  Based on patch by Victor Stinner.
+
 - Issue #21951: Fixed a crash in Tkinter on AIX when called Tcl command with
   empty string or tuple argument.
 
