@@ -416,7 +416,6 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue((1, '2', (3.4,))),
                          (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
 
-    @unittest.skipIf(sys.platform.startswith("aix"), 'Issue #21951: crashes on AIX')
     def test_user_command(self):
         result = None
         def testfunc(arg):
@@ -444,9 +443,11 @@ class TclTest(unittest.TestCase):
         check('string')
         check('string\xbd')
         check('string\u20ac')
+        check('')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
         check(b'string\xbd', 'string\xbd')
+        check(b'', '')
         check('str\x00ing')
         check('str\x00ing\xbd')
         check('str\x00ing\u20ac')
