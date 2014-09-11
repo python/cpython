@@ -142,6 +142,8 @@ IDLE
 Extension Modules
 -----------------
 
+- Issue #22381: Update zlib to 1.2.8.
+
 - Issue #22176: Update the ctypes module's libffi to v3.1.  This release
   adds support for the Linux AArch64 and POWERPC ELF ABIv2 little endian
   architectures.
