@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21951: Tkinter now most likely raises MemoryError instead of crash
+  if the memory allocation fails.
+
 - Issue #22338: Fix a crash in the json module on memory allocation failure.
 
 - Issue #22226: First letter no longer is stripped from the "status" key in

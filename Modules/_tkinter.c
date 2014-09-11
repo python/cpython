@@ -598,7 +598,7 @@ Tkapp_New(char *screenName, char *className,
         Tcl_SetVar(v->interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
 
     /* This is used to get the application class for Tk 4.1 and up */
-    argv0 = (char*)ckalloc(strlen(className) + 1);
+    argv0 = (char*)attemptckalloc(strlen(className) + 1);
     if (!argv0) {
         PyErr_NoMemory();
         Py_DECREF(v);
@@ -632,7 +632,7 @@ Tkapp_New(char *screenName, char *className,
         if (use)
             len += strlen(use) + sizeof "-use ";
 
-        args = (char*)ckalloc(len);
+        args = (char*)attemptckalloc(len);
         if (!args) {
             PyErr_NoMemory();
             Py_DECREF(v);
@@ -903,7 +903,7 @@ AsObj(PyObject *value)
             PyErr_SetString(PyExc_OverflowError, "tuple is too long");
             return NULL;
         }
-        argv = (Tcl_Obj **) ckalloc(((size_t)size) * sizeof(Tcl_Obj *));
+        argv = (Tcl_Obj **) attemptckalloc(((size_t)size) * sizeof(Tcl_Obj *));
         if(!argv)
           return 0;
         for (i = 0; i < size; i++)
@@ -933,7 +933,7 @@ AsObj(PyObject *value)
         if (kind == sizeof(Tcl_UniChar))
             return Tcl_NewUnicodeObj(inbuf, size);
         allocsize = ((size_t)size) * sizeof(Tcl_UniChar);
-        outbuf = (Tcl_UniChar*)ckalloc(allocsize);
+        outbuf = (Tcl_UniChar*)attemptckalloc(allocsize);
         /* Else overflow occurred, and we take the next exit */
         if (!outbuf) {
             PyErr_NoMemory();
@@ -1098,7 +1098,7 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
                 PyErr_SetString(PyExc_OverflowError, "tuple is too long");
                 return NULL;
             }
-            objv = (Tcl_Obj **)ckalloc(((size_t)objc) * sizeof(Tcl_Obj *));
+            objv = (Tcl_Obj **)attemptckalloc(((size_t)objc) * sizeof(Tcl_Obj *));
             if (objv == NULL) {
                 PyErr_NoMemory();
                 objc = 0;
@@ -1234,7 +1234,11 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
         PyObject *exc_type, *exc_value, *exc_tb;
         if (!WaitForMainloop(self))
             return NULL;
-        ev = (Tkapp_CallEvent*)ckalloc(sizeof(Tkapp_CallEvent));
+        ev = (Tkapp_CallEvent*)attemptckalloc(sizeof(Tkapp_CallEvent));
+        if (ev == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
         ev->ev.proc = (Tcl_EventProc*)Tkapp_CallProc;
         ev->self = self;
         ev->args = args;
@@ -1485,8 +1489,11 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
         if (!WaitForMainloop(self))
             return NULL;
 
-        ev = (VarEvent*)ckalloc(sizeof(VarEvent));
-
+        ev = (VarEvent*)attemptckalloc(sizeof(VarEvent));
+        if (ev == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
         ev->self = selfptr;
         ev->args = args;
         ev->flags = flags;
@@ -2082,7 +2089,12 @@ Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
 #ifdef WITH_THREAD
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
-        CommandEvent *ev = (CommandEvent*)ckalloc(sizeof(CommandEvent));
+        CommandEvent *ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
+        if (ev == NULL) {
+            PyErr_NoMemory();
+            PyMem_DEL(data);
+            return NULL;
+        }
         ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
         ev->interp = self->interp;
         ev->create = 1;
@@ -2128,7 +2140,11 @@ Tkapp_DeleteCommand(PyObject *selfptr, PyObject *args)
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
         CommandEvent *ev;
-        ev = (CommandEvent*)ckalloc(sizeof(CommandEvent));
+        ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
+        if (ev == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
         ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
         ev->interp = self->interp;
         ev->create = 0;
