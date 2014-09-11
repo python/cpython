@@ -307,6 +307,10 @@ class BuiltinLevelsTest(BaseTest):
             ('INF.BADPARENT', 'INFO', '4'),
         ])
 
+    def test_regression_22386(self):
+        """See issue #22386 for more information."""
+        self.assertEqual(logging.getLevelName('INFO'), logging.INFO)
+        self.assertEqual(logging.getLevelName(logging.INFO), 'INFO')
 
 class BasicFilterTest(BaseTest):
 
