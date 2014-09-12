@@ -73,12 +73,18 @@ compile Python sources.
    :program:`python -m compileall <directory> -r 0` is equivalent to
    :program:`python -m compileall <directory> -l`.
 
+.. cmdoption:: -j N
+
+   Use *N* workers to compile the files within the given directory.
+   If ``0`` is used, then the result of :func:`os.cpu_count()`
+   will be used.
 
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.
 
 .. versionchanged:: 3.5
-   Added the ``-r`` option.
+   Added the  ``-j`` and ``-r`` options.
+
 
 There is no command-line option to control the optimization level used by the
 :func:`compile` function, because the Python interpreter itself already
@@ -87,7 +93,7 @@ provides the option: :program:`python -O -m compileall`.
 Public functions
 ----------------
 
-.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False, legacy=False, optimize=-1)
+.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False, legacy=False, optimize=-1, workers=1)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way.
@@ -120,8 +126,17 @@ Public functions
    *optimize* specifies the optimization level for the compiler.  It is passed to
    the built-in :func:`compile` function.
 
+   The argument *workers* specifies how many workers are used to
+   compile files in parallel. The default is to not use multiple workers.
+   If the platform can't use multiple workers and *workers* argument is given,
+   then a :exc:`NotImplementedError` will be raised.
+   If *workers* is lower than ``0``, a :exc:`ValueError` will be raised.
+
    .. versionchanged:: 3.2
       Added the *legacy* and *optimize* parameter.
+
+   .. versionchanged:: 3.5
+      Added the *workers* parameter.
 
 
 .. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=False, legacy=False, optimize=-1)

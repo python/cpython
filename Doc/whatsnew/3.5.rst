@@ -134,6 +134,13 @@ New Modules
 Improved Modules
 ================
 
+compileall
+----------
+
+* :func:`compileall.compile_dir` and :mod:`compileall`'s command-line interface
+  can now do parallel bytecode compilation.
+  (Contributed by Claudiu Popa in :issue:`16104`).
+
 doctest
 -------
 
