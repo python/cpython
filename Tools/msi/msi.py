@@ -13,7 +13,7 @@ import tempfile
 # 0 for official python.org releases
 # 1 for intermediate releases by anybody, with
 # a new product code for every package.
-snapshot = 1
+snapshot = int(os.environ.get("SNAPSHOT", "1"))
 # 1 means that file extension is px, not py,
 # and binaries start with x
 testpackage = 0
@@ -22,15 +22,15 @@ srcdir = os.path.abspath("../..")
 # Text to be displayed as the version in dialogs etc.
 # goes into file name and ProductCode. Defaults to
 # current_version.day for Snapshot, current_version otherwise
-full_current_version = None
+full_current_version = os.environ.get("CURRENT_VERSION")
 # Is Tcl available at all?
 have_tcl = True
 # path to PCbuild directory
-PCBUILD="PCbuild"
+PCBUILD=os.environ.get("PCBUILD", "PCbuild")
 # msvcrt version
 MSVCR = "90"
 # Name of certificate in default store to sign MSI with
-certname = None
+certname = os.environ.get("CERTNAME", None)
 # Make a zip file containing the PDB files for this build?
 pdbzip = True
 
@@ -894,8 +894,8 @@ def generate_license():
     for name, pat, file in (("bzip2","bzip2-*", "LICENSE"),
                       ("Berkeley DB", "db-*", "LICENSE"),
                       ("openssl", "openssl-*", "LICENSE"),
-                      ("Tcl", "tcl8*", "license.terms"),
-                      ("Tk", "tk8*", "license.terms"),
+                      ("Tcl", "tcl-8*", "license.terms"),
+                      ("Tk", "tk-8*", "license.terms"),
                       ("Tix", "tix-*", "license.terms")):
         out.write("\nThis copy of Python includes a copy of %s, which is licensed under the following terms:\n\n" % name)
         dirs = glob.glob(srcdir+"/../"+pat)
@@ -946,7 +946,7 @@ def add_files(db):
     if not snapshot:
         # For releases, the Python DLL has the same version as the
         # installer package.
-        assert pyversion.split(".")[:3] == current_version.split(".")
+        assert pyversion.split(".")[:3] == current_version.split("."), "%s != %s" % (pyversion, current_version)
     dlldir.add_file("%s/python%s%s.dll" % (PCBUILD, major, minor),
                     version=pyversion,
                     language=installer.FileVersion(pydllsrc, 1))

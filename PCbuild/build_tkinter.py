@@ -23,7 +23,7 @@ NMAKE = ('nmake /nologo /f %s '
     '%s %s')
 
 def nmake(makefile, command="", **kw):
-    defines = ' '.join(k+'='+v for k, v in kw.items())
+    defines = ' '.join('%s=%s' % i for i in kw.items())
     cmd = NMAKE % (makefile, defines, command)
     print("\n\n"+cmd+"\n")
     if os.system(cmd) != 0:

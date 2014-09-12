@@ -484,12 +484,7 @@ class Directory:
 
     def make_short(self, file):
         file = re.sub(r'[\?|><:/*"+,;=\[\]]', '_', file) # restrictions on short names
-        parts = file.split(".")
-        if len(parts)>1:
-            suffix = parts[-1].upper()
-        else:
-            suffix = None
-        prefix = parts[0].upper()
+        prefix, _, suffix = file.upper().rpartition(".")
         if len(prefix) <= 8 and (not suffix or len(suffix)<=3):
             if suffix:
                 file = prefix+"."+suffix
