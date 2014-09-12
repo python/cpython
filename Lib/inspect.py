@@ -2239,14 +2239,7 @@ class Parameter:
                                            id(self), self)
 
     def __hash__(self):
-        hash_tuple = (self.name, int(self.kind))
-
-        if self._annotation is not _empty:
-            hash_tuple += (self._annotation,)
-        if self._default is not _empty:
-            hash_tuple += (self._default,)
-
-        return hash(hash_tuple)
+        return hash((self.name, self.kind, self.annotation, self.default))
 
     def __eq__(self, other):
         return (issubclass(other.__class__, Parameter) and
@@ -2541,41 +2534,23 @@ class Signature:
         return type(self)(parameters,
                           return_annotation=return_annotation)
 
+    def _hash_basis(self):
+        params = tuple(param for param in self.parameters.values()
+                             if param.kind != _KEYWORD_ONLY)
+
+        kwo_params = {param.name: param for param in self.parameters.values()
+                                        if param.kind == _KEYWORD_ONLY}
+
+        return params, kwo_params, self.return_annotation
+
     def __hash__(self):
-        hash_tuple = tuple(self.parameters.values())
-        if self._return_annotation is not _empty:
-            hash_tuple += (self._return_annotation,)
-        return hash(hash_tuple)
+        params, kwo_params, return_annotation = self._hash_basis()
+        kwo_params = frozenset(kwo_params.values())
+        return hash((params, kwo_params, return_annotation))
 
     def __eq__(self, other):
-        if (not issubclass(type(other), Signature) or
-                    self.return_annotation != other.return_annotation or
-                    len(self.parameters) != len(other.parameters)):
-            return False
-
-        other_positions = {param: idx
-                           for idx, param in enumerate(other.parameters.keys())}
-
-        for idx, (param_name, param) in enumerate(self.parameters.items()):
-            if param.kind == _KEYWORD_ONLY:
-                try:
-                    other_param = other.parameters[param_name]
-                except KeyError:
-                    return False
-                else:
-                    if param != other_param:
-                        return False
-            else:
-                try:
-                    other_idx = other_positions[param_name]
-                except KeyError:
-                    return False
-                else:
-                    if (idx != other_idx or
-                                    param != other.parameters[param_name]):
-                        return False
-
-        return True
+        return (isinstance(other, Signature) and
+                self._hash_basis() == other._hash_basis())
 
     def __ne__(self, other):
         return not self.__eq__(other)
