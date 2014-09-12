@@ -16,10 +16,40 @@ import importlib.util
 import py_compile
 import struct
 
+try:
+    from concurrent.futures import ProcessPoolExecutor
+except ImportError:
+    ProcessPoolExecutor = None
+from functools import partial
+
 __all__ = ["compile_dir","compile_file","compile_path"]
 
+def _walk_dir(dir, ddir=None, maxlevels=10, quiet=False):
+    if not quiet:
+        print('Listing {!r}...'.format(dir))
+    try:
+        names = os.listdir(dir)
+    except OSError:
+        print("Can't list {!r}".format(dir))
+        names = []
+    names.sort()
+    for name in names:
+        if name == '__pycache__':
+            continue
+        fullname = os.path.join(dir, name)
+        if ddir is not None:
+            dfile = os.path.join(ddir, name)
+        else:
+            dfile = None
+        if not os.path.isdir(fullname):
+            yield fullname
+        elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
+              os.path.isdir(fullname) and not os.path.islink(fullname)):
+            yield from _walk_dir(fullname, ddir=dfile,
+                                 maxlevels=maxlevels - 1, quiet=quiet)
+
 def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
-                quiet=False, legacy=False, optimize=-1):
+                quiet=False, legacy=False, optimize=-1, workers=1):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -32,32 +62,30 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     quiet:     if True, be quiet during compilation
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
     optimize:  optimization level or -1 for level of the interpreter
+    workers:   maximum number of parallel workers
     """
-    if not quiet:
-        print('Listing {!r}...'.format(dir))
-    try:
-        names = os.listdir(dir)
-    except OSError:
-        print("Can't list {!r}".format(dir))
-        names = []
-    names.sort()
+    files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
+                      ddir=ddir)
     success = 1
-    for name in names:
-        if name == '__pycache__':
-            continue
-        fullname = os.path.join(dir, name)
-        if ddir is not None:
-            dfile = os.path.join(ddir, name)
-        else:
-            dfile = None
-        if not os.path.isdir(fullname):
-            if not compile_file(fullname, ddir, force, rx, quiet,
+    if workers is not None and workers != 1:
+        if workers < 0:
+            raise ValueError('workers must be greater or equal to 0')
+        if ProcessPoolExecutor is None:
+            raise NotImplementedError('multiprocessing support not available')
+
+        workers = workers or None
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            results = executor.map(partial(compile_file,
+                                           ddir=ddir, force=force,
+                                           rx=rx, quiet=quiet,
+                                           legacy=legacy,
+                                           optimize=optimize),
+                                   files)
+            success = min(results, default=1)
+    else:
+        for file in files:
+            if not compile_file(file, ddir, force, rx, quiet,
                                 legacy, optimize):
-                success = 0
-        elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
-              os.path.isdir(fullname) and not os.path.islink(fullname)):
-            if not compile_dir(fullname, maxlevels - 1, dfile, force, rx,
-                               quiet, legacy, optimize):
                 success = 0
     return success
 
@@ -196,8 +224,10 @@ def main():
                         help=('zero or more file and directory names '
                               'to compile; if no arguments given, defaults '
                               'to the equivalent of -l sys.path'))
-    args = parser.parse_args()
+    parser.add_argument('-j', '--workers', default=1,
+                        type=int, help='Run compileall concurrently')
 
+    args = parser.parse_args()
     compile_dests = args.compile_dest
 
     if (args.ddir and (len(compile_dests) != 1
@@ -223,6 +253,9 @@ def main():
             print("Error reading file list {}".format(args.flist))
             return False
 
+    if args.workers is not None:
+        args.workers = args.workers or None
+
     success = True
     try:
         if compile_dests:
@@ -234,7 +267,7 @@ def main():
                 else:
                     if not compile_dir(dest, maxlevels, args.ddir,
                                        args.force, args.rx, args.quiet,
-                                       args.legacy):
+                                       args.legacy, workers=args.workers):
                         success = False
             return success
         else:

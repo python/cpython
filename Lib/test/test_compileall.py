@@ -10,6 +10,13 @@ import time
 import unittest
 import io
 
+from unittest import mock, skipUnless
+try:
+    from concurrent.futures import ProcessPoolExecutor
+    _have_multiprocessing = True
+except ImportError:
+    _have_multiprocessing = False
+
 from test import support, script_helper
 
 class CompileallTests(unittest.TestCase):
@@ -106,6 +113,33 @@ class CompileallTests(unittest.TestCase):
                                                    debug_override=not optimize)
         self.assertTrue(os.path.isfile(cached3))
 
+    @mock.patch('compileall.ProcessPoolExecutor')
+    def test_compile_pool_called(self, pool_mock):
+        compileall.compile_dir(self.directory, quiet=True, workers=5)
+        self.assertTrue(pool_mock.called)
+
+    def test_compile_workers_non_positive(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "workers must be greater or equal to 0"):
+            compileall.compile_dir(self.directory, workers=-1)
+
+    @mock.patch('compileall.ProcessPoolExecutor')
+    def test_compile_workers_cpu_count(self, pool_mock):
+        compileall.compile_dir(self.directory, quiet=True, workers=0)
+        self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
+
+    @mock.patch('compileall.ProcessPoolExecutor')
+    @mock.patch('compileall.compile_file')
+    def test_compile_one_worker(self, compile_file_mock, pool_mock):
+        compileall.compile_dir(self.directory, quiet=True)
+        self.assertFalse(pool_mock.called)
+        self.assertTrue(compile_file_mock.called)
+
+    @mock.patch('compileall.ProcessPoolExecutor', new=None)
+    def test_compile_missing_multiprocessing(self):
+        with self.assertRaisesRegex(NotImplementedError,
+                                    "multiprocessing support not available"):
+            compileall.compile_dir(self.directory, quiet=True, workers=5)
 
 class EncodingTest(unittest.TestCase):
     """Issue 6716: compileall should escape source code when printing errors
@@ -412,6 +446,29 @@ class CommandLineTests(unittest.TestCase):
     def test_invalid_arg_produces_message(self):
         out = self.assertRunOK('badfilename')
         self.assertRegex(out, b"Can't list 'badfilename'")
+
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
+    def test_workers(self):
+        bar2fn = script_helper.make_script(self.directory, 'bar2', '')
+        files = []
+        for suffix in range(5):
+            pkgdir = os.path.join(self.directory, 'foo{}'.format(suffix))
+            os.mkdir(pkgdir)
+            fn = script_helper.make_script(pkgdir, '__init__', '')
+            files.append(script_helper.make_script(pkgdir, 'bar2', ''))
+
+        self.assertRunOK(self.directory, '-j', '0')
+        self.assertCompiled(bar2fn)
+        for file in files:
+            self.assertCompiled(file)
+
+    @mock.patch('compileall.compile_dir')
+    def test_workers_available_cores(self, compile_dir):
+        with mock.patch("sys.argv",
+                        new=[sys.executable, self.directory, "-j0"]):
+            compileall.main()
+            self.assertTrue(compile_dir.called)
+            self.assertEqual(compile_dir.call_args[-1]['workers'], None)
 
 
 if __name__ == "__main__":
