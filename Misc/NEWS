@@ -814,6 +814,7 @@ _ Issue #21597: The separator between the turtledemo text pane and the drawing
   keyword-only.
 
 - Issue #20334: inspect.Signature and inspect.Parameter are now hashable.
+  Thanks to Antony Lee for bug reports and suggestions.
 
 - Issue #15916: doctest.DocTestSuite returns an empty unittest.TestSuite instead
   of raising ValueError if it finds no tests
