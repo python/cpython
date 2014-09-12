@@ -2535,43 +2535,67 @@ class TestSignatureObject(unittest.TestCase):
 
         def bar(a, *, b:int) -> float: pass
         self.assertEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def bar(a, *, b:int) -> int: pass
         self.assertNotEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertNotEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def bar(a, *, b:int): pass
         self.assertNotEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertNotEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def bar(a, *, b:int=42) -> float: pass
         self.assertNotEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertNotEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def bar(a, *, c) -> float: pass
         self.assertNotEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertNotEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def bar(a, b:int) -> float: pass
         self.assertNotEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertNotEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
         def spam(b:int, a) -> float: pass
         self.assertNotEqual(inspect.signature(spam), inspect.signature(bar))
+        self.assertNotEqual(
+            hash(inspect.signature(spam)), hash(inspect.signature(bar)))
 
         def foo(*, a, b, c): pass
         def bar(*, c, b, a): pass
         self.assertEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def foo(*, a=1, b, c): pass
         def bar(*, c, b, a=1): pass
         self.assertEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def foo(pos, *, a=1, b, c): pass
         def bar(pos, *, c, b, a=1): pass
         self.assertEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def foo(pos, *, a, b, c): pass
         def bar(pos, *, c, b, a=1): pass
         self.assertNotEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertNotEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
         def foo(pos, *args, a=42, b, c, **kwargs:int): pass
         def bar(pos, *args, c, b, a=42, **kwargs:int): pass
         self.assertEqual(inspect.signature(foo), inspect.signature(bar))
+        self.assertEqual(
+            hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
     def test_signature_hashable(self):
         S = inspect.Signature
