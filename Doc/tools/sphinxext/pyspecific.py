@@ -10,7 +10,7 @@
 """
 
 ISSUE_URI = 'http://bugs.python.org/issue%s'
-SOURCE_URI = 'http://hg.python.org/cpython/file/2.7/%s'
+SOURCE_URI = 'https://hg.python.org/cpython/file/2.7/%s'
 
 from docutils import nodes, utils
 
