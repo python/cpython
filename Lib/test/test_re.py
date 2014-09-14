@@ -480,29 +480,37 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\B(b.)\B",
                                    "abc bcd bc abxd").group(1), "bx")
         self.assertEqual(re.search(r"\b(b.)\b",
+                                   "abcd abc bcd bx", re.ASCII).group(1), "bx")
+        self.assertEqual(re.search(r"\B(b.)\B",
+                                   "abc bcd bc abxd", re.ASCII).group(1), "bx")
+        self.assertEqual(re.search(r"\b(b.)\b",
                                    "abcd abc bcd bx", re.LOCALE).group(1), "bx")
         self.assertEqual(re.search(r"\B(b.)\B",
                                    "abc bcd bc abxd", re.LOCALE).group(1), "bx")
-        self.assertEqual(re.search(r"\b(b.)\b",
-                                   "abcd abc bcd bx", re.UNICODE).group(1), "bx")
-        self.assertEqual(re.search(r"\B(b.)\B",
-                                   "abc bcd bc abxd", re.UNICODE).group(1), "bx")
         self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
         self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
         self.assertEqual(re.search(r"^\Aabc\Z$", "\nabc\n", re.M), None)
-        self.assertEqual(re.search(r"\b(b.)\b",
-                                   "abcd abc bcd bx").group(1), "bx")
-        self.assertEqual(re.search(r"\B(b.)\B",
-                                   "abc bcd bc abxd").group(1), "bx")
-        self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
-        self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
-        self.assertEqual(re.search(r"^\Aabc\Z$", "\nabc\n", re.M), None)
+        self.assertEqual(re.search(br"\b(b.)\b",
+                                   b"abcd abc bcd bx").group(1), b"bx")
+        self.assertEqual(re.search(br"\B(b.)\B",
+                                   b"abc bcd bc abxd").group(1), b"bx")
+        self.assertEqual(re.search(br"\b(b.)\b",
+                                   b"abcd abc bcd bx", re.LOCALE).group(1), b"bx")
+        self.assertEqual(re.search(br"\B(b.)\B",
+                                   b"abc bcd bc abxd", re.LOCALE).group(1), b"bx")
+        self.assertEqual(re.search(br"^abc$", b"\nabc\n", re.M).group(0), b"abc")
+        self.assertEqual(re.search(br"^\Aabc\Z$", b"abc", re.M).group(0), b"abc")
+        self.assertEqual(re.search(br"^\Aabc\Z$", b"\nabc\n", re.M), None)
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                    "1aa! a").group(0), "1aa! a")
+        self.assertEqual(re.search(br"\d\D\w\W\s\S",
+                                   b"1aa! a").group(0), b"1aa! a")
+        self.assertEqual(re.search(r"\d\D\w\W\s\S",
+                                   "1aa! a", re.ASCII).group(0), "1aa! a")
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                    "1aa! a", re.LOCALE).group(0), "1aa! a")
-        self.assertEqual(re.search(r"\d\D\w\W\s\S",
-                                   "1aa! a", re.UNICODE).group(0), "1aa! a")
+        self.assertEqual(re.search(br"\d\D\w\W\s\S",
+                                   b"1aa! a", re.LOCALE).group(0), b"1aa! a")
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -533,11 +541,8 @@ class ReTests(unittest.TestCase):
     def test_bigcharset(self):
         self.assertEqual(re.match("([\u2222\u2223])",
                                   "\u2222").group(1), "\u2222")
-        self.assertEqual(re.match("([\u2222\u2223])",
-                                  "\u2222", re.UNICODE).group(1), "\u2222")
         r = '[%s]' % ''.join(map(chr, range(256, 2**16, 255)))
-        self.assertEqual(re.match(r,
-                                  "\uff01", re.UNICODE).group(), "\uff01")
+        self.assertEqual(re.match(r, "\uff01").group(), "\uff01")
 
     def test_big_codesize(self):
         # Issue #1160
@@ -567,7 +572,7 @@ class ReTests(unittest.TestCase):
 
     def test_ignore_case(self):
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
+        self.assertEqual(re.match(b"abc", b"ABC", re.I).group(0), b"ABC")
         self.assertEqual(re.match(r"(a\s[^a])", "a b", re.I).group(1), "a b")
         self.assertEqual(re.match(r"(a\s[^a]*)", "a bb", re.I).group(1), "a bb")
         self.assertEqual(re.match(r"(a\s[abc])", "a b", re.I).group(1), "a b")
@@ -587,7 +592,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(_sre.getlower(ord('A'), re.UNICODE), ord('a'))
 
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
+        self.assertEqual(re.match(b"abc", b"ABC", re.I).group(0), b"ABC")
 
     def test_not_literal(self):
         self.assertEqual(re.search("\s([^a])", " b").group(1), "b")
@@ -901,7 +906,7 @@ class ReTests(unittest.TestCase):
                      re.compile(b'bug_926075'))
 
     def test_bug_931848(self):
-        pattern = eval('"[\u002E\u3002\uFF0E\uFF61]"')
+        pattern = "[\u002E\u3002\uFF0E\uFF61]"
         self.assertEqual(re.compile(pattern).split("a.b.c"),
                          ['a','b','c'])
 
@@ -1020,9 +1025,9 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pat.match('\xe0'), None)
         # Bytes patterns
         for flags in (0, re.ASCII):
-            pat = re.compile(b'\xc0', re.IGNORECASE)
+            pat = re.compile(b'\xc0', flags | re.IGNORECASE)
             self.assertEqual(pat.match(b'\xe0'), None)
-            pat = re.compile(b'\w')
+            pat = re.compile(b'\w', flags)
             self.assertEqual(pat.match(b'\xe0'), None)
         # Incompatibilities
         self.assertRaises(ValueError, re.compile, b'\w', re.UNICODE)
