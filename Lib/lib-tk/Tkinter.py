@@ -1879,9 +1879,12 @@ class Tk(Misc, Wm):
         if os.path.isfile(base_py):
             execfile(base_py, dir)
     def report_callback_exception(self, exc, val, tb):
-        """Internal function. It reports exception on sys.stderr."""
+        """Report callback exception on sys.stderr.
+
+        Applications may want to override this internal function, and
+        should when sys.stderr is None."""
         import traceback, sys
-        sys.stderr.write("Exception in Tkinter callback\n")
+        print >>sys.stderr, "Exception in Tkinter callback"
         sys.last_type = exc
         sys.last_value = val
         sys.last_traceback = tb
