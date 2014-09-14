@@ -997,8 +997,9 @@ class TurtleScreen(TurtleScreenBase):
             # Force Turtle window to the front on OS X. This is needed because
             # the Turtle window will show behind the Terminal window when you
             # start the demo from the command line.
-            cv._rootwindow.call('wm', 'attributes', '.', '-topmost', '1')
-            cv._rootwindow.call('wm', 'attributes', '.', '-topmost', '0')
+            rootwindow = cv.winfo_toplevel()
+            rootwindow.call('wm', 'attributes', '.', '-topmost', '1')
+            rootwindow.call('wm', 'attributes', '.', '-topmost', '0')
 
     def clear(self):
         """Delete all drawings and all turtles from the TurtleScreen.
