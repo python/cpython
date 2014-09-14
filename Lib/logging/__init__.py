@@ -1302,12 +1302,11 @@ class Logger(Filterer):
         if self.isEnabledFor(ERROR):
             self._log(ERROR, msg, args, **kwargs)
 
-    def exception(self, msg, *args, **kwargs):
+    def exception(self, msg, *args, exc_info=True, **kwargs):
         """
         Convenience method for logging an ERROR with exception information.
         """
-        kwargs['exc_info'] = True
-        self.error(msg, *args, **kwargs)
+        self.error(msg, *args, exc_info=exc_info, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -1402,7 +1401,9 @@ class Logger(Filterer):
         else: # pragma: no cover
             fn, lno, func = "(unknown file)", 0, "(unknown function)"
         if exc_info:
-            if not isinstance(exc_info, tuple):
+            if isinstance(exc_info, BaseException):
+                exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
+            elif not isinstance(exc_info, tuple):
                 exc_info = sys.exc_info()
         record = self.makeRecord(self.name, level, fn, lno, msg, args,
                                  exc_info, func, extra, sinfo)
@@ -1612,12 +1613,11 @@ class LoggerAdapter(object):
         """
         self.log(ERROR, msg, *args, **kwargs)
 
-    def exception(self, msg, *args, **kwargs):
+    def exception(self, msg, *args, exc_info=True, **kwargs):
         """
         Delegate an exception call to the underlying logger.
         """
-        kwargs["exc_info"] = True
-        self.log(ERROR, msg, *args, **kwargs)
+        self.log(ERROR, msg, *args, exc_info=exc_info, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -1796,14 +1796,13 @@ def error(msg, *args, **kwargs):
         basicConfig()
     root.error(msg, *args, **kwargs)
 
-def exception(msg, *args, **kwargs):
+def exception(msg, *args, exc_info=True, **kwargs):
     """
     Log a message with severity 'ERROR' on the root logger, with exception
     information. If the logger has no handlers, basicConfig() is called to add
     a console handler with a pre-defined format.
     """
-    kwargs['exc_info'] = True
-    error(msg, *args, **kwargs)
+    error(msg, *args, exc_info=exc_info, **kwargs)
 
 def warning(msg, *args, **kwargs):
     """
