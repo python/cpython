@@ -3712,6 +3712,19 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertEqual(record.exc_info,
                          (exc.__class__, exc, exc.__traceback__))
 
+    def test_exception_excinfo(self):
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            exc = e
+
+        self.adapter.exception('exc_info test', exc_info=exc)
+
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertEqual(record.exc_info,
+                         (exc.__class__, exc, exc.__traceback__))
+
     def test_critical(self):
         msg = 'critical test! %r'
         self.adapter.critical(msg, self.recording)

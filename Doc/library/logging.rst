@@ -155,11 +155,13 @@ is the module's name in the Python package namespace.
    *msg* using the string formatting operator. (Note that this means that you can
    use keywords in the format string, together with a single dictionary argument.)
 
-   There are three keyword arguments in *kwargs* which are inspected: *exc_info*
-   which, if it does not evaluate as false, causes exception information to be
+   There are three keyword arguments in *kwargs* which are inspected:
+   *exc_info*, *stack_info*, and *extra*.
+
+   If *exc_info* does not evaluate as false, it causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
-   :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
-   is called to get the exception information.
+   :func:`sys.exc_info`) or an exception instance is provided, it is used;
+   otherwise, :func:`sys.exc_info` is called to get the exception information.
 
    The second optional keyword argument is *stack_info*, which defaults to
    ``False``. If true, stack information is added to the logging
@@ -215,6 +217,9 @@ is the module's name in the Python package namespace.
 
    .. versionadded:: 3.2
       The *stack_info* parameter was added.
+
+   .. versionchanged:: 3.5
+      The *exc_info* parameter can now accept exception instances.
 
 
 .. method:: Logger.info(msg, *args, **kwargs)
