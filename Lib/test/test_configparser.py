@@ -1584,6 +1584,34 @@ class CoverageOneHundredTestCase(unittest.TestCase):
         """)
         self.assertEqual(repr(parser['section']), '<Section: section>')
 
+    def test_inconsistent_converters_state(self):
+        parser = configparser.ConfigParser()
+        import decimal
+        parser.converters['decimal'] = decimal.Decimal
+        parser.read_string("""
+            [s1]
+            one = 1
+            [s2]
+            two = 2
+        """)
+        self.assertIn('decimal', parser.converters)
+        self.assertEqual(parser.getdecimal('s1', 'one'), 1)
+        self.assertEqual(parser.getdecimal('s2', 'two'), 2)
+        self.assertEqual(parser['s1'].getdecimal('one'), 1)
+        self.assertEqual(parser['s2'].getdecimal('two'), 2)
+        del parser.getdecimal
+        with self.assertRaises(AttributeError):
+            parser.getdecimal('s1', 'one')
+        self.assertIn('decimal', parser.converters)
+        del parser.converters['decimal']
+        self.assertNotIn('decimal', parser.converters)
+        with self.assertRaises(AttributeError):
+            parser.getdecimal('s1', 'one')
+        with self.assertRaises(AttributeError):
+            parser['s1'].getdecimal('one')
+        with self.assertRaises(AttributeError):
+            parser['s2'].getdecimal('two')
+
 
 class ExceptionPicklingTestCase(unittest.TestCase):
     """Tests for issue #13760: ConfigParser exceptions are not picklable."""
@@ -1763,6 +1791,7 @@ class InlineCommentStrippingTestCase(unittest.TestCase):
         self.assertEqual(s['k2'], 'v2')
         self.assertEqual(s['k3'], 'v3;#//still v3# and still v3')
 
+
 class ExceptionContextTestCase(unittest.TestCase):
     """ Test that implementation details doesn't leak
     through raising exceptions. """
@@ -1815,6 +1844,200 @@ class ExceptionContextTestCase(unittest.TestCase):
         with self.assertRaises(configparser.NoSectionError) as cm:
             config.remove_option('Section1', 'an_int')
         self.assertIs(cm.exception.__suppress_context__, True)
+
+
+class ConvertersTestCase(BasicTestCase, unittest.TestCase):
+    """Introduced in 3.5, issue #18159."""
+
+    config_class = configparser.ConfigParser
+
+    def newconfig(self, defaults=None):
+        instance = super().newconfig(defaults=defaults)
+        instance.converters['list'] = lambda v: [e.strip() for e in v.split()
+                                                 if e.strip()]
+        return instance
+
+    def test_converters(self):
+        cfg = self.newconfig()
+        self.assertIn('boolean', cfg.converters)
+        self.assertIn('list', cfg.converters)
+        self.assertIsNone(cfg.converters['int'])
+        self.assertIsNone(cfg.converters['float'])
+        self.assertIsNone(cfg.converters['boolean'])
+        self.assertIsNotNone(cfg.converters['list'])
+        self.assertEqual(len(cfg.converters), 4)
+        with self.assertRaises(ValueError):
+            cfg.converters[''] = lambda v: v
+        with self.assertRaises(ValueError):
+            cfg.converters[None] = lambda v: v
+        cfg.read_string("""
+        [s]
+        str = string
+        int = 1
+        float = 0.5
+        list = a b c d e f g
+        bool = yes
+        """)
+        s = cfg['s']
+        self.assertEqual(s['str'], 'string')
+        self.assertEqual(s['int'], '1')
+        self.assertEqual(s['float'], '0.5')
+        self.assertEqual(s['list'], 'a b c d e f g')
+        self.assertEqual(s['bool'], 'yes')
+        self.assertEqual(cfg.get('s', 'str'), 'string')
+        self.assertEqual(cfg.get('s', 'int'), '1')
+        self.assertEqual(cfg.get('s', 'float'), '0.5')
+        self.assertEqual(cfg.get('s', 'list'), 'a b c d e f g')
+        self.assertEqual(cfg.get('s', 'bool'), 'yes')
+        self.assertEqual(cfg.get('s', 'str'), 'string')
+        self.assertEqual(cfg.getint('s', 'int'), 1)
+        self.assertEqual(cfg.getfloat('s', 'float'), 0.5)
+        self.assertEqual(cfg.getlist('s', 'list'), ['a', 'b', 'c', 'd',
+                                                    'e', 'f', 'g'])
+        self.assertEqual(cfg.getboolean('s', 'bool'), True)
+        self.assertEqual(s.get('str'), 'string')
+        self.assertEqual(s.getint('int'), 1)
+        self.assertEqual(s.getfloat('float'), 0.5)
+        self.assertEqual(s.getlist('list'), ['a', 'b', 'c', 'd',
+                                             'e', 'f', 'g'])
+        self.assertEqual(s.getboolean('bool'), True)
+        with self.assertRaises(AttributeError):
+            cfg.getdecimal('s', 'float')
+        with self.assertRaises(AttributeError):
+            s.getdecimal('float')
+        import decimal
+        cfg.converters['decimal'] = decimal.Decimal
+        self.assertIn('decimal', cfg.converters)
+        self.assertIsNotNone(cfg.converters['decimal'])
+        self.assertEqual(len(cfg.converters), 5)
+        dec0_5 = decimal.Decimal('0.5')
+        self.assertEqual(cfg.getdecimal('s', 'float'), dec0_5)
+        self.assertEqual(s.getdecimal('float'), dec0_5)
+        del cfg.converters['decimal']
+        self.assertNotIn('decimal', cfg.converters)
+        self.assertEqual(len(cfg.converters), 4)
+        with self.assertRaises(AttributeError):
+            cfg.getdecimal('s', 'float')
+        with self.assertRaises(AttributeError):
+            s.getdecimal('float')
+        with self.assertRaises(KeyError):
+            del cfg.converters['decimal']
+        with self.assertRaises(KeyError):
+            del cfg.converters['']
+        with self.assertRaises(KeyError):
+            del cfg.converters[None]
+
+
+class BlatantOverrideConvertersTestCase(unittest.TestCase):
+    """What if somebody overrode a getboolean()? We want to make sure that in
+    this case the automatic converters do not kick in."""
+
+    config = """
+        [one]
+        one = false
+        two = false
+        three = long story short
+
+        [two]
+        one = false
+        two = false
+        three = four
+    """
+
+    def test_converters_at_init(self):
+        cfg = configparser.ConfigParser(converters={'len': len})
+        cfg.read_string(self.config)
+        self._test_len(cfg)
+        self.assertIsNotNone(cfg.converters['len'])
+
+    def test_inheritance(self):
+        class StrangeConfigParser(configparser.ConfigParser):
+            gettysburg = 'a historic borough in south central Pennsylvania'
+
+            def getboolean(self, section, option, *, raw=False, vars=None,
+                        fallback=configparser._UNSET):
+                if section == option:
+                    return True
+                return super().getboolean(section, option, raw=raw, vars=vars,
+                                          fallback=fallback)
+            def getlen(self, section, option, *, raw=False, vars=None,
+                       fallback=configparser._UNSET):
+                return self._get_conv(section, option, len, raw=raw, vars=vars,
+                                      fallback=fallback)
+
+        cfg = StrangeConfigParser()
+        cfg.read_string(self.config)
+        self._test_len(cfg)
+        self.assertIsNone(cfg.converters['len'])
+        self.assertTrue(cfg.getboolean('one', 'one'))
+        self.assertTrue(cfg.getboolean('two', 'two'))
+        self.assertFalse(cfg.getboolean('one', 'two'))
+        self.assertFalse(cfg.getboolean('two', 'one'))
+        cfg.converters['boolean'] = cfg._convert_to_boolean
+        self.assertFalse(cfg.getboolean('one', 'one'))
+        self.assertFalse(cfg.getboolean('two', 'two'))
+        self.assertFalse(cfg.getboolean('one', 'two'))
+        self.assertFalse(cfg.getboolean('two', 'one'))
+
+    def _test_len(self, cfg):
+        self.assertEqual(len(cfg.converters), 4)
+        self.assertIn('boolean', cfg.converters)
+        self.assertIn('len', cfg.converters)
+        self.assertNotIn('tysburg', cfg.converters)
+        self.assertIsNone(cfg.converters['int'])
+        self.assertIsNone(cfg.converters['float'])
+        self.assertIsNone(cfg.converters['boolean'])
+        self.assertEqual(cfg.getlen('one', 'one'), 5)
+        self.assertEqual(cfg.getlen('one', 'two'), 5)
+        self.assertEqual(cfg.getlen('one', 'three'), 16)
+        self.assertEqual(cfg.getlen('two', 'one'), 5)
+        self.assertEqual(cfg.getlen('two', 'two'), 5)
+        self.assertEqual(cfg.getlen('two', 'three'), 4)
+        self.assertEqual(cfg.getlen('two', 'four', fallback=0), 0)
+        with self.assertRaises(configparser.NoOptionError):
+            cfg.getlen('two', 'four')
+        self.assertEqual(cfg['one'].getlen('one'), 5)
+        self.assertEqual(cfg['one'].getlen('two'), 5)
+        self.assertEqual(cfg['one'].getlen('three'), 16)
+        self.assertEqual(cfg['two'].getlen('one'), 5)
+        self.assertEqual(cfg['two'].getlen('two'), 5)
+        self.assertEqual(cfg['two'].getlen('three'), 4)
+        self.assertEqual(cfg['two'].getlen('four', 0), 0)
+        self.assertEqual(cfg['two'].getlen('four'), None)
+
+    def test_instance_assignment(self):
+        cfg = configparser.ConfigParser()
+        cfg.getboolean = lambda section, option: True
+        cfg.getlen = lambda section, option: len(cfg[section][option])
+        cfg.read_string(self.config)
+        self.assertEqual(len(cfg.converters), 3)
+        self.assertIn('boolean', cfg.converters)
+        self.assertNotIn('len', cfg.converters)
+        self.assertIsNone(cfg.converters['int'])
+        self.assertIsNone(cfg.converters['float'])
+        self.assertIsNone(cfg.converters['boolean'])
+        self.assertTrue(cfg.getboolean('one', 'one'))
+        self.assertTrue(cfg.getboolean('two', 'two'))
+        self.assertTrue(cfg.getboolean('one', 'two'))
+        self.assertTrue(cfg.getboolean('two', 'one'))
+        cfg.converters['boolean'] = cfg._convert_to_boolean
+        self.assertFalse(cfg.getboolean('one', 'one'))
+        self.assertFalse(cfg.getboolean('two', 'two'))
+        self.assertFalse(cfg.getboolean('one', 'two'))
+        self.assertFalse(cfg.getboolean('two', 'one'))
+        self.assertEqual(cfg.getlen('one', 'one'), 5)
+        self.assertEqual(cfg.getlen('one', 'two'), 5)
+        self.assertEqual(cfg.getlen('one', 'three'), 16)
+        self.assertEqual(cfg.getlen('two', 'one'), 5)
+        self.assertEqual(cfg.getlen('two', 'two'), 5)
+        self.assertEqual(cfg.getlen('two', 'three'), 4)
+        # If a getter impl is assigned straight to the instance, it won't
+        # be available on the section proxies.
+        with self.assertRaises(AttributeError):
+            self.assertEqual(cfg['one'].getlen('one'), 5)
+        with self.assertRaises(AttributeError):
+            self.assertEqual(cfg['two'].getlen('one'), 5)
+
 
 if __name__ == '__main__':
     unittest.main()
