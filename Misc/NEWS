@@ -344,6 +344,10 @@ IDLE
 Tests
 -----
 
+- Issue #22166:  with the assistance of a new internal _codecs._forget_codec
+  helping function, test_codecs now clears the encoding caches to avoid the
+  appearance of a reference leak
+
 - Issue #22236: Tkinter tests now don't reuse default root window.  New root
   window is created for every test class.
 
