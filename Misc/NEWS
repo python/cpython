@@ -525,6 +525,10 @@ _ Issue #21597: The separator between the turtledemo text pane and the drawing
 
 - Issue #21525: Most Tkinter methods which accepted tuples now accept lists too.
 
+- Issue #22166:  with the assistance of a new internal _codecs._forget_codec
+  helping function, test_codecs now clears the encoding caches to avoid the
+  appearance of a reference leak
+
 - Issue #22236: Tkinter tests now don't reuse default root window.  New root
   window is created for every test class.
 
