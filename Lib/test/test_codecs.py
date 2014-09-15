@@ -2578,6 +2578,14 @@ def _get_test_codec(codec_name):
     return _TEST_CODECS.get(codec_name)
 codecs.register(_get_test_codec) # Returns None, not usable as a decorator
 
+try:
+    # Issue #22166: Also need to clear the internal cache in CPython
+    from _codecs import _forget_codec
+except ImportError:
+    def _forget_codec(codec_name):
+        pass
+
+
 class ExceptionChainingTest(unittest.TestCase):
 
     def setUp(self):
@@ -2603,6 +2611,12 @@ class ExceptionChainingTest(unittest.TestCase):
 
     def tearDown(self):
         _TEST_CODECS.pop(self.codec_name, None)
+        # Issue #22166: Also pop from caches to avoid appearance of ref leaks
+        encodings._cache.pop(self.codec_name, None)
+        try:
+            _forget_codec(self.codec_name)
+        except KeyError:
+            pass
 
     def set_codec(self, encode, decode):
         codec_info = codecs.CodecInfo(encode, decode,
