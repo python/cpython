@@ -144,12 +144,13 @@ datatypes, you should convert on your own:
    >>> float(topsecret['CompressionLevel'])
    9.0
 
-Extracting Boolean values is not that simple, though.  Passing the value
-to ``bool()`` would do no good since ``bool('False')`` is still
-``True``.  This is why config parsers also provide :meth:`getboolean`.
-This method is case-insensitive and recognizes Boolean values from
-``'yes'``/``'no'``, ``'on'``/``'off'`` and ``'1'``/``'0'`` [1]_.
-For example:
+Since this task is so common, config parsers provide a range of handy getter
+methods to handle integers, floats and booleans.  The last one is the most
+interesting because simply passing the value to ``bool()`` would do no good
+since ``bool('False')`` is still ``True``.  This is why config parsers also
+provide :meth:`getboolean`.  This method is case-insensitive and recognizes
+Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
+``'true'``/``'false'`` and ``'1'``/``'0'`` [1]_.  For example:
 
 .. doctest::
 
@@ -161,10 +162,8 @@ For example:
    True
 
 Apart from :meth:`getboolean`, config parsers also provide equivalent
-:meth:`getint` and :meth:`getfloat` methods, but these are far less
-useful since conversion using :func:`int` and :func:`float` is
-sufficient for these types.
-
+:meth:`getint` and :meth:`getfloat` methods.  You can register your own
+converters and customize the provided ones. [1]_
 
 Fallback Values
 ---------------
@@ -319,11 +318,11 @@ from ``get()`` calls.
 .. class:: ExtendedInterpolation()
 
    An alternative handler for interpolation which implements a more advanced
-   syntax, used for instance in ``zc.buildout``. Extended interpolation is
+   syntax, used for instance in ``zc.buildout``.  Extended interpolation is
    using ``${section:option}`` to denote a value from a foreign section.
-   Interpolation can span multiple levels. For convenience, if the ``section:``
-   part is omitted, interpolation defaults to the current section (and possibly
-   the default values from the special section).
+   Interpolation can span multiple levels.  For convenience, if the
+   ``section:`` part is omitted, interpolation defaults to the current section
+   (and possibly the default values from the special section).
 
    For example, the configuration specified above with basic interpolation,
    would look like this with extended interpolation:
@@ -401,13 +400,13 @@ However, there are a few differences that should be taken into account:
   * ``parser.popitem()`` never returns it.
 
 * ``parser.get(section, option, **kwargs)`` - the second argument is **not**
-  a fallback value. Note however that the section-level ``get()`` methods are
+  a fallback value.  Note however that the section-level ``get()`` methods are
   compatible both with the mapping protocol and the classic configparser API.
 
 * ``parser.items()`` is compatible with the mapping protocol (returns a list of
   *section_name*, *section_proxy* pairs including the DEFAULTSECT).  However,
   this method can also be invoked with arguments: ``parser.items(section, raw,
-  vars)``. The latter call returns a list of *option*, *value* pairs for
+  vars)``.  The latter call returns a list of *option*, *value* pairs for
   a specified ``section``, with all interpolations expanded (unless
   ``raw=True`` is provided).
 
@@ -541,9 +540,9 @@ the :meth:`__init__` options:
 
 * *delimiters*, default value: ``('=', ':')``
 
-  Delimiters are substrings that delimit keys from values within a section. The
-  first occurrence of a delimiting substring on a line is considered a delimiter.
-  This means values (but not keys) can contain the delimiters.
+  Delimiters are substrings that delimit keys from values within a section.
+  The first occurrence of a delimiting substring on a line is considered
+  a delimiter.  This means values (but not keys) can contain the delimiters.
 
   See also the *space_around_delimiters* argument to
   :meth:`ConfigParser.write`.
@@ -555,7 +554,7 @@ the :meth:`__init__` options:
   Comment prefixes are strings that indicate the start of a valid comment within
   a config file. *comment_prefixes* are used only on otherwise empty lines
   (optionally indented) whereas *inline_comment_prefixes* can be used after
-  every valid value (e.g.  section names, options and empty lines as well). By
+  every valid value (e.g. section names, options and empty lines as well).  By
   default inline comments are disabled and ``'#'`` and ``';'`` are used as
   prefixes for whole line comments.
 
@@ -565,10 +564,10 @@ the :meth:`__init__` options:
 
   Please note that config parsers don't support escaping of comment prefixes so
   using *inline_comment_prefixes* may prevent users from specifying option
-  values with characters used as comment prefixes. When in doubt, avoid setting
-  *inline_comment_prefixes*. In any circumstances, the only way of storing
-  comment prefix characters at the beginning of a line in multiline values is to
-  interpolate the prefix, for example::
+  values with characters used as comment prefixes.  When in doubt, avoid
+  setting *inline_comment_prefixes*.  In any circumstances, the only way of
+  storing comment prefix characters at the beginning of a line in multiline
+  values is to interpolate the prefix, for example::
 
     >>> from configparser import ConfigParser, ExtendedInterpolation
     >>> parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -613,7 +612,7 @@ the :meth:`__init__` options:
 
   When set to ``True``, the parser will not allow for any section or option
   duplicates while reading from a single source (using :meth:`read_file`,
-  :meth:`read_string` or :meth:`read_dict`). It is recommended to use strict
+  :meth:`read_string` or :meth:`read_dict`).  It is recommended to use strict
   parsers in new applications.
 
   .. versionchanged:: 3.2
@@ -648,12 +647,12 @@ the :meth:`__init__` options:
 
   The convention of allowing a special section of default values for other
   sections or interpolation purposes is a powerful concept of this library,
-  letting users create complex declarative configurations. This section is
+  letting users create complex declarative configurations.  This section is
   normally called ``"DEFAULT"`` but this can be customized to point to any
-  other valid section name. Some typical values include: ``"general"`` or
-  ``"common"``. The name provided is used for recognizing default sections when
-  reading from any source and is used when writing configuration back to
-  a file. Its current value can be retrieved using the
+  other valid section name.  Some typical values include: ``"general"`` or
+  ``"common"``.  The name provided is used for recognizing default sections
+  when reading from any source and is used when writing configuration back to
+  a file.  Its current value can be retrieved using the
   ``parser_instance.default_section`` attribute and may be modified at runtime
   (i.e. to convert files from one format to another).
 
@@ -662,14 +661,30 @@ the :meth:`__init__` options:
   Interpolation behaviour may be customized by providing a custom handler
   through the *interpolation* argument. ``None`` can be used to turn off
   interpolation completely, ``ExtendedInterpolation()`` provides a more
-  advanced variant inspired by ``zc.buildout``. More on the subject in the
+  advanced variant inspired by ``zc.buildout``.  More on the subject in the
   `dedicated documentation section <#interpolation-of-values>`_.
   :class:`RawConfigParser` has a default value of ``None``.
 
+* *converters*, default value: not set
+
+  Config parsers provide option value getters that perform type conversion.  By
+  default :meth:`getint`, :meth:`getfloat`, and :meth:`getboolean` are
+  implemented.  Should other getters be desirable, users may define them in
+  a subclass or pass a dictionary where each key is a name of the converter and
+  each value is a callable implementing said conversion.  For instance, passing
+  ``{'decimal': decimal.Decimal}`` would add :meth:`getdecimal` on both the
+  parser object and all section proxies.  In other words, it will be possible
+  to write both ``parser_instance.getdecimal('section', 'key', fallback=0)``
+  and ``parser_instance['section'].getdecimal('key', 0)``.
+
+  If the converter needs to access the state of the parser, it can be
+  implemented as a method on a config parser subclass.  If the name of this
+  method starts with ``get``, it will be available on all section proxies, in
+  the dict-compatible form (see the ``getdecimal()`` example above).
 
 More advanced customization may be achieved by overriding default values of
-these parser attributes.  The defaults are defined on the classes, so they
-may be overridden by subclasses or by attribute assignment.
+these parser attributes.  The defaults are defined on the classes, so they may
+be overridden by subclasses or by attribute assignment.
 
 .. attribute:: BOOLEAN_STATES
 
@@ -727,10 +742,11 @@ may be overridden by subclasses or by attribute assignment.
 
 .. attribute:: SECTCRE
 
-  A compiled regular expression used to parse section headers. The default
-  matches ``[section]`` to the name ``"section"``. Whitespace is considered part
-  of the section name, thus ``[  larch  ]`` will be read as a section of name
-  ``"  larch  "``. Override this attribute if that's unsuitable.  For example:
+  A compiled regular expression used to parse section headers.  The default
+  matches ``[section]`` to the name ``"section"``.  Whitespace is considered
+  part of the section name, thus ``[  larch  ]`` will be read as a section of
+  name ``"  larch  "``.  Override this attribute if that's unsuitable.  For
+  example:
 
   .. doctest::
 
@@ -861,7 +877,7 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation())
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -871,8 +887,8 @@ ConfigParser Objects
    When *delimiters* is given, it is used as the set of substrings that
    divide keys from values.  When *comment_prefixes* is given, it will be used
    as the set of substrings that prefix comments in otherwise empty lines.
-   Comments can be indented. When *inline_comment_prefixes* is given, it will be
-   used as the set of substrings that prefix comments in non-empty lines.
+   Comments can be indented.  When *inline_comment_prefixes* is given, it will
+   be used as the set of substrings that prefix comments in non-empty lines.
 
    When *strict* is ``True`` (the default), the parser won't allow for
    any section or option duplicates while reading from a single source (file,
@@ -886,13 +902,13 @@ ConfigParser Objects
 
    When *default_section* is given, it specifies the name for the special
    section holding default values for other sections and interpolation purposes
-   (normally named ``"DEFAULT"``). This value can be retrieved and changed on
+   (normally named ``"DEFAULT"``).  This value can be retrieved and changed on
    runtime using the ``default_section`` instance attribute.
 
    Interpolation behaviour may be customized by providing a custom handler
    through the *interpolation* argument. ``None`` can be used to turn off
    interpolation completely, ``ExtendedInterpolation()`` provides a more
-   advanced variant inspired by ``zc.buildout``. More on the subject in the
+   advanced variant inspired by ``zc.buildout``.  More on the subject in the
    `dedicated documentation section <#interpolation-of-values>`_.
 
    All option names used in interpolation will be passed through the
@@ -901,6 +917,12 @@ ConfigParser Objects
    converts option names to lower case), the values ``foo %(bar)s`` and ``foo
    %(BAR)s`` are equivalent.
 
+   When *converters* is given, it should be a dictionary where each key
+   represents the name of a type converter and each value is a callable
+   implementing the conversion from string to the desired datatype.  Every
+   converter gets its own corresponding :meth:`get*()` method on the parser
+   object and section proxies.
+
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
@@ -908,6 +930,9 @@ ConfigParser Objects
       *allow_no_value*, *delimiters*, *comment_prefixes*, *strict*,
       *empty_lines_in_values*, *default_section* and *interpolation* were
       added.
+
+   .. versionchanged:: 3.5
+      The *converters* argument was added.
 
 
    .. method:: defaults()
@@ -946,7 +971,7 @@ ConfigParser Objects
    .. method:: has_option(section, option)
 
       If the given *section* exists, and contains the given *option*, return
-      :const:`True`; otherwise return :const:`False`. If the specified
+      :const:`True`; otherwise return :const:`False`.  If the specified
       *section* is :const:`None` or an empty string, DEFAULT is assumed.
 
 
@@ -1071,7 +1096,7 @@ ConfigParser Objects
       :meth:`get` method.
 
       .. versionchanged:: 3.2
-         Items present in *vars* no longer appear in the result. The previous
+         Items present in *vars* no longer appear in the result.  The previous
          behaviour mixed actual parser options with variables provided for
          interpolation.
 
@@ -1172,7 +1197,7 @@ RawConfigParser Objects
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
-      the values to be stored internally. If you don't want interpolation, you
+      the values to be stored internally.  If you don't want interpolation, you
       can use ``ConfigParser(interpolation=None)``.
 
 
@@ -1183,7 +1208,7 @@ RawConfigParser Objects
       *default section* name is passed, :exc:`ValueError` is raised.
 
       Type of *section* is not checked which lets users create non-string named
-      sections. This behaviour is unsupported and may cause internal errors.
+      sections.  This behaviour is unsupported and may cause internal errors.
 
 
    .. method:: set(section, option, value)
@@ -1284,3 +1309,4 @@ Exceptions
 .. [1] Config parsers allow for heavy customization.  If you are interested in
        changing the behaviour outlined by the footnote reference, consult the
        `Customizing Parser Behaviour`_ section.
+
