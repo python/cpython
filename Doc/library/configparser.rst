@@ -162,10 +162,8 @@ Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
    True
 
 Apart from :meth:`getboolean`, config parsers also provide equivalent
-:meth:`getint` and :meth:`getfloat` methods, but these are far less
-useful since conversion using :func:`int` and :func:`float` is
-sufficient for these types.
-
+:meth:`getint` and :meth:`getfloat` methods.  You can register your own
+converters and customize the provided ones. [1]_
 
 Fallback Values
 ---------------
@@ -555,10 +553,10 @@ the :meth:`__init__` options:
 
   Comment prefixes are strings that indicate the start of a valid comment within
   a config file. *comment_prefixes* are used only on otherwise empty lines
-  (optionally indented) whereas *inline_comment_prefixes* can be used
-  after every valid value (e.g. section names, options and empty lines
-  as well).  By default inline comments are disabled and ``'#'`` and
-  ``';'`` are used as prefixes for whole line comments.
+  (optionally indented) whereas *inline_comment_prefixes* can be used after
+  every valid value (e.g. section names, options and empty lines as well).  By
+  default inline comments are disabled and ``'#'`` and ``';'`` are used as
+  prefixes for whole line comments.
 
   .. versionchanged:: 3.2
      In previous versions of :mod:`configparser` behaviour matched
@@ -667,10 +665,26 @@ the :meth:`__init__` options:
   `dedicated documentation section <#interpolation-of-values>`_.
   :class:`RawConfigParser` has a default value of ``None``.
 
+* *converters*, default value: not set
+
+  Config parsers provide option value getters that perform type conversion.  By
+  default :meth:`getint`, :meth:`getfloat`, and :meth:`getboolean` are
+  implemented.  Should other getters be desirable, users may define them in
+  a subclass or pass a dictionary where each key is a name of the converter and
+  each value is a callable implementing said conversion.  For instance, passing
+  ``{'decimal': decimal.Decimal}`` would add :meth:`getdecimal` on both the
+  parser object and all section proxies.  In other words, it will be possible
+  to write both ``parser_instance.getdecimal('section', 'key', fallback=0)``
+  and ``parser_instance['section'].getdecimal('key', 0)``.
+
+  If the converter needs to access the state of the parser, it can be
+  implemented as a method on a config parser subclass.  If the name of this
+  method starts with ``get``, it will be available on all section proxies, in
+  the dict-compatible form (see the ``getdecimal()`` example above).
 
 More advanced customization may be achieved by overriding default values of
-these parser attributes.  The defaults are defined on the classes, so they
-may be overridden by subclasses or by attribute assignment.
+these parser attributes.  The defaults are defined on the classes, so they may
+be overridden by subclasses or by attribute assignment.
 
 .. attribute:: BOOLEAN_STATES
 
@@ -863,7 +877,7 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation())
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -903,6 +917,12 @@ ConfigParser Objects
    converts option names to lower case), the values ``foo %(bar)s`` and ``foo
    %(BAR)s`` are equivalent.
 
+   When *converters* is given, it should be a dictionary where each key
+   represents the name of a type converter and each value is a callable
+   implementing the conversion from string to the desired datatype.  Every
+   converter gets its own corresponding :meth:`get*()` method on the parser
+   object and section proxies.
+
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
@@ -910,6 +930,9 @@ ConfigParser Objects
       *allow_no_value*, *delimiters*, *comment_prefixes*, *strict*,
       *empty_lines_in_values*, *default_section* and *interpolation* were
       added.
+
+   .. versionchanged:: 3.5
+      The *converters* argument was added.
 
 
    .. method:: defaults()
@@ -1286,3 +1309,4 @@ Exceptions
 .. [1] Config parsers allow for heavy customization.  If you are interested in
        changing the behaviour outlined by the footnote reference, consult the
        `Customizing Parser Behaviour`_ section.
+
