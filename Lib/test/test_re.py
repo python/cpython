@@ -560,12 +560,15 @@ class ReTests(unittest.TestCase):
         # old pickles expect the _compile() reconstructor in sre module
         import_module("sre", deprecated=True)
         from sre import _compile
+        # current pickle expects the _compile() reconstructor in re module
+        from re import _compile
 
     def pickle_test(self, pickle):
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
-        s = pickle.dumps(oldpat)
-        newpat = pickle.loads(s)
-        self.assertEqual(oldpat, newpat)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pickled = pickle.dumps(oldpat, proto)
+            newpat = pickle.loads(pickled)
+            self.assertEqual(newpat, oldpat)
 
     def test_constants(self):
         self.assertEqual(re.I, re.IGNORECASE)
