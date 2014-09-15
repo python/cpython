@@ -659,11 +659,15 @@ class ReTests(unittest.TestCase):
         res = re.findall(re.escape('\u2620'.encode('utf-8')), b)
         self.assertEqual(len(res), 2)
 
-    def pickle_test(self, pickle):
-        oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
-        s = pickle.dumps(oldpat)
-        newpat = pickle.loads(s)
-        self.assertEqual(oldpat, newpat)
+    def test_pickling(self):
+        import pickle
+        oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)', re.UNICODE)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pickled = pickle.dumps(oldpat, proto)
+            newpat = pickle.loads(pickled)
+            self.assertEqual(newpat, oldpat)
+        # current pickle expects the _compile() reconstructor in re module
+        from re import _compile
 
     def test_constants(self):
         self.assertEqual(re.I, re.IGNORECASE)
