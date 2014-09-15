@@ -734,11 +734,6 @@ calculate_path(void)
 
     bufsz += wcslen(zip_path) + 1;
     bufsz += wcslen(exec_prefix) + 1;
-    /* When running from the build directory, add room for the Modules
-     * subdirectory too.
-     */
-    if (efound == -1)
-        bufsz += wcslen(argv0_path) + wcslen(L"Modules") + 2;
 
     buf = (wchar_t *)PyMem_Malloc(bufsz * sizeof(wchar_t));
     if (buf == NULL) {
@@ -786,15 +781,6 @@ calculate_path(void)
 
     /* Finally, on goes the directory for dynamic-load modules */
     wcscat(buf, exec_prefix);
-   /* And, if we run from a build directory, the Modules directory (for
-    * modules built with Modules/Setup.)
-    */
-   if (efound == -1) {
-       wcscat(buf, delimiter);
-       wcscat(buf, argv0_path);
-       wcscat(buf, separator);
-       wcscat(buf, L"Modules");
-   }
 
     /* And publish the results */
     module_search_path = buf;
