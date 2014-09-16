@@ -132,6 +132,10 @@ Core and Builtins
 Library
 -------
 
+- Lax cookie parsing in http.cookies could be a security issue when combined
+  with non-standard cookie handling in some Web browsers.  Reported by
+  Sergey Bobrov.
+
 - Issue #20537: logging methods now accept an exception instance as well as a
   Boolean value or exception tuple. Thanks to Yury Selivanov for the patch.
 

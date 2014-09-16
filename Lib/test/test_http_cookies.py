@@ -179,6 +179,15 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
 
+    def test_invalid_cookies(self):
+        # Accepting these could be a security issue
+        C = cookies.SimpleCookie()
+        for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x'):
+            C.load(s)
+            self.assertEqual(dict(C), {})
+            self.assertEqual(C.output(), '')
+
+
 class MorselTests(unittest.TestCase):
     """Tests for the Morsel object."""
 
