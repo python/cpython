@@ -1213,6 +1213,16 @@ class MockTest(unittest.TestCase):
         text = "call(daddy='hero', name='hello')"
         self.assertEqual(repr(m.hello.call_args), text)
 
+    #Issue21270 overrides tuple methods for mock.call objects
+    def test_override_tuple_methods(self):
+        c = call.count()
+        i = call.index(132,'hello')
+        m = Mock()
+        m.count()
+        m.index(132,"hello")
+        self.assertEqual(m.method_calls[0], c)
+        self.assertEqual(m.method_calls[1], i)
+
     def test_mock_add_spec(self):
         class _One(object):
             one = 1
