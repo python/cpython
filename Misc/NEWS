@@ -157,6 +157,9 @@ Library
 - Issue #12410: imaplib.IMAP4 now supports the context management protocol.
   Original patch by Tarek Ziadé.
 
+- Issue #21270: We now override tuple methods in mock.call objects so that
+  they can be used as normal call attributes.
+
 - Issue #16662: load_tests() is now unconditionally run when it is present in
   a package's __init__.py.  TestLoader.loadTestsFromModule() still accepts
   use_load_tests, but it is deprecated and ignored.  A new keyword-only
