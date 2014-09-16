@@ -531,6 +531,7 @@ class Morsel(dict):
 _LegalCharsPatt  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
 _CookiePattern = re.compile(
     r"(?x)"                       # This is a Verbose pattern
+    r"\s*"                        # Optional whitespace at start of cookie
     r"(?P<key>"                   # Start of group 'key'
     ""+ _LegalCharsPatt +"+?"     # Any word of at least one letter, nongreedy
     r")"                          # End of group 'key'
@@ -646,7 +647,7 @@ class BaseCookie(dict):
 
         while 0 <= i < n:
             # Start looking for a cookie
-            match = patt.search(str, i)
+            match = patt.match(str, i)
             if not match: break          # No more cookies
 
             K,V = match.group("key"), match.group("val")
