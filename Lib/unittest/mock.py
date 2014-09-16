@@ -2035,6 +2035,12 @@ class _Call(tuple):
         return _Call(name=name, parent=self, from_kall=False)
 
 
+    def count(self, *args, **kwargs):
+        return self.__getattr__('count')(*args, **kwargs)
+
+    def index(self, *args, **kwargs):
+        return self.__getattr__('index')(*args, **kwargs)
+
     def __repr__(self):
         if not self.from_kall:
             name = self.name or 'call'
