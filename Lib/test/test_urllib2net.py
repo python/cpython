@@ -103,9 +103,9 @@ class OtherNetworkTests(unittest.TestCase):
 
     def test_ftp(self):
         urls = [
-            'ftp://ftp.kernel.org/pub/linux/kernel/README',
-            'ftp://ftp.kernel.org/pub/linux/kernel/non-existent-file',
-            #'ftp://ftp.kernel.org/pub/leenox/kernel/test',
+            'ftp://ftp.debian.org/debian/README',
+            ('ftp://ftp.debian.org/debian/non-existent-file',
+             None, urllib.error.URLError),
             'ftp://gatekeeper.research.compaq.com/pub/DEC/SRC'
                 '/research-reports/00README-Legal-Rules-Regs',
             ]
@@ -215,39 +215,39 @@ class OtherNetworkTests(unittest.TestCase):
             urlopen = _wrap_with_retry_thrice(urlopen, urllib.error.URLError)
 
         for url in urls:
-            if isinstance(url, tuple):
-                url, req, expected_err = url
-            else:
-                req = expected_err = None
-
-            with support.transient_internet(url):
-                debug(url)
-                try:
-                    f = urlopen(url, req, TIMEOUT)
-                except OSError as err:
-                    debug(err)
-                    if expected_err:
-                        msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
-                               (expected_err, url, req, type(err), err))
-                        self.assertIsInstance(err, expected_err, msg)
-                except urllib.error.URLError as err:
-                    if isinstance(err[0], socket.timeout):
-                        print("<timeout: %s>" % url, file=sys.stderr)
-                        continue
-                    else:
-                        raise
+            with self.subTest(url=url):
+                if isinstance(url, tuple):
+                    url, req, expected_err = url
                 else:
+                    req = expected_err = None
+
+                with support.transient_internet(url):
                     try:
-                        with support.time_out, \
-                             support.socket_peer_reset, \
-                             support.ioerror_peer_reset:
-                            buf = f.read()
-                            debug("read %d bytes" % len(buf))
-                    except socket.timeout:
-                        print("<timeout: %s>" % url, file=sys.stderr)
-                    f.close()
-            debug("******** next url coming up...")
-            time.sleep(0.1)
+                        f = urlopen(url, req, TIMEOUT)
+                    except OSError as err:
+                        if expected_err:
+                            msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
+                                   (expected_err, url, req, type(err), err))
+                            self.assertIsInstance(err, expected_err, msg)
+                        else:
+                            raise
+                    except urllib.error.URLError as err:
+                        if isinstance(err[0], socket.timeout):
+                            print("<timeout: %s>" % url, file=sys.stderr)
+                            continue
+                        else:
+                            raise
+                    else:
+                        try:
+                            with support.time_out, \
+                                 support.socket_peer_reset, \
+                                 support.ioerror_peer_reset:
+                                buf = f.read()
+                                debug("read %d bytes" % len(buf))
+                        except socket.timeout:
+                            print("<timeout: %s>" % url, file=sys.stderr)
+                        f.close()
+                time.sleep(0.1)
 
     def _extra_handlers(self):
         handlers = []
