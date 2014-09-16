@@ -37,6 +37,10 @@ Library
   strings for ``rfc822Name`` (email), ``dNSName`` (DNS) and
   ``uniformResourceIdentifier`` (URI).
 
+- Lax cookie parsing in http.cookies could be a security issue when combined
+  with non-standard cookie handling in some Web browsers.  Reported by
+  Sergey Bobrov.
+
 - Issue #21766: Prevent a security hole in CGIHTTPServer by URL unquoting paths
   before checking for a CGI script at that path.
 
