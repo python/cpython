@@ -10,6 +10,9 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #22421: Fix a regression that caused the pydoc server to be bound to
+  all interfaces instead of only localhost.
+
 - Issue #22419: Limit the length of incoming HTTP request in wsgiref server to
   65536 bytes and send a 414 error code for higher lengths. Patch contributed
   by Devin Cook.
