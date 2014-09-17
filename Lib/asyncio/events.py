@@ -73,7 +73,7 @@ class Handle:
     """Object returned by callback registration methods."""
 
     __slots__ = ('_callback', '_args', '_cancelled', '_loop',
-                 '_source_traceback', '__weakref__')
+                 '_source_traceback', '_repr', '__weakref__')
 
     def __init__(self, callback, args, loop):
         assert not isinstance(callback, Handle), 'A Handle is not a callback'
@@ -81,12 +81,13 @@ class Handle:
         self._callback = callback
         self._args = args
         self._cancelled = False
+        self._repr = None
         if self._loop.get_debug():
             self._source_traceback = traceback.extract_stack(sys._getframe(1))
         else:
             self._source_traceback = None
 
-    def __repr__(self):
+    def _repr_info(self):
         info = [self.__class__.__name__]
         if self._cancelled:
             info.append('cancelled')
@@ -95,10 +96,21 @@ class Handle:
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append('created at %s:%s' % (frame[0], frame[1]))
+        return info
+
+    def __repr__(self):
+        if self._repr is not None:
+            return self._repr
+        info = self._repr_info()
         return '<%s>' % ' '.join(info)
 
     def cancel(self):
         self._cancelled = True
+        if self._loop.get_debug():
+            # Keep a representation in debug mode to keep callback and
+            # parameters. For example, to log the warning "Executing <Handle
+            # ...> took 2.5 second"
+            self._repr = repr(self)
         self._callback = None
         self._args = None
 
@@ -131,17 +143,11 @@ class TimerHandle(Handle):
             del self._source_traceback[-1]
         self._when = when
 
-    def __repr__(self):
-        info = []
-        if self._cancelled:
-            info.append('cancelled')
-        info.append('when=%s' % self._when)
-        if self._callback is not None:
-            info.append(_format_callback(self._callback, self._args))
-        if self._source_traceback:
-            frame = self._source_traceback[-1]
-            info.append('created at %s:%s' % (frame[0], frame[1]))
-        return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
+    def _repr_info(self):
+        info = super()._repr_info()
+        pos = 2 if self._cancelled else 1
+        info.insert(pos, 'when=%s' % self._when)
+        return info
 
     def __hash__(self):
         return hash(self._when)
