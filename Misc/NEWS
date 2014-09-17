@@ -21,6 +21,10 @@ Core and Builtins
 
 Library
 -------
+- Issue #22419: Limit the length of incoming HTTP request in wsgiref server to
+  65536 bytes and send a 414 error code for higher lengths. Patch contributed
+  by Devin Cook.
+
 - Lax cookie parsing in http.cookies could be a security issue when combined
   with non-standard cookie handling in some Web browsers.  Reported by
   Sergey Bobrov.
