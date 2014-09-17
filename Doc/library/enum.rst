@@ -400,7 +400,8 @@ The second argument is the *source* of enumeration member names.  It can be a
 whitespace-separated string of names, a sequence of names, a sequence of
 2-tuples with key/value pairs, or a mapping (e.g. dictionary) of names to
 values.  The last two options enable assigning arbitrary values to
-enumerations; the others auto-assign increasing integers starting with 1.  A
+enumerations; the others auto-assign increasing integers starting with 1 (use
+the `start` parameter to specify a different starting value).  A
 new class derived from :class:`Enum` is returned.  In other words, the above
 assignment to :class:`Animal` is equivalent to::
 
@@ -438,12 +439,12 @@ SomeData in the global scope::
 
 The complete signature is::
 
-    Enum(value='NewEnumName', names=<...>, *, module='...', qualname='...', type=<mixed-in class>)
+    Enum(value='NewEnumName', names=<...>, *, module='...', qualname='...', type=<mixed-in class>, start=1)
 
 :value: What the new Enum class will record as its name.
 
 :names: The Enum members.  This can be a whitespace or comma separated string
-  (values will start at 1)::
+  (values will start at 1 unless otherwise specified)::
 
     'red green blue' | 'red,green,blue' | 'red, green, blue'
 
@@ -460,6 +461,8 @@ The complete signature is::
 :qualname: where in module new Enum class can be found.
 
 :type: type to mix in to new Enum class.
+
+:start: number to start counting at if only names are passed in
 
 
 Derived Enumerations
