@@ -510,6 +510,8 @@ class PydocServerTest(unittest.TestCase):
             return text
 
         serverthread = pydoc._start_server(my_url_handler, port=0)
+        self.assertIn('localhost', serverthread.docserver.address)
+
         starttime = time.time()
         timeout = 1  #seconds
 
