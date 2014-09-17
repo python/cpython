@@ -193,7 +193,7 @@ class EnumMeta(type):
             enum_class.__new__ = Enum.__new__
         return enum_class
 
-    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None):
+    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1):
         """Either returns an existing member, or creates a new enum class.
 
         This method is used both when an enum class is given a value to match
@@ -205,7 +205,7 @@ class EnumMeta(type):
         `value` will be the name of the new class.
 
         `names` should be either a string of white-space/comma delimited names
-        (values will start at 1), or an iterator/mapping of name, value pairs.
+        (values will start at `start`), or an iterator/mapping of name, value pairs.
 
         `module` should be set to the module this class is being created in;
         if it is not set, an attempt to find that module will be made, but if
@@ -221,7 +221,7 @@ class EnumMeta(type):
         if names is None:  # simple value lookup
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
-        return cls._create_(value, names, module=module, qualname=qualname, type=type)
+        return cls._create_(value, names, module=module, qualname=qualname, type=type, start=start)
 
     def __contains__(cls, member):
         return isinstance(member, cls) and member._name_ in cls._member_map_
@@ -292,16 +292,16 @@ class EnumMeta(type):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
-    def _create_(cls, class_name, names=None, *, module=None, qualname=None, type=None):
+    def _create_(cls, class_name, names=None, *, module=None, qualname=None, type=None, start=1):
         """Convenience method to create a new Enum class.
 
         `names` can be:
 
         * A string containing member names, separated either with spaces or
-          commas.  Values are auto-numbered from 1.
-        * An iterable of member names.  Values are auto-numbered from 1.
+          commas.  Values are incremented by 1 from `start`.
+        * An iterable of member names.  Values are incremented by 1 from `start`.
         * An iterable of (member name, value) pairs.
-        * A mapping of member name -> value.
+        * A mapping of member name -> value pairs.
 
         """
         metacls = cls.__class__
@@ -312,7 +312,7 @@ class EnumMeta(type):
         if isinstance(names, str):
             names = names.replace(',', ' ').split()
         if isinstance(names, (tuple, list)) and isinstance(names[0], str):
-            names = [(e, i) for (i, e) in enumerate(names, 1)]
+            names = [(e, i) for (i, e) in enumerate(names, start)]
 
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:

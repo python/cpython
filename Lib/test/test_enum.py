@@ -634,6 +634,23 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
+    def test_programatic_function_string_with_start(self):
+        SummerMonth = Enum('SummerMonth', 'june july august', start=10)
+        lst = list(SummerMonth)
+        self.assertEqual(len(lst), len(SummerMonth))
+        self.assertEqual(len(SummerMonth), 3, SummerMonth)
+        self.assertEqual(
+                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 10):
+            e = SummerMonth(i)
+            self.assertEqual(int(e.value), i)
+            self.assertNotEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, SummerMonth)
+            self.assertIs(type(e), SummerMonth)
+
     def test_programatic_function_string_list(self):
         SummerMonth = Enum('SummerMonth', ['june', 'july', 'august'])
         lst = list(SummerMonth)
@@ -644,6 +661,23 @@ class TestEnum(unittest.TestCase):
                 lst,
                 )
         for i, month in enumerate('june july august'.split(), 1):
+            e = SummerMonth(i)
+            self.assertEqual(int(e.value), i)
+            self.assertNotEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, SummerMonth)
+            self.assertIs(type(e), SummerMonth)
+
+    def test_programatic_function_string_list_with_start(self):
+        SummerMonth = Enum('SummerMonth', ['june', 'july', 'august'], start=20)
+        lst = list(SummerMonth)
+        self.assertEqual(len(lst), len(SummerMonth))
+        self.assertEqual(len(SummerMonth), 3, SummerMonth)
+        self.assertEqual(
+                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 20):
             e = SummerMonth(i)
             self.assertEqual(int(e.value), i)
             self.assertNotEqual(e, i)
@@ -707,6 +741,22 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
+    def test_programatic_function_type_with_start(self):
+        SummerMonth = Enum('SummerMonth', 'june july august', type=int, start=30)
+        lst = list(SummerMonth)
+        self.assertEqual(len(lst), len(SummerMonth))
+        self.assertEqual(len(SummerMonth), 3, SummerMonth)
+        self.assertEqual(
+                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 30):
+            e = SummerMonth(i)
+            self.assertEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, SummerMonth)
+            self.assertIs(type(e), SummerMonth)
+
     def test_programatic_function_type_from_subclass(self):
         SummerMonth = IntEnum('SummerMonth', 'june july august')
         lst = list(SummerMonth)
@@ -717,6 +767,22 @@ class TestEnum(unittest.TestCase):
                 lst,
                 )
         for i, month in enumerate('june july august'.split(), 1):
+            e = SummerMonth(i)
+            self.assertEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, SummerMonth)
+            self.assertIs(type(e), SummerMonth)
+
+    def test_programatic_function_type_from_subclass_with_start(self):
+        SummerMonth = IntEnum('SummerMonth', 'june july august', start=40)
+        lst = list(SummerMonth)
+        self.assertEqual(len(lst), len(SummerMonth))
+        self.assertEqual(len(SummerMonth), 3, SummerMonth)
+        self.assertEqual(
+                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 40):
             e = SummerMonth(i)
             self.assertEqual(e, i)
             self.assertEqual(e.name, month)
