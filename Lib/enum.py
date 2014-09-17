@@ -159,7 +159,7 @@ class EnumMeta(type):
             # If another member with the same value was already defined, the
             # new member becomes an alias to the existing one.
             for name, canonical_member in enum_class._member_map_.items():
-                if canonical_member.value == enum_member._value_:
+                if canonical_member._value_ == enum_member._value_:
                     enum_member = canonical_member
                     break
             else:
@@ -224,7 +224,7 @@ class EnumMeta(type):
         return cls._create_(value, names, module=module, qualname=qualname, type=type)
 
     def __contains__(cls, member):
-        return isinstance(member, cls) and member.name in cls._member_map_
+        return isinstance(member, cls) and member._name_ in cls._member_map_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -452,9 +452,9 @@ class Enum(metaclass=EnumMeta):
         except TypeError:
             # not there, now do long search -- O(n) behavior
             for member in cls._member_map_.values():
-                if member.value == value:
+                if member._value_ == value:
                     return member
-        raise ValueError("%s is not a valid %s" % (value, cls.__name__))
+        raise ValueError("%r is not a valid %s" % (value, cls.__name__))
 
     def __repr__(self):
         return "<%s.%s: %r>" % (
@@ -480,7 +480,7 @@ class Enum(metaclass=EnumMeta):
         # mix-in branch
         else:
             cls = self._member_type_
-            val = self.value
+            val = self._value_
         return cls.__format__(val, format_spec)
 
     def __hash__(self):
