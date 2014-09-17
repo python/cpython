@@ -586,8 +586,7 @@ Avoids having to specify the value for each enumeration member::
 
     The :meth:`__new__` method, if defined, is used during creation of the Enum
     members; it is then replaced by Enum's :meth:`__new__` which is used after
-    class creation for lookup of existing members.  Due to the way Enums are
-    supposed to behave, there is no way to customize Enum's :meth:`__new__`.
+    class creation for lookup of existing members.
 
 
 OrderedEnum
@@ -743,7 +742,11 @@ but not of the class::
     >>> dir(Planet.EARTH)
     ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
 
-A :meth:`__new__` method will only be used for the creation of the
-:class:`Enum` members -- after that it is replaced.  This means if you wish to
-change how :class:`Enum` members are looked up you either have to write a
-helper function or a :func:`classmethod`.
+The :meth:`__new__` method will only be used for the creation of the
+:class:`Enum` members -- after that it is replaced.  Any custom :meth:`__new__`
+method must create the object and set the :attr:`_value_` attribute
+appropriately.
+
+If you wish to change how :class:`Enum` members are looked up you should either
+write a helper function or a :func:`classmethod` for the :class:`Enum`
+subclass.
