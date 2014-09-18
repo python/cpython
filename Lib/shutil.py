@@ -7,7 +7,6 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 import os
 import sys
 import stat
-from os.path import abspath
 import fnmatch
 import collections
 import errno
@@ -550,8 +549,8 @@ def move(src, dst, copy_function=copy2):
     return real_dst
 
 def _destinsrc(src, dst):
-    src = abspath(src)
-    dst = abspath(dst)
+    src = os.path.abspath(src)
+    dst = os.path.abspath(dst)
     if not src.endswith(os.path.sep):
         src += os.path.sep
     if not dst.endswith(os.path.sep):
