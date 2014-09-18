@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #11471: avoid generating a JUMP_FORWARD instruction at the end of
+  an if-block if there is no else-clause.  Original patch by Eugene Toder.
+
 - Issue #22215: Now ValueError is raised instead of TypeError when str or bytes
   argument contains not permitted null character or byte.
 
