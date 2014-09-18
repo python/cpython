@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21391: Use os.path.abspath in the shutil module.
+
 - Issue #11471: avoid generating a JUMP_FORWARD instruction at the end of
   an if-block if there is no else-clause.  Original patch by Eugene Toder.
 
