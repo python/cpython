@@ -1940,7 +1940,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     } else if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
     } else {
-        if (s->v.If.orelse) {
+        if (asdl_seq_LEN(s->v.If.orelse)) {
             next = compiler_new_block(c);
             if (next == NULL)
                 return 0;
@@ -1950,8 +1950,8 @@ compiler_if(struct compiler *c, stmt_ty s)
         VISIT(c, expr, s->v.If.test);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
         VISIT_SEQ(c, stmt, s->v.If.body);
-        ADDOP_JREL(c, JUMP_FORWARD, end);
-        if (s->v.If.orelse) {
+        if (asdl_seq_LEN(s->v.If.orelse)) {
+            ADDOP_JREL(c, JUMP_FORWARD, end);
             compiler_use_next_block(c, next);
             VISIT_SEQ(c, stmt, s->v.If.orelse);
         }
