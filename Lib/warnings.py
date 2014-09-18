@@ -53,6 +53,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
         filters.append(item)
     else:
         filters.insert(0, item)
+    _filters_mutated()
 
 def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
@@ -73,10 +74,12 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
         filters.append(item)
     else:
         filters.insert(0, item)
+    _filters_mutated()
 
 def resetwarnings():
     """Clear the list of warning filters, so that no filters are active."""
     filters[:] = []
+    _filters_mutated()
 
 class _OptionError(Exception):
     """Exception used by option processing helpers."""
@@ -204,6 +207,9 @@ def warn_explicit(message, category, filename, lineno,
             module = module[:-3] # XXX What about leading pathname?
     if registry is None:
         registry = {}
+    if registry.get('version', 0) != _filters_version:
+        registry.clear()
+        registry['version'] = _filters_version
     if isinstance(message, Warning):
         text = str(message)
         category = message.__class__
@@ -329,6 +335,7 @@ class catch_warnings(object):
         self._entered = True
         self._filters = self._module.filters
         self._module.filters = self._filters[:]
+        self._module._filters_mutated()
         self._showwarning = self._module.showwarning
         if self._record:
             log = []
@@ -343,6 +350,7 @@ class catch_warnings(object):
         if not self._entered:
             raise RuntimeError("Cannot exit %r without entering first" % self)
         self._module.filters = self._filters
+        self._module._filters_mutated()
         self._module.showwarning = self._showwarning
 
 
@@ -357,14 +365,21 @@ class catch_warnings(object):
 _warnings_defaults = False
 try:
     from _warnings import (filters, _defaultaction, _onceregistry,
-                            warn, warn_explicit)
+                           warn, warn_explicit, _filters_mutated)
     defaultaction = _defaultaction
     onceregistry = _onceregistry
     _warnings_defaults = True
+
 except ImportError:
     filters = []
     defaultaction = "default"
     onceregistry = {}
+
+    _filters_version = 1
+
+    def _filters_mutated():
+        global _filters_version
+        _filters_version += 1
 
 
 # Module initialization
