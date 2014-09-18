@@ -6248,6 +6248,9 @@ PyInit__socket(void)
 #ifdef  SO_PRIORITY
     PyModule_AddIntMacro(m, SO_PRIORITY);
 #endif
+#ifdef  SO_MARK
+    PyModule_AddIntMacro(m, SO_MARK);
+#endif
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
