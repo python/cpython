@@ -56,3 +56,4 @@ The :ref:`glossary` is also worth going through.
    whatnow.rst
    interactive.rst
    floatingpoint.rst
+   appendix.rst
