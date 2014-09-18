@@ -118,7 +118,9 @@ is the module's name in the Python package namespace.
    .. versionchanged:: 3.2
       The *lvl* parameter now accepts a string representation of the
       level such as 'INFO' as an alternative to the integer constants
-      such as :const:`INFO`.
+      such as :const:`INFO`. Note, however, that levels are internally stored
+      as integers, and methods such as e.g. :meth:`getEffectiveLevel` and
+      :meth:`isEnabledFor` will return/expect to be passed integers.
 
 
 .. method:: Logger.isEnabledFor(lvl)
@@ -134,7 +136,9 @@ is the module's name in the Python package namespace.
    Indicates the effective level for this logger. If a value other than
    :const:`NOTSET` has been set using :meth:`setLevel`, it is returned. Otherwise,
    the hierarchy is traversed towards the root until a value other than
-   :const:`NOTSET` is found, and that value is returned.
+   :const:`NOTSET` is found, and that value is returned. The value returned is
+   an integer, typically one of :const:`logging.DEBUG`, :const:`logging.INFO`
+   etc.
 
 
 .. method:: Logger.getChild(suffix)
@@ -1053,6 +1057,11 @@ functions.
    have associated with *lvl* is returned. If a numeric value corresponding to one
    of the defined levels is passed in, the corresponding string representation is
    returned. Otherwise, the string 'Level %s' % lvl is returned.
+
+   .. note:: Levels are internally integers (as they need to be compared in the
+      logging logic). This function is used to convert between an integer level
+      and the level name displayed in the formatted log output by means of the
+      ``%(levelname)s`` format specifier (see :ref:`logrecord-attributes`).
 
    .. versionchanged:: 3.4
       In Python versions earlier than 3.4, this function could also be passed a
