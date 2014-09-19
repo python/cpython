@@ -2570,7 +2570,7 @@ with the first of those changes appearing in the Python 2.7.7 release.
   certificate store, the :class:`~ssl.SSLContext` class, and other
   features. (Contributed by Alex Gaynor and David Reid; :issue:`21308`.)
 
-* :func:`os.urandomn` was changed to cache a file descriptor to ``/dev/urandom``
+* :func:`os.urandom` was changed to cache a file descriptor to ``/dev/urandom``
   instead of reopening ``/dev/urandom`` on every call. (Contributed by Alex
   Gaynor; :issue:`21305`.)
 
