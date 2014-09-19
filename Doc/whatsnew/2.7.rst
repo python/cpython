@@ -2548,33 +2548,31 @@ with the first of those changes appearing in the Python 2.7.7 release.
 :pep:`466` related features added in Python 2.7.7:
 
 * :func:`hmac.compare_digest` was backported from Python 3 to make a timing
-  attack resistant comparison operation broadly available to Python 2
-  applications (backported by Alex Gaynor in :issue:`21306`)
+  attack resistant comparison operation available to Python 2 applications.
+  (Contributed by Alex Gaynor; :issue:`21306`.)
 
-* upgraded to OpenSSL 1.0.1g for the prebuilt Windows installers published
-  on python.org (contributed by Zachary Ware in :issue:`21462`)
-
+* OpenSSL 1.0.1g was upgraded in the official Windows installers published on
+  python.org. (Contributed by Zachary Ware; :issue:`21462`.)
 
 :pep:`466` related features added in Python 2.7.8:
 
 * :func:`hashlib.pbkdf2_hmac` was backported from Python 3 to make a hashing
   algorithm suitable for secure password storage broadly available to Python
-  2 applications (backported by Alex Gaynor in :issue:`21304`)
+  2 applications. (Contributed by Alex Gaynor; :issue:`21304`.)
 
-* upgraded to OpenSSL 1.0.1h for the prebuilt Windows installers published
-  on python.org (contributed by Zachary Ware in :issue:`21671` for
-  CVE-2014-0224)
+* OpenSSL 1.0.1h was upgraded for the official Windows installers published on
+  python.org. (contributed by Zachary Ware in :issue:`21671` for CVE-2014-0224)
 
 :pep:`466` related features added in Python 2.7.9:
 
 * Most of Python 3.4's :mod:`ssl` module was backported. This means :mod:`ssl`
   now supports Server Name Indication, TLS1.x settings, access to the platform
   certificate store, the :class:`~ssl.SSLContext` class, and other
-  features. (Contributed by Alex Gaynor and David Reid in :issue:`21308`.)
+  features. (Contributed by Alex Gaynor and David Reid; :issue:`21308`.)
 
 * :func:`os.urandomn` was changed to cache a file descriptor to ``/dev/urandom``
   instead of reopening ``/dev/urandom`` on every call. (Contributed by Alex
-  Gaynor in :issue:`21305`.)
+  Gaynor; :issue:`21305`.)
 
 
 .. ======================================================================
