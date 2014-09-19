@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 from test import support
 import os
+import ssl
 import sys
 import tempfile
 from nturl2path import url2pathname, pathname2url
@@ -378,6 +379,13 @@ Content-Type: text/html; charset=iso-8859-1
     def test_URLopener_deprecation(self):
         with support.check_warnings(('',DeprecationWarning)):
             urllib.request.URLopener()
+
+    def test_cafile_and_context(self):
+        context = ssl.create_default_context()
+        with self.assertRaises(ValueError):
+            urllib.request.urlopen(
+                "https://localhost", cafile="/nonexistent/path", context=context
+            )
 
 class urlopen_DataTests(unittest.TestCase):
     """Test urlopen() opening a data URL."""
