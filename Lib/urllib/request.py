@@ -136,15 +136,23 @@ __version__ = sys.version[:3]
 
 _opener = None
 def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-            *, cafile=None, capath=None, cadefault=False):
+            *, cafile=None, capath=None, cadefault=False, context=None):
     global _opener
     if cafile or capath or cadefault:
+        if context is not None:
+            raise ValueError(
+                "You can't pass both context and any of cafile, capath, and "
+                "cadefault"
+            )
         if not _have_ssl:
             raise ValueError('SSL support not available')
         context = ssl._create_stdlib_context(cert_reqs=ssl.CERT_REQUIRED,
                                              cafile=cafile,
                                              capath=capath)
         https_handler = HTTPSHandler(context=context, check_hostname=True)
+        opener = build_opener(https_handler)
+    elif context:
+        https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
     elif _opener is None:
         _opener = opener = build_opener()

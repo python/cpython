@@ -137,6 +137,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22366: urllib.request.urlopen will accept a context object
+  (SSLContext) as an argument which will then used be for HTTPS connection.
+  Patch by Alex Gaynor.
+
 - Issue #4180: The warnings registries are now reset when the filters
   are modified.
 
