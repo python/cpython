@@ -16,7 +16,7 @@ authentication, redirections, cookies and more.
 The :mod:`urllib.request` module defines the following functions:
 
 
-.. function:: urlopen(url, data=None[, timeout], *, cafile=None, capath=None, cadefault=False)
+.. function:: urlopen(url, data=None[, timeout], *, cafile=None, capath=None, cadefault=False, context=None)
 
    Open the URL *url*, which can be either a string or a
    :class:`Request` object.
@@ -46,6 +46,10 @@ The :mod:`urllib.request` module defines the following functions:
    blocking operations like the connection attempt (if not specified,
    the global default timeout setting will be used).  This actually
    only works for HTTP, HTTPS and FTP connections.
+
+   If *context* is specified, it must be a :class:`ssl.SSLContext` instance
+   describing the various SSL options. See
+   :class:`~http.client.HTTPSConnection` for more details.
 
    The optional *cafile* and *capath* parameters specify a set of trusted
    CA certificates for HTTPS requests.  *cafile* should point to a single
@@ -110,6 +114,9 @@ The :mod:`urllib.request` module defines the following functions:
 
    .. versionchanged:: 3.3
       *cadefault* was added.
+
+   .. versionchanged:: 3.4.3
+      *context* was added.
 
 .. function:: install_opener(opener)
 
