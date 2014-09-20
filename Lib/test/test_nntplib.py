@@ -1412,11 +1412,18 @@ class MiscTests(unittest.TestCase):
     def test_ssl_support(self):
         self.assertTrue(hasattr(nntplib, 'NNTP_SSL'))
 
-def test_main():
-    tests = [MiscTests, NNTPv1Tests, NNTPv2Tests, CapsAfterLoginNNTPv2Tests,
-            SendReaderNNTPv2Tests, NetworkedNNTPTests, NetworkedNNTP_SSLTests]
-    support.run_unittest(*tests)
 
+class PublicAPITests(unittest.TestCase):
+    """Ensures that the correct values are exposed in the public API."""
+
+    def test_module_all_attribute(self):
+        self.assertTrue(hasattr(nntplib, '__all__'))
+        target_api = ['NNTP', 'NNTPError', 'NNTPReplyError',
+                      'NNTPTemporaryError', 'NNTPPermanentError',
+                      'NNTPProtocolError', 'NNTPDataError', 'decode_header']
+        if ssl is not None:
+            target_api.append('NNTP_SSL')
+        self.assertEqual(set(nntplib.__all__), set(target_api))
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
