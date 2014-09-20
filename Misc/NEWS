@@ -32,6 +32,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22247: Add NNTPError to nntplib.__all__.
+
 - Issue #4180: The warnings registries are now reset when the filters
   are modified.
 
