@@ -302,6 +302,9 @@ Extension Modules
 Build
 -----
 
+- Issue #15661: python.org OS X installers are now distributed as signed
+  installer packages compatible with the Gatekeeper security feature.
+
 - Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
   above.  Patch by Zachary Turner.
 
