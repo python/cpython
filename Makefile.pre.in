@@ -686,11 +686,12 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 ############################################################################
 # Importlib
 
+Programs/_freeze_importlib.o: Programs/_freeze_importlib.c
+
 Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
-Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py Programs/_freeze_importlib.c
-	$(MAKE) Programs/_freeze_importlib
+Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py Programs/_freeze_importlib
 	./Programs/_freeze_importlib \
 		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h
 
@@ -752,15 +753,13 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
 
 $(IO_OBJS): $(IO_H)
 
-$(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGENSRCS)
+$(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGEN)
 		@$(MKDIR_P) Include
-		$(MAKE) $(PGEN)
 		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
-$(GRAMMAR_C): $(GRAMMAR_H) $(GRAMMAR_INPUT) $(PGENSRCS)
-		$(MAKE) $(GRAMMAR_H)
+$(GRAMMAR_C): $(GRAMMAR_H)
 		touch $(GRAMMAR_C)
 
-$(PGEN):	$(PGENOBJS)
+$(PGEN): $(PGENOBJS)
 		$(CC) $(OPT) $(PY_LDFLAGS) $(PGENOBJS) $(LIBS) -o $(PGEN)
 
 Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
