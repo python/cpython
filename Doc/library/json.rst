@@ -576,7 +576,7 @@ Command Line Interface
 The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
 
-If the optional :option:`infile` and :option:`outfile` arguments are not
+If the optional ``infile`` and ``outfile`` arguments are not
 specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
 
     $ echo '{"json": "obj"}' | python -m json.tool
