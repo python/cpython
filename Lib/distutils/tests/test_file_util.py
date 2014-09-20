@@ -61,23 +61,22 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         wanted = ['moving %s -> %s' % (self.source, self.target_dir)]
         self.assertEqual(self._logs, wanted)
 
-    @patch('os.rename', side_effect=OSError('wrong', 1))
-    def test_move_file_exception_unpacking_rename(self, _):
+    def test_move_file_exception_unpacking_rename(self):
         # see issue 22182
-        with self.assertRaises(DistutilsFileError):
+        with patch("os.rename", side_effect=OSError("wrong", 1)), \
+             self.assertRaises(DistutilsFileError):
             with open(self.source, 'w') as fobj:
                 fobj.write('spam eggs')
             move_file(self.source, self.target, verbose=0)
 
-    @patch('os.rename', side_effect=OSError(errno.EXDEV, 'wrong'))
-    @patch('os.unlink', side_effect=OSError('wrong', 1))
-    def test_move_file_exception_unpacking_unlink(self, rename, unlink):
+    def test_move_file_exception_unpacking_unlink(self):
         # see issue 22182
-        with self.assertRaises(DistutilsFileError):
+        with patch("os.rename", side_effect=OSError(errno.EXDEV, "wrong")), \
+             patch("os.unlink", side_effect=OSError("wrong", 1)), \
+             self.assertRaises(DistutilsFileError):
             with open(self.source, 'w') as fobj:
                 fobj.write('spam eggs')
             move_file(self.source, self.target, verbose=0)
-
 
 def test_suite():
     return unittest.makeSuite(FileUtilTestCase)
