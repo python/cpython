@@ -722,15 +722,25 @@ class TestEmailMessageBase:
 
     def test_is_attachment(self):
         m = self._make_message()
-        self.assertFalse(m.is_attachment)
+        self.assertFalse(m.is_attachment())
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse(m.is_attachment)
         m['Content-Disposition'] = 'inline'
-        self.assertFalse(m.is_attachment)
+        self.assertFalse(m.is_attachment())
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse(m.is_attachment)
         m.replace_header('Content-Disposition', 'attachment')
-        self.assertTrue(m.is_attachment)
+        self.assertTrue(m.is_attachment())
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(m.is_attachment)
         m.replace_header('Content-Disposition', 'AtTachMent')
-        self.assertTrue(m.is_attachment)
+        self.assertTrue(m.is_attachment())
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(m.is_attachment)
         m.set_param('filename', 'abc.png', 'Content-Disposition')
-        self.assertTrue(m.is_attachment)
+        self.assertTrue(m.is_attachment())
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(m.is_attachment)
 
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
