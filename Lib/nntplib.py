@@ -80,8 +80,8 @@ from email.header import decode_header as _email_decode_header
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 __all__ = ["NNTP",
-           "NNTPReplyError", "NNTPTemporaryError", "NNTPPermanentError",
-           "NNTPProtocolError", "NNTPDataError",
+           "NNTPError", "NNTPReplyError", "NNTPTemporaryError",
+           "NNTPPermanentError", "NNTPProtocolError", "NNTPDataError",
            "decode_header",
            ]
 
