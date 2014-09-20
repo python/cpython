@@ -9,6 +9,7 @@ __all__ = ['Message']
 import re
 import uu
 import quopri
+import warnings
 from io import BytesIO, StringIO
 
 # Intrapackage imports
@@ -929,6 +930,17 @@ class Message:
     # I.e. def walk(self): ...
     from email.iterators import walk
 
+# XXX Support for temporary deprecation hack for is_attachment property.
+class _IsAttachment:
+    def __init__(self, value):
+        self.value = value
+    def __call__(self):
+        return self.value
+    def __bool__(self):
+        warnings.warn("is_attachment will be a method, not a property, in 3.5",
+                      DeprecationWarning,
+                      stacklevel=3)
+        return self.value
 
 class MIMEPart(Message):
 
@@ -941,10 +953,12 @@ class MIMEPart(Message):
     @property
     def is_attachment(self):
         c_d = self.get('content-disposition')
-        return False if c_d is None else c_d.content_disposition == 'attachment'
+        result = False if c_d is None else c_d.content_disposition == 'attachment'
+        # XXX transitional hack to raise deprecation if not called.
+        return _IsAttachment(result)
 
     def _find_body(self, part, preferencelist):
-        if part.is_attachment:
+        if part.is_attachment():
             return
         maintype, subtype = part.get_content_type().split('/')
         if maintype == 'text':
@@ -1037,7 +1051,7 @@ class MIMEPart(Message):
         for part in parts:
             maintype, subtype = part.get_content_type().split('/')
             if ((maintype, subtype) in self._body_types and
-                    not part.is_attachment and subtype not in seen):
+                    not part.is_attachment() and subtype not in seen):
                 seen.append(subtype)
                 continue
             yield part
