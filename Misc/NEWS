@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21079: Fix email.message.EmailMessage.is_attachment to return the
+  correct result when the header has parameters as well as a value.
+
 - Issue #22247: Add NNTPError to nntplib.__all__.
 
 - Issue #4180: The warnings registries are now reset when the filters
