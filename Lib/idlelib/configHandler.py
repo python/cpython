@@ -203,9 +203,9 @@ class IdleConf:
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
                 warn = ('\n Warning: os.path.expanduser("~") points to\n '+
-                        userDir+',\n but the path does not exist.\n')
+                        userDir+',\n but the path does not exist.')
                 try:
-                    sys.stderr.write(warn)
+                    print(warn, file=sys.stderr)
                 except OSError:
                     pass
                 userDir = '~'
@@ -218,8 +218,8 @@ class IdleConf:
                 os.mkdir(userDir)
             except OSError:
                 warn = ('\n Warning: unable to create user config directory\n'+
-                        userDir+'\n Check path and permissions.\n Exiting!\n\n')
-                sys.stderr.write(warn)
+                        userDir+'\n Check path and permissions.\n Exiting!\n')
+                print(warn, file=sys.stderr)
                 raise SystemExit
         return userDir
 
@@ -244,12 +244,12 @@ class IdleConf:
         except ValueError:
             warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
                        ' invalid %r value for configuration option %r\n'
-                       ' from section %r: %r\n' %
+                       ' from section %r: %r' %
                        (type, option, section,
                         self.userCfg[configType].Get(section, option,
                                                      raw=raw)))
             try:
-                sys.stderr.write(warning)
+                print(warning, file=sys.stderr)
             except OSError:
                 pass
         try:
@@ -263,10 +263,10 @@ class IdleConf:
             warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
                        ' problem retrieving configuration option %r\n'
                        ' from section %r.\n'
-                       ' returning default value: %r\n' %
+                       ' returning default value: %r' %
                        (option, section, default))
             try:
-                sys.stderr.write(warning)
+                print(warning, file=sys.stderr)
             except OSError:
                 pass
         return default
@@ -375,10 +375,10 @@ class IdleConf:
                 warning=('\n Warning: configHandler.py - IdleConf.GetThemeDict'
                            ' -\n problem retrieving theme element %r'
                            '\n from theme %r.\n'
-                           ' returning default value: %r\n' %
+                           ' returning default value: %r' %
                            (element, themeName, theme[element]))
                 try:
-                    sys.stderr.write(warning)
+                    print(warning, file=sys.stderr)
                 except OSError:
                     pass
             colour=cfgParser.Get(themeName,element,default=theme[element])
@@ -635,10 +635,10 @@ class IdleConf:
                     warning=('\n Warning: configHandler.py - IdleConf.GetCoreKeys'
                                ' -\n problem retrieving key binding for event %r'
                                '\n from key set %r.\n'
-                               ' returning default value: %r\n' %
+                               ' returning default value: %r' %
                                (event, keySetName, keyBindings[event]))
                     try:
-                        sys.stderr.write(warning)
+                        print(warning, file=sys.stderr)
                     except OSError:
                         pass
         return keyBindings
