@@ -40,10 +40,10 @@ today = ''
 today_fmt = '%B %d, %Y'
 
 # List of files that shouldn't be included in the build.
-unused_docs = [
-    'maclib/scrap',
-    'library/xmllib',
-    'library/xml.etree',
+exclude_patterns = [
+    'maclib/scrap.rst',
+    'library/xmllib.rst',
+    'library/xml.etree.rst',
 ]
 
 # Ignore .rst in Sphinx its self.
