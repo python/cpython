@@ -122,12 +122,12 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
             self.assertEqual(ensure_relative('c:\\home\\foo'), 'c:home\\foo')
             self.assertEqual(ensure_relative('home\\foo'), 'home\\foo')
 
-    @patch('os.listdir', side_effect=OSError())
-    def test_copy_tree_exception_in_listdir(self, listdir):
+    def test_copy_tree_exception_in_listdir(self):
         """
         An exception in listdir should raise a DistutilsFileError
         """
-        with self.assertRaises(errors.DistutilsFileError):
+        with patch("os.listdir", side_effect=OSError()), \
+             self.assertRaises(errors.DistutilsFileError):
             src = self.tempdirs[-1]
             dir_util.copy_tree(src, None)
 
