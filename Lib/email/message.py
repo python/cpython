@@ -9,6 +9,7 @@ __all__ = ['Message']
 import re
 import uu
 import quopri
+import warnings
 from io import BytesIO, StringIO
 
 # Intrapackage imports
@@ -938,13 +939,12 @@ class MIMEPart(Message):
             policy = default
         Message.__init__(self, policy)
 
-    @property
     def is_attachment(self):
         c_d = self.get('content-disposition')
         return False if c_d is None else c_d.content_disposition == 'attachment'
 
     def _find_body(self, part, preferencelist):
-        if part.is_attachment:
+        if part.is_attachment():
             return
         maintype, subtype = part.get_content_type().split('/')
         if maintype == 'text':
@@ -1037,7 +1037,7 @@ class MIMEPart(Message):
         for part in parts:
             maintype, subtype = part.get_content_type().split('/')
             if ((maintype, subtype) in self._body_types and
-                    not part.is_attachment and subtype not in seen):
+                    not part.is_attachment() and subtype not in seen):
                 seen.append(subtype)
                 continue
             yield part
