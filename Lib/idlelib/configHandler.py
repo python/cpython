@@ -15,8 +15,8 @@ idle. This is to allow IDLE to continue to function in spite of errors in
 the retrieval of config information. When a default is returned instead of
 a requested config value, a message is printed to stderr to aid in
 configuration problem notification and resolution.
-
 """
+from __future__ import print_function
 import os
 import sys
 import string
@@ -202,9 +202,9 @@ class IdleConf:
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
                 warn = ('\n Warning: os.path.expanduser("~") points to\n '+
-                        userDir+',\n but the path does not exist.\n')
+                        userDir+',\n but the path does not exist.')
                 try:
-                    sys.stderr.write(warn)
+                    print(warn, file=sys.stderr)
                 except IOError:
                     pass
                 userDir = '~'
@@ -217,8 +217,8 @@ class IdleConf:
                 os.mkdir(userDir)
             except (OSError, IOError):
                 warn = ('\n Warning: unable to create user config directory\n'+
-                        userDir+'\n Check path and permissions.\n Exiting!\n\n')
-                sys.stderr.write(warn)
+                        userDir+'\n Check path and permissions.\n Exiting!\n')
+                print(warn, file=sys.stderr)
                 raise SystemExit
         return userDir
 
@@ -243,12 +243,12 @@ class IdleConf:
         except ValueError:
             warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
                        ' invalid %r value for configuration option %r\n'
-                       ' from section %r: %r\n' %
+                       ' from section %r: %r' %
                        (type, option, section,
                         self.userCfg[configType].Get(section, option,
                                                      raw=raw)))
             try:
-                sys.stderr.write(warning)
+                print(warning, file=sys.stderr)
             except IOError:
                 pass
         try:
@@ -262,10 +262,10 @@ class IdleConf:
             warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
                        ' problem retrieving configuration option %r\n'
                        ' from section %r.\n'
-                       ' returning default value: %r\n' %
+                       ' returning default value: %r' %
                        (option, section, default))
             try:
-                sys.stderr.write(warning)
+                print(warning, file=sys.stderr)
             except IOError:
                 pass
         return default
@@ -374,10 +374,10 @@ class IdleConf:
                 warning=('\n Warning: configHandler.py - IdleConf.GetThemeDict'
                            ' -\n problem retrieving theme element %r'
                            '\n from theme %r.\n'
-                           ' returning default value: %r\n' %
+                           ' returning default value: %r' %
                            (element, themeName, theme[element]))
                 try:
-                    sys.stderr.write(warning)
+                    print(warning, file=sys.stderr)
                 except IOError:
                     pass
             colour=cfgParser.Get(themeName,element,default=theme[element])
@@ -634,10 +634,10 @@ class IdleConf:
                     warning=('\n Warning: configHandler.py - IdleConf.GetCoreKeys'
                                ' -\n problem retrieving key binding for event %r'
                                '\n from key set %r.\n'
-                               ' returning default value: %r\n' %
+                               ' returning default value: %r' %
                                (event, keySetName, keyBindings[event]))
                     try:
-                        sys.stderr.write(warning)
+                        print(warning, file=sys.stderr)
                     except IOError:
                         pass
         return keyBindings
@@ -704,18 +704,18 @@ idleConf=IdleConf()
 ### module test
 if __name__ == '__main__':
     def dumpCfg(cfg):
-        print '\n',cfg,'\n'
+        print('\n', cfg, '\n')
         for key in cfg.keys():
             sections=cfg[key].sections()
-            print key
-            print sections
+            print(key)
+            print(sections)
             for section in sections:
                 options=cfg[key].options(section)
-                print section
-                print options
+                print(section)
+                print(options)
                 for option in options:
-                    print option, '=', cfg[key].Get(section,option)
+                    print(option, '=', cfg[key].Get(section,option))
     dumpCfg(idleConf.defaultCfg)
     dumpCfg(idleConf.userCfg)
-    print idleConf.userCfg['main'].Get('Theme','name')
-    #print idleConf.userCfg['highlight'].GetDefHighlight('Foo','normal')
+    print(idleConf.userCfg['main'].Get('Theme','name'))
+    #print(idleConf.userCfg['highlight'].GetDefHighlight('Foo','normal'))
