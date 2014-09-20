@@ -67,7 +67,7 @@ universal :option:`--help` option, e.g. ::
    [...]
 
 Note that an option spelled :option:`--foo-bar` on the command-line  is spelled
-:option:`foo_bar` in configuration files.
+``foo_bar`` in configuration files.
 
 .. _distutils-build-ext-inplace:
 
@@ -114,7 +114,7 @@ own :file:`setup.cfg`::
                doc/
                examples/
 
-Note that the :option:`doc_files` option is simply a whitespace-separated string
+Note that the ``doc_files`` option is simply a whitespace-separated string
 split across multiple lines for readability.
 
 
