@@ -941,9 +941,7 @@ class MIMEPart(Message):
     @property
     def is_attachment(self):
         c_d = self.get('content-disposition')
-        if c_d is None:
-            return False
-        return c_d.lower() == 'attachment'
+        return False if c_d is None else c_d.content_disposition == 'attachment'
 
     def _find_body(self, part, preferencelist):
         if part.is_attachment:
