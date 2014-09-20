@@ -729,7 +729,8 @@ class TestEmailMessageBase:
         self.assertTrue(m.is_attachment)
         m.replace_header('Content-Disposition', 'AtTachMent')
         self.assertTrue(m.is_attachment)
-
+        m.set_param('filename', 'abc.png', 'Content-Disposition')
+        self.assertTrue(m.is_attachment)
 
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
