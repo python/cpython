@@ -21,7 +21,7 @@ from platform import python_version, system
 try:
     from tkinter import *
 except ImportError:
-    print("** IDLE can't import Tkinter.  " \
+    print("** IDLE can't import Tkinter.\n"
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     sys.exit(1)
 import tkinter.messagebox as tkMessageBox
@@ -651,9 +651,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
             code = compile(source, filename, "exec")
         except (OverflowError, SyntaxError):
             self.tkconsole.resetoutput()
-            tkerr = self.tkconsole.stderr
-            print('*** Error in script or command!\n', file=tkerr)
-            print('Traceback (most recent call last):', file=tkerr)
+            print('*** Error in script or command!\n'
+                 'Traceback (most recent call last):',
+                  file=self.tkconsole.stderr)
             InteractiveInterpreter.showsyntaxerror(self, filename)
             self.tkconsole.showprompt()
         else:
@@ -1472,8 +1472,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
     except getopt.error as msg:
-        sys.stderr.write("Error: %s\n" % str(msg))
-        sys.stderr.write(usage_msg)
+        print("Error: %s\n%s" % (msg, usage_msg), file=sys.stderr)
         sys.exit(2)
     for o, a in opts:
         if o == '-c':
