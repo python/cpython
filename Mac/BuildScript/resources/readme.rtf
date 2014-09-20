@@ -1,0 +1,103 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf210
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 CourierNewPSMT;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww13020\viewh15160\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 This package will install Python $FULL_VERSION for Mac OS X $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.\
+\
+
+\b \ul Update your version of Tcl/Tk to use IDLE or other Tk applications
+\b0 \ulnone \
+\
+To use IDLE or other programs that use the Tkinter graphical user interface toolkit, you need to install a newer third-party version of the 
+\i Tcl/Tk
+\i0  frameworks.  Visit {\field{\*\fldinst{HYPERLINK "https://www.python.org/download/mac/tcltk/"}}{\fldrslt https://www.python.org/download/mac/tcltk/}} for current information about supported and recommended versions of 
+\i Tcl/Tk
+\i0  for this version of Python and of Mac OS X.\
+
+\b \ul \
+Installing on OS X 10.8 (Mountain Lion) or later systems\
+\ulnone [CHANGED for Python 3.4.2]
+\b0 \
+\
+As of Python 3.4.2, installer packages from python.org are now compatible with the Gatekeeper security feature introduced in OS X 10.8.   Downloaded packages can now be directly installed by double-clicking with the default system security settings.  Python.org installer packages for OS X are signed with the Developer ID of the builder, as identified on the download page for this release ({\field{\*\fldinst{HYPERLINK "https://www.python.org/downloads/"}}{\fldrslt https://www.python.org/downloads/}}).  To inspect the digital signature of the package, click on the lock icon in the upper right corner of the 
+\i Install Python
+\i0  installer window.  Refer to Apple\'92s support pages for more information on Gatekeeper ({\field{\*\fldinst{HYPERLINK "http://support.apple.com/kb/ht5290"}}{\fldrslt http://support.apple.com/kb/ht5290}}).\
+\
+
+\b \ul Simplified web-based installs\
+\ulnone [NEW for Python 3.4.2]
+\b0 \
+\
+With the change to the newer flat format installer package, the download file now has a 
+\f1 .pkg
+\f0  extension as it is no longer necessary to embed the installer within a disk image (
+\f1 .dmg
+\f0 ) container.   If you download the Python installer through a web browser, the OS X installer application may open automatically to allow you to perform the install.  If your browser settings do not allow automatic open, double click on the downloaded installer file.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\b \cf0 \ul \ulc0 New Installation Options and Defaults\
+\ulnone [NEW for Python 3.4.0]
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \
+The Python installer now includes an option to automatically install or upgrade 
+\f1 pip
+\f0 , a tool for installing and managing Python packages.  This option is enabled by default and no Internet access is required.  If you do not want the installer to do this, select the 
+\i Customize
+\i0  option at the 
+\i Installation Type
+\i0  step and uncheck the 
+\i Install or ugprade pip
+\i0  option.\
+\
+To make it easier to use scripts installed by third-party Python packages, with 
+\f1 pip
+\f0  or by other means, the 
+\i Shell profile updater
+\i0  option is now enabled by default, as has been the case with Python 2.7.x installers. You can also turn this option off by selecting 
+\i Customize
+\i0  and unchecking the 
+\i Shell profile updater
+\i0  option. You can also update your shell profile later by launching the 
+\i Update Shell Profile
+\i0  command found in the 
+\f1 /Applications/Python $VERSION 
+\f0 folder.  You may need to start a new terminal window for the changes to take effect.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\b \cf0 \ul \ulc0 Python 3 and Python 2 Co-existence\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\b0 \cf0 \ulnone \
+Python.org Python $VERSION and 2.7.x versions can both be installed on your system and will not conflict. Command names for Python 3 contain a 3 in them, 
+\f1 python3
+\f0  (or
+\f1  python$VERSION
+\f0 ), 
+\f1 idle3
+\f0  (or i
+\f1 dle$VERSION
+\f0 ), 
+\f1 pip3
+\f0  (or 
+\f1 pip$VERSION
+\f0 ), etc.  Python 2.7 command names contain a 2 or no digit: 
+\f1 python2
+\f0  (or 
+\f1 python2.7
+\f0  or 
+\f1 python
+\f0 ), 
+\f1 idle2
+\f0  (or 
+\f1 idle2.7
+\f0  or 
+\f1 idle
+\f0 ), etc.  If you want to use 
+\f1 pip
+\f0  with Python 2.7.x, download and install a separate copy of it from the Python Package Index ({\field{\*\fldinst{HYPERLINK "https://pypi.python.org/pypi/pip/"}}{\fldrslt https://pypi.python.org/pypi/pip/}}).\
+}
