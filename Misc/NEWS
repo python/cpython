@@ -21,6 +21,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #22423: Unhandled exception in thread no longer causes unhandled
+  AttributeError when sys.stderr is None.
+
 - Issue #22419: Limit the length of incoming HTTP request in wsgiref server to
   65536 bytes and send a 414 error code for higher lengths. Patch contributed
   by Devin Cook.

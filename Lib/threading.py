@@ -818,10 +818,10 @@ class Thread(_Verbose):
                 # shutdown) use self.__stderr.  Otherwise still use sys (as in
                 # _sys) in case sys.stderr was redefined since the creation of
                 # self.
-                if _sys:
-                    _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                      (self.name, _format_exc()))
-                else:
+                if _sys and _sys.stderr is not None:
+                    print>>_sys.stderr, ("Exception in thread %s:\n%s" %
+                                         (self.name, _format_exc()))
+                elif self.__stderr is not None:
                     # Do the best job possible w/o a huge amt. of code to
                     # approximate a traceback (code ideas from
                     # Lib/traceback.py)

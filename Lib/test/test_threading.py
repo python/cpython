@@ -829,6 +829,85 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.start()
         self.assertRaises(RuntimeError, setattr, thread, "daemon", True)
 
+    def test_print_exception(self):
+        script = r"""if 1:
+            import threading
+            import time
+
+            running = False
+            def run():
+                global running
+                running = True
+                while running:
+                    time.sleep(0.01)
+                1/0
+            t = threading.Thread(target=run)
+            t.start()
+            while not running:
+                time.sleep(0.01)
+            running = False
+            t.join()
+            """
+        rc, out, err = assert_python_ok("-c", script)
+        self.assertEqual(out, '')
+        self.assertIn("Exception in thread", err)
+        self.assertIn("Traceback (most recent call last):", err)
+        self.assertIn("ZeroDivisionError", err)
+        self.assertNotIn("Unhandled exception", err)
+
+    def test_print_exception_stderr_is_none_1(self):
+        script = r"""if 1:
+            import sys
+            import threading
+            import time
+
+            running = False
+            def run():
+                global running
+                running = True
+                while running:
+                    time.sleep(0.01)
+                1/0
+            t = threading.Thread(target=run)
+            t.start()
+            while not running:
+                time.sleep(0.01)
+            sys.stderr = None
+            running = False
+            t.join()
+            """
+        rc, out, err = assert_python_ok("-c", script)
+        self.assertEqual(out, '')
+        self.assertIn("Exception in thread", err)
+        self.assertIn("Traceback (most recent call last):", err)
+        self.assertIn("ZeroDivisionError", err)
+        self.assertNotIn("Unhandled exception", err)
+
+    def test_print_exception_stderr_is_none_2(self):
+        script = r"""if 1:
+            import sys
+            import threading
+            import time
+
+            running = False
+            def run():
+                global running
+                running = True
+                while running:
+                    time.sleep(0.01)
+                1/0
+            sys.stderr = None
+            t = threading.Thread(target=run)
+            t.start()
+            while not running:
+                time.sleep(0.01)
+            running = False
+            t.join()
+            """
+        rc, out, err = assert_python_ok("-c", script)
+        self.assertEqual(out, '')
+        self.assertNotIn("Unhandled exception", err)
+
 
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)
