@@ -251,7 +251,7 @@ class Condition:
 
     def _is_owned(self):
         # Return True if lock is owned by current_thread.
-        # This method is called only if __lock doesn't have _is_owned().
+        # This method is called only if _lock doesn't have _is_owned().
         if self._lock.acquire(0):
             self._lock.release()
             return False
@@ -752,12 +752,12 @@ class Thread:
 
     """
 
-    __initialized = False
+    _initialized = False
     # Need to store a reference to sys.exc_info for printing
     # out exceptions when a thread tries to use a global var. during interp.
     # shutdown and thus raises an exception about trying to perform some
     # operation on/with a NoneType
-    __exc_info = _sys.exc_info
+    _exc_info = _sys.exc_info
     # Keep sys.exc_clear too to clear the exception just before
     # allowing .join() to return.
     #XXX __exc_clear = _sys.exc_clear
@@ -929,10 +929,10 @@ class Thread:
                 # shutdown) use self._stderr.  Otherwise still use sys (as in
                 # _sys) in case sys.stderr was redefined since the creation of
                 # self.
-                if _sys:
-                    _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                      (self.name, _format_exc()))
-                else:
+                if _sys and _sys.stderr is not None:
+                    print("Exception in thread %s:\n%s" %
+                          (self.name, _format_exc()), file=self._stderr)
+                elif self._stderr is not None:
                     # Do the best job possible w/o a huge amt. of code to
                     # approximate a traceback (code ideas from
                     # Lib/traceback.py)
@@ -960,7 +960,7 @@ class Thread:
                 # test_threading.test_no_refcycle_through_target when
                 # the exception keeps the target alive past when we
                 # assert that it's dead.
-                #XXX self.__exc_clear()
+                #XXX self._exc_clear()
                 pass
         finally:
             with _active_limbo_lock:
