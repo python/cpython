@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22423: Unhandled exception in thread no longer causes unhandled
+  AttributeError when sys.stderr is None.
+
 - Issue #21091: Fix API bug: email.message.EmailMessage.is_attachment is now
   a method.  Since EmailMessage is provisional, we can change the API in a
   maintenance release, but we use a trick to remain backward compatible with
