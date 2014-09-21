@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21332: Ensure that ``bufsize=1`` in subprocess.Popen() selects
+  line buffering, rather than block buffering.  Patch by Akira Li.
+
 - Issue #21091: Fix API bug: email.message.EmailMessage.is_attachment is now
   a method.  Since EmailMessage is provisional, we can change the API in a
   maintenance release, but we use a trick to remain backward compatible with
