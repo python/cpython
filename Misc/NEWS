@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22423: Fixed debugging output of the GROUPREF_EXISTS opcode in the re
+  module.
+
 - Issue #22423: Unhandled exception in thread no longer causes unhandled
   AttributeError when sys.stderr is None.
 
