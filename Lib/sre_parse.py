@@ -94,33 +94,45 @@ class SubPattern:
         self.data = data
         self.width = None
     def dump(self, level=0):
-        nl = 1
+        nl = True
         seqtypes = (tuple, list)
         for op, av in self.data:
-            print(level*"  " + op, end=' '); nl = 0
-            if op == "in":
+            print(level*"  " + op, end='')
+            if op == IN:
                 # member sublanguage
-                print(); nl = 1
+                print()
                 for op, a in av:
                     print((level+1)*"  " + op, a)
-            elif op == "branch":
-                print(); nl = 1
-                i = 0
-                for a in av[1]:
-                    if i > 0:
+            elif op == BRANCH:
+                print()
+                for i, a in enumerate(av[1]):
+                    if i:
                         print(level*"  " + "or")
-                    a.dump(level+1); nl = 1
-                    i = i + 1
+                    a.dump(level+1)
+            elif op == GROUPREF_EXISTS:
+                condgroup, item_yes, item_no = av
+                print('', condgroup)
+                item_yes.dump(level+1)
+                if item_no:
+                    print(level*"  " + "else")
+                    item_no.dump(level+1)
             elif isinstance(av, seqtypes):
+                nl = False
                 for a in av:
                     if isinstance(a, SubPattern):
-                        if not nl: print()
-                        a.dump(level+1); nl = 1
+                        if not nl:
+                            print()
+                        a.dump(level+1)
+                        nl = True
                     else:
-                        print(a, end=' ') ; nl = 0
+                        if not nl:
+                            print(' ', end='')
+                        print(a, end='')
+                        nl = False
+                if not nl:
+                    print()
             else:
-                print(av, end=' ') ; nl = 0
-            if not nl: print()
+                print('', av)
     def __repr__(self):
         return repr(self.data)
     def __len__(self):
