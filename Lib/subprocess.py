@@ -837,7 +837,8 @@ class Popen(object):
         if p2cwrite != -1:
             self.stdin = io.open(p2cwrite, 'wb', bufsize)
             if universal_newlines:
-                self.stdin = io.TextIOWrapper(self.stdin, write_through=True)
+                self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
+                                              line_buffering=(bufsize == 1))
         if c2pread != -1:
             self.stdout = io.open(c2pread, 'rb', bufsize)
             if universal_newlines:
