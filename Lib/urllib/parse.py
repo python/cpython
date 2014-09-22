@@ -443,6 +443,10 @@ def urljoin(base, url, allow_fragments=True):
         segments = path.split('/')
     else:
         segments = base_parts + path.split('/')
+        # filter out elements that would cause redundant slashes on re-joining
+        # the resolved_path
+        segments = segments[0:1] + [
+            s for s in segments[1:-1] if len(s) > 0] + segments[-1:]
 
     resolved_path = []
 
@@ -465,7 +469,7 @@ def urljoin(base, url, allow_fragments=True):
         resolved_path.append('')
 
     return _coerce_result(urlunparse((scheme, netloc, '/'.join(
-        resolved_path), params, query, fragment)))
+        resolved_path) or '/', params, query, fragment)))
 
 
 def urldefrag(url):
