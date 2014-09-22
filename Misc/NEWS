@@ -52,7 +52,7 @@ Library
   Initialization of variables and gui setup should be done in main(),
   which is called each time a demo is run, but not on import.
 
-_ Issue #21597: The separator between the turtledemo text pane and the drawing
+- Issue #21597: The separator between the turtledemo text pane and the drawing
   canvas can now be grabbed and dragged with a mouse.  The code text pane can
   be widened to easily view or copy the full width of the text.  The canvas
   can be widened on small screens.  Original patches by Jan Kanis and Lita Cho.
