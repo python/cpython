@@ -13,6 +13,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #22415: Fixed debugging output of the GROUPREF_EXISTS opcode in the re
+  module.  Removed trailing spaces in debugging output.
+
+- Issue #22423: Unhandled exception in thread no longer causes unhandled
+  AttributeError when sys.stderr is None.
+
+- Issue #21332: Ensure that ``bufsize=1`` in subprocess.Popen() selects
+  line buffering, rather than block buffering.  Patch by Akira Li.
+
 
 What's New in Python 3.4.2rc1?
 ==============================
