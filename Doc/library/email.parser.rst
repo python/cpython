@@ -181,7 +181,7 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
 
-   .. method:: parse(fp, headeronly=False)
+   .. method:: parse(fp, headersonly=False)
 
       Read all the data from the binary file-like object *fp*, parse the
       resulting bytes, and return the message object.  *fp* must support
