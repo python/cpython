@@ -380,6 +380,18 @@ class UrlParseTestCase(unittest.TestCase):
         # self.checkJoin(SIMPLE_BASE, '../../../g','http://a/../g')
         # self.checkJoin(SIMPLE_BASE, '/./g','http://a/./g')
 
+        # test for issue22118 duplicate slashes
+        self.checkJoin(SIMPLE_BASE + '/', 'foo', SIMPLE_BASE + '/foo')
+
+        # Non-RFC-defined tests, covering variations of base and trailing
+        # slashes
+        self.checkJoin('http://a/b/c/d/e/', '../../f/g/', 'http://a/b/c/f/g/')
+        self.checkJoin('http://a/b/c/d/e', '../../f/g/', 'http://a/b/f/g/')
+        self.checkJoin('http://a/b/c/d/e/', '/../../f/g/', 'http://a/f/g/')
+        self.checkJoin('http://a/b/c/d/e', '/../../f/g/', 'http://a/f/g/')
+        self.checkJoin('http://a/b/c/d/e/', '../../f/g', 'http://a/b/c/f/g')
+        self.checkJoin('http://a/b/', '../../f/g/', 'http://a/f/g/')
+
     def test_RFC2732(self):
         str_cases = [
             ('http://Test.python.org:5432/foo/', 'test.python.org', 5432),

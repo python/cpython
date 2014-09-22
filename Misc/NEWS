@@ -137,6 +137,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22278: Fix urljoin problem with relative urls, a regression observed
+  after changes to issue22118 were submitted.
+
 - Issue #22415: Fixed debugging output of the GROUPREF_EXISTS opcode in the re
   module.  Removed trailing spaces in debugging output.
 
