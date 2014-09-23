@@ -137,6 +137,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21866: ZipFile.close() no longer writes ZIP64 central directory
+  records if allowZip64 is false.
+
 - Issue #22278: Fix urljoin problem with relative urls, a regression observed
   after changes to issue22118 were submitted.
 
