@@ -137,6 +137,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22362: Forbidden ambiguous octal escapes out of range 0-0o377 in
+  regular expressions.
+
 - Issue #20912: Now directories added to ZIP file have correct Unix and MS-DOS
   directory attributes.
 

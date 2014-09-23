@@ -295,7 +295,11 @@ def _class_escape(source, escape):
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
             escape += source.getwhile(2, OCTDIGITS)
-            return LITERAL, int(escape[1:], 8) & 0xff
+            c = int(escape[1:], 8)
+            if c > 0o377:
+                raise error('octal escape value %r outside of '
+                            'range 0-0o377' % escape)
+            return LITERAL, c
         elif c in DIGITS:
             raise ValueError
         if len(escape) == 2:
@@ -337,7 +341,7 @@ def _escape(source, escape, state):
         elif c == "0":
             # octal escape
             escape += source.getwhile(2, OCTDIGITS)
-            return LITERAL, int(escape[1:], 8) & 0xff
+            return LITERAL, int(escape[1:], 8)
         elif c in DIGITS:
             # octal escape *or* decimal group reference (sigh)
             if source.next in DIGITS:
@@ -346,7 +350,11 @@ def _escape(source, escape, state):
                     source.next in OCTDIGITS):
                     # got three octal digits; this is an octal escape
                     escape = escape + source.get()
-                    return LITERAL, int(escape[1:], 8) & 0xff
+                    c = int(escape[1:], 8)
+                    if c > 0o377:
+                        raise error('octal escape value %r outside of '
+                                    'range 0-0o377' % escape)
+                    return LITERAL, c
             # not an octal escape, so this is a group reference
             group = int(escape[1:])
             if group < state.groups:
@@ -837,7 +845,11 @@ def parse_template(source, pattern):
                         s.next in OCTDIGITS):
                         this += sget()
                         isoctal = True
-                        lappend(chr(int(this[1:], 8) & 0xff))
+                        c = int(this[1:], 8)
+                        if c > 0o377:
+                            raise error('octal escape value %r outside of '
+                                        'range 0-0o377' % this)
+                        lappend(chr(c))
                 if not isoctal:
                     addgroup(int(this[1:]))
             else:
