@@ -54,8 +54,6 @@ Python\ Launcher.app:  Info.plist \
 		--resource=$(srcdir)/factorySettings.plist \
 		--plist Info.plist \
 		build
-	find "Python Launcher.app" -name '.svn' -print0 | xargs -0 rm -r
-		
 
 FileSettings.o: $(srcdir)/FileSettings.m
 	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/FileSettings.m
