@@ -696,8 +696,10 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
                 ressize += 1+1+2;
         }
         res = PyUnicode_FromUnicode(NULL, ressize);
-        if (res==NULL)
+        if (res == NULL) {
+            Py_DECREF(object);
             return NULL;
+        }
         for (p = startp+start, outp = PyUnicode_AS_UNICODE(res);
             p < startp+end; ++p) {
             Py_UNICODE c = *p;
