@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20912: Now directories added to ZIP file have correct Unix and MS-DOS
+  directory attributes.
+
 - Issue #21866: ZipFile.close() no longer writes ZIP64 central directory
   records if allowZip64 is false.
 

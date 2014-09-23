@@ -1472,11 +1472,48 @@ class TestWithDirectory(unittest.TestCase):
         os.mkdir(os.path.join(TESTFN2, "a"))
         self.test_extract_dir()
 
-    def test_store_dir(self):
+    def test_write_dir(self):
+        dirpath = os.path.join(TESTFN2, "x")
+        os.mkdir(dirpath)
+        mode = os.stat(dirpath).st_mode & 0xFFFF
+        with zipfile.ZipFile(TESTFN, "w") as zipf:
+            zipf.write(dirpath)
+            zinfo = zipf.filelist[0]
+            self.assertTrue(zinfo.filename.endswith("/x/"))
+            self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
+            zipf.write(dirpath, "y")
+            zinfo = zipf.filelist[1]
+            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            zinfo = zipf.filelist[0]
+            self.assertTrue(zinfo.filename.endswith("/x/"))
+            self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
+            zinfo = zipf.filelist[1]
+            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
+            target = os.path.join(TESTFN2, "target")
+            os.mkdir(target)
+            zipf.extractall(target)
+            self.assertTrue(os.path.isdir(os.path.join(target, "y")))
+            self.assertEqual(len(os.listdir(target)), 2)
+
+    def test_writestr_dir(self):
         os.mkdir(os.path.join(TESTFN2, "x"))
         with zipfile.ZipFile(TESTFN, "w") as zipf:
-            zipf.write(os.path.join(TESTFN2, "x"), "x")
-            self.assertTrue(zipf.filelist[0].filename.endswith("x/"))
+            zipf.writestr("x/", b'')
+            zinfo = zipf.filelist[0]
+            self.assertEqual(zinfo.filename, "x/")
+            self.assertEqual(zinfo.external_attr, (0o40775 << 16) | 0x10)
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            zinfo = zipf.filelist[0]
+            self.assertTrue(zinfo.filename.endswith("x/"))
+            self.assertEqual(zinfo.external_attr, (0o40775 << 16) | 0x10)
+            target = os.path.join(TESTFN2, "target")
+            os.mkdir(target)
+            zipf.extractall(target)
+            self.assertTrue(os.path.isdir(os.path.join(target, "x")))
+            self.assertEqual(os.listdir(target), ["x"])
 
     def tearDown(self):
         rmtree(TESTFN2)
