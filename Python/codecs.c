@@ -890,8 +890,10 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
                 ressize += 1+1+2;
         }
         res = PyUnicode_New(ressize, 127);
-        if (res==NULL)
+        if (res == NULL) {
+            Py_DECREF(object);
             return NULL;
+        }
         for (i = start, outp = PyUnicode_1BYTE_DATA(res);
             i < end; ++i) {
             c = PyUnicode_READ_CHAR(object, i);
