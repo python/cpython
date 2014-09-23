@@ -1830,7 +1830,7 @@ expression support in the :mod:`re` module).
       >>> '1,2,3'.split(',')
       ['1', '2', '3']
       >>> '1,2,3'.split(',', maxsplit=1)
-      ['1', '2 3']
+      ['1', '2,3']
       >>> '1,2,,3,'.split(',')
       ['1', '2', '', '3', '']
 
@@ -2695,7 +2695,7 @@ produce new objects.
       >>> b'1,2,3'.split(b',')
       [b'1', b'2', b'3']
       >>> b'1,2,3'.split(b',', maxsplit=1)
-      [b'1', b'2 3']
+      [b'1', b'2,3']
       >>> b'1,2,,3,'.split(b',')
       [b'1', b'2', b'', b'3', b'']
 
