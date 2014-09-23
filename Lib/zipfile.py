@@ -1356,6 +1356,7 @@ class ZipFile:
             zinfo.file_size = 0
             zinfo.compress_size = 0
             zinfo.CRC = 0
+            zinfo.external_attr |= 0x10  # MS-DOS directory flag
             self.filelist.append(zinfo)
             self.NameToInfo[zinfo.filename] = zinfo
             self.fp.write(zinfo.FileHeader(False))
@@ -1416,7 +1417,11 @@ class ZipFile:
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
-            zinfo.external_attr = 0o600 << 16
+            if zinfo.filename[-1] == '/':
+                zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
+                zinfo.external_attr |= 0x10           # MS-DOS directory flag
+            else:
+                zinfo.external_attr = 0o600 << 16     # ?rw-------
         else:
             zinfo = zinfo_or_arcname
 
