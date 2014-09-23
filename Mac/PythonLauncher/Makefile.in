@@ -50,7 +50,6 @@ Python\ Launcher.app:  Info.plist \
 	cp $(srcdir)/../Icons/PythonCompiled.icns  "Python Launcher.app/Contents/Resources"
 	cp $(srcdir)/factorySettings.plist  "Python Launcher.app/Contents/Resources"
 	cp -R $(srcdir)/English.lproj "Python Launcher.app/Contents/Resources"
-	find "Python Launcher.app" -name '.svn' -print0 | xargs -0 rm -r
 
 FileSettings.o: $(srcdir)/FileSettings.m
 	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/FileSettings.m
