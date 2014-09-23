@@ -18,7 +18,7 @@ import sys
 from io import StringIO
 from tempfile import TemporaryFile
 
-from test.support import TESTFN, run_unittest, requires_zlib
+from test.support import TESTFN, requires_zlib
 
 TESTFN2 = TESTFN + "2"
 
@@ -92,7 +92,7 @@ class OtherTests(unittest.TestCase):
     def testMoreThan64kFiles(self):
         # This test checks that more than 64k files can be added to an archive,
         # and that the resulting archive can be read properly by ZipFile
-        zipf = zipfile.ZipFile(TESTFN, mode="w", allowZip64=False)
+        zipf = zipfile.ZipFile(TESTFN, mode="w", allowZip64=True)
         zipf.debug = 100
         numfiles = (1 << 16) * 3//2
         for i in range(numfiles):
@@ -105,14 +105,47 @@ class OtherTests(unittest.TestCase):
         for i in range(numfiles):
             content = zipf2.read("foo%08d" % i).decode('ascii')
             self.assertEqual(content, "%d" % (i**3 % 57))
+        zipf2.close()
+
+    def testMoreThan64kFilesAppend(self):
+        zipf = zipfile.ZipFile(TESTFN, mode="w", allowZip64=False)
+        zipf.debug = 100
+        numfiles = (1 << 16) - 1
+        for i in range(numfiles):
+            zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        with self.assertRaises(zipfile.LargeZipFile):
+            zipf.writestr("foo%08d" % numfiles, b'')
+        self.assertEqual(len(zipf.namelist()), numfiles)
         zipf.close()
+
+        zipf = zipfile.ZipFile(TESTFN, mode="a", allowZip64=False)
+        zipf.debug = 100
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        with self.assertRaises(zipfile.LargeZipFile):
+            zipf.writestr("foo%08d" % numfiles, b'')
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        zipf.close()
+
+        zipf = zipfile.ZipFile(TESTFN, mode="a", allowZip64=True)
+        zipf.debug = 100
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        numfiles2 = (1 << 16) * 3//2
+        for i in range(numfiles, numfiles2):
+            zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
+        self.assertEqual(len(zipf.namelist()), numfiles2)
+        zipf.close()
+
+        zipf2 = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(len(zipf2.namelist()), numfiles2)
+        for i in range(numfiles2):
+            content = zipf2.read("foo%08d" % i).decode('ascii')
+            self.assertEqual(content, "%d" % (i**3 % 57))
+        zipf2.close()
 
     def tearDown(self):
         support.unlink(TESTFN)
         support.unlink(TESTFN2)
 
-def test_main():
-    run_unittest(TestsWithSourceFile, OtherTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
