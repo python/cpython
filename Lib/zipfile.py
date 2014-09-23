@@ -30,7 +30,7 @@ class LargeZipFile(Exception):
 error = BadZipfile      # The exception raised by this module
 
 ZIP64_LIMIT = (1 << 31) - 1
-ZIP_FILECOUNT_LIMIT = 1 << 16
+ZIP_FILECOUNT_LIMIT = (1 << 16) - 1
 ZIP_MAX_COMMENT = (1 << 16) - 1
 
 # constants for Zip file compression methods
@@ -1101,12 +1101,17 @@ class ZipFile(object):
         if zinfo.compress_type not in (ZIP_STORED, ZIP_DEFLATED):
             raise RuntimeError, \
                   "That compression method is not supported"
-        if zinfo.file_size > ZIP64_LIMIT:
-            if not self._allowZip64:
-                raise LargeZipFile("Filesize would require ZIP64 extensions")
-        if zinfo.header_offset > ZIP64_LIMIT:
-            if not self._allowZip64:
-                raise LargeZipFile("Zipfile size would require ZIP64 extensions")
+        if not self._allowZip64:
+            requires_zip64 = None
+            if len(self.filelist) >= ZIP_FILECOUNT_LIMIT:
+                requires_zip64 = "Files count"
+            elif zinfo.file_size > ZIP64_LIMIT:
+                requires_zip64 = "Filesize"
+            elif zinfo.header_offset > ZIP64_LIMIT:
+                requires_zip64 = "Zipfile size"
+            if requires_zip64:
+                raise LargeZipFile(requires_zip64 +
+                                   " would require ZIP64 extensions")
 
     def write(self, filename, arcname=None, compress_type=None):
         """Put the bytes from filename into the archive under the name
@@ -1256,10 +1261,8 @@ class ZipFile(object):
 
         try:
             if self.mode in ("w", "a") and self._didModify: # write ending records
-                count = 0
                 pos1 = self.fp.tell()
                 for zinfo in self.filelist:         # write central directory
-                    count = count + 1
                     dt = zinfo.date_time
                     dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
                     dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
@@ -1320,13 +1323,21 @@ class ZipFile(object):
 
                 pos2 = self.fp.tell()
                 # Write end-of-zip-archive record
-                centDirCount = count
+                centDirCount = len(self.filelist)
                 centDirSize = pos2 - pos1
                 centDirOffset = pos1
-                if (centDirCount >= ZIP_FILECOUNT_LIMIT or
-                    centDirOffset > ZIP64_LIMIT or
-                    centDirSize > ZIP64_LIMIT):
+                requires_zip64 = None
+                if centDirCount > ZIP_FILECOUNT_LIMIT:
+                    requires_zip64 = "Files count"
+                elif centDirOffset > ZIP64_LIMIT:
+                    requires_zip64 = "Central directory offset"
+                elif centDirSize > ZIP64_LIMIT:
+                    requires_zip64 = "Central directory size"
+                if requires_zip64:
                     # Need to write the ZIP64 end-of-archive records
+                    if not self._allowZip64:
+                        raise LargeZipFile(requires_zip64 +
+                                           " would require ZIP64 extensions")
                     zip64endrec = struct.pack(
                             structEndArchive64, stringEndArchive64,
                             44, 45, 45, 0, 0, centDirCount, centDirCount,

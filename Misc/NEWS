@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21866: ZipFile.close() no longer writes ZIP64 central directory
+  records if allowZip64 is false.
+
 - Issue #22415: Fixed debugging output of the GROUPREF_EXISTS opcode in the re
   module.
 
