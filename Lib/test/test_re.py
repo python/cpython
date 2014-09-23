@@ -766,8 +766,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"[\x%02xz]" % i).encode(), bytes([i])))
         self.assertTrue(re.match(br"[\u]", b'u'))
         self.assertTrue(re.match(br"[\U]", b'U'))
-        self.assertRaises(re.error, re.match, br"[\911]", "")
-        self.assertRaises(re.error, re.match, br"[\x1z]", "")
+        self.assertRaises(re.error, re.match, br"[\911]", b"")
+        self.assertRaises(re.error, re.match, br"[\x1z]", b"")
 
     def test_bug_113254(self):
         self.assertEqual(re.match(r'(a)|(b)', 'b').start(1), -1)
