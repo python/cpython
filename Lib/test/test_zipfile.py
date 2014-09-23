@@ -605,7 +605,9 @@ class TestZip64InSmallFiles(unittest.TestCase):
 
     def setUp(self):
         self._limit = zipfile.ZIP64_LIMIT
-        zipfile.ZIP64_LIMIT = 5
+        self._filecount_limit = zipfile.ZIP_FILECOUNT_LIMIT
+        zipfile.ZIP64_LIMIT = 1000
+        zipfile.ZIP_FILECOUNT_LIMIT = 9
 
         line_gen = ("Test of zipfile line %d." % i
                     for i in range(0, FIXEDTEST_SIZE))
@@ -709,8 +711,63 @@ class TestZip64InSmallFiles(unittest.TestCase):
         with zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED) as zipfp:
             self.assertEqual(zipfp.namelist(), ["absolute"])
 
+    def test_too_many_files(self):
+        # This test checks that more than 64k files can be added to an archive,
+        # and that the resulting archive can be read properly by ZipFile
+        zipf = zipfile.ZipFile(TESTFN, mode="w", allowZip64=True)
+        zipf.debug = 100
+        numfiles = 15
+        for i in range(numfiles):
+            zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        zipf.close()
+
+        zipf2 = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(len(zipf2.namelist()), numfiles)
+        for i in range(numfiles):
+            content = zipf2.read("foo%08d" % i)
+            self.assertEqual(content, "%d" % (i**3 % 57))
+        zipf2.close()
+
+    def test_too_many_files_append(self):
+        zipf = zipfile.ZipFile(TESTFN, mode="w", allowZip64=False)
+        zipf.debug = 100
+        numfiles = 9
+        for i in range(numfiles):
+            zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        with self.assertRaises(zipfile.LargeZipFile):
+            zipf.writestr("foo%08d" % numfiles, b'')
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        zipf.close()
+
+        zipf = zipfile.ZipFile(TESTFN, mode="a", allowZip64=False)
+        zipf.debug = 100
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        with self.assertRaises(zipfile.LargeZipFile):
+            zipf.writestr("foo%08d" % numfiles, b'')
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        zipf.close()
+
+        zipf = zipfile.ZipFile(TESTFN, mode="a", allowZip64=True)
+        zipf.debug = 100
+        self.assertEqual(len(zipf.namelist()), numfiles)
+        numfiles2 = 15
+        for i in range(numfiles, numfiles2):
+            zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
+        self.assertEqual(len(zipf.namelist()), numfiles2)
+        zipf.close()
+
+        zipf2 = zipfile.ZipFile(TESTFN, mode="r")
+        self.assertEqual(len(zipf2.namelist()), numfiles2)
+        for i in range(numfiles2):
+            content = zipf2.read("foo%08d" % i)
+            self.assertEqual(content, "%d" % (i**3 % 57))
+        zipf2.close()
+
     def tearDown(self):
         zipfile.ZIP64_LIMIT = self._limit
+        zipfile.ZIP_FILECOUNT_LIMIT = self._filecount_limit
         unlink(TESTFN)
         unlink(TESTFN2)
 
