@@ -154,8 +154,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('x', r'\09', 'x'), '\0' + '9')
         self.assertEqual(re.sub('x', r'\0a', 'x'), '\0' + 'a')
 
-        self.assertEqual(re.sub('x', r'\400', 'x'), '\0')
-        self.assertEqual(re.sub('x', r'\777', 'x'), '\377')
+        self.assertRaises(re.error, re.sub, 'x', r'\400', 'x')
+        self.assertRaises(re.error, re.sub, 'x', r'\777', 'x')
 
         self.assertRaises(re.error, re.sub, 'x', r'\1', 'x')
         self.assertRaises(re.error, re.sub, 'x', r'\8', 'x')
@@ -700,7 +700,7 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r"\08", "\0008"))
         self.assertTrue(re.match(r"\01", "\001"))
         self.assertTrue(re.match(r"\018", "\0018"))
-        self.assertTrue(re.match(r"\567", chr(0o167)))
+        self.assertRaises(re.error, re.match, r"\567", "")
         self.assertRaises(re.error, re.match, r"\911", "")
         self.assertRaises(re.error, re.match, r"\x1", "")
         self.assertRaises(re.error, re.match, r"\x1z", "")
@@ -728,12 +728,13 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(r"[\U%08x]" % i, chr(i)))
             self.assertTrue(re.match(r"[\U%08x0]" % i, chr(i)+"0"))
             self.assertTrue(re.match(r"[\U%08xz]" % i, chr(i)+"z"))
-        self.assertTrue(re.match(r"[\U0001d49c-\U0001d4b5]", "\U0001d49e"))
+        self.assertRaises(re.error, re.match, r"[\567]", "")
         self.assertRaises(re.error, re.match, r"[\911]", "")
         self.assertRaises(re.error, re.match, r"[\x1z]", "")
         self.assertRaises(re.error, re.match, r"[\u123z]", "")
         self.assertRaises(re.error, re.match, r"[\U0001234z]", "")
         self.assertRaises(re.error, re.match, r"[\U00110000]", "")
+        self.assertTrue(re.match(r"[\U0001d49c-\U0001d4b5]", "\U0001d49e"))
 
     def test_sre_byte_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255]:
@@ -749,7 +750,7 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(br"\08", b"\0008"))
         self.assertTrue(re.match(br"\01", b"\001"))
         self.assertTrue(re.match(br"\018", b"\0018"))
-        self.assertTrue(re.match(br"\567", bytes([0o167])))
+        self.assertRaises(re.error, re.match, br"\567", b"")
         self.assertRaises(re.error, re.match, br"\911", b"")
         self.assertRaises(re.error, re.match, br"\x1", b"")
         self.assertRaises(re.error, re.match, br"\x1z", b"")
@@ -766,6 +767,7 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"[\x%02xz]" % i).encode(), bytes([i])))
         self.assertTrue(re.match(br"[\u]", b'u'))
         self.assertTrue(re.match(br"[\U]", b'U'))
+        self.assertRaises(re.error, re.match, br"[\567]", b"")
         self.assertRaises(re.error, re.match, br"[\911]", b"")
         self.assertRaises(re.error, re.match, br"[\x1z]", b"")
 
