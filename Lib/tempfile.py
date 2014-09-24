@@ -663,11 +663,6 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    # Handle mkdtemp raising an exception
-    name = None
-    _finalizer = None
-    _closed = False
-
     def __init__(self, suffix="", prefix=template, dir=None):
         self.name = mkdtemp(suffix, prefix, dir)
         self._finalizer = _weakref.finalize(
@@ -675,10 +670,9 @@ class TemporaryDirectory(object):
             warn_message="Implicitly cleaning up {!r}".format(self))
 
     @classmethod
-    def _cleanup(cls, name, warn_message=None):
+    def _cleanup(cls, name, warn_message):
         _shutil.rmtree(name)
-        if warn_message is not None:
-            _warnings.warn(warn_message, ResourceWarning)
+        _warnings.warn(warn_message, ResourceWarning)
 
 
     def __repr__(self):
@@ -691,8 +685,5 @@ class TemporaryDirectory(object):
         self.cleanup()
 
     def cleanup(self):
-        if self._finalizer is not None:
-            self._finalizer.detach()
-        if self.name is not None and not self._closed:
+        if self._finalizer.detach():
             _shutil.rmtree(self.name)
-            self._closed = True

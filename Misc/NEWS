@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22427: TemporaryDirectory no longer attempts to clean up twice when
+  used in the with statement in generator.
+
 - Issue #20912: Now directories added to ZIP file have correct Unix and MS-DOS
   directory attributes.
 
