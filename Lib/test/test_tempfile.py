@@ -1211,6 +1211,30 @@ class TestTemporaryDirectory(BaseTestCase):
                 self.assertNotIn("Exception ", err)
                 self.assertIn("ResourceWarning: Implicitly cleaning up", err)
 
+    def test_exit_on_shutdown(self):
+        # Issue #22427
+        with self.do_create() as dir:
+            code = """if True:
+                import sys
+                import tempfile
+                import warnings
+
+                def generator():
+                    with tempfile.TemporaryDirectory(dir={dir!r}) as tmp:
+                        yield tmp
+                g = generator()
+                sys.stdout.buffer.write(next(g).encode())
+
+                warnings.filterwarnings("always", category=ResourceWarning)
+                """.format(dir=dir)
+            rc, out, err = script_helper.assert_python_ok("-c", code)
+            tmp_name = out.decode().strip()
+            self.assertFalse(os.path.exists(tmp_name),
+                        "TemporaryDirectory %s exists after cleanup" % tmp_name)
+            err = err.decode('utf-8', 'backslashreplace')
+            self.assertNotIn("Exception ", err)
+            self.assertIn("ResourceWarning: Implicitly cleaning up", err)
+
     def test_warnings_on_cleanup(self):
         # ResourceWarning will be triggered by __del__
         with self.do_create() as dir:
