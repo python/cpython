@@ -77,9 +77,9 @@ class Task(futures.Future):
         # status is still pending
         self._log_destroy_pending = True
 
-    # On Python 3.3 or older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks to
-    # the PEP 442.
+    # On Python 3.3 or older, objects with a destructor that are part of a
+    # reference cycle are never destroyed. That's not the case any more on
+    # Python 3.4 thanks to the PEP 442.
     if _PY34:
         def __del__(self):
             if self._state == futures._PENDING and self._log_destroy_pending:
@@ -155,7 +155,8 @@ class Task(futures.Future):
         This produces output similar to that of the traceback module,
         for the frames retrieved by get_stack().  The limit argument
         is passed to get_stack().  The file argument is an I/O stream
-        to which the output goes; by default it goes to sys.stderr.
+        to which the output is written; by default output is written
+        to sys.stderr.
         """
         extracted_list = []
         checked = set()
@@ -184,18 +185,18 @@ class Task(futures.Future):
                 print(line, file=file, end='')
 
     def cancel(self):
-        """Request this task to cancel itself.
+        """Request that this task cancel itself.
 
         This arranges for a CancelledError to be thrown into the
         wrapped coroutine on the next cycle through the event loop.
         The coroutine then has a chance to clean up or even deny
         the request using try/except/finally.
 
-        Contrary to Future.cancel(), this does not guarantee that the
+        Unlike Future.cancel, this does not guarantee that the
         task will be cancelled: the exception might be caught and
-        acted upon, delaying cancellation of the task or preventing it
-        completely.  The task may also return a value or raise a
-        different exception.
+        acted upon, delaying cancellation of the task or preventing
+        cancellation completely.  The task may also return a value or
+        raise a different exception.
 
         Immediately after this method is called, Task.cancelled() will
         not return True (unless the task was already cancelled).  A
