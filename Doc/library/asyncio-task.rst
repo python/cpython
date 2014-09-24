@@ -319,18 +319,18 @@ Task
    Schedule the execution of a :ref:`coroutine <coroutine>`: wrap it in a
    future. A task is a subclass of :class:`Future`.
 
-   A task is responsible to execute a coroutine object in an event loop.  If
+   A task is responsible for executing a coroutine object in an event loop.  If
    the wrapped coroutine yields from a future, the task suspends the execution
    of the wrapped coroutine and waits for the completition of the future. When
    the future is done, the execution of the wrapped coroutine restarts with the
    result or the exception of the future.
 
    Event loops use cooperative scheduling: an event loop only runs one task at
-   the same time. Other tasks may run in parallel if other event loops are
+   a time. Other tasks may run in parallel if other event loops are
    running in different threads. While a task waits for the completion of a
    future, the event loop executes a new task.
 
-   The cancellation of a task is different than cancelling a future. Calling
+   The cancellation of a task is different from the cancelation of a future. Calling
    :meth:`cancel` will throw a :exc:`~concurrent.futures.CancelledError` to the
    wrapped coroutine. :meth:`~Future.cancelled` only returns ``True`` if the
    wrapped coroutine did not catch the
@@ -341,7 +341,7 @@ Task
    <coroutine>` did not complete. It is probably a bug and a warning is
    logged: see :ref:`Pending task destroyed <asyncio-pending-task-destroyed>`.
 
-   Don't create directly :class:`Task` instances: use the :func:`async`
+   Don't directly create :class:`Task` instances: use the :func:`async`
    function or the :meth:`BaseEventLoop.create_task` method.
 
    .. classmethod:: all_tasks(loop=None)
@@ -360,17 +360,17 @@ Task
 
    .. method:: cancel()
 
-      Request this task to cancel itself.
+      Request that this task cancel itself.
 
       This arranges for a :exc:`~concurrent.futures.CancelledError` to be
       thrown into the wrapped coroutine on the next cycle through the event
       loop. The coroutine then has a chance to clean up or even deny the
       request using try/except/finally.
 
-      Contrary to :meth:`Future.cancel`, this does not guarantee that the task
+      Unlike :meth:`Future.cancel`, this does not guarantee that the task
       will be cancelled: the exception might be caught and acted upon, delaying
-      cancellation of the task or preventing it completely. The task may also
-      return a value or raise a different exception.
+      cancellation of the task or preventing cancellation completely. The task
+      may also return a value or raise a different exception.
 
       Immediately after this method is called, :meth:`~Future.cancelled` will
       not return ``True`` (unless the task was already cancelled). A task will
@@ -405,7 +405,7 @@ Task
       This produces output similar to that of the traceback module, for the
       frames retrieved by get_stack().  The limit argument is passed to
       get_stack().  The file argument is an I/O stream to which the output
-      goes; by default it goes to sys.stderr.
+      is written; by default output is written to sys.stderr.
 
 
 Example: Parallel execution of tasks
