@@ -991,14 +991,14 @@ class SumSpecialValues(NumericTestCase):
         result = statistics._sum([1, 2, inf, 3, -inf, 4])
         self.assertTrue(math.isnan(result))
 
-    def test_decimal_mismatched_infs_to_nan(self):
+    def test_decimal_extendedcontext_mismatched_infs_to_nan(self):
         # Test adding Decimal INFs with opposite sign returns NAN.
         inf = Decimal('inf')
         data = [1, 2, inf, 3, -inf, 4]
         with decimal.localcontext(decimal.ExtendedContext):
             self.assertTrue(math.isnan(statistics._sum(data)))
 
-    def test_decimal_mismatched_infs_to_nan(self):
+    def test_decimal_basiccontext_mismatched_infs_to_nan(self):
         # Test adding Decimal INFs with opposite sign raises InvalidOperation.
         inf = Decimal('inf')
         data = [1, 2, inf, 3, -inf, 4]
