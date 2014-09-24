@@ -104,7 +104,12 @@ class Fraction(numbers.Rational):
         self = super(Fraction, cls).__new__(cls)
 
         if denominator is None:
-            if isinstance(numerator, numbers.Rational):
+            if type(numerator) is int:
+                self._numerator = numerator
+                self._denominator = 1
+                return self
+
+            elif isinstance(numerator, numbers.Rational):
                 self._numerator = numerator.numerator
                 self._denominator = numerator.denominator
                 return self
@@ -152,6 +157,9 @@ class Fraction(numbers.Rational):
             else:
                 raise TypeError("argument should be a string "
                                 "or a Rational instance")
+
+        elif type(numerator) is int is type(denominator):
+            pass  # *very* normal case
 
         elif (isinstance(numerator, numbers.Rational) and
             isinstance(denominator, numbers.Rational)):
@@ -399,17 +407,17 @@ class Fraction(numbers.Rational):
 
     def _add(a, b):
         """a + b"""
-        return Fraction(a.numerator * b.denominator +
-                        b.numerator * a.denominator,
-                        a.denominator * b.denominator)
+        da, db = a.denominator, b.denominator
+        return Fraction(a.numerator * db + b.numerator * da,
+                        da * db)
 
     __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
     def _sub(a, b):
         """a - b"""
-        return Fraction(a.numerator * b.denominator -
-                        b.numerator * a.denominator,
-                        a.denominator * b.denominator)
+        da, db = a.denominator, b.denominator
+        return Fraction(a.numerator * db - b.numerator * da,
+                        da * db)
 
     __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
@@ -561,6 +569,8 @@ class Fraction(numbers.Rational):
 
     def __eq__(a, b):
         """a == b"""
+        if type(b) is int:
+            return a._numerator == b and a._denominator == 1
         if isinstance(b, numbers.Rational):
             return (a._numerator == b.numerator and
                     a._denominator == b.denominator)
