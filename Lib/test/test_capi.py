@@ -285,7 +285,7 @@ class EmbeddingTests(unittest.TestCase):
             exename += ext
             exepath = os.path.dirname(sys.executable)
         else:
-            exepath = os.path.join(basepath, "Modules")
+            exepath = os.path.join(basepath, "Programs")
         self.test_exe = exe = os.path.join(exepath, exename)
         if not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
