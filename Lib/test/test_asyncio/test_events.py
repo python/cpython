@@ -1890,9 +1890,17 @@ class HandleTests(test_utils.TestCase):
 
         # cancelled handle
         h.cancel()
-        self.assertEqual(repr(h),
-                        '<Handle cancelled noop(1, 2) at %s:%s created at %s:%s>'
-                        % (filename, lineno, create_filename, create_lineno))
+        self.assertEqual(
+            repr(h),
+            '<Handle cancelled noop(1, 2) at %s:%s created at %s:%s>'
+            % (filename, lineno, create_filename, create_lineno))
+
+        # double cancellation won't overwrite _repr
+        h.cancel()
+        self.assertEqual(
+            repr(h),
+            '<Handle cancelled noop(1, 2) at %s:%s created at %s:%s>'
+            % (filename, lineno, create_filename, create_lineno))
 
     def test_handle_source_traceback(self):
         loop = asyncio.get_event_loop_policy().new_event_loop()

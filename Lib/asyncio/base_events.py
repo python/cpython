@@ -40,6 +40,13 @@ __all__ = ['BaseEventLoop', 'Server']
 # Argument for default thread pool executor creation.
 _MAX_WORKERS = 5
 
+# Minimum number of _scheduled timer handles before cleanup of
+# cancelled handles is performed.
+_MIN_SCHEDULED_TIMER_HANDLES = 100
+
+# Minimum fraction of _scheduled timer handles that are cancelled
+# before cleanup of cancelled handles is performed.
+_MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 
 def _format_handle(handle):
     cb = handle._callback
@@ -145,6 +152,7 @@ class Server(events.AbstractServer):
 class BaseEventLoop(events.AbstractEventLoop):
 
     def __init__(self):
+        self._timer_cancelled_count = 0
         self._closed = False
         self._ready = collections.deque()
         self._scheduled = []
@@ -349,6 +357,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if timer._source_traceback:
             del timer._source_traceback[-1]
         heapq.heappush(self._scheduled, timer)
+        timer._scheduled = True
         return timer
 
     def call_soon(self, callback, *args):
@@ -964,15 +973,18 @@ class BaseEventLoop(events.AbstractEventLoop):
         assert isinstance(handle, events.Handle), 'A Handle is required here'
         if handle._cancelled:
             return
-        if isinstance(handle, events.TimerHandle):
-            heapq.heappush(self._scheduled, handle)
-        else:
-            self._ready.append(handle)
+        assert not isinstance(handle, events.TimerHandle)
+        self._ready.append(handle)
 
     def _add_callback_signalsafe(self, handle):
         """Like _add_callback() but called from a signal handler."""
         self._add_callback(handle)
         self._write_to_self()
+
+    def _timer_handle_cancelled(self, handle):
+        """Notification that a TimerHandle has been cancelled."""
+        if handle._scheduled:
+            self._timer_cancelled_count += 1
 
     def _run_once(self):
         """Run one full iteration of the event loop.
@@ -981,9 +993,26 @@ class BaseEventLoop(events.AbstractEventLoop):
         schedules the resulting callbacks, and finally schedules
         'call_later' callbacks.
         """
-        # Remove delayed calls that were cancelled from head of queue.
-        while self._scheduled and self._scheduled[0]._cancelled:
-            heapq.heappop(self._scheduled)
+
+        # Remove delayed calls that were cancelled if their number is too high
+        sched_count = len(self._scheduled)
+        if (sched_count > _MIN_SCHEDULED_TIMER_HANDLES and
+            self._timer_cancelled_count / sched_count >
+                _MIN_CANCELLED_TIMER_HANDLES_FRACTION):
+            for handle in self._scheduled:
+                if handle._cancelled:
+                    handle._scheduled = False
+
+            self._scheduled = [x for x in self._scheduled if not x._cancelled]
+            self._timer_cancelled_count = 0
+
+            heapq.heapify(self._scheduled)
+        else:
+            # Remove delayed calls that were cancelled from head of queue.
+            while self._scheduled and self._scheduled[0]._cancelled:
+                self._timer_cancelled_count -= 1
+                handle = heapq.heappop(self._scheduled)
+                handle._scheduled = False
 
         timeout = None
         if self._ready:
@@ -1024,6 +1053,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if handle._when >= end_time:
                 break
             handle = heapq.heappop(self._scheduled)
+            handle._scheduled = False
             self._ready.append(handle)
 
         # This is the only place where callbacks are actually *called*.
