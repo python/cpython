@@ -165,9 +165,10 @@ autobuild-dev:
 autobuild-html:
 	make html SPHINXOPTS='-A daily=1 -A versionswitcher=1'
 
-# for stable releases: only build if not in pre-release stage (alpha, beta, rc)
+# for stable releases: only build if not in pre-release stage (alpha, beta)
+# release candidate downloads are okay, since the stable tree can be in that stage
 autobuild-stable:
-	@case $(DISTVERSION) in *[abc]*) \
+	@case $(DISTVERSION) in *[ab]*) \
 		echo "Not building; $(DISTVERSION) is not a release version."; \
 		exit 1;; \
 	esac
