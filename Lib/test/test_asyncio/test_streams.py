@@ -596,12 +596,6 @@ class StreamReaderTests(test_utils.TestCase):
 
         code = """\
 import os, sys
-try:
-    import faulthandler
-except ImportError:
-    pass
-else:
-    faulthandler.dump_traceback_later(60, exit=True)
 fd = int(sys.argv[1])
 os.write(fd, b'data')
 os.close(fd)
