@@ -105,14 +105,15 @@ class Handle:
         return '<%s>' % ' '.join(info)
 
     def cancel(self):
-        self._cancelled = True
-        if self._loop.get_debug():
-            # Keep a representation in debug mode to keep callback and
-            # parameters. For example, to log the warning "Executing <Handle
-            # ...> took 2.5 second"
-            self._repr = repr(self)
-        self._callback = None
-        self._args = None
+        if not self._cancelled:
+            self._cancelled = True
+            if self._loop.get_debug():
+                # Keep a representation in debug mode to keep callback and
+                # parameters. For example, to log the warning
+                # "Executing <Handle...> took 2.5 second"
+                self._repr = repr(self)
+            self._callback = None
+            self._args = None
 
     def _run(self):
         try:
@@ -134,7 +135,7 @@ class Handle:
 class TimerHandle(Handle):
     """Object returned by timed callback registration methods."""
 
-    __slots__ = ['_when']
+    __slots__ = ['_scheduled', '_when']
 
     def __init__(self, when, callback, args, loop):
         assert when is not None
@@ -142,6 +143,7 @@ class TimerHandle(Handle):
         if self._source_traceback:
             del self._source_traceback[-1]
         self._when = when
+        self._scheduled = False
 
     def _repr_info(self):
         info = super()._repr_info()
@@ -179,6 +181,11 @@ class TimerHandle(Handle):
     def __ne__(self, other):
         equal = self.__eq__(other)
         return NotImplemented if equal is NotImplemented else not equal
+
+    def cancel(self):
+        if not self._cancelled:
+            self._loop._timer_handle_cancelled(self)
+        super().cancel()
 
 
 class AbstractServer:
@@ -237,6 +244,10 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     # Methods scheduling callbacks.  All these return Handles.
+
+    def _timer_handle_cancelled(self, handle):
+        """Notification that a TimerHandle has been cancelled."""
+        raise NotImplementedError
 
     def call_soon(self, callback, *args):
         return self.call_later(0, callback, *args)
