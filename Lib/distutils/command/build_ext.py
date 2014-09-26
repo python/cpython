@@ -4,7 +4,10 @@ Implements the Distutils 'build_ext' command, for building extension
 modules (currently limited to C extensions, should accommodate C++
 extensions ASAP)."""
 
-import sys, os, re
+import contextlib
+import os
+import re
+import sys
 from distutils.core import Command
 from distutils.errors import *
 from distutils.sysconfig import customize_compiler, get_python_version
@@ -85,6 +88,8 @@ class build_ext(Command):
          "forcibly build everything (ignore file timestamps)"),
         ('compiler=', 'c',
          "specify the compiler type"),
+        ('parallel=', 'j',
+         "number of parallel build jobs"),
         ('swig-cpp', None,
          "make SWIG create C++ files (default is C)"),
         ('swig-opts=', None,
@@ -124,6 +129,7 @@ class build_ext(Command):
         self.swig_cpp = None
         self.swig_opts = None
         self.user = None
+        self.parallel = None
 
     def finalize_options(self):
         from distutils import sysconfig
@@ -134,6 +140,7 @@ class build_ext(Command):
                                    ('compiler', 'compiler'),
                                    ('debug', 'debug'),
                                    ('force', 'force'),
+                                   ('parallel', 'parallel'),
                                    ('plat_name', 'plat_name'),
                                    )
 
@@ -273,6 +280,12 @@ class build_ext(Command):
             if os.path.isdir(user_lib):
                 self.library_dirs.append(user_lib)
                 self.rpath.append(user_lib)
+
+        if isinstance(self.parallel, str):
+            try:
+                self.parallel = int(self.parallel)
+            except ValueError:
+                raise DistutilsOptionError("parallel should be an integer")
 
     def run(self):
         from distutils.ccompiler import new_compiler
@@ -442,15 +455,45 @@ class build_ext(Command):
     def build_extensions(self):
         # First, sanity-check the 'extensions' list
         self.check_extensions_list(self.extensions)
+        if self.parallel:
+            self._build_extensions_parallel()
+        else:
+            self._build_extensions_serial()
 
+    def _build_extensions_parallel(self):
+        workers = self.parallel
+        if self.parallel is True:
+            workers = os.cpu_count()  # may return None
+        try:
+            from concurrent.futures import ThreadPoolExecutor
+        except ImportError:
+            workers = None
+
+        if workers is None:
+            self._build_extensions_serial()
+            return
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = [executor.submit(self.build_extension, ext)
+                       for ext in self.extensions]
+            for ext, fut in zip(self.extensions, futures):
+                with self._filter_build_errors(ext):
+                    fut.result()
+
+    def _build_extensions_serial(self):
         for ext in self.extensions:
-            try:
+            with self._filter_build_errors(ext):
                 self.build_extension(ext)
-            except (CCompilerError, DistutilsError, CompileError) as e:
-                if not ext.optional:
-                    raise
-                self.warn('building extension "%s" failed: %s' %
-                          (ext.name, e))
+
+    @contextlib.contextmanager
+    def _filter_build_errors(self, ext):
+        try:
+            yield
+        except (CCompilerError, DistutilsError, CompileError) as e:
+            if not ext.optional:
+                raise
+            self.warn('building extension "%s" failed: %s' %
+                      (ext.name, e))
 
     def build_extension(self, ext):
         sources = ext.sources
