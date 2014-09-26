@@ -1913,6 +1913,16 @@ transparently, particularly with the changes required to support the new
 :mod:`optparse` had either been copy-pasted over or monkey-patched, it no
 longer seemed practical to try to maintain the backwards compatibility.
 
+The :mod:`argparse` module improves on the standard library :mod:`optparse`
+module in a number of ways including:
+
+* Handling positional arguments.
+* Supporting sub-commands.
+* Allowing alternative option prefixes like ``+`` and ``/``.
+* Handling zero-or-more and one-or-more style arguments.
+* Producing more informative usage messages.
+* Providing a much simpler interface for custom ``type`` and ``action``.
+
 A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 
 * Replace all :meth:`optparse.OptionParser.add_option` calls with
