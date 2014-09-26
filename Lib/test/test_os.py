@@ -2616,6 +2616,13 @@ class BlockingTests(unittest.TestCase):
         self.assertEqual(os.get_blocking(fd), True)
 
 
+
+class ExportsTests(unittest.TestCase):
+    def test_os_all(self):
+        self.assertIn('open', os.__all__)
+        self.assertIn('walk', os.__all__)
+
+
 @support.reap_threads
 def test_main():
     support.run_unittest(
@@ -2652,6 +2659,7 @@ def test_main():
         FDInheritanceTests,
         Win32JunctionTests,
         BlockingTests,
+        ExportsTests,
     )
 
 if __name__ == "__main__":

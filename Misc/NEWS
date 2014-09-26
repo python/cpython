@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #18554: os.__all__ includes posix functions.
+
 - Issue #21391: Use os.path.abspath in the shutil module.
 
 - Issue #11471: avoid generating a JUMP_FORWARD instruction at the end of
