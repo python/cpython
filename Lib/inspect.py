@@ -817,6 +817,7 @@ def getsourcelines(object):
     corresponding to the object and the line number indicates where in the
     original source file the first line of code was found.  An OSError is
     raised if the source code cannot be retrieved."""
+    object = unwrap(object)
     lines, lnum = findsource(object)
 
     if ismodule(object): return lines, 0

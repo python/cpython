@@ -377,6 +377,9 @@ class TestDecorators(GetSourceBase):
     def test_replacing_decorator(self):
         self.assertSourceEqual(mod2.gone, 9, 10)
 
+    def test_getsource_unwrap(self):
+        self.assertSourceEqual(mod2.real, 122, 124)
+
 class TestOneliners(GetSourceBase):
     fodderModule = mod2
     def test_oneline_lambda(self):
