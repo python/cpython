@@ -109,3 +109,16 @@ def annotated(arg1: list):
 #line 109
 def keyword_only_arg(*, arg):
     pass
+
+from functools import wraps
+
+def decorator(func):
+    @wraps(func)
+    def fake():
+        return 42
+    return fake
+
+#line 121
+@decorator
+def real():
+    return 20
