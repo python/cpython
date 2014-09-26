@@ -36,6 +36,8 @@ class build(Command):
          "(default: %s)" % get_platform()),
         ('compiler=', 'c',
          "specify the compiler type"),
+        ('parallel=', 'j',
+         "number of parallel build jobs"),
         ('debug', 'g',
          "compile extensions and libraries with debugging information"),
         ('force', 'f',
@@ -65,6 +67,7 @@ class build(Command):
         self.debug = None
         self.force = 0
         self.executable = None
+        self.parallel = None
 
     def finalize_options(self):
         if self.plat_name is None:
@@ -115,6 +118,12 @@ class build(Command):
 
         if self.executable is None:
             self.executable = os.path.normpath(sys.executable)
+
+        if isinstance(self.parallel, str):
+            try:
+                self.parallel = int(self.parallel)
+            except ValueError:
+                raise DistutilsOptionError("parallel should be an integer")
 
     def run(self):
         # Run all relevant sub-commands.  This will be some subset of:
