@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #16324: _charset parameter of MIMEText now also accepts
+  email.charset.Charset instances. Initial patch by Claude Paroz.
+
 - Issue #1764286: Fix inspect.getsource() to support decorated functions.
   Patch by Claudiu Popa.
 

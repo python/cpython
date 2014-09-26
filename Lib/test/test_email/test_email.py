@@ -1636,6 +1636,10 @@ class TestMIMEText(unittest.TestCase):
         msg = MIMEText('hello there', _charset='us-ascii')
         eq(msg.get_charset().input_charset, 'us-ascii')
         eq(msg['content-type'], 'text/plain; charset="us-ascii"')
+        # Also accept a Charset instance
+        msg = MIMEText('hello there', _charset=Charset('utf-8'))
+        eq(msg.get_charset().input_charset, 'utf-8')
+        eq(msg['content-type'], 'text/plain; charset="utf-8"')
 
     def test_7bit_input(self):
         eq = self.assertEqual

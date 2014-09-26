@@ -195,7 +195,8 @@ Here are the classes:
    set of the text and is passed as an argument to the
    :class:`~email.mime.nonmultipart.MIMENonMultipart` constructor; it defaults
    to ``us-ascii`` if the string contains only ``ascii`` codepoints, and
-   ``utf-8`` otherwise.
+   ``utf-8`` otherwise.  The *_charset* parameter accepts either a string or a
+   :class:`~email.charset.Charset` instance.
 
    Unless the *_charset* argument is explicitly set to ``None``, the
    MIMEText object created will have both a :mailheader:`Content-Type` header
@@ -206,3 +207,6 @@ Here are the classes:
    ``Content-Transfer-Encoding`` header, after which a ``set_payload`` call
    will automatically encode the new payload (and add a new
    :mailheader:`Content-Transfer-Encoding` header).
+
+   .. versionchanged:: 3.5
+      *_charset* also accepts :class:`~email.charset.Charset` instances.
