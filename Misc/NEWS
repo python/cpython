@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #1764286: Fix inspect.getsource() to support decorated functions.
+  Patch by Claudiu Popa.
+
 - Issue #18554: os.__all__ includes posix functions.
 
 - Issue #21391: Use os.path.abspath in the shutil module.
