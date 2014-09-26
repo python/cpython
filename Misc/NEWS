@@ -139,6 +139,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5309: distutils' build and build_ext commands now accept a ``-j``
+  option to enable parallel building of extension modules.
+
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
 
