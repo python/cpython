@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10510: distutils register and upload methods now use HTML standards
+  compliant CRLF line endings.
+
 - Issue #9850: Fixed macpath.join() for empty first component.  Patch by
   Oleg Oshmyan.
 
