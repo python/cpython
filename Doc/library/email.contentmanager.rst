@@ -405,9 +405,7 @@ Currently the email package provides only one concrete content manager,
        ``message/rfc822``, use ``8bit`` if *cte* is not specified.  For all
        other values of *subtype*, use ``7bit``.
 
-       .. note::
-
-          A *cte* of ``binary`` does not actually work correctly yet.
+       .. note:: A *cte* of ``binary`` does not actually work correctly yet.
           The ``Message`` object as modified by ``set_content`` is correct, but
           :class:`~email.generator.BytesGenerator` does not serialize it
           correctly.

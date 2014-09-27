@@ -57,7 +57,6 @@ Notes on the availability of these functions:
    ``'ce'``, ``'java'``.
 
    .. seealso::
-
       :attr:`sys.platform` has a finer granularity.  :func:`os.uname` gives
       system-dependent version information.
 
