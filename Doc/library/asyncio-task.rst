@@ -269,6 +269,7 @@ and it stores the result into the future. The
 the future.
 
 .. note::
+
    The :meth:`~BaseEventLoop.run_until_complete` method uses internally the
    :meth:`~Future.add_done_callback` method to be notified when the future is
    done.

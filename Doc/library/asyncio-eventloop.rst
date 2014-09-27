@@ -197,7 +197,9 @@ Creating connections
      the transport; if *ssl* is :const:`True`, a context with some
      unspecified default settings is used.
 
-     .. seealso:: :ref:`SSL/TLS security considerations <ssl-security>`
+     .. seealso::
+
+        :ref:`SSL/TLS security considerations <ssl-security>`
 
    * *server_hostname*, is only for use together with *ssl*,
      and sets or overrides the hostname that the target server's certificate
