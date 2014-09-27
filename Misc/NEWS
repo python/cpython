@@ -205,6 +205,9 @@ Tests
 Build
 -----
 
+- Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
+  Jonathan Hosmer.
+
 - The documentation Makefile no longer automatically downloads Sphinx. Users are
   now required to have Sphinx already installed to build the documentation.
 
