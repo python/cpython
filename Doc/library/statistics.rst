@@ -135,9 +135,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    This is suited for when your data is discrete, and you don't mind that the
    median may not be an actual data point.
 
-   .. seealso::
-
-      :func:`median_low`, :func:`median_high`, :func:`median_grouped`
+   .. seealso:: :func:`median_low`, :func:`median_high`, :func:`median_grouped`
 
 
 .. function:: median_low(data)
