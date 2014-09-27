@@ -32,15 +32,18 @@ Pure paths are useful in some special cases; for example:
    useful since those simply don't have any OS-accessing operations.
 
 .. note::
+
    This module has been included in the standard library on a
    :term:`provisional basis <provisional package>`. Backwards incompatible
    changes (up to and including removal of the package) may occur if deemed
    necessary by the core developers.
 
 .. seealso::
+
    :pep:`428`: The pathlib module -- object-oriented filesystem paths.
 
 .. seealso::
+
    For low-level path manipulation on strings, you can also use the
    :mod:`os.path` module.
 

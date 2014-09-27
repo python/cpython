@@ -259,6 +259,7 @@ purposes.
    default CA certificates.
 
    .. note::
+
       The protocol, options, cipher and other settings may change to more
       restrictive values anytime without prior deprecation.  The values
       represent a fair balance between compatibility and security.
@@ -267,6 +268,7 @@ purposes.
       :class:`SSLContext` and apply the settings yourself.
 
    .. note::
+
       If you find that when certain older clients or servers attempt to connect
       with a :class:`SSLContext` created by this function that they get an
       error stating "Protocol or cipher suite mismatch", it may be that they
@@ -963,6 +965,7 @@ to speed up repeated connections from the same clients.
    interoperability.
 
    .. seealso::
+
       :func:`create_default_context` lets the :mod:`ssl` module choose
       security settings for a given purpose.
 

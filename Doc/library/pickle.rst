@@ -141,6 +141,7 @@ to read the pickle produced.
   brought by protocol 4.
 
 .. note::
+
    Serialization is a more primitive notion than persistence; although
    :mod:`pickle` reads and writes file objects, it does not handle the issue of
    naming persistent objects, nor the (even more complicated) issue of concurrent
