@@ -131,7 +131,11 @@ Here are the methods of the :class:`Message` class:
 
       Return ``True`` if the message's payload is a list of sub-\
       :class:`Message` objects, otherwise return ``False``.  When
-      :meth:`is_multipart` returns ``False``, the payload should be a string object.
+      :meth:`is_multipart` returns ``False``, the payload should be a string
+      object.  (Note that :meth:`is_multipart` returning ``True`` does not
+      necessarily mean that "msg.get_content_maintype() == 'multipart'" will
+      return the ``True``.   For example, ``is_multipart`` will return ``True``
+      when the :class:`Message` is of type ``message/rfc822``.)
 
 
    .. method:: set_unixfrom(unixfrom)
@@ -584,23 +588,56 @@ Here are the methods of the :class:`Message` class:
       Here's an example that prints the MIME type of every part of a multipart
       message structure:
 
-       .. testsetup::
+      .. testsetup::
 
-            >>> from email import message_from_binary_file
-            >>> with open('Lib/test/test_email/data/msg_16.txt', 'rb') as f:
-            ...     msg = message_from_binary_file(f)
+         >>> from email import message_from_binary_file
+         >>> with open('Lib/test/test_email/data/msg_16.txt', 'rb') as f:
+         ...     msg = message_from_binary_file(f)
+         >>> from email.iterators import _structure
 
-       .. doctest::
+      .. doctest::
 
-            >>> for part in msg.walk():
-            ...     print(part.get_content_type())
-            multipart/report
-            text/plain
-            message/delivery-status
-            text/plain
-            text/plain
-            message/rfc822
-            text/plain
+         >>> for part in msg.walk():
+         ...     print(part.get_content_type())
+         multipart/report
+         text/plain
+         message/delivery-status
+         text/plain
+         text/plain
+         message/rfc822
+         text/plain
+
+      ``walk`` iterates over the subparts of any part where
+      :meth:`is_multipart` returns ``True``, even though
+      ``msg.get_content_maintype() == 'multipart'`` may return ``False``.  We
+      can see this in our example by making use of the ``_structure`` debug
+      helper function:
+
+      .. doctest::
+
+         >>> for part in msg.walk():
+         ...     print(part.get_content_maintype() == 'multipart'),
+         ...           part.is_multipart())
+         True True
+         False False
+         False True
+         False False
+         False False
+         False True
+         False False
+         >>> _structure(msg)
+         multipart/report
+             text/plain
+         message/delivery-status
+             text/plain
+             text/plain
+         message/rfc822
+             text/plain
+
+      Here the ``message`` parts are not ``multiparts``, but they do contain
+      subparts. ``is_multipart()`` returns ``True`` and ``walk`` descends
+      into the subparts.
+
 
    :class:`Message` objects can also optionally contain two instance attributes,
    which can be used when generating the plain text of a MIME message.
