@@ -864,9 +864,7 @@ supports sending logging messages to a Web server, using either ``GET`` or
       :meth:`mapLogRecord` method is used to convert the record to the
       dictionary to be sent.
 
-   .. note::
-
-      Since preparing a record for sending it to a Web server is not
+   .. note:: Since preparing a record for sending it to a Web server is not
       the same as a generic formatting operation, using
       :meth:`~logging.Handler.setFormatter` to specify a
       :class:`~logging.Formatter` for a :class:`HTTPHandler` has no effect.
