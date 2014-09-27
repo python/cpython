@@ -983,7 +983,6 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
    }
 
 .. note::
-
    There are limitations to what you can safely do in a deallocator function.
    First, if your type supports garbage collection (using :c:member:`~PyTypeObject.tp_traverse`
    and/or :c:member:`~PyTypeObject.tp_clear`), some of the object's members can have been
@@ -998,7 +997,6 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
    :c:member:`~PyTypeObject.tp_finalize` type method.
 
    .. seealso::
-
       :pep:`442` explains the new finalization scheme.
 
 .. index::
