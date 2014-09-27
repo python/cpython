@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9850: Fixed macpath.join() for empty first component.  Patch by
+  Oleg Oshmyan.
+
 - Issue #22427: TemporaryDirectory no longer attempts to clean up twice when
   used in the with statement in generator.
 
