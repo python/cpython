@@ -407,7 +407,6 @@ even more), and eventually :meth:`resume_writing` is called once when the
 buffer size reaches the low-water mark.
 
 .. note::
-
    If the buffer size equals the high-water mark,
    :meth:`pause_writing` is not called -- it must go strictly over.
    Conversely, :meth:`resume_writing` is called when the buffer size is
@@ -416,7 +415,6 @@ buffer size reaches the low-water mark.
    mark is zero.
 
 .. note::
-
    On BSD systems (OS X, FreeBSD, etc.) flow control is not supported
    for :class:`DatagramProtocol`, because send failures caused by
    writing too many packets cannot be detected easily.  The socket

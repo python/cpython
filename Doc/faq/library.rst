@@ -697,9 +697,7 @@ quoted using :func:`urllib.parse.urlencode`.  For example, to send
    >>> urllib.parse.urlencode({'name': 'Guy Steele, Jr.'})
    'name=Guy+Steele%2C+Jr.'
 
-.. seealso::
-
-   :ref:`urllib-howto` for extensive examples.
+.. seealso:: :ref:`urllib-howto` for extensive examples.
 
 
 What module should I use to help with generating HTML?
