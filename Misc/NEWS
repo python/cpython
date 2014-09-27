@@ -977,6 +977,9 @@ IDLE
 Build
 -----
 
+- Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
+  Jonathan Hosmer.
+
 - Issue #22359: Remove incorrect uses of recursive make.  Patch by Jonas
   Wagner.
 
