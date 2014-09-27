@@ -107,6 +107,7 @@ source.
        python -mtimeit -h # for details
 
    .. seealso::
+
       :func:`runpy.run_module`
          Equivalent functionality directly available to Python code
 
@@ -158,7 +159,9 @@ automatically enabled, if available on your platform (see
 .. versionchanged:: 3.4
    Automatic enabling of tab-completion and history editing.
 
-.. seealso::  :ref:`tut-invoking`
+.. seealso::
+
+   :ref:`tut-invoking`
 
 
 Generic options
@@ -362,6 +365,7 @@ Miscellaneous options
    thus equivalent to an omitted line number.
 
    .. seealso::
+
       :mod:`warnings` -- the warnings module
 
       :pep:`230` -- Warning framework
