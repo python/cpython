@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9850: Fixed macpath.join() for empty first component.  Patch by
+  Oleg Oshmyan.
+
 - Issue #20912: Now directories added to ZIP file have correct Unix and MS-DOS
   directory attributes.
 
