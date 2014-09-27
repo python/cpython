@@ -851,7 +851,6 @@ Miscellaneous
    :exc:`NotImplementedError`.
 
    .. seealso::
-
       :func:`os.cpu_count`
 
 .. function:: current_process()

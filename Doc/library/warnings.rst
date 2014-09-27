@@ -41,7 +41,6 @@ message by calling :func:`formatwarning`, which is also available for use by
 custom implementations.
 
 .. seealso::
-
    :func:`logging.captureWarnings` allows you to handle all warnings with
    the standard logging infrastructure.
 
