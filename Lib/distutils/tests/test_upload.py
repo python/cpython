@@ -127,7 +127,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
 
         # what did we send ?
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2087')
+        self.assertEqual(headers['Content-length'], '2163')
         content_type = headers['Content-type']
         self.assertTrue(content_type.startswith('multipart/form-data'))
         self.assertEqual(self.last_open.req.get_method(), 'POST')

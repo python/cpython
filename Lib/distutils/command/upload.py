@@ -141,11 +141,11 @@ class upload(PyPIRCCommand):
 
         # Build up the MIME payload for the POST data
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
-        sep_boundary = b'\n--' + boundary.encode('ascii')
-        end_boundary = sep_boundary + b'--'
+        sep_boundary = b'\r\n--' + boundary.encode('ascii')
+        end_boundary = sep_boundary + b'--\r\n'
         body = io.BytesIO()
         for key, value in data.items():
-            title = '\nContent-Disposition: form-data; name="%s"' % key
+            title = '\r\nContent-Disposition: form-data; name="%s"' % key
             # handle multiple entries for the same name
             if not isinstance(value, list):
                 value = [value]
@@ -157,12 +157,12 @@ class upload(PyPIRCCommand):
                     value = str(value).encode('utf-8')
                 body.write(sep_boundary)
                 body.write(title.encode('utf-8'))
-                body.write(b"\n\n")
+                body.write(b"\r\n\r\n")
                 body.write(value)
                 if value and value[-1:] == b'\r':
                     body.write(b'\n')  # write an extra newline (lurve Macs)
         body.write(end_boundary)
-        body.write(b"\n")
+        body.write(b"\r\n")
         body = body.getvalue()
 
         msg = "Submitting %s to %s" % (filename, self.repository)
