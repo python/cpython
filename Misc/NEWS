@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9850: Fixed macpath.join() for empty first component.  Patch by
+  Oleg Oshmyan.
+
 - Issue #5309: distutils' build and build_ext commands now accept a ``-j``
   option to enable parallel building of extension modules.
 
