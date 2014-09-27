@@ -1894,6 +1894,7 @@ the populated namespace and the list of remaining argument strings.
    (Namespace(bar='BAR', foo=True), ['--badger', 'spam'])
 
 .. warning::
+
    :ref:`Prefix matching <prefix-matching>` rules apply to
    :meth:`parse_known_args`. The parser may consume an option even if it's just
    a prefix of one of its known options, instead of leaving it in the remaining
