@@ -15,6 +15,12 @@ Library
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
 
+Build
+-----
+
+- Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
+  Jonathan Hosmer.
+
 
 What's New in Python 3.4.2?
 ===========================
