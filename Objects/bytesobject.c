@@ -3403,7 +3403,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     _Py_DEC_REFTOTAL;
     _Py_ForgetReference(v);
     *pv = (PyObject *)
-        PyObject_REALLOC((char *)v, PyBytesObject_SIZE + newsize);
+        PyObject_REALLOC(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
         PyObject_Del(v);
         PyErr_NoMemory();

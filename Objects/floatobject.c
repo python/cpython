@@ -2026,7 +2026,7 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
     }
     else {
         float y = (float)x;
-        const char *s = (char*)&y;
+        const unsigned char *s = (unsigned char*)&y;
         int i, incr = 1;
 
         if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
@@ -2162,7 +2162,7 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
         return -1;
     }
     else {
-        const char *s = (char*)&x;
+        const unsigned char *s = (unsigned char*)&x;
         int i, incr = 1;
 
         if ((double_format == ieee_little_endian_format && !le)

@@ -1478,7 +1478,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
 
 
 static PyObject *
-newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
+newxmlparseobject(const char *encoding, const char *namespace_separator, PyObject *intern)
 {
     int i;
     xmlparseobject *self;
@@ -1932,8 +1932,7 @@ pyexpat_ParserCreate_impl(PyModuleDef *module, const char *encoding, const char 
         return NULL;
     }
 
-    result = newxmlparseobject((char *)encoding, (char *)namespace_separator,
-                               intern);
+    result = newxmlparseobject(encoding, namespace_separator, intern);
     if (intern_decref) {
         Py_DECREF(intern);
     }
@@ -2074,7 +2073,7 @@ MODULE_INITFUNC(void)
     PyModule_AddObject(m, "XMLParserType", (PyObject *) &Xmlparsetype);
 
     PyModule_AddStringConstant(m, "EXPAT_VERSION",
-                               (char *) XML_ExpatVersion());
+                               XML_ExpatVersion());
     {
         XML_Expat_Version info = XML_ExpatVersionInfo();
         PyModule_AddObject(m, "version_info",
@@ -2154,7 +2153,7 @@ MODULE_INITFUNC(void)
 
 #define MYCONST(name) \
     if (PyModule_AddStringConstant(errors_module, #name,               \
-                                   (char *)XML_ErrorString(name)) < 0) \
+                                   XML_ErrorString(name)) < 0)         \
         return NULL;                                                   \
     tmpnum = PyLong_FromLong(name);                                    \
     if (tmpnum == NULL) return NULL;                                   \
