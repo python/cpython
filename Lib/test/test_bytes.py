@@ -298,6 +298,7 @@ class BaseBytesTest:
         seq = [b"abc"] * 1000
         expected = b"abc" + b".:abc" * 999
         self.assertEqual(dot_join(seq), expected)
+        self.assertRaises(TypeError, self.type2test(b" ").join, None)
         # Error handling and cleanup when some item in the middle of the
         # sequence has the wrong type.
         with self.assertRaises(TypeError):
