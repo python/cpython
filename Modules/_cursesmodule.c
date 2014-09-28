@@ -2675,7 +2675,7 @@ PyCurses_KeyName(PyObject *self, PyObject *args)
     }
     knp = keyname(ch);
 
-    return PyBytes_FromString((knp == NULL) ? "" : (char *)knp);
+    return PyBytes_FromString((knp == NULL) ? "" : knp);
 }
 #endif
 

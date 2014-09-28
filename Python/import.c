@@ -2064,7 +2064,7 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 
     memset(newtab, '\0', sizeof newtab);
 
-    newtab[0].name = (char *)name;
+    newtab[0].name = name;
     newtab[0].initfunc = initfunc;
 
     return PyImport_ExtendInittab(newtab);

@@ -727,7 +727,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     _Py_DEC_REFTOTAL;
     _Py_ForgetReference(unicode);
 
-    new_unicode = (PyObject *)PyObject_REALLOC((char *)unicode, new_size);
+    new_unicode = (PyObject *)PyObject_REALLOC(unicode, new_size);
     if (new_unicode == NULL) {
         _Py_NewReference(unicode);
         PyErr_NoMemory();
@@ -3483,7 +3483,7 @@ mbstowcs_errorpos(const char *str, size_t len)
     memset(&mbs, 0, sizeof mbs);
     while (len)
     {
-        converted = mbrtowc(&ch, (char*)str, len, &mbs);
+        converted = mbrtowc(&ch, str, len, &mbs);
         if (converted == 0)
             /* Reached end of string */
             break;
