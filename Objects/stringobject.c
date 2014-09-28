@@ -1594,7 +1594,7 @@ string_join(PyStringObject *self, PyObject *orig)
     Py_ssize_t i;
     PyObject *seq, *item;
 
-    seq = PySequence_Fast(orig, "");
+    seq = PySequence_Fast(orig, "can only join an iterable");
     if (seq == NULL) {
         return NULL;
     }

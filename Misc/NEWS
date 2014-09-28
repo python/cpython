@@ -10,6 +10,9 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
+- Issue #22379: Fix empty exception message in a TypeError raised in
+  ``str.join``.
+
 - Issue #22221: Now the source encoding declaration on the second line isn't
   effective if the first line contains anything except a comment.
 
