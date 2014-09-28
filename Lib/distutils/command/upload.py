@@ -162,7 +162,6 @@ class upload(PyPIRCCommand):
                 if value and value[-1:] == b'\r':
                     body.write(b'\n')  # write an extra newline (lurve Macs)
         body.write(end_boundary)
-        body.write(b"\r\n")
         body = body.getvalue()
 
         msg = "Submitting %s to %s" % (filename, self.repository)
