@@ -1,5 +1,5 @@
 """
-Common tests shared by test_str, test_unicode, test_userstring and test_string.
+Common tests shared by test_unicode, test_userstring and test_string.
 """
 
 import unittest, string, sys, struct
@@ -79,11 +79,9 @@ class BaseTest:
     def checkraises(self, exc, obj, methodname, *args):
         obj = self.fixtype(obj)
         args = self.fixtype(args)
-        self.assertRaises(
-            exc,
-            getattr(obj, methodname),
-            *args
-        )
+        with self.assertRaises(exc) as cm:
+            getattr(obj, methodname)(*args)
+        self.assertNotEqual(str(cm.exception), '')
 
     # call obj.method(*args) without any checks
     def checkcall(self, obj, methodname, *args):
@@ -1119,8 +1117,7 @@ class MixinStrUnicodeUserStringTest:
     def test_join(self):
         # join now works with any sequence type
         # moved here, because the argument order is
-        # different in string.join (see the test in
-        # test.test_string.StringTest.test_join)
+        # different in string.join
         self.checkequal('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequal('abcd', '', 'join', ('a', 'b', 'c', 'd'))
         self.checkequal('bd', '', 'join', ('', 'b', '', 'd'))
@@ -1140,6 +1137,7 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('a b c', ' ', 'join', BadSeq2())
 
         self.checkraises(TypeError, ' ', 'join')
+        self.checkraises(TypeError, ' ', 'join', None)
         self.checkraises(TypeError, ' ', 'join', 7)
         self.checkraises(TypeError, ' ', 'join', [1, 2, bytes()])
         try:
