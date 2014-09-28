@@ -1269,10 +1269,10 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 
         if (sizehint < 0)
             cres = PyObject_CallMethod(self->stream,
-                            (char *)method, NULL);
+                            method, NULL);
         else
             cres = PyObject_CallMethod(self->stream,
-                            (char *)method, "i", sizehint);
+                            method, "i", sizehint);
         if (cres == NULL)
             goto errorexit;
 

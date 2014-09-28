@@ -2312,7 +2312,7 @@ _PyLong_FromBytes(const char *s, Py_ssize_t len, int base)
     PyObject *result, *strobj;
     char *end = NULL;
 
-    result = PyLong_FromString((char*)s, &end, base);
+    result = PyLong_FromString(s, &end, base);
     if (end == NULL || (result != NULL && end == s + len))
         return result;
     Py_XDECREF(result);
