@@ -926,13 +926,14 @@ PyObject *
 PyString_Repr(PyObject *obj, int smartquotes)
 {
     register PyStringObject* op = (PyStringObject*) obj;
-    size_t newsize = 2 + 4 * Py_SIZE(op);
+    size_t newsize;
     PyObject *v;
-    if (newsize > PY_SSIZE_T_MAX || newsize / 4 != Py_SIZE(op)) {
+    if (Py_SIZE(op) > (PY_SSIZE_T_MAX - 2)/4) {
         PyErr_SetString(PyExc_OverflowError,
             "string is too large to make repr");
         return NULL;
     }
+    newsize = 2 + 4*Py_SIZE(op);
     v = PyString_FromStringAndSize((char *)NULL, newsize);
     if (v == NULL) {
         return NULL;
