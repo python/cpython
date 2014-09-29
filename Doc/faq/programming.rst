@@ -473,7 +473,7 @@ There are two factors that produce this result:
 
 After the call to :meth:`~list.append`, the content of the mutable object has
 changed from ``[]`` to ``[10]``.  Since both the variables refer to the same
-object, accessing either one of them accesses the modified value ``[10]``.
+object, using either name accesses the modified value ``[10]``.
 
 If we instead assign an immutable object to ``x``::
 
