@@ -273,12 +273,10 @@ _pattern_type = type(sre_compile.compile("", 0))
 _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
-    bypass_cache = flags & DEBUG
-    if not bypass_cache:
-        try:
-            return _cache[type(pattern), pattern, flags]
-        except KeyError:
-            pass
+    try:
+        return _cache[type(pattern), pattern, flags]
+    except KeyError:
+        pass
     if isinstance(pattern, _pattern_type):
         if flags:
             raise ValueError(
@@ -287,7 +285,7 @@ def _compile(pattern, flags):
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
     p = sre_compile.compile(pattern, flags)
-    if not bypass_cache:
+    if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
             _cache.clear()
         _cache[type(pattern), pattern, flags] = p
