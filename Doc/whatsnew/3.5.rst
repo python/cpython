@@ -134,6 +134,13 @@ New Modules
 Improved Modules
 ================
 
+code
+----
+
+* The :func:`code.InteractiveInterpreter.showtraceback` method now prints
+  the full chained traceback, just like the interactive interpreter
+  (contributed by Claudiu.Popa in :issue:`17442`).
+
 compileall
 ----------
 
