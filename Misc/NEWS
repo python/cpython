@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22519: Fix overflow checking in PyBytes_Repr.
+
 - Issue #22518: Fix integer overflow issues in latin-1 encoding.
 
 - Issue #16324: _charset parameter of MIMEText now also accepts
