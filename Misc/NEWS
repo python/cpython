@@ -10,6 +10,8 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
+- Issue #22518: Fix integer overflow issues in latin-1 encoding.
+
 - Issue #22379: Fix empty exception message in a TypeError raised in
   ``str.join``.
 
