@@ -594,7 +594,7 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
 {
     PyBytesObject* op = (PyBytesObject*) obj;
     Py_ssize_t i, length = Py_SIZE(op);
-    size_t newsize, squotes, dquotes;
+    Py_ssize_t newsize, squotes, dquotes;
     PyObject *v;
     unsigned char quote, *s, *p;
 
