@@ -72,6 +72,8 @@ class Pattern:
     def opengroup(self, name=None):
         gid = self.groups
         self.groups = gid + 1
+        if self.groups > MAXGROUPS:
+            raise error("groups number is too large")
         if name is not None:
             ogid = self.groupdict.get(name, None)
             if ogid is not None:
@@ -695,8 +697,14 @@ def _parse(source, state):
                     else:
                         try:
                             condgroup = int(condname)
+                            if condgroup < 0:
+                                raise ValueError
                         except ValueError:
                             raise error("bad character in group name")
+                        if not condgroup:
+                            raise error("bad group number")
+                        if condgroup >= MAXGROUPS:
+                            raise error("the group number is too large")
                 else:
                     # flags
                     if not source.next in FLAGS:
@@ -822,6 +830,8 @@ def parse_template(source, pattern):
                     index = int(name)
                     if index < 0:
                         raise error("negative group number")
+                    if index >= MAXGROUPS:
+                        raise error("the group number is too large")
                 except ValueError:
                     if not name.isidentifier():
                         raise error("bad character in group name")

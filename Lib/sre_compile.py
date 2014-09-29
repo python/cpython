@@ -470,12 +470,6 @@ def compile(p, flags=0):
 
     # print code
 
-    # XXX: <fl> get rid of this limitation!
-    if p.pattern.groups > 100:
-        raise AssertionError(
-            "sorry, but this version only supports 100 named groups"
-            )
-
     # map in either direction
     groupindex = p.pattern.groupdict
     indexgroup = [None] * p.pattern.groups
