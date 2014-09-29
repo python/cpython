@@ -18,8 +18,10 @@
 #define SRE_CODE Py_UCS4
 #if SIZEOF_SIZE_T > 4
 # define SRE_MAXREPEAT (~(SRE_CODE)0)
+# define SRE_MAXGROUPS ((~(SRE_CODE)0) / 2)
 #else
 # define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX)
+# define SRE_MAXGROUPS ((SRE_CODE)PY_SSIZE_T_MAX / SIZEOF_SIZE_T / 2)
 #endif
 
 typedef struct {
@@ -52,9 +54,6 @@ typedef struct {
 
 typedef unsigned int (*SRE_TOLOWER_HOOK)(unsigned int ch);
 
-/* FIXME: <fl> shouldn't be a constant, really... */
-#define SRE_MARK_SIZE 200
-
 typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
     SRE_CODE* pattern; /* points to REPEAT operator arguments */
@@ -76,7 +75,7 @@ typedef struct {
     /* registers */
     Py_ssize_t lastindex;
     Py_ssize_t lastmark;
-    void* mark[SRE_MARK_SIZE];
+    void** mark;
     /* dynamically allocated stuff */
     char* data_stack;
     size_t data_stack_size;
