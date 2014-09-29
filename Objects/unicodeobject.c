@@ -4093,22 +4093,31 @@ unicode_decode_call_errorhandler_wchar(
        have+the replacement+the rest of the string (starting
        at the new input position), so we won't have to check space
        when there are no errors in the rest of the string) */
-    requiredsize = *outpos + repwlen + insize-newpos;
+    requiredsize = *outpos;
+    if (requiredsize > PY_SSIZE_T_MAX - repwlen)
+        goto overflow;
+    requiredsize += repwlen;
+    if (requiredsize > PY_SSIZE_T_MAX - (insize - newpos))
+        goto overflow;
+    requiredsize += insize - newpos;
     if (requiredsize > outsize) {
-        if (requiredsize < 2*outsize)
+        if (outsize <= PY_SSIZE_T_MAX/2 && requiredsize < 2*outsize)
             requiredsize = 2*outsize;
         if (unicode_resize(output, requiredsize) < 0)
             goto onError;
     }
     wcsncpy(_PyUnicode_WSTR(*output) + *outpos, repwstr, repwlen);
     *outpos += repwlen;
-
     *endinpos = newpos;
     *inptr = *input + newpos;
 
     /* we made it! */
     Py_XDECREF(restuple);
     return 0;
+
+  overflow:
+    PyErr_SetString(PyExc_OverflowError,
+                    "decoded result is too long for a Python string");
 
   onError:
     Py_XDECREF(restuple);
@@ -6502,7 +6511,7 @@ unicode_encode_ucs1(PyObject *unicode,
             Py_ssize_t collstart = pos;
             Py_ssize_t collend = pos;
             /* find all unecodable characters */
-            while ((collend < size) && (PyUnicode_READ(kind, data, collend)>=limit))
+            while ((collend < size) && (PyUnicode_READ(kind, data, collend) >= limit))
                 ++collend;
             /* cache callback name lookup (if not done yet, i.e. it's the first error) */
             if (known_errorHandler==-1) {
@@ -6522,36 +6531,43 @@ unicode_encode_ucs1(PyObject *unicode,
                 raise_encode_exception(&exc, encoding, unicode, collstart, collend, reason);
                 goto onError;
             case 2: /* replace */
-                while (collstart++<collend)
+                while (collstart++ < collend)
                     *str++ = '?'; /* fall through */
             case 3: /* ignore */
                 pos = collend;
                 break;
             case 4: /* xmlcharrefreplace */
                 respos = str - PyBytes_AS_STRING(res);
+                requiredsize = respos;
                 /* determine replacement size */
-                for (i = collstart, repsize = 0; i < collend; ++i) {
+                for (i = collstart; i < collend; ++i) {
                     Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+                    Py_ssize_t incr;
                     if (ch < 10)
-                        repsize += 2+1+1;
+                        incr = 2+1+1;
                     else if (ch < 100)
-                        repsize += 2+2+1;
+                        incr = 2+2+1;
                     else if (ch < 1000)
-                        repsize += 2+3+1;
+                        incr = 2+3+1;
                     else if (ch < 10000)
-                        repsize += 2+4+1;
+                        incr = 2+4+1;
                     else if (ch < 100000)
-                        repsize += 2+5+1;
+                        incr = 2+5+1;
                     else if (ch < 1000000)
-                        repsize += 2+6+1;
+                        incr = 2+6+1;
                     else {
                         assert(ch <= MAX_UNICODE);
-                        repsize += 2+7+1;
+                        incr = 2+7+1;
                     }
+                    if (requiredsize > PY_SSIZE_T_MAX - incr)
+                        goto overflow;
+                    requiredsize += incr;
                 }
-                requiredsize = respos+repsize+(size-collend);
+                if (requiredsize > PY_SSIZE_T_MAX - (size - collend))
+                    goto overflow;
+                requiredsize += size - collend;
                 if (requiredsize > ressize) {
-                    if (requiredsize<2*ressize)
+                    if (ressize <= PY_SSIZE_T_MAX/2 && requiredsize < 2*ressize)
                         requiredsize = 2*ressize;
                     if (_PyBytes_Resize(&res, requiredsize))
                         goto onError;
@@ -6577,6 +6593,10 @@ unicode_encode_ucs1(PyObject *unicode,
                     if (repsize > 1) {
                         /* Make room for all additional bytes. */
                         respos = str - PyBytes_AS_STRING(res);
+                        if (ressize > PY_SSIZE_T_MAX - repsize - 1) {
+                            Py_DECREF(repunicode);
+                            goto overflow;
+                        }
                         if (_PyBytes_Resize(&res, ressize+repsize-1)) {
                             Py_DECREF(repunicode);
                             goto onError;
@@ -6595,9 +6615,15 @@ unicode_encode_ucs1(PyObject *unicode,
                    we won't have to check space for encodable characters) */
                 respos = str - PyBytes_AS_STRING(res);
                 repsize = PyUnicode_GET_LENGTH(repunicode);
-                requiredsize = respos+repsize+(size-collend);
+                requiredsize = respos;
+                if (requiredsize > PY_SSIZE_T_MAX - repsize)
+                    goto overflow;
+                requiredsize += repsize;
+                if (requiredsize > PY_SSIZE_T_MAX - (size - collend))
+                    goto overflow;
+                requiredsize += size - collend;
                 if (requiredsize > ressize) {
-                    if (requiredsize<2*ressize)
+                    if (ressize <= PY_SSIZE_T_MAX/2 && requiredsize < 2*ressize)
                         requiredsize = 2*ressize;
                     if (_PyBytes_Resize(&res, requiredsize)) {
                         Py_DECREF(repunicode);
@@ -6634,6 +6660,10 @@ unicode_encode_ucs1(PyObject *unicode,
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     return res;
+
+  overflow:
+    PyErr_SetString(PyExc_OverflowError,
+                    "encoded result is too long for a Python string");
 
   onError:
     Py_XDECREF(res);
