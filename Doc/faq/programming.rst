@@ -548,7 +548,7 @@ requested again.  This is called "memoizing", and can be implemented like this::
 
        # Calculate the value
        result = ... expensive computation ...
-       _cache[(arg1, arg2)] = result  # Store result in the cache
+       _cache[(arg1, arg2)] = result           # Store result in the cache
        return result
 
 You could use a global variable containing a dictionary instead of the default
@@ -602,6 +602,81 @@ arguments a function can accept.  For example, given the function definition::
    func(42, bar=314, extra=somevar)
 
 the values ``42``, ``314``, and ``somevar`` are arguments.
+
+
+Why did changing list 'y' also change list 'x'?
+------------------------------------------------
+
+If you wrote code like::
+
+   >>> x = []
+   >>> y = x
+   >>> y.append(10)
+   >>> y
+   [10]
+   >>> x
+   [10]
+
+you might be wondering why appending an element to ``y`` changed ``x`` too.
+
+There are two factors that produce this result:
+
+1) Variables are simply names that refer to objects.  Doing ``y = x`` doesn't
+   create a copy of the list -- it creates a new variable ``y`` that refers to
+   the same object ``x`` refers to.  This means that there is only one object
+   (the list), and both ``x`` and ``y`` refer to it.
+2) Lists are :term:`mutable`, which means that you can change their content.
+
+After the call to :meth:`~list.append`, the content of the mutable object has
+changed from ``[]`` to ``[10]``.  Since both the variables refer to the same
+object, using either name accesses the modified value ``[10]``.
+
+If we instead assign an immutable object to ``x``::
+
+   >>> x = 5  # ints are immutable
+   >>> y = x
+   >>> x = x + 1  # 5 can't be mutated, we are creating a new object here
+   >>> x
+   6
+   >>> y
+   5
+
+we can see that in this case ``x`` and ``y`` are not equal anymore.  This is
+because integers are :term:`immutable`, and when we do ``x = x + 1`` we are not
+mutating the int ``5`` by incrementing its value; instead, we are creating a
+new object (the int ``6``) and assigning it to ``x`` (that is, changing which
+object ``x`` refers to).  After this assignment we have two objects (the ints
+``6`` and ``5``) and two variables that refer to them (``x`` now refers to
+``6`` but ``y`` still refers to ``5``).
+
+Some operations (for example ``y.append(10)`` and ``y.sort()``) mutate the
+object, whereas superficially similar operations (for example ``y = y + [10]``
+and ``sorted(y)``) create a new object.  In general in Python (and in all cases
+in the standard library) a method that mutates an object will return ``None``
+to help avoid getting the two types of operations confused.  So if you
+mistakenly write ``y.sort()`` thinking it will give you a sorted copy of ``y``,
+you'll instead end up with ``None``, which will likely cause your program to
+generate an easily diagnosed error.
+
+However, there is one class of operations where the same operation sometimes
+has different behaviors with different types:  the augmented assignment
+operators.  For example, ``+=`` mutates lists but not tuples or ints (``a_list
++= [1, 2, 3]`` is equivalent to ``a_list.extend([1, 2, 3])`` and mutates
+``a_list``, whereas ``some_tuple += (1, 2, 3)`` and ``some_int += 1`` create
+new objects).
+
+In other words:
+
+* If we have a mutable object (:class:`list`, :class:`dict`, :class:`set`,
+  etc.), we can use some specific operations to mutate it and all the variables
+  that refer to it will see the change.
+* If we have an immutable object (:class:`str`, :class:`int`, :class:`tuple`,
+  etc.), all the variables that refer to it will always see the same value,
+  but operations that transform that value into a new value always return a new
+  object.
+
+If you want to know if two variables refer to the same object or not, you can
+use the :keyword:`is` operator, or the built-in function :func:`id`.
 
 
 How do I write a function with output parameters (call by reference)?
