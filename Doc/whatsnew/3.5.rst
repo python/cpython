@@ -217,6 +217,12 @@ os
 * :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
   attribute on Windows (contributed by Ben Hoyt in :issue:`21719`).
 
+re
+--
+
+* Number of capturing groups in regular expression is no longer limited by 100.
+  (Contributed by Serhiy Storchaka in :issue:`22437`.)
+
 shutil
 ------
 

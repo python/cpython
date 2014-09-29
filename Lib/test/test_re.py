@@ -193,6 +193,7 @@ class ReTests(unittest.TestCase):
     def test_symbolic_groups(self):
         re.compile('(?P<a>x)(?P=a)(?(a)y)')
         re.compile('(?P<a1>x)(?P=a1)(?(a1)y)')
+        re.compile('(?P<a1>x)\1(?(1)y)')
         self.assertRaises(re.error, re.compile, '(?P<a>)(?P<a>)')
         self.assertRaises(re.error, re.compile, '(?Px)')
         self.assertRaises(re.error, re.compile, '(?P=)')
@@ -212,6 +213,10 @@ class ReTests(unittest.TestCase):
         re.compile('(?P<µ>x)(?P=µ)(?(µ)y)')
         re.compile('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)(?P=𝔘𝔫𝔦𝔠𝔬𝔡𝔢)(?(𝔘𝔫𝔦𝔠𝔬𝔡𝔢)y)')
         self.assertRaises(re.error, re.compile, '(?P<©>x)')
+        # Support > 100 groups.
+        pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
+        pat = '(?:%s)(?(200)z|t)' % pat
+        self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
 
     def test_symbolic_refs(self):
         self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<a', 'xx')
@@ -228,6 +233,9 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('(?P<µ>x)', r'\g<µ>', 'xx'), 'xx')
         self.assertEqual(re.sub('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)', r'\g<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>', 'xx'), 'xx')
         self.assertRaises(re.error, re.sub, '(?P<a>x)', r'\g<©>', 'xx')
+        # Support > 100 groups.
+        pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
+        self.assertEqual(re.sub(pat, '\g<200>', 'xc8yzxc8y'), 'c8zc8')
 
     def test_re_subn(self):
         self.assertEqual(re.subn("(?i)b+", "x", "bbbb BBBB"), ('x x', 2))
@@ -404,6 +412,10 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(p.match('abd'))
         self.assertIsNone(p.match('ac'))
 
+        # Support > 100 groups.
+        pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
+        pat = '(?:%s)(?(200)z)' % pat
+        self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
 
     def test_re_groupref(self):
         self.assertEqual(re.match(r'^(\|)?([^()]+)\1$', '|a|').groups(),
@@ -1070,8 +1082,10 @@ class ReTests(unittest.TestCase):
         # a RuntimeError is raised instead of OverflowError.
         long_overflow = 2**128
         self.assertRaises(TypeError, re.finditer, "a", {})
-        self.assertRaises(OverflowError, _sre.compile, "abc", 0, [long_overflow])
-        self.assertRaises(TypeError, _sre.compile, {}, 0, [])
+        with self.assertRaises(OverflowError):
+            _sre.compile("abc", 0, [long_overflow], 0, [], [])
+        with self.assertRaises(TypeError):
+            _sre.compile({}, 0, [], 0, [], [])
 
     def test_search_dot_unicode(self):
         self.assertTrue(re.search("123.*-", '123abc-'))

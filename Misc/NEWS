@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22437: Number of capturing groups in regular expression is no longer
+  limited by 100.
+
 - Issue #17442: InteractiveInterpreter now displays the full chained traceback
   in its showtraceback method, to match the built in interactive interpreter.
 
