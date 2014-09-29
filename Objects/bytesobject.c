@@ -593,28 +593,27 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     newsize = 3; /* b'' */
     s = (unsigned char*)op->ob_sval;
     for (i = 0; i < length; i++) {
+        Py_ssize_t incr = 1;
         switch(s[i]) {
-        case '\'': squotes++; newsize++; break;
-        case '"':  dquotes++; newsize++; break;
+        case '\'': squotes++; break;
+        case '"':  dquotes++; break;
         case '\\': case '\t': case '\n': case '\r':
-            newsize += 2; break; /* \C */
+            incr = 2; break; /* \C */
         default:
             if (s[i] < ' ' || s[i] >= 0x7f)
-                newsize += 4; /* \xHH */
-            else
-                newsize++;
+                incr = 4; /* \xHH */
         }
+        if (newsize > PY_SSIZE_T_MAX - incr)
+            goto overflow;
+        newsize += incr;
     }
     quote = '\'';
     if (smartquotes && squotes && !dquotes)
         quote = '"';
-    if (squotes && quote == '\'')
+    if (squotes && quote == '\'') {
+        if (newsize > PY_SSIZE_T_MAX - squotes)
+            goto overflow;
         newsize += squotes;
-
-    if (newsize > (PY_SSIZE_T_MAX - sizeof(PyUnicodeObject) - 1)) {
-        PyErr_SetString(PyExc_OverflowError,
-            "bytes object is too large to make repr");
-        return NULL;
     }
 
     v = PyUnicode_New(newsize, 127);
@@ -646,6 +645,11 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     *p++ = quote;
     assert(_PyUnicode_CheckConsistency(v, 1));
     return v;
+
+  overflow:
+    PyErr_SetString(PyExc_OverflowError,
+                    "bytes object is too large to make repr");
+    return NULL;
 }
 
 static PyObject *
