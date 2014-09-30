@@ -345,3 +345,4 @@ def setup(app):
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive('miscnews', MiscNews)
+    return {'version': '1.0', 'parallel_read_safe': True}
