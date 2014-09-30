@@ -12365,28 +12365,34 @@ unicode_repr(PyObject *unicode)
     ikind = PyUnicode_KIND(unicode);
     for (i = 0; i < isize; i++) {
         Py_UCS4 ch = PyUnicode_READ(ikind, idata, i);
+        Py_ssize_t incr = 1;
         switch (ch) {
-        case '\'': squote++; osize++; break;
-        case '"':  dquote++; osize++; break;
+        case '\'': squote++; break;
+        case '"':  dquote++; break;
         case '\\': case '\t': case '\r': case '\n':
-            osize += 2; break;
+            incr = 2;
+            break;
         default:
             /* Fast-path ASCII */
             if (ch < ' ' || ch == 0x7f)
-                osize += 4; /* \xHH */
+                incr = 4; /* \xHH */
             else if (ch < 0x7f)
-                osize++;
-            else if (Py_UNICODE_ISPRINTABLE(ch)) {
-                osize++;
+                ;
+            else if (Py_UNICODE_ISPRINTABLE(ch))
                 max = ch > max ? ch : max;
-            }
             else if (ch < 0x100)
-                osize += 4; /* \xHH */
+                incr = 4; /* \xHH */
             else if (ch < 0x10000)
-                osize += 6; /* \uHHHH */
+                incr = 6; /* \uHHHH */
             else
-                osize += 10; /* \uHHHHHHHH */
+                incr = 10; /* \uHHHHHHHH */
         }
+        if (osize > PY_SSIZE_T_MAX - incr) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "string is too long to generate repr");
+            return NULL;
+        }
+        osize += incr;
     }
 
     quote = '\'';
