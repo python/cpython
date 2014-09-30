@@ -1,4 +1,4 @@
-++++++++++
++++++++++++
 Python News
 +++++++++++
 
@@ -9,6 +9,9 @@ What's New in Python 3.2.6?
 
 Library
 -------
+
+- Issue #16037: HTTPMessage.readheaders() raises an HTTPException when more than
+  100 headers are read.  Adapted from patch by Jyrki Pulliainen.
 
 - Issue #18709: Fix CVE-2013-4238. The SSL module now handles NULL bytes
   inside subjectAltName correctly. Formerly the module has used OpenSSL's

@@ -169,8 +169,8 @@ The following exceptions are raised as appropriate:
    A subclass of :exc:`HTTPException`.  Raised if a server responds with a HTTP
    status code that we don't understand.
 
-The constants defined in this module are:
 
+The constants defined in this module are:
 
 .. data:: HTTP_PORT
 
