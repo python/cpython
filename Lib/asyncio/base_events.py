@@ -994,19 +994,22 @@ class BaseEventLoop(events.AbstractEventLoop):
         'call_later' callbacks.
         """
 
-        # Remove delayed calls that were cancelled if their number is too high
         sched_count = len(self._scheduled)
         if (sched_count > _MIN_SCHEDULED_TIMER_HANDLES and
             self._timer_cancelled_count / sched_count >
                 _MIN_CANCELLED_TIMER_HANDLES_FRACTION):
+            # Remove delayed calls that were cancelled if their number
+            # is too high
+            new_scheduled = []
             for handle in self._scheduled:
                 if handle._cancelled:
                     handle._scheduled = False
+                else:
+                    new_scheduled.append(handle)
 
-            self._scheduled = [x for x in self._scheduled if not x._cancelled]
+            heapq.heapify(new_scheduled)
+            self._scheduled = new_scheduled
             self._timer_cancelled_count = 0
-
-            heapq.heapify(self._scheduled)
         else:
             # Remove delayed calls that were cancelled from head of queue.
             while self._scheduled and self._scheduled[0]._cancelled:
