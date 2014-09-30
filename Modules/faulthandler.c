@@ -5,7 +5,13 @@
 #include <frameobject.h>
 #include <signal.h>
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
-#include <pthread.h>
+#  include <pthread.h>
+#endif
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#  include <sys/resource.h>
 #endif
 
 /* Allocate at maximum 100 MB of the stack to raise the stack overflow */
@@ -804,6 +810,34 @@ faulthandler_unregister_py(PyObject *self, PyObject *args)
 #endif   /* FAULTHANDLER_USER */
 
 
+static void
+faulthandler_suppress_crash_report(void)
+{
+#ifdef MS_WINDOWS
+    UINT mode;
+
+    /* Configure Windows to not display the Windows Error Reporting dialog */
+    mode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
+    SetErrorMode(mode | SEM_NOGPFAULTERRORBOX);
+#endif
+
+#ifdef HAVE_SYS_RESOURCE_H
+    struct rlimit rl;
+
+    /* Disable creation of core dump */
+    if (getrlimit(RLIMIT_CORE, &rl) != 0) {
+        rl.rlim_cur = 0;
+        setrlimit(RLIMIT_CORE, &rl);
+    }
+#endif
+
+#ifdef _MSC_VER
+    /* Visual Studio: configure abort() to not display an error message nor
+       open a popup asking to report the fault. */
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#endif
+}
+
 static PyObject *
 faulthandler_read_null(PyObject *self, PyObject *args)
 {
@@ -813,6 +847,7 @@ faulthandler_read_null(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i:_read_null", &release_gil))
         return NULL;
 
+    faulthandler_suppress_crash_report();
     x = NULL;
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS
@@ -827,6 +862,7 @@ faulthandler_read_null(PyObject *self, PyObject *args)
 static PyObject *
 faulthandler_sigsegv(PyObject *self, PyObject *args)
 {
+    faulthandler_suppress_crash_report();
 #if defined(MS_WINDOWS)
     /* For SIGSEGV, faulthandler_fatal_error() restores the previous signal
        handler and then gives back the execution flow to the program (without
@@ -853,6 +889,7 @@ faulthandler_sigfpe(PyObject *self, PyObject *args)
     /* Do an integer division by zero: raise a SIGFPE on Intel CPU, but not on
        PowerPC. Use volatile to disable compile-time optimizations. */
     volatile int x = 1, y = 0, z;
+    faulthandler_suppress_crash_report();
     z = x / y;
     /* If the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
        raise it manually. */
@@ -865,11 +902,7 @@ faulthandler_sigfpe(PyObject *self, PyObject *args)
 static PyObject *
 faulthandler_sigabrt(PyObject *self, PyObject *args)
 {
-#ifdef _MSC_VER
-    /* Visual Studio: configure abort() to not display an error message nor
-       open a popup asking to report the fault. */
-    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
-#endif
+    faulthandler_suppress_crash_report();
     abort();
     Py_RETURN_NONE;
 }
@@ -880,6 +913,7 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
     char *message;
     if (!PyArg_ParseTuple(args, "y:fatal_error", &message))
         return NULL;
+    faulthandler_suppress_crash_report();
     Py_FatalError(message);
     Py_RETURN_NONE;
 }
@@ -905,6 +939,7 @@ faulthandler_stack_overflow(PyObject *self)
     size_t depth, size;
     char *sp = (char *)&depth, *stop;
 
+    faulthandler_suppress_crash_report();
     depth = 0;
     stop = stack_overflow(sp - STACK_OVERFLOW_MAX_SIZE,
                           sp + STACK_OVERFLOW_MAX_SIZE,
