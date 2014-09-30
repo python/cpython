@@ -816,7 +816,7 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
     assert(_PyUnicode_WSTR(unicode) != NULL);
 
     /* check for integer overflow */
-    if (length > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
+    if (length > PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) - 1) {
         PyErr_NoMemory();
         return -1;
     }
@@ -888,7 +888,7 @@ _PyUnicode_New(Py_ssize_t length)
     }
 
     /* Ensure we won't overflow the size. */
-    if (length > ((PY_SSIZE_T_MAX / sizeof(Py_UNICODE)) - 1)) {
+    if (length > ((PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(Py_UNICODE)) - 1)) {
         return (PyUnicodeObject *)PyErr_NoMemory();
     }
     if (length < 0) {
@@ -2239,7 +2239,7 @@ as_ucs4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
     if (copy_null)
         targetlen++;
     if (!target) {
-        if (PY_SSIZE_T_MAX / sizeof(Py_UCS4) < targetlen) {
+        if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(Py_UCS4) < targetlen) {
             PyErr_NoMemory();
             return NULL;
         }
@@ -2852,7 +2852,7 @@ PyUnicode_AsWideCharString(PyObject *unicode,
     buflen = unicode_aswidechar(unicode, NULL, 0);
     if (buflen == -1)
         return NULL;
-    if (PY_SSIZE_T_MAX / sizeof(wchar_t) < buflen) {
+    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < buflen) {
         PyErr_NoMemory();
         return NULL;
     }
@@ -15430,7 +15430,7 @@ PyUnicode_AsUnicodeCopy(PyObject *unicode)
     if (u == NULL)
         return NULL;
     /* Ensure we won't overflow the size. */
-    if (len > ((PY_SSIZE_T_MAX / sizeof(Py_UNICODE)) - 1)) {
+    if (len > ((PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(Py_UNICODE)) - 1)) {
         PyErr_NoMemory();
         return NULL;
     }
