@@ -13,7 +13,7 @@
     Usage: Set the `refcount_file` config value to the path to the reference
     count data file.
 
-    :copyright: Copyright 2007-2013 by Georg Brandl.
+    :copyright: Copyright 2007-2014 by Georg Brandl.
     :license: Python license.
 """
 
@@ -118,3 +118,4 @@ def setup(app):
         signode.parent['stableabi'] = 'stableabi' in self.options
         return old_handle_signature(self, sig, signode)
     CObject.handle_signature = new_handle_signature
+    return {'version': '1.0', 'parallel_read_safe': True}
