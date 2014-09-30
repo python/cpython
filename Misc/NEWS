@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
+  weakrefs.
+
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
 
