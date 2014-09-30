@@ -381,17 +381,6 @@ class PyBuildExt(build_ext):
                 os.remove(newname)
             os.rename(ext_filename, newname)
 
-            # XXX -- This relies on a Vile HACK in
-            # distutils.command.build_ext.build_extension().  The
-            # _built_objects attribute is stored there strictly for
-            # use here.
-            # If there is a failure, _built_objects may not be there,
-            # so catch the AttributeError and move on.
-            try:
-                for filename in self._built_objects:
-                    os.remove(filename)
-            except AttributeError:
-                self.announce('unable to remove files (ignored)')
         except:
             exc_type, why, tb = sys.exc_info()
             self.announce('*** WARNING: importing extension "%s" '
