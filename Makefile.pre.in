@@ -1371,6 +1371,9 @@ patchcheck:
 
 Python/thread.o: @THREADHEADERS@
 
+# A dummy target so that we are "buildbot step compatible" with newer versions
+touch:
+
 # Declare targets that aren't real files
 .PHONY: all build_all sharedmods oldsharedmods test quicktest memtest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
@@ -1378,7 +1381,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean
-.PHONY: smelly funny patchcheck altmaninstall
+.PHONY: smelly funny patchcheck altmaninstall touch
 .PHONY: gdbhooks
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
