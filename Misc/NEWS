@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22396: On 32-bit AIX platform, don't expose os.posix_fadvise() nor
+  os.posix_fallocate() because their prototypes in system headers are wrong.
+
 - Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
   weakrefs.
 
