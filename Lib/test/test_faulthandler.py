@@ -194,10 +194,10 @@ class FaultHandlerTests(unittest.TestCase):
         self.check_fatal_error("""
             import faulthandler
             faulthandler.enable()
-            faulthandler._read_null(True)
+            faulthandler._sigsegv(True)
             """,
             3,
-            '(?:Segmentation fault|Bus error|Illegal instruction)')
+            'Segmentation fault')
 
     def test_enable_file(self):
         with temporary_filename() as filename:
