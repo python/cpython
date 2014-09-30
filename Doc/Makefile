@@ -6,7 +6,6 @@
 # You can set these variables from the command line.
 PYTHON       = python
 SPHINXBUILD  = sphinx-build
-SPHINXOPTS   =
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py)
