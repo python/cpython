@@ -114,11 +114,15 @@ class ThreadedImportTests(unittest.TestCase):
             errors = []
             done_tasks = []
             done.clear()
+            t0 = time.monotonic()
             for i in range(N):
                 t = threading.Thread(target=task,
                                      args=(N, done, done_tasks, errors,))
                 t.start()
             completed = done.wait(10 * 60)
+            dt = time.monotonic() - t0
+            if verbose:
+                print("%.1f ms" % (dt*1e3), flush=True, end=" ")
             dbg_info = 'done: %s/%s' % (len(done_tasks), N)
             self.assertFalse(errors, dbg_info)
             self.assertTrue(completed, dbg_info)
