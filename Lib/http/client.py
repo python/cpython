@@ -206,6 +206,8 @@ MAXAMOUNT = 1048576
 
 # maximal line length when calling readline().
 _MAXLINE = 65536
+_MAXHEADERS = 100
+
 
 class HTTPMessage(email.message.Message):
     # XXX The only usage of this method is in
@@ -253,6 +255,8 @@ def parse_headers(fp, _class=HTTPMessage):
         if len(line) > _MAXLINE:
             raise LineTooLong("header line")
         headers.append(line)
+        if len(headers) > _MAXHEADERS:
+            raise HTTPException("got more than %d headers" % _MAXHEADERS)
         if line in (b'\r\n', b'\n', b''):
             break
     hstring = b''.join(headers).decode('iso-8859-1')
