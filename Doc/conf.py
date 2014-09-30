@@ -7,14 +7,14 @@
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
 import sys, os, time
-sys.path.append(os.path.abspath('tools/sphinxext'))
+sys.path.append(os.path.abspath('tools'))
 
 # General configuration
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations']
-templates_path = ['tools/sphinxext']
+templates_path = ['tools']
 
 # General substitutions.
 project = 'Python'
@@ -68,7 +68,7 @@ needs_sphinx = '1.2'
 # -----------------------
 
 html_theme = 'pydoctheme'
-html_theme_path = ['tools/sphinxext']
+html_theme_path = ['tools']
 html_theme_options = {'collapsiblesidebar': True}
 
 html_short_title = '%s Documentation' % release
@@ -96,7 +96,7 @@ html_additional_pages = {
 html_use_opensearch = 'http://docs.python.org/' + version
 
 # Additional static files.
-html_static_path = ['tools/sphinxext/static']
+html_static_path = ['tools/static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
