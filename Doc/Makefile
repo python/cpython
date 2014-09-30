@@ -8,7 +8,7 @@ PYTHON       = python
 SPHINXBUILD  = sphinx-build
 PAPER        =
 SOURCES      =
-DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py)
+DISTVERSION  = $(shell $(PYTHON) tools/patchlevel.py)
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
@@ -79,7 +79,7 @@ suspicious:
 	@$(MAKE) build BUILDER=$(BUILDER) || { \
 	echo "Suspicious check complete; look for any errors in the above output" \
 	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
-	     "positives, append that file to tools/sphinxext/susp-ignored.csv."; \
+	     "positives, append that file to tools/susp-ignored.csv."; \
 	false; }
 
 coverage: BUILDER = coverage
