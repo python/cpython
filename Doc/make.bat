@@ -12,7 +12,7 @@ if DEFINED ProgramFiles(x86) set _PRGMFLS=%ProgramFiles(x86)%
 if NOT DEFINED ProgramFiles(x86) set _PRGMFLS=%ProgramFiles%
 if "%HTMLHELP%" EQU "" set HTMLHELP=%_PRGMFLS%\HTML Help Workshop\hhc.exe
 
-if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/sphinxext/patchlevel.py`) do set DISTVERSION=%%v
+if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/patchlevel.py`) do set DISTVERSION=%%v
 
 if "%BUILDDIR%" EQU "" set BUILDDIR=build
 
