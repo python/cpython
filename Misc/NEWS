@@ -10,6 +10,10 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #16038: CVE-2013-1752: ftplib: Limit amount of data read by
+  limiting the call to readline().  Original patch by Michał
+  Jastrzębski and Giampaolo Rodola.
+
 - Issue #16037: HTTPMessage.readheaders() raises an HTTPException when more than
   100 headers are read.  Adapted from patch by Jyrki Pulliainen.
 
