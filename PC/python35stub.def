@@ -119,6 +119,7 @@ PyErr_Display
 PyErr_ExceptionMatches
 PyErr_Fetch
 PyErr_Format
+PyErr_FormatV
 PyErr_GivenExceptionMatches
 PyErr_NewException
 PyErr_NewExceptionWithDoc

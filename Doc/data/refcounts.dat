@@ -349,6 +349,11 @@ PyErr_Format:PyObject*:exception:+1:
 PyErr_Format:const char*:format::
 PyErr_Format::...::
 
+PyErr_FormatV:PyObject*::null:
+PyErr_FormatV:PyObject*:exception:+1:
+PyErr_FormatV:const char*:format::
+PyErr_FormatV:va_list:vargs::
+
 PyErr_WarnEx:int:::
 PyErr_WarnEx:PyObject*:category:0:
 PyErr_WarnEx:const char*:message::

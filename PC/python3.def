@@ -120,6 +120,7 @@ EXPORTS
   PyErr_ExceptionMatches=python35.PyErr_ExceptionMatches
   PyErr_Fetch=python35.PyErr_Fetch
   PyErr_Format=python35.PyErr_Format
+  PyErr_FormatV=python35.PyErr_FormatV
   PyErr_GivenExceptionMatches=python35.PyErr_GivenExceptionMatches
   PyErr_NewException=python35.PyErr_NewException
   PyErr_NewExceptionWithDoc=python35.PyErr_NewExceptionWithDoc

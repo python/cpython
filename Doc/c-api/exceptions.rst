@@ -197,6 +197,14 @@ in various ways.  There is a separate error indicator for each thread.
    string.
 
 
+.. c:function:: PyObject* PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
+
+   Same as :c:func:`PyErr_Format`, but taking a `va_list` argument rather
+   than a variable number of arguments.
+
+   .. versionadded:: 3.5
+
+
 .. c:function:: void PyErr_SetNone(PyObject *type)
 
    This is a shorthand for ``PyErr_SetObject(type, Py_None)``.
