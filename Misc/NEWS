@@ -10,6 +10,9 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #16039: CVE-2013-1752: Change use of readline in imaplib module to limit
+  line length.  Patch by Emil Lind.
+
 - Issue #22421: Fix a regression that caused the pydoc server to be bound to
   all interfaces instead of only localhost.
 
