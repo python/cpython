@@ -545,15 +545,8 @@ class build_ext(Command):
                                          extra_postargs=extra_args,
                                          depends=ext.depends)
 
-        # XXX -- this is a Vile HACK!
-        #
-        # The setup.py script for Python on Unix needs to be able to
-        # get this list so it can perform all the clean up needed to
-        # avoid keeping object files around when cleaning out a failed
-        # build of an extension module.  Since Distutils does not
-        # track dependencies, we have to get rid of intermediates to
-        # ensure all the intermediates will be properly re-built.
-        #
+        # XXX outdated variable, kept here in case third-part code
+        # needs it.
         self._built_objects = objects[:]
 
         # Now link the object files together into a "shared object" --
