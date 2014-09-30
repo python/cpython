@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
+  weakrefs.
+
 - Issue #10510: distutils register and upload methods now use HTML standards
   compliant CRLF line endings.
 

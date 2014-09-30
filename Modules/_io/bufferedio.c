@@ -2120,6 +2120,8 @@ static void
 bufferedrwpair_dealloc(rwpair *self)
 {
     _PyObject_GC_UNTRACK(self);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
     Py_CLEAR(self->dict);
