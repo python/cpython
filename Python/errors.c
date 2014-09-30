@@ -749,18 +749,10 @@ PyErr_BadInternalCall(void)
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 
-
 PyObject *
-PyErr_Format(PyObject *exception, const char *format, ...)
+PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
 {
-    va_list vargs;
     PyObject* string;
-
-#ifdef HAVE_STDARG_PROTOTYPES
-    va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
 
 #ifdef Py_DEBUG
     /* in debug mode, PyEval_EvalFrameEx() fails with an assertion error
@@ -771,10 +763,23 @@ PyErr_Format(PyObject *exception, const char *format, ...)
     string = PyUnicode_FromFormatV(format, vargs);
     PyErr_SetObject(exception, string);
     Py_XDECREF(string);
-    va_end(vargs);
     return NULL;
 }
 
+
+PyObject *
+PyErr_Format(PyObject *exception, const char *format, ...)
+{
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    PyErr_FormatV(exception, format, vargs);
+    va_end(vargs);
+    return NULL;
+}
 
 
 PyObject *
