@@ -118,7 +118,7 @@ class ThreadedImportTests(unittest.TestCase):
                 t = threading.Thread(target=task,
                                      args=(N, done, done_tasks, errors,))
                 t.start()
-            completed = done.wait(60)
+            completed = done.wait(10 * 60)
             dbg_info = 'done: %s/%s' % (len(done_tasks), N)
             self.assertFalse(errors, dbg_info)
             self.assertTrue(completed, dbg_info)
