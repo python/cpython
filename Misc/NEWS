@@ -47,6 +47,19 @@ Library
   with non-standard cookie handling in some Web browsers.  Reported by
   Sergey Bobrov.
 
+- Issue #19855: uuid.getnode() on Unix now looks on the PATH for the
+  executables used to find the mac address, with /sbin and /usr/sbin as
+  fallbacks.
+
+- Issue #11508: Fixed uuid.getnode() and uuid.uuid1() on environment with
+  virtual interface.  Original patch by Kent Frazier.
+
+- Issue #18784: The uuid module no more attempts to load libc via ctypes.CDLL,
+  if all necessary functions are already found in libuuid.
+  Patch by Evgeny Sologubov.
+
+- Issue #16102: Make uuid._netbios_getnode() work again on Python 3.
+
 - Issue #21766: Prevent a security hole in CGIHTTPServer by URL unquoting paths
   before checking for a CGI script at that path.
 
