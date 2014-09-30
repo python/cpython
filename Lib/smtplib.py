@@ -189,10 +189,14 @@ else:
         def __init__(self, sslobj):
             self.sslobj = sslobj
 
-        def readline(self):
+        def readline(self, size=-1):
+            if size < 0:
+                size = None
             str = b""
             chr = None
             while chr != b"\n":
+                if size is not None and len(str) > size:
+                    break
                 chr = self.sslobj.read(1)
                 if not chr:
                     break
