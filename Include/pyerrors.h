@@ -242,6 +242,12 @@ PyAPI_FUNC(PyObject *) PyErr_Format(
     const char *format,   /* ASCII-encoded string  */
     ...
     );
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+PyAPI_FUNC(PyObject *) PyErr_FormatV(
+    PyObject *exception,
+    const char *format,
+    va_list vargs);
+#endif
 
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
