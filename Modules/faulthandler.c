@@ -1006,9 +1006,9 @@ static PyMethodDef module_methods[] = {
     {"_read_null", faulthandler_read_null, METH_VARARGS,
      PyDoc_STR("_read_null(release_gil=False): read from NULL, raise "
                "a SIGSEGV or SIGBUS signal depending on the platform")},
-    {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
+    {"_sigsegv", faulthandler_sigsegv, METH_NOARGS,
      PyDoc_STR("_sigsegv(): raise a SIGSEGV signal")},
-    {"_sigabrt", faulthandler_sigabrt, METH_VARARGS,
+    {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
      PyDoc_STR("_sigabrt(): raise a SIGABRT signal")},
     {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
      PyDoc_STR("_sigfpe(): raise a SIGFPE signal")},
