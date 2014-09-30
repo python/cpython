@@ -10,6 +10,10 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #16041: CVE-2013-1752: poplib: Limit maximum line lengths to 2048 to
+  prevent readline() calls from consuming too much memory.  Patch by Jyrki
+  Pulliainen.
+
 - Issue #16042: CVE-2013-1752: smtplib: Limit amount of data read by
   limiting the call to readline().  Original patch by Christian Heimes.
 
