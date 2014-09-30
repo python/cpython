@@ -1,4 +1,5 @@
-import os
+import os.path
+from os.path import abspath
 import re
 import sys
 import types
@@ -250,7 +251,7 @@ class TestDiscovery(unittest.TestCase):
         def restore_isdir():
             os.path.isdir = original_isdir
         self.addCleanup(restore_isdir)
-        self.addCleanup(sys.path.remove, '/foo')
+        self.addCleanup(sys.path.remove, abspath('/foo'))
 
         # Test data: we expect the following:
         # a listdir to find our package, and a isfile and isdir check on it.
@@ -263,8 +264,8 @@ class TestDiscovery(unittest.TestCase):
         # the module load tests for both package and plain module called,
         # and the plain module result nested by the package module load_tests
         # indicating that it was processed and could have been mutated.
-        vfs = {'/foo': ['my_package'],
-               '/foo/my_package': ['__init__.py', 'test_module.py']}
+        vfs = {abspath('/foo'): ['my_package'],
+               abspath('/foo/my_package'): ['__init__.py', 'test_module.py']}
         def list_dir(path):
             return list(vfs[path])
         os.listdir = list_dir
@@ -301,10 +302,10 @@ class TestDiscovery(unittest.TestCase):
         loader._get_module_from_name = lambda name: Module(name)
         loader.suiteClass = lambda thing: thing
 
-        loader._top_level_dir = '/foo'
+        loader._top_level_dir = abspath('/foo')
         # this time no '.py' on the pattern so that it can match
         # a test package
-        suite = list(loader._find_tests('/foo', 'test*.py'))
+        suite = list(loader._find_tests(abspath('/foo'), 'test*.py'))
 
         # We should have loaded tests from both my_package and
         # my_pacakge.test_module, and also run the load_tests hook in both.
@@ -404,8 +405,8 @@ class TestDiscovery(unittest.TestCase):
             test.test_this_does_not_exist()
 
     def test_discover_with_init_modules_that_fail_to_import(self):
-        vfs = {'/foo': ['my_package'],
-               '/foo/my_package': ['__init__.py', 'test_module.py']}
+        vfs = {abspath('/foo'): ['my_package'],
+               abspath('/foo/my_package'): ['__init__.py', 'test_module.py']}
         self.setup_import_issue_package_tests(vfs)
         import_calls = []
         def _get_module_from_name(name):
@@ -413,9 +414,9 @@ class TestDiscovery(unittest.TestCase):
             raise ImportError("Cannot import Name")
         loader = unittest.TestLoader()
         loader._get_module_from_name = _get_module_from_name
-        suite = loader.discover('/foo')
+        suite = loader.discover(abspath('/foo'))
 
-        self.assertIn('/foo', sys.path)
+        self.assertIn(abspath('/foo'), sys.path)
         self.assertEqual(suite.countTestCases(), 1)
         test = list(list(suite)[0])[0] # extract test from suite
         with self.assertRaises(ImportError):
@@ -439,8 +440,8 @@ class TestDiscovery(unittest.TestCase):
         self.assertEqual(len(result.skipped), 1)
 
     def test_discover_with_init_module_that_raises_SkipTest_on_import(self):
-        vfs = {'/foo': ['my_package'],
-               '/foo/my_package': ['__init__.py', 'test_module.py']}
+        vfs = {abspath('/foo'): ['my_package'],
+               abspath('/foo/my_package'): ['__init__.py', 'test_module.py']}
         self.setup_import_issue_package_tests(vfs)
         import_calls = []
         def _get_module_from_name(name):
@@ -448,9 +449,9 @@ class TestDiscovery(unittest.TestCase):
             raise unittest.SkipTest('skipperoo')
         loader = unittest.TestLoader()
         loader._get_module_from_name = _get_module_from_name
-        suite = loader.discover('/foo')
+        suite = loader.discover(abspath('/foo'))
 
-        self.assertIn('/foo', sys.path)
+        self.assertIn(abspath('/foo'), sys.path)
         self.assertEqual(suite.countTestCases(), 1)
         result = unittest.TestResult()
         suite.run(result)
