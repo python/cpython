@@ -10,6 +10,9 @@ What's New in Python 3.3.6 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #22520: Fix overflow checking when generating the repr of a unicode
+  object.
+
 - Issue #22519: Fix overflow checking in PyBytes_Repr.
 
 - Issue #22518: Fix integer overflow issues in latin-1 encoding.
