@@ -8786,7 +8786,15 @@ posix_truncate(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 #endif
 
-#ifdef HAVE_POSIX_FALLOCATE
+/* Issue #22396: On 32-bit AIX platform, the prototypes of os.posix_fadvise()
+   and os.posix_fallocate() in system headers are wrong if _LARGE_FILES is
+   defined, which is the case in Python on AIX. AIX bug report:
+   http://www-01.ibm.com/support/docview.wss?uid=isg1IV56170 */
+#if defined(_AIX) && defined(_LARGE_FILES) && !defined(__64BIT__)
+#  define POSIX_FADVISE_AIX_BUG
+#endif
+
+#if defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG)
 PyDoc_STRVAR(posix_posix_fallocate__doc__,
 "posix_fallocate(fd, offset, len)\n\n\
 Ensures that enough disk space is allocated for the file specified by fd\n\
@@ -8813,7 +8821,7 @@ posix_posix_fallocate(PyObject *self, PyObject *args)
 }
 #endif
 
-#ifdef HAVE_POSIX_FADVISE
+#if defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)
 PyDoc_STRVAR(posix_posix_fadvise__doc__,
 "posix_fadvise(fd, offset, len, advice)\n\n\
 Announces an intention to access data in a specific pattern thus allowing\n\
@@ -11485,10 +11493,10 @@ static PyMethodDef posix_methods[] = {
                         METH_VARARGS | METH_KEYWORDS,
                         posix_truncate__doc__},
 #endif
-#ifdef HAVE_POSIX_FALLOCATE
+#if defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG)
     {"posix_fallocate", posix_posix_fallocate, METH_VARARGS, posix_posix_fallocate__doc__},
 #endif
-#ifdef HAVE_POSIX_FADVISE
+#if defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)
     {"posix_fadvise",   posix_posix_fadvise, METH_VARARGS, posix_posix_fadvise__doc__},
 #endif
 #ifdef HAVE_PUTENV
