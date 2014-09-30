@@ -79,8 +79,7 @@ Available make targets are:
 
  * "pydoc-topics", which builds a Python module containing a dictionary with
    plain text documentation for the labels defined in
-   `tools/sphinxext/pyspecific.py` -- pydoc needs these to show topic and
-   keyword help.
+   `tools/pyspecific.py` -- pydoc needs these to show topic and keyword help.
 
  * "suspicious", which checks the parsed markup for text that looks like
    malformed and thus unconverted reST.
