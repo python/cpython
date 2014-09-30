@@ -10,6 +10,9 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #16042: CVE-2013-1752: smtplib: Limit amount of data read by
+  limiting the call to readline().  Original patch by Christian Heimes.
+
 - Issue #16038: CVE-2013-1752: ftplib: Limit amount of data read by
   limiting the call to readline().  Original patch by Michał
   Jastrzębski and Giampaolo Rodola.
