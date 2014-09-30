@@ -313,25 +313,38 @@ class UUID(object):
 
 def _find_mac(command, args, hw_identifiers, get_index):
     import os
-    for dir in ['', '/sbin/', '/usr/sbin']:
+    path = os.environ.get("PATH", os.defpath).split(os.pathsep)
+    path.extend(('/sbin', '/usr/sbin'))
+    for dir in path:
         executable = os.path.join(dir, command)
-        if not os.path.exists(executable):
-            continue
+        if (os.path.exists(executable) and
+            os.access(executable, os.F_OK | os.X_OK) and
+            not os.path.isdir(executable)):
+            break
+    else:
+        return None
 
-        try:
-            # LC_ALL to get English output, 2>/dev/null to
-            # prevent output on stderr
-            cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
-            with os.popen(cmd) as pipe:
-                for line in pipe:
-                    words = line.lower().split()
-                    for i in range(len(words)):
-                        if words[i] in hw_identifiers:
+    try:
+        # LC_ALL to ensure English output, 2>/dev/null to
+        # prevent output on stderr
+        cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
+        with os.popen(cmd) as pipe:
+            for line in pipe:
+                words = line.lower().split()
+                for i in range(len(words)):
+                    if words[i] in hw_identifiers:
+                        try:
                             return int(
                                 words[get_index(i)].replace(':', ''), 16)
-        except IOError:
-            continue
-    return None
+                        except (ValueError, IndexError):
+                            # Virtual interfaces, such as those provided by
+                            # VPNs, do not have a colon-delimited MAC address
+                            # as expected, but a 16-byte HWAddr separated by
+                            # dashes. These should be ignored in favor of a
+                            # real MAC address
+                            pass
+    except IOError:
+        pass
 
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
@@ -406,7 +419,7 @@ def _netbios_getnode():
         if win32wnet.Netbios(ncb) != 0:
             continue
         status._unpack()
-        bytes = map(ord, status.adapter_address)
+        bytes = status.adapter_address
         return ((bytes[0]<<40) + (bytes[1]<<32) + (bytes[2]<<24) +
                 (bytes[3]<<16) + (bytes[4]<<8) + bytes[5])
 
@@ -429,6 +442,8 @@ try:
             _uuid_generate_random = lib.uuid_generate_random
         if hasattr(lib, 'uuid_generate_time'):
             _uuid_generate_time = lib.uuid_generate_time
+            if _uuid_generate_random is not None:
+                break  # found everything we were looking for
 
     # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
     # in issue #8621 the function generates the same sequence of values
