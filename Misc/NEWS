@@ -31,6 +31,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20079: Added locales supported in glibc 2.18 to locale alias table.
+
 - Issue #22530: Allow the ``group()`` method of regular expression match objects
   to take a ``long`` as an index.
 
