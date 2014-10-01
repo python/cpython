@@ -1267,7 +1267,7 @@ unicode_aswidechar(PyUnicodeObject *unicode,
     Py_ssize_t nchar;
 
     u = PyUnicode_AS_UNICODE(unicode);
-    uend = u + PyUnicode_GET_SIZE(u);
+    uend = u + PyUnicode_GET_SIZE(unicode);
     if (w != NULL) {
         worig = w;
         wend = w + size;
