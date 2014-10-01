@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20079: Added locales supported in glibc 2.18 to locale alias table.
+
 - Issue #22396: On 32-bit AIX platform, don't expose os.posix_fadvise() nor
   os.posix_fallocate() because their prototypes in system headers are wrong.
 
