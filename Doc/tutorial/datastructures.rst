@@ -199,12 +199,17 @@ For example, assume we want to create a list of squares, like::
    >>> squares
    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-We can obtain the same result with::
+Note that this creates (or overwrites) a variable named ``x`` that still exists
+after the loop completes.  We can calculate the list of squares without any
+side effects using::
+
+   squares = list(map(lambda x: x**2, range(10)))
+
+or, equivalently::
 
    squares = [x**2 for x in range(10)]
 
-This is also equivalent to ``squares = list(map(lambda x: x**2, range(10)))``,
-but it's more concise and readable.
+which is more concise and readable.
 
 A list comprehension consists of brackets containing an expression followed
 by a :keyword:`for` clause, then zero or more :keyword:`for` or :keyword:`if`
