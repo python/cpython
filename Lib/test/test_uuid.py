@@ -1,4 +1,4 @@
-from unittest import TestCase
+import unittest
 from test import support
 import builtins
 import io
@@ -12,7 +12,7 @@ def importable(name):
     except:
         return False
 
-class TestUUID(TestCase):
+class TestUUID(unittest.TestCase):
     last_node = None
     source2node = {}
 
@@ -362,6 +362,7 @@ class TestUUID(TestCase):
 
         self.assertEqual(node1, node2)
 
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
         data = '''\
 
