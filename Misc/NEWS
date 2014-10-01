@@ -242,6 +242,8 @@ Build
 - Issue #21166: Prevent possible segfaults and other random failures of
   python --generate-posix-vars in pybuilddir.txt build target.
 
+- Issue #18096: Fix library order returned by python-config.
+
 Windows
 -------
 
