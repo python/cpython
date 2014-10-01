@@ -7,6 +7,12 @@ What's New in Python 3.2.6?
 
 *Release date: TBD*
 
+Core and Builtins
+-----------------
+
+- Issue #19529: Fix a potential crash in converting Unicode objects to wchar_t
+  when Py_UNICODE is 4 bytes but wchar_t is 2 bytes, for example on AIX.
+
 Library
 -------
 
