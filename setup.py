@@ -252,9 +252,7 @@ class PyBuildExt(build_ext):
 
         build_ext.build_extensions(self)
 
-        longest = 0
-        if self.extensions:
-            longest = max([len(e.name) for e in self.extensions])
+        longest = max([len(e.name) for e in self.extensions], default=0)
         if self.failed:
             longest = max(longest, max([len(name) for name in self.failed]))
 
