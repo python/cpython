@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22530: Allow the ``group()`` method of regular expression match objects
+  to take a ``long`` as an index.
+
 - Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
   weakrefs.
 

@@ -971,6 +971,10 @@ subpattern None
             pat.split(string='abracadabra', maxsplit=1),
             ['', 'ab', 'racadabra'])
 
+    def test_match_group_takes_long(self):
+        self.assertEqual(re.match("(foo)", "foo").group(1L), "foo")
+        self.assertRaises(IndexError, re.match("", "").group, sys.maxint + 1)
+
 
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR

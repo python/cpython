@@ -3301,7 +3301,7 @@ match_getindex(MatchObject* self, PyObject* index)
 {
     Py_ssize_t i;
 
-    if (PyInt_Check(index))
+    if (PyInt_Check(index) || PyLong_Check(index))
         return PyInt_AsSsize_t(index);
 
     i = -1;
