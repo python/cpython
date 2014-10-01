@@ -10,6 +10,8 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
+- Issue #22526: Fix iterating through files with lines longer than 2^31 bytes.
+
 - Issue #22519: Fix overflow checking in PyString_Repr.
 
 - Issue #22518: Fix integer overflow issues in latin-1 encoding.

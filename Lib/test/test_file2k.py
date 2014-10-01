@@ -436,6 +436,18 @@ class OtherFileTests(unittest.TestCase):
         finally:
             f.close()
 
+    @test_support.precisionbigmemtest(2**31, 1)
+    def test_very_long_line(self, maxsize):
+        # Issue #22526
+        with open(TESTFN, "wb") as fp:
+            fp.write("\0"*2**31)
+        with open(TESTFN, "rb") as fp:
+            for l in fp:
+                pass
+        self.assertEqual(len(l), 2**31)
+        self.assertEqual(l.count("\0"), 2**31)
+        l = None
+
 class FileSubclassTests(unittest.TestCase):
 
     def testExit(self):
