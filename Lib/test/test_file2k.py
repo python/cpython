@@ -436,6 +436,7 @@ class OtherFileTests(unittest.TestCase):
         finally:
             f.close()
 
+    @unittest.skipUnless(sys.maxsize > 2**31, "requires 64-bit system")
     @test_support.precisionbigmemtest(2**31, 1)
     def test_very_long_line(self, maxsize):
         # Issue #22526
