@@ -156,6 +156,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20218: Added convenience methods read_text/write_text and read_bytes/
+  write_bytes to pathlib.Path objects.
+
 - Issue #22437: Number of capturing groups in regular expression is no longer
   limited by 100.
 

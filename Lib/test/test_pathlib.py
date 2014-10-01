@@ -1310,6 +1310,23 @@ class _BasePathTest(object):
             self.assertIsInstance(f, io.RawIOBase)
             self.assertEqual(f.read().strip(), b"this is file A")
 
+    def test_read_write_bytes(self):
+        p = self.cls(BASE)
+        (p / 'fileA').write_bytes(b'abcdefg')
+        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
+        # check that trying to write str does not truncate the file
+        self.assertRaises(TypeError, (p / 'fileA').write_bytes, 'somestr')
+        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
+
+    def test_read_write_text(self):
+        p = self.cls(BASE)
+        (p / 'fileA').write_text('äbcdefg', encoding='latin-1')
+        self.assertEqual((p / 'fileA').read_text(
+            encoding='utf-8', errors='ignore'), 'bcdefg')
+        # check that trying to write bytes does not truncate the file
+        self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
+        self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
+
     def test_iterdir(self):
         P = self.cls
         p = P(BASE)
