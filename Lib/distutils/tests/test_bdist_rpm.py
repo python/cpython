@@ -24,6 +24,7 @@ setup(name='foo', version='0.1', py_modules=['foo'],
 """
 
 class BuildRpmTestCase(support.TempdirManager,
+                       support.EnvironGuard,
                        support.LoggingSilencer,
                        unittest.TestCase):
 
@@ -54,6 +55,7 @@ class BuildRpmTestCase(support.TempdirManager,
     def test_quiet(self):
         # let's create a package
         tmp_dir = self.mkdtemp()
+        os.environ['HOME'] = tmp_dir   # to confine dir '.rpmdb' creation
         pkg_dir = os.path.join(tmp_dir, 'foo')
         os.mkdir(pkg_dir)
         self.write_file((pkg_dir, 'setup.py'), SETUP_PY)
@@ -96,6 +98,7 @@ class BuildRpmTestCase(support.TempdirManager,
     def test_no_optimize_flag(self):
         # let's create a package that brakes bdist_rpm
         tmp_dir = self.mkdtemp()
+        os.environ['HOME'] = tmp_dir   # to confine dir '.rpmdb' creation
         pkg_dir = os.path.join(tmp_dir, 'foo')
         os.mkdir(pkg_dir)
         self.write_file((pkg_dir, 'setup.py'), SETUP_PY)
