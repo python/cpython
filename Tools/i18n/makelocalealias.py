@@ -45,10 +45,6 @@ def parse(filename):
             encoding = encoding.replace('-', '')
             encoding = encoding.replace('_', '')
             locale = lang + '.' + encoding
-            if encoding.lower() == 'utf8':
-                # Ignore UTF-8 mappings - this encoding should be
-                # available for all locales
-                continue
         data[locale] = alias
     return data
 
