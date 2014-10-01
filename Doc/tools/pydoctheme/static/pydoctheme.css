@@ -105,20 +105,20 @@ div.body a:hover {
     color: #00B0E4;
 }
 
-tt, pre {
+tt, code, pre {
     font-family: monospace, sans-serif;
     font-size: 96.5%;
 }
 
-div.body tt {
+div.body tt, div.body code {
     border-radius: 3px;
 }
 
-div.body tt.descname {
+div.body tt.descname, div.body code.descname {
     font-size: 120%;
 }
 
-div.body tt.xref, div.body a tt {
+div.body tt.xref, div.body a tt, div.body code.xref, div.body a code {
     font-weight: normal;
 }
 
