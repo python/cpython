@@ -157,11 +157,11 @@ grp_getgrall(PyObject *self, PyObject *ignore)
 
 static PyMethodDef grp_methods[] = {
     {"getgrgid",	grp_getgrgid,	METH_O,
-     "getgrgid(id) -> tuple\n\
+     "getgrgid(id) -> (gr_name,gr_passwd,gr_gid,gr_mem)\n\
 Return the group database entry for the given numeric group ID.  If\n\
 id is not valid, raise KeyError."},
     {"getgrnam",	grp_getgrnam,	METH_O,
-     "getgrnam(name) -> tuple\n\
+     "getgrnam(name) -> (gr_name,gr_passwd,gr_gid,gr_mem)\n\
 Return the group database entry for the given group name.  If\n\
 name is not valid, raise KeyError."},
     {"getgrall",	grp_getgrall,	METH_NOARGS,
@@ -178,10 +178,10 @@ PyDoc_STRVAR(grp__doc__,
 Group entries are reported as 4-tuples containing the following fields\n\
 from the group database, in order:\n\
 \n\
-  name   - name of the group\n\
-  passwd - group password (encrypted); often empty\n\
-  gid    - numeric ID of the group\n\
-  mem    - list of members\n\
+  gr_name   - name of the group\n\
+  gr_passwd - group password (encrypted); often empty\n\
+  gr_gid    - numeric ID of the group\n\
+  gr_mem    - list of members\n\
 \n\
 The gid is an integer, name and password are strings.  (Note that most\n\
 users are not explicitly listed as members of the groups they are in\n\
