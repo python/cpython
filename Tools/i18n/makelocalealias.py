@@ -10,8 +10,10 @@ import locale
 import sys
 _locale = locale
 
-# Location of the alias file
+# Location of the X11 alias file.
 LOCALE_ALIAS = '/usr/share/X11/locale/locale.alias'
+# Location of the glibc SUPPORTED locales file.
+SUPPORTED = '/usr/share/i18n/SUPPORTED'
 
 def parse(filename):
 
@@ -59,10 +61,12 @@ def parse_glibc_supported(filename):
             continue
         if line[:1] == '#':
             continue
-        if '/' not in line:
-            continue
+        line = line.replace('/', ' ').strip()
         line = line.rstrip('\\').rstrip()
-        alias, _, alias_encoding = line.partition('/')
+        words = line.split()
+        if len(words) != 2:
+            continue
+        alias, alias_encoding = words
         # Lower-case locale
         locale = alias.lower()
         # Normalize encoding, if given
@@ -125,13 +129,13 @@ if __name__ == '__main__':
     parser.add_argument('--locale-alias', default=LOCALE_ALIAS,
                         help='location of the X11 alias file '
                              '(default: %a)' % LOCALE_ALIAS)
-    parser.add_argument('--glibc-supported',
-                        help='location of the glibc SUPPORTED locales file')
+    parser.add_argument('--glibc-supported', default=SUPPORTED,
+                        help='location of the glibc SUPPORTED locales file '
+                             '(default: %a)' % SUPPORTED)
     args = parser.parse_args()
 
     data = locale.locale_alias.copy()
-    if args.glibc_supported:
-        data.update(parse_glibc_supported(args.glibc_supported))
+    data.update(parse_glibc_supported(args.glibc_supported))
     data.update(parse(args.locale_alias))
     while True:
         # Repeat optimization while the size is decreased.
