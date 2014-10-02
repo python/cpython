@@ -47,8 +47,9 @@ for opt in opt_flags:
         print(' '.join(flags))
 
     elif opt in ('--libs', '--ldflags'):
-        libs = getvar('LIBS').split() + getvar('SYSLIBS').split()
-        libs.append('-lpython' + pyver + sys.abiflags)
+        libs = ['-lpython' + pyver + sys.abiflags]
+        libs += getvar('LIBS').split()
+        libs += getvar('SYSLIBS').split()
         # add the prefix/lib/pythonX.Y/config dir, but only if there is no
         # shared library in prefix/lib/.
         if opt == '--ldflags':
