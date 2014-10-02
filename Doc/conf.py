@@ -38,13 +38,6 @@ today = ''
 # Else, today_fmt is used as the format for a strftime call.
 today_fmt = '%B %d, %Y'
 
-# List of files that shouldn't be included in the build.
-unused_docs = [
-    'maclib/scrap',
-    'library/xmllib',
-    'library/xml.etree',
-]
-
 # Ignore .rst in Sphinx its self.
 exclude_trees = ['tools/sphinx']
 
@@ -61,6 +54,7 @@ add_module_names = True
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
+# Require Sphinx 1.2 for build.
 needs_sphinx = '1.2'
 
 
