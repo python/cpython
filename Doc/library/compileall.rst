@@ -4,6 +4,10 @@
 .. module:: compileall
    :synopsis: Tools for byte-compiling all Python source files in a directory tree.
 
+**Source code:** :source:`Lib/compileall.py`
+
+--------------
+
 
 This module provides some utility functions to support installing Python
 libraries.  These functions compile Python source files in a directory tree.
