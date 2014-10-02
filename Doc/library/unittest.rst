@@ -1644,7 +1644,7 @@ Loading and running tests
       function. If this exists then it will be called with *loader*, *tests*,
       *pattern*.
 
-      If load_tests exists then discovery does *not* recurse into the package,
+      If ``load_tests`` exists then discovery does *not* recurse into the package,
       ``load_tests`` is responsible for loading all tests in the package.
 
       The pattern is deliberately not stored as a loader attribute so that
