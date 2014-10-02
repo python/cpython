@@ -94,6 +94,8 @@ class BasicTests(unittest.TestCase):
                 pass
             else:
                 raise
+
+
 def can_clear_options():
     # 0.9.8m or higher
     return ssl._OPENSSL_API_VERSION >= (0, 9, 8, 13, 15)
@@ -2944,7 +2946,7 @@ def test_main(verbose=False):
         if not os.path.exists(filename):
             raise support.TestFailed("Can't read certificate file %r" % filename)
 
-    tests = [ContextTests, BasicSocketTests, SSLErrorTests]
+    tests = [ContextTests, BasicTests, BasicSocketTests, SSLErrorTests]
 
     if support.is_resource_enabled('network'):
         tests.append(NetworkedTests)

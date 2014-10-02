@@ -517,10 +517,12 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->socket_type = socket_type;
     self->Socket = sock;
     Py_INCREF(self->Socket);
-    self->ssl_sock = PyWeakref_NewRef(ssl_sock, NULL);
-    if (self->ssl_sock == NULL) {
-        Py_DECREF(self);
-        return NULL;
+    if (ssl_sock != Py_None) {
+        self->ssl_sock = PyWeakref_NewRef(ssl_sock, NULL);
+        if (self->ssl_sock == NULL) {
+            Py_DECREF(self);
+            return NULL;
+        }
     }
     return self;
 }
@@ -2931,8 +2933,12 @@ _servername_callback(SSL *s, int *al, void *args)
 
     ssl = SSL_get_app_data(s);
     assert(PySSLSocket_Check(ssl));
-    ssl_socket = PyWeakref_GetObject(ssl->ssl_sock);
-    Py_INCREF(ssl_socket);
+    if (ssl->ssl_sock == NULL) {
+        ssl_socket = Py_None;
+    } else {
+        ssl_socket = PyWeakref_GetObject(ssl->ssl_sock);
+        Py_INCREF(ssl_socket);
+    }
     if (ssl_socket == Py_None) {
         goto error;
     }

@@ -969,16 +969,16 @@ def get_protocol_name(protocol_code):
 # a replacement for the old socket.ssl function
 
 def sslwrap_simple(sock, keyfile=None, certfile=None):
-
     """A replacement for the old socket.ssl function.  Designed
     for compability with Python 2.5 and earlier.  Will disappear in
     Python 3.0."""
-
     if hasattr(sock, "_sock"):
         sock = sock._sock
 
-    ssl_sock = _ssl.sslwrap(sock, 0, keyfile, certfile, CERT_NONE,
-                            PROTOCOL_SSLv23, None)
+    ctx = SSLContext(PROTOCOL_SSLv23)
+    if keyfile or certfile:
+        ctx.load_cert_chain(certfile, keyfile)
+    ssl_sock = ctx._wrap_socket(sock, server_side=False)
     try:
         sock.getpeername()
     except socket_error:
