@@ -200,10 +200,10 @@ PyDoc_STRVAR(grp__doc__,
 Group entries are reported as 4-tuples containing the following fields\n\
 from the group database, in order:\n\
 \n\
-  name   - name of the group\n\
-  passwd - group password (encrypted); often empty\n\
-  gid    - numeric ID of the group\n\
-  mem    - list of members\n\
+  gr_name   - name of the group\n\
+  gr_passwd - group password (encrypted); often empty\n\
+  gr_gid    - numeric ID of the group\n\
+  gr_mem    - list of members\n\
 \n\
 The gid is an integer, name and password are strings.  (Note that most\n\
 users are not explicitly listed as members of the groups they are in\n\
