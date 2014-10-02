@@ -235,7 +235,7 @@ class build_ext (Command):
         # Python's library directory must be appended to library_dirs
         # See Issues: #1600860, #4366
         if (sysconfig.get_config_var('Py_ENABLE_SHARED')):
-            if sys.executable.startswith(os.path.join(sys.exec_prefix, "bin")):
+            if not sysconfig.python_build:
                 # building third party extensions
                 self.library_dirs.append(sysconfig.get_config_var('LIBDIR'))
             else:

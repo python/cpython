@@ -244,6 +244,8 @@ Build
 
 - Issue #18096: Fix library order returned by python-config.
 
+- Issue #17219: Add library build dir for Python extension cross-builds.
+
 Windows
 -------
 
