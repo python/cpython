@@ -817,6 +817,9 @@ for k, v in sorted(locale_encoding_alias.items()):
 #    updated 'sr_cs' -> 'sr_RS.UTF-8' to 'sr_CS.UTF-8'
 #    updated 'sr_cs.utf8@latn' -> 'sr_RS.UTF-8@latin' to 'sr_CS.UTF-8@latin'
 #    updated 'sr_cs@latn' -> 'sr_RS.UTF-8@latin' to 'sr_CS.UTF-8@latin'
+#
+# SS 2014-10-01:
+# Updated alias mapping with glibc 2.19 supported locales.
 
 locale_alias = {
     'a3':                                   'az_AZ.KOI8-C',
@@ -894,6 +897,7 @@ locale_alias = {
     'ca':                                   'ca_ES.ISO8859-1',
     'ca_ad':                                'ca_AD.ISO8859-1',
     'ca_es':                                'ca_ES.ISO8859-1',
+    'ca_es@valencia':                       'ca_ES.ISO8859-15@valencia',
     'ca_fr':                                'ca_FR.ISO8859-1',
     'ca_it':                                'ca_IT.ISO8859-1',
     'catalan':                              'ca_ES.ISO8859-1',
@@ -921,6 +925,7 @@ locale_alias = {
     'de_be':                                'de_BE.ISO8859-1',
     'de_ch':                                'de_CH.ISO8859-1',
     'de_de':                                'de_DE.ISO8859-1',
+    'de_li.utf8':                           'de_LI.UTF-8',
     'de_lu':                                'de_LU.ISO8859-1',
     'deutsch':                              'de_DE.ISO8859-1',
     'doi_in':                               'doi_IN.UTF-8',
@@ -965,7 +970,9 @@ locale_alias = {
     'english_united-states.437':            'C',
     'english_us':                           'en_US.ISO8859-1',
     'eo':                                   'eo_XX.ISO8859-3',
+    'eo.utf8':                              'eo.UTF-8',
     'eo_eo':                                'eo_EO.ISO8859-3',
+    'eo_us.utf8':                           'eo_US.UTF-8',
     'eo_xx':                                'eo_XX.ISO8859-3',
     'es':                                   'es_ES.ISO8859-1',
     'es_ar':                                'es_AR.ISO8859-1',
@@ -994,6 +1001,7 @@ locale_alias = {
     'et_ee':                                'et_EE.ISO8859-15',
     'eu':                                   'eu_ES.ISO8859-1',
     'eu_es':                                'eu_ES.ISO8859-1',
+    'eu_fr':                                'eu_FR.ISO8859-1',
     'fa':                                   'fa_IR.UTF-8',
     'fa_ir':                                'fa_IR.UTF-8',
     'fa_ir.isiri3342':                      'fa_IR.ISIRI-3342',
@@ -1055,6 +1063,7 @@ locale_alias = {
     'hungarian':                            'hu_HU.ISO8859-2',
     'hy_am':                                'hy_AM.UTF-8',
     'hy_am.armscii8':                       'hy_AM.ARMSCII_8',
+    'ia':                                   'ia.UTF-8',
     'ia_fr':                                'ia_FR.UTF-8',
     'icelandic':                            'is_IS.ISO8859-1',
     'id':                                   'id_ID.ISO8859-1',
@@ -1096,7 +1105,7 @@ locale_alias = {
     'ka_ge.georgianacademy':                'ka_GE.GEORGIAN-ACADEMY',
     'ka_ge.georgianps':                     'ka_GE.GEORGIAN-PS',
     'ka_ge.georgianrs':                     'ka_GE.GEORGIAN-ACADEMY',
-    'kk_kz':                                'kk_KZ.ptcp154',
+    'kk_kz':                                'kk_KZ.RK1048',
     'kl':                                   'kl_GL.ISO8859-1',
     'kl_gl':                                'kl_GL.ISO8859-1',
     'km_kh':                                'km_KH.UTF-8',
@@ -1224,6 +1233,7 @@ locale_alias = {
     'sd':                                   'sd_IN.UTF-8',
     'sd_in':                                'sd_IN.UTF-8',
     'sd_in@devanagari.utf8':                'sd_IN.UTF-8@devanagari',
+    'sd_pk':                                'sd_PK.UTF-8',
     'se_no':                                'se_NO.UTF-8',
     'serbocroatian':                        'sr_RS.UTF-8@latin',
     'sh':                                   'sr_RS.UTF-8@latin',
