@@ -1606,7 +1606,6 @@ locale_alias = {
     'sr_cs@latn':                           'sr_CS.UTF-8@latin',
     'sr_me':                                'sr_ME.UTF-8',
     'sr_rs':                                'sr_RS.UTF-8',
-    'sr_rs.utf8@latn':                      'sr_RS.UTF-8@latin',
     'sr_rs@latin':                          'sr_RS.UTF-8@latin',
     'sr_rs@latn':                           'sr_RS.UTF-8@latin',
     'sr_sp':                                'sr_CS.ISO8859-2',
