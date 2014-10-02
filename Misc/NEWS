@@ -38,6 +38,8 @@ Build
 - Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
   Jonathan Hosmer.
 
+- Issue #18096: Fix library order returned by python-config.
+
 
 What's New in Python 3.4.2?
 ===========================
