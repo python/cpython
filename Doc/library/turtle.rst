@@ -2274,10 +2274,13 @@ study it as an example and see its effects when running the demos (preferably
 not from within the demo-viewer).
 
 
-Demo scripts
-============
+:mod:`turtledemo` --- Demo scripts
+==================================
 
-There is a set of demo scripts in the :mod:`turtledemo` package.  These
+.. module:: turtledemo
+   :synopsis: A viewer for example turtle scripts
+
+The :mod:`turtledemo` package includes a set of demo scripts.  These
 scripts can be run and viewed using the supplied demo viewer as follows::
 
    python -m turtledemo
@@ -2288,16 +2291,13 @@ Alternatively, you can run the demo scripts individually.  For example, ::
 
 The :mod:`turtledemo` package directory contains:
 
-- a set of 15 demo scripts demonstrating different features of the new module
-  :mod:`turtle`;
-- a demo viewer :file:`__main__.py` which can be used to view the sourcecode
-  of the scripts and run them at the same time. 14 of the examples can be
-  accessed via the Examples menu; all of them can also be run standalone.
-- The example :mod:`turtledemo.two_canvases` demonstrates the simultaneous
-  use of two canvases with the turtle module.  Therefore it only can be run
-  standalone.
-- There is a :file:`turtle.cfg` file in this directory, which serves as an
-  example for how to write and use such files.
+- A demo viewer :file:`__main__.py` which can be used to view the sourcecode
+  of the scripts and run them at the same time.
+- Multiple scripts demonstrating different features of the :mod:`turtle`
+  module.  Examples can be accessed via the Examples menu.  They can also
+  be run standalone.
+- A :file:`turtle.cfg` file which serves as an example of how to write
+  and use such files.
 
 The demo scripts are:
 
@@ -2319,6 +2319,8 @@ The demo scripts are:
 |                | of your computer             | hands, ontimer        |
 +----------------+------------------------------+-----------------------+
 | colormixer     | experiment with r, g, b      | :func:`ondrag`        |
++----------------+------------------------------+-----------------------+
+| forest         | 3 breadth-first trees        | randomization         |
 +----------------+------------------------------+-----------------------+
 | fractalcurves  | Hilbert & Koch curves        | recursion             |
 +----------------+------------------------------+-----------------------+
@@ -2351,6 +2353,9 @@ The demo scripts are:
 +----------------+------------------------------+-----------------------+
 | tree           | a (graphical) breadth        | :func:`clone`         |
 |                | first tree (using generators)|                       |
++----------------+------------------------------+-----------------------+
+| two_canvases   | simple design                | turtles on two        |
+|                |                              | canvases              |
 +----------------+------------------------------+-----------------------+
 | wikipedia      | a pattern from the wikipedia | :func:`clone`,        |
 |                | article on turtle graphics   | :func:`undo`          |
