@@ -133,7 +133,12 @@ if __name__ == '__main__':
     if args.glibc_supported:
         data.update(parse_glibc_supported(args.glibc_supported))
     data.update(parse(args.locale_alias))
-    data = optimize(data)
+    while True:
+        # Repeat optimization while the size is decreased.
+        n = len(data)
+        data = optimize(data)
+        if len(data) == n:
+            break
     print_differences(data, locale.locale_alias)
     print()
     print('locale_alias = {')
