@@ -68,4 +68,4 @@ def get_version_info():
         return version, release
 
 if __name__ == '__main__':
-    print get_header_version_info('.')[1]
+    print(get_header_version_info('.')[1])

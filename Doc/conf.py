@@ -59,6 +59,9 @@ add_function_parentheses = True
 # unit titles (such as .. function::).
 add_module_names = True
 
+# Require Sphinx 1.2 for build.
+needs_sphinx = '1.2'
+
 
 # Options for HTML output
 # -----------------------
