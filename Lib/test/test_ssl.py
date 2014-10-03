@@ -1058,6 +1058,7 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(TypeError, ctx.load_default_certs, None)
         self.assertRaises(TypeError, ctx.load_default_certs, 'SERVER_AUTH')
 
+    @unittest.skipIf(sys.platform == "win32", "not-Windows specific")
     def test_load_default_certs_env(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         with support.EnvironmentVarGuard() as env:
@@ -1065,6 +1066,20 @@ class ContextTests(unittest.TestCase):
             env["SSL_CERT_FILE"] = CERTFILE
             ctx.load_default_certs()
             self.assertEqual(ctx.cert_store_stats(), {"crl": 0, "x509": 1, "x509_ca": 0})
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    def test_load_default_certs_env_windows(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.load_default_certs()
+        stats = ctx.cert_store_stats()
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        with support.EnvironmentVarGuard() as env:
+            env["SSL_CERT_DIR"] = CAPATH
+            env["SSL_CERT_FILE"] = CERTFILE
+            ctx.load_default_certs()
+            stats["x509"] += 1
+            self.assertEqual(ctx.cert_store_stats(), stats)
 
     def test_create_default_context(self):
         ctx = ssl.create_default_context()
