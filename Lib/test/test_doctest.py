@@ -2613,6 +2613,36 @@ Test the verbose output:
     >>> sys.argv = save_argv
 """
 
+def test_lineendings(): r"""
+*nix systems use \n line endings, while Windows systems use \r\n.  Python
+handles this using universal newline mode for reading files.  Let's make
+sure doctest does so (issue 8473) by creating temporary test files using each
+of the two line disciplines.  One of the two will be the "wrong" one for the
+platform the test is run on.
+
+Windows line endings first:
+
+    >>> import tempfile, os
+    >>> fn = tempfile.mktemp()
+    >>> with open(fn, 'w') as f:
+    ...    f.write('Test:\r\n\r\n  >>> x = 1 + 1\r\n\r\nDone.\r\n')
+    35
+    >>> doctest.testfile(fn, False)
+    TestResults(failed=0, attempted=1)
+    >>> os.remove(fn)
+
+And now *nix line endings:
+
+    >>> fn = tempfile.mktemp()
+    >>> with open(fn, 'w') as f:
+    ...     f.write('Test:\n\n  >>> x = 1 + 1\n\nDone.\n')
+    30
+    >>> doctest.testfile(fn, False)
+    TestResults(failed=0, attempted=1)
+    >>> os.remove(fn)
+
+"""
+
 def test_testmod(): r"""
 Tests for the testmod function.  More might be useful, but for now we're just
 testing the case raised by Issue 6195, where trying to doctest a C module would
