@@ -2569,6 +2569,32 @@ bothering with the current sys.stdout encoding.
     >>> sys.argv = save_argv
 """
 
+def test_lineendings(): r"""
+*nix systems use \n line endings, while Windows systems use \r\n.  Python
+handles this using universal newline mode for reading files.  Let's make
+sure doctest does so (issue 8473) by creating temporary test files using each
+of the two line disciplines.  One of the two will be the "wrong" one for the
+platform the test is run on.
+
+Windows line endings first:
+
+    >>> import tempfile, os
+    >>> fn = tempfile.mktemp()
+    >>> open(fn, 'w').write('Test:\r\n\r\n  >>> x = 1 + 1\r\n\r\nDone.\r\n')
+    >>> doctest.testfile(fn, False)
+    TestResults(failed=0, attempted=1)
+    >>> os.remove(fn)
+
+And now *nix line endings:
+
+    >>> fn = tempfile.mktemp()
+    >>> open(fn, 'w').write('Test:\n\n  >>> x = 1 + 1\n\nDone.\n')
+    >>> doctest.testfile(fn, False)
+    TestResults(failed=0, attempted=1)
+    >>> os.remove(fn)
+
+"""
+
 # old_test1, ... used to live in doctest.py, but cluttered it.  Note
 # that these use the deprecated doctest.Tester, so should go away (or
 # be rewritten) someday.
