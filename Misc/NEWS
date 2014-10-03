@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22540: speed up `PyObject_IsInstance` and `PyObject_IsSubclass` in the
+  common case that the second argument has metaclass `type`.
+
 - Issue #18711: Add a new `PyErr_FormatV` function, similar to `PyErr_Format`
   but accepting a `va_list` argument.
 

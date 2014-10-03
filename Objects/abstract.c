@@ -2538,6 +2538,11 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
     if (Py_TYPE(inst) == (PyTypeObject *)cls)
         return 1;
 
+    /* We know what type's __instancecheck__ does. */
+    if (PyType_CheckExact(cls)) {
+        return recursive_isinstance(inst, cls);
+    }
+
     if (PyTuple_Check(cls)) {
         Py_ssize_t i;
         Py_ssize_t n;
@@ -2576,6 +2581,7 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
     }
     else if (PyErr_Occurred())
         return -1;
+    /* Probably never reached anymore. */
     return recursive_isinstance(inst, cls);
 }
 
@@ -2602,6 +2608,14 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
     _Py_IDENTIFIER(__subclasscheck__);
     PyObject *checker;
+
+    /* We know what type's __subclasscheck__ does. */
+    if (PyType_CheckExact(cls)) {
+        /* Quick test for an exact match */
+        if (derived == cls)
+            return 1;
+        return recursive_issubclass(derived, cls);
+    }
 
     if (PyTuple_Check(cls)) {
         Py_ssize_t i;
@@ -2641,6 +2655,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
     }
     else if (PyErr_Occurred())
         return -1;
+    /* Probably never reached anymore. */
     return recursive_issubclass(derived, cls);
 }
 
