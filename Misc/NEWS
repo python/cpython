@@ -268,7 +268,7 @@ Core and Builtins
   overwrite the error set in PyObject_GetAttr.
 
 - Issue #21831: Avoid integer overflow when large sizes and offsets are given to
-  the buffer type.
+  the buffer type. CVE-2014-7185.
 
 - Issue #1856: Avoid crashes and lockups when daemon threads run while the
   interpreter is shutting down; instead, these threads are now killed when they
