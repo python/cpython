@@ -376,8 +376,7 @@ class SSLContext(_SSLContext):
         if sys.platform == "win32":
             for storename in self._windows_cert_stores:
                 self._load_windows_store_certs(storename, purpose)
-        else:
-            self.set_default_verify_paths()
+        self.set_default_verify_paths()
 
 
 def create_default_context(purpose=Purpose.SERVER_AUTH, cafile=None,
