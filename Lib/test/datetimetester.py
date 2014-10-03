@@ -3,6 +3,7 @@
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
 
+import decimal
 import sys
 import pickle
 import random
@@ -3808,7 +3809,6 @@ class Oddballs(unittest.TestCase):
                 x.abc = 1
 
     def test_check_arg_types(self):
-        import decimal
         class Number:
             def __init__(self, value):
                 self.value = value
