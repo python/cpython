@@ -159,6 +159,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22449: In the ssl.SSLContext.load_default_certs, consult the
+  enviromental variables SSL_CERT_DIR and SSL_CERT_FILE on Windows.
+
 - Issue #22508: The email.__version__ variable has been removed; the email
   code is no longer shipped separately from the stdlib, and __version__
   hasn't been updated in several releases.
