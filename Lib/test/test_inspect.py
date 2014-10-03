@@ -446,10 +446,11 @@ class TestBuggyCases(GetSourceBase):
     def test_method_in_dynamic_class(self):
         self.assertSourceEqual(mod2.method_in_dynamic_class, 95, 97)
 
-    @unittest.skipIf(
-        not hasattr(unicodedata, '__file__') or
-            unicodedata.__file__[-4:] in (".pyc", ".pyo"),
-        "unicodedata is not an external binary module")
+    # This should not skip for CPython, but might on a repackaged python where
+    # unicodedata is not an external module, or on pypy.
+    @unittest.skipIf(not hasattr(unicodedata, '__file__') or
+                                 unicodedata.__file__.endswith('.py'),
+                     "unicodedata is not an external binary module")
     def test_findsource_binary(self):
         self.assertRaises(OSError, inspect.getsource, unicodedata)
         self.assertRaises(OSError, inspect.findsource, unicodedata)
