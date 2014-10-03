@@ -541,15 +541,16 @@ dump_ascii(int fd, PyObject *text)
             ch = PyUnicode_READ(kind, data, i);
         else
             ch = wstr[i];
-        if (ch < 128) {
+        if (' ' <= ch && ch <= 126) {
+            /* printable ASCII character */
             char c = (char)ch;
             write(fd, &c, 1);
         }
-        else if (ch < 0xff) {
+        else if (ch <= 0xff) {
             PUTS(fd, "\\x");
             dump_hexadecimal(fd, ch, 2);
         }
-        else if (ch < 0xffff) {
+        else if (ch <= 0xffff) {
             PUTS(fd, "\\u");
             dump_hexadecimal(fd, ch, 4);
         }
@@ -644,7 +645,7 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
         PUTS(fd, "Current thread 0x");
     else
         PUTS(fd, "Thread 0x");
-    dump_hexadecimal(fd, (unsigned long)tstate->thread_id, sizeof(long)*2);
+    dump_hexadecimal(fd, (unsigned long)tstate->thread_id, sizeof(unsigned long)*2);
     PUTS(fd, " (most recent call first):\n");
 }
 
