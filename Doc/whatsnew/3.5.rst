@@ -355,6 +355,14 @@ Deprecated features
 * None yet.
 
 
+Removed
+=======
+
+* The ``__version__`` attribute has been dropped from the email package.  The
+  email code hasn't been shipped separately from the stdlib for a long time,
+  and the ``__version__`` string was not updated in the last few releases.
+
+
 Porting to Python 3.5
 =====================
 
