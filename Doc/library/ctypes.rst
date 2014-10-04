@@ -1443,11 +1443,16 @@ copy of the windows error code.
    The default mode which is used to load shared libraries.  On OSX 10.3, this is
    *RTLD_GLOBAL*, otherwise it is the same as *RTLD_LOCAL*.
 
-Instances of these classes have no public methods, however :meth:`__getattr__`
-and :meth:`__getitem__` have special behavior: functions exported by the shared
-library can be accessed as attributes of by index.  Please note that both
-:meth:`__getattr__` and :meth:`__getitem__` cache their result, so calling them
-repeatedly returns the same object each time.
+Instances of these classes have no public methods.  Functions exported by the
+shared library can be accessed as attributes or by index.  Please note that
+accessing the function through an attribute caches the result and therefore
+accessing it repeatedly returns the same object each time.  On the other hand,
+accessing it through an index returns a new object each time:
+
+   >>> libc.time == libc.time
+   True
+   >>> libc['time'] == libc['time']
+   False
 
 The following public attributes are available, their name starts with an
 underscore to not clash with exported function names:
