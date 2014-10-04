@@ -31,7 +31,7 @@ installing other Python projects, refer to the
 Key terms
 =========
 
-* the `Python Package Index <https://pypi.python.org/pypi>`__ is a public
+* the `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users
 * the `Python Packaging Authority
@@ -119,14 +119,14 @@ involved in creating a project:
 
 * `Project structure`_
 * `Building and packaging the project`_
-* `Uploading the project to the Python Package Index`_
+* `Uploading the project to the Python Packaging Index`_
 
 .. _Project structure: \
-   http://packaging.python.org/en/latest/tutorial.html#creating-your-own-project
+   http://packaging.python.org/en/latest/distributing.html#creating-your-own-project
 .. _Building and packaging the project: \
-   http://packaging.python.org/en/latest/tutorial.html#building-packaging-your-project
-.. _Uploading the project to the Python Package Index: \
-   http://packaging.python.org/en/latest/tutorial.html#uploading-your-project-to-pypi
+   https://packaging.python.org/en/latest/distributing.html#packaging-your-project
+.. _Uploading the project to the Python Packaging Index: \
+   http://packaging.python.org/en/latest/distributing.html#uploading-your-project-to-pypi
 
 
 How do I...?
@@ -139,7 +139,7 @@ These are quick answers or links for some common tasks.
 
 This isn't an easy topic, but here are a few tips:
 
-* check the Python Package Index to see if the name is already in use
+* check the Python Packaging Index to see if the name is already in use
 * check popular hosting sites like GitHub, BitBucket, etc to see if there
   is already a project with that name
 * check what comes up in a web search for the name you're considering
