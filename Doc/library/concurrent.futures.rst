@@ -38,7 +38,7 @@ Executor Objects
               future = executor.submit(pow, 323, 1235)
               print(future.result())
 
-    .. method:: map(func, *iterables, timeout=None)
+    .. method:: map(func, *iterables, timeout=None, chunksize=1)
 
        Equivalent to :func:`map(func, *iterables) <map>` except *func* is executed
        asynchronously and several calls to *func* may be made concurrently.  The
@@ -48,7 +48,16 @@ Executor Objects
        *timeout* can be an int or a float.  If *timeout* is not specified or
        ``None``, there is no limit to the wait time.  If a call raises an
        exception, then that exception will be raised when its value is
-       retrieved from the iterator.
+       retrieved from the iterator. When using :class:`ProcessPoolExecutor`, this
+       method chops *iterables* into a number of chunks which it submits to the
+       pool as separate tasks. The (approximate) size of these chunks can be
+       specified by setting *chunksize* to a positive integer. For very long
+       iterables, using a large value for *chunksize* can significantly improve
+       performance compared to the default size of 1. With :class:`ThreadPoolExecutor`,
+       *chunksize* has no effect.
+
+       .. versionchanged:: 3.5
+          Added the *chunksize* argument.
 
     .. method:: shutdown(wait=True)
 

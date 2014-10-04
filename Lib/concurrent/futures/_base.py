@@ -520,7 +520,7 @@ class Executor(object):
         """
         raise NotImplementedError()
 
-    def map(self, fn, *iterables, timeout=None):
+    def map(self, fn, *iterables, timeout=None, chunksize=1):
         """Returns a iterator equivalent to map(fn, iter).
 
         Args:
@@ -528,6 +528,10 @@ class Executor(object):
                 passed iterables.
             timeout: The maximum number of seconds to wait. If None, then there
                 is no limit on the wait time.
+            chunksize: The size of the chunks the iterable will be broken into
+                before being passed to a child process. This argument is only
+                used by ProcessPoolExecutor; it is ignored by
+                ThreadPoolExecutor.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
