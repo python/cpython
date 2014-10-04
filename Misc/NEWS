@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22219: The zipfile module CLI now adds entries for directories
+  (including empty directories) in ZIP file.
+
 - Issue #22449: In the ssl.SSLContext.load_default_certs, consult the
   enviromental variables SSL_CERT_DIR and SSL_CERT_FILE on Windows.
 

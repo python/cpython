@@ -1519,14 +1519,21 @@ def main(args = None):
             if os.path.isfile(path):
                 zf.write(path, zippath, ZIP_DEFLATED)
             elif os.path.isdir(path):
+                if zippath:
+                    zf.write(path, zippath)
                 for nm in os.listdir(path):
                     addToZip(zf,
                             os.path.join(path, nm), os.path.join(zippath, nm))
             # else: ignore
 
         with ZipFile(args[1], 'w', allowZip64=True) as zf:
-            for src in args[2:]:
-                addToZip(zf, src, os.path.basename(src))
+            for path in args[2:]:
+                zippath = os.path.basename(path)
+                if not zippath:
+                    zippath = os.path.basename(os.path.dirname(path))
+                if zippath in ('', os.curdir, os.pardir):
+                    zippath = ''
+                addToZip(zf, path, zippath)
 
 if __name__ == "__main__":
     main()
