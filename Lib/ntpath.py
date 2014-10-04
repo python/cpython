@@ -584,7 +584,7 @@ def relpath(path, start=None):
         if not rel_list:
             return curdir
         return join(*rel_list)
-    except (TypeError, ValueError, AttributeError, BytesWarning):
+    except (TypeError, ValueError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
 
