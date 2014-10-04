@@ -569,8 +569,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         if (end - start > PY_SSIZE_T_MAX / (2+7+1)) {
             end = start + PY_SSIZE_T_MAX / (2+7+1);
 #ifndef Py_UNICODE_WIDE
-            ch = startp[end - 1];
-            if (0xD800 <= ch && ch <= 0xDBFF)
+            if (0xD800 <= startp[end - 1] && startp[end - 1] <= 0xDBFF)
                 end--;
 #endif
         }
