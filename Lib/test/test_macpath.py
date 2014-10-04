@@ -142,6 +142,8 @@ class MacPathTestCase(unittest.TestCase):
 class MacCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = macpath
 
+    test_relpath_errors = None
+
 
 if __name__ == "__main__":
     unittest.main()

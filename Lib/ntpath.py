@@ -80,32 +80,36 @@ def join(path, *paths):
         sep = '\\'
         seps = '\\/'
         colon = ':'
-    result_drive, result_path = splitdrive(path)
-    for p in paths:
-        p_drive, p_path = splitdrive(p)
-        if p_path and p_path[0] in seps:
-            # Second path is absolute
-            if p_drive or not result_drive:
-                result_drive = p_drive
-            result_path = p_path
-            continue
-        elif p_drive and p_drive != result_drive:
-            if p_drive.lower() != result_drive.lower():
-                # Different drives => ignore the first path entirely
-                result_drive = p_drive
+    try:
+        result_drive, result_path = splitdrive(path)
+        for p in paths:
+            p_drive, p_path = splitdrive(p)
+            if p_path and p_path[0] in seps:
+                # Second path is absolute
+                if p_drive or not result_drive:
+                    result_drive = p_drive
                 result_path = p_path
                 continue
-            # Same drive in different case
-            result_drive = p_drive
-        # Second path is relative to the first
-        if result_path and result_path[-1] not in seps:
-            result_path = result_path + sep
-        result_path = result_path + p_path
-    ## add separator between UNC and non-absolute path
-    if (result_path and result_path[0] not in seps and
-        result_drive and result_drive[-1:] != colon):
-        return result_drive + sep + result_path
-    return result_drive + result_path
+            elif p_drive and p_drive != result_drive:
+                if p_drive.lower() != result_drive.lower():
+                    # Different drives => ignore the first path entirely
+                    result_drive = p_drive
+                    result_path = p_path
+                    continue
+                # Same drive in different case
+                result_drive = p_drive
+            # Second path is relative to the first
+            if result_path and result_path[-1] not in seps:
+                result_path = result_path + sep
+            result_path = result_path + p_path
+        ## add separator between UNC and non-absolute path
+        if (result_path and result_path[0] not in seps and
+            result_drive and result_drive[-1:] != colon):
+            return result_drive + sep + result_path
+        return result_drive + result_path
+    except (TypeError, AttributeError, BytesWarning):
+        genericpath._check_arg_types('join', path, *paths)
+        raise
 
 
 # Split a path in a drive specification (a drive letter followed by a
@@ -558,27 +562,31 @@ def relpath(path, start=None):
     if not path:
         raise ValueError("no path specified")
 
-    start_abs = abspath(normpath(start))
-    path_abs = abspath(normpath(path))
-    start_drive, start_rest = splitdrive(start_abs)
-    path_drive, path_rest = splitdrive(path_abs)
-    if normcase(start_drive) != normcase(path_drive):
-        raise ValueError("path is on mount %r, start on mount %r" % (
-            path_drive, start_drive))
+    try:
+        start_abs = abspath(normpath(start))
+        path_abs = abspath(normpath(path))
+        start_drive, start_rest = splitdrive(start_abs)
+        path_drive, path_rest = splitdrive(path_abs)
+        if normcase(start_drive) != normcase(path_drive):
+            raise ValueError("path is on mount %r, start on mount %r" % (
+                path_drive, start_drive))
 
-    start_list = [x for x in start_rest.split(sep) if x]
-    path_list = [x for x in path_rest.split(sep) if x]
-    # Work out how much of the filepath is shared by start and path.
-    i = 0
-    for e1, e2 in zip(start_list, path_list):
-        if normcase(e1) != normcase(e2):
-            break
-        i += 1
+        start_list = [x for x in start_rest.split(sep) if x]
+        path_list = [x for x in path_rest.split(sep) if x]
+        # Work out how much of the filepath is shared by start and path.
+        i = 0
+        for e1, e2 in zip(start_list, path_list):
+            if normcase(e1) != normcase(e2):
+                break
+            i += 1
 
-    rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
-    if not rel_list:
-        return curdir
-    return join(*rel_list)
+        rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+        if not rel_list:
+            return curdir
+        return join(*rel_list)
+    except (TypeError, ValueError, AttributeError, BytesWarning):
+        genericpath._check_arg_types('relpath', path, start)
+        raise
 
 
 # determine if two files are in fact the same file

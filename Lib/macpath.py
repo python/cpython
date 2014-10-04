@@ -50,20 +50,24 @@ def isabs(s):
 
 
 def join(s, *p):
-    colon = _get_colon(s)
-    path = s
-    for t in p:
-        if (not path) or isabs(t):
-            path = t
-            continue
-        if t[:1] == colon:
-            t = t[1:]
-        if colon not in path:
-            path = colon + path
-        if path[-1:] != colon:
-            path = path + colon
-        path = path + t
-    return path
+    try:
+        colon = _get_colon(s)
+        path = s
+        for t in p:
+            if (not path) or isabs(t):
+                path = t
+                continue
+            if t[:1] == colon:
+                t = t[1:]
+            if colon not in path:
+                path = colon + path
+            if path[-1:] != colon:
+                path = path + colon
+            path = path + t
+        return path
+    except (TypeError, AttributeError, BytesWarning):
+        genericpath._check_arg_types('join', s, *p)
+        raise
 
 
 def split(s):
