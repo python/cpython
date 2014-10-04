@@ -82,13 +82,9 @@ def join(a, *p):
                 path += b
             else:
                 path += sep + b
-    except (TypeError, AttributeError):
-        for s in (a,) + p:
-            if not isinstance(s, (str, bytes)):
-                raise TypeError('join() argument must be str or bytes, not %r' %
-                                s.__class__.__name__) from None
-        # Must have a mixture of text and binary data
-        raise TypeError("Can't mix strings and bytes in path components") from None
+    except (TypeError, AttributeError, BytesWarning):
+        genericpath._check_arg_types('join', a, *p)
+        raise
     return path
 
 
@@ -446,13 +442,16 @@ def relpath(path, start=None):
     if start is None:
         start = curdir
 
-    start_list = [x for x in abspath(start).split(sep) if x]
-    path_list = [x for x in abspath(path).split(sep) if x]
+    try:
+        start_list = [x for x in abspath(start).split(sep) if x]
+        path_list = [x for x in abspath(path).split(sep) if x]
+        # Work out how much of the filepath is shared by start and path.
+        i = len(commonprefix([start_list, path_list]))
 
-    # Work out how much of the filepath is shared by start and path.
-    i = len(commonprefix([start_list, path_list]))
-
-    rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
-    if not rel_list:
-        return curdir
-    return join(*rel_list)
+        rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+        if not rel_list:
+            return curdir
+        return join(*rel_list)
+    except (TypeError, AttributeError, BytesWarning):
+        genericpath._check_arg_types('relpath', path, start)
+        raise

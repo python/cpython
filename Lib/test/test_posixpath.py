@@ -57,22 +57,6 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.join(b"/foo/", b"bar/", b"baz/"),
                          b"/foo/bar/baz/")
 
-    def test_join_errors(self):
-        # Check posixpath.join raises friendly TypeErrors.
-        errmsg = "Can't mix strings and bytes in path components"
-        with self.assertRaisesRegex(TypeError, errmsg):
-            posixpath.join(b'bytes', 'str')
-        with self.assertRaisesRegex(TypeError, errmsg):
-            posixpath.join('str', b'bytes')
-        # regression, see #15377
-        errmsg = r'join\(\) argument must be str or bytes, not %r'
-        with self.assertRaisesRegex(TypeError, errmsg % 'NoneType'):
-            posixpath.join(None, 'str')
-        with self.assertRaisesRegex(TypeError, errmsg % 'NoneType'):
-            posixpath.join('str', None)
-        with self.assertRaisesRegex(TypeError, errmsg % 'bytearray'):
-            posixpath.join(bytearray(b'foo'), bytearray(b'bar'))
-
     def test_split(self):
         self.assertEqual(posixpath.split("/foo/bar"), ("/foo", "bar"))
         self.assertEqual(posixpath.split("/"), ("/", ""))

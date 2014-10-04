@@ -162,6 +162,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21883: os.path.join() and os.path.relpath() now raise a TypeError with
+  more helpful error message for unsupported or mismatched types of arguments.
+
 - Issue #22219: The zipfile module CLI now adds entries for directories
   (including empty directories) in ZIP file.
 
