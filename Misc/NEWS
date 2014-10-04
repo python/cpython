@@ -10,7 +10,7 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
-- Issue #22518: Fixed integer overflow issues in "backslashreplace" and
+- Issue #22470: Fixed integer overflow issues in "backslashreplace" and
   "xmlcharrefreplace" error handlers.
 
 - Issue #22526: Fix iterating through files with lines longer than 2^31 bytes.
