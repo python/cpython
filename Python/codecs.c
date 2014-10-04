@@ -773,7 +773,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         Py_ssize_t end;
         PyObject *res;
         unsigned char *outp;
-        int ressize;
+        Py_ssize_t ressize;
         Py_UCS4 ch;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
@@ -781,6 +781,8 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
+        if (end - start > PY_SSIZE_T_MAX / (2+7+1))
+            end = start + PY_SSIZE_T_MAX / (2+7+1);
         for (i = start, ressize = 0; i < end; ++i) {
             /* object is guaranteed to be "ready" */
             ch = PyUnicode_READ_CHAR(object, i);
@@ -869,7 +871,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         Py_ssize_t end;
         PyObject *res;
         unsigned char *outp;
-        int ressize;
+        Py_ssize_t ressize;
         Py_UCS4 c;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
@@ -877,6 +879,8 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
+        if (end - start > PY_SSIZE_T_MAX / (1+1+8))
+            end = start + PY_SSIZE_T_MAX / (1+1+8);
         for (i = start, ressize = 0; i < end; ++i) {
             /* object is guaranteed to be "ready" */
             c = PyUnicode_READ_CHAR(object, i);
@@ -1036,6 +1040,8 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
             return NULL;
         }
 
+        if (end - start > PY_SSIZE_T_MAX / bytelength)
+            end = start + PY_SSIZE_T_MAX / bytelength;
         res = PyBytes_FromStringAndSize(NULL, bytelength*(end-start));
         if (!res) {
             Py_DECREF(object);
