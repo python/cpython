@@ -162,6 +162,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11271: concurrent.futures.Executor.map() now takes a *chunksize*
+  argument to allow batching of tasks in child processes and improve
+  performance of ProcessPoolExecutor.  Patch by Dan O'Reilly.
+
 - Issue #21883: os.path.join() and os.path.relpath() now raise a TypeError with
   more helpful error message for unsupported or mismatched types of arguments.
 
