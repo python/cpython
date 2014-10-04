@@ -21,7 +21,8 @@ higher-level functions in :ref:`shutil <archiving-operations>`.
 
 Some facts and figures:
 
-* reads and writes :mod:`gzip` and :mod:`bz2` compressed archives.
+* reads and writes :mod:`gzip` and :mod:`bz2` compressed archives
+  if the respective modules are available.
 
 * read/write support for the POSIX.1-1988 (ustar) format.
 
@@ -179,6 +180,14 @@ Some facts and figures:
    :attr:`TarFile.errorlevel`\ ``== 2``.
 
 
+The following constants are available at the module level:
+
+.. data:: ENCODING
+
+   The default character encoding: ``'utf-8'`` on Windows, the value returned by
+   :func:`sys.getfilesystemencoding` otherwise.
+
+
 .. exception:: HeaderError
 
    Is raised by :meth:`TarInfo.frombuf` if the buffer it gets is invalid.
@@ -211,19 +220,14 @@ details.
    The default format for creating archives. This is currently :const:`GNU_FORMAT`.
 
 
-The following variables are available on module level:
-
-
-.. data:: ENCODING
-
-   The default character encoding i.e. the value from either
-   :func:`sys.getfilesystemencoding` or :func:`sys.getdefaultencoding`.
-
-
 .. seealso::
 
    Module :mod:`zipfile`
       Documentation of the :mod:`zipfile` standard module.
+
+   :ref:`archiving-operations`
+      Documentation of the higher-level archiving facilities provided by the
+      standard :mod:`shutil` module.
 
    `GNU tar manual, Basic Tar Format <http://www.gnu.org/software/tar/manual/html_node/Standard.html>`_
       Documentation for tar archive files, including GNU tar extensions.
