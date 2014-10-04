@@ -55,6 +55,8 @@ from multiprocessing import SimpleQueue
 from multiprocessing.connection import wait
 import threading
 import weakref
+from functools import partial
+import itertools
 
 # Workers are created as daemon threads and processes. This is done to allow the
 # interpreter to exit when there are still idle processes in a
@@ -107,6 +109,26 @@ class _CallItem(object):
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
+
+def _get_chunks(*iterables, chunksize):
+    """ Iterates over zip()ed iterables in chunks. """
+    it = zip(*iterables)
+    while True:
+        chunk = tuple(itertools.islice(it, chunksize))
+        if not chunk:
+            return
+        yield chunk
+
+def _process_chunk(fn, chunk):
+    """ Processes a chunk of an iterable passed to map.
+
+    Runs the function passed to map() on a chunk of the
+    iterable passed to map.
+
+    This function is run in a separate process.
+
+    """
+    return [fn(*args) for args in chunk]
 
 def _process_worker(call_queue, result_queue):
     """Evaluates calls from call_queue and places the results in result_queue.
@@ -410,6 +432,35 @@ class ProcessPoolExecutor(_base.Executor):
             self._start_queue_management_thread()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
+
+    def map(self, fn, *iterables, timeout=None, chunksize=1):
+        """Returns a iterator equivalent to map(fn, iter).
+
+        Args:
+            fn: A callable that will take as many arguments as there are
+                passed iterables.
+            timeout: The maximum number of seconds to wait. If None, then there
+                is no limit on the wait time.
+            chunksize: If greater than one, the iterables will be chopped into
+                chunks of size chunksize and submitted to the process pool.
+                If set to one, the items in the list will be sent one at a time.
+
+        Returns:
+            An iterator equivalent to: map(func, *iterables) but the calls may
+            be evaluated out-of-order.
+
+        Raises:
+            TimeoutError: If the entire result iterator could not be generated
+                before the given timeout.
+            Exception: If fn(*args) raises for any values.
+        """
+        if chunksize < 1:
+            raise ValueError("chunksize must be >= 1.")
+
+        results = super().map(partial(_process_chunk, fn),
+                              _get_chunks(*iterables, chunksize=chunksize),
+                              timeout=timeout)
+        return itertools.chain.from_iterable(results)
 
     def shutdown(self, wait=True):
         with self._shutdown_lock:

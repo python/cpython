@@ -464,6 +464,22 @@ class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, unittest.TestCase)
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
 
+    def test_map_chunksize(self):
+        def bad_map():
+            list(self.executor.map(pow, range(40), range(40), chunksize=-1))
+
+        ref = list(map(pow, range(40), range(40)))
+        self.assertEqual(
+            list(self.executor.map(pow, range(40), range(40), chunksize=6)),
+            ref)
+        self.assertEqual(
+            list(self.executor.map(pow, range(40), range(40), chunksize=50)),
+            ref)
+        self.assertEqual(
+            list(self.executor.map(pow, range(40), range(40), chunksize=40)),
+            ref)
+        self.assertRaises(ValueError, bad_map)
+
 
 class FutureTests(unittest.TestCase):
     def test_done_callback_with_result(self):
