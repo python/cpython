@@ -162,6 +162,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21905: Avoid RuntimeError in pickle.whichmodule() when sys.modules
+  is mutated while iterating.  Patch by Olivier Grisel.
+
 - Issue #11271: concurrent.futures.Executor.map() now takes a *chunksize*
   argument to allow batching of tasks in child processes and improve
   performance of ProcessPoolExecutor.  Patch by Dan O'Reilly.
