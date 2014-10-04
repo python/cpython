@@ -130,3 +130,16 @@ def _splitext(p, sep, altsep, extsep):
             filenameIndex += 1
 
     return p, p[:0]
+
+def _check_arg_types(funcname, *args):
+    hasstr = hasbytes = False
+    for s in args:
+        if isinstance(s, str):
+            hasstr = True
+        elif isinstance(s, bytes):
+            hasbytes = True
+        else:
+            raise TypeError('%s() argument must be str or bytes, not %r' %
+                            (funcname, s.__class__.__name__)) from None
+    if hasstr and hasbytes:
+        raise TypeError("Can't mix strings and bytes in path components") from None
