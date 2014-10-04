@@ -6,7 +6,7 @@ import _thread
 from time import monotonic as _time
 from traceback import format_exc as _format_exc
 from _weakrefset import WeakSet
-from itertools import islice as _islice
+from itertools import islice as _islice, count as _count
 try:
     from _collections import deque as _deque
 except ImportError:
@@ -729,11 +729,10 @@ class BrokenBarrierError(RuntimeError):
 
 
 # Helper to generate new thread names
-_counter = 0
+_counter = _count().__next__
+_counter() # Consume 0 so first non-main thread has id 1.
 def _newname(template="Thread-%d"):
-    global _counter
-    _counter += 1
-    return template % _counter
+    return template % _counter()
 
 # Active thread administration
 _active_limbo_lock = _allocate_lock()
