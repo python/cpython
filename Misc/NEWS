@@ -9,6 +9,9 @@ What's New in Python 3.4.3?
 Core and Builtins
 -----------------
 
+- Issue #22518: Fixed integer overflow issues in "backslashreplace",
+  "xmlcharrefreplace", and "surrogatepass" error handlers.
+
 - Issue #22520: Fix overflow checking when generating the repr of a unicode
   object.
 
