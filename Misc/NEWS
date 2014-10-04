@@ -10,7 +10,7 @@ Release date: TBA
 Core and Builtins
 -----------------
 
-- Issue #22518: Fixed integer overflow issues in "backslashreplace",
+- Issue #22470: Fixed integer overflow issues in "backslashreplace",
   "xmlcharrefreplace", and "surrogatepass" error handlers.
 
 - Issue #22540: speed up `PyObject_IsInstance` and `PyObject_IsSubclass` in the
