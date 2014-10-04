@@ -122,6 +122,10 @@ been GPL-compatible; the table below summarizes the various releases.
 +----------------+--------------+------------+------------+-----------------+
 | 3.2.4          | 3.2.3        | 2013       | PSF        | yes             |
 +----------------+--------------+------------+------------+-----------------+
+| 3.2.5          | 3.2.4        | 2013       | PSF        | yes             |
++----------------+--------------+------------+------------+-----------------+
+| 3.2.6          | 3.2.5        | 2014       | PSF        | yes             |
++----------------+--------------+------------+------------+-----------------+
 
 .. note::
 
@@ -150,7 +154,7 @@ Terms and conditions for accessing or otherwise using Python
    analyze, test, perform and/or display publicly, prepare derivative works,
    distribute, and otherwise use Python |release| alone or in any derivative
    version, provided, however, that PSF's License Agreement and PSF's notice of
-   copyright, i.e., "Copyright © 2001-2013 Python Software Foundation; All Rights
+   copyright, i.e., "Copyright © 2001-2014 Python Software Foundation; All Rights
    Reserved" are retained in Python |release| alone or in any derivative version
    prepared by Licensee.
 
