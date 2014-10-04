@@ -558,7 +558,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         Py_UNICODE *startp;
         Py_UNICODE *e;
         Py_UNICODE *outp;
-        int ressize;
+        Py_ssize_t ressize;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
@@ -566,6 +566,14 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
         startp = PyUnicode_AS_UNICODE(object);
+        if (end - start > PY_SSIZE_T_MAX / (2+7+1)) {
+            end = start + PY_SSIZE_T_MAX / (2+7+1);
+#ifndef Py_UNICODE_WIDE
+            ch = startp[end - 1];
+            if (0xD800 <= ch && ch <= 0xDBFF)
+                end--;
+#endif
+        }
         e = startp + end;
         for (p = startp+start, ressize = 0; p < e;) {
             Py_UCS4 ch = *p++;
@@ -675,13 +683,15 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         Py_UNICODE *p;
         Py_UNICODE *startp;
         Py_UNICODE *outp;
-        int ressize;
+        Py_ssize_t ressize;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
+        if (end - start > PY_SSIZE_T_MAX / (1+1+8))
+            end = start + PY_SSIZE_T_MAX / (1+1+8);
         startp = PyUnicode_AS_UNICODE(object);
         for (p = startp+start, ressize = 0; p < startp+end; ++p) {
 #ifdef Py_UNICODE_WIDE
