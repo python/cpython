@@ -44,7 +44,7 @@ Key terms
   ``pyvenv``. It allows virtual environments to be used on versions of
   Python prior to 3.4, which either don't provide ``pyvenv`` at all, or
   aren't able to automatically install ``pip`` into created environments.
-* the `Python Package Index <https://pypi.python.org/pypi>`__ is a public
+* the `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users
 * the `Python Packaging Authority
@@ -70,7 +70,7 @@ The standard packaging tools are all designed to be used from the command
 line.
 
 The following command will install the latest version of a module and its
-dependencies from the Python Package Index::
+dependencies from the Python Packaging Index::
 
     python -m pip install SomePackage
 
@@ -103,8 +103,8 @@ into an active virtual environment uses the commands shown above.
 
 .. seealso::
 
-    `Python Packaging User Guide: Installing Python packages
-    <http://packaging.python.org/en/latest/tutorial.html#installing-python-packages>`__
+    `Python Packaging User Guide: Installing Python Distribution Packages
+    <https://packaging.python.org/en/latest/installing.html#installing-python-distributions>`__
 
 
 How do I ...?
@@ -121,8 +121,8 @@ User Guide.
 
 .. seealso::
 
-   `Python Packaging User Guide: Installing the Tools
-   <http://packaging.python.org/en/latest/tutorial.html#installing-the-tools>`__
+   `Python Packaging User Guide: Setup for Installing Distribution Packages
+   <https://packaging.python.org/en/latest/installing.html#setup-for-installing-distributions>`__
 
 
 .. installing-per-user-installation:
@@ -205,7 +205,7 @@ the installation process.
 
 With the introduction of support for the binary ``wheel`` format, and the
 ability to publish wheels for at least Windows and Mac OS X through the
-Python Package Index, this problem is expected to diminish over time,
+Python Packaging Index, this problem is expected to diminish over time,
 as users are more regularly able to install pre-built extensions rather
 than needing to build them themselves.
 
