@@ -453,7 +453,8 @@ class CommonTest(GenericTest):
 
     def test_relpath_errors(self):
         # Check relpath() raises friendly TypeErrors.
-        with support.check_warnings(('', BytesWarning), quiet=True):
+        with support.check_warnings(('', (BytesWarning, DeprecationWarning)),
+                                    quiet=True):
             errmsg = "Can't mix strings and bytes in path components"
             with self.assertRaisesRegex(TypeError, errmsg):
                 self.pathmodule.relpath(b'bytes', 'str')
