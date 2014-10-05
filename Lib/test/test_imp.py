@@ -198,6 +198,7 @@ class ImportTests(unittest.TestCase):
                 support.unlink(temp_mod_name + ext)
                 support.unlink(init_file_name + ext)
             support.rmtree(test_package_name)
+            support.rmtree('__pycache__')
 
     def test_issue9319(self):
         path = os.path.dirname(__file__)
