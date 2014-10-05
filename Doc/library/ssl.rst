@@ -803,6 +803,29 @@ the specification of normal, OS-level sockets.  See especially the
 
 SSL sockets also have the following additional methods and attributes:
 
+.. method:: SSLSocket.read(len=0, buffer=None)
+
+   Read up to *len* bytes of data from the SSL socket and return the result as
+   a ``bytes`` instance. If *buffer* is specified, then read into the buffer
+   instead, and return the number of bytes read.
+
+.. method:: SSLSocket.write(buf)
+
+   Write *buf* to the SSL socket and return the number of bytes written. The
+   *buf* argument must be an object supporting the buffer interface.
+
+.. note::
+
+   The :meth:`~SSLSocket.read` and :meth:`~SSLSocket.write` methods are the
+   low-level methods that read and write unencrypted, application-level data
+   and and decrypt/encrypt it to encrypted, wire-level data. These methods
+   require an active SSL connection, i.e. the handshake was completed and
+   :meth:`SSLSocket.unwrap` was not called.
+
+   Normally you should use the socket API methods like
+   :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` instead of these
+   methods.
+
 .. method:: SSLSocket.do_handshake()
 
    Perform the SSL setup handshake.
@@ -935,6 +958,11 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.5
 
+.. method:: SSLSocket.pending()
+
+   Returns the number of already decrypted bytes available for read, pending on
+   the connection.
+
 .. attribute:: SSLSocket.context
 
    The :class:`SSLContext` object this SSL socket is tied to.  If the SSL
@@ -943,6 +971,22 @@ SSL sockets also have the following additional methods and attributes:
    object created for this SSL socket.
 
    .. versionadded:: 3.2
+
+.. attribute:: SSLSocket.server_side
+
+   A boolean which is ``True`` for server-side sockets and ``False`` for
+   client-side sockets.
+
+   .. versionadded:: 3.5
+
+.. attribute:: SSLSocket.server_hostname
+
+   A ``bytes`` instance containing the ``'idna'`` encoded version of the
+   hostname specified in the *server_hostname* argument in
+   :meth:`SSLContext.wrap_socket`. If no *server_hostname* was specified, this
+   attribute will be ``None``.
+
+   .. versionadded:: 3.5
 
 
 SSL Contexts
@@ -1668,6 +1712,130 @@ thus several things you need to be aware of:
             select.select([sock], [], [])
         except ssl.SSLWantWriteError:
             select.select([], [sock], [])
+
+
+Memory BIO Support
+------------------
+
+.. versionadded:: 3.5
+
+Ever since the SSL module was introduced in Python 2.6, the :class:`SSLSocket`
+class has provided two related but distinct areas of functionality:
+
+- SSL protocol handling
+- Network IO
+
+The network IO API is identical to that provided by :class:`socket.socket`,
+from which :class:`SSLSocket` also inherits. This allows an SSL socket to be
+used as a drop-in replacement for a regular socket, making it very easy to add
+SSL support to an existing application.
+
+Combining SSL protocol handling and network IO usually works well, but there
+are some cases where it doesn't. An example is async IO frameworks that want to
+use a different IO multiplexing model than the "select/poll on a file
+descriptor" (readiness based) model that is assumed by :class:`socket.socket`
+and by the internal OpenSSL socket IO routines. This is mostly relevant for
+platforms like Windows where this model is not efficient. For this purpose, a
+reduced scope variant of :class:`SSLSocket` called :class:`SSLObject` is
+provided.
+
+.. class:: SSLObject
+
+   A reduced-scope variant of :class:`SSLSocket` representing an SSL protocol
+   instance that does not contain any network IO methods.
+
+The following methods are available from :class:`SSLSocket`:
+
+- :attr:`~SSLSocket.context`
+- :attr:`~SSLSocket.server_side`
+- :attr:`~SSLSocket.server_hostname`
+- :meth:`~SSLSocket.read`
+- :meth:`~SSLSocket.write`
+- :meth:`~SSLSocket.getpeercert`
+- :meth:`~SSLSocket.selected_npn_protocol`
+- :meth:`~SSLSocket.cipher`
+- :meth:`~SSLSocket.compression`
+- :meth:`~SSLSocket.pending`
+- :meth:`~SSLSocket.do_handshake`
+- :meth:`~SSLSocket.unwrap`
+- :meth:`~SSLSocket.get_channel_binding`
+
+An SSLObject communicates with the outside world using memory buffers. The
+class :class:`MemoryBIO` provides a memory buffer that can be used for this
+purpose.  It wraps an OpenSSL memory BIO (Basic IO) object:
+
+.. class:: MemoryBIO
+
+   A memory buffer that can be used to pass data between Python and an SSL
+   protocol instance.
+
+.. attribute:: MemoryBIO.pending
+
+   Return the number of bytes currently in the memory buffer.
+
+.. attribute:: MemoryBIO.eof
+
+   A boolean indicating whether the memory BIO is current at the end-of-file
+   position.
+
+.. method:: MemoryBIO.read(n=-1)
+
+   Read up to *n* bytes from the memory buffer. If *n* is not specified or
+   negative, all bytes are returned.
+
+.. method:: MemoryBIO.write(buf)
+
+   Write the bytes from *buf* to the memory BIO. The *buf* argument must be an
+   object supporting the buffer protocol.
+
+   The return value is the number of bytes written, which is always equal to
+   the length of *buf*.
+
+.. method:: MemoryBIO.write_eof()
+
+   Write an EOF marker to the memory BIO. After this method has been called, it
+   is illegal to call :meth:`~MemoryBIO.write`. The attribute :attr:`eof` will
+   become true after all data currently in the buffer has been read.
+
+An :class:`SSLObject` instance can be created using the
+:meth:`~SSLContext.wrap_bio` method. This method will create the
+:class:`SSLObject` instance and bind it to a pair of BIOs. The *incoming* BIO
+is used to pass data from Python to the SSL protocol instance, while the
+*outgoing* BIO is used to pass data the other way around.
+
+.. method:: SSLContext.wrap_bio(incoming, outgoing, server_side=False, \
+                                server_hostname=None)
+
+   Create a new :class:`SSLObject` instance by wrapping the BIO objects
+   *incoming* and *outgoing*. The SSL routines will read input data from the
+   incoming BIO and write data to the outgoing BIO.
+
+   The *server_side* and *server_hostname* parameters have the same meaning as
+   in :meth:`SSLContext.wrap_socket`.
+
+Some notes related to the use of :class:`SSLObject`:
+
+- All IO on an :class:`SSLObject` is non-blocking. This means that for example
+  :meth:`~SSLSocket.read` will raise an :exc:`SSLWantReadError` if it needs
+  more data than the incoming BIO has available.
+
+- There is no module-level ``wrap_bio`` call like there is for
+  :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created via
+  an :class:`SSLContext`.
+
+- There is no *do_handshake_on_connect* machinery. You must always manually
+  call :meth:`~SSLSocket.do_handshake` to start the handshake.
+
+- There is no handling of *suppress_ragged_eofs*. All end-of-file conditions
+  that are in violation of the protocol are reported via the :exc:`SSLEOFError`
+  exception.
+
+- The method :meth:`~SSLSocket.unwrap` call does not return anything, unlike
+  for an SSL socket where it returns the underlying socket.
+
+- The *server_name_callback* callback passed to
+  :meth:`SSLContext.set_servername_callback` will get an :class:`SSLObject`
+  instance instead of a :class:`SSLSocket` instance as its first parameter.
 
 
 .. _ssl-security:

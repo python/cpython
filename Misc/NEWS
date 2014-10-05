@@ -166,6 +166,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21965: Add support for in-memory SSL to the ssl module.  Patch
+  by Geert Jansen.
+
 - Issue #21173: Fix len() on a WeakKeyDictionary when .clear() was called
   with an iterator alive.
 
