@@ -711,11 +711,11 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             s.sendto('\u2620', sockname)
         self.assertEqual(str(cm.exception),
-                         "'str' does not support the buffer interface")
+                         "a bytes-like object is required, not 'str'")
         with self.assertRaises(TypeError) as cm:
             s.sendto(5j, sockname)
         self.assertEqual(str(cm.exception),
-                         "'complex' does not support the buffer interface")
+                         "a bytes-like object is required, not 'complex'")
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo', None)
         self.assertIn('not NoneType',str(cm.exception))
@@ -723,11 +723,11 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             s.sendto('\u2620', 0, sockname)
         self.assertEqual(str(cm.exception),
-                         "'str' does not support the buffer interface")
+                         "a bytes-like object is required, not 'str'")
         with self.assertRaises(TypeError) as cm:
             s.sendto(5j, 0, sockname)
         self.assertEqual(str(cm.exception),
-                         "'complex' does not support the buffer interface")
+                         "a bytes-like object is required, not 'complex'")
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo', 0, None)
         self.assertIn('not NoneType', str(cm.exception))

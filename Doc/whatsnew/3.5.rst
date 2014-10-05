@@ -393,6 +393,12 @@ Changes in the Python API
   The *convert_charrefs* argument of :class:`~html.parser.HTMLParser` is
   now ``True`` by default (contributed by Berker Peksag in :issue:`21047`).
 
+* Although it is not formally part of the API, it is worth noting for porting
+  purposes (ie: fixing tests) that error messages that were previously of the
+  form "'sometype' does not support the buffer protocol" are now of the form "a
+  bytes-like object is required, not 'sometype'" (contributed by Ezio Melotti
+  in :issue:`16518`).
+
 Changes in the C API
 --------------------
 

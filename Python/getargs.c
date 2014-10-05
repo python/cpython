@@ -1244,7 +1244,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
            supports it directly. */
         if (PyObject_GetBuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
             PyErr_Clear();
-            return converterr("read-write buffer", arg, msgbuf, bufsize);
+            return converterr("read-write bytes-like object",
+                              arg, msgbuf, bufsize);
         }
         if (!PyBuffer_IsContiguous((Py_buffer*)p, 'C')) {
             PyBuffer_Release((Py_buffer*)p);
@@ -1282,7 +1283,7 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
     *errmsg = NULL;
     *p = NULL;
     if (pb != NULL && pb->bf_releasebuffer != NULL) {
-        *errmsg = "read-only pinned buffer";
+        *errmsg = "read-only bytes-like object";
         return -1;
     }
 
@@ -1298,7 +1299,7 @@ static int
 getbuffer(PyObject *arg, Py_buffer *view, char **errmsg)
 {
     if (PyObject_GetBuffer(arg, view, PyBUF_SIMPLE) != 0) {
-        *errmsg = "bytes or buffer";
+        *errmsg = "bytes-like object";
         return -1;
     }
     if (!PyBuffer_IsContiguous(view, 'C')) {

@@ -241,7 +241,7 @@ PyDoc_STRVAR(compare_digest__doc__,
 "Return 'a == b'.  This function uses an approach designed to prevent\n"
 "timing analysis, making it appropriate for cryptography.\n"
 "a and b must both be of the same type: either str (ASCII only),\n"
-"or any type that supports the buffer protocol (e.g. bytes).\n"
+"or any bytes-like object.\n"
 "\n"
 "Note: If a and b are of different lengths, or if an error occurs,\n"
 "a timing attack could theoretically reveal information about the\n"
