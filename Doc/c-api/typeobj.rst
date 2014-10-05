@@ -189,30 +189,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
 .. c:member:: printfunc PyTypeObject.tp_print
 
-   An optional pointer to the instance print function.
-
-   The print function is only called when the instance is printed to a *real* file;
-   when it is printed to a pseudo-file (like a :class:`io.StringIO` instance), the
-   instance's :c:member:`~PyTypeObject.tp_repr` or :c:member:`~PyTypeObject.tp_str` function is called to convert it to
-   a string.  These are also called when the type's :c:member:`~PyTypeObject.tp_print` field is
-   *NULL*.  A type should never implement :c:member:`~PyTypeObject.tp_print` in a way that produces
-   different output than :c:member:`~PyTypeObject.tp_repr` or :c:member:`~PyTypeObject.tp_str` would.
-
-   The print function is called with the same signature as :c:func:`PyObject_Print`:
-   ``int tp_print(PyObject *self, FILE *file, int flags)``.  The *self* argument is
-   the instance to be printed.  The *file* argument is the stdio file to which it
-   is to be printed.  The *flags* argument is composed of flag bits. The only flag
-   bit currently defined is :const:`Py_PRINT_RAW`. When the :const:`Py_PRINT_RAW`
-   flag bit is set, the instance should be printed the same way as :c:member:`~PyTypeObject.tp_str`
-   would format it; when the :const:`Py_PRINT_RAW` flag bit is clear, the instance
-   should be printed the same way as :c:member:`~PyTypeObject.tp_repr` would format it. It should
-   return ``-1`` and set an exception condition when an error occurs.
-
-   It is possible that the :c:member:`~PyTypeObject.tp_print` field will be deprecated. In any case,
-   it is recommended not to define :c:member:`~PyTypeObject.tp_print`, but instead to rely on
-   :c:member:`~PyTypeObject.tp_repr` and :c:member:`~PyTypeObject.tp_str` for printing.
-
-   This field is inherited by subtypes.
+   Reserved slot, formerly used for print formatting in Python 2.x.
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
