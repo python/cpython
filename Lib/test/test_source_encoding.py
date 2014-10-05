@@ -1,7 +1,7 @@
 # -*- coding: koi8-r -*-
 
 import unittest
-from test.support import TESTFN, unlink, unload
+from test.support import TESTFN, unlink, unload, rmtree
 import importlib
 import os
 import sys
@@ -129,6 +129,7 @@ class SourceEncodingTest(unittest.TestCase):
             unlink(filename + "c")
             unlink(filename + "o")
             unload(TESTFN)
+            rmtree('__pycache__')
 
     def test_error_from_string(self):
         # See http://bugs.python.org/issue6289
