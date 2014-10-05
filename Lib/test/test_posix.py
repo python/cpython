@@ -1125,7 +1125,7 @@ class PosixTester(unittest.TestCase):
         """
         Test functions that call path_error2(), providing two filenames in their exceptions.
         """
-        for name in ("rename", "replace", "link", "symlink"):
+        for name in ("rename", "replace", "link"):
             function = getattr(os, name, None)
 
             if function:

@@ -916,6 +916,7 @@ class PdbTestCase(unittest.TestCase):
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(support.unlink, filename)
+        self.addCleanup(support.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb', filename]
         stdout = stderr = None
         with subprocess.Popen(cmd, stdout=subprocess.PIPE,
