@@ -567,7 +567,7 @@ class SSLObject:
         """Return the number of bytes that can be read immediately."""
         return self._sslobj.pending()
 
-    def do_handshake(self, block=False):
+    def do_handshake(self):
         """Start the SSL/TLS handshake."""
         self._sslobj.do_handshake()
         if self.context.check_hostname:
