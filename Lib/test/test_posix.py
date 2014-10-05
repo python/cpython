@@ -1127,16 +1127,17 @@ class PosixTester(unittest.TestCase):
         """
         for name in ("rename", "replace", "link"):
             function = getattr(os, name, None)
+            if function is None:
+                continue
 
-            if function:
-                for dst in ("noodly2", support.TESTFN):
-                    try:
-                        function('doesnotexistfilename', dst)
-                    except OSError as e:
-                        self.assertIn("'doesnotexistfilename' -> '{}'".format(dst), str(e))
-                        break
-                else:
-                    self.fail("No valid path_error2() test for os." + name)
+            for dst in ("noodly2", support.TESTFN):
+                try:
+                    function('doesnotexistfilename', dst)
+                except OSError as e:
+                    self.assertIn("'doesnotexistfilename' -> '{}'".format(dst), str(e))
+                    break
+            else:
+                self.fail("No valid path_error2() test for os." + name)
 
 class PosixGroupsTester(unittest.TestCase):
 
