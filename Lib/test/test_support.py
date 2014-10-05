@@ -69,6 +69,7 @@ class TestSupport(unittest.TestCase):
         finally:
             del sys.path[0]
             support.unlink(mod_filename)
+            support.rmtree('__pycache__')
 
     def test_HOST(self):
         s = socket.socket()
