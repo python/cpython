@@ -4873,9 +4873,7 @@ PyDoc_STRVAR(long_from_bytes_doc,
 \n\
 Return the integer represented by the given array of bytes.\n\
 \n\
-The bytes argument must either support the buffer protocol or be an\n\
-iterable object producing bytes.  Bytes and bytearray are examples of\n\
-built-in objects that support the buffer protocol.\n\
+The bytes argument must be a bytes-like object (e.g. bytes or bytearray).\n\
 \n\
 The byteorder argument determines the byte order used to represent the\n\
 integer.  If byteorder is 'big', the most significant byte is at the\n\

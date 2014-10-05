@@ -87,7 +87,7 @@ _getbuffer(PyObject *obj, Py_buffer *view)
     if (buffer == NULL || buffer->bf_getbuffer == NULL)
     {
         PyErr_Format(PyExc_TypeError,
-                     "Type %.100s doesn't support the buffer API",
+                     "a bytes-like object is required, not '%.100s'",
                      Py_TYPE(obj)->tp_name);
         return -1;
     }

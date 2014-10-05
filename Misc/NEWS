@@ -10,6 +10,10 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #16518: Use 'bytes-like object required' in error messages that
+  previously used the far more cryptic "'x' does not support the buffer
+  protocol.
+
 - Issue #22470: Fixed integer overflow issues in "backslashreplace",
   "xmlcharrefreplace", and "surrogatepass" error handlers.
 

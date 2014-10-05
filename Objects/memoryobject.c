@@ -792,7 +792,7 @@ PyMemoryView_FromObject(PyObject *v)
     }
 
     PyErr_Format(PyExc_TypeError,
-        "memoryview: %.200s object does not have the buffer interface",
+        "memoryview: a bytes-like object is required, not '%.200s'",
         Py_TYPE(v)->tp_name);
     return NULL;
 }
