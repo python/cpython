@@ -538,6 +538,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t arg_num;
+    int import_lock_held = 0;
 
     if (!PyArg_ParseTuple(
             args, "OOpOOOiiiiiiiiiiO:fork_exec",
@@ -590,10 +591,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     }
 
     exec_array = _PySequence_BytesToCharpArray(executable_list);
-    if (!exec_array) {
-        Py_XDECREF(gc_module);
-        return NULL;
-    }
+    if (!exec_array)
+        goto cleanup;
 
     /* Convert args and env into appropriate arguments for exec() */
     /* These conversions are done in the parent process to avoid allocating
@@ -635,6 +634,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         if (!preexec_fn_args_tuple)
             goto cleanup;
         _PyImport_AcquireLock();
+        import_lock_held = 1;
     }
 
     if (cwd_obj != Py_None) {
@@ -682,6 +682,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError,
                         "not holding the import lock");
     }
+    import_lock_held = 0;
 
     /* Parent process */
     if (envp)
@@ -704,18 +705,25 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
+    if (import_lock_held)
+        _PyImport_ReleaseLock();
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)
         _Py_FreeCharPArray(argv);
-    _Py_FreeCharPArray(exec_array);
+    if (exec_array)
+        _Py_FreeCharPArray(exec_array);
     Py_XDECREF(converted_args);
     Py_XDECREF(fast_args);
     Py_XDECREF(preexec_fn_args_tuple);
 
     /* Reenable gc if it was disabled. */
-    if (need_to_reenable_gc)
+    if (need_to_reenable_gc) {
+        PyObject *exctype, *val, *tb;
+        PyErr_Fetch(&exctype, &val, &tb);
         _enable_gc(gc_module);
+        PyErr_Restore(exctype, val, tb);
+    }
     Py_XDECREF(gc_module);
     return NULL;
 }
