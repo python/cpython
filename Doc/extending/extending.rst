@@ -89,8 +89,9 @@ example, the single expression ``"ls -l"``) to the arguments passed to the C
 function.  The C function always has two arguments, conventionally named *self*
 and *args*.
 
-The *self* argument points to the module object for module-level functions;
-for a method it would point to the object instance.
+For module functions, the *self* argument is *NULL* or a pointer selected while
+initializing the module (see :c:func:`Py_InitModule4`).  For a method, it would
+point to the object instance.
 
 The *args* argument will be a pointer to a Python tuple object containing the
 arguments.  Each item of the tuple corresponds to an argument in the call's
