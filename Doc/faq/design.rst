@@ -49,7 +49,7 @@ Why are floating-point calculations so inaccurate?
 Users are often surprised by results like this::
 
     >>> 1.2 - 1.0
-    0.199999999999999996
+    0.19999999999999996
 
 and think it is a bug in Python.  It's not.  This has little to do with Python,
 and much more to do with how the underlying platform handles floating-point

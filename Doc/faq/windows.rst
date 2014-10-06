@@ -78,7 +78,7 @@ by entering a few expressions of your choice and seeing the results::
     >>> print("Hello")
     Hello
     >>> "Hello" * 3
-    HelloHelloHello
+    'HelloHelloHello'
 
 Many people use the interactive mode as a convenient yet highly programmable
 calculator.  When you want to end your interactive Python session, hold the Ctrl
