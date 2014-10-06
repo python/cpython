@@ -19,11 +19,7 @@ from SimpleDialog import SimpleDialog
 
 from idlelib.configHandler import idleConf
 
-try:
-    from codecs import BOM_UTF8
-except ImportError:
-    # only available since Python 2.3
-    BOM_UTF8 = '\xef\xbb\xbf'
+from codecs import BOM_UTF8
 
 # Try setting the locale, so that we can find out
 # what encoding to use
@@ -532,6 +528,8 @@ class IOBinding:
         ("All files", "*"),
         ]
 
+    defaultextension = '.py' if sys.platform == 'darwin' else ''
+
     def askopenfile(self):
         dir, base = self.defaultfilename("open")
         if not self.opendialog:
@@ -557,8 +555,10 @@ class IOBinding:
     def asksavefile(self):
         dir, base = self.defaultfilename("save")
         if not self.savedialog:
-            self.savedialog = tkFileDialog.SaveAs(master=self.text,
-                                                  filetypes=self.filetypes)
+            self.savedialog = tkFileDialog.SaveAs(
+                    master=self.text,
+                    filetypes=self.filetypes,
+                    defaultextension=self.defaultextension)
         filename = self.savedialog.show(initialdir=dir, initialfile=base)
         if isinstance(filename, unicode):
             filename = filename.encode(filesystemencoding)
