@@ -92,13 +92,14 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.6
 
 
-.. function:: bool([x])
+.. class:: bool([x])
 
-   Convert a value to a Boolean, using the standard truth testing procedure.  If
-   *x* is false or omitted, this returns :const:`False`; otherwise it returns
-   :const:`True`. :class:`bool` is also a class, which is a subclass of
-   :class:`int`. Class :class:`bool` cannot be subclassed further.  Its only
-   instances are :const:`False` and :const:`True`.
+   Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
+   using the standard truth testing procedure.  If *x* is false or omitted, this
+   returns :const:`False`; otherwise it returns :const:`True`. :class:`bool` is
+   also a class, which is a subclass of :class:`int`. Class :class:`bool` cannot
+   be subclassed further.  Its only instances are :const:`False` and
+   :const:`True`.
 
    .. index:: pair: Boolean; type
 
@@ -108,9 +109,9 @@ available.  They are listed here in alphabetical order.
       If no argument is given, this function returns :const:`False`.
 
 
-.. function:: bytearray([source[, encoding[, errors]]])
+.. class:: bytearray([source[, encoding[, errors]]])
 
-   Return a new array of bytes.  The :class:`bytearray` type is a mutable
+   Return a new array of bytes.  The :class:`bytearray` class is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
    methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
    as most methods that the :class:`str` type has, see :ref:`string-methods`.
@@ -250,9 +251,9 @@ available.  They are listed here in alphabetical order.
       does not have to end in a newline anymore.
 
 
-.. function:: complex([real[, imag]])
+.. class:: complex([real[, imag]])
 
-   Create a complex number with the value *real* + *imag*\*j or convert a string or
+   Return a complex number with the value *real* + *imag*\*j or convert a string or
    number to a complex number.  If the first parameter is a string, it will be
    interpreted as a complex number and the function must be called without a second
    parameter.  The second parameter can never be a string. Each argument may be any
@@ -279,14 +280,13 @@ available.  They are listed here in alphabetical order.
 
 
 .. _func-dict:
-.. function:: dict(**kwarg)
-              dict(mapping, **kwarg)
-              dict(iterable, **kwarg)
+.. class:: dict(**kwarg)
+           dict(mapping, **kwarg)
+           dict(iterable, **kwarg)
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this
-   class.
+   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`list`, :class:`set`, and
    :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -489,9 +489,11 @@ available.  They are listed here in alphabetical order.
    where the *function* returns false.
 
 
-.. function:: float([x])
+.. class:: float([x])
 
-   Convert a string or a number to floating point.  If the argument is a string, it
+   Return a floating point number constructed from a number or string *x*.
+
+   If the argument is a string, it
    must contain a possibly signed decimal or floating point number, possibly
    embedded in whitespace. The argument may also be [+|-]nan or [+|-]inf.
    Otherwise, the argument may be a plain or long integer
@@ -534,7 +536,7 @@ available.  They are listed here in alphabetical order.
 
 
 .. _func-frozenset:
-.. function:: frozenset([iterable])
+.. class:: frozenset([iterable])
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
@@ -645,10 +647,10 @@ available.  They are listed here in alphabetical order.
    Consider using the :func:`raw_input` function for general input from users.
 
 
-.. function:: int(x=0)
-              int(x, base=10)
+.. class:: int(x=0)
+           int(x, base=10)
 
-   Convert a number or string *x* to an integer, or return ``0`` if no
+   Return an integer object constructed from a number or string *x*, or return ``0`` if no
    arguments are given.  If *x* is a number, it can be a plain integer, a long
    integer, or a floating point number.  If *x* is floating point, the conversion
    truncates towards zero.  If the argument is outside the integer range, the
@@ -730,7 +732,7 @@ available.  They are listed here in alphabetical order.
    (such as a dictionary, set, or frozen set).
 
 
-.. function:: list([iterable])
+.. class:: list([iterable])
 
    Return a list whose items are the same and in the same order as *iterable*'s
    items.  *iterable* may be either a sequence, a container that supports
@@ -756,10 +758,11 @@ available.  They are listed here in alphabetical order.
       affect the values of local and free variables used by the interpreter.
 
 
-.. function:: long(x=0)
-              long(x, base=10)
+.. class:: long(x=0)
+           long(x, base=10)
 
-   Convert a string or number to a long integer.  If the argument is a string, it
+   Return a long integer object constructed from a string or number *x*.
+   If the argument is a string, it
    must contain a possibly signed number of arbitrary size, possibly embedded in
    whitespace. The *base* argument is interpreted in the same way as for
    :func:`int`, and may only be given when *x* is a string. Otherwise, the argument
@@ -837,7 +840,7 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.6
 
 
-.. function:: object()
+.. class:: object()
 
    Return a new featureless object.  :class:`object` is a base for all new style
    classes.  It has the methods that are common to all instances of new style
@@ -987,7 +990,7 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.6
 
 
-.. function:: property([fget[, fset[, fdel[, doc]]]])
+.. class:: property([fget[, fset[, fdel[, doc]]]])
 
    Return a property attribute for :term:`new-style class`\es (classes that
    derive from :class:`object`).
@@ -1249,7 +1252,7 @@ available.  They are listed here in alphabetical order.
 
 
 .. _func-set:
-.. function:: set([iterable])
+.. class:: set([iterable])
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
@@ -1272,8 +1275,8 @@ available.  They are listed here in alphabetical order.
    ``x.foobar = 123``.
 
 
-.. function:: slice(stop)
-              slice(start, stop[, step])
+.. class:: slice(stop)
+           slice(start, stop[, step])
 
    .. index:: single: Numerical Python
 
@@ -1352,7 +1355,7 @@ available.  They are listed here in alphabetical order.
       Function decorator syntax added.
 
 
-.. function:: str(object='')
+.. class:: str(object='')
 
    Return a string containing a nicely printable representation of an object.  For
    strings, this returns the string itself.  The difference with ``repr(object)``
@@ -1456,8 +1459,8 @@ available.  They are listed here in alphabetical order.
    :class:`list`, and :class:`set` classes, and the :mod:`collections` module.
 
 
-.. function:: type(object)
-              type(name, bases, dict)
+.. class:: type(object)
+           type(name, bases, dict)
 
    .. index:: object: type
 
