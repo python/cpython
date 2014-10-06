@@ -343,7 +343,8 @@ AST_C=		$(AST_C_DIR)/Python-ast.c
 AST_ASDL=	$(srcdir)/Parser/Python.asdl
 
 ASDLGEN_FILES=	$(srcdir)/Parser/asdl.py $(srcdir)/Parser/asdl_c.py
-# XXX Note that a build now requires Python exist before the build starts
+# Note that a build now requires Python to exist before the build starts.
+# Use "hg touch" to fix up screwed up file mtimes in a checkout.
 ASDLGEN=	@ASDLGEN@ $(srcdir)/Parser/asdl_c.py
 
 ##########################################################################
@@ -1509,7 +1510,10 @@ TAGS::
 	etags Include/*.h; \
 	for i in $(SRCDIRS); do etags -a $$i/*.[ch]; done
 
-# Touch generated files
+# This fixes up the mtimes of checked-in generated files, assuming that they
+# only *appear* to be outdated because of checkout order.
+# This is run while preparing a source release tarball, and can be run manually
+# to avoid bootstrap issues.
 touch:
 	cd $(srcdir); \
 	hg --config extensions.touch=Tools/hg/hgtouch.py touch -v
