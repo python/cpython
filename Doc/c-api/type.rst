@@ -69,7 +69,7 @@ Type Objects
    Return true if *a* is a subtype of *b*.
 
    This function only checks for actual subtypes, which means that
-   :meth:`~type.__subclasscheck__` is not called on *b*.  Call
+   :meth:`~class.__subclasscheck__` is not called on *b*.  Call
    :c:func:`PyObject_IsSubclass` to do the same check that :func:`issubclass`
    would do.
 
