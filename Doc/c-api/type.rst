@@ -44,6 +44,7 @@ Type Objects
 
    .. versionadded:: 3.2
 
+
 .. c:function:: void PyType_Modified(PyTypeObject *type)
 
    Invalidate the internal lookup cache for the type and all of its
@@ -66,6 +67,11 @@ Type Objects
 .. c:function:: int PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 
    Return true if *a* is a subtype of *b*.
+
+   This function only checks for actual subtypes, which means that
+   :meth:`~type.__subclasscheck__` is not called on *b*.  Call
+   :c:func:`PyObject_IsSubclass` to do the same check that :func:`issubclass`
+   would do.
 
 
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
