@@ -1117,18 +1117,19 @@ New-style and classic classes
 
 Classes and instances come in two flavors: old-style (or classic) and new-style.
 
-Up to Python 2.1, old-style classes were the only flavour available to the user.
-The concept of (old-style) class is unrelated to the concept of type: if *x* is
-an instance of an old-style class, then ``x.__class__`` designates the class of
-*x*, but ``type(x)`` is always ``<type 'instance'>``.  This reflects the fact
-that all old-style instances, independently of their class, are implemented with
-a single built-in type, called ``instance``.
+Up to Python 2.1 the concept of ``class`` was unrelated to the concept of
+``type``, and old-style classes were the only flavor available.  For an
+old-style class, the statement ``x.__class__`` provides the class of *x*, but
+``type(x)`` is always ``<type 'instance'>``.  This reflects the fact that all
+old-style instances, independent of their class, are implemented with a single
+built-in type, called ``instance``.
 
-New-style classes were introduced in Python 2.2 to unify classes and types.  A
-new-style class is neither more nor less than a user-defined type.  If *x* is an
-instance of a new-style class, then ``type(x)`` is typically the same as
-``x.__class__`` (although this is not guaranteed - a new-style class instance is
-permitted to override the value returned for ``x.__class__``).
+New-style classes were introduced in Python 2.2 to unify the concepts of
+``class`` and ``type``.  A new-style class is simply a user-defined type,
+no more, no less.  If *x* is an instance of a new-style class, then ``type(x)``
+is typically the same as ``x.__class__`` (although this is not guaranteed -- a
+new-style class instance is permitted to override the value returned for
+``x.__class__``).
 
 The major motivation for introducing new-style classes is to provide a unified
 object model with a full meta-model.  It also has a number of practical
@@ -1155,8 +1156,7 @@ sources of additional information.
    single: class; classic
    single: class; old-style
 
-Old-style classes are removed in Python 3, leaving only the semantics of
-new-style classes.
+Old-style classes are removed in Python 3, leaving only new-style classes.
 
 
 .. _specialnames:
