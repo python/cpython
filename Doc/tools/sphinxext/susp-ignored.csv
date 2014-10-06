@@ -256,11 +256,6 @@ whatsnew/2.4,,:System,
 whatsnew/2.5,,:memory,:memory:
 whatsnew/2.5,,:step,[start:stop:step]
 whatsnew/2.5,,:stop,[start:stop:step]
-whatsnew/2.7,1619,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',"
-whatsnew/2.7,1619,::,>>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
-whatsnew/2.7,735,:Sunday,'2009:4:Sunday'
-whatsnew/2.7,862,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
-whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/3.2,,:affe,"netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',"
 whatsnew/3.2,,:affe,>>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
 whatsnew/3.2,,:beef,"netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',"
@@ -282,3 +277,8 @@ whatsnew/changelog,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised Unic
 whatsnew/changelog,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
 whatsnew/changelog,,:password,user:password
+whatsnew/2.7,780,:Sunday,'2009:4:Sunday'
+whatsnew/2.7,907,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
+whatsnew/2.7,907,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
+whatsnew/2.7,1657,::,>>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
+whatsnew/2.7,1657,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',"
