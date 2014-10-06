@@ -438,9 +438,8 @@ What are the "best practices" for using import in a module?
 -----------------------------------------------------------
 
 In general, don't use ``from modulename import *``.  Doing so clutters the
-importer's namespace.  Some people avoid this idiom even with the few modules
-that were designed to be imported in this manner.  Modules designed in this
-manner include :mod:`Tkinter`, and :mod:`threading`.
+importer's namespace, and makes it much harder for linters to detect undefined
+names.
 
 Import modules at the top of a file.  Doing so makes it clear what other modules
 your code requires and avoids questions of whether the module name is in scope.
@@ -454,11 +453,10 @@ It's good practice if you import modules in the following order:
    directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
 3. locally-developed modules
 
-Never use relative package imports.  If you're writing code that's in the
-``package.sub.m1`` module and want to import ``package.sub.m2``, do not just
+Only use explicit relative package imports.  If you're writing code that's in
+the ``package.sub.m1`` module and want to import ``package.sub.m2``, do not just
 write ``import m2``, even though it's legal.  Write ``from package.sub import
-m2`` instead.  Relative imports can lead to a module being initialized twice,
-leading to confusing bugs.  See :pep:`328` for details.
+m2`` or ``from . import m2`` instead.
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -489,14 +487,6 @@ first time may be expensive because of the one time initialization of the
 module, but loading a module multiple times is virtually free, costing only a
 couple of dictionary lookups.  Even if the module name has gone out of scope,
 the module is probably available in :data:`sys.modules`.
-
-If only instances of a specific class use a module, then it is reasonable to
-import the module in the class's ``__init__`` method and then assign the module
-to an instance variable so that the module is always available (via that
-instance variable) during the life of the object.  Note that to delay an import
-until the class is instantiated, the import must be inside a method.  Putting
-the import inside the class but outside of any method still causes the import to
-occur when the module is initialized.
 
 
 Why are default values shared between objects?
