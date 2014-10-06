@@ -282,7 +282,7 @@ intentional.)  If an exception is raised, the caller should do its normal
 exception handling (for example, :c:func:`Py_DECREF` owned references and return
 an error value).
 
-.. c:function:: int PyErr_WarnEx(PyObject *category, char *message, int stack_level)
+.. c:function:: int PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 
    Issue a warning message.  The *category* argument is a warning category (see
    below) or *NULL*; the *message* argument is an UTF-8 encoded string.  *stack_level* is a
