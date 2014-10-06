@@ -346,7 +346,7 @@ in various ways.  There is a separate error indicator for each thread.
    use.
 
 
-.. c:function:: int PyErr_WarnEx(PyObject *category, char *message, int stack_level)
+.. c:function:: int PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 
    Issue a warning message.  The *category* argument is a warning category (see
    below) or *NULL*; the *message* argument is an UTF-8 encoded string.  *stack_level* is a
