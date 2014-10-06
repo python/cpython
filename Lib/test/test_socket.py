@@ -12,9 +12,9 @@ import sys
 import os
 import array
 import contextlib
-from weakref import proxy
 import signal
 import math
+import weakref
 try:
     import _socket
 except ImportError:
@@ -264,7 +264,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_weakref(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        p = proxy(s)
+        p = weakref.proxy(s)
         self.assertEqual(p.fileno(), s.fileno())
         s.close()
         s = None
@@ -274,6 +274,14 @@ class GeneralModuleTests(unittest.TestCase):
             pass
         else:
             self.fail('Socket proxy still exists')
+
+    def test_weakref__sock(self):
+        s = socket.socket()._sock
+        w = weakref.ref(s)
+        self.assertIs(w(), s)
+        del s
+        test_support.gc_collect()
+        self.assertIsNone(w())
 
     def testSocketError(self):
         # Testing socket module exceptions
