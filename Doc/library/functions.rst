@@ -85,22 +85,22 @@ are always available.  They are listed here in alphabetical order.
    :meth:`__index__` method that returns an integer.
 
 
-.. function:: bool([x])
+.. class:: bool([x])
 
-   Convert a value to a Boolean, using the standard :ref:`truth testing
-   procedure <truth>`.  If *x* is false or omitted, this returns ``False``;
-   otherwise it returns ``True``. :class:`bool` is also a class, which is a
-   subclass of :class:`int` (see :ref:`typesnumeric`).  Class :class:`bool`
-   cannot be subclassed further.  Its only instances are ``False`` and
+   Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
+   using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
+   or omitted, this returns ``False``; otherwise it returns ``True``.  The
+   :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
+   It cannot be subclassed further.  Its only instances are ``False`` and
    ``True`` (see :ref:`bltin-boolean-values`).
 
    .. index:: pair: Boolean; type
 
 
 .. _func-bytearray:
-.. function:: bytearray([source[, encoding[, errors]]])
+.. class:: bytearray([source[, encoding[, errors]]])
 
-   Return a new array of bytes.  The :class:`bytearray` type is a mutable
+   Return a new array of bytes.  The :class:`bytearray` class is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
    methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
    as most methods that the :class:`bytes` type has, see :ref:`bytes-methods`.
@@ -127,7 +127,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-bytes:
-.. function:: bytes([source[, encoding[, errors]]])
+.. class:: bytes([source[, encoding[, errors]]])
 
    Return a new "bytes" object, which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
@@ -243,15 +243,16 @@ are always available.  They are listed here in alphabetical order.
       does not have to end in a newline anymore.  Added the *optimize* parameter.
 
 
-.. function:: complex([real[, imag]])
+.. class:: complex([real[, imag]])
 
-   Create a complex number with the value *real* + *imag*\*j or convert a string or
-   number to a complex number.  If the first parameter is a string, it will be
-   interpreted as a complex number and the function must be called without a second
-   parameter.  The second parameter can never be a string. Each argument may be any
-   numeric type (including complex). If *imag* is omitted, it defaults to zero and
-   the function serves as a numeric conversion function like :func:`int`
-   and :func:`float`.  If both arguments are omitted, returns ``0j``.
+   Return a complex number with the value *real* + *imag*\*j or convert a string
+   or number to a complex number.  If the first parameter is a string, it will
+   be interpreted as a complex number and the function must be called without a
+   second parameter.  The second parameter can never be a string. Each argument
+   may be any numeric type (including complex).  If *imag* is omitted, it
+   defaults to zero and the constructor serves as a numeric conversion like
+   :class:`int` and :class:`float`.  If both arguments are omitted, returns
+   ``0j``.
 
    .. note::
 
@@ -272,14 +273,13 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-dict:
-.. function:: dict(**kwarg)
-              dict(mapping, **kwarg)
-              dict(iterable, **kwarg)
+.. class:: dict(**kwarg)
+           dict(mapping, **kwarg)
+           dict(iterable, **kwarg)
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this
-   class.
+   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`list`, :class:`set`, and
    :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -470,13 +470,13 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* returns false.
 
 
-.. function:: float([x])
+.. class:: float([x])
 
    .. index::
       single: NaN
       single: Infinity
 
-   Convert a string or a number to floating point.
+   Return a floating point number constructed from a number or string *x*.
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
@@ -551,7 +551,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-frozenset:
-.. function:: frozenset([iterable])
+.. class:: frozenset([iterable])
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
@@ -664,12 +664,13 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. function:: int(x=0)
-              int(x, base=10)
+.. class:: int(x=0)
+           int(x, base=10)
 
-   Convert a number or string *x* to an integer, or return ``0`` if no
-   arguments are given.  If *x* is a number, return :meth:`x.__int__()
-   <object.__int__>`.  For floating point numbers, this truncates towards zero.
+   Return an integer object constructed from a number or string *x*, or return
+   ``0`` if no arguments are given.  If *x* is a number, return
+   :meth:`x.__int__() <object.__int__>`.  For floating point numbers, this
+   truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
@@ -748,7 +749,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-list:
-.. function:: list([iterable])
+.. class:: list([iterable])
    :noindex:
 
    Rather than being a function, :class:`list` is actually a mutable
@@ -842,7 +843,7 @@ are always available.  They are listed here in alphabetical order.
    if the iterator is exhausted, otherwise :exc:`StopIteration` is raised.
 
 
-.. function:: object()
+.. class:: object()
 
    Return a new featureless object.  :class:`object` is a base for all classes.
    It has the methods that are common to all instances of Python classes.  This
@@ -1105,7 +1106,7 @@ are always available.  They are listed here in alphabetical order.
       Added the *flush* keyword argument.
 
 
-.. function:: property(fget=None, fset=None, fdel=None, doc=None)
+.. class:: property(fget=None, fset=None, fdel=None, doc=None)
 
    Return a property attribute.
 
@@ -1231,7 +1232,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-set:
-.. function:: set([iterable])
+.. class:: set([iterable])
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
@@ -1252,8 +1253,8 @@ are always available.  They are listed here in alphabetical order.
    ``x.foobar = 123``.
 
 
-.. function:: slice(stop)
-              slice(start, stop[, step])
+.. class:: slice(stop)
+           slice(start, stop[, step])
 
    .. index:: single: Numerical Python
 
@@ -1316,8 +1317,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-str:
-.. function:: str(object='')
-              str(object=b'', encoding='utf-8', errors='strict')
+.. class:: str(object='')
+           str(object=b'', encoding='utf-8', errors='strict')
    :noindex:
 
    Return a :class:`str` version of *object*.  See :func:`str` for details.
@@ -1404,11 +1405,10 @@ are always available.  They are listed here in alphabetical order.
    sequence type, as documented in :ref:`typesseq-tuple` and :ref:`typesseq`.
 
 
-.. function:: type(object)
-              type(name, bases, dict)
+.. class:: type(object)
+           type(name, bases, dict)
 
    .. index:: object: type
-
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
