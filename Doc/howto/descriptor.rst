@@ -92,9 +92,9 @@ For objects, the machinery is in :meth:`object.__getattribute__` which
 transforms ``b.x`` into ``type(b).__dict__['x'].__get__(b, type(b))``.  The
 implementation works through a precedence chain that gives data descriptors
 priority over instance variables, instance variables priority over non-data
-descriptors, and assigns lowest priority to :meth:`__getattr__` if provided.  The
-full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
-`Objects/object.c <http://svn.python.org/view/python/trunk/Objects/object.c?view=markup>`_\.
+descriptors, and assigns lowest priority to :meth:`__getattr__` if provided.
+The full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
+:source:`Objects/object.c`.
 
 For classes, the machinery is in :meth:`type.__getattribute__` which transforms
 ``B.x`` into ``B.__dict__['x'].__get__(None, B)``.  In pure Python, it looks
@@ -124,8 +124,8 @@ and then returns ``A.__dict__['m'].__get__(obj, B)``.  If not a descriptor,
 search using :meth:`object.__getattribute__`.
 
 The implementation details are in :c:func:`super_getattro()` in
-`Objects/typeobject.c <http://svn.python.org/view/python/trunk/Objects/typeobject.c?view=markup>`_
-and a pure Python equivalent can be found in `Guido's Tutorial`_.
+:source:`Objects/typeobject.c`.  and a pure Python equivalent can be found in
+`Guido's Tutorial`_.
 
 .. _`Guido's Tutorial`: http://www.python.org/2.2.3/descrintro.html#cooperation
 
@@ -300,10 +300,9 @@ Running the interpreter shows how the function descriptor works in practice::
 
 The output suggests that bound and unbound methods are two different types.
 While they could have been implemented that way, the actual C implementation of
-:c:type:`PyMethod_Type` in
-`Objects/classobject.c <http://svn.python.org/view/python/trunk/Objects/classobject.c?view=markup>`_
-is a single object with two different representations depending on whether the
-:attr:`im_self` field is set or is *NULL* (the C equivalent of *None*).
+:c:type:`PyMethod_Type` in :source:`Objects/classobject.c` is a single object
+with two different representations depending on whether the :attr:`im_self`
+field is set or is *NULL* (the C equivalent of *None*).
 
 Likewise, the effects of calling a method object depend on the :attr:`im_self`
 field. If set (meaning bound), the original function (stored in the
