@@ -468,19 +468,8 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
         close_result = _PyObject_CallMethodId(result, &PyId_close, NULL);
-        if (close_result != NULL) {
-            Py_DECREF(close_result);
-            PyErr_Restore(exc, val, tb);
-        } else {
-            PyObject *exc2, *val2, *tb2;
-            PyErr_Fetch(&exc2, &val2, &tb2);
-            PyErr_NormalizeException(&exc, &val, &tb);
-            Py_XDECREF(exc);
-            Py_XDECREF(tb);
-            PyErr_NormalizeException(&exc2, &val2, &tb2);
-            PyException_SetContext(val2, val);
-            PyErr_Restore(exc2, val2, tb2);
-        }
+        _PyErr_ChainExceptions(exc, val, tb);
+        Py_XDECREF(close_result);
         Py_DECREF(result);
     }
     Py_XDECREF(modeobj);

@@ -123,7 +123,9 @@ PyAPI_FUNC(void) PyException_SetCause(PyObject *, PyObject *);
 /* Context manipulation (PEP 3134) */
 PyAPI_FUNC(PyObject *) PyException_GetContext(PyObject *);
 PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
-
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+#endif
 
 /* */
 
