@@ -166,6 +166,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22462: Fix pyexpat's creation of a dummy frame to make it
+  appear in exception tracebacks.
+
 - Issue #21965: Add support for in-memory SSL to the ssl module.  Patch
   by Geert Jansen.
 
