@@ -353,8 +353,6 @@ extern char *_ctypes_conversion_errors;
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
 
-extern void _ctypes_add_traceback(char *, char *, int);
-
 extern PyObject *PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr);
 extern char *_ctypes_alloc_format_string(const char *prefix, const char *suffix);
 extern char *_ctypes_alloc_format_string_with_shape(int ndim,
