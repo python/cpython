@@ -1864,7 +1864,7 @@ expression support in the :mod:`re` module).
    For example::
 
       >>> 'ab c\n\nde fg\rkl\r\n'.splitlines()
-      ['ab c', '', 'de fg', 'kl']``
+      ['ab c', '', 'de fg', 'kl']
       >>> 'ab c\n\nde fg\rkl\r\n'.splitlines(keepends=True)
       ['ab c\n', '\n', 'de fg\r', 'kl\r\n']
 
@@ -2932,7 +2932,7 @@ place, and instead produce new objects.
    For example::
 
       >>> b'ab c\n\nde fg\rkl\r\n'.splitlines()
-      [b'ab c', b'', b'de fg', b'kl']``
+      [b'ab c', b'', b'de fg', b'kl']
       >>> b'ab c\n\nde fg\rkl\r\n'.splitlines(keepends=True)
       [b'ab c\n', b'\n', b'de fg\r', b'kl\r\n']
 
