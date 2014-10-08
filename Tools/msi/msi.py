@@ -1158,7 +1158,7 @@ def add_files(db):
     for f in ['i18n', 'pynche', 'Scripts']:
         lib = PyDirectory(db, cab, tooldir, f, f, "%s|%s" % (tooldir.make_short(f), f))
         lib.glob("*.py")
-        lib.glob("*.pyw", exclude=['pydocgui.pyw'])
+        lib.glob("*.pyw")
         lib.remove_pyc()
         lib.glob("*.txt")
         if f == "pynche":
@@ -1170,9 +1170,6 @@ def add_files(db):
             lib.add_file("2to3.py", src="2to3")
             lib.add_file("pydoc3.py", src="pydoc3")
             lib.add_file("pyvenv.py", src="pyvenv")
-            if have_tcl:
-                lib.start_component("pydocgui.pyw", tcltk, keyfile="pydocgui.pyw")
-                lib.add_file("pydocgui.pyw")
     # Add documentation
     htmlfiles.set_current()
     lib = PyDirectory(db, cab, root, "Doc", "Doc", "DOC|Doc")
