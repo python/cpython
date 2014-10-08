@@ -142,6 +142,39 @@ PyTraceBack_Here(PyFrameObject *frame)
     return 0;
 }
 
+/* Insert a frame into the traceback for (funcname, filename, lineno). */
+void _PyTraceback_Add(char *funcname, char *filename, int lineno)
+{
+    PyObject *globals = NULL;
+    PyCodeObject *code = NULL;
+    PyFrameObject *frame = NULL;
+    PyObject *exception, *value, *tb;
+
+    /* Save and clear the current exception. Python functions must not be
+       called with an exception set. Calling Python functions happens when
+       the codec of the filesystem encoding is implemented in pure Python. */
+    PyErr_Fetch(&exception, &value, &tb);
+
+    globals = PyDict_New();
+    if (!globals)
+        goto done;
+    code = PyCode_NewEmpty(filename, funcname, lineno);
+    if (!code)
+        goto done;
+    frame = PyFrame_New(PyThreadState_Get(), code, globals, NULL);
+    if (!frame)
+        goto done;
+    frame->f_lineno = lineno;
+
+    PyErr_Restore(exception, value, tb);
+    PyTraceBack_Here(frame);
+
+done:
+    Py_XDECREF(globals);
+    Py_XDECREF(code);
+    Py_XDECREF(frame);
+}
+
 static PyObject *
 _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *io)
 {

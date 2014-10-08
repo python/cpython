@@ -2,7 +2,9 @@
 # handler, are obscure and unhelpful.
 
 from io import BytesIO
+import os
 import unittest
+import traceback
 
 from xml.parsers import expat
 from xml.parsers.expat import errors
@@ -419,7 +421,11 @@ class HandlerExceptionTest(unittest.TestCase):
     def StartElementHandler(self, name, attrs):
         raise RuntimeError(name)
 
-    def test(self):
+    def check_traceback_entry(self, entry, filename, funcname):
+        self.assertEqual(os.path.basename(entry[0]), filename)
+        self.assertEqual(entry[2], funcname)
+
+    def test_exception(self):
         parser = expat.ParserCreate()
         parser.StartElementHandler = self.StartElementHandler
         try:
@@ -429,6 +435,16 @@ class HandlerExceptionTest(unittest.TestCase):
             self.assertEqual(e.args[0], 'a',
                              "Expected RuntimeError for element 'a', but" + \
                              " found %r" % e.args[0])
+            # Check that the traceback contains the relevant line in pyexpat.c
+            entries = traceback.extract_tb(e.__traceback__)
+            self.assertEqual(len(entries), 3)
+            self.check_traceback_entry(entries[0],
+                                       "test_pyexpat.py", "test_exception")
+            self.check_traceback_entry(entries[1],
+                                       "pyexpat.c", "StartElement")
+            self.check_traceback_entry(entries[2],
+                                       "test_pyexpat.py", "StartElementHandler")
+            self.assertIn('call_with_frame("StartElement"', entries[1][3])
 
 
 # Test Current* members:
