@@ -8,8 +8,6 @@
 
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
-#define FIX_TRACE
-
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
     PyObject_Malloc, PyObject_Realloc, PyObject_Free};
 
@@ -210,121 +208,17 @@ flag_error(xmlparseobject *self)
                                     error_external_entity_ref_handler);
 }
 
-static PyCodeObject*
-getcode(enum HandlerTypes slot, char* func_name, int lineno)
-{
-    if (handler_info[slot].tb_code == NULL) {
-        handler_info[slot].tb_code =
-            PyCode_NewEmpty(__FILE__, func_name, lineno);
-    }
-    return handler_info[slot].tb_code;
-}
-
-#ifdef FIX_TRACE
-static int
-trace_frame(PyThreadState *tstate, PyFrameObject *f, int code, PyObject *val)
-{
-    int result = 0;
-    if (!tstate->use_tracing || tstate->tracing)
-        return 0;
-    if (tstate->c_profilefunc != NULL) {
-        tstate->tracing++;
-        result = tstate->c_profilefunc(tstate->c_profileobj,
-                                       f, code , val);
-        tstate->use_tracing = ((tstate->c_tracefunc != NULL)
-                               || (tstate->c_profilefunc != NULL));
-        tstate->tracing--;
-        if (result)
-            return result;
-    }
-    if (tstate->c_tracefunc != NULL) {
-        tstate->tracing++;
-        result = tstate->c_tracefunc(tstate->c_traceobj,
-                                     f, code , val);
-        tstate->use_tracing = ((tstate->c_tracefunc != NULL)
-                               || (tstate->c_profilefunc != NULL));
-        tstate->tracing--;
-    }
-    return result;
-}
-
-static int
-trace_frame_exc(PyThreadState *tstate, PyFrameObject *f)
-{
-    PyObject *type, *value, *traceback, *arg;
-    int err;
-
-    if (tstate->c_tracefunc == NULL)
-        return 0;
-
-    PyErr_Fetch(&type, &value, &traceback);
-    if (value == NULL) {
-        value = Py_None;
-        Py_INCREF(value);
-    }
-    arg = PyTuple_Pack(3, type, value, traceback);
-    if (arg == NULL) {
-        PyErr_Restore(type, value, traceback);
-        return 0;
-    }
-    err = trace_frame(tstate, f, PyTrace_EXCEPTION, arg);
-    Py_DECREF(arg);
-    if (err == 0)
-        PyErr_Restore(type, value, traceback);
-    else {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(traceback);
-    }
-    return err;
-}
-#endif
-
 static PyObject*
-call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args,
+call_with_frame(char *funcname, int lineno, PyObject* func, PyObject* args,
                 xmlparseobject *self)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyFrameObject *f;
-    PyObject *res, *globals;
+    PyObject *res;
 
-    if (c == NULL)
-        return NULL;
-
-    globals = PyEval_GetGlobals();
-    if (globals == NULL) {
-        return NULL;
-    }
-
-    f = PyFrame_New(tstate, c, globals, NULL);
-    if (f == NULL)
-        return NULL;
-    tstate->frame = f;
-#ifdef FIX_TRACE
-    if (trace_frame(tstate, f, PyTrace_CALL, Py_None) < 0) {
-        return NULL;
-    }
-#endif
     res = PyEval_CallObject(func, args);
     if (res == NULL) {
-        if (tstate->curexc_traceback == NULL)
-            PyTraceBack_Here(f);
+        _PyTraceback_Add(funcname, __FILE__, lineno);
         XML_StopParser(self->itself, XML_FALSE);
-#ifdef FIX_TRACE
-        if (trace_frame_exc(tstate, f) < 0) {
-            return NULL;
-        }
     }
-    else {
-        if (trace_frame(tstate, f, PyTrace_RETURN, res) < 0) {
-            Py_CLEAR(res);
-        }
-    }
-#else
-    }
-#endif
-    tstate->frame = f->f_back;
-    Py_DECREF(f);
     return res;
 }
 
@@ -376,7 +270,7 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
     PyTuple_SET_ITEM(args, 0, temp);
     /* temp is now a borrowed reference; consider it unused. */
     self->in_callback = 1;
-    temp = call_with_frame(getcode(CharacterData, "CharacterData", __LINE__),
+    temp = call_with_frame("CharacterData", __LINE__,
                            self->handlers[CharacterData], args, self);
     /* temp is an owned reference again, or NULL */
     self->in_callback = 0;
@@ -508,7 +402,7 @@ my_StartElementHandler(void *userData,
         }
         /* Container is now a borrowed reference; ignore it. */
         self->in_callback = 1;
-        rv = call_with_frame(getcode(StartElement, "StartElement", __LINE__),
+        rv = call_with_frame("StartElement", __LINE__,
                              self->handlers[StartElement], args, self);
         self->in_callback = 0;
         Py_DECREF(args);
@@ -537,7 +431,7 @@ my_##NAME##Handler PARAMS {\
         args = Py_BuildValue PARAM_FORMAT ;\
         if (!args) { flag_error(self); return RETURN;} \
         self->in_callback = 1; \
-        rv = call_with_frame(getcode(NAME,#NAME,__LINE__), \
+        rv = call_with_frame(#NAME,__LINE__, \
                              self->handlers[NAME], args, self); \
         self->in_callback = 0; \
         Py_DECREF(args); \
@@ -669,7 +563,7 @@ my_ElementDeclHandler(void *userData,
             goto finally;
         }
         self->in_callback = 1;
-        rv = call_with_frame(getcode(ElementDecl, "ElementDecl", __LINE__),
+        rv = call_with_frame("ElementDecl", __LINE__,
                              self->handlers[ElementDecl], args, self);
         self->in_callback = 0;
         if (rv == NULL) {
