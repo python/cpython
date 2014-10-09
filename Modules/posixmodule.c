@@ -17479,7 +17479,7 @@ all_ins(PyObject *m)
 }
 
 
-#if (defined(_MSC_VER) || defined(__WATCOMC__) || defined(__BORLANDC__)) && !defined(__QNX__)
+#ifdef MS_WINDOWS
 #define INITFUNC PyInit_nt
 #define MODNAME "nt"
 
