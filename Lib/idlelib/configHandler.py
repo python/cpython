@@ -274,25 +274,27 @@ class IdleConf:
         return cfgParser.sections()
 
     def GetHighlight(self, theme, element, fgBg=None):
-        """Return individual highlighting theme elements.
+        """Return individual theme element highlight color(s).
 
-        fgBg - string ('fg'or'bg') or None, if None return a dictionary
-        containing fg and bg colours (appropriate for passing to Tkinter in,
-        e.g., a tag_config call), otherwise fg or bg colour only as specified.
+        fgBg - string ('fg' or 'bg') or None.
+        If None, return a dictionary containing fg and bg colors with
+        keys 'foreground' and 'background'.  Otherwise, only return
+        fg or bg color, as specified.  Colors are intended to be
+        appropriate for passing to Tkinter in, e.g., a tag_config call).
         """
         if self.defaultCfg['highlight'].has_section(theme):
             themeDict = self.GetThemeDict('default', theme)
         else:
             themeDict = self.GetThemeDict('user', theme)
         fore = themeDict[element + '-foreground']
-        if element == 'cursor': #there is no config value for cursor bg
+        if element == 'cursor':  # There is no config value for cursor bg
             back = themeDict['normal-background']
         else:
             back = themeDict[element + '-background']
         highlight = {"foreground": fore, "background": back}
-        if not fgBg: #return dict of both colours
+        if not fgBg:  # Return dict of both colors
             return highlight
-        else: #return specified colour only
+        else:  # Return specified color only
             if fgBg == 'fg':
                 return highlight["foreground"]
             if fgBg == 'bg':
@@ -314,11 +316,11 @@ class IdleConf:
             cfgParser = self.defaultCfg['highlight']
         else:
             raise InvalidTheme('Invalid theme type specified')
-        #foreground and background values are provded for each theme element
-        #(apart from cursor) even though all these values are not yet used
-        #by idle, to allow for their use in the future. Default values are
-        #generally black and white.
-        # TODO make theme, a constant, a module or class attribute
+        # Provide foreground and background colors for each theme
+        # element (other than cursor) even though some values are not
+        # yet used by idle, to allow for their use in the future.
+        # Default values are generally black and white.
+        # TODO copy theme from a class attribute.
         theme ={'normal-foreground':'#000000',
                 'normal-background':'#ffffff',
                 'keyword-foreground':'#000000',
@@ -350,18 +352,18 @@ class IdleConf:
                 'console-background':'#ffffff' }
         for element in theme:
             if not cfgParser.has_option(themeName, element):
-                #we are going to return a default, print warning
-                warning = ('\n Warning: configHandler.py - IdleConf.GetThemeDict'
+                # Print warning that will return a default color
+                warning = ('\n Warning: configHandler.IdleConf.GetThemeDict'
                            ' -\n problem retrieving theme element %r'
                            '\n from theme %r.\n'
-                           ' returning default value: %r' %
+                           ' returning default color: %r' %
                            (element, themeName, theme[element]))
                 try:
                     print(warning, file=sys.stderr)
                 except OSError:
                     pass
-            colour = cfgParser.Get(themeName, element, default=theme[element])
-            theme[element] = colour
+            theme[element] = cfgParser.Get(
+                    themeName, element, default=theme[element])
         return theme
 
     def CurrentTheme(self):
