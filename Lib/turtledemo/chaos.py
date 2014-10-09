@@ -29,8 +29,8 @@ def coosys():
     line(-1, 0, N+1, 0)
     line(0, -0.1, 0, 1.1)
 
-def plot(fun, start, colour):
-    pencolor(colour)
+def plot(fun, start, color):
+    pencolor(color)
     x = start
     jumpto(0, x)
     pendown()
