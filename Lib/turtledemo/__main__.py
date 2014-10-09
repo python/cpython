@@ -14,7 +14,7 @@
   (1) How to use the demo viewer.
 
   Select a demoscript from the example menu.
-  The (syntax coloured) source code appears in the left
+  The (syntax colored) source code appears in the left
   source code window. IT CANNOT BE EDITED, but ONLY VIEWED!
 
   The demo viewer windows can be resized. The divider between text
