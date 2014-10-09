@@ -1575,7 +1575,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
    Unicode string.
 
 
-.. c:function:: int PyUnicode_Tailmatch(PyObject *str, PyObject *substr, \
+.. c:function:: Py_ssize_t PyUnicode_Tailmatch(PyObject *str, PyObject *substr, \
                         Py_ssize_t start, Py_ssize_t end, int direction)
 
    Return 1 if *substr* matches ``str[start:end]`` at the given tail end
