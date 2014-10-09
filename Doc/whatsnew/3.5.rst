@@ -276,7 +276,8 @@ socket
 time
 ----
 
-The :func:`time.monotonic` function is now always available (:issue`22043`).
+* The :func:`time.monotonic` function is now always available.  (Contributed by
+  Victor Stinner in :issue:`22043`.)
 
 wsgiref
 -------
