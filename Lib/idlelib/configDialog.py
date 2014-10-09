@@ -79,8 +79,15 @@ class ConfigDialog(Toplevel):
     def CreateWidgets(self):
         self.tabPages = TabbedPageSet(self,
                 page_names=['Fonts/Tabs', 'Highlighting', 'Keys', 'General'])
-        frameActionButtons = Frame(self, pady=2)
-        #action buttons
+        self.tabPages.pack(side=TOP, expand=TRUE, fill=BOTH)
+        self.CreatePageFontTab()
+        self.CreatePageHighlight()
+        self.CreatePageKeys()
+        self.CreatePageGeneral()
+        self.create_action_buttons().pack(side=BOTTOM)
+        Frame(self, height=2, borderwidth=0).pack(side=BOTTOM)
+
+    def create_action_buttons(self):
         if macosxSupport.isAquaTk():
             # Changing the default padding on OSX results in unreadable
             # text in the buttons
@@ -88,30 +95,25 @@ class ConfigDialog(Toplevel):
         else:
             paddingArgs = {'padx':6, 'pady':3}
 
-# Comment out button creation and packing until implement self.Help
-##        self.buttonHelp = Button(frameActionButtons, text='Help',
-##                command=self.Help, takefocus=FALSE,
-##                **paddingArgs)
+        frame = Frame(self, pady=2)
         self.buttonOk = Button(
-                frameActionButtons, text='Ok',
-                command=self.Ok, takefocus=FALSE, **paddingArgs)
+                frame, text='Ok', command=self.Ok,
+                takefocus=FALSE, **paddingArgs)
         self.buttonApply = Button(
-                frameActionButtons, text='Apply',
-                command=self.Apply, takefocus=FALSE, **paddingArgs)
+                frame, text='Apply', command=self.Apply,
+                takefocus=FALSE, **paddingArgs)
         self.buttonCancel = Button(
-                frameActionButtons, text='Cancel',
-                command=self.Cancel, takefocus=FALSE, **paddingArgs)
-        self.CreatePageFontTab()
-        self.CreatePageHighlight()
-        self.CreatePageKeys()
-        self.CreatePageGeneral()
+                frame, text='Cancel', command=self.Cancel,
+                takefocus=FALSE, **paddingArgs)
+# Comment out Help button creation and packing until implement self.Help
+##        self.buttonHelp = Button(
+##                frame, text='Help', command=self.Help,
+##                takefocus=FALSE, **paddingArgs)
 ##        self.buttonHelp.pack(side=RIGHT, padx=5)
         self.buttonOk.pack(side=LEFT, padx=5)
         self.buttonApply.pack(side=LEFT, padx=5)
         self.buttonCancel.pack(side=LEFT, padx=5)
-        frameActionButtons.pack(side=BOTTOM)
-        Frame(self, height=2, borderwidth=0).pack(side=BOTTOM)
-        self.tabPages.pack(side=TOP, expand=TRUE, fill=BOTH)
+        return frame
 
     def CreatePageFontTab(self):
         parent = self.parent
