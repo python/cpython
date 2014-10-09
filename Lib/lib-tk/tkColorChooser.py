@@ -1,4 +1,4 @@
-# tk common colour chooser dialogue
+# tk common color chooser dialogue
 #
 # this module provides an interface to the native color dialogue
 # available in Tk 4.2 and newer.
@@ -11,7 +11,7 @@
 #
 # options (all have default values):
 #
-# - initialcolor: colour to mark as selected when dialog is displayed
+# - initialcolor: color to mark as selected when dialog is displayed
 #   (given as an RGB triplet or a Tk color string)
 #
 # - parent: which window to place the dialog on top of
