@@ -2699,7 +2699,7 @@ static PyObject *
 test_incref_decref_API(PyObject *ob)
 {
     PyObject *obj = PyLong_FromLong(0);
-    Py_IncRef(ob);
+    Py_IncRef(obj);
     Py_DecRef(obj);
     Py_DecRef(obj);
     Py_RETURN_NONE;
