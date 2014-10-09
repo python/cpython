@@ -1,4 +1,5 @@
 import sndhdr
+import pickle
 import unittest
 from test.support import findfile
 
@@ -18,6 +19,18 @@ class TestFormats(unittest.TestCase):
             what = sndhdr.what(filename)
             self.assertNotEqual(what, None, filename)
             self.assertSequenceEqual(what, expected)
+            self.assertEqual(what.filetype, expected[0])
+            self.assertEqual(what.framerate, expected[1])
+            self.assertEqual(what.nchannels, expected[2])
+            self.assertEqual(what.nframes, expected[3])
+            self.assertEqual(what.sampwidth, expected[4])
+
+    def test_pickleable(self):
+        filename = findfile('sndhdr.aifc', subdir="sndhdrdata")
+        what = sndhdr.what(filename)
+        dump = pickle.dumps(what)
+        self.assertEqual(pickle.loads(dump), what)
+
 
 if __name__ == '__main__':
     unittest.main()

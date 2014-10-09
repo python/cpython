@@ -264,6 +264,13 @@ smtplib
   implement custom authentication mechanisms (contributed by Milan Oberkirch in
   :issue:`15014`).
 
+sndhdr
+------
+
+* :func:`~sndhdr.what` and :func:`~sndhdr.whathdr` now return
+  :func:`~collections.namedtuple` \s (contributed by Claudiu Popa in
+  :issue:`18615`).
+
 socket
 ------
 
