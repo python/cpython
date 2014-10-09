@@ -4684,54 +4684,54 @@ typedef struct {
 } utime_t;
 
 /*
- * these macros assume that "utime" is a pointer to a utime_t
+ * these macros assume that "ut" is a pointer to a utime_t
  * they also intentionally leak the declaration of a pointer named "time"
  */
 #define UTIME_TO_TIMESPEC \
     struct timespec ts[2]; \
     struct timespec *time; \
-    if (utime->now) \
+    if (ut->now) \
         time = NULL; \
     else { \
-        ts[0].tv_sec = utime->atime_s; \
-        ts[0].tv_nsec = utime->atime_ns; \
-        ts[1].tv_sec = utime->mtime_s; \
-        ts[1].tv_nsec = utime->mtime_ns; \
+        ts[0].tv_sec = ut->atime_s; \
+        ts[0].tv_nsec = ut->atime_ns; \
+        ts[1].tv_sec = ut->mtime_s; \
+        ts[1].tv_nsec = ut->mtime_ns; \
         time = ts; \
     } \
 
 #define UTIME_TO_TIMEVAL \
     struct timeval tv[2]; \
     struct timeval *time; \
-    if (utime->now) \
+    if (ut->now) \
         time = NULL; \
     else { \
-        tv[0].tv_sec = utime->atime_s; \
-        tv[0].tv_usec = utime->atime_ns / 1000; \
-        tv[1].tv_sec = utime->mtime_s; \
-        tv[1].tv_usec = utime->mtime_ns / 1000; \
+        tv[0].tv_sec = ut->atime_s; \
+        tv[0].tv_usec = ut->atime_ns / 1000; \
+        tv[1].tv_sec = ut->mtime_s; \
+        tv[1].tv_usec = ut->mtime_ns / 1000; \
         time = tv; \
     } \
 
 #define UTIME_TO_UTIMBUF \
     struct utimbuf u[2]; \
     struct utimbuf *time; \
-    if (utime->now) \
+    if (ut->now) \
         time = NULL; \
     else { \
-        u.actime = utime->atime_s; \
-        u.modtime = utime->mtime_s; \
+        u[0].actime = ut->atime_s; \
+        u[0].modtime = ut->mtime_s; \
         time = u; \
     }
 
 #define UTIME_TO_TIME_T \
     time_t timet[2]; \
     struct timet time; \
-    if (utime->now) \
+    if (ut->now) \
         time = NULL; \
     else { \
-        timet[0] = utime->atime_s; \
-        timet[1] = utime->mtime_s; \
+        timet[0] = ut->atime_s; \
+        timet[1] = ut->mtime_s; \
         time = &timet; \
     } \
 
@@ -4741,7 +4741,7 @@ typedef struct {
 #if UTIME_HAVE_DIR_FD
 
 static int
-utime_dir_fd(utime_t *utime, int dir_fd, char *path, int follow_symlinks)
+utime_dir_fd(utime_t *ut, int dir_fd, char *path, int follow_symlinks)
 {
 #ifdef HAVE_UTIMENSAT
     int flags = follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
@@ -4766,7 +4766,7 @@ utime_dir_fd(utime_t *utime, int dir_fd, char *path, int follow_symlinks)
 #if UTIME_HAVE_FD
 
 static int
-utime_fd(utime_t *utime, int fd)
+utime_fd(utime_t *ut, int fd)
 {
 #ifdef HAVE_FUTIMENS
     UTIME_TO_TIMESPEC;
@@ -4786,7 +4786,7 @@ utime_fd(utime_t *utime, int fd)
 #if UTIME_HAVE_NOFOLLOW_SYMLINKS
 
 static int
-utime_nofollow_symlinks(utime_t *utime, char *path)
+utime_nofollow_symlinks(utime_t *ut, char *path)
 {
 #ifdef HAVE_UTIMENSAT
     UTIME_TO_TIMESPEC;
@@ -4802,7 +4802,7 @@ utime_nofollow_symlinks(utime_t *utime, char *path)
 #ifndef MS_WINDOWS
 
 static int
-utime_default(utime_t *utime, char *path)
+utime_default(utime_t *ut, char *path)
 {
 #ifdef HAVE_UTIMENSAT
     UTIME_TO_TIMESPEC;
