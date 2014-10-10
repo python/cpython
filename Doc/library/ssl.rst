@@ -771,35 +771,41 @@ Constants
 SSL Sockets
 -----------
 
-SSL sockets provide the following methods of :ref:`socket-objects`:
+.. class:: SSLSocket(socket.socket)
 
-- :meth:`~socket.socket.accept()`
-- :meth:`~socket.socket.bind()`
-- :meth:`~socket.socket.close()`
-- :meth:`~socket.socket.connect()`
-- :meth:`~socket.socket.detach()`
-- :meth:`~socket.socket.fileno()`
-- :meth:`~socket.socket.getpeername()`, :meth:`~socket.socket.getsockname()`
-- :meth:`~socket.socket.getsockopt()`, :meth:`~socket.socket.setsockopt()`
-- :meth:`~socket.socket.gettimeout()`, :meth:`~socket.socket.settimeout()`,
-  :meth:`~socket.socket.setblocking()`
-- :meth:`~socket.socket.listen()`
-- :meth:`~socket.socket.makefile()`
-- :meth:`~socket.socket.recv()`, :meth:`~socket.socket.recv_into()`
-  (but passing a non-zero ``flags`` argument is not allowed)
-- :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
-  the same limitation)
-- :meth:`~socket.socket.sendfile()` (but :mod:`os.sendfile` will be used
-  for plain-text sockets only, else :meth:`~socket.socket.send()` will be used)
+   SSL sockets provide the following methods of :ref:`socket-objects`:
 
-     .. versionadded:: 3.5
+   - :meth:`~socket.socket.accept()`
+   - :meth:`~socket.socket.bind()`
+   - :meth:`~socket.socket.close()`
+   - :meth:`~socket.socket.connect()`
+   - :meth:`~socket.socket.detach()`
+   - :meth:`~socket.socket.fileno()`
+   - :meth:`~socket.socket.getpeername()`, :meth:`~socket.socket.getsockname()`
+   - :meth:`~socket.socket.getsockopt()`, :meth:`~socket.socket.setsockopt()`
+   - :meth:`~socket.socket.gettimeout()`, :meth:`~socket.socket.settimeout()`,
+     :meth:`~socket.socket.setblocking()`
+   - :meth:`~socket.socket.listen()`
+   - :meth:`~socket.socket.makefile()`
+   - :meth:`~socket.socket.recv()`, :meth:`~socket.socket.recv_into()`
+     (but passing a non-zero ``flags`` argument is not allowed)
+   - :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
+     the same limitation)
+   - :meth:`~socket.socket.sendfile()` (but :mod:`os.sendfile` will be used
+     for plain-text sockets only, else :meth:`~socket.socket.send()` will be used)
+   - :meth:`~socket.socket.shutdown()`
 
-- :meth:`~socket.socket.shutdown()`
+   However, since the SSL (and TLS) protocol has its own framing atop
+   of TCP, the SSL sockets abstraction can, in certain respects, diverge from
+   the specification of normal, OS-level sockets.  See especially the
+   :ref:`notes on non-blocking sockets <ssl-nonblocking>`.
 
-However, since the SSL (and TLS) protocol has its own framing atop
-of TCP, the SSL sockets abstraction can, in certain respects, diverge from
-the specification of normal, OS-level sockets.  See especially the
-:ref:`notes on non-blocking sockets <ssl-nonblocking>`.
+   Usually, :class:`SSLSocket` are not created directly, but using the
+   :func:`wrap_socket` function or the :meth:`SSLContext.wrap_socket` method.
+
+   .. versionchanged:: 3.5
+      The :meth:`sendfile` method was added.
+
 
 SSL sockets also have the following additional methods and attributes:
 
@@ -809,10 +815,22 @@ SSL sockets also have the following additional methods and attributes:
    a ``bytes`` instance. If *buffer* is specified, then read into the buffer
    instead, and return the number of bytes read.
 
+   Raise :exc:`SSLWantReadError` or :exc:`SSLWantWriteError` if the socket is
+   non-blocking and the read would block.
+
+   As at any time a re-negotiation is possible, a call to :meth:`read` can also
+   cause write operations.
+
 .. method:: SSLSocket.write(buf)
 
    Write *buf* to the SSL socket and return the number of bytes written. The
    *buf* argument must be an object supporting the buffer interface.
+
+   Raise :exc:`SSLWantReadError` or :exc:`SSLWantWriteError` if the socket is
+   non-blocking and the write would block.
+
+   As at any time a re-negotiation is possible, a call to :meth:`write` can
+   also cause read operations.
 
 .. note::
 
@@ -977,16 +995,14 @@ SSL sockets also have the following additional methods and attributes:
    A boolean which is ``True`` for server-side sockets and ``False`` for
    client-side sockets.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.2
 
 .. attribute:: SSLSocket.server_hostname
 
-   A ``bytes`` instance containing the ``'idna'`` encoded version of the
-   hostname specified in the *server_hostname* argument in
-   :meth:`SSLContext.wrap_socket`. If no *server_hostname* was specified, this
-   attribute will be ``None``.
+   Hostname of the server: :class:`str` type, or ``None`` for server-side
+   socket or if the hostname was not specified in the constructor.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.2
 
 
 SSL Contexts
