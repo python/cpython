@@ -29,6 +29,7 @@ accomplished in Idle.
 
 import sys
 import os
+import io
 import socket
 import select
 import socketserver
@@ -53,16 +54,15 @@ def pickle_code(co):
     ms = marshal.dumps(co)
     return unpickle_code, (ms,)
 
-# XXX KBK 24Aug02 function pickling capability not used in Idle
-#  def unpickle_function(ms):
-#      return ms
+def dumps(obj, protocol=None):
+    f = io.BytesIO()
+    p = CodePickler(f, protocol)
+    p.dump(obj)
+    return f.getvalue()
 
-#  def pickle_function(fn):
-#      assert isinstance(fn, type.FunctionType)
-#      return repr(fn)
-
-copyreg.pickle(types.CodeType, pickle_code, unpickle_code)
-# copyreg.pickle(types.FunctionType, pickle_function, unpickle_function)
+class CodePickler(pickle.Pickler):
+    dispatch_table = {types.CodeType: pickle_code}
+    dispatch_table.update(copyreg.dispatch_table)
 
 BUFSIZE = 8*1024
 LOCALHOST = '127.0.0.1'
@@ -329,7 +329,7 @@ class SocketIO(object):
     def putmessage(self, message):
         self.debug("putmessage:%d:" % message[0])
         try:
-            s = pickle.dumps(message)
+            s = dumps(message)
         except pickle.PicklingError:
             print("Cannot pickle:", repr(message), file=sys.__stderr__)
             raise
