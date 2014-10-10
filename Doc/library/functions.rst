@@ -119,9 +119,9 @@ available.  They are listed here in alphabetical order.
    The optional *source* parameter can be used to initialize the array in a few
    different ways:
 
-   * If it is a *string*, you must also give the *encoding* (and optionally,
-     *errors*) parameters; :func:`bytearray` then converts the string to
-     bytes using :meth:`str.encode`.
+   * If it is *unicode*, you must also give the *encoding* (and optionally,
+     *errors*) parameters; :func:`bytearray` then converts the unicode to
+     bytes using :meth:`unicode.encode`.
 
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
