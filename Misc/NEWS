@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20152: Convert the array module to Argument Clinic.
+
 - Issue #21052: Do not raise ImportWarning when sys.path_hooks or sys.meta_path
   are set to None.
 
