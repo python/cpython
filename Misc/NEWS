@@ -222,6 +222,9 @@ Extension Modules
 Tools/Demos
 -----------
 
+- Issue #10712: 2to3 has a new "asserts" fixer that replaces deprecated names
+  of unittest methods (e.g. failUnlessEqual -> assertEqual).
+
 - Issue #22221: 2to3 and the findnocoding.py script now ignore the source
   encoding declaration on the second line if the first line contains anything
   except a comment.
