@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11694: Raise ConversionError in xdrlib as documented.  Patch
+  by Filip Gruszczyński and Claudiu Popa.
+
 - Issue #22462: Fix pyexpat's creation of a dummy frame to make it
   appear in exception tracebacks.
 
