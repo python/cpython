@@ -225,9 +225,11 @@ class ReTests(unittest.TestCase):
         self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<a a>', 'xx')
         self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<>', 'xx')
         self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<1a1>', 'xx')
+        self.assertRaises(re.error, re.sub, '(?P<a>x)', r'\g<2>', 'xx')
+        self.assertRaises(re.error, re.sub, '(?P<a>x)', r'\2', 'xx')
         self.assertRaises(IndexError, re.sub, '(?P<a>x)', '\g<ab>', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)|(?P<b>y)', '\g<b>', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)|(?P<b>y)', '\\2', 'xx')
+        self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\g<b>', 'xx'), '')
+        self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\2', 'xx'), '')
         self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<-1>', 'xx')
         # New valid/invalid identifiers in Python 3
         self.assertEqual(re.sub('(?P<µ>x)', r'\g<µ>', 'xx'), 'xx')
@@ -439,6 +441,10 @@ class ReTests(unittest.TestCase):
                                   "first second")
                                   .expand(r"\2 \1 \g<second> \g<first>"),
                          "second first second first")
+        self.assertEqual(re.match("(?P<first>first)|(?P<second>second)",
+                                  "first")
+                                  .expand(r"\2 \g<second>"),
+                         " ")
 
     def test_repeat_minmax(self):
         self.assertIsNone(re.match("^(\w){1}$", "abc"))

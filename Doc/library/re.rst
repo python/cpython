@@ -701,6 +701,9 @@ form.
    .. versionchanged:: 3.1
       Added the optional flags argument.
 
+   .. versionchanged:: 3.5
+      Unmatched groups are replaced with an empty string.
+
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
 
@@ -709,6 +712,9 @@ form.
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
+
+   .. versionchanged:: 3.5
+      Unmatched groups are replaced with an empty string.
 
 
 .. function:: escape(string)
@@ -885,6 +891,8 @@ Match objects support the following methods and attributes:
    (``\g<1>``, ``\g<name>``) are replaced by the contents of the
    corresponding group.
 
+   .. versionchanged:: 3.5
+      Unmatched groups are replaced with an empty string.
 
 .. method:: match.group([group1, ...])
 
