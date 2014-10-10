@@ -1269,6 +1269,16 @@ to speed up repeated connections from the same clients.
    *server_hostname* will also raise a :exc:`ValueError` if *server_side*
    is true.
 
+.. method:: SSLContext.wrap_bio(incoming, outgoing, server_side=False, \
+                                server_hostname=None)
+
+   Create a new :class:`SSLObject` instance by wrapping the BIO objects
+   *incoming* and *outgoing*. The SSL routines will read input data from the
+   incoming BIO and write data to the outgoing BIO.
+
+   The *server_side* and *server_hostname* parameters have the same meaning as
+   in :meth:`SSLContext.wrap_socket`.
+
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
@@ -1768,78 +1778,31 @@ provided.
    A reduced-scope variant of :class:`SSLSocket` representing an SSL protocol
    instance that does not contain any network IO methods.
 
-The following methods are available from :class:`SSLSocket`:
+   The following methods are available from :class:`SSLSocket`:
 
-- :attr:`~SSLSocket.context`
-- :attr:`~SSLSocket.server_side`
-- :attr:`~SSLSocket.server_hostname`
-- :meth:`~SSLSocket.read`
-- :meth:`~SSLSocket.write`
-- :meth:`~SSLSocket.getpeercert`
-- :meth:`~SSLSocket.selected_npn_protocol`
-- :meth:`~SSLSocket.cipher`
-- :meth:`~SSLSocket.compression`
-- :meth:`~SSLSocket.pending`
-- :meth:`~SSLSocket.do_handshake`
-- :meth:`~SSLSocket.unwrap`
-- :meth:`~SSLSocket.get_channel_binding`
+   - :attr:`~SSLSocket.context`
+   - :attr:`~SSLSocket.server_side`
+   - :attr:`~SSLSocket.server_hostname`
+   - :meth:`~SSLSocket.read`
+   - :meth:`~SSLSocket.write`
+   - :meth:`~SSLSocket.getpeercert`
+   - :meth:`~SSLSocket.selected_npn_protocol`
+   - :meth:`~SSLSocket.cipher`
+   - :meth:`~SSLSocket.compression`
+   - :meth:`~SSLSocket.pending`
+   - :meth:`~SSLSocket.do_handshake`
+   - :meth:`~SSLSocket.unwrap`
+   - :meth:`~SSLSocket.get_channel_binding`
 
-An SSLObject communicates with the outside world using memory buffers. The
-class :class:`MemoryBIO` provides a memory buffer that can be used for this
-purpose.  It wraps an OpenSSL memory BIO (Basic IO) object:
-
-.. class:: MemoryBIO
-
-   A memory buffer that can be used to pass data between Python and an SSL
-   protocol instance.
-
-.. attribute:: MemoryBIO.pending
-
-   Return the number of bytes currently in the memory buffer.
-
-.. attribute:: MemoryBIO.eof
-
-   A boolean indicating whether the memory BIO is current at the end-of-file
-   position.
-
-.. method:: MemoryBIO.read(n=-1)
-
-   Read up to *n* bytes from the memory buffer. If *n* is not specified or
-   negative, all bytes are returned.
-
-.. method:: MemoryBIO.write(buf)
-
-   Write the bytes from *buf* to the memory BIO. The *buf* argument must be an
-   object supporting the buffer protocol.
-
-   The return value is the number of bytes written, which is always equal to
-   the length of *buf*.
-
-.. method:: MemoryBIO.write_eof()
-
-   Write an EOF marker to the memory BIO. After this method has been called, it
-   is illegal to call :meth:`~MemoryBIO.write`. The attribute :attr:`eof` will
-   become true after all data currently in the buffer has been read.
-
-An :class:`SSLObject` instance can be created using the
-:meth:`~SSLContext.wrap_bio` method. This method will create the
-:class:`SSLObject` instance and bind it to a pair of BIOs. The *incoming* BIO
-is used to pass data from Python to the SSL protocol instance, while the
-*outgoing* BIO is used to pass data the other way around.
-
-.. method:: SSLContext.wrap_bio(incoming, outgoing, server_side=False, \
-                                server_hostname=None)
-
-   Create a new :class:`SSLObject` instance by wrapping the BIO objects
-   *incoming* and *outgoing*. The SSL routines will read input data from the
-   incoming BIO and write data to the outgoing BIO.
-
-   The *server_side* and *server_hostname* parameters have the same meaning as
-   in :meth:`SSLContext.wrap_socket`.
+   An :class:`SSLObject` instance can be created using the
+   :meth:`~SSLContext.wrap_bio` method. This method will create the
+   :class:`SSLObject` instance and bind it to a pair of BIOs. The *incoming* BIO
+   is used to pass data from Python to the SSL protocol instance, while the
+   *outgoing* BIO is used to pass data the other way around.
 
 Some notes related to the use of :class:`SSLObject`:
 
-- All IO on an :class:`SSLObject` is non-blocking. This means that for example
+- All I/O on an :class:`SSLObject` is non-blocking. This means that for example
   :meth:`~SSLSocket.read` will raise an :exc:`SSLWantReadError` if it needs
   more data than the incoming BIO has available.
 
@@ -1860,6 +1823,43 @@ Some notes related to the use of :class:`SSLObject`:
 - The *server_name_callback* callback passed to
   :meth:`SSLContext.set_servername_callback` will get an :class:`SSLObject`
   instance instead of a :class:`SSLSocket` instance as its first parameter.
+
+An SSLObject communicates with the outside world using memory buffers. The
+class :class:`MemoryBIO` provides a memory buffer that can be used for this
+purpose.  It wraps an OpenSSL memory BIO (Basic IO) object:
+
+.. class:: MemoryBIO
+
+   A memory buffer that can be used to pass data between Python and an SSL
+   protocol instance.
+
+   .. attribute:: MemoryBIO.pending
+
+      Return the number of bytes currently in the memory buffer.
+
+   .. attribute:: MemoryBIO.eof
+
+      A boolean indicating whether the memory BIO is current at the end-of-file
+      position.
+
+   .. method:: MemoryBIO.read(n=-1)
+
+      Read up to *n* bytes from the memory buffer. If *n* is not specified or
+      negative, all bytes are returned.
+
+   .. method:: MemoryBIO.write(buf)
+
+      Write the bytes from *buf* to the memory BIO. The *buf* argument must be an
+      object supporting the buffer protocol.
+
+      The return value is the number of bytes written, which is always equal to
+      the length of *buf*.
+
+   .. method:: MemoryBIO.write_eof()
+
+      Write an EOF marker to the memory BIO. After this method has been called, it
+      is illegal to call :meth:`~MemoryBIO.write`. The attribute :attr:`eof` will
+      become true after all data currently in the buffer has been read.
 
 
 .. _ssl-security:
