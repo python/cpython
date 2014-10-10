@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21052: Do not raise ImportWarning when sys.path_hooks or sys.meta_path
+  are set to None.
+
 - Issue #16518: Use 'bytes-like object required' in error messages that
   previously used the far more cryptic "'x' does not support the buffer
   protocol.
