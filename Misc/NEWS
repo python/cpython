@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22604: Fix assertion error in debug mode when dividing a complex
+  number by (nan+0j).
+
 - Issue #20152: Convert the array module to Argument Clinic.
 
 - Issue #21052: Do not raise ImportWarning when sys.path_hooks or sys.meta_path
