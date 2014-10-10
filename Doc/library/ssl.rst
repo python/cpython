@@ -1681,7 +1681,7 @@ are finished with the client (or the client is finished with you)::
 
 And go back to listening for new client connections (of course, a real server
 would probably handle each client connection in a separate thread, or put
-the sockets in non-blocking mode and use an event loop).
+the sockets in :ref:`non-blocking mode <ssl-nonblocking>` and use an event loop).
 
 
 .. _ssl-nonblocking:
@@ -1741,7 +1741,8 @@ thus several things you need to be aware of:
 
 .. seealso::
 
-   The :mod:`asyncio` module supports non-blocking SSL sockets and provides a
+   The :mod:`asyncio` module supports :ref:`non-blocking SSL sockets
+   <ssl-nonblocking>` and provides a
    higher level API. It polls for events using the :mod:`selectors` module and
    handles :exc:`SSLWantWriteError`, :exc:`SSLWantReadError` and
    :exc:`BlockingIOError` exceptions. It runs the SSL handshake asynchronously
@@ -1802,9 +1803,10 @@ provided.
 
 Some notes related to the use of :class:`SSLObject`:
 
-- All I/O on an :class:`SSLObject` is non-blocking. This means that for example
-  :meth:`~SSLSocket.read` will raise an :exc:`SSLWantReadError` if it needs
-  more data than the incoming BIO has available.
+- All I/O on an :class:`SSLObject` is :ref:`non-blocking <ssl-nonblocking>`.
+  This means that for example :meth:`~SSLSocket.read` will raise an
+  :exc:`SSLWantReadError` if it needs more data than the incoming BIO has
+  available.
 
 - There is no module-level ``wrap_bio`` call like there is for
   :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created via
