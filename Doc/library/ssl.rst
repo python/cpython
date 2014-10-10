@@ -1005,7 +1005,7 @@ to speed up repeated connections from the same clients.
    :data:`CERT_NONE`.  At least one of *cafile* or *capath* must be specified.
 
    This method can also load certification revocation lists (CRLs) in PEM or
-   or DER format. In order to make use of CRLs, :attr:`SSLContext.verify_flags`
+   DER format. In order to make use of CRLs, :attr:`SSLContext.verify_flags`
    must be configured properly.
 
    The *cafile* string, if present, is the path to a file of concatenated
@@ -1671,7 +1671,7 @@ Manual settings
 Verifying certificates
 ''''''''''''''''''''''
 
-When calling the the :class:`SSLContext` constructor directly,
+When calling the :class:`SSLContext` constructor directly,
 :const:`CERT_NONE` is the default.  Since it does not authenticate the other
 peer, it can be insecure, especially in client mode where most of time you
 would like to ensure the authenticity of the server you're talking to.
