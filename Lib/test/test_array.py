@@ -393,7 +393,9 @@ class BaseTest:
         self.assertEqual(a, b)
 
     def test_tofromstring(self):
-        nb_warnings = 4
+        # Warnings not raised when arguments are incorrect as Argument Clinic
+        # handles that before the warning can be raised.
+        nb_warnings = 2
         with warnings.catch_warnings(record=True) as r:
             warnings.filterwarnings("always",
                                     message=r"(to|from)string\(\) is deprecated",
