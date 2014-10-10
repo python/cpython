@@ -97,48 +97,20 @@ static char copyright[] =
 /* -------------------------------------------------------------------- */
 /* search engine state */
 
-/* default character predicates (run sre_chars.py to regenerate tables) */
-
-#define SRE_DIGIT_MASK 1
-#define SRE_SPACE_MASK 2
-#define SRE_LINEBREAK_MASK 4
-#define SRE_ALNUM_MASK 8
-#define SRE_WORD_MASK 16
-
-/* FIXME: this assumes ASCII.  create tables in init_sre() instead */
-
-static char sre_char_info[128] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6, 2,
-2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 25, 25, 25, 25, 25, 25, 25,
-25, 25, 0, 0, 0, 0, 0, 0, 0, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 0, 0,
-0, 0, 16, 0, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 0, 0, 0, 0, 0 };
-
-static char sre_char_lower[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
-44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-61, 62, 63, 64, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107,
-108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121,
-122, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105,
-106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
-120, 121, 122, 123, 124, 125, 126, 127 };
-
 #define SRE_IS_DIGIT(ch)\
-    ((ch) < 128 ? (sre_char_info[(ch)] & SRE_DIGIT_MASK) : 0)
+    ((ch) < 128 && Py_ISDIGIT(ch))
 #define SRE_IS_SPACE(ch)\
-    ((ch) < 128 ? (sre_char_info[(ch)] & SRE_SPACE_MASK) : 0)
+    ((ch) < 128 && Py_ISSPACE(ch))
 #define SRE_IS_LINEBREAK(ch)\
-    ((ch) < 128 ? (sre_char_info[(ch)] & SRE_LINEBREAK_MASK) : 0)
+    ((ch) == '\n')
 #define SRE_IS_ALNUM(ch)\
-    ((ch) < 128 ? (sre_char_info[(ch)] & SRE_ALNUM_MASK) : 0)
+    ((ch) < 128 && Py_ISALNUM(ch))
 #define SRE_IS_WORD(ch)\
-    ((ch) < 128 ? (sre_char_info[(ch)] & SRE_WORD_MASK) : 0)
+    ((ch) < 128 && (Py_ISALNUM(ch) || (ch) == '_'))
 
 static unsigned int sre_lower(unsigned int ch)
 {
-    return ((ch) < 128 ? (unsigned int)sre_char_lower[ch] : ch);
+    return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
 }
 
 /* locale-specific character predicates */
