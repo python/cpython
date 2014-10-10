@@ -78,7 +78,7 @@ c_quot(Py_complex a, Py_complex b)
      const double abs_breal = b.real < 0 ? -b.real : b.real;
      const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
 
-     if (abs_breal >= abs_bimag) {
+    if (abs_breal >= abs_bimag) {
         /* divide tops and bottom by b.real */
         if (abs_breal == 0.0) {
             errno = EDOM;
@@ -91,13 +91,17 @@ c_quot(Py_complex a, Py_complex b)
             r.imag = (a.imag - a.real * ratio) / denom;
         }
     }
-    else {
+    else if (abs_bimag >= abs_breal) {
         /* divide tops and bottom by b.imag */
         const double ratio = b.real / b.imag;
         const double denom = b.real * ratio + b.imag;
         assert(b.imag != 0.0);
         r.real = (a.real * ratio + a.imag) / denom;
         r.imag = (a.imag * ratio - a.real) / denom;
+    }
+    else {
+        /* At least one of b.real or b.imag is a NaN */
+        r.real = r.imag = Py_NAN;
     }
     return r;
 }

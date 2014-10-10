@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22604: Fix assertion error in debug mode when dividing a complex
+  number by (nan+0j).
+
 - Issue #22470: Fixed integer overflow issues in "backslashreplace",
   "xmlcharrefreplace", and "surrogatepass" error handlers.
 
