@@ -1050,6 +1050,12 @@ IDLE
 - Issue #17654: Ensure IDLE menus are customized properly on OS X for
   non-framework builds and for all variants of Tk.
 
+Tests
+-----
+
+- Issue #21456: Skip two tests in test_urllib2net.py if _ssl module not
+  present. Patch by Remi Pointel.
+
 Build
 -----
 
