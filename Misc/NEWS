@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11694: Raise ConversionError in xdrlib as documented.  Patch
+  by Filip Gruszczyński and Claudiu Popa.
+
 - Issue #1686: Fix string.Template when overriding the pattern attribute.
 
 - Issue #11866: Eliminated race condition in the computation of names
