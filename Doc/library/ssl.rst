@@ -782,6 +782,9 @@ SSL Sockets
    the specification of normal, OS-level sockets.  See especially the
    :ref:`notes on non-blocking sockets <ssl-nonblocking>`.
 
+   Usually, :class:`SSLSocket` are not created directly, but using the
+   :func:`wrap_socket` function or the :meth:`SSLContext.wrap_socket` method.
+
 SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.read(len=0, buffer=None)
