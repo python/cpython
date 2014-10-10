@@ -794,7 +794,7 @@ SSL sockets also have the following additional methods and attributes:
    instead, and return the number of bytes read.
 
    Raise :exc:`SSLWantReadError` or :exc:`SSLWantWriteError` if the socket is
-   non-blocking and the read would block.
+   :ref:`non-blocking <ssl-nonblocking>` and the read would block.
 
    As at any time a re-negotiation is possible, a call to :meth:`read` can also
    cause write operations.
@@ -805,7 +805,7 @@ SSL sockets also have the following additional methods and attributes:
    *buf* argument must be an object supporting the buffer interface.
 
    Raise :exc:`SSLWantReadError` or :exc:`SSLWantWriteError` if the socket is
-   non-blocking and the write would block.
+   :ref:`non-blocking <ssl-nonblocking>` and the write would block.
 
    As at any time a re-negotiation is possible, a call to :meth:`write` can
    also cause read operations.
@@ -1690,6 +1690,14 @@ thus several things you need to be aware of:
             select.select([sock], [], [])
         except ssl.SSLWantWriteError:
             select.select([], [sock], [])
+
+.. seealso::
+
+   The :mod:`asyncio` module supports non-blocking SSL sockets and provides a
+   higher level API. It polls for events using the :mod:`selectors` module and
+   handles :exc:`SSLWantWriteError`, :exc:`SSLWantReadError` and
+   :exc:`BlockingIOError` exceptions. It runs the SSL handshake asynchronously
+   as well.
 
 
 .. _ssl-security:
