@@ -7,14 +7,11 @@ extern "C" {
 
 /* Operating system dependencies */
 
-/* Mod by chrish: QNX has WATCOM, but isn't DOS */
-#if !defined(__QNX__)
-#if defined(MS_WINDOWS) || defined(__BORLANDC__) || defined(__WATCOMC__) || defined(__DJGPP__)
+#ifdef MS_WINDOWS
 #define SEP L'\\'
 #define ALTSEP L'/'
 #define MAXPATHLEN 256
 #define DELIM L';'
-#endif
 #endif
 
 /* Filename separator */
