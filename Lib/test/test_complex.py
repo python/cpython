@@ -27,7 +27,7 @@ class ComplexTest(unittest.TestCase):
                 unittest.TestCase.assertAlmostEqual(self, a, b)
 
     def assertCloseAbs(self, x, y, eps=1e-9):
-        """Return true iff floats x and y "are close\""""
+        """Return true iff floats x and y "are close"."""
         # put the one with larger magnitude second
         if abs(x) > abs(y):
             x, y = y, x
@@ -62,7 +62,7 @@ class ComplexTest(unittest.TestCase):
         self.fail(msg.format(x, y))
 
     def assertClose(self, x, y, eps=1e-9):
-        """Return true iff complexes x and y "are close\""""
+        """Return true iff complexes x and y "are close"."""
         self.assertCloseAbs(x.real, y.real, eps)
         self.assertCloseAbs(x.imag, y.imag, eps)
 
@@ -103,6 +103,11 @@ class ComplexTest(unittest.TestCase):
 
         self.assertAlmostEqual(complex.__truediv__(2+0j, 1+1j), 1-1j)
         self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
+
+        for denom_real, denom_imag in [(0, NAN), (NAN, 0), (NAN, NAN)]:
+            z = complex(0, 0) / complex(denom_real, denom_imag)
+            self.assertTrue(isnan(z.real))
+            self.assertTrue(isnan(z.imag))
 
     def test_floordiv(self):
         self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 1.5+0j)
