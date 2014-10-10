@@ -782,6 +782,41 @@ the specification of normal, OS-level sockets.  See especially the
 
 SSL sockets also have the following additional methods and attributes:
 
+.. method:: SSLSocket.read(len=0, buffer=None)
+
+   Read up to *len* bytes of data from the SSL socket and return the result as
+   a ``bytes`` instance. If *buffer* is specified, then read into the buffer
+   instead, and return the number of bytes read.
+
+   Raise :exc:`SSLWantReadError` or :exc:`SSLWantWriteError` if the socket is
+   non-blocking and the read would block.
+
+   As at any time a re-negotiation is possible, a call to :meth:`read` can also
+   cause write operations.
+
+.. method:: SSLSocket.write(buf)
+
+   Write *buf* to the SSL socket and return the number of bytes written. The
+   *buf* argument must be an object supporting the buffer interface.
+
+   Raise :exc:`SSLWantReadError` or :exc:`SSLWantWriteError` if the socket is
+   non-blocking and the write would block.
+
+   As at any time a re-negotiation is possible, a call to :meth:`write` can
+   also cause read operations.
+
+.. note::
+
+   The :meth:`~SSLSocket.read` and :meth:`~SSLSocket.write` methods are the
+   low-level methods that read and write unencrypted, application-level data
+   and and decrypt/encrypt it to encrypted, wire-level data. These methods
+   require an active SSL connection, i.e. the handshake was completed and
+   :meth:`SSLSocket.unwrap` was not called.
+
+   Normally you should use the socket API methods like
+   :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` instead of these
+   methods.
+
 .. method:: SSLSocket.do_handshake()
 
    Perform the SSL setup handshake.
@@ -904,12 +939,31 @@ SSL sockets also have the following additional methods and attributes:
    returned socket should always be used for further communication with the
    other side of the connection, rather than the original socket.
 
+.. method:: SSLSocket.pending()
+
+   Returns the number of already decrypted bytes available for read, pending on
+   the connection.
+
 .. attribute:: SSLSocket.context
 
    The :class:`SSLContext` object this SSL socket is tied to.  If the SSL
    socket was created using the top-level :func:`wrap_socket` function
    (rather than :meth:`SSLContext.wrap_socket`), this is a custom context
    object created for this SSL socket.
+
+   .. versionadded:: 3.2
+
+.. attribute:: SSLSocket.server_side
+
+   A boolean which is ``True`` for server-side sockets and ``False`` for
+   client-side sockets.
+
+   .. versionadded:: 3.2
+
+.. attribute:: SSLSocket.server_hostname
+
+   Hostname of the server: :class:`str` type, or ``None`` for server-side
+   socket or if the hostname was not specified in the constructor.
 
    .. versionadded:: 3.2
 
