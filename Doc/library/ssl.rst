@@ -1777,9 +1777,22 @@ provided.
 .. class:: SSLObject
 
    A reduced-scope variant of :class:`SSLSocket` representing an SSL protocol
-   instance that does not contain any network IO methods.
+   instance that does not contain any network IO methods. This class is
+   typically used by framework authors that want to implement asynchronous IO
+   for SSL through memory buffers.
 
-   The following methods are available from :class:`SSLSocket`:
+   This class implements an interface on top of a low-level SSL object as
+   implemented by OpenSSL. This object captures the state of an SSL connection
+   but does not provide any network IO itself. IO needs to be performed through
+   separate "BIO" objects which are OpenSSL's IO abstraction layer.
+
+   An :class:`SSLObject` instance can be created using the
+   :meth:`~SSLContext.wrap_bio` method. This method will create the
+   :class:`SSLObject` instance and bind it to a pair of BIOs. The *incoming*
+   BIO is used to pass data from Python to the SSL protocol instance, while the
+   *outgoing* BIO is used to pass data the other way around.
+
+   The following methods are available:
 
    - :attr:`~SSLSocket.context`
    - :attr:`~SSLSocket.server_side`
@@ -1795,36 +1808,36 @@ provided.
    - :meth:`~SSLSocket.unwrap`
    - :meth:`~SSLSocket.get_channel_binding`
 
-   An :class:`SSLObject` instance can be created using the
-   :meth:`~SSLContext.wrap_bio` method. This method will create the
-   :class:`SSLObject` instance and bind it to a pair of BIOs. The *incoming* BIO
-   is used to pass data from Python to the SSL protocol instance, while the
-   *outgoing* BIO is used to pass data the other way around.
+   When compared to :class:`SSLSocket`, this object lacks the following
+   features:
 
-Some notes related to the use of :class:`SSLObject`:
+   - Any form of network IO incluging methods such as ``recv()`` and
+     ``send()``.
 
-- All I/O on an :class:`SSLObject` is :ref:`non-blocking <ssl-nonblocking>`.
-  This means that for example :meth:`~SSLSocket.read` will raise an
-  :exc:`SSLWantReadError` if it needs more data than the incoming BIO has
-  available.
+   - There is no *do_handshake_on_connect* machinery. You must always manually
+     call :meth:`~SSLSocket.do_handshake` to start the handshake.
 
-- There is no module-level ``wrap_bio`` call like there is for
-  :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created via
-  an :class:`SSLContext`.
+   - There is no handling of *suppress_ragged_eofs*. All end-of-file conditions
+     that are in violation of the protocol are reported via the
+     :exc:`SSLEOFError` exception.
 
-- There is no *do_handshake_on_connect* machinery. You must always manually
-  call :meth:`~SSLSocket.do_handshake` to start the handshake.
+   - The method :meth:`~SSLSocket.unwrap` call does not return anything,
+     unlike for an SSL socket where it returns the underlying socket.
 
-- There is no handling of *suppress_ragged_eofs*. All end-of-file conditions
-  that are in violation of the protocol are reported via the :exc:`SSLEOFError`
-  exception.
+   - The *server_name_callback* callback passed to
+     :meth:`SSLContext.set_servername_callback` will get an :class:`SSLObject`
+     instance instead of a :class:`SSLSocket` instance as its first parameter.
 
-- The method :meth:`~SSLSocket.unwrap` call does not return anything, unlike
-  for an SSL socket where it returns the underlying socket.
+   Some notes related to the use of :class:`SSLObject`:
 
-- The *server_name_callback* callback passed to
-  :meth:`SSLContext.set_servername_callback` will get an :class:`SSLObject`
-  instance instead of a :class:`SSLSocket` instance as its first parameter.
+   - All IO on an :class:`SSLObject` is :ref:`non-blocking <ssl-nonblocking>`.
+     This means that for example :meth:`~SSLSocket.read` will raise an
+     :exc:`SSLWantReadError` if it needs more data than the incoming BIO has
+     available.
+
+   - There is no module-level ``wrap_bio()`` call like there is for
+     :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created
+     via an :class:`SSLContext`.
 
 An SSLObject communicates with the outside world using memory buffers. The
 class :class:`MemoryBIO` provides a memory buffer that can be used for this
