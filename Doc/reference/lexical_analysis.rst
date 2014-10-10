@@ -310,7 +310,9 @@ The Unicode category codes mentioned above stand for:
 * *Mc* - spacing combining marks
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
-* *Other_ID_Start* - explicit list of characters in `PropList.txt <http://unicode.org/Public/UNIDATA/PropList.txt>`_ to support backwards compatibility
+* *Other_ID_Start* - explicit list of characters in `PropList.txt
+  <http://www.unicode.org/Public/6.3.0/ucd/PropList.txt>`_ to support backwards
+  compatibility
 * *Other_ID_Continue* - likewise
 
 All identifiers are converted into the normal form NFKC while parsing; comparison
