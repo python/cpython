@@ -880,14 +880,12 @@ def parse_template(source, pattern):
 
 def expand_template(template, match):
     g = match.group
-    sep = match.string[:0]
+    empty = match.string[:0]
     groups, literals = template
     literals = literals[:]
     try:
         for index, group in groups:
-            literals[index] = s = g(group)
-            if s is None:
-                raise error("unmatched group")
+            literals[index] = g(group) or empty
     except IndexError:
         raise error("invalid group reference")
-    return sep.join(literals)
+    return empty.join(literals)
