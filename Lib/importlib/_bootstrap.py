@@ -1806,7 +1806,7 @@ class PathFinder:
         If 'hooks' is false then use sys.path_hooks.
 
         """
-        if not sys.path_hooks:
+        if sys.path_hooks is not None and not sys.path_hooks:
             _warnings.warn('sys.path_hooks is empty', ImportWarning)
         for hook in sys.path_hooks:
             try:
@@ -2095,7 +2095,7 @@ def _find_spec_legacy(finder, name, path):
 
 def _find_spec(name, path, target=None):
     """Find a module's loader."""
-    if not sys.meta_path:
+    if sys.meta_path is not None and not sys.meta_path:
         _warnings.warn('sys.meta_path is empty', ImportWarning)
     # We check sys.modules here for the reload case.  While a passed-in
     # target will usually indicate a reload there is no guarantee, whereas
