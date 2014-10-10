@@ -169,6 +169,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11694: Raise ConversionError in xdrlib as documented.  Patch
+  by Filip Gruszczyński and Claudiu Popa.
+
 - Issue #19380: Optimized parsing of regular expressions.
 
 - Issue #1519638: Now unmatched groups are replaced with empty strings in re.sub()
