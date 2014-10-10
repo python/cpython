@@ -223,6 +223,9 @@ re
 * Number of capturing groups in regular expression is no longer limited by 100.
   (Contributed by Serhiy Storchaka in :issue:`22437`.)
 
+* Now unmatched groups are replaced with empty strings in :func:`re.sub`
+  and :func:`re.subn`.  (Contributed by Serhiy Storchaka in :issue:`1519638`.)
+
 shutil
 ------
 
