@@ -676,10 +676,13 @@ Wait until a file descriptor received some data using the
 :meth:`BaseEventLoop.add_reader` method and then close the event loop::
 
     import asyncio
-    import socket
+    try:
+        from socket import socketpair
+    except ImportError:
+        from asyncio.windows_utils import socketpair
 
     # Create a pair of connected file descriptors
-    rsock, wsock = socket.socketpair()
+    rsock, wsock = socketpair()
     loop = asyncio.get_event_loop()
 
     def reader():
