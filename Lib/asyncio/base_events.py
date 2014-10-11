@@ -268,7 +268,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             future._log_destroy_pending = False
 
         future.add_done_callback(_raise_stop_error)
-        self.run_forever()
+        try:
+            self.run_forever()
+        except:
+            if new_task and future.done() and not future.cancelled():
+                # The coroutine raised a BaseException. Consume the exception
+                # to not log a warning, the caller doesn't have access to the
+                # local task.
+                future.exception()
+            raise
         future.remove_done_callback(_raise_stop_error)
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
