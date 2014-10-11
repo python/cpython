@@ -283,3 +283,53 @@ Usage::
 
     python example.py http://example.com/path/page.html
 
+or with HTTPS::
+
+    python example.py https://example.com/path/page.html
+
+.. _asyncio-register-socket-streams:
+
+Register an open socket to wait for data using streams
+------------------------------------------------------
+
+Coroutine waiting until a socket receives data using the
+:func:`open_connection` function::
+
+    import asyncio
+    import socket
+
+    def wait_for_data(loop):
+        # Create a pair of connected sockets
+        rsock, wsock = socket.socketpair()
+
+        # Register the open socket to wait for data
+        reader, writer = yield from asyncio.open_connection(sock=rsock, loop=loop)
+
+        # Simulate the reception of data from the network
+        loop.call_soon(wsock.send, 'abc'.encode())
+
+        # Wait for data
+        data = yield from reader.read(100)
+
+        # Got data, we are done: close the socket
+        print("Received:", data.decode())
+        writer.close()
+
+        # Close the second socket
+        wsock.close()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(wait_for_data(loop))
+    loop.close()
+
+.. seealso::
+
+   The :ref:`register an open socket to wait for data using a protocol
+   <asyncio-register-socket>` example uses a low-level protocol created by the
+   :meth:`BaseEventLoop.create_connection` method.
+
+   The :ref:`watch a file descriptor for read events
+   <asyncio-watch-read-event>` example uses the low-level
+   :meth:`BaseEventLoop.add_reader` method to register the file descriptor of a
+   socket.
+
