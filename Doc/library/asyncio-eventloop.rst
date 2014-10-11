@@ -633,13 +633,16 @@ Handle
       Cancel the call.
 
 
+Event loop examples
+===================
 
 .. _asyncio-hello-world-callback:
 
-Example: Hello World (callback)
--------------------------------
+Hello World with a callback
+---------------------------
 
-Print ``Hello World`` every two seconds, using a callback::
+Print ``"Hello World"`` every two seconds using a callback scheduled by the
+:meth:`BaseEventLoop.call_soon` method::
 
     import asyncio
 
@@ -656,7 +659,8 @@ Print ``Hello World`` every two seconds, using a callback::
 
 .. seealso::
 
-   :ref:`Hello World example using a coroutine <asyncio-hello-world-coroutine>`.
+   The :ref:`Hello World coroutine <asyncio-hello-world-coroutine>` example
+   uses a :ref:`coroutine <coroutine>`.
 
 
 Example: Set signal handlers for SIGINT and SIGTERM
