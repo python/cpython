@@ -29,6 +29,8 @@ Modules/config.c
 Modules/ld_so_aix
 Programs/_freeze_importlib
 Programs/_testembed
+PC/python_nt*.h
+PC/pythonnt_rc*.h
 PCbuild/*.bsc
 PCbuild/*.dll
 PCbuild/*.exe
@@ -37,8 +39,15 @@ PCbuild/*.lib
 PCbuild/*.ncb
 PCbuild/*.o
 PCbuild/*.pdb
+PCbuild/*.user
+PCbuild/*.suo
+PCbuild/*.*sdf
 PCbuild/Win32-temp-*
+PCbuild/x64-temp-*
+PCbuild/*-pgi
+PCbuild/*-pgo
 PCbuild/amd64/
+PCbuild/ipch
 .purify
 Parser/pgen
 __pycache__
@@ -61,6 +70,7 @@ pyconfig.h
 python
 python-config
 python-config.py
+python.bat
 python.exe
 python-gdb.py
 python.exe-gdb.py
