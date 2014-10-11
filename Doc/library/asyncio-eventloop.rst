@@ -339,6 +339,10 @@ On Windows with :class:`ProactorEventLoop`, these methods are not supported.
 
    Stop watching the file descriptor for write availability.
 
+The :ref:`watch a file descriptor for read events <asyncio-watch-read-event>`
+example uses the low-level :meth:`BaseEventLoop.add_reader` method to register
+the file descriptor of a socket.
+
 
 Low-level socket operations
 ---------------------------
@@ -633,13 +637,16 @@ Handle
       Cancel the call.
 
 
+Event loop examples
+===================
 
 .. _asyncio-hello-world-callback:
 
-Example: Hello World (callback)
--------------------------------
+Hello World with a callback
+---------------------------
 
-Print ``Hello World`` every two seconds, using a callback::
+Print ``"Hello World"`` every two seconds using a callback scheduled by the
+:meth:`BaseEventLoop.call_soon` method::
 
     import asyncio
 
@@ -656,13 +663,63 @@ Print ``Hello World`` every two seconds, using a callback::
 
 .. seealso::
 
-   :ref:`Hello World example using a coroutine <asyncio-hello-world-coroutine>`.
+   The :ref:`Hello World coroutine <asyncio-hello-world-coroutine>` example
+   uses a :ref:`coroutine <coroutine>`.
 
 
-Example: Set signal handlers for SIGINT and SIGTERM
----------------------------------------------------
+.. _asyncio-watch-read-event:
 
-Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`::
+Watch a file descriptor for read events
+---------------------------------------
+
+Wait until a file descriptor received some data using the
+:meth:`BaseEventLoop.add_reader` method and then close the event loop::
+
+    import asyncio
+    import socket
+
+    # Create a pair of connected file descriptors
+    rsock, wsock = socket.socketpair()
+    loop = asyncio.get_event_loop()
+
+    def reader():
+        data = rsock.recv(100)
+        print("Received:", data.decode())
+        # We are done: unregister the register
+        loop.remove_reader(rsock)
+        # Stop the event loop
+        loop.stop()
+
+    # Wait for read event
+    loop.add_reader(rsock, reader)
+
+    # Simulate the reception of data from the network
+    loop.call_soon(wsock.send, 'abc'.encode())
+
+    # Run the event loop
+    loop.run_forever()
+
+    # We are done, close sockets and the event loop
+    rsock.close()
+    wsock.close()
+    loop.close()
+
+.. seealso::
+
+   The :ref:`register an open socket to wait for data using a protocol
+   <asyncio-register-socket>` example uses a low-level protocol created by the
+   :meth:`BaseEventLoop.create_connection` method.
+
+   The :ref:`register an open socket to wait for data using streams
+   <asyncio-register-socket-streams>` example uses high-level streams
+   created by the :func:`open_connection` function in a coroutine.
+
+
+Set signal handlers for SIGINT and SIGTERM
+------------------------------------------
+
+Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM` using
+the :meth:`BaseEventLoop.add_signal_handler` method::
 
     import asyncio
     import functools
@@ -684,4 +741,3 @@ Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`::
         loop.run_forever()
     finally:
         loop.close()
-
