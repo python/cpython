@@ -73,4 +73,5 @@ the `Python Package Index <http://pypi.python.org/pypi>`_.
    misc.rst
    windows.rst
    unix.rst
+   superseded.rst
    undoc.rst
