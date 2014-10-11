@@ -521,10 +521,13 @@ Wait until a socket receives data using the
 the event loop ::
 
     import asyncio
-    import socket
+    try:
+        from socket import socketpair
+    except ImportError:
+        from asyncio.windows_utils import socketpair
 
     # Create a pair of connected sockets
-    rsock, wsock = socket.socketpair()
+    rsock, wsock = socketpair()
     loop = asyncio.get_event_loop()
 
     class MyProtocol(asyncio.Protocol):
