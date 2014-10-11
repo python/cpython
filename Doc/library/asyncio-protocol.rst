@@ -436,11 +436,11 @@ coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
 coroutine can be used to wait until the write buffer is flushed.
 
 
-Protocol example: TCP echo server and client
-============================================
+Protocol examples
+=================
 
-Echo client
------------
+TCP echo client
+---------------
 
 TCP echo client example, send data and wait until the connection is closed::
 
@@ -473,8 +473,8 @@ having to write a short coroutine to handle the exception and stop the
 running loop. At :meth:`~BaseEventLoop.run_until_complete` exit, the loop is
 no longer running, so there is no need to stop the loop in case of an error.
 
-Echo server
------------
+TCP echo server
+---------------
 
 TCP echo server example, send back received data and close the connection::
 
@@ -511,4 +511,60 @@ TCP echo server example, send back received data and close the connection::
 methods are asynchronous. ``yield from`` is not needed because these transport
 methods are not coroutines.
 
+.. _asyncio-register-socket:
 
+Register an open socket to wait for data using a protocol
+---------------------------------------------------------
+
+Wait until a socket receives data using the
+:meth:`BaseEventLoop.create_connection` method with a protocol, and then close
+the event loop ::
+
+    import asyncio
+    import socket
+
+    # Create a pair of connected sockets
+    rsock, wsock = socket.socketpair()
+    loop = asyncio.get_event_loop()
+
+    class MyProtocol(asyncio.Protocol):
+        transport = None
+
+        def connection_made(self, transport):
+            self.transport = transport
+
+        def data_received(self, data):
+            print("Received:", data.decode())
+
+            # We are done: close the transport (it will call connection_lost())
+            self.transport.close()
+
+        def connection_lost(self, exc):
+            # The socket has been closed, stop the event loop
+            loop.stop()
+
+    # Register the socket to wait for data
+    connect_coro = loop.create_connection(MyProtocol, sock=rsock)
+    transport, protocol = loop.run_until_complete(connect_coro)
+
+    # Simulate the reception of data from the network
+    loop.call_soon(wsock.send, 'abc'.encode())
+
+    # Run the event loop
+    loop.run_forever()
+
+    # We are done, close sockets and the event loop
+    rsock.close()
+    wsock.close()
+    loop.close()
+
+.. seealso::
+
+   The :ref:`watch a file descriptor for read events
+   <asyncio-watch-read-event>` example uses the low-level
+   :meth:`BaseEventLoop.add_reader` method to register the file descriptor of a
+   socket.
+
+   The :ref:`register an open socket to wait for data using streams
+   <asyncio-register-socket-streams>` example uses high-level streams
+   created by the :func:`open_connection` function in a coroutine.
