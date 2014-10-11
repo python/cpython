@@ -238,8 +238,11 @@ IncompleteReadError
       Read bytes string before the end of stream was reached (:class:`bytes`).
 
 
-Example
-=======
+Stream examples
+===============
+
+Get HTTP headers
+----------------
 
 Simple example querying HTTP headers of the URL passed on the command line::
 
@@ -250,10 +253,14 @@ Simple example querying HTTP headers of the URL passed on the command line::
     @asyncio.coroutine
     def print_http_headers(url):
         url = urllib.parse.urlsplit(url)
-        reader, writer = yield from asyncio.open_connection(url.hostname, 80)
-        query = ('HEAD {url.path} HTTP/1.0\r\n'
-                 'Host: {url.hostname}\r\n'
-                 '\r\n').format(url=url)
+        if url.scheme == 'https':
+            connect = asyncio.open_connection(url.hostname, 443, ssl=True)
+        else:
+            connect = asyncio.open_connection(url.hostname, 80)
+        reader, writer = yield from connect
+        query = ('HEAD {path} HTTP/1.0\r\n'
+                 'Host: {hostname}\r\n'
+                 '\r\n').format(path=url.path or '/', hostname=url.hostname)
         writer.write(query.encode('latin-1'))
         while True:
             line = yield from reader.readline()
@@ -262,6 +269,9 @@ Simple example querying HTTP headers of the URL passed on the command line::
             line = line.decode('latin1').rstrip()
             if line:
                 print('HTTP header> %s' % line)
+
+        # Ignore the body, close the socket
+        writer.close()
 
     url = sys.argv[1]
     loop = asyncio.get_event_loop()
