@@ -98,8 +98,9 @@ Print ``"Hello World"`` every two seconds using a coroutine::
 
 .. seealso::
 
-   :ref:`Hello World example using a callback <asyncio-hello-world-callback>`.
-
+   The :ref:`Hello World with a callback <asyncio-hello-world-callback>`
+   example uses a callback scheduled by the :meth:`BaseEventLoop.call_soon`
+   method.
 
 Example: Chain coroutines
 ^^^^^^^^^^^^^^^^^^^^^^^^^
