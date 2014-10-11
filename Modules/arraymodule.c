@@ -2709,7 +2709,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     self->allocated = Py_SIZE(self);
                 }
             }
-            else if (initial != NULL && array_Check(initial)) {
+            else if (initial != NULL && array_Check(initial) && len > 0) {
                 arrayobject *self = (arrayobject *)a;
                 arrayobject *other = (arrayobject *)initial;
                 memcpy(self->ob_item, other->ob_item, len * other->ob_descr->itemsize);
