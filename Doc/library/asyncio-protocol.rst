@@ -473,6 +473,7 @@ having to write a short coroutine to handle the exception and stop the
 running loop. At :meth:`~BaseEventLoop.run_until_complete` exit, the loop is
 no longer running, so there is no need to stop the loop in case of an error.
 
+
 TCP echo server
 ---------------
 
@@ -483,33 +484,121 @@ TCP echo server example, send back received data and close the connection::
     class EchoServer(asyncio.Protocol):
         def connection_made(self, transport):
             peername = transport.get_extra_info('peername')
-            print('connection from {}'.format(peername))
+            print('Connection from {}'.format(peername))
             self.transport = transport
 
         def data_received(self, data):
-            print('data received: {}'.format(data.decode()))
+            message = data.decode()
+            print('Data received: {!r}'.format(message))
+
+            print('Send: {!r}'.format(message))
             self.transport.write(data)
 
-            # close the socket
+            print('Close the socket')
             self.transport.close()
 
     loop = asyncio.get_event_loop()
     coro = loop.create_server(EchoServer, '127.0.0.1', 8888)
     server = loop.run_until_complete(coro)
-    print('serving on {}'.format(server.sockets[0].getsockname()))
 
+    # Server requests until CTRL+c is pressed
+    print('Serving on {}'.format(server.sockets[0].getsockname()))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
         print("exit")
-    finally:
-        server.close()
-        loop.close()
+
+    # Close the server
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.close()
 
 :meth:`Transport.close` can be called immediately after
 :meth:`WriteTransport.write` even if data are not sent yet on the socket: both
 methods are asynchronous. ``yield from`` is not needed because these transport
 methods are not coroutines.
+
+
+.. _asyncio-udp-echo-client-protocol:
+
+UDP echo client protocol
+------------------------
+
+UDP echo client using the :meth:`BaseEventLoop.create_datagram_endpoint`
+method, send data and close the transport when we received the answer::
+
+    import asyncio
+
+    class EchoClientProtocol:
+        def __init__(self, message, loop):
+            self.message = message
+            self.loop = loop
+            self.transport = None
+
+        def connection_made(self, transport):
+            self.transport = transport
+            print('Send:', self.message)
+            self.transport.sendto(self.message.encode())
+
+        def datagram_received(self, data, addr):
+            print("Received:", data.decode())
+
+            print("Close the socket")
+            self.transport.close()
+
+        def error_received(self, exc):
+            print('Error received:', exc)
+
+        def connection_lost(self, exc):
+            print("Socket closed, stop the event loop")
+            loop = asyncio.get_event_loop()
+            loop.stop()
+
+    loop = asyncio.get_event_loop()
+    message = "Hello World!"
+    connect = loop.create_datagram_endpoint(
+        lambda: EchoClientProtocol(message, loop),
+        remote_addr=('127.0.0.1', 9999))
+    transport, protocol = loop.run_until_complete(connect)
+    loop.run_forever()
+    transport.close()
+    loop.close()
+
+
+.. _asyncio-udp-echo-server-protocol:
+
+UDP echo server protocol
+------------------------
+
+UDP echo server using the :meth:`BaseEventLoop.create_datagram_endpoint`
+method, send back received data::
+
+    import asyncio
+
+    class EchoServerClientProtocol:
+        def connection_made(self, transport):
+            self.transport = transport
+
+        def datagram_received(self, data, addr):
+            message = data.decode()
+            print('Received %r from %s' % (message, addr))
+            print('Send %r to %s' % (message, addr))
+            self.transport.sendto(data, addr)
+
+    loop = asyncio.get_event_loop()
+    print("Starting UDP server")
+    listen = loop.create_datagram_endpoint(
+        EchoServerClientProtocol, local_addr=('127.0.0.1', 9999))
+    transport, protocol = loop.run_until_complete(listen)
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+
+    transport.close()
+    loop.close()
+
 
 .. _asyncio-register-socket:
 
