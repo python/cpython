@@ -8,26 +8,57 @@
 The Python Package Index (PyPI)
 *******************************
 
-The `Python Package Index (PyPI)`_ holds :ref:`meta-data <meta-data>`
+The `Python Package Index (PyPI)`_ stores :ref:`meta-data <meta-data>`
 describing distributions packaged with distutils, as well as package data like
-distribution files if the package author wishes.
+distribution files if a package author wishes.
+
+Distutils provides the :command:`register` and :command:`upload` commands for
+pushing meta-data and distribution files to PyPI, respectively.  See
+:ref:`package-commands` for information on these commands.
+
+
+PyPI overview
+=============
+
+PyPI lets you submit any number of versions of your distribution to the index.
+If you alter the meta-data for a particular version, you can submit it again
+and the index will be updated.
+
+PyPI holds a record for each (name, version) combination submitted.  The first
+user to submit information for a given name is designated the Owner of that
+name.  Changes can be submitted through the :command:`register` command or
+through the web interface.  Owners can designate other users as Owners or
+Maintainers.  Maintainers can edit the package information, but not designate
+new Owners or Maintainers.
+
+By default PyPI displays only the newest version of a given package.  The web
+interface lets one change this default behavior and manually select which
+versions to display and hide.
+
+For each version, PyPI displays a home page.  The home page is created from
+the ``long_description`` which can be submitted via the :command:`register`
+command.  See :ref:`package-display` for more information.
+
+
+.. _package-commands:
+
+Distutils commands
+==================
 
 Distutils exposes two commands for submitting package data to PyPI: the
 :ref:`register <package-register>` command for submitting meta-data to PyPI
 and the :ref:`upload <package-upload>` command for submitting distribution
-files.  Both commands read configuration data from a special file called the
-:ref:`.pypirc file <pypirc>`.  PyPI :ref:`displays a home page
-<package-display>` for each package created from the ``long_description``
-submitted by the :command:`register` command.
+files.  Both commands read configuration data from a special file called a
+:ref:`.pypirc file <pypirc>`.
 
 
 .. _package-register:
 
-Registering Packages
-====================
+The ``register`` command
+------------------------
 
 The distutils command :command:`register` is used to submit your distribution's
-meta-data to the index. It is invoked as follows::
+meta-data to an index server. It is invoked as follows::
 
     python setup.py register
 
@@ -42,7 +73,8 @@ Distutils will respond with the following prompt::
     Your selection [default 1]:
 
 Note: if your username and password are saved locally, you will not see this
-menu.
+menu.  Also, refer to :ref:`pypirc` for how to store your credentials in a
+:file:`.pypirc` file.
 
 If you have not registered with PyPI, then you will need to do so now. You
 should choose option 2, and enter your details as required. Soon after
@@ -53,26 +85,13 @@ Once you are registered, you may choose option 1 from the menu. You will be
 prompted for your PyPI username and password, and :command:`register` will then
 submit your meta-data to the index.
 
-You may submit any number of versions of your distribution to the index. If you
-alter the meta-data for a particular version, you may submit it again and the
-index will be updated.
-
-PyPI holds a record for each (name, version) combination submitted. The first
-user to submit information for a given name is designated the Owner of that
-name. They may submit changes through the :command:`register` command or through
-the web interface. They may also designate other users as Owners or Maintainers.
-Maintainers may edit the package information, but not designate other Owners or
-Maintainers.
-
-By default PyPI displays only the newest version of a given package. The web
-interface lets one change this default behavior and manually select which
-versions to display and hide.
+See :ref:`package-cmdoptions` for options to the :command:`register` command.
 
 
 .. _package-upload:
 
-Uploading Packages
-==================
+The ``upload`` command
+----------------------
 
 The distutils command :command:`upload` pushes the distribution files to PyPI.
 
@@ -86,29 +105,42 @@ PyPI.  Note that these will be uploaded even if they are built using an earlier
 invocation of :file:`setup.py`, but that only distributions named on the command
 line for the invocation including the :command:`upload` command are uploaded.
 
-The :command:`upload` command uses the username, password, and repository URL
-from the :file:`$HOME/.pypirc` file (see section :ref:`pypirc` for more on this
-file). If a :command:`register` command was previously called in the same command,
+If a :command:`register` command was previously called in the same command,
 and if the password was entered in the prompt, :command:`upload` will reuse the
-entered password. This is useful if you do not want to store a clear text
-password in the :file:`$HOME/.pypirc` file.
-
-You can specify another PyPI server with the ``--repository=url`` option::
-
-    python setup.py sdist bdist_wininst upload -r http://example.com/pypi
-
-See section :ref:`pypirc` for more on defining several servers.
+entered password.  This is useful if you do not want to store a password in
+clear text in a :file:`.pypirc` file.
 
 You can use the ``--sign`` option to tell :command:`upload` to sign each
 uploaded file using GPG (GNU Privacy Guard).  The  :program:`gpg` program must
 be available for execution on the system :envvar:`PATH`.  You can also specify
 which key to use for signing using the ``--identity=name`` option.
 
-Other :command:`upload` options include ``--repository=url`` or
-``--repository=section`` where *url* is the url of the server and
-*section* the name of the section in :file:`$HOME/.pypirc`, and
-``--show-response`` (which displays the full response text from the PyPI
-server for help in debugging upload problems).
+See :ref:`package-cmdoptions` for additional options to the :command:`upload`
+command.
+
+
+.. _package-cmdoptions:
+
+Additional command options
+--------------------------
+
+This section describes options common to both the :command:`register` and
+:command:`upload` commands.
+
+The ``--repository`` or ``-r`` option lets you specify a PyPI server
+different from the default.  For example::
+
+    python setup.py sdist bdist_wininst upload -r https://example.com/pypi
+
+For convenience, a name can be used in place of the URL when the
+:file:`.pypirc` file is configured to do so.  For example::
+
+    python setup.py register -r other
+
+See :ref:`pypirc` for more information on defining alternate servers.
+
+The ``--show-response`` option displays the full response text from the PyPI
+server, which is useful when debugging problems with registering and uploading.
 
 
 .. index::
@@ -117,10 +149,14 @@ server for help in debugging upload problems).
 
 .. _pypirc:
 
-The .pypirc file
-================
+The ``.pypirc`` file
+--------------------
 
-The format of the :file:`.pypirc` file is as follows::
+The :command:`register` and :command:`upload` commands both check for the
+existence of a :file:`.pypirc` file at the location :file:`$HOME/.pypirc`.
+If this file exists, the command uses the username, password, and repository
+URL configured in the file.  The format of a :file:`.pypirc` file is as
+follows::
 
     [distutils]
     index-servers =
@@ -137,7 +173,7 @@ name of all sections describing a repository.
 Each section describing a repository defines three variables:
 
 - *repository*, that defines the url of the PyPI server. Defaults to
-    ``http://www.python.org/pypi``.
+    ``https://www.python.org/pypi``.
 - *username*, which is the registered username on the PyPI server.
 - *password*, that will be used to authenticate. If omitted the user
     will be prompt to type it when needed.
@@ -156,19 +192,17 @@ listed in the *index-servers* variable::
     password: <password>
 
     [other]
-    repository: http://example.com/pypi
+    repository: https://example.com/pypi
     username: <username>
     password: <password>
 
-:command:`register` can then be called with the -r option to point the
-repository to work with::
+This allows the :command:`register` and :command:`upload` commands to be
+called with the ``--repository`` option as described in
+:ref:`package-cmdoptions`.
 
-    python setup.py register -r http://example.com/pypi
-
-For convenience, the name of the section that describes the repository
-may also be used::
-
-    python setup.py register -r other
+Specifically, you might want to add the `PyPI Test Repository
+<https://wiki.python.org/moin/TestPyPI>`_ to your ``.pypirc`` to facilitate
+testing before doing your first upload to ``PyPI`` itself.
 
 
 .. _package-display:
@@ -210,4 +244,4 @@ without warnings does not guarantee that PyPI will convert the content
 successfully.
 
 
-.. _Python Package Index (PyPI): http://pypi.python.org/
+.. _Python Package Index (PyPI): https://pypi.python.org/
