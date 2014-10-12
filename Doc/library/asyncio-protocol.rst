@@ -446,22 +446,27 @@ TCP echo client example, send data and wait until the connection is closed::
 
     import asyncio
 
-    class EchoClient(asyncio.Protocol):
-        message = 'This is the message. It will be echoed.'
+    class EchoClientProtocol(asyncio.Protocol):
+        def __init__(self, message, loop):
+            self.message = message
+            self.loop = loop
 
         def connection_made(self, transport):
             transport.write(self.message.encode())
-            print('data sent: {}'.format(self.message))
+            print('Data sent: {!r}'.format(self.message))
 
         def data_received(self, data):
-            print('data received: {}'.format(data.decode()))
+            print('Data received: {!r}'.format(data.decode()))
 
         def connection_lost(self, exc):
-            print('server closed the connection')
-            asyncio.get_event_loop().stop()
+            print('The server closed the connection')
+            print('Stop the event lop')
+            self.loop.stop()
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_connection(EchoClient, '127.0.0.1', 8888)
+    message = 'Hello World!'
+    coro = loop.create_connection(lambda: EchoClientProtocol(message, loop),
+                                  '127.0.0.1', 8888)
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()
@@ -481,7 +486,7 @@ TCP echo server example, send back received data and close the connection::
 
     import asyncio
 
-    class EchoServer(asyncio.Protocol):
+    class EchoServerClientProtocol(asyncio.Protocol):
         def connection_made(self, transport):
             peername = transport.get_extra_info('peername')
             print('Connection from {}'.format(peername))
@@ -494,11 +499,12 @@ TCP echo server example, send back received data and close the connection::
             print('Send: {!r}'.format(message))
             self.transport.write(data)
 
-            print('Close the socket')
+            print('Close the client socket')
             self.transport.close()
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_server(EchoServer, '127.0.0.1', 8888)
+    # Each client connection will create a new protocol instance
+    coro = loop.create_server(EchoServerClientProtocol, '127.0.0.1', 8888)
     server = loop.run_until_complete(coro)
 
     # Server requests until CTRL+c is pressed
@@ -575,7 +581,7 @@ method, send back received data::
 
     import asyncio
 
-    class EchoServerClientProtocol:
+    class EchoServerProtocol:
         def connection_made(self, transport):
             self.transport = transport
 
@@ -587,8 +593,9 @@ method, send back received data::
 
     loop = asyncio.get_event_loop()
     print("Starting UDP server")
+    # One protocol instance will be created to serve all client requests
     listen = loop.create_datagram_endpoint(
-        EchoServerClientProtocol, local_addr=('127.0.0.1', 9999))
+        EchoServerProtocol, local_addr=('127.0.0.1', 9999))
     transport, protocol = loop.run_until_complete(listen)
 
     try:
