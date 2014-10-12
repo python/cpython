@@ -243,6 +243,9 @@ Creating connections
 
    On Windows with :class:`ProactorEventLoop`, this method is not supported.
 
+   See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
+   :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
+
 
 .. method:: BaseEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
 
