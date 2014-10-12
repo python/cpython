@@ -167,7 +167,7 @@ Functions and classes provided:
    applications. It also has no effect on the output of subprocesses.
    However, it is still a useful approach for many utility scripts.
 
-   This context manager is :ref:`reusable but not reentrant <reusable-cms>`.
+   This context manager is :ref:`reentrant <reentrant-cms>`.
 
    .. versionadded:: 3.4
 
