@@ -447,21 +447,26 @@ TCP echo client example, send data and wait until the connection is closed::
     import asyncio
 
     class EchoClientProtocol(asyncio.Protocol):
-        message = 'This is the message. It will be echoed.'
+        def __init__(self, message, loop):
+            self.message = message
+            self.loop = loop
 
         def connection_made(self, transport):
             transport.write(self.message.encode())
-            print('data sent: {}'.format(self.message))
+            print('Data sent: {!r}'.format(self.message))
 
         def data_received(self, data):
-            print('data received: {}'.format(data.decode()))
+            print('Data received: {!r}'.format(data.decode()))
 
         def connection_lost(self, exc):
-            print('server closed the connection')
-            asyncio.get_event_loop().stop()
+            print('The server closed the connection')
+            print('Stop the event lop')
+            self.loop.stop()
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_connection(EchoClientProtocol, '127.0.0.1', 8888)
+    message = 'Hello World!'
+    coro = loop.create_connection(lambda: EchoClientProtocol(message, loop),
+                                  '127.0.0.1', 8888)
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()
@@ -494,7 +499,7 @@ TCP echo server example, send back received data and close the connection::
             print('Send: {!r}'.format(message))
             self.transport.write(data)
 
-            print('Close the socket')
+            print('Close the client socket')
             self.transport.close()
 
     loop = asyncio.get_event_loop()
