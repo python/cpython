@@ -10,6 +10,7 @@ import contextlib
 import operator
 import ipaddress
 
+
 class BaseTestCase(unittest.TestCase):
     # One big change in ipaddress over the original ipaddr module is
     # error reporting that tries to assume users *don't know the rules*
@@ -52,16 +53,17 @@ class BaseTestCase(unittest.TestCase):
     def assertAddressError(self, details, *args):
         """Ensure a clean AddressValueError"""
         return self.assertCleanError(ipaddress.AddressValueError,
-                                       details, *args)
+                                     details, *args)
 
     def assertNetmaskError(self, details, *args):
         """Ensure a clean NetmaskValueError"""
         return self.assertCleanError(ipaddress.NetmaskValueError,
-                                details, *args)
+                                     details, *args)
 
     def assertInstancesEqual(self, lhs, rhs):
         """Check constructor arguments produce equivalent instances"""
         self.assertEqual(self.factory(lhs), self.factory(rhs))
+
 
 class CommonTestMixin:
 
@@ -114,6 +116,7 @@ class CommonTestMixin_v4(CommonTestMixin):
 
         assertBadLength(3)
         assertBadLength(5)
+
 
 class CommonTestMixin_v6(CommonTestMixin):
 
@@ -195,7 +198,7 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     def test_empty_octet(self):
         def assertBadOctet(addr):
             with self.assertAddressError("Empty octet not permitted in %r",
-                                          addr):
+                                         addr):
                 ipaddress.IPv4Address(addr)
 
         assertBadOctet("42..42.42")
@@ -443,6 +446,7 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
 class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Interface
 
+
 class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Network
 
@@ -496,8 +500,10 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
         assertBadNetmask("::1", "pudding")
         assertBadNetmask("::", "::")
 
+
 class InterfaceTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Interface
+
 
 class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Network
@@ -606,7 +612,6 @@ class ComparisonTests(unittest.TestCase):
         self.assertRaises(TypeError, v6addr.__gt__, v4addr)
         self.assertRaises(TypeError, v6net.__lt__, v4net)
         self.assertRaises(TypeError, v6net.__gt__, v4net)
-
 
 
 class IpaddrUnitTest(unittest.TestCase):
