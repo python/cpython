@@ -478,7 +478,8 @@ Task functions
 
 .. function:: async(coro_or_future, \*, loop=None)
 
-   Wrap a :ref:`coroutine object <coroutine>` in a future.
+   Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
+   a future. Return a :class:`Task` object.
 
    If the argument is a :class:`Future`, it is returned directly.
 
