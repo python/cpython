@@ -22,6 +22,7 @@ class AbstractTkTest:
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update_idletasks()
         cls.root.destroy()
         cls.root = None
         tkinter._default_root = None
