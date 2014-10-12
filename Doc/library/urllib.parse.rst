@@ -81,7 +81,8 @@ or on combining URL components into a URL string.
    this argument is the empty string.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
-   allowed.  The default value for this argument is :const:`True`.
+   recognized and parsed as part of the preceding component.  The default value
+   for this argument is :const:`True`.
 
    The return value is actually an instance of a subclass of :class:`tuple`.  This
    class has the following additional read-only convenience attributes:
