@@ -164,9 +164,16 @@ class GzipFile(io.BufferedIOBase):
     def _write_gzip_header(self):
         self.fileobj.write('\037\213')             # magic header
         self.fileobj.write('\010')                 # compression method
-        fname = os.path.basename(self.name)
-        if fname.endswith(".gz"):
-            fname = fname[:-3]
+        try:
+            # RFC 1952 requires the FNAME field to be Latin-1. Do not
+            # include filenames that cannot be represented that way.
+            fname = os.path.basename(self.name)
+            if not isinstance(fname, str):
+                fname = fname.encode('latin-1')
+            if fname.endswith('.gz'):
+                fname = fname[:-3]
+        except UnicodeEncodeError:
+            fname = ''
         flags = 0
         if fname:
             flags = FNAME

@@ -37,6 +37,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13664: GzipFile now supports non-ascii Unicode filenames.
+
 - Issue #13096: Fixed segfault in CTypes POINTER handling of large
   values.
 
