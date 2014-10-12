@@ -7,6 +7,8 @@ ctype_types = [c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                  c_long, c_ulong, c_longlong, c_ulonglong, c_double, c_float]
 python_types = [int, int, int, int, int, long,
                 int, long, long, long, float, float]
+LargeNamedType = type('T' * 2 ** 25, (Structure,), {})
+large_string = 'T' * 2 ** 25
 
 class PointersTestCase(unittest.TestCase):
 
@@ -187,6 +189,12 @@ class PointersTestCase(unittest.TestCase):
         if sys.platform == "win32":
             mth = WINFUNCTYPE(None)(42, "name", (), None)
             self.assertEqual(bool(mth), True)
+
+    def test_pointer_type_name(self):
+        self.assertTrue(POINTER(LargeNamedType))
+
+    def test_pointer_type_str_name(self):
+        self.assertTrue(POINTER(large_string))
 
 if __name__ == '__main__':
     unittest.main()
