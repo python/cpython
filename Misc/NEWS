@@ -16,6 +16,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16040: CVE-2013-1752: nntplib: Limit maximum line lengths to 2048 to
+  prevent readline() calls from consuming too much memory.  Patch by Jyrki
+  Pulliainen.
+
 - Issue #16039: CVE-2013-1752: Change use of readline in imaplib module to limit
   line length.  Patch by Emil Lind.
 
