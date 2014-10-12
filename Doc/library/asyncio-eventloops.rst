@@ -76,7 +76,7 @@ Windows
 
 Common limits of Windows event loops:
 
-- :meth:`~BaseEventLoop.create_unix_server` and
+- :meth:`~BaseEventLoop.create_unix_connection` and
   :meth:`~BaseEventLoop.create_unix_server` are not supported: the socket
   family :data:`socket.AF_UNIX` is specific to UNIX
 - :meth:`~BaseEventLoop.add_signal_handler` and
