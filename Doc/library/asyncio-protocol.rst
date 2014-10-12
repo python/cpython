@@ -439,10 +439,13 @@ coroutine can be used to wait until the write buffer is flushed.
 Protocol examples
 =================
 
-TCP echo client
----------------
+.. _asyncio-tcp-echo-client-protocol:
 
-TCP echo client example, send data and wait until the connection is closed::
+TCP echo client protocol
+------------------------
+
+TCP echo client  using the :meth:`BaseEventLoop.create_connection` method, send
+data and wait until the connection is closed::
 
     import asyncio
 
@@ -478,11 +481,19 @@ having to write a short coroutine to handle the exception and stop the
 running loop. At :meth:`~BaseEventLoop.run_until_complete` exit, the loop is
 no longer running, so there is no need to stop the loop in case of an error.
 
+.. seealso::
 
-TCP echo server
----------------
+   The :ref:`TCP echo client using streams <asyncio-tcp-echo-client-streams>`
+   example uses the :func:`asyncio.open_connection` function.
 
-TCP echo server example, send back received data and close the connection::
+
+.. _asyncio-tcp-echo-server-protocol:
+
+TCP echo server protocol
+------------------------
+
+TCP echo server using the :meth:`BaseEventLoop.create_server` method, send back
+received data and close the connection::
 
     import asyncio
 
@@ -507,12 +518,12 @@ TCP echo server example, send back received data and close the connection::
     coro = loop.create_server(EchoServerClientProtocol, '127.0.0.1', 8888)
     server = loop.run_until_complete(coro)
 
-    # Server requests until CTRL+c is pressed
+    # Serve requests until CTRL+c is pressed
     print('Serving on {}'.format(server.sockets[0].getsockname()))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        print("exit")
+        pass
 
     # Close the server
     server.close()
@@ -523,6 +534,11 @@ TCP echo server example, send back received data and close the connection::
 :meth:`WriteTransport.write` even if data are not sent yet on the socket: both
 methods are asynchronous. ``yield from`` is not needed because these transport
 methods are not coroutines.
+
+.. seealso::
+
+   The :ref:`TCP echo server using streams <asyncio-tcp-echo-server-streams>`
+   example uses the :func:`asyncio.start_server` function.
 
 
 .. _asyncio-udp-echo-client-protocol:
