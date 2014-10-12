@@ -258,8 +258,6 @@ Creating connections
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
-   On Windows with :class:`ProactorEventLoop`, SSL/TLS is not supported.
-
    See the :meth:`BaseEventLoop.create_connection` method for parameters.
 
    Availability: UNIX.
@@ -270,35 +268,41 @@ Creating listening connections
 
 .. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
-   Create a TCP server bound to *host* and *port*. Return a :class:`Server` object,
-   its :attr:`~Server.sockets` attribute contains created sockets. Use the
-   :meth:`Server.close` method to stop the server: close listening sockets.
+   Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
+   *host* and *port*.
+
+   Return a :class:`Server` object, its :attr:`~Server.sockets` attribute
+   contains created sockets. Use the :meth:`Server.close` method to stop the
+   server: close listening sockets.
+
+   Parameters:
+
+   * If *host* is an empty string or ``None``, all interfaces are assumed
+     and a list of multiple sockets will be returned (most likely
+     one for IPv4 and another one for IPv6).
+
+   * *family* can be set to either :data:`socket.AF_INET` or
+     :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6. If not set
+     it will be determined from host (defaults to :data:`socket.AF_UNSPEC`).
+
+   * *flags* is a bitmask for :meth:`getaddrinfo`.
+
+   * *sock* can optionally be specified in order to use a preexisting
+     socket object. If specified, *host* and *port* should be omitted (must be
+     :const:`None`).
+
+   * *backlog* is the maximum number of queued connections passed to
+     :meth:`~socket.socket.listen` (defaults to 100).
+
+   * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over the
+     accepted connections.
+
+   * *reuse_address* tells the kernel to reuse a local socket in
+     TIME_WAIT state, without waiting for its natural timeout to
+     expire. If not specified will automatically be set to True on
+     UNIX.
 
    This method is a :ref:`coroutine <coroutine>`.
-
-   If *host* is an empty string or ``None``, all interfaces are assumed
-   and a list of multiple sockets will be returned (most likely
-   one for IPv4 and another one for IPv6).
-
-   *family* can be set to either :data:`socket.AF_INET` or
-   :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6. If not set
-   it will be determined from host (defaults to :data:`socket.AF_UNSPEC`).
-
-   *flags* is a bitmask for :meth:`getaddrinfo`.
-
-   *sock* can optionally be specified in order to use a preexisting
-   socket object.
-
-   *backlog* is the maximum number of queued connections passed to
-   :meth:`~socket.socket.listen` (defaults to 100).
-
-   *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over the
-   accepted connections.
-
-   *reuse_address* tells the kernel to reuse a local socket in
-   TIME_WAIT state, without waiting for its natural timeout to
-   expire. If not specified will automatically be set to True on
-   UNIX.
 
    On Windows with :class:`ProactorEventLoop`, SSL/TLS is not supported.
 
@@ -462,7 +466,7 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
 
    *protocol_factory* should instantiate object with :class:`BaseProtocol`
    interface. *pipe* is file-like object.
-   Return pair (transport, protocol), where transport support
+   Return pair (transport, protocol), where *transport* supports
    :class:`WriteTransport` interface.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
