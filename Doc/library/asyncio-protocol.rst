@@ -518,6 +518,88 @@ TCP echo server example, send back received data and close the connection::
 methods are asynchronous. ``yield from`` is not needed because these transport
 methods are not coroutines.
 
+
+.. _asyncio-udp-echo-client-protocol:
+
+UDP echo client protocol
+------------------------
+
+UDP echo client using the :meth:`BaseEventLoop.create_datagram_endpoint`
+method, send data and close the transport when we received the answer::
+
+    import asyncio
+
+    class EchoClientProtocol:
+        def __init__(self, message, loop):
+            self.message = message
+            self.loop = loop
+            self.transport = None
+
+        def connection_made(self, transport):
+            self.transport = transport
+            print('Send:', self.message)
+            self.transport.sendto(self.message.encode())
+
+        def datagram_received(self, data, addr):
+            print("Received:", data.decode())
+
+            print("Close the socket")
+            self.transport.close()
+
+        def error_received(self, exc):
+            print('Error received:', exc)
+
+        def connection_lost(self, exc):
+            print("Socket closed, stop the event loop")
+            loop = asyncio.get_event_loop()
+            loop.stop()
+
+    loop = asyncio.get_event_loop()
+    message = "Hello World!"
+    connect = loop.create_datagram_endpoint(
+        lambda: EchoClientProtocol(message, loop),
+        remote_addr=('127.0.0.1', 9999))
+    transport, protocol = loop.run_until_complete(connect)
+    loop.run_forever()
+    transport.close()
+    loop.close()
+
+
+.. _asyncio-udp-echo-server-protocol:
+
+UDP echo server protocol
+------------------------
+
+UDP echo server using the :meth:`BaseEventLoop.create_datagram_endpoint`
+method, send back received data::
+
+    import asyncio
+
+    class EchoServerClientProtocol:
+        def connection_made(self, transport):
+            self.transport = transport
+
+        def datagram_received(self, data, addr):
+            message = data.decode()
+            print('Received %r from %s' % (message, addr))
+            print('Send %r to %s' % (message, addr))
+            self.transport.sendto(data, addr)
+
+    loop = asyncio.get_event_loop()
+    print("Starting UDP server")
+    listen = loop.create_datagram_endpoint(
+        EchoServerClientProtocol, local_addr=('127.0.0.1', 9999))
+    transport, protocol = loop.run_until_complete(listen)
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+
+    transport.close()
+    loop.close()
+
+
 .. _asyncio-register-socket:
 
 Register an open socket to wait for data using a protocol
