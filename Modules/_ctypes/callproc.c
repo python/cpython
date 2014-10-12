@@ -1672,24 +1672,30 @@ POINTER(PyObject *self, PyObject *cls)
     }
     if (PyUnicode_CheckExact(cls)) {
         char *name = _PyUnicode_AsString(cls);
-        buf = alloca(strlen(name) + 3 + 1);
+        buf = PyMem_Malloc(strlen(name) + 3 + 1);
+        if (buf == NULL)
+            return PyErr_NoMemory();
         sprintf(buf, "LP_%s", name);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
                                        "s(O){}",
                                        buf,
                                        &PyCPointer_Type);
+        PyMem_Free(buf);
         if (result == NULL)
             return result;
         key = PyLong_FromVoidPtr(result);
     } else if (PyType_Check(cls)) {
         typ = (PyTypeObject *)cls;
-        buf = alloca(strlen(typ->tp_name) + 3 + 1);
+        buf = PyMem_Malloc(strlen(typ->tp_name) + 3 + 1);
+        if (buf == NULL)
+            return PyErr_NoMemory();
         sprintf(buf, "LP_%s", typ->tp_name);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
                                        "s(O){sO}",
                                        buf,
                                        &PyCPointer_Type,
                                        "_type_", cls);
+        PyMem_Free(buf);
         if (result == NULL)
             return result;
         Py_INCREF(cls);
