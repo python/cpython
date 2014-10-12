@@ -166,25 +166,34 @@ Example of unhandled exception::
 Output::
 
     Task exception was never retrieved
-    future: <Task finished bug() done at asyncio/coroutines.py:139 exception=Exception('not consumed',)>
-    source_traceback: Object created at (most recent call last):
-      File "test.py", line 10, in <module>
-        asyncio.async(bug())
-      File "asyncio/tasks.py", line 510, in async
-        task = loop.create_task(coro_or_future)
+    future: <Task finished coro=<coro() done, defined at asyncio/coroutines.py:139> exception=Exception('not consumed',)>
     Traceback (most recent call last):
-      File "asyncio/tasks.py", line 244, in _step
+      File "asyncio/tasks.py", line 237, in _step
         result = next(coro)
-      File "coroutines.py", line 78, in __next__
-        return next(self.gen)
       File "asyncio/coroutines.py", line 141, in coro
         res = func(*args, **kw)
-      File "test.py", line 7, in bug
+      File "test.py", line 5, in bug
         raise Exception("not consumed")
     Exception: not consumed
 
 :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to get the
-traceback where the task was created.
+traceback where the task was created. Output in debug mode::
+
+    Task exception was never retrieved
+    future: <Task finished coro=<bug() done, defined at test.py:3> exception=Exception('not consumed',) created at test.py:8>
+    source_traceback: Object created at (most recent call last):
+      File "test.py", line 8, in <module>
+        asyncio.async(bug())
+    Traceback (most recent call last):
+      File "asyncio/tasks.py", line 237, in _step
+        result = next(coro)
+      File "asyncio/coroutines.py", line 79, in __next__
+        return next(self.gen)
+      File "asyncio/coroutines.py", line 141, in coro
+        res = func(*args, **kw)
+      File "test.py", line 5, in bug
+        raise Exception("not consumed")
+    Exception: not consumed
 
 There are different options to fix this issue. The first option is to chain to
 coroutine in another coroutine and use classic try/except::
@@ -303,15 +312,17 @@ If a pending task is destroyed, the execution of its wrapped :ref:`coroutine
 Example of log::
 
     Task was destroyed but it is pending!
-    source_traceback: Object created at (most recent call last):
-      File "test.py", line 17, in <module>
-        task = asyncio.async(coro, loop=loop)
-      File "asyncio/tasks.py", line 510, in async
-        task = loop.create_task(coro_or_future)
-    task: <Task pending kill_me() done at test.py:5 wait_for=<Future pending cb=[Task._wakeup()]>>
+    task: <Task pending coro=<kill_me() done, defined at test.py:5> wait_for=<Future pending cb=[Task._wakeup()]>>
 
 :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to get the
-traceback where the task was created.
+traceback where the task was created. Example of log in debug mode::
+
+    Task was destroyed but it is pending!
+    source_traceback: Object created at (most recent call last):
+      File "test.py", line 15, in <module>
+        task = asyncio.async(coro, loop=loop)
+    task: <Task pending coro=<kill_me() done, defined at test.py:5> wait_for=<Future pending cb=[Task._wakeup()] created at test.py:7> created at test.py:15>
+
 
 .. seealso::
 
