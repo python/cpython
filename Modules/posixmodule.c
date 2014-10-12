@@ -4714,25 +4714,25 @@ typedef struct {
     } \
 
 #define UTIME_TO_UTIMBUF \
-    struct utimbuf u[2]; \
+    struct utimbuf u; \
     struct utimbuf *time; \
     if (ut->now) \
         time = NULL; \
     else { \
-        u[0].actime = ut->atime_s; \
-        u[0].modtime = ut->mtime_s; \
-        time = u; \
+        u.actime = ut->atime_s; \
+        u.modtime = ut->mtime_s; \
+        time = &u; \
     }
 
 #define UTIME_TO_TIME_T \
     time_t timet[2]; \
-    struct timet time; \
+    time_t *time; \
     if (ut->now) \
         time = NULL; \
     else { \
         timet[0] = ut->atime_s; \
         timet[1] = ut->mtime_s; \
-        time = &timet; \
+        time = timet; \
     } \
 
 
