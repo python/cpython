@@ -250,6 +250,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
     import asyncio
 
+    @asyncio.coroutine
     def tcp_echo_client(message, loop):
         reader, writer = yield from asyncio.open_connection('127.0.0.1', 8888,
                                                             loop=loop)
@@ -379,6 +380,7 @@ Coroutine waiting until a socket receives data using the
     except ImportError:
         from asyncio.windows_utils import socketpair
 
+    @asyncio.coroutine
     def wait_for_data(loop):
         # Create a pair of connected sockets
         rsock, wsock = socketpair()
