@@ -16,10 +16,18 @@ for %%k in (kill_python.exe
         "%pcbuild%\%%k"
     )
 )
+if "%1" == "x64" (
+    set vcvars_target=x86_amd64
+    set platform_target=x64
+) else (
+    set vcvars_target=x86
+    set platform_target=x86
+)
+call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %vcvars_target%
+echo Deleting .pyc/.pyo files ...
+del /s "%root%\Lib\*.pyc" "%root%\Lib\*.pyo"
+echo Deleting test leftovers ...
+rmdir /s /q "%root%\build"
 
-echo Purging all non-tracked files with `hg purge`
-echo on
-hg -R "%root%" --config extensions.purge= purge --all -X "%root%\Lib\test\data"
-
-@rem Clean is best effort, so we "always succeed"
-@exit /b 0
+msbuild /target:clean "%pcbuild%\pcbuild.sln" /p:Configuration=Release /p:PlatformTarget=%platform_target%
+msbuild /target:clean "%pcbuild%\pcbuild.sln" /p:Configuration=Debug /p:PlatformTarget=%platform_target%
