@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #17636: Circular imports involving relative imports are now
+  supported.
+
 - Issue #22604: Fix assertion error in debug mode when dividing a complex
   number by (nan+0j).
 

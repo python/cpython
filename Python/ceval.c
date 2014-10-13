@@ -4693,11 +4693,29 @@ static PyObject *
 import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
+    _Py_IDENTIFIER(__name__);
+    PyObject *fullmodname, *pkgname;
 
     x = PyObject_GetAttr(v, name);
-    if (x == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+    if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
+        return x;
+    /* Issue #17636: in case this failed because of a circular relative
+       import, try to fallback on reading the module directly from
+       sys.modules. */
+    PyErr_Clear();
+    pkgname = _PyObject_GetAttrId(v, &PyId___name__);
+    if (pkgname == NULL)
+        return NULL;
+    fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
+    Py_DECREF(pkgname);
+    if (fullmodname == NULL)
+        return NULL;
+    x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
+    if (x == NULL)
         PyErr_Format(PyExc_ImportError, "cannot import name %R", name);
-    }
+    else
+        Py_INCREF(x);
+    Py_DECREF(fullmodname);
     return x;
 }
 
