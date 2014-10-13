@@ -27,23 +27,34 @@ Example to use it on Windows::
 Create a subprocess: high-level API using Process
 -------------------------------------------------
 
-.. function:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
+.. function:: create_subprocess_exec(\*args, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
-   Run the shell command *cmd*. See :meth:`BaseEventLoop.subprocess_shell` for
-   parameters. Return a :class:`~asyncio.subprocess.Process` instance.
+   Create a subprocess.
 
-   The optional *limit* parameter sets the buffer limit passed to the
-   :class:`StreamReader`.
+   The *limit* parameter sets the buffer limit passed to the
+   :class:`StreamReader`. See :meth:`BaseEventLoop.subprocess_exec` for other
+   parameters.
+
+   Return a :class:`~asyncio.subprocess.Process` instance.
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. function:: create_subprocess_exec(\*args, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
+.. function:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
-   Create a subprocess. See :meth:`BaseEventLoop.subprocess_exec` for
-   parameters. Return a :class:`~asyncio.subprocess.Process` instance.
+   Run the shell command *cmd*.
 
-   The optional *limit* parameter sets the buffer limit passed to the
-   :class:`StreamReader`.
+   The *limit* parameter sets the buffer limit passed to the
+   :class:`StreamReader`. See :meth:`BaseEventLoop.subprocess_shell` for other
+   parameters.
+
+   Return a :class:`~asyncio.subprocess.Process` instance.
+
+   It is the application's responsibility to ensure that all whitespace and
+   metacharacters are quoted appropriately to avoid `shell injection
+   <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+   vulnerabilities. The :func:`shlex.quote` function can be used to properly
+   escape whitespace and shell metacharacters in strings that are going to be
+   used to construct shell commands.
 
    This function is a :ref:`coroutine <coroutine>`.
 
@@ -68,6 +79,9 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    shell=False and the list of strings passed as the first argument;
    however, where :class:`~subprocess.Popen` takes a single argument which is
    list of strings, :func:`subprocess_exec` takes multiple string arguments.
+
+   The *protocol_factory* must instanciate a subclass of the
+   :class:`asyncio.SubprocessProtocol` class.
 
    Other parameters:
 
@@ -109,15 +123,23 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    using the platform's "shell" syntax. This is similar to the standard library
    :class:`subprocess.Popen` class called with ``shell=True``.
 
+   The *protocol_factory* must instanciate a subclass of the
+   :class:`asyncio.SubprocessProtocol` class.
+
    See :meth:`~BaseEventLoop.subprocess_exec` for more details about
    the remaining arguments.
 
    Returns a pair of ``(transport, protocol)``, where *transport* is an
    instance of :class:`BaseSubprocessTransport`.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   It is the application's responsibility to ensure that all whitespace and
+   metacharacters are quoted appropriately to avoid `shell injection
+   <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+   vulnerabilities. The :func:`shlex.quote` function can be used to properly
+   escape whitespace and shell metacharacters in strings that are going to be
+   used to construct shell commands.
 
-   See the constructor of the :class:`subprocess.Popen` class for parameters.
+   This method is a :ref:`coroutine <coroutine>`.
 
 .. seealso::
 
@@ -153,35 +175,37 @@ Process
 
 .. class:: asyncio.subprocess.Process
 
-   .. attribute:: pid
+   A subprocess created by the :func:`create_subprocess_exec` or the
+   :func:`create_subprocess_shell` function.
 
-      The identifier of the process.
+   The API of the :class:`~asyncio.subprocess.Process` class was designed to be
+   closed the API of the :class:`subprocess.Popen` class, but they are some
+   differences:
 
-      Note that if you set the *shell* argument to ``True``, this is the
-      process identifier of the spawned shell.
+   * There is no explicit :meth:`~subprocess.Popen.poll` method
+   * The :meth:`~subprocess.Popen.communicate` and
+     :meth:`~subprocess.Popen.wait` methods don't take a *timeout* parameter:
+     use the :func:`wait_for` function
+   * The *universal_newlines* parameter is not supported (only bytes strings
+     are supported)
+   * The :meth:`~asyncio.subprocess.Process.wait` method of
+     the :class:`~asyncio.subprocess.Process` class is asynchronous whereas the
+     :meth:`~subprocess.Popen.wait` method of the :class:`~subprocess.Popen`
+     class is implemented as a busy loop.
 
-   .. attribute:: returncode
+   .. method:: wait()
 
-      Return code of the process when it exited.  A ``None`` value indicates
-      that the process has not terminated yet.
+      Wait for child process to terminate.  Set and return :attr:`returncode`
+      attribute.
 
-      A negative value ``-N`` indicates that the child was terminated by signal
-      ``N`` (Unix only).
+      This method is a :ref:`coroutine <coroutine>`.
 
-   .. attribute:: stdin
+      .. note::
 
-      Standard input stream (write), ``None`` if the process was created with
-      ``stdin=None``.
-
-   .. attribute:: stdout
-
-      Standard output stream (read), ``None`` if the process was created with
-      ``stdout=None``.
-
-   .. attribute:: stderr
-
-      Standard error stream (read), ``None`` if the process was created with
-      ``stderr=None``.
+         This will deadlock when using ``stdout=PIPE`` or ``stderr=PIPE`` and
+         the child process generates enough output to a pipe such that it
+         blocks waiting for the OS pipe buffer to accept more data. Use the
+         :meth:`communicate` method when using pipes to avoid that.
 
    .. method:: communicate(input=None)
 
@@ -191,32 +215,27 @@ Process
       process, or ``None``, if no data should be sent to the child.  The type
       of *input* must be bytes.
 
+      :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
+
       If a :exc:`BrokenPipeError` or :exc:`ConnectionResetError` exception is
       raised when writing *input* into stdin, the exception is ignored. It
       occurs when the process exits before all data are written into stdin.
-
-      :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
 
       Note that if you want to send data to the process's stdin, you need to
       create the Process object with ``stdin=PIPE``.  Similarly, to get anything
       other than ``None`` in the result tuple, you need to give ``stdout=PIPE``
       and/or ``stderr=PIPE`` too.
 
+      This method is a :ref:`coroutine <coroutine>`.
+
       .. note::
 
          The data read is buffered in memory, so do not use this method if the
          data size is large or unlimited.
 
-      This method is a :ref:`coroutine <coroutine>`.
-
       .. versionchanged:: 3.4.2
          The method now ignores :exc:`BrokenPipeError` and
          :exc:`ConnectionResetError`.
-
-   .. method:: kill()
-
-      Kills the child. On Posix OSs the function sends :py:data:`SIGKILL` to
-      the child.  On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
    .. method:: send_signal(signal)
 
@@ -235,53 +254,142 @@ Process
       to the child. On Windows the Win32 API function
       :c:func:`TerminateProcess` is called to stop the child.
 
-   .. method:: wait():
+   .. method:: kill()
 
-      Wait for child process to terminate.  Set and return :attr:`returncode`
-      attribute.
+      Kills the child. On Posix OSs the function sends :py:data:`SIGKILL` to
+      the child.  On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
-      This method is a :ref:`coroutine <coroutine>`.
+   .. attribute:: stdin
+
+      Standard input stream (:class:`StreamWriter`), ``None`` if the process
+      was created with ``stdin=None``.
+
+   .. attribute:: stdout
+
+      Standard output stream (:class:`StreamReader`), ``None`` if the process
+      was created with ``stdout=None``.
+
+   .. attribute:: stderr
+
+      Standard error stream (:class:`StreamReader`), ``None`` if the process
+      was created with ``stderr=None``.
+
+   .. warning::
+
+      Use the :meth:`communicate` method rather than :attr:`.stdin.write
+      <stdin>`, :attr:`.stdout.read <stdout>` or :attr:`.stderr.read <stderr>`
+      to avoid deadlocks due to streams pausing reading or writing and blocking
+      the child process.
+
+   .. attribute:: pid
+
+      The identifier of the process.
+
+      Note that for processes created by the :func:`create_subprocess_shell`
+      function, this attribute is the process identifier of the spawned shell.
+
+   .. attribute:: returncode
+
+      Return code of the process when it exited.  A ``None`` value indicates
+      that the process has not terminated yet.
+
+      A negative value ``-N`` indicates that the child was terminated by signal
+      ``N`` (Unix only).
 
 
-Example
--------
+Subprocess examples
+===================
 
-Implement a function similar to :func:`subprocess.getstatusoutput`, except that
-it does not use a shell. Get the output of the "python -m platform" command and
-display the output::
+Subprocess using transport and protocol
+---------------------------------------
+
+Example of a subprocess protocol using to get the output of a subprocess and to
+wait for the subprocess exit. The subprocess is created by the
+:meth:`BaseEventLoop.subprocess_exec` method::
 
     import asyncio
-    import os
     import sys
-    from asyncio import subprocess
+
+    class DateProtocol(asyncio.SubprocessProtocol):
+        def __init__(self, exit_future):
+            self.exit_future = exit_future
+            self.output = bytearray()
+
+        def pipe_data_received(self, fd, data):
+            self.output.extend(data)
+
+        def process_exited(self):
+            self.exit_future.set_result(True)
 
     @asyncio.coroutine
-    def getstatusoutput(*args):
-        proc = yield from asyncio.create_subprocess_exec(
-                                      *args,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.STDOUT)
-        try:
-            stdout, _ = yield from proc.communicate()
-        except:
-            proc.kill()
-            yield from proc.wait()
-            raise
-        exitcode = yield from proc.wait()
-        return (exitcode, stdout)
+    def get_date(loop):
+        code = 'import datetime; print(datetime.datetime.now())'
+        exit_future = asyncio.Future(loop=loop)
 
-    if os.name == 'nt':
+        # Create the subprocess controlled by the protocol DateProtocol,
+        # redirect the standard output into a pipe
+        create = loop.subprocess_exec(lambda: DateProtocol(exit_future),
+                                      sys.executable, '-c', code,
+                                      stdin=None, stderr=None)
+        transport, protocol = yield from create
+
+        # Wait for the subprocess exit using the process_exited() method
+        # of the protocol
+        yield from exit_future
+
+        # Close the stdout pipe
+        transport.close()
+
+        # Read the output which was collected by the pipe_data_received()
+        # method of the protocol
+        data = bytes(protocol.output)
+        return data.decode('ascii').rstrip()
+
+    if sys.platform == "win32":
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
     else:
         loop = asyncio.get_event_loop()
-    coro = getstatusoutput(sys.executable, '-m', 'platform')
-    exitcode, stdout = loop.run_until_complete(coro)
-    if not exitcode:
-        stdout = stdout.decode('ascii').rstrip()
-        print("Platform: %s" % stdout)
+
+    date = loop.run_until_complete(get_date(loop))
+    print("Current date: %s" % date)
+    loop.close()
+
+
+Subprocess using streams
+------------------------
+
+Example using the :class:`~asyncio.subprocess.Process` class to control the
+subprocess and the :class:`StreamReader` class to read from the standard
+output.  The subprocess is created by the :func:`create_subprocess_exec`
+function::
+
+    import asyncio.subprocess
+    import sys
+
+    @asyncio.coroutine
+    def get_date():
+        code = 'import datetime; print(datetime.datetime.now())'
+
+        # Create the subprocess, redirect the standard output into a pipe
+        create = asyncio.create_subprocess_exec(sys.executable, '-c', code,
+                                                stdout=asyncio.subprocess.PIPE)
+        proc = yield from create
+
+        # Read one line of output
+        data = yield from proc.stdout.readline()
+        line = data.decode('ascii').rstrip()
+
+        # Wait for the subprocess exit
+        yield from proc.wait()
+        return line
+
+    if sys.platform == "win32":
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
     else:
-        print("Python failed with exit code %s:" % exitcode, flush=True)
-        sys.stdout.buffer.write(stdout)
-        sys.stdout.buffer.flush()
+        loop = asyncio.get_event_loop()
+
+    date = loop.run_until_complete(get_date())
+    print("Current date: %s" % date)
     loop.close()
