@@ -34,6 +34,11 @@ between conformable Python objects and XML on the wire.
    constructed data.  If you need to parse untrusted or unauthenticated data see
    :ref:`xml-vulnerabilities`.
 
+.. warning::
+
+   In the case of https URIS, :mod:`xmlrpclib` does not do any verification of
+   the server's certificate.
+
 
 .. class:: ServerProxy(uri[, transport[, encoding[, verbose[,  allow_none[, use_datetime]]]]])
 
