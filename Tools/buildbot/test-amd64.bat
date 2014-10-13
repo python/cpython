@@ -1,6 +1,7 @@
 @rem Used by the buildbot "test" step.
 
+setlocal
 rem The following line should be removed before #20035 is closed
 set TCL_LIBRARY=%~dp0..\..\..\tcltk64\lib\tcl8.6
 
-"%~dp0..\..\PCbuild\amd64\python_d.exe" "%~dp0..\scripts\run_tests.py" -j 1 -u all -W --timeout=3600 %*
+call "%~dp0..\..\PCbuild\rt.bat" -d -q -x64 -uall -rwW -n --timeout=3600 %*
