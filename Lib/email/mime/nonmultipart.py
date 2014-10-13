@@ -12,7 +12,7 @@ from email.mime.base import MIMEBase
 
 
 class MIMENonMultipart(MIMEBase):
-    """Base class for MIME multipart/* type messages."""
+    """Base class for MIME non-multipart type messages."""
 
     def attach(self, payload):
         # The public API prohibits attaching multiple subparts to MIMEBase

@@ -66,9 +66,10 @@ class Font:
     def __init__(self, root=None, font=None, name=None, exists=False, **options):
         if not root:
             root = Tkinter._default_root
+        tk = getattr(root, 'tk', root)
         if font:
             # get actual settings corresponding to the given font
-            font = root.tk.splitlist(root.tk.call("font", "actual", font))
+            font = tk.splitlist(tk.call("font", "actual", font))
         else:
             font = self._set(options)
         if not name:
@@ -78,20 +79,18 @@ class Font:
         if exists:
             self.delete_font = False
             # confirm font exists
-            if self.name not in root.tk.splitlist(
-                    root.tk.call("font", "names")):
+            if self.name not in tk.splitlist(tk.call("font", "names")):
                 raise Tkinter._tkinter.TclError, "named font %s does not already exist" % (self.name,)
             # if font config info supplied, apply it
             if font:
-                root.tk.call("font", "configure", self.name, *font)
+                tk.call("font", "configure", self.name, *font)
         else:
             # create new font (raises TclError if the font exists)
-            root.tk.call("font", "create", self.name, *font)
+            tk.call("font", "create", self.name, *font)
             self.delete_font = True
-        # backlinks!
-        self._root  = root
-        self._split = root.tk.splitlist
-        self._call  = root.tk.call
+        self._tk = tk
+        self._split = tk.splitlist
+        self._call  = tk.call
 
     def __str__(self):
         return self.name
@@ -116,7 +115,7 @@ class Font:
 
     def copy(self):
         "Return a distinct copy of the current font"
-        return Font(self._root, **self.actual())
+        return Font(self._tk, **self.actual())
 
     def actual(self, option=None):
         "Return actual font attributes"

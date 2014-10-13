@@ -694,7 +694,7 @@ Miscellaneous
 
    Return list of all live children of the current process.
 
-   Calling this has the side affect of "joining" any processes which have
+   Calling this has the side effect of "joining" any processes which have
    already finished.
 
 .. function:: cpu_count()
@@ -2142,7 +2142,7 @@ Joining processes that use queues
     items which have been put on the queue will eventually be removed before the
     process is joined.  Otherwise you cannot be sure that processes which have
     put items on the queue will terminate.  Remember also that non-daemonic
-    processes will be automatically be joined.
+    processes will be joined automatically.
 
     An example which will deadlock is the following::
 
@@ -2158,7 +2158,7 @@ Joining processes that use queues
             p.join()                    # this deadlocks
             obj = queue.get()
 
-    A fix here would be to swap the last two lines round (or simply remove the
+    A fix here would be to swap the last two lines (or simply remove the
     ``p.join()`` line).
 
 Explicitly pass resources to child processes

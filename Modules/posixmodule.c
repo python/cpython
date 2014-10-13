@@ -6861,7 +6861,7 @@ posix_fdopen(PyObject *self, PyObject *args)
         if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
             PyMem_FREE(mode);
             msg = strerror(EISDIR);
-            exc = PyObject_CallFunction(PyExc_IOError, "(isO)",
+            exc = PyObject_CallFunction(PyExc_IOError, "(iss)",
                                         EISDIR, msg, "<fdopen>");
             if (exc) {
                 PyErr_SetObject(PyExc_IOError, exc);

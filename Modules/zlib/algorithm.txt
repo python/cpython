@@ -121,7 +121,7 @@ At least for deflate's output that generates new trees every several 10's of
 kbytes.  You can imagine that filling in a 2^15 entry table for a 15-bit code
 would take too long if you're only decoding several thousand symbols.  At the
 other extreme, you could make a new table for every bit in the code.  In fact,
-that's essentially a Huffman tree.  But then you spend two much time
+that's essentially a Huffman tree.  But then you spend too much time
 traversing the tree while decoding, even for short symbols.
 
 So the number of bits for the first lookup table is a trade of the time to
@@ -206,4 +206,4 @@ Compression,'' IEEE Transactions on Information Theory, Vol. 23, No. 3,
 pp. 337-343.
 
 ``DEFLATE Compressed Data Format Specification'' available in
-http://www.ietf.org/rfc/rfc1951.txt
+http://tools.ietf.org/html/rfc1951

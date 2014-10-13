@@ -14,7 +14,7 @@ except ImportError:
     threading = None
 
 from test import test_support
-from test.test_support import TESTFN, run_unittest
+from test.test_support import TESTFN, run_unittest, requires
 from UserList import UserList
 
 class AutoFileTests(unittest.TestCase):
@@ -435,6 +435,21 @@ class OtherFileTests(unittest.TestCase):
                 f.write('\n')
         finally:
             f.close()
+
+    @unittest.skipUnless(sys.maxsize > 2**31, "requires 64-bit system")
+    @test_support.precisionbigmemtest(2**31, 2.5, dry_run=False)
+    def test_very_long_line(self, size):
+        # Issue #22526
+        requires('largefile')
+        with open(TESTFN, "wb") as fp:
+            fp.seek(size - 1)
+            fp.write("\0")
+        with open(TESTFN, "rb") as fp:
+            for l in fp:
+                pass
+        self.assertEqual(len(l), size)
+        self.assertEqual(l.count("\0"), size)
+        l = None
 
 class FileSubclassTests(unittest.TestCase):
 

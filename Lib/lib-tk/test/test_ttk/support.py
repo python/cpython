@@ -1,29 +1,44 @@
 import unittest
-import Tkinter
+import Tkinter as tkinter
 
-def get_tk_root():
-    try:
-        root = Tkinter._default_root
-    except AttributeError:
-        # it is possible to disable default root in Tkinter, although
-        # I haven't seen people doing it (but apparently someone did it
-        # here).
-        root = None
+class AbstractTkTest:
 
-    if root is None:
-        # create a new master only if there isn't one already
-        root = Tkinter.Tk()
+    @classmethod
+    def setUpClass(cls):
+        cls._old_support_default_root = tkinter._support_default_root
+        destroy_default_root()
+        tkinter.NoDefaultRoot()
+        cls.root = tkinter.Tk()
+        cls.wantobjects = cls.root.wantobjects()
+        # De-maximize main window.
+        # Some window managers can maximize new windows.
+        cls.root.wm_state('normal')
+        try:
+            cls.root.wm_attributes('-zoomed', False)
+        except tkinter.TclError:
+            pass
 
-    return root
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        cls.root = None
+        tkinter._default_root = None
+        tkinter._support_default_root = cls._old_support_default_root
 
-def root_deiconify():
-    root = get_tk_root()
-    root.deiconify()
+    def setUp(self):
+        self.root.deiconify()
 
-def root_withdraw():
-    root = get_tk_root()
-    root.withdraw()
+    def tearDown(self):
+        for w in self.root.winfo_children():
+            w.destroy()
+        self.root.withdraw()
 
+def destroy_default_root():
+    if getattr(tkinter, '_default_root', None):
+        tkinter._default_root.update_idletasks()
+        tkinter._default_root.destroy()
+        tkinter._default_root = None
 
 def simulate_mouse_click(widget, x, y):
     """Generate proper events to click at the x, y position (tries to act
@@ -45,7 +60,7 @@ _tk_patchlevel = None
 def get_tk_patchlevel():
     global _tk_patchlevel
     if _tk_patchlevel is None:
-        tcl = Tkinter.Tcl()
+        tcl = tkinter.Tcl()
         patchlevel = []
         for x in tcl.call('info', 'patchlevel').split('.'):
             try:
@@ -82,7 +97,7 @@ def tcl_obj_eq(actual, expected):
 def widget_eq(actual, expected):
     if actual == expected:
         return True
-    if isinstance(actual, (str, Tkinter.Widget)):
-        if isinstance(expected, (str, Tkinter.Widget)):
+    if isinstance(actual, (str, tkinter.Widget)):
+        if isinstance(expected, (str, tkinter.Widget)):
             return str(actual) == str(expected)
     return False

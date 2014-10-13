@@ -458,7 +458,19 @@ SOURCE=..\..\Parser\grammar1.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\zlib\gzio.c
+SOURCE=..\..\Modules\zlib\gzclose.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\gzlib.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\gzread.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\zlib\gzwrite.c
 # End Source File
 # Begin Source File
 

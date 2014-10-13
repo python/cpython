@@ -273,17 +273,21 @@ def _parse_makefile(filename, vars=None):
     return vars
 
 
-def _get_makefile_filename():
+def get_makefile_filename():
+    """Return the path of the Makefile."""
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
     return os.path.join(get_path('platstdlib'), "config", "Makefile")
+
+# Issue #22199: retain undocumented private name for compatibility
+_get_makefile_filename = get_makefile_filename
 
 def _generate_posix_vars():
     """Generate the Python module containing build-time variables."""
     import pprint
     vars = {}
     # load the installed Makefile:
-    makefile = _get_makefile_filename()
+    makefile = get_makefile_filename()
     try:
         _parse_makefile(makefile, vars)
     except IOError, e:

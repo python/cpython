@@ -84,7 +84,7 @@ EOF
 }
 
 
-# WARNING - Don't modify the trampoline code size without also updating the relevent libffi code
+# WARNING - Don't modify the trampoline code size without also updating the relevant libffi code
 trampoline () {
     cat << END
 

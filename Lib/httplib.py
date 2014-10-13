@@ -215,6 +215,10 @@ MAXAMOUNT = 1048576
 # maximal line length when calling readline().
 _MAXLINE = 65536
 
+# maximum amount of headers accepted
+_MAXHEADERS = 100
+
+
 class HTTPMessage(mimetools.Message):
 
     def addheader(self, key, value):
@@ -271,6 +275,8 @@ class HTTPMessage(mimetools.Message):
         elif self.seekable:
             tell = self.fp.tell
         while True:
+            if len(hlist) > _MAXHEADERS:
+                raise HTTPException("got more than %d headers" % _MAXHEADERS)
             if tell:
                 try:
                     startofline = tell()

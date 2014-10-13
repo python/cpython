@@ -11,7 +11,7 @@ import textwrap
 from distutils.dist import Distribution, fix_help_options
 from distutils.cmd import Command
 import distutils.dist
-from test.test_support import TESTFN, captured_stdout, run_unittest
+from test.test_support import TESTFN, captured_stdout, run_unittest, unlink
 from distutils.tests import support
 
 
@@ -64,6 +64,7 @@ class DistributionTestCase(support.TempdirManager,
         with open(TESTFN, "w") as f:
             f.write("[global]\n")
             f.write("command_packages = foo.bar, splat")
+        self.addCleanup(unlink, TESTFN)
 
         files = [TESTFN]
         sys.argv.append("build")

@@ -119,7 +119,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         # what did we send ?
         self.assertIn('dédé', self.last_open.req.data)
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2085')
+        self.assertEqual(headers['Content-length'], '2159')
         self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
         self.assertEqual(self.last_open.req.get_method(), 'POST')
         self.assertEqual(self.last_open.req.get_full_url(),

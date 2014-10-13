@@ -4673,9 +4673,18 @@ static int
 exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
                PyObject *locals)
 {
+    int n;
     PyObject *v;
     int plain = 0;
 
+    if (PyTuple_Check(prog) && globals == Py_None && locals == Py_None &&
+        ((n = PyTuple_Size(prog)) == 2 || n == 3)) {
+        /* Backward compatibility hack */
+        globals = PyTuple_GetItem(prog, 1);
+        if (n == 3)
+            locals = PyTuple_GetItem(prog, 2);
+        prog = PyTuple_GetItem(prog, 0);
+    }
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {

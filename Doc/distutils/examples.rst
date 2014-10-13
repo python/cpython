@@ -22,7 +22,7 @@ Pure Python distribution (by module)
 
 If you're just distributing a couple of modules, especially if they don't live
 in a particular package, you can specify them individually using the
-:option:`py_modules` option in the setup script.
+``py_modules`` option in the setup script.
 
 In the simplest case, you'll have two files to worry about: a setup script and
 the single module you're distributing, :file:`foo.py` in this example::
@@ -41,12 +41,12 @@ directory.)  A minimal setup script to describe this situation would be::
          )
 
 Note that the name of the distribution is specified independently with the
-:option:`name` option, and there's no rule that says it has to be the same as
+``name`` option, and there's no rule that says it has to be the same as
 the name of the sole module in the distribution (although that's probably a good
 convention to follow).  However, the distribution name is used to generate
 filenames, so you should stick to letters, digits, underscores, and hyphens.
 
-Since :option:`py_modules` is a list, you can of course specify multiple
+Since ``py_modules`` is a list, you can of course specify multiple
 modules, eg. if you're distributing modules :mod:`foo` and :mod:`bar`, your
 setup might look like this::
 
@@ -130,7 +130,7 @@ requires the least work to describe in your setup script::
          )
 
 If you want to put modules in directories not named for their package, then you
-need to use the :option:`package_dir` option again.  For example, if the
+need to use the ``package_dir`` option again.  For example, if the
 :file:`src` directory holds modules in the :mod:`foobar` package::
 
    <root>/
@@ -169,8 +169,8 @@ in which case your setup script would be  ::
 
 (The empty string also stands for the current directory.)
 
-If you have sub-packages, they must be explicitly listed in :option:`packages`,
-but any entries in :option:`package_dir` automatically extend to sub-packages.
+If you have sub-packages, they must be explicitly listed in ``packages``,
+but any entries in ``package_dir`` automatically extend to sub-packages.
 (In other words, the Distutils does *not* scan your source tree, trying to
 figure out which directories correspond to Python packages by looking for
 :file:`__init__.py` files.)  Thus, if the default layout grows a sub-package::
@@ -199,8 +199,8 @@ then the corresponding setup script would be  ::
 Single extension module
 =======================
 
-Extension modules are specified using the :option:`ext_modules` option.
-:option:`package_dir` has no effect on where extension source files are found;
+Extension modules are specified using the ``ext_modules`` option.
+``package_dir`` has no effect on where extension source files are found;
 it only affects the source for pure Python modules.  The simplest  case, a
 single extension module in a single C source file, is::
 

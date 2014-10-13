@@ -113,6 +113,11 @@ class IntegrationTests(TestCase):
         out, err = run_amock()
         self.check_hello(out)
 
+    def test_request_length(self):
+        out, err = run_amock(data="GET " + ("x" * 65537) + " HTTP/1.0\n\n")
+        self.assertEqual(out.splitlines()[0],
+                         "HTTP/1.0 414 Request-URI Too Long")
+
     def test_validated_hello(self):
         out, err = run_amock(validator(hello_app))
         # the middleware doesn't support len(), so content-length isn't there

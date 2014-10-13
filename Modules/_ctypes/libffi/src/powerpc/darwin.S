@@ -318,11 +318,6 @@ _ffi_call_AIX:
 
 #define EH_DATA_ALIGN_FACT MODE_CHOICE(0x7c,0x78)
 
-	.static_data
-	.align LOG2_GPR_BYTES
-LLFB0$non_lazy_ptr:
-	.g_long Lstartcode
-
 	.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms+live_support
 EH_frame1:
 	.set	L$set$0,LECIE1-LSCIE1
@@ -335,7 +330,7 @@ LSCIE1:
 	.byte	EH_DATA_ALIGN_FACT ; sleb128 -4; CIE Data Alignment Factor
 	.byte	0x41	; CIE RA Column
 	.byte	0x1	; uleb128 0x1; Augmentation size
-	.byte	0x10	; FDE Encoding (indirect pcrel)
+	.byte	0x10	; FDE Encoding (pcrel)
 	.byte	0xc	; DW_CFA_def_cfa
 	.byte	0x1	; uleb128 0x1
 	.byte	0x0	; uleb128 0x0
@@ -349,7 +344,7 @@ LSFDE1:
 	.long	L$set$1	; FDE Length
 LASFDE1:
 	.long	LASFDE1-EH_frame1 ; FDE CIE offset
-	.g_long	LLFB0$non_lazy_ptr-.	; FDE initial location
+	.g_long	Lstartcode-.	; FDE initial location
 	.set	L$set$3,LFE1-Lstartcode
 	.g_long	L$set$3	; FDE address range
 	.byte   0x0     ; uleb128 0x0; Augmentation size

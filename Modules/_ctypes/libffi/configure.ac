@@ -5,13 +5,17 @@ dnl Process this with autoconf to create configure
 
 AC_PREREQ(2.68)
 
-AC_INIT([libffi], [3.0.13], [http://github.com/atgreen/libffi/issues])
+AC_INIT([libffi], [3.1], [http://github.com/atgreen/libffi/issues])
 AC_CONFIG_HEADERS([fficonfig.h])
 
 AC_CANONICAL_SYSTEM
 target_alias=${target_alias-$host_alias}
 
-. ${srcdir}/configure.host
+case "${host}" in
+  frv*-elf)
+    LDFLAGS=`echo $LDFLAGS | sed "s/\-B[^ ]*libgloss\/frv\///"`\ -B`pwd`/../libgloss/frv/
+    ;;
+esac
 
 AX_ENABLE_BUILDDIR
 
@@ -28,6 +32,7 @@ m4_rename([_AC_ARG_VAR_PRECIOUS],[real_PRECIOUS])
 m4_define([_AC_ARG_VAR_PRECIOUS],[])
 save_CFLAGS=$CFLAGS
 AC_PROG_CC
+AC_PROG_CXX
 CFLAGS=$save_CFLAGS
 m4_undefine([_AC_ARG_VAR_PRECIOUS])
 m4_rename_force([real_PRECIOUS],[_AC_ARG_VAR_PRECIOUS])
@@ -52,12 +57,12 @@ fi
 
 if test "x$GCC" = "xyes"; then
   CFLAGS="$CFLAGS -fexceptions"
-  touch local.exp
-else
-  cat > local.exp <<EOF
-set CC_FOR_TARGET "$CC"
-EOF
 fi
+
+cat > local.exp <<EOF
+set CC_FOR_TARGET "$CC"
+set CXX_FOR_TARGET "$CXX"
+EOF
 
 AM_MAINTAINER_MODE
 
@@ -69,6 +74,7 @@ dnl The -no-testsuite modules omit the test subdir.
 AM_CONDITIONAL(TESTSUBDIR, test -d $srcdir/testsuite)
 
 TARGETDIR="unknown"
+HAVE_LONG_DOUBLE_VARIANT=0
 case "$host" in
   aarch64*-*-*)
 	TARGET=AARCH64; TARGETDIR=aarch64
@@ -78,6 +84,10 @@ case "$host" in
 	TARGET=ALPHA; TARGETDIR=alpha;
 	# Support 128-bit long double, changeable via command-line switch.
 	HAVE_LONG_DOUBLE='defined(__LONG_DOUBLE_128__)'
+	;;
+
+  arc*-*-*)
+	TARGET=ARC; TARGETDIR=arc
 	;;
 
   arm*-*-*)
@@ -137,6 +147,9 @@ case "$host" in
 	  AM_LTLDFLAGS='-no-undefined -bindir "$(bindir)"';
 	fi
 	;;
+  i*86-*-nto-qnx*) 
+        TARGET=X86; TARGETDIR=x86
+        ;;
   i?86-*-darwin*)
 	TARGET=X86_DARWIN; TARGETDIR=x86
 	;;
@@ -148,10 +161,6 @@ case "$host" in
 	  TARGET=X86_64; 
 	fi	  
 	;;
-
-  i*86-*-nto-qnx*) 
-        TARGET=X86; TARGETDIR=x86
-        ;;
 
   x86_64-*-darwin*)
 	TARGET=X86_DARWIN; TARGETDIR=x86
@@ -198,6 +207,10 @@ case "$host" in
 	TARGET=M68K; TARGETDIR=m68k
 	;;
 
+  m88k-*-*)
+	TARGET=M88K; TARGETDIR=m88k
+	;;
+
   microblaze*-*-*)
 	TARGET=MICROBLAZE; TARGETDIR=microblaze
 	;;
@@ -213,14 +226,19 @@ case "$host" in
   mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
 	TARGET=MIPS_IRIX; TARGETDIR=mips
 	;;
-  mips*-*-linux* | mips*-*-openbsd*)
+  mips*-*linux* | mips*-*-openbsd*)
 	# Support 128-bit long double for NewABI.
 	HAVE_LONG_DOUBLE='defined(__mips64)'
-	TARGET=MIPS_IRIX; TARGETDIR=mips
+	TARGET=MIPS_LINUX; TARGETDIR=mips
+	;;
+
+  nios2*-linux*)
+	TARGET=NIOS2; TARGETDIR=nios2
 	;;
 
   powerpc*-*-linux* | powerpc-*-sysv*)
 	TARGET=POWERPC; TARGETDIR=powerpc
+	HAVE_LONG_DOUBLE_VARIANT=1
 	;;
   powerpc-*-amigaos*)
 	TARGET=POWERPC; TARGETDIR=powerpc
@@ -236,6 +254,7 @@ case "$host" in
 	;;
   powerpc-*-freebsd* | powerpc-*-openbsd*)
 	TARGET=POWERPC_FREEBSD; TARGETDIR=powerpc
+	HAVE_LONG_DOUBLE_VARIANT=1
 	;;
   powerpc64-*-freebsd*)
 	TARGET=POWERPC; TARGETDIR=powerpc
@@ -263,6 +282,10 @@ case "$host" in
         TARGET=TILE; TARGETDIR=tile
         ;;
 
+  vax-*-*)
+	TARGET=VAX; TARGETDIR=vax
+	;;
+
   xtensa*-*)
 	TARGET=XTENSA; TARGETDIR=xtensa
 	;;
@@ -284,18 +307,23 @@ AM_CONDITIONAL(X86_FREEBSD, test x$TARGET = xX86_FREEBSD)
 AM_CONDITIONAL(X86_WIN32, test x$TARGET = xX86_WIN32)
 AM_CONDITIONAL(X86_WIN64, test x$TARGET = xX86_WIN64)
 AM_CONDITIONAL(X86_DARWIN, test x$TARGET = xX86_DARWIN)
+AM_CONDITIONAL(X86_DARWIN32, test x$TARGET = xX86_DARWIN && test $ac_cv_sizeof_size_t = 4)
+AM_CONDITIONAL(X86_DARWIN64, test x$TARGET = xX86_DARWIN && test $ac_cv_sizeof_size_t = 8)
 AM_CONDITIONAL(ALPHA, test x$TARGET = xALPHA)
 AM_CONDITIONAL(IA64, test x$TARGET = xIA64)
 AM_CONDITIONAL(M32R, test x$TARGET = xM32R)
 AM_CONDITIONAL(M68K, test x$TARGET = xM68K)
+AM_CONDITIONAL(M88K, test x$TARGET = xM88K)
 AM_CONDITIONAL(MICROBLAZE, test x$TARGET = xMICROBLAZE)
 AM_CONDITIONAL(METAG, test x$TARGET = xMETAG)
 AM_CONDITIONAL(MOXIE, test x$TARGET = xMOXIE)
+AM_CONDITIONAL(NIOS2, test x$TARGET = xNIOS2)
 AM_CONDITIONAL(POWERPC, test x$TARGET = xPOWERPC)
 AM_CONDITIONAL(POWERPC_AIX, test x$TARGET = xPOWERPC_AIX)
 AM_CONDITIONAL(POWERPC_DARWIN, test x$TARGET = xPOWERPC_DARWIN)
 AM_CONDITIONAL(POWERPC_FREEBSD, test x$TARGET = xPOWERPC_FREEBSD)
 AM_CONDITIONAL(AARCH64, test x$TARGET = xAARCH64)
+AM_CONDITIONAL(ARC, test x$TARGET = xARC)
 AM_CONDITIONAL(ARM, test x$TARGET = xARM)
 AM_CONDITIONAL(AVR32, test x$TARGET = xAVR32)
 AM_CONDITIONAL(LIBFFI_CRIS, test x$TARGET = xLIBFFI_CRIS)
@@ -308,6 +336,7 @@ AM_CONDITIONAL(PA_LINUX, test x$TARGET = xPA_LINUX)
 AM_CONDITIONAL(PA_HPUX, test x$TARGET = xPA_HPUX)
 AM_CONDITIONAL(PA64_HPUX, test x$TARGET = xPA64_HPUX)
 AM_CONDITIONAL(TILE, test x$TARGET = xTILE)
+AM_CONDITIONAL(VAX, test x$TARGET = xVAX)
 AM_CONDITIONAL(XTENSA, test x$TARGET = xXTENSA)
 
 AC_HEADER_STDC
@@ -320,14 +349,20 @@ AC_CHECK_SIZEOF(long double)
 # Also AC_SUBST this variable for ffi.h.
 if test -z "$HAVE_LONG_DOUBLE"; then
   HAVE_LONG_DOUBLE=0
-  if test $ac_cv_sizeof_double != $ac_cv_sizeof_long_double; then
-    if test $ac_cv_sizeof_long_double != 0; then
+  if test $ac_cv_sizeof_long_double != 0; then
+    if test $HAVE_LONG_DOUBLE_VARIANT != 0; then
+      AC_DEFINE(HAVE_LONG_DOUBLE_VARIANT, 1, [Define if you support more than one size of the long double type])
       HAVE_LONG_DOUBLE=1
-      AC_DEFINE(HAVE_LONG_DOUBLE, 1, [Define if you have the long double type and it is bigger than a double])
+    else
+      if test $ac_cv_sizeof_double != $ac_cv_sizeof_long_double; then
+        HAVE_LONG_DOUBLE=1
+        AC_DEFINE(HAVE_LONG_DOUBLE, 1, [Define if you have the long double type and it is bigger than a double])
+      fi
     fi
   fi
 fi
 AC_SUBST(HAVE_LONG_DOUBLE)
+AC_SUBST(HAVE_LONG_DOUBLE_VARIANT)
 
 AC_C_BIGENDIAN
 
@@ -413,11 +448,9 @@ AC_ARG_ENABLE(pax_emutramp,
       [Define this if you want to enable pax emulated trampolines])
   fi)
 
-if test x$TARGET = xX86_WIN64; then
-    LT_SYS_SYMBOL_USCORE
-    if test "x$sys_symbol_underscore" = xyes; then
-        AC_DEFINE(SYMBOL_UNDERSCORE, 1, [Define if symbols are underscored.])
-    fi
+LT_SYS_SYMBOL_USCORE
+if test "x$sys_symbol_underscore" = xyes; then
+    AC_DEFINE(SYMBOL_UNDERSCORE, 1, [Define if symbols are underscored.])
 fi
 
 FFI_EXEC_TRAMPOLINE_TABLE=0
@@ -438,12 +471,28 @@ AM_CONDITIONAL(FFI_EXEC_TRAMPOLINE_TABLE, test x$FFI_EXEC_TRAMPOLINE_TABLE = x1)
 AC_SUBST(FFI_EXEC_TRAMPOLINE_TABLE)
 
 if test x$TARGET = xX86_64; then
-    AC_CACHE_CHECK([assembler supports unwind section type],
+    AC_CACHE_CHECK([toolchain supports unwind section type],
 	libffi_cv_as_x86_64_unwind_section_type, [
-	libffi_cv_as_x86_64_unwind_section_type=yes
-	echo '.section .eh_frame,"a",@unwind' > conftest.s
-	if $CC $CFLAGS -c conftest.s 2>&1 | grep -i warning > /dev/null; then
-	    libffi_cv_as_x86_64_unwind_section_type=no
+        cat  > conftest1.s << EOF
+.text
+.globl foo
+foo:
+jmp bar
+.section .eh_frame,"a",@unwind
+bar:
+EOF
+
+        cat > conftest2.c  << EOF
+extern void foo();
+int main(){foo();}
+EOF
+
+	libffi_cv_as_x86_64_unwind_section_type=no
+	# we ensure that we can compile _and_ link an assembly file containing an @unwind section
+	# since the compiler can support it and not the linker (ie old binutils)
+	if $CC -Wa,--fatal-warnings $CFLAGS -c conftest1.s > /dev/null 2>&1 && \
+           $CC conftest2.c conftest1.o > /dev/null 2>&1 ; then
+	    libffi_cv_as_x86_64_unwind_section_type=yes
 	fi
 	])
     if test "x$libffi_cv_as_x86_64_unwind_section_type" = xyes; then
@@ -526,14 +575,14 @@ AM_CONDITIONAL(FFI_DEBUG, test "$enable_debug" = "yes")
 AC_ARG_ENABLE(structs,
 [  --disable-structs       omit code for struct support],
   if test "$enable_structs" = "no"; then
-    AC_DEFINE(FFI_NO_STRUCTS, 1, [Define this is you do not want support for aggregate types.])
+    AC_DEFINE(FFI_NO_STRUCTS, 1, [Define this if you do not want support for aggregate types.])
   fi)
 AM_CONDITIONAL(FFI_DEBUG, test "$enable_debug" = "yes")
 
 AC_ARG_ENABLE(raw-api,
 [  --disable-raw-api       make the raw api unavailable],
   if test "$enable_raw_api" = "no"; then
-    AC_DEFINE(FFI_NO_RAW_API, 1, [Define this is you do not want support for the raw API.])
+    AC_DEFINE(FFI_NO_RAW_API, 1, [Define this if you do not want support for the raw API.])
   fi)
 
 AC_ARG_ENABLE(purify-safety,
@@ -553,7 +602,7 @@ if test "x$GCC" = "xyes"; then
     toolexecdir='$(libdir)/gcc-lib/$(target_alias)'
     toolexeclibdir='$(libdir)'
   fi
-  multi_os_directory=`$CC -print-multi-os-directory`
+  multi_os_directory=`$CC $CFLAGS -print-multi-os-directory`
   case $multi_os_directory in
     .) ;; # Avoid trailing /.
     ../*) toolexeclibdir=$toolexeclibdir/$multi_os_directory ;;

@@ -83,8 +83,9 @@ The :mod:`urlparse` module defines the following functions:
    this argument is the empty string.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
-   allowed, even if the URL's addressing scheme normally does support them.  The
-   default value for this argument is :const:`True`.
+   recognized and parsed as part of the preceding component, even if the URL's
+   addressing scheme normally does support them.  The default value for this
+   argument is :const:`True`.
 
    The return value is actually an instance of a subclass of :class:`tuple`.  This
    class has the following additional read-only convenience attributes:

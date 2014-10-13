@@ -11,6 +11,7 @@ except ImportError:
 import warnings
 
 from collections import deque as _deque
+from itertools import count as _count
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
 
@@ -623,11 +624,10 @@ class _Event(_Verbose):
             self.__cond.release()
 
 # Helper to generate new thread names
-_counter = 0
+_counter = _count().next
+_counter() # Consume 0 so first non-main thread has id 1.
 def _newname(template="Thread-%d"):
-    global _counter
-    _counter = _counter + 1
-    return template % _counter
+    return template % _counter()
 
 # Active thread administration
 _active_limbo_lock = _allocate_lock()
@@ -818,10 +818,10 @@ class Thread(_Verbose):
                 # shutdown) use self.__stderr.  Otherwise still use sys (as in
                 # _sys) in case sys.stderr was redefined since the creation of
                 # self.
-                if _sys:
-                    _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                      (self.name, _format_exc()))
-                else:
+                if _sys and _sys.stderr is not None:
+                    print>>_sys.stderr, ("Exception in thread %s:\n%s" %
+                                         (self.name, _format_exc()))
+                elif self.__stderr is not None:
                     # Do the best job possible w/o a huge amt. of code to
                     # approximate a traceback (code ideas from
                     # Lib/traceback.py)

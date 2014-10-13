@@ -4,6 +4,10 @@
 .. module:: compileall
    :synopsis: Tools for byte-compiling all Python source files in a directory tree.
 
+**Source code:** :source:`Lib/compileall.py`
+
+--------------
+
 
 This module provides some utility functions to support installing Python
 libraries.  These functions compile Python source files in a directory tree.
@@ -20,7 +24,8 @@ compile Python sources.
 
 .. program:: compileall
 
-.. cmdoption:: [directory|file]...
+.. cmdoption:: directory ...
+               file ...
 
    Positional arguments are files to compile or directories that contain
    source files, traversed recursively.  If no argument is given, behave as if

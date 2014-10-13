@@ -3,6 +3,7 @@
 
 .. module:: repr
    :synopsis: Alternate repr() implementation with size limits.
+   :noindex:
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 .. note::

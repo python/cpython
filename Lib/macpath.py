@@ -42,7 +42,7 @@ def isabs(s):
 def join(s, *p):
     path = s
     for t in p:
-        if (not s) or isabs(t):
+        if (not path) or isabs(t):
             path = t
             continue
         if t[:1] == ':':

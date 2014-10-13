@@ -475,8 +475,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     if bad:
                         return
         tests = test_forever()
+        test_count = ''
+        test_count_width = 3
     else:
         tests = iter(selected)
+        test_count = '/{}'.format(len(selected))
+        test_count_width = len(test_count) - 1
 
     if use_mp:
         try:
@@ -521,8 +525,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         output.put((None, None, None, None))
                         return
                     result = json.loads(result)
-                    if not quiet:
-                        stdout = test+'\n'+stdout
                     output.put((test, stdout.rstrip(), stderr.rstrip(), result))
             except BaseException:
                 output.put((None, None, None, None))
@@ -531,6 +533,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for worker in workers:
             worker.start()
         finished = 0
+        test_index = 1
         try:
             while finished < use_mp:
                 test, stdout, stderr, result = output.get()
@@ -547,15 +550,23 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     assert result[1] == 'KeyboardInterrupt'
                     raise KeyboardInterrupt   # What else?
                 accumulate_result(test, result)
+                if not quiet:
+                    fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                    print(fmt.format(
+                        test_count_width, test_index, test_count,
+                        len(bad), test))
+                test_index += 1
         except KeyboardInterrupt:
             interrupted = True
             pending.close()
         for worker in workers:
             worker.join()
     else:
-        for test in tests:
+        for test_index, test in enumerate(tests, 1):
             if not quiet:
-                print test
+                fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                print(fmt.format(
+                    test_count_width, test_index, test_count, len(bad), test))
                 sys.stdout.flush()
             if trace:
                 # If we're tracing code coverage, then we don't exit with status

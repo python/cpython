@@ -167,7 +167,8 @@ Sphinx-formatted documentation, Python library modules, example programs, and
 several useful pieces of freely distributable software.  The source will compile
 and run out of the box on most UNIX platforms.
 
-Consult the `Developer FAQ <http://docs.python.org/devguide/faq>`__ for more
+Consult the `Getting Started section of the Python Developer's Guide
+<https://docs.python.org/devguide/setup.html>`__ for more
 information on getting the source code and compiling it.
 
 
@@ -376,43 +377,6 @@ Providing a gradual upgrade path is necessary if a feature has to be changed.
 changes while minimizing disruption for users.
 
 
-Is Python Y2K (Year 2000) Compliant?
-------------------------------------
-
-.. remove this question?
-
-As of August, 2003 no major problems have been reported and Y2K compliance seems
-to be a non-issue.
-
-Python does very few date calculations and for those it does perform relies on
-the C library functions.  Python generally represents times either as seconds
-since 1970 or as a ``(year, month, day, ...)`` tuple where the year is expressed
-with four digits, which makes Y2K bugs unlikely.  So as long as your C library
-is okay, Python should be okay.  Of course, it's possible that a particular
-application written in Python makes assumptions about 2-digit years.
-
-Because Python is available free of charge, there are no absolute guarantees.
-If there *are* unforeseen problems, liability is the user's problem rather than
-the developers', and there is nobody you can sue for damages.  The Python
-copyright notice contains the following disclaimer:
-
-    4. PSF is making Python 2.3 available to Licensee on an "AS IS"
-    basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED.  BY
-    WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND DISCLAIMS ANY
-    REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR
-    PURPOSE OR THAT THE USE OF PYTHON 2.3 WILL NOT INFRINGE ANY THIRD PARTY
-    RIGHTS.
-
-    5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
-    2.3 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
-    A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 2.3,
-    OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
-
-The good news is that *if* you encounter a problem, you have full source
-available to track it down and fix it.  This is one advantage of an open source
-programming environment.
-
-
 Is Python a good language for beginning programmers?
 ----------------------------------------------------
 
@@ -451,14 +415,22 @@ while they enter their program's source in another window.  If they can't
 remember the methods for a list, they can do something like this::
 
    >>> L = []
-   >>> dir(L)
-   ['append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
-   'reverse', 'sort']
+   >>> dir(L) # doctest: +NORMALIZE_WHITESPACE
+   ['__add__', '__class__', '__contains__', '__delattr__', '__delitem__',
+   '__delslice__', '__doc__', '__eq__', '__format__', '__ge__',
+   '__getattribute__', '__getitem__', '__getslice__', '__gt__',
+   '__hash__', '__iadd__', '__imul__', '__init__', '__iter__', '__le__',
+   '__len__', '__lt__', '__mul__', '__ne__', '__new__', '__reduce__',
+   '__reduce_ex__', '__repr__', '__reversed__', '__rmul__',
+   '__setattr__', '__setitem__', '__setslice__', '__sizeof__', '__str__',
+   '__subclasshook__', 'append', 'count', 'extend', 'index', 'insert',
+   'pop', 'remove', 'reverse', 'sort']
    >>> help(L.append)
    Help on built-in function append:
-
+   <BLANKLINE>
    append(...)
        L.append(object) -- append object to end
+   <BLANKLINE>
    >>> L.append(1)
    >>> L
    [1]

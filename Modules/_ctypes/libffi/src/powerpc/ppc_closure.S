@@ -31,7 +31,7 @@
 
 	.file   "ppc_closure.S"
 
-#ifndef __powerpc64__
+#ifndef POWERPC64
 
 ENTRY(ffi_closure_SYSV)
 .LFB1:
@@ -159,25 +159,41 @@ ENTRY(ffi_closure_SYSV)
 #endif
 
 # case FFI_TYPE_UINT8
+#ifdef __LITTLE_ENDIAN__
+	lbz %r3,112+0(%r1)
+#else
 	lbz %r3,112+3(%r1)
+#endif
 	mtlr %r0
 	addi %r1,%r1,144
 	blr
 
 # case FFI_TYPE_SINT8
+#ifdef __LITTLE_ENDIAN__
+	lbz %r3,112+0(%r1)
+#else
 	lbz %r3,112+3(%r1)
+#endif
 	extsb %r3,%r3
 	mtlr %r0
 	b .Lfinish
 
 # case FFI_TYPE_UINT16
+#ifdef __LITTLE_ENDIAN__
+	lhz %r3,112+0(%r1)
+#else
 	lhz %r3,112+2(%r1)
+#endif
 	mtlr %r0
 	addi %r1,%r1,144
 	blr
 
 # case FFI_TYPE_SINT16
+#ifdef __LITTLE_ENDIAN__
+	lha %r3,112+0(%r1)
+#else
 	lha %r3,112+2(%r1)
+#endif
 	mtlr %r0
 	addi %r1,%r1,144
 	blr
@@ -222,7 +238,7 @@ ENTRY(ffi_closure_SYSV)
 	lwz %r3,112+0(%r1)
 	lwz %r4,112+4(%r1)
 	lwz %r5,112+8(%r1)
-	bl .Luint128
+	b .Luint128
 
 # The return types below are only used when the ABI type is FFI_SYSV.
 # case FFI_SYSV_TYPE_SMALL_STRUCT + 1. One byte struct.
@@ -239,9 +255,15 @@ ENTRY(ffi_closure_SYSV)
 
 # case FFI_SYSV_TYPE_SMALL_STRUCT + 3. Three byte struct.
 	lwz %r3,112+0(%r1)
+#ifdef __LITTLE_ENDIAN__
+	mtlr %r0
+	addi %r1,%r1,144
+	blr
+#else
 	srwi %r3,%r3,8
 	mtlr %r0
 	b .Lfinish
+#endif
 
 # case FFI_SYSV_TYPE_SMALL_STRUCT + 4. Four byte struct.
 	lwz %r3,112+0(%r1)
@@ -252,20 +274,35 @@ ENTRY(ffi_closure_SYSV)
 # case FFI_SYSV_TYPE_SMALL_STRUCT + 5. Five byte struct.
 	lwz %r3,112+0(%r1)
 	lwz %r4,112+4(%r1)
+#ifdef __LITTLE_ENDIAN__
+	mtlr %r0
+	b .Lfinish
+#else
 	li %r5,24
 	b .Lstruct567
+#endif
 
 # case FFI_SYSV_TYPE_SMALL_STRUCT + 6. Six byte struct.
 	lwz %r3,112+0(%r1)
 	lwz %r4,112+4(%r1)
+#ifdef __LITTLE_ENDIAN__
+	mtlr %r0
+	b .Lfinish
+#else
 	li %r5,16
 	b .Lstruct567
+#endif
 
 # case FFI_SYSV_TYPE_SMALL_STRUCT + 7. Seven byte struct.
 	lwz %r3,112+0(%r1)
 	lwz %r4,112+4(%r1)
+#ifdef __LITTLE_ENDIAN__
+	mtlr %r0
+	b .Lfinish
+#else
 	li %r5,8
 	b .Lstruct567
+#endif
 
 # case FFI_SYSV_TYPE_SMALL_STRUCT + 8. Eight byte struct.
 	lwz %r3,112+0(%r1)
@@ -273,6 +310,7 @@ ENTRY(ffi_closure_SYSV)
 	mtlr %r0
 	b .Lfinish
 
+#ifndef __LITTLE_ENDIAN__
 .Lstruct567:
 	subfic %r6,%r5,32
 	srw %r4,%r4,%r5
@@ -282,13 +320,14 @@ ENTRY(ffi_closure_SYSV)
 	mtlr %r0
 	addi %r1,%r1,144
 	blr
+#endif
 
 .Luint128:
 	lwz %r6,112+12(%r1)
 	mtlr %r0
 	addi %r1,%r1,144
 	blr
-
+	
 END(ffi_closure_SYSV)
 
 	.section	".eh_frame",EH_FRAME_FLAGS,@progbits
@@ -339,8 +378,7 @@ END(ffi_closure_SYSV)
 	.align 2
 .LEFDE1:
 
-#endif
-
 #if defined __ELF__ && defined __linux__
 	.section	.note.GNU-stack,"",@progbits
+#endif
 #endif

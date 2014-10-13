@@ -124,9 +124,10 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: wraps(wrapped[, assigned][, updated])
 
-   This is a convenience function for invoking ``partial(update_wrapper,
-   wrapped=wrapped, assigned=assigned, updated=updated)`` as a function decorator
-   when defining a wrapper function. For example:
+   This is a convenience function for invoking :func:`update_wrapper` as a
+   function decorator when defining a wrapper function.  It is equivalent to
+   ``partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)``.
+   For example::
 
       >>> from functools import wraps
       >>> def my_decorator(f):

@@ -34,7 +34,7 @@
 #include <ffi_common.h>
 
 #if !FFI_MMAP_EXEC_WRIT && !FFI_EXEC_TRAMPOLINE_TABLE
-# if __gnu_linux__
+# if __gnu_linux__ && !defined(__ANDROID__)
 /* This macro indicates it may be forbidden to map anonymous memory
    with both write and execute permission.  Code compiled when this
    option is defined will attempt to map such pages once, but if it
@@ -181,10 +181,26 @@ static int emutramp_enabled = -1;
 static int
 emutramp_enabled_check (void)
 {
-  if (getenv ("FFI_DISABLE_EMUTRAMP") == NULL)
-    return 1;
-  else
+  char *buf = NULL;
+  size_t len = 0;
+  FILE *f;
+  int ret;
+  f = fopen ("/proc/self/status", "r");
+  if (f == NULL)
     return 0;
+  ret = 0;
+
+  while (getline (&buf, &len, f) != -1)
+    if (!strncmp (buf, "PaX:", 4))
+      {
+        char emutramp;
+        if (sscanf (buf, "%*s %*c%c", &emutramp) == 1)
+          ret = (emutramp == 'E');
+        break;
+      }
+  free (buf);
+  fclose (f);
+  return ret;
 }
 
 #define is_emutramp_enabled() (emutramp_enabled >= 0 ? emutramp_enabled \
@@ -264,7 +280,7 @@ static int
 open_temp_exec_file_dir (const char *dir)
 {
   static const char suffix[] = "/ffiXXXXXX";
-  int lendir = strlen (dir);
+  size_t lendir = strlen (dir);
   char *tempname = __builtin_alloca (lendir + sizeof (suffix));
 
   if (!tempname)
@@ -382,7 +398,7 @@ open_temp_exec_file_opts_next (void)
 }
 
 /* Return a file descriptor of a temporary zero-sized file in a
-   writable and exexutable filesystem.  */
+   writable and executable filesystem.  */
 static int
 open_temp_exec_file (void)
 {

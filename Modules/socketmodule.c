@@ -3115,6 +3115,8 @@ sock_dealloc(PySocketSockObject *s)
 {
     if (s->sock_fd != -1)
         (void) SOCKETCLOSE(s->sock_fd);
+    if (s->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *)s);
     Py_TYPE(s)->tp_free((PyObject *)s);
 }
 
@@ -3163,6 +3165,7 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ((PySocketSockObject *)new)->sock_fd = -1;
         ((PySocketSockObject *)new)->sock_timeout = -1.0;
         ((PySocketSockObject *)new)->errorhandler = &set_error;
+        ((PySocketSockObject *)new)->weakreflist = NULL;
     }
     return new;
 }
@@ -3226,7 +3229,7 @@ static PyTypeObject sock_type = {
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    offsetof(PySocketSockObject, weakreflist),  /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     sock_methods,                               /* tp_methods */

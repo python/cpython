@@ -92,13 +92,14 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.6
 
 
-.. function:: bool([x])
+.. class:: bool([x])
 
-   Convert a value to a Boolean, using the standard truth testing procedure.  If
-   *x* is false or omitted, this returns :const:`False`; otherwise it returns
-   :const:`True`. :class:`bool` is also a class, which is a subclass of
-   :class:`int`. Class :class:`bool` cannot be subclassed further.  Its only
-   instances are :const:`False` and :const:`True`.
+   Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
+   using the standard truth testing procedure.  If *x* is false or omitted, this
+   returns :const:`False`; otherwise it returns :const:`True`. :class:`bool` is
+   also a class, which is a subclass of :class:`int`. Class :class:`bool` cannot
+   be subclassed further.  Its only instances are :const:`False` and
+   :const:`True`.
 
    .. index:: pair: Boolean; type
 
@@ -108,9 +109,9 @@ available.  They are listed here in alphabetical order.
       If no argument is given, this function returns :const:`False`.
 
 
-.. function:: bytearray([source[, encoding[, errors]]])
+.. class:: bytearray([source[, encoding[, errors]]])
 
-   Return a new array of bytes.  The :class:`bytearray` type is a mutable
+   Return a new array of bytes.  The :class:`bytearray` class is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
    methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
    as most methods that the :class:`str` type has, see :ref:`string-methods`.
@@ -118,9 +119,9 @@ available.  They are listed here in alphabetical order.
    The optional *source* parameter can be used to initialize the array in a few
    different ways:
 
-   * If it is a *string*, you must also give the *encoding* (and optionally,
-     *errors*) parameters; :func:`bytearray` then converts the string to
-     bytes using :meth:`str.encode`.
+   * If it is *unicode*, you must also give the *encoding* (and optionally,
+     *errors*) parameters; :func:`bytearray` then converts the unicode to
+     bytes using :meth:`unicode.encode`.
 
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
@@ -250,9 +251,9 @@ available.  They are listed here in alphabetical order.
       does not have to end in a newline anymore.
 
 
-.. function:: complex([real[, imag]])
+.. class:: complex([real[, imag]])
 
-   Create a complex number with the value *real* + *imag*\*j or convert a string or
+   Return a complex number with the value *real* + *imag*\*j or convert a string or
    number to a complex number.  If the first parameter is a string, it will be
    interpreted as a complex number and the function must be called without a second
    parameter.  The second parameter can never be a string. Each argument may be any
@@ -279,14 +280,13 @@ available.  They are listed here in alphabetical order.
 
 
 .. _func-dict:
-.. function:: dict(**kwarg)
-              dict(mapping, **kwarg)
-              dict(iterable, **kwarg)
+.. class:: dict(**kwarg)
+           dict(mapping, **kwarg)
+           dict(iterable, **kwarg)
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this
-   class.
+   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`list`, :class:`set`, and
    :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -489,9 +489,11 @@ available.  They are listed here in alphabetical order.
    where the *function* returns false.
 
 
-.. function:: float([x])
+.. class:: float([x])
 
-   Convert a string or a number to floating point.  If the argument is a string, it
+   Return a floating point number constructed from a number or string *x*.
+
+   If the argument is a string, it
    must contain a possibly signed decimal or floating point number, possibly
    embedded in whitespace. The argument may also be [+|-]nan or [+|-]inf.
    Otherwise, the argument may be a plain or long integer
@@ -534,7 +536,7 @@ available.  They are listed here in alphabetical order.
 
 
 .. _func-frozenset:
-.. function:: frozenset([iterable])
+.. class:: frozenset([iterable])
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
@@ -645,10 +647,10 @@ available.  They are listed here in alphabetical order.
    Consider using the :func:`raw_input` function for general input from users.
 
 
-.. function:: int(x=0)
-              int(x, base=10)
+.. class:: int(x=0)
+           int(x, base=10)
 
-   Convert a number or string *x* to an integer, or return ``0`` if no
+   Return an integer object constructed from a number or string *x*, or return ``0`` if no
    arguments are given.  If *x* is a number, it can be a plain integer, a long
    integer, or a floating point number.  If *x* is floating point, the conversion
    truncates towards zero.  If the argument is outside the integer range, the
@@ -730,7 +732,7 @@ available.  They are listed here in alphabetical order.
    (such as a dictionary, set, or frozen set).
 
 
-.. function:: list([iterable])
+.. class:: list([iterable])
 
    Return a list whose items are the same and in the same order as *iterable*'s
    items.  *iterable* may be either a sequence, a container that supports
@@ -756,10 +758,11 @@ available.  They are listed here in alphabetical order.
       affect the values of local and free variables used by the interpreter.
 
 
-.. function:: long(x=0)
-              long(x, base=10)
+.. class:: long(x=0)
+           long(x, base=10)
 
-   Convert a string or number to a long integer.  If the argument is a string, it
+   Return a long integer object constructed from a string or number *x*.
+   If the argument is a string, it
    must contain a possibly signed number of arbitrary size, possibly embedded in
    whitespace. The *base* argument is interpreted in the same way as for
    :func:`int`, and may only be given when *x* is a string. Otherwise, the argument
@@ -837,7 +840,7 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.6
 
 
-.. function:: object()
+.. class:: object()
 
    Return a new featureless object.  :class:`object` is a base for all new style
    classes.  It has the methods that are common to all instances of new style
@@ -987,14 +990,16 @@ available.  They are listed here in alphabetical order.
    .. versionadded:: 2.6
 
 
-.. function:: property([fget[, fset[, fdel[, doc]]]])
+.. class:: property([fget[, fset[, fdel[, doc]]]])
 
    Return a property attribute for :term:`new-style class`\es (classes that
    derive from :class:`object`).
 
-   *fget* is a function for getting an attribute value, likewise *fset* is a
-   function for setting, and *fdel* a function for del'ing, an attribute.  Typical
-   use is to define a managed attribute ``x``::
+   *fget* is a function for getting an attribute value.  *fset* is a function
+   for setting an attribute value. *fdel* is a function for deleting an attribute
+   value.  And *doc* creates a docstring for the attribute.
+
+   A typical use is to define a managed attribute ``x``::
 
       class C(object):
           def __init__(self):
@@ -1002,13 +1007,16 @@ available.  They are listed here in alphabetical order.
 
           def getx(self):
               return self._x
+
           def setx(self, value):
               self._x = value
+
           def delx(self):
               del self._x
+
           x = property(getx, setx, delx, "I'm the 'x' property.")
 
-   If then *c* is an instance of *C*, ``c.x`` will invoke the getter,
+   If *c* is an instance of *C*, ``c.x`` will invoke the getter,
    ``c.x = value`` will invoke the setter and ``del c.x`` the deleter.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
@@ -1024,8 +1032,9 @@ available.  They are listed here in alphabetical order.
               """Get the current voltage."""
               return self._voltage
 
-   turns the :meth:`voltage` method into a "getter" for a read-only attribute
-   with the same name.
+   The ``@property`` decorator turns the :meth:`voltage` method into a "getter"
+   for a read-only attribute with the same name, and it sets the docstring for
+   *voltage* to "Get the current voltage."
 
    A property object has :attr:`~property.getter`, :attr:`~property.setter`,
    and :attr:`~property.deleter` methods usable as decorators that create a
@@ -1053,7 +1062,7 @@ available.  They are listed here in alphabetical order.
    additional functions the same name as the original property (``x`` in this
    case.)
 
-   The returned property also has the attributes ``fget``, ``fset``, and
+   The returned property object also has the attributes ``fget``, ``fset``, and
    ``fdel`` corresponding to the constructor arguments.
 
    .. versionadded:: 2.2
@@ -1243,7 +1252,7 @@ available.  They are listed here in alphabetical order.
 
 
 .. _func-set:
-.. function:: set([iterable])
+.. class:: set([iterable])
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
@@ -1266,8 +1275,8 @@ available.  They are listed here in alphabetical order.
    ``x.foobar = 123``.
 
 
-.. function:: slice(stop)
-              slice(start, stop[, step])
+.. class:: slice(stop)
+           slice(start, stop[, step])
 
    .. index:: single: Numerical Python
 
@@ -1346,7 +1355,7 @@ available.  They are listed here in alphabetical order.
       Function decorator syntax added.
 
 
-.. function:: str(object='')
+.. class:: str(object='')
 
    Return a string containing a nicely printable representation of an object.  For
    strings, this returns the string itself.  The difference with ``repr(object)``
@@ -1450,8 +1459,8 @@ available.  They are listed here in alphabetical order.
    :class:`list`, and :class:`set` classes, and the :mod:`collections` module.
 
 
-.. function:: type(object)
-              type(name, bases, dict)
+.. class:: type(object)
+           type(name, bases, dict)
 
    .. index:: object: type
 

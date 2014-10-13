@@ -30,6 +30,21 @@ class TestGzip(unittest.TestCase):
     def tearDown(self):
         test_support.unlink(self.filename)
 
+    @test_support.requires_unicode
+    def test_unicode_filename(self):
+        unicode_filename = test_support.TESTFN_UNICODE
+        try:
+            unicode_filename.encode(test_support.TESTFN_ENCODING)
+        except (UnicodeError, TypeError):
+            self.skipTest("Requires unicode filenames support")
+        with gzip.GzipFile(unicode_filename, "wb") as f:
+            f.write(data1 * 50)
+        with gzip.GzipFile(unicode_filename, "rb") as f:
+            self.assertEqual(f.read(), data1 * 50)
+        # Sanity check that we are actually operating on the right file.
+        with open(unicode_filename, 'rb') as fobj, \
+             gzip.GzipFile(fileobj=fobj, mode="rb") as f:
+            self.assertEqual(f.read(), data1 * 50)
 
     def test_write(self):
         with gzip.GzipFile(self.filename, 'wb') as f:

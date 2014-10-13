@@ -1260,7 +1260,7 @@ extern void*     sbrk(ptrdiff_t);
 #define SIZE_T_BITSIZE      (sizeof(size_t) << 3)
 
 /* Some constants coerced to size_t */
-/* Annoying but necessary to avoid errors on some plaftorms */
+/* Annoying but necessary to avoid errors on some platforms */
 #define SIZE_T_ZERO         ((size_t)0)
 #define SIZE_T_ONE          ((size_t)1)
 #define SIZE_T_TWO          ((size_t)2)
@@ -1414,7 +1414,7 @@ static int win32munmap(void* ptr, size_t size) {
 #define CALL_MORECORE(S)     MFAIL
 #endif /* HAVE_MORECORE */
 
-/* mstate bit set if continguous morecore disabled or failed */
+/* mstate bit set if contiguous morecore disabled or failed */
 #define USE_NONCONTIGUOUS_BIT (4U)
 
 /* segment bit set in create_mspace_with_base */
@@ -1666,7 +1666,7 @@ struct malloc_chunk {
 typedef struct malloc_chunk  mchunk;
 typedef struct malloc_chunk* mchunkptr;
 typedef struct malloc_chunk* sbinptr;  /* The type of bins of chunks */
-typedef unsigned int bindex_t;         /* Described below */
+typedef size_t bindex_t;               /* Described below */
 typedef unsigned int binmap_t;         /* Described below */
 typedef unsigned int flag_t;           /* The type of various bit flag sets */
 
@@ -3095,8 +3095,8 @@ static void internal_malloc_stats(mstate m) {
      and choose its bk node as its replacement.
   2. If x was the last node of its size, but not a leaf node, it must
      be replaced with a leaf node (not merely one with an open left or
-     right), to make sure that lefts and rights of descendents
-     correspond properly to bit masks.  We use the rightmost descendent
+     right), to make sure that lefts and rights of descendants
+     correspond properly to bit masks.  We use the rightmost descendant
      of x.  We could use any other leaf, but this is easy to locate and
      tends to counteract removal of leftmosts elsewhere, and so keeps
      paths shorter than minimally guaranteed.  This doesn't loop much
@@ -3393,7 +3393,7 @@ static void add_segment(mstate m, char* tbase, size_t tsize, flag_t mmapped) {
   *ss = m->seg; /* Push current record */
   m->seg.base = tbase;
   m->seg.size = tsize;
-  set_segment_flags(&m->seg, mmapped);
+  (void)set_segment_flags(&m->seg, mmapped);
   m->seg.next = ss;
 
   /* Insert trailing fenceposts */
@@ -3553,7 +3553,7 @@ static void* sys_alloc(mstate m, size_t nb) {
     if (!is_initialized(m)) { /* first-time initialization */
       m->seg.base = m->least_addr = tbase;
       m->seg.size = tsize;
-      set_segment_flags(&m->seg, mmap_flag);
+      (void)set_segment_flags(&m->seg, mmap_flag);
       m->magic = mparams.magic;
       init_bins(m);
       if (is_global(m)) 
@@ -4502,7 +4502,7 @@ mspace create_mspace(size_t capacity, int locked) {
     char* tbase = (char*)(CALL_MMAP(tsize));
     if (tbase != CMFAIL) {
       m = init_user_mstate(tbase, tsize);
-      set_segment_flags(&m->seg, IS_MMAPPED_BIT);
+      (void)set_segment_flags(&m->seg, IS_MMAPPED_BIT);
       set_lock(m, locked);
     }
   }
@@ -4517,7 +4517,7 @@ mspace create_mspace_with_base(void* base, size_t capacity, int locked) {
   if (capacity > msize + TOP_FOOT_SIZE &&
       capacity < (size_t) -(msize + TOP_FOOT_SIZE + mparams.page_size)) {
     m = init_user_mstate((char*)base, capacity);
-    set_segment_flags(&m->seg, EXTERN_BIT);
+    (void)set_segment_flags(&m->seg, EXTERN_BIT);
     set_lock(m, locked);
   }
   return (mspace)m;
@@ -5096,10 +5096,10 @@ History:
         Wolfram Gloger (Gloger@lrz.uni-muenchen.de).
       * Use last_remainder in more cases.
       * Pack bins using idea from  colin@nyx10.cs.du.edu
-      * Use ordered bins instead of best-fit threshhold
+      * Use ordered bins instead of best-fit threshold
       * Eliminate block-local decls to simplify tracing and debugging.
       * Support another case of realloc via move into top
-      * Fix error occuring when initial sbrk_base not word-aligned.
+      * Fix error occurring when initial sbrk_base not word-aligned.
       * Rely on page size for units instead of SBRK_UNIT to
         avoid surprises about sbrk alignment conventions.
       * Add mallinfo, mallopt. Thanks to Raymond Nijssen

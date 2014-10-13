@@ -183,7 +183,7 @@ void ffi_closure_call_SYSV(void* register_args, void* stack_args,
 	ffi_type** arg_types = cif->arg_types;
 
 	/* re-allocate data for the args. This needs to be done in order to keep
-	 * multi-word objects (e.g. structs) in contigious memory. Callers are not
+	 * multi-word objects (e.g. structs) in contiguous memory. Callers are not
 	 * required to store the value of args in the lower 6 words in the stack
 	 * (although they are allocated in the stack).
 	 */

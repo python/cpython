@@ -35,7 +35,7 @@ test_fn (ffi_cif* cif __UNUSED__, void* resp,
   printf ("%d %d %d %d %d %d %d %d %d %d\n", n, s1.a, s1.b,
 	  l1.a, l1.b, l1.c, l1.d, l1.e,
 	  s2.a, s2.b);
-  * (int*) resp = 42;
+  * (ffi_arg*) resp = 42;
 }
 
 int

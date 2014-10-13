@@ -1,7 +1,7 @@
 import unittest
 
 import sys
-from .support import LoggingResult, TestEquality
+from unittest.test.support import LoggingResult, TestEquality
 
 
 ### Support code for Test_TestSuite

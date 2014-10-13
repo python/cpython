@@ -1,6 +1,7 @@
 # ltsugar.m4 -- libtool m4 base layer.                         -*-Autoconf-*-
 #
-# Copyright (C) 2004, 2005, 2007, 2008 Free Software Foundation, Inc.
+# Copyright (C) 2004-2005, 2007-2008, 2011-2013 Free Software
+# Foundation, Inc.
 # Written by Gary V. Vaughan, 2004
 #
 # This file is free software; the Free Software Foundation gives
@@ -33,7 +34,7 @@ m4_define([_lt_join],
 # ------------
 # Manipulate m4 lists.
 # These macros are necessary as long as will still need to support
-# Autoconf-2.59 which quotes differently.
+# Autoconf-2.59, which quotes differently.
 m4_define([lt_car], [[$1]])
 m4_define([lt_cdr],
 [m4_if([$#], 0, [m4_fatal([$0: cannot be called without arguments])],
@@ -44,7 +45,7 @@ m4_define([lt_unquote], $1)
 
 # lt_append(MACRO-NAME, STRING, [SEPARATOR])
 # ------------------------------------------
-# Redefine MACRO-NAME to hold its former content plus `SEPARATOR'`STRING'.
+# Redefine MACRO-NAME to hold its former content plus 'SEPARATOR''STRING'.
 # Note that neither SEPARATOR nor STRING are expanded; they are appended
 # to MACRO-NAME as is (leaving the expansion for when MACRO-NAME is invoked).
 # No SEPARATOR is output if MACRO-NAME was previously undefined (different

@@ -194,6 +194,18 @@ class PosixTester(unittest.TestCase):
         self.fdopen_helper('r')
         self.fdopen_helper('r', 100)
 
+    @unittest.skipUnless(hasattr(posix, 'fdopen'),
+                         'test needs posix.fdopen()')
+    def test_fdopen_directory(self):
+        try:
+            fd = os.open('.', os.O_RDONLY)
+        except OSError as e:
+            self.assertEqual(e.errno, errno.EACCES)
+            self.skipTest("system cannot open directories")
+        with self.assertRaises(IOError) as cm:
+            os.fdopen(fd, 'r')
+        self.assertEqual(cm.exception.errno, errno.EISDIR)
+
     @unittest.skipUnless(hasattr(posix, 'fdopen') and
                          not sys.platform.startswith("sunos"),
                          'test needs posix.fdopen()')

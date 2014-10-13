@@ -8,14 +8,14 @@
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
 import sys, os, time
-sys.path.append(os.path.abspath('tools/sphinxext'))
+sys.path.append(os.path.abspath('tools'))
 
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.ext.refcounting', 'sphinx.ext.coverage',
-              'sphinx.ext.doctest', 'pyspecific']
-templates_path = ['tools/sphinxext']
+extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
+              'pyspecific', 'c_annotations']
+templates_path = ['tools']
 
 # General substitutions.
 project = 'Python'
@@ -40,10 +40,10 @@ today = ''
 today_fmt = '%B %d, %Y'
 
 # List of files that shouldn't be included in the build.
-unused_docs = [
-    'maclib/scrap',
-    'library/xmllib',
-    'library/xml.etree',
+exclude_patterns = [
+    'maclib/scrap.rst',
+    'library/xmllib.rst',
+    'library/xml.etree.rst',
 ]
 
 # Ignore .rst in Sphinx its self.
@@ -58,6 +58,9 @@ add_function_parentheses = True
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
 add_module_names = True
+
+# Require Sphinx 1.2 for build.
+needs_sphinx = '1.2'
 
 
 # Options for HTML output
@@ -89,7 +92,7 @@ html_additional_pages = {
 html_use_opensearch = 'http://docs.python.org/'
 
 # Additional static files.
-html_static_path = ['tools/sphinxext/static']
+html_static_path = ['tools/static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')

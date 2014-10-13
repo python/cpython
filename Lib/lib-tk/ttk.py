@@ -26,7 +26,7 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "tclobjs_to_py", "setup_master"]
 
 import Tkinter
-from Tkinter import _flatten, _join, _stringify
+from Tkinter import _flatten, _join, _stringify, _splitdict
 
 # Verify if Tk is new enough to not need the Tile package
 _REQUIRE_TILE = True if Tkinter.TkVersion < 8.5 else False
@@ -242,21 +242,6 @@ def _script_from_settings(settings):
 
     return '\n'.join(script)
 
-def _dict_from_tcltuple(ttuple, cut_minus=True):
-    """Break tuple in pairs, format it properly, then build the return
-    dict. If cut_minus is True, the supposed '-' prefixing options will
-    be removed.
-
-    ttuple is expected to contain an even number of elements."""
-    opt_start = 1 if cut_minus else 0
-
-    retdict = {}
-    it = iter(ttuple)
-    for opt, val in zip(it, it):
-        retdict[str(opt)[opt_start:]] = val
-
-    return tclobjs_to_py(retdict)
-
 def _list_from_statespec(stuple):
     """Construct a list from the given statespec tuple according to the
     accepted statespec accepted by _format_mapdict."""
@@ -316,7 +301,7 @@ def _val_or_dict(tk, options, *args):
     if len(options) % 2: # option specified without a value, return its value
         return res
 
-    return _dict_from_tcltuple(tk.splitlist(res))
+    return _splitdict(tk, res, conv=_tclobj_to_py)
 
 def _convert_stringval(value):
     """Converts a value to, hopefully, a more appropriate Python object."""
@@ -336,20 +321,24 @@ def _to_number(x):
             x = int(x)
     return x
 
+def _tclobj_to_py(val):
+    """Return value converted from Tcl object to Python object."""
+    if val and hasattr(val, '__len__') and not isinstance(val, basestring):
+        if getattr(val[0], 'typename', None) == 'StateSpec':
+            val = _list_from_statespec(val)
+        else:
+            val = map(_convert_stringval, val)
+
+    elif hasattr(val, 'typename'): # some other (single) Tcl object
+        val = _convert_stringval(val)
+
+    return val
+
 def tclobjs_to_py(adict):
     """Returns adict with its values converted from Tcl objects to Python
     objects."""
-    for opt, val in adict.iteritems():
-        if val and hasattr(val, '__len__') and not isinstance(val, basestring):
-            if getattr(val[0], 'typename', None) == 'StateSpec':
-                val = _list_from_statespec(val)
-            else:
-                val = map(_convert_stringval, val)
-
-        elif hasattr(val, 'typename'): # some other (single) Tcl object
-            val = _convert_stringval(val)
-
-        adict[opt] = val
+    for opt, val in adict.items():
+        adict[opt] = _tclobj_to_py(val)
 
     return adict
 
@@ -409,8 +398,10 @@ class Style(object):
             return _list_from_statespec(self.tk.splitlist(
                 self.tk.call(self._name, "map", style, '-%s' % query_opt)))
 
-        return _dict_from_tcltuple(self.tk.splitlist(
-            self.tk.call(self._name, "map", style, *(_format_mapdict(kw)))))
+        return _splitdict(
+            self.tk,
+            self.tk.call(self._name, "map", style, *_format_mapdict(kw)),
+            conv=_tclobj_to_py)
 
 
     def lookup(self, style, option, state=None, default=None):
@@ -1427,13 +1418,16 @@ class Treeview(Widget, Tkinter.XView, Tkinter.YView):
 
 
     def set(self, item, column=None, value=None):
-        """With one argument, returns a dictionary of column/value pairs
-        for the specified item. With two arguments, returns the current
-        value of the specified column. With three arguments, sets the
+        """Query or set the value of given item.
+
+        With one argument, return a dictionary of column/value pairs
+        for the specified item. With two arguments, return the current
+        value of the specified column. With three arguments, set the
         value of given column in given item to the specified value."""
         res = self.tk.call(self._w, "set", item, column, value)
         if column is None and value is None:
-            return _dict_from_tcltuple(self.tk.splitlist(res), False)
+            return _splitdict(self.tk, res,
+                              cut_minus=False, conv=_tclobj_to_py)
         else:
             return res
 

@@ -71,16 +71,16 @@ If you don't supply an explicit list of files (or instructions on how to
 generate one), the :command:`sdist` command puts a minimal default set into the
 source distribution:
 
-* all Python source files implied by the :option:`py_modules` and
-  :option:`packages` options
+* all Python source files implied by the ``py_modules`` and
+  ``packages`` options
 
-* all C source files mentioned in the :option:`ext_modules` or
-  :option:`libraries` options
+* all C source files mentioned in the ``ext_modules`` or
+  ``libraries`` options
 
   .. XXX Getting C library sources is currently broken -- no
      :meth:`get_source_files` method in :file:`build_clib.py`!
 
-* scripts identified by the :option:`scripts` option
+* scripts identified by the ``scripts`` option
   See :ref:`distutils-installing-scripts`.
 
 * anything that looks like a test script: :file:`test/test\*.py` (currently, the
@@ -215,7 +215,7 @@ source distribution:
 
 #. include all Python source files in the :file:`distutils` and
    :file:`distutils/command` subdirectories (because packages corresponding to
-   those two directories were mentioned in the :option:`packages` option in the
+   those two directories were mentioned in the ``packages`` option in the
    setup script---see section :ref:`setup-script`)
 
 #. include :file:`README.txt`, :file:`setup.py`, and :file:`setup.cfg` (standard

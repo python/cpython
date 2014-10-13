@@ -823,6 +823,11 @@ class DecimalFormatTest(unittest.TestCase):
 
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
+
+            # issue 22090
+            ('<^+15.20%', 'inf', '<<+Infinity%<<<'),
+            ('\x07>,%', 'sNaN1234567', 'sNaN1234567%'),
+            ('=10.10%', 'NaN123', '   NaN123%'),
             ]
         for fmt, d, result in test_values:
             self.assertEqual(format(Decimal(d), fmt), result)

@@ -2236,7 +2236,7 @@ drop_readahead(PyFileObject *f)
    (unless at EOF) and no more than bufsize.  Returns negative value on
    error, will set MemoryError if bufsize bytes cannot be allocated. */
 static int
-readahead(PyFileObject *f, int bufsize)
+readahead(PyFileObject *f, Py_ssize_t bufsize)
 {
     Py_ssize_t chunksize;
 
@@ -2274,7 +2274,7 @@ readahead(PyFileObject *f, int bufsize)
    logarithmic buffer growth to about 50 even when reading a 1gb line. */
 
 static PyStringObject *
-readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
+readahead_get_line_skip(PyFileObject *f, Py_ssize_t skip, Py_ssize_t bufsize)
 {
     PyStringObject* s;
     char *bufptr;
@@ -2294,10 +2294,10 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
         bufptr++;                               /* Count the '\n' */
         len = bufptr - f->f_bufptr;
         s = (PyStringObject *)
-            PyString_FromStringAndSize(NULL, skip+len);
+            PyString_FromStringAndSize(NULL, skip + len);
         if (s == NULL)
             return NULL;
-        memcpy(PyString_AS_STRING(s)+skip, f->f_bufptr, len);
+        memcpy(PyString_AS_STRING(s) + skip, f->f_bufptr, len);
         f->f_bufptr = bufptr;
         if (bufptr == f->f_bufend)
             drop_readahead(f);
@@ -2305,14 +2305,13 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
         bufptr = f->f_bufptr;
         buf = f->f_buf;
         f->f_buf = NULL;                /* Force new readahead buffer */
-        assert(skip+len < INT_MAX);
-        s = readahead_get_line_skip(
-            f, (int)(skip+len), bufsize + (bufsize>>2) );
+        assert(len <= PY_SSIZE_T_MAX - skip);
+        s = readahead_get_line_skip(f, skip + len, bufsize + (bufsize>>2));
         if (s == NULL) {
             PyMem_Free(buf);
             return NULL;
         }
-        memcpy(PyString_AS_STRING(s)+skip, bufptr, len);
+        memcpy(PyString_AS_STRING(s) + skip, bufptr, len);
         PyMem_Free(buf);
     }
     return s;

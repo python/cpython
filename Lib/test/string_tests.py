@@ -65,14 +65,12 @@ class CommonTest(unittest.TestCase):
             self.assertTrue(object is not realresult)
 
     # check that object.method(*args) raises exc
-    def checkraises(self, exc, object, methodname, *args):
-        object = self.fixtype(object)
+    def checkraises(self, exc, obj, methodname, *args):
+        obj = self.fixtype(obj)
         args = self.fixtype(args)
-        self.assertRaises(
-            exc,
-            getattr(object, methodname),
-            *args
-        )
+        with self.assertRaises(exc) as cm:
+            getattr(obj, methodname)(*args)
+        self.assertNotEqual(cm.exception.args[0], '')
 
     # call object.method(*args) without any checks
     def checkcall(self, object, methodname, *args):
@@ -1057,6 +1055,7 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('a b c', ' ', 'join', BadSeq2())
 
         self.checkraises(TypeError, ' ', 'join')
+        self.checkraises(TypeError, ' ', 'join', None)
         self.checkraises(TypeError, ' ', 'join', 7)
         self.checkraises(TypeError, ' ', 'join', Sequence([7, 'hello', 123L]))
         try:

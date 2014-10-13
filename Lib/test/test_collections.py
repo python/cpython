@@ -8,13 +8,14 @@ import pickle, cPickle, copy
 from random import randrange, shuffle
 import keyword
 import re
-import sets
 import sys
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
 from collections import Set, MutableSet
 from collections import Mapping, MutableMapping
 from collections import Sequence, MutableSequence
+# Silence deprecation warning
+sets = test_support.import_module('sets', deprecated=True)
 
 TestNT = namedtuple('TestNT', 'x y z')    # type used for pickle tests
 
@@ -713,10 +714,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(r1 < r3)
         self.assertFalse(r1 < r1)
         self.assertFalse(r1 < r2)
-        # python 2 only, cross-type compares will succeed
-        f1 < l3
-        f1 < l1
-        f1 < l2
+
+        with test_support.check_py3k_warnings():
+            # python 2 only, cross-type compares will succeed
+            f1 < l3
+            f1 < l1
+            f1 < l2
 
         # any subset
         self.assertTrue(f1 <= f3)
@@ -728,10 +731,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(r1 <= r3)
         self.assertTrue(r1 <= r1)
         self.assertFalse(r1 <= r2)
-        # python 2 only, cross-type compares will succeed
-        f1 <= l3
-        f1 <= l1
-        f1 <= l2
+
+        with test_support.check_py3k_warnings():
+            # python 2 only, cross-type compares will succeed
+            f1 <= l3
+            f1 <= l1
+            f1 <= l2
 
         # proper superset
         self.assertTrue(f3 > f1)
@@ -743,10 +748,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(r3 > r1)
         self.assertFalse(r1 > r1)
         self.assertFalse(r2 > r1)
-        # python 2 only, cross-type compares will succeed
-        f1 > l3
-        f1 > l1
-        f1 > l2
+
+        with test_support.check_py3k_warnings():
+            # python 2 only, cross-type compares will succeed
+            f1 > l3
+            f1 > l1
+            f1 > l2
 
         # any superset
         self.assertTrue(f3 >= f1)
@@ -758,10 +765,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(r3 >= r1)
         self.assertTrue(r1 >= r1)
         self.assertFalse(r2 >= r1)
-        # python 2 only, cross-type compares will succeed
-        f1 >= l3
-        f1 >=l1
-        f1 >= l2
+
+        with test_support.check_py3k_warnings():
+            # python 2 only, cross-type compares will succeed
+            f1 >= l3
+            f1 >=l1
+            f1 >= l2
 
         # equality
         self.assertTrue(f1 == f1)

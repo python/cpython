@@ -808,6 +808,7 @@ class TestBasicOps(unittest.TestCase):
         it = islice(it, 1)
         self.assertIsNotNone(wr())
         list(it) # exhaust the iterator
+        test_support.gc_collect()
         self.assertIsNone(wr())
 
     def test_takewhile(self):

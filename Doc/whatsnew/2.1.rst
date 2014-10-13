@@ -555,7 +555,7 @@ will include metadata, making it possible to build automated cataloguing systems
 and experiment with them.  With the result experience, perhaps it'll be possible
 to design a really good catalog and then build support for it into Python 2.2.
 For example, the Distutils :command:`sdist` and :command:`bdist_\*` commands
-could support a :option:`upload` option that would automatically upload your
+could support a ``upload`` option that would automatically upload your
 package to a catalog server.
 
 You can start creating packages containing :file:`PKG-INFO` even if you're not

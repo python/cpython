@@ -4,6 +4,10 @@
 .. module:: symtable
    :synopsis: Interface to the compiler's internal symbol tables.
 
+**Source code:** :source:`Lib/symtable.py`
+
+--------------
+
 .. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 

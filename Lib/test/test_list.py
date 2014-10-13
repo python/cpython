@@ -53,7 +53,7 @@ class ListTest(list_tests.CommonTest):
 
     def test_overflow(self):
         lst = [4, 5, 6, 7]
-        n = int((sys.maxint*2+2) // len(lst))
+        n = int((sys.maxsize*2+2) // len(lst))
         def mul(a, b): return a * b
         def imul(a, b): a *= b
         self.assertRaises((MemoryError, OverflowError), mul, lst, n)

@@ -41,7 +41,7 @@
 #define STRUCT_VALUE_ADDRESS_WITH_ARG 0
 #endif
 
-/* If the structure has essentialy an unique element, return its type.  */
+/* If the structure has essentially an unique element, return its type.  */
 static int
 simple_type (ffi_type *arg)
 {

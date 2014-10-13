@@ -29,6 +29,26 @@ class MacPathTestCase(unittest.TestCase):
         self.assertEqual(split(":conky:mountpoint:"),
                           (':conky:mountpoint', ''))
 
+    def test_join(self):
+        join = macpath.join
+        self.assertEqual(join('a', 'b'), ':a:b')
+        self.assertEqual(join(':a', 'b'), ':a:b')
+        self.assertEqual(join(':a:', 'b'), ':a:b')
+        self.assertEqual(join(':a::', 'b'), ':a::b')
+        self.assertEqual(join(':a', '::b'), ':a::b')
+        self.assertEqual(join('a', ':'), ':a:')
+        self.assertEqual(join('a:', ':'), 'a:')
+        self.assertEqual(join('a', ''), ':a:')
+        self.assertEqual(join('a:', ''), 'a:')
+        self.assertEqual(join('', ''), '')
+        self.assertEqual(join('', 'a:b'), 'a:b')
+        self.assertEqual(join('', 'a', 'b'), ':a:b')
+        self.assertEqual(join('a:b', 'c'), 'a:b:c')
+        self.assertEqual(join('a:b', ':c'), 'a:b:c')
+        self.assertEqual(join('a', ':b', ':c'), ':a:b:c')
+        self.assertEqual(join('a', 'b:'), 'b:')
+        self.assertEqual(join('a:', 'b:'), 'b:')
+
     def test_splitext(self):
         splitext = macpath.splitext
         self.assertEqual(splitext(":foo.ext"), (':foo', '.ext'))

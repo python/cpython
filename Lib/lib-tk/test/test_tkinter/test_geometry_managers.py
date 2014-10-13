@@ -1,6 +1,6 @@
 import unittest
 import re
-import Tkinter
+import Tkinter as tkinter
 from Tkinter import TclError
 from test.test_support import requires, run_unittest
 
@@ -13,13 +13,13 @@ requires('gui')
 class PackTest(AbstractWidgetTest, unittest.TestCase):
 
     def create2(self):
-        pack = Tkinter.Toplevel(self.root, name='pack')
+        pack = tkinter.Toplevel(self.root, name='pack')
         pack.wm_geometry('300x200+0+0')
         pack.wm_minsize(1, 1)
-        a = Tkinter.Frame(pack, name='a', width=20, height=40, bg='red')
-        b = Tkinter.Frame(pack, name='b', width=50, height=30, bg='blue')
-        c = Tkinter.Frame(pack, name='c', width=80, height=80, bg='green')
-        d = Tkinter.Frame(pack, name='d', width=40, height=30, bg='yellow')
+        a = tkinter.Frame(pack, name='a', width=20, height=40, bg='red')
+        b = tkinter.Frame(pack, name='b', width=50, height=30, bg='blue')
+        c = tkinter.Frame(pack, name='c', width=80, height=80, bg='green')
+        d = tkinter.Frame(pack, name='d', width=40, height=30, bg='yellow')
         return pack, a, b, c, d
 
     def test_pack_configure_after(self):
@@ -277,11 +277,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
 class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 
     def create2(self):
-        t = Tkinter.Toplevel(self.root, width=300, height=200, bd=0)
-        t.wm_geometry('+0+0')
-        f = Tkinter.Frame(t, width=154, height=84, bd=2, relief='raised')
+        t = tkinter.Toplevel(self.root, width=300, height=200, bd=0)
+        t.wm_geometry('300x200+0+0')
+        f = tkinter.Frame(t, width=154, height=84, bd=2, relief='raised')
         f.place_configure(x=48, y=38)
-        f2 = Tkinter.Frame(t, width=30, height=60, bd=2, relief='raised')
+        f2 = tkinter.Frame(t, width=30, height=60, bd=2, relief='raised')
         self.root.update()
         return t, f, f2
 
@@ -369,7 +369,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
             f2.place_configure(in_=f, rely='spam')
 
     def test_place_configure_anchor(self):
-        f = Tkinter.Frame(self.root)
+        f = tkinter.Frame(self.root)
         with self.assertRaisesRegexp(TclError, 'bad anchor "j"'):
             f.place_configure(anchor='j')
         with self.assertRaisesRegexp(TclError, 'ambiguous anchor ""'):
@@ -425,7 +425,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
             f2.place_configure(relheight='abcd')
 
     def test_place_configure_bordermode(self):
-        f = Tkinter.Frame(self.root)
+        f = tkinter.Frame(self.root)
         with self.assertRaisesRegexp(TclError, 'bad bordermode "j"'):
             f.place_configure(bordermode='j')
         with self.assertRaisesRegexp(TclError, 'ambiguous bordermode ""'):
@@ -435,7 +435,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
             self.assertEqual(f.place_info()['bordermode'], value)
 
     def test_place_forget(self):
-        foo = Tkinter.Frame(self.root)
+        foo = tkinter.Frame(self.root)
         foo.place_configure(width=50, height=50)
         self.root.update()
         foo.place_forget()
@@ -467,8 +467,8 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
             f2.place_info(0)
 
     def test_place_slaves(self):
-        foo = Tkinter.Frame(self.root)
-        bar = Tkinter.Frame(self.root)
+        foo = tkinter.Frame(self.root)
+        bar = tkinter.Frame(self.root)
         self.assertEqual(foo.place_slaves(), [])
         bar.place_configure(in_=foo)
         self.assertEqual(foo.place_slaves(), [bar])
@@ -479,17 +479,16 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     def tearDown(self):
-        super(GridTest, self).tearDown()
         cols, rows = self.root.grid_size()
         for i in range(cols + 1):
             self.root.grid_columnconfigure(i, weight=0, minsize=0, pad=0, uniform='')
         for i in range(rows + 1):
             self.root.grid_rowconfigure(i, weight=0, minsize=0, pad=0, uniform='')
         self.root.grid_propagate(1)
+        super(GridTest, self).tearDown()
 
     def test_grid_configure(self):
-        b = Tkinter.Button(self.root)
-        self.addCleanup(b.destroy)
+        b = tkinter.Button(self.root)
         self.assertEqual(b.grid_info(), {})
         b.grid_configure()
         self.assertEqual(b.grid_info()['in'], self.root)
@@ -500,7 +499,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(b.grid_info()['row'], self._str(2))
 
     def test_grid_configure_column(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad column value "-1": '
                                      'must be a non-negative integer'):
             b.grid_configure(column=-1)
@@ -508,7 +507,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(b.grid_info()['column'], self._str(2))
 
     def test_grid_configure_columnspan(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad columnspan value "0": '
                                      'must be a positive integer'):
             b.grid_configure(columnspan=0)
@@ -516,8 +515,8 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(b.grid_info()['columnspan'], self._str(2))
 
     def test_grid_configure_in(self):
-        f = Tkinter.Frame(self.root)
-        b = Tkinter.Button(self.root)
+        f = tkinter.Frame(self.root)
+        b = tkinter.Button(self.root)
         self.assertEqual(b.grid_info(), {})
         b.grid_configure()
         self.assertEqual(b.grid_info()['in'], self.root)
@@ -527,7 +526,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(b.grid_info()['in'], self.root)
 
     def test_grid_configure_ipadx(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad ipadx value "-1": '
                                      'must be positive screen distance'):
             b.grid_configure(ipadx=-1)
@@ -538,7 +537,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
                 self._str(int_round(pixels_conv('.5c') * self.scaling)))
 
     def test_grid_configure_ipady(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad ipady value "-1": '
                                      'must be positive screen distance'):
             b.grid_configure(ipady=-1)
@@ -549,7 +548,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
                 self._str(int_round(pixels_conv('.5c') * self.scaling)))
 
     def test_grid_configure_padx(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad pad value "-1": '
                                      'must be positive screen distance'):
             b.grid_configure(padx=-1)
@@ -562,7 +561,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
                 self._str(int_round(pixels_conv('.5c') * self.scaling)))
 
     def test_grid_configure_pady(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad pad value "-1": '
                                      'must be positive screen distance'):
             b.grid_configure(pady=-1)
@@ -575,8 +574,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
                 self._str(int_round(pixels_conv('.5c') * self.scaling)))
 
     def test_grid_configure_row(self):
-        b = Tkinter.Button(self.root)
-        self.addCleanup(b.destroy)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad (row|grid) value "-1": '
                                      'must be a non-negative integer'):
             b.grid_configure(row=-1)
@@ -584,7 +582,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(b.grid_info()['row'], self._str(2))
 
     def test_grid_configure_rownspan(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         with self.assertRaisesRegexp(TclError, 'bad rowspan value "0": '
                                      'must be a positive integer'):
             b.grid_configure(rowspan=0)
@@ -592,7 +590,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(b.grid_info()['rowspan'], self._str(2))
 
     def test_grid_configure_sticky(self):
-        f = Tkinter.Frame(self.root, bg='red')
+        f = tkinter.Frame(self.root, bg='red')
         with self.assertRaisesRegexp(TclError, 'bad stickyness value "glue"'):
             f.grid_configure(sticky='glue')
         f.grid_configure(sticky='ne')
@@ -611,7 +609,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaisesRegexp(TclError,
                                      'must specify a single element on retrieval'):
             self.root.grid_columnconfigure((0, 3))
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         b.grid_configure(column=0, row=0)
         if tcl_version >= (8, 5):
             self.root.grid_columnconfigure('all', weight=3)
@@ -667,7 +665,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaisesRegexp(TclError,
                                      'must specify a single element on retrieval'):
             self.root.grid_rowconfigure((0, 3))
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         b.grid_configure(column=0, row=0)
         if tcl_version >= (8, 5):
             self.root.grid_rowconfigure('all', weight=3)
@@ -713,8 +711,8 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_rowconfigure(0)['uniform'], 'foo')
 
     def test_grid_forget(self):
-        b = Tkinter.Button(self.root)
-        c = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
+        c = tkinter.Button(self.root)
         b.grid_configure(row=2, column=2, rowspan=2, columnspan=2,
                          padx=3, pady=4, sticky='ns')
         self.assertEqual(self.root.grid_slaves(), [b])
@@ -733,8 +731,8 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(info['sticky'], '')
 
     def test_grid_remove(self):
-        b = Tkinter.Button(self.root)
-        c = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
+        c = tkinter.Button(self.root)
         b.grid_configure(row=2, column=2, rowspan=2, columnspan=2,
                          padx=3, pady=4, sticky='ns')
         self.assertEqual(self.root.grid_slaves(), [b])
@@ -753,7 +751,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(info['sticky'], 'ns')
 
     def test_grid_info(self):
-        b = Tkinter.Button(self.root)
+        b = tkinter.Button(self.root)
         self.assertEqual(b.grid_info(), {})
         b.grid_configure(row=2, column=2, rowspan=2, columnspan=2,
                          padx=3, pady=4, sticky='ns')
@@ -782,12 +780,12 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
             self.root.grid_bbox(0, 0, 0, 'x')
         with self.assertRaises(TypeError):
             self.root.grid_bbox(0, 0, 0, 0, 0)
-        t = Tkinter.Toplevel(self.root)
+        t = self.root
         # de-maximize
         t.wm_geometry('1x1+0+0')
         t.wm_geometry('')
-        f1 = Tkinter.Frame(t, width=75, height=75, bg='red')
-        f2 = Tkinter.Frame(t, width=90, height=90, bg='blue')
+        f1 = tkinter.Frame(t, width=75, height=75, bg='red')
+        f2 = tkinter.Frame(t, width=90, height=90, bg='blue')
         f1.grid_configure(row=0, column=0)
         f2.grid_configure(row=1, column=1)
         self.root.update()
@@ -810,11 +808,11 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
             self.root.grid_location('x', 'y')
         with self.assertRaisesRegexp(TclError, 'bad screen distance "y"'):
             self.root.grid_location('1c', 'y')
-        t = Tkinter.Toplevel(self.root)
+        t = self.root
         # de-maximize
         t.wm_geometry('1x1+0+0')
         t.wm_geometry('')
-        f = Tkinter.Frame(t, width=200, height=100,
+        f = tkinter.Frame(t, width=200, height=100,
                           highlightthickness=0, bg='red')
         self.assertEqual(f.grid_location(10, 10), (-1, -1))
         f.grid_configure()
@@ -837,13 +835,13 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
             self.root.grid_propagate(False, False)
         self.root.grid_propagate(False)
         self.assertFalse(self.root.grid_propagate())
-        f = Tkinter.Frame(self.root, width=100, height=100, bg='red')
+        f = tkinter.Frame(self.root, width=100, height=100, bg='red')
         f.grid_configure(row=0, column=0)
         self.root.update()
         self.assertEqual(f.winfo_width(), 100)
         self.assertEqual(f.winfo_height(), 100)
         f.grid_propagate(False)
-        g = Tkinter.Frame(self.root, width=75, height=85, bg='green')
+        g = tkinter.Frame(self.root, width=75, height=85, bg='green')
         g.grid_configure(in_=f, row=0, column=0)
         self.root.update()
         self.assertEqual(f.winfo_width(), 100)
@@ -857,7 +855,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaises(TypeError):
             self.root.grid_size(0)
         self.assertEqual(self.root.grid_size(), (0, 0))
-        f = Tkinter.Scale(self.root)
+        f = tkinter.Scale(self.root)
         f.grid_configure(row=0, column=0)
         self.assertEqual(self.root.grid_size(), (1, 1))
         f.grid_configure(row=4, column=5)
@@ -865,13 +863,13 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_grid_slaves(self):
         self.assertEqual(self.root.grid_slaves(), [])
-        a = Tkinter.Label(self.root)
+        a = tkinter.Label(self.root)
         a.grid_configure(row=0, column=1)
-        b = Tkinter.Label(self.root)
+        b = tkinter.Label(self.root)
         b.grid_configure(row=1, column=0)
-        c = Tkinter.Label(self.root)
+        c = tkinter.Label(self.root)
         c.grid_configure(row=1, column=1)
-        d = Tkinter.Label(self.root)
+        d = tkinter.Label(self.root)
         d.grid_configure(row=1, column=1)
         self.assertEqual(self.root.grid_slaves(), [d, c, b, a])
         self.assertEqual(self.root.grid_slaves(row=0), [a])

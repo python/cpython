@@ -980,7 +980,8 @@ PyDoc_STRVAR(fileno_doc,
 "This is needed for lower-level file interfaces, such the fcntl module.");
 
 PyDoc_STRVAR(seek_doc,
-"seek(offset: int[, whence: int]) -> None.  Move to new file position.\n"
+"seek(offset: int[, whence: int]) -> int.  Move to new file position\n"
+"and return the file position.\n"
 "\n"
 "Argument offset is a byte count.  Optional argument whence defaults to\n"
 "0 (offset from start of file, offset should be >= 0); other values are 1\n"
@@ -992,9 +993,10 @@ PyDoc_STRVAR(seek_doc,
 
 #ifdef HAVE_FTRUNCATE
 PyDoc_STRVAR(truncate_doc,
-"truncate([size: int]) -> None.  Truncate the file to at most size bytes.\n"
+"truncate([size: int]) -> int.  Truncate the file to at most size bytes and\n"
+"return the truncated size.\n"
 "\n"
-"Size defaults to the current file position, as returned by tell()."
+"Size defaults to the current file position, as returned by tell().\n"
 "The current file position is changed to the value of size.");
 #endif
 

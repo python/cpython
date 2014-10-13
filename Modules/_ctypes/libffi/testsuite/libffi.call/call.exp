@@ -19,20 +19,7 @@ libffi-init
 
 global srcdir subdir
 
-if { [string match $using_gcc "yes"] } {
-
-  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] "-O0 -W -Wall" ""
-  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] "-O2" ""
-  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] "-O3" ""
-  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] "-Os" ""
-  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] "-O2 -fomit-frame-pointer" ""
- 
-} else { 
-
-  # Assume we are using the vendor compiler.
-  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] "" ""
-
-}
+run-many-tests [lsort [glob -nocomplain -- $srcdir/$subdir/*.{c,cc}]] ""
 
 dg-finish
 

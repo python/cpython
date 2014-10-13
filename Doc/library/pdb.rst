@@ -6,6 +6,9 @@
 .. module:: pdb
    :synopsis: The Python debugger for interactive interpreters.
 
+**Source code:** :source:`Lib/pdb.py`
+
+--------------
 
 .. index:: single: debugging
 

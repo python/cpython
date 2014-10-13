@@ -2683,12 +2683,12 @@ ast_for_exec_stmt(struct compiling *c, const node *n)
     if (expr1->kind == Tuple_kind && n_children < 4 &&
         (asdl_seq_LEN(expr1->v.Tuple.elts) == 2 ||
          asdl_seq_LEN(expr1->v.Tuple.elts) == 3)) {
-        /* Backwards compatibility: pass exec args as a tuple */
-        globals = (expr_ty) asdl_seq_GET(expr1->v.Tuple.elts, 1);
+        /* Backwards compatibility: passing exec args as a tuple */
+        globals = asdl_seq_GET(expr1->v.Tuple.elts, 1);
         if (asdl_seq_LEN(expr1->v.Tuple.elts) == 3) {
-            locals = (expr_ty) asdl_seq_GET(expr1->v.Tuple.elts, 2);
+            locals = asdl_seq_GET(expr1->v.Tuple.elts, 2);
         }
-        expr1 = (expr_ty) asdl_seq_GET(expr1->v.Tuple.elts, 0);
+        expr1 = asdl_seq_GET(expr1->v.Tuple.elts, 0);
     }
 
     if (n_children >= 4) {

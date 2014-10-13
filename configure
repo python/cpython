@@ -2857,6 +2857,9 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
+# pybuilddir.txt will be created by --generate-posix-vars in the Makefile
+rm -f pybuilddir.txt
+
 if test "$cross_compiling" = yes; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python interpreter for cross build" >&5
 $as_echo_n "checking for python interpreter for cross build... " >&6; }

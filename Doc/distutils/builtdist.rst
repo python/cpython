@@ -186,21 +186,21 @@ Distutils configuration files.  Various options and sections in the
 +------------------------------------------+----------------------------------------------+
 | RPM :file:`.spec` file option or section | Distutils setup script option                |
 +==========================================+==============================================+
-| Name                                     | :option:`name`                               |
+| Name                                     | ``name``                                     |
 +------------------------------------------+----------------------------------------------+
-| Summary (in preamble)                    | :option:`description`                        |
+| Summary (in preamble)                    | ``description``                              |
 +------------------------------------------+----------------------------------------------+
-| Version                                  | :option:`version`                            |
+| Version                                  | ``version``                                  |
 +------------------------------------------+----------------------------------------------+
-| Vendor                                   | :option:`author` and :option:`author_email`, |
-|                                          | or  --- & :option:`maintainer` and           |
-|                                          | :option:`maintainer_email`                   |
+| Vendor                                   | ``author`` and ``author_email``,             |
+|                                          | or  --- & ``maintainer`` and                 |
+|                                          | ``maintainer_email``                         |
 +------------------------------------------+----------------------------------------------+
-| Copyright                                | :option:`license`                            |
+| Copyright                                | ``license``                                  |
 +------------------------------------------+----------------------------------------------+
-| Url                                      | :option:`url`                                |
+| Url                                      | ``url``                                      |
 +------------------------------------------+----------------------------------------------+
-| %description (section)                   | :option:`long_description`                   |
+| %description (section)                   | ``long_description``                         |
 +------------------------------------------+----------------------------------------------+
 
 Additionally, there are many options in :file:`.spec` files that don't have
@@ -211,27 +211,27 @@ options to the :command:`bdist_rpm` command as follows:
 | RPM :file:`.spec` file option | :command:`bdist_rpm` option | default value           |
 | or section                    |                             |                         |
 +===============================+=============================+=========================+
-| Release                       | :option:`release`           | "1"                     |
+| Release                       | ``release``                 | "1"                     |
 +-------------------------------+-----------------------------+-------------------------+
-| Group                         | :option:`group`             | "Development/Libraries" |
+| Group                         | ``group``                   | "Development/Libraries" |
 +-------------------------------+-----------------------------+-------------------------+
-| Vendor                        | :option:`vendor`            | (see above)             |
+| Vendor                        | ``vendor``                  | (see above)             |
 +-------------------------------+-----------------------------+-------------------------+
-| Packager                      | :option:`packager`          | (none)                  |
+| Packager                      | ``packager``                | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
-| Provides                      | :option:`provides`          | (none)                  |
+| Provides                      | ``provides``                | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
-| Requires                      | :option:`requires`          | (none)                  |
+| Requires                      | ``requires``                | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
-| Conflicts                     | :option:`conflicts`         | (none)                  |
+| Conflicts                     | ``conflicts``               | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
-| Obsoletes                     | :option:`obsoletes`         | (none)                  |
+| Obsoletes                     | ``obsoletes``               | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
-| Distribution                  | :option:`distribution_name` | (none)                  |
+| Distribution                  | ``distribution_name``       | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
-| BuildRequires                 | :option:`build_requires`    | (none)                  |
+| BuildRequires                 | ``build_requires``          | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
-| Icon                          | :option:`icon`              | (none)                  |
+| Icon                          | ``icon``                    | (none)                  |
 +-------------------------------+-----------------------------+-------------------------+
 
 Obviously, supplying even a few of these options on the command-line would be

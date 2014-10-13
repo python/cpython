@@ -210,7 +210,6 @@ class DemoWindow(object):
             direc, fname = os.path.split(filename)
             self.root.title(fname[6:-3]+" - a Python turtle graphics example")
             self.module = __import__(fname[:-3])
-            reload(self.module)
             self.configGUI(NORMAL, NORMAL, DISABLED, DISABLED,
                            "Press start button", "red")
             self.state = READY

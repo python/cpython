@@ -192,7 +192,7 @@ LCFI1:
 	lg	r0,0(r3)		; size => r0
 	lhz	r3,FFI_TYPE_TYPE(r3)	; type => r3
 
-	/* The helper will have intercepted struture returns and inserted
+	/* The helper will have intercepted structure returns and inserted
 	   the caller`s destination address for structs returned by ref.  */
 
 	/* r3 contains the return type  so use it to look up in a table
@@ -467,11 +467,6 @@ Lendcode:
 #define EH_FRAME_OFFSETA MODE_CHOICE(176,0x90)
 #define EH_FRAME_OFFSETB MODE_CHOICE(1,3)
 
-	.static_data
-	.align LOG2_GPR_BYTES
-LLFB1$non_lazy_ptr:
-	.g_long Lstartcode
-
 	.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms+live_support
 EH_frame1:
 	.set	L$set$0,LECIE1-LSCIE1
@@ -484,7 +479,7 @@ LSCIE1:
 	.byte	EH_DATA_ALIGN_FACT ; sleb128 -4; CIE Data Alignment Factor
 	.byte	0x41	; CIE RA Column
 	.byte	0x1	; uleb128 0x1; Augmentation size
-	.byte	0x10	; FDE Encoding (indirect pcrel)
+	.byte	0x10	; FDE Encoding (pcrel)
 	.byte	0xc	; DW_CFA_def_cfa
 	.byte	0x1	; uleb128 0x1
 	.byte	0x0	; uleb128 0x0
@@ -498,7 +493,7 @@ LSFDE1:
 
 LASFDE1:
 	.long	LASFDE1-EH_frame1	; FDE CIE offset
-	.g_long	LLFB1$non_lazy_ptr-.	; FDE initial location
+	.g_long	Lstartcode-.	; FDE initial location
 	.set	L$set$3,LFE1-Lstartcode
 	.g_long	L$set$3	; FDE address range
 	.byte   0x0     ; uleb128 0x0; Augmentation size
@@ -523,12 +518,12 @@ LEFDE1:
 L_ffi_closure_helper_DARWIN$stub:
 	.indirect_symbol _ffi_closure_helper_DARWIN
 	mflr r0
-	bcl 20,31,"L00000000001$spb"
-"L00000000001$spb":
+	bcl 20,31,"L1$spb"
+"L1$spb":
 	mflr r11
-	addis r11,r11,ha16(L_ffi_closure_helper_DARWIN$lazy_ptr-"L00000000001$spb")
+	addis r11,r11,ha16(L_ffi_closure_helper_DARWIN$lazy_ptr-"L1$spb")
 	mtlr r0
-	lwzu r12,lo16(L_ffi_closure_helper_DARWIN$lazy_ptr-"L00000000001$spb")(r11)
+	lwzu r12,lo16(L_ffi_closure_helper_DARWIN$lazy_ptr-"L1$spb")(r11)
 	mtctr r12
 	bctr
 	.lazy_symbol_pointer
@@ -542,12 +537,12 @@ L_ffi_closure_helper_DARWIN$lazy_ptr:
 L_darwin64_struct_ret_by_value_p$stub:
 	.indirect_symbol _darwin64_struct_ret_by_value_p
 	mflr r0
-	bcl 20,31,"L00000000002$spb"
-"L00000000002$spb":
+	bcl 20,31,"L2$spb"
+"L2$spb":
 	mflr r11
-	addis r11,r11,ha16(L_darwin64_struct_ret_by_value_p$lazy_ptr-"L00000000002$spb")
+	addis r11,r11,ha16(L_darwin64_struct_ret_by_value_p$lazy_ptr-"L2$spb")
 	mtlr r0
-	lwzu r12,lo16(L_darwin64_struct_ret_by_value_p$lazy_ptr-"L00000000002$spb")(r11)
+	lwzu r12,lo16(L_darwin64_struct_ret_by_value_p$lazy_ptr-"L2$spb")(r11)
 	mtctr r12
 	bctr
 	.lazy_symbol_pointer
@@ -560,12 +555,12 @@ L_darwin64_struct_ret_by_value_p$lazy_ptr:
 L_darwin64_pass_struct_floats$stub:
 	.indirect_symbol _darwin64_pass_struct_floats
 	mflr r0
-	bcl 20,31,"L00000000003$spb"
-"L00000000003$spb":
+	bcl 20,31,"L3$spb"
+"L3$spb":
 	mflr r11
-	addis r11,r11,ha16(L_darwin64_pass_struct_floats$lazy_ptr-"L00000000003$spb")
+	addis r11,r11,ha16(L_darwin64_pass_struct_floats$lazy_ptr-"L3$spb")
 	mtlr r0
-	lwzu r12,lo16(L_darwin64_pass_struct_floats$lazy_ptr-"L00000000003$spb")(r11)
+	lwzu r12,lo16(L_darwin64_pass_struct_floats$lazy_ptr-"L3$spb")(r11)
 	mtctr r12
 	bctr
 	.lazy_symbol_pointer

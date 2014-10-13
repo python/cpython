@@ -262,6 +262,13 @@ class BasicTest(TestCase):
         if resp.read() != "":
             self.fail("Did not expect response from HEAD request")
 
+    def test_too_many_headers(self):
+        headers = '\r\n'.join('Header%d: foo' % i for i in xrange(200)) + '\r\n'
+        text = ('HTTP/1.1 200 OK\r\n' + headers)
+        s = FakeSocket(text)
+        r = httplib.HTTPResponse(s)
+        self.assertRaises(httplib.HTTPException, r.begin)
+
     def test_send_file(self):
         expected = 'GET /foo HTTP/1.1\r\nHost: example.com\r\n' \
                    'Accept-Encoding: identity\r\nContent-Length:'

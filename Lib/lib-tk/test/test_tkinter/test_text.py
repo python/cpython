@@ -1,18 +1,15 @@
 import unittest
-import Tkinter
+import Tkinter as tkinter
 from test.test_support import requires, run_unittest
-from ttk import setup_master
+from test_ttk.support import AbstractTkTest
 
 requires('gui')
 
-class TextTest(unittest.TestCase):
+class TextTest(AbstractTkTest, unittest.TestCase):
 
     def setUp(self):
-        self.root = setup_master()
-        self.text = Tkinter.Text(self.root)
-
-    def tearDown(self):
-        self.text.destroy()
+        super(TextTest, self).setUp()
+        self.text = tkinter.Text(self.root)
 
     def test_debug(self):
         text = self.text
@@ -30,12 +27,12 @@ class TextTest(unittest.TestCase):
         text = self.text
 
         # pattern and index are obligatory arguments.
-        self.assertRaises(Tkinter.TclError, text.search, None, '1.0')
-        self.assertRaises(Tkinter.TclError, text.search, 'a', None)
-        self.assertRaises(Tkinter.TclError, text.search, None, None)
+        self.assertRaises(tkinter.TclError, text.search, None, '1.0')
+        self.assertRaises(tkinter.TclError, text.search, 'a', None)
+        self.assertRaises(tkinter.TclError, text.search, None, None)
 
         # Invalid text index.
-        self.assertRaises(Tkinter.TclError, text.search, '', 0)
+        self.assertRaises(tkinter.TclError, text.search, '', 0)
 
         # Check if we are getting the indices as strings -- you are likely
         # to get Tcl_Obj under Tk 8.5 if Tkinter doesn't convert it.

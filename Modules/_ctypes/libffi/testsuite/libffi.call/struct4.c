@@ -14,7 +14,7 @@ typedef struct
   unsigned ui3;
 } test_structure_4;
 
-static test_structure_4 struct4(test_structure_4 ts)
+static test_structure_4 ABI_ATTR struct4(test_structure_4 ts)
 {
   ts.ui3 = ts.ui1 * ts.ui2 * ts.ui3;
 
@@ -48,7 +48,7 @@ int main (void)
   values[0] = &ts4_arg;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ts4_type, args) == FFI_OK);
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 1, &ts4_type, args) == FFI_OK);
   
   ts4_arg.ui1 = 2;
   ts4_arg.ui2 = 3;

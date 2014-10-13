@@ -222,6 +222,10 @@ proc libffi_target_compile { source dest type options } {
 	lappend options "libs= -lpthread"
     }
 
+    if { [string match "*.cc" $source] } {
+	lappend options "c++"
+    }
+
     verbose "options: $options"
     return [target_compile $source $dest $type $options]
 }
@@ -273,6 +277,46 @@ proc libffi-dg-runtest { testcases default-extra-flags } {
     }
 }
 
+proc run-many-tests { testcases extra_flags } {
+    global using_gcc
+    if { [string match $using_gcc "yes"] } {
+        set common "-W -Wall"
+        set optimizations { "-O0" "-O2" "-O3" "-Os" "-O2 -fomit-frame-pointer" }
+    } else {
+        # Assume we are using the vendor compiler.
+        set common ""
+        set optimizations { "" }
+    }
+
+    set targetabis { "" }
+    if [string match $using_gcc "yes"] {
+        if [istarget "i?86-*-*"] {
+            set targetabis {
+                ""
+                "-DABI_NUM=FFI_STDCALL -DABI_ATTR=__STDCALL__"
+                "-DABI_NUM=FFI_THISCALL -DABI_ATTR=__THISCALL__"
+                "-DABI_NUM=FFI_FASTCALL -DABI_ATTR=__FASTCALL__"
+            }
+        }
+    }
+
+    set common [ concat $common $extra_flags ]
+    foreach test $testcases {
+        set testname [file tail $test]
+        if [search_for $test "ABI_NUM"] {
+            set abis $targetabis
+        } else {
+            set abis { "" }
+        }
+        foreach opt $optimizations {
+            foreach abi $abis {
+                set options [concat $common $opt $abi]
+                verbose "Testing $testname, $options" 1
+                dg-test $test $options ""
+            }
+        }
+    }
+}
 
 # Like check_conditional_xfail, but callable from a dg test.
 

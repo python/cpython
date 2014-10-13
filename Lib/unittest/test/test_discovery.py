@@ -3,6 +3,7 @@ import re
 import sys
 
 import unittest
+import unittest.test
 
 
 class TestDiscovery(unittest.TestCase):

@@ -188,10 +188,10 @@ process and user.
 .. function:: getlogin()
 
    Return the name of the user logged in on the controlling terminal of the
-   process.  For most purposes, it is more useful to use the environment variable
-   :envvar:`LOGNAME` to find out who the user is, or
-   ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the currently
-   effective user id.
+   process.  For most purposes, it is more useful to use the environment
+   variable :envvar:`LOGNAME` to find out who the user is, or
+   ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the process's real
+   user id.
 
    Availability: Unix.
 

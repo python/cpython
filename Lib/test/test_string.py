@@ -16,13 +16,10 @@ class StringTest(
             realresult
         )
 
-    def checkraises(self, exc, object, methodname, *args):
-        self.assertRaises(
-            exc,
-            getattr(string, methodname),
-            object,
-            *args
-        )
+    def checkraises(self, exc, obj, methodname, *args):
+        with self.assertRaises(exc) as cm:
+            getattr(string, methodname)(obj, *args)
+        self.assertNotEqual(cm.exception.args[0], '')
 
     def checkcall(self, object, methodname, *args):
         getattr(string, methodname)(object, *args)

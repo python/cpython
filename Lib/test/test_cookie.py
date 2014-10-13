@@ -133,6 +133,15 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C['Customer']['version'], '1')
         self.assertEqual(C['Customer']['path'], '/acme')
 
+    def test_invalid_cookies(self):
+        # Accepting these could be a security issue
+        C = Cookie.SimpleCookie()
+        for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x'):
+            C.load(s)
+            self.assertEqual(dict(C), {})
+            self.assertEqual(C.output(), '')
+
+
 def test_main():
     run_unittest(CookieTests)
     if Cookie.__doc__ is not None:

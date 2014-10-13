@@ -123,6 +123,29 @@ def _cnfmerge(cnfs):
 try: _cnfmerge = _tkinter._cnfmerge
 except AttributeError: pass
 
+def _splitdict(tk, v, cut_minus=True, conv=None):
+    """Return a properly formatted dict built from Tcl list pairs.
+
+    If cut_minus is True, the supposed '-' prefix will be removed from
+    keys. If conv is specified, it is used to convert values.
+
+    Tcl list is expected to contain an even number of elements.
+    """
+    t = tk.splitlist(v)
+    if len(t) % 2:
+        raise RuntimeError('Tcl list representing a dict is expected '
+                           'to contain an even number of elements')
+    it = iter(t)
+    dict = {}
+    for key, value in zip(it, it):
+        key = str(key)
+        if cut_minus and key[0] == '-':
+            key = key[1:]
+        if conv:
+            value = conv(value)
+        dict[key] = value
+    return dict
+
 class Event:
     """Container for the properties of an event.
 
@@ -201,6 +224,7 @@ class Variable:
     Subclasses StringVar, IntVar, DoubleVar, BooleanVar are specializations
     that constrain the type of the value returned from get()."""
     _default = ""
+    _tclCommands = None
     def __init__(self, master=None, value=None, name=None):
         """Construct a variable
 
@@ -214,7 +238,7 @@ class Variable:
         global _varnum
         if not master:
             master = _default_root
-        self._master = master
+        self._root = master._root()
         self._tk = master.tk
         if name:
             self._name = name
@@ -227,9 +251,15 @@ class Variable:
             self.set(self._default)
     def __del__(self):
         """Unset the variable in Tcl."""
-        if (self._tk is not None and
-            self._tk.getboolean(self._tk.call("info", "exists", self._name))):
+        if self._tk is None:
+            return
+        if self._tk.getboolean(self._tk.call("info", "exists", self._name)):
             self._tk.globalunsetvar(self._name)
+        if self._tclCommands is not None:
+            for name in self._tclCommands:
+                #print '- Tkinter: deleted command', name
+                self._tk.deletecommand(name)
+            self._tclCommands = None
     def __str__(self):
         """Return the name of the variable in Tcl."""
         return self._name
@@ -248,7 +278,20 @@ class Variable:
 
         Return the name of the callback.
         """
-        cbname = self._master._register(callback)
+        f = CallWrapper(callback, None, self._root).__call__
+        cbname = repr(id(f))
+        try:
+            callback = callback.im_func
+        except AttributeError:
+            pass
+        try:
+            cbname = cbname + callback.__name__
+        except AttributeError:
+            pass
+        self._tk.createcommand(cbname, f)
+        if self._tclCommands is None:
+            self._tclCommands = []
+        self._tclCommands.append(cbname)
         self._tk.call("trace", "variable", self._name, mode, cbname)
         return cbname
     trace = trace_variable
@@ -259,7 +302,11 @@ class Variable:
         CBNAME is the name of the callback returned from trace_variable or trace.
         """
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
-        self._master.deletecommand(cbname)
+        self._tk.deletecommand(cbname)
+        try:
+            self._tclCommands.remove(cbname)
+        except ValueError:
+            pass
     def trace_vinfo(self):
         """Return all trace callback information."""
         return map(self._tk.split, self._tk.splitlist(
@@ -539,6 +586,7 @@ class Misc:
                         self.deletecommand(name)
                     except TclError:
                         pass
+            callit.__name__ = func.__name__
             name = self._register(callit)
             return self.tk.call('after', ms, name)
     def after_idle(self, func, *args):
@@ -1365,15 +1413,10 @@ class Misc:
         else:
             options = self._options(cnf, kw)
         if not options:
-            res = self.tk.call('grid',
-                       command, self._w, index)
-            words = self.tk.splitlist(res)
-            dict = {}
-            for i in range(0, len(words), 2):
-                key = words[i][1:]
-                value = words[i+1]
-                dict[key] = self._gridconvvalue(value)
-            return dict
+            return _splitdict(
+                self.tk,
+                self.tk.call('grid', command, self._w, index),
+                conv=self._gridconvvalue)
         res = self.tk.call(
                   ('grid', command, self._w, index)
                   + options)
@@ -1836,9 +1879,12 @@ class Tk(Misc, Wm):
         if os.path.isfile(base_py):
             execfile(base_py, dir)
     def report_callback_exception(self, exc, val, tb):
-        """Internal function. It reports exception on sys.stderr."""
+        """Report callback exception on sys.stderr.
+
+        Applications may want to override this internal function, and
+        should when sys.stderr is None."""
         import traceback, sys
-        sys.stderr.write("Exception in Tkinter callback\n")
+        print >>sys.stderr, "Exception in Tkinter callback"
         sys.last_type = exc
         sys.last_value = val
         sys.last_traceback = tb
@@ -1896,16 +1942,10 @@ class Pack:
     def pack_info(self):
         """Return information about the packing options
         for this widget."""
-        words = self.tk.splitlist(
-            self.tk.call('pack', 'info', self._w))
-        dict = {}
-        for i in range(0, len(words), 2):
-            key = words[i][1:]
-            value = words[i+1]
-            if str(value)[:1] == '.':
-                value = self._nametowidget(value)
-            dict[key] = value
-        return dict
+        d = _splitdict(self.tk, self.tk.call('pack', 'info', self._w))
+        if 'in' in d:
+            d['in'] = self.nametowidget(d['in'])
+        return d
     info = pack_info
     propagate = pack_propagate = Misc.pack_propagate
     slaves = pack_slaves = Misc.pack_slaves
@@ -1947,16 +1987,10 @@ class Place:
     def place_info(self):
         """Return information about the placing options
         for this widget."""
-        words = self.tk.splitlist(
-            self.tk.call('place', 'info', self._w))
-        dict = {}
-        for i in range(0, len(words), 2):
-            key = words[i][1:]
-            value = words[i+1]
-            if str(value)[:1] == '.':
-                value = self._nametowidget(value)
-            dict[key] = value
-        return dict
+        d = _splitdict(self.tk, self.tk.call('place', 'info', self._w))
+        if 'in' in d:
+            d['in'] = self.nametowidget(d['in'])
+        return d
     info = place_info
     slaves = place_slaves = Misc.place_slaves
 
@@ -1996,16 +2030,10 @@ class Grid:
     def grid_info(self):
         """Return information about the options
         for positioning this widget in a grid."""
-        words = self.tk.splitlist(
-            self.tk.call('grid', 'info', self._w))
-        dict = {}
-        for i in range(0, len(words), 2):
-            key = words[i][1:]
-            value = words[i+1]
-            if str(value)[:1] == '.':
-                value = self._nametowidget(value)
-            dict[key] = value
-        return dict
+        d = _splitdict(self.tk, self.tk.call('grid', 'info', self._w))
+        if 'in' in d:
+            d['in'] = self.nametowidget(d['in'])
+        return d
     info = grid_info
     location = grid_location = Misc.grid_location
     propagate = grid_propagate = Misc.grid_propagate
@@ -3269,7 +3297,7 @@ class Image:
             master = _default_root
             if not master:
                 raise RuntimeError, 'Too early to create image'
-        self.tk = master.tk
+        self.tk = getattr(master, 'tk', master)
         if not name:
             Image._last_id += 1
             name = "pyimage%r" % (Image._last_id,) # tk itself would use image<x>
@@ -3344,20 +3372,20 @@ class PhotoImage(Image):
     # XXX copy -from, -to, ...?
     def copy(self):
         """Return a new PhotoImage with the same image as this widget."""
-        destImage = PhotoImage()
+        destImage = PhotoImage(master=self.tk)
         self.tk.call(destImage, 'copy', self.name)
         return destImage
     def zoom(self,x,y=''):
         """Return a new PhotoImage with the same image as this widget
         but zoom it with X and Y."""
-        destImage = PhotoImage()
+        destImage = PhotoImage(master=self.tk)
         if y=='': y=x
         self.tk.call(destImage, 'copy', self.name, '-zoom',x,y)
         return destImage
     def subsample(self,x,y=''):
         """Return a new PhotoImage based on the same image as this widget
         but use only every Xth or Yth pixel."""
-        destImage = PhotoImage()
+        destImage = PhotoImage(master=self.tk)
         if y=='': y=x
         self.tk.call(destImage, 'copy', self.name, '-subsample',x,y)
         return destImage

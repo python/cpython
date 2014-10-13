@@ -1154,6 +1154,7 @@ class MappingTestCase(TestBase):
                 yield Object(v), v
             finally:
                 it = None           # should commit all removals
+                gc.collect()
         self.check_weak_destroy_and_mutate_while_iterating(dict, testcontext)
 
     def test_weak_values_destroy_while_iterating(self):
@@ -1175,6 +1176,7 @@ class MappingTestCase(TestBase):
                 yield k, Object(k)
             finally:
                 it = None           # should commit all removals
+                gc.collect()
         self.check_weak_destroy_and_mutate_while_iterating(dict, testcontext)
 
     def test_make_weak_keyed_dict_from_dict(self):

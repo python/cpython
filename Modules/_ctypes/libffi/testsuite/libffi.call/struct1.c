@@ -14,7 +14,7 @@ typedef struct
   unsigned int ui;
 } test_structure_1;
 
-static test_structure_1 struct1(test_structure_1 ts)
+static test_structure_1 ABI_ATTR struct1(test_structure_1 ts)
 {
   ts.uc++;
   ts.d--;
@@ -50,7 +50,7 @@ int main (void)
   values[0] = &ts1_arg;
   
   /* Initialize the cif */
-  CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, 
+  CHECK(ffi_prep_cif(&cif, ABI_NUM, 1,
 		     &ts1_type, args) == FFI_OK);
   
   ts1_arg.uc = '\x01';
