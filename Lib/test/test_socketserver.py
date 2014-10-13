@@ -314,6 +314,16 @@ class SocketServerTest(unittest.TestCase):
         for t, s in threads:
             t.join()
 
+    def test_tcpserver_bind_leak(self):
+        # Issue #22435: the server socket wouldn't be closed if bind()/listen()
+        # failed.
+        # Create many servers for which bind() will fail, to see if this result
+        # in FD exhaustion.
+        for i in range(1024):
+            with self.assertRaises(OverflowError):
+                SocketServer.TCPServer((HOST, -1),
+                                       SocketServer.StreamRequestHandler)
+
 
 def test_main():
     if imp.lock_held():
