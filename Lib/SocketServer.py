@@ -416,8 +416,12 @@ class TCPServer(BaseServer):
         self.socket = socket.socket(self.address_family,
                                     self.socket_type)
         if bind_and_activate:
-            self.server_bind()
-            self.server_activate()
+            try:
+                self.server_bind()
+                self.server_activate()
+            except:
+                self.server_close()
+                raise
 
     def server_bind(self):
         """Called by constructor to bind the socket.
