@@ -70,7 +70,7 @@ class CommonTest(unittest.TestCase):
         args = self.fixtype(args)
         with self.assertRaises(exc) as cm:
             getattr(obj, methodname)(*args)
-        self.assertNotEqual(cm.exception.message, '')
+        self.assertNotEqual(cm.exception.args[0], '')
 
     # call object.method(*args) without any checks
     def checkcall(self, object, methodname, *args):

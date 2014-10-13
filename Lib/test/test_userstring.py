@@ -33,7 +33,7 @@ class UserStringTest(
         # we don't fix the arguments, because UserString can't cope with it
         with self.assertRaises(exc) as cm:
             getattr(obj, methodname)(*args)
-        self.assertNotEqual(cm.exception.message, '')
+        self.assertNotEqual(cm.exception.args[0], '')
 
     def checkcall(self, object, methodname, *args):
         object = self.fixtype(object)
