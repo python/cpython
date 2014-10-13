@@ -1819,7 +1819,7 @@ exit:
 
 static PyObject *
 bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, PyObject *deletechars)
-/*[clinic end generated code: output=f0f29a57f41df5d8 input=a90fad893c3c88d7]*/
+/*[clinic end generated code: output=f0f29a57f41df5d8 input=d8fa5519d7cc4be7]*/
 {
     char *input, *output;
     const char *table_chars;

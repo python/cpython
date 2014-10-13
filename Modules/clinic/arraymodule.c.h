@@ -446,7 +446,7 @@ PyDoc_STRVAR(array__array_reconstructor__doc__,
     {"_array_reconstructor", (PyCFunction)array__array_reconstructor, METH_VARARGS, array__array_reconstructor__doc__},
 
 static PyObject *
-array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, int typecode, int mformat_code, PyObject *items);
+array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, int typecode, enum machine_format_code mformat_code, PyObject *items);
 
 static PyObject *
 array__array_reconstructor(PyModuleDef *module, PyObject *args)
@@ -454,7 +454,7 @@ array__array_reconstructor(PyModuleDef *module, PyObject *args)
     PyObject *return_value = NULL;
     PyTypeObject *arraytype;
     int typecode;
-    int mformat_code;
+    enum machine_format_code mformat_code;
     PyObject *items;
 
     if (!PyArg_ParseTuple(args,
@@ -502,4 +502,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=dff8eae01f0ab208 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e1deb61c6a3bc8c8 input=a9049054013a1b77]*/
