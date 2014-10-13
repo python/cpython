@@ -151,6 +151,9 @@ class PyShellEditorWindow(EditorWindow):
 
     def color_breakpoint_text(self, color=True):
         "Turn colorizing of breakpoint text on or off"
+        if self.io is None:
+            # possible due to update in restore_file_breaks
+            return
         if color:
             theme = idleConf.GetOption('main','Theme','name')
             cfg = idleConf.GetHighlight(theme, "break")
