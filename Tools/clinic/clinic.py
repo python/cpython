@@ -2426,11 +2426,13 @@ class int_converter(CConverter):
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, types='int'):
+    def converter_init(self, *, types='int', type=None):
         if types == 'str':
             self.format_unit = 'C'
         elif types != 'int':
             fail("int_converter: illegal 'types' argument")
+        if type != None:
+            self.type = type
 
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'

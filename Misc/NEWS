@@ -1263,6 +1263,10 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #22615: Argument Clinic now supports the "type" argument for the
+  int converter.  This permits using the int converter with enums and
+  typedefs.
+
 - Issue #20076: The makelocalealias.py script no longer ignores UTF-8 mapping.
 
 - Issue #20079: The makelocalealias.py script now can parse the SUPPORTED file
