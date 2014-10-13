@@ -59,7 +59,50 @@ static PyTypeObject PyArrayIter_Type;
 
 #define PyArrayIter_Check(op) PyObject_TypeCheck(op, &PyArrayIter_Type)
 
-/* Must come after arrayobject and arrayiterobject definitions. */
+enum machine_format_code {
+    UNKNOWN_FORMAT = -1,
+    /* UNKNOWN_FORMAT is used to indicate that the machine format for an
+     * array type code cannot be interpreted. When this occurs, a list of
+     * Python objects is used to represent the content of the array
+     * instead of using the memory content of the array directly. In that
+     * case, the array_reconstructor mechanism is bypassed completely, and
+     * the standard array constructor is used instead.
+     *
+     * This is will most likely occur when the machine doesn't use IEEE
+     * floating-point numbers.
+     */
+
+    UNSIGNED_INT8 = 0,
+    SIGNED_INT8 = 1,
+    UNSIGNED_INT16_LE = 2,
+    UNSIGNED_INT16_BE = 3,
+    SIGNED_INT16_LE = 4,
+    SIGNED_INT16_BE = 5,
+    UNSIGNED_INT32_LE = 6,
+    UNSIGNED_INT32_BE = 7,
+    SIGNED_INT32_LE = 8,
+    SIGNED_INT32_BE = 9,
+    UNSIGNED_INT64_LE = 10,
+    UNSIGNED_INT64_BE = 11,
+    SIGNED_INT64_LE = 12,
+    SIGNED_INT64_BE = 13,
+    IEEE_754_FLOAT_LE = 14,
+    IEEE_754_FLOAT_BE = 15,
+    IEEE_754_DOUBLE_LE = 16,
+    IEEE_754_DOUBLE_BE = 17,
+    UTF16_LE = 18,
+    UTF16_BE = 19,
+    UTF32_LE = 20,
+    UTF32_BE = 21
+};
+#define MACHINE_FORMAT_CODE_MIN 0
+#define MACHINE_FORMAT_CODE_MAX 21
+
+
+/*
+ * Must come after arrayobject, arrayiterobject,
+ * and enum machine_code_type definitions.
+ */
 #include "clinic/arraymodule.c.h"
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
@@ -1712,45 +1755,6 @@ array_array___sizeof___impl(arrayobject *self)
 
 /*********************** Pickling support ************************/
 
-enum machine_format_code {
-    UNKNOWN_FORMAT = -1,
-    /* UNKNOWN_FORMAT is used to indicate that the machine format for an
-     * array type code cannot be interpreted. When this occurs, a list of
-     * Python objects is used to represent the content of the array
-     * instead of using the memory content of the array directly. In that
-     * case, the array_reconstructor mechanism is bypassed completely, and
-     * the standard array constructor is used instead.
-     *
-     * This is will most likely occur when the machine doesn't use IEEE
-     * floating-point numbers.
-     */
-
-    UNSIGNED_INT8 = 0,
-    SIGNED_INT8 = 1,
-    UNSIGNED_INT16_LE = 2,
-    UNSIGNED_INT16_BE = 3,
-    SIGNED_INT16_LE = 4,
-    SIGNED_INT16_BE = 5,
-    UNSIGNED_INT32_LE = 6,
-    UNSIGNED_INT32_BE = 7,
-    SIGNED_INT32_LE = 8,
-    SIGNED_INT32_BE = 9,
-    UNSIGNED_INT64_LE = 10,
-    UNSIGNED_INT64_BE = 11,
-    SIGNED_INT64_LE = 12,
-    SIGNED_INT64_BE = 13,
-    IEEE_754_FLOAT_LE = 14,
-    IEEE_754_FLOAT_BE = 15,
-    IEEE_754_DOUBLE_LE = 16,
-    IEEE_754_DOUBLE_BE = 17,
-    UTF16_LE = 18,
-    UTF16_BE = 19,
-    UTF32_LE = 20,
-    UTF32_BE = 21
-};
-#define MACHINE_FORMAT_CODE_MIN 0
-#define MACHINE_FORMAT_CODE_MAX 21
-
 static const struct mformatdescr {
     size_t size;
     int is_signed;
@@ -1939,13 +1943,12 @@ Internal. Used for pickling support.
 [clinic start generated code]*/
 
 static PyObject *
-array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, int typecode, int mformat_code, PyObject *items)
-/*[clinic end generated code: output=a0a4ab61c2fbc17a input=450d59a5373c4eea]*/
+array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, int typecode, enum machine_format_code mformat_code, PyObject *items)
+/*[clinic end generated code: output=c51081ec91caf7e9 input=f72492708c0a1d50]*/
 {
     PyObject *converted_items;
     PyObject *result;
     struct arraydescr *descr;
-    enum machine_format_code mformat_code_enum = mformat_code;
 
     if (!PyType_Check(arraytype)) {
         PyErr_Format(PyExc_TypeError,
@@ -1968,8 +1971,8 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, in
                         "second argument must be a valid type code");
         return NULL;
     }
-    if (mformat_code_enum < MACHINE_FORMAT_CODE_MIN ||
-        mformat_code_enum > MACHINE_FORMAT_CODE_MAX) {
+    if (mformat_code < MACHINE_FORMAT_CODE_MIN ||
+        mformat_code > MACHINE_FORMAT_CODE_MAX) {
         PyErr_SetString(PyExc_ValueError,
             "third argument must be a valid machine format code.");
         return NULL;
@@ -1982,8 +1985,8 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, in
     }
 
     /* Fast path: No decoding has to be done. */
-    if (mformat_code_enum == typecode_to_mformat_code((char)typecode) ||
-        mformat_code_enum == UNKNOWN_FORMAT) {
+    if (mformat_code == typecode_to_mformat_code((char)typecode) ||
+        mformat_code == UNKNOWN_FORMAT) {
         return make_array(arraytype, (char)typecode, items);
     }
 
@@ -1992,16 +1995,16 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, in
      * object is architecturally different from the one that pickled the
      * array.
      */
-    if (Py_SIZE(items) % mformat_descriptors[mformat_code_enum].size != 0) {
+    if (Py_SIZE(items) % mformat_descriptors[mformat_code].size != 0) {
         PyErr_SetString(PyExc_ValueError,
                         "string length not a multiple of item size");
         return NULL;
     }
-    switch (mformat_code_enum) {
+    switch (mformat_code) {
     case IEEE_754_FLOAT_LE:
     case IEEE_754_FLOAT_BE: {
         int i;
-        int le = (mformat_code_enum == IEEE_754_FLOAT_LE) ? 1 : 0;
+        int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 4;
         const unsigned char *memstr =
             (unsigned char *)PyBytes_AS_STRING(items);
@@ -2023,7 +2026,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, in
     case IEEE_754_DOUBLE_LE:
     case IEEE_754_DOUBLE_BE: {
         int i;
-        int le = (mformat_code_enum == IEEE_754_DOUBLE_LE) ? 1 : 0;
+        int le = (mformat_code == IEEE_754_DOUBLE_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 8;
         const unsigned char *memstr =
             (unsigned char *)PyBytes_AS_STRING(items);
@@ -2044,7 +2047,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, in
     }
     case UTF16_LE:
     case UTF16_BE: {
-        int byteorder = (mformat_code_enum == UTF16_LE) ? -1 : 1;
+        int byteorder = (mformat_code == UTF16_LE) ? -1 : 1;
         converted_items = PyUnicode_DecodeUTF16(
             PyBytes_AS_STRING(items), Py_SIZE(items),
             "strict", &byteorder);
@@ -2054,7 +2057,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, in
     }
     case UTF32_LE:
     case UTF32_BE: {
-        int byteorder = (mformat_code_enum == UTF32_LE) ? -1 : 1;
+        int byteorder = (mformat_code == UTF32_LE) ? -1 : 1;
         converted_items = PyUnicode_DecodeUTF32(
             PyBytes_AS_STRING(items), Py_SIZE(items),
             "strict", &byteorder);
@@ -2079,7 +2082,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, in
     case SIGNED_INT64_BE: {
         int i;
         const struct mformatdescr mf_descr =
-            mformat_descriptors[mformat_code_enum];
+            mformat_descriptors[mformat_code];
         Py_ssize_t itemcount = Py_SIZE(items) / mf_descr.size;
         const unsigned char *memstr =
             (unsigned char *)PyBytes_AS_STRING(items);
