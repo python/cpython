@@ -207,10 +207,15 @@ BaseSubprocessTransport
    .. method:: get_pipe_transport(fd)
 
       Return the transport for the communication pipe corresponding to the
-      integer file descriptor *fd*.  The return value can be a readable or
-      writable streaming transport, depending on the *fd*.  If *fd* doesn't
-      correspond to a pipe belonging to this transport, :const:`None` is
-      returned.
+      integer file descriptor *fd*:
+
+      * ``0``: readable streaming transport of the standard input (*stdin*),
+        or :const:`None` if the subprocess was not created with ``stdin=PIPE``
+      * ``1``: writable streaming transport of the standard output (*stdout*),
+        or :const:`None` if the subprocess was not created with ``stdout=PIPE``
+      * ``2``: writable streaming transport of the standard error (*stderr*),
+        or :const:`None` if the subprocess was not created with ``stderr=PIPE``
+      * other *fd*: :const:`None`
 
    .. method:: get_returncode()
 
@@ -238,6 +243,12 @@ BaseSubprocessTransport
       On POSIX systems, this method sends SIGTERM to the subprocess.
       On Windows, the Windows API function TerminateProcess() is called to
       stop the subprocess.
+
+   .. method:: close()
+
+      Ask the subprocess to stop by calling the :meth:`terminate` method if the
+      subprocess hasn't returned yet, and close transports of all pipes
+      (*stdin*, *stdout* and *stderr*).
 
 
 .. _asyncio-protocol:
