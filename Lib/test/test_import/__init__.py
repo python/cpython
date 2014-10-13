@@ -568,7 +568,7 @@ class RelativeImportTests(unittest.TestCase):
 
     def test_relimport_star(self):
         # This will import * from .test_import.
-        from . import relimport
+        from .. import relimport
         self.assertTrue(hasattr(relimport, "RelativeImportTests"))
 
     def test_issue3221(self):
@@ -1066,6 +1066,46 @@ class ImportTracebackTests(unittest.TestCase):
         name = pyname[:-3]
         script_helper.assert_python_ok("-c", "mod = __import__(%a)" % name,
                                        __isolated=False)
+
+
+class CircularImportTests(unittest.TestCase):
+
+    """See the docstrings of the modules being imported for the purpose of the
+    test."""
+
+    def tearDown(self):
+        """Make sure no modules pre-exist in sys.modules which are being used to
+        test."""
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.circular_imports'):
+                del sys.modules[key]
+
+    def test_direct(self):
+        try:
+            import test.test_import.data.circular_imports.basic
+        except ImportError:
+            self.fail('circular import through relative imports failed')
+
+    def test_indirect(self):
+        try:
+            import test.test_import.data.circular_imports.indirect
+        except ImportError:
+            self.fail('relative import in module contributing to circular '
+                      'import failed')
+
+    def test_subpackage(self):
+        try:
+            import test.test_import.data.circular_imports.subpackage
+        except ImportError:
+            self.fail('circular import involving a subpackage failed')
+
+    def test_rebinding(self):
+        try:
+            import test.test_import.data.circular_imports.rebinding as rebinding
+        except ImportError:
+            self.fail('circular import with rebinding of module attribute failed')
+        from test.test_import.data.circular_imports.subpkg import util
+        self.assertIs(util.util, rebinding.util)
 
 
 if __name__ == '__main__':
