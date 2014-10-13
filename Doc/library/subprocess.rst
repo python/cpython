@@ -634,7 +634,7 @@ Instances of the :class:`Popen` class have the following methods:
    ``None``, if no data should be sent to the child.  The type of *input*
    must be bytes or, if *universal_newlines* was ``True``, a string.
 
-   :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
+   :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
 
    Note that if you want to send data to the process's stdin, you need to create
    the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
