@@ -9,7 +9,7 @@
     :license: Python license.
 """
 
-ISSUE_URI = 'http://bugs.python.org/issue%s'
+ISSUE_URI = 'https://bugs.python.org/issue%s'
 SOURCE_URI = 'https://hg.python.org/cpython/file/default/%s'
 
 from docutils import nodes, utils
@@ -204,7 +204,7 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`\1ssue #\2 <http://bugs.python.org/\2>`__',
+        content = issue_re.sub(r'`\1ssue #\2 <https://bugs.python.org/\2>`__',
                                content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
