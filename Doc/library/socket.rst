@@ -350,7 +350,6 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    type, and protocol number.  Address family, socket type, and protocol number are
    as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
-   Availability: Unix.
 
    The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
 
@@ -360,6 +359,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    .. versionchanged:: 3.4
       The returned sockets are now non-inheritable.
+
+   .. versionchanged:: 3.5
+      Windows support added.
 
 
 .. function:: create_connection(address[, timeout[, source_address]])
