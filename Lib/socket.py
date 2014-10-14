@@ -76,6 +76,11 @@ SocketType = IntEnum('SocketType',
                       if name.isupper() and name.startswith('SOCK_')})
 globals().update(SocketType.__members__)
 
+
+_LOCALHOST    = '127.0.0.1'
+_LOCALHOST_V6 = '::1'
+
+
 def _intenum_converter(value, enum_klass):
     """Convert a numeric family value to an IntEnum member.
 
@@ -468,6 +473,52 @@ if hasattr(_socket, "socketpair"):
         b = socket(family, type, proto, b.detach())
         return a, b
 
+else:
+
+    # Origin: https://gist.github.com/4325783, by Geert Jansen.  Public domain.
+    def socketpair(family=AF_INET, type=SOCK_STREAM, proto=0):
+        if family == AF_INET:
+            host = _LOCALHOST
+        elif family == AF_INET6:
+            host = _LOCALHOST_V6
+        else:
+            raise ValueError("Only AF_INET and AF_INET6 socket address families "
+                             "are supported")
+        if type != SOCK_STREAM:
+            raise ValueError("Only SOCK_STREAM socket type is supported")
+        if proto != 0:
+            raise ValueError("Only protocol zero is supported")
+
+        # We create a connected TCP socket. Note the trick with
+        # setblocking(False) that prevents us from having to create a thread.
+        lsock = socket(family, type, proto)
+        try:
+            lsock.bind((host, 0))
+            lsock.listen()
+            # On IPv6, ignore flow_info and scope_id
+            addr, port = lsock.getsockname()[:2]
+            csock = socket(family, type, proto)
+            try:
+                csock.setblocking(False)
+                try:
+                    csock.connect((addr, port))
+                except (BlockingIOError, InterruptedError):
+                    pass
+                csock.setblocking(True)
+                ssock, _ = lsock.accept()
+            except:
+                csock.close()
+                raise
+        finally:
+            lsock.close()
+        return (ssock, csock)
+
+socketpair.__doc__ = """socketpair([family[, type[, proto]]]) -> (socket object, socket object)
+Create a pair of socket objects from the sockets returned by the platform
+socketpair() function.
+The arguments are the same as for socket() except the default family is AF_UNIX
+if defined on the platform; otherwise, the default is AF_INET.
+"""
 
 _blocking_errnos = { EAGAIN, EWOULDBLOCK }
 

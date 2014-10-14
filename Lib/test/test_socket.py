@@ -3728,8 +3728,6 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.cli.connect((HOST, self.port))
         time.sleep(1.0)
 
-@unittest.skipUnless(hasattr(socket, 'socketpair'),
-                     'test needs socket.socketpair()')
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicSocketPairTest(SocketPairTest):
 
