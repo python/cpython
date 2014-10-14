@@ -464,7 +464,12 @@ class Enum(metaclass=EnumMeta):
         return "%s.%s" % (self.__class__.__name__, self._name_)
 
     def __dir__(self):
-        added_behavior = [m for m in self.__class__.__dict__ if m[0] != '_']
+        added_behavior = [
+                m
+                for cls in self.__class__.mro()
+                for m in cls.__dict__
+                if m[0] != '_'
+                ]
         return (['__class__', '__doc__', '__module__', 'name', 'value'] +
                 added_behavior)
 
