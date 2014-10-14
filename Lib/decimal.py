@@ -6035,7 +6035,10 @@ def _parse_format_specifier(format_spec, _localeconv=None):
         format_dict['decimal_point'] = '.'
 
     # record whether return type should be str or unicode
-    format_dict['unicode'] = isinstance(format_spec, unicode)
+    try:
+        format_dict['unicode'] = isinstance(format_spec, unicode)
+    except NameError:
+        format_dict['unicode'] = False
 
     return format_dict
 

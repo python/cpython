@@ -31,7 +31,7 @@ import pickle, copy
 import unittest
 from decimal import *
 import numbers
-from test.test_support import (run_unittest, run_doctest,
+from test.test_support import (run_unittest, run_doctest, requires_unicode, u,
                                is_resource_enabled, check_py3k_warnings)
 import random
 try:
@@ -595,11 +595,12 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         d = nc.create_decimal(prevdec)
         self.assertEqual(str(d), '5.00E+8')
 
+    @requires_unicode
     def test_unicode_digits(self):
         test_values = {
-            u'\uff11': '1',
-            u'\u0660.\u0660\u0663\u0667\u0662e-\u0663' : '0.0000372',
-            u'-nan\u0c68\u0c6a\u0c66\u0c66' : '-NaN2400',
+            u(r'\uff11'): '1',
+            u(r'\u0660.\u0660\u0663\u0667\u0662e-\u0663') : '0.0000372',
+            u(r'-nan\u0c68\u0c6a\u0c66\u0c66') : '-NaN2400',
             }
         for input, expected in test_values.items():
             self.assertEqual(str(Decimal(input)), expected)
