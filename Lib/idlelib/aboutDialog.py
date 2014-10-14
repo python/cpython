@@ -62,7 +62,8 @@ class AboutDialog(Toplevel):
                            justify=LEFT, fg=self.fg, bg=self.bg)
         labelEmail.grid(row=6, column=0, columnspan=2,
                         sticky=W, padx=10, pady=0)
-        labelWWW = Label(frameBg, text='www:  http://www.python.org/idle/',
+        labelWWW = Label(frameBg, text='https://docs.python.org/' +
+                         sys.version[:3] + '/library/idle.html',
                          justify=LEFT, fg=self.fg, bg=self.bg)
         labelWWW.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
         Frame(frameBg, borderwidth=1, relief=SUNKEN,
