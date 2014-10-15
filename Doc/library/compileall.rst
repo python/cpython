@@ -42,7 +42,8 @@ compile Python sources.
 
 .. cmdoption:: -q
 
-   Do not print the list of files compiled, print only error messages.
+   Do not print the list of files compiled. If passed once, error messages will
+   still be printed. If passed twice (``-qq``), all output is suppressed.
 
 .. cmdoption:: -d destdir
 
@@ -89,6 +90,9 @@ compile Python sources.
 .. versionchanged:: 3.5
    Added the  ``-j`` and ``-r`` options.
 
+.. versionchanged:: 3.5
+   ``-q`` option was changed to a multilevel value.
+
 
 There is no command-line option to control the optimization level used by the
 :func:`compile` function, because the Python interpreter itself already
@@ -97,7 +101,7 @@ provides the option: :program:`python -O -m compileall`.
 Public functions
 ----------------
 
-.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False, legacy=False, optimize=-1, workers=1)
+.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way.
@@ -118,8 +122,9 @@ Public functions
    file considered for compilation, and if it returns a true value, the file
    is skipped.
 
-   If *quiet* is true, nothing is printed to the standard output unless errors
-   occur.
+   If *quiet* is ``False`` or ``0`` (the default), the filenames and other
+   information are printed to standard out. Set to ``1``, only errors are
+   printed. Set to ``2``, all output is suppressed.
 
    If *legacy* is true, byte-code files are written to their legacy locations
    and names, which may overwrite byte-code files created by another version of
@@ -142,8 +147,10 @@ Public functions
    .. versionchanged:: 3.5
       Added the *workers* parameter.
 
+   .. versionchanged:: 3.5
+      *quiet* parameter was changed to a multilevel value.
 
-.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=False, legacy=False, optimize=-1)
+.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1)
 
    Compile the file with path *fullname*.
 
@@ -157,8 +164,9 @@ Public functions
    file being compiled, and if it returns a true value, the file is not
    compiled and ``True`` is returned.
 
-   If *quiet* is true, nothing is printed to the standard output unless errors
-   occur.
+   If *quiet* is ``False`` or ``0`` (the default), the filenames and other
+   information are printed to standard out. Set to ``1``, only errors are
+   printed. Set to ``2``, all output is suppressed.
 
    If *legacy* is true, byte-code files are written to their legacy locations
    and names, which may overwrite byte-code files created by another version of
@@ -171,8 +179,10 @@ Public functions
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.5
+      *quiet* parameter was changed to a multilevel value.
 
-.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, legacy=False, optimize=-1)
+.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. If
    *skip_curdir* is true (the default), the current directory is not included
@@ -183,6 +193,8 @@ Public functions
    .. versionchanged:: 3.2
       Added the *legacy* and *optimize* parameter.
 
+   .. versionchanged:: 3.5
+      *quiet* parameter was changed to a multilevel value.
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`
 subdirectory and all its subdirectories::

@@ -24,13 +24,14 @@ from functools import partial
 
 __all__ = ["compile_dir","compile_file","compile_path"]
 
-def _walk_dir(dir, ddir=None, maxlevels=10, quiet=False):
+def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
     if not quiet:
         print('Listing {!r}...'.format(dir))
     try:
         names = os.listdir(dir)
     except OSError:
-        print("Can't list {!r}".format(dir))
+        if quiet < 2:
+            print("Can't list {!r}".format(dir))
         names = []
     names.sort()
     for name in names:
@@ -49,7 +50,7 @@ def _walk_dir(dir, ddir=None, maxlevels=10, quiet=False):
                                  maxlevels=maxlevels - 1, quiet=quiet)
 
 def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
-                quiet=False, legacy=False, optimize=-1, workers=1):
+                quiet=0, legacy=False, optimize=-1, workers=1):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -59,7 +60,8 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     ddir:      the directory that will be prepended to the path to the
                file as it is compiled into each byte-code file.
     force:     if True, force compilation, even if timestamps are up-to-date
-    quiet:     if True, be quiet during compilation
+    quiet:     full output with False or 0, errors only with 1,
+               no output with 2
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
     optimize:  optimization level or -1 for level of the interpreter
     workers:   maximum number of parallel workers
@@ -89,7 +91,7 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
                 success = 0
     return success
 
-def compile_file(fullname, ddir=None, force=False, rx=None, quiet=False,
+def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  legacy=False, optimize=-1):
     """Byte-compile one file.
 
@@ -99,7 +101,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=False,
     ddir:      if given, the directory name compiled in to the
                byte-code file.
     force:     if True, force compilation, even if timestamps are up-to-date
-    quiet:     if True, be quiet during compilation
+    quiet:     full output with False or 0, errors only with 1,
+               no output with 2
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
     optimize:  optimization level or -1 for level of the interpreter
     """
@@ -142,7 +145,10 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=False,
                 ok = py_compile.compile(fullname, cfile, dfile, True,
                                         optimize=optimize)
             except py_compile.PyCompileError as err:
-                if quiet:
+                success = 0
+                if quiet >= 2:
+                    return success
+                elif quiet:
                     print('*** Error compiling {!r}...'.format(fullname))
                 else:
                     print('*** ', end='')
@@ -151,20 +157,21 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=False,
                                      errors='backslashreplace')
                 msg = msg.decode(sys.stdout.encoding)
                 print(msg)
-                success = 0
             except (SyntaxError, UnicodeError, OSError) as e:
-                if quiet:
+                success = 0
+                if quiet >= 2:
+                    return success
+                elif quiet:
                     print('*** Error compiling {!r}...'.format(fullname))
                 else:
                     print('*** ', end='')
                 print(e.__class__.__name__ + ':', e)
-                success = 0
             else:
                 if ok == 0:
                     success = 0
     return success
 
-def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
+def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=0,
                  legacy=False, optimize=-1):
     """Byte-compile all module on sys.path.
 
@@ -173,14 +180,15 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=False,
     skip_curdir: if true, skip current directory (default True)
     maxlevels:   max recursion level (default 0)
     force: as for compile_dir() (default False)
-    quiet: as for compile_dir() (default False)
+    quiet: as for compile_dir() (default 0)
     legacy: as for compile_dir() (default False)
     optimize: as for compile_dir() (default -1)
     """
     success = 1
     for dir in sys.path:
         if (not dir or dir == os.curdir) and skip_curdir:
-            print('Skipping current directory')
+            if quiet < 2:
+                print('Skipping current directory')
         else:
             success = success and compile_dir(dir, maxlevels, None,
                                               force, quiet=quiet,
@@ -203,8 +211,9 @@ def main():
                               'then `-r` takes precedence.'))
     parser.add_argument('-f', action='store_true', dest='force',
                         help='force rebuild even if timestamps are up to date')
-    parser.add_argument('-q', action='store_true', dest='quiet',
-                        help='output only error messages')
+    parser.add_argument('-q', action='count', dest='quiet', default=0,
+                        help='output only error messages; -qq will suppress '
+                             'the error messages as well.')
     parser.add_argument('-b', action='store_true', dest='legacy',
                         help='use legacy (pre-PEP3147) compiled file locations')
     parser.add_argument('-d', metavar='DESTDIR',  dest='ddir', default=None,
@@ -250,7 +259,8 @@ def main():
                 for line in f:
                     compile_dests.append(line.strip())
         except OSError:
-            print("Error reading file list {}".format(args.flist))
+            if args.quiet < 2:
+                print("Error reading file list {}".format(args.flist))
             return False
 
     if args.workers is not None:
@@ -274,7 +284,8 @@ def main():
             return compile_path(legacy=args.legacy, force=args.force,
                                 quiet=args.quiet)
     except KeyboardInterrupt:
-        print("\n[interrupted]")
+        if args.quiet < 2:
+            print("\n[interrupted]")
         return False
     return True
 

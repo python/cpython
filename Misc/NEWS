@@ -175,6 +175,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21338: Add silent mode for compileall. quiet parameters of
+  compile_{dir, file, path} functions now have a multilevel value. Also,
+  -q option of the CLI now have a multilevel value. Patch by Thomas Kluyver.
+
 - Issue #20152: Convert the array and cmath modules to Argument Clinic.
 
 - Issue #18643: Add socket.socketpair() on Windows.

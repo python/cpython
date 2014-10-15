@@ -347,6 +347,13 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotEqual(b'', noisy)
         self.assertEqual(b'', quiet)
 
+    def test_silent(self):
+        script_helper.make_script(self.pkgdir, 'crunchyfrog', 'bad(syntax')
+        _, quiet, _ = self.assertRunNotOK('-q', self.pkgdir)
+        _, silent, _ = self.assertRunNotOK('-qq', self.pkgdir)
+        self.assertNotEqual(b'', quiet)
+        self.assertEqual(b'', silent)
+
     def test_regexp(self):
         self.assertRunOK('-q', '-x', r'ba[^\\/]*$', self.pkgdir)
         self.assertNotCompiled(self.barfn)
