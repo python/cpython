@@ -9675,6 +9675,11 @@ case_operation(PyObject *self,
     kind = PyUnicode_KIND(self);
     data = PyUnicode_DATA(self);
     length = PyUnicode_GET_LENGTH(self);
+    if (length > PY_SSIZE_T_MAX / 3 ||
+        length > PY_SIZE_MAX / (3 * sizeof(Py_UCS4))) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        return NULL;
+    }
     tmp = PyMem_MALLOC(sizeof(Py_UCS4) * 3 * length);
     if (tmp == NULL)
         return PyErr_NoMemory();
