@@ -35,10 +35,12 @@ SocketType -- type object for socket objects
 error -- exception raised for I/O errors
 has_ipv6 -- boolean value indicating if IPv6 is supported
 
-Integer constants:
+IntEnum constants:
 
 AF_INET, AF_UNIX -- socket domains (first argument to socket() call)
 SOCK_STREAM, SOCK_DGRAM, SOCK_RAW -- socket types (second argument)
+
+Integer constants:
 
 Many other constants may be defined; these may be used in calls to
 the setsockopt() and getsockopt() methods.
@@ -71,10 +73,10 @@ AddressFamily = IntEnum('AddressFamily',
                          if name.isupper() and name.startswith('AF_')})
 globals().update(AddressFamily.__members__)
 
-SocketType = IntEnum('SocketType',
+SocketKind = IntEnum('SocketKind',
                      {name: value for name, value in globals().items()
                       if name.isupper() and name.startswith('SOCK_')})
-globals().update(SocketType.__members__)
+globals().update(SocketKind.__members__)
 
 def _intenum_converter(value, enum_klass):
     """Convert a numeric family value to an IntEnum member.
@@ -269,7 +271,7 @@ class socket(_socket.socket):
     def type(self):
         """Read-only access to the socket type.
         """
-        return _intenum_converter(super().type, SocketType)
+        return _intenum_converter(super().type, SocketKind)
 
     if os.name == 'nt':
         def get_inheritable(self):
@@ -530,6 +532,6 @@ def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
         af, socktype, proto, canonname, sa = res
         addrlist.append((_intenum_converter(af, AddressFamily),
-                         _intenum_converter(socktype, SocketType),
+                         _intenum_converter(socktype, SocketKind),
                          proto, canonname, sa))
     return addrlist
