@@ -651,6 +651,13 @@ def requireSocket(*args):
 
 class GeneralModuleTests(unittest.TestCase):
 
+    def test_SocketType_is_socketobject(self):
+        import _socket
+        self.assertTrue(socket.SocketType is _socket.socket)
+        s = socket.socket()
+        self.assertIsInstance(s, socket.SocketType)
+        s.close()
+
     def test_repr(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         with s:
@@ -1226,7 +1233,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(family, socket.AF_INET)
             self.assertEqual(str(family), 'AddressFamily.AF_INET')
             self.assertEqual(type, socket.SOCK_STREAM)
-            self.assertEqual(str(type), 'SocketType.SOCK_STREAM')
+            self.assertEqual(str(type), 'SocketKind.SOCK_STREAM')
         infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
         for _, socktype, _, _, _ in infos:
             self.assertEqual(socktype, socket.SOCK_STREAM)
@@ -1401,7 +1408,7 @@ class GeneralModuleTests(unittest.TestCase):
         # reprs.
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             self.assertEqual(str(s.family), 'AddressFamily.AF_INET')
-            self.assertEqual(str(s.type), 'SocketType.SOCK_STREAM')
+            self.assertEqual(str(s.type), 'SocketKind.SOCK_STREAM')
 
     @unittest.skipIf(os.name == 'nt', 'Will not work on Windows')
     def test_uknown_socket_family_repr(self):
