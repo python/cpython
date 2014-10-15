@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22643: Fix integer overflow in Unicode case operations (upper, lower,
+  title, swapcase, casefold).
+
 - Issue #22604: Fix assertion error in debug mode when dividing a complex
   number by (nan+0j).
 
