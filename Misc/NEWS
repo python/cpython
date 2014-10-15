@@ -10,6 +10,9 @@ What's New in Python 3.3.6?
 Core and Builtins
 -----------------
 
+- Issue #22643: Fix integer overflow in Unicode case operations (upper, lower,
+  title, swapcase, casefold).
+
 - Issue #22518: Fixed integer overflow issues in "backslashreplace",
   "xmlcharrefreplace", and "surrogatepass" error handlers.
 
