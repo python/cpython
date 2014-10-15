@@ -9484,7 +9484,7 @@ case_operation(PyObject *self,
     kind = PyUnicode_KIND(self);
     data = PyUnicode_DATA(self);
     length = PyUnicode_GET_LENGTH(self);
-    if (length > PY_SSIZE_T_MAX / (3 * sizeof(Py_UCS4))) {
+    if ((size_t) length > PY_SSIZE_T_MAX / (3 * sizeof(Py_UCS4))) {
         PyErr_SetString(PyExc_OverflowError, "string is too long");
         return NULL;
     }
