@@ -661,6 +661,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('x'.center(4, '\U0010FFFF'),
                          '\U0010FFFFx\U0010FFFF\U0010FFFF')
 
+    @unittest.skipUnless(sys.maxsize == 2**31 - 1, "requires 32-bit system")
+    def test_case_operation_overflow(self):
+        # Issue #22643
+        self.assertRaises(OverflowError, ("ü"*(2**32//12 + 1)).upper)
+
     def test_contains(self):
         # Testing Unicode contains method
         self.assertIn('a', 'abdb')
