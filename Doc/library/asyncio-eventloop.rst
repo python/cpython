@@ -649,29 +649,68 @@ Event loop examples
 
 .. _asyncio-hello-world-callback:
 
-Hello World with a callback
----------------------------
+Hello World with call_soon()
+----------------------------
 
-Print ``"Hello World"`` every two seconds using a callback scheduled by the
-:meth:`BaseEventLoop.call_soon` method::
+Example using the :meth:`BaseEventLoop.call_soon` method to schedule a
+callback. The callback displays ``"Hello World"`` and then stops the event
+loop::
 
     import asyncio
 
-    def print_and_repeat(loop):
+    def hello_world(loop):
         print('Hello World')
-        loop.call_later(2, print_and_repeat, loop)
+        loop.stop()
 
     loop = asyncio.get_event_loop()
-    loop.call_soon(print_and_repeat, loop)
-    try:
-        loop.run_forever()
-    finally:
-        loop.close()
+
+    # Schedule a call to hello_world()
+    loop.call_soon(hello_world, loop)
+
+    # Blocking call interrupted by loop.stop()
+    loop.run_forever()
+    loop.close()
 
 .. seealso::
 
    The :ref:`Hello World coroutine <asyncio-hello-world-coroutine>` example
    uses a :ref:`coroutine <coroutine>`.
+
+
+.. _asyncio-date-callback:
+
+Display the current date with call_later()
+------------------------------------------
+
+Example of callback displaying the current date every second. The callback uses
+the :meth:`BaseEventLoop.call_later` method to reschedule itself during 5
+seconds, and then stops the event loop::
+
+    import asyncio
+    import datetime
+
+    def display_date(end_time, loop):
+        print(datetime.datetime.now())
+        if (loop.time() + 1.0) < end_time:
+            loop.call_later(1, display_date, end_time, loop)
+        else:
+            loop.stop()
+
+    loop = asyncio.get_event_loop()
+
+    # Schedule the first call to display_date()
+    end_time = loop.time() + 5.0
+    loop.call_soon(display_date, end_time, loop)
+
+    # Blocking call interrupted by loop.stop()
+    loop.run_forever()
+    loop.close()
+
+.. seealso::
+
+   The :ref:`coroutine displaying the current date
+   <asyncio-date-coroutine>` example uses a :ref:`coroutine
+   <coroutine>`.
 
 
 .. _asyncio-watch-read-event:
