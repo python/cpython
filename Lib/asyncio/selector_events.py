@@ -689,16 +689,17 @@ class _SelectorSslTransport(_SelectorTransport):
             if not sslcontext:
                 # Client side may pass ssl=True to use a default
                 # context; in that case the sslcontext passed is None.
-                # The default is the same as used by urllib with
-                # cadefault=True.
-                if hasattr(ssl, '_create_stdlib_context'):
-                    sslcontext = ssl._create_stdlib_context(
-                        cert_reqs=ssl.CERT_REQUIRED,
-                        check_hostname=bool(server_hostname))
+                # The default is secure for client connections.
+                if hasattr(ssl, 'create_default_context'):
+                    # Python 3.4+: use up-to-date strong settings.
+                    sslcontext = ssl.create_default_context()
+                    if not server_hostname:
+                        sslcontext.check_hostname = False
                 else:
                     # Fallback for Python 3.3.
                     sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                     sslcontext.options |= ssl.OP_NO_SSLv2
+                    sslcontext.options |= ssl.OP_NO_SSLv3
                     sslcontext.set_default_verify_paths()
                     sslcontext.verify_mode = ssl.CERT_REQUIRED
 

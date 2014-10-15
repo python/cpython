@@ -606,15 +606,43 @@ class EventLoopTestsMixin:
         self.assertGreater(pr.nbytes, 0)
         tr.close()
 
+    def _dummy_ssl_create_context(self, purpose=ssl.Purpose.SERVER_AUTH, *,
+                                  cafile=None, capath=None, cadata=None):
+        """
+        A ssl.create_default_context() replacement that doesn't enable
+        cert validation.
+        """
+        self.assertEqual(purpose, ssl.Purpose.SERVER_AUTH)
+        return test_utils.dummy_ssl_context()
+
+    def _test_create_ssl_connection(self, httpd, create_connection,
+                                    check_sockname=True):
+        conn_fut = create_connection(ssl=test_utils.dummy_ssl_context())
+        self._basetest_create_ssl_connection(conn_fut, check_sockname)
+
+        # With ssl=True, ssl.create_default_context() should be called
+        with mock.patch('ssl.create_default_context',
+                        side_effect=self._dummy_ssl_create_context) as m:
+            conn_fut = create_connection(ssl=True)
+            self._basetest_create_ssl_connection(conn_fut, check_sockname)
+            self.assertEqual(m.call_count, 1)
+
+        # With the real ssl.create_default_context(), certificate
+        # validation will fail
+        with self.assertRaises(ssl.SSLError) as cm:
+            conn_fut = create_connection(ssl=True)
+            self._basetest_create_ssl_connection(conn_fut, check_sockname)
+
+        self.assertEqual(cm.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
+
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_ssl_connection(self):
         with test_utils.run_test_server(use_ssl=True) as httpd:
-            conn_fut = self.loop.create_connection(
+            create_connection = functools.partial(
+                self.loop.create_connection,
                 lambda: MyProto(loop=self.loop),
-                *httpd.address,
-                ssl=test_utils.dummy_ssl_context())
-
-            self._basetest_create_ssl_connection(conn_fut)
+                *httpd.address)
+            self._test_create_ssl_connection(httpd, create_connection)
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
@@ -624,13 +652,13 @@ class EventLoopTestsMixin:
         check_sockname = not osx_tiger()
 
         with test_utils.run_test_unix_server(use_ssl=True) as httpd:
-            conn_fut = self.loop.create_unix_connection(
-                lambda: MyProto(loop=self.loop),
-                httpd.address,
-                ssl=test_utils.dummy_ssl_context(),
+            create_connection = functools.partial(
+                self.loop.create_unix_connection,
+                lambda: MyProto(loop=self.loop), httpd.address,
                 server_hostname='127.0.0.1')
 
-            self._basetest_create_ssl_connection(conn_fut, check_sockname)
+            self._test_create_ssl_connection(httpd, create_connection,
+                                             check_sockname)
 
     def test_create_connection_local_addr(self):
         with test_utils.run_test_server() as httpd:

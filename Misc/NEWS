@@ -175,6 +175,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22641: In asyncio, the default SSL context for client connections
+  is now created using ssl.create_default_context(), for stronger security.
+
 - Issue #21338: Add silent mode for compileall. quiet parameters of
   compile_{dir, file, path} functions now have a multilevel value. Also,
   -q option of the CLI now have a multilevel value. Patch by Thomas Kluyver.
