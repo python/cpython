@@ -702,6 +702,7 @@ class UnicodeTest(string_tests.CommonTest,
                          '\U0010FFFFx\U0010FFFF\U0010FFFF')
 
     @unittest.skipUnless(sys.maxsize == 2**31 - 1, "requires 32-bit system")
+    @support.cpython_only
     def test_case_operation_overflow(self):
         # Issue #22643
         self.assertRaises(OverflowError, ("ü"*(2**32//12 + 1)).upper)
