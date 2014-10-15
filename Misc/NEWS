@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22641: In asyncio, the default SSL context for client connections
+  is now created using ssl.create_default_context(), for stronger security.
+
 - Issue #22435: Fix a file descriptor leak when SocketServer bind fails.
 
 - Issue #13096: Fixed segfault in CTypes POINTER handling of large
