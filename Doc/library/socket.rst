@@ -192,6 +192,11 @@ Exceptions
 Constants
 ^^^^^^^^^
 
+   The AF_* and SOCK_* constants are now :class:`AddressFamily` and
+   :class:`SocketKind` :class:`.IntEnum` collections.
+
+   .. versionadded:: 3.4
+
 .. data:: AF_UNIX
           AF_INET
           AF_INET6
