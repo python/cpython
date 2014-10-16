@@ -693,30 +693,29 @@ class EditorWindow(object):
             return
         # XXX Ought to insert current file's directory in front of path
         try:
-            (f, file, (suffix, mode, type)) = _find_module(name)
+            (f, file_path, (suffix, mode, mtype)) = _find_module(name)
         except (NameError, ImportError) as msg:
             tkMessageBox.showerror("Import error", str(msg), parent=self.text)
             return
-        if type != imp.PY_SOURCE:
+        if mtype != imp.PY_SOURCE:
             tkMessageBox.showerror("Unsupported type",
                 "%s is not a source module" % name, parent=self.text)
             return
         if f:
             f.close()
         if self.flist:
-            self.flist.open(file)
+            self.flist.open(file_path)
         else:
-            self.io.loadfile(file)
+            self.io.loadfile(file_path)
+        return file_path
 
     def open_class_browser(self, event=None):
         filename = self.io.filename
-        if not filename:
-            tkMessageBox.showerror(
-                "No filename",
-                "This buffer has no associated filename",
-                master=self.text)
-            self.text.focus_set()
-            return None
+        if not (self.__class__.__name__ == 'PyShellEditorWindow'
+                and filename):
+            filename = self.open_module()
+            if filename is None:
+                return
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
         from idlelib import ClassBrowser
