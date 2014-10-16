@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22636: Avoid shell injection problems with
+  ctypes.util.find_library().
+
 - Issue #27330: Fixed possible leaks in the ctypes module.
 
 - Issue #27238: Got rid of bare excepts in the turtle module.  Original patch
