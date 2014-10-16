@@ -689,16 +689,15 @@ class EditorWindow(object):
             self.flist.open(file_path)
         else:
             self.io.loadfile(file_path)
+        return file_path
 
     def open_class_browser(self, event=None):
         filename = self.io.filename
-        if not filename:
-            tkMessageBox.showerror(
-                "No filename",
-                "This buffer has no associated filename",
-                master=self.text)
-            self.text.focus_set()
-            return None
+        if not (self.__class__.__name__ == 'PyShellEditorWindow'
+                and filename):
+            filename = self.open_module()
+            if filename is None:
+                return
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
         from idlelib import ClassBrowser
