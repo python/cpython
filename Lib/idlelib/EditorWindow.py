@@ -1711,7 +1711,8 @@ def fixwordbreaks(root):
     tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_]')
 
 
-def _editor_window(parent):
+def _editor_window(parent):  # htest #
+    # error if close master window first - timer event, after script
     root = parent
     fixwordbreaks(root)
     if sys.argv[1:]:
@@ -1721,7 +1722,8 @@ def _editor_window(parent):
     macosxSupport.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
     edit.text.bind("<<close-all-windows>>", edit.close_event)
-    parent.mainloop()
+    # Does not stop error, neither does following
+    # edit.text.bind("<<close-window>>", edit.close_event)
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run
