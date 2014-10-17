@@ -889,11 +889,11 @@ class SMTPHandler(logging.Handler):
         certificate file. (This tuple is passed to the `starttls` method).
         """
         logging.Handler.__init__(self)
-        if isinstance(mailhost, tuple):
+        if isinstance(mailhost, (list, tuple)):
             self.mailhost, self.mailport = mailhost
         else:
             self.mailhost, self.mailport = mailhost, None
-        if isinstance(credentials, tuple):
+        if isinstance(credentials, (list, tuple)):
             self.username, self.password = credentials
         else:
             self.username = None
