@@ -7,6 +7,7 @@ Eventually HeaderRegistry will be a public API, but it isn't yet,
 and will probably change some before that happens.
 
 """
+from types import MappingProxyType
 
 from email import utils
 from email import errors
@@ -454,7 +455,7 @@ class ParameterizedMIMEHeader:
 
     @property
     def params(self):
-        return self._params.copy()
+        return MappingProxyType(self._params)
 
 
 class ContentTypeHeader(ParameterizedMIMEHeader):
