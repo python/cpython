@@ -1325,8 +1325,7 @@ Windows
 
 - Issue #21907: Improved the batch scripts provided for building Python.
 
-- Issue #21671, #22160, CVE-2014-0224: The bundled version of OpenSSL has been
-  updated to 1.0.1i.
+- Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.
 
 - Issue #10747: Use versioned labels in the Windows start menu.
   Patch by Olive Kilburn.
