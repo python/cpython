@@ -10,6 +10,24 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
+- Issue #22604: Fix assertion error in debug mode when dividing a complex
+  number by (nan+0j).
+
+- Issue #22470: Fixed integer overflow issues in "backslashreplace" and
+  "xmlcharrefreplace" error handlers.
+
+- Issue #22526: Fix iterating through files with lines longer than 2^31 bytes.
+
+- Issue #22519: Fix overflow checking in PyString_Repr.
+
+- Issue #22518: Fix integer overflow issues in latin-1 encoding.
+
+- Issue #22379: Fix empty exception message in a TypeError raised in
+  ``str.join``.
+
+- Issue #22221: Now the source encoding declaration on the second line isn't
+  effective if the first line contains anything except a comment.
+
 - Issue #22023: Fix ``%S``, ``%R`` and ``%V`` formats of
   :c:func:`PyUnicode_FromFormat`.
 
@@ -20,6 +38,130 @@ Library
 -------
 
 - Issue #22435: Fix a file descriptor leak when SocketServer bind fails.
+
+- Issue #13664: GzipFile now supports non-ascii Unicode filenames.
+
+- Issue #13096: Fixed segfault in CTypes POINTER handling of large
+  values.
+
+- Issue #11694: Raise ConversionError in xdrlib as documented.  Patch
+  by Filip Gruszczyński and Claudiu Popa.
+
+- Issue #1686: Fix string.Template when overriding the pattern attribute.
+
+- Issue #11866: Eliminated race condition in the computation of names
+  for new threads.
+
+- Issue #22219: The zipfile module CLI now adds entries for directories
+  (including empty directories) in ZIP file.
+
+- Issue #22449: In the ssl.SSLContext.load_default_certs, consult the
+  enviromental variables SSL_CERT_DIR and SSL_CERT_FILE on Windows.
+
+- Issue #8473: doctest.testfile now uses universal newline mode to read
+  the test file.
+
+- Issue #20076: Added non derived UTF-8 aliases to locale aliases table.
+
+- Issue #20079: Added locales supported in glibc 2.18 to locale alias table.
+
+- Issue #22530: Allow the ``group()`` method of regular expression match objects
+  to take a ``long`` as an index.
+
+- Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
+  weakrefs.
+
+- Issue #10510: distutils register and upload methods now use HTML standards
+  compliant CRLF line endings.
+
+- Issue #9850: Fixed macpath.join() for empty first component.  Patch by
+  Oleg Oshmyan.
+
+- Issue #20912: Now directories added to ZIP file have correct Unix and MS-DOS
+  directory attributes.
+
+- Issue #21866: ZipFile.close() no longer writes ZIP64 central directory
+  records if allowZip64 is false.
+
+- Issue #22415: Fixed debugging output of the GROUPREF_EXISTS opcode in the re
+  module.
+
+- Issue #22423: Unhandled exception in thread no longer causes unhandled
+  AttributeError when sys.stderr is None.
+
+- Issue #22419: Limit the length of incoming HTTP request in wsgiref server to
+  65536 bytes and send a 414 error code for higher lengths. Patch contributed
+  by Devin Cook.
+
+- Lax cookie parsing in http.cookies could be a security issue when combined
+  with non-standard cookie handling in some Web browsers.  Reported by
+  Sergey Bobrov.
+
+- Issue #21147: sqlite3 now raises an exception if the request contains a null
+  character instead of truncate it.  Based on patch by Victor Stinner.
+
+- Issue #21951: Fixed a crash in Tkinter on AIX when called Tcl command with
+  empty string or tuple argument.
+
+- Issue #21951: Tkinter now most likely raises MemoryError instead of crash
+  if the memory allocation fails.
+
+- Issue #22226: First letter no longer is stripped from the "status" key in
+  the result of Treeview.heading().
+
+- Issue #22051: turtledemo no longer reloads examples to re-run them.
+  Initialization of variables and gui setup should be done in main(),
+  which is called each time a demo is run, but not on import.
+
+- Issue #21597: The separator between the turtledemo text pane and the drawing
+  canvas can now be grabbed and dragged with a mouse.  The code text pane can
+  be widened to easily view or copy the full width of the text.  The canvas
+  can be widened on small screens.  Original patches by Jan Kanis and Lita Cho.
+
+- Issue #18132: Turtledemo buttons no longer disappear when the window is
+  shrunk.  Original patches by Jan Kanis and Lita Cho.
+
+- Issue #22312: Fix ntpath.splitdrive IndexError.
+
+- Issue #22216: smtplib now resets its state more completely after a quit.  The
+  most obvious consequence of the previous behavior was a STARTTLS failure
+  during a connect/starttls/quit/connect/starttls sequence.
+
+- Issue #21305: os.urandom now caches a fd to /dev/urandom. This is a PEP 466
+  backport from Python 3.
+
+- Issue #21307: As part of PEP 466, backport hashlib.algorithms_guaranteed and
+  hashlib.algorithms_available.
+
+- Issue #22259: Fix segfault when attempting to fopen a file descriptor
+  corresponding to a directory.
+
+- Issue #22236: Fixed Tkinter images copying operations in NoDefaultRoot mode.
+
+- Issue #22191: Fixed warnings.__all__.
+
+- Issue #21308: Backport numerous features from Python's ssl module. This is
+  part of PEP 466.
+
+- Issue #15696: Add a __sizeof__ implementation for mmap objects on Windows.
+
+- Issue #8797: Raise HTTPError on failed Basic Authentication immediately.
+  Initial patch by Sam Bull.
+
+- Issue #22068: Avoided reference loops with Variables and Fonts in Tkinter.
+
+- Issue #21448: Changed FeedParser feed() to avoid O(N**2) behavior when
+  parsing long line.  Original patch by Raymond Hettinger.
+
+- Issue #17923: glob() patterns ending with a slash no longer match non-dirs on
+  AIX.  Based on patch by Delhallt.
+
+- Issue #21975: Fixed crash when using uninitialized sqlite3.Row (in particular
+  when unpickling pickled sqlite3.Row).  sqlite3.Row is now initialized in the
+  __new__() method.
+
+- Issue #16037: HTTPMessage.readheaders() raises an HTTPException when more
+  than 100 headers are read. Patch by Jyrki Pulliainen and Daniel Eriksson.
 
 - Issue #21580: Now Tkinter correctly handles binary "data" and "maskdata"
   configure options of tkinter.PhotoImage.
@@ -66,8 +208,51 @@ Library
 - Issue #21323: Fix CGIHTTPServer to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
 
+- Issue #22199: Make get_makefile_filename() available in Lib/sysconfig.py
+  for 2.7 to match other versions of sysconfig.
+
+IDLE
+----
+
+- Issue #22221: IDLE now ignores the source encoding declaration on the second
+  line if the first line contains anything except a comment.
+
+- Issue #17390: Adjust Editor window title; remove 'Python',
+  move version to end.
+
+- Issue #14105: Idle debugger breakpoints no longer disappear
+  when inseting or deleting lines.
+
+Extension Modules
+-----------------
+
+- Issue #22381: Update zlib to 1.2.8.
+
+- Issue #22176: Update the ctypes module's libffi to v3.1.  This release
+  adds support for the Linux AArch64 and POWERPC ELF ABIv2 little endian
+  architectures.
+
+Tools/Demos
+-----------
+
+- Issue #10712: 2to3 has a new "asserts" fixer that replaces deprecated names
+  of unittest methods (e.g. failUnlessEqual -> assertEqual).
+
+- Issue #22221: 2to3 and the findnocoding.py script now ignore the source
+  encoding declaration on the second line if the first line contains anything
+  except a comment.
+
+- Issue #22201: Command-line interface of the zipfile module now correctly
+  extracts ZIP files with directory entries.  Patch by Ryan Wilson.
+
 Tests
 -----
+
+- Issue #22236: Tkinter tests now don't reuse default root window.  New root
+  window is created for every test class.
+
+- Issue #18004: test_overflow in test_list by mistake consumed 40 GiB of memory
+  on 64-bit systems.
 
 - Issue #21976: Fix test_ssl to accept LibreSSL version strings.  Thanks
   to William Orr.
@@ -75,11 +260,30 @@ Tests
 Build
 -----
 
+- Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
+  Jonathan Hosmer.
+
+- The documentation Makefile no longer automatically downloads Sphinx. Users are
+  now required to have Sphinx already installed to build the documentation.
+
 - Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
   above.  Patch by Zachary Turner.
 
 - Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
   now display special message when and only when there are failures.
+
+- Issue #21166: Prevent possible segfaults and other random failures of
+  python --generate-posix-vars in pybuilddir.txt build target.
+
+- Issue #18096: Fix library order returned by python-config.
+
+- Issue #17219: Add library build dir for Python extension cross-builds.
+
+Windows
+-------
+
+- Issue #22160: The bundled version of OpenSSL has been updated to 1.0.1i.
+version in use.
 
 
 What's New in Python 2.7.8?
@@ -94,7 +298,7 @@ Core and Builtins
   overwrite the error set in PyObject_GetAttr.
 
 - Issue #21831: Avoid integer overflow when large sizes and offsets are given to
-  the buffer type.
+  the buffer type. CVE-2014-7185.
 
 - Issue #1856: Avoid crashes and lockups when daemon threads run while the
   interpreter is shutting down; instead, these threads are now killed when they
@@ -5012,7 +5216,7 @@ Library
 - Issue #7494: Fix a crash in ``_lsprof`` (cProfile) after clearing the profiler,
   reset also the pointer to the current pointer context.
 
-- Issue #7232: Add support for the context manager protocol to the
+- Issue #7232: Add support for the context management protocol to the
   ``tarfile.TarFile`` class.
 
 - Issue #7250: Fix info leak of os.environ across multi-run uses of
@@ -6762,7 +6966,7 @@ Library
 
 - Issue #1696199: Add collections.Counter() for rapid and convenient counting.
 
-- Issue #3860: GzipFile and BZ2File now support the context manager protocol.
+- Issue #3860: GzipFile and BZ2File now support the context management protocol.
 
 - Issue #4272: Add an optional argument to the GzipFile constructor to override
   the timestamp in the gzip stream.  The default value remains the current time.
@@ -9931,7 +10135,7 @@ Extension Modules
   parameter.
 
 - _winreg's HKEY object has gained __enter__ and __exit__ methods to
-  support the context manager protocol.  The _winreg module also
+  support the context management protocol.  The _winreg module also
   gained a new function ``ExpandEnvironmentStrings`` to expand
   REG_EXPAND_SZ keys.
 
