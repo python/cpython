@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9351: Defaults set with set_defaults on an argparse subparser
+  are no longer ignored when also set on the parent parser.
+
 - Issue #21991: Make email.headerregistry's header 'params' attributes
   be read-only (MappingProxyType).  Previously the dictionary was modifiable
   but a new one was created on each access of the attribute.
