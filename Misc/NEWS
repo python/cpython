@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -90,6 +90,10 @@ Build
 
 - Issue #17219: Add library build dir for Python extension cross-builds.
 
+Windows
+-------
+
+- Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.
 
 What's New in Python 3.4.2?
 ===========================
