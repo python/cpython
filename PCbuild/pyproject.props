@@ -20,7 +20,7 @@
     <sqlite3Dir>$(externalsDir)\sqlite-3.8.3.1</sqlite3Dir>
     <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
     <lzmaDir>$(externalsDir)\xz-5.0.5</lzmaDir>
-    <opensslDir>$(externalsDir)\openssl-1.0.1i</opensslDir>
+    <opensslDir>$(externalsDir)\openssl-1.0.1j</opensslDir>
     <tclDir>$(externalsDir)\tcl-8.6.1.0</tclDir>
     <tkDir>$(externalsDir)\tk-8.6.1.0</tkDir>
     <tixDir>$(externalsDir)\tix-8.4.3.4</tixDir>
