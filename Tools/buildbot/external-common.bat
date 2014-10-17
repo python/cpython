@@ -24,6 +24,7 @@ cd ..
 @rem if exist openssl-1.0.1g rd /s/q openssl-1.0.1g
 @rem if exist openssl-1.0.1h rd /s/q openssl-1.0.1h
 @rem if exist openssl-1.0.1i rd /s/q openssl-1.0.1i
+@rem if exist openssl-1.0.1j rd /s/q openssl-1.0.1j
 @rem if exist sqlite-3.6.21 rd /s/q sqlite-3.6.21
 
 @rem bzip
@@ -37,8 +38,8 @@ if exist db-4.4.20 rd /s/q db-4.4.20
 if not exist db-4.7.25.0 svn export http://svn.python.org/projects/external/db-4.7.25.0
 
 @rem OpenSSL
-if exist openssl-1.0.1h rd /s/q openssl-1.0.1h
-if not exist openssl-1.0.1i svn export http://svn.python.org/projects/external/openssl-1.0.1i
+if exist openssl-1.0.1i rd /s/q openssl-1.0.1i
+if not exist openssl-1.0.1j svn export http://svn.python.org/projects/external/openssl-1.0.1j
 
 @rem tcl/tk
 if not exist tcl-8.5.15.0 (

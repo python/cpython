@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -288,7 +288,7 @@ Build
 Windows
 -------
 
-- Issue #22160: The bundled version of OpenSSL has been updated to 1.0.1i.
+- Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.
 
 
 
