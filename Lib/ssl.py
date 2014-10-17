@@ -454,6 +454,9 @@ def _create_stdlib_context(protocol=PROTOCOL_SSLv23, *, cert_reqs=None,
     context = SSLContext(protocol)
     # SSLv2 considered harmful.
     context.options |= OP_NO_SSLv2
+    # SSLv3 has problematic security and is only required for really old
+    # clients such as IE6 on Windows XP
+    context.options |= OP_NO_SSLv3
 
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
