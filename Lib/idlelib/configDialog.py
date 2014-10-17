@@ -24,7 +24,7 @@ from idlelib import macosxSupport
 
 class ConfigDialog(Toplevel):
 
-    def __init__(self, parent, title, _htest=False, _utest=False):
+    def __init__(self, parent, title='', _htest=False, _utest=False):
         """
         _htest - bool, change box location when running htest
         _utest - bool, don't wait_window when running unittest
@@ -36,7 +36,7 @@ class ConfigDialog(Toplevel):
         self.wm_withdraw()
 
         self.configure(borderwidth=5)
-        self.title('IDLE Preferences')
+        self.title(title or 'IDLE Preferences')
         self.geometry(
                 "+%d+%d" % (parent.winfo_rootx() + 20,
                 parent.winfo_rooty() + (30 if not _htest else 150)))
