@@ -178,6 +178,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22638: SSLv3 is now disabled throughout the standard library.
+  It can still be enabled by instantiating a SSLContext manually.
+
 - Issue #22641: In asyncio, the default SSL context for client connections
   is now created using ssl.create_default_context(), for stronger security.
 
