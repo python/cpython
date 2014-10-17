@@ -131,7 +131,7 @@ class GrepDialog(SearchDialogBase):
             self.top.withdraw()
 
 
-def _grep_dialog(parent):  # for htest
+def _grep_dialog(parent):  # htest #
     from idlelib.PyShell import PyShellFileList
     root = Tk()
     root.title("Test GrepDialog")
