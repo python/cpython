@@ -51,7 +51,7 @@ echo.Fetching external libraries...
 
 for %%e in (
             bzip2-1.0.6
-            openssl-1.0.1i
+            openssl-1.0.1j
             tcl-8.6.1.0
             tk-8.6.1.0
             tix-8.4.3.4
