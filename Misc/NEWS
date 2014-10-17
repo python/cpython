@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22653: Fix an assertion failure in debug mode when doing a reentrant
+  dict insertion in debug mode.
+
 - Issue #22643: Fix integer overflow in Unicode case operations (upper, lower,
   title, swapcase, casefold).
 
