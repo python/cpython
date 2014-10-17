@@ -814,13 +814,14 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     if (ep == NULL) {
         return -1;
     }
+    assert(PyUnicode_CheckExact(key) || mp->ma_keys->dk_lookup == lookdict);
     Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
     old_value = *value_addr;
     if (old_value != NULL) {
         assert(ep->me_key != NULL && ep->me_key != dummy);
         *value_addr = value;
-        Py_DECREF(old_value); /* which **CAN** re-enter */
+        Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
     }
     else {
         if (ep->me_key == NULL) {
@@ -851,9 +852,8 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         }
         mp->ma_used++;
         *value_addr = value;
+        assert(ep->me_key != NULL && ep->me_key != dummy);
     }
-    assert(ep->me_key != NULL && ep->me_key != dummy);
-    assert(PyUnicode_CheckExact(key) || mp->ma_keys->dk_lookup == lookdict);
     return 0;
 }
 
