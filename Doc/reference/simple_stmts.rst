@@ -695,9 +695,7 @@ hierarchical naming of modules. To help organize modules and provide a
 hierarchy in naming, Python has a concept of packages. A package can contain
 other packages and modules while modules cannot contain other modules or
 packages. From a file system perspective, packages are directories and modules
-are files. The original `specification for packages
-<http://www.python.org/doc/essays/packages.html>`_ is still available to read,
-although minor details have changed since the writing of that document.
+are files.
 
 .. index::
     single: sys.modules
