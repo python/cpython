@@ -133,37 +133,27 @@ class CallTip:
 
 
 def _calltip_window(parent):  # htest #
-    import re
-    from tkinter import Tk, Text, LEFT, BOTH
+    from tkinter import Toplevel, Text, LEFT, BOTH
 
-    root = Tk()
-    root.title("Test calltips")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
+    top = Toplevel(parent)
+    top.title("Test calltips")
+    top.geometry("200x100+%d+%d" % (parent.winfo_rootx() + 200,
+                  parent.winfo_rooty() + 150))
+    text = Text(top)
+    text.pack(side=LEFT, fill=BOTH, expand=1)
+    text.insert("insert", "string.split")
+    top.update()
+    calltip = CallTip(text)
 
-    class MyEditWin: # conceptually an editor_window
-        def __init__(self):
-            text = self.text = Text(root)
-            text.pack(side=LEFT, fill=BOTH, expand=1)
-            text.insert("insert", "string.split")
-            root.update()
-            self.calltip = CallTip(text)
-
-            text.event_add("<<calltip-show>>", "(")
-            text.event_add("<<calltip-hide>>", ")")
-            text.bind("<<calltip-show>>", self.calltip_show)
-            text.bind("<<calltip-hide>>", self.calltip_hide)
-
-            text.focus_set()
-            root.mainloop()
-
-        def calltip_show(self, event):
-            self.calltip.showtip("Hello world", "insert", "end")
-
-        def calltip_hide(self, event):
-            self.calltip.hidetip()
-
-    MyEditWin()
+    def calltip_show(event):
+        calltip.showtip("(s=Hello world)", "insert", "end")
+    def calltip_hide(event):
+        calltip.hidetip()
+    text.event_add("<<calltip-show>>", "(")
+    text.event_add("<<calltip-hide>>", ")")
+    text.bind("<<calltip-show>>", calltip_show)
+    text.bind("<<calltip-hide>>", calltip_hide)
+    text.focus_set()
 
 if __name__=='__main__':
     from idlelib.idle_test.htest import run

@@ -2,7 +2,6 @@ import time
 import re
 import keyword
 import builtins
-from tkinter import *
 from idlelib.Delegator import Delegator
 from idlelib.configHandler import idleConf
 
@@ -234,20 +233,23 @@ class ColorDelegator(Delegator):
         for tag in self.tagdefs:
             self.tag_remove(tag, "1.0", "end")
 
-def _color_delegator(parent):
+def _color_delegator(parent):  # htest #
+    from tkinter import Toplevel, Text
     from idlelib.Percolator import Percolator
-    root = Tk()
-    root.title("Test ColorDelegator")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
-    source = "if somename: x = 'abc' # comment\nprint"
-    text = Text(root, background="white")
-    text.insert("insert", source)
+
+    top = Toplevel(parent)
+    top.title("Test ColorDelegator")
+    top.geometry("200x100+%d+%d" % (parent.winfo_rootx() + 200,
+                  parent.winfo_rooty() + 150))
+    source = "if somename: x = 'abc' # comment\nprint\n"
+    text = Text(top, background="white")
     text.pack(expand=1, fill="both")
+    text.insert("insert", source)
+    text.focus_set()
+
     p = Percolator(text)
     d = ColorDelegator()
     p.insertfilter(d)
-    root.mainloop()
 
 if __name__ == "__main__":
     from idlelib.idle_test.htest import run
