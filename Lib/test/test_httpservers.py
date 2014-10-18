@@ -349,7 +349,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request('/', method='FOO')
         self.check_status_and_reason(response, 501)
         # requests must be case sensitive,so this should fail too
-        response = self.request('/', method='get')
+        response = self.request('/', method='custom')
         self.check_status_and_reason(response, 501)
         response = self.request('/', method='GETs')
         self.check_status_and_reason(response, 501)
