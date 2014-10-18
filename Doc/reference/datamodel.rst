@@ -454,7 +454,8 @@ Callable types
       +=========================+===============================+===========+
       | :attr:`__doc__`         | The function's documentation  | Writable  |
       |                         | string, or ``None`` if        |           |
-      |                         | unavailable                   |           |
+      |                         | unavailable; not inherited by |           |
+      |                         | subclasses                    |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__name__`        | The function's name           | Writable  |
       +-------------------------+-------------------------------+-----------+
