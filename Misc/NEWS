@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9351: Defaults set with set_defaults on an argparse subparser
+  are no longer ignored when also set on the parent parser.
+
 - Issue #20421: Add a .version() method to SSL sockets exposing the actual
   protocol version in use.
 
