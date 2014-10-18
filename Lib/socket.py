@@ -60,7 +60,8 @@ EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
-__all__ = ["getfqdn", "create_connection"]
+__all__ = ["fromfd", "getfqdn", "create_connection",
+        "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
@@ -454,6 +455,7 @@ if hasattr(_socket.socket, "share"):
         socket.share(pid).
         """
         return socket(0, 0, 0, info)
+    __all__.append("fromshare")
 
 if hasattr(_socket, "socketpair"):
 
