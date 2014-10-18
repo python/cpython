@@ -1054,12 +1054,14 @@ fileio_repr(fileio *self)
             PyErr_Clear();
         else
             return NULL;
-        res = PyUnicode_FromFormat("<_io.FileIO fd=%d mode='%s'>",
-                                   self->fd, mode_string(self));
+        res = PyUnicode_FromFormat(
+	    "<_io.FileIO fd=%d mode='%s' closefd='%d'>",
+	    self->fd, mode_string(self), self->closefd);
     }
     else {
-        res = PyUnicode_FromFormat("<_io.FileIO name=%R mode='%s'>",
-                                   nameobj, mode_string(self));
+        res = PyUnicode_FromFormat(
+	    "<_io.FileIO name=%R mode='%s' closefd='%d'>",
+	    nameobj, mode_string(self), self->closefd);
         Py_DECREF(nameobj);
     }
     return res;
