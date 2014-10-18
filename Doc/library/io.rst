@@ -519,9 +519,12 @@ Raw File I/O
    The *name* can be one of two things:
 
    * a character string or :class:`bytes` object representing the path to the
-     file which will be opened;
+     file which will be opened. In this case closefd must be True (the default)
+     otherwise an error will be raised.
    * an integer representing the number of an existing OS-level file descriptor
-     to which the resulting :class:`FileIO` object will give access.
+     to which the resulting :class:`FileIO` object will give access. When the
+     FileIO object is closed this fd will be closed as well, unless *closefd*
+     is set to ``False``.
 
    The *mode* can be ``'r'``, ``'w'``, ``'x'`` or ``'a'`` for reading
    (default), writing, exclusive creation or appending. The file will be
