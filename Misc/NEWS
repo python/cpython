@@ -181,6 +181,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18853: Fixed ResourceWarning in shlex.__nain__.
+
 - Issue #9351: Defaults set with set_defaults on an argparse subparser
   are no longer ignored when also set on the parent parser.
 
