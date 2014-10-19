@@ -1349,7 +1349,7 @@ test case
         self.checkAssertLogsPerLevel('ERROR')
 
     def checkAssertLogsPerLogger(self, logger):
-        # Check per-logger fitering
+        # Check per-logger filtering
         with self.assertNoStderr():
             with self.assertLogs(level='DEBUG') as outer_cm:
                 with self.assertLogs(logger, level='DEBUG') as cm:
