@@ -36,7 +36,7 @@ between conformable Python objects and XML on the wire.
 
 .. warning::
 
-   In the case of https URIS, :mod:`xmlrpclib` does not do any verification of
+   In the case of https URIs, :mod:`xmlrpclib` does not do any verification of
    the server's certificate.
 
 
