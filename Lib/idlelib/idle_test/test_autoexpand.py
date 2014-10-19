@@ -78,7 +78,7 @@ class AutoExpandTest(unittest.TestCase):
         equal(previous(), 'a')
 
     def test_after_only(self):
-        # Also add punctuation 'noise' that shoud be ignored.
+        # Also add punctuation 'noise' that should be ignored.
         text = self.text
         previous = self.auto_expand.getprevword
         expand = self.auto_expand.expand_word_event

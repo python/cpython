@@ -479,7 +479,7 @@ class _IPAddressBase(_TotalOrderingMixin):
         """Return prefix length from the bitwise netmask.
 
         Args:
-            ip_int: An integer, the netmask in axpanded bitwise format
+            ip_int: An integer, the netmask in expanded bitwise format
 
         Returns:
             An integer, the prefix length.
