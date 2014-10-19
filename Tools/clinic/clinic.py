@@ -1015,7 +1015,7 @@ class CLanguage(Language):
         # when we're METH_O, but have a custom return converter,
         # we use "impl_parameters" for the parsing function
         # because that works better.  but that means we must
-        # supress actually declaring the impl's parameters
+        # suppress actually declaring the impl's parameters
         # as variables in the parsing function.  but since it's
         # METH_O, we have exactly one anyway, so we know exactly
         # where it is.
@@ -3727,7 +3727,7 @@ class DSLParser:
             if self.keyword_only:
                 fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
             self.parameter_state = self.ps_seen_slash
-            # fixup preceeding parameters
+            # fixup preceding parameters
             for p in self.function.parameters.values():
                 if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and not isinstance(p.converter, self_converter)):
                     fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
@@ -3923,7 +3923,7 @@ class DSLParser:
                 # for __init__.  (it can't be, __init__ doesn't
                 # have a docstring.)  if this is an __init__
                 # (or __new__), then this signature is for
-                # calling the class to contruct a new instance.
+                # calling the class to construct a new instance.
                 p_add('$')
 
             name = p.converter.signature_name or p.name

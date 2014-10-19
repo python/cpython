@@ -213,7 +213,7 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
     wildcards = leftmost.count('*')
     if wildcards > max_wildcards:
         # Issue #17980: avoid denials of service by refusing more
-        # than one wildcard per fragment.  A survery of established
+        # than one wildcard per fragment.  A survey of established
         # policy among SSL implementations showed it to be a
         # reasonable choice.
         raise CertificateError(

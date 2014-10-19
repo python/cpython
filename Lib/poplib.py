@@ -41,7 +41,7 @@ LF = b'\n'
 CRLF = CR+LF
 
 # maximal line length when calling readline(). This is to prevent
-# reading arbitrary lenght lines. RFC 1939 limits POP3 line length to
+# reading arbitrary length lines. RFC 1939 limits POP3 line length to
 # 512 characters, including CRLF. We have selected 2048 just to be on
 # the safe side.
 _MAXLINE = 2048

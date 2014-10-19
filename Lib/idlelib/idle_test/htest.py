@@ -171,7 +171,7 @@ GetKeysDialog_spec = {
            "<nothing> is invalid.\n"
            "No modifier key is invalid.\n"
            "Shift key with [a-z],[0-9], function key, move key, tab, space"
-           "is invalid.\nNo validitity checking if advanced key binding "
+           "is invalid.\nNo validity checking if advanced key binding "
            "entry is used."
     }
 

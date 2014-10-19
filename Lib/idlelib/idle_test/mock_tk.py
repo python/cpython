@@ -116,7 +116,7 @@ class Text:
         """Return a (line, char) tuple of int indexes into self.data.
 
         This implements .index without converting the result back to a string.
-        The result is contrained by the number of lines and linelengths of
+        The result is constrained by the number of lines and linelengths of
         self.data. For many indexes, the result is initially (1, 0).
 
         The input index may have any of several possible forms:

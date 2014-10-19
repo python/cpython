@@ -371,7 +371,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.run_until_complete, self.loop.subprocess_exec,
             asyncio.SubprocessProtocol)
 
-        # exepected multiple arguments, not a list
+        # expected multiple arguments, not a list
         self.assertRaises(TypeError,
             self.loop.run_until_complete, self.loop.subprocess_exec,
             asyncio.SubprocessProtocol, args)
