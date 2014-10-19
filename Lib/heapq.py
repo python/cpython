@@ -429,7 +429,7 @@ def merge(*iterables, key=None, reverse=False):
 #   value seen being in the 100 most extreme values is 100/101.
 # * If the value is a new extreme value, the cost of inserting it into the
 #   heap is 1 + log(k, 2).
-# * The probabilty times the cost gives:
+# * The probability times the cost gives:
 #            (k/i) * (1 + log(k, 2))
 # * Summing across the remaining n-k elements gives:
 #            sum((k/i) * (1 + log(k, 2)) for i in range(k+1, n+1))

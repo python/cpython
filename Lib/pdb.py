@@ -301,7 +301,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # An 'Internal StopIteration' exception is an exception debug event
         # issued by the interpreter when handling a subgenerator run with
         # 'yield from' or a generator controled by a for loop. No exception has
-        # actually occured in this case. The debugger uses this debug event to
+        # actually occurred in this case. The debugger uses this debug event to
         # stop when the debuggee is returning from such generators.
         prefix = 'Internal ' if (not exc_traceback
                                     and exc_type is StopIteration) else ''
