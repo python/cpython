@@ -90,7 +90,7 @@ class TestRaiseChanges(GrammarTest):
         self.invalid_syntax("raise E from")
 
 
-# Adaptated from Python 3's Lib/test/test_grammar.py:GrammarTests.testFuncdef
+# Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.testFuncdef
 class TestFunctionAnnotations(GrammarTest):
     def test_1(self):
         self.validate("""def f(x) -> list: pass""")

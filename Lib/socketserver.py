@@ -288,7 +288,7 @@ class BaseServer:
             deadline = time() + timeout
 
         # Wait until a request arrives or the timeout expires - the loop is
-        # necessary to accomodate early wakeups due to EINTR.
+        # necessary to accommodate early wakeups due to EINTR.
         with _ServerSelector() as selector:
             selector.register(self, selectors.EVENT_READ)
 
