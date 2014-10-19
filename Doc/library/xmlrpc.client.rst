@@ -29,7 +29,7 @@ between conformable Python objects and XML on the wire.
 
 .. warning::
 
-   In the case of https URIS, :mod:`xmlrpc.client` does not do any verification
+   In the case of https URIs, :mod:`xmlrpc.client` does not do any verification
    of the server's certificate.
 
 
