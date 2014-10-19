@@ -393,7 +393,7 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    any non-alphanumeric character; this is equivalent to the set ``[^a-zA-Z0-9_]``.
    With :const:`LOCALE`, it will match any character not in the set ``[0-9_]``, and
    not defined as alphanumeric for the current locale. If :const:`UNICODE` is set,
-   this will match anything other than ``[0-9_]`` plus characters classied as
+   this will match anything other than ``[0-9_]`` plus characters classified as
    not alphanumeric in the Unicode character properties database.
 
 ``\Z``
