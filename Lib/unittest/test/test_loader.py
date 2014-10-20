@@ -24,6 +24,13 @@ def warningregistry(func):
 
 class Test_TestLoader(unittest.TestCase):
 
+    ### Basic object tests
+    ################################################################
+
+    def test___init__(self):
+        loader = unittest.TestLoader()
+        self.assertEqual([], loader.errors)
+
     ### Tests for TestLoader.loadTestsFromTestCase
     ################################################################
 
@@ -336,6 +343,13 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromModule(m)
         self.assertIsInstance(suite, unittest.TestSuite)
         self.assertEqual(suite.countTestCases(), 1)
+        # Errors loading the suite are also captured for introspection.
+        self.assertNotEqual([], loader.errors)
+        self.assertEqual(1, len(loader.errors))
+        error = loader.errors[0]
+        self.assertTrue(
+            'Failed to call load_tests:' in error,
+            'missing error string in %r' % error)
         test = list(suite)[0]
 
         self.assertRaisesRegex(TypeError, "some failure", test.m)
