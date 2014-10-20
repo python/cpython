@@ -201,13 +201,9 @@ instead.
    .. note::
 
       Which connections succeed will vary depending on the version of
-      OpenSSL.  For instance, in some older versions of OpenSSL (such
-      as 0.9.7l on OS X 10.4), an SSLv2 client could not connect to an
-      SSLv23 server.  Another example: beginning with OpenSSL 1.0.0,
-      an SSLv23 client will not actually attempt SSLv2 connections
-      unless you explicitly enable SSLv2 ciphers; for example, you
-      might specify ``"ALL"`` or ``"SSLv2"`` as the *ciphers* parameter
-      to enable them.
+      OpenSSL.  For example, beginning with OpenSSL 1.0.0, an SSLv23 client
+      will not actually attempt SSLv2 connections unless you explicitly
+      enable SSLv2 ciphers (which is not recommended, as SSLv2 is broken).
 
    The *ciphers* parameter sets the available ciphers for this SSL object.
    It should be a string in the `OpenSSL cipher list format
@@ -550,6 +546,11 @@ Constants
 
    .. versionadded:: 3.4
 
+.. data:: PROTOCOL_SSLv23
+
+   Selects the highest protocol version that both the client and server support.
+   Despite the name, this option can select "TLS" protocols as well as "SSL".
+
 .. data:: PROTOCOL_SSLv2
 
    Selects SSL version 2 as the channel encryption protocol.
@@ -561,17 +562,13 @@ Constants
 
       SSL version 2 is insecure.  Its use is highly discouraged.
 
-.. data:: PROTOCOL_SSLv23
-
-   Selects SSL version 2 or 3 as the channel encryption protocol.  This is a
-   setting to use with servers for maximum compatibility with the other end of
-   an SSL connection, but it may cause the specific ciphers chosen for the
-   encryption to be of fairly low quality.
-
 .. data:: PROTOCOL_SSLv3
 
-   Selects SSL version 3 as the channel encryption protocol.  For clients, this
-   is the maximally compatible SSL variant.
+   Selects SSL version 3 as the channel encryption protocol.
+
+   .. warning::
+
+      SSL version 3 is insecure.  Its use is highly discouraged.
 
 .. data:: PROTOCOL_TLSv1
 
@@ -586,9 +583,9 @@ Constants
 
 .. data:: PROTOCOL_TLSv1_2
 
-   Selects TLS version 1.2 as the channel encryption protocol. This is the most
-   modern version, and probably the best choice for maximum protection, if both
-   sides can speak it.  Available only with openssl version 1.0.1+.
+   Selects TLS version 1.2 as the channel encryption protocol. This is the
+   most modern version, and probably the best choice for maximum protection,
+   if both sides can speak it.  Available only with openssl version 1.0.1+.
 
    .. versionadded:: 3.4
 
@@ -683,9 +680,8 @@ Constants
 .. data:: HAS_SNI
 
    Whether the OpenSSL library has built-in support for the *Server Name
-   Indication* extension to the SSLv3 and TLSv1 protocols (as defined in
-   :rfc:`4366`).  When true, you can use the *server_hostname* argument to
-   :meth:`SSLContext.wrap_socket`.
+   Indication* extension (as defined in :rfc:`4366`).  When true, you can
+   use the *server_hostname* argument to :meth:`SSLContext.wrap_socket`.
 
    .. versionadded:: 3.2
 
@@ -1516,118 +1512,100 @@ should use the following idiom::
 Client-side operation
 ^^^^^^^^^^^^^^^^^^^^^
 
-This example connects to an SSL server and prints the server's certificate::
+This example creates a SSL context with the recommended security settings
+for client sockets, including automatic certificate verification::
 
-   import socket, ssl, pprint
+   >>> context = ssl.create_default_context()
 
-   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   # require a certificate from the server
-   ssl_sock = ssl.wrap_socket(s,
-                              ca_certs="/etc/ca_certs_file",
-                              cert_reqs=ssl.CERT_REQUIRED)
-   ssl_sock.connect(('www.verisign.com', 443))
-
-   pprint.pprint(ssl_sock.getpeercert())
-   # note that closing the SSLSocket will also close the underlying socket
-   ssl_sock.close()
-
-As of January 6, 2012, the certificate printed by this program looks like
-this::
-
-   {'issuer': ((('countryName', 'US'),),
-               (('organizationName', 'VeriSign, Inc.'),),
-               (('organizationalUnitName', 'VeriSign Trust Network'),),
-               (('organizationalUnitName',
-                 'Terms of use at https://www.verisign.com/rpa (c)06'),),
-               (('commonName',
-                 'VeriSign Class 3 Extended Validation SSL SGC CA'),)),
-    'notAfter': 'May 25 23:59:59 2012 GMT',
-    'notBefore': 'May 26 00:00:00 2010 GMT',
-    'serialNumber': '53D2BEF924A7245E83CA01E46CAA2477',
-    'subject': ((('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
-                (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
-                (('businessCategory', 'V1.0, Clause 5.(b)'),),
-                (('serialNumber', '2497886'),),
-                (('countryName', 'US'),),
-                (('postalCode', '94043'),),
-                (('stateOrProvinceName', 'California'),),
-                (('localityName', 'Mountain View'),),
-                (('streetAddress', '487 East Middlefield Road'),),
-                (('organizationName', 'VeriSign, Inc.'),),
-                (('organizationalUnitName', ' Production Security Services'),),
-                (('commonName', 'www.verisign.com'),)),
-    'subjectAltName': (('DNS', 'www.verisign.com'),
-                       ('DNS', 'verisign.com'),
-                       ('DNS', 'www.verisign.net'),
-                       ('DNS', 'verisign.net'),
-                       ('DNS', 'www.verisign.mobi'),
-                       ('DNS', 'verisign.mobi'),
-                       ('DNS', 'www.verisign.eu'),
-                       ('DNS', 'verisign.eu')),
-    'version': 3}
-
-This other example first creates an SSL context, instructs it to verify
-certificates sent by peers, and feeds it a set of recognized certificate
-authorities (CA)::
+If you prefer to tune security settings yourself, you might create
+a context from scratch (but beware that you might not get the settings
+right)::
 
    >>> context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
    >>> context.verify_mode = ssl.CERT_REQUIRED
+   >>> context.check_hostname = True
    >>> context.load_verify_locations("/etc/ssl/certs/ca-bundle.crt")
 
-(it is assumed your operating system places a bundle of all CA certificates
-in ``/etc/ssl/certs/ca-bundle.crt``; if not, you'll get an error and have
-to adjust the location)
+(this snippet assumes your operating system places a bundle of all CA
+certificates in ``/etc/ssl/certs/ca-bundle.crt``; if not, you'll get an
+error and have to adjust the location)
 
 When you use the context to connect to a server, :const:`CERT_REQUIRED`
 validates the server certificate: it ensures that the server certificate
 was signed with one of the CA certificates, and checks the signature for
 correctness::
 
-   >>> conn = context.wrap_socket(socket.socket(socket.AF_INET))
-   >>> conn.connect(("linuxfr.org", 443))
+   >>> conn = context.wrap_socket(socket.socket(socket.AF_INET),
+   ...                            server_hostname="www.python.org")
+   >>> conn.connect(("www.python.org", 443))
 
-You should then fetch the certificate and check its fields for conformity::
+You may then fetch the certificate::
 
    >>> cert = conn.getpeercert()
-   >>> ssl.match_hostname(cert, "linuxfr.org")
 
 Visual inspection shows that the certificate does identify the desired service
-(that is, the HTTPS host ``linuxfr.org``)::
+(that is, the HTTPS host ``www.python.org``)::
 
    >>> pprint.pprint(cert)
-   {'issuer': ((('organizationName', 'CAcert Inc.'),),
-               (('organizationalUnitName', 'http://www.CAcert.org'),),
-               (('commonName', 'CAcert Class 3 Root'),)),
-    'notAfter': 'Jun  7 21:02:24 2013 GMT',
-    'notBefore': 'Jun  8 21:02:24 2011 GMT',
-    'serialNumber': 'D3E9',
-    'subject': ((('commonName', 'linuxfr.org'),),),
-    'subjectAltName': (('DNS', 'linuxfr.org'),
-                       ('othername', '<unsupported>'),
-                       ('DNS', 'linuxfr.org'),
-                       ('othername', '<unsupported>'),
-                       ('DNS', 'dev.linuxfr.org'),
-                       ('othername', '<unsupported>'),
-                       ('DNS', 'prod.linuxfr.org'),
-                       ('othername', '<unsupported>'),
-                       ('DNS', 'alpha.linuxfr.org'),
-                       ('othername', '<unsupported>'),
-                       ('DNS', '*.linuxfr.org'),
-                       ('othername', '<unsupported>')),
+   {'OCSP': ('http://ocsp.digicert.com',),
+    'caIssuers': ('http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt',),
+    'crlDistributionPoints': ('http://crl3.digicert.com/sha2-ev-server-g1.crl',
+                              'http://crl4.digicert.com/sha2-ev-server-g1.crl'),
+    'issuer': ((('countryName', 'US'),),
+               (('organizationName', 'DigiCert Inc'),),
+               (('organizationalUnitName', 'www.digicert.com'),),
+               (('commonName', 'DigiCert SHA2 Extended Validation Server CA'),)),
+    'notAfter': 'Sep  9 12:00:00 2016 GMT',
+    'notBefore': 'Sep  5 00:00:00 2014 GMT',
+    'serialNumber': '01BB6F00122B177F36CAB49CEA8B6B26',
+    'subject': ((('businessCategory', 'Private Organization'),),
+                (('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
+                (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
+                (('serialNumber', '3359300'),),
+                (('streetAddress', '16 Allen Rd'),),
+                (('postalCode', '03894-4801'),),
+                (('countryName', 'US'),),
+                (('stateOrProvinceName', 'NH'),),
+                (('localityName', 'Wolfeboro,'),),
+                (('organizationName', 'Python Software Foundation'),),
+                (('commonName', 'www.python.org'),)),
+    'subjectAltName': (('DNS', 'www.python.org'),
+                       ('DNS', 'python.org'),
+                       ('DNS', 'pypi.python.org'),
+                       ('DNS', 'docs.python.org'),
+                       ('DNS', 'testpypi.python.org'),
+                       ('DNS', 'bugs.python.org'),
+                       ('DNS', 'wiki.python.org'),
+                       ('DNS', 'hg.python.org'),
+                       ('DNS', 'mail.python.org'),
+                       ('DNS', 'packaging.python.org'),
+                       ('DNS', 'pythonhosted.org'),
+                       ('DNS', 'www.pythonhosted.org'),
+                       ('DNS', 'test.pythonhosted.org'),
+                       ('DNS', 'us.pycon.org'),
+                       ('DNS', 'id.python.org')),
     'version': 3}
 
-Now that you are assured of its authenticity, you can proceed to talk with
-the server::
+Now the SSL channel is established and the certificate verified, you can
+proceed to talk with the server::
 
    >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
    >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
-   [b'HTTP/1.1 302 Found',
-    b'Date: Sun, 16 May 2010 13:43:28 GMT',
-    b'Server: Apache/2.2',
-    b'Location: https://linuxfr.org/pub/',
-    b'Vary: Accept-Encoding',
+   [b'HTTP/1.1 200 OK',
+    b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
+    b'Server: nginx',
+    b'Content-Type: text/html; charset=utf-8',
+    b'X-Frame-Options: SAMEORIGIN',
+    b'Content-Length: 45679',
+    b'Accept-Ranges: bytes',
+    b'Via: 1.1 varnish',
+    b'Age: 2188',
+    b'X-Served-By: cache-lcy1134-LCY',
+    b'X-Cache: HIT',
+    b'X-Cache-Hits: 11',
+    b'Vary: Cookie',
+    b'Strict-Transport-Security: max-age=63072000; includeSubDomains',
     b'Connection: close',
-    b'Content-Type: text/html; charset=iso-8859-1',
     b'',
     b'']
 
@@ -1645,7 +1623,7 @@ waiting for clients to connect::
 
    import socket, ssl
 
-   context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+   context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
    context.load_cert_chain(certfile="mycertfile", keyfile="mykeyfile")
 
    bindsocket = socket.socket()
@@ -1941,16 +1919,18 @@ to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
 Protocol versions
 '''''''''''''''''
 
-SSL version 2 is considered insecure and is therefore dangerous to use.  If
-you want maximum compatibility between clients and servers, it is recommended
-to use :const:`PROTOCOL_SSLv23` as the protocol version and then disable
-SSLv2 explicitly using the :data:`SSLContext.options` attribute::
+SSL versions 2 and 3 are considered insecure and are therefore dangerous to
+use.  If you want maximum compatibility between clients and servers, it is
+recommended to use :const:`PROTOCOL_SSLv23` as the protocol version and then
+disable SSLv2 and SSLv3 explicitly using the :data:`SSLContext.options`
+attribute::
 
    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
    context.options |= ssl.OP_NO_SSLv2
+   context.options |= ssl.OP_NO_SSLv3
 
-The SSL context created above will allow SSLv3 and TLSv1 (and later, if
-supported by your system) connections, but not SSLv2.
+The SSL context created above will only allow TLSv1 and later (if
+supported by your system) connections.
 
 Cipher selection
 ''''''''''''''''
