@@ -399,6 +399,13 @@ class TestDiscovery(unittest.TestCase):
         suite = loader.discover('.')
         self.assertIn(os.getcwd(), sys.path)
         self.assertEqual(suite.countTestCases(), 1)
+        # Errors loading the suite are also captured for introspection.
+        self.assertNotEqual([], loader.errors)
+        self.assertEqual(1, len(loader.errors))
+        error = loader.errors[0]
+        self.assertTrue(
+            'Failed to import test module: test_this_does_not_exist' in error,
+            'missing error string in %r' % error)
         test = list(list(suite)[0])[0] # extract test from suite
 
         with self.assertRaises(ImportError):
@@ -418,6 +425,13 @@ class TestDiscovery(unittest.TestCase):
 
         self.assertIn(abspath('/foo'), sys.path)
         self.assertEqual(suite.countTestCases(), 1)
+        # Errors loading the suite are also captured for introspection.
+        self.assertNotEqual([], loader.errors)
+        self.assertEqual(1, len(loader.errors))
+        error = loader.errors[0]
+        self.assertTrue(
+            'Failed to import test module: my_package' in error,
+            'missing error string in %r' % error)
         test = list(list(suite)[0])[0] # extract test from suite
         with self.assertRaises(ImportError):
             test.my_package()
