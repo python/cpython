@@ -1044,10 +1044,10 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    .. versionadded:: 3.3
 
 
-.. function:: pwrite(fd, string, offset)
+.. function:: pwrite(fd, str, offset)
 
-   Write *string* to a file descriptor, *fd*, from *offset*, leaving the file
-   offset unchanged.
+   Write *bytestring* to a file descriptor, *fd*, from *offset*,
+   leaving the file offset unchanged.
 
    Availability: Unix.
 
