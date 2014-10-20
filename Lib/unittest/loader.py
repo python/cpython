@@ -21,19 +21,22 @@ VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
 
 
 def _make_failed_import_test(name, suiteClass):
-    message = 'Failed to import test module: %s\n%s' % (name, traceback.format_exc())
+    message = 'Failed to import test module: %s\n%s' % (
+        name, traceback.format_exc())
     return _make_failed_test('ModuleImportFailure', name, ImportError(message),
-                             suiteClass)
+                             suiteClass, message)
 
 def _make_failed_load_tests(name, exception, suiteClass):
-    return _make_failed_test('LoadTestsFailure', name, exception, suiteClass)
+    message = 'Failed to call load_tests:\n%s' % (traceback.format_exc(),)
+    return _make_failed_test(
+        'LoadTestsFailure', name, exception, suiteClass, message)
 
-def _make_failed_test(classname, methodname, exception, suiteClass):
+def _make_failed_test(classname, methodname, exception, suiteClass, message):
     def testFailure(self):
         raise exception
     attrs = {methodname: testFailure}
     TestClass = type(classname, (case.TestCase,), attrs)
-    return suiteClass((TestClass(methodname),))
+    return suiteClass((TestClass(methodname),)), message
 
 def _make_skipped_test(methodname, exception, suiteClass):
     @case.skip(str(exception))
@@ -58,6 +61,10 @@ class TestLoader(object):
     sortTestMethodsUsing = staticmethod(util.three_way_cmp)
     suiteClass = suite.TestSuite
     _top_level_dir = None
+
+    def __init__(self):
+        super(TestLoader, self).__init__()
+        self.errors = []
 
     def loadTestsFromTestCase(self, testCaseClass):
         """Return a suite of all tests cases contained in testCaseClass"""
@@ -107,8 +114,10 @@ class TestLoader(object):
             try:
                 return load_tests(self, tests, pattern)
             except Exception as e:
-                return _make_failed_load_tests(module.__name__, e,
-                                               self.suiteClass)
+                error_case, error_message = _make_failed_load_tests(
+                    module.__name__, e, self.suiteClass)
+                self.errors.append(error_message)
+                return error_case
         return tests
 
     def loadTestsFromName(self, name, module=None):
@@ -336,7 +345,10 @@ class TestLoader(object):
                 except case.SkipTest as e:
                     yield _make_skipped_test(name, e, self.suiteClass)
                 except:
-                    yield _make_failed_import_test(name, self.suiteClass)
+                    error_case, error_message = \
+                        _make_failed_import_test(name, self.suiteClass)
+                    self.errors.append(error_message)
+                    yield error_case
                 else:
                     mod_file = os.path.abspath(getattr(module, '__file__', full_path))
                     realpath = _jython_aware_splitext(os.path.realpath(mod_file))
@@ -362,7 +374,10 @@ class TestLoader(object):
                 except case.SkipTest as e:
                     yield _make_skipped_test(name, e, self.suiteClass)
                 except:
-                    yield _make_failed_import_test(name, self.suiteClass)
+                    error_case, error_message = \
+                        _make_failed_import_test(name, self.suiteClass)
+                    self.errors.append(error_message)
+                    yield error_case
                 else:
                     load_tests = getattr(package, 'load_tests', None)
                     tests = self.loadTestsFromModule(package, pattern=pattern)

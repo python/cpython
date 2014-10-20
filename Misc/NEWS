@@ -186,6 +186,10 @@ Library
 - Issue #9351: Defaults set with set_defaults on an argparse subparser
   are no longer ignored when also set on the parent parser.
 
+- Issue #19746: Make it possible to examine the errors from unittest
+  discovery without executing the test suite. The new `errors` attribute
+  on TestLoader exposes these non-fatal errors encountered during discovery.
+
 - Issue #21991: Make email.headerregistry's header 'params' attributes
   be read-only (MappingProxyType).  Previously the dictionary was modifiable
   but a new one was created on each access of the attribute.
