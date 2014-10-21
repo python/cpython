@@ -1,9 +1,10 @@
-import unittest
+import unittest.mock
 from test import support
 import builtins
 import io
 import os
 import shutil
+import subprocess
 import uuid
 
 def importable(name):
@@ -361,28 +362,27 @@ class TestUUID(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
-        data = '''\
-
+        data = '''
 fake hwaddr
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
-        def mock_popen(cmd):
-            return io.StringIO(data)
 
-        if shutil.which('ifconfig') is None:
-            path = os.pathsep.join(('/sbin', '/usr/sbin'))
-            if shutil.which('ifconfig', path=path) is None:
-                self.skipTest('requires ifconfig')
+        popen = unittest.mock.MagicMock()
+        popen.stdout = io.BytesIO(data.encode())
 
-        with support.swap_attr(os, 'popen', mock_popen):
-            mac = uuid._find_mac(
-                command='ifconfig',
-                args='',
-                hw_identifiers=['hwaddr'],
-                get_index=lambda x: x + 1,
-            )
-            self.assertEqual(mac, 0x1234567890ab)
+        with unittest.mock.patch.object(shutil, 'which',
+                                        return_value='/sbin/ifconfig'):
+            with unittest.mock.patch.object(subprocess, 'Popen',
+                                            return_value=popen):
+                mac = uuid._find_mac(
+                    command='ifconfig',
+                    arg='',
+                    hw_identifiers=[b'hwaddr'],
+                    get_index=lambda x: x + 1,
+                )
+
+        self.assertEqual(mac, 0x1234567890ab)
 
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_uuid1(self):
