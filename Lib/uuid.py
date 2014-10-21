@@ -304,8 +304,8 @@ class UUID(object):
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
-def _find_mac(command, args, hw_identifiers, get_index):
-    import os, shutil
+def _find_mac(command, arg, hw_identifiers, get_index):
+    import os, shutil, subprocess
     executable = shutil.which(command)
     if executable is None:
         path = os.pathsep.join(('/sbin', '/usr/sbin'))
@@ -314,18 +314,26 @@ def _find_mac(command, args, hw_identifiers, get_index):
             return None
 
     try:
-        # LC_ALL to ensure English output, 2>/dev/null to prevent output on
-        # stderr (Note: we don't have an example where the words we search for
-        # are actually localized, but in theory some system could do so.)
-        cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
-        with os.popen(cmd) as pipe:
-            for line in pipe:
+        # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
+        # on stderr (Note: we don't have an example where the words we search
+        # for are actually localized, but in theory some system could do so.)
+        env = dict(os.environ)
+        env['LC_ALL'] = 'C'
+        cmd = [executable]
+        if arg:
+            cmd.append(arg)
+        proc = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL,
+                                env=env)
+        with proc:
+            for line in proc.stdout:
                 words = line.lower().split()
                 for i in range(len(words)):
                     if words[i] in hw_identifiers:
                         try:
                             return int(
-                                words[get_index(i)].replace(':', ''), 16)
+                                words[get_index(i)].replace(b':', b''), 16)
                         except (ValueError, IndexError):
                             # Virtual interfaces, such as those provided by
                             # VPNs, do not have a colon-delimited MAC address
@@ -341,7 +349,7 @@ def _ifconfig_getnode():
 
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     for args in ('', '-a', '-av'):
-        mac = _find_mac('ifconfig', args, ['hwaddr', 'ether'], lambda i: i+1)
+        mac = _find_mac('ifconfig', args, [b'hwaddr', b'ether'], lambda i: i+1)
         if mac:
             return mac
 
@@ -349,12 +357,12 @@ def _ifconfig_getnode():
     ip_addr = socket.gethostbyname(socket.gethostname())
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
-    mac = _find_mac('arp', '-an', [ip_addr], lambda i: -1)
+    mac = _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
     if mac:
         return mac
 
     # This might work on HP-UX.
-    mac = _find_mac('lanscan', '-ai', ['lan0'], lambda i: 0)
+    mac = _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
     if mac:
         return mac
 
