@@ -1113,6 +1113,12 @@ Tests
 Build
 -----
 
+- Issue #22592: Drop support of the Borland C compiler to build Python. The
+  distutils module still supports it to build extensions.
+
+- Issue #22591: Drop support of MS-DOS, especially of the DJGPP compiler
+  (MS-DOS port of GCC).
+
 - Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
   Jonathan Hosmer.
 
