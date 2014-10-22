@@ -1054,6 +1054,7 @@ are always available.  They are listed here in alphabetical order.
       The file is now non-inheritable.
 
    .. deprecated-removed:: 3.4 4.0
+
       The ``'U'`` mode.
 
 
