@@ -227,35 +227,6 @@ typedef int pid_t;
 #endif /* _MSC_VER */
 
 /* ------------------------------------------------------------------------*/
-/* The Borland compiler defines __BORLANDC__ */
-/* XXX These defines are likely incomplete, but should be easy to fix. */
-#ifdef __BORLANDC__
-#define COMPILER "[Borland]"
-
-#ifdef _WIN32
-/* tested with BCC 5.5 (__BORLANDC__ >= 0x0550)
- */
-
-typedef int pid_t;
-/* BCC55 seems to understand __declspec(dllimport), it is used in its
-   own header files (winnt.h, ...) - so we can do nothing and get the default*/
-
-#undef HAVE_SYS_UTIME_H
-#define HAVE_UTIME_H
-#define HAVE_DIRENT_H
-
-/* rename a few functions for the Borland compiler */
-#include <io.h>
-#define _chsize chsize
-#define _setmode setmode
-
-#else /* !_WIN32 */
-#error "Only Win32 and later are supported"
-#endif /* !_WIN32 */
-
-#endif /* BORLANDC */
-
-/* ------------------------------------------------------------------------*/
 /* egcs/gnu-win32 defines __GNUC__ and _WIN32 */
 #if defined(__GNUC__) && defined(_WIN32)
 /* XXX These defines are likely incomplete, but should be easy to fix.

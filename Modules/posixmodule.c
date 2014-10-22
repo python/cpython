@@ -6,7 +6,7 @@
    functions are either unimplemented or implemented differently.  The source
    assumes that for Windows NT, the macro 'MS_WINDOWS' is defined independent
    of the compiler used.  Different compilers define their own feature
-   test macro, e.g. '__BORLANDC__' or '_MSC_VER'. */
+   test macro, e.g. '_MSC_VER'. */
 
 
 
@@ -143,13 +143,6 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_SYSTEM     1
 #include <process.h>
 #else
-#ifdef __BORLANDC__             /* Borland compiler */
-#define HAVE_EXECV      1
-#define HAVE_OPENDIR    1
-#define HAVE_PIPE       1
-#define HAVE_SYSTEM     1
-#define HAVE_WAIT       1
-#else
 #ifdef _MSC_VER         /* Microsoft compiler */
 #define HAVE_GETPPID    1
 #define HAVE_GETLOGIN   1
@@ -179,7 +172,6 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_WAIT       1
 #define HAVE_TTYNAME    1
 #endif  /* _MSC_VER */
-#endif  /* __BORLANDC__ */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 
@@ -214,11 +206,7 @@ extern int rmdir(char *);
 extern int chdir(const char *);
 extern int rmdir(const char *);
 #endif
-#ifdef __BORLANDC__
-extern int chmod(const char *, int);
-#else
 extern int chmod(const char *, mode_t);
-#endif
 /*#ifdef HAVE_FCHMOD
 extern int fchmod(int, mode_t);
 #endif*/
