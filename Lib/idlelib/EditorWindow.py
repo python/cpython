@@ -189,6 +189,8 @@ class EditorWindow(object):
         text.bind("<<python-docs>>", self.python_docs)
         text.bind("<<about-idle>>", self.about_dialog)
         text.bind("<<open-config-dialog>>", self.config_dialog)
+        text.bind("<<open-config-extensions-dialog>>",
+                  self.config_extensions_dialog)
         text.bind("<<open-module>>", self.open_module)
         text.bind("<<do-nothing>>", lambda event: "break")
         text.bind("<<select-all>>", self.select_all)
@@ -543,6 +545,8 @@ class EditorWindow(object):
 
     def config_dialog(self, event=None):
         configDialog.ConfigDialog(self.top,'Settings')
+    def config_extensions_dialog(self, event=None):
+        configDialog.ConfigExtensionsDialog(self.top)
 
     def help_dialog(self, event=None):
         if self.root:
