@@ -45,6 +45,9 @@ class IdleConfParser(ConfigParser):
         Get an option value for given section/option or return default.
         If type is specified, return as type.
         """
+        # TODO Use default as fallback, at least if not None
+        # Should also print Warning(file, section, option).
+        # Currently may raise ValueError
         if not self.has_option(section, option):
             return default
         if type == 'bool':
