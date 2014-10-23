@@ -390,7 +390,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. function:: delocalize(string)
 
     Converts a string into a normalized number string, following the
-    :const:'LC_NUMERIC`settings.
+    :const:`LC_NUMERIC` settings.
 
     .. versionadded:: 3.5
 
