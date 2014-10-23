@@ -524,5 +524,59 @@ class TestMiscellaneous(unittest.TestCase):
             locale.setlocale(locale.LC_ALL, (b'not', b'valid'))
 
 
+class BaseDelocalizeTest(BaseLocalizedTest):
+
+    def _test_delocalize(self, value, out):
+        self.assertEqual(locale.delocalize(value), out)
+
+    def _test_atof(self, value, out):
+        self.assertEqual(locale.atof(value), out)
+
+    def _test_atoi(self, value, out):
+        self.assertEqual(locale.atoi(value), out)
+
+
+class TestEnUSDelocalize(EnUSCookedTest, BaseDelocalizeTest):
+
+    def test_delocalize(self):
+        self._test_delocalize('50000.00', '50000.00')
+        self._test_delocalize('50,000.00', '50000.00')
+
+    def test_atof(self):
+        self._test_atof('50000.00', 50000.)
+        self._test_atof('50,000.00', 50000.)
+
+    def test_atoi(self):
+        self._test_atoi('50000', 50000)
+        self._test_atoi('50,000', 50000)
+
+
+class TestCDelocalizeTest(CCookedTest, BaseDelocalizeTest):
+
+    def test_delocalize(self):
+        self._test_delocalize('50000.00', '50000.00')
+
+    def test_atof(self):
+        self._test_atof('50000.00', 50000.)
+
+    def test_atoi(self):
+        self._test_atoi('50000', 50000)
+
+
+class TestfrFRDelocalizeTest(FrFRCookedTest, BaseDelocalizeTest):
+
+    def test_delocalize(self):
+        self._test_delocalize('50000,00', '50000.00')
+        self._test_delocalize('50 000,00', '50000.00')
+
+    def test_atof(self):
+        self._test_atof('50000,00', 50000.)
+        self._test_atof('50 000,00', 50000.)
+
+    def test_atoi(self):
+        self._test_atoi('50000', 50000)
+        self._test_atoi('50 000', 50000)
+
+
 if __name__ == '__main__':
     unittest.main()
