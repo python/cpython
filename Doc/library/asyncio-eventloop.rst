@@ -465,8 +465,8 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
    Register write pipe in eventloop.
 
    *protocol_factory* should instantiate object with :class:`BaseProtocol`
-   interface. *pipe* is file-like object.
-   Return pair (transport, protocol), where *transport* supports
+   interface. *pipe* is :term:`file-like object <file object>`.
+   Return pair ``(transport, protocol)``, where *transport* supports
    :class:`WriteTransport` interface.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
@@ -734,12 +734,12 @@ Wait until a file descriptor received some data using the
     def reader():
         data = rsock.recv(100)
         print("Received:", data.decode())
-        # We are done: unregister the register
+        # We are done: unregister the file descriptor
         loop.remove_reader(rsock)
         # Stop the event loop
         loop.stop()
 
-    # Wait for read event
+    # Register the file descriptor for read event
     loop.add_reader(rsock, reader)
 
     # Simulate the reception of data from the network
@@ -790,3 +790,5 @@ the :meth:`BaseEventLoop.add_signal_handler` method::
         loop.run_forever()
     finally:
         loop.close()
+
+This example only works on UNIX.
