@@ -181,6 +181,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13918: Provide a locale.delocalize() function which can remove
+  locale-specific number formatting from a string representing a number,
+  without then converting it to a specific type.  Patch by Cédric Krier.
+
 - Issue #22676: Make the pickling of global objects which don't have a
   __module__ attribute less slow.
 

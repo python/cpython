@@ -387,6 +387,14 @@ The :mod:`locale` module defines the following exception and functions:
    ``str(float)``, but takes the decimal point into account.
 
 
+.. function:: delocalize(string)
+
+    Converts a string into a normalized number string, following the
+    :const:'LC_NUMERIC`settings.
+
+    .. versionadded:: 3.5
+
+
 .. function:: atof(string)
 
    Converts a string to a floating point number, following the :const:`LC_NUMERIC`
