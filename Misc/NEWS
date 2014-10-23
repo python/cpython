@@ -181,6 +181,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22676: Make the pickling of global objects which don't have a
+  __module__ attribute less slow.
+
 - Issue #18853: Fixed ResourceWarning in shlex.__nain__.
 
 - Issue #9351: Defaults set with set_defaults on an argparse subparser
