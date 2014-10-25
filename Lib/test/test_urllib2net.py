@@ -229,17 +229,12 @@ class OtherNetworkTests(unittest.TestCase):
                 with support.transient_internet(url):
                     try:
                         f = urlopen(url, req, TIMEOUT)
+                    # urllib.error.URLError is a subclass of OSError
                     except OSError as err:
                         if expected_err:
                             msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
                                    (expected_err, url, req, type(err), err))
                             self.assertIsInstance(err, expected_err, msg)
-                        else:
-                            raise
-                    except urllib.error.URLError as err:
-                        if isinstance(err[0], socket.timeout):
-                            print("<timeout: %s>" % url, file=sys.stderr)
-                            continue
                         else:
                             raise
                     else:
