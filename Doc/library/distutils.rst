@@ -13,9 +13,25 @@ additional modules into a Python installation.  The new modules may be either
 collections of Python packages which include modules coded in both Python and C.
 
 Most Python users will *not* want to use this module directly, but instead
-use the cross-version tools maintained by the Python Packaging Authority.
-Refer to the `Python Packaging User Guide <http://packaging.python.org>`_
-for more information.
+use the cross-version tools maintained by the Python Packaging Authority. In
+particular,
+`setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`__ is an
+enhanced alternative to :mod:`distutils` that provides:
+
+* support for declaring project dependencies
+* additional mechanisms for configuring which files to include in source
+  releases (including plugins for integration with version control systems)
+* the ability to declare project "entry points", which can be used as the
+  basis for application plugin systems
+* the ability to automatically generate Windows command line executables at
+  installation time rather than needing to prebuild them
+* consistent behaviour across all supported Python versions
+
+The recommended `pip <https://pip.pypa.io/>`__ installer runs all
+``setup.py`` scripts with ``setuptools``, even if the script itself only
+imports ``distutils``. Refer to the
+`Python Packaging User Guide <http://packaging.python.org>`_ for more
+information.
 
 For the benefits of packaging tool authors and users seeking a deeper
 understanding of the details of the current packaging and distribution
