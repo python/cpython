@@ -41,26 +41,28 @@ Key terms
   file format standards. They maintain a variety of tools, documentation
   and issue trackers on both `GitHub <https://github.com/pypa>`__ and
   `BitBucket <https://bitbucket.org/pypa/>`__.
-* ``distutils`` is the original build and distribution system first added to
-  the Python standard library in 1998. While direct use of ``distutils`` is
-  being phased out, it still laid the foundation for the current packaging
+* :mod:`distutils` is the original build and distribution system first added
+  to the Python standard library in 1998. While direct use of :mod:`distutils`
+  is being phased out, it still laid the foundation for the current packaging
   and distribution infrastructure, and it not only remains part of the
   standard library, but its name lives on in other ways (such as the name
   of the mailing list used to coordinate Python packaging standards
   development).
-* ``setuptools`` is a (largely) drop-in replacement for ``distutils`` first
+* `setuptools`_ is a (largely) drop-in replacement for :mod:`distutils` first
   published in 2004. Its most notable addition over the unmodified
-  ``distutils`` tools was the ability to declare dependencies on other
+  :mod:`distutils` tools was the ability to declare dependencies on other
   packages. It is currently recommended as a more regularly updated
-  alternative to ``distutils`` that offers consistent support for more
+  alternative to :mod:`distutils` that offers consistent support for more
   recent packaging standards across a wide range of Python versions.
-* ``wheel`` (in this context) is a project that adds the ``bdist_wheel``
-  command to ``distutils``/``setuptools``. This produces a cross platform
+* `wheel`_ (in this context) is a project that adds the ``bdist_wheel``
+  command to :mod:`distutils`/`setuptools`_. This produces a cross platform
   binary packaging format (called "wheels" or "wheel files" and defined in
   :pep:`427`) that allows Python libraries, even those including binary
   extensions, to be installed on a system without needing to be built
   locally.
 
+.. _setuptools: https://setuptools.pypa.io/en/latest/setuptools.html
+.. _wheel: http://wheel.readthedocs.org
 
 Open source licensing and collaboration
 =======================================
