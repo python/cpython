@@ -25,6 +25,7 @@ import sysconfig
 import tempfile
 import time
 import unittest
+import urllib.error
 import warnings
 
 try:
@@ -1307,6 +1308,8 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         n = getattr(err, 'errno', None)
         if (isinstance(err, socket.timeout) or
             (isinstance(err, socket.gaierror) and n in gai_errnos) or
+            (isinstance(err, urllib.error.URLError) and
+             "ConnectionRefusedError" in err.reason) or
             n in captured_errnos):
             if not verbose:
                 sys.stderr.write(denied.args[0] + "\n")
