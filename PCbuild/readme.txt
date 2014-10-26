@@ -88,6 +88,19 @@ this behavior:
    -r                  Rebuild instead of just building
    -e                  Use get_externals.bat to fetch external sources
 
+Up to 9 MSBuild switches can also be passed, though they must be passed
+after specifying any of the above switches.  For example, use:
+
+   build.bat -e -d /m
+
+to do a concurrent debug build with externals fetched as needed.  If
+the MSBuild switch requires an equal sign ("="), the entire switch must
+be quoted:
+
+   build.bat -e -d "/p:externalsDir=P:\cpython-externals"
+
+There may also be other situations where quotes are necessary.
+
 
 Legacy support
 --------------
