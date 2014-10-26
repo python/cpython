@@ -214,7 +214,7 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.0.1h of the OpenSSL secure sockets
+    Python wrapper for version 1.0.1j of the OpenSSL secure sockets
     library, which is built by ssl.vcxproj
     Homepage:
         http://www.openssl.org/
