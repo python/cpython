@@ -53,9 +53,9 @@ for detailed information about platforms with precompiled installers.
       by Mark Pilgrim, 2004,
       ISBN 1-59059-356-1
 
-   `For Windows users <http://swaroopch.com/text/Byte_of_Python:Installing_Python#For_Windows_users>`_
+   `For Windows users <http://www.swaroopch.com/notes/python/#install_windows>`_
       in "Installing Python"
-      in "`A Byte of Python <http://www.byteofpython.info>`_"
+      in "`A Byte of Python <http://www.swaroopch.com/notes/python/>`_"
       by Swaroop C H, 2003
 
 
