@@ -1286,6 +1286,11 @@ are always available.  They are listed here in alphabetical order.
    Use :func:`functools.cmp_to_key` to convert an old-style *cmp* function to a
    *key* function.
 
+   The built-in :func:`sorted` function is guaranteed to be stable. A sort is
+   stable if it guarantees not to change the relative order of elements that
+   compare equal --- this is helpful for sorting in multiple passes (for
+   example, sort by department, then by salary grade).
+
    For sorting examples and a brief sorting tutorial, see `Sorting HowTo
    <http://wiki.python.org/moin/HowTo/Sorting/>`_\.
 
