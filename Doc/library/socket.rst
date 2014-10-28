@@ -265,7 +265,7 @@ The module :mod:`socket` exports the following constants and functions:
    connection to ``www.python.org`` on port 80 (results may differ on your
    system if IPv6 isn't enabled)::
 
-      >>> socket.getaddrinfo("www.python.org", 80, 0, 0, socket.SOL_TCP)
+      >>> socket.getaddrinfo("www.python.org", 80, 0, 0, socket.IPPROTO_TCP)
       [(2, 1, 6, '', ('82.94.164.162', 80)),
        (10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]
 
