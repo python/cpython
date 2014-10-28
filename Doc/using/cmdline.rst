@@ -468,14 +468,6 @@ conflict.
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
 
-.. envvar:: PYTHONY2K
-
-   Set this to a non-empty string to cause the :mod:`time` module to require
-   dates specified as strings to include 4-digit years, otherwise 2-digit years
-   are converted based on rules described in the :mod:`time` module
-   documentation.
-
-
 .. envvar:: PYTHONOPTIMIZE
 
    If this is set to a non-empty string it is equivalent to specifying the
