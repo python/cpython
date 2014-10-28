@@ -43,10 +43,9 @@ separating others.
 str/unicode Unification
 -----------------------
 
-
-Python 3's :func:`str` (``PyString_*`` functions in C) type is equivalent to
-Python 2's :func:`unicode` (``PyUnicode_*``).  The old 8-bit string type has
-become :func:`bytes`.  Python 2.6 and later provide a compatibility header,
+Python 3's :func:`str` type is equivalent to Python 2's :func:`unicode`; the C
+functions are called ``PyUnicode_*`` for both.  The old 8-bit string type has become
+:func:`bytes`, with C functions called ``PyBytes_*``.  Python 2.6 and later provide a compatibility header,
 :file:`bytesobject.h`, mapping ``PyBytes`` names to ``PyString`` ones.  For best
 compatibility with Python 3, :c:type:`PyUnicode` should be used for textual data and
 :c:type:`PyBytes` for binary data.  It's also important to remember that
