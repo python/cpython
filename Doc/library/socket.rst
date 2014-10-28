@@ -90,9 +90,6 @@ created.  Socket addresses are represented as follows:
     If *addr_type* is :const:`TIPC_ADDR_ID`, then *v1* is the node, *v2* is the
     reference, and *v3* should be set to 0.
 
-    If *addr_type* is :const:`TIPC_ADDR_ID`, then *v1* is the node, *v2* is the
-    reference, and *v3* should be set to 0.
-
 - A tuple ``(interface, )`` is used for the :const:`AF_CAN` address family,
   where *interface* is a string representing a network interface name like
   ``'can0'``. The network interface name ``''`` can be used to receive packets
