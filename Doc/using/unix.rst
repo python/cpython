@@ -55,9 +55,8 @@ On FreeBSD and OpenBSD
 On OpenSolaris
 --------------
 
-To install the newest Python versions on OpenSolaris, install `blastwave
-<http://www.blastwave.org/howto.html>`_ and type ``pkg_get -i python`` at the
-prompt.
+You can get Python from `OpenCSW <http://www.opencsw.org/>`_.  Various versions
+of Python are available and can be installed with e.g. ``pkgutil -i python27``.
 
 
 Building Python
