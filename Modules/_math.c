@@ -240,7 +240,7 @@ _Py_log1p(double x)
         return x;
     }
     else if (-0.5 <= x && x <= 1.) {
-        /* WARNING: it's possible than an overeager compiler
+        /* WARNING: it's possible that an overeager compiler
            will incorrectly optimize the following two lines
            to the equivalent of "return log(1.+x)". If this
            happens, then results from log1p will be inaccurate
