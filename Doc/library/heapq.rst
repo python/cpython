@@ -136,7 +136,6 @@ pushing all values onto a heap and then popping off the smallest values one at a
 time::
 
    >>> def heapsort(iterable):
-   ...     'Equivalent to sorted(iterable)'
    ...     h = []
    ...     for value in iterable:
    ...         heappush(h, value)
@@ -144,6 +143,9 @@ time::
    ...
    >>> heapsort([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+This is similar to ``sorted(iterable)``, but unlike :func:`sorted`, this
+implementation is not stable.
 
 Heap elements can be tuples.  This is useful for assigning comparison values
 (such as task priorities) alongside the main record being tracked::
