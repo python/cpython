@@ -33,13 +33,6 @@ module-level functions and :class:`RegexObject` methods.  The functions are
 shortcuts that don't require you to compile a regex object first, but miss some
 fine-tuning parameters.
 
-.. seealso::
-
-   Mastering Regular Expressions
-      Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
-      second edition of the book no longer covers Python at all, but the first
-      edition covered writing good regular expression patterns in great detail.
-
 
 .. _re-syntax:
 
@@ -417,6 +410,14 @@ Octal escapes are included in a limited form: If the first digit is a 0, or if
 there are three octal digits, it is considered an octal escape. Otherwise, it is
 a group reference.  As for string literals, octal escapes are always at most
 three digits in length.
+
+.. seealso::
+
+   Mastering Regular Expressions
+      Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
+      second edition of the book no longer covers Python at all, but the first
+      edition covered writing good regular expression patterns in great detail.
+
 
 
 .. _contents-of-module-re:
