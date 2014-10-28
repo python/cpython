@@ -384,11 +384,6 @@ You can also change the prompts
 and
 .I sys.ps2
 in this file.
-.IP PYTHONY2K
-Set this to a non-empty string to cause the \fItime\fP module to
-require dates specified as strings to include 4-digit years, otherwise
-2-digit years are converted based on rules described in the \fItime\fP
-module documentation.
 .IP PYTHONOPTIMIZE
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-O\fP option. If set to an integer, it is equivalent to
