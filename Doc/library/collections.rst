@@ -908,13 +908,14 @@ customize a prototype instance:
     >>> janes_account = default_account._replace(owner='Jane')
 
 Enumerated constants can be implemented with named tuples, but it is simpler
-and more efficient to use a simple class declaration:
+and more efficient to use a simple :class:`~enum.Enum` :
 
     >>> Status = namedtuple('Status', 'open pending closed')._make(range(3))
     >>> Status.open, Status.pending, Status.closed
     (0, 1, 2)
-    >>> class Status:
-        open, pending, closed = range(3)
+    >>> from enum import Enum
+    >>> class Status(Enum):
+    ...     open, pending, closed = range(3)
 
     * `Recipe for named tuple abstract base class with a metaclass mix-in
       <http://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
