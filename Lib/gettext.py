@@ -225,6 +225,13 @@ class GNUTranslations(NullTranslations):
     LE_MAGIC = 0x950412de
     BE_MAGIC = 0xde120495
 
+    # Acceptable .mo versions
+    VERSIONS = (0, 1)
+
+    def _get_versions(self, version):
+        """Returns a tuple of major version, minor version"""
+        return (version >> 16, version & 0xffff)
+
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
         unpack = struct.unpack
@@ -245,6 +252,12 @@ class GNUTranslations(NullTranslations):
             ii = '>II'
         else:
             raise OSError(0, 'Bad magic number', filename)
+
+        major_version, minor_version = self._get_versions(version)
+
+        if major_version not in self.VERSIONS:
+            raise OSError(0, 'Bad version number ' + str(major_version), filename)
+
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
         for i in range(0, msgcount):

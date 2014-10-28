@@ -344,9 +344,9 @@ will assume message ids as Unicode strings, not byte strings.
 The entire set of key/value pairs are placed into a dictionary and set as the
 "protected" :attr:`_info` instance variable.
 
-If the :file:`.mo` file's magic number is invalid, or if other problems occur
-while reading the file, instantiating a :class:`GNUTranslations` class can raise
-:exc:`OSError`.
+If the :file:`.mo` file's magic number is invalid, the major version number is
+unexpected, or if other problems occur while reading the file, instantiating a
+:class:`GNUTranslations` class can raise :exc:`OSError`.
 
 The following methods are overridden from the base class implementation:
 
