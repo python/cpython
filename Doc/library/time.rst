@@ -133,8 +133,7 @@ The module defines the following functions and data items:
 
    On Unix, return the current processor time as a floating point number expressed
    in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name, but in any
-   case, this is the function to use for benchmarking Python or timing algorithms.
+   "processor time", depends on that of the C function of the same name.
 
    On Windows, this function returns wall-clock seconds elapsed since the first
    call to this function, as a floating point number, based on the Win32 function
