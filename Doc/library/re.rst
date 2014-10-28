@@ -38,13 +38,6 @@ module-level functions and methods on
 that don't require you to compile a regex object first, but miss some
 fine-tuning parameters.
 
-.. seealso::
-
-   Mastering Regular Expressions
-      Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
-      second edition of the book no longer covers Python at all, but the first
-      edition covered writing good regular expression patterns in great detail.
-
 
 .. _re-syntax:
 
@@ -441,6 +434,14 @@ three digits in length.
 
 .. versionchanged:: 3.3
    The ``'\u'`` and ``'\U'`` escape sequences have been added.
+
+
+.. seealso::
+
+   Mastering Regular Expressions
+      Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
+      second edition of the book no longer covers Python at all, but the first
+      edition covered writing good regular expression patterns in great detail.
 
 
 
