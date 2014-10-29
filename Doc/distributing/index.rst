@@ -35,7 +35,7 @@ Key terms
   repository of open source licensed packages made available for use by
   other Python users
 * the `Python Packaging Authority
-  <http://packaging.python.org/en/latest/future.html>`__ are the group of
+  <https://packaging.python.org/en/latest/future.html>`__ are the group of
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation
@@ -124,11 +124,11 @@ involved in creating a project:
 * `Uploading the project to the Python Packaging Index`_
 
 .. _Project structure: \
-   http://packaging.python.org/en/latest/distributing.html#creating-your-own-project
+   https://packaging.python.org/en/latest/distributing.html#creating-your-own-project
 .. _Building and packaging the project: \
    https://packaging.python.org/en/latest/distributing.html#packaging-your-project
 .. _Uploading the project to the Python Packaging Index: \
-   http://packaging.python.org/en/latest/distributing.html#uploading-your-project-to-pypi
+   https://packaging.python.org/en/latest/distributing.html#uploading-your-project-to-pypi
 
 
 How do I...?
@@ -160,11 +160,11 @@ Python Packaging User Guide for more information and recommendations.
 .. seealso::
 
    `Python Packaging User Guide: Binary Extensions
-   <http://packaging.python.org/en/latest/extensions.html>`__
+   <https://packaging.python.org/en/latest/extensions.html>`__
 
 .. other topics:
 
    Once the Development & Deployment part of PPUG is fleshed out, some of
    those sections should be linked from new questions here (most notably,
    we should have a question about avoiding depending on PyPI that links to
-   http://packaging.python.org/en/latest/deployment.html#pypi-mirrors-and-caches)
+   https://packaging.python.org/en/latest/deployment.html#pypi-mirrors-and-caches)

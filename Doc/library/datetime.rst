@@ -1686,7 +1686,7 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
 
-   `pytz <http://pypi.python.org/pypi/pytz/>`_
+   `pytz <https://pypi.python.org/pypi/pytz/>`_
       The standard library has :class:`timezone` class for handling arbitrary
       fixed offsets from UTC and :attr:`timezone.utc` as UTC timezone instance.
 

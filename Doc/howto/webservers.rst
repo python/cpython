@@ -26,7 +26,7 @@ of the most popular libraries is provided.
    While this HOWTO tries to give an overview of Python in the web, it cannot
    always be as up to date as desired.  Web development in Python is rapidly
    moving forward, so the wiki page on `Web Programming
-   <http://wiki.python.org/moin/WebProgramming>`_ may be more in sync with
+   <https://wiki.python.org/moin/WebProgramming>`_ may be more in sync with
    recent development.
 
 
@@ -86,7 +86,7 @@ available.
      applications, instead of presenting a "500 Internal Server Error" message
 
    The Python wiki features a page on `CGI scripts
-   <http://wiki.python.org/moin/CgiScripts>`_ with some additional information
+   <https://wiki.python.org/moin/CgiScripts>`_ with some additional information
    about CGI in Python.
 
 
@@ -309,7 +309,7 @@ following WSGI-application::
     WSGIServer(app).run()
 
 This is a simple WSGI application, but you need to install `flup
-<http://pypi.python.org/pypi/flup/1.0>`_ first, as flup handles the low level
+<https://pypi.python.org/pypi/flup/1.0>`_ first, as flup handles the low level
 FastCGI access.
 
 .. seealso::
@@ -486,7 +486,7 @@ developing a web site.
 
    There are far more components than can be presented here.  The Python wiki
    has a page about these components, called
-   `Web Components <http://wiki.python.org/moin/WebComponents>`_.
+   `Web Components <https://wiki.python.org/moin/WebComponents>`_.
 
 
 Templates
@@ -528,7 +528,7 @@ Popular template engines include:
 
    There are many template engines competing for attention, because it is
    pretty easy to create them in Python.  The page `Templating
-   <http://wiki.python.org/moin/Templating>`_ in the wiki lists a big,
+   <https://wiki.python.org/moin/Templating>`_ in the wiki lists a big,
    ever-growing number of these.  The three listed above are considered "second
    generation" template engines and are a good place to start.
 
@@ -578,11 +578,11 @@ alternate storage mechanism.
 
 .. seealso::
 
-   * `Persistence Tools <http://wiki.python.org/moin/PersistenceTools>`_ lists
+   * `Persistence Tools <https://wiki.python.org/moin/PersistenceTools>`_ lists
      possibilities on how to save data in the file system.  Some of these
      modules are part of the standard library
 
-   * `Database Programming <http://wiki.python.org/moin/DatabaseProgramming>`_
+   * `Database Programming <https://wiki.python.org/moin/DatabaseProgramming>`_
      helps with choosing a method for saving data
 
    * `SQLAlchemy <http://www.sqlalchemy.org/>`_, the most powerful OR-Mapper
@@ -732,9 +732,9 @@ found in the Python wiki.
 .. seealso::
 
    The Python wiki contains an extensive list of `web frameworks
-   <http://wiki.python.org/moin/WebFrameworks>`_.
+   <https://wiki.python.org/moin/WebFrameworks>`_.
 
    Most frameworks also have their own mailing lists and IRC channels, look out
    for these on the projects' web sites.  There is also a general "Python in the
    Web" IRC channel on freenode called `#python.web
-   <http://wiki.python.org/moin/PoundPythonWeb>`_.
+   <https://wiki.python.org/moin/PoundPythonWeb>`_.

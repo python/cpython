@@ -19,7 +19,7 @@ standard library module.  (Eventually you'll learn what's in the standard
 library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
-<http://pypi.python.org/pypi>`_ or try `Google <http://www.google.com>`_ or
+<https://pypi.python.org/pypi>`_ or try `Google <https://www.google.com>`_ or
 another Web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
@@ -607,7 +607,7 @@ use ``p.read(n)``.
    "expect" library.  A Python extension that interfaces to expect is called
    "expy" and available from http://expectpy.sourceforge.net.  A pure Python
    solution that works like expect is `pexpect
-   <http://pypi.python.org/pypi/pexpect/>`_.
+   <https://pypi.python.org/pypi/pexpect/>`_.
 
 
 How do I access the serial (RS232) port?
@@ -663,7 +663,7 @@ and client-side web systems.
 .. XXX check if wiki page is still up to date
 
 A summary of available frameworks is maintained by Paul Boddie at
-http://wiki.python.org/moin/WebProgramming\ .
+https://wiki.python.org/moin/WebProgramming\ .
 
 Cameron Laird maintains a useful set of pages about Python web technologies at
 http://phaseit.net/claird/comp.lang.python/web_python.
@@ -706,7 +706,7 @@ What module should I use to help with generating HTML?
 .. XXX add modern template languages
 
 You can find a collection of useful links on the `Web Programming wiki page
-<http://wiki.python.org/moin/WebProgramming>`_.
+<https://wiki.python.org/moin/WebProgramming>`_.
 
 
 How do I send mail from a Python script?
@@ -792,7 +792,7 @@ database.
 
 Support for most relational databases is available.  See the
 `DatabaseProgramming wiki page
-<http://wiki.python.org/moin/DatabaseProgramming>`_ for details.
+<https://wiki.python.org/moin/DatabaseProgramming>`_ for details.
 
 
 How do you implement persistent objects in Python?
