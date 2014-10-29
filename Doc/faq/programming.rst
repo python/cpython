@@ -23,8 +23,7 @@ for pdb as an example.
 
 The IDLE interactive development environment, which is part of the standard
 Python distribution (normally available as Tools/scripts/idle), includes a
-graphical debugger.  There is documentation for the IDLE debugger at
-https://www.python.org/idle/doc/idle2.html#Debugger.
+graphical debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
 Pythonwin debugger colors breakpoints and has quite a few cool features such as
@@ -52,6 +51,7 @@ They include:
 
 * Wing IDE (http://wingware.com/)
 * Komodo IDE (http://www.activestate.com/Products/Komodo)
+* PyCharm (https://www.jetbrains.com/pycharm/)
 
 
 Is there a tool to help find bugs or perform static analysis?
