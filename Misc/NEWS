@@ -1235,6 +1235,8 @@ Documentation
 Tests
 -----
 
+- Issue #22173: Update lib2to3 tests to use unittest test discovery.
+
 - Issue #20746: Fix test_pdb to run in refleak mode (-R).  Patch by Xavier
   de Gaye.
 
