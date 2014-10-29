@@ -1891,7 +1891,7 @@ socket
 
 * The :class:`~socket.socket` class now supports the PF_RDS protocol family
   (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
-  http://oss.oracle.com/projects/rds/).
+  https://oss.oracle.com/projects/rds/).
 
 * The :class:`~socket.socket` class now supports the ``PF_SYSTEM`` protocol
   family on OS X.  (Contributed by Michael Goderbauer in :issue:`13777`.)

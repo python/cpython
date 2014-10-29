@@ -181,7 +181,7 @@ How do I create documentation from doc strings?
 
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
-docstrings is `epydoc <http://epydoc.sf.net/>`_.  `Sphinx
+docstrings is `epydoc <http://epydoc.sourceforge.net/>`_.  `Sphinx
 <http://sphinx-doc.org>`_ can also include docstring content.
 
 
@@ -773,7 +773,7 @@ socket to select to check if it's writable.
 .. note::
    The :mod:`asyncore` module presents a framework-like approach to the problem
    of writing non-blocking networking code.
-   The third-party `Twisted <http://twistedmatrix.com/>`_ library is
+   The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
    a popular and feature-rich alternative.
 
 
