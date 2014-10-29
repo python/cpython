@@ -39,7 +39,9 @@ The Short Version
 
 With that done, your options are:
 
-* If you are dropping Python 2 support, use 2to3_ to port to Python 3
+* If you are dropping Python 2 support, use :ref:`2to3 <2to3-reference>` to port
+  to Python 3
+
 * If you are keeping Python 2 support, then start writing Python 2/3-compatible
   code starting **TODAY**
 
@@ -601,8 +603,6 @@ If you feel there is something missing from this document that should be added,
 please email the python-porting_ mailing list.
 
 
-
-.. _2to3: https://docs.python.org/2/library/2to3.html
 .. _3to2: https://pypi.python.org/pypi/3to2
 .. _Cheeseshop: PyPI_
 .. _coverage: https://pypi.python.org/pypi/coverage
