@@ -26,7 +26,7 @@ Introduction
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
-**urllib.request** is a `Python <http://www.python.org>`_ module for fetching URLs
+**urllib.request** is a Python module for fetching URLs
 (Uniform Resource Locators). It offers a very simple interface, in the form of
 the *urlopen* function. This is capable of fetching URLs using a variety of
 different protocols. It also offers a slightly more complex interface for

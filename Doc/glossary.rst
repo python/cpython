@@ -76,7 +76,7 @@ Glossary
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
-      <http://www.python.org/~guido/>`_, Python's creator.
+      <https://www.python.org/~guido/>`_, Python's creator.
 
    binary file
       A :term:`file object` able to read and write
@@ -141,7 +141,7 @@ Glossary
 
    CPython
       The canonical implementation of the Python programming language, as
-      distributed on `python.org <http://python.org>`_.  The term "CPython"
+      distributed on `python.org <https://www.python.org>`_.  The term "CPython"
       is used when necessary to distinguish this implementation from others
       such as Jython or IronPython.
 
@@ -531,7 +531,7 @@ Glossary
    method resolution order
       Method Resolution Order is the order in which base classes are searched
       for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <http://www.python.org/download/releases/2.3/mro/>`_.
+      <https://www.python.org/download/releases/2.3/mro/>`_.
 
    module
       An object that serves as an organizational unit of Python code.  Modules

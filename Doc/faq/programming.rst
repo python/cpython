@@ -1020,7 +1020,7 @@ performance levels:
   as builtins and some extension types.  For example, be sure to use
   either the :meth:`list.sort` built-in method or the related :func:`sorted`
   function to do sorting (and see the
-  `sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
+  `sorting mini-HOWTO <https://wiki.python.org/moin/HowTo/Sorting>`_ for examples
   of moderately advanced usage).
 
 * Abstractions tend to create indirections and force the interpreter to work
@@ -1040,7 +1040,7 @@ yourself.
 
 .. seealso::
    The wiki page devoted to `performance tips
-   <http://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
+   <https://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
 
 .. _efficient_string_concatenation:
 
