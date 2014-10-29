@@ -130,20 +130,47 @@ class TestLoader(object):
         The method optionally resolves the names relative to a given module.
         """
         parts = name.split('.')
+        error_case, error_message = None, None
         if module is None:
             parts_copy = parts[:]
             while parts_copy:
                 try:
-                    module = __import__('.'.join(parts_copy))
+                    module_name = '.'.join(parts_copy)
+                    module = __import__(module_name)
                     break
                 except ImportError:
-                    del parts_copy[-1]
+                    next_attribute = parts_copy.pop()
+                    # Last error so we can give it to the user if needed.
+                    error_case, error_message = _make_failed_import_test(
+                        next_attribute, self.suiteClass)
                     if not parts_copy:
-                        raise
+                        # Even the top level import failed: report that error.
+                        self.errors.append(error_message)
+                        return error_case
             parts = parts[1:]
         obj = module
         for part in parts:
-            parent, obj = obj, getattr(obj, part)
+            try:
+                parent, obj = obj, getattr(obj, part)
+            except AttributeError as e:
+                # We can't traverse some part of the name.
+                if (getattr(obj, '__path__', None) is not None
+                    and error_case is not None):
+                    # This is a package (no __path__ per importlib docs), and we
+                    # encountered an error importing something. We cannot tell
+                    # the difference between package.WrongNameTestClass and
+                    # package.wrong_module_name so we just report the
+                    # ImportError - it is more informative.
+                    self.errors.append(error_message)
+                    return error_case
+                else:
+                    # Otherwise, we signal that an AttributeError has occurred.
+                    error_case, error_message = _make_failed_test(
+                        'AttributeError', part, e, self.suiteClass,
+                        'Failed to access attribute:\n%s' % (
+                            traceback.format_exc(),))
+                    self.errors.append(error_message)
+                    return error_case
 
         if isinstance(obj, types.ModuleType):
             return self.loadTestsFromModule(obj)
