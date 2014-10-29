@@ -500,7 +500,7 @@ The documentation for the :mod:`codecs` module.
 
 Marc-André Lemburg gave a presentation at EuroPython 2002 titled "Python and
 Unicode".  A PDF version of his slides is available at
-<http://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>, and is an
+<https://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>, and is an
 excellent overview of the design of Python's Unicode features.
 
 
@@ -687,7 +687,7 @@ References
 
 The PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware
 Applications in Python" are available at
-<http://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>
+<https://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>
 and discuss questions of character encodings as well as how to internationalize
 and localize an application.
 

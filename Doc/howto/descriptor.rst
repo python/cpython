@@ -133,7 +133,7 @@ Note, in Python 2.2, ``super(B, obj).m()`` would only invoke :meth:`__get__` if
 invoked unless an old-style class is involved.  The implementation details are
 in :c:func:`super_getattro()` in :source:`Objects/typeobject.c`.
 
-.. _`Guido's Tutorial`: https://www.python.org/2.2.3/descrintro.html#cooperation
+.. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
 
 The details above show that the mechanism for descriptors is embedded in the
 :meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and
