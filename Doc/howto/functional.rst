@@ -741,7 +741,7 @@ the constructed list's ``.sort()`` method. ::
     [9878, 9828, 8442, 7953, 6431, 6213, 2207, 769]
 
 (For a more detailed discussion of sorting, see the Sorting mini-HOWTO in the
-Python wiki at http://wiki.python.org/moin/HowTo/Sorting.)
+Python wiki at https://wiki.python.org/moin/HowTo/Sorting.)
 
 The ``any(iter)`` and ``all(iter)`` built-ins look at the truth values of an
 iterable's contents.  :func:`any` returns ``True`` if any element in the iterable is

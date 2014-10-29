@@ -255,11 +255,11 @@ parsing text files formatted in XML (Extensible Markup Language).
       material on XML, including translations of the specification, are available at
       http://www.w3.org/XML/.
 
-   `Python and XML Processing <http://www.python.org/topics/xml/>`_
+   `Python and XML Processing <https://www.python.org/topics/xml/>`_
       The Python XML Topic Guide provides a great deal of information on using XML
       from Python and links to other sources of information on XML.
 
-   `SIG for XML Processing in Python <http://www.python.org/sigs/xml-sig/>`_
+   `SIG for XML Processing in Python <https://www.python.org/sigs/xml-sig/>`_
       The Python XML Special Interest Group is developing substantial support for
       processing XML from Python.
 

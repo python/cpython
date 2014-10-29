@@ -18,7 +18,7 @@ Installing Python
 Unlike most Unix systems and services, Windows does not require Python natively
 and thus does not pre-install a version of Python.  However, the CPython team
 has compiled Windows installers (MSI packages) with every `release
-<http://www.python.org/download/releases/>`_ for many years.
+<https://www.python.org/download/releases/>`_ for many years.
 
 With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
@@ -38,7 +38,7 @@ Check :pep:`11` for details on all unsupported platforms.
   release/python>`_, `Maintainer releases
   <http://www.tishler.net/jason/software/python/>`_)
 
-See `Python for Windows (and DOS) <http://www.python.org/download/windows/>`_
+See `Python for Windows (and DOS) <https://www.python.org/download/windows/>`_
 for detailed information about platforms with precompiled installers.
 
 .. seealso::
@@ -255,7 +255,7 @@ utilities for:
   user interfaces
 
 `PythonWin <http://web.archive.org/web/20060524042422/
-http://www.python.org/windows/pythonwin/>`_ is a sample MFC application
+https://www.python.org/windows/pythonwin/>`_ is a sample MFC application
 shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 
 .. seealso::
@@ -292,9 +292,9 @@ Compiling Python on Windows
 ===========================
 
 If you want to compile CPython yourself, first thing you should do is get the
-`source <http://python.org/download/source/>`_. You can download either the
+`source <https://www.python.org/download/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<http://docs.python.org/devguide/setup#checking-out-the-code>`_.
+<https://docs.python.org/devguide/setup#checking-out-the-code>`_.
 
 For Microsoft Visual C++, which is the compiler with which official Python
 releases are built, the source tree contains solutions/project files.  View the

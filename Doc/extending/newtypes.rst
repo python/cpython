@@ -25,7 +25,7 @@ are some details that you need to understand before you can get started.
    Python 2.2.  This document documents how to define new types for Python 2.2 and
    later.  If you need to support older versions of Python, you will need to refer
    to `older versions of this documentation
-   <http://www.python.org/doc/versions/>`_.
+   <https://www.python.org/doc/versions/>`_.
 
 
 .. _dnt-basics:

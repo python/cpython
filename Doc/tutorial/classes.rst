@@ -600,7 +600,7 @@ parent only once, and that is monotonic (meaning that a class can be subclassed
 without affecting the precedence order of its parents).  Taken together, these
 properties make it possible to design reliable and extensible classes with
 multiple inheritance.  For more detail, see
-http://www.python.org/download/releases/2.3/mro/.
+https://www.python.org/download/releases/2.3/mro/.
 
 
 .. _tut-private:

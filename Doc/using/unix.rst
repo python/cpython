@@ -63,9 +63,9 @@ Building Python
 ===============
 
 If you want to compile CPython yourself, first thing you should do is get the
-`source <http://python.org/download/source/>`_. You can download either the
+`source <https://www.python.org/download/source/>`_. You can download either the
 latest release's source or just grab a fresh `clone
-<http://docs.python.org/devguide/setup#getting-the-source-code>`_.  (If you want
+<https://docs.python.org/devguide/setup#getting-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
 The build process consists in the usual ::

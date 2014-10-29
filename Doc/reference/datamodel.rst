@@ -783,7 +783,7 @@ Classes
    inheritance structures where there are multiple inheritance paths
    leading back to a common ancestor. Additional details on the C3 MRO used by
    new-style classes can be found in the documentation accompanying the
-   2.3 release at http://www.python.org/download/releases/2.3/mro/.
+   2.3 release at https://www.python.org/download/releases/2.3/mro/.
 
    .. XXX: Could we add that MRO doc as an appendix to the language ref?
 
@@ -1148,7 +1148,7 @@ in case of multiple inheritance.
 
 While this manual aims to provide comprehensive coverage of Python's class
 mechanics, it may still be lacking in some areas when it comes to its coverage
-of new-style classes. Please see http://www.python.org/doc/newstyle/ for
+of new-style classes. Please see https://www.python.org/doc/newstyle/ for
 sources of additional information.
 
 .. index::

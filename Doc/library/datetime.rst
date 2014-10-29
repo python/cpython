@@ -1563,7 +1563,7 @@ EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
 
-   `pytz <http://pypi.python.org/pypi/pytz/>`_
+   `pytz <https://pypi.python.org/pypi/pytz/>`_
       The standard library has no :class:`tzinfo` instances, but
       there exists a third-party library which brings the *IANA timezone
       database* (also known as the Olson database) to Python: *pytz*.

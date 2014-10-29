@@ -28,7 +28,7 @@ the package into Python 1.5.2.) ::
           description='Python Distribution Utilities',
           author='Greg Ward',
           author_email='gward@python.net',
-          url='http://www.python.org/sigs/distutils-sig/',
+          url='https://www.python.org/sigs/distutils-sig/',
           packages=['distutils', 'distutils.command'],
          )
 
@@ -606,7 +606,7 @@ Notes:
 (4)
     These fields should not be used if your package is to be compatible with Python
     versions prior to 2.2.3 or 2.3.  The list is available from the `PyPI website
-    <http://pypi.python.org/pypi>`_.
+    <https://pypi.python.org/pypi>`_.
 
 (5)
     The ``long_description`` field is used by PyPI when you are

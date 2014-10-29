@@ -162,7 +162,7 @@ is an open-source project that requires volunteers
 to administer it and a server to host it.
 
 After posting a call for volunteers, a new Roundup installation was
-set up at http://bugs.python.org.  One installation of Roundup can
+set up at https://bugs.python.org.  One installation of Roundup can
 host multiple trackers, and this server now also hosts issue trackers
 for Jython and for the Python web site.  It will surely find
 other uses in the future.  Where possible,
@@ -179,7 +179,7 @@ other projects wishing to move from SourceForge to Roundup.
 
 .. seealso::
 
-  http://bugs.python.org
+  https://bugs.python.org
     The Python bug tracker.
 
   http://bugs.jython.org:
@@ -225,15 +225,15 @@ the Python community.
 
 Sphinx is a standalone package that can be used for writing, and
 almost two dozen other projects
-(`listed on the Sphinx web site <http://sphinx.pocoo.org/examples.html>`__)
+(`listed on the Sphinx web site <http://sphinx-doc.org/examples.html>`__)
 have adopted Sphinx as their documentation tool.
 
 .. seealso::
 
-   `Documenting Python <http://docs.python.org/devguide/documenting.html>`__
+   `Documenting Python <https://docs.python.org/devguide/documenting.html>`__
        Describes how to write for Python's documentation.
 
-   `Sphinx <http://sphinx.pocoo.org/>`__
+   `Sphinx <http://sphinx-doc.org/>`__
      Documentation and code for the Sphinx toolchain.
 
    `Docutils <http://docutils.sf.net>`__

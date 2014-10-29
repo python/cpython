@@ -153,7 +153,7 @@ is reading from the first process, also in a blocking fashion.
 
 .. Example explanation and suggested work-arounds substantially stolen
    from Martin von Löwis:
-   http://mail.python.org/pipermail/python-dev/2000-September/009460.html
+   https://mail.python.org/pipermail/python-dev/2000-September/009460.html
 
 There are several ways to deal with this situation.
 

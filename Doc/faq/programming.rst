@@ -24,7 +24,7 @@ for pdb as an example.
 The IDLE interactive development environment, which is part of the standard
 Python distribution (normally available as Tools/scripts/idle), includes a
 graphical debugger.  There is documentation for the IDLE debugger at
-http://www.python.org/idle/doc/idle2.html#Debugger.
+https://www.python.org/idle/doc/idle2.html#Debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
 Pythonwin debugger colors breakpoints and has quite a few cool features such as
@@ -146,10 +146,10 @@ development time, greater likelihood of bugs) unless the resulting performance
 benefit is worth it.
 
 There is a page on the wiki devoted to `performance tips
-<http://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
+<https://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
 
 Guido van Rossum has written up an anecdote related to optimization at
-http://www.python.org/doc/essays/list2str.
+https://www.python.org/doc/essays/list2str.
 
 One thing to notice is that function and (especially) method calls are rather
 expensive; if you have designed a purely OO interface with lots of tiny
@@ -207,7 +207,7 @@ not dealing with constant string patterns.  You may still use :ref:`the old %
 operations <string-formatting>` ``string % tuple`` and ``string % dictionary``.
 
 Be sure to use the :meth:`list.sort` built-in method to do sorting, and see the
-`sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
+`sorting mini-HOWTO <https://wiki.python.org/moin/HowTo/Sorting>`_ for examples
 of moderately advanced usage.  :meth:`list.sort` beats other techniques for
 sorting in all but the most extreme circumstances.
 

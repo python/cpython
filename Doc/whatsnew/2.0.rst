@@ -130,7 +130,7 @@ Guidelines":
 Read the rest of PEP 1 for the details of the PEP editorial process, style, and
 format.  PEPs are kept in the Python CVS tree on SourceForge, though they're not
 part of the Python 2.0 distribution, and are also available in HTML form from
-http://www.python.org/peps/.  As of September 2000, there are 25 PEPS, ranging
+https://www.python.org/peps/.  As of September 2000, there are 25 PEPS, ranging
 from PEP 201, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 
@@ -566,7 +566,7 @@ such as ``cmp(a,b)`` would always produce an answer, even if a user-defined
 simply be silently swallowed.
 
 .. Starting URL:
-.. http://www.python.org/pipermail/python-dev/2000-April/004834.html
+.. https://www.python.org/pipermail/python-dev/2000-April/004834.html
 
 Work has been done on porting Python to 64-bit Windows on the Itanium processor,
 mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
@@ -1003,7 +1003,7 @@ Relationship to PyXML
 
 The XML Special Interest Group has been working on XML-related Python code for a
 while.  Its code distribution, called PyXML, is available from the SIG's Web
-pages at http://www.python.org/sigs/xml-sig/. The PyXML distribution also used
+pages at https://www.python.org/sigs/xml-sig/. The PyXML distribution also used
 the package name ``xml``.  If you've written programs that used PyXML, you're
 probably wondering about its compatibility with the 2.0 :mod:`xml` package.
 

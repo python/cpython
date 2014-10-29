@@ -398,13 +398,13 @@ calls into the Python run-time system, even for seemingly simple operations like
 ``x+1``.
 
 Several projects described in the Python newsgroup or at past `Python
-conferences <http://python.org/community/workshops/>`_ have shown that this
+conferences <https://www.python.org/community/workshops/>`_ have shown that this
 approach is feasible, although the speedups reached so far are only modest
 (e.g. 2x).  Jython uses the same strategy for compiling to Java bytecode.  (Jim
 Hugunin has demonstrated that in combination with whole-program analysis,
 speedups of 1000x are feasible for small demo programs.  See the proceedings
 from the `1997 Python conference
-<http://python.org/workshops/1997-10/proceedings/>`_ for more information.)
+<https://www.python.org/workshops/1997-10/proceedings/>`_ for more information.)
 
 Internally, Python source code is always translated into a bytecode
 representation, and this bytecode is then executed by the Python virtual

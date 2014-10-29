@@ -657,7 +657,7 @@ The heart of the catalog is the new Distutils :command:`register` command.
 Running ``python setup.py register`` will collect the metadata describing a
 package, such as its name, version, maintainer, description, &c., and send it to
 a central catalog server.  The resulting catalog is available from
-http://www.python.org/pypi.
+https://pypi.python.org/pypi.
 
 To make the catalog a bit more useful, a new optional *classifiers* keyword
 argument has been added to the Distutils :func:`setup` function.  A list of
@@ -1082,9 +1082,9 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   C3 algorithm as described in the paper `"A Monotonic Superclass Linearization
   for Dylan" <http://www.webcom.com/haahr/dylan/linearization-oopsla96.html>`_. To
   understand the motivation for this change,  read Michele Simionato's article
-  `"Python 2.3 Method Resolution Order" <http://www.python.org/2.3/mro.html>`_, or
+  `"Python 2.3 Method Resolution Order" <https://www.python.org/2.3/mro.html>`_, or
   read the thread on python-dev starting with the message at
-  http://mail.python.org/pipermail/python-dev/2002-October/029035.html. Samuele
+  https://mail.python.org/pipermail/python-dev/2002-October/029035.html. Samuele
   Pedroni first pointed out the problem and also implemented the fix by coding the
   C3 algorithm.
 
@@ -1564,7 +1564,7 @@ complete list of changes, or look through the CVS logs for all the details.
   to the correct thread, and waiting for the results.  Other interfaces can't be
   handled automatically but :mod:`Tkinter` will now raise an exception on such an
   access so that you can at least find out about the problem.  See
-  http://mail.python.org/pipermail/python-dev/2002-December/031107.html for a more
+  https://mail.python.org/pipermail/python-dev/2002-December/031107.html for a more
   detailed explanation of this change.  (Implemented by Martin von Löwis.)
 
 * Calling Tcl methods through :mod:`_tkinter` no longer  returns only strings.
@@ -1858,7 +1858,7 @@ and bundle it with the source of your extension.
 
 .. seealso::
 
-   http://svn.python.org/view/python/trunk/Objects/obmalloc.c
+   https://svn.python.org/view/python/trunk/Objects/obmalloc.c
       For the full details of the pymalloc implementation, see the comments at
       the top of the file :file:`Objects/obmalloc.c` in the Python source code.
       The above link points to the file within the python.org SVN browser.

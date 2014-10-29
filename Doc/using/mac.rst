@@ -27,7 +27,7 @@ Getting and Installing MacPython
 
 Mac OS X 10.8 comes with Python 2.7 pre-installed by Apple.  If you wish, you
 are invited to install the most recent version of Python from the Python website
-(http://www.python.org).  A current "universal binary" build of Python, which
+(https://www.python.org).  A current "universal binary" build of Python, which
 runs natively on the Mac's new Intel and legacy PPC CPU's, is available there.
 
 What you get after installing is a number of things:
@@ -181,9 +181,9 @@ Other Resources
 The MacPython mailing list is an excellent support resource for Python users and
 developers on the Mac:
 
-http://www.python.org/community/sigs/current/pythonmac-sig/
+https://www.python.org/community/sigs/current/pythonmac-sig/
 
 Another useful resource is the MacPython wiki:
 
-http://wiki.python.org/moin/MacPython
+https://wiki.python.org/moin/MacPython
 

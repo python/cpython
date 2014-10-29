@@ -78,7 +78,7 @@ need to derive from a specific class.
    Module :mod:`doctest`
       Another test-support module with a very different flavor.
 
-   `unittest2: A backport of new unittest features for Python 2.4-2.6 <http://pypi.python.org/pypi/unittest2>`_
+   `unittest2: A backport of new unittest features for Python 2.4-2.6 <https://pypi.python.org/pypi/unittest2>`_
       Many new features were added to unittest in Python 2.7, including test
       discovery. unittest2 allows you to use these features with earlier
       versions of Python.
@@ -91,7 +91,7 @@ need to derive from a specific class.
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
-   `The Python Testing Tools Taxonomy <http://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
+   `The Python Testing Tools Taxonomy <https://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
       An extensive list of Python testing tools including functional testing
       frameworks and mock object libraries.
 

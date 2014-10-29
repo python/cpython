@@ -68,9 +68,9 @@ included in 2.7.
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
 full details, you should refer to the documentation for Python 2.7 at
-http://docs.python.org. If you want to understand the rationale for
+https://docs.python.org. If you want to understand the rationale for
 the design and implementation, refer to the PEP for a particular new
-feature or the issue on http://bugs.python.org in which a change was
+feature or the issue on https://bugs.python.org in which a change was
 discussed.  Whenever possible, "What's New in Python" links to the
 bug/patch item for each change.
 
@@ -1767,7 +1767,7 @@ a complete list of functions.
 
 The Distutils package and :mod:`sysconfig` are now maintained by Tarek
 Ziadé, who has also started a Distutils2 package (source repository at
-http://hg.python.org/distutils2/) for developing a next-generation
+https://hg.python.org/distutils2/) for developing a next-generation
 version of Distutils.
 
 
@@ -1804,7 +1804,7 @@ new features were added.  Most of these features were implemented
 by Michael Foord, unless otherwise noted.  The enhanced version of
 the module is downloadable separately for use with Python versions 2.4 to 2.6,
 packaged as the :mod:`unittest2` package, from
-http://pypi.python.org/pypi/unittest2.
+https://pypi.python.org/pypi/unittest2.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <http://pytest.org>`__ or

@@ -7,7 +7,7 @@
 This HOWTO discusses Python 2.x's support for Unicode, and explains
 various problems that people commonly encounter when trying to work
 with Unicode.  For the Python 3 version, see
-<http://docs.python.org/py3k/howto/unicode.html>.
+<https://docs.python.org/3/howto/unicode.html>.
 
 Introduction to Unicode
 =======================
@@ -435,7 +435,7 @@ When you run it with Python 2.4, it will output the following warning::
     amk:~$ python2.4 p263.py
     sys:1: DeprecationWarning: Non-ASCII character '\xe9'
          in file p263.py on line 2, but no encoding declared;
-         see http://www.python.org/peps/pep-0263.html for details
+         see https://www.python.org/peps/pep-0263.html for details
 
 Python 2.5 and higher are stricter and will produce a syntax error::
 
@@ -443,7 +443,7 @@ Python 2.5 and higher are stricter and will produce a syntax error::
     File "/tmp/p263.py", line 2
     SyntaxError: Non-ASCII character '\xc3' in file /tmp/p263.py
       on line 2, but no encoding declared; see
-      http://www.python.org/peps/pep-0263.html for details
+      https://www.python.org/peps/pep-0263.html for details
 
 
 Unicode Properties

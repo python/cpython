@@ -588,7 +588,7 @@ thanks for making public their tips for porting Python 2 code to Python 3 (and
 thus helping provide information for this document and its various revisions
 over the years):
 
-* http://wiki.python.org/moin/PortingPythonToPy3k
+* https://wiki.python.org/moin/PortingPythonToPy3k
 * http://python3porting.com/
 * http://docs.pythonsprints.com/python3_porting/py-porting.html
 * http://techspot.zzzeek.org/2011/01/24/zzzeek-s-guide-to-python-3-porting/
@@ -602,23 +602,23 @@ please email the python-porting_ mailing list.
 
 
 
-.. _2to3: http://docs.python.org/2/library/2to3.html
+.. _2to3: https://docs.python.org/2/library/2to3.html
 .. _3to2: https://pypi.python.org/pypi/3to2
 .. _Cheeseshop: PyPI_
 .. _coverage: https://pypi.python.org/pypi/coverage
 .. _future: http://python-future.org/
 .. _modernize: https://github.com/mitsuhiko/python-modernize
 .. _Porting to Python 3: http://python3porting.com/
-.. _PyPI: http://pypi.python.org/
-.. _Python 2.2: http://www.python.org/2.2.x
-.. _Python 2.5: http://www.python.org/2.5.x
-.. _Python 2.6: http://www.python.org/2.6.x
-.. _Python 2.7: http://www.python.org/2.7.x
-.. _Python 2.5: http://www.python.org/2.5.x
-.. _Python 3.3: http://www.python.org/3.3.x
+.. _PyPI: https://pypi.python.org/
+.. _Python 2.2: https://www.python.org/2.2.x
+.. _Python 2.5: https://www.python.org/2.5.x
+.. _Python 2.6: https://www.python.org/2.6.x
+.. _Python 2.7: https://www.python.org/2.7.x
+.. _Python 2.5: https://www.python.org/2.5.x
+.. _Python 3.3: https://www.python.org/3.3.x
 .. _Python 3 Packages: https://pypi.python.org/pypi?:action=browse&c=533&show=all
 .. _Python 3 Q & A: http://ncoghlan-devs-python-notes.readthedocs.org/en/latest/python3/questions_and_answers.html
-.. _python-porting: http://mail.python.org/mailman/listinfo/python-porting
+.. _python-porting: https://mail.python.org/mailman/listinfo/python-porting
 .. _six: https://pypi.python.org/pypi/six
 .. _tox: https://pypi.python.org/pypi/tox
 .. _trove classifiers: https://pypi.python.org/pypi?%3Aaction=list_classifiers
