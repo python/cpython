@@ -8,25 +8,17 @@
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
 import sys, os, time
-sys.path.append(os.path.abspath('tools'))
+sys.path.append(os.path.abspath('tools/extensions'))
 
 # General configuration
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations']
-templates_path = ['tools']
 
 # General substitutions.
 project = 'Python'
 copyright = '1990-%s, Python Software Foundation' % time.strftime('%Y')
-
-# The default replacements for |version| and |release|.
-#
-# The short X.Y version.
-# version = '2.6'
-# The full version, including alpha/beta/rc tags.
-# release = '2.6a0'
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
@@ -46,19 +38,6 @@ exclude_patterns = [
     'library/xml.etree.rst',
 ]
 
-# Ignore .rst in Sphinx its self.
-exclude_trees = ['tools/sphinx']
-
-# Relative filename of the reference count data file.
-refcount_file = 'data/refcounts.dat'
-
-# If true, '()' will be appended to :func: etc. cross-reference text.
-add_function_parentheses = True
-
-# If true, the current module name will be prepended to all description
-# unit titles (such as .. function::).
-add_module_names = True
-
 # Require Sphinx 1.2 for build.
 needs_sphinx = '1.2'
 
@@ -73,9 +52,8 @@ html_theme_options = {'collapsiblesidebar': True}
 # using the given strftime format.
 html_last_updated_fmt = '%b %d, %Y'
 
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-html_use_smartypants = True
+# Path to find HTML templates.
+templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
@@ -192,3 +170,9 @@ coverage_c_regexes = {
 coverage_ignore_c_items = {
 #    'cfunction': [...]
 }
+
+# Options for extensions
+# ----------------------
+
+# Relative filename of the reference count data file.
+refcount_file = 'data/refcounts.dat'
