@@ -3,4 +3,3 @@ Changelog
 +++++++++
 
 .. miscnews:: ../../Misc/NEWS
-

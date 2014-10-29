@@ -2478,7 +2478,7 @@ members of the community to create and share external changesets.  See
 
 To learn to use the new version control system, see the `tutorial by Joel
 Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
-<http://mercurial.selenic.com/guide/>`_.
+<http://mercurial.selenic.com/guide>`_.
 
 
 Build and C API Changes
@@ -2649,7 +2649,7 @@ require changes to your code:
                 outfile.write(line)
 
   (Contributed by Georg Brandl and Mattias Brändström;
-  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
+  `appspot issue 53094 <https://codereview.appspot.com/53094>`_.)
 
 * :func:`struct.pack` now only allows bytes for the ``s`` string pack code.
   Formerly, it would accept text arguments and implicitly encode them to bytes
