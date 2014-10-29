@@ -20,13 +20,6 @@ templates_path = ['tools']
 project = 'Python'
 copyright = '1990-%s, Python Software Foundation' % time.strftime('%Y')
 
-# The default replacements for |version| and |release|.
-#
-# The short X.Y version.
-# version = '2.6'
-# The full version, including alpha/beta/rc tags.
-# release = '2.6a0'
-
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 import patchlevel
@@ -37,9 +30,6 @@ version, release = patchlevel.get_version_info()
 today = ''
 # Else, today_fmt is used as the format for a strftime call.
 today_fmt = '%B %d, %Y'
-
-# Ignore .rst in Sphinx its self.
-exclude_trees = ['tools/sphinx']
 
 # Relative filename of the reference count data file.
 refcount_file = 'data/refcounts.dat'
