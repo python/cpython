@@ -609,11 +609,10 @@ please email the python-porting_ mailing list.
 .. _future: http://python-future.org/
 .. _modernize: https://github.com/mitsuhiko/python-modernize
 .. _Porting to Python 3: http://python3porting.com/
-.. _PyPI: https://pypi.python.org/
+.. _PyPI: https://pypi.python.org/pypi
 .. _Python 3 Packages: https://pypi.python.org/pypi?:action=browse&c=533&show=all
 .. _Python 3 Q & A: http://ncoghlan-devs-python-notes.readthedocs.org/en/latest/python3/questions_and_answers.html
 .. _python-porting: https://mail.python.org/mailman/listinfo/python-porting
 .. _six: https://pypi.python.org/pypi/six
 .. _tox: https://pypi.python.org/pypi/tox
 .. _trove classifiers: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-

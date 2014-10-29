@@ -515,7 +515,7 @@ Popular template engines include:
 
    * `Mako <http://www.makotemplates.org/>`_
    * `Genshi <http://genshi.edgewall.org/>`_
-   * `Jinja <http://jinja.pocoo.org/2/>`_
+   * `Jinja <http://jinja.pocoo.org/>`_
 
 .. seealso::
 
