@@ -512,9 +512,8 @@ this list of calls for us:
 Partial mocking
 ~~~~~~~~~~~~~~~
 
-In some tests I wanted to mock out a call to `datetime.date.today()
-<https://docs.python.org/library/datetime.html#datetime.date.today>`_ to return
-a known date, but I didn't want to prevent the code under test from
+In some tests I wanted to mock out a call to :func:`datetime.date.today`
+to return a known date, but I didn't want to prevent the code under test from
 creating new date objects. Unfortunately `datetime.date` is written in C, and
 so I couldn't just monkey-patch out the static `date.today` method.
 
@@ -556,14 +555,12 @@ is discussed in `this blog entry
 Mocking a Generator Method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A Python generator is a function or method that uses the `yield statement
-<https://docs.python.org/reference/simple_stmts.html#the-yield-statement>`_ to
-return a series of values when iterated over [#]_.
+A Python generator is a function or method that uses the :keyword:`yield` statement
+to return a series of values when iterated over [#]_.
 
 A generator method / function is called to return the generator object. It is
 the generator object that is then iterated over. The protocol method for
-iteration is `__iter__
-<https://docs.python.org/library/stdtypes.html#container.__iter__>`_, so we can
+iteration is :meth:`~container.__iter__`, so we can
 mock this using a `MagicMock`.
 
 Here's an example class with an "iter" method implemented as a generator:
