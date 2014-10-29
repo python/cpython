@@ -2,7 +2,7 @@
 Main program for 2to3.
 """
 
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 
 import sys
 import os
