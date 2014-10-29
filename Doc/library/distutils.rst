@@ -30,7 +30,7 @@ enhanced alternative to :mod:`distutils` that provides:
 The recommended `pip <https://pip.pypa.io/>`__ installer runs all
 ``setup.py`` scripts with ``setuptools``, even if the script itself only
 imports ``distutils``. Refer to the
-`Python Packaging User Guide <http://packaging.python.org>`_ for more
+`Python Packaging User Guide <https://packaging.python.org>`_ for more
 information.
 
 For the benefits of packaging tool authors and users seeking a deeper

@@ -127,7 +127,7 @@ The implementation details are in :c:func:`super_getattro()` in
 :source:`Objects/typeobject.c`.  and a pure Python equivalent can be found in
 `Guido's Tutorial`_.
 
-.. _`Guido's Tutorial`: http://www.python.org/2.2.3/descrintro.html#cooperation
+.. _`Guido's Tutorial`: https://www.python.org/2.2.3/descrintro.html#cooperation
 
 The details above show that the mechanism for descriptors is embedded in the
 :meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and

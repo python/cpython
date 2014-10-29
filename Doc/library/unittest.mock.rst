@@ -30,7 +30,7 @@ is based on the 'action -> assertion' pattern instead of `'record -> replay'`
 used by many mocking frameworks.
 
 There is a backport of `unittest.mock` for earlier versions of Python,
-available as `mock on PyPI <http://pypi.python.org/pypi/mock>`_.
+available as `mock on PyPI <https://pypi.python.org/pypi/mock>`_.
 
 **Source code:** :source:`Lib/unittest/mock.py`
 

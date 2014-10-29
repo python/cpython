@@ -513,7 +513,7 @@ Partial mocking
 ~~~~~~~~~~~~~~~
 
 In some tests I wanted to mock out a call to `datetime.date.today()
-<http://docs.python.org/library/datetime.html#datetime.date.today>`_ to return
+<https://docs.python.org/library/datetime.html#datetime.date.today>`_ to return
 a known date, but I didn't want to prevent the code under test from
 creating new date objects. Unfortunately `datetime.date` is written in C, and
 so I couldn't just monkey-patch out the static `date.today` method.
@@ -557,13 +557,13 @@ Mocking a Generator Method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Python generator is a function or method that uses the `yield statement
-<http://docs.python.org/reference/simple_stmts.html#the-yield-statement>`_ to
+<https://docs.python.org/reference/simple_stmts.html#the-yield-statement>`_ to
 return a series of values when iterated over [#]_.
 
 A generator method / function is called to return the generator object. It is
 the generator object that is then iterated over. The protocol method for
 iteration is `__iter__
-<http://docs.python.org/library/stdtypes.html#container.__iter__>`_, so we can
+<https://docs.python.org/library/stdtypes.html#container.__iter__>`_, so we can
 mock this using a `MagicMock`.
 
 Here's an example class with an "iter" method implemented as a generator:
@@ -1254,7 +1254,7 @@ With a bit of tweaking you could have the comparison function raise the
 `AssertionError` directly and provide a more useful failure message.
 
 As of version 1.5, the Python testing library `PyHamcrest
-<http://pypi.python.org/pypi/PyHamcrest>`_ provides similar functionality,
+<https://pypi.python.org/pypi/PyHamcrest>`_ provides similar functionality,
 that may be useful here, in the form of its equality matcher
 (`hamcrest.library.integration.match_equality
-<http://packages.python.org/PyHamcrest/integration.html#hamcrest.library.integration.match_equality>`_).
+<http://pythonhosted.org/PyHamcrest/integration.html#hamcrest.library.integration.match_equality>`_).

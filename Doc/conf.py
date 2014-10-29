@@ -67,7 +67,7 @@ html_additional_pages = {
 }
 
 # Output an OpenSearch description file.
-html_use_opensearch = 'http://docs.python.org/' + version
+html_use_opensearch = 'https://docs.python.org/' + version
 
 # Additional static files.
 html_static_path = ['tools/static']

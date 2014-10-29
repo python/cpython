@@ -337,7 +337,7 @@ returned.
       wrote patches implementing function decorators, but the one that was actually
       checked in was patch #979728, written by Mark Russell.
 
-   http://www.python.org/moin/PythonDecoratorLibrary
+   https://www.python.org/moin/PythonDecoratorLibrary
       This Wiki page contains several examples of decorators.
 
 .. ======================================================================

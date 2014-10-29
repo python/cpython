@@ -50,7 +50,7 @@
            window.location.href = new_url;
         },
         error: function() {
-           window.location.href = 'http://docs.python.org/' + selected;
+           window.location.href = 'https://docs.python.org/' + selected;
         }
       });
     }

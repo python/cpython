@@ -81,7 +81,7 @@ example below. ::
           description = 'This is a demo package',
           author = 'Martin v. Loewis',
           author_email = 'martin@v.loewis.de',
-          url = 'http://docs.python.org/extending/building',
+          url = 'https://docs.python.org/extending/building',
           long_description = '''
    This is really just a demo package.
    ''',

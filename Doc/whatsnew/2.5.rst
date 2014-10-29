@@ -39,7 +39,7 @@ finds there were 353 patches applied and 458 bugs fixed between Python 2.4 and
 This article doesn't try to be a complete specification of the new features;
 instead changes are briefly introduced using helpful examples.  For full
 details, you should always refer to the documentation for Python 2.5 at
-http://docs.python.org. If you want to understand the complete implementation
+https://docs.python.org. If you want to understand the complete implementation
 and design rationale, refer to the PEP for a particular new feature.
 
 Comments, suggestions, and error reports for this document are welcome; please
@@ -229,7 +229,7 @@ required packages. ::
         )
 
 Another new enhancement to the Python package index at
-http://cheeseshop.python.org is storing source and binary archives for a
+https://pypi.python.org is storing source and binary archives for a
 package.  The new :command:`upload` Distutils command will upload a package to
 the repository.
 
@@ -2130,7 +2130,7 @@ Changes to Python's build process and to the C API include:
   such as PyCon.
 
   .. List of names taken from Jeremy's python-dev post at
-  .. http://mail.python.org/pipermail/python-dev/2005-October/057500.html
+  .. https://mail.python.org/pipermail/python-dev/2005-October/057500.html
 
 * Evan Jones's patch to obmalloc, first described in a talk at PyCon DC 2005,
   was applied.  Python 2.4 allocated small objects in 256K-sized arenas, but never
