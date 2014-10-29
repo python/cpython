@@ -53,7 +53,7 @@ html_short_title = '%s Documentation' % release
 html_last_updated_fmt = '%b %d, %Y'
 
 # Path to find HTML templates.
-templates_path = ['tools']
+templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
