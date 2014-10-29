@@ -1075,10 +1075,7 @@ test case
         except self.failureException as e:
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
-
-            # no fair testing ourself with ourself, and assertEqual is used for strings
-            # so can't use assertEqual either. Just use assertTrue.
-            self.assertTrue(sample_text_error == error)
+            self.assertEqual(sample_text_error, error)
 
     def testAssertEqualSingleLine(self):
         sample_text = "laden swallows fly slowly"
@@ -1092,8 +1089,9 @@ test case
         try:
             self.assertEqual(sample_text, revised_sample_text)
         except self.failureException as e:
+            # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
-            self.assertTrue(sample_text_error == error)
+            self.assertEqual(sample_text_error, error)
 
     def testAssertIsNone(self):
         self.assertIsNone(None)
