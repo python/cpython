@@ -4,6 +4,8 @@
 
 """Main program for testing the infrastructure."""
 
+from __future__ import print_function
+
 __author__ = "Guido van Rossum <guido@python.org>"
 
 # Support imports (need to be imported first)
