@@ -27,7 +27,7 @@ https://www.python.org/psf/) was formed, a non-profit organization created
 specifically to own Python-related Intellectual Property.  Zope Corporation is a
 sponsoring member of the PSF.
 
-All Python releases are Open Source (see http://www.opensource.org/ for the Open
+All Python releases are Open Source (see http://opensource.org/ for the Open
 Source Definition). Historically, most, but not all, Python releases have also
 been GPL-compatible; the table below summarizes the various releases.
 

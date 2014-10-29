@@ -410,7 +410,7 @@ Options you shouldn't use
 
    Reserved for use by Jython_.
 
-.. _Jython: http://jython.org
+.. _Jython: http://www.jython.org/
 
 .. cmdoption:: -U
 

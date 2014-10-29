@@ -1009,7 +1009,7 @@ section :ref:`inst-config-files`.)
 
 .. seealso::
 
-   `C++Builder Compiler <http://www.codegear.com/downloads/free/cppbuilder>`_
+   `C++Builder Compiler <http://www.embarcadero.com/downloads>`_
       Information about the free C++ compiler from Borland, including links to the
       download pages.
 
@@ -1081,7 +1081,7 @@ normal libraries do.
 
 .. seealso::
 
-   `Building Python modules on MS Windows platform with MinGW <http://www.zope.org/Members/als/tips/win32_mingw_modules>`_
+   `Building Python modules on MS Windows platform with MinGW <http://old.zope.org/Members/als/tips/win32_mingw_modules>`_
       Information about building the required libraries for the MinGW environment.
 
 
@@ -1090,7 +1090,7 @@ normal libraries do.
 .. [#] This also means you could replace all existing COFF-libraries with OMF-libraries
    of the same name.
 
-.. [#] Check http://sources.redhat.com/cygwin/ and http://www.mingw.org/ for more
+.. [#] Check http://www.sourceware.org/cygwin/ and http://www.mingw.org/ for more
    information
 
 .. [#] Then you have no POSIX emulation available, but you also don't need

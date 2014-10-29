@@ -331,9 +331,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. seealso::
 
-   `Pattern Matching: The Gestalt Approach <http://www.ddj.com/184407970?pgno=5>`_
+   `Pattern Matching: The Gestalt Approach <http://www.drdobbs.com/database/pattern-matching-the-gestalt-approach/184407970>`_
       Discussion of a similar algorithm by John W. Ratcliff and D. E. Metzener. This
-      was published in `Dr. Dobb's Journal <http://www.ddj.com/>`_ in July, 1988.
+      was published in `Dr. Dobb's Journal <http://www.drdobbs.com/>`_ in July, 1988.
 
 
 .. _sequence-matcher:
