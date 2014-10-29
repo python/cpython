@@ -181,6 +181,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22217: Implemented reprs of classes in the zipfile module.
+
 - Issue #18216: gettext now raises an error when a .mo file has an
   unsupported major version number.  Patch by Aaron Hill.
 

@@ -355,6 +355,28 @@ class ZipInfo (object):
         # compress_size         Size of the compressed file
         # file_size             Size of the uncompressed file
 
+    def __repr__(self):
+        result = ['<%s filename=%r' % (self.__class__.__name__, self.filename)]
+        if self.compress_type != ZIP_STORED:
+            result.append(' compress_type=%s' %
+                          compressor_names.get(self.compress_type,
+                                               self.compress_type))
+        hi = self.external_attr >> 16
+        lo = self.external_attr & 0xFFFF
+        if hi:
+            result.append(' filemode=%r' % stat.filemode(hi))
+        if lo:
+            result.append(' external_attr=%#x' % lo)
+        isdir = self.filename[-1:] == '/'
+        if not isdir or self.file_size:
+            result.append(' file_size=%r' % self.file_size)
+        if ((not isdir or self.compress_size) and
+            (self.compress_type != ZIP_STORED or
+             self.file_size != self.compress_size)):
+            result.append(' compress_size=%r' % self.compress_size)
+        result.append('>')
+        return ''.join(result)
+
     def FileHeader(self, zip64=None):
         """Return the per-file header as a string."""
         dt = self.date_time
@@ -671,6 +693,20 @@ class ZipExtFile(io.BufferedIOBase):
         else:
             self._expected_crc = None
 
+    def __repr__(self):
+        result = ['<%s.%s' % (self.__class__.__module__,
+                              self.__class__.__qualname__)]
+        if not self.closed:
+            result.append(' name=%r mode=%r' % (self.name, self.mode))
+            if self._compress_type != ZIP_STORED:
+                result.append(' compress_type=%s' %
+                              compressor_names.get(self._compress_type,
+                                                   self._compress_type))
+        else:
+            result.append(' [closed]')
+        result.append('>')
+        return ''.join(result)
+
     def readline(self, limit=-1):
         """Read and return a line from the stream.
 
@@ -966,6 +1002,20 @@ class ZipFile:
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+    def __repr__(self):
+        result = ['<%s.%s' % (self.__class__.__module__,
+                              self.__class__.__qualname__)]
+        if self.fp is not None:
+            if self._filePassed:
+                result.append(' file=%r' % self.fp)
+            elif self.filename is not None:
+                result.append(' filename=%r' % self.filename)
+            result.append(' mode=%r' % self.mode)
+        else:
+            result.append(' [closed]')
+        result.append('>')
+        return ''.join(result)
 
     def _RealGetContents(self):
         """Read in the table of contents for the ZIP file."""
