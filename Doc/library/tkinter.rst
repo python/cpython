@@ -26,7 +26,7 @@ is maintained at ActiveState.)
    `TKDocs <http://www.tkdocs.com/>`_
       Extensive tutorial plus friendlier widget pages for some of the widgets.
 
-   `Tkinter reference: a GUI for Python <http://infohost.nmt.edu/tcc/help/pubs/tkinter/>`_
+   `Tkinter reference: a GUI for Python <http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
       On-line reference material.
 
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_

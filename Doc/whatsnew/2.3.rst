@@ -1330,7 +1330,7 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Kevin O'Connor.)
 
 * The IDLE integrated development environment has been updated using the code
-  from the IDLEfork project (http://idlefork.sf.net).  The most notable feature is
+  from the IDLEfork project (http://idlefork.sourceforge.net).  The most notable feature is
   that the code being developed is now executed in a subprocess, meaning that
   there's no longer any need for manual ``reload()`` operations. IDLE's core code
   has been incorporated into the standard library as the :mod:`idlelib` package.

@@ -26,6 +26,5 @@ Here's an overview:
 Hardcore cypherpunks will probably find the cryptographic modules written by
 A.M. Kuchling of further interest; the package contains modules for various
 encryption algorithms, most notably AES.  These modules are not distributed with
-Python but available separately.  See the URL
-http://www.pycrypto.org  for more information.
-
+Python but available separately.  See the URL http://www.pycrypto.org/ for more
+information.

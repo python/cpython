@@ -48,7 +48,7 @@ Qt
 ---
 
 There are bindings available for the Qt toolkit (using either `PyQt
-<http://www.riverbankcomputing.co.uk/software/pyqt/>`_ or `PySide
+<http://www.riverbankcomputing.co.uk/software/pyqt/intro>`_ or `PySide
 <http://www.pyside.org/>`_) and for KDE (`PyKDE <https://techbase.kde.org/Development/Languages/Python>`__).
 PyQt is currently more mature than PySide, but you must buy a PyQt license from
 `Riverbank Computing <http://www.riverbankcomputing.co.uk/software/pyqt/license>`_

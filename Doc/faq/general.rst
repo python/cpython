@@ -53,7 +53,7 @@ commercial use, to sell copies of Python in source or binary form (modified or
 unmodified), or to sell products that incorporate Python in some form.  We would
 still like to know about all commercial use of Python, of course.
 
-See `the PSF license page <https://www.python.org/psf/license/>`_ to find further
+See `the PSF license page <https://docs.python.org/3/license/>`_ to find further
 explanations and a link to the full text of the license.
 
 The Python logo is trademarked, and in certain cases permission is required to
@@ -178,8 +178,8 @@ How do I get documentation on Python?
 .. XXX mention py3k
 
 The standard documentation for the current stable version of Python is available
-at https://docs.python.org/.  PDF, plain text, and downloadable HTML versions are
-also available at https://docs.python.org/download.html.
+at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions are
+also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
 documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for

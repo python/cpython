@@ -222,7 +222,7 @@ Differences from :mod:`mimelib`
 -------------------------------
 
 The :mod:`email` package was originally prototyped as a separate library called
-`mimelib <http://mimelib.sf.net/>`_. Changes have been made so that method names
+`mimelib <http://mimelib.sourceforge.net/>`_. Changes have been made so that method names
 are more consistent, and some methods or modules have either been added or
 removed.  The semantics of some of the methods have also changed.  For the most
 part, any functionality available in :mod:`mimelib` is still available in the

@@ -1674,10 +1674,10 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
    `RFC 4366: Transport Layer Security (TLS) Extensions <http://www.ietf.org/rfc/rfc4366>`_
        Blake-Wilson et. al.
 
-   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <http://www.ietf.org/rfc/rfc5246>`_
+   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <http://tools.ietf.org/html/rfc5246>`_
        T. Dierks et. al.
 
-   `RFC 6066: Transport Layer Security (TLS) Extensions <http://www.ietf.org/rfc/rfc6066>`_
+   `RFC 6066: Transport Layer Security (TLS) Extensions <http://tools.ietf.org/html/rfc6066>`_
        D. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <http://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_

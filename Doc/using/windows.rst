@@ -293,7 +293,7 @@ Compiling Python on Windows
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/download/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<https://docs.python.org/devguide/setup.html#checking-out-the-code>`_.
+<https://docs.python.org/devguide/setup.html#getting-the-source-code>`_.
 
 For Microsoft Visual C++, which is the compiler with which official Python
 releases are built, the source tree contains solutions/project files.  View the
@@ -336,7 +336,7 @@ Other resources
 
 .. seealso::
 
-   `Python Programming On Win32 <http://www.oreilly.com/catalog/pythonwin32/>`_
+   `Python Programming On Win32 <http://shop.oreilly.com/product/9781565926219.do>`_
       "Help for Windows Programmers"
       by Mark Hammond and Andy Robinson, O'Reilly Media, 2000,
       ISBN 1-56592-621-8

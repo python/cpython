@@ -708,7 +708,7 @@ Some smaller changes made to the core Python language are:
   The :func:`contextlib.nested` function provides a very similar
   function, so it's no longer necessary and has been deprecated.
 
-  (Proposed in http://codereview.appspot.com/53094; implemented by
+  (Proposed in https://codereview.appspot.com/53094; implemented by
   Georg Brandl.)
 
 * Conversions between floating-point numbers and strings are
