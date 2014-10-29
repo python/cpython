@@ -83,7 +83,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub("(?i)b+", "x", "bbbb BBBB"), 'x x')
         self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y'),
                          '9.3 -3 24x100y')
-        self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', 3),
+        self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', count=3),
                          '9.3 -3 23x99y')
 
         self.assertEqual(re.sub('.', lambda m: r"\n", 'x'), '\\n')
@@ -179,7 +179,7 @@ class ReTests(unittest.TestCase):
 
     def test_qualified_re_sub(self):
         self.assertEqual(re.sub('a', 'b', 'aaaaa'), 'bbbbb')
-        self.assertEqual(re.sub('a', 'b', 'aaaaa', 1), 'baaaa')
+        self.assertEqual(re.sub('a', 'b', 'aaaaa', count=1), 'baaaa')
 
     def test_bug_114660(self):
         self.assertEqual(re.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there'),
@@ -244,7 +244,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.subn("b+", "x", "bbbb BBBB"), ('x BBBB', 1))
         self.assertEqual(re.subn("b+", "x", "xyz"), ('xyz', 0))
         self.assertEqual(re.subn("b*", "x", "xyz"), ('xxxyxzx', 4))
-        self.assertEqual(re.subn("b*", "x", "xyz", 2), ('xxxyz', 2))
+        self.assertEqual(re.subn("b*", "x", "xyz", count=2), ('xxxyz', 2))
 
     def test_re_split(self):
         for string in ":a:b::c", S(":a:b::c"):
@@ -282,11 +282,11 @@ class ReTests(unittest.TestCase):
                          ['', 'a', '', '', 'c'])
 
     def test_qualified_re_split(self):
-        self.assertEqual(re.split(":", ":a:b::c", 2), ['', 'a', 'b::c'])
-        self.assertEqual(re.split(':', 'a:b:c:d', 2), ['a', 'b', 'c:d'])
-        self.assertEqual(re.split("(:)", ":a:b::c", 2),
+        self.assertEqual(re.split(":", ":a:b::c", maxsplit=2), ['', 'a', 'b::c'])
+        self.assertEqual(re.split(':', 'a:b:c:d', maxsplit=2), ['a', 'b', 'c:d'])
+        self.assertEqual(re.split("(:)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
-        self.assertEqual(re.split("(:*)", ":a:b::c", 2),
+        self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
 
     def test_re_findall(self):

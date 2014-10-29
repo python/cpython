@@ -478,7 +478,7 @@ def parse_ns_headers(ns_headers):
             if "=" not in param:
                 k, v = param, None
             else:
-                k, v = re.split(r"\s*=\s*", param, 1)
+                k, v = re.split(r"\s*=\s*", param, maxsplit=1)
                 k = k.lstrip()
             if ii != 0:
                 lc = k.lower()
