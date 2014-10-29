@@ -493,10 +493,11 @@ The documentation for the :mod:`unicodedata` module.
 
 The documentation for the :mod:`codecs` module.
 
-Marc-André Lemburg gave `a presentation titled "Python and Unicode" (PDF slides) <http://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>`_ at
-EuroPython 2002.  The slides are an excellent overview of the design
-of Python 2's Unicode features (where the Unicode string type is
-called ``unicode`` and literals start with ``u``).
+Marc-André Lemburg gave `a presentation titled "Python and Unicode" (PDF slides)
+<https://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>`_ at
+EuroPython 2002.  The slides are an excellent overview of the design of Python
+2's Unicode features (where the Unicode string type is called ``unicode`` and
+literals start with ``u``).
 
 
 Reading and Writing Unicode Data
@@ -696,13 +697,20 @@ encoding the data and writing it back out.
 References
 ----------
 
-One section of `Mastering Python 3 Input/Output <http://pyvideo.org/video/289/pycon-2010--mastering-python-3-i-o>`_,  a PyCon 2010 talk by David Beazley, discusses text processing and binary data handling.
+One section of `Mastering Python 3 Input/Output
+<http://pyvideo.org/video/289/pycon-2010--mastering-python-3-i-o>`_,
+a PyCon 2010 talk by David Beazley, discusses text processing and binary data handling.
 
-The `PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware Applications in Python" <http://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>`_
+The `PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware
+Applications in Python"
+<https://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>`_
 discuss questions of character encodings as well as how to internationalize
 and localize an application.  These slides cover Python 2.x only.
 
-`The Guts of Unicode in Python <http://pyvideo.org/video/1768/the-guts-of-unicode-in-python>`_ is a PyCon 2013 talk by Benjamin Peterson that discusses the internal Unicode representation in Python 3.3.
+`The Guts of Unicode in Python
+<http://pyvideo.org/video/1768/the-guts-of-unicode-in-python>`_
+is a PyCon 2013 talk by Benjamin Peterson that discusses the internal Unicode
+representation in Python 3.3.
 
 
 Acknowledgements

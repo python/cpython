@@ -29,9 +29,8 @@ earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
 * `Windows CE <http://pythonce.sourceforge.net/>`_ is still supported.
-* The `Cygwin <http://cygwin.com/>`_ installer offers to install the `Python
-  interpreter <http://cygwin.com/packages/python>`_ as well; it is located under
-  "Interpreters." (cf. `Cygwin package source
+* The `Cygwin <http://cygwin.com/>`_ installer offers to install the Python
+  interpreter as well (cf. `Cygwin package source
   <ftp://ftp.uni-erlangen.de/pub/pc/gnuwin32/cygwin/mirrors/cygnus/
   release/python>`_, `Maintainer releases
   <http://www.tishler.net/jason/software/python/>`_)
@@ -45,9 +44,9 @@ for detailed information about platforms with pre-compiled installers.
       "7 Minutes to "Hello World!""
       by Richard Dooling, 2006
 
-   `Installing on Windows <http://diveintopython.net/installing_python/windows.html>`_
+   `Installing on Windows <http://www.diveintopython.net/installing_python/windows.html>`_
       in "`Dive into Python: Python from novice to pro
-      <http://diveintopython.net/index.html>`_"
+      <http://www.diveintopython.net/>`_"
       by Mark Pilgrim, 2004,
       ISBN 1-59059-356-1
 
@@ -67,7 +66,7 @@ key features:
 `ActivePython <http://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
+`Enthought Python Distribution <https://www.enthought.com/products/epd/>`_
     Popular modules (such as PyWin32) with their respective documentation, tool
     suite for building extensible Python applications
 
@@ -555,7 +554,7 @@ Compiling Python on Windows
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/download/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<https://docs.python.org/devguide/setup#checking-out-the-code>`_.
+<https://docs.python.org/devguide/setup.html#checking-out-the-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
 Visual C++, which is the compiler used to build the official Python releases.

@@ -160,10 +160,7 @@ The module defines the following:
 .. _devpoll-objects:
 
 ``/dev/poll`` Polling Objects
-----------------------------------------------
-
-   http://developers.sun.com/solaris/articles/using_devpoll.html
-   http://developers.sun.com/solaris/articles/polling_efficient.html
+-----------------------------
 
 Solaris and derivatives have ``/dev/poll``. While :c:func:`select` is
 O(highest file descriptor) and :c:func:`poll` is O(number of file
