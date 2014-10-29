@@ -91,7 +91,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
         self.log_file_name = os.path.join(self.outdir, 'suspicious.csv')
         open(self.log_file_name, 'w').close()
         # load database of previously ignored issues
-        self.load_rules(os.path.join(os.path.dirname(__file__),
+        self.load_rules(os.path.join(os.path.dirname(__file__), '..',
                                      'susp-ignored.csv'))
 
     def get_outdated_docs(self):
