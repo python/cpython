@@ -30,7 +30,7 @@ Pythonwin debugger colors breakpoints and has quite a few cool features such as
 debugging non-Pythonwin programs.  Pythonwin is available as part of the `Python
 for Windows Extensions <http://sourceforge.net/projects/pywin32/>`__ project and
 as a part of the ActivePython distribution (see
-http://www.activestate.com/Products/ActivePython/index.html).
+http://www.activestate.com/activepython\ ).
 
 `Boa Constructor <http://boa-constructor.sourceforge.net/>`_ is an IDE and GUI
 builder that uses wxWidgets.  It offers visual frame creation and manipulation,
@@ -38,7 +38,7 @@ an object inspector, many views on the source like object browsers, inheritance
 hierarchies, doc string generated html documentation, an advanced debugger,
 integrated help, and Zope support.
 
-`Eric <http://www.die-offenbachs.de/eric/index.html>`_ is an IDE built on PyQt
+`Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
 Pydb is a version of the standard Python debugger pdb, modified for use with DDD
@@ -50,7 +50,7 @@ There are a number of commercial Python IDEs that include graphical debuggers.
 They include:
 
 * Wing IDE (http://wingware.com/)
-* Komodo IDE (http://www.activestate.com/Products/Komodo)
+* Komodo IDE (http://komodoide.com/)
 * PyCharm (https://www.jetbrains.com/pycharm/)
 
 
@@ -69,8 +69,7 @@ plug-ins to add a custom feature.  In addition to the bug checking that
 PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
-http://www.logilab.org/card/pylint_manual provides a full list of Pylint's
-features.
+http://docs.pylint.org/ provides a full list of Pylint's features.
 
 
 How can I create a stand-alone binary from a Python script?
@@ -101,13 +100,7 @@ which don't. One is Thomas Heller's py2exe (Windows only) at
 
     http://www.py2exe.org/
 
-Another is Christian Tismer's `SQFREEZE <http://starship.python.net/crew/pirx>`_
-which appends the byte code to a specially-prepared Python interpreter that can
-find the byte code in the executable.
-
-Other tools include Fredrik Lundh's `Squeeze
-<http://www.pythonware.com/products/python/squeeze>`_ and Anthony Tuininga's
-`cx_Freeze <http://starship.python.net/crew/atuining/cx_Freeze/index.html>`_.
+Another tool is Anthony Tuininga's `cx_Freeze <http://cx-freeze.sourceforge.net/>`_.
 
 
 Are there coding standards or a style guide for Python programs?
@@ -1125,7 +1118,7 @@ How do you remove duplicates from a list?
 
 See the Python Cookbook for a long discussion of many ways to do this:
 
-    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52560
+   http://code.activestate.com/recipes/52560/
 
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::

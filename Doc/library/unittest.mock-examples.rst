@@ -549,7 +549,7 @@ Calls to the date constructor are recorded in the `mock_date` attributes
 
 An alternative way of dealing with mocking dates, or other builtin classes,
 is discussed in `this blog entry
-<http://williamjohnbert.com/2011/07/how-to-unit-testing-in-django-with-mocking-and-patching/>`_.
+<http://www.williamjohnbert.com/2011/07/how-to-unit-testing-in-django-with-mocking-and-patching/>`_.
 
 
 Mocking a Generator Method
@@ -1254,4 +1254,4 @@ As of version 1.5, the Python testing library `PyHamcrest
 <https://pypi.python.org/pypi/PyHamcrest>`_ provides similar functionality,
 that may be useful here, in the form of its equality matcher
 (`hamcrest.library.integration.match_equality
-<http://pythonhosted.org/PyHamcrest/integration.html#hamcrest.library.integration.match_equality>`_).
+<http://pythonhosted.org/PyHamcrest/integration.html#hamcrest.library.integration.match_equality.match_equality>`_).

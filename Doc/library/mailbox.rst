@@ -487,7 +487,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <http://www.jwz.org/doc/content-length.html>`_
       An argument for using the original mbox format rather than a variation.
 
-   `"mbox" is a family of several mutually incompatible mailbox formats <http://homepages.tesco.net./~J.deBoynePollard/FGA/mail-mbox-formats.html>`_
+   `"mbox" is a family of several mutually incompatible mailbox formats <http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/mail-mbox-formats.html>`_
       A history of mbox variations.
 
 
