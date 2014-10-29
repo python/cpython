@@ -61,7 +61,7 @@ Yes.
 
 PyChecker is a static analysis tool that finds bugs in Python source code and
 warns about code complexity and style.  You can get PyChecker from
-http://pychecker.sf.net.
+http://pychecker.sourceforge.net/.
 
 `Pylint <http://www.logilab.org/projects/pylint>`_ is another tool that checks
 if a module satisfies a coding standard, and also makes it possible to write
