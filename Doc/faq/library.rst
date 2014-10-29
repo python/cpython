@@ -182,7 +182,7 @@ How do I create documentation from doc strings?
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
 docstrings is `epydoc <http://epydoc.sf.net/>`_.  `Sphinx
-<http://sphinx.pocoo.org>`_ can also include docstring content.
+<http://sphinx-doc.org>`_ can also include docstring content.
 
 
 How do I get a single keypress at a time?

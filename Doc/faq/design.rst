@@ -404,7 +404,7 @@ approach is feasible, although the speedups reached so far are only modest
 Hugunin has demonstrated that in combination with whole-program analysis,
 speedups of 1000x are feasible for small demo programs.  See the proceedings
 from the `1997 Python conference
-<https://www.python.org/workshops/1997-10/proceedings/>`_ for more information.)
+<http://legacy.python.org/workshops/1997-10/proceedings/>`_ for more information.)
 
 Internally, Python source code is always translated into a bytecode
 representation, and this bytecode is then executed by the Python virtual
@@ -429,12 +429,12 @@ much speed.
 .. XXX check which of these projects are still alive
 
 There are also several programs which make it easier to intermingle Python and C
-code in various ways to increase performance.  See, for example, `Psyco
+code in various ways to increase performance.  See, for example, `Cython <http://cython.org/>`_ , `Psyco
 <http://psyco.sourceforge.net/>`_, `Pyrex
 <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_, `PyInline
 <http://pyinline.sourceforge.net/>`_, `Py2Cmod
-<http://sourceforge.net/projects/py2cmod/>`_, and `Weave
-<http://www.scipy.org/Weave>`_.
+<http://sourceforge.net/projects/py2cmod/>`_, and
+`Weave <http://docs.scipy.org/doc/scipy-dev/reference/tutorial/weave.html>`_.
 
 
 How does Python manage memory?

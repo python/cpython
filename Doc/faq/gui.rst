@@ -49,13 +49,13 @@ Qt
 
 There are bindings available for the Qt toolkit (using either `PyQt
 <http://www.riverbankcomputing.co.uk/software/pyqt/>`_ or `PySide
-<http://www.pyside.org/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`_).
+<http://www.pyside.org/>`_) and for KDE (`PyKDE <https://techbase.kde.org/Development/Languages/Python>`__).
 PyQt is currently more mature than PySide, but you must buy a PyQt license from
 `Riverbank Computing <http://www.riverbankcomputing.co.uk/software/pyqt/license>`_
 if you want to write proprietary applications.  PySide is free for all applications.
 
 Qt 4.5 upwards is licensed under the LGPL license; also, commercial licenses
-are available from `Nokia <http://qt.nokia.com/>`_.
+are available from `The Qt Company <http://www.qt.io/licensing/>`_.
 
 Gtk+
 ----
@@ -89,7 +89,7 @@ What platform-specific GUI toolkits exist for Python?
 ========================================================
 
 By installing the `PyObjc Objective-C bridge
-<http://pyobjc.sourceforge.net>`_, Python programs can use Mac OS X's
+<https://pythonhosted.org/pyobjc/>`_, Python programs can use Mac OS X's
 Cocoa libraries.
 
 :ref:`Pythonwin <windows-faq>` by Mark Hammond includes an interface to the
