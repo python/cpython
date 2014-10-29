@@ -50,7 +50,7 @@
 
 This article explains the new features in Python 3.2 as compared to 3.1.  It
 focuses on a few highlights and gives a few examples.  For full details, see the
-`Misc/NEWS <http://hg.python.org/cpython/file/3.2/Misc/NEWS>`_ file.
+`Misc/NEWS <https://hg.python.org/cpython/file/3.2/Misc/NEWS>`_ file.
 
 .. seealso::
 
@@ -816,7 +816,7 @@ functools
   >>> sorted(iterable, key=cmp_to_key(locale.strcoll))
 
   For sorting examples and a brief sorting tutorial, see the `Sorting HowTo
-  <http://wiki.python.org/moin/HowTo/Sorting/>`_ tutorial.
+  <https://wiki.python.org/moin/HowTo/Sorting/>`_ tutorial.
 
   (Contributed by Raymond Hettinger.)
 
@@ -1020,7 +1020,7 @@ datetime and time
 :issue:`5094`, :issue:`6641`, :issue:`2706`, :issue:`1777412`, :issue:`8013`,
 and :issue:`10827`.)
 
-.. XXX http://bugs.python.org/issue?%40search_text=datetime&%40sort=-activity
+.. XXX https://bugs.python.org/issue?%40search_text=datetime&%40sort=-activity
 
 math
 ----
@@ -2283,7 +2283,7 @@ Multi-threading
 
   Additional details about the implementation can be read from a `python-dev
   mailing-list message
-  <http://mail.python.org/pipermail/python-dev/2009-October/093321.html>`_
+  <https://mail.python.org/pipermail/python-dev/2009-October/093321.html>`_
   (however, "priority requests" as exposed in this message have not been kept
   for inclusion).
 
@@ -2469,7 +2469,7 @@ Code Repository
 
 In addition to the existing Subversion code repository at http://svn.python.org
 there is now a `Mercurial <http://mercurial.selenic.com/>`_ repository at
-http://hg.python.org/\ .
+https://hg.python.org/\ .
 
 After the 3.2 release, there are plans to switch to Mercurial as the primary
 repository.  This distributed version control system should make it easier for
@@ -2560,7 +2560,7 @@ Also, there were a number of updates to the Mac OS X build, see
 build, there is a known problem with the default Tcl/Tk on Mac OS X 10.6.
 Accordingly, we recommend installing an updated alternative such as
 `ActiveState Tcl/Tk 8.5.9 <http://www.activestate.com/activetcl/downloads>`_\.
-See http://www.python.org/download/mac/tcltk/ for additional details.
+See https://www.python.org/download/mac/tcltk/ for additional details.
 
 Porting to Python 3.2
 =====================
