@@ -64,7 +64,7 @@ the Finder you first need an editor to create your script. Mac OS X comes with a
 number of standard Unix command line editors, :program:`vim` and
 :program:`emacs` among them. If you want a more Mac-like editor,
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
-http://www.barebones.com/products/bbedit/index.shtml) are good choices, as is
+http://www.barebones.com/products/bbedit/index.html) are good choices, as is
 :program:`TextMate` (see http://macromates.com/). Other editors include
 :program:`Gvim` (http://macvim.org) and :program:`Aquamacs`
 (http://aquamacs.org/).
@@ -116,7 +116,7 @@ The IDE
 
 MacPython ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
-http://hkn.eecs.berkeley.edu/~dyoo/python/idle_intro/index.html.
+https://hkn.eecs.berkeley.edu/~dyoo/python/idle_intro/index.html.
 
 
 .. _mac-package-manager:
@@ -130,7 +130,7 @@ There are several methods to install additional Python packages:
   setup.py install``).
 
 * Many packages can also be installed via the :program:`setuptools` extension
-  or :program:`pip` wrapper, see http://www.pip-installer.org/.
+  or :program:`pip` wrapper, see https://pip.pypa.io/.
 
 
 GUI Programming on the Mac
@@ -140,7 +140,7 @@ There are several options for building GUI applications on the Mac with Python.
 
 *PyObjC* is a Python binding to Apple's Objective-C/Cocoa framework, which is
 the foundation of most modern Mac development. Information on PyObjC is
-available from http://pyobjc.sourceforge.net.
+available from https://pythonhosted.org/pyobjc/.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
 Tk toolkit (http://www.tcl.tk). An Aqua-native version of Tk is bundled with OS

@@ -573,9 +573,7 @@ Footnotes
 This document was reviewed and revised by John Lee.
 
 .. [#] Like Google for example. The *proper* way to use google from a program
-       is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course. See
-       `Voidspace Google <http://www.voidspace.org.uk/python/recipebook.shtml#google>`_
-       for some examples of using the Google API.
+       is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course.
 .. [#] Browser sniffing is a very bad practise for website design - building
        sites using web standards is much more sensible. Unfortunately a lot of
        sites still send different versions to different browsers.
@@ -589,5 +587,5 @@ This document was reviewed and revised by John Lee.
        scripts with a localhost server, I have to prevent urllib from using
        the proxy.
 .. [#] urllib opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe
-       <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/456195>`_.
+       <http://code.activestate.com/recipes/456195/>`_.
 

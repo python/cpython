@@ -42,7 +42,7 @@ on what you're trying to do.
 .. XXX make sure these all work
 
 `Cython <http://cython.org>`_ and its relative `Pyrex
-<http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_ are compilers
+<http://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
 that accept a slightly modified form of Python and generate the corresponding
 C code.  Cython and Pyrex make it possible to write an extension without having
 to learn Python's C API.
@@ -53,8 +53,8 @@ with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
 <http://www.riverbankcomputing.co.uk/software/sip/>`__, `CXX
 <http://cxx.sourceforge.net/>`_ `Boost
 <http://www.boost.org/libs/python/doc/index.html>`_, or `Weave
-<http://www.scipy.org/Weave>`_ are also alternatives for wrapping
-C++ libraries.
+<http://docs.scipy.org/doc/scipy-dev/reference/tutorial/weave.html>`_ are also
+alternatives for wrapping C++ libraries.
 
 
 How can I execute arbitrary Python statements from C?

@@ -115,7 +115,7 @@ The following classes are provided:
       :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
       other.
 
-   http://wp.netscape.com/newsref/std/cookie_spec.html
+   http://curl.haxx.se/rfc/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
       the major browsers (and :mod:`http.cookiejar`) only bears a passing resemblance to
