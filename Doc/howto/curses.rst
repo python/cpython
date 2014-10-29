@@ -543,7 +543,7 @@ learn more about submitting patches to Python.
 
 * `Writing Programs with NCURSES <http://invisible-island.net/ncurses/ncurses-intro.html>`_:
   a lengthy tutorial for C programmers.
-* `The ncurses man page <http://www.linuxmanpages.com/man3/ncurses.3x.php>`_
+* `The ncurses man page <http://linux.die.net/man/3/ncurses>`_
 * `The ncurses FAQ <http://invisible-island.net/ncurses/ncurses.faq.html>`_
 * `"Use curses... don't swear" <http://www.youtube.com/watch?v=eN1eZtjLEnU>`_:
   video of a PyCon 2013 talk on controlling terminals using curses or Urwid.
