@@ -104,7 +104,7 @@ into an active virtual environment uses the commands shown above.
 .. seealso::
 
     `Python Packaging User Guide: Installing Python Distribution Packages
-    <https://packaging.python.org/en/latest/installing.html#installing-python-distributions>`__
+    <https://packaging.python.org/en/latest/installing.html#installing-python-distribution-packages>`__
 
 
 How do I ...?
@@ -122,7 +122,7 @@ User Guide.
 .. seealso::
 
    `Python Packaging User Guide: Setup for Installing Distribution Packages
-   <https://packaging.python.org/en/latest/installing.html#setup-for-installing-distributions>`__
+   <https://packaging.python.org/en/latest/installing.html#setup-for-installing-distribution-packages>`__
 
 
 .. installing-per-user-installation:
@@ -141,13 +141,13 @@ A number of scientific Python packages have complex binary dependencies, and
 aren't currently easy to install using ``pip`` directly. At this point in
 time, it will often be easier for users to install these packages by
 `other means
-<https://packaging.python.org/en/latest/platforms.html#installing-scientific-packages>`__
+<https://packaging.python.org/en/latest/science.html>`__
 rather than attempting to install them with ``pip``.
 
 .. seealso::
 
    `Python Packaging User Guide: Installing Scientific Packages
-   <https://packaging.python.org/en/latest/platforms.html#installing-scientific-packages>`__
+   <https://packaging.python.org/en/latest/science.html>`__
 
 
 ... work with multiple versions of Python installed in parallel?
@@ -210,7 +210,7 @@ as users are more regularly able to install pre-built extensions rather
 than needing to build them themselves.
 
 Some of the solutions for installing `scientific software
-<https://packaging.python.org/en/latest/platforms.html#installing-scientific-packages>`__
+<https://packaging.python.org/en/latest/science.html>`__
 that is not yet available as pre-built ``wheel`` files may also help with
 obtaining other binary extensions without needing to build them locally.
 
