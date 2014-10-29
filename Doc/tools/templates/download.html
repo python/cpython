@@ -3,7 +3,7 @@
 {% if daily is defined %}
   {% set dlbase = pathto('archives', 1) %}
 {% else %}
-  {% set dlbase = 'http://docs.python.org/ftp/python/doc/' + release %}
+  {% set dlbase = 'https://docs.python.org/ftp/python/doc/' + release %}
 {% endif %}
 
 {% block body %}
@@ -38,7 +38,7 @@ in the table are the size of the download files in megabytes.</p>
 <p>These archives contain all the content in the documentation.</p>
 
 <p>HTML Help (<tt>.chm</tt>) files are made available in the "Windows" section
-on the <a href="http://python.org/download/releases/{{ release[:5] }}/">Python
+on the <a href="https://www.python.org/download/releases/{{ release[:5] }}/">Python
 download page</a>.</p>
 
 
