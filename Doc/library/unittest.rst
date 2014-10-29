@@ -1629,6 +1629,12 @@ Loading and running tests
 
       The method optionally resolves *name* relative to the given *module*.
 
+   .. versionchanged:: 3.5
+      If an :exc:`ImportError` or :exc:`AttributeError` occurs while traversing
+      *name* then a synthetic test that raises that error when run will be
+      returned. These errors are included in the errors accumulated by
+      self.errors.
+
 
    .. method:: loadTestsFromNames(names, module=None)
 
