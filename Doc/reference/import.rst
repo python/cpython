@@ -901,7 +901,7 @@ References
 
 The import machinery has evolved considerably since Python's early days.  The
 original `specification for packages
-<https://www.python.org/doc/essays/packages.html>`_ is still available to read,
+<http://legacy.python.org/doc/essays/packages.html>`_ is still available to read,
 although some details have changed since the writing of that document.
 
 The original specification for :data:`sys.meta_path` was :pep:`302`, with

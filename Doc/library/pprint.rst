@@ -211,7 +211,7 @@ Example
 -------
 
 To demonstrate several uses of the :func:`pprint` function and its parameters,
-let's fetch information about a project from `PyPI <https://pypi.python.org>`_::
+let's fetch information about a project from `PyPI <https://pypi.python.org/pypi>`_::
 
    >>> import json
    >>> import pprint
