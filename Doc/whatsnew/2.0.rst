@@ -1003,7 +1003,7 @@ Relationship to PyXML
 
 The XML Special Interest Group has been working on XML-related Python code for a
 while.  Its code distribution, called PyXML, is available from the SIG's Web
-pages at https://www.python.org/sigs/xml-sig/. The PyXML distribution also used
+pages at https://www.python.org/community/sigs/current/xml-sig. The PyXML distribution also used
 the package name ``xml``.  If you've written programs that used PyXML, you're
 probably wondering about its compatibility with the 2.0 :mod:`xml` package.
 

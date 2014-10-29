@@ -172,6 +172,16 @@ coverage_ignore_c_items = {
 #    'cfunction': [...]
 }
 
+
+# Options for the link checker
+# ----------------------------
+
+# Ignore certain URLs.
+linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
+                    # Ignore PEPs for now, they all have permanent redirects.
+                    r'http://www.python.org/dev/peps/pep-\d+']
+
+
 # Options for extensions
 # ----------------------
 

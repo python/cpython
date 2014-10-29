@@ -172,7 +172,7 @@ Some smaller changes made to the core Python language are:
   needed and is now deprecated.
 
   (Contributed by Georg Brandl and Mattias Brändström;
-  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
+  `appspot issue 53094 <https://codereview.appspot.com/53094>`_.)
 
 * ``round(x, n)`` now returns an integer if *x* is an integer.
   Previously it returned a float::

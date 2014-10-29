@@ -26,7 +26,7 @@ Here is a more detailed list of the package contents:
   implementations;
 
 * :ref:`transport <asyncio-transport>` and :ref:`protocol <asyncio-protocol>` abstractions
-  (similar to those in `Twisted <http://twistedmatrix.com/>`_);
+  (similar to those in `Twisted <https://twistedmatrix.com/trac/>`_);
 
 * concrete support for TCP, UDP, SSL, subprocess pipes, delayed calls, and
   others (some may be system-dependent);
