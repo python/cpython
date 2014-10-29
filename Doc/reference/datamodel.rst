@@ -709,7 +709,7 @@ Custom classes
    where there are multiple inheritance paths leading back to a common ancestor.
    Additional details on the C3 MRO used by Python can be found in the
    documentation accompanying the 2.3 release at
-   http://www.python.org/download/releases/2.3/mro/.
+   https://www.python.org/download/releases/2.3/mro/.
 
    .. XXX: Could we add that MRO doc as an appendix to the language ref?
 

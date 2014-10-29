@@ -1292,7 +1292,7 @@ are always available.  They are listed here in alphabetical order.
    example, sort by department, then by salary grade).
 
    For sorting examples and a brief sorting tutorial, see `Sorting HowTo
-   <http://wiki.python.org/moin/HowTo/Sorting/>`_\.
+   <https://wiki.python.org/moin/HowTo/Sorting/>`_\.
 
 .. function:: staticmethod(function)
 

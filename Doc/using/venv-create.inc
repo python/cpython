@@ -14,7 +14,7 @@ subdirectory (on Windows, this is ``Lib\site-packages``).
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <http://packaging.python.org/en/latest/tutorial.html#creating-and-using-virtual-environments>`__
+   <https://packaging.python.org/en/latest/tutorial.html#creating-and-using-virtual-environments>`__
 
 .. highlight:: none
 

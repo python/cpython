@@ -56,7 +56,7 @@ available for Python:
 PyGTK, PyQt, and wxPython, all have a modern look and feel and more
 widgets than Tkinter. In addition, there are many other GUI toolkits for
 Python, both cross-platform, and platform-specific. See the `GUI Programming
-<http://wiki.python.org/moin/GuiProgramming>`_ page in the Python Wiki for a
+<https://wiki.python.org/moin/GuiProgramming>`_ page in the Python Wiki for a
 much more complete list, and also for links to documents where the
 different GUI toolkits are compared.
 

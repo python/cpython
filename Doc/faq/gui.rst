@@ -29,7 +29,7 @@ Tkinter
 Standard builds of Python include an object-oriented interface to the Tcl/Tk
 widget set, called :ref:`tkinter <Tkinter>`.  This is probably the easiest to
 install (since it comes included with most
-`binary distributions <http://www.python.org/download/>`_ of Python) and use.
+`binary distributions <https://www.python.org/download/>`_ of Python) and use.
 For more info about Tk, including pointers to the source, see the
 `Tcl/Tk home page <http://www.tcl.tk>`_.  Tcl/Tk is fully portable to the
 Mac OS X, Windows, and Unix platforms.
