@@ -87,6 +87,8 @@ Library
 Tests
 -----
 
+- Issue #22173: Update lib2to3 tests to use unittest test discovery.
+
 - Issue #16000: Convert test_curses to use unittest.
 
 - Issue #21456: Skip two tests in test_urllib2net.py if _ssl module not
