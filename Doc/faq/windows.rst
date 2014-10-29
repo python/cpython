@@ -31,7 +31,7 @@ obvious; otherwise, you might need a little more guidance.
 
 .. |Python Development on XP| image:: python-video-icon.png
 .. _`Python Development on XP`:
-   http://www.showmedo.com/videos/series?name=pythonOzsvaldPyNewbieSeries
+   http://showmedo.com/videotutorials/series?name=pythonOzsvaldPyNewbieSeries
 
 Unless you use some sort of integrated development environment, you will end up
 *typing* Windows commands into what is variously referred to as a "DOS window"
@@ -105,7 +105,7 @@ gives you a message like::
 
 .. |Adding Python to DOS Path| image:: python-video-icon.png
 .. _`Adding Python to DOS Path`:
-   http://showmedo.com/videos/video?name=960000&fromSeriesID=96
+   http://showmedo.com/videotutorials/video?name=960000&fromSeriesID=96
 
 
 or::

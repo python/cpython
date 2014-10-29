@@ -223,8 +223,8 @@ releases are announced on the comp.lang.python and comp.lang.python.announce
 newsgroups and on the Python home page at https://www.python.org/; an RSS feed of
 news is available.
 
-You can also access the development version of Python through Subversion.  See
-https://docs.python.org/devguide/faq for details.
+You can also access the development version of Python through Mercurial.  See
+https://docs.python.org/devguide/faq.html for details.
 
 
 How do I submit bug reports and patches for Python?
@@ -284,7 +284,7 @@ Why is it called Python?
 
 When he began implementing Python, Guido van Rossum was also reading the
 published scripts from `"Monty Python's Flying Circus"
-<http://pythonline.com/>`__, a BBC comedy series from the 1970s.  Van Rossum
+<http://en.wikipedia.org/wiki/Monty_Python>`__, a BBC comedy series from the 1970s.  Van Rossum
 thought he needed a name that was short, unique, and slightly mysterious, so he
 decided to call the language Python.
 
@@ -313,7 +313,7 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://python.org/download/>`_.  There are two recommended production-ready
+<https://www.python.org/download/>`_.  There are two recommended production-ready
 versions at this point in time, because at the moment there are two branches of
 stable releases: 2.x and 3.x.  Python 3.x may be less useful than 2.x, since
 currently there is more third party software available for Python 2 than for
@@ -337,9 +337,9 @@ the group or even read it.
 Have any significant projects been done in Python?
 --------------------------------------------------
 
-See https://python.org/about/success for a list of projects that use Python.
+See https://www.python.org/about/success for a list of projects that use Python.
 Consulting the proceedings for `past Python conferences
-<https://python.org/community/workshops/>`_ will reveal contributions from many
+<https://www.python.org/community/workshops/>`_ will reveal contributions from many
 different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
