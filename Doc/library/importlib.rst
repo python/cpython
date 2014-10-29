@@ -29,7 +29,7 @@ generically as an :term:`importer`) to participate in the import process.
     :ref:`import`
         The language reference for the :keyword:`import` statement.
 
-    `Packages specification <https://www.python.org/doc/essays/packages.html>`__
+    `Packages specification <http://legacy.python.org/doc/essays/packages.html>`__
         Original specification of packages. Some semantics have changed since
         the writing of this document (e.g. redirecting based on ``None``
         in :data:`sys.modules`).

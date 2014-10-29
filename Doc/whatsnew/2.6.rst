@@ -238,7 +238,7 @@ have adopted Sphinx as their documentation tool.
    `Sphinx <http://sphinx-doc.org/>`__
      Documentation and code for the Sphinx toolchain.
 
-   `Docutils <http://docutils.sf.net>`__
+   `Docutils <http://docutils.sourceforge.net>`__
      The underlying reStructuredText parser and toolset.
 
 
@@ -2363,7 +2363,7 @@ changes, or look through the Subversion logs for all the details.
   negotiation itself.  (Patch contributed by Bill Fenner;
   :issue:`829951`.)
 
-* The :mod:`socket` module now supports TIPC (http://tipc.sf.net),
+* The :mod:`socket` module now supports TIPC (http://tipc.sourceforge.net/),
   a high-performance non-IP-based protocol designed for use in clustered
   environments.  TIPC addresses are 4- or 5-tuples.
   (Contributed by Alberto Bertogli; :issue:`1646`.)

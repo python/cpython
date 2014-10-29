@@ -22,7 +22,7 @@ available for Python:
       `GNOME <http://www.gnome.org>`_.  An online `tutorial
       <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is available.
 
-   `PyQt <http://www.riverbankcomputing.co.uk/software/pyqt/>`_
+   `PyQt <http://www.riverbankcomputing.co.uk/software/pyqt/intro>`_
       PyQt is a :program:`sip`\ -wrapped binding to the Qt toolkit.  Qt is an
       extensive C++ GUI application development framework that is
       available for Unix, Windows and Mac OS X. :program:`sip` is a tool
@@ -34,7 +34,7 @@ available for Python:
       with Python and Qt <http://www.qtrac.eu/pyqtbook.html>`_, by Mark
       Summerfield.
 
-   `PySide <http://www.pyside.org/>`_
+   `PySide <http://qt-project.org/wiki/PySide>`_
       is a newer binding to the Qt toolkit, provided by Nokia.
       Compared to PyQt, its licensing scheme is friendlier to non-open source
       applications.
