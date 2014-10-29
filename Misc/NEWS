@@ -196,6 +196,10 @@ Library
 - Issue #9351: Defaults set with set_defaults on an argparse subparser
   are no longer ignored when also set on the parent parser.
 
+- Issue #7559: unittest test loading ImportErrors are reported as import errors
+  with their import exception rather than as attribute errors after the import
+  has already failed.
+
 - Issue #19746: Make it possible to examine the errors from unittest
   discovery without executing the test suite. The new `errors` attribute
   on TestLoader exposes these non-fatal errors encountered during discovery.
