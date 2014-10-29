@@ -226,7 +226,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       * Calculating the `median <http://www.ualberta.ca/~opscan/median.html>`_.
 
       * The `SSMEDIAN
-        <https://projects.gnome.org/gnumeric/doc/gnumeric-function-SSMEDIAN.shtml>`_
+        <https://help.gnome.org/users/gnumeric/stable/gnumeric.html#gnumeric-function-SSMEDIAN>`_
         function in the Gnome Gnumeric spreadsheet, including `this discussion
         <https://mail.gnome.org/archives/gnumeric-list/2011-April/msg00018.html>`_.
 

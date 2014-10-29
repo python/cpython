@@ -67,7 +67,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <http://buildbot.net/trac>`_, `Jenkins <http://jenkins-ci.org>`_
+   `Buildbot <http://buildbot.net/>`_, `Jenkins <http://jenkins-ci.org/>`_
    or  `Hudson <http://hudson-ci.org/>`_.
 
 
