@@ -368,9 +368,9 @@ Can Python be compiled to machine code, C or some other language?
 
 Practical answer:
 
-`Cython <http://cython.org/>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_
+`Cython <http://cython.org/>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_
 compile a modified version of Python with optional annotations into C
-extensions.  `Weave <http://www.scipy.org/Weave>`_ makes it easy to
+extensions.  `Weave <http://docs.scipy.org/doc/scipy-dev/reference/tutorial/weave.html>`_ makes it easy to
 intermingle Python and C code in various ways to increase performance.
 `Nuitka <http://www.nuitka.net/>`_ is an up-and-coming compiler of Python
 into C++ code, aiming to support the full Python language.
@@ -392,7 +392,7 @@ approach is feasible, although the speedups reached so far are only modest
 Hugunin has demonstrated that in combination with whole-program analysis,
 speedups of 1000x are feasible for small demo programs.  See the proceedings
 from the `1997 Python conference
-<https://www.python.org/workshops/1997-10/proceedings/>`_ for more information.)
+<http://legacy.python.org/workshops/1997-10/proceedings/>`_ for more information.)
 
 
 How does Python manage memory?
