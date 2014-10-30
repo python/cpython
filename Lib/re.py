@@ -104,7 +104,10 @@ This module also defines an exception 'error'.
 import sys
 import sre_compile
 import sre_parse
-import _locale
+try:
+    import _locale
+except ImportError:
+    _locale = None
 
 # public symbols
 __all__ = [ "match", "search", "sub", "subn", "split", "findall",
@@ -250,6 +253,8 @@ def _compile(*key):
         if len(_cache) >= _MAXCACHE:
             _cache.clear()
         if p.flags & LOCALE:
+            if not _locale:
+                return p
             loc = _locale.setlocale(_locale.LC_CTYPE)
         else:
             loc = None
