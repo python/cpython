@@ -15,7 +15,7 @@
 This module defines a class, :class:`POP3`, which encapsulates a connection to a
 POP3 server and implements the protocol as defined in :rfc:`1939`. The
 :class:`POP3` class supports both the minimal and optional command sets from
-:rfc:`1939`. The :class:`POP3` class also supports the `STLS` command introduced
+:rfc:`1939`. The :class:`POP3` class also supports the ``STLS`` command introduced
 in :rfc:`2595` to enable encrypted communication on an already established connection.
 
 Additionally, this module provides a class :class:`POP3_SSL`, which provides

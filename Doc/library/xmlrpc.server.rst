@@ -184,8 +184,8 @@ server::
    # Print list of available methods
    print(s.system.listMethods())
 
-The following example included in `Lib/xmlrpc/server.py` module shows a server
-allowing dotted names and registering a multicall function.
+The following example included in the :file:`Lib/xmlrpc/server.py` module shows
+a server allowing dotted names and registering a multicall function.
 
 .. warning::
 

@@ -401,7 +401,7 @@ whitespace-separated string of names, a sequence of names, a sequence of
 2-tuples with key/value pairs, or a mapping (e.g. dictionary) of names to
 values.  The last two options enable assigning arbitrary values to
 enumerations; the others auto-assign increasing integers starting with 1 (use
-the `start` parameter to specify a different starting value).  A
+the ``start`` parameter to specify a different starting value).  A
 new class derived from :class:`Enum` is returned.  In other words, the above
 assignment to :class:`Animal` is equivalent to::
 
