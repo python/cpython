@@ -322,6 +322,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
         Py_XDECREF(lineobj);
         lineobj = PyFile_GetLine(fob, -1);
         if (!lineobj) {
+            PyErr_Clear();
             err = -1;
             break;
         }
