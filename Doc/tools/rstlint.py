@@ -15,7 +15,6 @@ import os
 import re
 import sys
 import getopt
-import subprocess
 from os.path import join, splitext, abspath, exists
 from collections import defaultdict
 
@@ -33,7 +32,8 @@ directives = [
     'autoexception', 'autofunction', 'automethod', 'automodule', 'centered',
     'cfunction', 'class', 'classmethod', 'cmacro', 'cmdoption', 'cmember',
     'code-block', 'confval', 'cssclass', 'ctype', 'currentmodule', 'cvar',
-    'data', 'deprecated', 'describe', 'directive', 'doctest', 'envvar', 'event',
+    'data', 'deprecated-removed', 'deprecated(?!-removed)', 'describe', 'directive',
+    'doctest', 'envvar', 'event',
     'exception', 'function', 'glossary', 'highlight', 'highlightlang', 'index',
     'literalinclude', 'method', 'module', 'moduleauthor', 'productionlist',
     'program', 'role', 'sectionauthor', 'seealso', 'sourcecode', 'staticmethod',
@@ -50,6 +50,7 @@ leaked_markup_re = re.compile(r'[a-z]::[^=]|:[a-z]+:|`|\.\.\s*\w+:')
 checkers = {}
 
 checker_props = {'severity': 1, 'falsepositives': False}
+
 
 def checker(*suffixes, **kwds):
     """Decorator to register a function as a checker."""
