@@ -173,10 +173,6 @@ Options:  -v       verbose (print all checked file names)
     count = defaultdict(int)
 
     for root, dirs, files in os.walk(path):
-        # ignore subdirs controlled by svn
-        if '.svn' in dirs:
-            dirs.remove('.svn')
-
         # ignore subdirs in ignore list
         if abspath(root) in ignore:
             del dirs[:]
