@@ -535,7 +535,7 @@ Update ``map`` for imbalanced input sequences
 '''''''''''''''''''''''''''''''''''''''''''''
 
 With Python 2, when ``map`` was given more than one input sequence it would pad
-the shorter sequences with `None` values, returning a sequence as long as the
+the shorter sequences with ``None`` values, returning a sequence as long as the
 longest input sequence.
 
 With Python 3, if the input sequences to ``map`` are of unequal length, ``map``

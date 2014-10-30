@@ -323,8 +323,8 @@ first::
    18
 
 ``f.tell()`` returns an integer giving the file object's current position in the file
-represented as number of bytes from the beginning of the file when in `binary mode` and
-an opaque number when in `text mode`.
+represented as number of bytes from the beginning of the file when in binary mode and
+an opaque number when in text mode.
 
 To change the file object's position, use ``f.seek(offset, from_what)``.  The position is computed
 from adding *offset* to a reference point; the reference point is selected by

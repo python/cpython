@@ -85,7 +85,7 @@ A basic boilerplate is often used::
 
 This code pattern allows the testing suite to be run by :mod:`test.regrtest`,
 on its own as a script that supports the :mod:`unittest` CLI, or via the
-`python -m unittest` CLI.
+``python -m unittest`` CLI.
 
 The goal for regression testing is to try to break code. This leads to a few
 guidelines to be followed:
@@ -141,9 +141,9 @@ guidelines to be followed:
          arg = (1, 2, 3)
 
   When using this pattern, remember that all classes that inherit from
-  `unittest.TestCase` are run as tests.  The `Mixin` class in the example above
+  :class:`unittest.TestCase` are run as tests.  The :class:`Mixin` class in the example above
   does not have any data and so can't be run by itself, thus it does not
-  inherit from `unittest.TestCase`.
+  inherit from :class:`unittest.TestCase`.
 
 
 .. seealso::
