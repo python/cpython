@@ -565,10 +565,10 @@ Supporting Only Python 3 Going Forward From Python 2 Code
 ---------------------------------------------------------
 
 If you have Python 2 code but going forward only want to improve it as Python 3
-code, then you can use 2to3_ to translate your Python 2 code to Python 3 code.
-This is only recommended, though, if your current version of your project is
-going into maintenance mode and you want all new features to be exclusive to
-Python 3.
+code, then you can use :ref:`2to3 <2to3-reference>` to translate your Python 2
+code to Python 3 code.  This is only recommended, though, if your current
+version of your project is going into maintenance mode and you want all new
+features to be exclusive to Python 3.
 
 
 Backporting Python 3 code to Python 2
