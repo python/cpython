@@ -1,6 +1,7 @@
 from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
         cpython_only, captured_stdout
 import io
+import locale
 import re
 from re import Scanner
 import sre_compile
@@ -1253,6 +1254,42 @@ subpattern None
         # Issue #20998: Fullmatch of repeated single character pattern
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
+
+    def test_locale_caching(self):
+        # Issue #22410
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+        for loc in 'en_US.iso88591', 'en_US.utf8':
+            try:
+                locale.setlocale(locale.LC_CTYPE, loc)
+            except locale.Error:
+                # Unsupported locale on this system
+                self.skipTest('test needs %s locale' % loc)
+
+        re.purge()
+        self.check_en_US_iso88591()
+        self.check_en_US_utf8()
+        re.purge()
+        self.check_en_US_utf8()
+        self.check_en_US_iso88591()
+
+    def check_en_US_iso88591(self):
+        locale.setlocale(locale.LC_CTYPE, 'en_US.iso88591')
+        self.assertTrue(re.match(b'\xc5\xe5', b'\xc5\xe5', re.L|re.I))
+        self.assertTrue(re.match(b'\xc5', b'\xe5', re.L|re.I))
+        self.assertTrue(re.match(b'\xe5', b'\xc5', re.L|re.I))
+        self.assertTrue(re.match(b'(?Li)\xc5\xe5', b'\xc5\xe5'))
+        self.assertTrue(re.match(b'(?Li)\xc5', b'\xe5'))
+        self.assertTrue(re.match(b'(?Li)\xe5', b'\xc5'))
+
+    def check_en_US_utf8(self):
+        locale.setlocale(locale.LC_CTYPE, 'en_US.utf8')
+        self.assertTrue(re.match(b'\xc5\xe5', b'\xc5\xe5', re.L|re.I))
+        self.assertIsNone(re.match(b'\xc5', b'\xe5', re.L|re.I))
+        self.assertIsNone(re.match(b'\xe5', b'\xc5', re.L|re.I))
+        self.assertTrue(re.match(b'(?Li)\xc5\xe5', b'\xc5\xe5'))
+        self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
+        self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
 
 class PatternReprTests(unittest.TestCase):
