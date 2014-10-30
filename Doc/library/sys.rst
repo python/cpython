@@ -667,7 +667,7 @@ always available.
    an underscore, and are not described here.  Regardless of its contents,
    :data:`sys.implementation` will not change during a run of the interpreter,
    nor between implementation versions.  (It may change between Python
-   language versions, however.)  See `PEP 421` for more information.
+   language versions, however.)  See :pep:`421` for more information.
 
    .. versionadded:: 3.3
 
