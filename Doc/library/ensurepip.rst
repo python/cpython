@@ -2,7 +2,7 @@
 ========================================================
 
 .. module:: ensurepip
-   :synopsis: Bootstrapping the ``pip`` installer into an existing Python
+   :synopsis: Bootstrapping the "pip" installer into an existing Python
               installation or virtual environment.
 
 .. versionadded:: 3.4
