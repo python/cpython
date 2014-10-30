@@ -180,6 +180,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22410: Module level functions in the re module now cache compiled
+  locale-dependent regular expressions taking into account the locale.
+
 - Issue #22759: Query methods on pathlib.Path() (exists(), is_dir(), etc.)
   now return False when the underlying stat call raises NotADirectoryError.
 
