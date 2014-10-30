@@ -44,7 +44,7 @@ directives = [
 all_directives = '(' + '|'.join(directives) + ')'
 seems_directive_re = re.compile(r'\.\. %s([^a-z:]|:(?!:))' % all_directives)
 default_role_re = re.compile(r'(^| )`\w([^`]*?\w)?`($| )')
-leaked_markup_re = re.compile(r'[a-z]::[^=]|:[a-z]+:|`|\.\.\s*\w+:')
+leaked_markup_re = re.compile(r'[a-z]::\s|`|\.\.\s*\w+:')
 
 
 checkers = {}
