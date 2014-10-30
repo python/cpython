@@ -1276,9 +1276,12 @@ class _BasePathTest(object):
         self.assertIs(True, p.exists())
         self.assertIs(True, (p / 'dirA').exists())
         self.assertIs(True, (p / 'fileA').exists())
+        self.assertIs(False, (p / 'fileA' / 'bah').exists())
         if not symlink_skip_reason:
             self.assertIs(True, (p / 'linkA').exists())
             self.assertIs(True, (p / 'linkB').exists())
+            self.assertIs(True, (p / 'linkB' / 'fileB').exists())
+            self.assertIs(False, (p / 'linkA' / 'bah').exists())
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
 
@@ -1626,6 +1629,7 @@ class _BasePathTest(object):
         self.assertTrue((P / 'dirA').is_dir())
         self.assertFalse((P / 'fileA').is_dir())
         self.assertFalse((P / 'non-existing').is_dir())
+        self.assertFalse((P / 'fileA' / 'bah').is_dir())
         if not symlink_skip_reason:
             self.assertFalse((P / 'linkA').is_dir())
             self.assertTrue((P / 'linkB').is_dir())
@@ -1636,6 +1640,7 @@ class _BasePathTest(object):
         self.assertTrue((P / 'fileA').is_file())
         self.assertFalse((P / 'dirA').is_file())
         self.assertFalse((P / 'non-existing').is_file())
+        self.assertFalse((P / 'fileA' / 'bah').is_file())
         if not symlink_skip_reason:
             self.assertTrue((P / 'linkA').is_file())
             self.assertFalse((P / 'linkB').is_file())
@@ -1646,6 +1651,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_symlink())
         self.assertFalse((P / 'dirA').is_symlink())
         self.assertFalse((P / 'non-existing').is_symlink())
+        self.assertFalse((P / 'fileA' / 'bah').is_symlink())
         if not symlink_skip_reason:
             self.assertTrue((P / 'linkA').is_symlink())
             self.assertTrue((P / 'linkB').is_symlink())
@@ -1656,6 +1662,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_fifo())
         self.assertFalse((P / 'dirA').is_fifo())
         self.assertFalse((P / 'non-existing').is_fifo())
+        self.assertFalse((P / 'fileA' / 'bah').is_fifo())
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     def test_is_fifo_true(self):
@@ -1670,6 +1677,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_socket())
         self.assertFalse((P / 'dirA').is_socket())
         self.assertFalse((P / 'non-existing').is_socket())
+        self.assertFalse((P / 'fileA' / 'bah').is_socket())
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
     def test_is_socket_true(self):
@@ -1690,12 +1698,14 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_block_device())
         self.assertFalse((P / 'dirA').is_block_device())
         self.assertFalse((P / 'non-existing').is_block_device())
+        self.assertFalse((P / 'fileA' / 'bah').is_block_device())
 
     def test_is_char_device_false(self):
         P = self.cls(BASE)
         self.assertFalse((P / 'fileA').is_char_device())
         self.assertFalse((P / 'dirA').is_char_device())
         self.assertFalse((P / 'non-existing').is_char_device())
+        self.assertFalse((P / 'fileA' / 'bah').is_char_device())
 
     def test_is_char_device_true(self):
         # Under Unix, /dev/null should generally be a char device
