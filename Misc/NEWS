@@ -37,6 +37,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8876: distutils now falls back to copying files when hard linking
+  doesn't work.  This allows use with special filesystems such as VirtualBox
+  shared folders.
+
 - Issue #9351: Defaults set with set_defaults on an argparse subparser
   are no longer ignored when also set on the parent parser.
 

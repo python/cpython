@@ -8,6 +8,11 @@ from distutils import log
 from distutils.tests import support
 from test.test_support import run_unittest
 
+
+requires_os_link = unittest.skipUnless(hasattr(os, "link"),
+                                       "test requires os.link()")
+
+
 class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     def _log(self, msg, *args):
@@ -73,6 +78,44 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         dst_dir = self.mkdtemp()
         copy_file(foo, dst_dir)
         self.assertTrue(os.path.exists(os.path.join(dst_dir, 'foo')))
+
+    @requires_os_link
+    def test_copy_file_hard_link(self):
+        with open(self.source, 'w') as f:
+            f.write('some content')
+        st = os.stat(self.source)
+        copy_file(self.source, self.target, link='hard')
+        st2 = os.stat(self.source)
+        st3 = os.stat(self.target)
+        self.assertTrue(os.path.samestat(st, st2), (st, st2))
+        self.assertTrue(os.path.samestat(st2, st3), (st2, st3))
+        with open(self.source, 'r') as f:
+            self.assertEqual(f.read(), 'some content')
+
+    @requires_os_link
+    def test_copy_file_hard_link_failure(self):
+        # If hard linking fails, copy_file() falls back on copying file
+        # (some special filesystems don't support hard linking even under
+        #  Unix, see issue #8876).
+        with open(self.source, 'w') as f:
+            f.write('some content')
+        st = os.stat(self.source)
+        def _os_link(*args):
+            raise OSError(0, "linking unsupported")
+        old_link = os.link
+        os.link = _os_link
+        try:
+            copy_file(self.source, self.target, link='hard')
+        finally:
+            os.link = old_link
+        st2 = os.stat(self.source)
+        st3 = os.stat(self.target)
+        self.assertTrue(os.path.samestat(st, st2), (st, st2))
+        self.assertFalse(os.path.samestat(st2, st3), (st2, st3))
+        for fn in (self.source, self.target):
+            with open(fn, 'r') as f:
+                self.assertEqual(f.read(), 'some content')
+
 
 def test_suite():
     return unittest.makeSuite(FileUtilTestCase)
