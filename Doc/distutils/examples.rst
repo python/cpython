@@ -264,7 +264,7 @@ For example, if the :file:`setup.py` script is changed like this::
 
     desc = """\
     My description
-    =============
+    ==============
 
     This is the description of the ``foobar`` package.
     """
