@@ -122,6 +122,7 @@ This module also defines an exception 'error'.
 import sys
 import sre_compile
 import sre_parse
+import _locale
 
 # public symbols
 __all__ = [
@@ -274,7 +275,9 @@ _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
     try:
-        return _cache[type(pattern), pattern, flags]
+        p, loc = _cache[type(pattern), pattern, flags]
+        if loc is None or loc == _locale.setlocale(_locale.LC_CTYPE):
+            return p
     except KeyError:
         pass
     if isinstance(pattern, _pattern_type):
@@ -288,7 +291,11 @@ def _compile(pattern, flags):
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
             _cache.clear()
-        _cache[type(pattern), pattern, flags] = p
+        if p.flags & LOCALE:
+            loc = _locale.setlocale(_locale.LC_CTYPE)
+        else:
+            loc = None
+        _cache[type(pattern), pattern, flags] = p, loc
     return p
 
 def _compile_repl(repl, pattern):
