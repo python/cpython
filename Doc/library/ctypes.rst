@@ -1032,7 +1032,7 @@ As we can easily check, our array is sorted now::
    outside of Python's control (e.g. by the foreign code that calls the
    callback), ctypes creates a new dummy Python thread on every invocation. This
    behavior is correct for most purposes, but it means that values stored with
-   `threading.local` will *not* survive across different callbacks, even when
+   :class:`threading.local` will *not* survive across different callbacks, even when
    those calls are made from the same C thread.
 
 .. _ctypes-accessing-values-exported-from-dlls:

@@ -504,7 +504,7 @@ methods:
 .. method:: object.__getnewargs__()
 
    This method serve a similar purpose as :meth:`__getnewargs_ex__` but
-   for protocols 2 and newer.  It must return a tuple of arguments `args`
+   for protocols 2 and newer.  It must return a tuple of arguments ``args``
    which will be passed to the :meth:`__new__` method upon unpickling.
 
    In protocols 4 and newer, :meth:`__getnewargs__` will not be called if

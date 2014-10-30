@@ -286,20 +286,20 @@ Reading the metadata
 
 The :func:`distutils.core.setup` function provides a command-line interface
 that allows you to query the metadata fields of a project through the
-`setup.py` script of a given project::
+``setup.py`` script of a given project::
 
     $ python setup.py --name
     distribute
 
-This call reads the `name` metadata by running the
+This call reads the ``name`` metadata by running the
 :func:`distutils.core.setup`  function. Although, when a source or binary
 distribution is created with Distutils, the metadata fields are written
 in a static file called :file:`PKG-INFO`. When a Distutils-based project is
 installed in Python, the :file:`PKG-INFO` file is copied alongside the modules
 and packages of the distribution under :file:`NAME-VERSION-pyX.X.egg-info`,
-where `NAME` is the name of the project, `VERSION` its version as defined
-in the Metadata, and `pyX.X` the major and minor version of Python like
-`2.7` or `3.2`.
+where ``NAME`` is the name of the project, ``VERSION`` its version as defined
+in the Metadata, and ``pyX.X`` the major and minor version of Python like
+``2.7`` or ``3.2``.
 
 You can read back this static file, by using the
 :class:`distutils.dist.DistributionMetadata` class and its
