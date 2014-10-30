@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22759: Query methods on pathlib.Path() (exists(), is_dir(), etc.)
+  now return False when the underlying stat call raises NotADirectoryError.
+
 - Issue #8876: distutils now falls back to copying files when hard linking
   doesn't work.  This allows use with special filesystems such as VirtualBox
   shared folders.
