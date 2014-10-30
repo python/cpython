@@ -111,7 +111,7 @@ NULL pointer for use in a ``return`` statement.
 
 .. c:function:: PyObject* PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
 
-   Same as :c:func:`PyErr_Format`, but taking a `va_list` argument rather
+   Same as :c:func:`PyErr_Format`, but taking a :c:type:`va_list` argument rather
    than a variable number of arguments.
 
    .. versionadded:: 3.5
