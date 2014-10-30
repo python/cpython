@@ -62,7 +62,6 @@ Core and Builtins
   argument contains not permitted null character or byte.
 
 - Issue #22258: Fix the internal function set_inheritable() on Illumos.
-
   This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
   with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()
   now falls back to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
@@ -180,6 +179,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #8876: distutils now falls back to copying files when hard linking
+  doesn't work.  This allows use with special filesystems such as VirtualBox
+  shared folders.
 
 - Issue #22217: Implemented reprs of classes in the zipfile module.
 
