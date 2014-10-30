@@ -15,7 +15,6 @@ import os
 import re
 import sys
 import getopt
-import subprocess
 from os.path import join, splitext, abspath, exists
 from collections import defaultdict
 
@@ -28,15 +27,16 @@ directives = [
     'parsed-literal', 'pull-quote', 'raw', 'replace',
     'restructuredtext-test-directive', 'role', 'rubric', 'sectnum', 'sidebar',
     'table', 'target-notes', 'tip', 'title', 'topic', 'unicode', 'warning',
-    # Sphinx custom ones
+    # Sphinx and Python docs custom ones
     'acks', 'attribute', 'autoattribute', 'autoclass', 'autodata',
     'autoexception', 'autofunction', 'automethod', 'automodule', 'centered',
     'cfunction', 'class', 'classmethod', 'cmacro', 'cmdoption', 'cmember',
     'code-block', 'confval', 'cssclass', 'ctype', 'currentmodule', 'cvar',
-    'data', 'deprecated', 'describe', 'directive', 'doctest', 'envvar', 'event',
-    'exception', 'function', 'glossary', 'highlight', 'highlightlang', 'index',
-    'literalinclude', 'method', 'module', 'moduleauthor', 'productionlist',
-    'program', 'role', 'sectionauthor', 'seealso', 'sourcecode', 'staticmethod',
+    'data', 'decorator', 'decoratormethod', 'deprecated-removed',
+    'deprecated(?!-removed)', 'describe', 'directive', 'doctest', 'envvar',
+    'event', 'exception', 'function', 'glossary', 'highlight', 'highlightlang',
+    'impl-detail', 'index', 'literalinclude', 'method', 'miscnews', 'module',
+    'moduleauthor', 'opcode', 'pdbcommand', 'productionlist',
     'tabularcolumns', 'testcode', 'testoutput', 'testsetup', 'toctree', 'todo',
     'todolist', 'versionadded', 'versionchanged'
 ]
