@@ -5,7 +5,7 @@ import shutil
 import errno
 from unittest.mock import patch
 
-from distutils.file_util import move_file
+from distutils.file_util import move_file, copy_file
 from distutils import log
 from distutils.tests import support
 from distutils.errors import DistutilsFileError
@@ -77,6 +77,36 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
             with open(self.source, 'w') as fobj:
                 fobj.write('spam eggs')
             move_file(self.source, self.target, verbose=0)
+
+    def test_copy_file_hard_link(self):
+        with open(self.source, 'w') as f:
+            f.write('some content')
+        st = os.stat(self.source)
+        copy_file(self.source, self.target, link='hard')
+        st2 = os.stat(self.source)
+        st3 = os.stat(self.target)
+        self.assertTrue(os.path.samestat(st, st2), (st, st2))
+        self.assertTrue(os.path.samestat(st2, st3), (st2, st3))
+        with open(self.source, 'r') as f:
+            self.assertEqual(f.read(), 'some content')
+
+    def test_copy_file_hard_link_failure(self):
+        # If hard linking fails, copy_file() falls back on copying file
+        # (some special filesystems don't support hard linking even under
+        #  Unix, see issue #8876).
+        with open(self.source, 'w') as f:
+            f.write('some content')
+        st = os.stat(self.source)
+        with patch("os.link", side_effect=OSError(0, "linking unsupported")):
+            copy_file(self.source, self.target, link='hard')
+        st2 = os.stat(self.source)
+        st3 = os.stat(self.target)
+        self.assertTrue(os.path.samestat(st, st2), (st, st2))
+        self.assertFalse(os.path.samestat(st2, st3), (st2, st3))
+        for fn in (self.source, self.target):
+            with open(fn, 'r') as f:
+                self.assertEqual(f.read(), 'some content')
+
 
 def test_suite():
     return unittest.makeSuite(FileUtilTestCase)
