@@ -111,8 +111,9 @@ specified in the statement refer to the binding of that name in the top-level
 namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
-global namespace is searched first.  If the name is not found there, the builtins
-namespace is searched.  The global statement must precede all uses of the name.
+global namespace is searched first.  If the name is not found there, the
+builtins namespace is searched.  The :keyword:`global` statement must precede
+all uses of the name.
 
 .. XXX document "nonlocal" semantics here
 

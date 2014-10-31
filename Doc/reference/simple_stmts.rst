@@ -548,8 +548,8 @@ printed::
    RuntimeError: Something bad happened
 
 A similar mechanism works implicitly if an exception is raised inside an
-exception handler: the previous exception is then attached as the new
-exception's :attr:`__context__` attribute::
+exception handler or a :keyword:`finally` clause: the previous exception is then
+attached as the new exception's :attr:`__context__` attribute::
 
    >>> try:
    ...     print(1 / 0)
@@ -731,10 +731,9 @@ in the module's namespace which do not begin with an underscore character
 to avoid accidentally exporting items that are not part of the API (such as
 library modules which were imported and used within the module).
 
-The :keyword:`from` form with ``*`` may only occur in a module scope.  The wild
-card form of import --- ``from module import *`` --- is only allowed at the
-module level.  Attempting to use it in class or function definitions will raise
-a :exc:`SyntaxError`.
+The wild card form of import --- ``from module import *`` --- is only allowed at
+the module level.  Attempting to use it in class or function definitions will
+raise a :exc:`SyntaxError`.
 
 .. index::
     single: relative; import
