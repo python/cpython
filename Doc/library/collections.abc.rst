@@ -134,7 +134,7 @@ particular functionality, for example::
 
 Several of the ABCs are also useful as mixins that make it easier to develop
 classes supporting container APIs.  For example, to write a class supporting
-the full :class:`Set` API, it only necessary to supply the three underlying
+the full :class:`Set` API, it is only necessary to supply the three underlying
 abstract methods: :meth:`__contains__`, :meth:`__iter__`, and :meth:`__len__`.
 The ABC supplies the remaining methods such as :meth:`__and__` and
 :meth:`isdisjoint`::

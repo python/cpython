@@ -192,7 +192,7 @@ The module defines the following user-callable items:
          >>> os.path.exists(f.name)
          False
 
-The module uses two global variables that tell it how to construct a
+The module uses a global variable that tell it how to construct a
 temporary name.  They are initialized at the first call to any of the
 functions above.  The caller may change them, but this is discouraged; use
 the appropriate function arguments, instead.
