@@ -127,9 +127,6 @@ The :mod:`runpy` module provides two functions:
    supplied path, and ``__spec__``, ``__cached__``, ``__loader__`` and
    ``__package__`` will all be set to :const:`None`.
 
-   ``__spec__`` will be set to :const:`None` if the supplied path is a
-   direct path to a script (as source or as precompiled bytecode).
-
    If the supplied path is a reference to a valid sys.path entry, then
    ``__spec__`` will be set appropriately for the imported ``__main__``
    module (that is, ``__spec__.name`` will always be ``__main__``).

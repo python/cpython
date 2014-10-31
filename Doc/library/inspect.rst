@@ -750,17 +750,20 @@ Classes and functions
    :func:`getargspec` or :func:`getfullargspec`.
 
    The first seven arguments are (``args``, ``varargs``, ``varkw``,
-   ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``). The
-   other five arguments are the corresponding optional formatting functions
-   that are called to turn names and values into strings. The last argument
-   is an optional function to format the sequence of arguments. For example::
+   ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``).
 
-    >>> from inspect import formatargspec, getfullargspec
-    >>> def f(a: int, b: float):
-    ...     pass
-    ...
-    >>> formatargspec(*getfullargspec(f))
-    '(a: int, b: float)'
+   The other six arguments are functions that are called to turn argument names,
+   ``*`` argument name, ``**`` argument name, default values, return annotation
+   and individual annotations into strings, respectively.
+
+   For example:
+
+   >>> from inspect import formatargspec, getfullargspec
+   >>> def f(a: int, b: float):
+   ...     pass
+   ...
+   >>> formatargspec(*getfullargspec(f))
+   '(a: int, b: float)'
 
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])

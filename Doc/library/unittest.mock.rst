@@ -461,13 +461,18 @@ the `new_callable` argument to `patch`.
     .. attribute:: side_effect
 
         This can either be a function to be called when the mock is called,
-        or an exception (class or instance) to be raised.
+        an iterable or an exception (class or instance) to be raised.
 
         If you pass in a function it will be called with same arguments as the
         mock and unless the function returns the :data:`DEFAULT` singleton the
         call to the mock will then return whatever the function returns. If the
         function returns :data:`DEFAULT` then the mock will return its normal
         value (from the :attr:`return_value`).
+
+        If you pass in an iterable, it is used to retrieve an iterator which
+        must yield a value on every call.  This value can either be an exception
+        instance to be raised, or a value to be returned from the call to the
+        mock (:data:`DEFAULT` handling is identical to the function case).
 
         An example of a mock that raises an exception (to test exception
         handling of an API):
@@ -486,11 +491,7 @@ the `new_callable` argument to `patch`.
             >>> mock(), mock(), mock()
             (3, 2, 1)
 
-        The :attr:`side_effect` function is called with the same arguments as the
-        mock (so it is wise for it to take arbitrary args and keyword
-        arguments) and whatever it returns is used as the return value for
-        the call. The exception is if :attr:`side_effect` returns :data:`DEFAULT`,
-        in which case the normal :attr:`return_value` is used.
+        Using a callable:
 
             >>> mock = Mock(return_value=3)
             >>> def side_effect(*args, **kwargs):
@@ -1011,7 +1012,7 @@ patch
     used.
 
     A more powerful form of *spec* is *autospec*. If you set ``autospec=True``
-    then the mock with be created with a spec from the object being replaced.
+    then the mock will be created with a spec from the object being replaced.
     All attributes of the mock will also have the spec of the corresponding
     attribute of the object being replaced. Methods and functions being mocked
     will have their arguments checked and will raise a :exc:`TypeError` if they are
