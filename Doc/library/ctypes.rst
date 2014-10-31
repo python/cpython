@@ -1909,7 +1909,7 @@ Utility functions
 .. function:: find_msvcrt()
    :module: ctypes.util
 
-   Windows only: return the filename of the VC runtype library used by Python,
+   Windows only: return the filename of the VC runtime library used by Python,
    and by the extension modules.  If the name of the library cannot be
    determined, ``None`` is returned.
 
@@ -2445,11 +2445,6 @@ other data types containing pointer type fields.
       type is first used (an instance is created, ``sizeof()`` is called on it,
       and so on).  Later assignments to the :attr:`_fields_` class variable will
       raise an AttributeError.
-
-      Structure and union subclass constructors accept both positional and named
-      arguments.  Positional arguments are used to initialize the fields in the
-      same order as they appear in the :attr:`_fields_` definition, named
-      arguments are used to initialize the fields with the corresponding name.
 
       It is possible to defined sub-subclasses of structure types, they inherit
       the fields of the base class plus the :attr:`_fields_` defined in the
