@@ -28,22 +28,22 @@ it is called with the correct arguments by another part of the system:
     >>> real.method(3, 4, 5, key='value')
     <MagicMock name='method()' id='...'>
 
-Once our mock has been used (`real.method` in this example) it has methods
+Once our mock has been used (``real.method`` in this example) it has methods
 and attributes that allow you to make assertions about how it has been used.
 
 .. note::
 
     In most of these examples the :class:`Mock` and :class:`MagicMock` classes
-    are interchangeable. As the `MagicMock` is the more capable class it makes
+    are interchangeable. As the ``MagicMock`` is the more capable class it makes
     a sensible one to use by default.
 
 Once the mock has been called its :attr:`~Mock.called` attribute is set to
-`True`. More importantly we can use the :meth:`~Mock.assert_called_with` or
+``True``. More importantly we can use the :meth:`~Mock.assert_called_with` or
 :meth:`~Mock.assert_called_once_with` method to check that it was called with
 the correct arguments.
 
-This example tests that calling `ProductionClass().method` results in a call to
-the `something` method:
+This example tests that calling ``ProductionClass().method`` results in a call to
+the ``something`` method:
 
     >>> class ProductionClass:
     ...     def method(self):
@@ -66,15 +66,15 @@ was called correctly. Another common use case is to pass an object into a
 method (or some part of the system under test) and then check that it is used
 in the correct way.
 
-The simple `ProductionClass` below has a `closer` method. If it is called with
-an object then it calls `close` on it.
+The simple ``ProductionClass`` below has a ``closer`` method. If it is called with
+an object then it calls ``close`` on it.
 
     >>> class ProductionClass:
     ...     def closer(self, something):
     ...         something.close()
     ...
 
-So to test it we need to pass in an object with a `close` method and check
+So to test it we need to pass in an object with a ``close`` method and check
 that it was called correctly.
 
     >>> real = ProductionClass()
@@ -96,9 +96,9 @@ When you patch a class, then that class is replaced with a mock. Instances
 are created by *calling the class*. This means you access the "mock instance"
 by looking at the return value of the mocked class.
 
-In the example below we have a function `some_function` that instantiates `Foo`
-and calls a method on it. The call to `patch` replaces the class `Foo` with a
-mock. The `Foo` instance is the result of calling the mock, so it is configured
+In the example below we have a function ``some_function`` that instantiates ``Foo``
+and calls a method on it. The call to :func:`patch` replaces the class ``Foo`` with a
+mock. The ``Foo`` instance is the result of calling the mock, so it is configured
 by modifying the mock :attr:`~Mock.return_value`.
 
     >>> def some_function():
@@ -141,13 +141,13 @@ to child attributes of the mock - and also to their children.
     >>> mock.mock_calls
     [call.method(), call.attribute.method(10, x=53)]
 
-If you make an assertion about `mock_calls` and any unexpected methods
+If you make an assertion about ``mock_calls`` and any unexpected methods
 have been called, then the assertion will fail. This is useful because as well
 as asserting that the calls you expected have been made, you are also checking
 that they were made in the right order and with no additional calls:
 
 You use the :data:`call` object to construct lists for comparing with
-`mock_calls`:
+``mock_calls``:
 
     >>> expected = [call.method(), call.attribute.method(10, x=53)]
     >>> mock.mock_calls == expected
@@ -185,7 +185,7 @@ If you need an attribute setting on your mock, just do it:
     3
 
 Sometimes you want to mock up a more complex situation, like for example
-`mock.connection.cursor().execute("SELECT 1")`. If we wanted this call to
+``mock.connection.cursor().execute("SELECT 1")``. If we wanted this call to
 return a list, then we have to configure the result of the nested call.
 
 We can use :data:`call` to construct the set of calls in a "chained call" like
@@ -202,7 +202,7 @@ this for easy assertion afterwards:
     >>> mock.mock_calls == expected
     True
 
-It is the call to `.call_list()` that turns our call object into a list of
+It is the call to ``.call_list()`` that turns our call object into a list of
 calls representing the chained calls.
 
 
@@ -223,10 +223,10 @@ is called.
 Side effect functions and iterables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`side_effect` can also be set to a function or an iterable. The use case for
-`side_effect` as an iterable is where your mock is going to be called several
+``side_effect`` can also be set to a function or an iterable. The use case for
+``side_effect`` as an iterable is where your mock is going to be called several
 times, and you want each call to return a different value. When you set
-`side_effect` to an iterable every call to the mock returns the next value
+``side_effect`` to an iterable every call to the mock returns the next value
 from the iterable:
 
     >>> mock = MagicMock(side_effect=[4, 5, 6])
@@ -239,7 +239,7 @@ from the iterable:
 
 
 For more advanced use cases, like dynamically varying the return values
-depending on what the mock is called with, `side_effect` can be a function.
+depending on what the mock is called with, ``side_effect`` can be a function.
 The function will be called with the same arguments as the mock. Whatever the
 function returns is what the call returns:
 
@@ -259,13 +259,13 @@ Creating a Mock from an Existing Object
 
 One problem with over use of mocking is that it couples your tests to the
 implementation of your mocks rather than your real code. Suppose you have a
-class that implements `some_method`. In a test for another class, you
-provide a mock of this object that *also* provides `some_method`. If later
-you refactor the first class, so that it no longer has `some_method` - then
+class that implements ``some_method``. In a test for another class, you
+provide a mock of this object that *also* provides ``some_method``. If later
+you refactor the first class, so that it no longer has ``some_method`` - then
 your tests will continue to pass even though your code is now broken!
 
-`Mock` allows you to provide an object as a specification for the mock,
-using the `spec` keyword argument. Accessing methods / attributes on the
+:class:`Mock` allows you to provide an object as a specification for the mock,
+using the *spec* keyword argument. Accessing methods / attributes on the
 mock that don't exist on your specification object will immediately raise an
 attribute error. If you change the implementation of your specification, then
 tests that use that class will start failing immediately without you having to
@@ -293,7 +293,7 @@ you can use :ref:`auto-speccing <auto-speccing>`.
 
 If you want a stronger form of specification that prevents the setting
 of arbitrary attributes as well as the getting of them then you can use
-`spec_set` instead of `spec`.
+*spec_set* instead of *spec*.
 
 
 
@@ -302,8 +302,8 @@ Patch Decorators
 
 .. note::
 
-   With `patch` it matters that you patch objects in the namespace where they
-   are looked up. This is normally straightforward, but for a quick guide
+   With :func:`patch` it matters that you patch objects in the namespace where
+   they are looked up. This is normally straightforward, but for a quick guide
    read :ref:`where to patch <where-to-patch>`.
 
 
@@ -313,15 +313,15 @@ is instantiated. Modules and classes are effectively global, so patching on
 them has to be undone after the test or the patch will persist into other
 tests and cause hard to diagnose problems.
 
-mock provides three convenient decorators for this: `patch`, `patch.object` and
-`patch.dict`. `patch` takes a single string, of the form
-`package.module.Class.attribute` to specify the attribute you are patching. It
+mock provides three convenient decorators for this: :func:`patch`, :func:`patch.object` and
+:func:`patch.dict`. ``patch`` takes a single string, of the form
+``package.module.Class.attribute`` to specify the attribute you are patching. It
 also optionally takes a value that you want the attribute (or class or
 whatever) to be replaced with. 'patch.object' takes an object and the name of
 the attribute you would like patched, plus optionally the value to patch it
 with.
 
-`patch.object`:
+``patch.object``:
 
     >>> original = SomeClass.attribute
     >>> @patch.object(SomeClass, 'attribute', sentinel.attribute)
@@ -338,8 +338,8 @@ with.
     ...
     >>> test()
 
-If you are patching a module (including :mod:`builtins`) then use `patch`
-instead of `patch.object`:
+If you are patching a module (including :mod:`builtins`) then use :func:`patch`
+instead of :func:`patch.object`:
 
     >>> mock = MagicMock(return_value=sentinel.file_handle)
     >>> with patch('builtins.open', mock):
@@ -348,7 +348,7 @@ instead of `patch.object`:
     >>> mock.assert_called_with('filename', 'r')
     >>> assert handle == sentinel.file_handle, "incorrect file handle returned"
 
-The module name can be 'dotted', in the form `package.module` if needed:
+The module name can be 'dotted', in the form ``package.module`` if needed:
 
     >>> @patch('package.module.ClassName.attribute', sentinel.attribute)
     ... def test():
@@ -368,8 +368,8 @@ A nice pattern is to actually decorate test methods themselves:
     >>> MyTest('test_something').test_something()
     >>> assert SomeClass.attribute == original
 
-If you want to patch with a Mock, you can use `patch` with only one argument
-(or `patch.object` with two arguments). The mock will be created for you and
+If you want to patch with a Mock, you can use :func:`patch` with only one argument
+(or :func:`patch.object` with two arguments). The mock will be created for you and
 passed into the test function / method:
 
     >>> class MyTest(unittest2.TestCase):
@@ -394,7 +394,7 @@ You can stack up multiple patch decorators using this pattern:
 When you nest patch decorators the mocks are passed in to the decorated
 function in the same order they applied (the normal *python* order that
 decorators are applied). This means from the bottom up, so in the example
-above the mock for `test_module.ClassName2` is passed in first.
+above the mock for ``test_module.ClassName2`` is passed in first.
 
 There is also :func:`patch.dict` for setting values in a dictionary just
 during a scope and restoring the dictionary to its original state when the test
@@ -407,9 +407,9 @@ ends:
    ...
    >>> assert foo == original
 
-`patch`, `patch.object` and `patch.dict` can all be used as context managers.
+``patch``, ``patch.object`` and ``patch.dict`` can all be used as context managers.
 
-Where you use `patch` to create a mock for you, you can get a reference to the
+Where you use :func:`patch` to create a mock for you, you can get a reference to the
 mock using the "as" form of the with statement:
 
     >>> class ProductionClass:
@@ -424,7 +424,7 @@ mock using the "as" form of the with statement:
     >>> mock_method.assert_called_with(1, 2, 3)
 
 
-As an alternative `patch`, `patch.object` and `patch.dict` can be used as
+As an alternative ``patch``, ``patch.object`` and ``patch.dict`` can be used as
 class decorators. When used in this way it is the same as applying the
 decorator individually to every method whose name starts with "test".
 
@@ -443,11 +443,11 @@ Mocking chained calls
 
 Mocking chained calls is actually straightforward with mock once you
 understand the :attr:`~Mock.return_value` attribute. When a mock is called for
-the first time, or you fetch its `return_value` before it has been called, a
-new `Mock` is created.
+the first time, or you fetch its ``return_value`` before it has been called, a
+new :class:`Mock` is created.
 
 This means that you can see how the object returned from a call to a mocked
-object has been used by interrogating the `return_value` mock:
+object has been used by interrogating the ``return_value`` mock:
 
     >>> mock = Mock()
     >>> mock().foo(a=2, b=3)
@@ -467,22 +467,22 @@ So, suppose we have some code that looks a little bit like this:
     ...         response = self.backend.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
     ...         # more code
 
-Assuming that `BackendProvider` is already well tested, how do we test
-`method()`? Specifically, we want to test that the code section `# more
-code` uses the response object in the correct way.
+Assuming that ``BackendProvider`` is already well tested, how do we test
+``method()``? Specifically, we want to test that the code section ``# more
+code`` uses the response object in the correct way.
 
 As this chain of calls is made from an instance attribute we can monkey patch
-the `backend` attribute on a `Something` instance. In this particular case
+the ``backend`` attribute on a ``Something`` instance. In this particular case
 we are only interested in the return value from the final call to
-`start_call` so we don't have much configuration to do. Let's assume the
+``start_call`` so we don't have much configuration to do. Let's assume the
 object it returns is 'file-like', so we'll ensure that our response object
-uses the builtin `open` as its `spec`.
+uses the builtin :func:`open` as its ``spec``.
 
 To do this we create a mock instance as our mock backend and create a mock
 response object for it. To set the response as the return value for that final
-`start_call` we could do this:
+``start_call`` we could do this::
 
-    `mock_backend.get_endpoint.return_value.create_call.return_value.start_call.return_value = mock_response`.
+    mock_backend.get_endpoint.return_value.create_call.return_value.start_call.return_value = mock_response
 
 We can do that in a slightly nicer way using the :meth:`~Mock.configure_mock`
 method to directly set the return value for us:
@@ -501,7 +501,7 @@ call:
 
 Using :attr:`~Mock.mock_calls` we can check the chained call with a single
 assert. A chained call is several calls in one line of code, so there will be
-several entries in `mock_calls`. We can use :meth:`call.call_list` to create
+several entries in ``mock_calls``. We can use :meth:`call.call_list` to create
 this list of calls for us:
 
     >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
@@ -512,20 +512,20 @@ this list of calls for us:
 Partial mocking
 ~~~~~~~~~~~~~~~
 
-In some tests I wanted to mock out a call to :func:`datetime.date.today`
+In some tests I wanted to mock out a call to :meth:`datetime.date.today`
 to return a known date, but I didn't want to prevent the code under test from
-creating new date objects. Unfortunately `datetime.date` is written in C, and
-so I couldn't just monkey-patch out the static `date.today` method.
+creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
+so I couldn't just monkey-patch out the static :meth:`date.today` method.
 
 I found a simple way of doing this that involved effectively wrapping the date
 class with a mock, but passing through calls to the constructor to the real
 class (and returning real instances).
 
 The :func:`patch decorator <patch>` is used here to
-mock out the `date` class in the module under test. The :attr:`side_effect`
+mock out the ``date`` class in the module under test. The :attr:`side_effect`
 attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
-constructed and returned by `side_effect`.
+constructed and returned by ``side_effect``.
 
     >>> from datetime import date
     >>> with patch('mymodule.date') as mock_date:
@@ -536,16 +536,16 @@ constructed and returned by `side_effect`.
     ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
     ...
 
-Note that we don't patch `datetime.date` globally, we patch `date` in the
+Note that we don't patch :class:`datetime.date` globally, we patch ``date`` in the
 module that *uses* it. See :ref:`where to patch <where-to-patch>`.
 
-When `date.today()` is called a known date is returned, but calls to the
-`date(...)` constructor still return normal dates. Without this you can find
+When ``date.today()`` is called a known date is returned, but calls to the
+``date(...)`` constructor still return normal dates. Without this you can find
 yourself having to calculate an expected result using exactly the same
 algorithm as the code under test, which is a classic testing anti-pattern.
 
-Calls to the date constructor are recorded in the `mock_date` attributes
-(`call_count` and friends) which may also be useful for your tests.
+Calls to the date constructor are recorded in the ``mock_date`` attributes
+(``call_count`` and friends) which may also be useful for your tests.
 
 An alternative way of dealing with mocking dates, or other builtin classes,
 is discussed in `this blog entry
@@ -561,7 +561,7 @@ to return a series of values when iterated over [#]_.
 A generator method / function is called to return the generator object. It is
 the generator object that is then iterated over. The protocol method for
 iteration is :meth:`~container.__iter__`, so we can
-mock this using a `MagicMock`.
+mock this using a :class:`MagicMock`.
 
 Here's an example class with an "iter" method implemented as a generator:
 
@@ -578,7 +578,7 @@ Here's an example class with an "iter" method implemented as a generator:
 How would we mock this class, and in particular its "iter" method?
 
 To configure the values returned from the iteration (implicit in the call to
-`list`), we need to configure the object returned by the call to `foo.iter()`.
+:class:`list`), we need to configure the object returned by the call to ``foo.iter()``.
 
     >>> mock_foo = MagicMock()
     >>> mock_foo.iter.return_value = iter([1, 2, 3])
@@ -597,10 +597,10 @@ Applying the same patch to every test method
 
 If you want several patches in place for multiple test methods the obvious way
 is to apply the patch decorators to every method. This can feel like unnecessary
-repetition. For Python 2.6 or more recent you can use `patch` (in all its
+repetition. For Python 2.6 or more recent you can use :func:`patch` (in all its
 various forms) as a class decorator. This applies the patches to all test
 methods on the class. A test method is identified by methods whose names start
-with `test`:
+with ``test``:
 
     >>> @patch('mymodule.SomeClass')
     ... class MyTest(TestCase):
@@ -620,7 +620,7 @@ with `test`:
     'something'
 
 An alternative way of managing patches is to use the :ref:`start-and-stop`.
-These allow you to move the patching into your `setUp` and `tearDown` methods.
+These allow you to move the patching into your ``setUp`` and ``tearDown`` methods.
 
     >>> class MyTest(TestCase):
     ...     def setUp(self):
@@ -636,7 +636,7 @@ These allow you to move the patching into your `setUp` and `tearDown` methods.
     >>> MyTest('test_foo').run()
 
 If you use this technique you must ensure that the patching is "undone" by
-calling `stop`. This can be fiddlier than you might think, because if an
+calling ``stop``. This can be fiddlier than you might think, because if an
 exception is raised in the setUp then tearDown is not called.
 :meth:`unittest.TestCase.addCleanup` makes this easier:
 
@@ -666,13 +666,13 @@ function instead. The :func:`patch` decorator makes it so simple to
 patch out methods with a mock that having to create a real function becomes a
 nuisance.
 
-If you pass `autospec=True` to patch then it does the patching with a
+If you pass ``autospec=True`` to patch then it does the patching with a
 *real* function object. This function object has the same signature as the one
 it is replacing, but delegates to a mock under the hood. You still get your
 mock auto-created in exactly the same way as before. What it means though, is
 that if you use it to patch out an unbound method on a class the mocked
 function will be turned into a bound method if it is fetched from an instance.
-It will have `self` passed in as the first argument, which is exactly what I
+It will have ``self`` passed in as the first argument, which is exactly what I
 wanted:
 
     >>> class Foo:
@@ -687,8 +687,8 @@ wanted:
     'foo'
     >>> mock_foo.assert_called_once_with(foo)
 
-If we don't use `autospec=True` then the unbound method is patched out
-with a Mock instance instead, and isn't called with `self`.
+If we don't use ``autospec=True`` then the unbound method is patched out
+with a Mock instance instead, and isn't called with ``self``.
 
 
 Checking multiple calls with mock
@@ -712,7 +712,7 @@ If your mock is only being called once you can use the
         ...
     AssertionError: Expected to be called once. Called 2 times.
 
-Both `assert_called_with` and `assert_called_once_with` make assertions about
+Both ``assert_called_with`` and ``assert_called_once_with`` make assertions about
 the *most recent* call. If your mock is going to be called several times, and
 you want to make assertions about *all* those calls you can use
 :attr:`~Mock.call_args_list`:
@@ -725,8 +725,8 @@ you want to make assertions about *all* those calls you can use
     [call(1, 2, 3), call(4, 5, 6), call()]
 
 The :data:`call` helper makes it easy to make assertions about these calls. You
-can build up a list of expected calls and compare it to `call_args_list`. This
-looks remarkably similar to the repr of the `call_args_list`:
+can build up a list of expected calls and compare it to ``call_args_list``. This
+looks remarkably similar to the repr of the ``call_args_list``:
 
     >>> expected = [call(1, 2, 3), call(4, 5, 6), call()]
     >>> mock.call_args_list == expected
@@ -737,7 +737,7 @@ Coping with mutable arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Another situation is rare, but can bite you, is when your mock is called with
-mutable arguments. `call_args` and `call_args_list` store *references* to the
+mutable arguments. ``call_args`` and ``call_args_list`` store *references* to the
 arguments. If the arguments are mutated by the code under test then you can no
 longer make assertions about what the values were when the mock was called.
 
@@ -752,7 +752,7 @@ defined in 'mymodule'::
         frob(val)
         val.clear()
 
-When we try to test that `grob` calls `frob` with the correct argument look
+When we try to test that ``grob`` calls ``frob`` with the correct argument look
 what happens:
 
     >>> with patch('mymodule.frob') as mock_frob:
@@ -772,8 +772,8 @@ could then cause problems if you do assertions that rely on object identity
 for equality.
 
 Here's one solution that uses the :attr:`side_effect`
-functionality. If you provide a `side_effect` function for a mock then
-`side_effect` will be called with the same args as the mock. This gives us an
+functionality. If you provide a ``side_effect`` function for a mock then
+``side_effect`` will be called with the same args as the mock. This gives us an
 opportunity to copy the arguments and store them for later assertions. In this
 example I'm using *another* mock to store the arguments so that I can use the
 mock methods for doing the assertion. Again a helper function sets this up for
@@ -800,15 +800,15 @@ me.
     >>> new_mock.call_args
     call(set([6]))
 
-`copy_call_args` is called with the mock that will be called. It returns a new
-mock that we do the assertion on. The `side_effect` function makes a copy of
-the args and calls our `new_mock` with the copy.
+``copy_call_args`` is called with the mock that will be called. It returns a new
+mock that we do the assertion on. The ``side_effect`` function makes a copy of
+the args and calls our ``new_mock`` with the copy.
 
 .. note::
 
     If your mock is only going to be used once there is an easier way of
     checking arguments at the point they are called. You can simply do the
-    checking inside a `side_effect` function.
+    checking inside a ``side_effect`` function.
 
         >>> def side_effect(arg):
         ...     assert arg == set([6])
@@ -820,8 +820,8 @@ the args and calls our `new_mock` with the copy.
             ...
         AssertionError
 
-An alternative approach is to create a subclass of `Mock` or `MagicMock` that
-copies (using :func:`copy.deepcopy`) the arguments.
+An alternative approach is to create a subclass of :class:`Mock` or
+:class:`MagicMock` that copies (using :func:`copy.deepcopy`) the arguments.
 Here's an example implementation:
 
     >>> from copy import deepcopy
@@ -844,9 +844,9 @@ Here's an example implementation:
     >>> c.foo
     <CopyingMock name='mock.foo' id='...'>
 
-When you subclass `Mock` or `MagicMock` all dynamically created attributes,
-and the `return_value` will use your subclass automatically. That means all
-children of a `CopyingMock` will also have the type `CopyingMock`.
+When you subclass ``Mock`` or ``MagicMock`` all dynamically created attributes,
+and the ``return_value`` will use your subclass automatically. That means all
+children of a ``CopyingMock`` will also have the type ``CopyingMock``.
 
 
 Nesting Patches
@@ -870,9 +870,9 @@ right:
     >>> MyTest('test_foo').test_foo()
     >>> assert mymodule.Foo is original
 
-With unittest `cleanup` functions and the :ref:`start-and-stop` we can
+With unittest ``cleanup`` functions and the :ref:`start-and-stop` we can
 achieve the same effect without the nested indentation. A simple helper
-method, `create_patch`, puts the patch in place and returns the created mock
+method, ``create_patch``, puts the patch in place and returns the created mock
 for us:
 
     >>> class MyTest(TestCase):
@@ -907,11 +907,11 @@ We can do this with :class:`MagicMock`, which will behave like a dictionary,
 and using :data:`~Mock.side_effect` to delegate dictionary access to a real
 underlying dictionary that is under our control.
 
-When the `__getitem__` and `__setitem__` methods of our `MagicMock` are called
-(normal dictionary access) then `side_effect` is called with the key (and in
-the case of `__setitem__` the value too). We can also control what is returned.
+When the :meth:`__getitem__` and :meth:`__setitem__` methods of our ``MagicMock`` are called
+(normal dictionary access) then ``side_effect`` is called with the key (and in
+the case of ``__setitem__`` the value too). We can also control what is returned.
 
-After the `MagicMock` has been used we can use attributes like
+After the ``MagicMock`` has been used we can use attributes like
 :data:`~Mock.call_args_list` to assert about how the dictionary was used:
 
     >>> my_dict = {'a': 1, 'b': 2, 'c': 3}
@@ -927,23 +927,23 @@ After the `MagicMock` has been used we can use attributes like
 
 .. note::
 
-    An alternative to using `MagicMock` is to use `Mock` and *only* provide
+    An alternative to using ``MagicMock`` is to use ``Mock`` and *only* provide
     the magic methods you specifically want:
 
         >>> mock = Mock()
         >>> mock.__getitem__ = Mock(side_effect=getitem)
         >>> mock.__setitem__ = Mock(side_effect=setitem)
 
-    A *third* option is to use `MagicMock` but passing in `dict` as the `spec`
-    (or `spec_set`) argument so that the `MagicMock` created only has
+    A *third* option is to use ``MagicMock`` but passing in ``dict`` as the *spec*
+    (or *spec_set*) argument so that the ``MagicMock`` created only has
     dictionary magic methods available:
 
         >>> mock = MagicMock(spec_set=dict)
         >>> mock.__getitem__.side_effect = getitem
         >>> mock.__setitem__.side_effect = setitem
 
-With these side effect functions in place, the `mock` will behave like a normal
-dictionary but recording the access. It even raises a `KeyError` if you try
+With these side effect functions in place, the ``mock`` will behave like a normal
+dictionary but recording the access. It even raises a :exc:`KeyError` if you try
 to access a key that doesn't exist.
 
     >>> mock['a']
@@ -975,8 +975,8 @@ mock methods and attributes:
 Mock subclasses and their attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are various reasons why you might want to subclass `Mock`. One reason
-might be to add helper methods. Here's a silly example:
+There are various reasons why you might want to subclass :class:`Mock`. One
+reason might be to add helper methods. Here's a silly example:
 
     >>> class MyMock(MagicMock):
     ...     def has_been_called(self):
@@ -991,9 +991,9 @@ might be to add helper methods. Here's a silly example:
     >>> mymock.has_been_called()
     True
 
-The standard behaviour for `Mock` instances is that attributes and the return
+The standard behaviour for ``Mock`` instances is that attributes and the return
 value mocks are of the same type as the mock they are accessed on. This ensures
-that `Mock` attributes are `Mocks` and `MagicMock` attributes are `MagicMocks`
+that ``Mock`` attributes are ``Mocks`` and ``MagicMock`` attributes are ``MagicMocks``
 [#]_. So if you're subclassing to add helper methods then they'll also be
 available on the attributes and return value mock of instances of your
 subclass.
@@ -1013,10 +1013,10 @@ created a `Twisted adaptor
 <http://twistedmatrix.com/documents/11.0.0/api/twisted.python.components.html>`_.
 Having this applied to attributes too actually causes errors.
 
-`Mock` (in all its flavours) uses a method called `_get_child_mock` to create
+``Mock`` (in all its flavours) uses a method called ``_get_child_mock`` to create
 these "sub-mocks" for attributes and return values. You can prevent your
 subclass being used for attributes by overriding this method. The signature is
-that it takes arbitrary keyword arguments (`**kwargs`) which are then passed
+that it takes arbitrary keyword arguments (``**kwargs``) which are then passed
 onto the mock constructor:
 
     >>> class Subclass(MagicMock):
@@ -1049,17 +1049,17 @@ import. This can also be solved in better ways than an unconditional local
 import (store the module as a class or module attribute and only do the import
 on first use).
 
-That aside there is a way to use `mock` to affect the results of an import.
-Importing fetches an *object* from the `sys.modules` dictionary. Note that it
+That aside there is a way to use ``mock`` to affect the results of an import.
+Importing fetches an *object* from the :data:`sys.modules` dictionary. Note that it
 fetches an *object*, which need not be a module. Importing a module for the
 first time results in a module object being put in `sys.modules`, so usually
 when you import something you get a module back. This need not be the case
 however.
 
 This means you can use :func:`patch.dict` to *temporarily* put a mock in place
-in `sys.modules`. Any imports whilst this patch is active will fetch the mock.
+in :data:`sys.modules`. Any imports whilst this patch is active will fetch the mock.
 When the patch is complete (the decorated function exits, the with statement
-body is complete or `patcher.stop()` is called) then whatever was there
+body is complete or ``patcher.stop()`` is called) then whatever was there
 previously will be restored safely.
 
 Here's an example that mocks out the 'fooble' module.
@@ -1073,10 +1073,10 @@ Here's an example that mocks out the 'fooble' module.
     >>> assert 'fooble' not in sys.modules
     >>> mock.blob.assert_called_once_with()
 
-As you can see the `import fooble` succeeds, but on exit there is no 'fooble'
-left in `sys.modules`.
+As you can see the ``import fooble`` succeeds, but on exit there is no 'fooble'
+left in :data:`sys.modules`.
 
-This also works for the `from module import name` form:
+This also works for the ``from module import name`` form:
 
     >>> mock = Mock()
     >>> with patch.dict('sys.modules', {'fooble': mock}):
@@ -1106,10 +1106,10 @@ your mock objects through the :attr:`~Mock.method_calls` attribute. This
 doesn't allow you to track the order of calls between separate mock objects,
 however we can use :attr:`~Mock.mock_calls` to achieve the same effect.
 
-Because mocks track calls to child mocks in `mock_calls`, and accessing an
+Because mocks track calls to child mocks in ``mock_calls``, and accessing an
 arbitrary attribute of a mock creates a child mock, we can create our separate
 mocks from a parent one. Calls to those child mock will then all be recorded,
-in order, in the `mock_calls` of the parent:
+in order, in the ``mock_calls`` of the parent:
 
     >>> manager = Mock()
     >>> mock_foo = manager.foo
@@ -1124,15 +1124,15 @@ in order, in the `mock_calls` of the parent:
     [call.foo.something(), call.bar.other.thing()]
 
 We can then assert about the calls, including the order, by comparing with
-the `mock_calls` attribute on the manager mock:
+the ``mock_calls`` attribute on the manager mock:
 
     >>> expected_calls = [call.foo.something(), call.bar.other.thing()]
     >>> manager.mock_calls == expected_calls
     True
 
-If `patch` is creating, and putting in place, your mocks then you can attach
+If ``patch`` is creating, and putting in place, your mocks then you can attach
 them to a manager mock using the :meth:`~Mock.attach_mock` method. After
-attaching calls will be recorded in `mock_calls` of the manager.
+attaching calls will be recorded in ``mock_calls`` of the manager.
 
     >>> manager = MagicMock()
     >>> with patch('mymodule.Class1') as MockClass1:
@@ -1164,12 +1164,12 @@ with the :data:`call` object). If that sequence of calls are in
     >>> calls = call.one().two().three().call_list()
     >>> m.assert_has_calls(calls)
 
-Even though the chained call `m.one().two().three()` aren't the only calls that
+Even though the chained call ``m.one().two().three()`` aren't the only calls that
 have been made to the mock, the assert still succeeds.
 
 Sometimes a mock may have several calls made to it, and you are only interested
 in asserting about *some* of those calls. You may not even care about the
-order. In this case you can pass `any_order=True` to `assert_has_calls`:
+order. In this case you can pass ``any_order=True`` to ``assert_has_calls``:
 
     >>> m = MagicMock()
     >>> m(1), m.two(2, 3), m.seven(7), m.fifty('50')
@@ -1191,7 +1191,7 @@ in the exact same object. If we are only interested in some of the attributes
 of this object then we can create a matcher that will check these attributes
 for us.
 
-You can see in this example how a 'standard' call to `assert_called_with` isn't
+You can see in this example how a 'standard' call to ``assert_called_with`` isn't
 sufficient:
 
     >>> class Foo:
@@ -1206,7 +1206,7 @@ sufficient:
     AssertionError: Expected: call(<__main__.Foo object at 0x...>)
     Actual call: call(<__main__.Foo object at 0x...>)
 
-A comparison function for our `Foo` class might look something like this:
+A comparison function for our ``Foo`` class might look something like this:
 
     >>> def compare(self, other):
     ...     if not type(self) == type(other):
@@ -1234,11 +1234,11 @@ Putting all this together:
     >>> match_foo = Matcher(compare, Foo(1, 2))
     >>> mock.assert_called_with(match_foo)
 
-The `Matcher` is instantiated with our compare function and the `Foo` object
-we want to compare against. In `assert_called_with` the `Matcher` equality
+The ``Matcher`` is instantiated with our compare function and the ``Foo`` object
+we want to compare against. In ``assert_called_with`` the ``Matcher`` equality
 method will be called, which compares the object the mock was called with
 against the one we created our matcher with. If they match then
-`assert_called_with` passes, and if they don't an `AssertionError` is raised:
+``assert_called_with`` passes, and if they don't an :exc:`AssertionError` is raised:
 
     >>> match_wrong = Matcher(compare, Foo(3, 4))
     >>> mock.assert_called_with(match_wrong)
@@ -1248,7 +1248,7 @@ against the one we created our matcher with. If they match then
     Called with: ((<Foo object at 0x...>,), {})
 
 With a bit of tweaking you could have the comparison function raise the
-`AssertionError` directly and provide a more useful failure message.
+:exc:`AssertionError` directly and provide a more useful failure message.
 
 As of version 1.5, the Python testing library `PyHamcrest
 <https://pypi.python.org/pypi/PyHamcrest>`_ provides similar functionality,

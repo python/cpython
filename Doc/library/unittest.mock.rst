@@ -13,7 +13,7 @@
 replace parts of your system under test with mock objects and make assertions
 about how they have been used.
 
-`unittest.mock` provides a core :class:`Mock` class removing the need to
+:mod:`unittest.mock` provides a core :class:`Mock` class removing the need to
 create a host of stubs throughout your test suite. After performing an
 action, you can make assertions about which methods / attributes were used
 and arguments they were called with. You can also specify return values and
@@ -26,10 +26,10 @@ some examples of how to use :class:`Mock`, :class:`MagicMock` and
 :func:`patch`.
 
 Mock is very easy to use and is designed for use with :mod:`unittest`. Mock
-is based on the 'action -> assertion' pattern instead of `'record -> replay'`
+is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
-There is a backport of `unittest.mock` for earlier versions of Python,
+There is a backport of :mod:`unittest.mock` for earlier versions of Python,
 available as `mock on PyPI <https://pypi.python.org/pypi/mock>`_.
 
 **Source code:** :source:`Lib/unittest/mock.py`
@@ -71,9 +71,9 @@ exception when a mock is called:
    (5, 4, 3)
 
 Mock has many other ways you can configure it and control its behaviour. For
-example the `spec` argument configures the mock to take its specification
+example the *spec* argument configures the mock to take its specification
 from another object. Attempting to access attributes or methods on the mock
-that don't exist on the spec will fail with an `AttributeError`.
+that don't exist on the spec will fail with an :exc:`AttributeError`.
 
 The :func:`patch` decorator / context manager makes it easy to mock classes or
 objects in a module under test. The object you specify will be replaced with a
@@ -97,13 +97,13 @@ mock (or other object) during the test and restored when the test ends:
    When you nest patch decorators the mocks are passed in to the decorated
    function in the same order they applied (the normal *python* order that
    decorators are applied). This means from the bottom up, so in the example
-   above the mock for `module.ClassName1` is passed in first.
+   above the mock for ``module.ClassName1`` is passed in first.
 
-   With `patch` it matters that you patch objects in the namespace where they
+   With :func:`patch` it matters that you patch objects in the namespace where they
    are looked up. This is normally straightforward, but for a quick guide
    read :ref:`where to patch <where-to-patch>`.
 
-As well as a decorator `patch` can be used as a context manager in a with
+As well as a decorator :func:`patch` can be used as a context manager in a with
 statement:
 
     >>> with patch.object(ProductionClass, 'method', return_value=None) as mock_method:
@@ -135,7 +135,7 @@ allows you to do things like:
     >>> mock.__str__.assert_called_with()
 
 Mock allows you to assign functions (or other Mock instances) to magic methods
-and they will be called appropriately. The `MagicMock` class is just a Mock
+and they will be called appropriately. The :class:`MagicMock` class is just a Mock
 variant that has all of the magic methods pre-created for you (well, all the
 useful ones anyway).
 
@@ -149,7 +149,7 @@ class:
 
 For ensuring that the mock objects in your tests have the same api as the
 objects they are replacing, you can use :ref:`auto-speccing <auto-speccing>`.
-Auto-speccing can be done through the `autospec` argument to patch, or the
+Auto-speccing can be done through the *autospec* argument to patch, or the
 :func:`create_autospec` function. Auto-speccing creates mock objects that
 have the same attributes and methods as the objects they are replacing, and
 any functions and methods (including constructors) have the same call
@@ -171,9 +171,9 @@ code if they are used incorrectly:
     ...
    TypeError: <lambda>() takes exactly 3 arguments (1 given)
 
-`create_autospec` can also be used on classes, where it copies the signature of
-the `__init__` method, and on callable objects where it copies the signature of
-the `__call__` method.
+:func:`create_autospec` can also be used on classes, where it copies the signature of
+the ``__init__`` method, and on callable objects where it copies the signature of
+the ``__call__`` method.
 
 
 
@@ -181,77 +181,77 @@ The Mock Class
 --------------
 
 
-`Mock` is a flexible mock object intended to replace the use of stubs and
+:class:`Mock` is a flexible mock object intended to replace the use of stubs and
 test doubles throughout your code. Mocks are callable and create attributes as
 new mocks when you access them [#]_. Accessing the same attribute will always
 return the same mock. Mocks record how you use them, allowing you to make
 assertions about what your code has done to them.
 
-:class:`MagicMock` is a subclass of `Mock` with all the magic methods
+:class:`MagicMock` is a subclass of :class:`Mock` with all the magic methods
 pre-created and ready to use. There are also non-callable variants, useful
 when you are mocking out objects that aren't callable:
 :class:`NonCallableMock` and :class:`NonCallableMagicMock`
 
 The :func:`patch` decorators makes it easy to temporarily replace classes
-in a particular module with a `Mock` object. By default `patch` will create
-a `MagicMock` for you. You can specify an alternative class of `Mock` using
-the `new_callable` argument to `patch`.
+in a particular module with a :class:`Mock` object. By default :func:`patch` will create
+a :class:`MagicMock` for you. You can specify an alternative class of :class:`Mock` using
+the *new_callable* argument to :func:`patch`.
 
 
 .. class:: Mock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
-    Create a new `Mock` object. `Mock` takes several optional arguments
+    Create a new :class:`Mock` object. :class:`Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
 
-    * `spec`: This can be either a list of strings or an existing object (a
+    * *spec*: This can be either a list of strings or an existing object (a
       class or instance) that acts as the specification for the mock object. If
       you pass in an object then a list of strings is formed by calling dir on
       the object (excluding unsupported magic attributes and methods).
-      Accessing any attribute not in this list will raise an `AttributeError`.
+      Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
-      If `spec` is an object (rather than a list of strings) then
+      If *spec* is an object (rather than a list of strings) then
       :attr:`~instance.__class__` returns the class of the spec object. This
-      allows mocks to pass `isinstance` tests.
+      allows mocks to pass :func:`isinstance` tests.
 
-    * `spec_set`: A stricter variant of `spec`. If used, attempting to *set*
+    * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
-      `spec_set` will raise an `AttributeError`.
+      *spec_set* will raise an :exc:`AttributeError`.
 
-    * `side_effect`: A function to be called whenever the Mock is called. See
+    * *side_effect*: A function to be called whenever the Mock is called. See
       the :attr:`~Mock.side_effect` attribute. Useful for raising exceptions or
       dynamically changing return values. The function is called with the same
       arguments as the mock, and unless it returns :data:`DEFAULT`, the return
       value of this function is used as the return value.
 
-      Alternatively `side_effect` can be an exception class or instance. In
+      Alternatively *side_effect* can be an exception class or instance. In
       this case the exception will be raised when the mock is called.
 
-      If `side_effect` is an iterable then each call to the mock will return
+      If *side_effect* is an iterable then each call to the mock will return
       the next value from the iterable.
 
-      A `side_effect` can be cleared by setting it to `None`.
+      A *side_effect* can be cleared by setting it to ``None``.
 
-    * `return_value`: The value returned when the mock is called. By default
+    * *return_value*: The value returned when the mock is called. By default
       this is a new Mock (created on first access). See the
       :attr:`return_value` attribute.
 
-    * `unsafe`: By default if any attribute starts with *assert* or
-      *assret* will raise an `AttributeError`. Passing `unsafe=True` will allow
-      access to these attributes.
+    * *unsafe*: By default if any attribute starts with *assert* or
+      *assret* will raise an :exc:`AttributeError`. Passing ``unsafe=True``
+      will allow access to these attributes.
 
       .. versionadded:: 3.5
 
-    * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
+    * *wraps*: Item for the mock object to wrap. If *wraps* is not None then
       calling the Mock will pass the call through to the wrapped object
       (returning the real result). Attribute access on the mock will return a
       Mock object that wraps the corresponding attribute of the wrapped
       object (so attempting to access an attribute that doesn't exist will
-      raise an `AttributeError`).
+      raise an :exc:`AttributeError`).
 
-      If the mock has an explicit `return_value` set then calls are not passed
-      to the wrapped object and the `return_value` is returned instead.
+      If the mock has an explicit *return_value* set then calls are not passed
+      to the wrapped object and the *return_value* is returned instead.
 
-    * `name`: If the mock has a name then it will be used in the repr of the
+    * *name*: If the mock has a name then it will be used in the repr of the
       mock. This can be useful for debugging. The name is propagated to child
       mocks.
 
@@ -302,13 +302,13 @@ the `new_callable` argument to `patch`.
     .. method:: assert_has_calls(calls, any_order=False)
 
         assert the mock has been called with the specified calls.
-        The `mock_calls` list is checked for the calls.
+        The :attr:`mock_calls` list is checked for the calls.
 
-        If `any_order` is false (the default) then the calls must be
+        If *any_order* is false (the default) then the calls must be
         sequential. There can be extra calls before or after the
         specified calls.
 
-        If `any_order` is true then the calls can be in any order, but
+        If *any_order* is true then the calls can be in any order, but
         they must all appear in :attr:`mock_calls`.
 
             >>> mock = Mock(return_value=None)
@@ -349,7 +349,7 @@ the `new_callable` argument to `patch`.
             False
 
         This can be useful where you want to make a series of assertions that
-        reuse the same object. Note that `reset_mock` *doesn't* clear the
+        reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
         return value, :attr:`side_effect` or any child attributes you have
         set using normal assignment. Child mocks and the return value mock
         (if any) are reset as well.
@@ -357,11 +357,11 @@ the `new_callable` argument to `patch`.
 
     .. method:: mock_add_spec(spec, spec_set=False)
 
-        Add a spec to a mock. `spec` can either be an object or a
-        list of strings. Only attributes on the `spec` can be fetched as
+        Add a spec to a mock. *spec* can either be an object or a
+        list of strings. Only attributes on the *spec* can be fetched as
         attributes from the mock.
 
-        If `spec_set` is `True` then only attributes on the spec can be set.
+        If *spec_set* is true then only attributes on the spec can be set.
 
 
     .. method:: attach_mock(mock, attribute)
@@ -402,14 +402,14 @@ the `new_callable` argument to `patch`.
               ...
             KeyError
 
-        `configure_mock` exists to make it easier to do configuration
+        :meth:`configure_mock` exists to make it easier to do configuration
         after the mock has been created.
 
 
     .. method:: __dir__()
 
-        `Mock` objects limit the results of `dir(some_mock)` to useful results.
-        For mocks with a `spec` this includes all the permitted attributes
+        :class:`Mock` objects limit the results of ``dir(some_mock)`` to useful results.
+        For mocks with a *spec* this includes all the permitted attributes
         for the mock.
 
         See :data:`FILTER_DIR` for what this filtering does, and how to
@@ -469,7 +469,7 @@ the `new_callable` argument to `patch`.
             <Mock name='mock()()' id='...'>
             >>> mock.return_value.assert_called_with()
 
-        `return_value` can also be set in the constructor:
+        :attr:`return_value` can also be set in the constructor:
 
             >>> mock = Mock(return_value=3)
             >>> mock.return_value
@@ -499,17 +499,17 @@ the `new_callable` argument to `patch`.
               ...
             Exception: Boom!
 
-        Using `side_effect` to return a sequence of values:
+        Using :attr:`side_effect` to return a sequence of values:
 
             >>> mock = Mock()
             >>> mock.side_effect = [3, 2, 1]
             >>> mock(), mock(), mock()
             (3, 2, 1)
 
-        The `side_effect` function is called with the same arguments as the
+        The :attr:`side_effect` function is called with the same arguments as the
         mock (so it is wise for it to take arbitrary args and keyword
         arguments) and whatever it returns is used as the return value for
-        the call. The exception is if `side_effect` returns :data:`DEFAULT`,
+        the call. The exception is if :attr:`side_effect` returns :data:`DEFAULT`,
         in which case the normal :attr:`return_value` is used.
 
             >>> mock = Mock(return_value=3)
@@ -520,7 +520,7 @@ the `new_callable` argument to `patch`.
             >>> mock()
             3
 
-        `side_effect` can be set in the constructor. Here's an example that
+        :attr:`side_effect` can be set in the constructor. Here's an example that
         adds one to the value the mock is called with and returns it:
 
             >>> side_effect = lambda value: value + 1
@@ -530,7 +530,7 @@ the `new_callable` argument to `patch`.
             >>> mock(-8)
             -7
 
-        Setting `side_effect` to `None` clears it:
+        Setting :attr:`side_effect` to ``None`` clears it:
 
             >>> m = Mock(side_effect=KeyError, return_value=3)
             >>> m()
@@ -544,7 +544,7 @@ the `new_callable` argument to `patch`.
 
     .. attribute:: call_args
 
-        This is either `None` (if the mock hasn't been called), or the
+        This is either ``None`` (if the mock hasn't been called), or the
         arguments that the mock was last called with. This will be in the
         form of a tuple: the first member is any ordered arguments the mock
         was called with (or an empty tuple) and the second member is any
@@ -567,7 +567,7 @@ the `new_callable` argument to `patch`.
             >>> mock.call_args
             call(3, 4, 5, key='fish', next='w00t!')
 
-        `call_args`, along with members of the lists :attr:`call_args_list`,
+        :attr:`call_args`, along with members of the lists :attr:`call_args_list`,
         :attr:`method_calls` and :attr:`mock_calls` are :data:`call` objects.
         These are tuples, so they can be unpacked to get at the individual
         arguments and make more complex assertions. See
@@ -580,7 +580,7 @@ the `new_callable` argument to `patch`.
         (so the length of the list is the number of times it has been
         called). Before any calls have been made it is an empty list. The
         :data:`call` object can be used for conveniently constructing lists of
-        calls to compare with `call_args_list`.
+        calls to compare with :attr:`call_args_list`.
 
             >>> mock = Mock(return_value=None)
             >>> mock()
@@ -592,7 +592,7 @@ the `new_callable` argument to `patch`.
             >>> mock.call_args_list == expected
             True
 
-        Members of `call_args_list` are :data:`call` objects. These can be
+        Members of :attr:`call_args_list` are :data:`call` objects. These can be
         unpacked as tuples to get at the individual arguments. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
@@ -610,15 +610,15 @@ the `new_callable` argument to `patch`.
             >>> mock.method_calls
             [call.method(), call.property.method.attribute()]
 
-        Members of `method_calls` are :data:`call` objects. These can be
+        Members of :attr:`method_calls` are :data:`call` objects. These can be
         unpacked as tuples to get at the individual arguments. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
 
     .. attribute:: mock_calls
 
-        `mock_calls` records *all* calls to the mock object, its methods, magic
-        methods *and* return value mocks.
+        :attr:`mock_calls` records *all* calls to the mock object, its methods,
+        magic methods *and* return value mocks.
 
             >>> mock = MagicMock()
             >>> result = mock(1, 2, 3)
@@ -635,24 +635,24 @@ the `new_callable` argument to `patch`.
             >>> mock.mock_calls == expected
             True
 
-        Members of `mock_calls` are :data:`call` objects. These can be
+        Members of :attr:`mock_calls` are :data:`call` objects. These can be
         unpacked as tuples to get at the individual arguments. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
 
     .. attribute:: __class__
 
-        Normally the `__class__` attribute of an object will return its type.
-        For a mock object with a `spec` `__class__` returns the spec class
-        instead. This allows mock objects to pass `isinstance` tests for the
+        Normally the :attr:`__class__` attribute of an object will return its type.
+        For a mock object with a :attr:`spec`, ``__class__`` returns the spec class
+        instead. This allows mock objects to pass :func:`isinstance` tests for the
         object they are replacing / masquerading as:
 
             >>> mock = Mock(spec=3)
             >>> isinstance(mock, int)
             True
 
-        `__class__` is assignable to, this allows a mock to pass an
-        `isinstance` check without forcing you to use a spec:
+        :attr:`__class__` is assignable to, this allows a mock to pass an
+        :func:`isinstance` check without forcing you to use a spec:
 
             >>> mock = Mock()
             >>> mock.__class__ = dict
@@ -661,12 +661,12 @@ the `new_callable` argument to `patch`.
 
 .. class:: NonCallableMock(spec=None, wraps=None, name=None, spec_set=None, **kwargs)
 
-    A non-callable version of `Mock`. The constructor parameters have the same
-    meaning of `Mock`, with the exception of `return_value` and `side_effect`
+    A non-callable version of :class:`Mock`. The constructor parameters have the same
+    meaning of :class:`Mock`, with the exception of *return_value* and *side_effect*
     which have no meaning on a non-callable mock.
 
-Mock objects that use a class or an instance as a `spec` or `spec_set` are able
-to pass `isinstance` tests:
+Mock objects that use a class or an instance as a :attr:`spec` or
+:attr:`spec_set` are able to pass :func:`isinstance` tests:
 
     >>> mock = Mock(spec=SomeClass)
     >>> isinstance(mock, SomeClass)
@@ -675,11 +675,11 @@ to pass `isinstance` tests:
     >>> isinstance(mock, SomeClass)
     True
 
-The `Mock` classes have support for mocking magic methods. See :ref:`magic
+The :class:`Mock` classes have support for mocking magic methods. See :ref:`magic
 methods <magic-methods>` for the full details.
 
 The mock classes and the :func:`patch` decorators all take arbitrary keyword
-arguments for configuration. For the `patch` decorators the keywords are
+arguments for configuration. For the :func:`patch` decorators the keywords are
 passed to the constructor of the mock being created. The keyword arguments
 are for configuring attributes of the mock:
 
@@ -691,7 +691,7 @@ are for configuring attributes of the mock:
 
 The return value and side effect of child mocks can be set in the same way,
 using dotted notation. As you can't use dotted names directly in a call you
-have to create a dictionary and unpack it using `**`:
+have to create a dictionary and unpack it using ``**``:
 
     >>> attrs = {'method.return_value': 3, 'other.side_effect': KeyError}
     >>> mock = Mock(some_attribute='eggs', **attrs)
@@ -729,10 +729,10 @@ apply to method calls on the mock object.
 .. class:: PropertyMock(*args, **kwargs)
 
    A mock intended to be used as a property, or other descriptor, on a class.
-   `PropertyMock` provides `__get__` and `__set__` methods so you can specify
-   a return value when it is fetched.
+   :class:`PropertyMock` provides :meth:`__get__` and :meth:`__set__` methods
+   so you can specify a return value when it is fetched.
 
-   Fetching a `PropertyMock` instance from an object calls the mock, with
+   Fetching a :class:`PropertyMock` instance from an object calls the mock, with
    no args. Setting it calls the mock with the value being set.
 
         >>> class Foo:
@@ -754,7 +754,7 @@ apply to method calls on the mock object.
         [call(), call(6)]
 
 Because of the way mock attributes are stored you can't directly attach a
-`PropertyMock` to a mock object. Instead you can attach it to the mock type
+:class:`PropertyMock` to a mock object. Instead you can attach it to the mock type
 object::
 
     >>> m = MagicMock()
@@ -778,7 +778,7 @@ Calls made to the object will be recorded in the attributes
 like :attr:`~Mock.call_args` and :attr:`~Mock.call_args_list`.
 
 If :attr:`~Mock.side_effect` is set then it will be called after the call has
-been recorded, so if `side_effect` raises an exception the call is still
+been recorded, so if :attr:`side_effect` raises an exception the call is still
 recorded.
 
 The simplest way to make a mock raise an exception when called is to make
@@ -799,8 +799,8 @@ The simplest way to make a mock raise an exception when called is to make
         >>> m.mock_calls
         [call(1, 2, 3), call('two', 'three', 'four')]
 
-If `side_effect` is a function then whatever that function returns is what
-calls to the mock return. The `side_effect` function is called with the
+If :attr:`side_effect` is a function then whatever that function returns is what
+calls to the mock return. The :attr:`side_effect` function is called with the
 same arguments as the mock. This allows you to vary the return value of the
 call dynamically, based on the input:
 
@@ -817,7 +817,7 @@ call dynamically, based on the input:
 
 If you want the mock to still return the default return value (a new mock), or
 any set return value, then there are two ways of doing this. Either return
-`mock.return_value` from inside `side_effect`, or return :data:`DEFAULT`:
+:attr:`mock.return_value` from inside :attr:`side_effect`, or return :data:`DEFAULT`:
 
         >>> m = MagicMock()
         >>> def side_effect(*args, **kwargs):
@@ -834,8 +834,8 @@ any set return value, then there are two ways of doing this. Either return
         >>> m()
         3
 
-To remove a `side_effect`, and return to the default behaviour, set the
-`side_effect` to `None`:
+To remove a :attr:`side_effect`, and return to the default behaviour, set the
+:attr:`side_effect` to ``None``:
 
         >>> m = MagicMock(return_value=6)
         >>> def side_effect(*args, **kwargs):
@@ -848,9 +848,9 @@ To remove a `side_effect`, and return to the default behaviour, set the
         >>> m()
         6
 
-The `side_effect` can also be any iterable object. Repeated calls to the mock
+The :attr:`side_effect` can also be any iterable object. Repeated calls to the mock
 will return values from the iterable (until the iterable is exhausted and
-a `StopIteration` is raised):
+a :exc:`StopIteration` is raised):
 
         >>> m = MagicMock(side_effect=[1, 2, 3])
         >>> m()
@@ -887,12 +887,12 @@ Deleting Attributes
 Mock objects create attributes on demand. This allows them to pretend to be
 objects of any type.
 
-You may want a mock object to return `False` to a `hasattr` call, or raise an
-`AttributeError` when an attribute is fetched. You can do this by providing
-an object as a `spec` for a mock, but that isn't always convenient.
+You may want a mock object to return ``False`` to a :func:`hasattr` call, or raise an
+:exc:`AttributeError` when an attribute is fetched. You can do this by providing
+an object as a :attr:`spec` for a mock, but that isn't always convenient.
 
 You "block" attributes by deleting them. Once deleted, accessing an attribute
-will raise an `AttributeError`.
+will raise an :exc:`AttributeError`.
 
     >>> mock = MagicMock()
     >>> hasattr(mock, 'm')
@@ -978,7 +978,7 @@ method:
 
 .. [#] The only exceptions are magic methods and attributes (those that have
        leading and trailing double underscores). Mock doesn't create these but
-       instead raises an ``AttributeError``. This is because the interpreter
+       instead raises an :exc:`AttributeError`. This is because the interpreter
        will often implicitly request these methods, and gets *very* confused to
        get a new Mock object when it expects a magic method. If you need magic
        method support see :ref:`magic methods <magic-methods>`.
@@ -998,53 +998,53 @@ patch
 
 .. note::
 
-    `patch` is straightforward to use. The key is to do the patching in the
+    :func:`patch` is straightforward to use. The key is to do the patching in the
     right namespace. See the section `where to patch`_.
 
 .. function:: patch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
 
-    `patch` acts as a function decorator, class decorator or a context
-    manager. Inside the body of the function or with statement, the `target`
-    is patched with a `new` object. When the function/with statement exits
+    :func:`patch` acts as a function decorator, class decorator or a context
+    manager. Inside the body of the function or with statement, the *target*
+    is patched with a *new* object. When the function/with statement exits
     the patch is undone.
 
-    If `new` is omitted, then the target is replaced with a
-    :class:`MagicMock`. If `patch` is used as a decorator and `new` is
+    If *new* is omitted, then the target is replaced with a
+    :class:`MagicMock`. If :func:`patch` is used as a decorator and *new* is
     omitted, the created mock is passed in as an extra argument to the
-    decorated function. If `patch` is used as a context manager the created
+    decorated function. If :func:`patch` is used as a context manager the created
     mock is returned by the context manager.
 
-    `target` should be a string in the form `'package.module.ClassName'`. The
-    `target` is imported and the specified object replaced with the `new`
-    object, so the `target` must be importable from the environment you are
-    calling `patch` from. The target is imported when the decorated function
+    *target* should be a string in the form ``'package.module.ClassName'``. The
+    *target* is imported and the specified object replaced with the *new*
+    object, so the *target* must be importable from the environment you are
+    calling :func:`patch` from. The target is imported when the decorated function
     is executed, not at decoration time.
 
-    The `spec` and `spec_set` keyword arguments are passed to the `MagicMock`
+    The *spec* and *spec_set* keyword arguments are passed to the :class:`MagicMock`
     if patch is creating one for you.
 
-    In addition you can pass `spec=True` or `spec_set=True`, which causes
+    In addition you can pass ``spec=True`` or ``spec_set=True``, which causes
     patch to pass in the object being mocked as the spec/spec_set object.
 
-    `new_callable` allows you to specify a different class, or callable object,
-    that will be called to create the `new` object. By default `MagicMock` is
+    *new_callable* allows you to specify a different class, or callable object,
+    that will be called to create the *new* object. By default :class:`MagicMock` is
     used.
 
-    A more powerful form of `spec` is `autospec`. If you set `autospec=True`
+    A more powerful form of *spec* is *autospec*. If you set ``autospec=True``
     then the mock with be created with a spec from the object being replaced.
     All attributes of the mock will also have the spec of the corresponding
     attribute of the object being replaced. Methods and functions being mocked
-    will have their arguments checked and will raise a `TypeError` if they are
+    will have their arguments checked and will raise a :exc:`TypeError` if they are
     called with the wrong signature. For mocks
     replacing a class, their return value (the 'instance') will have the same
     spec as the class. See the :func:`create_autospec` function and
     :ref:`auto-speccing`.
 
-    Instead of `autospec=True` you can pass `autospec=some_object` to use an
+    Instead of ``autospec=True`` you can pass ``autospec=some_object`` to use an
     arbitrary object as the spec instead of the one being replaced.
 
-    By default `patch` will fail to replace attributes that don't exist. If
-    you pass in `create=True`, and the attribute doesn't exist, patch will
+    By default :func:`patch` will fail to replace attributes that don't exist. If
+    you pass in ``create=True``, and the attribute doesn't exist, patch will
     create the attribute for you when the patched function is called, and
     delete it again afterwards. This is useful for writing tests against
     attributes that your production code creates at runtime. It is off by
@@ -1055,27 +1055,27 @@ patch
 
         .. versionchanged:: 3.5
            If you are patching builtins in a module then you don't
-           need to pass `create=True`, it will be added by default.
+           need to pass ``create=True``, it will be added by default.
 
-    Patch can be used as a `TestCase` class decorator. It works by
+    Patch can be used as a :class:`TestCase` class decorator. It works by
     decorating each test method in the class. This reduces the boilerplate
-    code when your test methods share a common patchings set. `patch` finds
-    tests by looking for method names that start with `patch.TEST_PREFIX`.
-    By default this is `test`, which matches the way `unittest` finds tests.
-    You can specify an alternative prefix by setting `patch.TEST_PREFIX`.
+    code when your test methods share a common patchings set. :func:`patch` finds
+    tests by looking for method names that start with ``patch.TEST_PREFIX``.
+    By default this is ``'test'``, which matches the way :mod:`unittest` finds tests.
+    You can specify an alternative prefix by setting ``patch.TEST_PREFIX``.
 
     Patch can be used as a context manager, with the with statement. Here the
     patching applies to the indented block after the with statement. If you
     use "as" then the patched object will be bound to the name after the
-    "as"; very useful if `patch` is creating a mock object for you.
+    "as"; very useful if :func:`patch` is creating a mock object for you.
 
-    `patch` takes arbitrary keyword arguments. These will be passed to
-    the `Mock` (or `new_callable`) on construction.
+    :func:`patch` takes arbitrary keyword arguments. These will be passed to
+    the :class:`Mock` (or *new_callable*) on construction.
 
-    `patch.dict(...)`, `patch.multiple(...)` and `patch.object(...)` are
+    ``patch.dict(...)``, ``patch.multiple(...)`` and ``patch.object(...)`` are
     available for alternate use-cases.
 
-`patch` as function decorator, creating the mock for you and passing it into
+:func:`patch` as function decorator, creating the mock for you and passing it into
 the decorated function:
 
     >>> @patch('__main__.SomeClass')
@@ -1085,16 +1085,16 @@ the decorated function:
     >>> function(None)
     True
 
-Patching a class replaces the class with a `MagicMock` *instance*. If the
+Patching a class replaces the class with a :class:`MagicMock` *instance*. If the
 class is instantiated in the code under test then it will be the
 :attr:`~Mock.return_value` of the mock that will be used.
 
 If the class is instantiated multiple times you could use
 :attr:`~Mock.side_effect` to return a new mock each time. Alternatively you
-can set the `return_value` to be anything you want.
+can set the *return_value* to be anything you want.
 
 To configure return values on methods of *instances* on the patched class
-you must do this on the `return_value`. For example:
+you must do this on the :attr:`return_value`. For example:
 
     >>> class Class:
     ...     def method(self):
@@ -1107,7 +1107,7 @@ you must do this on the `return_value`. For example:
     ...     assert Class().method() == 'foo'
     ...
 
-If you use `spec` or `spec_set` and `patch` is replacing a *class*, then the
+If you use *spec* or *spec_set* and :func:`patch` is replacing a *class*, then the
 return value of the created mock will have the same spec.
 
     >>> Original = Class
@@ -1117,7 +1117,7 @@ return value of the created mock will have the same spec.
     >>> assert isinstance(instance, Original)
     >>> patcher.stop()
 
-The `new_callable` argument is useful where you want to use an alternative
+The *new_callable* argument is useful where you want to use an alternative
 class to the default :class:`MagicMock` for the created mock. For example, if
 you wanted a :class:`NonCallableMock` to be used:
 
@@ -1130,7 +1130,7 @@ you wanted a :class:`NonCallableMock` to be used:
       ...
     TypeError: 'NonCallableMock' object is not callable
 
-Another use case might be to replace an object with a `io.StringIO` instance:
+Another use case might be to replace an object with a :class:`io.StringIO` instance:
 
     >>> from io import StringIO
     >>> def foo():
@@ -1143,7 +1143,7 @@ Another use case might be to replace an object with a `io.StringIO` instance:
     ...
     >>> test()
 
-When `patch` is creating a mock for you, it is common that the first thing
+When :func:`patch` is creating a mock for you, it is common that the first thing
 you need to do is to configure the mock. Some of that configuration can be done
 in the call to patch. Any arbitrary keywords you pass into the call will be
 used to set attributes on the created mock:
@@ -1159,7 +1159,7 @@ As well as attributes on the created mock attributes, like the
 :attr:`~Mock.return_value` and :attr:`~Mock.side_effect`, of child mocks can
 also be configured. These aren't syntactically valid to pass in directly as
 keyword arguments, but a dictionary with these as keys can still be expanded
-into a `patch` call using `**`:
+into a :func:`patch` call using ``**``:
 
     >>> config = {'method.return_value': 3, 'other.side_effect': KeyError}
     >>> patcher = patch('__main__.thing', **config)
@@ -1177,19 +1177,19 @@ patch.object
 
 .. function:: patch.object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
 
-    patch the named member (`attribute`) on an object (`target`) with a mock
+    patch the named member (*attribute*) on an object (*target*) with a mock
     object.
 
-    `patch.object` can be used as a decorator, class decorator or a context
-    manager. Arguments `new`, `spec`, `create`, `spec_set`, `autospec` and
-    `new_callable` have the same meaning as for `patch`. Like `patch`,
-    `patch.object` takes arbitrary keyword arguments for configuring the mock
+    :func:`patch.object` can be used as a decorator, class decorator or a context
+    manager. Arguments *new*, *spec*, *create*, *spec_set*, *autospec* and
+    *new_callable* have the same meaning as for :func:`patch`. Like :func:`patch`,
+    :func:`patch.object` takes arbitrary keyword arguments for configuring the mock
     object it creates.
 
-    When used as a class decorator `patch.object` honours `patch.TEST_PREFIX`
+    When used as a class decorator :func:`patch.object` honours ``patch.TEST_PREFIX``
     for choosing which methods to wrap.
 
-You can either call `patch.object` with three arguments or two arguments. The
+You can either call :func:`patch.object` with three arguments or two arguments. The
 three argument form takes the object to be patched, the attribute name and the
 object to replace the attribute with.
 
@@ -1204,8 +1204,8 @@ function:
     ...
     >>> test()
 
-`spec`, `create` and the other arguments to `patch.object` have the same
-meaning as they do for `patch`.
+*spec*, *create* and the other arguments to :func:`patch.object` have the same
+meaning as they do for :func:`patch`.
 
 
 patch.dict
@@ -1216,27 +1216,27 @@ patch.dict
     Patch a dictionary, or dictionary like object, and restore the dictionary
     to its original state after the test.
 
-    `in_dict` can be a dictionary or a mapping like container. If it is a
+    *in_dict* can be a dictionary or a mapping like container. If it is a
     mapping then it must at least support getting, setting and deleting items
     plus iterating over keys.
 
-    `in_dict` can also be a string specifying the name of the dictionary, which
+    *in_dict* can also be a string specifying the name of the dictionary, which
     will then be fetched by importing it.
 
-    `values` can be a dictionary of values to set in the dictionary. `values`
-    can also be an iterable of `(key, value)` pairs.
+    *values* can be a dictionary of values to set in the dictionary. *values*
+    can also be an iterable of ``(key, value)`` pairs.
 
-    If `clear` is true then the dictionary will be cleared before the new
+    If *clear* is true then the dictionary will be cleared before the new
     values are set.
 
-    `patch.dict` can also be called with arbitrary keyword arguments to set
+    :func:`patch.dict` can also be called with arbitrary keyword arguments to set
     values in the dictionary.
 
-    `patch.dict` can be used as a context manager, decorator or class
-    decorator. When used as a class decorator `patch.dict` honours
-    `patch.TEST_PREFIX` for choosing which methods to wrap.
+    :func:`patch.dict` can be used as a context manager, decorator or class
+    decorator. When used as a class decorator :func:`patch.dict` honours
+    ``patch.TEST_PREFIX`` for choosing which methods to wrap.
 
-`patch.dict` can be used to add members to a dictionary, or simply let a test
+:func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
 ends.
 
@@ -1253,7 +1253,7 @@ ends.
     newvalue
     >>> assert 'newkey' not in os.environ
 
-Keywords can be used in the `patch.dict` call to set values in the dictionary:
+Keywords can be used in the :func:`patch.dict` call to set values in the dictionary:
 
     >>> mymodule = MagicMock()
     >>> mymodule.function.return_value = 'fish'
@@ -1263,11 +1263,11 @@ Keywords can be used in the `patch.dict` call to set values in the dictionary:
     ...
     'fish'
 
-`patch.dict` can be used with dictionary like objects that aren't actually
+:func:`patch.dict` can be used with dictionary like objects that aren't actually
 dictionaries. At the very minimum they must support item getting, setting,
 deleting and either iteration or membership test. This corresponds to the
-magic methods `__getitem__`, `__setitem__`, `__delitem__` and either
-`__iter__` or `__contains__`.
+magic methods :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
+:meth:`__iter__` or :meth:`__contains__`.
 
     >>> class Container:
     ...     def __init__(self):
@@ -1303,21 +1303,21 @@ patch.multiple
         with patch.multiple(settings, FIRST_PATCH='one', SECOND_PATCH='two'):
             ...
 
-    Use :data:`DEFAULT` as the value if you want `patch.multiple` to create
+    Use :data:`DEFAULT` as the value if you want :func:`patch.multiple` to create
     mocks for you. In this case the created mocks are passed into a decorated
-    function by keyword, and a dictionary is returned when `patch.multiple` is
+    function by keyword, and a dictionary is returned when :func:`patch.multiple` is
     used as a context manager.
 
-    `patch.multiple` can be used as a decorator, class decorator or a context
-    manager. The arguments `spec`, `spec_set`, `create`, `autospec` and
-    `new_callable` have the same meaning as for `patch`. These arguments will
-    be applied to *all* patches done by `patch.multiple`.
+    :func:`patch.multiple` can be used as a decorator, class decorator or a context
+    manager. The arguments *spec*, *spec_set*, *create*, *autospec* and
+    *new_callable* have the same meaning as for :func:`patch`. These arguments will
+    be applied to *all* patches done by :func:`patch.multiple`.
 
-    When used as a class decorator `patch.multiple` honours `patch.TEST_PREFIX`
+    When used as a class decorator :func:`patch.multiple` honours ``patch.TEST_PREFIX``
     for choosing which methods to wrap.
 
-If you want `patch.multiple` to create mocks for you, then you can use
-:data:`DEFAULT` as the value. If you use `patch.multiple` as a decorator
+If you want :func:`patch.multiple` to create mocks for you, then you can use
+:data:`DEFAULT` as the value. If you use :func:`patch.multiple` as a decorator
 then the created mocks are passed into the decorated function by keyword.
 
     >>> thing = object()
@@ -1330,8 +1330,8 @@ then the created mocks are passed into the decorated function by keyword.
     ...
     >>> test_function()
 
-`patch.multiple` can be nested with other `patch` decorators, but put arguments
-passed by keyword *after* any of the standard arguments created by `patch`:
+:func:`patch.multiple` can be nested with other ``patch`` decorators, but put arguments
+passed by keyword *after* any of the standard arguments created by :func:`patch`:
 
     >>> @patch('sys.exit')
     ... @patch.multiple('__main__', thing=DEFAULT, other=DEFAULT)
@@ -1342,7 +1342,7 @@ passed by keyword *after* any of the standard arguments created by `patch`:
     ...
     >>> test_function()
 
-If `patch.multiple` is used as a context manager, the value returned by the
+If :func:`patch.multiple` is used as a context manager, the value returned by the
 context manger is a dictionary where created mocks are keyed by name:
 
     >>> with patch.multiple('__main__', thing=DEFAULT, other=DEFAULT) as values:
@@ -1358,16 +1358,16 @@ context manger is a dictionary where created mocks are keyed by name:
 patch methods: start and stop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All the patchers have `start` and `stop` methods. These make it simpler to do
-patching in `setUp` methods or where you want to do multiple patches without
+All the patchers have :meth:`start` and :meth:`stop` methods. These make it simpler to do
+patching in ``setUp`` methods or where you want to do multiple patches without
 nesting decorators or with statements.
 
-To use them call `patch`, `patch.object` or `patch.dict` as normal and keep a
-reference to the returned `patcher` object. You can then call `start` to put
-the patch in place and `stop` to undo it.
+To use them call :func:`patch`, :func:`patch.object` or :func:`patch.dict` as
+normal and keep a reference to the returned ``patcher`` object. You can then
+call :meth:`start` to put the patch in place and :meth:`stop` to undo it.
 
-If you are using `patch` to create a mock for you then it will be returned by
-the call to `patcher.start`.
+If you are using :func:`patch` to create a mock for you then it will be returned by
+the call to ``patcher.start``.
 
     >>> patcher = patch('package.module.ClassName')
     >>> from package import module
@@ -1380,8 +1380,8 @@ the call to `patcher.start`.
     >>> assert module.ClassName is not new_mock
 
 
-A typical use case for this might be for doing multiple patches in the `setUp`
-method of a `TestCase`:
+A typical use case for this might be for doing multiple patches in the ``setUp``
+method of a :class:`TestCase`:
 
     >>> class MyTest(TestCase):
     ...     def setUp(self):
@@ -1403,7 +1403,7 @@ method of a `TestCase`:
 .. caution::
 
     If you use this technique you must ensure that the patching is "undone" by
-    calling `stop`. This can be fiddlier than you might think, because if an
+    calling ``stop``. This can be fiddlier than you might think, because if an
     exception is raised in the ``setUp`` then ``tearDown`` is not called.
     :meth:`unittest.TestCase.addCleanup` makes this easier:
 
@@ -1417,22 +1417,23 @@ method of a `TestCase`:
         ...         assert package.module.Class is self.MockClass
         ...
 
-    As an added bonus you no longer need to keep a reference to the `patcher`
+    As an added bonus you no longer need to keep a reference to the ``patcher``
     object.
 
 It is also possible to stop all patches which have been started by using
-`patch.stopall`.
+:func:`patch.stopall`.
 
 .. function:: patch.stopall
 
-    Stop all active patches. Only stops patches started with `start`.
+    Stop all active patches. Only stops patches started with ``start``.
 
-.. patch-builtins:
+
+.. _patch-builtins:
 
 patch builtins
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 You can patch any builtins within a module. The following example patches
-builtin `ord`:
+builtin :func:`ord`:
 
     >>> @patch('__main__.ord')
     ... def test(mock_ord):
@@ -1448,11 +1449,11 @@ TEST_PREFIX
 
 All of the patchers can be used as class decorators. When used in this way
 they wrap every test method on the class. The patchers recognise methods that
-start with `test` as being test methods. This is the same way that the
+start with ``'test'`` as being test methods. This is the same way that the
 :class:`unittest.TestLoader` finds test methods by default.
 
 It is possible that you want to use a different prefix for your tests. You can
-inform the patchers of the different prefix by setting `patch.TEST_PREFIX`:
+inform the patchers of the different prefix by setting ``patch.TEST_PREFIX``:
 
     >>> patch.TEST_PREFIX = 'foo'
     >>> value = 3
@@ -1505,7 +1506,7 @@ passed into your test function matches this order.
 Where to patch
 ~~~~~~~~~~~~~~
 
-`patch` works by (temporarily) changing the object that a *name* points to with
+:func:`patch` works by (temporarily) changing the object that a *name* points to with
 another one. There can be many names pointing to any individual object, so
 for patching to work you must ensure that you patch the name used by the system
 under test.
@@ -1523,23 +1524,23 @@ Imagine we have a project that we want to test with the following structure::
         -> from a import SomeClass
         -> some_function instantiates SomeClass
 
-Now we want to test `some_function` but we want to mock out `SomeClass` using
-`patch`. The problem is that when we import module b, which we will have to
-do then it imports `SomeClass` from module a. If we use `patch` to mock out
-`a.SomeClass` then it will have no effect on our test; module b already has a
-reference to the *real* `SomeClass` and it looks like our patching had no
+Now we want to test ``some_function`` but we want to mock out ``SomeClass`` using
+:func:`patch`. The problem is that when we import module b, which we will have to
+do then it imports ``SomeClass`` from module a. If we use :func:`patch` to mock out
+``a.SomeClass`` then it will have no effect on our test; module b already has a
+reference to the *real* ``SomeClass`` and it looks like our patching had no
 effect.
 
-The key is to patch out `SomeClass` where it is used (or where it is looked up
-). In this case `some_function` will actually look up `SomeClass` in module b,
+The key is to patch out ``SomeClass`` where it is used (or where it is looked up
+). In this case ``some_function`` will actually look up ``SomeClass`` in module b,
 where we have imported it. The patching should look like::
 
     @patch('b.SomeClass')
 
-However, consider the alternative scenario where instead of `from a import
-SomeClass` module b does `import a` and `some_function` uses `a.SomeClass`. Both
+However, consider the alternative scenario where instead of ``from a import
+SomeClass`` module b does ``import a`` and ``some_function`` uses ``a.SomeClass``. Both
 of these import forms are common. In this case the class we want to patch is
-being looked up on the a module and so we have to patch `a.SomeClass` instead::
+being looked up on the a module and so we have to patch ``a.SomeClass`` instead::
 
     @patch('a.SomeClass')
 
@@ -1595,7 +1596,7 @@ the first argument [#]_.
    []
 
 One use case for this is for mocking objects used as context managers in a
-`with` statement:
+:keyword:`with` statement:
 
    >>> mock = Mock()
    >>> mock.__enter__ = Mock(return_value='foo')
@@ -1611,8 +1612,8 @@ are recorded in :attr:`~Mock.mock_calls`.
 
 .. note::
 
-   If you use the `spec` keyword argument to create a mock then attempting to
-   set a magic method that isn't in the spec will raise an `AttributeError`.
+   If you use the *spec* keyword argument to create a mock then attempting to
+   set a magic method that isn't in the spec will raise an :exc:`AttributeError`.
 
 The full list of supported magic methods is:
 
@@ -1648,7 +1649,7 @@ by mock, can't be set dynamically, or can cause problems:
 Magic Mock
 ~~~~~~~~~~
 
-There are two `MagicMock` variants: `MagicMock` and `NonCallableMagicMock`.
+There are two ``MagicMock`` variants: :class:`MagicMock` and :class:`NonCallableMagicMock`.
 
 
 .. class:: MagicMock(*args, **kw)
@@ -1659,19 +1660,19 @@ There are two `MagicMock` variants: `MagicMock` and `NonCallableMagicMock`.
 
    The constructor parameters have the same meaning as for :class:`Mock`.
 
-   If you use the `spec` or `spec_set` arguments then *only* magic methods
+   If you use the *spec* or *spec_set* arguments then *only* magic methods
    that exist in the spec will be created.
 
 
 .. class:: NonCallableMagicMock(*args, **kw)
 
-    A non-callable version of `MagicMock`.
+    A non-callable version of :class:`MagicMock`.
 
     The constructor parameters have the same meaning as for
-    :class:`MagicMock`, with the exception of `return_value` and
-    `side_effect` which have no meaning on a non-callable mock.
+    :class:`MagicMock`, with the exception of *return_value* and
+    *side_effect* which have no meaning on a non-callable mock.
 
-The magic methods are setup with `MagicMock` objects, so you can configure them
+The magic methods are setup with :class:`MagicMock` objects, so you can configure them
 and use them in the usual way:
 
    >>> mock = MagicMock()
@@ -1718,7 +1719,7 @@ For example:
    >>> object() in mock
    False
 
-The two equality method, `__eq__` and `__ne__`, are special.
+The two equality method, :meth:`__eq__` and :meth:`__ne__`, are special.
 They do the default equality comparison on identity, using a side
 effect, unless you change their return value to return something else:
 
@@ -1731,7 +1732,7 @@ effect, unless you change their return value to return something else:
    >>> mock == 3
    True
 
-The return value of `MagicMock.__iter__` can be any iterable object and isn't
+The return value of :meth:`MagicMock.__iter__` can be any iterable object and isn't
 required to be an iterator:
 
    >>> mock = MagicMock()
@@ -1791,10 +1792,10 @@ sentinel
 
 Sometimes when testing you need to test that a specific object is passed as an
 argument to another method, or returned. It can be common to create named
-sentinel objects to test this. `sentinel` provides a convenient way of
+sentinel objects to test this. :data:`sentinel` provides a convenient way of
 creating and testing the identity of objects like this.
 
-In this example we monkey patch `method` to return `sentinel.some_object`:
+In this example we monkey patch ``method`` to return ``sentinel.some_object``:
 
     >>> real = ProductionClass()
     >>> real.method = Mock(name="method")
@@ -1811,8 +1812,8 @@ DEFAULT
 
 .. data:: DEFAULT
 
-    The `DEFAULT` object is a pre-created sentinel (actually
-    `sentinel.DEFAULT`). It can be used by :attr:`~Mock.side_effect`
+    The :data:`DEFAULT` object is a pre-created sentinel (actually
+    ``sentinel.DEFAULT``). It can be used by :attr:`~Mock.side_effect`
     functions to indicate that the normal return value should be used.
 
 
@@ -1821,9 +1822,9 @@ call
 
 .. function:: call(*args, **kwargs)
 
-    `call` is a helper object for making simpler assertions, for comparing with
+    :func:`call` is a helper object for making simpler assertions, for comparing with
     :attr:`~Mock.call_args`, :attr:`~Mock.call_args_list`,
-    :attr:`~Mock.mock_calls` and :attr:`~Mock.method_calls`. `call` can also be
+    :attr:`~Mock.mock_calls` and :attr:`~Mock.method_calls`. :func:`call` can also be
     used with :meth:`~Mock.assert_has_calls`.
 
         >>> m = MagicMock(return_value=None)
@@ -1834,11 +1835,11 @@ call
 
 .. method:: call.call_list()
 
-    For a call object that represents multiple calls, `call_list`
+    For a call object that represents multiple calls, :meth:`call_list`
     returns a list of all the intermediate calls as well as the
     final call.
 
-`call_list` is particularly useful for making assertions on "chained calls". A
+``call_list`` is particularly useful for making assertions on "chained calls". A
 chained call is multiple calls on a single line of code. This results in
 multiple entries in :attr:`~Mock.mock_calls` on a mock. Manually constructing
 the sequence of calls can be tedious.
@@ -1860,15 +1861,15 @@ chained call:
 
 .. _calls-as-tuples:
 
-A `call` object is either a tuple of (positional args, keyword args) or
+A ``call`` object is either a tuple of (positional args, keyword args) or
 (name, positional args, keyword args) depending on how it was constructed. When
-you construct them yourself this isn't particularly interesting, but the `call`
+you construct them yourself this isn't particularly interesting, but the ``call``
 objects that are in the :attr:`Mock.call_args`, :attr:`Mock.call_args_list` and
 :attr:`Mock.mock_calls` attributes can be introspected to get at the individual
 arguments they contain.
 
-The `call` objects in :attr:`Mock.call_args` and :attr:`Mock.call_args_list`
-are two-tuples of (positional args, keyword args) whereas the `call` objects
+The ``call`` objects in :attr:`Mock.call_args` and :attr:`Mock.call_args_list`
+are two-tuples of (positional args, keyword args) whereas the ``call`` objects
 in :attr:`Mock.mock_calls`, along with ones you construct yourself, are
 three-tuples of (name, positional args, keyword args).
 
@@ -1911,25 +1912,25 @@ create_autospec
 .. function:: create_autospec(spec, spec_set=False, instance=False, **kwargs)
 
     Create a mock object using another object as a spec. Attributes on the
-    mock will use the corresponding attribute on the `spec` object as their
+    mock will use the corresponding attribute on the *spec* object as their
     spec.
 
     Functions or methods being mocked will have their arguments checked to
     ensure that they are called with the correct signature.
 
-    If `spec_set` is `True` then attempting to set attributes that don't exist
-    on the spec object will raise an `AttributeError`.
+    If *spec_set* is ``True`` then attempting to set attributes that don't exist
+    on the spec object will raise an :exc:`AttributeError`.
 
     If a class is used as a spec then the return value of the mock (the
     instance of the class) will have the same spec. You can use a class as the
-    spec for an instance object by passing `instance=True`. The returned mock
+    spec for an instance object by passing ``instance=True``. The returned mock
     will only be callable if instances of the mock are callable.
 
-    `create_autospec` also takes arbitrary keyword arguments that are passed to
+    :func:`create_autospec` also takes arbitrary keyword arguments that are passed to
     the constructor of the created mock.
 
 See :ref:`auto-speccing` for examples of how to use auto-speccing with
-`create_autospec` and the `autospec` argument to :func:`patch`.
+:func:`create_autospec` and the *autospec* argument to :func:`patch`.
 
 
 ANY
@@ -1951,7 +1952,7 @@ passed in.
     >>> mock('foo', bar=object())
     >>> mock.assert_called_once_with('foo', bar=ANY)
 
-`ANY` can also be used in comparisons with call lists like
+:data:`ANY` can also be used in comparisons with call lists like
 :attr:`~Mock.mock_calls`:
 
     >>> m = MagicMock(return_value=None)
@@ -1968,15 +1969,15 @@ FILTER_DIR
 
 .. data:: FILTER_DIR
 
-`FILTER_DIR` is a module level variable that controls the way mock objects
-respond to `dir` (only for Python 2.6 or more recent). The default is `True`,
+:data:`FILTER_DIR` is a module level variable that controls the way mock objects
+respond to :func:`dir` (only for Python 2.6 or more recent). The default is ``True``,
 which uses the filtering described below, to only show useful members. If you
 dislike this filtering, or need to switch it off for diagnostic purposes, then
-set `mock.FILTER_DIR = False`.
+set ``mock.FILTER_DIR = False``.
 
-With filtering on, `dir(some_mock)` shows only useful attributes and will
+With filtering on, ``dir(some_mock)`` shows only useful attributes and will
 include any dynamically created attributes that wouldn't normally be shown.
-If the mock was created with a `spec` (or `autospec` of course) then all the
+If the mock was created with a *spec* (or *autospec* of course) then all the
 attributes from the original are shown, even if they haven't been accessed
 yet:
 
@@ -1995,11 +1996,11 @@ yet:
      'BaseHandler',
      ...
 
-Many of the not-very-useful (private to `Mock` rather than the thing being
+Many of the not-very-useful (private to :class:`Mock` rather than the thing being
 mocked) underscore and double underscore prefixed attributes have been
-filtered from the result of calling `dir` on a `Mock`. If you dislike this
+filtered from the result of calling :func:`dir` on a :class:`Mock`. If you dislike this
 behaviour you can switch it off by setting the module level switch
-`FILTER_DIR`:
+:data:`FILTER_DIR`:
 
     >>> from unittest import mock
     >>> mock.FILTER_DIR = False
@@ -2013,9 +2014,9 @@ behaviour you can switch it off by setting the module level switch
      '__class__',
      ...
 
-Alternatively you can just use `vars(my_mock)` (instance members) and
-`dir(type(my_mock))` (type members) to bypass the filtering irrespective of
-`mock.FILTER_DIR`.
+Alternatively you can just use ``vars(my_mock)`` (instance members) and
+``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
+:data:`mock.FILTER_DIR`.
 
 
 mock_open
@@ -2023,30 +2024,30 @@ mock_open
 
 .. function:: mock_open(mock=None, read_data=None)
 
-    A helper function to create a mock to replace the use of `open`. It works
-    for `open` called directly or used as a context manager.
+    A helper function to create a mock to replace the use of :func:`open`. It works
+    for :func:`open` called directly or used as a context manager.
 
-    The `mock` argument is the mock object to configure. If `None` (the
-    default) then a `MagicMock` will be created for you, with the API limited
+    The *mock* argument is the mock object to configure. If ``None`` (the
+    default) then a :class:`MagicMock` will be created for you, with the API limited
     to methods or attributes available on standard file handles.
 
-    `read_data` is a string for the :meth:`~io.IOBase.read`,
+    *read_data* is a string for the :meth:`~io.IOBase.read`,
     :meth:`~io.IOBase.readline`, and :meth:`~io.IOBase.readlines` methods
     of the file handle to return.  Calls to those methods will take data from
-    `read_data` until it is depleted.  The mock of these methods is pretty
+    *read_data* until it is depleted.  The mock of these methods is pretty
     simplistic.  If you need more control over the data that you are feeding to
     the tested code you will need to customize this mock for yourself.
-    `read_data` is an empty string by default.
+    *read_data* is an empty string by default.
 
-Using `open` as a context manager is a great way to ensure your file handles
+Using :func:`open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
 
     with open('/some/path', 'w') as f:
         f.write('something')
 
-The issue is that even if you mock out the call to `open` it is the
-*returned object* that is used as a context manager (and has `__enter__` and
-`__exit__` called).
+The issue is that even if you mock out the call to :func:`open` it is the
+*returned object* that is used as a context manager (and has :meth:`__enter__` and
+:meth:`__exit__` called).
 
 Mocking context managers with a :class:`MagicMock` is common enough and fiddly
 enough that a helper function is useful.
@@ -2080,21 +2081,21 @@ And for reading files:
 Autospeccing
 ~~~~~~~~~~~~
 
-Autospeccing is based on the existing `spec` feature of mock. It limits the
+Autospeccing is based on the existing :attr:`spec` feature of mock. It limits the
 api of mocks to the api of an original object (the spec), but it is recursive
 (implemented lazily) so that attributes of mocks only have the same api as
 the attributes of the spec. In addition mocked functions / methods have the
-same call signature as the original so they raise a `TypeError` if they are
+same call signature as the original so they raise a :exc:`TypeError` if they are
 called incorrectly.
 
 Before I explain how auto-speccing works, here's why it is needed.
 
-`Mock` is a very powerful and flexible object, but it suffers from two flaws
+:class:`Mock` is a very powerful and flexible object, but it suffers from two flaws
 when used to mock out objects from a system under test. One of these flaws is
-specific to the `Mock` api and the other is a more general problem with using
+specific to the :class:`Mock` api and the other is a more general problem with using
 mock objects.
 
-First the problem specific to `Mock`. `Mock` has two assert methods that are
+First the problem specific to :class:`Mock`. :class:`Mock` has two assert methods that are
 extremely handy: :meth:`~Mock.assert_called_with` and
 :meth:`~Mock.assert_called_once_with`.
 
@@ -2129,8 +2130,8 @@ unit tests. Testing everything in isolation is all fine and dandy, but if you
 don't test how your units are "wired together" there is still lots of room
 for bugs that tests might have caught.
 
-`mock` already provides a feature to help with this, called speccing. If you
-use a class or instance as the `spec` for a mock then you can only access
+:mod:`mock` already provides a feature to help with this, called speccing. If you
+use a class or instance as the :attr:`spec` for a mock then you can only access
 attributes on the mock that exist on the real class:
 
     >>> from urllib import request
@@ -2149,9 +2150,9 @@ with any methods on the mock:
     <mock.Mock object at 0x...>
     >>> mock.has_data.assret_called_with()
 
-Auto-speccing solves this problem. You can either pass `autospec=True` to
-`patch` / `patch.object` or use the `create_autospec` function to create a
-mock with a spec. If you use the `autospec=True` argument to `patch` then the
+Auto-speccing solves this problem. You can either pass ``autospec=True`` to
+:func:`patch` / :func:`patch.object` or use the :func:`create_autospec` function to create a
+mock with a spec. If you use the ``autospec=True`` argument to :func:`patch` then the
 object that is being replaced will be used as the spec object. Because the
 speccing is done "lazily" (the spec is created as attributes on the mock are
 accessed) you can use it with very complex or deeply nested objects (like
@@ -2168,8 +2169,8 @@ Here's an example of it in use:
     >>> mock_request.Request
     <MagicMock name='request.Request' spec='Request' id='...'>
 
-You can see that `request.Request` has a spec. `request.Request` takes two
-arguments in the constructor (one of which is `self`). Here's what happens if
+You can see that :class:`request.Request` has a spec. :class:`request.Request` takes two
+arguments in the constructor (one of which is *self*). Here's what happens if
 we try to call it incorrectly:
 
     >>> req = request.Request()
@@ -2184,8 +2185,8 @@ specced mocks):
     >>> req
     <NonCallableMagicMock name='request.Request()' spec='Request' id='...'>
 
-`Request` objects are not callable, so the return value of instantiating our
-mocked out `request.Request` is a non-callable mock. With the spec in place
+:class:`Request` objects are not callable, so the return value of instantiating our
+mocked out :class:`request.Request` is a non-callable mock. With the spec in place
 any typos in our asserts will raise the correct error:
 
     >>> req.add_header('spam', 'eggs')
@@ -2196,11 +2197,11 @@ any typos in our asserts will raise the correct error:
     AttributeError: Mock object has no attribute 'assret_called_with'
     >>> req.add_header.assert_called_with('spam', 'eggs')
 
-In many cases you will just be able to add `autospec=True` to your existing
-`patch` calls and then be protected against bugs due to typos and api
+In many cases you will just be able to add ``autospec=True`` to your existing
+:func:`patch` calls and then be protected against bugs due to typos and api
 changes.
 
-As well as using `autospec` through `patch` there is a
+As well as using *autospec* through :func:`patch` there is a
 :func:`create_autospec` for creating autospecced mocks directly:
 
     >>> from urllib import request
@@ -2218,8 +2219,8 @@ able to use autospec. On the other hand it is much better to design your
 objects so that introspection is safe [#]_.
 
 A more serious problem is that it is common for instance attributes to be
-created in the `__init__` method and not to exist on the class at all.
-`autospec` can't know about any dynamically created attributes and restricts
+created in the :meth:`__init__` method and not to exist on the class at all.
+*autospec* can't know about any dynamically created attributes and restricts
 the api to visible attributes.
 
     >>> class Something:
@@ -2236,7 +2237,7 @@ the api to visible attributes.
 
 There are a few different ways of resolving this problem. The easiest, but
 not necessarily the least annoying, way is to simply set the required
-attributes on the mock after creation. Just because `autospec` doesn't allow
+attributes on the mock after creation. Just because *autospec* doesn't allow
 you to fetch attributes that don't exist on the spec it doesn't prevent you
 setting them:
 
@@ -2245,7 +2246,7 @@ setting them:
     ...   thing.a = 33
     ...
 
-There is a more aggressive version of both `spec` and `autospec` that *does*
+There is a more aggressive version of both *spec* and *autospec* that *does*
 prevent you setting non-existent attributes. This is useful if you want to
 ensure your code only *sets* valid attributes too, but obviously it prevents
 this particular scenario:
@@ -2259,8 +2260,8 @@ this particular scenario:
     AttributeError: Mock object has no attribute 'a'
 
 Probably the best way of solving the problem is to add class attributes as
-default values for instance members initialised in `__init__`. Note that if
-you are only setting default attributes in `__init__` then providing them via
+default values for instance members initialised in :meth:`__init__`. Note that if
+you are only setting default attributes in :meth:`__init__` then providing them via
 class attributes (shared between instances of course) is faster too. e.g.
 
 .. code-block:: python
@@ -2269,12 +2270,12 @@ class attributes (shared between instances of course) is faster too. e.g.
         a = 33
 
 This brings up another issue. It is relatively common to provide a default
-value of `None` for members that will later be an object of a different type.
-`None` would be useless as a spec because it wouldn't let you access *any*
-attributes or methods on it. As `None` is *never* going to be useful as a
+value of ``None`` for members that will later be an object of a different type.
+``None`` would be useless as a spec because it wouldn't let you access *any*
+attributes or methods on it. As ``None`` is *never* going to be useful as a
 spec, and probably indicates a member that will normally of some other type,
-`autospec` doesn't use a spec for members that are set to `None`. These will
-just be ordinary mocks (well - `MagicMocks`):
+autospec doesn't use a spec for members that are set to ``None``. These will
+just be ordinary mocks (well - MagicMocks):
 
     >>> class Something:
     ...     member = None
@@ -2288,8 +2289,8 @@ then there are more options. One of these is simply to use an instance as the
 spec rather than the class. The other is to create a subclass of the
 production class and add the defaults to the subclass without affecting the
 production class. Both of these require you to use an alternative object as
-the spec. Thankfully `patch` supports this - you can simply pass the
-alternative object as the `autospec` argument:
+the spec. Thankfully :func:`patch` supports this - you can simply pass the
+alternative object as the *autospec* argument:
 
     >>> class Something:
     ...   def __init__(self):
@@ -2306,5 +2307,5 @@ alternative object as the `autospec` argument:
 
 .. [#] This only applies to classes or already instantiated objects. Calling
    a mocked class to create a mock instance *does not* create a real instance.
-   It is only attribute lookups - along with calls to `dir` - that are done.
+   It is only attribute lookups - along with calls to :func:`dir` - that are done.
 
