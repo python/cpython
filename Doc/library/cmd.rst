@@ -148,8 +148,8 @@ A :class:`Cmd` instance has the following methods:
    Hook method executed once when :meth:`cmdloop` is about to return. This method
    is a stub in :class:`Cmd`; it exists to be overridden by subclasses.
 
-Instances of :class:`Cmd` subclasses have some public instance variables:
 
+Instances of :class:`Cmd` subclasses have some public instance variables:
 
 .. attribute:: Cmd.prompt
 
@@ -164,6 +164,13 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
 .. attribute:: Cmd.lastcmd
 
    The last nonempty command prefix seen.
+
+
+.. attribute:: Cmd.cmdqueue
+
+   A list of queued input lines.  The cmdqueue list is checked in
+   :meth:`cmdloop` when new input is needed; if it is nonempty, its elements
+   will be processed in order, as if entered at the prompt.
 
 
 .. attribute:: Cmd.intro
