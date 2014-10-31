@@ -443,7 +443,7 @@ instance of the :class:`bytes` type instead of the :class:`str` type.  They
 may only contain ASCII characters; bytes with a numeric value of 128 or greater
 must be expressed with escapes.
 
-As of Python 3.3 it is possible again to prefix unicode strings with a
+As of Python 3.3 it is possible again to prefix string literals with a
 ``u`` prefix to simplify maintenance of dual 2.x and 3.x codebases.
 
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
@@ -453,24 +453,24 @@ escapes in raw strings are not treated specially. Given that Python 2.x's raw
 unicode literals behave differently than Python 3.x's the ``'ur'`` syntax
 is not supported.
 
-   .. versionadded:: 3.3
-      The ``'rb'`` prefix of raw bytes literals has been added as a synonym
-      of ``'br'``.
+.. versionadded:: 3.3
+   The ``'rb'`` prefix of raw bytes literals has been added as a synonym
+   of ``'br'``.
 
-   .. versionadded:: 3.3
-      Support for the unicode legacy literal (``u'value'``) was reintroduced
-      to simplify the maintenance of dual Python 2.x and 3.x codebases.
-      See :pep:`414` for more information.
+.. versionadded:: 3.3
+   Support for the unicode legacy literal (``u'value'``) was reintroduced
+   to simplify the maintenance of dual Python 2.x and 3.x codebases.
+   See :pep:`414` for more information.
 
-In triple-quoted strings, unescaped newlines and quotes are allowed (and are
-retained), except that three unescaped quotes in a row terminate the string.  (A
-"quote" is the character used to open the string, i.e. either ``'`` or ``"``.)
+In triple-quoted literals, unescaped newlines and quotes are allowed (and are
+retained), except that three unescaped quotes in a row terminate the literal.  (A
+"quote" is the character used to open the literal, i.e. either ``'`` or ``"``.)
 
 .. index:: physical line, escape sequence, Standard C, C
 
-Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in strings are
-interpreted according to rules similar to those used by Standard C.  The
-recognized escape sequences are:
+Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
+bytes literals are interpreted according to rules similar to those used by
+Standard C.  The recognized escape sequences are:
 
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
@@ -547,20 +547,20 @@ Notes:
 .. index:: unrecognized escape sequence
 
 Unlike Standard C, all unrecognized escape sequences are left in the string
-unchanged, i.e., *the backslash is left in the string*.  (This behavior is
+unchanged, i.e., *the backslash is left in the result*.  (This behavior is
 useful when debugging: if an escape sequence is mistyped, the resulting output
 is more easily recognized as broken.)  It is also important to note that the
 escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
-Even in a raw string, string quotes can be escaped with a backslash, but the
-backslash remains in the string; for example, ``r"\""`` is a valid string
+Even in a raw literal, quotes can be escaped with a backslash, but the
+backslash remains in the result; for example, ``r"\""`` is a valid string
 literal consisting of two characters: a backslash and a double quote; ``r"\"``
 is not a valid string literal (even a raw string cannot end in an odd number of
-backslashes).  Specifically, *a raw string cannot end in a single backslash*
+backslashes).  Specifically, *a raw literal cannot end in a single backslash*
 (since the backslash would escape the following quote character).  Note also
 that a single backslash followed by a newline is interpreted as those two
-characters as part of the string, *not* as a line continuation.
+characters as part of the literal, *not* as a line continuation.
 
 
 .. _string-catenation:
