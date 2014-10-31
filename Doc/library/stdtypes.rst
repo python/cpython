@@ -269,8 +269,8 @@ the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
 :func:`complex` can be used to produce numbers of a specific type.
 
 All numeric types (except complex) support the following operations, sorted by
-ascending priority (operations in the same box have the same priority; all
-numeric operations have a higher priority than comparison operations):
+ascending priority (all numeric operations have a higher priority than
+comparison operations):
 
 +---------------------+---------------------------------+---------+--------------------+
 | Operation           | Result                          | Notes   | Full documentation |
@@ -404,8 +404,7 @@ The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
 same priority as the other unary numeric operations (``+`` and ``-``).
 
-This table lists the bitwise operations sorted in ascending priority
-(operations in the same box have the same priority):
+This table lists the bitwise operations sorted in ascending priority:
 
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
@@ -444,7 +443,7 @@ Additional Methods on Integer Types
 -----------------------------------
 
 The int type implements the :class:`numbers.Integral` :term:`abstract base
-class`. In addition, it provides one more method:
+class`. In addition, it provides a few more methods:
 
 .. method:: int.bit_length()
 
@@ -820,10 +819,10 @@ both mutable and immutable. The :class:`collections.abc.Sequence` ABC is
 provided to make it easier to correctly implement these operations on
 custom sequence types.
 
-This table lists the sequence operations sorted in ascending priority
-(operations in the same box have the same priority).  In the table, *s* and *t*
-are sequences of the same type, *n*, *i*, *j* and *k* are integers and *x* is
-an arbitrary object that meets any type and value restrictions imposed by *s*.
+This table lists the sequence operations sorted in ascending priority.  In the
+table, *s* and *t* are sequences of the same type, *n*, *i*, *j* and *k* are
+integers and *x* is an arbitrary object that meets any type and value
+restrictions imposed by *s*.
 
 The ``in`` and ``not in`` operations have the same priorities as the
 comparison operations. The ``+`` (concatenation) and ``*`` (repetition)
@@ -4006,8 +4005,8 @@ before the statement body is executed and exited when the statement ends:
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
    successfully and does not want to suppress the raised exception. This allows
-   context management code (such as ``contextlib.nested``) to easily detect whether
-   or not an :meth:`__exit__` method has actually failed.
+   context management code to easily detect whether or not an :meth:`__exit__`
+   method has actually failed.
 
 Python defines several context managers to support easy thread synchronisation,
 prompt closure of files or other objects, and simpler manipulation of the active
