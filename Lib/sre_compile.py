@@ -22,9 +22,6 @@ if _sre.CODESIZE == 2:
 else:
     MAXCODE = 0xFFFFFFFF
 
-def _identityfunction(x):
-    return x
-
 _LITERAL_CODES = set([LITERAL, NOT_LITERAL])
 _REPEATING_CODES = set([REPEAT, MIN_REPEAT, MAX_REPEAT])
 _SUCCESS_CODES = set([SUCCESS, FAILURE])
@@ -53,7 +50,7 @@ def _compile(code, pattern, flags):
                     return _sre.getlower(literal, flags)
             else:
                 emit(OPCODES[op])
-                fixup = _identityfunction
+                fixup = None
             skip = _len(code); emit(0)
             _compile_charset(av, flags, code, fixup)
             code[skip] = _len(code) - skip
@@ -172,17 +169,15 @@ def _compile(code, pattern, flags):
 def _compile_charset(charset, flags, code, fixup=None):
     # compile charset subprogram
     emit = code.append
-    if fixup is None:
-        fixup = _identityfunction
     for op, av in _optimize_charset(charset, fixup):
         emit(OPCODES[op])
         if op is NEGATE:
             pass
         elif op is LITERAL:
-            emit(fixup(av))
-        elif op is RANGE:
-            emit(fixup(av[0]))
-            emit(fixup(av[1]))
+            emit(av)
+        elif op is RANGE or op is RANGE_IGNORE:
+            emit(av[0])
+            emit(av[1])
         elif op is CHARSET:
             code.extend(av)
         elif op is BIGCHARSET:
@@ -207,9 +202,14 @@ def _optimize_charset(charset, fixup):
         while True:
             try:
                 if op is LITERAL:
-                    charmap[fixup(av)] = 1
+                    if fixup:
+                        av = fixup(av)
+                    charmap[av] = 1
                 elif op is RANGE:
-                    for i in range(fixup(av[0]), fixup(av[1])+1):
+                    r = range(av[0], av[1]+1)
+                    if fixup:
+                        r = map(fixup, r)
+                    for i in r:
                         charmap[i] = 1
                 elif op is NEGATE:
                     out.append((op, av))
@@ -220,7 +220,12 @@ def _optimize_charset(charset, fixup):
                     # character set contains non-UCS1 character codes
                     charmap += b'\0' * 0xff00
                     continue
-                # character set contains non-BMP character codes
+                # Character set contains non-BMP character codes.
+                # There are only two ranges of cased non-BMP characters:
+                # 10400-1044F (Deseret) and 118A0-118DF (Warang Citi),
+                # and for both ranges RANGE_IGNORE works.
+                if fixup and op is RANGE:
+                    op = RANGE_IGNORE
                 tail.append((op, av))
             break
 
@@ -247,8 +252,10 @@ def _optimize_charset(charset, fixup):
             else:
                 out.append((RANGE, (p, q - 1)))
         out += tail
-        if len(out) < len(charset):
+        # if the case was changed or new representation is more compact
+        if fixup or len(out) < len(charset):
             return out
+        # else original character set is good enough
         return charset
 
     # use bitmap

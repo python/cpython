@@ -601,6 +601,25 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"((a)\s(abc|a))", "a a", re.I).group(1), "a a")
         self.assertEqual(re.match(r"((a)\s(abc|a)*)", "a aa", re.I).group(1), "a aa")
 
+    def test_ignore_case_range(self):
+        # Issues #3511, #17381.
+        self.assertTrue(re.match(r'[9-a]', '_', re.I))
+        self.assertIsNone(re.match(r'[9-A]', '_', re.I))
+        self.assertTrue(re.match(br'[9-a]', b'_', re.I))
+        self.assertIsNone(re.match(br'[9-A]', b'_', re.I))
+        self.assertTrue(re.match(r'[\xc0-\xde]', '\xd7', re.I))
+        self.assertIsNone(re.match(r'[\xc0-\xde]', '\xf7', re.I))
+        self.assertTrue(re.match(r'[\xe0-\xfe]', '\xf7', re.I))
+        self.assertIsNone(re.match(r'[\xe0-\xfe]', '\xd7', re.I))
+        self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0450', re.I))
+        self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0400', re.I))
+        self.assertTrue(re.match(r'[\u0400-\u042f]', '\u0450', re.I))
+        self.assertTrue(re.match(r'[\u0400-\u042f]', '\u0400', re.I))
+        self.assertTrue(re.match(r'[\U00010428-\U0001044f]', '\U00010428', re.I))
+        self.assertTrue(re.match(r'[\U00010428-\U0001044f]', '\U00010400', re.I))
+        self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010428', re.I))
+        self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010400', re.I))
+
     def test_category(self):
         self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
 

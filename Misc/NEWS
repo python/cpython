@@ -180,6 +180,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17381: Fixed handling of case-insensitive ranges in regular
+  expressions.
+
 - Issue #22410: Module level functions in the re module now cache compiled
   locale-dependent regular expressions taking into account the locale.
 
