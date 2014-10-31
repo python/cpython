@@ -429,10 +429,11 @@ API Functions
 
    Function used to deconstruct the argument lists of "old-style" functions ---
    these are functions which use the :const:`METH_OLDARGS` parameter parsing
-   method.  This is not recommended for use in parameter parsing in new code, and
-   most code in the standard interpreter has been modified to no longer use this
-   for that purpose.  It does remain a convenient way to decompose other tuples,
-   however, and may continue to be used for that purpose.
+   method, which has been removed in Python 3.  This is not recommended for use
+   in parameter parsing in new code, and most code in the standard interpreter
+   has been modified to no longer use this for that purpose.  It does remain a
+   convenient way to decompose other tuples, however, and may continue to be
+   used for that purpose.
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
