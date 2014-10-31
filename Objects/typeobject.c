@@ -6280,9 +6280,9 @@ static slotdef slotdefs[] = {
     BINSLOT("__truediv__", nb_true_divide, slot_nb_true_divide, "/"),
     RBINSLOT("__rtruediv__", nb_true_divide, slot_nb_true_divide, "/"),
     IBSLOT("__ifloordiv__", nb_inplace_floor_divide,
-           slot_nb_inplace_floor_divide, wrap_binaryfunc, "//"),
+           slot_nb_inplace_floor_divide, wrap_binaryfunc, "//="),
     IBSLOT("__itruediv__", nb_inplace_true_divide,
-           slot_nb_inplace_true_divide, wrap_binaryfunc, "/"),
+           slot_nb_inplace_true_divide, wrap_binaryfunc, "/="),
     NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc,
            "__index__($self, /)\n--\n\n"
            "Return self converted to an integer, if self is suitable "
