@@ -1133,8 +1133,10 @@ Basic customization
       reference to the object on the stack frame that raised an unhandled
       exception in interactive mode (the traceback stored in
       ``sys.last_traceback`` keeps the stack frame alive).  The first situation
-      can only be remedied by explicitly breaking the cycles; the latter two
-      situations can be resolved by storing ``None`` in ``sys.last_traceback``.
+      can only be remedied by explicitly breaking the cycles; the second can be
+      resolved by freeing the reference to the traceback object when it is no
+      longer useful, and the third can be resolved by storing ``None`` in
+      ``sys.last_traceback``.
       Circular references which are garbage are detected and cleaned up when
       the cyclic garbage collector is enabled (it's on by default). Refer to the
       documentation for the :mod:`gc` module for more information about this
@@ -1556,9 +1558,9 @@ saved because *__dict__* is not created for each instance.
 .. data:: object.__slots__
 
    This class variable can be assigned a string, iterable, or sequence of
-   strings with variable names used by instances.  If defined in a
-   class, *__slots__* reserves space for the declared variables and prevents the
-   automatic creation of *__dict__* and *__weakref__* for each instance.
+   strings with variable names used by instances.  *__slots__* reserves space
+   for the declared variables and prevents the automatic creation of *__dict__*
+   and *__weakref__* for each instance.
 
 
 Notes on using *__slots__*

@@ -27,10 +27,10 @@ frame (1 frame). To store 25 frames at startup: set the
 
 
 Examples
-========
+--------
 
 Display the top 10
-------------------
+^^^^^^^^^^^^^^^^^^
 
 Display the 10 files allocating the most memory::
 
@@ -70,7 +70,7 @@ See :meth:`Snapshot.statistics` for more options.
 
 
 Compute differences
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 Take two snapshots and display the differences::
 
@@ -114,7 +114,7 @@ the :meth:`Snapshot.dump` method to analyze the snapshot offline. Then use the
 
 
 Get the traceback of a memory block
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Code to display the traceback of the biggest memory block::
 
@@ -179,7 +179,7 @@ loaded.
 
 
 Pretty top
-----------
+^^^^^^^^^^
 
 Code to display the 10 lines allocating the most memory with a pretty output,
 ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
@@ -249,10 +249,10 @@ See :meth:`Snapshot.statistics` for more options.
 
 
 API
-===
+---
 
 Functions
----------
+^^^^^^^^^
 
 .. function:: clear_traces()
 
@@ -356,7 +356,7 @@ Functions
 
 
 Filter
-------
+^^^^^^
 
 .. class:: Filter(inclusive: bool, filename_pattern: str, lineno: int=None, all_frames: bool=False)
 
@@ -404,7 +404,7 @@ Filter
 
 
 Frame
------
+^^^^^
 
 .. class:: Frame
 
@@ -422,7 +422,7 @@ Frame
 
 
 Snapshot
---------
+^^^^^^^^
 
 .. class:: Snapshot
 
@@ -508,7 +508,7 @@ Snapshot
 
 
 Statistic
----------
+^^^^^^^^^
 
 .. class:: Statistic
 
@@ -533,7 +533,7 @@ Statistic
 
 
 StatisticDiff
--------------
+^^^^^^^^^^^^^
 
 .. class:: StatisticDiff
 
@@ -572,7 +572,7 @@ StatisticDiff
 
 
 Trace
------
+^^^^^
 
 .. class:: Trace
 
@@ -592,7 +592,7 @@ Trace
 
 
 Traceback
----------
+^^^^^^^^^
 
 .. class:: Traceback
 

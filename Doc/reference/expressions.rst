@@ -619,8 +619,8 @@ slice list contains no proper slice).
    single: stop (slice object attribute)
    single: step (slice object attribute)
 
-The semantics for a slicing are as follows.  The primary must evaluate to a
-mapping object, and it is indexed (using the same :meth:`__getitem__` method as
+The semantics for a slicing are as follows.  The primary is indexed (using the
+same :meth:`__getitem__` method as
 normal subscription) with a key that is constructed from the slice list, as
 follows.  If the slice list contains at least one comma, the key is a tuple
 containing the conversion of the slice items; otherwise, the conversion of the

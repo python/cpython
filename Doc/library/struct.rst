@@ -24,6 +24,14 @@ structs and the intended conversion to/from Python values.
    or omit implicit pad bytes, use ``standard`` size and alignment instead of
    ``native`` size and alignment: see :ref:`struct-alignment` for details.
 
+Several :mod:`struct` functions (and methods of :class:`Struct`) take a *buffer*
+argument.  This refers to objects that implement the :ref:`bufferobjects` and
+provide either a readable or read-writable buffer.  The most common types used
+for that purpose are :class:`bytes` and :class:`bytearray`, but many other types
+that can be viewed as an array of bytes implement the buffer protocol, so that
+they can be read/filled without additional copying from a :class:`bytes` object.
+
+
 Functions and Exceptions
 ------------------------
 
@@ -47,7 +55,7 @@ The module defines the following exception and functions:
 
    Pack the values *v1*, *v2*, ... according to the format string *fmt* and
    write the packed bytes into the writable buffer *buffer* starting at
-   position *offset*. Note that *offset* is a required argument.
+   position *offset*.  Note that *offset* is a required argument.
 
 
 .. function:: unpack(fmt, buffer)
