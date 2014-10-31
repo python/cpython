@@ -22,9 +22,6 @@ if _sre.CODESIZE == 2:
 else:
     MAXCODE = 0xFFFFFFFF
 
-def _identityfunction(x):
-    return x
-
 _LITERAL_CODES = set([LITERAL, NOT_LITERAL])
 _REPEATING_CODES = set([REPEAT, MIN_REPEAT, MAX_REPEAT])
 _SUCCESS_CODES = set([SUCCESS, FAILURE])
@@ -53,7 +50,7 @@ def _compile(code, pattern, flags):
                     return _sre.getlower(literal, flags)
             else:
                 emit(OPCODES[op])
-                fixup = _identityfunction
+                fixup = None
             skip = _len(code); emit(0)
             _compile_charset(av, flags, code, fixup)
             code[skip] = _len(code) - skip
@@ -172,17 +169,15 @@ def _compile(code, pattern, flags):
 def _compile_charset(charset, flags, code, fixup=None):
     # compile charset subprogram
     emit = code.append
-    if fixup is None:
-        fixup = _identityfunction
-    for op, av in _optimize_charset(charset, fixup):
+    for op, av in _optimize_charset(charset, fixup, flags & SRE_FLAG_UNICODE):
         emit(OPCODES[op])
         if op is NEGATE:
             pass
         elif op is LITERAL:
-            emit(fixup(av))
+            emit(av)
         elif op is RANGE:
-            emit(fixup(av[0]))
-            emit(fixup(av[1]))
+            emit(av[0])
+            emit(av[1])
         elif op is CHARSET:
             code.extend(av)
         elif op is BIGCHARSET:
@@ -198,7 +193,7 @@ def _compile_charset(charset, flags, code, fixup=None):
             raise error("internal: unsupported set operator")
     emit(OPCODES[FAILURE])
 
-def _optimize_charset(charset, fixup):
+def _optimize_charset(charset, fixup, isunicode):
     # internal: optimize character set
     out = []
     tail = []
@@ -207,9 +202,15 @@ def _optimize_charset(charset, fixup):
         while True:
             try:
                 if op is LITERAL:
-                    charmap[fixup(av)] = 1
+                    i = av
+                    if fixup:
+                        i = fixup(i)
+                    charmap[i] = 1
                 elif op is RANGE:
-                    for i in range(fixup(av[0]), fixup(av[1])+1):
+                    r = range(av[0], av[1]+1)
+                    if fixup:
+                        r = map(fixup, r)
+                    for i in r:
                         charmap[i] = 1
                 elif op is NEGATE:
                     out.append((op, av))
@@ -221,7 +222,20 @@ def _optimize_charset(charset, fixup):
                     charmap += b'\0' * 0xff00
                     continue
                 # character set contains non-BMP character codes
-                tail.append((op, av))
+                if fixup and isunicode and op is RANGE:
+                    lo, hi = av
+                    ranges = [av]
+                    # There are only two ranges of cased astral characters:
+                    # 10400-1044F (Deseret) and 118A0-118DF (Warang Citi).
+                    _fixup_range(max(0x10000, lo), min(0x11fff, hi),
+                                 ranges, fixup)
+                    for lo, hi in ranges:
+                        if lo == hi:
+                            tail.append((LITERAL, hi))
+                        else:
+                            tail.append((RANGE, (lo, hi)))
+                else:
+                    tail.append((op, av))
             break
 
     # compress character map
@@ -247,8 +261,10 @@ def _optimize_charset(charset, fixup):
             else:
                 out.append((RANGE, (p, q - 1)))
         out += tail
-        if len(out) < len(charset):
+        # if the case was changed or new representation is more compact
+        if fixup or len(out) < len(charset):
             return out
+        # else original character set is good enough
         return charset
 
     # use bitmap
@@ -296,6 +312,24 @@ def _optimize_charset(charset, fixup):
     out.append((BIGCHARSET, data))
     out += tail
     return out
+
+def _fixup_range(lo, hi, ranges, fixup):
+    for i in map(fixup, range(lo, hi+1)):
+        for k, (lo, hi) in enumerate(ranges):
+            if i < lo:
+                if l == lo - 1:
+                    ranges[k] = (i, hi)
+                else:
+                    ranges.insert(k, (i, i))
+                break
+            elif i > hi:
+                if i == hi + 1:
+                    ranges[k] = (lo, i)
+                    break
+            else:
+                break
+        else:
+            ranges.append((i, i))
 
 _CODEBITS = _sre.CODESIZE * 8
 _BITS_TRANS = b'0' + b'1' * 255
