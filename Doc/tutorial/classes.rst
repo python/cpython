@@ -826,7 +826,7 @@ Generators
 :term:`Generator`\s are a simple and powerful tool for creating iterators.  They
 are written like regular functions but use the :keyword:`yield` statement
 whenever they want to return data.  Each time :func:`next` is called on it, the
-generator resumes where it left-off (it remembers all the data values and which
+generator resumes where it left off (it remembers all the data values and which
 statement was last executed).  An example shows that generators can be trivially
 easy to create::
 
@@ -844,7 +844,7 @@ easy to create::
    o
    g
 
-Anything that can be done with generators can also be done with class based
+Anything that can be done with generators can also be done with class-based
 iterators as described in the previous section.  What makes generators so
 compact is that the :meth:`__iter__` and :meth:`~generator.next` methods
 are created automatically.
