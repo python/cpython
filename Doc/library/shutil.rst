@@ -491,7 +491,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *logger* must be an object compatible with :pep:`282`, usually an instance of
    :class:`logging.Logger`.
 
-   The *verbose* argument is currently unused.
+   The *verbose* argument is unused and deprecated.
 
    .. versionchanged:: 3.5
       Added support for the *xztar* format.
