@@ -84,7 +84,7 @@ typedef struct {
     /* current repeat context */
     SRE_REPEAT *repeat;
     /* hooks */
-    SRE_TOLOWER_HOOK lower;
+    SRE_TOLOWER_HOOK lower, upper;
 } SRE_STATE;
 
 typedef struct {

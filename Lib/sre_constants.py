@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20031017
+MAGIC = 20140917
 
 from _sre import MAXREPEAT, MAXGROUPS
 
@@ -56,6 +56,7 @@ NEGATE = "negate"
 NOT_LITERAL = "not_literal"
 NOT_LITERAL_IGNORE = "not_literal_ignore"
 RANGE = "range"
+RANGE_IGNORE = "range_ignore"
 REPEAT = "repeat"
 REPEAT_ONE = "repeat_one"
 SUBPATTERN = "subpattern"
@@ -121,7 +122,8 @@ OPCODES = [
     REPEAT,
     REPEAT_ONE,
     SUBPATTERN,
-    MIN_REPEAT_ONE
+    MIN_REPEAT_ONE,
+    RANGE_IGNORE,
 
 ]
 
@@ -159,7 +161,8 @@ OP_IGNORE = {
     GROUPREF: GROUPREF_IGNORE,
     IN: IN_IGNORE,
     LITERAL: LITERAL_IGNORE,
-    NOT_LITERAL: NOT_LITERAL_IGNORE
+    NOT_LITERAL: NOT_LITERAL_IGNORE,
+    RANGE: RANGE_IGNORE,
 }
 
 AT_MULTILINE = {
