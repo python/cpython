@@ -449,11 +449,16 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *root_dir* and *base_dir* both default to the current directory.
 
+   If *dry_run* is true, no archive is created, but the operations that would be
+   executed are logged to *logger*.
+
    *owner* and *group* are used when creating a tar archive. By default,
    uses the current owner and group.
 
    *logger* must be an object compatible with :pep:`282`, usually an instance of
    :class:`logging.Logger`.
+
+   The *verbose* argument is currently unused.
 
 
 .. function:: get_archive_formats()
@@ -474,14 +479,19 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
 .. function:: register_archive_format(name, function, [extra_args, [description]])
 
-   Register an archiver for the format *name*. *function* is a callable that
-   will be used to invoke the archiver.
+   Register an archiver for the format *name*.
+
+   *function* is the callable that will be used to unpack archives. The callable
+   will receive the *base_name* of the file to create, followed by the
+   *base_dir* (which defaults to :data:`os.curdir`) to start archiving from.
+   Further arguments are passed as keyword arguments: *owner*, *group*,
+   *dry_run* and *logger* (as passed in :func:`make_archive`).
 
    If given, *extra_args* is a sequence of ``(name, value)`` pairs that will be
    used as extra keywords arguments when the archiver callable is used.
 
    *description* is used by :func:`get_archive_formats` which returns the
-   list of archivers. Defaults to an empty list.
+   list of archivers.  Defaults to an empty string.
 
 
 .. function:: unregister_archive_format(name)
