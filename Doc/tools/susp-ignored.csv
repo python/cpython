@@ -122,6 +122,8 @@ library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,:db8,IPv6Address('2001:db8::1000')
 library/ipaddress,,::,IPv6Address('2001:db8::1000')
+library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
+library/ipaddress,,::,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,"""::abc:7:def"""
 library/ipaddress,,:def,"""::abc:7:def"""
 library/ipaddress,,::,::FFFF/96
@@ -256,11 +258,11 @@ whatsnew/2.4,,:System,
 whatsnew/2.5,,:memory,:memory:
 whatsnew/2.5,,:step,[start:stop:step]
 whatsnew/2.5,,:stop,[start:stop:step]
-whatsnew/2.7,1619,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',"
-whatsnew/2.7,1619,::,>>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
-whatsnew/2.7,735,:Sunday,'2009:4:Sunday'
-whatsnew/2.7,862,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
-whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
+whatsnew/2.7,,::,"ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',"
+whatsnew/2.7,,::,>>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
+whatsnew/2.7,,:Sunday,'2009:4:Sunday'
+whatsnew/2.7,,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
+whatsnew/2.7,,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/3.2,,:affe,"netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',"
 whatsnew/3.2,,:affe,>>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
 whatsnew/3.2,,:beef,"netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',"
