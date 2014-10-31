@@ -26,9 +26,9 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: NotImplemented
 
-   Special value which can be returned by the "rich comparison" special methods
-   (:meth:`__eq__`, :meth:`__lt__`, and friends), to indicate that the comparison
-   is not implemented with respect to the other type.
+   Special value which should be returned by the special methods
+   (:meth:`__eq__`, :meth:`__lt__`, :meth:`__add__`, etc.) to indicate
+   that the operation is not implemented with respect to the other type.
 
 
 .. data:: Ellipsis
