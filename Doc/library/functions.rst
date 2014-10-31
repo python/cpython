@@ -211,7 +211,7 @@ are always available.  They are listed here in alphabetical order.
    The optional arguments *flags* and *dont_inherit* control which future
    statements (see :pep:`236`) affect the compilation of *source*.  If neither
    is present (or both are zero) the code is compiled with those future
-   statements that are in effect in the code that is calling compile.  If the
+   statements that are in effect in the code that is calling :func:`compile`.  If the
    *flags* argument is given and *dont_inherit* is not (or is zero) then the
    future statements specified by the *flags* argument are used in addition to
    those that would be used anyway. If *dont_inherit* is a non-zero integer then
@@ -231,6 +231,9 @@ are always available.  They are listed here in alphabetical order.
 
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`TypeError` if the source contains null bytes.
+
+   If you want to parse Python code into its AST representation, see
+   :func:`ast.parse`.
 
    .. note::
 
@@ -540,7 +543,7 @@ are always available.  They are listed here in alphabetical order.
    effect as calling :func:`str(value) <str>`.
 
    A call to ``format(value, format_spec)`` is translated to
-   ``type(value).__format__(format_spec)`` which bypasses the instance
+   ``type(value).__format__(value, format_spec)`` which bypasses the instance
    dictionary when searching for the value's :meth:`__format__` method.  A
    :exc:`TypeError` exception is raised if the method search reaches
    :mod:`object` and the *format_spec* is non-empty, or if either the
