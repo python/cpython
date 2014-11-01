@@ -180,6 +180,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22665: Add missing get_terminal_size and SameFileError to
+  shutil.__all__.
+
 - Issue #6623: Remove deprecated Netrc class in the ftplib module. Patch by
   Matt Chaput.
 
