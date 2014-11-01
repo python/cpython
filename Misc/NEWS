@@ -1383,6 +1383,9 @@ Tools/Demos
 Windows
 -------
 
+- Issue #17717: The Windows build scripts now use a copy of NASM pulled from
+  svn.python.org to build OpenSSL.
+
 - Issue #21907: Improved the batch scripts provided for building Python.
 
 - Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.

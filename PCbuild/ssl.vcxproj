@@ -119,6 +119,7 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 copy /Y crypto\buildinf_x86.h crypto\buildinf.h
 copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
@@ -133,6 +134,7 @@ nmake /nologo -f "ms\nt.mak"
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
 copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
@@ -148,6 +150,7 @@ nmake /nologo -f "ms\nt64.mak"
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 copy /Y crypto\buildinf_x86.h crypto\buildinf.h
 copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
@@ -162,6 +165,7 @@ nmake /nologo -f "ms\nt.mak"
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
 copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
@@ -177,6 +181,7 @@ nmake /nologo -f "ms\nt64.mak"
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 copy /Y crypto\buildinf_x86.h crypto\buildinf.h
 copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
@@ -191,6 +196,7 @@ nmake /nologo -f "ms\nt.mak"
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
 copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
@@ -206,6 +212,7 @@ nmake /nologo -f "ms\nt64.mak"
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 copy /Y crypto\buildinf_x86.h crypto\buildinf.h
 copy /Y crypto\opensslconf_x86.h crypto\opensslconf.h
@@ -220,6 +227,7 @@ nmake /nologo -f "ms\nt.mak"
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
+path %PATH%;$(SolutionDir)$(nasmDir)
 cd "$(SolutionDir)$(opensslDir)"
 nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm || echo nasm failed! &amp;&amp; exit
 copy /Y crypto\buildinf_amd64.h crypto\buildinf.h
