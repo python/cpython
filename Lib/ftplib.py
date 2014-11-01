@@ -42,7 +42,7 @@ import socket
 import warnings
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
-__all__ = ["FTP", "Netrc"]
+__all__ = ["FTP"]
 
 # Magic number from <socket.h>
 MSG_OOB = 0x1                           # Process data out of band
@@ -920,115 +920,6 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
     target.voidresp()
 
 
-class Netrc:
-    """Class to parse & provide access to 'netrc' format files.
-
-    See the netrc(4) man page for information on the file format.
-
-    WARNING: This class is obsolete -- use module netrc instead.
-
-    """
-    __defuser = None
-    __defpasswd = None
-    __defacct = None
-
-    def __init__(self, filename=None):
-        warnings.warn("This class is deprecated, use the netrc module instead",
-                      DeprecationWarning, 2)
-        if filename is None:
-            if "HOME" in os.environ:
-                filename = os.path.join(os.environ["HOME"],
-                                        ".netrc")
-            else:
-                raise OSError("specify file to load or set $HOME")
-        self.__hosts = {}
-        self.__macros = {}
-        fp = open(filename, "r")
-        in_macro = 0
-        while 1:
-            line = fp.readline()
-            if not line:
-                break
-            if in_macro and line.strip():
-                macro_lines.append(line)
-                continue
-            elif in_macro:
-                self.__macros[macro_name] = tuple(macro_lines)
-                in_macro = 0
-            words = line.split()
-            host = user = passwd = acct = None
-            default = 0
-            i = 0
-            while i < len(words):
-                w1 = words[i]
-                if i+1 < len(words):
-                    w2 = words[i + 1]
-                else:
-                    w2 = None
-                if w1 == 'default':
-                    default = 1
-                elif w1 == 'machine' and w2:
-                    host = w2.lower()
-                    i = i + 1
-                elif w1 == 'login' and w2:
-                    user = w2
-                    i = i + 1
-                elif w1 == 'password' and w2:
-                    passwd = w2
-                    i = i + 1
-                elif w1 == 'account' and w2:
-                    acct = w2
-                    i = i + 1
-                elif w1 == 'macdef' and w2:
-                    macro_name = w2
-                    macro_lines = []
-                    in_macro = 1
-                    break
-                i = i + 1
-            if default:
-                self.__defuser = user or self.__defuser
-                self.__defpasswd = passwd or self.__defpasswd
-                self.__defacct = acct or self.__defacct
-            if host:
-                if host in self.__hosts:
-                    ouser, opasswd, oacct = \
-                           self.__hosts[host]
-                    user = user or ouser
-                    passwd = passwd or opasswd
-                    acct = acct or oacct
-                self.__hosts[host] = user, passwd, acct
-        fp.close()
-
-    def get_hosts(self):
-        """Return a list of hosts mentioned in the .netrc file."""
-        return self.__hosts.keys()
-
-    def get_account(self, host):
-        """Returns login information for the named host.
-
-        The return value is a triple containing userid,
-        password, and the accounting field.
-
-        """
-        host = host.lower()
-        user = passwd = acct = None
-        if host in self.__hosts:
-            user, passwd, acct = self.__hosts[host]
-        user = user or self.__defuser
-        passwd = passwd or self.__defpasswd
-        acct = acct or self.__defacct
-        return user, passwd, acct
-
-    def get_macros(self):
-        """Return a list of all defined macro names."""
-        return self.__macros.keys()
-
-    def get_macro(self, macro):
-        """Return a sequence of lines which define a named macro."""
-        return self.__macros[macro]
-
-
-
 def test():
     '''Test program.
     Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
@@ -1041,6 +932,8 @@ def test():
     if len(sys.argv) < 2:
         print(test.__doc__)
         sys.exit(0)
+
+    import netrc
 
     debugging = 0
     rcfile = None
@@ -1056,14 +949,14 @@ def test():
     ftp.set_debuglevel(debugging)
     userid = passwd = acct = ''
     try:
-        netrc = Netrc(rcfile)
+        netrcobj = netrc.netrc(rcfile)
     except OSError:
         if rcfile is not None:
             sys.stderr.write("Could not open account file"
                              " -- using anonymous login.")
     else:
         try:
-            userid, passwd, acct = netrc.get_account(host)
+            userid, acct, passwd = netrcobj.authenticators(host)
         except KeyError:
             # no account for host
             sys.stderr.write(
