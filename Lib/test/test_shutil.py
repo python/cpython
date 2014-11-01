@@ -1788,5 +1788,23 @@ class TermsizeTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
+class PublicAPITests(unittest.TestCase):
+    """Ensures that the correct values are exposed in the public API."""
+
+    def test_module_all_attribute(self):
+        self.assertTrue(hasattr(shutil, '__all__'))
+        target_api = ['copyfileobj', 'copyfile', 'copymode', 'copystat',
+                      'copy', 'copy2', 'copytree', 'move', 'rmtree', 'Error',
+                      'SpecialFileError', 'ExecError', 'make_archive',
+                      'get_archive_formats', 'register_archive_format',
+                      'unregister_archive_format', 'get_unpack_formats',
+                      'register_unpack_format', 'unregister_unpack_format',
+                      'unpack_archive', 'ignore_patterns', 'chown', 'which',
+                      'get_terminal_size', 'SameFileError']
+        if hasattr(os, 'statvfs') or os.name == 'nt':
+            target_api.append('disk_usage')
+        self.assertEqual(set(shutil.__all__), set(target_api))
+
+
 if __name__ == '__main__':
     unittest.main()
