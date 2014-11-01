@@ -180,6 +180,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6623: Remove deprecated Netrc class in the ftplib module. Patch by
+  Matt Chaput.
+
 - Issue #17381: Fixed handling of case-insensitive ranges in regular
   expressions.
 
