@@ -304,12 +304,13 @@ class EmbeddingTests(unittest.TestCase):
         cmd.extend(args)
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
         (out, err) = p.communicate()
         self.assertEqual(p.returncode, 0,
                          "bad returncode %d, stderr is %r" %
                          (p.returncode, err))
-        return out.decode("latin1"), err.decode("latin1")
+        return out, err
 
     def test_subinterps(self):
         # This is just a "don't crash" test
@@ -339,7 +340,7 @@ class EmbeddingTests(unittest.TestCase):
         expected_errors = sys.__stdout__.errors
         expected_stdin_encoding = sys.__stdin__.encoding
         expected_pipe_encoding = self._get_default_pipe_encoding()
-        expected_output = os.linesep.join([
+        expected_output = '\n'.join([
         "--- Use defaults ---",
         "Expected encoding: default",
         "Expected errors: default",
