@@ -3,9 +3,8 @@ Quick Start Guide
 
 1.  Install Microsoft Visual C++ 2010 SP1, any edition.
 2.  Install Subversion, and make sure 'svn.exe' is on your PATH.
-3.  Install NASM, and make sure 'nasm.exe' is on your PATH.
-4.  Run "build.bat -e" to build Python in 32-bit Release configuration.
-5.  (Optional, but recommended) Run the test suite with "rt.bat -q".
+3.  Run "build.bat -e" to build Python in 32-bit Release configuration.
+4.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
 Building Python using Microsoft Visual C++
@@ -225,7 +224,8 @@ _ssl
     to be somewhere on your PATH.  More recent versions of OpenSSL may
     need a later version of NASM. If OpenSSL's self tests don't pass,
     you should first try to update NASM and do a full rebuild of
-    OpenSSL.
+    OpenSSL.  get_externals.py also downloads a snapshot of NASM, and the
+    ssl sub-project includes that version of nasm.exe on PATH.
 
     The ssl sub-project expects your OpenSSL sources to have already
     been configured and be ready to build.  If you get your sources
