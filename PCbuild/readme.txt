@@ -144,7 +144,9 @@ _ssl
 
     You must install the NASM assembler from
         http://nasm.sf.net
-    for x86 builds.  Put nasm.exe anywhere in your PATH.
+    for x86 builds.  Put nasm.exe anywhere in your PATH.  If you use the
+    Tools\buildbot\external(-amd64).bat method for getting sources, it also
+    downloads a version of NASM, which the ssl build script will add to PATH.
 
     You can also install ActivePerl from
         http://www.activestate.com/activeperl/

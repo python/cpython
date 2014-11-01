@@ -37,6 +37,10 @@ if not exist bzip2-1.0.6 (
 if exist db-4.4.20 rd /s/q db-4.4.20
 if not exist db-4.7.25.0 svn export http://svn.python.org/projects/external/db-4.7.25.0
 
+@rem NASM, for OpenSSL build
+@rem if exist nasm-2.11.06 rd /s/q nasm-2.11.06
+if not exist nasm-2.11.06 svn export http://svn.python.org/projects/external/nasm-2.11.06
+
 @rem OpenSSL
 if exist openssl-1.0.1i rd /s/q openssl-1.0.1i
 if not exist openssl-1.0.1j svn export http://svn.python.org/projects/external/openssl-1.0.1j
