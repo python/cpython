@@ -69,7 +69,10 @@ class CharPointersTestCase(unittest.TestCase):
 
     def test_int_pointer_arg(self):
         func = testdll._testfunc_p_p
-        func.restype = c_long
+        if sizeof(c_longlong) == sizeof(c_void_p):
+            func.restype = c_longlong
+        else:
+            func.restype = c_long
         self.assertEqual(0, func(0))
 
         ci = c_int(0)
