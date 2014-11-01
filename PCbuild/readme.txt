@@ -182,7 +182,9 @@ _ssl
     to be somewhere on your PATH.  More recent versions of OpenSSL may
     need a later version of NASM. If OpenSSL's self tests don't pass,
     you should first try to update NASM and do a full rebuild of
-    OpenSSL.
+    OpenSSL.  If you use the Tools\buildbot\external(-amd64).bat method
+    for getting sources, it also downloads a version of NASM which the
+    ssl build script will add to PATH.
 
     If you like to use the official sources instead of the files from
     python.org's subversion repository, Perl is required to build the
