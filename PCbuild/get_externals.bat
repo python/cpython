@@ -20,6 +20,7 @@ echo.Cleaning up external libraries.
 for /D %%d in (
                bzip2-*
                db-*
+               nasm-*
                openssl-*
                tcl-*
                tcltk*
@@ -51,6 +52,7 @@ echo.Fetching external libraries...
 
 for %%e in (
             bzip2-1.0.6
+            nasm-2.11.06
             openssl-1.0.1j
             tcl-8.6.1.0
             tk-8.6.1.0
@@ -87,9 +89,9 @@ echo.
 echo.**WARNING**: the cleaning options unconditionally remove any directory
 echo.that is a child of
 echo.   %CD%
-echo.and matches wildcard patterns beginning with bzip2-, db-, openssl-, tcl-,
-echo.tcltk, tk-, tix-, sqlite-, or xz-, and as such has the potential to be
-echo.very destructive if you are not aware of what it is doing.  Use with
+echo.and matches wildcard patterns beginning with bzip2-, db-, nasm-, openssl-,
+echo.tcl-, tcltk, tk-, tix-, sqlite-, or xz-, and as such has the potential
+echo.to be very destructive if you are not aware of what it is doing.  Use with
 echo.caution!
 popd
 exit /b -1

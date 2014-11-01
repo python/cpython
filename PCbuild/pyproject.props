@@ -20,6 +20,7 @@
     <sqlite3Dir>$(externalsDir)\sqlite-3.8.3.1</sqlite3Dir>
     <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
     <lzmaDir>$(externalsDir)\xz-5.0.5</lzmaDir>
+    <nasmDir>$(externalsDir)\nasm-2.11.06</nasmDir>
     <opensslDir>$(externalsDir)\openssl-1.0.1j</opensslDir>
     <tclDir>$(externalsDir)\tcl-8.6.1.0</tclDir>
     <tkDir>$(externalsDir)\tk-8.6.1.0</tkDir>
@@ -76,6 +77,9 @@
     </BuildMacro>
     <BuildMacro Include="lzmaDir">
       <Value>$(lzmaDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="nasmDir">
+      <Value>$(nasmDir)</Value>
     </BuildMacro>
     <BuildMacro Include="opensslDir">
       <Value>$(opensslDir)</Value>
