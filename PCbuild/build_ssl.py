@@ -182,6 +182,17 @@ def main():
     if ssl_dir is None:
         sys.exit(1)
 
+    # add our copy of NASM to PATH.  It will be on the same level as openssl
+    for dir in os.listdir(os.path.join(ssl_dir, os.pardir)):
+        if dir.startswith('nasm'):
+            nasm_dir = os.path.join(ssl_dir, os.pardir, dir)
+            nasm_dir = os.path.abspath(nasm_dir)
+            os.environ['PATH'] += os.pathsep.join(['', nasm_dir])
+            break
+    else:
+        print('NASM was not found, make sure it is on PATH')
+
+
     old_cd = os.getcwd()
     try:
         os.chdir(ssl_dir)

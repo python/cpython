@@ -20,6 +20,10 @@ if not exist bzip2-1.0.6 (
   svn export http://svn.python.org/projects/external/bzip2-1.0.6
 )
 
+@rem NASM, for OpenSSL build
+@rem if exist nasm-2.11.06 rd /s/q nasm-2.11.06
+if not exist nasm-2.11.06 svn export http://svn.python.org/projects/external/nasm-2.11.06
+
 @rem OpenSSL
 if not exist openssl-1.0.1j (
     rd /s/q openssl-1.0.1i
