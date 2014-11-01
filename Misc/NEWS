@@ -180,6 +180,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22776: Brought excluded code into the scope of a try block in
+  SysLogHandler.emit().
+ 
 - Issue #22665: Add missing get_terminal_size and SameFileError to
   shutil.__all__.
 
