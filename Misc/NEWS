@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22776: Brought excluded code into the scope of a try block in
+  SysLogHandler.emit().
+ 
 - Issue #17381: Fixed ranges handling in case-insensitive regular expressions.
 
 - Issue #19329: Optimized compiling charsets in regular expressions.
