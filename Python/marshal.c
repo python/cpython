@@ -19,7 +19,7 @@
  * On Windows debug builds, reduce this value.
  */
 #if defined(MS_WINDOWS) && defined(_DEBUG)
-#define MAX_MARSHAL_STACK_DEPTH 1500
+#define MAX_MARSHAL_STACK_DEPTH 1000
 #else
 #define MAX_MARSHAL_STACK_DEPTH 2000
 #endif
