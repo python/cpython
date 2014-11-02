@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22775: Fixed unpickling of http.cookies.SimpleCookie with protocol 2
+  and above.  Patch by Tim Graham.
+
 - Issue #22366: urllib.request.urlopen will accept a context object
   (SSLContext) as an argument which will then used be for HTTPS connection.
   Patch by Alex Gaynor.
