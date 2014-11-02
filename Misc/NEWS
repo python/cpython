@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22775: Fixed unpickling of Cookie.SimpleCookie with protocol 2.
+  Patch by Tim Graham.
+
 - Issue #22776: Brought excluded code into the scope of a try block in
   SysLogHandler.emit().
  

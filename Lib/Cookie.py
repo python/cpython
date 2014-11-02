@@ -591,8 +591,12 @@ class BaseCookie(dict):
 
     def __setitem__(self, key, value):
         """Dictionary style assignment."""
-        rval, cval = self.value_encode(value)
-        self.__set(key, rval, cval)
+        if isinstance(value, Morsel):
+            # allow assignment of constructed Morsels (e.g. for pickling)
+            dict.__setitem__(self, key, value)
+        else:
+            rval, cval = self.value_encode(value)
+            self.__set(key, rval, cval)
     # end __setitem__
 
     def output(self, attrs=None, header="Set-Cookie:", sep="\015\012"):
