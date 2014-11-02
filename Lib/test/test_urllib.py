@@ -10,7 +10,10 @@ import unittest
 from unittest.mock import patch
 from test import support
 import os
-import ssl
+try:
+    import ssl
+except ImportError:
+    ssl = None
 import sys
 import tempfile
 from nturl2path import url2pathname, pathname2url
@@ -380,6 +383,7 @@ Content-Type: text/html; charset=iso-8859-1
         with support.check_warnings(('',DeprecationWarning)):
             urllib.request.URLopener()
 
+    @unittest.skipUnless(ssl, "ssl module required")
     def test_cafile_and_context(self):
         context = ssl.create_default_context()
         with self.assertRaises(ValueError):
