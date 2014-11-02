@@ -277,6 +277,8 @@ Tests
 - Issue #21976: Fix test_ssl to accept LibreSSL version strings.  Thanks
   to William Orr.
 
+- Issue #22770: Prevent some Tk segfaults on OS X when running gui tests.
+
 Build
 -----
 
