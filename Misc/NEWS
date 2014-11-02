@@ -1385,6 +1385,9 @@ Tools/Demos
 Windows
 -------
 
+- Issue #17896: The Windows build scripts now expect external library sources
+  to be in ``PCbuild\..\externals`` rather than ``PCbuild\..\..``.
+
 - Issue #17717: The Windows build scripts now use a copy of NASM pulled from
   svn.python.org to build OpenSSL.
 
