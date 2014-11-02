@@ -175,20 +175,22 @@ PyByteArray_AsString(PyObject *self)
 }
 
 int
-PyByteArray_Resize(PyObject *self, Py_ssize_t size)
+PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
 {
     void *sval;
     PyByteArrayObject *obj = ((PyByteArrayObject *)self);
-    Py_ssize_t alloc = obj->ob_alloc;
-    Py_ssize_t logical_offset = obj->ob_start - obj->ob_bytes;
+    /* All computations are done unsigned to avoid integer overflows
+       (see issue #22335). */
+    size_t alloc = (size_t) obj->ob_alloc;
+    size_t logical_offset = (size_t) (obj->ob_start - obj->ob_bytes);
+    size_t size = (size_t) requested_size;
 
     assert(self != NULL);
     assert(PyByteArray_Check(self));
-    assert(size >= 0);
-    assert(logical_offset >= 0);
     assert(logical_offset <= alloc);
+    assert(requested_size >= 0);
 
-    if (size == Py_SIZE(self)) {
+    if (requested_size == Py_SIZE(self)) {
         return 0;
     }
     if (!_canresize(obj)) {
@@ -220,6 +222,10 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t size)
             alloc = size + 1;
         }
     }
+    if (alloc > PY_SSIZE_T_MAX) {
+        PyErr_NoMemory();
+        return -1;
+    }
 
     if (logical_offset > 0) {
         sval = PyObject_Malloc(alloc);
@@ -227,7 +233,8 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t size)
             PyErr_NoMemory();
             return -1;
         }
-        memcpy(sval, PyByteArray_AS_STRING(self), Py_MIN(size, Py_SIZE(self)));
+        memcpy(sval, PyByteArray_AS_STRING(self),
+               Py_MIN(requested_size, Py_SIZE(self)));
         PyObject_Free(obj->ob_bytes);
     }
     else {
