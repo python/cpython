@@ -138,22 +138,22 @@ code
 ----
 
 * The :func:`code.InteractiveInterpreter.showtraceback` method now prints
-  the full chained traceback, just like the interactive interpreter
-  (contributed by Claudiu.Popa in :issue:`17442`).
+  the full chained traceback, just like the interactive interpreter.
+  (Contributed by Claudiu.Popa in :issue:`17442`.)
 
 compileall
 ----------
 
 * :func:`compileall.compile_dir` and :mod:`compileall`'s command-line interface
   can now do parallel bytecode compilation.
-  (Contributed by Claudiu Popa in :issue:`16104`).
+  (Contributed by Claudiu Popa in :issue:`16104`.)
 
 doctest
 -------
 
 * :func:`doctest.DocTestSuite` returns an empty :class:`unittest.TestSuite` if
-  *module* contains no docstrings instead of raising :exc:`ValueError`
-  (contributed by Glenn Jones in :issue:`15916`).
+  *module* contains no docstrings instead of raising :exc:`ValueError`.
+  (Contributed by Glenn Jones in :issue:`15916`.)
 
 glob
 ----
@@ -168,20 +168,20 @@ imaplib
 * :class:`IMAP4` now supports the context management protocol.  When used in a
   :keyword:`with` statement, the IMAP4 ``LOGOUT`` command will be called
   automatically at the end of the block.  (Contributed by Tarek Ziadé and
-  Serhiy Storchaka in :issue:`4972`).
+  Serhiy Storchaka in :issue:`4972`.)
 
 imghdr
 ------
 
 * :func:`~imghdr.what` now recognizes the `OpenEXR <http://www.openexr.com>`_
-  format (contributed by Martin vignali and Cladui Popa in :issue:`20295`).
+  format.  (Contributed by Martin vignali and Cladui Popa in :issue:`20295`.)
 
 importlib
 ---------
 
 * :class:`importlib.util.LazyLoader` allows for the lazy loading of modules in
-  applications where startup time is paramount (contributed by Brett Cannon in
-  :issue:`17621`).
+  applications where startup time is paramount.
+  (Contributed by Brett Cannon in :issue:`17621`.)
 
 * :func:`importlib.abc.InspectLoader.source_to_code` is now a
   static method to make it easier to work with source code in a string.
@@ -196,26 +196,26 @@ inspect
 -------
 
 * :class:`inspect.Signature` and :class:`inspect.Parameter` are now
-  picklable and hashable (contributed by Yury Selivanov in :issue:`20726`
-  and :issue:`20334`).
+  picklable and hashable.  (Contributed by Yury Selivanov in :issue:`20726`
+  and :issue:`20334`.)
 
 * New class method :meth:`inspect.Signature.from_callable`, which makes
-  subclassing of :class:`~inspect.Signature` easier (contributed
-  by Yury Selivanov and Eric Snow in :issue:`17373`).
+  subclassing of :class:`~inspect.Signature` easier.  (Contributed
+  by Yury Selivanov and Eric Snow in :issue:`17373`.)
 
 ipaddress
 ---------
 
 * :class:`ipaddress.IPv4Network` and :class:`ipaddress.IPv6Network` now
   accept an ``(address, netmask)`` tuple argument, so as to easily construct
-  network objects from existing addresses (contributed by Peter Moody
-  and Antoine Pitrou in :issue:`16531`).
+  network objects from existing addresses.  (Contributed by Peter Moody
+  and Antoine Pitrou in :issue:`16531`.)
 
 os
 --
 
 * :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
-  attribute on Windows (contributed by Ben Hoyt in :issue:`21719`).
+  attribute on Windows.  (Contributed by Ben Hoyt in :issue:`21719`.)
 
 re
 --
@@ -239,8 +239,8 @@ signal
 
 * Different constants of :mod:`signal` module are now enumeration values using
   the :mod:`enum` module. This allows meaningful names to be printed during
-  debugging, instead of integer “magic numbers”. (contributed by Giampaolo
-  Rodola' in :issue:`21076`)
+  debugging, instead of integer “magic numbers”.  (Contributed by Giampaolo
+  Rodola' in :issue:`21076`.)
 
 smtpd
 -----
@@ -264,15 +264,15 @@ smtplib
 -------
 
 * A new :meth:`~smtplib.SMTP.auth` method provides a convenient way to
-  implement custom authentication mechanisms (contributed by Milan Oberkirch in
-  :issue:`15014`).
+  implement custom authentication mechanisms.
+  (Contributed by Milan Oberkirch in :issue:`15014`.)
 
 sndhdr
 ------
 
 * :func:`~sndhdr.what` and :func:`~sndhdr.whathdr` now return
-  :func:`~collections.namedtuple` \s (contributed by Claudiu Popa in
-  :issue:`18615`).
+  :func:`~collections.namedtuple`.
+  (Contributed by Claudiu Popa in :issue:`18615`.)
 
 socket
 ------
@@ -281,7 +281,7 @@ socket
   by using high-performance :func:`os.sendfile` function on UNIX resulting in
   uploads being from 2x to 3x faster than when using plain
   :meth:`socket.socket.send`.
-  (contributed by Giampaolo Rodola' in :issue:`17552`)
+  (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
 time
 ----
@@ -298,8 +298,8 @@ wsgiref
 xmlrpc
 ------
 
-* :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`
-  (contributed by Claudiu Popa in :issue:`20627`).
+* :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`.
+  (Contributed by Claudiu Popa in :issue:`20627`.)
 
 
 Optimizations
@@ -380,7 +380,8 @@ removed:
   and the ``__version__`` string was not updated in the last few releases.
 
 * The internal ``Netrc`` class in the :mod:`ftplib` module was deprecated in
-  3.4, and has now been removed. (Contributed by Matt Chaput in :issue:`6623`.)
+  3.4, and has now been removed.
+  (Contributed by Matt Chaput in :issue:`6623`.)
 
 Porting to Python 3.5
 =====================
@@ -408,15 +409,15 @@ Changes in the Python API
 
 * The deprecated "strict" mode and argument of :class:`~html.parser.HTMLParser`,
   :meth:`HTMLParser.error`, and the :exc:`HTMLParserError` exception have been
-  removed (contributed by Ezio Melotti in :issue:`15114`).
+  removed.  (Contributed by Ezio Melotti in :issue:`15114`.)
   The *convert_charrefs* argument of :class:`~html.parser.HTMLParser` is
-  now ``True`` by default (contributed by Berker Peksag in :issue:`21047`).
+  now ``True`` by default.  (Contributed by Berker Peksag in :issue:`21047`.)
 
 * Although it is not formally part of the API, it is worth noting for porting
   purposes (ie: fixing tests) that error messages that were previously of the
   form "'sometype' does not support the buffer protocol" are now of the form "a
-  bytes-like object is required, not 'sometype'" (contributed by Ezio Melotti
-  in :issue:`16518`).
+  bytes-like object is required, not 'sometype'".  (Contributed by Ezio Melotti
+  in :issue:`16518`.)
 
 Changes in the C API
 --------------------
