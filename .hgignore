@@ -92,6 +92,7 @@ Modules/_freeze_importlib
 Modules/_testembed
 .coverage
 coverage/
+externals/
 htmlcov/
 *.gcda
 *.gcno
