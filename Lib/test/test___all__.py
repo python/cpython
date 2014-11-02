@@ -72,13 +72,14 @@ class AllTest(unittest.TestCase):
 
         # rlcompleter needs special consideration; it import readline which
         # initializes GNU readline which calls setlocale(LC_CTYPE, "")... :-(
+        import locale
+        locale_tuple = locale.getlocale(locale.LC_CTYPE)
         try:
             import rlcompleter
-            import locale
         except ImportError:
             pass
-        else:
-            locale.setlocale(locale.LC_CTYPE, 'C')
+        finally:
+            locale.setlocale(locale.LC_CTYPE, locale_tuple)
 
         ignored = []
         failed_imports = []
