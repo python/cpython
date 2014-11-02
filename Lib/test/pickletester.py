@@ -1284,7 +1284,7 @@ class AbstractPickleTests(unittest.TestCase):
         loaded = self.loads(DATA5)
         self.assertEqual(type(loaded), SimpleCookie)
         self.assertEqual(list(loaded.keys()), ["key"])
-        self.assertEqual(loaded["key"].value, "Set-Cookie: key=value")
+        self.assertEqual(loaded["key"].value, "value")
 
         for (exc, data) in DATA7.items():
             loaded = self.loads(data)
