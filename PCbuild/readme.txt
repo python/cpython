@@ -224,9 +224,10 @@ _tkinter
 
     Unlike the other external libraries listed above, Tk must be built
     separately before the _tkinter module can be built. This means that
-    a pre-built Tcl/Tk installation is expected in ..\..\tcltk (tcltk64
-    for 64-bit) relative to this directory.  See "Getting External
-    Sources" below for the easiest method to ensure Tcl/Tk is built.
+    a pre-built Tcl/Tk installation is expected in ..\externals\tcltk
+    (tcltk64 for 64-bit) relative to this directory.  See "Getting
+    External Sources" below for the easiest method to ensure Tcl/Tk is
+    built.
 
 
 Getting External Sources
@@ -246,12 +247,12 @@ directory from ..\, i.e.:
 This extracts all the external sub-projects from
     http://svn.python.org/projects/external
 via Subversion (so you'll need an svn.exe on your PATH) and places them
-in ..\.. (relative to this directory).
+in ..\externals (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change the names of some folders in order to make
 things work.  For instance, if you were to download a version 5.0.7 of
-XZ Utils, you would need to extract the archive into ..\..\xz-5.0.5
+XZ Utils, you would need to extract the archive into ..\externals\xz-5.0.5
 anyway, since that is where the solution is set to look for xz.  The
 same is true for all other external projects.
 
@@ -268,7 +269,7 @@ The external-amd64.bat file contains this for tcl:
 So for a release build, you'd call it as:
     nmake -f makefile.vc MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
 
-Note that the above command is called from within ..\..\tcl-8.6.1.0\win
+Note that the above command is called from within ..\externals\tcl-8.6.1.0\win
 (relative to this directory); don't forget to build Tk as well as Tcl!
 
 This will be cleaned up in the future; http://bugs.python.org/issue15968

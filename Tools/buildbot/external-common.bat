@@ -1,7 +1,8 @@
 @rem Common file shared between external.bat and external-amd64.bat.  Responsible for
 @rem fetching external components into the root\.. buildbot directories.
 
-cd ..
+if not exist externals mkdir externals
+cd externals
 @rem XXX: If you need to force the buildbots to start from a fresh environment, uncomment
 @rem the following, check it in, then check it out, comment it out, then check it back in.
 @rem if exist bzip2-1.0.6 rd /s/q bzip2-1.0.6
