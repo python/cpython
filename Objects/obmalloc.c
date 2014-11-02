@@ -1754,8 +1754,8 @@ _PyMem_DebugMalloc(void *ctx, size_t nbytes)
 
     bumpserialno();
     total = nbytes + 4*SST;
-    if (total < nbytes)
-        /* overflow:  can't represent total as a size_t */
+    if (nbytes > PY_SSIZE_T_MAX - 4*SST)
+        /* overflow:  can't represent total as a Py_ssize_t */
         return NULL;
 
     p = (uchar *)api->alloc.malloc(api->alloc.ctx, total);
@@ -1817,8 +1817,8 @@ _PyMem_DebugRealloc(void *ctx, void *p, size_t nbytes)
     bumpserialno();
     original_nbytes = read_size_t(q - 2*SST);
     total = nbytes + 4*SST;
-    if (total < nbytes)
-        /* overflow:  can't represent total as a size_t */
+    if (nbytes > PY_SSIZE_T_MAX - 4*SST)
+        /* overflow:  can't represent total as a Py_ssize_t */
         return NULL;
 
     /* Resize and add decorations. We may get a new pointer here, in which
