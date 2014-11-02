@@ -461,12 +461,11 @@ def _is_gui_available():
                 reason = "cannot run without OS X gui process"
 
     # check on every platform whether tkinter can actually do anything
-    # but skip the test on OS X because it can cause segfaults in Cocoa Tk
-    # when running regrtest with the -j option (multiple threads/subprocesses)
-    if (not reason) and (sys.platform != 'darwin'):
+    if not reason:
         try:
             from tkinter import Tk
             root = Tk()
+            root.update()
             root.destroy()
         except Exception as e:
             err_string = str(e)
