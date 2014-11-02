@@ -439,8 +439,8 @@ Coroutines and protocols
 ------------------------
 
 Coroutines can be scheduled in a protocol method using :func:`async`, but there
-is no guarantee made about the execution order.  Protocols are not aware of coroutines
-created in protocol methods and so will not wait for them.
+is no guarantee made about the execution order.  Protocols are not aware of
+coroutines created in protocol methods and so will not wait for them.
 
 To have a reliable execution order, use :ref:`stream objects <asyncio-streams>` in a
 coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
