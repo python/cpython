@@ -13,9 +13,11 @@ import functools
 import pickle
 import tempfile
 import unittest
+
 import test.support
 import test.string_tests
 import test.buffer_tests
+from test.support import bigaddrspacetest, MAX_Py_ssize_t
 
 
 if sys.flags.bytes_warning:
@@ -110,6 +112,17 @@ class BaseBytesTest:
         self.assertRaises(ValueError, self.type2test, [sys.maxsize])
         self.assertRaises(ValueError, self.type2test, [sys.maxsize+1])
         self.assertRaises(ValueError, self.type2test, [10**100])
+
+    @bigaddrspacetest
+    def test_constructor_overflow(self):
+        size = MAX_Py_ssize_t
+        self.assertRaises((OverflowError, MemoryError), self.type2test, size)
+        try:
+            # Should either pass or raise an error (e.g. on debug builds with
+            # additional malloc() overhead), but shouldn't crash.
+            bytearray(size - 4)
+        except (OverflowError, MemoryError):
+            pass
 
     def test_compare(self):
         b1 = self.type2test([1, 2, 3])
