@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22335: Fix crash when trying to enlarge a bytearray to 0x7fffffff
+  bytes on a 32-bit platform.
+
 - Issue #22653: Fix an assertion failure in debug mode when doing a reentrant
   dict insertion in debug mode.
 
