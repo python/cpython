@@ -80,4 +80,5 @@ tags
 TAGS
 .coverage
 coverage/
+externals/
 htmlcov/

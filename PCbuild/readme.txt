@@ -278,7 +278,7 @@ painless as possible, called "get_externals.bat" and located in this
 directory.  This script extracts all the external sub-projects from
     http://svn.python.org/projects/external
 via Subversion (so you'll need svn.exe on your PATH) and places them
-in ..\.. (relative to this directory).
+in ..\externals (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change folder names or pass the names to MSBuild

@@ -93,6 +93,7 @@ Programs/_freeze_importlib
 Programs/_testembed
 .coverage
 coverage/
+externals/
 htmlcov/
 *.gcda
 *.gcno
