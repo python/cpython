@@ -2,7 +2,8 @@
 setlocal
 rem Simple script to fetch source for external libraries
 
-pushd "%~dp0..\.."
+if not exist "%~dp0..\externals" mkdir "%~dp0..\externals"
+pushd "%~dp0..\externals"
 
 if "%SVNROOT%"=="" set SVNROOT=http://svn.python.org/projects/external/
 
