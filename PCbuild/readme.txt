@@ -112,9 +112,9 @@ _tkinter
     Wraps the Tk windowing system.  Unlike _bsddb and _sqlite3, there's no
     corresponding tcltk.vcproj-type project that builds Tcl/Tk from vcproj's
     within our pcbuild.sln, which means this module expects to find a
-    pre-built Tcl/Tk in either ..\..\tcltk for 32-bit or ..\..\tcltk64 for
-    64-bit (relative to this directory).  See below for instructions to build
-    Tcl/Tk.
+    pre-built Tcl/Tk in either ..\externals\tcltk for 32-bit or
+    ..\externals\tcltk64 for 64-bit (relative to this directory).  See below
+    for instructions to build Tcl/Tk.
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
         http://sources.redhat.com/bzip2/
@@ -186,8 +186,8 @@ external-amd64.bat in the ..\Tools\buildbot directory from ..\, i.e.:
 
 This extracts all the external subprojects from http://svn.python.org/external
 via Subversion (so you'll need an svn.exe on your PATH) and places them in
-..\.. (relative to this directory).  The external(-amd64).bat scripts will
-also build a debug build of Tcl/Tk; there aren't any equivalent batch files
+..\externals (relative to this directory).  The external(-amd64).bat scripts
+will also build a debug build of Tcl/Tk; there aren't any equivalent batch files
 for building release versions of Tcl/Tk lying around in the Tools\buildbot
 directory.  If you need to build a release version of Tcl/Tk it isn't hard
 though, take a look at the relevant external(-amd64).bat file and find the
@@ -207,36 +207,6 @@ This will be cleaned up in the future; ideally Tcl/Tk will be brought into our
 pcbuild.sln as custom .vcproj files, just as we've recently done with the
 _bsddb.vcproj and sqlite3.vcproj files, which will remove the need for
 Tcl/Tk to be built separately via a batch file.
-
-XXX trent.nelson 02-Apr-08:
-    Having the external subprojects in ..\.. relative to this directory is a
-    bit of a nuisance when you're working on py3k and trunk in parallel and
-    your directory layout mimics that of Python's subversion layout, e.g.:
-
-        C:\..\svn.python.org\projects\python\trunk
-        C:\..\svn.python.org\projects\python\branches\py3k
-        C:\..\svn.python.org\projects\python\branches\release25-maint
-
-    I'd like to change things so that external subprojects are fetched from
-    ..\external instead of ..\.., then provide some helper scripts or batch
-    files that would set up a new ..\external directory with svn checkouts of
-    the relevant branches in http://svn.python.org/projects/external/, or
-    alternatively, use junctions to link ..\external with a pre-existing
-    externals directory being used by another branch.  i.e. if I'm usually
-    working on trunk (and have previously created trunk\external via the
-    provided batch file), and want to do some work on py3k, I'd set up a
-    junction as follows (using the directory structure above as an example):
-
-        C:\..\python\trunk\external <- already exists and has built versions
-                                       of the external subprojects
-
-        C:\..\python\branches\py3k>linkd.exe external ..\..\trunk\external
-        Link created at: external
-
-    Only a slight tweak would be needed to the buildbots such that bots
-    building trunk and py3k could make use of the same facility.  (2.5.x
-    builds need to be kept separate as they're using Visual Studio 7.1.)
-/XXX trent.nelson 02-Apr-08
 
 Building for Itanium
 --------------------

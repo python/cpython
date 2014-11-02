@@ -46,7 +46,7 @@
 	/>
 	<UserMacro
 		Name="externalsDir"
-		Value="..\.."
+		Value="..\externals"
 	/>
 	<UserMacro
 		Name="bsddb47Dir"

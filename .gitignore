@@ -43,4 +43,5 @@ python-gdb.py
 tags
 .coverage
 coverage/
+externals/
 htmlcov/

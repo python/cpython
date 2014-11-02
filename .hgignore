@@ -61,4 +61,5 @@ PCbuild/*.bsc
 PCbuild/Win32-temp-*
 .coverage
 coverage/
+externals/
 htmlcov/
