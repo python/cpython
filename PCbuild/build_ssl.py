@@ -68,7 +68,7 @@ def get_ssl_dir():
     propfile = (os.path.join(os.path.dirname(__file__), 'pyproject.props'))
     with open(propfile, encoding='utf-8-sig') as f:
         m = re.search('openssl-([^<]+)<', f.read())
-        return "..\..\openssl-"+m.group(1)
+        return "..\externals\openssl-"+m.group(1)
 
 
 def create_makefile64(makefile, m32):
