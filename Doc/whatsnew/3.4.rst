@@ -52,7 +52,7 @@
    * It's helpful to add the bug/patch number as a comment:
 
    The :ref:`~socket.transmogrify()` function was added to the
-   :mod:`socket` module. (Contributed by P.Y. Developer in :issue:`12345`.)
+   :mod:`socket` module.  (Contributed by P.Y. Developer in :issue:`12345`.)
 
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
@@ -372,7 +372,7 @@ The binary and text transforms provided in the standard library are detailed
 in :ref:`binary-transforms` and :ref:`text-transforms`.
 
 (Contributed by Nick Coghlan in :issue:`7475`, :issue:`17827`,
-:issue:`17828` and :issue:`19619`)
+:issue:`17828` and :issue:`19619`.)
 
 
 .. _whatsnew-pep-451:
@@ -414,14 +414,14 @@ Some smaller changes made to the core Python language are:
 * Module ``__file__`` attributes (and related values) should now always
   contain absolute paths by default, with the sole exception of
   ``__main__.__file__`` when a script has been executed directly using
-  a relative path (Contributed by Brett Cannon in :issue:`18416`).
+  a relative path.  (Contributed by Brett Cannon in :issue:`18416`.)
 
 * All the UTF-\* codecs (except UTF-7) now reject surrogates during both
   encoding and decoding unless the ``surrogatepass`` error handler is used,
   with the exception of the UTF-16 decoder (which accepts valid surrogate pairs)
   and the UTF-16 encoder (which produces them while encoding non-BMP characters).
-  Contributed by Victor Stinner, Kang-Hao (Kenny) Lu and Serhiy Storchaka in
-  :issue:`12892`.
+  (Contributed by Victor Stinner, Kang-Hao (Kenny) Lu and Serhiy Storchaka in
+  :issue:`12892`.)
 
 * New German EBCDIC :ref:`codec <standard-encodings>` ``cp273``.  (Contributed
   by Michael Bierenfeld and Andrew Kuchling in :issue:`1097797`.)
@@ -633,8 +633,8 @@ audioop
 in :issue:`12866`.)
 
 New :func:`~audioop.byteswap` function converts big-endian samples to
-little-endian and vice versa (Contributed by Serhiy Storchaka in
-:issue:`19641`).
+little-endian and vice versa.  (Contributed by Serhiy Storchaka in
+:issue:`19641`.)
 
 All :mod:`audioop` functions now accept any :term:`bytes-like object`.  Strings
 are not accepted: they didn't work before, now they raise an error right away.
@@ -681,8 +681,8 @@ contextlib
 
 The new :class:`contextlib.suppress` context manager helps to clarify the
 intent of code that deliberately suppresses exceptions from a single
-statement. (Contributed by Raymond Hettinger in :issue:`15806` and
-Zero Piraeus in :issue:`19266`)
+statement.  (Contributed by Raymond Hettinger in :issue:`15806` and
+Zero Piraeus in :issue:`19266`.)
 
 The new :func:`contextlib.redirect_stdout` context manager makes it easier
 for utility scripts to handle inflexible APIs that write their output to
@@ -693,7 +693,7 @@ The latter can be especially useful, for example, to capture output
 from a function that was written to implement a command line interface.
 It is recommended only for utility scripts because it affects the
 global state of :data:`sys.stdout`.  (Contributed by Raymond Hettinger
-in :issue:`15805`)
+in :issue:`15805`.)
 
 The :mod:`contextlib` documentation has also been updated to include a
 :ref:`discussion <single-use-reusable-and-reentrant-cms>` of the
@@ -765,7 +765,7 @@ traceback (that is, ``print(Bytecode.from_traceback(tb).dis())`` is equivalent
 to ``distb(tb)``).
 
 (Contributed by Nick Coghlan, Ryan Kelly and Thomas Kluyver in :issue:`11816`
-and Claudiu Popa in :issue:`17916`)
+and Claudiu Popa in :issue:`17916`.)
 
 New function :func:`~dis.stack_effect` computes the effect on the Python stack
 of a given opcode and argument, information that is not otherwise available.
@@ -855,7 +855,7 @@ application to descriptors, just as :func:`~functools.partial` provides
 for normal callables. The new descriptor also makes it easier to get
 arbitrary callables (including :func:`~functools.partial` instances)
 to behave like normal instance methods when included in a class definition.
-(Contributed by Alon Horev and Nick Coghlan in :issue:`4331`)
+(Contributed by Alon Horev and Nick Coghlan in :issue:`4331`.)
 
 .. _whatsnew-singledispatch:
 
@@ -903,7 +903,7 @@ hashlib
 A new :func:`hashlib.pbkdf2_hmac` function provides
 the `PKCS#5 password-based key derivation function 2
 <http://en.wikipedia.org/wiki/PBKDF2>`_.  (Contributed by Christian
-Heimes in :issue:`18582`)
+Heimes in :issue:`18582`.)
 
 The :attr:`~hashlib.hash.name` attribute of :mod:`hashlib` hash objects is now
 a formally supported interface.  It has always existed in CPython's
@@ -939,17 +939,17 @@ html
 
 New function :func:`~html.unescape` function converts HTML5 character references to
 the corresponding Unicode characters.  (Contributed by Ezio Melotti in
-:issue:`2927`)
+:issue:`2927`.)
 
 :class:`~html.parser.HTMLParser` accepts a new keyword argument
 *convert_charrefs* that, when ``True``, automatically converts all character
 references.  For backward-compatibility, its value defaults to ``False``, but
 it will change to ``True`` in a future version of Python, so you are invited to
 set it explicitly and update your code to use this new feature.  (Contributed
-by Ezio Melotti in :issue:`13633`)
+by Ezio Melotti in :issue:`13633`.)
 
 The *strict* argument of :class:`~html.parser.HTMLParser` is now deprecated.
-(Contributed by Ezio Melotti in :issue:`15114`)
+(Contributed by Ezio Melotti in :issue:`15114`.)
 
 
 http
@@ -1015,19 +1015,19 @@ inspect
 
 The :mod:`inspect` module now offers a basic :ref:`command line interface
 <inspect-module-cli>` to quickly display source code and other
-information for modules, classes and functions. (Contributed by Claudiu Popa
-and Nick Coghlan in :issue:`18626`)
+information for modules, classes and functions.  (Contributed by Claudiu Popa
+and Nick Coghlan in :issue:`18626`.)
 
 :func:`~inspect.unwrap` makes it easy to unravel wrapper function chains
 created by :func:`functools.wraps` (and any other API that sets the
-``__wrapped__`` attribute on a wrapper function). (Contributed by
-Daniel Urban, Aaron Iles and Nick Coghlan in :issue:`13266`)
+``__wrapped__`` attribute on a wrapper function).  (Contributed by
+Daniel Urban, Aaron Iles and Nick Coghlan in :issue:`13266`.)
 
 As part of the implementation of the new :mod:`enum` module, the
 :mod:`inspect` module now has substantially better support for custom
 ``__dir__`` methods and dynamic class attributes provided through
-metaclasses (Contributed by Ethan Furman in :issue:`18929` and
-:issue:`19030`)
+metaclasses.  (Contributed by Ethan Furman in :issue:`18929` and
+:issue:`19030`.)
 
 :func:`~inspect.getfullargspec` and :func:`~inspect.getargspec`
 now use the :func:`~inspect.signature` API. This allows them to
@@ -1038,11 +1038,11 @@ clinic, :func:`functools.partial` objects and more. Note that, unlike
 attributes, and report the already bound first argument for bound methods,
 so it is still necessary to update your code to use
 :func:`~inspect.signature` directly if those features are desired.
-(Contributed by Yury Selivanov in :issue:`17481`)
+(Contributed by Yury Selivanov in :issue:`17481`.)
 
 :func:`~inspect.signature` now supports duck types of CPython functions,
-which adds support for functions compiled with Cython. (Contributed
-by Stefan Behnel and Yury Selivanov in :issue:`17159`)
+which adds support for functions compiled with Cython.  (Contributed
+by Stefan Behnel and Yury Selivanov in :issue:`17159`.)
 
 
 ipaddress
@@ -1082,7 +1082,7 @@ the application modifies the configuration before passing it to
 Logging configuration data received from a socket via the
 :func:`logging.config.listen` function can now be validated before being
 processed by supplying a verification function as the argument to the new
-*verify* keyword argument. (Contributed by Vinay Sajip in :issue:`15452`.)
+*verify* keyword argument.  (Contributed by Vinay Sajip in :issue:`15452`.)
 
 
 .. _whatsnew-marshal-3:
@@ -1120,7 +1120,7 @@ always used on Windows.  New function
 :func:`~multiprocessing.get_all_start_methods` reports all start methods
 available on the platform, :func:`~multiprocessing.get_start_method` reports
 the current start method, and :func:`~multiprocessing.set_start_method` sets
-the start method.  (Contributed by Richard Oudkerk in :issue:`8713`).
+the start method.  (Contributed by Richard Oudkerk in :issue:`8713`.)
 
 :mod:`multiprocessing` also now has the concept of a ``context``, which
 determines how child processes are created.  New function
@@ -1141,7 +1141,7 @@ inherit unneeded handles/file descriptors from their parents (part of
 when using the ``spawn`` or ``forkserver`` start methods. This resolves some
 edge cases where combining multiprocessing, the ``-m`` command line switch,
 and explicit relative imports could cause obscure failures in child
-processes. (Contributed by Nick Coghlan in :issue:`19946`)
+processes.  (Contributed by Nick Coghlan in :issue:`19946`.)
 
 
 operator
@@ -1176,7 +1176,7 @@ Victor Stinner, and Charles-François Natali in :issue:`17914`.)
 Windows).  (Contributed by Brian Curtin in :issue:`11939`.)
 
 :func:`os.path.ismount` now recognizes volumes mounted below a drive
-root on Windows. (Contributed by Tim Golden in :issue:`9035`.)
+root on Windows.  (Contributed by Tim Golden in :issue:`9035`.)
 
 :func:`os.open` supports two new flags on platforms that provide them,
 :data:`~os.O_PATH` (un-opened file descriptor), and :data:`~os.O_TMPFILE`
@@ -1230,7 +1230,7 @@ stdlib serialization protocols, with new :func:`~plistlib.load`,
 functions.  (The older API is now deprecated.)  In addition to the already
 supported XML plist format (:data:`~plistlib.FMT_XML`), it also now supports
 the binary plist format (:data:`~plistlib.FMT_BINARY`).  (Contributed by Ronald
-Oussoren and others in :issue:`14455`).
+Oussoren and others in :issue:`14455`.)
 
 
 poplib
@@ -1254,7 +1254,7 @@ sequence elements as will fit within *width* on each (indented) line.
 (Contributed by Serhiy Storchaka in :issue:`19132`.)
 
 Long strings are now wrapped using Python's normal line continuation
-syntax.  (Contributed by Antoine Pitrou in :issue:`17150`).
+syntax.  (Contributed by Antoine Pitrou in :issue:`17150`.)
 
 
 pty
@@ -1270,13 +1270,13 @@ pydoc
 The :mod:`pydoc` module is now based directly on the :func:`inspect.signature`
 introspection API, allowing it to provide signature information for a wider
 variety of callable objects. This change also means that ``__wrapped__``
-attributes are now taken into account when displaying help information
-(Contributed by Larry Hastings in :issue:`19674`)
+attributes are now taken into account when displaying help information.
+(Contributed by Larry Hastings in :issue:`19674`.)
 
 The :mod:`pydoc` module no longer displays the ``self`` parameter for
 already bound methods. Instead, it aims to always display the exact current
-signature of the supplied callable (Contributed by Larry Hastings in
-:issue:`20710`)
+signature of the supplied callable.  (Contributed by Larry Hastings in
+:issue:`20710`.)
 
 In addition to the changes that have been made to :mod:`pydoc` directly,
 its handling of custom ``__dir__`` methods and various descriptor
@@ -1372,7 +1372,7 @@ smtplib
 :exc:`~smtplib.SMTPException` is now a subclass of :exc:`OSError`, which allows
 both socket level errors and SMTP protocol level errors to be caught in one
 try/except statement by code that only cares whether or not an error occurred.
-(Contributed by Ned Jackson Lovely in :issue:`2118`).
+(Contributed by Ned Jackson Lovely in :issue:`2118`.)
 
 
 socket
@@ -1412,7 +1412,7 @@ ssl
 :data:`~ssl.PROTOCOL_TLSv1_1` and :data:`~ssl.PROTOCOL_TLSv1_2` (TLSv1.1 and
 TLSv1.2 support) have been added; support for these protocols is only available if
 Python is linked with OpenSSL 1.0.1 or later.  (Contributed by Michele Orrù and
-Antoine Pitrou in :issue:`16692`)
+Antoine Pitrou in :issue:`16692`.)
 
 .. _whatsnew34-sslcontext:
 
@@ -1596,7 +1596,7 @@ traceback
 A new :func:`traceback.clear_frames` function takes a traceback object
 and clears the local variables in all of the frames it references,
 reducing the amount of memory consumed.  (Contributed by Andrew Kuchling in
-:issue:`1565525`).
+:issue:`1565525`.)
 
 
 types
@@ -1619,7 +1619,7 @@ in :issue:`16423`.)
 
 The http method that will be used by a :class:`~urllib.request.Request` class
 can now be specified by setting a :class:`~urllib.request.Request.method`
-class attribute on the subclass. (Contributed by Jason R Coombs in
+class attribute on the subclass.  (Contributed by Jason R Coombs in
 :issue:`18978`.)
 
 :class:`~urllib.request.Request` objects are now reusable: if the
@@ -1701,14 +1701,14 @@ or name, instead of only by position.  (Contributed by Antoine Pitrou in
 :issue:`17015`.)
 
 :func:`~mock.mock_open` objects now have ``readline`` and ``readlines``
-methods. (Contributed by Toshio Kuratomi in :issue:`17467`.)
+methods.  (Contributed by Toshio Kuratomi in :issue:`17467`.)
 
 
 venv
 ----
 
 :mod:`venv` now includes activation scripts for the ``csh`` and ``fish``
-shells (Contributed by Andrew Svetlov in :issue:`15417`.)
+shells.  (Contributed by Andrew Svetlov in :issue:`15417`.)
 
 :class:`~venv.EnvBuilder` and the :func:`~venv.create` convenience function
 take a new keyword argument *with_pip*, which defaults to ``False``, that
@@ -1739,12 +1739,12 @@ weakref
 -------
 
 New :class:`~weakref.WeakMethod` class simulates weak references to bound
-methods. (Contributed by Antoine Pitrou in :issue:`14631`.)
+methods.  (Contributed by Antoine Pitrou in :issue:`14631`.)
 
 New :class:`~weakref.finalize` class makes it possible to register a callback
 to be invoked when an object is garbage collected, without needing to
-carefully manage the lifecycle of the weak reference itself. (Contributed by
-Richard Oudkerk in :issue:`15528`)
+carefully manage the lifecycle of the weak reference itself.  (Contributed by
+Richard Oudkerk in :issue:`15528`.)
 
 The callback, if any, associated with a :class:`~weakref.ref` is now
 exposed via the :attr:`~weakref.ref.__callback__` attribute.  (Contributed
@@ -1879,16 +1879,16 @@ Other Build and C API Changes
 
 * The new :c:func:`PyType_GetSlot` function has been added to the stable ABI,
   allowing retrieval of function pointers from named type slots when using
-  the limited API. (Contributed by Martin von Löwis in :issue:`17162`)
+  the limited API.  (Contributed by Martin von Löwis in :issue:`17162`.)
 
 * The new :c:func:`Py_SetStandardStreamEncoding` pre-initialization API
   allows applications embedding the CPython interpreter to reliably force
-  a particular encoding and error handler for the standard streams
-  (Contributed by Bastien Montagne and Nick Coghlan in :issue:`16129`)
+  a particular encoding and error handler for the standard streams.
+  (Contributed by Bastien Montagne and Nick Coghlan in :issue:`16129`.)
 
 * Most Python C APIs that don't mutate string arguments are now correctly
-  marked as accepting ``const char *`` rather than ``char *`` (Contributed
-  by Serhiy Storchaka in :issue:`1772673`).
+  marked as accepting ``const char *`` rather than ``char *``.  (Contributed
+  by Serhiy Storchaka in :issue:`1772673`.)
 
 * A new shell version of ``python-config`` can be used even when a python
   interpreter is not available (for example, in cross compilation scenarios).
@@ -1958,7 +1958,7 @@ Other Improvements
 * The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
   also checks for memory allocation leaks, using
   :func:`sys.getallocatedblocks()`.  (Contributed by Antoine Pitrou in
-  :issue:`13390`).
+  :issue:`13390`.)
 
 * ``python -m`` now works with namespace packages.
 
@@ -2021,14 +2021,14 @@ Significant Optimizations
   longer imported by default. The marshal module has been improved to load
   compiled Python code faster.  (Contributed by Antoine Pitrou, Christian
   Heimes and Victor Stinner in :issue:`19219`, :issue:`19218`, :issue:`19209`,
-  :issue:`19205` and :issue:`9548`)
+  :issue:`19205` and :issue:`9548`.)
 
 * :class:`bz2.BZ2File` is now as fast or faster than the Python2 version for
   most cases.  :class:`lzma.LZMAFile` has also been optimized.  (Contributed by
   Serhiy Storchaka and Nadeem Vawda in :issue:`16034`.)
 
 * :func:`random.getrandbits` is 20%-40% faster for small integers (the most
-  common use case).  (Contributed by Serhiy Storchaka in :issue:`16674`).
+  common use case).  (Contributed by Serhiy Storchaka in :issue:`16674`.)
 
 * By taking advantage of the new storage format for strings, pickling of
   strings is now significantly faster.  (Contributed by Victor Stinner and
@@ -2048,7 +2048,7 @@ Significant Optimizations
 
 * :func:`os.urandom` now uses a lazily-opened persistent file descriptor
   so as to avoid using many file descriptors when run in parallel from
-  multiple threads. (Contributed by Antoine Pitrou in :issue:`18756`.)
+  multiple threads.  (Contributed by Antoine Pitrou in :issue:`18756`.)
 
 
 .. _deprecated-3.4:
@@ -2246,7 +2246,7 @@ Changes in 'python' Command Behavior
 
 * The [X refs, Y blocks] output of a debug (``--with-pydebug``) build of the
   CPython interpreter is now off by default.  It can be re-enabled using the
-  ``-X showrefcount`` option. (Contributed by Ezio Melotti in :issue:`17323`.)
+  ``-X showrefcount`` option.  (Contributed by Ezio Melotti in :issue:`17323`.)
 
 * The python command and most stdlib scripts (as well as :mod:`argparse`) now
   output ``--version`` information to ``stdout`` instead of ``stderr`` (for
@@ -2395,8 +2395,8 @@ Changes in the Python API
   storage).  (:issue:`17094`.)
 
 * Parameter names in ``__annotations__`` dicts are now mangled properly,
-  similarly to ``__kwdefaults__``. (Contributed by Yury Selivanov in
-  :issue:`20625`).
+  similarly to ``__kwdefaults__``.  (Contributed by Yury Selivanov in
+  :issue:`20625`.)
 
 * :attr:`hashlib.hash.name` now always returns the identifier in lower case.
   Previously some builtin hashes had uppercase names, but now that it is a
