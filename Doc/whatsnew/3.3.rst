@@ -171,7 +171,7 @@ Features
 * Multi-dimensional comparisons are supported for any array type.
 
 * One-dimensional memoryviews of hashable (read-only) types with formats B,
-  b or c are now hashable. (Contributed by Antoine Pitrou in :issue:`13411`)
+  b or c are now hashable.  (Contributed by Antoine Pitrou in :issue:`13411`.)
 
 * Arbitrary slicing of any 1-D arrays type is supported. For example, it
   is now possible to reverse a memoryview in O(1) by using a negative step.
@@ -196,7 +196,7 @@ API changes
 
 * For further changes see `Build and C API Changes`_ and `Porting C code`_.
 
-(Contributed by Stefan Krah in :issue:`10181`)
+(Contributed by Stefan Krah in :issue:`10181`.)
 
 .. seealso::
 
@@ -307,8 +307,8 @@ Python 2 is also installed, or ``-2.6`` to specifclly request an earlier
 Python version when a more recent version is installed).
 
 In addition to the launcher, the Windows installer now includes an
-option to add the newly installed Python to the system PATH (contributed
-by Brian Curtin in :issue:`3561`).
+option to add the newly installed Python to the system PATH.  (Contributed
+by Brian Curtin in :issue:`3561`.)
 
 .. seealso::
 
@@ -781,7 +781,7 @@ Some smaller changes made to the core Python language are:
   Both :func:`unicodedata.lookup()` and ``'\N{...}'`` now resolve name aliases,
   and :func:`unicodedata.lookup()` resolves named sequences too.
 
-  (Contributed by Ezio Melotti in :issue:`12753`)
+  (Contributed by Ezio Melotti in :issue:`12753`.)
 
 * Unicode database updated to UCD version 6.1.0
 
@@ -793,7 +793,7 @@ Some smaller changes made to the core Python language are:
   methods of :class:`bytes` and :class:`bytearray` objects now accept an
   integer between 0 and 255 as their first argument.
 
-  (Contributed by Petri Lehtinen in :issue:`12170`)
+  (Contributed by Petri Lehtinen in :issue:`12170`.)
 
 * The ``rjust()``, ``ljust()``, and ``center()`` methods of :class:`bytes`
   and :class:`bytearray` now accept a :class:`bytearray` for the ``fill``
@@ -854,7 +854,7 @@ Builtin functions and types
 * The sequence documentation has been substantially rewritten to better
   explain the binary/text sequence distinction and to provide specific
   documentation sections for the individual builtin sequence types
-  (:issue:`4966`)
+  (:issue:`4966`).
 
 
 New Modules
@@ -891,7 +891,7 @@ The new :mod:`ipaddress` module provides tools for creating and manipulating
 objects representing IPv4 and IPv6 addresses, networks and interfaces (i.e.
 an IP address associated with a specific IP subnet).
 
-(Contributed by Google and Peter Moody in :pep:`3144`)
+(Contributed by Google and Peter Moody in :pep:`3144`.)
 
 lzma
 ----
@@ -900,7 +900,7 @@ The newly-added :mod:`lzma` module provides data compression and decompression
 using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
 file formats.
 
-(Contributed by Nadeem Vawda and Per Øyvind Karlsen in :issue:`6715`)
+(Contributed by Nadeem Vawda and Per Øyvind Karlsen in :issue:`6715`.)
 
 
 Improved Modules
@@ -921,7 +921,7 @@ property. The built-in descriptors have been updated accordingly.
   * :class:`abc.abstractstaticmethod` has been deprecated, use
     :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
-(Contributed by Darren Dale in :issue:`11610`)
+(Contributed by Darren Dale in :issue:`11610`.)
 
 :meth:`abc.ABCMeta.register` now returns the registered subclass, which means
 it can now be used as a class decorator (:issue:`10868`).
@@ -933,7 +933,7 @@ array
 The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
 ``Q`` type codes.
 
-(Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`)
+(Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`.)
 
 
 base64
@@ -964,14 +964,14 @@ new features have been added:
 * :class:`bz2.BZ2File` can now read from and write to arbitrary file-like
   objects, by means of its constructor's *fileobj* argument.
 
-  (Contributed by Nadeem Vawda in :issue:`5863`)
+  (Contributed by Nadeem Vawda in :issue:`5863`.)
 
 * :class:`bz2.BZ2File` and :func:`bz2.decompress` can now decompress
   multi-stream inputs (such as those produced by the :program:`pbzip2` tool).
   :class:`bz2.BZ2File` can now also be used to create this type of file, using
   the ``'a'`` (append) mode.
 
-  (Contributed by Nir Aides in :issue:`1625`)
+  (Contributed by Nir Aides in :issue:`1625`.)
 
 * :class:`bz2.BZ2File` now implements all of the :class:`io.BufferedIOBase` API,
   except for the :meth:`detach` and :meth:`truncate` methods.
@@ -1018,7 +1018,7 @@ collections
 
 Addition of a new :class:`~collections.ChainMap` class to allow treating a
 number of mappings as a single unit.  (Written by Raymond Hettinger for
-:issue:`11089`, made public in :issue:`11297`)
+:issue:`11089`, made public in :issue:`11297`.)
 
 The abstract base classes have been moved in a new :mod:`collections.abc`
 module, to better differentiate between the abstract and the concrete
@@ -1069,7 +1069,7 @@ curses
    push a wide character so the next :meth:`~curses.window.get_wch` will return
    it
 
-(Contributed by Iñigo Serna in :issue:`6755`)
+(Contributed by Iñigo Serna in :issue:`6755`.)
 
 datetime
 --------
@@ -1376,11 +1376,11 @@ ftplib
   :func:`~ftplib.FTP_TLS.ccc` function to revert control channel back to
   plaintext.  This can be useful to take advantage of firewalls that know how
   to handle NAT with non-secure FTP without opening fixed ports.  (Contributed
-  by Giampaolo Rodolà in :issue:`12139`)
+  by Giampaolo Rodolà in :issue:`12139`.)
 
 * Added :meth:`ftplib.FTP.mlsd` method which provides a parsable directory
   listing format and deprecates :meth:`ftplib.FTP.nlst` and
-  :meth:`ftplib.FTP.dir`.  (Contributed by Giampaolo Rodolà in :issue:`11072`)
+  :meth:`ftplib.FTP.dir`.  (Contributed by Giampaolo Rodolà in :issue:`11072`.)
 
 
 functools
@@ -1404,7 +1404,7 @@ hmac
 
 A new :func:`~hmac.compare_digest` function has been added to prevent side
 channel attacks on digests through timing analysis.  (Contributed by Nick
-Coghlan and Christian Heimes in :issue:`15061`)
+Coghlan and Christian Heimes in :issue:`15061`.)
 
 
 http
@@ -1436,13 +1436,13 @@ are also available on the latest bug fix releases of Python 2.7/3.2.
 (Contributed by Ezio Melotti in :issue:`15114`, and :issue:`14538`,
 :issue:`13993`, :issue:`13960`, :issue:`13358`, :issue:`1745761`,
 :issue:`755670`, :issue:`13357`, :issue:`12629`, :issue:`1200313`,
-:issue:`670664`, :issue:`13273`, :issue:`12888`, :issue:`7311`)
+:issue:`670664`, :issue:`13273`, :issue:`12888`, :issue:`7311`.)
 
 A new :data:`~html.entities.html5` dictionary that maps HTML5 named character
 references to the equivalent Unicode character(s) (e.g. ``html5['gt;'] ==
 '>'``) has been added to the :mod:`html.entities` module.  The dictionary is
 now also used by :class:`~html.parser.HTMLParser`.  (Contributed by Ezio
-Melotti in :issue:`11113` and :issue:`15156`)
+Melotti in :issue:`11113` and :issue:`15156`.)
 
 
 imaplib
@@ -1451,7 +1451,7 @@ imaplib
 The :class:`~imaplib.IMAP4_SSL` constructor now accepts an SSLContext
 parameter to control parameters of the secure channel.
 
-(Contributed by Sijin Joseph in :issue:`8808`)
+(Contributed by Sijin Joseph in :issue:`8808`.)
 
 
 inspect
@@ -1462,14 +1462,14 @@ reports the current binding of all names referenced from the function body and
 where those names were resolved, making it easier to verify correct internal
 state when testing code that relies on stateful closures.
 
-(Contributed by Meador Inge and Nick Coghlan in :issue:`13062`)
+(Contributed by Meador Inge and Nick Coghlan in :issue:`13062`.)
 
 A new :func:`~inspect.getgeneratorlocals` function has been added. This
 function reports the current binding of local variables in the generator's
 stack frame, making it easier to verify correct internal state when testing
 generators.
 
-(Contributed by Meador Inge in :issue:`15153`)
+(Contributed by Meador Inge in :issue:`15153`.)
 
 io
 --
@@ -1478,7 +1478,7 @@ The :func:`~io.open` function has a new ``'x'`` mode that can be used to
 exclusively create a new file, and raise a :exc:`FileExistsError` if the file
 already exists. It is based on the C11 'x' mode to fopen().
 
-(Contributed by David Townshend in :issue:`12760`)
+(Contributed by David Townshend in :issue:`12760`.)
 
 The constructor of the :class:`~io.TextIOWrapper` class has a new
 *write_through* optional argument. If *write_through* is ``True``, calls to
@@ -1513,7 +1513,7 @@ math
 The :mod:`math` module has a new function, :func:`~math.log2`,  which returns
 the base-2 logarithm of *x*.
 
-(Written by Mark Dickinson in :issue:`11888`).
+(Written by Mark Dickinson in :issue:`11888`.)
 
 
 mmap
@@ -1567,7 +1567,7 @@ connection when done::
   ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
   >>>
 
-(Contributed by Giampaolo Rodolà in :issue:`9795`)
+(Contributed by Giampaolo Rodolà in :issue:`9795`.)
 
 
 os
@@ -1744,24 +1744,24 @@ sched
   set to False makes the method execute the scheduled events due to expire
   soonest (if any) and then return immediately.
   This is useful in case you want to use the :class:`~sched.scheduler` in
-  non-blocking applications.  (Contributed by Giampaolo Rodolà in :issue:`13449`)
+  non-blocking applications.  (Contributed by Giampaolo Rodolà in :issue:`13449`.)
 
 * :class:`~sched.scheduler` class can now be safely used in multi-threaded
   environments.  (Contributed by Josiah Carlson and Giampaolo Rodolà in
-  :issue:`8684`)
+  :issue:`8684`.)
 
 * *timefunc* and *delayfunct* parameters of :class:`~sched.scheduler` class
   constructor are now optional and defaults to :func:`time.time` and
   :func:`time.sleep` respectively.  (Contributed by Chris Clark in
-  :issue:`13245`)
+  :issue:`13245`.)
 
 * :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
   *argument* parameter is now optional.  (Contributed by Chris Clark in
-  :issue:`13245`)
+  :issue:`13245`.)
 
 * :meth:`~sched.scheduler.enter` and :meth:`~sched.scheduler.enterabs`
   now accept a *kwargs* parameter.  (Contributed by Chris Clark in
-  :issue:`13245`)
+  :issue:`13245`.)
 
 
 select
@@ -1787,10 +1787,10 @@ shutil
 * New functions:
 
   * :func:`~shutil.disk_usage`: provides total, used and free disk space
-    statistics. (Contributed by Giampaolo Rodolà in :issue:`12442`)
+    statistics.  (Contributed by Giampaolo Rodolà in :issue:`12442`.)
   * :func:`~shutil.chown`: allows one to change user and/or group of the given
     path also specifying the user/group names and not only their numeric
-    ids. (Contributed by Sandro Tosi in :issue:`12191`)
+    ids.  (Contributed by Sandro Tosi in :issue:`12191`.)
   * :func:`shutil.get_terminal_size`: returns the size of the terminal window
     to which the interpreter is attached.  (Contributed by Zbigniew
     Jędrzejewski-Szmek in :issue:`13609`.)
@@ -1813,7 +1813,7 @@ shutil
 
 * :func:`~shutil.rmtree` is now resistant to symlink attacks on platforms
   which support the new ``dir_fd`` parameter in :func:`os.open` and
-  :func:`os.unlink`. (Contributed by Martin von Löwis and Hynek Schlawack
+  :func:`os.unlink`.  (Contributed by Martin von Löwis and Hynek Schlawack
   in :issue:`4489`.)
 
 
@@ -1867,7 +1867,7 @@ by Giampaolo Rodolà in :issue:`11289`.)
 
 The :class:`~smtplib.SMTP_SSL` constructor and the :meth:`~smtplib.SMTP.starttls`
 method now accept an SSLContext parameter to control parameters of the secure
-channel.  (Contributed by Kasun Herath in :issue:`8809`)
+channel.  (Contributed by Kasun Herath in :issue:`8809`.)
 
 
 socket
@@ -1887,7 +1887,7 @@ socket
   (http://en.wikipedia.org/wiki/Socketcan), on Linux
   (http://lwn.net/Articles/253425).
 
-  (Contributed by Matthias Fuchs, updated by Tiago Gonçalves in :issue:`10141`)
+  (Contributed by Matthias Fuchs, updated by Tiago Gonçalves in :issue:`10141`.)
 
 * The :class:`~socket.socket` class now supports the PF_RDS protocol family
   (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
@@ -1929,37 +1929,37 @@ ssl
     pseudo-random bytes.
   * :func:`~ssl.RAND_pseudo_bytes`: generate pseudo-random bytes.
 
-  (Contributed by Victor Stinner in :issue:`12049`)
+  (Contributed by Victor Stinner in :issue:`12049`.)
 
 * The :mod:`ssl` module now exposes a finer-grained exception hierarchy
   in order to make it easier to inspect the various kinds of errors.
-  (Contributed by Antoine Pitrou in :issue:`11183`)
+  (Contributed by Antoine Pitrou in :issue:`11183`.)
 
 * :meth:`~ssl.SSLContext.load_cert_chain` now accepts a *password* argument
   to be used if the private key is encrypted.
-  (Contributed by Adam Simpkins in :issue:`12803`)
+  (Contributed by Adam Simpkins in :issue:`12803`.)
 
 * Diffie-Hellman key exchange, both regular and Elliptic Curve-based, is
   now supported through the :meth:`~ssl.SSLContext.load_dh_params` and
   :meth:`~ssl.SSLContext.set_ecdh_curve` methods.
-  (Contributed by Antoine Pitrou in :issue:`13626` and :issue:`13627`)
+  (Contributed by Antoine Pitrou in :issue:`13626` and :issue:`13627`.)
 
 * SSL sockets have a new :meth:`~ssl.SSLSocket.get_channel_binding` method
   allowing the implementation of certain authentication mechanisms such as
-  SCRAM-SHA-1-PLUS.  (Contributed by Jacek Konieczny in :issue:`12551`)
+  SCRAM-SHA-1-PLUS.  (Contributed by Jacek Konieczny in :issue:`12551`.)
 
 * You can query the SSL compression algorithm used by an SSL socket, thanks
   to its new :meth:`~ssl.SSLSocket.compression` method.  The new attribute
   :attr:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
-  (Contributed by Antoine Pitrou in :issue:`13634`)
+  (Contributed by Antoine Pitrou in :issue:`13634`.)
 
 * Support has been added for the Next Procotol Negotiation extension using
   the :meth:`ssl.SSLContext.set_npn_protocols` method.
-  (Contributed by Colin Marc in :issue:`14204`)
+  (Contributed by Colin Marc in :issue:`14204`.)
 
 * SSL errors can now be introspected more easily thanks to
   :attr:`~ssl.SSLError.library` and :attr:`~ssl.SSLError.reason` attributes.
-  (Contributed by Antoine Pitrou in :issue:`14837`)
+  (Contributed by Antoine Pitrou in :issue:`14837`.)
 
 * The :func:`~ssl.get_server_certificate` function now supports IPv6.
   (Contributed by Charles-François Natali in :issue:`11811`.)
@@ -1976,7 +1976,7 @@ The undocumented tarfile.filemode function has been moved to
 :func:`stat.filemode`. It can be used to convert a file's mode to a string of
 the form '-rwxrwxrwx'.
 
-(Contributed by Giampaolo Rodolà in :issue:`14807`)
+(Contributed by Giampaolo Rodolà in :issue:`14807`.)
 
 
 struct
@@ -2035,8 +2035,8 @@ threading
 :class:`threading.Condition`, :class:`threading.Semaphore`,
 :class:`threading.BoundedSemaphore`, :class:`threading.Event`, and
 :class:`threading.Timer`, all of which used to be factory functions returning a
-class instance, are now classes and may be subclassed. (Contributed by Éric
-Araujo in :issue:`10968`).
+class instance, are now classes and may be subclassed.  (Contributed by Éric
+Araujo in :issue:`10968`.)
 
 The :class:`threading.Thread` constructor now accepts a ``daemon`` keyword
 argument to override the default behavior of inheriting the ``deamon`` flag
@@ -2066,7 +2066,7 @@ Other new functions:
 
 * :func:`~time.clock_getres`, :func:`~time.clock_gettime` and
   :func:`~time.clock_settime` functions with ``CLOCK_xxx`` constants.
-  (Contributed by Victor Stinner in :issue:`10278`)
+  (Contributed by Victor Stinner in :issue:`10278`.)
 
 To improve cross platform consistency, :func:`~time.sleep` now raises a
 :exc:`ValueError` when passed a negative sleep value.  Previously this was an
@@ -2090,7 +2090,7 @@ unittest
 :meth:`.assertRaises`, :meth:`.assertRaisesRegex`, :meth:`.assertWarns`, and
 :meth:`.assertWarnsRegex` now accept a keyword argument *msg* when used as
 context managers.  (Contributed by Ezio Melotti and Winston Ewert in
-:issue:`10775`)
+:issue:`10775`.)
 
 :meth:`unittest.TestCase.run` now returns the :class:`~unittest.TestResult`
 object.
@@ -2117,7 +2117,7 @@ The :mod:`webbrowser` module supports more "browsers": Google Chrome (named
 and the generic launchers :program:`xdg-open`, from the FreeDesktop.org
 project, and :program:`gvfs-open`, which is the default URI handler for GNOME
 3.  (The former contributed by Arnaud Calmettes in :issue:`13620`, the latter
-by Matthias Klose in :issue:`14493`)
+by Matthias Klose in :issue:`14493`.)
 
 
 xml.etree.ElementTree
@@ -2160,7 +2160,7 @@ Major performance enhancements have been added:
 
 * UTF-8 is now 2x to 4x faster.  UTF-16 encoding is now up to 10x faster.
 
-  (contributed by Serhiy Storchaka, :issue:`14624`, :issue:`14738` and
+  (Contributed by Serhiy Storchaka, :issue:`14624`, :issue:`14738` and
   :issue:`15026`.)
 
 
