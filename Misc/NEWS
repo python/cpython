@@ -1342,6 +1342,8 @@ Tests
 - Issue #21093: Prevent failures of ctypes test_macholib on OS X if a
   copy of libz exists in $HOME/lib or /usr/local/lib.
 
+- Issue #22770: Prevent some Tk segfaults on OS X when running gui tests.
+
 Tools/Demos
 -----------
 
