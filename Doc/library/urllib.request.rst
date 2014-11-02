@@ -48,8 +48,8 @@ The :mod:`urllib.request` module defines the following functions:
    only works for HTTP, HTTPS and FTP connections.
 
    If *context* is specified, it must be a :class:`ssl.SSLContext` instance
-   describing the various SSL options. See
-   :class:`~http.client.HTTPSConnection` for more details.
+   describing the various SSL options. See :class:`~http.client.HTTPSConnection`
+   for more details.
 
    The optional *cafile* and *capath* parameters specify a set of trusted
    CA certificates for HTTPS requests.  *cafile* should point to a single
@@ -117,6 +117,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    .. versionchanged:: 3.5
       *context* was added.
+
 
 .. function:: install_opener(opener)
 
