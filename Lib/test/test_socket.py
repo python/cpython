@@ -1291,9 +1291,10 @@ class GeneralModuleTests(unittest.TestCase):
             if e.errno == socket.EAI_NODATA:
                 self.skipTest('internet access required for this test')
         # these should all be successful
-        socket.gethostbyname('испытание.python.org')
-        socket.gethostbyname_ex('испытание.python.org')
-        socket.getaddrinfo('испытание.python.org',0,socket.AF_UNSPEC,socket.SOCK_STREAM)
+        domain = 'испытание.pythontest.net'
+        socket.gethostbyname(domain)
+        socket.gethostbyname_ex(domain)
+        socket.getaddrinfo(domain,0,socket.AF_UNSPEC,socket.SOCK_STREAM)
         # this may not work if the forward lookup choses the IPv6 address, as that doesn't
         # have a reverse entry yet
         # socket.gethostbyaddr('испытание.python.org')
