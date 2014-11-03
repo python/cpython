@@ -110,7 +110,7 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.3
       *cadefault* was added.
 
-   .. versionchanged:: 3.5
+   .. versionchanged:: 3.4.3
       *context* was added.
 
 
