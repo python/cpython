@@ -2337,9 +2337,10 @@ else:
                 d1 = f.read()
             d2 = ''
             # now fetch the same data from the HTTPS server
-            url = 'https://%s:%d/%s' % (
-                HOST, server.port, os.path.split(CERTFILE)[1])
-            f = urllib.request.urlopen(url)
+            url = 'https://localhost:%d/%s' % (
+                server.port, os.path.split(CERTFILE)[1])
+            context = ssl.create_default_context(cafile=CERTFILE)
+            f = urllib.request.urlopen(url, context=context)
             try:
                 dlen = f.info().get("content-length")
                 if dlen and (int(dlen) > 0):

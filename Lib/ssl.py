@@ -441,8 +441,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         context.load_default_certs(purpose)
     return context
 
-
-def _create_stdlib_context(protocol=PROTOCOL_SSLv23, *, cert_reqs=None,
+def _create_unverified_context(protocol=PROTOCOL_SSLv23, *, cert_reqs=None,
                            check_hostname=False, purpose=Purpose.SERVER_AUTH,
                            certfile=None, keyfile=None,
                            cafile=None, capath=None, cadata=None):
@@ -479,6 +478,14 @@ def _create_stdlib_context(protocol=PROTOCOL_SSLv23, *, cert_reqs=None,
         context.load_default_certs(purpose)
 
     return context
+
+# Used by http.client if no context is explicitly passed.
+_create_default_https_context = create_default_context
+
+
+# Backwards compatibility alias, even though it's not a public name.
+_create_stdlib_context = _create_unverified_context
+
 
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
