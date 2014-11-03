@@ -62,11 +62,6 @@ The :mod:`urllib.request` module defines the following functions:
    *cafile* and *capath* parameters are omitted.  This will only work on
    some non-Windows platforms.
 
-   .. warning::
-      If neither *cafile* nor *capath* is specified, and *cadefault* is ``False``,
-      an HTTPS request will not do any verification of the server's
-      certificate.
-
    For http and https urls, this function returns a
    :class:`http.client.HTTPResponse` object which has the following
    :ref:`httpresponse-objects` methods.
