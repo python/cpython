@@ -71,12 +71,6 @@ The module provides the following classes:
    :func:`ssl.create_default_context` select the system's trusted CA
    certificates for you.
 
-   The recommended way to connect to HTTPS hosts on the Internet is as
-   follows::
-
-      context = ssl.create_default_context()
-      h = client.HTTPSConnection('www.python.org', 443, context=context)
-
    Please read :ref:`ssl-security` for more information on best practices.
 
    .. note::
@@ -96,6 +90,12 @@ The module provides the following classes:
    .. versionchanged:: 3.4
       The *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
       no longer supported.
+
+   .. versionchanged:: 3.4.3
+      This class now performs all the necessary certificate and hostname checks
+      by default. To revert to the previous, unverified, behavior
+      :func:`ssl._create_unverified_context` can be passed to the *context*
+      parameter.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)

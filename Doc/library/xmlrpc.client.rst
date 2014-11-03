@@ -27,11 +27,10 @@ between conformable Python objects and XML on the wire.
    constructed data.  If you need to parse untrusted or unauthenticated data see
    :ref:`xml-vulnerabilities`.
 
-.. warning::
+.. versionchanged:: 3.4.3
 
-   In the case of https URIs, :mod:`xmlrpc.client` does not do any verification
-   of the server's certificate.
-
+   For https URIs, :mod:`xmlrpc.client` now performs all the necessary
+   certificate and hostname checks by default
 
 .. class:: ServerProxy(uri, transport=None, encoding=None, verbose=False, \
                        allow_none=False, use_datetime=False, \
