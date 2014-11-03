@@ -1012,13 +1012,36 @@ class HTTPSTest(TestCase):
         self.assertIn('Apache', server_string)
 
     def test_networked(self):
-        # Default settings: no cert verification is done
+        # Default settings: requires a valid cert from a trusted CA
+        import ssl
         support.requires('network')
-        with support.transient_internet('svn.python.org'):
-            h = client.HTTPSConnection('svn.python.org', 443)
+        with support.transient_internet('self-signed.pythontest.net'):
+            h = client.HTTPSConnection('self-signed.pythontest.net', 443)
+            with self.assertRaises(ssl.SSLError) as exc_info:
+                h.request('GET', '/')
+            self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
+
+    def test_networked_noverification(self):
+        # Switch off cert verification
+        import ssl
+        support.requires('network')
+        with support.transient_internet('self-signed.pythontest.net'):
+            context = ssl._create_unverified_context()
+            h = client.HTTPSConnection('self-signed.pythontest.net', 443,
+                                       context=context)
             h.request('GET', '/')
             resp = h.getresponse()
-            self._check_svn_python_org(resp)
+            self.assertIn('nginx', resp.getheader('server'))
+
+    def test_networked_trusted_by_default_cert(self):
+        # Default settings: requires a valid cert from a trusted CA
+        support.requires('network')
+        with support.transient_internet('www.python.org'):
+            h = client.HTTPSConnection('www.python.org', 443)
+            h.request('GET', '/')
+            resp = h.getresponse()
+            content_type = resp.getheader('content-type')
+            self.assertIn('text/html', content_type)
 
     def test_networked_good_cert(self):
         # We feed a CA cert that validates the server's cert
@@ -1037,13 +1060,23 @@ class HTTPSTest(TestCase):
         # We feed a "CA" cert that is unrelated to the server's cert
         import ssl
         support.requires('network')
-        with support.transient_internet('svn.python.org'):
+        with support.transient_internet('self-signed.pythontest.net'):
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_verify_locations(CERT_localhost)
-            h = client.HTTPSConnection('svn.python.org', 443, context=context)
-            with self.assertRaises(ssl.SSLError):
+            h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
+            with self.assertRaises(ssl.SSLError) as exc_info:
                 h.request('GET', '/')
+            self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
+
+    def test_local_unknown_cert(self):
+        # The custom cert isn't known to the default trust bundle
+        import ssl
+        server = self.make_server(CERT_localhost)
+        h = client.HTTPSConnection('localhost', server.port)
+        with self.assertRaises(ssl.SSLError) as exc_info:
+            h.request('GET', '/')
+        self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
 
     def test_local_good_hostname(self):
         # The (valid) cert validates the HTTP hostname
@@ -1056,7 +1089,6 @@ class HTTPSTest(TestCase):
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         self.assertEqual(resp.status, 404)
-        del server
 
     def test_local_bad_hostname(self):
         # The (valid) cert doesn't validate the HTTP hostname
@@ -1079,7 +1111,6 @@ class HTTPSTest(TestCase):
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         self.assertEqual(resp.status, 404)
-        del server
 
     @unittest.skipIf(not hasattr(client, 'HTTPSConnection'),
                      'http.client.HTTPSConnection not available')
