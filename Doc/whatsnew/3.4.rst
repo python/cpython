@@ -2504,3 +2504,32 @@ Changes in the C API
 * The ``f_tstate`` (thread state) field of the :c:type:`PyFrameObject`
   structure has been removed to fix a bug: see :issue:`14432` for the
   rationale.
+
+Changed in 3.4.3
+================
+
+.. _pep-476:
+
+PEP 476: Enabling certificate verification by default for stdlib http clients
+-----------------------------------------------------------------------------
+
+:mod:`http.client` and modules which use it, such as :mod:`urllib.request` and
+:mod:`xmlrpc.client`, will now verify that the server presents a certificate
+which is signed by a CA in the platform trust store and whose hostname matches
+the hostname being requested by default, significantly improving security for
+many applications.
+
+For applications which require the old previous behavior, they can pass an
+alternate context::
+
+    import urllib.request
+    import ssl
+
+    # This disables all verification
+    context = ssl._create_unverified_context()
+
+    # This allows using a specific certificate for the host, which doesn't need
+    # to be in the trust store
+    context = ssl.create_default_context(cafile="/path/to/file.crt")
+
+    urllib.request.urlopen("https://invalid-cert", context=context)
