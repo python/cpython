@@ -212,6 +212,8 @@ Library
 
 - Issue #22217: Implemented reprs of classes in the zipfile module.
 
+- Issue #22457: Honour load_tests in the start_dir of discovery.
+
 - Issue #18216: gettext now raises an error when a .mo file has an
   unsupported major version number.  Patch by Aaron Hill.
 
