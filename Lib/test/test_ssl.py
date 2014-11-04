@@ -766,7 +766,7 @@ class ContextTests(unittest.TestCase):
     def test_load_cert_chain(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         # Combined key and cert in a single file
-        ctx.load_cert_chain(CERTFILE)
+        ctx.load_cert_chain(CERTFILE, keyfile=None)
         ctx.load_cert_chain(CERTFILE, keyfile=CERTFILE)
         self.assertRaises(TypeError, ctx.load_cert_chain, keyfile=CERTFILE)
         with self.assertRaises(IOError) as cm:
