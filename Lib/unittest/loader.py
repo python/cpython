@@ -343,6 +343,8 @@ class TestLoader(object):
             return os.path.dirname(full_path)
 
     def _get_name_from_path(self, path):
+        if path == self._top_level_dir:
+            return '.'
         path = _jython_aware_splitext(os.path.normpath(path))
 
         _relpath = os.path.relpath(path, self._top_level_dir)
