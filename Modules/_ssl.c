@@ -2447,8 +2447,8 @@ static PyObject *
 load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"certfile", "keyfile", "password", NULL};
-    PyObject *password = NULL;
-    char *certfile_bytes = NULL, *keyfile_bytes = NULL;
+    PyObject *keyfile = NULL, *keyfile_bytes = NULL, *password = NULL;
+    char *certfile_bytes = NULL;
     pem_password_cb *orig_passwd_cb = self->ctx->default_passwd_callback;
     void *orig_passwd_userdata = self->ctx->default_passwd_callback_userdata;
     _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
@@ -2457,11 +2457,27 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     errno = 0;
     ERR_clear_error();
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-            "et|etO:load_cert_chain", kwlist,
+            "et|OO:load_cert_chain", kwlist,
             Py_FileSystemDefaultEncoding, &certfile_bytes,
-            Py_FileSystemDefaultEncoding, &keyfile_bytes,
-            &password))
+            &keyfile, &password))
         return NULL;
+
+    if (keyfile && keyfile != Py_None) {
+        if (PyString_Check(keyfile)) {
+            Py_INCREF(keyfile);
+            keyfile_bytes = keyfile;
+        } else {
+            PyObject *u = PyUnicode_FromObject(keyfile);
+            if (!u)
+                goto error;
+            keyfile_bytes = PyUnicode_AsEncodedString(
+                u, Py_FileSystemDefaultEncoding, NULL);
+            Py_DECREF(u);
+            if (!keyfile_bytes)
+                goto error;
+        }
+    }
+
     if (password && password != Py_None) {
         if (PyCallable_Check(password)) {
             pw_info.callable = password;
@@ -2491,7 +2507,7 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     }
     PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
     r = SSL_CTX_use_PrivateKey_file(self->ctx,
-        keyfile_bytes ? keyfile_bytes : certfile_bytes,
+        keyfile_bytes ? PyBytes_AS_STRING(keyfile_bytes) : certfile_bytes,
         SSL_FILETYPE_PEM);
     PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
     if (r != 1) {
@@ -2523,8 +2539,8 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
 error:
     SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
     SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
+    Py_XDECREF(keyfile_bytes);
     PyMem_Free(pw_info.password);
-    PyMem_Free(keyfile_bytes);
     PyMem_Free(certfile_bytes);
     return NULL;
 }
