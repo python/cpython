@@ -1668,7 +1668,11 @@ Loading and running tests
 
       If a package (a directory containing a file named :file:`__init__.py`) is
       found, the package will be checked for a ``load_tests`` function. If this
-      exists then it will be called with *loader*, *tests*, *pattern*.
+      exists then it will be called
+      ``package.load_tests(loader, tests, pattern)``. Test discovery takes care
+      to ensure that a package is only checked for tests once during an
+      invocation, even if the load_tests function itself calls
+      ``loader.discover``.
 
       If ``load_tests`` exists then discovery does *not* recurse into the
       package, ``load_tests`` is responsible for loading all tests in the
