@@ -841,7 +841,7 @@ class Test_TestLoader(unittest.TestCase):
         loader = unittest.TestLoader()
 
         suite = loader.loadTestsFromNames(
-            ['unittest.loader.sdasfasfasdf', 'unittest'])
+            ['unittest.loader.sdasfasfasdf', 'unittest.test.dummy'])
         error, test = self.check_deferred_error(loader, list(suite)[0])
         expected = "module 'unittest.loader' has no attribute 'sdasfasfasdf'"
         self.assertIn(
