@@ -1184,4 +1184,7 @@ initreadline(void)
 
     PyOS_ReadlineFunctionPointer = call_readline;
     setup_readline();
+
+    PyModule_AddIntConstant(m, "_READLINE_VERSION", RL_READLINE_VERSION);
+    PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION", rl_readline_version);
 }
