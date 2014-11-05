@@ -32,7 +32,6 @@
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
-#define PATH_MAX MAXPATHLEN
 #endif
 
 #ifdef __gnu_hurd__
