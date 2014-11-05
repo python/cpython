@@ -346,6 +346,7 @@ def _find_mac(command, arg, hw_identifiers, get_index):
 
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
+    import os
 
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     for args in ('', '-a', '-av'):
