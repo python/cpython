@@ -447,7 +447,7 @@ class _SelectorTransport(transports._FlowControlMixin,
     _buffer_factory = bytearray  # Constructs initial value for self._buffer.
 
     def __init__(self, loop, sock, protocol, extra, server=None):
-        super().__init__(extra)
+        super().__init__(extra, loop)
         self._extra['socket'] = sock
         self._extra['sockname'] = sock.getsockname()
         if 'peername' not in self._extra:
@@ -455,7 +455,6 @@ class _SelectorTransport(transports._FlowControlMixin,
                 self._extra['peername'] = sock.getpeername()
             except socket.error:
                 self._extra['peername'] = None
-        self._loop = loop
         self._sock = sock
         self._sock_fd = sock.fileno()
         self._protocol = protocol
