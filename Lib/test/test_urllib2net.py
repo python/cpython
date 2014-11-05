@@ -155,12 +155,12 @@ class OtherNetworkTests(unittest.TestCase):
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
     def test_urlwithfrag(self):
-        urlwith_frag = "https://docs.python.org/2/glossary.html#glossary"
+        urlwith_frag = "http://www.pythontest.net/index.html#frag"
         with test_support.transient_internet(urlwith_frag):
             req = urllib2.Request(urlwith_frag)
             res = urllib2.urlopen(req)
             self.assertEqual(res.geturl(),
-                    "https://docs.python.org/2/glossary.html#glossary")
+                    "http://www.pythontest.net/index.html#frag")
 
     def test_fileno(self):
         req = urllib2.Request("http://www.example.com")
