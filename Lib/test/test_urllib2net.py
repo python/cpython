@@ -8,13 +8,6 @@ import urllib.error
 import urllib.request
 import sys
 
-try:
-    import ssl
-except ImportError:
-    ssl = None
-
-requires_ssl = unittest.skipIf(ssl is None, "SSL not supported")
-
 support.requires("network")
 
 TIMEOUT = 60  # seconds
@@ -167,14 +160,13 @@ class OtherNetworkTests(unittest.TestCase):
             self.assertEqual(res.geturl(),
                     "http://www.pythontest.net/index.html#frag")
 
-    @requires_ssl
     def test_redirect_url_withfrag(self):
-        redirect_url_with_frag = "http://bit.ly/1iSHToT"
+        redirect_url_with_frag = "http://www.pythontest.net/redir/with_frag/"
         with support.transient_internet(redirect_url_with_frag):
             req = urllib.request.Request(redirect_url_with_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    "https://docs.python.org/3.4/glossary.html#term-global-interpreter-lock")
+                    "http://www.pythontest.net/elsewhere/#frag")
 
     def test_custom_headers(self):
         url = "http://www.example.com"
