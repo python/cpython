@@ -15,8 +15,8 @@ here = os.path.dirname(__file__)
 CERT_localhost = os.path.join(here, 'keycert.pem')
 # Self-signed cert file for 'fakehostname'
 CERT_fakehostname = os.path.join(here, 'keycert2.pem')
-# Root cert file (CA) for svn.python.org's cert
-CACERT_svn_python_org = os.path.join(here, 'https_svn_python_org_root.pem')
+# Self-signed cert file for self-signed.pythontest.net
+CERT_selfsigned_pythontestdotnet = os.path.join(here, 'selfsigned_pythontestdotnet.pem')
 
 HOST = support.HOST
 
@@ -570,17 +570,18 @@ class HTTPSTest(TestCase):
             self._check_svn_python_org(resp)
 
     def test_networked_good_cert(self):
-        # We feed a CA cert that validates the server's cert
+        # We feed the server's cert as a validating cert
         import ssl
         support.requires('network')
-        with support.transient_internet('svn.python.org'):
+        with support.transient_internet('self-signed.pythontest.net'):
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.verify_mode = ssl.CERT_REQUIRED
-            context.load_verify_locations(CACERT_svn_python_org)
-            h = client.HTTPSConnection('svn.python.org', 443, context=context)
+            context.load_verify_locations(CERT_selfsigned_pythontestdotnet)
+            h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
             h.request('GET', '/')
             resp = h.getresponse()
-            self._check_svn_python_org(resp)
+            server_string = resp.getheader('server')
+            self.assertIn('nginx', server_string)
 
     def test_networked_bad_cert(self):
         # We feed a "CA" cert that is unrelated to the server's cert
