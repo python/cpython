@@ -606,14 +606,15 @@ class EventLoopTestsMixin:
         self.assertGreater(pr.nbytes, 0)
         tr.close()
 
-    def _dummy_ssl_create_context(self, purpose=ssl.Purpose.SERVER_AUTH, *,
-                                  cafile=None, capath=None, cadata=None):
-        """
-        A ssl.create_default_context() replacement that doesn't enable
-        cert validation.
-        """
-        self.assertEqual(purpose, ssl.Purpose.SERVER_AUTH)
-        return test_utils.dummy_ssl_context()
+    if ssl:
+        def _dummy_ssl_create_context(self, purpose=ssl.Purpose.SERVER_AUTH, *,
+                                      cafile=None, capath=None, cadata=None):
+            """
+            A ssl.create_default_context() replacement that doesn't enable
+            cert validation.
+            """
+            self.assertEqual(purpose, ssl.Purpose.SERVER_AUTH)
+            return test_utils.dummy_ssl_context()
 
     def _test_create_ssl_connection(self, httpd, create_connection,
                                     check_sockname=True):
