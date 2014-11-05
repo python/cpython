@@ -159,7 +159,6 @@ class OtherNetworkTests(unittest.TestCase):
 
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
-    @requires_ssl
     def test_urlwithfrag(self):
         urlwith_frag = "http://www.pythontest.net/index.html#frag"
         with support.transient_internet(urlwith_frag):
