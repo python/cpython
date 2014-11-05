@@ -21,9 +21,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
-        super().__init__(extra)
+        super().__init__(extra, loop)
         self._set_extra(sock)
-        self._loop = loop
         self._sock = sock
         self._protocol = protocol
         self._server = server
