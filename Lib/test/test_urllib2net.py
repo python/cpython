@@ -161,12 +161,12 @@ class OtherNetworkTests(unittest.TestCase):
 
     @requires_ssl
     def test_urlwithfrag(self):
-        urlwith_frag = "https://docs.python.org/2/glossary.html#glossary"
+        urlwith_frag = "http://www.pythontest.net/index.html#frag"
         with support.transient_internet(urlwith_frag):
             req = urllib.request.Request(urlwith_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    "https://docs.python.org/2/glossary.html#glossary")
+                    "http://www.pythontest.net/index.html#frag")
 
     @requires_ssl
     def test_redirect_url_withfrag(self):
