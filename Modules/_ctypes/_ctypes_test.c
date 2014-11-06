@@ -540,6 +540,49 @@ EXPORT(int) PointInRect(RECT *prc, POINT pt)
     return 1;
 }
 
+EXPORT(long left = 10);
+EXPORT(long top = 20);
+EXPORT(long right = 30);
+EXPORT(long bottom = 40);
+
+EXPORT(RECT) ReturnRect(int i, RECT ar, RECT* br, POINT cp, RECT dr,
+                        RECT *er, POINT fp, RECT gr)
+{
+    /*Check input */
+    if (ar.left + br->left + dr.left + er->left + gr.left != left * 5)
+    {
+        ar.left = 100;
+        return ar;
+    }
+    if (ar.right + br->right + dr.right + er->right + gr.right != right * 5)
+    {
+        ar.right = 100;
+        return ar;
+    }
+    if (cp.x != fp.x)
+    {
+        ar.left = -100;
+    }
+    if (cp.y != fp.y)
+    {
+        ar.left = -200;
+    }
+    switch(i)
+    {
+    case 0:
+        return ar;
+        break;
+    case 1:
+        return dr;
+        break;
+    case 2:
+        return gr;
+        break;
+
+    }
+    return ar;
+}
+
 typedef struct {
     short x;
     short y;
