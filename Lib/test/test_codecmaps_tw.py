@@ -10,14 +10,12 @@ import unittest
 class TestBIG5Map(test_multibytecodec_support.TestBase_Mapping,
                   unittest.TestCase):
     encoding = 'big5'
-    mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/OBSOLETE/' \
-                 'EASTASIA/OTHER/BIG5.TXT'
+    mapfileurl = 'http://www.pythontest.net/unicode/BIG5.TXT'
 
 class TestCP950Map(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'cp950'
-    mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/' \
-                 'WINDOWS/CP950.TXT'
+    mapfileurl = 'http://www.pythontest.net/unicode/CP950.TXT'
     pass_enctest = [
         ('\xa2\xcc', u'\u5341'),
         ('\xa2\xce', u'\u5345'),
