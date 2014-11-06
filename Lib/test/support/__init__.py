@@ -1029,7 +1029,12 @@ def open_urlresource(url, *args, **kw):
     requires('urlfetch')
 
     print('\tfetching %s ...' % url, file=get_original_stdout())
-    f = urllib.request.urlopen(url, timeout=15)
+    opener = urllib.request.build_opener()
+    if gzip:
+        opener.addheaders.append(('Accept-Encoding', 'gzip'))
+    f = opener.open(url, timeout=15)
+    if gzip and f.headers.get('Content-Encoding') == 'gzip':
+        f = gzip.GzipFile(fileobj=f)
     try:
         with open(fn, "wb") as out:
             s = f.read()
