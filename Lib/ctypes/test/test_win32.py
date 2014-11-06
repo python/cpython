@@ -111,9 +111,29 @@ class Structures(unittest.TestCase):
 
         dll = CDLL(_ctypes_test.__file__)
 
-        pt = POINT(10, 10)
-        rect = RECT(0, 0, 20, 20)
-        self.assertEqual(1, dll.PointInRect(byref(rect), pt))
+        pt = POINT(15, 25)
+        left = c_long.in_dll(dll, 'left')
+        top = c_long.in_dll(dll, 'top')
+        right = c_long.in_dll(dll, 'right')
+        bottom = c_long.in_dll(dll, 'bottom')
+        rect = RECT(left, top, right, bottom)
+        PointInRect = dll.PointInRect
+        PointInRect.argtypes = [POINTER(RECT), POINT]
+        self.assertEqual(1, PointInRect(byref(rect), pt))
+
+        ReturnRect = dll.ReturnRect
+        ReturnRect.argtypes = [c_int, RECT, POINTER(RECT), POINT, RECT,
+                               POINTER(RECT), POINT, RECT]
+        ReturnRect.restype = RECT
+        for i in range(4):
+            ret = ReturnRect(i, rect, pointer(rect), pt, rect,
+                         byref(rect), pt, rect)
+            # the c function will check and modify ret if something is
+            # passed in improperly
+            self.assertEqual(ret.left, left.value)
+            self.assertEqual(ret.right, right.value)
+            self.assertEqual(ret.top, top.value)
+            self.assertEqual(ret.bottom, bottom.value)
 
 if __name__ == '__main__':
     unittest.main()
