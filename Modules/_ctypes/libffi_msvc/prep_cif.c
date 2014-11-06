@@ -116,9 +116,9 @@ ffi_status ffi_prep_cif(/*@out@*/ /*@partial@*/ ffi_cif *cif,
 #if !defined M68K && !defined __x86_64__ && !defined S390
   /* Make space for the return structure pointer */
   if (cif->rtype->type == FFI_TYPE_STRUCT
-      /* MSVC returns small structures in registers.  But we have a different
-      workaround: pretend int32 or int64 return type, and converting to
-      structure afterwards. */
+#ifdef _WIN32
+      && (cif->rtype->size > 8)  /* MSVC returns small structs in registers */
+#endif
 #ifdef SPARC
       && (cif->abi != FFI_V9 || cif->rtype->size > 32)
 #endif
@@ -145,6 +145,10 @@ ffi_status ffi_prep_cif(/*@out@*/ /*@partial@*/ ffi_cif *cif,
 	      && cif->abi != FFI_V9))
 	bytes += sizeof(void*);
       else
+#elif defined (_WIN64)
+      if ((*ptr)->type == FFI_TYPE_STRUCT && ((*ptr)->size > 8))
+	    bytes += sizeof(void*);
+      else
 #endif
 	{
 #if !defined(_MSC_VER) && !defined(__MINGW32__)
@@ -167,6 +171,12 @@ ffi_status ffi_prep_cif(/*@out@*/ /*@partial@*/ ffi_cif *cif,
 	}
 #endif
     }
+
+#ifdef _WIN64
+  /* Function call needs at least 40 bytes stack size, on win64 AMD64 */
+  if (bytes < 40)
+      bytes = 40;
+#endif
 
   cif->bytes = bytes;
 
