@@ -113,6 +113,8 @@ functions should be good enough; otherwise, you should use an instance of
       +
       + world
 
+   .. versionadded:: 3.3
+
 
 :func:`wrap`, :func:`fill` and :func:`shorten` work by creating a
 :class:`TextWrapper` instance and calling a single method on it.  That
