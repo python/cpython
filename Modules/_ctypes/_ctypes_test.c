@@ -540,10 +540,10 @@ EXPORT(int) PointInRect(RECT *prc, POINT pt)
     return 1;
 }
 
-EXPORT(int left = 10);
-EXPORT(int top = 20);
-EXPORT(int right = 30);
-EXPORT(int bottom = 40);
+EXPORT(long left = 10);
+EXPORT(long top = 20);
+EXPORT(long right = 30);
+EXPORT(long bottom = 40);
 
 EXPORT(RECT) ReturnRect(int i, RECT ar, RECT* br, POINT cp, RECT dr,
                         RECT *er, POINT fp, RECT gr)
