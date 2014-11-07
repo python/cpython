@@ -180,7 +180,7 @@ class PyclbrTest(TestCase):
         cm('pickle')
         cm('aifc', ignore=('openfp',))  # set with = in module
         cm('Cookie')
-        cm('sre_parse', ignore=('dump',)) # from sre_constants import *
+        cm('sre_parse', ignore=('dump', 'groups')) # from sre_constants import *; property
         cm('pdb')
         cm('pydoc')
 
