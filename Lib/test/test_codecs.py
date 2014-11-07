@@ -2563,6 +2563,10 @@ class TransformCodecTest(unittest.TestCase):
                     info = codecs.lookup(alias)
                     self.assertEqual(info.name, expected_name)
 
+    def test_uu_invalid(self):
+        # Missing "begin" line
+        self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
+
 
 # The codec system tries to wrap exceptions in order to ensure the error
 # mentions the operation being performed and the codec involved. We

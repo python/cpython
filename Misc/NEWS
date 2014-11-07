@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22406: Fixed the uu_codec codec incorrectly ported to 3.x.
+  Based on patch by Martin Panter.
+
 - Issue #17293: uuid.getnode() now determines MAC address on AIX using netstat.
   Based on patch by Aivars Kalvāns.
 
