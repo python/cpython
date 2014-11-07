@@ -69,12 +69,14 @@ class Pattern:
     # master pattern object.  keeps track of global attributes
     def __init__(self):
         self.flags = 0
-        self.open = []
-        self.groups = 1
         self.groupdict = {}
+        self.subpatterns = [None]  # group 0
+    @property
+    def groups(self):
+        return len(self.subpatterns)
     def opengroup(self, name=None):
         gid = self.groups
-        self.groups = gid + 1
+        self.subpatterns.append(None)
         if self.groups > MAXGROUPS:
             raise error("groups number is too large")
         if name is not None:
@@ -83,12 +85,11 @@ class Pattern:
                 raise error("redefinition of group name %s as group %d; "
                             "was group %d" % (repr(name), gid,  ogid))
             self.groupdict[name] = gid
-        self.open.append(gid)
         return gid
-    def closegroup(self, gid):
-        self.open.remove(gid)
+    def closegroup(self, gid, p):
+        self.subpatterns[gid] = p
     def checkgroup(self, gid):
-        return gid < self.groups and gid not in self.open
+        return gid < self.groups and self.subpatterns[gid] is not None
 
 class SubPattern:
     # a subpattern, in intermediate form
@@ -184,7 +185,21 @@ class SubPattern:
             elif op in _UNITCODES:
                 lo = lo + 1
                 hi = hi + 1
-            elif op == SUCCESS:
+            elif op is GROUPREF:
+                i, j = self.pattern.subpatterns[av].getwidth()
+                lo = lo + i
+                hi = hi + j
+            elif op is GROUPREF_EXISTS:
+                i, j = av[1].getwidth()
+                if av[2] is not None:
+                    l, h = av[2].getwidth()
+                    i = min(i, l)
+                    j = max(j, h)
+                else:
+                    i = 0
+                lo = lo + i
+                hi = hi + j
+            elif op is SUCCESS:
                 break
         self.width = min(lo, MAXREPEAT - 1), min(hi, MAXREPEAT)
         return self.width
@@ -705,7 +720,7 @@ def _parse(source, state):
                 if not sourcematch(")"):
                     raise error("unbalanced parenthesis")
                 if group is not None:
-                    state.closegroup(group)
+                    state.closegroup(group, p)
                 subpatternappend((SUBPATTERN, (group, p)))
             else:
                 while True:
