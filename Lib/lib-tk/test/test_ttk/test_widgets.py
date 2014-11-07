@@ -1,5 +1,6 @@
 import unittest
 import Tkinter as tkinter
+from Tkinter import TclError
 import ttk
 from test.test_support import requires, run_unittest
 import sys
@@ -1563,6 +1564,21 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(str(self.tv.tag_configure('test', foreground=None)),
             'blue')
         self.assertIsInstance(self.tv.tag_configure('test'), dict)
+
+    def test_tag_has(self):
+        item1 = self.tv.insert('', 'end', text='Item 1', tags=['tag1'])
+        item2 = self.tv.insert('', 'end', text='Item 2', tags=['tag2'])
+        self.assertRaises(TypeError, self.tv.tag_has)
+        self.assertRaises(TclError, self.tv.tag_has, 'tag1', 'non-existing')
+        self.assertTrue(self.tv.tag_has('tag1', item1))
+        self.assertFalse(self.tv.tag_has('tag1', item2))
+        self.assertFalse(self.tv.tag_has('tag2', item1))
+        self.assertTrue(self.tv.tag_has('tag2', item2))
+        self.assertFalse(self.tv.tag_has('tag3', item1))
+        self.assertFalse(self.tv.tag_has('tag3', item2))
+        self.assertEqual(self.tv.tag_has('tag1'), (item1,))
+        self.assertEqual(self.tv.tag_has('tag2'), (item2,))
+        self.assertEqual(self.tv.tag_has('tag3'), ())
 
 
 @add_standard_options(StandardTtkOptionsTests)
