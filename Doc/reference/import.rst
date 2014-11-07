@@ -459,7 +459,8 @@ import machinery will create the new module itself.
 
     * If loading fails, the loader must remove any modules it has inserted
       into :data:`sys.modules`, but it must remove **only** the failing
-      module, and only if the loader itself has loaded it explicitly.
+      module(s), and only if the loader itself has loaded the module(s)
+      explicitly.
 
 Module spec
 -----------
