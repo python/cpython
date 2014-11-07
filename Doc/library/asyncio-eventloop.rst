@@ -121,7 +121,8 @@ a different clock than :func:`time.time`.
 .. method:: BaseEventLoop.call_at(when, callback, *args)
 
    Arrange for the *callback* to be called at the given absolute timestamp
-   *when* (an int or float), using the same time reference as :meth:`time`.
+   *when* (an int or float), using the same time reference as
+   :meth:`BaseEventLoop.time`.
 
    This method's behavior is the same as :meth:`call_later`.
 
