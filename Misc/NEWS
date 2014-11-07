@@ -183,6 +183,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17293: uuid.getnode() now determines MAC address on AIX using netstat.
+  Based on patch by Aivars Kalvāns.
+
 - Issue #22769: Fixed ttk.Treeview.tag_has() when called without arguments.
 
 - Issue #22417: Verify certificates by default in httplib (PEP 476).
