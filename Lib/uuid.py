@@ -311,7 +311,7 @@ class UUID(object):
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
-def _find_mac(command, args, hw_identifiers, get_index):
+def _popen(command, args):
     import os, shutil
     executable = shutil.which(command)
     if executable is None:
@@ -319,20 +319,27 @@ def _find_mac(command, args, hw_identifiers, get_index):
         executable = shutil.which(command, path=path)
         if executable is None:
             return None
+    # LC_ALL to ensure English output, 2>/dev/null to prevent output on
+    # stderr (Note: we don't have an example where the words we search for
+    # are actually localized, but in theory some system could do so.)
+    cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
+    return os.popen(cmd)
 
+def _find_mac(command, args, hw_identifiers, get_index):
     try:
-        # LC_ALL to ensure English output, 2>/dev/null to prevent output on
-        # stderr (Note: we don't have an example where the words we search for
-        # are actually localized, but in theory some system could do so.)
-        cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
-        with os.popen(cmd) as pipe:
+        pipe = _popen(command, args)
+        if not pipe:
+            return
+        with pipe:
             for line in pipe:
-                words = line.lower().split()
+                words = line.lower().rstrip().split()
                 for i in range(len(words)):
                     if words[i] in hw_identifiers:
                         try:
-                            return int(
-                                words[get_index(i)].replace(':', ''), 16)
+                            word = words[get_index(i)]
+                            mac = int(word.replace(':', ''), 16)
+                            if mac:
+                                return mac
                         except (ValueError, IndexError):
                             # Virtual interfaces, such as those provided by
                             # VPNs, do not have a colon-delimited MAC address
@@ -345,27 +352,50 @@ def _find_mac(command, args, hw_identifiers, get_index):
 
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
-
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     for args in ('', '-a', '-av'):
         mac = _find_mac('ifconfig', args, ['hwaddr', 'ether'], lambda i: i+1)
         if mac:
             return mac
 
-    import socket
+def _arp_getnode():
+    """Get the hardware address on Unix by running arp."""
+    import os, socket
     ip_addr = socket.gethostbyname(socket.gethostname())
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
-    mac = _find_mac('arp', '-an', [ip_addr], lambda i: -1)
-    if mac:
-        return mac
+    return _find_mac('arp', '-an', [ip_addr], lambda i: -1)
 
+def _lanscan_getnode():
+    """Get the hardware address on Unix by running lanscan."""
     # This might work on HP-UX.
-    mac = _find_mac('lanscan', '-ai', ['lan0'], lambda i: 0)
-    if mac:
-        return mac
+    return _find_mac('lanscan', '-ai', ['lan0'], lambda i: 0)
 
-    return None
+def _netstat_getnode():
+    """Get the hardware address on Unix by running netstat."""
+    # This might work on AIX, Tru64 UNIX and presumably on IRIX.
+    try:
+        pipe = _popen('netstat', '-ia')
+        if not pipe:
+            return
+        with pipe:
+            words = pipe.readline().rstrip().split()
+            try:
+                i = words.index('Address')
+            except ValueError:
+                return
+            for line in pipe:
+                try:
+                    words = line.rstrip().split()
+                    word = words[i]
+                    if len(word) == 17 and word.count(':') == 5:
+                        mac = int(word.replace(':', ''), 16)
+                        if mac:
+                            return mac
+                except (ValueError, IndexError):
+                    pass
+    except OSError:
+        pass
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""
@@ -506,7 +536,8 @@ def getnode():
     if sys.platform == 'win32':
         getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
     else:
-        getters = [_unixdll_getnode, _ifconfig_getnode]
+        getters = [_unixdll_getnode, _ifconfig_getnode, _arp_getnode,
+                   _lanscan_getnode, _netstat_getnode]
 
     for getter in getters + [_random_getnode]:
         try:
