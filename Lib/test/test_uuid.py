@@ -307,6 +307,24 @@ class TestUUID(unittest.TestCase):
         if node is not None:
             self.check_node(node, 'ifconfig')
 
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_arp_getnode(self):
+        node = uuid._arp_getnode()
+        if node is not None:
+            self.check_node(node, 'arp')
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_lanscan_getnode(self):
+        node = uuid._lanscan_getnode()
+        if node is not None:
+            self.check_node(node, 'lanscan')
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_netstat_getnode(self):
+        node = uuid._netstat_getnode()
+        if node is not None:
+            self.check_node(node, 'netstat')
+
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_ipconfig_getnode(self):
         node = uuid._ipconfig_getnode()
