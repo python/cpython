@@ -61,6 +61,26 @@ class UUTest(unittest.TestCase):
         except uu.Error, e:
             self.assertEqual(str(e), "No valid begin line found in input file")
 
+    def test_garbage_padding(self):
+        # Issue #22406
+        encodedtext = (
+            "begin 644 file\n"
+            # length 1; bits 001100 111111 111111 111111
+            "\x21\x2C\x5F\x5F\x5F\n"
+            "\x20\n"
+            "end\n"
+        )
+        plaintext = "\x33"  # 00110011
+
+        inp = cStringIO.StringIO(encodedtext)
+        out = cStringIO.StringIO()
+        uu.decode(inp, out, quiet=True)
+        self.assertEqual(out.getvalue(), plaintext)
+
+        import codecs
+        decoded = codecs.decode(encodedtext, "uu_codec")
+        self.assertEqual(decoded, plaintext)
+
 class UUStdIOTest(unittest.TestCase):
 
     def setUp(self):

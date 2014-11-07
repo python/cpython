@@ -2109,6 +2109,10 @@ def test_main():
         BomTest,
     )
 
+    def test_uu_invalid(self):
+        # Missing "begin" line
+        self.assertRaises(ValueError, codecs.decode, "", "uu-codec")
+
 
 if __name__ == "__main__":
     test_main()
