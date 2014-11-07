@@ -159,7 +159,7 @@ class PyclbrTest(TestCase):
         cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle')
         cm('aifc', ignore=('openfp', '_aifc_params'))  # set with = in module
-        cm('sre_parse', ignore=('dump',)) # from sre_constants import *
+        cm('sre_parse', ignore=('dump', 'groups')) # from sre_constants import *; property
         cm('pdb')
         cm('pydoc')
 
