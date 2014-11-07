@@ -183,6 +183,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #814253, #9179: Group references and conditional group references now
+  work in lookbehind assertions in regular expressions.
+
 - Issue #22406: Fixed the uu_codec codec incorrectly ported to 3.x.
   Based on patch by Martin Panter.
 
