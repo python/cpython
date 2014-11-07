@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issues #814253, #9179: Group references and conditional group references now
+  work in lookbehind assertions in regular expressions.
+
 - Issue #17293: uuid.getnode() now determines MAC address on AIX using netstat.
   Based on patch by Aivars Kalvāns.
 
