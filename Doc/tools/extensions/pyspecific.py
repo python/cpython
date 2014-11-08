@@ -172,22 +172,20 @@ class DeprecatedRemoved(Directive):
             messages = []
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, node)
+        if len(node):
             if isinstance(node[0], nodes.paragraph) and node[0].rawsource:
                 content = nodes.inline(node[0].rawsource, translatable=True)
                 content.source = node[0].source
                 content.line = node[0].line
                 content += node[0].children
                 node[0].replace_self(nodes.paragraph('', '', content))
-                node[0].insert(0, nodes.inline('', '%s: ' % text,
-                                               classes=['versionmodified']))
+            node[0].insert(0, nodes.inline('', '%s: ' % text,
+                                           classes=['versionmodified']))
         else:
             para = nodes.paragraph('', '',
                                    nodes.inline('', '%s.' % text,
                                                 classes=['versionmodified']))
-            if len(node):
-                node.insert(0, para)
-            else:
-                node.append(para)
+            node.append(para)
         env = self.state.document.settings.env
         env.note_versionchange('deprecated', version[0], node, self.lineno)
         return [node] + messages
