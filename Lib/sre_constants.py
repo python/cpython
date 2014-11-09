@@ -23,138 +23,81 @@ from _sre import MAXREPEAT, MAXGROUPS
 class error(Exception):
     pass
 
+
+class _NamedIntConstant(int):
+    def __new__(cls, value, name):
+        self = super(_NamedIntConstant, cls).__new__(cls, value)
+        self.name = name
+        return self
+
+    def __str__(self):
+        return self.name
+
+    __repr__ = __str__
+
+MAXREPEAT = _NamedIntConstant(MAXREPEAT, 'MAXREPEAT')
+
+def _makecodes(names):
+    names = names.strip().split()
+    items = [_NamedIntConstant(i, name) for i, name in enumerate(names)]
+    globals().update({item.name: item for item in items})
+    return items
+
 # operators
+# failure=0 success=1 (just because it looks better that way :-)
+OPCODES = _makecodes("""
+    FAILURE SUCCESS
 
-FAILURE = "failure"
-SUCCESS = "success"
+    ANY ANY_ALL
+    ASSERT ASSERT_NOT
+    AT
+    BRANCH
+    CALL
+    CATEGORY
+    CHARSET BIGCHARSET
+    GROUPREF GROUPREF_EXISTS GROUPREF_IGNORE
+    IN IN_IGNORE
+    INFO
+    JUMP
+    LITERAL LITERAL_IGNORE
+    MARK
+    MAX_UNTIL
+    MIN_UNTIL
+    NOT_LITERAL NOT_LITERAL_IGNORE
+    NEGATE
+    RANGE
+    REPEAT
+    REPEAT_ONE
+    SUBPATTERN
+    MIN_REPEAT_ONE
+    RANGE_IGNORE
 
-ANY = "any"
-ANY_ALL = "any_all"
-ASSERT = "assert"
-ASSERT_NOT = "assert_not"
-AT = "at"
-BIGCHARSET = "bigcharset"
-BRANCH = "branch"
-CALL = "call"
-CATEGORY = "category"
-CHARSET = "charset"
-GROUPREF = "groupref"
-GROUPREF_IGNORE = "groupref_ignore"
-GROUPREF_EXISTS = "groupref_exists"
-IN = "in"
-IN_IGNORE = "in_ignore"
-INFO = "info"
-JUMP = "jump"
-LITERAL = "literal"
-LITERAL_IGNORE = "literal_ignore"
-MARK = "mark"
-MAX_REPEAT = "max_repeat"
-MAX_UNTIL = "max_until"
-MIN_REPEAT = "min_repeat"
-MIN_UNTIL = "min_until"
-NEGATE = "negate"
-NOT_LITERAL = "not_literal"
-NOT_LITERAL_IGNORE = "not_literal_ignore"
-RANGE = "range"
-RANGE_IGNORE = "range_ignore"
-REPEAT = "repeat"
-REPEAT_ONE = "repeat_one"
-SUBPATTERN = "subpattern"
-MIN_REPEAT_ONE = "min_repeat_one"
+    MIN_REPEAT MAX_REPEAT
+""")
+del OPCODES[-2:] # remove MIN_REPEAT and MAX_REPEAT
 
 # positions
-AT_BEGINNING = "at_beginning"
-AT_BEGINNING_LINE = "at_beginning_line"
-AT_BEGINNING_STRING = "at_beginning_string"
-AT_BOUNDARY = "at_boundary"
-AT_NON_BOUNDARY = "at_non_boundary"
-AT_END = "at_end"
-AT_END_LINE = "at_end_line"
-AT_END_STRING = "at_end_string"
-AT_LOC_BOUNDARY = "at_loc_boundary"
-AT_LOC_NON_BOUNDARY = "at_loc_non_boundary"
-AT_UNI_BOUNDARY = "at_uni_boundary"
-AT_UNI_NON_BOUNDARY = "at_uni_non_boundary"
+ATCODES = _makecodes("""
+    AT_BEGINNING AT_BEGINNING_LINE AT_BEGINNING_STRING
+    AT_BOUNDARY AT_NON_BOUNDARY
+    AT_END AT_END_LINE AT_END_STRING
+    AT_LOC_BOUNDARY AT_LOC_NON_BOUNDARY
+    AT_UNI_BOUNDARY AT_UNI_NON_BOUNDARY
+""")
 
 # categories
-CATEGORY_DIGIT = "category_digit"
-CATEGORY_NOT_DIGIT = "category_not_digit"
-CATEGORY_SPACE = "category_space"
-CATEGORY_NOT_SPACE = "category_not_space"
-CATEGORY_WORD = "category_word"
-CATEGORY_NOT_WORD = "category_not_word"
-CATEGORY_LINEBREAK = "category_linebreak"
-CATEGORY_NOT_LINEBREAK = "category_not_linebreak"
-CATEGORY_LOC_WORD = "category_loc_word"
-CATEGORY_LOC_NOT_WORD = "category_loc_not_word"
-CATEGORY_UNI_DIGIT = "category_uni_digit"
-CATEGORY_UNI_NOT_DIGIT = "category_uni_not_digit"
-CATEGORY_UNI_SPACE = "category_uni_space"
-CATEGORY_UNI_NOT_SPACE = "category_uni_not_space"
-CATEGORY_UNI_WORD = "category_uni_word"
-CATEGORY_UNI_NOT_WORD = "category_uni_not_word"
-CATEGORY_UNI_LINEBREAK = "category_uni_linebreak"
-CATEGORY_UNI_NOT_LINEBREAK = "category_uni_not_linebreak"
+CHCODES = _makecodes("""
+    CATEGORY_DIGIT CATEGORY_NOT_DIGIT
+    CATEGORY_SPACE CATEGORY_NOT_SPACE
+    CATEGORY_WORD CATEGORY_NOT_WORD
+    CATEGORY_LINEBREAK CATEGORY_NOT_LINEBREAK
+    CATEGORY_LOC_WORD CATEGORY_LOC_NOT_WORD
+    CATEGORY_UNI_DIGIT CATEGORY_UNI_NOT_DIGIT
+    CATEGORY_UNI_SPACE CATEGORY_UNI_NOT_SPACE
+    CATEGORY_UNI_WORD CATEGORY_UNI_NOT_WORD
+    CATEGORY_UNI_LINEBREAK CATEGORY_UNI_NOT_LINEBREAK
+""")
 
-OPCODES = [
-
-    # failure=0 success=1 (just because it looks better that way :-)
-    FAILURE, SUCCESS,
-
-    ANY, ANY_ALL,
-    ASSERT, ASSERT_NOT,
-    AT,
-    BRANCH,
-    CALL,
-    CATEGORY,
-    CHARSET, BIGCHARSET,
-    GROUPREF, GROUPREF_EXISTS, GROUPREF_IGNORE,
-    IN, IN_IGNORE,
-    INFO,
-    JUMP,
-    LITERAL, LITERAL_IGNORE,
-    MARK,
-    MAX_UNTIL,
-    MIN_UNTIL,
-    NOT_LITERAL, NOT_LITERAL_IGNORE,
-    NEGATE,
-    RANGE,
-    REPEAT,
-    REPEAT_ONE,
-    SUBPATTERN,
-    MIN_REPEAT_ONE,
-    RANGE_IGNORE,
-
-]
-
-ATCODES = [
-    AT_BEGINNING, AT_BEGINNING_LINE, AT_BEGINNING_STRING, AT_BOUNDARY,
-    AT_NON_BOUNDARY, AT_END, AT_END_LINE, AT_END_STRING,
-    AT_LOC_BOUNDARY, AT_LOC_NON_BOUNDARY, AT_UNI_BOUNDARY,
-    AT_UNI_NON_BOUNDARY
-]
-
-CHCODES = [
-    CATEGORY_DIGIT, CATEGORY_NOT_DIGIT, CATEGORY_SPACE,
-    CATEGORY_NOT_SPACE, CATEGORY_WORD, CATEGORY_NOT_WORD,
-    CATEGORY_LINEBREAK, CATEGORY_NOT_LINEBREAK, CATEGORY_LOC_WORD,
-    CATEGORY_LOC_NOT_WORD, CATEGORY_UNI_DIGIT, CATEGORY_UNI_NOT_DIGIT,
-    CATEGORY_UNI_SPACE, CATEGORY_UNI_NOT_SPACE, CATEGORY_UNI_WORD,
-    CATEGORY_UNI_NOT_WORD, CATEGORY_UNI_LINEBREAK,
-    CATEGORY_UNI_NOT_LINEBREAK
-]
-
-def makedict(list):
-    d = {}
-    i = 0
-    for item in list:
-        d[item] = i
-        i = i + 1
-    return d
-
-OPCODES = makedict(OPCODES)
-ATCODES = makedict(ATCODES)
-CHCODES = makedict(CHCODES)
 
 # replacement operations for "ignore case" mode
 OP_IGNORE = {
@@ -220,9 +163,9 @@ SRE_INFO_CHARSET = 4 # pattern starts with character from given set
 
 if __name__ == "__main__":
     def dump(f, d, prefix):
-        items = sorted(d.items(), key=lambda a: a[1])
-        for k, v in items:
-            f.write("#define %s_%s %s\n" % (prefix, k.upper(), v))
+        items = sorted(d)
+        for item in items:
+            f.write("#define %s_%s %d\n" % (prefix, item, item))
     f = open("sre_constants.h", "w")
     f.write("""\
 /*

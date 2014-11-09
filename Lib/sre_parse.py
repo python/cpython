@@ -13,7 +13,6 @@
 # XXX: show string offset and offending character for all errors
 
 from sre_constants import *
-from _sre import MAXREPEAT
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
@@ -103,24 +102,24 @@ class SubPattern:
         nl = True
         seqtypes = (tuple, list)
         for op, av in self.data:
-            print(level*"  " + op, end='')
+            print(level*"  " + str(op), end='')
             if op == IN:
                 # member sublanguage
                 print()
                 for op, a in av:
-                    print((level+1)*"  " + op, a)
+                    print((level+1)*"  " + str(op), a)
             elif op == BRANCH:
                 print()
                 for i, a in enumerate(av[1]):
                     if i:
-                        print(level*"  " + "or")
+                        print(level*"  " + "OR")
                     a.dump(level+1)
             elif op == GROUPREF_EXISTS:
                 condgroup, item_yes, item_no = av
                 print('', condgroup)
                 item_yes.dump(level+1)
                 if item_no:
-                    print(level*"  " + "else")
+                    print(level*"  " + "ELSE")
                     item_no.dump(level+1)
             elif isinstance(av, seqtypes):
                 nl = False

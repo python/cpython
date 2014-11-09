@@ -1285,22 +1285,22 @@ class ReTests(unittest.TestCase):
         with captured_stdout() as out:
             re.compile(pat, re.DEBUG)
         dump = '''\
-subpattern 1
-  literal 46
-subpattern None
-  branch
-    in
-      literal 99
-      literal 104
-  or
-    literal 112
-    literal 121
-subpattern None
-  groupref_exists 1
-    at at_end
-  else
-    literal 58
-    literal 32
+SUBPATTERN 1
+  LITERAL 46
+SUBPATTERN None
+  BRANCH
+    IN
+      LITERAL 99
+      LITERAL 104
+  OR
+    LITERAL 112
+    LITERAL 121
+SUBPATTERN None
+  GROUPREF_EXISTS 1
+    AT AT_END
+  ELSE
+    LITERAL 58
+    LITERAL 32
 '''
         self.assertEqual(out.getvalue(), dump)
         # Debug output is output again even a second time (bypassing
