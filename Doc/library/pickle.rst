@@ -859,7 +859,7 @@ For the simplest code, use the :func:`dump` and :func:`load` functions. ::
    data = {
        'a': [1, 2.0, 3, 4+6j],
        'b': ("character string", b"byte string"),
-       'c': set([None, True, False])
+       'c': {None, True, False}
    }
 
    with open('data.pickle', 'wb') as f:

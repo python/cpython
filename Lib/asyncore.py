@@ -57,8 +57,8 @@ from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
      ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
      errorcode
 
-_DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
-                           EBADF))
+_DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
+                           EBADF})
 
 try:
     socket_map
@@ -220,7 +220,7 @@ class dispatcher:
     connecting = False
     closing = False
     addr = None
-    ignore_log_types = frozenset(['warning'])
+    ignore_log_types = frozenset({'warning'})
 
     def __init__(self, sock=None, map=None):
         if map is None:
