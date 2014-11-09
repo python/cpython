@@ -150,7 +150,7 @@ def _sum(data, start=0):
     # We fail as soon as we reach a value that is not an int or the type of
     # the first value which is not an int. E.g. _sum([int, int, float, int])
     # is okay, but sum([int, int, float, Fraction]) is not.
-    allowed_types = set([int, type(start)])
+    allowed_types = {int, type(start)}
     n, d = _exact_ratio(start)
     partials = {d: n}  # map {denominator: sum of numerators}
     # Micro-optimizations.
@@ -168,7 +168,7 @@ def _sum(data, start=0):
         assert allowed_types.pop() is int
         T = int
     else:
-        T = (allowed_types - set([int])).pop()
+        T = (allowed_types - {int}).pop()
     if None in partials:
         assert issubclass(T, (float, Decimal))
         assert not math.isfinite(partials[None])
