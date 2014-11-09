@@ -167,9 +167,9 @@ class LocaleTime(object):
             time.tzset()
         except AttributeError:
             pass
-        no_saving = frozenset(["utc", "gmt", time.tzname[0].lower()])
+        no_saving = frozenset({"utc", "gmt", time.tzname[0].lower()})
         if time.daylight:
-            has_saving = frozenset([time.tzname[1].lower()])
+            has_saving = frozenset({time.tzname[1].lower()})
         else:
             has_saving = frozenset()
         self.timezone = (no_saving, has_saving)

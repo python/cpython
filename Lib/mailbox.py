@@ -1230,8 +1230,8 @@ class MH(Mailbox):
 class Babyl(_singlefileMailbox):
     """An Rmail-style Babyl mailbox."""
 
-    _special_labels = frozenset(('unseen', 'deleted', 'filed', 'answered',
-                                 'forwarded', 'edited', 'resent'))
+    _special_labels = frozenset({'unseen', 'deleted', 'filed', 'answered',
+                                 'forwarded', 'edited', 'resent'})
 
     def __init__(self, path, factory=None, create=True):
         """Initialize a Babyl mailbox."""

@@ -25,8 +25,8 @@ HEXDIGITS = frozenset("0123456789abcdefABCDEF")
 
 WHITESPACE = frozenset(" \t\n\r\v\f")
 
-_REPEATCODES = frozenset((MIN_REPEAT, MAX_REPEAT))
-_UNITCODES = frozenset((ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY))
+_REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT})
+_UNITCODES = frozenset({ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY})
 
 ESCAPES = {
     r"\a": (LITERAL, ord("\a")),
