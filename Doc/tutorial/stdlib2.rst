@@ -18,7 +18,7 @@ abbreviated displays of large or deeply nested containers::
 
    >>> import reprlib
    >>> reprlib.repr(set('supercalifragilisticexpialidocious'))
-   "set(['a', 'c', 'd', 'e', 'f', 'g', ...])"
+   "{'a', 'c', 'd', 'e', 'f', 'g', ...}"
 
 The :mod:`pprint` module offers more sophisticated control over printing both
 built-in and user defined objects in a way that is readable by the interpreter.
