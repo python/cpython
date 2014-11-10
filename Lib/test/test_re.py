@@ -1419,6 +1419,42 @@ SUBPATTERN None
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
+    def test_error(self):
+        with self.assertRaises(re.error) as cm:
+            re.compile('(\u20ac))')
+        err = cm.exception
+        self.assertIsInstance(err.pattern, str)
+        self.assertEqual(err.pattern, '(\u20ac))')
+        self.assertEqual(err.pos, 3)
+        self.assertEqual(err.lineno, 1)
+        self.assertEqual(err.colno, 4)
+        self.assertIn(err.msg, str(err))
+        self.assertIn(' at position 3', str(err))
+        self.assertNotIn(' at position 3', err.msg)
+        # Bytes pattern
+        with self.assertRaises(re.error) as cm:
+            re.compile(b'(\xa4))')
+        err = cm.exception
+        self.assertIsInstance(err.pattern, bytes)
+        self.assertEqual(err.pattern, b'(\xa4))')
+        self.assertEqual(err.pos, 3)
+        # Multiline pattern
+        with self.assertRaises(re.error) as cm:
+            re.compile("""
+                (
+                    abc
+                )
+                )
+                (
+                """, re.VERBOSE)
+        err = cm.exception
+        self.assertEqual(err.pos, 77)
+        self.assertEqual(err.lineno, 5)
+        self.assertEqual(err.colno, 17)
+        self.assertIn(err.msg, str(err))
+        self.assertIn(' at position 77', str(err))
+        self.assertIn('(line 5, column 17)', str(err))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):

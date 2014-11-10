@@ -733,13 +733,36 @@ form.
    Clear the regular expression cache.
 
 
-.. exception:: error
+.. exception:: error(msg, pattern=None, pos=None)
 
    Exception raised when a string passed to one of the functions here is not a
    valid regular expression (for example, it might contain unmatched parentheses)
    or when some other error occurs during compilation or matching.  It is never an
-   error if a string contains no match for a pattern.
+   error if a string contains no match for a pattern.  The error instance has
+   the following additional attributes:
 
+   .. attribute:: msg
+
+      The unformatted error message.
+
+   .. attribute:: pattern
+
+      The regular expression pattern.
+
+   .. attribute:: pos
+
+      The index of *pattern* where compilation failed.
+
+   .. attribute:: lineno
+
+      The line corresponding to *pos*.
+
+   .. attribute:: colno
+
+      The column corresponding to *pos*.
+
+   .. versionchanged:: 3.5
+      Added additional attributes.
 
 .. _re-objects:
 
