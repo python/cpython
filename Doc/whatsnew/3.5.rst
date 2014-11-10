@@ -211,6 +211,14 @@ ipaddress
   network objects from existing addresses.  (Contributed by Peter Moody
   and Antoine Pitrou in :issue:`16531`.)
 
+json
+----
+
+* The output of :mod:`json.tool` command line interface is now in the same
+  order as the input. Use the :option:`--sort-keys` option to sort the output
+  of dictionaries alphabetically by key.  (Contributed by Berker Peksag in
+  :issue:`21650`.)
+
 os
 --
 
