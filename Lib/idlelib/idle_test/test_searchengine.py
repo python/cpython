@@ -178,7 +178,7 @@ class SearchEngineTest(unittest.TestCase):
         engine.revar.set(1)
         Equal(engine.getprog(), None)
         self.assertEqual(Mbox.showerror.message,
-                          'Error: nothing to repeat\nPattern: +')
+                         'Error: nothing to repeat at position 0\nPattern: +')
 
     def test_report_error(self):
         showerror = Mbox.showerror
