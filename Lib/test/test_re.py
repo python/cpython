@@ -637,6 +637,43 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"((a)\s(abc|a))", "a a", re.I).group(1), "a a")
         self.assertEqual(re.match(r"((a)\s(abc|a)*)", "a aa", re.I).group(1), "a aa")
 
+        assert '\u212a'.lower() == 'k' # 'K'
+        self.assertTrue(re.match(r'K', '\u212a', re.I))
+        self.assertTrue(re.match(r'k', '\u212a', re.I))
+        self.assertTrue(re.match(r'\u212a', 'K', re.I))
+        self.assertTrue(re.match(r'\u212a', 'k', re.I))
+        assert '\u017f'.upper() == 'S' # 'ſ'
+        self.assertTrue(re.match(r'S', '\u017f', re.I))
+        self.assertTrue(re.match(r's', '\u017f', re.I))
+        self.assertTrue(re.match(r'\u017f', 'S', re.I))
+        self.assertTrue(re.match(r'\u017f', 's', re.I))
+        assert '\ufb05'.upper() == '\ufb06'.upper() == 'ST' # 'ﬅ', 'ﬆ'
+        self.assertTrue(re.match(r'\ufb05', '\ufb06', re.I))
+        self.assertTrue(re.match(r'\ufb06', '\ufb05', re.I))
+
+    def test_ignore_case_set(self):
+        self.assertTrue(re.match(r'[19A]', 'A', re.I))
+        self.assertTrue(re.match(r'[19a]', 'a', re.I))
+        self.assertTrue(re.match(r'[19a]', 'A', re.I))
+        self.assertTrue(re.match(r'[19A]', 'a', re.I))
+        self.assertTrue(re.match(br'[19A]', b'A', re.I))
+        self.assertTrue(re.match(br'[19a]', b'a', re.I))
+        self.assertTrue(re.match(br'[19a]', b'A', re.I))
+        self.assertTrue(re.match(br'[19A]', b'a', re.I))
+        assert '\u212a'.lower() == 'k' # 'K'
+        self.assertTrue(re.match(r'[19K]', '\u212a', re.I))
+        self.assertTrue(re.match(r'[19k]', '\u212a', re.I))
+        self.assertTrue(re.match(r'[19\u212a]', 'K', re.I))
+        self.assertTrue(re.match(r'[19\u212a]', 'k', re.I))
+        assert '\u017f'.upper() == 'S' # 'ſ'
+        self.assertTrue(re.match(r'[19S]', '\u017f', re.I))
+        self.assertTrue(re.match(r'[19s]', '\u017f', re.I))
+        self.assertTrue(re.match(r'[19\u017f]', 'S', re.I))
+        self.assertTrue(re.match(r'[19\u017f]', 's', re.I))
+        assert '\ufb05'.upper() == '\ufb06'.upper() == 'ST' # 'ﬅ', 'ﬆ'
+        self.assertTrue(re.match(r'[19\ufb05]', '\ufb06', re.I))
+        self.assertTrue(re.match(r'[19\ufb06]', '\ufb05', re.I))
+
     def test_ignore_case_range(self):
         # Issues #3511, #17381.
         self.assertTrue(re.match(r'[9-a]', '_', re.I))
@@ -655,6 +692,20 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'[\U00010428-\U0001044f]', '\U00010400', re.I))
         self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010428', re.I))
         self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010400', re.I))
+
+        assert '\u212a'.lower() == 'k' # 'K'
+        self.assertTrue(re.match(r'[J-M]', '\u212a', re.I))
+        self.assertTrue(re.match(r'[j-m]', '\u212a', re.I))
+        self.assertTrue(re.match(r'[\u2129-\u212b]', 'K', re.I))
+        self.assertTrue(re.match(r'[\u2129-\u212b]', 'k', re.I))
+        assert '\u017f'.upper() == 'S' # 'ſ'
+        self.assertTrue(re.match(r'[R-T]', '\u017f', re.I))
+        self.assertTrue(re.match(r'[r-t]', '\u017f', re.I))
+        self.assertTrue(re.match(r'[\u017e-\u0180]', 'S', re.I))
+        self.assertTrue(re.match(r'[\u017e-\u0180]', 's', re.I))
+        assert '\ufb05'.upper() == '\ufb06'.upper() == 'ST' # 'ﬅ', 'ﬆ'
+        self.assertTrue(re.match(r'[\ufb04-\ufb05]', '\ufb06', re.I))
+        self.assertTrue(re.match(r'[\ufb06-\ufb07]', '\ufb05', re.I))
 
     def test_category(self):
         self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
