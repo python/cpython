@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22821: Fixed fcntl() with integer argument on 64-bit big-endian
+  platforms.
+
 - Issues #814253, #9179: Group references and conditional group references now
   work in lookbehind assertions in regular expressions.
 
