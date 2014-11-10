@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from test.test_support import verbose, run_unittest, import_module
 from test.test_support import precisionbigmemtest, _2G, cpython_only
 from test.test_support import captured_stdout, have_unicode, requires_unicode, u
@@ -510,6 +511,39 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"((a)\s(abc|a))", "a a", re.I).group(1), "a a")
         self.assertEqual(re.match(r"((a)\s(abc|a)*)", "a aa", re.I).group(1), "a aa")
 
+        if have_unicode:
+            assert u(r'\u212a').lower() == u'k' # 'K'
+            self.assertTrue(re.match(ur'K', u(r'\u212a'), re.U | re.I))
+            self.assertTrue(re.match(ur'k', u(r'\u212a'), re.U | re.I))
+            self.assertTrue(re.match(u(r'\u212a'), u'K', re.U | re.I))
+            self.assertTrue(re.match(u(r'\u212a'), u'k', re.U | re.I))
+            assert u(r'\u017f').upper() == u'S' # 'ſ'
+            self.assertTrue(re.match(ur'S', u(r'\u017f'), re.U | re.I))
+            self.assertTrue(re.match(ur's', u(r'\u017f'), re.U | re.I))
+            self.assertTrue(re.match(u(r'\u017f'), u'S', re.U | re.I))
+            self.assertTrue(re.match(u(r'\u017f'), u's', re.U | re.I))
+
+    def test_ignore_case_set(self):
+        self.assertTrue(re.match(r'[19A]', 'A', re.I))
+        self.assertTrue(re.match(r'[19a]', 'a', re.I))
+        self.assertTrue(re.match(r'[19a]', 'A', re.I))
+        self.assertTrue(re.match(r'[19A]', 'a', re.I))
+        if have_unicode:
+            self.assertTrue(re.match(ur'[19A]', u'A', re.U | re.I))
+            self.assertTrue(re.match(ur'[19a]', u'a', re.U | re.I))
+            self.assertTrue(re.match(ur'[19a]', u'A', re.U | re.I))
+            self.assertTrue(re.match(ur'[19A]', u'a', re.U | re.I))
+            assert u(r'\u212a').lower() == u'k' # 'K'
+            self.assertTrue(re.match(u(r'[19K]'), u(r'\u212a'), re.U | re.I))
+            self.assertTrue(re.match(u(r'[19k]'), u(r'\u212a'), re.U | re.I))
+            self.assertTrue(re.match(u(r'[19\u212a]'), u'K', re.U | re.I))
+            self.assertTrue(re.match(u(r'[19\u212a]'), u'k', re.U | re.I))
+            assert u(r'\u017f').upper() == u'S' # 'ſ'
+            self.assertTrue(re.match(ur'[19S]', u(r'\u017f'), re.U | re.I))
+            self.assertTrue(re.match(ur'[19s]', u(r'\u017f'), re.U | re.I))
+            self.assertTrue(re.match(u(r'[19\u017f]'), u'S', re.U | re.I))
+            self.assertTrue(re.match(u(r'[19\u017f]'), u's', re.U | re.I))
+
     def test_ignore_case_range(self):
         # Issues #3511, #17381.
         self.assertTrue(re.match(r'[9-a]', '_', re.I))
@@ -546,6 +580,17 @@ class ReTests(unittest.TestCase):
                                          u(r'\U00010428'), re.U | re.I))
                 self.assertTrue(re.match(u(r'[\U00010400-\U00010427]'),
                                          u(r'\U00010400'), re.U | re.I))
+
+            assert u(r'\u212a').lower() == u'k' # 'K'
+            self.assertTrue(re.match(ur'[J-M]', u(r'\u212a'), re.U | re.I))
+            self.assertTrue(re.match(ur'[j-m]', u(r'\u212a'), re.U | re.I))
+            self.assertTrue(re.match(u(r'[\u2129-\u212b]'), u'K', re.U | re.I))
+            self.assertTrue(re.match(u(r'[\u2129-\u212b]'), u'k', re.U | re.I))
+            assert u(r'\u017f').upper() == u'S' # 'ſ'
+            self.assertTrue(re.match(ur'[R-T]', u(r'\u017f'), re.U | re.I))
+            self.assertTrue(re.match(ur'[r-t]', u(r'\u017f'), re.U | re.I))
+            self.assertTrue(re.match(u(r'[\u017e-\u0180]'), u'S', re.U | re.I))
+            self.assertTrue(re.match(u(r'[\u017e-\u0180]'), u's', re.U | re.I))
 
     def test_category(self):
         self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
