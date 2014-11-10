@@ -60,7 +60,7 @@ static PyObject *
 fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg)
 /*[clinic end generated code: output=afc5bfa74a03ef0d input=4850c13a41e86930]*/
 {
-    int int_arg = 0;
+    unsigned int int_arg = 0;
     int ret;
     char *str;
     Py_ssize_t len;
@@ -88,7 +88,7 @@ fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg)
 
         PyErr_Clear();
         parse_result = PyArg_Parse(arg,
-            "l;fcntl requires a file or file descriptor,"
+            "I;fcntl requires a file or file descriptor,"
             " an integer and optionally a third integer or a string",
             &int_arg);
         if (!parse_result) {
@@ -97,7 +97,7 @@ fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    ret = fcntl(fd, code, int_arg);
+    ret = fcntl(fd, code, (int)int_arg);
     Py_END_ALLOW_THREADS
     if (ret < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
