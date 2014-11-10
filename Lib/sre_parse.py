@@ -225,7 +225,8 @@ class Tokenizer:
             try:
                 char += self.decoded_string[index]
             except IndexError:
-                raise self.error("bogus escape (end of line)") from None
+                raise error("bogus escape (end of line)",
+                            self.string, len(self.string) - 1) from None
         self.index = index + 1
         self.next = char
     def match(self, char):
