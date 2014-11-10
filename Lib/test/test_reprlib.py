@@ -10,7 +10,7 @@ import importlib
 import importlib.util
 import unittest
 
-from test.support import run_unittest, create_empty_file, verbose
+from test.support import create_empty_file, verbose
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
 from reprlib import recursive_repr
@@ -70,18 +70,18 @@ class ReprTests(unittest.TestCase):
         eq(r([1, 2, 3, 4, 5, 6, 7]), "[1, 2, 3, 4, 5, 6, ...]")
 
         # Sets give up after 6 as well
-        eq(r(set([])), "set([])")
-        eq(r(set([1])), "set([1])")
-        eq(r(set([1, 2, 3])), "set([1, 2, 3])")
-        eq(r(set([1, 2, 3, 4, 5, 6])), "set([1, 2, 3, 4, 5, 6])")
-        eq(r(set([1, 2, 3, 4, 5, 6, 7])), "set([1, 2, 3, 4, 5, 6, ...])")
+        eq(r(set([])), "set()")
+        eq(r(set([1])), "{1}")
+        eq(r(set([1, 2, 3])), "{1, 2, 3}")
+        eq(r(set([1, 2, 3, 4, 5, 6])), "{1, 2, 3, 4, 5, 6}")
+        eq(r(set([1, 2, 3, 4, 5, 6, 7])), "{1, 2, 3, 4, 5, 6, ...}")
 
         # Frozensets give up after 6 as well
-        eq(r(frozenset([])), "frozenset([])")
-        eq(r(frozenset([1])), "frozenset([1])")
-        eq(r(frozenset([1, 2, 3])), "frozenset([1, 2, 3])")
-        eq(r(frozenset([1, 2, 3, 4, 5, 6])), "frozenset([1, 2, 3, 4, 5, 6])")
-        eq(r(frozenset([1, 2, 3, 4, 5, 6, 7])), "frozenset([1, 2, 3, 4, 5, 6, ...])")
+        eq(r(frozenset([])), "frozenset()")
+        eq(r(frozenset([1])), "frozenset({1})")
+        eq(r(frozenset([1, 2, 3])), "frozenset({1, 2, 3})")
+        eq(r(frozenset([1, 2, 3, 4, 5, 6])), "frozenset({1, 2, 3, 4, 5, 6})")
+        eq(r(frozenset([1, 2, 3, 4, 5, 6, 7])), "frozenset({1, 2, 3, 4, 5, 6, ...})")
 
         # collections.deque after 6
         eq(r(deque([1, 2, 3, 4, 5, 6, 7])), "deque([1, 2, 3, 4, 5, 6, ...])")
@@ -102,6 +102,20 @@ class ReprTests(unittest.TestCase):
         eq(r(array('i', [1, 2, 3, 4, 5])), "array('i', [1, 2, 3, 4, 5])")
         eq(r(array('i', [1, 2, 3, 4, 5, 6])),
                    "array('i', [1, 2, 3, 4, 5, ...])")
+
+    def test_set_literal(self):
+        eq = self.assertEqual
+        eq(r({1}), "{1}")
+        eq(r({1, 2, 3}), "{1, 2, 3}")
+        eq(r({1, 2, 3, 4, 5, 6}), "{1, 2, 3, 4, 5, 6}")
+        eq(r({1, 2, 3, 4, 5, 6, 7}), "{1, 2, 3, 4, 5, 6, ...}")
+
+    def test_frozenset(self):
+        eq = self.assertEqual
+        eq(r(frozenset({1})), "frozenset({1})")
+        eq(r(frozenset({1, 2, 3})), "frozenset({1, 2, 3})")
+        eq(r(frozenset({1, 2, 3, 4, 5, 6})), "frozenset({1, 2, 3, 4, 5, 6})")
+        eq(r(frozenset({1, 2, 3, 4, 5, 6, 7})), "frozenset({1, 2, 3, 4, 5, 6, ...})")
 
     def test_numbers(self):
         eq = self.assertEqual
@@ -373,11 +387,5 @@ class TestRecursiveRepr(unittest.TestCase):
         m.append(m)
         self.assertEqual(repr(m), '<a, b, c, d, e, +++, x, +++>')
 
-def test_main():
-    run_unittest(ReprTests)
-    run_unittest(LongReprTest)
-    run_unittest(TestRecursiveRepr)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
