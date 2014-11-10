@@ -1680,7 +1680,7 @@ as in the following complete example::
 
     def main():
         logging.basicConfig(level=logging.INFO, format='%(message)s')
-        logging.info(_('message 1', set_value=set([1, 2, 3]), snowman='\u2603'))
+        logging.info(_('message 1', set_value={1, 2, 3}, snowman='\u2603'))
 
     if __name__ == '__main__':
         main()
