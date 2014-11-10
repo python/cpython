@@ -531,6 +531,20 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(br"\d\D\w\W\s\S",
                                    b"1aa! a", re.LOCALE).group(0), b"1aa! a")
 
+    def test_other_escapes(self):
+        self.assertRaises(re.error, re.compile, "\\")
+        self.assertEqual(re.match(r"\(", '(').group(), '(')
+        self.assertIsNone(re.match(r"\(", ')'))
+        self.assertEqual(re.match(r"\\", '\\').group(), '\\')
+        self.assertEqual(re.match(r"\y", 'y').group(), 'y')
+        self.assertIsNone(re.match(r"\y", 'z'))
+        self.assertEqual(re.match(r"[\]]", ']').group(), ']')
+        self.assertIsNone(re.match(r"[\]]", '['))
+        self.assertEqual(re.match(r"[a\-c]", '-').group(), '-')
+        self.assertIsNone(re.match(r"[a\-c]", 'b'))
+        self.assertEqual(re.match(r"[\^a]+", 'a^').group(), 'a^')
+        self.assertIsNone(re.match(r"[\^a]+", 'b'))
+
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
         self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1),

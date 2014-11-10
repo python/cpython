@@ -211,6 +211,7 @@ class Tokenizer:
             string = str(string, 'latin1')
         self.decoded_string = string
         self.index = 0
+        self.next = None
         self.__next()
     def __next(self):
         index = self.index
