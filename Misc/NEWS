@@ -183,6 +183,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21650: Add an `--sort-keys` option to json.tool CLI.
+
 - Issues #814253, #9179: Group references and conditional group references now
   work in lookbehind assertions in regular expressions.
 

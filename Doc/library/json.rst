@@ -567,6 +567,7 @@ the last name-value pair for a given name::
 The *object_pairs_hook* parameter can be used to alter this behavior.
 
 .. highlight:: bash
+.. module:: json.tool
 
 .. _json-commandline:
 
@@ -586,6 +587,10 @@ specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
     $ echo '{1.2:3.4}' | python -m json.tool
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
+.. versionchanged:: 3.5
+   The output is now in the same order as the input. Use the
+   :option:`--sort-keys` option to sort the output of dictionaries
+   alphabetically by key.
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
@@ -612,6 +617,12 @@ Command line options
 
    Write the output of the *infile* to the given *outfile*. Otherwise, write it
    to :attr:`sys.stdout`.
+
+.. cmdoption:: --sort-keys
+
+   Sort the output of dictionaries alphabetically by key.
+
+   .. versionadded:: 3.5
 
 .. cmdoption:: -h, --help
 
