@@ -183,6 +183,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12728: Different Unicode characters having the same uppercase but
+  different lowercase are now matched in case-insensitive regular expressions.
+
 - Issue #22821: Fixed fcntl() with integer argument on 64-bit big-endian
   platforms.
 
