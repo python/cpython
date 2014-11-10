@@ -1326,8 +1326,7 @@ available.  They are listed here in alphabetical order.
    compare equal --- this is helpful for sorting in multiple passes (for
    example, sort by department, then by salary grade).
 
-   For sorting examples and a brief sorting tutorial, see `Sorting HowTo
-   <https://wiki.python.org/moin/HowTo/Sorting/>`_\.
+   For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
    .. versionadded:: 2.4
 

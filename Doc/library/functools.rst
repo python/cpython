@@ -38,8 +38,7 @@ The :mod:`functools` module defines the following functions:
 
        sorted(iterable, key=cmp_to_key(locale.strcoll))  # locale-aware sort order
 
-   For sorting examples and a brief sorting tutorial, see `Sorting HowTo
-   <https://wiki.python.org/moin/HowTo/Sorting/>`_\.
+   For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
 
    .. versionadded:: 2.7
