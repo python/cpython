@@ -87,12 +87,16 @@ class Repr:
         return self._repr_iterable(x, level, header, '])', self.maxarray)
 
     def repr_set(self, x, level):
+        if not x:
+            return 'set()'
         x = _possibly_sorted(x)
-        return self._repr_iterable(x, level, 'set([', '])', self.maxset)
+        return self._repr_iterable(x, level, '{', '}', self.maxset)
 
     def repr_frozenset(self, x, level):
+        if not x:
+            return 'frozenset()'
         x = _possibly_sorted(x)
-        return self._repr_iterable(x, level, 'frozenset([', '])',
+        return self._repr_iterable(x, level, 'frozenset({', '})',
                                    self.maxfrozenset)
 
     def repr_deque(self, x, level):

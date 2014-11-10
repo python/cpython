@@ -1,0 +1,188 @@
+/*[clinic input]
+preserve
+[clinic start generated code]*/
+
+PyDoc_STRVAR(fcntl_fcntl__doc__,
+"fcntl($module, fd, code, arg=None, /)\n"
+"--\n"
+"\n"
+"Perform the operation `code` on file descriptor fd.\n"
+"\n"
+"The values used for `code` are operating system dependent, and are available\n"
+"as constants in the fcntl module, using the same names as used in\n"
+"the relevant C header files.  The argument arg is optional, and\n"
+"defaults to 0; it may be an int or a string.  If arg is given as a string,\n"
+"the return value of fcntl is a string of that length, containing the\n"
+"resulting value put in the arg buffer by the operating system.  The length\n"
+"of the arg string is not allowed to exceed 1024 bytes.  If the arg given\n"
+"is an integer or if none is specified, the result value is an integer\n"
+"corresponding to the return value of the fcntl call in the C code.");
+
+#define FCNTL_FCNTL_METHODDEF    \
+    {"fcntl", (PyCFunction)fcntl_fcntl, METH_VARARGS, fcntl_fcntl__doc__},
+
+static PyObject *
+fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg);
+
+static PyObject *
+fcntl_fcntl(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int code;
+    PyObject *arg = NULL;
+
+    if (!PyArg_ParseTuple(args,
+        "O&i|O:fcntl",
+        conv_descriptor, &fd, &code, &arg))
+        goto exit;
+    return_value = fcntl_fcntl_impl(module, fd, code, arg);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(fcntl_ioctl__doc__,
+"ioctl($module, fd, op, arg=None, mutate_flag=True, /)\n"
+"--\n"
+"\n"
+"Perform the operation op on file descriptor fd.\n"
+"\n"
+"The values used for op are operating system dependent, and are available as\n"
+"constants in the fcntl or termios library modules, using the same names as\n"
+"used in the relevant C header files.\n"
+"\n"
+"The argument `arg` is optional, and defaults to 0; it may be an int or a\n"
+"buffer containing character data (most likely a string or an array).\n"
+"\n"
+"If the argument is a mutable buffer (such as an array) and if the\n"
+"mutate_flag argument (which is only allowed in this case) is true then the\n"
+"buffer is (in effect) passed to the operating system and changes made by\n"
+"the OS will be reflected in the contents of the buffer after the call has\n"
+"returned.  The return value is the integer returned by the ioctl system\n"
+"call.\n"
+"\n"
+"If the argument is a mutable buffer and the mutable_flag argument is not\n"
+"passed or is false, the behavior is as if a string had been passed.  This\n"
+"behavior will change in future releases of Python.\n"
+"\n"
+"If the argument is an immutable buffer (most likely a string) then a copy\n"
+"of the buffer is passed to the operating system and the return value is a\n"
+"string of the same length containing whatever the operating system put in\n"
+"the buffer.  The length of the arg buffer in this case is not allowed to\n"
+"exceed 1024 bytes.\n"
+"\n"
+"If the arg given is an integer or if none is specified, the result value is\n"
+"an integer corresponding to the return value of the ioctl call in the C\n"
+"code.");
+
+#define FCNTL_IOCTL_METHODDEF    \
+    {"ioctl", (PyCFunction)fcntl_ioctl, METH_VARARGS, fcntl_ioctl__doc__},
+
+static PyObject *
+fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code, PyObject *ob_arg, int mutate_arg);
+
+static PyObject *
+fcntl_ioctl(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    unsigned int code;
+    PyObject *ob_arg = NULL;
+    int mutate_arg = 1;
+
+    if (!PyArg_ParseTuple(args,
+        "O&I|Op:ioctl",
+        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg))
+        goto exit;
+    return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(fcntl_flock__doc__,
+"flock($module, fd, code, /)\n"
+"--\n"
+"\n"
+"Perform the lock operation op on file descriptor fd.\n"
+"\n"
+"See the Unix manual page for flock(2) for details (On some systems, this\n"
+"function is emulated using fcntl()).");
+
+#define FCNTL_FLOCK_METHODDEF    \
+    {"flock", (PyCFunction)fcntl_flock, METH_VARARGS, fcntl_flock__doc__},
+
+static PyObject *
+fcntl_flock_impl(PyModuleDef *module, int fd, int code);
+
+static PyObject *
+fcntl_flock(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int code;
+
+    if (!PyArg_ParseTuple(args,
+        "O&i:flock",
+        conv_descriptor, &fd, &code))
+        goto exit;
+    return_value = fcntl_flock_impl(module, fd, code);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(fcntl_lockf__doc__,
+"lockf($module, fd, code, lenobj=None, startobj=None, whence=0, /)\n"
+"--\n"
+"\n"
+"A wrapper around the fcntl() locking calls.\n"
+"\n"
+"fd is the file descriptor of the file to lock or unlock, and operation is one\n"
+"of the following values:\n"
+"\n"
+"    LOCK_UN - unlock\n"
+"    LOCK_SH - acquire a shared lock\n"
+"    LOCK_EX - acquire an exclusive lock\n"
+"\n"
+"When operation is LOCK_SH or LOCK_EX, it can also be bitwise ORed with\n"
+"LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the\n"
+"lock cannot be acquired, an IOError will be raised and the exception will\n"
+"have an errno attribute set to EACCES or EAGAIN (depending on the operating\n"
+"system -- for portability, check for either value).\n"
+"\n"
+"length is the number of bytes to lock, with the default meaning to lock to\n"
+"EOF.  start is the byte offset, relative to whence, to that the lock\n"
+"starts.  whence is as with fileobj.seek(), specifically:\n"
+"\n"
+"    0 - relative to the start of the file (SEEK_SET)\n"
+"    1 - relative to the current buffer position (SEEK_CUR)\n"
+"    2 - relative to the end of the file (SEEK_END)");
+
+#define FCNTL_LOCKF_METHODDEF    \
+    {"lockf", (PyCFunction)fcntl_lockf, METH_VARARGS, fcntl_lockf__doc__},
+
+static PyObject *
+fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj, PyObject *startobj, int whence);
+
+static PyObject *
+fcntl_lockf(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int code;
+    PyObject *lenobj = NULL;
+    PyObject *startobj = NULL;
+    int whence = 0;
+
+    if (!PyArg_ParseTuple(args,
+        "O&i|OOi:lockf",
+        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence))
+        goto exit;
+    return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=84bdde73a92f7c61 input=a9049054013a1b77]*/
