@@ -21,8 +21,8 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: cmp_to_key(func)
 
-   Transform an old-style comparison function to a key function.  Used with
-   tools that accept key functions (such as :func:`sorted`, :func:`min`,
+   Transform an old-style comparison function to a :term:`key function`.  Used
+   with tools that accept key functions (such as :func:`sorted`, :func:`min`,
    :func:`max`, :func:`heapq.nlargest`, :func:`heapq.nsmallest`,
    :func:`itertools.groupby`).  This function is primarily used as a transition
    tool for programs being converted from Python 2 which supported the use of
@@ -31,12 +31,13 @@ The :mod:`functools` module defines the following functions:
    A comparison function is any callable that accept two arguments, compares them,
    and returns a negative number for less-than, zero for equality, or a positive
    number for greater-than.  A key function is a callable that accepts one
-   argument and returns another value indicating the position in the desired
-   collation sequence.
+   argument and returns another value to be used as the sort key.
 
    Example::
 
        sorted(iterable, key=cmp_to_key(locale.strcoll))  # locale-aware sort order
+
+   For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
    .. versionadded:: 3.2
 
