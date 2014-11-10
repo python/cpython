@@ -15,6 +15,12 @@
 #include <stropts.h>
 #endif
 
+/*[clinic input]
+output preset file
+module fcntl
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c7356fdb126a904a]*/
+
 static int
 conv_descriptor(PyObject *object, int *target)
 {
@@ -26,48 +32,72 @@ conv_descriptor(PyObject *object, int *target)
     return 1;
 }
 
+/* Must come after conv_descriptor definition. */
+#include "clinic/fcntlmodule.c.h"
 
-/* fcntl(fd, op, [arg]) */
+/*[clinic input]
+fcntl.fcntl
+
+    fd: object(type='int', converter='conv_descriptor')
+    code: int
+    arg: object = NULL
+    /
+
+Perform the operation `code` on file descriptor fd.
+
+The values used for `code` are operating system dependent, and are available
+as constants in the fcntl module, using the same names as used in
+the relevant C header files.  The argument arg is optional, and
+defaults to 0; it may be an int or a string.  If arg is given as a string,
+the return value of fcntl is a string of that length, containing the
+resulting value put in the arg buffer by the operating system.  The length
+of the arg string is not allowed to exceed 1024 bytes.  If the arg given
+is an integer or if none is specified, the result value is an integer
+corresponding to the return value of the fcntl call in the C code.
+[clinic start generated code]*/
 
 static PyObject *
-fcntl_fcntl(PyObject *self, PyObject *args)
+fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg)
+/*[clinic end generated code: output=afc5bfa74a03ef0d input=4850c13a41e86930]*/
 {
-    int fd;
-    int code;
-    long arg;
+    int int_arg = 0;
     int ret;
     char *str;
     Py_ssize_t len;
     char buf[1024];
 
-    if (PyArg_ParseTuple(args, "O&is#:fcntl",
-                         conv_descriptor, &fd, &code, &str, &len)) {
-        if ((size_t)len > sizeof buf) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fcntl string arg too long");
-            return NULL;
+    if (arg != NULL) {
+        int parse_result;
+
+        if (PyArg_Parse(arg, "s#", &str, &len)) {
+            if ((size_t)len > sizeof buf) {
+                PyErr_SetString(PyExc_ValueError,
+                                "fcntl string arg too long");
+                return NULL;
+            }
+            memcpy(buf, str, len);
+            Py_BEGIN_ALLOW_THREADS
+            ret = fcntl(fd, code, buf);
+            Py_END_ALLOW_THREADS
+            if (ret < 0) {
+                PyErr_SetFromErrno(PyExc_IOError);
+                return NULL;
+            }
+            return PyBytes_FromStringAndSize(buf, len);
         }
-        memcpy(buf, str, len);
-        Py_BEGIN_ALLOW_THREADS
-        ret = fcntl(fd, code, buf);
-        Py_END_ALLOW_THREADS
-        if (ret < 0) {
-            PyErr_SetFromErrno(PyExc_IOError);
-            return NULL;
+
+        PyErr_Clear();
+        parse_result = PyArg_Parse(arg,
+            "l;fcntl requires a file or file descriptor,"
+            " an integer and optionally a third integer or a string",
+            &int_arg);
+        if (!parse_result) {
+          return NULL;
         }
-        return PyBytes_FromStringAndSize(buf, len);
     }
 
-    PyErr_Clear();
-    arg = 0;
-    if (!PyArg_ParseTuple(args,
-         "O&i|l;fcntl requires a file or file descriptor,"
-         " an integer and optionally a third integer or a string",
-                          conv_descriptor, &fd, &code, &arg)) {
-      return NULL;
-    }
     Py_BEGIN_ALLOW_THREADS
-    ret = fcntl(fd, code, arg);
+    ret = fcntl(fd, code, int_arg);
     Py_END_ALLOW_THREADS
     if (ret < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
@@ -76,29 +106,53 @@ fcntl_fcntl(PyObject *self, PyObject *args)
     return PyLong_FromLong((long)ret);
 }
 
-PyDoc_STRVAR(fcntl_doc,
-"fcntl(fd, op, [arg])\n\
-\n\
-Perform the operation op on file descriptor fd.  The values used\n\
-for op are operating system dependent, and are available\n\
-as constants in the fcntl module, using the same names as used in\n\
-the relevant C header files.  The argument arg is optional, and\n\
-defaults to 0; it may be an int or a string.  If arg is given as a string,\n\
-the return value of fcntl is a string of that length, containing the\n\
-resulting value put in the arg buffer by the operating system.  The length\n\
-of the arg string is not allowed to exceed 1024 bytes.  If the arg given\n\
-is an integer or if none is specified, the result value is an integer\n\
-corresponding to the return value of the fcntl call in the C code.");
 
+/*[clinic input]
+fcntl.ioctl
 
-/* ioctl(fd, op, [arg]) */
+    fd: object(type='int', converter='conv_descriptor')
+    op as code: unsigned_int(bitwise=True)
+    arg as ob_arg: object = NULL
+    mutate_flag as mutate_arg: bool = True
+    /
+
+Perform the operation op on file descriptor fd.
+
+The values used for op are operating system dependent, and are available as
+constants in the fcntl or termios library modules, using the same names as
+used in the relevant C header files.
+
+The argument `arg` is optional, and defaults to 0; it may be an int or a
+buffer containing character data (most likely a string or an array).
+
+If the argument is a mutable buffer (such as an array) and if the
+mutate_flag argument (which is only allowed in this case) is true then the
+buffer is (in effect) passed to the operating system and changes made by
+the OS will be reflected in the contents of the buffer after the call has
+returned.  The return value is the integer returned by the ioctl system
+call.
+
+If the argument is a mutable buffer and the mutable_flag argument is not
+passed or is false, the behavior is as if a string had been passed.  This
+behavior will change in future releases of Python.
+
+If the argument is an immutable buffer (most likely a string) then a copy
+of the buffer is passed to the operating system and the return value is a
+string of the same length containing whatever the operating system put in
+the buffer.  The length of the arg buffer in this case is not allowed to
+exceed 1024 bytes.
+
+If the arg given is an integer or if none is specified, the result value is
+an integer corresponding to the return value of the ioctl call in the C
+code.
+[clinic start generated code]*/
 
 static PyObject *
-fcntl_ioctl(PyObject *self, PyObject *args)
+fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code, PyObject *ob_arg, int mutate_arg)
+/*[clinic end generated code: output=ad47738c118622bf input=a55a6ee8e494c449]*/
 {
 #define IOCTL_BUFSZ 1024
-    int fd;
-    /* In PyArg_ParseTuple below, we use the unsigned non-checked 'I'
+    /* We use the unsigned non-checked 'I'
        format for the 'code' parameter because Python turns 0x8000000
        into either a large positive number (PyLong or PyInt on 64-bit
        platforms) or a negative number on others (32-bit PyInt)
@@ -111,101 +165,98 @@ fcntl_ioctl(PyObject *self, PyObject *args)
        in their unsigned long ioctl codes this will break and need
        special casing based on the platform being built on.
      */
-    unsigned int code;
-    int arg;
+    int arg = 0;
     int ret;
     Py_buffer pstr;
     char *str;
     Py_ssize_t len;
-    int mutate_arg = 1;
     char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
-    if (PyArg_ParseTuple(args, "O&Iw*|i:ioctl",
-                         conv_descriptor, &fd, &code,
-                         &pstr, &mutate_arg)) {
-        char *arg;
-        str = pstr.buf;
-        len = pstr.len;
+    if (ob_arg != NULL) {
+        if (PyArg_Parse(ob_arg, "w*:ioctl", &pstr)) {
+            char *arg;
+            str = pstr.buf;
+            len = pstr.len;
 
-        if (mutate_arg) {
-            if (len <= IOCTL_BUFSZ) {
-                memcpy(buf, str, len);
-                buf[len] = '\0';
-                arg = buf;
+            if (mutate_arg) {
+                if (len <= IOCTL_BUFSZ) {
+                    memcpy(buf, str, len);
+                    buf[len] = '\0';
+                    arg = buf;
+                }
+                else {
+                    arg = str;
+                }
             }
             else {
-                arg = str;
+                if (len > IOCTL_BUFSZ) {
+                    PyBuffer_Release(&pstr);
+                    PyErr_SetString(PyExc_ValueError,
+                        "ioctl string arg too long");
+                    return NULL;
+                }
+                else {
+                    memcpy(buf, str, len);
+                    buf[len] = '\0';
+                    arg = buf;
+                }
+            }
+            if (buf == arg) {
+                Py_BEGIN_ALLOW_THREADS /* think array.resize() */
+                ret = ioctl(fd, code, arg);
+                Py_END_ALLOW_THREADS
+            }
+            else {
+                ret = ioctl(fd, code, arg);
+            }
+            if (mutate_arg && (len <= IOCTL_BUFSZ)) {
+                memcpy(str, buf, len);
+            }
+            PyBuffer_Release(&pstr); /* No further access to str below this point */
+            if (ret < 0) {
+                PyErr_SetFromErrno(PyExc_IOError);
+                return NULL;
+            }
+            if (mutate_arg) {
+                return PyLong_FromLong(ret);
+            }
+            else {
+                return PyBytes_FromStringAndSize(buf, len);
             }
         }
-        else {
+
+        PyErr_Clear();
+        if (PyArg_Parse(ob_arg, "s*:ioctl", &pstr)) {
+            str = pstr.buf;
+            len = pstr.len;
             if (len > IOCTL_BUFSZ) {
                 PyBuffer_Release(&pstr);
                 PyErr_SetString(PyExc_ValueError,
-                    "ioctl string arg too long");
+                                "ioctl string arg too long");
                 return NULL;
             }
-            else {
-                memcpy(buf, str, len);
-                buf[len] = '\0';
-                arg = buf;
-            }
-        }
-        if (buf == arg) {
-            Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-            ret = ioctl(fd, code, arg);
+            memcpy(buf, str, len);
+            buf[len] = '\0';
+            Py_BEGIN_ALLOW_THREADS
+            ret = ioctl(fd, code, buf);
             Py_END_ALLOW_THREADS
-        }
-        else {
-            ret = ioctl(fd, code, arg);
-        }
-        if (mutate_arg && (len <= IOCTL_BUFSZ)) {
-            memcpy(str, buf, len);
-        }
-        PyBuffer_Release(&pstr); /* No further access to str below this point */
-        if (ret < 0) {
-            PyErr_SetFromErrno(PyExc_IOError);
-            return NULL;
-        }
-        if (mutate_arg) {
-            return PyLong_FromLong(ret);
-        }
-        else {
+            if (ret < 0) {
+                PyBuffer_Release(&pstr);
+                PyErr_SetFromErrno(PyExc_IOError);
+                return NULL;
+            }
+            PyBuffer_Release(&pstr);
             return PyBytes_FromStringAndSize(buf, len);
         }
-    }
 
-    PyErr_Clear();
-    if (PyArg_ParseTuple(args, "O&Is*:ioctl",
-                         conv_descriptor, &fd, &code, &pstr)) {
-        str = pstr.buf;
-        len = pstr.len;
-        if (len > IOCTL_BUFSZ) {
-            PyBuffer_Release(&pstr);
-            PyErr_SetString(PyExc_ValueError,
-                            "ioctl string arg too long");
-            return NULL;
+        PyErr_Clear();
+        if (!PyArg_Parse(ob_arg,
+             "i;ioctl requires a file or file descriptor,"
+             " an integer and optionally an integer or buffer argument",
+             &arg)) {
+          return NULL;
         }
-        memcpy(buf, str, len);
-        buf[len] = '\0';
-        Py_BEGIN_ALLOW_THREADS
-        ret = ioctl(fd, code, buf);
-        Py_END_ALLOW_THREADS
-        if (ret < 0) {
-            PyBuffer_Release(&pstr);
-            PyErr_SetFromErrno(PyExc_IOError);
-            return NULL;
-        }
-        PyBuffer_Release(&pstr);
-        return PyBytes_FromStringAndSize(buf, len);
-    }
-
-    PyErr_Clear();
-    arg = 0;
-    if (!PyArg_ParseTuple(args,
-         "O&I|i;ioctl requires a file or file descriptor,"
-         " an integer and optionally an integer or buffer argument",
-                          conv_descriptor, &fd, &code, &arg)) {
-      return NULL;
+        // Fall-through to outside the 'if' statement.
     }
     Py_BEGIN_ALLOW_THREADS
     ret = ioctl(fd, code, arg);
@@ -218,51 +269,24 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 #undef IOCTL_BUFSZ
 }
 
-PyDoc_STRVAR(ioctl_doc,
-"ioctl(fd, op[, arg[, mutate_flag]])\n\
-\n\
-Perform the operation op on file descriptor fd.  The values used for op\n\
-are operating system dependent, and are available as constants in the\n\
-fcntl or termios library modules, using the same names as used in the\n\
-relevant C header files.\n\
-\n\
-The argument arg is optional, and defaults to 0; it may be an int or a\n\
-buffer containing character data (most likely a string or an array). \n\
-\n\
-If the argument is a mutable buffer (such as an array) and if the\n\
-mutate_flag argument (which is only allowed in this case) is true then the\n\
-buffer is (in effect) passed to the operating system and changes made by\n\
-the OS will be reflected in the contents of the buffer after the call has\n\
-returned.  The return value is the integer returned by the ioctl system\n\
-call.\n\
-\n\
-If the argument is a mutable buffer and the mutable_flag argument is not\n\
-passed or is false, the behavior is as if a string had been passed.  This\n\
-behavior will change in future releases of Python.\n\
-\n\
-If the argument is an immutable buffer (most likely a string) then a copy\n\
-of the buffer is passed to the operating system and the return value is a\n\
-string of the same length containing whatever the operating system put in\n\
-the buffer.  The length of the arg buffer in this case is not allowed to\n\
-exceed 1024 bytes.\n\
-\n\
-If the arg given is an integer or if none is specified, the result value is\n\
-an integer corresponding to the return value of the ioctl call in the C\n\
-code.");
+/*[clinic input]
+fcntl.flock
 
+    fd: object(type='int', converter='conv_descriptor')
+    code: int
+    /
 
-/* flock(fd, operation) */
+Perform the lock operation op on file descriptor fd.
+
+See the Unix manual page for flock(2) for details (On some systems, this
+function is emulated using fcntl()).
+[clinic start generated code]*/
 
 static PyObject *
-fcntl_flock(PyObject *self, PyObject *args)
+fcntl_flock_impl(PyModuleDef *module, int fd, int code)
+/*[clinic end generated code: output=c9035133a7dbfc96 input=b762aa9448d05e43]*/
 {
-    int fd;
-    int code;
     int ret;
-
-    if (!PyArg_ParseTuple(args, "O&i:flock",
-                          conv_descriptor, &fd, &code))
-        return NULL;
 
 #ifdef HAVE_FLOCK
     Py_BEGIN_ALLOW_THREADS
@@ -299,29 +323,49 @@ fcntl_flock(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(flock_doc,
-"flock(fd, operation)\n\
-\n\
-Perform the lock operation op on file descriptor fd.  See the Unix \n\
-manual page for flock(2) for details.  (On some systems, this function is\n\
-emulated using fcntl().)");
 
+/*[clinic input]
+fcntl.lockf
 
-/* lockf(fd, operation) */
+    fd: object(type='int', converter='conv_descriptor')
+    code: int
+    lenobj: object = NULL
+    startobj: object = NULL
+    whence: int = 0
+    /
+
+A wrapper around the fcntl() locking calls.
+
+fd is the file descriptor of the file to lock or unlock, and operation is one
+of the following values:
+
+    LOCK_UN - unlock
+    LOCK_SH - acquire a shared lock
+    LOCK_EX - acquire an exclusive lock
+
+When operation is LOCK_SH or LOCK_EX, it can also be bitwise ORed with
+LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the
+lock cannot be acquired, an IOError will be raised and the exception will
+have an errno attribute set to EACCES or EAGAIN (depending on the operating
+system -- for portability, check for either value).
+
+length is the number of bytes to lock, with the default meaning to lock to
+EOF.  start is the byte offset, relative to whence, to that the lock
+starts.  whence is as with fileobj.seek(), specifically:
+
+    0 - relative to the start of the file (SEEK_SET)
+    1 - relative to the current buffer position (SEEK_CUR)
+    2 - relative to the end of the file (SEEK_END)
+[clinic start generated code]*/
+
 static PyObject *
-fcntl_lockf(PyObject *self, PyObject *args)
+fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj, PyObject *startobj, int whence)
+/*[clinic end generated code: output=5536df2892bf3ce9 input=44856fa06db36184]*/
 {
-    int fd, code, ret, whence = 0;
-    PyObject *lenobj = NULL, *startobj = NULL;
-
-    if (!PyArg_ParseTuple(args, "O&i|OOi:lockf",
-                          conv_descriptor, &fd, &code,
-                          &lenobj, &startobj, &whence))
-        return NULL;
+    int ret;
 
 #ifndef LOCK_SH
 #define LOCK_SH         1       /* shared lock */
@@ -374,43 +418,17 @@ fcntl_lockf(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(lockf_doc,
-"lockf (fd, operation, length=0, start=0, whence=0)\n\
-\n\
-This is essentially a wrapper around the fcntl() locking calls.  fd is the\n\
-file descriptor of the file to lock or unlock, and operation is one of the\n\
-following values:\n\
-\n\
-    LOCK_UN - unlock\n\
-    LOCK_SH - acquire a shared lock\n\
-    LOCK_EX - acquire an exclusive lock\n\
-\n\
-When operation is LOCK_SH or LOCK_EX, it can also be bitwise ORed with\n\
-LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the\n\
-lock cannot be acquired, an IOError will be raised and the exception will\n\
-have an errno attribute set to EACCES or EAGAIN (depending on the operating\n\
-system -- for portability, check for either value).\n\
-\n\
-length is the number of bytes to lock, with the default meaning to lock to\n\
-EOF.  start is the byte offset, relative to whence, to that the lock\n\
-starts.  whence is as with fileobj.seek(), specifically:\n\
-\n\
-    0 - relative to the start of the file (SEEK_SET)\n\
-    1 - relative to the current buffer position (SEEK_CUR)\n\
-    2 - relative to the end of the file (SEEK_END)");
 
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
-    {"fcntl",           fcntl_fcntl, METH_VARARGS, fcntl_doc},
-    {"ioctl",           fcntl_ioctl, METH_VARARGS, ioctl_doc},
-    {"flock",           fcntl_flock, METH_VARARGS, flock_doc},
-    {"lockf",       fcntl_lockf, METH_VARARGS, lockf_doc},
-    {NULL,              NULL}           /* sentinel */
+    FCNTL_FCNTL_METHODDEF
+    FCNTL_IOCTL_METHODDEF
+    FCNTL_FLOCK_METHODDEF
+    FCNTL_LOCKF_METHODDEF
+    {NULL, NULL}  /* sentinel */
 };
 
 
