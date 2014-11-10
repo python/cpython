@@ -435,7 +435,7 @@ Snapshot
       Compute the differences with an old snapshot. Get statistics as a sorted
       list of :class:`StatisticDiff` instances grouped by *group_by*.
 
-      See the :meth:`statistics` method for *group_by* and *cumulative*
+      See the :meth:`Snapshot.statistics` method for *group_by* and *cumulative*
       parameters.
 
       The result is sorted from the biggest to the smallest by: absolute value
