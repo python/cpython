@@ -27,6 +27,46 @@ _REPEATING_CODES = set([REPEAT, MIN_REPEAT, MAX_REPEAT])
 _SUCCESS_CODES = set([SUCCESS, FAILURE])
 _ASSERT_CODES = set([ASSERT, ASSERT_NOT])
 
+# Sets of lowercase characters which have the same uppercase.
+_equivalences = (
+    # LATIN SMALL LETTER I, LATIN SMALL LETTER DOTLESS I
+    (0x69, 0x131), # iı
+    # LATIN SMALL LETTER S, LATIN SMALL LETTER LONG S
+    (0x73, 0x17f), # sſ
+    # MICRO SIGN, GREEK SMALL LETTER MU
+    (0xb5, 0x3bc), # µμ
+    # COMBINING GREEK YPOGEGRAMMENI, GREEK SMALL LETTER IOTA, GREEK PROSGEGRAMMENI
+    (0x345, 0x3b9, 0x1fbe), # \u0345ιι
+    # GREEK SMALL LETTER IOTA WITH DIALYTIKA AND TONOS, GREEK SMALL LETTER IOTA WITH DIALYTIKA AND OXIA
+    (0x390, 0x1fd3), # ΐΐ
+    # GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND TONOS, GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND OXIA
+    (0x3b0, 0x1fe3), # ΰΰ
+    # GREEK SMALL LETTER BETA, GREEK BETA SYMBOL
+    (0x3b2, 0x3d0), # βϐ
+    # GREEK SMALL LETTER EPSILON, GREEK LUNATE EPSILON SYMBOL
+    (0x3b5, 0x3f5), # εϵ
+    # GREEK SMALL LETTER THETA, GREEK THETA SYMBOL
+    (0x3b8, 0x3d1), # θϑ
+    # GREEK SMALL LETTER KAPPA, GREEK KAPPA SYMBOL
+    (0x3ba, 0x3f0), # κϰ
+    # GREEK SMALL LETTER PI, GREEK PI SYMBOL
+    (0x3c0, 0x3d6), # πϖ
+    # GREEK SMALL LETTER RHO, GREEK RHO SYMBOL
+    (0x3c1, 0x3f1), # ρϱ
+    # GREEK SMALL LETTER FINAL SIGMA, GREEK SMALL LETTER SIGMA
+    (0x3c2, 0x3c3), # ςσ
+    # GREEK SMALL LETTER PHI, GREEK PHI SYMBOL
+    (0x3c6, 0x3d5), # φϕ
+    # LATIN SMALL LETTER S WITH DOT ABOVE, LATIN SMALL LETTER LONG S WITH DOT ABOVE
+    (0x1e61, 0x1e9b), # ṡẛ
+    # LATIN SMALL LIGATURE LONG S T, LATIN SMALL LIGATURE ST
+    (0xfb05, 0xfb06), # ﬅﬆ
+)
+
+# Maps the lowercase code to lowercase codes which have the same uppercase.
+_ignorecase_fixes = {i: tuple(j for j in t if i != j)
+                     for t in _equivalences for i in t}
+
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
     emit = code.append
@@ -35,11 +75,29 @@ def _compile(code, pattern, flags):
     REPEATING_CODES = _REPEATING_CODES
     SUCCESS_CODES = _SUCCESS_CODES
     ASSERT_CODES = _ASSERT_CODES
+    if (flags & SRE_FLAG_IGNORECASE and
+            not (flags & SRE_FLAG_LOCALE) and
+            flags & SRE_FLAG_UNICODE):
+        fixes = _ignorecase_fixes
+    else:
+        fixes = None
     for op, av in pattern:
         if op in LITERAL_CODES:
             if flags & SRE_FLAG_IGNORECASE:
-                emit(OPCODES[OP_IGNORE[op]])
-                emit(_sre.getlower(av, flags))
+                lo = _sre.getlower(av, flags)
+                if fixes and lo in fixes:
+                    emit(OPCODES[IN_IGNORE])
+                    skip = _len(code); emit(0)
+                    if op is NOT_LITERAL:
+                        emit(OPCODES[NEGATE])
+                    for k in (lo,) + fixes[lo]:
+                        emit(OPCODES[LITERAL])
+                        emit(k)
+                    emit(OPCODES[FAILURE])
+                    code[skip] = _len(code) - skip
+                else:
+                    emit(OPCODES[OP_IGNORE[op]])
+                    emit(lo)
             else:
                 emit(OPCODES[op])
                 emit(av)
@@ -52,7 +110,7 @@ def _compile(code, pattern, flags):
                 emit(OPCODES[op])
                 fixup = None
             skip = _len(code); emit(0)
-            _compile_charset(av, flags, code, fixup)
+            _compile_charset(av, flags, code, fixup, fixes)
             code[skip] = _len(code) - skip
         elif op is ANY:
             if flags & SRE_FLAG_DOTALL:
@@ -166,10 +224,11 @@ def _compile(code, pattern, flags):
         else:
             raise ValueError("unsupported operand type", op)
 
-def _compile_charset(charset, flags, code, fixup=None):
+def _compile_charset(charset, flags, code, fixup=None, fixes=None):
     # compile charset subprogram
     emit = code.append
-    for op, av in _optimize_charset(charset, fixup, flags & SRE_FLAG_UNICODE):
+    for op, av in _optimize_charset(charset, fixup, fixes,
+                                    flags & SRE_FLAG_UNICODE):
         emit(OPCODES[op])
         if op is NEGATE:
             pass
@@ -193,7 +252,7 @@ def _compile_charset(charset, flags, code, fixup=None):
             raise error("internal: unsupported set operator")
     emit(OPCODES[FAILURE])
 
-def _optimize_charset(charset, fixup, isunicode):
+def _optimize_charset(charset, fixup, fixes, isunicode):
     # internal: optimize character set
     out = []
     tail = []
@@ -202,16 +261,27 @@ def _optimize_charset(charset, fixup, isunicode):
         while True:
             try:
                 if op is LITERAL:
-                    i = av
                     if fixup:
-                        i = fixup(i)
-                    charmap[i] = 1
+                        i = fixup(av)
+                        charmap[i] = 1
+                        if fixes and i in fixes:
+                            for k in fixes[i]:
+                                charmap[k] = 1
+                    else:
+                        charmap[av] = 1
                 elif op is RANGE:
                     r = range(av[0], av[1]+1)
                     if fixup:
                         r = map(fixup, r)
-                    for i in r:
-                        charmap[i] = 1
+                    if fixup and fixes:
+                        for i in r:
+                            charmap[i] = 1
+                            if i in fixes:
+                                for k in fixes[i]:
+                                    charmap[k] = 1
+                    else:
+                        for i in r:
+                            charmap[i] = 1
                 elif op is NEGATE:
                     out.append((op, av))
                 else:
