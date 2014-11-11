@@ -16,11 +16,6 @@ from sre_constants import *
 
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
-if _sre.CODESIZE == 2:
-    MAXCODE = 65535
-else:
-    MAXCODE = 0xFFFFFFFF
-
 _LITERAL_CODES = {LITERAL, NOT_LITERAL}
 _REPEATING_CODES = {REPEAT, MIN_REPEAT, MAX_REPEAT}
 _SUCCESS_CODES = {SUCCESS, FAILURE}
@@ -191,7 +186,7 @@ def _compile(code, pattern, flags):
                 emit(JUMP)
                 tailappend(_len(code)); emit(0)
                 code[skip] = _len(code) - skip
-            emit(0) # end of branch
+            emit(FAILURE) # end of branch
             for tail in tail:
                 code[tail] = _len(code) - tail
         elif op is CATEGORY:
@@ -374,6 +369,7 @@ def _optimize_charset(charset, fixup, fixes):
     return out
 
 _CODEBITS = _sre.CODESIZE * 8
+MAXCODE = (1 << _CODEBITS) - 1
 _BITS_TRANS = b'0' + b'1' * 255
 def _mk_bitmap(bits, _CODEBITS=_CODEBITS, _int=int):
     s = bits.translate(_BITS_TRANS)[::-1]
@@ -477,9 +473,9 @@ def _compile_info(code, pattern, flags):
             elif op is IN:
                 charset = av
 ##     if prefix:
-##         print "*** PREFIX", prefix, prefix_skip
+##         print("*** PREFIX", prefix, prefix_skip)
 ##     if charset:
-##         print "*** CHARSET", charset
+##         print("*** CHARSET", charset)
     # add an info block
     emit = code.append
     emit(INFO)
@@ -489,9 +485,9 @@ def _compile_info(code, pattern, flags):
     if prefix:
         mask = SRE_INFO_PREFIX
         if len(prefix) == prefix_skip == len(pattern.data):
-            mask = mask + SRE_INFO_LITERAL
+            mask = mask | SRE_INFO_LITERAL
     elif charset:
-        mask = mask + SRE_INFO_CHARSET
+        mask = mask | SRE_INFO_CHARSET
     emit(mask)
     # pattern length
     if lo < MAXCODE:

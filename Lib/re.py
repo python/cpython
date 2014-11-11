@@ -363,7 +363,7 @@ class Scanner:
         append = result.append
         match = self.scanner.scanner(string).match
         i = 0
-        while 1:
+        while True:
             m = match()
             if not m:
                 break

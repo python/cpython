@@ -103,18 +103,18 @@ class SubPattern:
         seqtypes = (tuple, list)
         for op, av in self.data:
             print(level*"  " + str(op), end='')
-            if op == IN:
+            if op is IN:
                 # member sublanguage
                 print()
                 for op, a in av:
                     print((level+1)*"  " + str(op), a)
-            elif op == BRANCH:
+            elif op is BRANCH:
                 print()
                 for i, a in enumerate(av[1]):
                     if i:
                         print(level*"  " + "OR")
                     a.dump(level+1)
-            elif op == GROUPREF_EXISTS:
+            elif op is GROUPREF_EXISTS:
                 condgroup, item_yes, item_no = av
                 print('', condgroup)
                 item_yes.dump(level+1)
@@ -607,7 +607,7 @@ def _parse(source, state):
                 item = subpattern[-1:]
             else:
                 item = None
-            if not item or (_len(item) == 1 and item[0][0] == AT):
+            if not item or (_len(item) == 1 and item[0][0] is AT):
                 raise source.error("nothing to repeat",
                                    source.tell() - here + len(this))
             if item[0][0] in _REPEATCODES:
