@@ -446,7 +446,7 @@ Miscellaneous opcodes.
 
    Implements the expression statement for the interactive mode.  TOS is removed
    from the stack and printed.  In non-interactive mode, an expression statement is
-   terminated with ``POP_STACK``.
+   terminated with :opcode:`POP_TOP`.
 
 
 .. opcode:: PRINT_ITEM ()
@@ -481,7 +481,7 @@ Miscellaneous opcodes.
 .. opcode:: CONTINUE_LOOP (target)
 
    Continues a loop due to a :keyword:`continue` statement.  *target* is the
-   address to jump to (which should be a ``FOR_ITER`` instruction).
+   address to jump to (which should be a :opcode:`FOR_ITER` instruction).
 
 
 .. opcode:: LIST_APPEND (i)
@@ -838,21 +838,21 @@ the more significant byte last.
 
 .. opcode:: CALL_FUNCTION_VAR (argc)
 
-   Calls a function. *argc* is interpreted as in ``CALL_FUNCTION``. The top element
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The top element
    on the stack contains the variable argument list, followed by keyword and
    positional arguments.
 
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
-   Calls a function. *argc* is interpreted as in ``CALL_FUNCTION``. The top element
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The top element
    on the stack contains the keyword arguments dictionary,  followed by explicit
    keyword and positional arguments.
 
 
 .. opcode:: CALL_FUNCTION_VAR_KW (argc)
 
-   Calls a function. *argc* is interpreted as in ``CALL_FUNCTION``.  The top
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The top
    element on the stack contains the keyword arguments dictionary, followed by the
    variable-arguments tuple, followed by explicit keyword and positional arguments.
 
