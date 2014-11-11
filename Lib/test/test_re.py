@@ -1101,8 +1101,8 @@ class ReTests(unittest.TestCase):
 
     def test_inline_flags(self):
         # Bug #1700
-        upper_char = chr(0x1ea0) # Latin Capital Letter A with Dot Bellow
-        lower_char = chr(0x1ea1) # Latin Small Letter A with Dot Bellow
+        upper_char = '\u1ea0' # Latin Capital Letter A with Dot Below
+        lower_char = '\u1ea1' # Latin Small Letter A with Dot Below
 
         p = re.compile(upper_char, re.I | re.U)
         q = p.match(lower_char)
