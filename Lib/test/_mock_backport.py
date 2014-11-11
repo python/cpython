@@ -1873,6 +1873,8 @@ class MagicProxy(object):
 class _ANY(object):
     "A helper object that compares equal to everything."
 
+    __hash__ = object.__hash__
+
     def __eq__(self, other):
         return True
 
@@ -1923,6 +1925,9 @@ class _Call(tuple):
 
     If the _Call has no name then it will match any name.
     """
+
+    __hash__ = object.__hash__
+
     def __new__(cls, value=(), name=None, parent=None, two=False,
                 from_kall=True):
         name = ''
