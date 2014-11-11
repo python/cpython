@@ -63,6 +63,7 @@ the `Python Package Index <https://pypi.python.org/pypi>`_.
    tk.rst
    development.rst
    debug.rst
+   distribution.rst
    python.rst
    custominterp.rst
    restricted.rst

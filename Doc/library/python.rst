@@ -28,4 +28,3 @@ overview:
    site.rst
    user.rst
    fpectl.rst
-   distutils.rst

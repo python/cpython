@@ -2575,6 +2575,65 @@ with the first of those changes appearing in the Python 2.7.7 release.
   Gaynor; :issue:`21305`.)
 
 
+PEP 477: Backport ensurepip (PEP 453) to Python 2.7
+---------------------------------------------------
+
+:pep:`477` approves the inclusion of the :pep:`453` ensurepip module and the
+improved documentation that was enabled by it in the Python 2.7 maintenance
+releases, appearing first in the the Python 2.7.9 release.
+
+
+Bootstrapping pip By Default
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
+cross-platform mechanism to bootstrap the pip installer into Python
+installations. The version of ``pip`` included with Python 2.7.9 is ``pip``
+1.5.6, and future 2.7.x maintenance releases will update the bundled version to
+the latest version of ``pip`` that is available at the time of creating the
+release candidate.
+
+By default, the commands ``pip``, ``pipX`` and ``pipX.Y`` will be installed on
+all platforms (where X.Y stands for the version of the Python installation),
+along with the ``pip`` Python package and its dependencies.
+
+On Windows and Mac OS X, the CPython installers now default to installing
+``pip`` along with CPython itself (users may opt out of installing it
+during the installation process). Window users will need to opt in to the
+automatic ``PATH`` modifications to have ``pip`` available from the command
+line by default, otherwise it can still be accessed through the Python
+launcher for Windows as ``py -m pip``.
+
+As `discussed in the PEP`__, platform packagers may choose not to install
+these commands by default, as long as, when invoked, they provide clear and
+simple directions on how to install them on that platform (usually using
+the system package manager).
+
+__ https://www.python.org/dev/peps/pep-0477/#disabling-ensurepip-by-downstream-distributors
+
+
+Documentation Changes
+~~~~~~~~~~~~~~~~~~~~~
+
+As part of this change, the :ref:`installing-index` and
+:ref:`distributing-index` sections of the documentation have been
+completely redesigned as short getting started and FAQ documents. Most
+packaging documentation has now been moved out to the Python Packaging
+Authority maintained `Python Packaging User Guide
+<http://packaging.python.org>`__ and the documentation of the individual
+projects.
+
+However, as this migration is currently still incomplete, the legacy
+versions of those guides remaining available as :ref:`install-index`
+and :ref:`distutils-index`.
+
+.. seealso::
+
+   :pep:`453` -- Explicit bootstrapping of pip in Python installations
+      PEP written by Donald Stufft and Nick Coghlan, implemented by
+      Donald Stufft, Nick Coghlan, Martin von Löwis and Ned Deily.
+
+
 .. ======================================================================
 
 .. _acks27:
