@@ -133,7 +133,7 @@ object isn't useful:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Added ``file`` parameter
+      Added *file* parameter.
 
 
 .. function:: dis(x=None, *, file=None)
@@ -147,11 +147,11 @@ object isn't useful:
    disassembled.  If no object is provided, this function disassembles the last
    traceback.
 
-   The disassembly is written as text to the supplied ``file`` argument if
+   The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
    .. versionchanged:: 3.4
-      Added ``file`` parameter
+      Added *file* parameter.
 
 
 .. function:: distb(tb=None, *, file=None)
@@ -160,11 +160,11 @@ object isn't useful:
    traceback if none was passed.  The instruction causing the exception is
    indicated.
 
-   The disassembly is written as text to the supplied ``file`` argument if
+   The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
    .. versionchanged:: 3.4
-      Added ``file`` parameter
+      Added *file* parameter.
 
 
 .. function:: disassemble(code, lasti=-1, *, file=None)
@@ -184,11 +184,11 @@ object isn't useful:
    The parameter interpretation recognizes local and global variable names,
    constant values, branch targets, and compare operators.
 
-   The disassembly is written as text to the supplied ``file`` argument if
+   The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
    .. versionchanged:: 3.4
-      Added ``file`` parameter
+      Added *file* parameter.
 
 
 .. function:: get_instructions(x, *, first_line=None)
@@ -512,7 +512,7 @@ the original TOS1.
 
    Implements the expression statement for the interactive mode.  TOS is removed
    from the stack and printed.  In non-interactive mode, an expression statement is
-   terminated with ``POP_STACK``.
+   terminated with :opcode:`POP_TOP`.
 
 
 .. opcode:: BREAK_LOOP
@@ -523,7 +523,7 @@ the original TOS1.
 .. opcode:: CONTINUE_LOOP (target)
 
    Continues a loop due to a :keyword:`continue` statement.  *target* is the
-   address to jump to (which should be a ``FOR_ITER`` instruction).
+   address to jump to (which should be a :opcode:`FOR_ITER` instruction).
 
 
 .. opcode:: SET_ADD (i)
@@ -541,7 +541,8 @@ the original TOS1.
    Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
    comprehensions.
 
-For all of the SET_ADD, LIST_APPEND and MAP_ADD instructions, while the
+For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
+instructions, while the
 added value or key/value pair is popped off, the container object remains on
 the stack so that it is available for further iterations of the loop.
 
@@ -594,7 +595,7 @@ the stack so that it is available for further iterations of the loop.
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
-   by ``CALL_FUNCTION`` to construct a class.
+   by :opcode:`CALL_FUNCTION` to construct a class.
 
 
 .. opcode:: SETUP_WITH (delta)
@@ -625,7 +626,7 @@ the stack so that it is available for further iterations of the loop.
 
    If the stack represents an exception, *and* the function call returns
    a 'true' value, this information is "zapped" and replaced with a single
-   ``WHY_SILENCED`` to prevent ``END_FINALLY`` from re-raising the exception.
+   ``WHY_SILENCED`` to prevent :opcode:`END_FINALLY` from re-raising the exception.
    (But non-local gotos will still be resumed.)
 
    .. XXX explain the WHY stuff!
@@ -637,8 +638,8 @@ the more significant byte last.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = TOS``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use ``STORE_FAST``
-   or ``STORE_GLOBAL`` if possible.
+   :attr:`co_names` of the code object. The compiler tries to use :opcode:`STORE_FAST`
+   or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
@@ -678,12 +679,12 @@ the more significant byte last.
 
 .. opcode:: STORE_GLOBAL (namei)
 
-   Works as ``STORE_NAME``, but stores the name as a global.
+   Works as :opcode:`STORE_NAME`, but stores the name as a global.
 
 
 .. opcode:: DELETE_GLOBAL (namei)
 
-   Works as ``DELETE_NAME``, but deletes a global name.
+   Works as :opcode:`DELETE_NAME`, but deletes a global name.
 
 
 .. opcode:: LOAD_CONST (consti)
@@ -704,12 +705,12 @@ the more significant byte last.
 
 .. opcode:: BUILD_LIST (count)
 
-   Works as ``BUILD_TUPLE``, but creates a list.
+   Works as :opcode:`BUILD_TUPLE`, but creates a list.
 
 
 .. opcode:: BUILD_SET (count)
 
-   Works as ``BUILD_TUPLE``, but creates a set.
+   Works as :opcode:`BUILD_TUPLE`, but creates a set.
 
 
 .. opcode:: BUILD_MAP (count)
@@ -734,7 +735,7 @@ the more significant byte last.
    Imports the module ``co_names[namei]``.  TOS and TOS1 are popped and provide
    the *fromlist* and *level* arguments of :func:`__import__`.  The module
    object is pushed onto the stack.  The current namespace is not affected:
-   for a proper import statement, a subsequent ``STORE_FAST`` instruction
+   for a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
    modifies the namespace.
 
 
@@ -742,7 +743,7 @@ the more significant byte last.
 
    Loads the attribute ``co_names[namei]`` from the module found in TOS. The
    resulting object is pushed onto the stack, to be subsequently stored by a
-   ``STORE_FAST`` instruction.
+   :opcode:`STORE_FAST` instruction.
 
 
 .. opcode:: JUMP_FORWARD (delta)
@@ -921,21 +922,21 @@ the more significant byte last.
 
 .. opcode:: CALL_FUNCTION_VAR (argc)
 
-   Calls a function. *argc* is interpreted as in ``CALL_FUNCTION``. The top element
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The top element
    on the stack contains the variable argument list, followed by keyword and
    positional arguments.
 
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
-   Calls a function. *argc* is interpreted as in ``CALL_FUNCTION``. The top element
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The top element
    on the stack contains the keyword arguments dictionary,  followed by explicit
    keyword and positional arguments.
 
 
 .. opcode:: CALL_FUNCTION_VAR_KW (argc)
 
-   Calls a function. *argc* is interpreted as in ``CALL_FUNCTION``.  The top
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The top
    element on the stack contains the keyword arguments dictionary, followed by the
    variable-arguments tuple, followed by explicit keyword and positional arguments.
 
