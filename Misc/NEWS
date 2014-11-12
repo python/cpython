@@ -183,6 +183,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19494: Added urllib.request.HTTPBasicPriorAuthHandler. Patch by
+  Matej Cepl.
+
 - Issue #22578: Added attributes to the re.error class.
 
 - Issue #12728: Different Unicode characters having the same uppercase but
