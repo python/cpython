@@ -2890,6 +2890,7 @@ def _to_memoryview(buf):
     arr.frombytes(buf[:idx])
     return memoryview(arr)
 
+
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
     shutdown_error = "RuntimeError: could not find io module state"
