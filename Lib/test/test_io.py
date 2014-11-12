@@ -2784,6 +2784,21 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertFalse(err)
         self.assertEqual("ok", out.decode().strip())
 
+    def test_issue22849(self):
+        class F(object):
+            def readable(self): return True
+            def writable(self): return True
+            def seekable(self): return True
+
+        for i in range(10):
+            try:
+                self.TextIOWrapper(F(), encoding='utf-8')
+            except Exception:
+                pass
+
+        F.tell = lambda x: 0
+        t = self.TextIOWrapper(F(), encoding='utf-8')
+
 
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
