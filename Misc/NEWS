@@ -188,6 +188,8 @@ Library
 
 - Issue #22578: Added attributes to the re.error class.
 
+- Issue #22849: Fix possible double free in the io.TextIOWrapper constructor.
+
 - Issue #12728: Different Unicode characters having the same uppercase but
   different lowercase are now matched in case-insensitive regular expressions.
 

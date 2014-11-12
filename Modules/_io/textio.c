@@ -1061,7 +1061,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     }
 
     /* Finished sorting out the codec details */
-    Py_DECREF(codec_info);
+    Py_CLEAR(codec_info);
 
     self->buffer = buffer;
     Py_INCREF(buffer);
