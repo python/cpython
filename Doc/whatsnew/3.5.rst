@@ -297,6 +297,15 @@ time
 * The :func:`time.monotonic` function is now always available.  (Contributed by
   Victor Stinner in :issue:`22043`.)
 
+time
+----
+
+* A new :class:`urllib.request.HTTPBasicPriorAuthHandler` allows HTTP Basic
+  Authentication credentials to be sent unconditionally with the first HTTP
+  request, rather than waiting for a HTTP 401 Unauthorized response from the
+  server.
+  (Contributed by Matej Cepl in :issue:`19494`.)
+
 wsgiref
 -------
 

@@ -304,6 +304,17 @@ The following classes are provided:
    presented with a wrong Authentication scheme.
 
 
+.. class:: HTTPBasicPriorAuthHandler(password_mgr=None)
+
+   A variant of :class:`HTTPBasicAuthHandler` which automatically sends
+   authorization credentials with the first request, rather than waiting to
+   first receive a HTTP 401 "Unauthorised" error response. This allows
+   authentication to sites that don't provide a 401 response when receiving
+   a request without an Authorization header. Aside from this difference,
+   this behaves exactly as :class:`HTTPBasicAuthHandler`.
+
+   .. versionadded:: 3.5
+
 .. class:: ProxyBasicAuthHandler(password_mgr=None)
 
    Handle authentication with the proxy. *password_mgr*, if given, should be
