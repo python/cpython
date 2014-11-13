@@ -410,6 +410,8 @@ def add_ui(db):
 
     compileargs = r'-Wi "[TARGETDIR]Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py3_" "[TARGETDIR]Lib"'
     lib2to3args = r'-c "import lib2to3.pygram, lib2to3.patcomp;lib2to3.patcomp.PatternCompiler()"'
+    updatepipargs = r'-m ensurepip -U --default-pip'
+    removepipargs = r'-B -m ensurepip._uninstall'
     # See "CustomAction Table"
     add_data(db, "CustomAction", [
         # msidbCustomActionTypeFirstSequence + msidbCustomActionTypeTextData + msidbCustomActionTypeProperty
@@ -421,9 +423,13 @@ def add_ui(db):
         ("SetDLLDirToSystem32", 307, "DLLDIR", SystemFolderName),
         # msidbCustomActionTypeExe + msidbCustomActionTypeSourceFile
         # See "Custom Action Type 18"
-        ("CompilePyc", 18, "python.exe", compileargs),
-        ("CompilePyo", 18, "python.exe", "-O "+compileargs),
-        ("CompileGrammar", 18, "python.exe", lib2to3args),
+        # msidbCustomActionTypeInScript (1024); run during actual installation
+        # msidbCustomActionTypeNoImpersonate (2048); run action in system account, not user account
+        ("CompilePyc", 18+1024+2048, "python.exe", compileargs),
+        ("CompilePyo", 18+1024+2048, "python.exe", "-O "+compileargs),
+        ("CompileGrammar", 18+1024+2048, "python.exe", lib2to3args),
+        ("UpdatePip", 18+1024+2048, "python.exe", updatepipargs),
+        ("RemovePip", 18+1024+2048, "python.exe", removepipargs),
         ])
 
     # UI Sequences, see "InstallUISequence Table", "Using a Sequence Table"
@@ -447,7 +453,7 @@ def add_ui(db):
 
     # Prepend TARGETDIR to the system path, and remove it on uninstall.
     add_data(db, "Environment",
-             [("PathAddition", "=-*Path", "[TARGETDIR];[~]", "REGISTRY.path")])
+             [("PathAddition", "=-*Path", "[TARGETDIR];[TARGETDIR]Scripts;[~]", "REGISTRY.path")])
 
     # Execute Sequences
     add_data(db, "InstallExecuteSequence",
@@ -455,16 +461,19 @@ def add_ui(db):
              ("SetDLLDirToSystem32", 'DLLDIR="" and ' + sys32cond, 751),
              ("SetDLLDirToTarget", 'DLLDIR="" and not ' + sys32cond, 752),
              ("UpdateEditIDLE", None, 1050),
-             ("CompilePyc", "COMPILEALL", 6800),
-             ("CompilePyo", "COMPILEALL", 6801),
-             ("CompileGrammar", "COMPILEALL", 6802),
+             # run command if install state of pip changes to INSTALLSTATE_LOCAL
+             # run after InstallFiles
+             ("UpdatePip", "&pip_feature=3", 4001),
+             # remove pip when state changes to INSTALLSTATE_ABSENT
+             # run before RemoveFiles
+             ("RemovePip", "&pip_feature=2", 3499),
+             ("CompilePyc", "COMPILEALL", 4002),
+             ("CompilePyo", "COMPILEALL", 4003),
+             ("CompileGrammar", "COMPILEALL", 4004),
             ])
     add_data(db, "AdminExecuteSequence",
             [("InitialTargetDir", 'TARGETDIR=""', 750),
              ("SetDLLDirToTarget", 'DLLDIR=""', 751),
-             ("CompilePyc", "COMPILEALL", 6800),
-             ("CompilePyo", "COMPILEALL", 6801),
-             ("CompileGrammar", "COMPILEALL", 6802),
             ])
 
     #####################################################################
@@ -830,7 +839,8 @@ def add_features(db):
     # (i.e. additional Python libraries) need to follow the parent feature.
     # Features that have no advertisement trigger (e.g. the test suite)
     # must not support advertisement
-    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature, private_crt, prepend_path
+    global default_feature, tcltk, htmlfiles, tools, testsuite
+    global ext_feature, private_crt, prepend_path, pip_feature
     default_feature = Feature(db, "DefaultFeature", "Python",
                               "Python Interpreter and Libraries",
                               1, directory = "TARGETDIR")
@@ -852,8 +862,12 @@ def add_features(db):
     tools = Feature(db, "Tools", "Utility Scripts",
                     "Python utility scripts (Tools/", 9,
                     parent = default_feature, attributes=2)
+    pip_feature = Feature(db, "pip_feature", "pip",
+                    "Install or upgrade pip, a tool for installing and managing "
+                    "Python packages.", 11,
+                    parent = default_feature, attributes=2|8)
     testsuite = Feature(db, "Testsuite", "Test suite",
-                        "Python test suite (Lib/test/)", 11,
+                        "Python test suite (Lib/test/)", 13,
                         parent = default_feature, attributes=2|8)
     # prepend_path is an additional feature which is to be off by default.
     # Since the default level for the above features is 1, this needs to be
@@ -861,7 +875,7 @@ def add_features(db):
     prepend_path = Feature(db, "PrependPath", "Add python.exe to Path",
                            "Prepend [TARGETDIR] to the system Path variable. "
                            "This allows you to type 'python' into a command "
-                           "prompt without needing the full path.", 13,
+                           "prompt without needing the full path.", 15,
                            parent = default_feature, attributes=2|8,
                            level=2)
 
@@ -1188,6 +1202,8 @@ def add_registry(db):
                "Documentation"),
               ("REGISTRY.path", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
                None),
+              ("REGISTRY.ensurepip", msilib.gen_uuid(), "TARGETDIR", registry_component, "EnsurePipRun",
+              None),
               ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", registry_component,
                None, None)] + tcldata)
     # See "FeatureComponents Table".
@@ -1205,6 +1221,7 @@ def add_registry(db):
              [(default_feature.id, "REGISTRY"),
               (htmlfiles.id, "REGISTRY.doc"),
               (prepend_path.id, "REGISTRY.path"),
+              (pip_feature.id, "REGISTRY.ensurepip"),
               (ext_feature.id, "REGISTRY.def")] +
               tcldata
               )
@@ -1287,7 +1304,9 @@ def add_registry(db):
                "", r"[TARGETDIR]Python.exe", "REGISTRY.def"),
               ("DisplayIcon", -1,
                r"Software\Microsoft\Windows\CurrentVersion\Uninstall\%s" % product_code,
-               "DisplayIcon", "[TARGETDIR]python.exe", "REGISTRY")
+               "DisplayIcon", "[TARGETDIR]python.exe", "REGISTRY"),
+              # Fake registry entry to allow installer to track whether ensurepip has been run
+              ("EnsurePipRun", -1, prefix+r"\EnsurePipRun", "", "#1", "REGISTRY.ensurepip"),
               ])
     # Shortcuts, see "Shortcut Table"
     add_data(db, "Directory",
