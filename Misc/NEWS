@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22847: Improve method cache efficiency.
+
 - Issue #22335: Fix crash when trying to enlarge a bytearray to 0x7fffffff
   bytes on a 32-bit platform.
 
