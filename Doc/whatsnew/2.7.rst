@@ -2570,9 +2570,17 @@ with the first of those changes appearing in the Python 2.7.7 release.
   certificate store, the :class:`~ssl.SSLContext` class, and other
   features. (Contributed by Alex Gaynor and David Reid; :issue:`21308`.)
 
+  Refer to the "Version added: 2.7.9" notes in the module documentation for
+  specific details.
+
 * :func:`os.urandom` was changed to cache a file descriptor to ``/dev/urandom``
   instead of reopening ``/dev/urandom`` on every call. (Contributed by Alex
   Gaynor; :issue:`21305`.)
+
+* :data:`hashlib.algorithms_guaranteed` and
+  :data:`hashlib.algorithms_available` were backported from Python 3 to make
+  it easier for Python 2 applications to select the strongest available hash
+  algorithm. (Contributed by Alex Gaynor in :issue:`21307`)
 
 
 PEP 477: Backport ensurepip (PEP 453) to Python 2.7
