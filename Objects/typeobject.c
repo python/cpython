@@ -13,10 +13,11 @@
    MCACHE_MAX_ATTR_SIZE, since it might be a problem if very large
    strings are used as attribute names. */
 #define MCACHE_MAX_ATTR_SIZE    100
-#define MCACHE_SIZE_EXP         10
+#define MCACHE_SIZE_EXP         12
 #define MCACHE_HASH(version, name_hash)                                 \
-        (((unsigned int)(version) * (unsigned int)(name_hash))          \
-         >> (8*sizeof(unsigned int) - MCACHE_SIZE_EXP))
+        (((unsigned int)(version) ^ (unsigned int)(name_hash))          \
+         & ((1 << MCACHE_SIZE_EXP) - 1))
+
 #define MCACHE_HASH_METHOD(type, name)                                  \
         MCACHE_HASH((type)->tp_version_tag,                     \
                     ((PyStringObject *)(name))->ob_shash)
@@ -33,11 +34,31 @@ struct method_cache_entry {
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
 
+#define MCACHE_STATS 0
+
+#if MCACHE_STATS
+static size_t method_cache_hits = 0;
+static size_t method_cache_misses = 0;
+static size_t method_cache_collisions = 0;
+#endif
+
 unsigned int
 PyType_ClearCache(void)
 {
     Py_ssize_t i;
     unsigned int cur_version_tag = next_version_tag - 1;
+
+#if MCACHE_STATS
+    size_t total = method_cache_hits + method_cache_collisions + method_cache_misses;
+    fprintf(stderr, "-- Method cache hits        = %zd (%d%%)\n",
+            method_cache_hits, (int) (100.0 * method_cache_hits / total));
+    fprintf(stderr, "-- Method cache true misses = %zd (%d%%)\n",
+            method_cache_misses, (int) (100.0 * method_cache_misses / total));
+    fprintf(stderr, "-- Method cache collisions  = %zd (%d%%)\n",
+            method_cache_collisions, (int) (100.0 * method_cache_collisions / total));
+    fprintf(stderr, "-- Method cache size        = %zd KB\n",
+            sizeof(method_cache) / 1024);
+#endif
 
     for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         method_cache[i].version = 0;
@@ -2505,8 +2526,12 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         /* fast path */
         h = MCACHE_HASH_METHOD(type, name);
         if (method_cache[h].version == type->tp_version_tag &&
-            method_cache[h].name == name)
+            method_cache[h].name == name) {
+#if MCACHE_STATS
+            method_cache_hits++;
+#endif
             return method_cache[h].value;
+        }
     }
 
     /* Look in tp_dict of types in MRO */
@@ -2540,7 +2565,15 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         method_cache[h].version = type->tp_version_tag;
         method_cache[h].value = res;  /* borrowed */
         Py_INCREF(name);
-        Py_SETREF(method_cache[h].name, name);
+        assert(((PyASCIIObject *)(name))->hash != -1);
+#if MCACHE_STATS
+        if (method_cache[h].name != Py_None && method_cache[h].name != name)
+            method_cache_collisions++;
+        else
+            method_cache_misses++;
+#endif
+        Py_DECREF(method_cache[h].name);
+        method_cache[h].name = name;
     }
     return res;
 }

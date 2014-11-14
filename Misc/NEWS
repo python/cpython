@@ -10,6 +10,8 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #22847: Improve method cache efficiency.
+
 - Issue #25843: When compiling code, don't merge constants if they are equal
   but have a different types. For example, ``f1, f2 = lambda: 1, lambda: 1.0``
   is now correctly compiled to two different functions: ``f1()`` returns ``1``
