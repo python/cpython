@@ -183,6 +183,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22841: Reject coroutines in asyncio add_signal_handler().
+  Patch by Ludovic.Gasc.
+
 - Issue #19494: Added urllib.request.HTTPBasicPriorAuthHandler. Patch by
   Matej Cepl.
 
