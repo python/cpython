@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22841: Reject coroutines in asyncio add_signal_handler().
+  Patch by Ludovic.Gasc.
+
 - Issue #22849: Fix possible double free in the io.TextIOWrapper constructor.
 
 - Issue #12728: Different Unicode characters having the same uppercase but

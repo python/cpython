@@ -64,6 +64,18 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             signal.SIGINT, lambda: True)
 
     @mock.patch('asyncio.unix_events.signal')
+    def test_add_signal_handler_coroutine_error(self, m_signal):
+
+        @asyncio.coroutine
+        def simple_coroutine():
+            yield from []
+
+        self.assertRaises(
+            TypeError,
+            self.loop.add_signal_handler,
+            signal.SIGINT, simple_coroutine)
+
+    @mock.patch('asyncio.unix_events.signal')
     def test_add_signal_handler(self, m_signal):
         m_signal.NSIG = signal.NSIG
 
