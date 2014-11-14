@@ -181,7 +181,7 @@ There are three built-in functions that are very useful when used with lists:
 the sequence for which ``function(item)`` is true. If *sequence* is a
 :class:`string` or :class:`tuple`, the result will be of the same type;
 otherwise, it is always a :class:`list`. For example, to compute a sequence of
-numbers divisible by 2 or 3::
+numbers divisible by 3 or 5::
 
    >>> def f(x): return x % 3 == 0 or x % 5 == 0
    ...
