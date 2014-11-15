@@ -94,7 +94,7 @@ class ReprTests(unittest.TestCase):
         eq(r(d), "{'alice': 1, 'arthur': 1, 'bob': 2, 'charles': 3, ...}")
 
         # array.array after 5.
-        eq(r(array('i')), "array('i', [])")
+        eq(r(array('i')), "array('i')")
         eq(r(array('i', [1])), "array('i', [1])")
         eq(r(array('i', [1, 2])), "array('i', [1, 2])")
         eq(r(array('i', [1, 2, 3])), "array('i', [1, 2, 3])")
