@@ -494,6 +494,31 @@ class SizeofTest(unittest.TestCase):
         # but lists are
         self.assertEqual(sys.getsizeof([]), size('P PP') + gc_header_size)
 
+    def test_errors(self):
+        class BadSizeof(object):
+            def __sizeof__(self):
+                raise ValueError
+        self.assertRaises(ValueError, sys.getsizeof, BadSizeof())
+
+        class InvalidSizeof(object):
+            def __sizeof__(self):
+                return None
+        self.assertRaises(TypeError, sys.getsizeof, InvalidSizeof())
+        sentinel = ["sentinel"]
+        self.assertIs(sys.getsizeof(InvalidSizeof(), sentinel), sentinel)
+
+        class OverflowSizeof(int):
+            def __sizeof__(self):
+                return int(self)
+        self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
+                         sys.maxsize + self.gc_headsize)
+        with self.assertRaises(OverflowError):
+            sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
+        with self.assertRaises(ValueError):
+            sys.getsizeof(OverflowSizeof(-1))
+        with self.assertRaises((ValueError, OverflowError)):
+            sys.getsizeof(OverflowSizeof(-sys.maxsize - 1))
+
     def test_default(self):
         size = test.test_support.calcobjsize
         self.assertEqual(sys.getsizeof(True, -1), size('l'))
