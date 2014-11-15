@@ -198,7 +198,7 @@ def library_recipes():
     LT_10_5 = bool(getDeptargetTuple() < (10, 5))
 
 #   Disable for now
-    if False:   # if (getDeptargetTuple() > (10, 5)) and (getVersionTuple() >= (3, 5)):
+    if False:   # if getDeptargetTuple() > (10, 5):
         result.extend([
           dict(
               name="Tcl 8.5.15",
@@ -239,7 +239,7 @@ def library_recipes():
                 ),
         ])
 
-    if getVersionTuple() >= (3, 3):
+    if PYTHON_3:
         result.extend([
           dict(
               name="XZ 5.0.5",
@@ -369,8 +369,6 @@ def library_recipes():
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
     unselected_for_python3 = ('selected', 'unselected')[PYTHON_3]
-    # unselected if 3.0 through 3.3, selected otherwise (2.x or >= 3.4)
-    unselected_for_lt_python34 = ('selected', 'unselected')[(3, 0) <= getVersionTuple() < (3, 4)]
     result = [
         dict(
             name="PythonFramework",
@@ -439,26 +437,22 @@ def pkg_recipes():
             topdir="/Library/Frameworks/Python.framework",
             source="/empty-dir",
             required=False,
-            selected=unselected_for_lt_python34,
+            selected='selected',
+        ),
+        dict(
+            name="PythonInstallPip",
+            long_name="Install or upgrade pip",
+            readme="""\
+                This package installs (or upgrades from an earlier version)
+                pip, a tool for installing and managing Python packages.
+                """,
+            postflight="scripts/postflight.ensurepip",
+            topdir="/Library/Frameworks/Python.framework",
+            source="/empty-dir",
+            required=False,
+            selected='selected',
         ),
     ]
-
-    if getVersionTuple() >= (3, 4):
-        result.append(
-            dict(
-                name="PythonInstallPip",
-                long_name="Install or upgrade pip",
-                readme="""\
-                    This package installs (or upgrades from an earlier version)
-                    pip, a tool for installing and managing Python packages.
-                    """,
-                postflight="scripts/postflight.ensurepip",
-                topdir="/Library/Frameworks/Python.framework",
-                source="/empty-dir",
-                required=False,
-                selected='selected',
-            )
-        )
 
     if getDeptargetTuple() < (10, 4) and not PYTHON_3:
         result.append(
@@ -977,7 +971,7 @@ def buildPython():
         shellQuote(os.path.join(SRCDIR, 'configure')), shellQuote(SDKPATH),
         UNIVERSALARCHS,
         (' ', '--with-computed-gotos ')[PYTHON_3],
-        (' ', '--without-ensurepip ')[getVersionTuple() >= (3, 4)],
+        (' ', '--without-ensurepip ')[PYTHON_3],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
@@ -1159,7 +1153,9 @@ def patchFile(inPath, outPath):
     fp.close()
 
 def patchScript(inPath, outPath):
+    major, minor = getVersionMajorMinor()
     data = fileContents(inPath)
+    data = data.replace('@PYMAJOR@', str(major))
     data = data.replace('@PYVER@', getVersion())
     fp = open(outPath, 'w')
     fp.write(data)
