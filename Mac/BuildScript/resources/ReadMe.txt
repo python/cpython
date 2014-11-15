@@ -1,88 +1,52 @@
-This package will install Python $FULL_VERSION for Mac OS X
-$MACOSX_DEPLOYMENT_TARGET for the following architecture(s):
-$ARCHITECTURES.
+This package will install Python $FULL_VERSION for Mac OS X $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.
 
-               **** IMPORTANT ****
-
-Installing on OS X 10.8 (Mountain Lion) or later systems
-========================================================
-
-If you are attempting to install on an OS X 10.8+ system, you may
-see a message that Python can't be installed because it is from an
-unidentified developer.  This is because this Python installer
-package is not yet compatible with the Gatekeeper security feature
-introduced in OS X 10.8.  To allow Python to be installed, you
-can override the Gatekeeper policy for this install.  In the Finder,
-instead of double-clicking, control-click or right click the "Python"
-installer package icon.  Then select "Open using ... Installer" from
-the contextual menu that appears.
-
-               **** IMPORTANT ****
-
+=============================
 Update your version of Tcl/Tk to use IDLE or other Tk applications
-==================================================================
+=============================
 
-To use IDLE or other programs that use the Tkinter graphical user
-interface toolkit, you may need to install a newer third-party version
-of the Tcl/Tk frameworks.  Visit http://www.python.org/download/mac/tcltk/
-for current information about supported and recommended versions of
-Tcl/Tk for this version of Python and of Mac OS X.
+To use IDLE or other programs that use the Tkinter graphical user interface toolkit, you need to install a newer third-party version of the Tcl/Tk frameworks.  Visit https://www.python.org/download/mac/tcltk/ for current information about supported and recommended versions of Tcl/Tk for this version of Python and of Mac OS X.
 
-               **** IMPORTANT ****
+=============================
+Installing on OS X 10.8 (Mountain Lion) or later systems
+[CHANGED for Python 2.7.9]
+=============================
 
-Binary installer support for 10.4 and 10.3.9 to be discontinued
-===============================================================
+As of Python 2.7.9, installer packages from python.org are now compatible with the Gatekeeper security feature introduced in OS X 10.8.   Downloaded packages can now be directly installed by double-clicking with the default system security settings.  Python.org installer packages for OS X are signed with the Developer ID of the builder, as identified on the download page for this release (https://www.python.org/downloads/).  To inspect the digital signature of the package, click on the lock icon in the upper right corner of the Install Python installer window.  Refer to Apple’s support pages for more information on Gatekeeper (http://support.apple.com/kb/ht5290).
 
-Python 2.7.7 is the last release for which binary installers will be
-released on python.org that support OS X 10.3.9 (Panther) and 10.4.x
-(Tiger) systems.  These systems were last updated by Apple in 2005
-and 2007.  As of 2.7.8, the 32-bit-only installer will support PPC
-and Intel Macs running OS X 10.5 (Leopard) and later.  10.5 was the
-last OS X release for PPC machines (G4 and G5).  (The 64-/32-bit
-installer configuration will remain unchanged.)  This aligns Python
-2.7.x installer configurations with those currently provided with
-Python 3.x.  Some of the reasons for making this change are:
-there were significant additions and compatibility improvements to
-the OS X POSIX system APIs in OS X 10.5 that Python users can now
-take advantage of; it is increasingly difficult to build and test
-on obsolete 10.3 and 10.4 systems and with the 10.3 ABI; and it is
-assumed that most remaining legacy PPC systems have upgraded to 10.5.
-To ease the transition, for Python 2.7.7 only we are providing three
-binary installers: (1) the legacy deprecated 32-bit-only 10.3+
-PPC/Intel format, (2) the newer 32-bit-only 10.5+ PPC/Intel format,
-and (3) the current 64-bit/32-bit 10.6+ Intel-only format.  While
-future releases will not provide the deprecated installer, it will
-still be possible to build Python from source on 10.3.9 and 10.4
-systems if needed.
+=============================
+Simplified web-based installs
+[NEW for Python 2.7.9]
+=============================
 
-Using this version of Python on OS X
-====================================
+With the change to the newer flat format installer package, the download file now has a .pkg extension as it is no longer necessary to embed the installer within a disk image (.dmg) container.   If you download the Python installer through a web browser, the OS X installer application may open automatically to allow you to perform the install.  If your browser settings do not allow automatic open, double click on the downloaded installer file.
 
-Python consists of the Python programming language interpreter, plus
-a set of programs to allow easy access to it for Mac users including
-an integrated development environment, IDLE, plus a set of pre-built
-extension modules that open up specific Macintosh technologies to
-Python programs.
+=============================
+New Installation Options and Defaults
+[NEW for Python 2.7.9]
+=============================
 
-The installer puts applications, an "Update Shell Profile" command,
-and a link to the optionally installed Python Documentation into the
-"Python $VERSION" subfolder of the system Applications folder,
-and puts the underlying machinery into the folder
-$PYTHONFRAMEWORKINSTALLDIR. It can
-optionally place links to the command-line tools in /usr/local/bin as
-well. Double-click on the "Update Shell Profile" command to add the
-"bin" directory inside the framework to your shell's search path.
+The Python installer now includes an option to automatically install or upgrade pip, a tool for installing and managing Python packages.  This option is enabled by default and no Internet access is required.  If you do not want the installer to do this, select the Customize option at the Installation Type step and uncheck the Install or ugprade pip option.
 
-You must install onto your current boot disk, even though the
-installer may not enforce this, otherwise things will not work.
+=============================
+Binary installer support for OS X 10.4 and 10.3.9 discontinued
+[CHANGED for Python 2.7.9]
+=============================
 
-You can verify the integrity of the disk image file containing the
-installer package and this ReadMe file by comparing its md5 checksum
-and size with the values published on the release page linked at
-http://www.python.org/download/
+As previously announced, binary installers for Python 2.7.9 from python.org
+no longer support Mac OS X 10.3.9 (Panther) and 10.4.x (Tiger) systems.
+These systems were last updated by Apple in 2005 and 2007.  As of 2.7.9, the
+32-bit-only installer supports PPC and Intel Macs running OS X 10.5 (Leopard).
+10.5 was the last OS X release for PPC machines (G4 and G5).  The 64-/32-bit
+installer configuration remains unchanged and should normally be used on OS X
+10.6 (Snow Leopard) and later systems.  This aligns Python 2.7.x installer
+configurations with those currently provided with Python 3.x.  If needed,
+it is still possible to build Python from source for 10.3.9 and 10.4.
 
-Installation requires approximately $INSTALL_SIZE MB of disk space,
-ignore the message that it will take zero bytes.
+=============================
+Python 3 and Python 2 Co-existence
+=============================
 
-More information on Python in general can be found at
-http://www.python.org.
+Python.org Python 2.7 and 3.x versions can both be installed on your system and
+will not conflict.  Python 2 command names contain a 2 or no digit: python2 (or
+python2.7 or python), idle2 (or idle2.7 or idle), pip2 (or pip2.7 or pip), etc.
+Command names for Python 3 contain a 3 in them: python3, idle3, pip3, etc.
