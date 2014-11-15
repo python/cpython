@@ -2535,9 +2535,9 @@ class str_converter(CConverter):
         length=False, nullable=False, zeroes=False):
 
         types = set(types.strip().split())
-        bytes_type = set(("bytes",))
-        str_type = set(("str",))
-        all_3_type = set(("bytearray",)) | bytes_type | str_type
+        bytes_type = {"bytes"}
+        str_type = {"str"}
+        all_3_type = {"bytearray"} | bytes_type | str_type
         is_bytes = types == bytes_type
         is_str = types == str_type
         is_all_3 = types == all_3_type
@@ -2633,12 +2633,12 @@ class Py_buffer_converter(CConverter):
             fail("The only legal default value for Py_buffer is None.")
         self.c_default = self.c_ignored_default
         types = set(types.strip().split())
-        bytes_type = set(('bytes',))
-        bytearray_type = set(('bytearray',))
-        buffer_type = set(('buffer',))
-        rwbuffer_type = set(('rwbuffer',))
-        robuffer_type = set(('robuffer',))
-        str_type = set(('str',))
+        bytes_type = {'bytes'}
+        bytearray_type = {'bytearray'}
+        buffer_type = {'buffer'}
+        rwbuffer_type = {'rwbuffer'}
+        robuffer_type = {'robuffer'}
+        str_type = {'str'}
         bytes_bytearray_buffer_type = bytes_type | bytearray_type | buffer_type
 
         format_unit = None
