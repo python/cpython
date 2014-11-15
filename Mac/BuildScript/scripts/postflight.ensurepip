@@ -4,7 +4,7 @@
 #
 
 PYVER="@PYVER@"
-PYMAJOR="3"
+PYMAJOR="@PYMAJOR@"
 FWK="/Library/Frameworks/Python.framework/Versions/${PYVER}"
 RELFWKBIN="../../..${FWK}/bin"
 
@@ -34,32 +34,36 @@ chmod -R g+w "${FWK}/lib/python${PYVER}/site-packages" "${FWK}/bin"
 
 if [ -d /usr/local/bin ] ; then
     (
+        install_links_if_our_fw() {
+            if [ "$(readlink -n ./$1)" = "${RELFWKBIN}/$1" ] ; then
+                shift
+                for fn ;
+                do
+                    if [ -e "${RELFWKBIN}/${fn}" ] ; then
+                        rm -f ./${fn}
+                        ln -s "${RELFWKBIN}/${fn}" "./${fn}"
+                        chgrp -h admin "./${fn}"
+                        chmod -h g+w "./${fn}"
+                    fi
+                done
+            fi
+        }
+
         cd /usr/local/bin
+
         # Create pipx.y and easy_install-x.y links if /usr/local/bin/pythonx.y
         #   is linked to this framework version
-        if [ "$(readlink -n ./python${PYVER})" = "${RELFWKBIN}/python${PYVER}" ] ; then
-            for fn in "pip${PYVER}" "easy_install-${PYVER}" ;
-            do
-                if [ -e "${RELFWKBIN}/${fn}" ] ; then
-                    rm -f ./${fn}
-                    ln -s "${RELFWKBIN}/${fn}" "./${fn}"
-                    chgrp -h admin "./${fn}"
-                    chmod -h g+w "./${fn}"
-                fi
-            done
-        fi
+        install_links_if_our_fw "python${PYVER}" \
+                                    "pip${PYVER}" "easy_install-${PYVER}"
+
         # Create pipx link if /usr/local/bin/pythonx is linked to this version
-        if [ "$(readlink -n ./python${PYMAJOR})" = "${RELFWKBIN}/python${PYMAJOR}" ] ; then
-            for fn in "pip${PYMAJOR}" ;
-            do
-                if [ -e "${RELFWKBIN}/${fn}" ] ; then
-                    rm -f ./${fn}
-                    ln -s "${RELFWKBIN}/${fn}" "./${fn}"
-                    chgrp -h admin "./${fn}"
-                    chmod -h g+w "./${fn}"
-                fi
-            done
-        fi
+        install_links_if_our_fw "python${PYMAJOR}" \
+                                    "pip${PYMAJOR}"
+
+        # Create pip and easy_install link if /usr/local/bin/python
+        #   is linked to this version
+        install_links_if_our_fw "python" \
+                                    "pip" "easy_install"
     )
 fi
 exit 0
