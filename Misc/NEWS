@@ -209,6 +209,9 @@ Library
 - Issue #22824:  Updated reprlib output format for sets to use set literals.
   Patch contributed by Berker Peksag.
 
+- Issue #22824:  Updated reprlib output format for arrays to display empty
+  arrays without an unnecessary empty list.  Suggested by Serhiy Storchaka.
+
 - Issue #22406: Fixed the uu_codec codec incorrectly ported to 3.x.
   Based on patch by Martin Panter.
 
