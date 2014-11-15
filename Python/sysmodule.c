@@ -868,7 +868,7 @@ _PySys_GetSizeOf(PyObject *o)
 {
     PyObject *res = NULL;
     PyObject *method;
-    size_t size;
+    Py_ssize_t size;
 
     /* Make sure the type is initialized. float gets initialized late */
     if (PyType_Ready(Py_TYPE(o)) < 0)
@@ -889,15 +889,20 @@ _PySys_GetSizeOf(PyObject *o)
     if (res == NULL)
         return (size_t)-1;
 
-    size = PyLong_AsSize_t(res);
+    size = PyLong_AsSsize_t(res);
     Py_DECREF(res);
-    if (size == (size_t)-1 && PyErr_Occurred())
+    if (size == -1 && PyErr_Occurred())
         return (size_t)-1;
+
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "__sizeof__() should return >= 0");
+        return (size_t)-1;
+    }
 
     /* add gc_head size */
     if (PyObject_IS_GC(o))
-        size += sizeof(PyGC_Head);
-    return size;
+        return ((size_t)size) + sizeof(PyGC_Head);
+    return (size_t)size;
 }
 
 static PyObject *
