@@ -954,7 +954,7 @@ class HTMLDoc(Doc):
         if not argspec:
             argspec = '(...)'
 
-        decl = title + argspec + (note and self.grey(
+        decl = title + self.escape(argspec) + (note and self.grey(
                '<font face="helvetica, arial">%s</font>' % note))
 
         if skipdocs:
