@@ -2313,35 +2313,6 @@ PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
 
 #endif /* HAVE_WCHAR_H */
 
-static void
-makefmt(char *fmt, int longflag, int longlongflag, int size_tflag,
-        char c)
-{
-    *fmt++ = '%';
-    if (longflag)
-        *fmt++ = 'l';
-    else if (longlongflag) {
-        /* longlongflag should only ever be nonzero on machines with
-           HAVE_LONG_LONG defined */
-#ifdef HAVE_LONG_LONG
-        char *f = PY_FORMAT_LONG_LONG;
-        while (*f)
-            *fmt++ = *f++;
-#else
-        /* we shouldn't ever get here */
-        assert(0);
-        *fmt++ = 'l';
-#endif
-    }
-    else if (size_tflag) {
-        char *f = PY_FORMAT_SIZE_T;
-        while (*f)
-            *fmt++ = *f++;
-    }
-    *fmt++ = c;
-    *fmt = '\0';
-}
-
 /* maximum number of characters required for output of %lld or %p.
    We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
    plus 1 for the sign.  53/22 is an upper bound for log10(256). */
@@ -2517,48 +2488,42 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'x':
     {
         /* used by sprintf */
-        char fmt[10]; /* should be enough for "%0lld\0" */
         char buffer[MAX_LONG_LONG_CHARS];
         Py_ssize_t arglen;
 
         if (*f == 'u') {
-            makefmt(fmt, longflag, longlongflag, size_tflag, *f);
-
             if (longflag)
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%lu",
                         va_arg(*vargs, unsigned long));
 #ifdef HAVE_LONG_LONG
             else if (longlongflag)
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%" PY_FORMAT_LONG_LONG "u",
                         va_arg(*vargs, unsigned PY_LONG_LONG));
 #endif
             else if (size_tflag)
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
                         va_arg(*vargs, size_t));
             else
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%u",
                         va_arg(*vargs, unsigned int));
         }
         else if (*f == 'x') {
-            makefmt(fmt, 0, 0, 0, 'x');
-            len = sprintf(buffer, fmt, va_arg(*vargs, int));
+            len = sprintf(buffer, "%x", va_arg(*vargs, int));
         }
         else {
-            makefmt(fmt, longflag, longlongflag, size_tflag, *f);
-
             if (longflag)
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%li",
                         va_arg(*vargs, long));
 #ifdef HAVE_LONG_LONG
             else if (longlongflag)
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%" PY_FORMAT_LONG_LONG "i",
                         va_arg(*vargs, PY_LONG_LONG));
 #endif
             else if (size_tflag)
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "i",
                         va_arg(*vargs, Py_ssize_t));
             else
-                len = sprintf(buffer, fmt,
+                len = sprintf(buffer, "%i",
                         va_arg(*vargs, int));
         }
         assert(len >= 0);
