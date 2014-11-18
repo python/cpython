@@ -1256,6 +1256,8 @@ Build
 C API
 -----
 
+- Issue #22453: Removed non-documented macro PyObject_REPR().
+
 - Issue #18395: Rename ``_Py_char2wchar()`` to :c:func:`Py_DecodeLocale`,
   rename ``_Py_wchar2char()`` to :c:func:`Py_EncodeLocale`, and document
   these functions.
