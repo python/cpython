@@ -1414,12 +1414,12 @@ get_ref_type(struct compiler *c, PyObject *name)
         PyOS_snprintf(buf, sizeof(buf),
                       "unknown scope for %.100s in %.100s(%s)\n"
                       "symbols: %s\nlocals: %s\nglobals: %s",
-                      PyBytes_AS_STRING(name),
-                      PyBytes_AS_STRING(c->u->u_name),
-                      PyObject_REPR(c->u->u_ste->ste_id),
-                      PyObject_REPR(c->u->u_ste->ste_symbols),
-                      PyObject_REPR(c->u->u_varnames),
-                      PyObject_REPR(c->u->u_names)
+                      PyUnicode_AsUTF8(name),
+                      PyUnicode_AsUTF8(c->u->u_name),
+                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_id)),
+                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_symbols)),
+                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_varnames)),
+                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_names))
         );
         Py_FatalError(buf);
     }
@@ -1476,11 +1476,11 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t args, PyO
             fprintf(stderr,
                 "lookup %s in %s %d %d\n"
                 "freevars of %s: %s\n",
-                PyObject_REPR(name),
-                PyBytes_AS_STRING(c->u->u_name),
+                PyUnicode_AsUTF8(PyObject_Repr(name)),
+                PyUnicode_AsUTF8(c->u->u_name),
                 reftype, arg,
-                _PyUnicode_AsString(co->co_name),
-                PyObject_REPR(co->co_freevars));
+                PyUnicode_AsUTF8(co->co_name),
+                PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
             Py_FatalError("compiler_make_closure()");
         }
         ADDOP_I(c, LOAD_CLOSURE, arg);

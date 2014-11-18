@@ -575,9 +575,6 @@ PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
 PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
 
-/* Helper for passing objects to printf and the like */
-#define PyObject_REPR(obj) _PyUnicode_AsString(PyObject_Repr(obj))
-
 /* Flag bits for printing: */
 #define Py_PRINT_RAW    1       /* No string quotes etc. */
 

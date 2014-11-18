@@ -441,3 +441,7 @@ Changes in the C API
 
 * The :c:type:`PyMemAllocator` structure was renamed to
   :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
+
+* Removed non-documented macro :c:macro:`PyObject_REPR` which leaked references.
+  Use format character ``%R`` in :c:func:`PyUnicode_FromFormat`-like functions
+  to format the :func:`repr` of the object.
