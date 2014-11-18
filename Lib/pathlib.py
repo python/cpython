@@ -15,16 +15,15 @@ from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 supports_symlinks = True
-try:
+if os.name == 'nt':
     import nt
-except ImportError:
-    nt = None
-else:
     if sys.getwindowsversion()[:2] >= (6, 0):
         from nt import _getfinalpathname
     else:
         supports_symlinks = False
         _getfinalpathname = None
+else:
+    nt = None
 
 
 __all__ = [
@@ -110,7 +109,7 @@ class _WindowsFlavour(_Flavour):
     has_drv = True
     pathmod = ntpath
 
-    is_supported = (nt is not None)
+    is_supported = (os.name == 'nt')
 
     drive_letters = (
         set(chr(x) for x in range(ord('a'), ord('z') + 1)) |
