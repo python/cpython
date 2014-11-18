@@ -1957,9 +1957,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 if (err == 0) continue;
                 break;
             }
+            t = PyObject_Repr(w);
+            if (t == NULL)
+                break;
             PyErr_Format(PyExc_SystemError,
                          "no locals found when storing %s",
-                         PyObject_REPR(w));
+                         PyString_AS_STRING(t));
+            Py_DECREF(t);
             break;
 
         case DELETE_NAME:
@@ -1971,9 +1975,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                          w);
                 break;
             }
+            t = PyObject_Repr(w);
+            if (t == NULL)
+                break;
             PyErr_Format(PyExc_SystemError,
                          "no locals when deleting %s",
-                         PyObject_REPR(w));
+                         PyString_AS_STRING(w));
+            Py_DECREF(t);
             break;
 
         PREDICTED_WITH_ARG(UNPACK_SEQUENCE);
@@ -2046,10 +2054,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         case LOAD_NAME:
             w = GETITEM(names, oparg);
             if ((v = f->f_locals) == NULL) {
+                why = WHY_EXCEPTION;
+                t = PyObject_Repr(w);
+                if (t == NULL)
+                    break;
                 PyErr_Format(PyExc_SystemError,
                              "no locals when loading %s",
-                             PyObject_REPR(w));
-                why = WHY_EXCEPTION;
+                             PyString_AS_STRING(w));
+                Py_DECREF(t);
                 break;
             }
             if (PyDict_CheckExact(v)) {

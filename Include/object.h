@@ -527,7 +527,9 @@ PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
 PyAPI_DATA(int) _Py_HashSecret_Initialized;
 #endif
 
-/* Helper for passing objects to printf and the like */
+/* Helper for passing objects to printf and the like.
+   Leaks refcounts.  Don't use it!
+*/
 #define PyObject_REPR(obj) PyString_AS_STRING(PyObject_Repr(obj))
 
 /* Flag bits for printing: */
