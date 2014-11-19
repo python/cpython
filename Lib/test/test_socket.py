@@ -2216,7 +2216,7 @@ class SendmsgStreamTests(SendmsgTests):
     # Linux supports MSG_DONTWAIT when sending, but in general, it
     # only works when receiving.  Could add other platforms if they
     # support it too.
-    @skipWithClientIf(sys.platform not in {"linux2"},
+    @skipWithClientIf(sys.platform not in {"linux"},
                       "MSG_DONTWAIT not known to work on this platform when "
                       "sending")
     def testSendmsgDontWait(self):
