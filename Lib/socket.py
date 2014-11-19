@@ -209,9 +209,8 @@ class socket(_socket.socket):
         except the only mode characters supported are 'r', 'w' and 'b'.
         The semantics are similar too.  (XXX refactor to share code?)
         """
-        for c in mode:
-            if c not in {"r", "w", "b"}:
-                raise ValueError("invalid mode %r (only r, w, b allowed)")
+        if not set(mode) <= {"r", "w", "b"}:
+            raise ValueError("invalid mode %r (only r, w, b allowed)" % (mode,))
         writing = "w" in mode
         reading = "r" in mode or not writing
         assert reading or writing
