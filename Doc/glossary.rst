@@ -720,6 +720,12 @@ Glossary
       the dictionary view to become a full list use ``list(dictview)``.  See
       :ref:`dict-views`.
 
+   virtual environment
+      A cooperatively isolated runtime environment that allows Python users
+      and applications to install and upgrade Python distribution packages
+      without interfering with the behaviour of other Python applications
+      running on the same system.
+
    virtual machine
       A computer defined entirely in software.  Python's virtual machine
       executes the :term:`bytecode` emitted by the bytecode compiler.
