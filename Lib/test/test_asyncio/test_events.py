@@ -606,33 +606,37 @@ class EventLoopTestsMixin:
         self.assertGreater(pr.nbytes, 0)
         tr.close()
 
-    if ssl:
-        def _dummy_ssl_create_context(self, purpose=ssl.Purpose.SERVER_AUTH, *,
-                                      cafile=None, capath=None, cadata=None):
-            """
-            A ssl.create_default_context() replacement that doesn't enable
-            cert validation.
-            """
-            self.assertEqual(purpose, ssl.Purpose.SERVER_AUTH)
-            return test_utils.dummy_ssl_context()
-
     def _test_create_ssl_connection(self, httpd, create_connection,
                                     check_sockname=True):
         conn_fut = create_connection(ssl=test_utils.dummy_ssl_context())
         self._basetest_create_ssl_connection(conn_fut, check_sockname)
 
-        # With ssl=True, ssl.create_default_context() should be called
-        with mock.patch('ssl.create_default_context',
-                        side_effect=self._dummy_ssl_create_context) as m:
-            conn_fut = create_connection(ssl=True)
-            self._basetest_create_ssl_connection(conn_fut, check_sockname)
-            self.assertEqual(m.call_count, 1)
+        # ssl.Purpose was introduced in Python 3.4
+        if hasattr(ssl, 'Purpose'):
+            def _dummy_ssl_create_context(purpose=ssl.Purpose.SERVER_AUTH, *,
+                                          cafile=None, capath=None,
+                                          cadata=None):
+                """
+                A ssl.create_default_context() replacement that doesn't enable
+                cert validation.
+                """
+                self.assertEqual(purpose, ssl.Purpose.SERVER_AUTH)
+                return test_utils.dummy_ssl_context()
+
+            # With ssl=True, ssl.create_default_context() should be called
+            with mock.patch('ssl.create_default_context',
+                            side_effect=_dummy_ssl_create_context) as m:
+                conn_fut = create_connection(ssl=True)
+                self._basetest_create_ssl_connection(conn_fut, check_sockname)
+                self.assertEqual(m.call_count, 1)
 
         # With the real ssl.create_default_context(), certificate
         # validation will fail
         with self.assertRaises(ssl.SSLError) as cm:
             conn_fut = create_connection(ssl=True)
-            self._basetest_create_ssl_connection(conn_fut, check_sockname)
+            # Ignore the "SSL handshake failed" log in debug mode
+            with test_utils.disable_logger():
+                self._basetest_create_ssl_connection(conn_fut, check_sockname)
 
         self.assertEqual(cm.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
 
