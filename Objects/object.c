@@ -33,6 +33,22 @@ _Py_GetRefTotal(void)
         total -= o->ob_refcnt;
     return total;
 }
+
+void
+_PyDebug_PrintTotalRefs(void) {
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showrefcount);
+
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    value = _PyDict_GetItemId(xoptions, &PyId_showrefcount);
+    if (value == Py_True)
+        fprintf(stderr,
+                "[%" PY_FORMAT_SIZE_T "d refs, "
+                "%" PY_FORMAT_SIZE_T "d blocks]\n",
+                _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+}
 #endif /* Py_REF_DEBUG */
 
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.

@@ -257,7 +257,7 @@ class OpenWrapper:
     Trick so that open won't become a bound method when stored
     as a class variable (as dbm.dumb does).
 
-    See initstdio() in Python/pythonrun.c.
+    See initstdio() in Python/pylifecycle.c.
     """
     __doc__ = DocDescriptor()
 

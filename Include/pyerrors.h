@@ -99,6 +99,7 @@ PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
 #define _Py_NO_RETURN
 #endif
 
+/* Defined in Python/pylifecycle.c */
 PyAPI_FUNC(void) Py_FatalError(const char *message) _Py_NO_RETURN;
 
 #if defined(Py_DEBUG) || defined(Py_LIMITED_API)
