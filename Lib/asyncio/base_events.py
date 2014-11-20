@@ -357,7 +357,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Absolute time corresponds to the event loop's time() method.
         """
-        if coroutines.iscoroutinefunction(callback):
+        if (coroutines.iscoroutine(callback)
+        or coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used with call_at()")
         if self._debug:
             self._assert_is_current_event_loop()
@@ -384,7 +385,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         return handle
 
     def _call_soon(self, callback, args, check_loop):
-        if coroutines.iscoroutinefunction(callback):
+        if (coroutines.iscoroutine(callback)
+        or coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used with call_soon()")
         if self._debug and check_loop:
             self._assert_is_current_event_loop()
@@ -421,8 +423,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         return handle
 
     def run_in_executor(self, executor, callback, *args):
-        if coroutines.iscoroutinefunction(callback):
-            raise TypeError("Coroutines cannot be used with run_in_executor()")
+        if (coroutines.iscoroutine(callback)
+        or coroutines.iscoroutinefunction(callback)):
+            raise TypeError("coroutines cannot be used with run_in_executor()")
         if isinstance(callback, events.Handle):
             assert not args
             assert not isinstance(callback, events.TimerHandle)
