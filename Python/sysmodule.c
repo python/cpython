@@ -1681,7 +1681,7 @@ _PySys_Init(void)
     }
 #endif
 
-    /* stdin/stdout/stderr are now set by pythonrun.c */
+    /* stdin/stdout/stderr are set in pylifecycle.c */
 
     SET_SYS_FROM_STRING_BORROW("__displayhook__",
                                PyDict_GetItemString(sysdict, "displayhook"));

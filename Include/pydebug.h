@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+/* These global variable are defined in pylifecycle.c */
+/* XXX (ncoghlan): move these declarations to pylifecycle.h? */
 PyAPI_DATA(int) Py_DebugFlag;
 PyAPI_DATA(int) Py_VerboseFlag;
 PyAPI_DATA(int) Py_QuietFlag;
