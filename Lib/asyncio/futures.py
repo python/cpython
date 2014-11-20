@@ -104,10 +104,11 @@ class _TracebackLogger:
 
     def __del__(self):
         if self.tb:
-            msg = 'Future/Task exception was never retrieved'
+            msg = 'Future/Task exception was never retrieved\n'
             if self.source_traceback:
-                msg += '\nFuture/Task created at (most recent call last):\n'
-                msg += ''.join(traceback.format_list(self.source_traceback))
+                src = ''.join(traceback.format_list(self.source_traceback))
+                msg += 'Future/Task created at (most recent call last):\n'
+                msg += '%s\n' % src.rstrip()
             msg += ''.join(self.tb).rstrip()
             self.loop.call_exception_handler({'message': msg})
 
