@@ -634,7 +634,9 @@ class EventLoopTestsMixin:
         # validation will fail
         with self.assertRaises(ssl.SSLError) as cm:
             conn_fut = create_connection(ssl=True)
-            self._basetest_create_ssl_connection(conn_fut, check_sockname)
+            # Ignore the "SSL handshake failed" log in debug mode
+            with test_utils.disable_logger():
+                self._basetest_create_ssl_connection(conn_fut, check_sockname)
 
         self.assertEqual(cm.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
 
