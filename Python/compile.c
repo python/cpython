@@ -30,8 +30,6 @@
 #include "symtable.h"
 #include "opcode.h"
 
-int Py_OptimizeFlag = 0;
-
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
 #define DEFAULT_CODE_SIZE 128

@@ -389,6 +389,7 @@ PYTHON_OBJS=	\
 		Python/pyctype.o \
 		Python/pyfpe.o \
 		Python/pyhash.o \
+		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
 		Python/pythonrun.o \
@@ -909,6 +910,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyerrors.h \
 		$(srcdir)/Include/pyfpe.h \
 		$(srcdir)/Include/pyhash.h \
+		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymath.h \
 		$(srcdir)/Include/pygetopt.h \
 		$(srcdir)/Include/pymacro.h \

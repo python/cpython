@@ -60,7 +60,7 @@ atexit_cleanup(atexitmodule_state *modstate)
     modstate->ncallbacks = 0;
 }
 
-/* Installed into pythonrun.c's atexit mechanism */
+/* Installed into pylifecycle.c's atexit mechanism */
 
 static void
 atexit_callfuncs(void)

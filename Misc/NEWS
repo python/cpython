@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22869: Move the interpreter startup & shutdown code to a new
+  dedicated pylifecycle.c module
+
 - Issue #22847: Improve method cache efficiency.
 
 - Issue #22335: Fix crash when trying to enlarge a bytearray to 0x7fffffff

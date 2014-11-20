@@ -65,6 +65,7 @@ whose size is determined when the object is allocated.
 #error Py_LIMITED_API is incompatible with Py_DEBUG, Py_TRACE_REFS, and Py_REF_DEBUG
 #endif
 
+
 #ifdef Py_TRACE_REFS
 /* Define pointers to support a doubly-linked list of all live heap objects. */
 #define _PyObject_HEAD_EXTRA            \
@@ -710,11 +711,17 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
                 _Py_NegativeRefcount(__FILE__, __LINE__,        \
                                      (PyObject *)(OP));         \
 }
+/* Py_REF_DEBUG also controls the display of refcounts and memory block
+ * allocations at the interactive prompt and at interpreter shutdown
+ */
+PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
+#define _PY_DEBUG_PRINT_TOTAL_REFS() _PyDebug_PrintTotalRefs()
 #else
 #define _Py_INC_REFTOTAL
 #define _Py_DEC_REFTOTAL
 #define _Py_REF_DEBUG_COMMA
 #define _Py_CHECK_REFCNT(OP)    /* a semicolon */;
+#define _PY_DEBUG_PRINT_TOTAL_REFS()
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
