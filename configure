@@ -624,6 +624,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+ENSUREPIP
 SRCDIRS
 THREADHEADERS
 UNICODE_OBJS
@@ -807,6 +808,7 @@ with_libm
 with_libc
 enable_big_digits
 enable_unicode
+with_ensurepip
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1486,6 +1488,9 @@ Optional Packages:
   --with-fpectl           enable SIGFPE catching
   --with-libm=STRING      math library
   --with-libc=STRING      C library
+  --with(out)-ensurepip=[=OPTION]
+                          "install" or "upgrade" using bundled pip, default is
+                          "no"
 
 Some influential environment variables:
   CC          C compiler command
@@ -14603,6 +14608,31 @@ for dir in $SRCDIRS; do
 done
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: done" >&5
 $as_echo "done" >&6; }
+
+# ensurepip option
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ensurepip" >&5
+$as_echo_n "checking for ensurepip... " >&6; }
+
+# Check whether --with-ensurepip was given.
+if test "${with_ensurepip+set}" = set; then :
+  withval=$with_ensurepip;
+else
+  with_ensurepip=no
+fi
+
+case $with_ensurepip in #(
+  yes|upgrade) :
+    ENSUREPIP=upgrade ;; #(
+  install) :
+    ENSUREPIP=install ;; #(
+  no) :
+    ENSUREPIP=no ;; #(
+  *) :
+    as_fn_error $? "--with-ensurepip=upgrade|install|no" "$LINENO" 5 ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENSUREPIP" >&5
+$as_echo "$ENSUREPIP" >&6; }
+
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Modules/Setup.config Misc/python.pc"

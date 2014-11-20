@@ -4552,6 +4552,21 @@ for dir in $SRCDIRS; do
 done
 AC_MSG_RESULT(done)
 
+# ensurepip option
+AC_MSG_CHECKING(for ensurepip)
+AC_ARG_WITH(ensurepip,
+    [AS_HELP_STRING([--with(out)-ensurepip=@<:@=OPTION@:>@],
+        ["install" or "upgrade" using bundled pip, default is "no"])],
+    [],
+    [with_ensurepip=no])
+AS_CASE($with_ensurepip,
+    [yes|upgrade],[ENSUREPIP=upgrade],
+    [install],[ENSUREPIP=install],
+    [no],[ENSUREPIP=no],
+    [AC_MSG_ERROR([--with-ensurepip=upgrade|install|no])])
+AC_MSG_RESULT($ENSUREPIP)
+AC_SUBST(ENSUREPIP)
+
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])

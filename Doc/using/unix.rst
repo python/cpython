@@ -59,6 +59,8 @@ You can get Python from `OpenCSW <http://www.opencsw.org/>`_.  Various versions
 of Python are available and can be installed with e.g. ``pkgutil -i python27``.
 
 
+.. _building-python-on-unix:
+
 Building Python
 ===============
 

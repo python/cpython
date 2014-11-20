@@ -3,9 +3,11 @@
 # commandline in that case.
 
 VERSION=@VERSION@
+ENSUREPIP=@ENSUREPIP@
 builddir = ..
 srcdir=@srcdir@
 prefix=@prefix@
+exec_prefix=@exec_prefix@
 LIBDEST=$(prefix)/lib/python$(VERSION)
 RUNSHARED=@RUNSHARED@
 BUILDEXE=@BUILDEXEEXT@
@@ -21,7 +23,7 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 export MACOSX_DEPLOYMENT_TARGET
 
 # These are normally glimpsed from the previous set
-bindir=$(prefix)/bin
+BINDIR=		@bindir@
 PYTHONAPPSDIR=@FRAMEWORKINSTALLAPPSPREFIX@/$(PYTHONFRAMEWORK) $(VERSION)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 
@@ -92,6 +94,18 @@ ifneq ($(LIPO_32BIT_FLAGS),)
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
 endif
+	-if test "x$(ENSUREPIP)" != "xno"  ; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				easy_install \
+				pip \
+				pip2 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
 
 
 #
@@ -112,7 +126,18 @@ ifneq ($(LIPO_32BIT_FLAGS),)
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
 endif
-	ln -fs "$(prefix)/bin/2to3-$(VERSION)" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/2to3-$(VERSION)" ;\
+	ln -fs "$(prefix)/bin/2to3-$(VERSION)" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/2to3-$(VERSION)"
+	-if test "x$(ENSUREPIP)" != "xno"  ; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				easy_install-$(VERSION) \
+				pip$(VERSION) \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
 
 # By default most tools are installed without a version in their basename, to
 # make it easier to install (and use) several python versions side-by-side move

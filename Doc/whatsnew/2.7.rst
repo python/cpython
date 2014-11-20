@@ -2605,6 +2605,11 @@ By default, the commands ``pip``, ``pipX`` and ``pipX.Y`` will be installed on
 all platforms (where X.Y stands for the version of the Python installation),
 along with the ``pip`` Python package and its dependencies.
 
+For CPython :ref:`source builds on POSIX systems <building-python-on-unix>`,
+the ``make install`` and ``make altinstall`` commands do not bootstrap ``pip``
+by default.  This behaviour can be controlled through configure options, and
+overridden through Makefile options.
+
 On Windows and Mac OS X, the CPython installers now default to installing
 ``pip`` along with CPython itself (users may opt out of installing it
 during the installation process). Window users will need to opt in to the

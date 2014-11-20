@@ -326,6 +326,13 @@ Build
 
 - Issue #22877: PEP 477 - OS X installer now installs pip.
 
+- Issue #22878: PEP 477 - "make install" and "make altinstall" can now install
+  or upgrade pip, using the bundled pip provided by the backported ensurepip
+  module.  A configure option, --with-ensurepip[=upgrade|install|no], is
+  available to set the option for subsequent installs; the default for Python 2
+  in "no" (do not install or upgrade pip).  The option can also be set with
+  "make [alt]install ENSUREPIP=[upgrade|install|no]".
+
 Windows
 -------
 
