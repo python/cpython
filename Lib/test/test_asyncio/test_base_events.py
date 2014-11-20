@@ -1107,19 +1107,23 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def test_call_coroutine(self):
         @asyncio.coroutine
-        def coroutine_function():
+        def simple_coroutine():
             pass
 
-        with self.assertRaises(TypeError):
-            self.loop.call_soon(coroutine_function)
-        with self.assertRaises(TypeError):
-            self.loop.call_soon_threadsafe(coroutine_function)
-        with self.assertRaises(TypeError):
-            self.loop.call_later(60, coroutine_function)
-        with self.assertRaises(TypeError):
-            self.loop.call_at(self.loop.time() + 60, coroutine_function)
-        with self.assertRaises(TypeError):
-            self.loop.run_in_executor(None, coroutine_function)
+        coro_func = simple_coroutine
+        coro_obj = coro_func()
+        self.addCleanup(coro_obj.close)
+        for func in (coro_func, coro_obj):
+            with self.assertRaises(TypeError):
+                self.loop.call_soon(func)
+            with self.assertRaises(TypeError):
+                self.loop.call_soon_threadsafe(func)
+            with self.assertRaises(TypeError):
+                self.loop.call_later(60, func)
+            with self.assertRaises(TypeError):
+                self.loop.call_at(self.loop.time() + 60, func)
+            with self.assertRaises(TypeError):
+                self.loop.run_in_executor(None, func)
 
     @mock.patch('asyncio.base_events.logger')
     def test_log_slow_callbacks(self, m_logger):
