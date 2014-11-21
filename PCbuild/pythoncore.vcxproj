@@ -502,6 +502,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <ClInclude Include="..\Include\pyexpat.h" />
     <ClInclude Include="..\Include\pyfpe.h" />
     <ClInclude Include="..\Include\pygetopt.h" />
+    <ClInclude Include="..\Include\pylifecycle.h" />
     <ClInclude Include="..\Include\pymath.h" />
     <ClInclude Include="..\Include\pytime.h" />
     <ClInclude Include="..\Include\pymacro.h" />
@@ -734,6 +735,7 @@ IF %ERRORLEVEL% NEQ 0 (
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
     <ClCompile Include="..\Python\pyfpe.c" />
+    <ClCompile Include="..\Python\pylifecycle.c" />
     <ClCompile Include="..\Python\pymath.c" />
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\pystate.c" />
