@@ -141,13 +141,6 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C['eggs']['httponly'], 'foo')
         self.assertEqual(C['eggs']['secure'], 'bar')
 
-    def test_bad_attrs(self):
-        # issue 16611: make sure we don't break backward compatibility.
-        C = cookies.SimpleCookie()
-        C.load('cookie=with; invalid; version; second=cookie;')
-        self.assertEqual(C.output(),
-            'Set-Cookie: cookie=with\r\nSet-Cookie: second=cookie')
-
     def test_extra_spaces(self):
         C = cookies.SimpleCookie()
         C.load('eggs  =  scrambled  ;  secure  ;  path  =  bar   ; foo=foo   ')
@@ -182,7 +175,10 @@ class CookieTests(unittest.TestCase):
     def test_invalid_cookies(self):
         # Accepting these could be a security issue
         C = cookies.SimpleCookie()
-        for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x'):
+        for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x',
+                  'Set-Cookie: foo=bar', 'Set-Cookie: foo',
+                  'foo=bar; baz', 'baz; foo=bar',
+                  'secure;foo=bar', 'Version=1;foo=bar'):
             C.load(s)
             self.assertEqual(dict(C), {})
             self.assertEqual(C.output(), '')
