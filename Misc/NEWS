@@ -10,6 +10,11 @@ What's New in Python 2.7.9?
 Core and Builtins
 -----------------
 
+- Backout issue #1856 patch (avoid crashes and lockups when daemon threads
+  run while the interpreter is shutting down; instead, these threads are
+  now killed when they try to take the GIL), as it seems to break some
+  existing code.
+
 - Issue #22604: Fix assertion error in debug mode when dividing a complex
   number by (nan+0j).
 
@@ -359,10 +364,6 @@ Core and Builtins
 
 - Issue #21831: Avoid integer overflow when large sizes and offsets are given to
   the buffer type. CVE-2014-7185.
-
-- Issue #1856: Avoid crashes and lockups when daemon threads run while the
-  interpreter is shutting down; instead, these threads are now killed when they
-  try to take the GIL.
 
 - Issue #19656: Running Python with the -3 option now also warns about
   non-ascii bytes literals.
