@@ -2172,7 +2172,7 @@ def _find_and_load_unlocked(name, import_):
             path = parent_module.__path__
         except AttributeError:
             msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
-            raise ImportError(msg, name=name)
+            raise ImportError(msg, name=name) from None
     spec = _find_spec(name, path)
     if spec is None:
         raise ImportError(_ERR_MSG.format(name), name=name)
