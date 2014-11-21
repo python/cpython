@@ -754,6 +754,15 @@ hook` callables on :data:`sys.path_hooks`, then the following protocol is used
 to ask the finder for a module spec, which is then used when loading the
 module.
 
+The current working directory -- denoted by an empty string -- is handled
+slightly differently from other entries on :data:`sys.path`. First, if the
+current working directory is found to not exist, no value is stored in
+:data:`sys.path_importer_cache`. Second, the value for the current working
+directory is looked up fresh for each module lookup. Third, the path used for
+:data:`sys.path_importer_cache` and returned by
+:meth:`importlib.machinery.PathFinder.find_spec` will be the actual current
+working directory and not the empty string.
+
 Path entry finder protocol
 --------------------------
 

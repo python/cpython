@@ -1825,7 +1825,12 @@ class PathFinder:
 
         """
         if path == '':
-            path = _os.getcwd()
+            try:
+                path = _os.getcwd()
+            except FileNotFoundError:
+                # Don't cache the failure as the cwd can easily change to
+                # a valid directory later on.
+                return None
         try:
             finder = sys.path_importer_cache[path]
         except KeyError:

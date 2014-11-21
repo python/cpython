@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22834: If the current working directory ends up being set to a
+  non-existent directory then import will no longer raise FileNotFoundError.
+
 - Issue #22869: Move the interpreter startup & shutdown code to a new
   dedicated pylifecycle.c module
 
@@ -235,7 +238,7 @@ Library
 
 - Issue #22776: Brought excluded code into the scope of a try block in
   SysLogHandler.emit().
- 
+
 - Issue #22665: Add missing get_terminal_size and SameFileError to
   shutil.__all__.
 
