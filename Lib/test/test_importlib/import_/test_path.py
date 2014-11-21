@@ -5,6 +5,7 @@ machinery = util.import_importlib('importlib.machinery')
 
 import os
 import sys
+import tempfile
 from types import ModuleType
 import unittest
 import warnings
@@ -157,6 +158,17 @@ class FinderTests:
         with util.import_state(path_importer_cache={path: success_finder}):
             got = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(got, success_finder.spec)
+
+    def test_deleted_cwd(self):
+        # Issue #22834
+        self.addCleanup(os.chdir, os.getcwd())
+        with tempfile.TemporaryDirectory() as path:
+            os.chdir(path)
+        with util.import_state(path=['']):
+            # Do not want FileNotFoundError raised.
+            self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
+
+
 
 
 (Frozen_FinderTests,
