@@ -436,6 +436,12 @@ Changes in the Python API
   bytes-like object is required, not 'sometype'".  (Contributed by Ezio Melotti
   in :issue:`16518`.)
 
+* If the current directory is set to a directory that no longer exists then
+  :exc:`FileNotFoundError` will no longer be raised and instead
+  :meth:`~importlib.machinery.FileFinder.find_spec` will return ``None``
+  **without** caching ``None`` in :data:`sys.path_importer_cache` which is
+  different than the typical case (:issue:`22834`).
+
 Changes in the C API
 --------------------
 

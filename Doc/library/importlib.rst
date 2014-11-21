@@ -794,6 +794,11 @@ find and load modules.
 
       .. versionadded:: 3.4
 
+      .. versionchanged:: 3.5
+         If the current working directory -- represented by an empty string --
+         is no longer valid then ``None`` is returned but no value is cached
+         in :data:`sys.path_importer_cache`.
+
    .. classmethod:: find_module(fullname, path=None)
 
       A legacy wrapper around :meth:`find_spec`.
