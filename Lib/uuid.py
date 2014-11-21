@@ -345,7 +345,10 @@ def _ifconfig_getnode():
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
     import os, socket
-    ip_addr = socket.gethostbyname(socket.gethostname())
+    try:
+        ip_addr = socket.gethostbyname(socket.gethostname())
+    except EnvironmentError:
+        return None
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
     return _find_mac('arp', '-an', [ip_addr], lambda i: -1)
