@@ -73,7 +73,7 @@ def find_loader(name, path=None):
     except KeyError:
         pass
     except AttributeError:
-        raise ValueError('{}.__loader__ is not set'.format(name))
+        raise ValueError('{}.__loader__ is not set'.format(name)) from None
 
     spec = _bootstrap._find_spec(name, path)
     # We won't worry about malformed specs (missing attributes).
@@ -138,7 +138,8 @@ def reload(module):
                 parent = sys.modules[parent_name]
             except KeyError:
                 msg = "parent {!r} not in sys.modules"
-                raise ImportError(msg.format(parent_name), name=parent_name)
+                raise ImportError(msg.format(parent_name),
+                                  name=parent_name) from None
             else:
                 pkgpath = parent.__path__
         else:
