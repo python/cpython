@@ -29,6 +29,8 @@ The Python installer now includes an option to automatically install or upgrade 
 
 To make it easier to use scripts installed by third-party Python packages, with pip or by other means, the Shell profile updater option is now enabled by default, as has been the case with Python 2.7.x installers. You can also turn this option off by selecting Customize and unchecking the Shell profile updater option. You can also update your shell profile later by launching the Update Shell Profile command found in the /Applications/Python $VERSION folder.  You may need to start a new terminal window for the changes to take effect.
 
+For other changes in this release, see the Release Notes link for this release at https://www.python.org/downloads/.
+
 =============================
 Python 3 and Python 2 Co-existence
 =============================
