@@ -34,10 +34,6 @@
 static int floatsleep(double);
 static PyObject* floattime(_Py_clock_info_t *info);
 
-#ifdef MS_WINDOWS
-static OSVERSIONINFOEX winver;
-#endif
-
 static PyObject *
 time_time(PyObject *self, PyObject *unused)
 {
@@ -1359,15 +1355,6 @@ PyInit_time(void)
         if (PyStructSequence_InitType2(&StructTimeType,
                                        &struct_time_type_desc) < 0)
             return NULL;
-
-#ifdef MS_WINDOWS
-        winver.dwOSVersionInfoSize = sizeof(winver);
-        if (!GetVersionEx((OSVERSIONINFO*)&winver)) {
-            Py_DECREF(m);
-            PyErr_SetFromWindowsErr(0);
-            return NULL;
-        }
-#endif
     }
     Py_INCREF(&StructTimeType);
 #ifdef HAVE_STRUCT_TM_TM_ZONE

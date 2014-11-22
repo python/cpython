@@ -36,44 +36,11 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}</ProjectGuid>
+    <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
   </PropertyGroup>
+  <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+  <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
@@ -81,427 +48,23 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="pyproject.props" />
-    <Import Project="release.props" />
-    <Import Project="pgupdate.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="release.props" />
-    <Import Project="pginstrument.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="debug.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="release.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="release.props" />
-    <Import Project="pgupdate.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="release.props" />
-    <Import Project="pginstrument.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="debug.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Link</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Link</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">Link</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">Link</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">Link</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">Link</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Link</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Link</CustomBuildAfterTargets>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <CompileAs>Default</CompileAs>
     </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
     <Link>
-      <OutputFile>$(OutDir)python.exe</OutputFile>
       <SubSystem>Console</SubSystem>
       <StackReserveSize>2000000</StackReserveSize>
       <BaseAddress>0x1d000000</BaseAddress>
     </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Midl>
-      <TargetEnvironment>X64</TargetEnvironment>
-    </Midl>
-    <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
-    <Link>
-      <OutputFile>$(OutDir)python.exe</OutputFile>
-      <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
-      <BaseAddress>0x1d000000</BaseAddress>
-    </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <BrowseInformation>true</BrowseInformation>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-      <AdditionalIncludeDirectories>..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Link>
-      <OutputFile>$(OutDir)python_d.exe</OutputFile>
-      <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
-      <BaseAddress>0x1d000000</BaseAddress>
-    </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Midl>
-      <TargetEnvironment>X64</TargetEnvironment>
-    </Midl>
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <BrowseInformation>true</BrowseInformation>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-      <AdditionalIncludeDirectories>..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Link>
-      <OutputFile>$(OutDir)python_d.exe</OutputFile>
-      <SubSystem>Console</SubSystem>
-      <StackReserveSize>4194304</StackReserveSize>
-      <BaseAddress>0x1d000000</BaseAddress>
-    </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
-    <Link>
-      <OutputFile>$(OutDir)python.exe</OutputFile>
-      <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
-      <BaseAddress>0x1d000000</BaseAddress>
-      <ImportLibrary>
-      </ImportLibrary>
-    </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
-    <Midl>
-      <TargetEnvironment>X64</TargetEnvironment>
-    </Midl>
-    <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
-    <Link>
-      <OutputFile>$(OutDir)python.exe</OutputFile>
-      <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
-      <BaseAddress>0x1d000000</BaseAddress>
-      <ImportLibrary>
-      </ImportLibrary>
-      <TargetMachine>MachineX64</TargetMachine>
-    </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
-    <Link>
-      <OutputFile>$(OutDir)python.exe</OutputFile>
-      <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
-      <BaseAddress>0x1d000000</BaseAddress>
-      <ImportLibrary>
-      </ImportLibrary>
-    </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
-    <Midl>
-      <TargetEnvironment>X64</TargetEnvironment>
-    </Midl>
-    <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
-    <Link>
-      <OutputFile>$(OutDir)python.exe</OutputFile>
-      <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
-      <BaseAddress>0x1d000000</BaseAddress>
-      <ImportLibrary>
-      </ImportLibrary>
-      <TargetMachine>MachineX64</TargetMachine>
-    </Link>
-    <CustomBuildStep>
-      <Command>echo @rem This script invokes the most recently built Python with all arguments&gt; "$(SolutionDir)..\python.bat"
-echo @rem passed through to the interpreter.  This file is generated by the&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem build process and any changes *will* be thrown away by the next&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem rebuild.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem This is only meant as a convenience for developing CPython&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @rem and using it outside of that context is ill-advised.&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @echo Running $(Configuration)^^^|$(Platform) interpreter...&gt;&gt; "$(SolutionDir)..\python.bat"
-echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.bat"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Message>Creating convenience batch file for easily invoking the newly built interpreter.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)..\python.bat</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Inputs>$(OutDir)python$(PyDebugExt).exe;%(Inputs)</Inputs>
-    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\PC\pycon.ico" />
@@ -521,4 +84,19 @@ echo @"$(OutDir)python$(PyDebugExt).exe" %%*&gt;&gt; "$(SolutionDir)..\python.ba
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="GeneratePythonBat" AfterTargets="AfterBuild">
+    <PropertyGroup>
+      <_Content>@rem This script invokes the most recently built Python with all arguments
+@rem passed through to the interpreter.  This file is generated by the
+@rem build process and any changes *will* be thrown away by the next
+@rem rebuild.
+@rem This is only meant as a convenience for developing CPython
+@rem and using it outside of that context is ill-advised.
+@echo Running $(Configuration)^|$(Platform) interpreter...
+@"$(OutDir)python$(PyDebugExt).exe" %*
+</_Content>
+      <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(PySourcePath)python.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
+  </Target>
 </Project>

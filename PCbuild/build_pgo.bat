@@ -7,6 +7,7 @@ rem building the PGUpdate configuration while developing.
 
 setlocal
 set platf=Win32
+set parallel=/m
 set dir=%~dp0
 
 rem use the performance testsuite.  This is quick and simple
@@ -23,26 +24,25 @@ set clrpath=%path1%
 :CheckOpts
 if "%1"=="-p" (set platf=%2) & shift & shift & goto CheckOpts
 if "%1"=="-2" (set job=%job2%) & (set clrpath=%path2%) & shift & goto CheckOpts
+if "%1"=="-M" (set parallel=) & shift & goto CheckOpts
 
-set PGI=%dir%%platf%-pgi
-set PGO=%dir%%platf%-pgo
 
 rem We cannot cross compile PGO builds, as the optimization needs to be run natively
 set vs_platf=x86
-if "%platf%"=="x64" (set vs_platf=amd64)
+set PGO=%dir%win32-pgo
+
+if "%platf%"=="x64" (set vs_platf=amd64) & (set PGO=%dir%amd64-pgo)
 rem Setup the environment
-call "%VS100COMNTOOLS%..\..\VC\vcvarsall.bat" %vs_platf%
+call "%dir%env.bat" %vs_platf%
+
 
 rem build the instrumented version
-msbuild "%dir%pcbuild.sln" /t:Build /p:Configuration=PGInstrument /p:Platform=%platf% %1 %2 %3 %4 %5 %6 %7 %8 %9
+msbuild "%dir%pcbuild.proj" %parallel% /t:Build /p:Configuration=PGInstrument /p:Platform=%platf% %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 rem remove .pyc files, .pgc files and execute the job
-"%PGI%\python.exe" "%dir%rmpyc.py" %clrpath%
-del "%PGI%\*.pgc"
-"%PGI%\python.exe" %job%
-
-rem clean
-if exist "%PGO%" del /s /q "%PGO%"
+"%PGO%\python.exe" "%dir%rmpyc.py" %clrpath%
+del "%PGO%\*.pgc"
+"%PGO%\python.exe" %job%
 
 rem build optimized version
-msbuild "%dir%pcbuild.sln" /t:Build /p:Configuration=PGUpdate /p:Platform=%platf% %1 %2 %3 %4 %5 %6 %7 %8 %9
+msbuild "%dir%pcbuild.proj" %parallel% /t:Build /p:Configuration=PGUpdate /p:Platform=%platf% %1 %2 %3 %4 %5 %6 %7 %8 %9

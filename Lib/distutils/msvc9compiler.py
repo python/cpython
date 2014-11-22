@@ -179,6 +179,9 @@ def get_build_version():
     i = i + len(prefix)
     s, rest = sys.version[i:].split(" ", 1)
     majorVersion = int(s[:-2]) - 6
+    if majorVersion >= 13:
+        # v13 was skipped and should be v14
+        majorVersion += 1
     minorVersion = int(s[2:3]) / 10.0
     # I don't think paths are affected by minor version in version 6
     if majorVersion == 6:

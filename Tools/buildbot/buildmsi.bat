@@ -2,6 +2,7 @@
 setlocal
 
 set cwd=%CD%
+
 @rem build release versions of things
 call "%~dp0build.bat" -c Release
 
@@ -9,7 +10,7 @@ call "%~dp0build.bat" -c Release
 call "%~dp0..\..\Doc\make.bat" htmlhelp
 
 @rem build the MSI file
-call "%VS100COMNTOOLS%..\..\VC\vcvarsall.bat" x86
+call "%~dp0..\..\PCBuild\env.bat" x86
 cd "%~dp0..\..\PC"
 nmake /f icons.mak
 cd ..\Tools\msi

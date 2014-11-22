@@ -5,9 +5,9 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="PGInstrument|Win32">
       <Configuration>PGInstrument</Configuration>
@@ -25,9 +25,9 @@
       <Configuration>PGUpdate</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
@@ -36,140 +36,55 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B5FD6F1D-129E-4BFF-9340-03606FAC7283}</ProjectGuid>
-    <RootNamespace>tcl</RootNamespace>
-    <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
+
+  <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" Label="Configuration">
+  <Import Project="tcltk.props" />
+  
+  <PropertyGroup Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
+    <OutDir>$(tcltkDir)</OutDir>
+    <TargetPath>$(OutDir)bin\$(tclDLLName)</TargetPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="pgupdate.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="pginstrument.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="release.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="debug.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="pgupdate.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="pginstrument.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="release.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="debug.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <NMakeBuildCommandLine>
-IF EXIST $(tcltkDir)\include\tcl.h (
-    IF EXIST $(tcltkDir)\bin\$(tclDLLName) (
-        IF EXIST $(OutDir)$(tclDLLName) (
-            echo Tcl is already built and available.
-            exit /b 0
-        ) ELSE (
-            echo Copying tcl dll to $(OutDir)
-            xcopy $(tcltkDir)\bin\$(tclDLLName) $(OutDir)
-            exit /b 0
-        )
-    )
-)
-
-IF NOT EXIST $(tclDir) (
-    echo error: $(tclDir) doesn't exist.
-    exit 1
-)
-
-IF "$(Platform)" EQU "Win32" set TclMachine=IX86
-IF "$(Platform)" EQU "x64" set TclMachine=AMD64
-
-IF "$(Configuration)" EQU "Debug" (
-    set TclOpts=symbols
-) ELSE (
-    set TclOpts=
-)
-
-cd $(tclDir)\win
-
-nmake -f makefile.vc MACHINE=%TclMachine% OPTS=%TclOpts% core shell dlls &amp;&amp; nmake -f makefile.vc MACHINE=%TclMachine% OPTS=%TclOpts% INSTALLDIR=$(SolutionDir)$(tcltkDir) install-binaries install-libraries &amp;&amp; xcopy /y $(SolutionDir)$(tcltkDir)\bin\$(tclDLLName) $(OutDir)
-    </NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>del $(OutDir)$(tclDLLName)
-echo Tcl must be cleaned manually if you want to rebuild it.</NMakeCleanCommandLine>
-  </PropertyGroup>
-  <ItemDefinitionGroup>
-  </ItemDefinitionGroup>
+  
   <ItemGroup>
+    <ExpectedOutputs Include="
+        $(OutDir)\bin\$(tclDLLName);
+        $(OutDir)\bin\$(tclShExeName);
+        $(OutDir)\include\tcl.h;
+        $(OutDir)\lib\tcl$(TclMajorVersion);
+        $(OutDir)\lib\tcl$(TclMajorVersion).$(TclMinorVersion);
+        $(OutDir)\lib\$(tclLibName)" />
   </ItemGroup>
+  
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  
+  <PropertyGroup>
+    <TclOpts Condition="$(Configuration) == 'Debug'">symbols</TclOpts>
+    <TclDirs>INSTALLDIR="$(OutDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TclDirs>
+    <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
+    <NMakeBuildCommandLine>setlocal
+@(ExpectedOutputs->'if not exist "%(FullPath)" goto build','
+')
+goto :eof
+:build
+set VCINSTALLDIR=$(VCInstallDir)
+cd /D "$(tclDir)win"
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) core shell dlls
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) install-binaries install-libraries
+</NMakeBuildCommandLine>
+  </PropertyGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  
+  <Target Name="CopyDll" Inputs="$(OutDir)\bin\$(tclDLLName)" Outputs="$(BuildPath)$(tclDLLName)" AfterTargets="Build">
+    <Copy SourceFiles="$(OutDir)\bin\$(tclDLLName)" DestinationFiles="$(BuildPath)$(tclDLLName)" />
+  </Target>
+  
+  <Target Name="Clean" />
+  <Target Name="CleanAll">
+    <Delete Files="$(TargetPath);$(BuildPath)$(tclDLLName)" />
+    <RemoveDir Directories="$(IntDir)" />
+  </Target>
 </Project>

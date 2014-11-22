@@ -209,7 +209,7 @@ class build_ext(Command):
             if MSVC_VERSION >= 9:
                 # Use the .lib files for the correct architecture
                 if self.plat_name == 'win32':
-                    suffix = ''
+                    suffix = 'win32'
                 else:
                     # win-amd64 or win-ia64
                     suffix = self.plat_name[4:]
