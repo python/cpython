@@ -159,6 +159,7 @@ class FinderTests:
             got = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(got, success_finder.spec)
 
+    @unittest.skipIf(sys.platform == 'win32', "cwd can't not exist on Windows")
     def test_deleted_cwd(self):
         # Issue #22834
         self.addCleanup(os.chdir, os.getcwd())
