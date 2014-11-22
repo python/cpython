@@ -25,7 +25,8 @@ New Installation Options and Defaults
 [NEW for Python 2.7.9]
 =============================
 
-The Python installer now includes an option to automatically install or upgrade pip, a tool for installing and managing Python packages.  This option is enabled by default and no Internet access is required.  If you do not want the installer to do this, select the Customize option at the Installation Type step and uncheck the Install or ugprade pip option.
+The Python installer now includes an option to automatically install or upgrade pip, a tool for installing and managing Python packages.  This option is enabled by default and no Internet access is required.  If you do not want the installer to do this, select the Customize option at the Installation Type step and uncheck the Install or ugprade pip option.  For other changes in this
+release, see the Release Notes link for this release at https://www.python.org/downloads/.
 
 =============================
 Binary installer support for OS X 10.4 and 10.3.9 discontinued
