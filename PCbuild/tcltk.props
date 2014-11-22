@@ -1,30 +1,45 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ImportGroup Label="PropertySheets" />
-  <PropertyGroup Label="UserMacros">
-    <MSDEVDIR>Dummy value to avoid patching Tcl/Tk's makefile.vc</MSDEVDIR>
-    <tclDLLName>tcl86t$(TclDebugExt).dll</tclDLLName>
-    <tkDLLName>tk86t$(TclDebugExt).dll</tkDLLName>
-    <tixDLLName>tix84$(TclDebugExt).dll</tixDLLName>
-    <tcltkLib>$(tcltkDir)\lib\tcl86t$(TclDebugExt).lib;$(tcltkDir)\lib\tk86t$(TclDebugExt).lib</tcltkLib>
+  <Import Project="pyproject.props" />
+  <PropertyGroup>
+    <TclMajorVersion>8</TclMajorVersion>
+    <TclMinorVersion>6</TclMinorVersion>
+    <TclPatchLevel>1</TclPatchLevel>
+    <TclRevision>0</TclRevision>
+    <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
+    <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
+    <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
+    <TkRevision>$(TclRevision)</TkRevision>
+    <TixMajorVersion>8</TixMajorVersion>
+    <TixMinorVersion>4</TixMinorVersion>
+    <TixPatchLevel>3</TixPatchLevel>
+    <TixRevision>4</TixRevision>
+    <tclDir>$(ExternalsDir)tcl-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\</tclDir>
+    <tkDir>$(ExternalsDir)tk-$(TkMajorVersion).$(TkMinorVersion).$(TkPatchLevel).$(TkRevision)\</tkDir>
+    <tixDir>$(ExternalsDir)tix-$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel).$(TixRevision)\</tixDir>
+    <tcltkDir>$(ExternalsDir)tcltk\</tcltkDir>
+    <tcltkDir Condition="'$(Platform)' == 'x64'">$(ExternalsDir)tcltk64\</tcltkDir>
+    <TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>
+    <tclDLLName>tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).dll</tclDLLName>
+    <tclLibName>tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib</tclLibName>
+    <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).exe</tclShExeName>
+    <tkDLLName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).dll</tkDLLName>
+    <tkLibName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tkLibName>
+    <tixDLLName>tix$(TixMajorVersion)$(TixMinorVersion)$(TclDebugExt).dll</tixDLLName>
+    <tixDLLPath>$(tcltkDir)lib\tix$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel)\$(tixDLLName)</tixDLLPath>
+    <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tcltkLib>
+    <TclMachine>IX86</TclMachine>
+    <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>
+    <TclVersions>TCL_MAJOR_VERSION=$(TclMajorVersion) TCL_MINOR_VERSION=$(TclMinorVersion) TCL_PATCH_LEVEL=$(TclPatchLevel)</TclVersions>
+    <TclShortVersions>TCL_MAJOR=$(TclMajorVersion) TCL_MINOR=$(TclMinorVersion) TCL_PATCH=$(TclPatchLevel)</TclShortVersions>
+    <TkVersions>TK_MAJOR_VERSION=$(TkMajorVersion) TK_MINOR_VERSION=$(TkMinorVersion) TK_PATCH_LEVEL=$(TkPatchLevel)</TkVersions>
+
+    <BuildDirTop>Release</BuildDirTop>
+    <BuildDirTop Condition="$(Configuration) == 'Debug'">Debug</BuildDirTop>
+    <BuildDirTop Condition="$(TclMachine) != 'IX86'">$(BuildDirTop)_$(TclMachine)</BuildDirTop>
+    <BuildDirTop Condition="$(VisualStudioVersion) == '14.0'">$(BuildDirTop)_VC13</BuildDirTop>
+    <BuildDirTop Condition="$(VisualStudioVersion) == '12.0'">$(BuildDirTop)_VC12</BuildDirTop>
+    <BuildDirTop Condition="$(VisualStudioVersion) == '11.0'">$(BuildDirTop)_VC11</BuildDirTop>
+    <BuildDirTop Condition="$(VisualStudioVersion) == '10.0'">$(BuildDirTop)_VC10</BuildDirTop>
   </PropertyGroup>
-  <ItemDefinitionGroup />
-  <ItemGroup>
-    <BuildMacro Include="MSDEVDIR">
-      <Value>$(MSDEVDIR)</Value>
-      <EnvironmentVariable>true</EnvironmentVariable>
-    </BuildMacro>
-    <BuildMacro Include="tclDLLName">
-      <Value>$(tclDLLName)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tkDLLName">
-      <Value>$(tkDLLName)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tixDLLName">
-      <Value>$(tixDLLName)</Value>
-    </BuildMacro>
-    <BuildMacro Include="tcltkLib">
-      <Value>$(tcltkLib)</Value>
-    </BuildMacro>
-  </ItemGroup>
 </Project>

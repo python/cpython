@@ -213,6 +213,13 @@ typedef int pid_t;
 #define hypot _hypot
 #endif
 
+/* VS 2015 defines these names with a leading underscore */
+#if _MSC_VER >= 1900
+#define timezone _timezone
+#define daylight _daylight
+#define tzname _tzname
+#endif
+
 /* Side by Side assemblies supported in VS 2005 and VS 2008 but not 2010*/
 #if _MSC_VER >= 1400 && _MSC_VER < 1600
 #define HAVE_SXS 1

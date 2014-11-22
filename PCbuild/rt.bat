@@ -28,7 +28,7 @@ rem     rt -u "network,largefile"
 setlocal
 
 set pcbuild=%~dp0
-set prefix=%pcbuild%
+set prefix=%pcbuild%win32\
 set suffix=
 set qmode=
 set dashO=

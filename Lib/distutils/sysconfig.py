@@ -9,6 +9,7 @@ Written by:   Fred L. Drake, Jr.
 Email:        <fdrake@acm.org>
 """
 
+import _imp
 import os
 import re
 import sys
@@ -22,23 +23,15 @@ BASE_PREFIX = os.path.normpath(sys.base_prefix)
 BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
 # Path to the base directory of the project. On Windows the binary may
-# live in project/PCBuild9.  If we're dealing with an x64 Windows build,
-# it'll live in project/PCbuild/amd64.
+# live in project/PCBuild/win32 or project/PCBuild/amd64.
 # set for cross builds
 if "_PYTHON_PROJECT_BASE" in os.environ:
     project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
 else:
     project_base = os.path.dirname(os.path.abspath(sys.executable))
-if os.name == "nt" and "pcbuild" in project_base[-8:].lower():
-    project_base = os.path.abspath(os.path.join(project_base, os.path.pardir))
-# PC/VS7.1
-if os.name == "nt" and "\\pc\\v" in project_base[-10:].lower():
-    project_base = os.path.abspath(os.path.join(project_base, os.path.pardir,
-                                                os.path.pardir))
-# PC/AMD64
-if os.name == "nt" and "\\pcbuild\\amd64" in project_base[-14:].lower():
-    project_base = os.path.abspath(os.path.join(project_base, os.path.pardir,
-                                                os.path.pardir))
+if (os.name == 'nt' and
+    project_base.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
+    project_base = os.path.dirname(os.path.dirname(project_base))
 
 # python_build: (Boolean) if true, we're either building Python or
 # building an extension with an un-installed Python, so we use
@@ -51,11 +44,9 @@ def _is_python_source_dir(d):
             return True
     return False
 _sys_home = getattr(sys, '_home', None)
-if _sys_home and os.name == 'nt' and \
-    _sys_home.lower().endswith(('pcbuild', 'pcbuild\\amd64')):
-    _sys_home = os.path.dirname(_sys_home)
-    if _sys_home.endswith('pcbuild'):   # must be amd64
-        _sys_home = os.path.dirname(_sys_home)
+if (_sys_home and os.name == 'nt' and
+    _sys_home.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
+    _sys_home = os.path.dirname(os.path.dirname(_sys_home))
 def _python_build():
     if _sys_home:
         return _is_python_source_dir(_sys_home)
@@ -468,7 +459,7 @@ def _init_nt():
     # XXX hmmm.. a normal install puts include files here
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
-    g['EXT_SUFFIX'] = '.pyd'
+    g['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
     g['EXE'] = ".exe"
     g['VERSION'] = get_python_version().replace(".", "")
     g['BINDIR'] = os.path.dirname(os.path.abspath(sys.executable))
