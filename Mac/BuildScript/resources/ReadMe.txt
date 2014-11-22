@@ -25,29 +25,17 @@ New Installation Options and Defaults
 [NEW for Python 2.7.9]
 =============================
 
-The Python installer now includes an option to automatically install or upgrade pip, a tool for installing and managing Python packages.  This option is enabled by default and no Internet access is required.  If you do not want the installer to do this, select the Customize option at the Installation Type step and uncheck the Install or ugprade pip option.  For other changes in this
-release, see the Release Notes link for this release at https://www.python.org/downloads/.
+The Python installer now includes an option to automatically install or upgrade pip, a tool for installing and managing Python packages.  This option is enabled by default and no Internet access is required.  If you do not want the installer to do this, select the Customize option at the Installation Type step and uncheck the Install or ugprade pip option.  For other changes in this release, see the Release Notes link for this release at https://www.python.org/downloads/.
 
 =============================
 Binary installer support for OS X 10.4 and 10.3.9 discontinued
 [CHANGED for Python 2.7.9]
 =============================
 
-As previously announced, binary installers for Python 2.7.9 from python.org
-no longer support Mac OS X 10.3.9 (Panther) and 10.4.x (Tiger) systems.
-These systems were last updated by Apple in 2005 and 2007.  As of 2.7.9, the
-32-bit-only installer supports PPC and Intel Macs running OS X 10.5 (Leopard).
-10.5 was the last OS X release for PPC machines (G4 and G5).  The 64-/32-bit
-installer configuration remains unchanged and should normally be used on OS X
-10.6 (Snow Leopard) and later systems.  This aligns Python 2.7.x installer
-configurations with those currently provided with Python 3.x.  If needed,
-it is still possible to build Python from source for 10.3.9 and 10.4.
+As previously announced, binary installers for Python 2.7.9 from python.org no longer support Mac OS X 10.3.9 (Panther) and 10.4.x (Tiger) systems.  These systems were last updated by Apple in 2005 and 2007.  As of 2.7.9, the 32-bit-only installer supports PPC and Intel Macs running OS X 10.5 (Leopard). 10.5 was the last OS X release for PPC machines (G4 and G5).  The 64-/32-bit installer configuration remains unchanged and should normally be used on OS X 10.6 (Snow Leopard) and later systems.  This aligns Python 2.7.x installer configurations with those currently provided with Python 3.x.  If needed, it is still possible to build Python from source for 10.3.9 and 10.4.
 
 =============================
 Python 3 and Python 2 Co-existence
 =============================
 
-Python.org Python 2.7 and 3.x versions can both be installed on your system and
-will not conflict.  Python 2 command names contain a 2 or no digit: python2 (or
-python2.7 or python), idle2 (or idle2.7 or idle), pip2 (or pip2.7 or pip), etc.
-Command names for Python 3 contain a 3 in them: python3, idle3, pip3, etc.
+Python.org Python 2.7 and 3.x versions can both be installed on your system and will not conflict.  Python 2 command names contain a 2 or no digit: python2 (or python2.7 or python), idle2 (or idle2.7 or idle), pip2 (or pip2.7 or pip), etc.  Command names for Python 3 contain a 3 in them: python3, idle3, pip3, etc.
