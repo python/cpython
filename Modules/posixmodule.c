@@ -1046,15 +1046,33 @@ PyLong_FromPy_off_t(Py_off_t offset)
 /* The actual size of the structure is determined at runtime.
  * Only the first items must be present.
  */
+
+#if _MSC_VER >= 1900
+
+typedef struct {
+    CRITICAL_SECTION lock;
+    intptr_t osfhnd;
+    __int64 startpos;
+    char osfile;
+} my_ioinfo;
+
+#define IOINFO_L2E 6
+#define IOINFO_ARRAYS 128
+
+#else
+
 typedef struct {
     intptr_t osfhnd;
     char osfile;
 } my_ioinfo;
 
-extern __declspec(dllimport) char * __pioinfo[];
 #define IOINFO_L2E 5
-#define IOINFO_ARRAY_ELTS   (1 << IOINFO_L2E)
 #define IOINFO_ARRAYS 64
+
+#endif
+
+extern __declspec(dllimport) char * __pioinfo[];
+#define IOINFO_ARRAY_ELTS   (1 << IOINFO_L2E)
 #define _NHANDLE_           (IOINFO_ARRAYS * IOINFO_ARRAY_ELTS)
 #define FOPEN 0x01
 #define _NO_CONSOLE_FILENO (intptr_t)-2

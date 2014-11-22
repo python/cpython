@@ -1362,6 +1362,11 @@ Build
 
 - Issue #17219: Add library build dir for Python extension cross-builds.
 
+- Issue #22919: Windows build updated to support VC 14.0 (Visual Studio 2015),
+  which will be used for the official release.
+
+- Issue #21236: Build _msi.pyd with cabinet.lib instead of fci.lib
+
 C API
 -----
 

@@ -74,11 +74,6 @@ dllbase_nt.txt A (manually maintained) list of base addresses for
 example_nt     A subdirectory showing how to build an extension as a
                DLL.
 
-Legacy support for older versions of Visual Studio
-==================================================
-The subdirectories VC6, VS7.1 and VS8.0 contain legacy support older
-versions of Microsoft Visual Studio. See PCbuild/readme.txt.
-
 Note for Windows 3.x and DOS users
 ==================================
 

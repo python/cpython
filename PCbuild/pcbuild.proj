@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CC9B93A2-439D-4058-9D29-6DCF43774405}</ProjectGuid>
+    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
+    <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
+    <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <Projects>
+      <Platform>$(Platform)</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>true</BuildInParallel>
+    </Projects>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <!-- pythonXY.dll -->
+    <!--
+    Parallel build is explicitly disabled for this project because it
+    causes many conflicts between pythoncore and projects that depend
+    in pythoncore. Once the core DLL has been built, subsequent
+    projects will be built in parallel.
+    -->
+    <Projects Include="pythoncore.vcxproj">
+      <BuildInParallel>false</BuildInParallel>
+    </Projects>
+    <!-- python[w].exe -->
+    <Projects Include="python.vcxproj;pythonw.vcxproj" />
+    <!-- python3.dll -->
+    <Projects Include="python3dll.vcxproj" />
+    <!-- py[w].exe -->
+    <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
+    <!-- wininst-1x.0.exe -->
+    <Projects Include="bdist_wininst.vcxproj" />
+    <!-- _freeze_importlib -->
+    <Projects Include="_freeze_importlib.vcxproj" />
+    <!-- Extension modules -->
+    <ExtensionModules Include="_bz2;_ctypes;_decimal;_elementtree;_lzma;_msi;_multiprocessing;_overlapped;_sqlite3;_tkinter;pyexpat;select;unicodedata;winsound" />
+    <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
+    <ExtensionModules Include="_socket" Condition="!$(IncludeSSL)" />
+    <ExtensionModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
+    <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
+    <!-- Test modules -->
+    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testembed;_testimportmultiple" />
+    <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
+    <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
+      <!-- Disable parallel build for test modules -->
+      <BuildInParallel>false</BuildInParallel>
+    </Projects>
+  </ItemGroup>
+
+  <Target Name="Build">
+    <MSBuild Projects="@(Projects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             Targets="%(BuildTarget)" />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Projects="@(Projects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanTarget) != ''"
+             Targets="%(CleanTarget)" />
+  </Target>
+
+  <Target Name="CleanAll">
+    <MSBuild Projects="@(Projects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanAllTarget) != ''"
+             Targets="%(CleanAllTarget)" />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+  <Target Name="RebuildAll" DependsOnTargets="CleanAll;Build" />
+</Project>

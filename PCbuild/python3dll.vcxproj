@@ -1,6 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="PGInstrument|Win32">
       <Configuration>PGInstrument</Configuration>
       <Platform>Win32</Platform>
@@ -30,144 +38,42 @@
     <ProjectGuid>{885D4898-D08D-4091-9C40-C700CFE3FC5A}</ProjectGuid>
     <RootNamespace>python3dll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <TargetName>python3</TargetName>
+    <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
+    <SupportPGO>false</SupportPGO>
   </PropertyGroup>
+  <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="pyproject.props" />
-    <Import Project="release.props" />
-    <Import Project="pgupdate.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="release.props" />
-    <Import Project="pginstrument.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="release.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="release.props" />
-    <Import Project="pgupdate.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="release.props" />
-    <Import Project="pginstrument.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="x64.props" />
-    <Import Project="release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)\..\PC
-"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)python3.dll</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)\..\PC
-"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)python3.dll</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">cd $(ProjectDir)\..\PC
-"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(OutDir)python3.dll</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">cd $(ProjectDir)\..\PC
-"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(OutDir)python3.dll</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">cd $(ProjectDir)\..\PC
-"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(OutDir)python3.dll</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">cd $(ProjectDir)\..\PC
-"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(OutDir)python3.dll</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <_Machine>X86</_Machine>
+    <_Machine Condition="$(Platform) == 'x64'">X64</_Machine>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(OutDir)$(TargetName)stub.lib</AdditionalDependencies>
+      <ModuleDefinitionFile>$(PySourcePath)PC\python3.def</ModuleDefinitionFile>
+      <EntryPointSymbol>DllMain</EntryPointSymbol>
+    </Link>
+    <PreLinkEvent>
+      <Command>lib /nologo /def:"$(IntDir)python3stub.def" /out:"$(OutDir)$(TargetName)stub.lib" /MACHINE:$(_Machine)</Command>
+      <Message>Rebuilding $(TargetName)stub.lib</Message>
+      <Outputs>$(OutDir)$(TargetName)stub.lib</Outputs>
+    </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\PC\python3.def" />
@@ -181,4 +87,27 @@ nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLi
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="BuildStubDef" BeforeTargets="PreLinkEvent" Inputs="..\PC\python3.def" Outputs="$(IntDir)python3stub.def">
+    <ReadLinesFromFile File="..\PC\python3.def">
+      <Output TaskParameter="Lines" ItemName="DefLines" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_Pattern>^[\w.]+=.+?\.([^ ]+).*$</_Pattern>
+      <_Sub>$1</_Sub>
+    </PropertyGroup>
+    <ItemGroup>
+      <_Lines Include="EXPORTS" />
+      <_Symbols Include="@(DefLines)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(`%(Identity)`, `$(_Pattern)`))">
+        <Symbol>$([System.Text.RegularExpressions.Regex]::Replace(`%(Identity)`, `$(_Pattern)`, `$(_Sub)`))</Symbol>
+      </_Symbols>
+      <_Lines Include="@(_Symbols->'%(Symbol)')" />
+    </ItemGroup>
+    <MakeDir Directories="$(IntDir)" />
+    <WriteLinesToFile File="$(IntDir)python3stub.def" Lines="@(_Lines)" />
+  </Target>
+  <Target Name="_CleanStubDef" BeforeTargets="CoreClean">
+    <ItemGroup>
+      <Clean Include="$(IntDir)python3stub.def" />
+    </ItemGroup>
+  </Target>
 </Project>

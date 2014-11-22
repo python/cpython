@@ -13,7 +13,7 @@
 #endif
 
 /* e.g., 3.3.0a1
- * PY_VERSION comes from patchevel.h
+ * PY_VERSION comes from patchlevel.h
  */
 #define PYTHON_VERSION PY_VERSION "\0"
 

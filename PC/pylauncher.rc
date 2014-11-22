@@ -34,7 +34,7 @@ BEGIN
             VALUE "FileDescription", "Python Launcher for Windows (Console)"
             VALUE "FileVersion", PYTHON_VERSION
             VALUE "InternalName", "py"
-            VALUE "LegalCopyright", "Copyright (C) 2011-2012 Python Software Foundation"
+            VALUE "LegalCopyright", "Copyright (C) 2011-2014 Python Software Foundation"
             VALUE "OriginalFilename", "py"
             VALUE "ProductName", "Python Launcher for Windows"
             VALUE "ProductVersion", PYTHON_VERSION

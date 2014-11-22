@@ -1,7 +1,7 @@
 Quick Start Guide
 -----------------
 
-1.  Install Microsoft Visual C++ 2010 SP1, any edition.
+1.  Install Microsoft Visual Studio 2015, any edition.
 2.  Install Subversion, and make sure 'svn.exe' is on your PATH.
 3.  Run "build.bat -e" to build Python in 32-bit Release configuration.
 4.  (Optional, but recommended) Run the test suite with "rt.bat -q".
@@ -11,41 +11,38 @@ Building Python using Microsoft Visual C++
 ------------------------------------------
 
 This directory is used to build CPython for Microsoft Windows NT version
-5.1 or higher (Windows XP, Windows Server 2003, or later) on 32 and 64
+6.0 or higher (Windows Vista, Windows Server 2008, or later) on 32 and 64
 bit platforms.  Using this directory requires an installation of
-Microsoft Visual C++ 2010 (MSVC 10.0) of any edition.  The specific
+Microsoft Visual C++ 2015 (MSVC 14.0) of any edition.  The specific
 requirements are as follows:
 
-Visual C++ 2010 Express Edition
-    Required for building 32-bit Debug and Release configuration builds.
+Visual Studio Express 2015 for Desktop
+Visual Studio Professional 2015
+    Either edition is sufficient for building all configurations except
+    for Profile Guided Optimization.
     The Python build solution pcbuild.sln makes use of Solution Folders,
     which this edition does not support.  Any time pcbuild.sln is opened
-    or reloaded by Visual C++, a warning about Solution Folders will be
-    displayed which can be safely dismissed with no impact on your
+    or reloaded by Visual Studio, a warning about Solution Folders will
+    be displayed, which can be safely dismissed with no impact on your
     ability to build Python.
-Visual Studio 2010 Professional Edition
     Required for building 64-bit Debug and Release configuration builds
-Visual Studio 2010 Premium Edition
+Visual Studio Premium 2015
     Required for building Release configuration builds that make use of
     Profile Guided Optimization (PGO), on either platform.
 
-Installing Service Pack 1 for Visual Studio 2010 is highly recommended
-to avoid LNK1123 errors.
-
 All you need to do to build is open the solution "pcbuild.sln" in Visual
 Studio, select the desired combination of configuration and platform,
-then build with "Build Solution" or the F7 keyboard shortcut.  You can
-also build from the command line using the "build.bat" script in this
-directory; see below for details.  The solution is configured to build
-the projects in the correct order.
+then build with "Build Solution".  You can also build from the command
+line using the "build.bat" script in this directory; see below for
+details.  The solution is configured to build the projects in the correct
+order.
 
 The solution currently supports two platforms.  The Win32 platform is
-used to build standard x86-compatible 32-bit binaries, output into this
-directory.  The x64 platform is used for building 64-bit AMD64 (aka
-x86_64 or EM64T) binaries, output into the amd64 sub-directory which
-will be created if it doesn't already exist.  The Itanium (IA-64)
-platform is no longer supported.  See the "Building for AMD64" section
-below for more information about 64-bit builds.
+used to build standard x86-compatible 32-bit binaries, output into the
+win32 sub-directory.  The x64 platform is used for building 64-bit AMD64
+(aka x86_64 or EM64T) binaries, output into the amd64 sub-directory.
+The Itanium (IA-64) platform is no longer supported.  See the "Building
+for AMD64" section below for more information about 64-bit builds.
 
 Four configuration options are supported by the solution:
 Debug
@@ -61,8 +58,8 @@ PGInstrument, PGUpdate
     requires Premium Edition of Visual Studio.  See the "Profile
     Guided Optimization" section below for more information.  Build
     output from each of these configurations lands in its own
-    sub-directory of this directory.  The official Python releases are
-    built using these configurations.
+    sub-directory of this directory.  The official Python releases may
+    be built using these configurations.
 Release
     Used to build Python as it is meant to be used in production
     settings, though without PGO.
@@ -72,10 +69,10 @@ Building Python using the build.bat script
 ----------------------------------------------
 
 In this directory you can find build.bat, a script designed to make
-building Python on Windows simpler.  The only absolute requirement for
-using this script is for the VS100COMNTOOLS environment variable to be
-properly set, which should be done by Microsoft Visual C++ 2010
-installation.
+building Python on Windows simpler.  This script will use the env.bat
+script to detect one of Visual Studio 2015, 2013, 2012, or 2010, any of
+which may be used to build Python, though only Visual Studio 2015 is
+officially supported.
 
 By default, build.bat will build Python in Release configuration for
 the 32-bit Win32 platform.  It accepts several arguments to change
@@ -85,37 +82,29 @@ this behavior:
    -d                  Shortcut for "-c Debug"
    -p <platform>       Set the platform to build for ("Win32" or "x64")
    -r                  Rebuild instead of just building
+   -t <target>         Set the target (Build, Rebuild, Clean or CleanAll)
    -e                  Use get_externals.bat to fetch external sources
+   -M                  Don't build in parallel
+   -v                  Increased output messages
 
 Up to 9 MSBuild switches can also be passed, though they must be passed
 after specifying any of the above switches.  For example, use:
 
-   build.bat -e -d /m
+   build.bat -e -d /fl
 
-to do a concurrent debug build with externals fetched as needed.  If
-the MSBuild switch requires an equal sign ("="), the entire switch must
-be quoted:
+to do a debug build with externals fetched as needed and write detailed
+build logs to a file.  If the MSBuild switch requires an equal sign
+("="), the entire switch must be quoted:
 
-   build.bat -e -d "/p:externalsDir=P:\cpython-externals"
+   build.bat -e -d "/p:ExternalsDir=P:\cpython-externals"
 
 There may also be other situations where quotes are necessary.
-
-
-Legacy support
---------------
-
-You can find build directories for older versions of Visual Studio and
-Visual C++ in the PC directory. The legacy build directories are no
-longer actively maintained and may not work out of the box.
-
-Currently, the only legacy build directory is PC\VS9.0, for Visual
-Studio 2008 (9.0).
 
 
 C Runtime
 ---------
 
-Visual Studio 2010 uses version 10 of the C runtime (MSVCRT10).  The
+Visual Studio 2015 uses version 14 of the C runtime (MSVCRT14).  The
 executables no longer use the "Side by Side" assemblies used in previous
 versions of the compiler.  This simplifies distribution of applications.
 
@@ -140,10 +129,6 @@ pythoncore
     .dll and .lib
 python
     .exe
-kill_python
-    kill_python.exe, a small program designed to kill any instances of
-    python(_d).exe that are running and live in the build output
-    directory; this is meant to avoid build issues due to locked files
 make_buildinfo, make_versioninfo
     helpers to provide necessary information to the build process
 
@@ -163,13 +148,12 @@ _testembed
     purposes, used by test_capi.py
 
 These are miscellaneous sub-projects that don't really fit the other
-categories.  By default, these projects do not build in Debug
-configuration:
+categories:
 _freeze_importlib
     _freeze_importlib.exe, used to regenerate Python\importlib.h after
     changes have been made to Lib\importlib\_bootstrap.py
 bdist_wininst
-    ..\Lib\distutils\command\wininst-10.0[-amd64].exe, the base
+    ..\Lib\distutils\command\wininst-14.0[-amd64].exe, the base
     executable used by the distutils bdist_wininst command
 python3dll
     python3.dll, the PEP 384 Stable ABI dll
@@ -225,10 +209,10 @@ _ssl
     need a later version of NASM. If OpenSSL's self tests don't pass,
     you should first try to update NASM and do a full rebuild of
     OpenSSL.  get_externals.py also downloads a snapshot of NASM, and the
-    ssl sub-project includes that version of nasm.exe on PATH.
+    libeay and ssleay sub-projects use that version of nasm.exe.
 
-    The ssl sub-project expects your OpenSSL sources to have already
-    been configured and be ready to build.  If you get your sources
+    The libeay/ssleay sub-projects expect your OpenSSL sources to have
+    already been configured and be ready to build.  If you get your sources
     from svn.python.org as suggested in the "Getting External Sources"
     section below, the OpenSSL source will already be ready to go.  If
     you want to build a different version, you will need to run
@@ -241,8 +225,11 @@ _ssl
     OpenSSL.  ActivePerl is recommended and is available from
         http://www.activestate.com/activeperl/
 
-    The ssl sub-project does not have the ability to clean the OpenSSL
-    build; if you need to rebuild, you'll have to clean it by hand.
+    The libeay and ssleay sub-projects will build the modules of OpenSSL
+    required by _ssl and _hashlib and may need to be manually updated when
+    upgrading to a newer version of OpenSSL or when adding new
+    functionality to _ssl or _hashlib. They will not clean up their output
+    with the normal Clean target; CleanAll should be used instead.
 _sqlite3
     Wraps SQLite 3.8.3.1, which is itself built by sqlite3.vcxproj
     Homepage:
@@ -262,9 +249,9 @@ _tkinter
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
 
-    The tcl, tk, and tix sub-projects do not have the ability to clean
-    their builds; if you need to rebuild, you'll have to clean them by
-    hand.
+    The tcl, tk, and tix sub-projects do not clean their builds with
+    the normal Clean target; if you need to rebuild, you should use the
+    CleanAll target or manually delete their builds.
 
 
 Getting External Sources
@@ -293,9 +280,7 @@ Building for AMD64
 The build process for AMD64 / x64 is very similar to standard builds,
 you just have to set x64 as platform. In addition, the HOST_PYTHON
 environment variable must point to a Python interpreter (at least 2.4),
-to support cross-compilation from Win32.  Note that Visual Studio
-requires Professional Edition or better in order to build 64-bit
-binaries.
+to support cross-compilation from Win32.
 
 
 Profile Guided Optimization
@@ -330,31 +315,22 @@ also have to change the "Runtime Library" from "Multi-threaded DLL
 Visual Studio properties
 ------------------------
 
-The PCbuild solution makes heavy use of Visual Studio property files
-(*.props). The properties can be viewed and altered in the Property
-Manager (View -> Other Windows -> Property Manager).
+The PCbuild solution makes use of Visual Studio property files (*.props)
+to simplify each project. The properties can be viewed in the Property
+Manager (View -> Other Windows -> Property Manager) but should be
+carefully modified by hand.
 
-The property files used are (+-- = "also imports"):
- * debug (debug macro: _DEBUG)
- * pginstrument (PGO)
- * pgupdate (PGO)
-    +-- pginstrument
- * pyd (python extension, release build)
-    +-- release
-    +-- pyproject
- * pyd_d (python extension, debug build)
-    +-- debug
-    +-- pyproject
- * pyproject (base settings for all projects, user macros like PyDllName)
- * release (release macro: NDEBUG)
- * sqlite3 (used only by sqlite3.vcxproj)
+The property files used are:
+ * python (versions, directories and build names)
+ * pyproject (base settings for all projects)
+ * openssl (used by libeay and ssleay projects)
  * tcltk (used by _tkinter, tcl, tk and tix projects)
- * x64 (AMD64 / x64 platform specific settings)
 
-The pyproject property file defines _WIN32 and x64 defines _WIN64 and
-_M_X64 although the macros are set by the compiler, too. The GUI doesn't
-always know about the macros and confuse the user with false
-information.
+The pyproject property file defines all of the build settings for each
+project, with some projects overriding certain specific values. The GUI
+doesn't always reflect the correct settings and may confuse the user
+with false information, especially for settings that automatically adapt
+for diffirent configurations.
 
 
 Your Own Extension DLLs
