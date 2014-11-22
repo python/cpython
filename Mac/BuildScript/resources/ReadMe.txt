@@ -7,6 +7,12 @@ Update your version of Tcl/Tk to use IDLE or other Tk applications
 To use IDLE or other programs that use the Tkinter graphical user interface toolkit, you need to install a newer third-party version of the Tcl/Tk frameworks.  Visit https://www.python.org/download/mac/tcltk/ for current information about supported and recommended versions of Tcl/Tk for this version of Python and of Mac OS X.
 
 =============================
+New Installation Options and Defaults
+=============================
+
+For other changes in this release, see the Release Notes link for this release at https://www.python.org/downloads/.
+
+=============================
 Python 3 and Python 2 Co-existence
 =============================
 
