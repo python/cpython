@@ -15,9 +15,6 @@ try:
     import ssl
 except ImportError:
     ssl = None
-    HAS_SNI = False
-else:
-    from ssl import HAS_SNI
 
 from unittest import TestCase, skipUnless
 from test import support
@@ -927,7 +924,6 @@ class TestTLS_FTPClass(TestCase):
         self.client.ccc()
         self.assertRaises(ValueError, self.client.sock.unwrap)
 
-    @skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_check_hostname(self):
         self.client.quit()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
