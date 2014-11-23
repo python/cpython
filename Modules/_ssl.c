@@ -2922,12 +2922,6 @@ context_wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwds)
             &sock, &server_side,
             "idna", &hostname))
             return NULL;
-#if !HAVE_SNI
-        PyMem_Free(hostname);
-        PyErr_SetString(PyExc_ValueError, "server_hostname is not supported "
-                        "by your OpenSSL library");
-        return NULL;
-#endif
     }
 
     res = (PyObject *) newPySSLSocket(self, sock, server_side, hostname,
@@ -2955,14 +2949,8 @@ context_wrap_bio(PySSLContext *self, PyObject *args, PyObject *kwds)
                                      &server_side, &hostname_obj))
         return NULL;
     if (hostname_obj != Py_None) {
-#if HAVE_SNI
         if (!PyArg_Parse(hostname_obj, "et", "idna", &hostname))
             return NULL;
-#else
-        PyErr_SetString(PyExc_ValueError, "server_hostname is not supported "
-                        "by your OpenSSL library");
-        return NULL;
-#endif
     }
 
     res = (PyObject *) newPySSLSocket(self, NULL, server_side, hostname,

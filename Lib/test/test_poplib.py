@@ -21,13 +21,10 @@ PORT = 0
 SUPPORTS_SSL = False
 if hasattr(poplib, 'POP3_SSL'):
     import ssl
-    from ssl import HAS_SNI
 
     SUPPORTS_SSL = True
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
     CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
-else:
-    HAS_SNI = False
 
 requires_ssl = skipUnless(SUPPORTS_SSL, 'SSL not supported')
 
@@ -334,7 +331,6 @@ class TestPOP3Class(TestCase):
         self.assertEqual(resp, expected)
 
     @requires_ssl
-    @skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
