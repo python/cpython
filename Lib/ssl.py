@@ -655,12 +655,7 @@ class SSLSocket(socket):
             raise ValueError("server_hostname can only be specified "
                              "in client mode")
         if self._context.check_hostname and not server_hostname:
-            if HAS_SNI:
-                raise ValueError("check_hostname requires server_hostname")
-            else:
-                raise ValueError("check_hostname requires server_hostname, "
-                                 "but it's not supported by your OpenSSL "
-                                 "library")
+            raise ValueError("check_hostname requires server_hostname")
         self.server_side = server_side
         self.server_hostname = server_hostname
         self.do_handshake_on_connect = do_handshake_on_connect
