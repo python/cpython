@@ -208,7 +208,7 @@ PyInt_AsSsize_t(register PyObject *op)
 {
 #if SIZEOF_SIZE_T != SIZEOF_LONG
     PyNumberMethods *nb;
-    PyIntObject *io;
+    PyObject *io;
     Py_ssize_t val;
 #endif
 
@@ -232,15 +232,15 @@ PyInt_AsSsize_t(register PyObject *op)
     }
 
     if (nb->nb_long != 0)
-        io = (PyIntObject*) (*nb->nb_long) (op);
+        io = (*nb->nb_long)(op);
     else
-        io = (PyIntObject*) (*nb->nb_int) (op);
+        io = (*nb->nb_int)(op);
     if (io == NULL)
         return -1;
     if (!PyInt_Check(io)) {
         if (PyLong_Check(io)) {
             /* got a long? => retry int conversion */
-            val = _PyLong_AsSsize_t((PyObject *)io);
+            val = _PyLong_AsSsize_t(io);
             Py_DECREF(io);
             if ((val == -1) && PyErr_Occurred())
                 return -1;
