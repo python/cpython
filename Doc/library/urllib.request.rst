@@ -57,10 +57,7 @@ The :mod:`urllib.request` module defines the following functions:
    point to a directory of hashed certificate files.  More information can
    be found in :meth:`ssl.SSLContext.load_verify_locations`.
 
-   The *cadefault* parameter specifies whether to fall back to loading a
-   default certificate store defined by the underlying OpenSSL library if the
-   *cafile* and *capath* parameters are omitted.  This will only work on
-   some non-Windows platforms.
+   The *cadefault* parameter is ignored.
 
    For http and https urls, this function returns a
    :class:`http.client.HTTPResponse` object which has the following
