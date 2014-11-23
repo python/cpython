@@ -14,7 +14,7 @@ import os
 import errno
 import pprint
 import tempfile
-import urllib
+import urllib2
 import traceback
 import weakref
 import platform
@@ -2388,10 +2388,11 @@ else:
                 d1 = f.read()
             d2 = ''
             # now fetch the same data from the HTTPS server
-            url = 'https://%s:%d/%s' % (
-                HOST, server.port, os.path.split(CERTFILE)[1])
+            url = 'https://localhost:%d/%s' % (
+                server.port, os.path.split(CERTFILE)[1])
+            context = ssl.create_default_context(cafile=CERTFILE)
             with support.check_py3k_warnings():
-                f = urllib.urlopen(url)
+                f = urllib2.urlopen(url, context=context)
             try:
                 dlen = f.info().getheader("content-length")
                 if dlen and (int(dlen) > 0):

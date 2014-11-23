@@ -42,6 +42,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #9003 and #22366: httplib.HTTPSConnection, urllib2.HTTPSHandler and
+  urllib2.urlopen now take optional arguments to allow for server certificate
+  checking, as recommended in public uses of HTTPS. This backport is part of PEP
+  467.
+
 - Issue #12728: Different Unicode characters having the same uppercase but
   different lowercase are now matched in case-insensitive regular expressions.
 

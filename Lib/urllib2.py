@@ -109,6 +109,14 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+# check for SSL
+try:
+    import ssl
+except ImportError:
+    _have_ssl = False
+else:
+    _have_ssl = True
+
 from urllib import (unwrap, unquote, splittype, splithost, quote,
      addinfourl, splitport, splittag, toBytes,
      splitattr, ftpwrapper, splituser, splitpasswd, splitvalue)
@@ -120,11 +128,30 @@ from urllib import localhost, url2pathname, getproxies, proxy_bypass
 __version__ = sys.version[:3]
 
 _opener = None
-def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+            cafile=None, capath=None, cadefault=False, context=None):
     global _opener
-    if _opener is None:
-        _opener = build_opener()
-    return _opener.open(url, data, timeout)
+    if cafile or capath or cadefault:
+        if context is not None:
+            raise ValueError(
+                "You can't pass both context and any of cafile, capath, and "
+                "cadefault"
+            )
+        if not _have_ssl:
+            raise ValueError('SSL support not available')
+        context = ssl._create_stdlib_context(cert_reqs=ssl.CERT_REQUIRED,
+                                             cafile=cafile,
+                                             capath=capath)
+        https_handler = HTTPSHandler(context=context, check_hostname=True)
+        opener = build_opener(https_handler)
+    elif context:
+        https_handler = HTTPSHandler(context=context)
+        opener = build_opener(https_handler)
+    elif _opener is None:
+        _opener = opener = build_opener()
+    else:
+        opener = _opener
+    return opener.open(url, data, timeout)
 
 def install_opener(opener):
     global _opener
@@ -1121,7 +1148,7 @@ class AbstractHTTPHandler(BaseHandler):
 
         return request
 
-    def do_open(self, http_class, req):
+    def do_open(self, http_class, req, **http_conn_args):
         """Return an addinfourl object for the request, using http_class.
 
         http_class must implement the HTTPConnection API from httplib.
@@ -1135,7 +1162,8 @@ class AbstractHTTPHandler(BaseHandler):
         if not host:
             raise URLError('no host given')
 
-        h = http_class(host, timeout=req.timeout) # will parse host:port
+        # will parse host:port
+        h = http_class(host, timeout=req.timeout, **http_conn_args)
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
@@ -1203,8 +1231,14 @@ class HTTPHandler(AbstractHTTPHandler):
 if hasattr(httplib, 'HTTPS'):
     class HTTPSHandler(AbstractHTTPHandler):
 
+        def __init__(self, debuglevel=0, context=None, check_hostname=None):
+            AbstractHTTPHandler.__init__(self, debuglevel)
+            self._context = context
+            self._check_hostname = check_hostname
+
         def https_open(self, req):
-            return self.do_open(httplib.HTTPSConnection, req)
+            return self.do_open(httplib.HTTPSConnection, req,
+                context=self._context, check_hostname=self._check_hostname)
 
         https_request = AbstractHTTPHandler.do_request_
 

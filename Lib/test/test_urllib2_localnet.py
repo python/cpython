@@ -1,3 +1,4 @@
+import os
 import base64
 import urlparse
 import urllib2
@@ -9,6 +10,17 @@ from test import test_support
 
 mimetools = test_support.import_module('mimetools', deprecated=True)
 threading = test_support.import_module('threading')
+
+try:
+    import ssl
+except ImportError:
+    ssl = None
+
+here = os.path.dirname(__file__)
+# Self-signed cert file for 'localhost'
+CERT_localhost = os.path.join(here, 'keycert.pem')
+# Self-signed cert file for 'fakehostname'
+CERT_fakehostname = os.path.join(here, 'keycert2.pem')
 
 # Loopback http server infrastructure
 
@@ -24,7 +36,7 @@ class LoopbackHttpServer(BaseHTTPServer.HTTPServer):
 
         # Set the timeout of our listening socket really low so
         # that we can stop the server easily.
-        self.socket.settimeout(1.0)
+        self.socket.settimeout(0.1)
 
     def get_request(self):
         """BaseHTTPServer method, overridden."""
@@ -433,6 +445,19 @@ class TestUrlopen(BaseTestCase):
         urllib2.install_opener(opener)
         super(TestUrlopen, self).setUp()
 
+    def urlopen(self, url, data=None, **kwargs):
+        l = []
+        f = urllib2.urlopen(url, data, **kwargs)
+        try:
+            # Exercise various methods
+            l.extend(f.readlines(200))
+            l.append(f.readline())
+            l.append(f.read(1024))
+            l.append(f.read())
+        finally:
+            f.close()
+        return b"".join(l)
+
     def start_server(self, responses):
         handler = GetRequestHandler(responses)
 
@@ -443,6 +468,16 @@ class TestUrlopen(BaseTestCase):
         handler.port = port
         return handler
 
+    def start_https_server(self, responses=None, **kwargs):
+        if not hasattr(urllib2, 'HTTPSHandler'):
+            self.skipTest('ssl support required')
+        from test.ssl_servers import make_https_server
+        if responses is None:
+            responses = [(200, [], b"we care a bit")]
+        handler = GetRequestHandler(responses)
+        server = make_https_server(self, handler_class=handler, **kwargs)
+        handler.port = server.port
+        return handler
 
     def test_redirection(self):
         expected_response = 'We got here...'
@@ -513,6 +548,28 @@ class TestUrlopen(BaseTestCase):
         finally:
             self.server.stop()
 
+    def test_https(self):
+        handler = self.start_https_server()
+        context = ssl.create_default_context(cafile=CERT_localhost)
+        data = self.urlopen("https://localhost:%s/bizarre" % handler.port, context=context)
+        self.assertEqual(data, b"we care a bit")
+
+    def test_https_with_cafile(self):
+        handler = self.start_https_server(certfile=CERT_localhost)
+        import ssl
+        # Good cert
+        data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                            cafile=CERT_localhost)
+        self.assertEqual(data, b"we care a bit")
+        # Bad cert
+        with self.assertRaises(urllib2.URLError) as cm:
+            self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                         cafile=CERT_fakehostname)
+        # Good cert, but mismatching hostname
+        handler = self.start_https_server(certfile=CERT_fakehostname)
+        with self.assertRaises(ssl.CertificateError) as cm:
+            self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                         cafile=CERT_fakehostname)
 
     def test_sending_headers(self):
         handler = self.start_server([(200, [], "we don't care")])

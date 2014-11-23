@@ -1,6 +1,7 @@
 import httplib
 import array
 import httplib
+import os
 import StringIO
 import socket
 import errno
@@ -9,6 +10,14 @@ import unittest
 TestCase = unittest.TestCase
 
 from test import test_support
+
+here = os.path.dirname(__file__)
+# Self-signed cert file for 'localhost'
+CERT_localhost = os.path.join(here, 'keycert.pem')
+# Self-signed cert file for 'fakehostname'
+CERT_fakehostname = os.path.join(here, 'keycert2.pem')
+# Self-signed cert file for self-signed.pythontest.net
+CERT_selfsigned_pythontestdotnet = os.path.join(here, 'selfsigned_pythontestdotnet.pem')
 
 HOST = test_support.HOST
 
@@ -506,36 +515,140 @@ class TimeoutTest(TestCase):
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
 
+class HTTPSTest(TestCase):
 
-class HTTPSTimeoutTest(TestCase):
-# XXX Here should be tests for HTTPS, there isn't any right now!
+    def setUp(self):
+        if not hasattr(httplib, 'HTTPSConnection'):
+            self.skipTest('ssl support required')
+
+    def make_server(self, certfile):
+        from test.ssl_servers import make_https_server
+        return make_https_server(self, certfile=certfile)
 
     def test_attributes(self):
-        # simple test to check it's storing it
-        if hasattr(httplib, 'HTTPSConnection'):
-            h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
-            self.assertEqual(h.timeout, 30)
+        # simple test to check it's storing the timeout
+        h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
+        self.assertEqual(h.timeout, 30)
 
-    @unittest.skipIf(not hasattr(httplib, 'HTTPS'), 'httplib.HTTPS not available')
+    def test_networked(self):
+        # Default settings: requires a valid cert from a trusted CA
+        import ssl
+        test_support.requires('network')
+        with test_support.transient_internet('self-signed.pythontest.net'):
+            h = httplib.HTTPSConnection('self-signed.pythontest.net', 443)
+            with self.assertRaises(ssl.SSLError) as exc_info:
+                h.request('GET', '/')
+            self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
+
+    def test_networked_noverification(self):
+        # Switch off cert verification
+        import ssl
+        test_support.requires('network')
+        with test_support.transient_internet('self-signed.pythontest.net'):
+            context = ssl._create_stdlib_context()
+            h = httplib.HTTPSConnection('self-signed.pythontest.net', 443,
+                                        context=context)
+            h.request('GET', '/')
+            resp = h.getresponse()
+            self.assertIn('nginx', resp.getheader('server'))
+
+    def test_networked_trusted_by_default_cert(self):
+        # Default settings: requires a valid cert from a trusted CA
+        test_support.requires('network')
+        with test_support.transient_internet('www.python.org'):
+            h = httplib.HTTPSConnection('www.python.org', 443)
+            h.request('GET', '/')
+            resp = h.getresponse()
+            content_type = resp.getheader('content-type')
+            self.assertIn('text/html', content_type)
+
+    def test_networked_good_cert(self):
+        # We feed the server's cert as a validating cert
+        import ssl
+        test_support.requires('network')
+        with test_support.transient_internet('self-signed.pythontest.net'):
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.load_verify_locations(CERT_selfsigned_pythontestdotnet)
+            h = httplib.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
+            h.request('GET', '/')
+            resp = h.getresponse()
+            server_string = resp.getheader('server')
+            self.assertIn('nginx', server_string)
+
+    def test_networked_bad_cert(self):
+        # We feed a "CA" cert that is unrelated to the server's cert
+        import ssl
+        test_support.requires('network')
+        with test_support.transient_internet('self-signed.pythontest.net'):
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.load_verify_locations(CERT_localhost)
+            h = httplib.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
+            with self.assertRaises(ssl.SSLError) as exc_info:
+                h.request('GET', '/')
+            self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
+
+    def test_local_unknown_cert(self):
+        # The custom cert isn't known to the default trust bundle
+        import ssl
+        server = self.make_server(CERT_localhost)
+        h = httplib.HTTPSConnection('localhost', server.port)
+        with self.assertRaises(ssl.SSLError) as exc_info:
+            h.request('GET', '/')
+        self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
+
+    def test_local_good_hostname(self):
+        # The (valid) cert validates the HTTP hostname
+        import ssl
+        server = self.make_server(CERT_localhost)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.load_verify_locations(CERT_localhost)
+        h = httplib.HTTPSConnection('localhost', server.port, context=context)
+        h.request('GET', '/nonexistent')
+        resp = h.getresponse()
+        self.assertEqual(resp.status, 404)
+
+    def test_local_bad_hostname(self):
+        # The (valid) cert doesn't validate the HTTP hostname
+        import ssl
+        server = self.make_server(CERT_fakehostname)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.load_verify_locations(CERT_fakehostname)
+        h = httplib.HTTPSConnection('localhost', server.port, context=context)
+        with self.assertRaises(ssl.CertificateError):
+            h.request('GET', '/')
+        # Same with explicit check_hostname=True
+        h = httplib.HTTPSConnection('localhost', server.port, context=context,
+                                   check_hostname=True)
+        with self.assertRaises(ssl.CertificateError):
+            h.request('GET', '/')
+        # With check_hostname=False, the mismatching is ignored
+        h = httplib.HTTPSConnection('localhost', server.port, context=context,
+                                   check_hostname=False)
+        h.request('GET', '/nonexistent')
+        resp = h.getresponse()
+        self.assertEqual(resp.status, 404)
+
     def test_host_port(self):
         # Check invalid host_port
 
-        # Note that httplib does not accept user:password@ in the host-port.
         for hp in ("www.python.org:abc", "user:password@www.python.org"):
-            self.assertRaises(httplib.InvalidURL, httplib.HTTP, hp)
+            self.assertRaises(httplib.InvalidURL, httplib.HTTPSConnection, hp)
 
-        for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000", "fe80::207:e9ff:fe9b",
-                          8000),
-                         ("pypi.python.org:443", "pypi.python.org", 443),
-                         ("pypi.python.org", "pypi.python.org", 443),
-                         ("pypi.python.org:", "pypi.python.org", 443),
-                         ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 443)):
-            http = httplib.HTTPS(hp)
-            c = http._conn
-            if h != c.host:
-                self.fail("Host incorrectly parsed: %s != %s" % (h, c.host))
-            if p != c.port:
-                self.fail("Port incorrectly parsed: %s != %s" % (p, c.host))
+        for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000",
+                          "fe80::207:e9ff:fe9b", 8000),
+                         ("www.python.org:443", "www.python.org", 443),
+                         ("www.python.org:", "www.python.org", 443),
+                         ("www.python.org", "www.python.org", 443),
+                         ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 443),
+                         ("[fe80::207:e9ff:fe9b]:", "fe80::207:e9ff:fe9b",
+                             443)):
+            c = httplib.HTTPSConnection(hp)
+            self.assertEqual(h, c.host)
+            self.assertEqual(p, c.port)
 
 
 class TunnelTests(TestCase):
@@ -577,9 +690,10 @@ class TunnelTests(TestCase):
         self.assertTrue('Host: destination.com' in conn.sock.data)
 
 
+@test_support.reap_threads
 def test_main(verbose=None):
     test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
-                              HTTPSTimeoutTest, SourceAddressTest, TunnelTests)
+                              HTTPSTest, SourceAddressTest, TunnelTests)
 
 if __name__ == '__main__':
     test_main()

@@ -8,6 +8,11 @@ import StringIO
 import urllib2
 from urllib2 import Request, OpenerDirector
 
+try:
+    import ssl
+except ImportError:
+    ssl = None
+
 # XXX
 # Request
 # CacheFTPHandler (hard to write)
@@ -46,6 +51,14 @@ class TrivialTests(unittest.TestCase):
                  ('a="b\\"c", d="e\\,f", g="h\\\\i"', ['a="b"c"', 'd="e,f"', 'g="h\\i"'])]
         for string, list in tests:
             self.assertEqual(urllib2.parse_http_list(string), list)
+
+    @unittest.skipUnless(ssl, "ssl module required")
+    def test_cafile_and_context(self):
+        context = ssl.create_default_context()
+        with self.assertRaises(ValueError):
+            urllib2.urlopen(
+                "https://localhost", cafile="/nonexistent/path", context=context
+            )
 
 
 def test_request_headers_dict():
