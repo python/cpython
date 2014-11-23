@@ -114,7 +114,10 @@ def prepare_self(next, token):
     return select
 
 def prepare_descendant(next, token):
-    token = next()
+    try:
+        token = next()
+    except StopIteration:
+        return
     if token[0] == "*":
         tag = "*"
     elif not token[0]:
@@ -148,7 +151,10 @@ def prepare_predicate(next, token):
     signature = []
     predicate = []
     while 1:
-        token = next()
+        try:
+            token = next()
+        except StopIteration:
+            return
         if token[0] == "]":
             break
         if token[0] and token[0][:1] in "'\"":
@@ -261,7 +267,10 @@ def iterfind(elem, path, namespaces=None):
         if path[:1] == "/":
             raise SyntaxError("cannot use absolute path on element")
         next = iter(xpath_tokenizer(path, namespaces)).__next__
-        token = next()
+        try:
+            token = next()
+        except StopIteration:
+            return
         selector = []
         while 1:
             try:
