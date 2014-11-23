@@ -260,7 +260,6 @@ class ProfileHookTestCase(TestCaseBase):
         def f():
             for i in range(2):
                 yield i
-            raise StopIteration
         def g(p):
             for i in f():
                 pass

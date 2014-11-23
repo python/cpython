@@ -1803,8 +1803,6 @@ class RegressionTests(unittest.TestCase):
             hist.append(3)
             yield 2
             hist.append(4)
-            if x:
-                raise StopIteration
 
         hist = []
         self.assertRaises(AssertionError, list, chain(gen1(), gen2(False)))
