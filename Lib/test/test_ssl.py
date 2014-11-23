@@ -1281,11 +1281,8 @@ class NetworkedTests(unittest.TestCase):
             # Same with a server hostname
             s = ctx.wrap_socket(socket.socket(socket.AF_INET),
                                 server_hostname="svn.python.org")
-            if ssl.HAS_SNI:
-                s.connect(("svn.python.org", 443))
-                s.close()
-            else:
-                self.assertRaises(ValueError, s.connect, ("svn.python.org", 443))
+            s.connect(("svn.python.org", 443))
+            s.close()
             # This should fail because we have no verification certs
             ctx.verify_mode = ssl.CERT_REQUIRED
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
@@ -2038,7 +2035,6 @@ else:
                     cert = s.getpeercert()
                     self.assertTrue(cert, "Can't get peer certificate.")
 
-        @needs_sni
         def test_check_hostname(self):
             if support.verbose:
                 sys.stdout.write("\n")

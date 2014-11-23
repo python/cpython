@@ -289,8 +289,7 @@ if _have_ssl:
         # Generate a default SSL context if none was passed.
         if context is None:
             context = ssl._create_stdlib_context()
-        server_hostname = hostname if ssl.HAS_SNI else None
-        return context.wrap_socket(sock, server_hostname=server_hostname)
+        return context.wrap_socket(sock, server_hostname=hostname)
 
 
 # The classes themselves

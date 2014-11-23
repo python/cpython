@@ -664,8 +664,7 @@ Constants
 .. data:: HAS_SNI
 
    Whether the OpenSSL library has built-in support for the *Server Name
-   Indication* extension (as defined in :rfc:`4366`).  When true, you can
-   use the *server_hostname* argument to :meth:`SSLContext.wrap_socket`.
+   Indication* extension (as defined in :rfc:`4366`).
 
    .. versionadded:: 3.2
 
@@ -1227,11 +1226,12 @@ to speed up repeated connections from the same clients.
    On client connections, the optional parameter *server_hostname* specifies
    the hostname of the service which we are connecting to.  This allows a
    single server to host multiple SSL-based services with distinct certificates,
-   quite similarly to HTTP virtual hosts.  Specifying *server_hostname*
-   will raise a :exc:`ValueError` if the OpenSSL library doesn't have support
-   for it (that is, if :data:`HAS_SNI` is :const:`False`).  Specifying
-   *server_hostname* will also raise a :exc:`ValueError` if *server_side*
-   is true.
+   quite similarly to HTTP virtual hosts. Specifying *server_hostname* will
+   raise a :exc:`ValueError` if *server_side* is true.
+
+   .. versionchanged:: 3.5
+      Always allow a server_hostname to be passed, even if OpenSSL does not
+      have SNI.
 
 .. method:: SSLContext.session_stats()
 

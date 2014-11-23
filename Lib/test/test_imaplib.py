@@ -18,9 +18,6 @@ try:
     import ssl
 except ImportError:
     ssl = None
-    HAS_SNI = False
-else:
-    from ssl import HAS_SNI
 
 CERTFILE = None
 CAFILE = None
@@ -352,7 +349,6 @@ class ThreadedNetworkedTestsSSL(BaseThreadedNetworkedTests):
     imap_class = IMAP4_SSL
 
     @reap_threads
-    @unittest.skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_ssl_verified(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         ssl_context.verify_mode = ssl.CERT_REQUIRED

@@ -12,9 +12,6 @@ try:
     import ssl
 except ImportError:
     ssl = None
-    HAS_SNI = False
-else:
-    from ssl import HAS_SNI
 import subprocess
 import sys
 import threading
@@ -857,7 +854,6 @@ class EventLoopTestsMixin:
         server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_create_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
@@ -882,7 +878,6 @@ class EventLoopTestsMixin:
         server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(HAS_SNI, 'No SNI support in ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
@@ -909,7 +904,6 @@ class EventLoopTestsMixin:
         server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_create_server_ssl_match_failed(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
@@ -937,7 +931,6 @@ class EventLoopTestsMixin:
         server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(HAS_SNI, 'No SNI support in ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
@@ -963,7 +956,6 @@ class EventLoopTestsMixin:
         server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
-    @unittest.skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_create_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
