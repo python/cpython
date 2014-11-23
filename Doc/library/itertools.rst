@@ -104,7 +104,10 @@ loops that truncate the stream.
             # accumulate([1,2,3,4,5]) --> 1 3 6 10 15
             # accumulate([1,2,3,4,5], operator.mul) --> 1 2 6 24 120
             it = iter(iterable)
-            total = next(it)
+            try:
+                total = next(it)
+            except StopIteration:
+                return
             yield total
             for element in it:
                 total = func(total, element)
@@ -405,7 +408,10 @@ loops that truncate the stream.
           def _grouper(self, tgtkey):
               while self.currkey == tgtkey:
                   yield self.currvalue
-                  self.currvalue = next(self.it)    # Exit on StopIteration
+                  try:
+                      self.currvalue = next(self.it)
+                  except StopIteration:
+                      return
                   self.currkey = self.keyfunc(self.currvalue)
 
 
@@ -429,7 +435,10 @@ loops that truncate the stream.
           # islice('ABCDEFG', 0, None, 2) --> A C E G
           s = slice(*args)
           it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
-          nexti = next(it)
+          try:
+              nexti = next(it)
+          except StopIteration:
+              return
           for i, element in enumerate(iterable):
               if i == nexti:
                   yield element
@@ -587,7 +596,10 @@ loops that truncate the stream.
             def gen(mydeque):
                 while True:
                     if not mydeque:             # when the local deque is empty
-                        newval = next(it)       # fetch a new value and
+                        try:
+                            newval = next(it)   # fetch a new value and
+                        except StopIteration:
+                            return
                         for d in deques:        # load it to all the deques
                             d.append(newval)
                     yield mydeque.popleft()
