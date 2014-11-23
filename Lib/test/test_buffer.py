@@ -216,7 +216,7 @@ def iter_format(nitems, testobj='ndarray'):
     for t in iter_mode(nitems, testobj):
         yield t
     if testobj != 'ndarray':
-        raise StopIteration
+        return
     yield struct_items(nitems, testobj)
 
 

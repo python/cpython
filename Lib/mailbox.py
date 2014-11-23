@@ -1949,7 +1949,7 @@ class _ProxyFile:
         while True:
             line = self.readline()
             if not line:
-                raise StopIteration
+                return
             yield line
 
     def tell(self):
