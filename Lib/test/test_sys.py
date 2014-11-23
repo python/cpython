@@ -507,7 +507,7 @@ class SizeofTest(unittest.TestCase):
         sentinel = ["sentinel"]
         self.assertIs(sys.getsizeof(InvalidSizeof(), sentinel), sentinel)
 
-        class OverflowSizeof(int):
+        class OverflowSizeof(long):
             def __sizeof__(self):
                 return int(self)
         self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
