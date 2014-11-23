@@ -2391,8 +2391,7 @@ else:
             url = 'https://localhost:%d/%s' % (
                 server.port, os.path.split(CERTFILE)[1])
             context = ssl.create_default_context(cafile=CERTFILE)
-            with support.check_py3k_warnings():
-                f = urllib2.urlopen(url, context=context)
+            f = urllib2.urlopen(url, context=context)
             try:
                 dlen = f.info().getheader("content-length")
                 if dlen and (int(dlen) > 0):
