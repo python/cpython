@@ -1224,10 +1224,9 @@ else:
                 server_hostname = self._tunnel_host
             else:
                 server_hostname = self.host
-            sni_hostname = server_hostname if ssl.HAS_SNI else None
 
             self.sock = self._context.wrap_socket(self.sock,
-                                                  server_hostname=sni_hostname)
+                                                  server_hostname=server_hostname)
             if not self._context.check_hostname and self._check_hostname:
                 try:
                     ssl.match_hostname(self.sock.getpeercert(), server_hostname)
