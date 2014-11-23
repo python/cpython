@@ -121,7 +121,6 @@ class TestResult(object):
         self.failures.append((test, self._exc_info_to_string(err, test)))
         self._mirrorOutput = True
 
-    @failfast
     def addSubTest(self, test, subtest, err):
         """Called at the end of a subtest.
         'err' is None if the subtest ended successfully, otherwise it's a
@@ -130,6 +129,8 @@ class TestResult(object):
         # By default, we don't do anything with successful subtests, but
         # more sophisticated test results might want to record them.
         if err is not None:
+            if getattr(self, 'failfast', False):
+                self.stop()
             if issubclass(err[0], test.failureException):
                 errors = self.failures
             else:
