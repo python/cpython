@@ -808,7 +808,7 @@ class _BaseNetwork(_IPAddressBase):
                 other.broadcast_address <= self.broadcast_address):
             raise ValueError('%s not contained in %s' % (other, self))
         if other == self:
-            raise StopIteration
+            return
 
         # Make sure we're comparing the network of other.
         other = other.__class__('%s/%s' % (other.network_address,

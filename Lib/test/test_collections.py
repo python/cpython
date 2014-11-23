@@ -511,7 +511,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         class NextOnly:
             def __next__(self):
                 yield 1
-                raise StopIteration
+                return
         self.assertNotIsInstance(NextOnly(), Iterator)
 
     def test_Sized(self):
