@@ -7,6 +7,15 @@ import sys
 import os
 import time
 
+try:
+    import ssl
+except ImportError:
+    ssl = None
+
+here = os.path.dirname(__file__)
+# Self-signed cert file for self-signed.pythontest.net
+CERT_selfsigned_pythontestdotnet = os.path.join(here, 'selfsigned_pythontestdotnet.pem')
+
 mimetools = test_support.import_module("mimetools", deprecated=True)
 
 
@@ -195,6 +204,14 @@ class urlretrieveNetworkTests(unittest.TestCase):
             self.fail('Date value not in %r format', dateformat)
 
 
+@unittest.skipIf(ssl is None, "requires ssl")
+class urlopen_HttpsTests(unittest.TestCase):
+
+    def test_context_argument(self):
+        context = ssl.create_default_context(cafile=CERT_selfsigned_pythontestdotnet)
+        response = urllib.urlopen("https://self-signed.pythontest.net", context=context)
+        self.assertIn("Python", response.read())
+
 
 def test_main():
     test_support.requires('network')
@@ -202,7 +219,8 @@ def test_main():
             ("urllib.urlopen.. has been removed", DeprecationWarning)):
         test_support.run_unittest(URLTimeoutTest,
                                   urlopenNetworkTests,
-                                  urlretrieveNetworkTests)
+                                  urlretrieveNetworkTests,
+                                  urlopen_HttpsTests)
 
 if __name__ == "__main__":
     test_main()

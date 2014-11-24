@@ -1238,14 +1238,15 @@ else:
         _connection_class = HTTPSConnection
 
         def __init__(self, host='', port=None, key_file=None, cert_file=None,
-                     strict=None):
+                     strict=None, context=None):
             # provide a default host, pass the X509 cert info
 
             # urf. compensate for bad input.
             if port == 0:
                 port = None
             self._setup(self._connection_class(host, port, key_file,
-                                               cert_file, strict))
+                                               cert_file, strict,
+                                               context=context))
 
             # we never actually use these for anything, but we keep them
             # here for compatibility with post-1.5.2 CVS.
