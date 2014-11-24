@@ -180,6 +180,18 @@ The :mod:`csv` module defines the following classes:
    of the optional *restval* parameter.  Any other optional or keyword
    arguments are passed to the underlying :class:`reader` instance.
 
+   A short usage example::
+
+       >>> import csv
+       >>> with open('names.csv') as csvfile:
+       ...     reader = csv.DictReader(csvfile)
+       ...     for row in reader:
+       ...         print(row['first_name'], row['last_name'])
+       ...
+       Baked Beans
+       Lovely Spam
+       Wonderful Spam
+
 
 .. class:: DictWriter(csvfile, fieldnames, restval='', extrasaction='raise', \
                       dialect='excel', *args, **kwds)
@@ -201,6 +213,19 @@ The :mod:`csv` module defines the following classes:
    of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
    objects are not ordered, there is not enough information available to deduce
    the order in which the row should be written to the *csvfile*.
+
+   A short usage example::
+
+       import csv
+
+       with open('names.csv', 'w') as csvfile:
+           fieldnames = ['first_name', 'last_name']
+           writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+           writer.writeheader()
+           writer.writerow({'first_name': 'Baked', 'last_name': 'Beans'})
+           writer.writerow({'first_name': 'Lovely', 'last_name': 'Spam'})
+           writer.writerow({'first_name': 'Wonderful', 'last_name': 'Spam'})
 
 
 .. class:: Dialect
