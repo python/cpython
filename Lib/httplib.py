@@ -1193,7 +1193,7 @@ else:
             self.key_file = key_file
             self.cert_file = cert_file
             if context is None:
-                context = ssl.create_default_context()
+                context = ssl._create_default_https_context()
             will_verify = context.verify_mode != ssl.CERT_NONE
             if check_hostname is None:
                 check_hostname = will_verify

@@ -1,10 +1,9 @@
 import httplib
 import array
-import httplib
-import os
 import StringIO
 import socket
 import errno
+import os
 
 import unittest
 TestCase = unittest.TestCase

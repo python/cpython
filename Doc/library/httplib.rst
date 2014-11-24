@@ -90,9 +90,6 @@ The module provides the following classes:
       server's certificate.  If you want to change that behaviour, you can
       explicitly set *check_hostname* to False.
 
-   .. warning::
-      This does not do any verification of the server's certificate.
-
    .. versionadded:: 2.0
 
    .. versionchanged:: 2.6
@@ -103,6 +100,11 @@ The module provides the following classes:
 
    .. versionchanged:: 2.7.9
       *context* and *check_hostname* was added.
+
+      This class now performs all the necessary certificate and hostname checks
+      by default. To revert to the previous, unverified, behavior
+      :func:`ssl._create_unverified_context` can be passed to the *context*
+      parameter.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, strict=0)

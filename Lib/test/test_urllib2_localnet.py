@@ -5,6 +5,7 @@ import urllib2
 import BaseHTTPServer
 import unittest
 import hashlib
+import ssl
 
 from test import test_support
 
@@ -562,14 +563,36 @@ class TestUrlopen(BaseTestCase):
                             cafile=CERT_localhost)
         self.assertEqual(data, b"we care a bit")
         # Bad cert
-        with self.assertRaises(urllib2.URLError) as cm:
+        with self.assertRaises(urllib2.URLError):
             self.urlopen("https://localhost:%s/bizarre" % handler.port,
                          cafile=CERT_fakehostname)
         # Good cert, but mismatching hostname
         handler = self.start_https_server(certfile=CERT_fakehostname)
-        with self.assertRaises(ssl.CertificateError) as cm:
+        with self.assertRaises(ssl.CertificateError):
             self.urlopen("https://localhost:%s/bizarre" % handler.port,
                          cafile=CERT_fakehostname)
+
+    def test_https_with_cadefault(self):
+        handler = self.start_https_server(certfile=CERT_localhost)
+        # Self-signed cert should fail verification with system certificate store
+        with self.assertRaises(urllib2.URLError):
+            self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                         cadefault=True)
+
+    def test_https_sni(self):
+        if ssl is None:
+            self.skipTest("ssl module required")
+        if not ssl.HAS_SNI:
+            self.skipTest("SNI support required in OpenSSL")
+        sni_name = [None]
+        def cb_sni(ssl_sock, server_name, initial_context):
+            sni_name[0] = server_name
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context.set_servername_callback(cb_sni)
+        handler = self.start_https_server(context=context, certfile=CERT_localhost)
+        context = ssl.create_default_context(cafile=CERT_localhost)
+        self.urlopen("https://localhost:%s" % handler.port, context=context)
+        self.assertEqual(sni_name[0], "localhost")
 
     def test_sending_headers(self):
         handler = self.start_server([(200, [], "we don't care")])

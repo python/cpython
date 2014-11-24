@@ -2646,6 +2646,29 @@ and :ref:`distutils-index`.
       PEP written by Donald Stufft and Nick Coghlan, implemented by
       Donald Stufft, Nick Coghlan, Martin von Löwis and Ned Deily.
 
+PEP 476: Enabling certificate verification by default for stdlib http clients
+-----------------------------------------------------------------------------
+
+:mod:`httplib` and modules which use it, such as :mod:`urllib2` and
+:mod:`xmlrpclib`, will now verify that the server presents a certificate
+which is signed by a CA in the platform trust store and whose hostname matches
+the hostname being requested by default, significantly improving security for
+many applications.
+
+For applications which require the old previous behavior, they can pass an
+alternate context::
+
+    import urllib2
+    import ssl
+
+    # This disables all verification
+    context = ssl._create_unverified_context()
+
+    # This allows using a specific certificate for the host, which doesn't need
+    # to be in the trust store
+    context = ssl.create_default_context(cafile="/path/to/file.crt")
+
+    urllib2.urlopen("https://invalid-cert", context=context)
 
 .. ======================================================================
 
