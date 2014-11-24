@@ -11,7 +11,6 @@ import warnings
 import collections
 import gc
 import contextlib
-from UserString import UserString as ustr
 
 
 class Foo:
@@ -448,59 +447,6 @@ class TestWeakSet(unittest.TestCase):
             self.assertLessEqual(n1, N)
             self.assertGreaterEqual(n2, 0)
             self.assertLessEqual(n2, n1)
-
-    def test_weak_destroy_while_iterating(self):
-        # Issue #7105: iterators shouldn't crash when a key is implicitly removed
-        # Create new items to be sure no-one else holds a reference
-        items = [ustr(c) for c in ('a', 'b', 'c')]
-        s = WeakSet(items)
-        it = iter(s)
-        next(it)             # Trigger internal iteration
-        # Destroy an item
-        del items[-1]
-        gc.collect()    # just in case
-        # We have removed either the first consumed items, or another one
-        self.assertIn(len(list(it)), [len(items), len(items) - 1])
-        del it
-        # The removal has been committed
-        self.assertEqual(len(s), len(items))
-
-    def test_weak_destroy_and_mutate_while_iterating(self):
-        # Issue #7105: iterators shouldn't crash when a key is implicitly removed
-        items = [ustr(c) for c in string.ascii_letters]
-        s = WeakSet(items)
-        @contextlib.contextmanager
-        def testcontext():
-            try:
-                it = iter(s)
-                # Start iterator
-                yielded = ustr(str(next(it)))
-                # Schedule an item for removal and recreate it
-                u = ustr(str(items.pop()))
-                if yielded == u:
-                    # The iterator still has a reference to the removed item,
-                    # advance it (issue #20006).
-                    next(it)
-                gc.collect()      # just in case
-                yield u
-            finally:
-                it = None           # should commit all removals
-
-        with testcontext() as u:
-            self.assertFalse(u in s)
-        with testcontext() as u:
-            self.assertRaises(KeyError, s.remove, u)
-        self.assertFalse(u in s)
-        with testcontext() as u:
-            s.add(u)
-        self.assertTrue(u in s)
-        t = s.copy()
-        with testcontext() as u:
-            s.update(t)
-        self.assertEqual(len(s), len(t))
-        with testcontext() as u:
-            s.clear()
-        self.assertEqual(len(s), 0)
 
 
 def test_main(verbose=None):

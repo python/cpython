@@ -484,7 +484,7 @@ class UnicodeTest(
                          u'X\U00010427X\U00010427')
 
     @requires_wide_build
-    def test_capitalize(self):
+    def test_capitalize_wide_build(self):
         string_tests.CommonTest.test_capitalize(self)
         self.assertEqual(u'\U0001044F'.capitalize(), u'\U00010427')
         self.assertEqual(u'\U0001044F\U0001044F'.capitalize(),
