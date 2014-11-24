@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22921: Allow SSLContext to take the *hostname* parameter even if
+  OpenSSL doesn't support SNI.
+
 - Issue #22894: TestCase.subTest() would cause the test suite to be stopped
   when in failfast mode, even in the absence of failures.
 
