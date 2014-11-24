@@ -1138,7 +1138,7 @@ to speed up repeated connections from the same clients.
    quite similarly to HTTP virtual hosts. Specifying *server_hostname* will
    raise a :exc:`ValueError` if *server_side* is true.
 
-   .. versionchanged:: 3.5
+   .. versionchanged:: 2.7.9
       Always allow a server_hostname to be passed, even if OpenSSL does not
       have SNI.
 
