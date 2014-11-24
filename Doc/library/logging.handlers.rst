@@ -852,7 +852,7 @@ supports sending logging messages to a Web server, using either ``GET`` or
    credentials, you should also specify secure=True so that your userid and
    password are not passed in cleartext across the wire.
 
-   .. versionchanged:: 3.4.3
+   .. versionchanged:: 3.5
       The *context* parameter was added.
 
    .. method:: mapLogRecord(record)
