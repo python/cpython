@@ -25,7 +25,7 @@ gdb_minor_version = int(gdb_version_number.group(2))
 if gdb_major_version < 7:
     raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
                             " Saw:\n" + gdb_version)
-if sys.platform.startswith("solaris"):
+if sys.platform.startswith("sunos"):
     raise unittest.SkipTest("test doesn't work very well on Solaris")
 
 
