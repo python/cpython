@@ -1667,21 +1667,11 @@ class HTTPHandlerTest(BaseTest):
                     localhost_cert = os.path.join(here, "keycert.pem")
                     sslctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                     sslctx.load_cert_chain(localhost_cert)
-                    # Unfortunately, HTTPHandler doesn't allow us to change the
-                    # SSLContext used by HTTPSConnection, so we have to
-                    # monkeypatch. This can be cleaned up if issue 22788 is
-                    # fixed.
-                    old = ssl._create_default_https_context
-                    def restore_handler():
-                        ssl._create_default_https_context = old
-                    self.addCleanup(restore_handler)
-                    def hack_create_ctx():
-                        ctx = old()
-                        ctx.load_verify_locations(localhost_cert)
-                        return ctx
-                    ssl._create_default_https_context = hack_create_ctx
+
+                    context = ssl.create_default_context(cafile=localhost_cert)
             else:
                 sslctx = None
+                context = None
             self.server = server = TestHTTPServer(addr, self.handle_request,
                                                     0.01, sslctx=sslctx)
             server.start()
@@ -1689,7 +1679,8 @@ class HTTPHandlerTest(BaseTest):
             host = 'localhost:%d' % server.server_port
             secure_client = secure and sslctx
             self.h_hdlr = logging.handlers.HTTPHandler(host, '/frob',
-                                                       secure=secure_client)
+                                                       secure=secure_client,
+                                                       context=context)
             self.log_data = None
             root_logger.addHandler(self.h_hdlr)
 

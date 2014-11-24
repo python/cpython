@@ -839,16 +839,21 @@ supports sending logging messages to a Web server, using either ``GET`` or
 ``POST`` semantics.
 
 
-.. class:: HTTPHandler(host, url, method='GET', secure=False, credentials=None)
+.. class:: HTTPHandler(host, url, method='GET', secure=False, credentials=None, context=None)
 
    Returns a new instance of the :class:`HTTPHandler` class. The *host* can be
-   of the form ``host:port``, should you need to use a specific port number.
-   If no *method* is specified, ``GET`` is used. If *secure* is true, an HTTPS
-   connection will be used. If *credentials* is specified, it should be a
-   2-tuple consisting of userid and password, which will be placed in an HTTP
+   of the form ``host:port``, should you need to use a specific port number.  If
+   no *method* is specified, ``GET`` is used. If *secure* is true, a HTTPS
+   connection will be used. The *context* parameter may be set to a
+   :class:`ssl.SSLContext` instance to configure the SSL settings used for the
+   HTTPS connection. If *credentials* is specified, it should be a 2-tuple
+   consisting of userid and password, which will be placed in a HTTP
    'Authorization' header using Basic authentication. If you specify
    credentials, you should also specify secure=True so that your userid and
    password are not passed in cleartext across the wire.
+
+   .. versionchanged:: 3.4.3
+      The *context* parameter was added.
 
    .. method:: mapLogRecord(record)
 
