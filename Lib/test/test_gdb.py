@@ -25,6 +25,9 @@ gdb_minor_version = int(gdb_version_number.group(2))
 if gdb_major_version < 7:
     raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
                             " Saw:\n" + gdb_version)
+if sys.platform == "solaris":
+    raise unittest.SkipTest("test doesn't work very well on Solaris")
+
 
 # Location of custom hooks file in a repository checkout.
 checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
