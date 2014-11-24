@@ -38,7 +38,7 @@ The :mod:`urllib2` module defines the following functions:
    The optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
    timeout setting will be used).  This actually only works for HTTP, HTTPS and
-         FTP connections.
+   FTP connections.
 
    If *context* is specified, it must be a :class:`ssl.SSLContext` instance
    describing the various SSL options. See :class:`~httplib.HTTPSConnection` for
