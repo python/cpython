@@ -1089,7 +1089,8 @@ class HTTPHandler(logging.Handler):
     A class which sends records to a Web server, using either GET or
     POST semantics.
     """
-    def __init__(self, host, url, method="GET", secure=False, credentials=None):
+    def __init__(self, host, url, method="GET", secure=False, credentials=None,
+                 context=None):
         """
         Initialize the instance with the host, the request URL, and the method
         ("GET" or "POST")
@@ -1098,11 +1099,15 @@ class HTTPHandler(logging.Handler):
         method = method.upper()
         if method not in ["GET", "POST"]:
             raise ValueError("method must be GET or POST")
+        if not secure and context is not None:
+            raise ValueError("context parameter only makes sense "
+                             "with secure=True")
         self.host = host
         self.url = url
         self.method = method
         self.secure = secure
         self.credentials = credentials
+        self.context = context
 
     def mapLogRecord(self, record):
         """
@@ -1122,7 +1127,7 @@ class HTTPHandler(logging.Handler):
             import http.client, urllib.parse
             host = self.host
             if self.secure:
-                h = http.client.HTTPSConnection(host)
+                h = http.client.HTTPSConnection(host, context=self.context)
             else:
                 h = http.client.HTTPConnection(host)
             url = self.url

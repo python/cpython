@@ -191,6 +191,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22788: Add *context* parameter to logging.handlers.HTTPHandler.
+
 - Issue #22921: Allow SSLContext to take the *hostname* parameter even if
   OpenSSL doesn't support SNI.
 
