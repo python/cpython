@@ -41,15 +41,22 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
 
     def connection_made(self, transport):
         self._transport = transport
-        if transport.get_pipe_transport(1):
+
+        stdout_transport = transport.get_pipe_transport(1)
+        if stdout_transport is not None:
             self.stdout = streams.StreamReader(limit=self._limit,
                                                loop=self._loop)
-        if transport.get_pipe_transport(2):
+            self.stdout.set_transport(stdout_transport)
+
+        stderr_transport = transport.get_pipe_transport(2)
+        if stderr_transport is not None:
             self.stderr = streams.StreamReader(limit=self._limit,
                                                loop=self._loop)
-        stdin = transport.get_pipe_transport(0)
-        if stdin is not None:
-            self.stdin = streams.StreamWriter(stdin,
+            self.stderr.set_transport(stderr_transport)
+
+        stdin_transport = transport.get_pipe_transport(0)
+        if stdin_transport is not None:
+            self.stdin = streams.StreamWriter(stdin_transport,
                                               protocol=self,
                                               reader=None,
                                               loop=self._loop)
