@@ -488,7 +488,7 @@ def system_must_validate_cert(f):
         try:
             f(*args, **kwargs)
         except IOError as e:
-            if getattr(e, "reason", "") == "CERTIFICATE_VERIFY_FAILED":
+            if "CERTIFICATE_VERIFY_FAILED" in str(e):
                 raise unittest.SkipTest("system does not contain "
                                         "necessary certificates")
             raise
