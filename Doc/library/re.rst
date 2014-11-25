@@ -366,7 +366,7 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    database.
 
 ``\S``
-   When the :const:`UNICODE` flags is not specified, matches any non-whitespace
+   When the :const:`UNICODE` flag is not specified, matches any non-whitespace
    character; this is equivalent to the set ``[^ \t\n\r\f\v]`` The
    :const:`LOCALE` flag has no extra effect on non-whitespace match.  If
    :const:`UNICODE` is set, then any character not marked as space in the
