@@ -225,6 +225,9 @@ PyAPI_FUNC(PyObject *) PyCodec_XMLCharRefReplaceErrors(PyObject *exc);
 /* replace the unicode encode error with backslash escapes (\x, \u and \U) */
 PyAPI_FUNC(PyObject *) PyCodec_BackslashReplaceErrors(PyObject *exc);
 
+/* replace the unicode encode error with backslash escapes (\N, \x, \u and \U) */
+PyAPI_FUNC(PyObject *) PyCodec_NameReplaceErrors(PyObject *exc);
+
 PyAPI_DATA(const char *) Py_hexdigits;
 
 #ifdef __cplusplus

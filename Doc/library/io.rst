@@ -827,9 +827,10 @@ Text I/O
    errors can lead to data loss.)  ``'replace'`` causes a replacement marker
    (such as ``'?'``) to be inserted where there is malformed data.  When
    writing, ``'xmlcharrefreplace'`` (replace with the appropriate XML character
-   reference) or ``'backslashreplace'`` (replace with backslashed escape
-   sequences) can be used.  Any other error handling name that has been
-   registered with :func:`codecs.register_error` is also valid.
+   reference), ``'backslashreplace'`` (replace with backslashed escape
+   sequences) or ``'namereplace'`` (replace with ``\N{...}`` escape sequences)
+   can be used.  Any other error handling name that has been registered with
+   :func:`codecs.register_error` is also valid.
 
    .. index::
       single: universal newlines; io.TextIOWrapper class

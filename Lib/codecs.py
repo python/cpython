@@ -22,6 +22,7 @@ __all__ = ["register", "lookup", "open", "EncodedFile", "BOM", "BOM_BE",
            "BOM_UTF32", "BOM_UTF32_LE", "BOM_UTF32_BE",
            "strict_errors", "ignore_errors", "replace_errors",
            "xmlcharrefreplace_errors",
+           "backslashreplace_errors", "namereplace_errors",
            "register_error", "lookup_error"]
 
 ### Constants
@@ -1085,6 +1086,7 @@ try:
     replace_errors = lookup_error("replace")
     xmlcharrefreplace_errors = lookup_error("xmlcharrefreplace")
     backslashreplace_errors = lookup_error("backslashreplace")
+    namereplace_errors = lookup_error("namereplace")
 except LookupError:
     # In --disable-unicode builds, these error handler are missing
     strict_errors = None
@@ -1092,6 +1094,7 @@ except LookupError:
     replace_errors = None
     xmlcharrefreplace_errors = None
     backslashreplace_errors = None
+    namereplace_errors = None
 
 # Tell modulefinder that using codecs probably needs the encodings
 # package
