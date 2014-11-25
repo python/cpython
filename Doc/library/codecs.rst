@@ -98,6 +98,8 @@ It defines the following functions:
      reference (for encoding only)
    * ``'backslashreplace'``: replace with backslashed escape sequences (for
      encoding only)
+   * ``'namereplace'``: replace with ``\N{...}`` escape sequences (for
+     encoding only)
    * ``'surrogateescape'``: on decoding, replace with code points in the Unicode
      Private Use Area ranging from U+DC80 to U+DCFF.  These private code
      points will then be turned back into the same bytes when the
@@ -232,6 +234,11 @@ functions which use :func:`lookup` for the codec lookup:
    Implements the ``backslashreplace`` error handling (for encoding only): the
    unencodable character is replaced by a backslashed escape sequence.
 
+.. function:: namereplace_errors(exception)
+
+   Implements the ``namereplace`` error handling (for encoding only): the
+   unencodable character is replaced by a ``\N{...}`` escape sequence.
+
 To simplify working with encoded files or stream, the module also defines these
 utility functions:
 
@@ -363,6 +370,9 @@ and implemented by all standard Python codecs:
 | ``'backslashreplace'``  | Replace with backslashed escape sequences     |
 |                         | (only for encoding).                          |
 +-------------------------+-----------------------------------------------+
+| ``'namereplace'``       | Replace with ``\N{...}`` escape sequences     |
+|                         | (only for encoding).                          |
++-------------------------+-----------------------------------------------+
 | ``'surrogateescape'``   | Replace byte with surrogate U+DCxx, as defined|
 |                         | in :pep:`383`.                                |
 +-------------------------+-----------------------------------------------+
@@ -383,6 +393,9 @@ schemes:
 
 .. versionchanged:: 3.4
    The ``'surrogatepass'`` error handlers now works with utf-16\* and utf-32\* codecs.
+
+.. versionadded:: 3.4
+   The ``'namereplace'`` error handler.
 
 The set of allowed values can be extended via :meth:`register_error`.
 
@@ -476,6 +489,8 @@ define in order to be compatible with the Python codec registry.
    * ``'xmlcharrefreplace'`` Replace with the appropriate XML character reference
 
    * ``'backslashreplace'`` Replace with backslashed escape sequences.
+
+   * ``'namereplace'`` Replace with ``\N{...}`` escape sequences.
 
    The *errors* argument will be assigned to an attribute of the same name.
    Assigning to this attribute makes it possible to switch between different error
@@ -624,6 +639,8 @@ compatible with the Python codec registry.
    * ``'xmlcharrefreplace'`` Replace with the appropriate XML character reference
 
    * ``'backslashreplace'`` Replace with backslashed escape sequences.
+
+   * ``'namereplace'`` Replace with ``\N{...}`` escape sequences.
 
    The *errors* argument will be assigned to an attribute of the same name.
    Assigning to this attribute makes it possible to switch between different error

@@ -9,6 +9,7 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
+#include "ucnhash.h"
 #include <ctype.h>
 
 const char *Py_hexdigits = "0123456789abcdef";
@@ -933,6 +934,97 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     }
 }
 
+static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
+static int ucnhash_initialized = 0;
+
+PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
+{
+    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+        PyObject *restuple;
+        PyObject *object;
+        Py_ssize_t i;
+        Py_ssize_t start;
+        Py_ssize_t end;
+        PyObject *res;
+        unsigned char *outp;
+        int ressize;
+        Py_UCS4 c;
+        char buffer[256]; /* NAME_MAXLEN */
+        if (PyUnicodeEncodeError_GetStart(exc, &start))
+            return NULL;
+        if (PyUnicodeEncodeError_GetEnd(exc, &end))
+            return NULL;
+        if (!(object = PyUnicodeEncodeError_GetObject(exc)))
+            return NULL;
+        if (!ucnhash_initialized) {
+            /* load the unicode data module */
+            ucnhash_CAPI = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+                                            PyUnicodeData_CAPSULE_NAME, 1);
+            ucnhash_initialized = 1;
+        }
+        for (i = start, ressize = 0; i < end; ++i) {
+            /* object is guaranteed to be "ready" */
+            c = PyUnicode_READ_CHAR(object, i);
+            if (ucnhash_CAPI &&
+                ucnhash_CAPI->getname(NULL, c, buffer, sizeof(buffer), 1)) {
+                ressize += 1+1+1+strlen(buffer)+1;
+            }
+            else if (c >= 0x10000) {
+                ressize += 1+1+8;
+            }
+            else if (c >= 0x100) {
+                ressize += 1+1+4;
+            }
+            else
+                ressize += 1+1+2;
+        }
+        res = PyUnicode_New(ressize, 127);
+        if (res==NULL)
+            return NULL;
+        for (i = start, outp = PyUnicode_1BYTE_DATA(res);
+            i < end; ++i) {
+            c = PyUnicode_READ_CHAR(object, i);
+            *outp++ = '\\';
+            if (ucnhash_CAPI &&
+                ucnhash_CAPI->getname(NULL, c, buffer, sizeof(buffer), 1)) {
+                *outp++ = 'N';
+                *outp++ = '{';
+                strcpy((char *)outp, buffer);
+                outp += strlen(buffer);
+                *outp++ = '}';
+                continue;
+            }
+            if (c >= 0x00010000) {
+                *outp++ = 'U';
+                *outp++ = Py_hexdigits[(c>>28)&0xf];
+                *outp++ = Py_hexdigits[(c>>24)&0xf];
+                *outp++ = Py_hexdigits[(c>>20)&0xf];
+                *outp++ = Py_hexdigits[(c>>16)&0xf];
+                *outp++ = Py_hexdigits[(c>>12)&0xf];
+                *outp++ = Py_hexdigits[(c>>8)&0xf];
+            }
+            else if (c >= 0x100) {
+                *outp++ = 'u';
+                *outp++ = Py_hexdigits[(c>>12)&0xf];
+                *outp++ = Py_hexdigits[(c>>8)&0xf];
+            }
+            else
+                *outp++ = 'x';
+            *outp++ = Py_hexdigits[(c>>4)&0xf];
+            *outp++ = Py_hexdigits[c&0xf];
+        }
+
+        assert(_PyUnicode_CheckConsistency(res, 1));
+        restuple = Py_BuildValue("(Nn)", res, end);
+        Py_DECREF(object);
+        return restuple;
+    }
+    else {
+        wrong_exception_type(exc);
+        return NULL;
+    }
+}
+
 #define ENC_UNKNOWN     -1
 #define ENC_UTF8        0
 #define ENC_UTF16BE     1
@@ -1276,6 +1368,11 @@ static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
     return PyCodec_BackslashReplaceErrors(exc);
 }
 
+static PyObject *namereplace_errors(PyObject *self, PyObject *exc)
+{
+    return PyCodec_NameReplaceErrors(exc);
+}
+
 static PyObject *surrogatepass_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_SurrogatePassErrors(exc);
@@ -1343,6 +1440,17 @@ static int _PyCodecRegistry_Init(void)
                 PyDoc_STR("Implements the 'backslashreplace' error handling, "
                           "which replaces an unencodable character with a "
                           "backslashed escape sequence.")
+            }
+        },
+        {
+            "namereplace",
+            {
+                "namereplace_errors",
+                namereplace_errors,
+                METH_O,
+                PyDoc_STR("Implements the 'namereplace' error handling, "
+                          "which replaces an unencodable character with a "
+                          "\\N{...} escape sequence.")
             }
         },
         {

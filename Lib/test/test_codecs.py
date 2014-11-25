@@ -349,6 +349,8 @@ class ReadTest(MixInCheckStateHandling):
         self.assertRaises(UnicodeEncodeError, "\ud800".encode, self.encoding)
         self.assertEqual("[\uDC80]".encode(self.encoding, "backslashreplace"),
                          "[\\udc80]".encode(self.encoding))
+        self.assertEqual("[\uDC80]".encode(self.encoding, "namereplace"),
+                         "[\\udc80]".encode(self.encoding))
         self.assertEqual("[\uDC80]".encode(self.encoding, "xmlcharrefreplace"),
                          "[&#56448;]".encode(self.encoding))
         self.assertEqual("[\uDC80]".encode(self.encoding, "ignore"),
@@ -808,6 +810,7 @@ class CP65001Test(ReadTest, unittest.TestCase):
                 ('\udc80', 'ignore', b''),
                 ('\udc80', 'replace', b'?'),
                 ('\udc80', 'backslashreplace', b'\\udc80'),
+                ('\udc80', 'namereplace', b'\\udc80'),
                 ('\udc80', 'surrogatepass', b'\xed\xb2\x80'),
             ))
         else:
@@ -868,6 +871,8 @@ class CP65001Test(ReadTest, unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, "\ud800".encode, "cp65001")
         self.assertRaises(UnicodeDecodeError, b"\xed\xa0\x80".decode, "cp65001")
         self.assertEqual("[\uDC80]".encode("cp65001", "backslashreplace"),
+                         b'[\\udc80]')
+        self.assertEqual("[\uDC80]".encode("cp65001", "namereplace"),
                          b'[\\udc80]')
         self.assertEqual("[\uDC80]".encode("cp65001", "xmlcharrefreplace"),
                          b'[&#56448;]')
@@ -2824,6 +2829,8 @@ class CodePageTest(unittest.TestCase):
             ('[\xff]', 'replace', b'[y]'),
             ('[\u20ac]', 'replace', b'[?]'),
             ('[\xff]', 'backslashreplace', b'[\\xff]'),
+            ('[\xff]', 'namereplace',
+             b'[\\N{LATIN SMALL LETTER Y WITH DIAERESIS}]'),
             ('[\xff]', 'xmlcharrefreplace', b'[&#255;]'),
             ('\udcff', 'strict', None),
             ('[\udcff]', 'surrogateescape', b'[\xff]'),
