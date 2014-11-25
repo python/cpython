@@ -4,6 +4,7 @@ import asyncio
 import signal
 import sys
 import unittest
+from unittest import mock
 from test import support
 if sys.platform != 'win32':
     from asyncio import unix_events
@@ -160,6 +161,37 @@ class SubprocessMixin:
         with test_utils.disable_logger():
             self.loop.run_until_complete(proc.communicate(large_data))
         self.loop.run_until_complete(proc.wait())
+
+    def test_pause_reading(self):
+        @asyncio.coroutine
+        def test_pause_reading():
+            limit = 100
+
+            code = '\n'.join((
+                'import sys',
+                'sys.stdout.write("x" * %s)' % (limit * 2 + 1),
+                'sys.stdout.flush()',
+            ))
+            proc = yield from asyncio.create_subprocess_exec(
+                                         sys.executable, '-c', code,
+                                         stdin=asyncio.subprocess.PIPE,
+                                         stdout=asyncio.subprocess.PIPE,
+                                         limit=limit,
+                                         loop=self.loop)
+            stdout_transport = proc._transport.get_pipe_transport(1)
+            stdout_transport.pause_reading = mock.Mock()
+
+            yield from proc.wait()
+
+            # The child process produced more than limit bytes of output,
+            # the stream reader transport should pause the protocol to not
+            # allocate too much memory.
+            return stdout_transport.pause_reading.called
+
+        # Issue #22685: Ensure that the stream reader pauses the protocol
+        # when the child process produces too much data
+        called = self.loop.run_until_complete(test_pause_reading())
+        self.assertTrue(called)
 
 
 if sys.platform != 'win32':
