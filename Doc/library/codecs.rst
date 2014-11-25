@@ -239,6 +239,8 @@ functions which use :func:`lookup` for the codec lookup:
    Implements the ``namereplace`` error handling (for encoding only): the
    unencodable character is replaced by a ``\N{...}`` escape sequence.
 
+   .. versionadded:: 3.5
+
 To simplify working with encoded files or stream, the module also defines these
 utility functions:
 
@@ -394,7 +396,7 @@ schemes:
 .. versionchanged:: 3.4
    The ``'surrogatepass'`` error handlers now works with utf-16\* and utf-32\* codecs.
 
-.. versionadded:: 3.4
+.. versionadded:: 3.5
    The ``'namereplace'`` error handler.
 
 The set of allowed values can be extended via :meth:`register_error`.

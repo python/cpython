@@ -118,6 +118,6 @@ Registry API for Unicode encoding error handlers
 
 .. c:function:: PyObject* PyCodec_NameReplaceErrors(PyObject *exc)
 
-   Replace the unicode encode error with `\N{...}` escapes.
+   Replace the unicode encode error with ``\N{...}`` escapes.
 
-  .. versionadded: 3.4
+   .. versionadded:: 3.5
