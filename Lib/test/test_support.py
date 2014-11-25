@@ -481,6 +481,19 @@ def _is_ipv6_enabled():
 
 IPV6_ENABLED = _is_ipv6_enabled()
 
+def system_must_validate_cert(f):
+    """Skip the test on TLS certificate validation failures."""
+    @functools.wraps(f)
+    def dec(*args, **kwargs):
+        try:
+            f(*args, **kwargs)
+        except IOError as e:
+            if e.reason == "CERTIFICATE_VERIFY_FAILED":
+                raise unittest.SkipTest("system does not contain "
+                                        "necessary certificates")
+            raise
+    return dec
+
 FUZZ = 1e-6
 
 def fcmp(x, y): # fuzzy comparison function

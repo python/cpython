@@ -551,12 +551,10 @@ class HTTPSTest(TestCase):
             resp = h.getresponse()
             self.assertIn('nginx', resp.getheader('server'))
 
+    @test_support.system_must_validate_cert
     def test_networked_trusted_by_default_cert(self):
         # Default settings: requires a valid cert from a trusted CA
         test_support.requires('network')
-        if test_support.verbose:
-            import ssl
-            print(ssl._create_default_https_context().get_ca_certs())
         with test_support.transient_internet('www.python.org'):
             h = httplib.HTTPSConnection('www.python.org', 443)
             h.request('GET', '/')
