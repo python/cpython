@@ -975,6 +975,9 @@ are always available.  They are listed here in alphabetical order.
      replaces unsupported characters with Python's backslashed escape
      sequences.
 
+   * ``'namereplace'`` (also only supported when writing)
+     replaces unsupported characters with ``\N{...}`` escape sequences.
+
    .. index::
       single: universal newlines; open() built-in function
 

@@ -116,3 +116,8 @@ Registry API for Unicode encoding error handlers
    Replace the unicode encode error with backslash escapes (``\x``, ``\u`` and
    ``\U``).
 
+.. c:function:: PyObject* PyCodec_NameReplaceErrors(PyObject *exc)
+
+   Replace the unicode encode error with `\N{...}` escapes.
+
+  .. versionadded: 3.4
