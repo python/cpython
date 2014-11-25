@@ -794,6 +794,7 @@ class HTTPSTest(TestCase):
             resp = h.getresponse()
             self.assertIn('nginx', resp.getheader('server'))
 
+    @support.system_must_validate_cert
     def test_networked_trusted_by_default_cert(self):
         # Default settings: requires a valid cert from a trusted CA
         support.requires('network')
