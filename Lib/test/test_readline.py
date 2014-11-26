@@ -2,8 +2,9 @@
 Very minimal unittests for parts of the readline module.
 """
 import os
+import tempfile
 import unittest
-from test.support import run_unittest, import_module
+from test.support import run_unittest, import_module, unlink
 from test.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
@@ -41,6 +42,43 @@ class TestHistoryManipulation (unittest.TestCase):
         self.assertEqual(readline.get_history_item(1), "second line")
 
         self.assertEqual(readline.get_current_history_length(), 1)
+
+    def test_write_read_append(self):
+        hfile = tempfile.NamedTemporaryFile(delete=False)
+        hfile.close()
+        hfilename = hfile.name
+        self.addCleanup(unlink, hfilename)
+
+        # test write-clear-read == nop
+        readline.clear_history()
+        readline.add_history("first line")
+        readline.add_history("second line")
+        readline.write_history_file(hfilename)
+
+        readline.clear_history()
+        self.assertEqual(readline.get_current_history_length(), 0)
+
+        readline.read_history_file(hfilename)
+        self.assertEqual(readline.get_current_history_length(), 2)
+        self.assertEqual(readline.get_history_item(1), "first line")
+        self.assertEqual(readline.get_history_item(2), "second line")
+
+        # test append
+        readline.append_history_file(1, hfilename)
+        readline.clear_history()
+        readline.read_history_file(hfilename)
+        self.assertEqual(readline.get_current_history_length(), 3)
+        self.assertEqual(readline.get_history_item(1), "first line")
+        self.assertEqual(readline.get_history_item(2), "second line")
+        self.assertEqual(readline.get_history_item(3), "second line")
+
+        # test 'no such file' behaviour
+        os.unlink(hfilename)
+        with self.assertRaises(FileNotFoundError):
+            readline.append_history_file(1, hfilename)
+
+        # write_history_file can create the target
+        readline.write_history_file(hfilename)
 
 
 class TestReadline(unittest.TestCase):
