@@ -1019,7 +1019,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             *outp++ = Py_hexdigits[c&0xf];
         }
 
-        assert(outp == start + ressize);
+        assert(outp == PyUnicode_1BYTE_DATA(res) + ressize);
         assert(_PyUnicode_CheckConsistency(res, 1));
         restuple = Py_BuildValue("(Nn)", res, end);
         Py_DECREF(object);
