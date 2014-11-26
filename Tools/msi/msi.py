@@ -1019,6 +1019,8 @@ def add_files(db):
         # Add additional files
         dirs[dir]=lib
         lib.glob("*.txt")
+        lib.glob("*.whl")
+        lib.glob("*.0")
         if dir=='site-packages':
             lib.add_file("README.txt", src="README")
             continue
