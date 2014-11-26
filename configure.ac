@@ -4308,6 +4308,10 @@ then
   [Define if you can turn off readline's signal handling.]), )
 fi
 
+AC_CHECK_LIB(readline, append_history,
+	AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
+        [Define if readline supports append_history]), ,$READLINE_LIBS)
+
 # End of readline checks: restore LIBS
 LIBS=$LIBS_no_readline
 
