@@ -43,6 +43,8 @@ class TestHistoryManipulation (unittest.TestCase):
 
         self.assertEqual(readline.get_current_history_length(), 1)
 
+    @unittest.skipUnless(hasattr(readline, "append_history"),
+                         "append_history not available")
     def test_write_read_append(self):
         hfile = tempfile.NamedTemporaryFile(delete=False)
         hfile.close()

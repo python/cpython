@@ -690,6 +690,9 @@
 /* Define to 1 if you have the `renameat' function. */
 #undef HAVE_RENAMEAT
 
+/* Define if readline supports append_history */
+#undef HAVE_RL_APPEND_HISTORY
+
 /* Define if you have readline 2.1 */
 #undef HAVE_RL_CALLBACK
 
