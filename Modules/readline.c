@@ -237,6 +237,7 @@ Save a readline history file.\n\
 The default filename is ~/.history.");
 
 
+#ifdef HAVE_RL_APPEND_HISTORY
 /* Exported function to save part of a readline history file */
 
 static PyObject *
@@ -270,6 +271,7 @@ PyDoc_STRVAR(doc_append_history_file,
 "append_history_file(nelements[, filename]) -> None\n\
 Append the last nelements of the history list to file.\n\
 The default filename is ~/.history.");
+#endif
 
 
 /* Set history length */
@@ -782,7 +784,9 @@ static struct PyMethodDef readline_methods[] =
      METH_VARARGS, doc_read_history_file},
     {"write_history_file", write_history_file,
      METH_VARARGS, doc_write_history_file},
+#ifdef HAVE_RL_APPEND_HISTORY
     {"append_history_file", append_history_file,
+#endif
      METH_VARARGS, doc_append_history_file},
     {"get_history_item", get_history_item,
      METH_VARARGS, doc_get_history_item},
