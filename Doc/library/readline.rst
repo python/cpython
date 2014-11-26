@@ -59,6 +59,14 @@ The :mod:`readline` module defines the following functions:
    Save a readline history file. The default filename is :file:`~/.history`.
 
 
+.. function:: append_history_file(nelements[, filename])
+
+   Append the last *nelements* of history to a file.  The default filename is
+   :file:`~/.history`.  The file must already exist.
+
+   .. versionadded:: 3.5
+
+
 .. function:: clear_history()
 
    Clear the current history.  (Note: this function is not available if the
@@ -209,6 +217,26 @@ from the user's :envvar:`PYTHONSTARTUP` file. ::
 This code is actually automatically run when Python is run in
 :ref:`interactive mode <tut-interactive>` (see :ref:`rlcompleter-config`).
 
+The following example achieves the same goal but supports concurrent interactive
+sessions, by only appending the new history. ::
+
+   import atexit
+   import os
+   import realine
+   histfile = os.path.join(os.path.expanduser("~"), ".python_history")
+
+   try:
+       readline.read_history_file(histfile)
+       h_len = readline.get_history_length()
+   except FileNotFoundError:
+       open(histfile, 'wb').close()
+       h_len = 0
+
+   def save(prev_h_len, histfile):
+       new_h_len = readline.get_history_length()
+       readline.append_history_file(new_h_len - prev_h_len, histfile)
+   atexit.register(save, h_len, histfile)
+
 The following example extends the :class:`code.InteractiveConsole` class to
 support history save/restore. ::
 
@@ -234,4 +262,3 @@ support history save/restore. ::
 
        def save_history(self, histfile):
            readline.write_history_file(histfile)
-
