@@ -786,8 +786,8 @@ static struct PyMethodDef readline_methods[] =
      METH_VARARGS, doc_write_history_file},
 #ifdef HAVE_RL_APPEND_HISTORY
     {"append_history_file", append_history_file,
-#endif
      METH_VARARGS, doc_append_history_file},
+#endif
     {"get_history_item", get_history_item,
      METH_VARARGS, doc_get_history_item},
     {"get_current_history_length", (PyCFunction)get_current_history_length,
