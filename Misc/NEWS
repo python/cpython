@@ -191,6 +191,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22940: Add readline.append_history_file.
+
 - Issue #19676: Added the "namereplace" error handler.
 
 - Issue #22788: Add *context* parameter to logging.handlers.HTTPHandler.

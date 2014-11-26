@@ -237,6 +237,41 @@ Save a readline history file.\n\
 The default filename is ~/.history.");
 
 
+/* Exported function to save part of a readline history file */
+
+static PyObject *
+append_history_file(PyObject *self, PyObject *args)
+{
+    int nelements;
+    PyObject *filename_obj = Py_None, *filename_bytes;
+    char *filename;
+    int err;
+    if (!PyArg_ParseTuple(args, "i|O:append_history_file", &nelements, &filename_obj))
+        return NULL;
+    if (filename_obj != Py_None) {
+        if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
+            return NULL;
+        filename = PyBytes_AsString(filename_bytes);
+    } else {
+        filename_bytes = NULL;
+        filename = NULL;
+    }
+    errno = err = append_history(nelements, filename);
+    if (!err && _history_length >= 0)
+        history_truncate_file(filename, _history_length);
+    Py_XDECREF(filename_bytes);
+    errno = err;
+    if (errno)
+        return PyErr_SetFromErrno(PyExc_IOError);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_append_history_file,
+"append_history_file(nelements[, filename]) -> None\n\
+Append the last nelements of the history list to file.\n\
+The default filename is ~/.history.");
+
+
 /* Set history length */
 
 static PyObject*
@@ -747,6 +782,8 @@ static struct PyMethodDef readline_methods[] =
      METH_VARARGS, doc_read_history_file},
     {"write_history_file", write_history_file,
      METH_VARARGS, doc_write_history_file},
+    {"append_history_file", append_history_file,
+     METH_VARARGS, doc_append_history_file},
     {"get_history_item", get_history_item,
      METH_VARARGS, doc_get_history_item},
     {"get_current_history_length", (PyCFunction)get_current_history_length,
