@@ -947,7 +947,8 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         Py_ssize_t end;
         PyObject *res;
         unsigned char *outp;
-        int ressize;
+        Py_ssize_t ressize;
+        int replsize;
         Py_UCS4 c;
         char buffer[256]; /* NAME_MAXLEN */
         if (PyUnicodeEncodeError_GetStart(exc, &start))
@@ -967,17 +968,21 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             c = PyUnicode_READ_CHAR(object, i);
             if (ucnhash_CAPI &&
                 ucnhash_CAPI->getname(NULL, c, buffer, sizeof(buffer), 1)) {
-                ressize += 1+1+1+strlen(buffer)+1;
+                replsize = 1+1+1+strlen(buffer)+1;
             }
             else if (c >= 0x10000) {
-                ressize += 1+1+8;
+                replsize = 1+1+8;
             }
             else if (c >= 0x100) {
-                ressize += 1+1+4;
+                replsize = 1+1+4;
             }
             else
-                ressize += 1+1+2;
+                replsize = 1+1+2;
+            if (ressize > PY_SSIZE_T_MAX - replsize)
+                break;
+            ressize += replsize;
         }
+        end = i;
         res = PyUnicode_New(ressize, 127);
         if (res==NULL)
             return NULL;
@@ -1014,6 +1019,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             *outp++ = Py_hexdigits[c&0xf];
         }
 
+        assert(out == start + ressize);
         assert(_PyUnicode_CheckConsistency(res, 1));
         restuple = Py_BuildValue("(Nn)", res, end);
         Py_DECREF(object);
