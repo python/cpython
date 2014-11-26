@@ -691,6 +691,18 @@ def _is_ipv6_enabled():
 
 IPV6_ENABLED = _is_ipv6_enabled()
 
+def system_must_validate_cert(f):
+    """Skip the test on TLS certificate validation failures."""
+    @functools.wraps(f)
+    def dec(*args, **kwargs):
+        try:
+            f(*args, **kwargs)
+        except IOError as e:
+            if "CERTIFICATE_VERIFY_FAILED" in str(e):
+                raise unittest.SkipTest("system does not contain "
+                                        "necessary certificates")
+            raise
+    return dec
 
 # A constant likely larger than the underlying OS pipe buffer size, to
 # make writes blocking.
