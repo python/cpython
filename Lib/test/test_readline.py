@@ -15,9 +15,9 @@ class TestHistoryManipulation (unittest.TestCase):
     That's why the tests cover only a small subset of the interface.
     """
 
-    @unittest.skipIf(not hasattr(readline, 'clear_history'),
-                     "The history update test cannot be run because the "
-                     "clear_history method is not available.")
+    @unittest.skipUnless(hasattr(readline, "clear_history"),
+                         "The history update test cannot be run because the "
+                         "clear_history method is not available.")
     def testHistoryUpdates(self):
         readline.clear_history()
 
