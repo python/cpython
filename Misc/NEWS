@@ -22,6 +22,12 @@ Documentation
 - Issue #21514: The documentation of the json module now refers to new JSON RFC
   7159 instead of obsoleted RFC 4627.
 
+Tools/Demos
+-----------
+
+- Issue #18905: "pydoc -p 0" now outputs actually used port.  Based on patch by
+  Wieland Hoffmann.
+
 
 What's New in Python 2.7.9 release candidate 1?
 ===============================================

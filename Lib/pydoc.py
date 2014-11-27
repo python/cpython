@@ -17,7 +17,8 @@ Run "pydoc -k <keyword>" to search for a keyword in the synopsis lines
 of all available modules.
 
 Run "pydoc -p <port>" to start an HTTP server on a given port on the
-local machine to generate documentation web pages.
+local machine to generate documentation web pages.  Port number 0 can be
+used to get an arbitrary unused port.
 
 For platforms without a command line, "pydoc -g" starts the HTTP server
 and also pops up a little window for controlling it.
@@ -2098,7 +2099,6 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
         def __init__(self, port, callback):
             host = 'localhost'
             self.address = (host, port)
-            self.url = 'http://%s:%d/' % (host, port)
             self.callback = callback
             self.base.__init__(self, self.address, self.handler)
 
@@ -2111,6 +2111,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
 
         def server_activate(self):
             self.base.server_activate(self)
+            self.url = 'http://%s:%d/' % (self.address[0], self.server_port)
             if self.callback: self.callback(self)
 
     DocServer.base = BaseHTTPServer.HTTPServer
@@ -2384,7 +2385,8 @@ def cli():
     Search for a keyword in the synopsis lines of all available modules.
 
 %s -p <port>
-    Start an HTTP server on the given port on the local machine.
+    Start an HTTP server on the given port on the local machine.  Port
+    number 0 can be used to get an arbitrary unused port.
 
 %s -g
     Pop up a graphical interface for finding and serving documentation.
