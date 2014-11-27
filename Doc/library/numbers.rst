@@ -110,6 +110,8 @@ those. You can add ``MyFoo`` between :class:`Complex` and
     MyFoo.register(Real)
 
 
+.. _implementing-the-arithmetic-operations:
+
 Implementing the arithmetic operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
