@@ -16,6 +16,12 @@ Library
 - Issue #22609: Constructors and update methods of mapping classes in the
   collections module now accept the self keyword argument.
 
+Documentation
+-------------
+
+- Issue #21514: The documentation of the json module now refers to new JSON RFC
+  7159 instead of obsoleted RFC 4627.
+
 
 What's New in Python 2.7.9 release candidate 1?
 ===============================================
