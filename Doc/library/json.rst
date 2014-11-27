@@ -7,9 +7,11 @@
 .. sectionauthor:: Bob Ippolito <bob@redivi.com>
 
 `JSON (JavaScript Object Notation) <http://json.org>`_, specified by
-:rfc:`4627`, is a lightweight data interchange format based on a subset of
-`JavaScript <http://en.wikipedia.org/wiki/JavaScript>`_ syntax (`ECMA-262 3rd
-edition <http://www.ecma-international.org/publications/files/ECMA-ST-ARCH/ECMA-262,%203rd%20edition,%20December%201999.pdf>`_).
+:rfc:`7159` (which obsoletes :rfc:`4627`) and by
+`ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_,
+is a lightweight data interchange format inspired by
+`JavaScript <http://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
+(although it is not a strict subset of JavaScript [#rfc-errata]_ ).
 
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
@@ -465,18 +467,18 @@ Encoders and Decoders
                 mysocket.write(chunk)
 
 
-Standard Compliance
--------------------
+Standard Compliance and Interoperability
+----------------------------------------
 
-The JSON format is specified by :rfc:`4627`.  This section details this
-module's level of compliance with the RFC.  For simplicity,
-:class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and parameters other
-than those explicitly mentioned, are not considered.
+The JSON format is specified by :rfc:`7159` and by
+`ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_.
+This section details this module's level of compliance with the RFC.
+For simplicity, :class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and
+parameters other than those explicitly mentioned, are not considered.
 
 This module does not comply with the RFC in a strict fashion, implementing some
 extensions that are valid JavaScript but not valid JSON.  In particular:
 
-- Top-level non-object, non-array values are accepted and output;
 - Infinite and NaN number values are accepted and output;
 - Repeated names within an object are accepted, and only the value of the last
   name-value pair is used.
@@ -488,8 +490,8 @@ default settings.
 Character Encodings
 ^^^^^^^^^^^^^^^^^^^
 
-The RFC recommends that JSON be represented using either UTF-8, UTF-16, or
-UTF-32, with UTF-8 being the default.
+The RFC requires that JSON be represented using either UTF-8, UTF-16, or
+UTF-32, with UTF-8 being the recommended default for maximum interoperability.
 
 As permitted, though not required, by the RFC, this module's serializer sets
 *ensure_ascii=True* by default, thus escaping the output so that the resulting
@@ -497,34 +499,20 @@ strings only contain ASCII characters.
 
 Other than the *ensure_ascii* parameter, this module is defined strictly in
 terms of conversion between Python objects and
-:class:`Unicode strings <str>`, and thus does not otherwise address the issue
-of character encodings.
+:class:`Unicode strings <str>`, and thus does not otherwise directly address
+the issue of character encodings.
 
+The RFC prohibits adding a byte order mark (BOM) to the start of a JSON text,
+and this module's serializer does not add a BOM to its output.
+The RFC permits, but does not require, JSON deserializers to ignore an initial
+BOM in their input.  This module's deserializer raises a :exc:`ValueError`
+when an initial BOM is present.
 
-Top-level Non-Object, Non-Array Values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The RFC specifies that the top-level value of a JSON text must be either a
-JSON object or array (Python :class:`dict` or :class:`list`).  This module's
-deserializer also accepts input texts consisting solely of a
-JSON null, boolean, number, or string value::
-
-   >>> just_a_json_string = '"spam and eggs"'  # Not by itself a valid JSON text
-   >>> json.loads(just_a_json_string)
-   'spam and eggs'
-
-This module itself does not include a way to request that such input texts be
-regarded as illegal.  Likewise, this module's serializer also accepts single
-Python :data:`None`, :class:`bool`, numeric, and :class:`str`
-values as input and will generate output texts consisting solely of a top-level
-JSON null, boolean, number, or string value without raising an exception::
-
-   >>> neither_a_list_nor_a_dict = "spam and eggs"
-   >>> json.dumps(neither_a_list_nor_a_dict)  # The result is not a valid JSON text
-   '"spam and eggs"'
-
-This module's serializer does not itself include a way to enforce the
-aforementioned constraint.
+The RFC does not explicitly forbid JSON strings which contain byte sequences
+that don't correspond to valid Unicode characters (e.g. unpaired UTF-16
+surrogates), but it does note that they may cause interoperability problems.
+By default, this module accepts and outputs (when present in the original
+:class:`str`) codepoints for such sequences.
 
 
 Infinite and NaN Number Values
@@ -554,7 +542,7 @@ Repeated Names Within an Object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The RFC specifies that the names within a JSON object should be unique, but
-does not specify how repeated names in JSON objects should be handled.  By
+does not mandate how repeated names in JSON objects should be handled.  By
 default, this module does not raise an exception; instead, it ignores all but
 the last name-value pair for a given name::
 
@@ -563,3 +551,48 @@ the last name-value pair for a given name::
    {'x': 3}
 
 The *object_pairs_hook* parameter can be used to alter this behavior.
+
+
+Top-level Non-Object, Non-Array Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The old version of JSON specified by the obsolete :rfc:`4627` required that
+the top-level value of a JSON text must be either a JSON object or array
+(Python :class:`dict` or :class:`list`), and could not be a JSON null,
+boolean, number, or string value.  :rfc:`7159` removed that restriction, and
+this module does not and has never implemented that restriction in either its
+serializer or its deserializer.
+
+Regardless, for maximum interoperability, you may wish to voluntarily adhere
+to the restriction yourself.
+
+
+Implementation Limitations
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some JSON deserializer implementations may set limits on:
+
+* the size of accepted JSON texts
+* the maximum level of nesting of JSON objects and arrays
+* the range and precision of JSON numbers
+* the content and maximum length of JSON strings
+
+This module does not impose any such limits beyond those of the relevant
+Python datatypes themselves or the Python interpreter itself.
+
+When serializing to JSON, beware any such limitations in applications that may
+consume your JSON.  In particular, it is common for JSON numbers to be
+deserialized into IEEE 754 double precision numbers and thus subject to that
+representation's range and precision limitations.  This is especially relevant
+when serializing Python :class:`int` values of extremely large magnitude, or
+when serializing instances of "exotic" numerical types such as
+:class:`decimal.Decimal`.
+
+
+.. rubric:: Footnotes
+
+.. [#rfc-errata] As noted in `the errata for RFC 7159
+   <http://www.rfc-editor.org/errata_search.php?rfc=7159>`_,
+   JSON permits literal U+2028 (LINE SEPARATOR) and
+   U+2029 (PARAGRAPH SEPARATOR) characters in strings, whereas JavaScript
+   (as of ECMAScript Edition 5.1) does not.
