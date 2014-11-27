@@ -4798,7 +4798,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
                      "%s.__new__(%s) is not safe, use %s.__new__()",
                      type->tp_name,
                      subtype->tp_name,
-                     staticbase == NULL ? "?" : staticbase->tp_name);
+                     staticbase->tp_name);
         return NULL;
     }
 
