@@ -154,10 +154,15 @@ NotImplemented
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the built-in name ``NotImplemented``. Numeric methods
-   and rich comparison methods may return this value if they do not implement the
+   and rich comparison methods should return this value if they do not implement the
    operation for the operands provided.  (The interpreter will then try the
    reflected operation, or some other fallback, depending on the operator.)  Its
    truth value is true.
+
+   See
+   :ref:`implementing-the-arithmetic-operations`
+   for more details.
+
 
 Ellipsis
    .. index:: object: Ellipsis
