@@ -38,12 +38,16 @@ class OrderedDict(dict):
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
-    def __init__(self, *args, **kwds):
+    def __init__(*args, **kwds):
         '''Initialize an ordered dictionary.  The signature is the same as
         regular dictionaries, but keyword arguments are not recommended because
         their insertion order is arbitrary.
 
         '''
+        if not args:
+            raise TypeError("descriptor '__init__' of 'OrderedDict' object "
+                            "needs an argument")
+        self, *args = args
         if len(args) > 1:
             raise TypeError('expected at most 1 arguments, got %d' % len(args))
         try:
@@ -450,7 +454,7 @@ class Counter(dict):
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
-    def __init__(self, iterable=None, **kwds):
+    def __init__(*args, **kwds):
         '''Create a new, empty Counter object.  And if given, count elements
         from an input iterable.  Or, initialize the count from another mapping
         of elements to their counts.
@@ -461,8 +465,14 @@ class Counter(dict):
         >>> c = Counter(a=4, b=2)                   # a new counter from keyword args
 
         '''
-        super().__init__()
-        self.update(iterable, **kwds)
+        if not args:
+            raise TypeError("descriptor '__init__' of 'Counter' object "
+                            "needs an argument")
+        self, *args = args
+        if len(args) > 1:
+            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+        super(Counter, self).__init__()
+        self.update(*args, **kwds)
 
     def __missing__(self, key):
         'The count of elements not in the Counter is zero.'
@@ -513,7 +523,7 @@ class Counter(dict):
         raise NotImplementedError(
             'Counter.fromkeys() is undefined.  Use Counter(iterable) instead.')
 
-    def update(self, iterable=None, **kwds):
+    def update(*args, **kwds):
         '''Like dict.update() but add counts instead of replacing them.
 
         Source can be an iterable, a dictionary, or another Counter instance.
@@ -533,6 +543,13 @@ class Counter(dict):
         # contexts.  Instead, we implement straight-addition.  Both the inputs
         # and outputs are allowed to contain zero and negative counts.
 
+        if not args:
+            raise TypeError("descriptor 'update' of 'Counter' object "
+                            "needs an argument")
+        self, *args = args
+        if len(args) > 1:
+            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+        iterable = args[0] if args else None
         if iterable is not None:
             if isinstance(iterable, Mapping):
                 if self:
@@ -540,13 +557,13 @@ class Counter(dict):
                     for elem, count in iterable.items():
                         self[elem] = count + self_get(elem, 0)
                 else:
-                    super().update(iterable) # fast path when counter is empty
+                    super(Counter, self).update(iterable) # fast path when counter is empty
             else:
                 _count_elements(self, iterable)
         if kwds:
             self.update(kwds)
 
-    def subtract(self, iterable=None, **kwds):
+    def subtract(*args, **kwds):
         '''Like dict.update() but subtracts counts instead of replacing them.
         Counts can be reduced below zero.  Both the inputs and outputs are
         allowed to contain zero and negative counts.
@@ -562,6 +579,13 @@ class Counter(dict):
         -1
 
         '''
+        if not args:
+            raise TypeError("descriptor 'subtract' of 'Counter' object "
+                            "needs an argument")
+        self, *args = args
+        if len(args) > 1:
+            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+        iterable = args[0] if args else None
         if iterable is not None:
             self_get = self.get
             if isinstance(iterable, Mapping):
@@ -869,7 +893,14 @@ class ChainMap(MutableMapping):
 class UserDict(MutableMapping):
 
     # Start by filling-out the abstract methods
-    def __init__(self, dict=None, **kwargs):
+    def __init__(*args, **kwargs):
+        if not args:
+            raise TypeError("descriptor '__init__' of 'UserDict' object "
+                            "needs an argument")
+        self, *args = args
+        if len(args) > 1:
+            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+        dict = args[0] if args else None
         self.data = {}
         if dict is not None:
             self.update(dict)
