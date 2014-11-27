@@ -53,6 +53,10 @@ produced for that file.
    executed on that occasion.  Use an ``if __name__ == '__main__':`` guard to
    only execute code when a file is invoked as a script and not just imported.
 
+When printing output to the console, :program:`pydoc` attempts to paginate the
+output for easier reading.  If the :envvar:`PAGER` environment variable is set,
+:program:`pydoc` will use its value as a pagination program.
+
 Specifying a ``-w`` flag before the argument will cause HTML documentation
 to be written out to a file in the current directory, instead of displaying text
 on the console.
