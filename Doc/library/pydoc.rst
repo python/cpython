@@ -66,11 +66,6 @@ will start a HTTP server on port 1234, allowing you to browse the
 documentation at ``http://localhost:1234/`` in your preferred Web browser.
 Specifying ``0`` as the port number will select an arbitrary unused port.
 
-:program:`pydoc -g` will start the server and additionally bring up a
-small :mod:`tkinter`\ -based graphical interface to help you search for
-documentation pages.  The ``-g`` option is deprecated, since the server can
-now be controlled directly from HTTP clients.
-
 :program:`pydoc -b` will start the server and additionally open a web
 browser to a module index page.  Each served page has a navigation bar at the
 top where you can *Get* help on an individual item, *Search* all modules with a
@@ -90,7 +85,10 @@ to a different URL or to a local directory containing the Library
 Reference Manual pages.
 
 .. versionchanged:: 3.2
-   Added the ``-b`` option, deprecated the ``-g`` option.
+   Added the ``-b`` option.
+
+.. versionchanged:: 3.3
+   The ``-g`` command line option was removed.
 
 .. versionchanged:: 3.4
    :mod:`pydoc` now uses :func:`inspect.signature` rather than
