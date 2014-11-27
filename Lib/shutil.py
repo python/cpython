@@ -617,7 +617,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     archive_name = base_name + '.tar' + compress_ext.get(compress, '')
     archive_dir = os.path.dirname(archive_name)
 
-    if not os.path.exists(archive_dir):
+    if archive_dir and not os.path.exists(archive_dir):
         if logger is not None:
             logger.info("creating %s", archive_dir)
         if not dry_run:
@@ -662,7 +662,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
     zip_filename = base_name + ".zip"
     archive_dir = os.path.dirname(base_name)
 
-    if not os.path.exists(archive_dir):
+    if archive_dir and not os.path.exists(archive_dir):
         if logger is not None:
             logger.info("creating %s", archive_dir)
         if not dry_run:
