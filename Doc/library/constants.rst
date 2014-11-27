@@ -26,9 +26,24 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: NotImplemented
 
-   Special value which can be returned by the "rich comparison" special methods
-   (:meth:`__eq__`, :meth:`__lt__`, and friends), to indicate that the comparison
-   is not implemented with respect to the other type.
+   Special value which should be returned by the binary special methods
+   (e.g. :meth:`__eq__`, :meth:`__lt__`, :meth:`__add__`, :meth:`__rsub__`,
+   etc.) to indicate that the operation is not implemented with respect to
+   the other type; may be returned by the in-place binary special methods
+   (e.g. :meth:`__imul__`, :meth:`__iand__`, etc.) for the same purpose.
+   Its truth value is true.
+
+.. note::
+
+   When ``NotImplemented`` is returned, the interpreter will then try the
+   reflected operation on the other type, or some other fallback, depending
+   on the operator.  If all attempted operations return ``NotImplemented``, the
+   interpreter will raise an appropriate exception.
+
+   See
+   :ref:`implementing-the-arithmetic-operations`
+   for more details.
+
 
 
 .. data:: Ellipsis
