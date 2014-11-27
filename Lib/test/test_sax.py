@@ -648,6 +648,30 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
+    def test_expat_binary_file_bytes_name(self):
+        fname = os.fsencode(TEST_XMLFILE)
+        parser = create_parser()
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+
+        parser.setContentHandler(xmlgen)
+        with open(fname, 'rb') as f:
+            parser.parse(f)
+
+        self.assertEqual(result.getvalue(), xml_test_out)
+
+    def test_expat_binary_file_int_name(self):
+        parser = create_parser()
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+
+        parser.setContentHandler(xmlgen)
+        with open(TEST_XMLFILE, 'rb') as f:
+            with open(f.fileno(), 'rb', closefd=False) as f2:
+                parser.parse(f2)
+
+        self.assertEqual(result.getvalue(), xml_test_out)
+
     # ===== DTDHandler support
 
     class TestDTDHandler:
