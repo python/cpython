@@ -191,6 +191,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22609: Constructors and update methods of mapping classes in the
+  collections module now accept the self keyword argument.
+
 - Issue #22940: Add readline.append_history_file.
 
 - Issue #19676: Added the "namereplace" error handler.
