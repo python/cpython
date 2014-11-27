@@ -175,6 +175,12 @@ Build
 
 - Issue #17219: Add library build dir for Python extension cross-builds.
 
+Documentation
+-------------
+
+- Issue #21514: The documentation of the json module now refers to new JSON RFC
+  7159 instead of obsoleted RFC 4627.
+
 Windows
 -------
 
