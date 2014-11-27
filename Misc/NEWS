@@ -383,6 +383,11 @@ Library
 - Issue #17442: InteractiveInterpreter now displays the full chained traceback
   in its showtraceback method, to match the built in interactive interpreter.
 
+Tools/Demos
+-----------
+
+- Issue #22314: pydoc now works when the LINES environment variable is set.
+
 - Issue #10510: distutils register and upload methods now use HTML standards
   compliant CRLF line endings.
 
