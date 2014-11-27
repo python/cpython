@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22915: SAX parser now supports files opened with file descriptor or
+  bytes path.
+
 - Issue #22609: Constructors and update methods of mapping classes in the
   collections module now accept the self keyword argument.
 
