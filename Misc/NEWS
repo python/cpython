@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22609: Constructors and update methods of mapping classes in the
+  collections module now accept the self keyword argument.
+
 - Issue #22788: Add *context* parameter to logging.handlers.HTTPHandler.
 
 - Issue #22921: Allow SSLContext to take the *hostname* parameter even if
