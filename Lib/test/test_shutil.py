@@ -581,6 +581,29 @@ class TestShutil(unittest.TestCase):
         finally:
             unregister_archive_format('xxx')
 
+    def test_make_tarfile_in_curdir(self):
+        # Issue #21280
+        root_dir = self.mkdtemp()
+        saved_dir = os.getcwd()
+        try:
+            os.chdir(root_dir)
+            self.assertEqual(make_archive('test', 'tar'), 'test.tar')
+            self.assertTrue(os.path.isfile('test.tar'))
+        finally:
+            os.chdir(saved_dir)
+
+    @unittest.skipUnless(zlib, "Requires zlib")
+    def test_make_zipfile_in_curdir(self):
+        # Issue #21280
+        root_dir = self.mkdtemp()
+        saved_dir = os.getcwd()
+        try:
+            os.chdir(root_dir)
+            self.assertEqual(make_archive('test', 'zip'), 'test.zip')
+            self.assertTrue(os.path.isfile('test.zip'))
+        finally:
+            os.chdir(saved_dir)
+
     def test_register_archive_format(self):
 
         self.assertRaises(TypeError, register_archive_format, 'xxx', 1)
