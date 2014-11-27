@@ -1300,6 +1300,9 @@ C API
 Documentation
 -------------
 
+- Issue #21514: The documentation of the json module now refers to new JSON RFC
+  7159 instead of obsoleted RFC 4627.
+
 - Issue #21777: The binary sequence methods on bytes and bytearray are now
   documented explicitly, rather than assuming users will be able to derive
   the expected behaviour from the behaviour of the corresponding str methods.
