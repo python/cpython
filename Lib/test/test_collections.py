@@ -1639,24 +1639,6 @@ class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
         d = self._empty_mapping()
         self.assertRaises(KeyError, d.popitem)
 
-class TestUserDict(unittest.TestCase):
-
-    def test_init(self):
-        self.assertEqual(list(UserDict(self=42).items()), [('self', 42)])
-        self.assertEqual(list(UserDict(dict=42).items()), [('dict', 42)])
-        self.assertEqual(list(UserDict(dict=None).items()), [('dict', None)])
-        self.assertRaises(TypeError, UserDict, 42)
-        self.assertRaises(TypeError, UserDict, (), ())
-        self.assertRaises(TypeError, UserDict.__init__)
-
-    def test_update(self):
-        d = UserDict()
-        d.update(self=42)
-        self.assertEqual(list(d.items()), [('self', 42)])
-        self.assertRaises(TypeError, UserDict().update, 42)
-        self.assertRaises(TypeError, UserDict().update, {}, {})
-        self.assertRaises(TypeError, UserDict.update)
-
 
 ################################################################################
 ### Run tests
@@ -1668,8 +1650,7 @@ def test_main(verbose=None):
     NamedTupleDocs = doctest.DocTestSuite(module=collections)
     test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
                     TestCollectionABCs, TestCounter, TestChainMap,
-                    TestOrderedDict, GeneralMappingTests, SubclassMappingTests,
-                    TestUserDict,]
+                    TestOrderedDict, GeneralMappingTests, SubclassMappingTests]
     support.run_unittest(*test_classes)
     support.run_doctest(collections, verbose)
 
