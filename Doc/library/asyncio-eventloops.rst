@@ -150,6 +150,7 @@ loop per thread that interacts with :mod:`asyncio`. The module-level functions
 :func:`get_event_loop` and :func:`set_event_loop` provide convenient access to
 event loops managed by the default policy.
 
+
 Event loop policy interface
 ---------------------------
 
@@ -157,22 +158,31 @@ An event loop policy must implement the following interface:
 
 .. class:: AbstractEventLoopPolicy
 
+   Event loop policy.
+
    .. method:: get_event_loop()
 
-   Get the event loop for the current context. Returns an event loop object
-   implementing the :class:`BaseEventLoop` interface, or raises an exception in case
-   no event loop has been set for the current context and the current policy
-   does not specify to create one. It should never return ``None``.
+      Get the event loop for the current context.
+
+      Returns an event loop object implementing the :class:`BaseEventLoop`
+      interface.
+
+      Raises an exception in case no event loop has been set for the current
+      context and the current policy does not specify to create one. It must
+      never return ``None``.
 
    .. method:: set_event_loop(loop)
 
-   Set the event loop for the current context to *loop*.
+      Set the event loop for the current context to *loop*.
 
    .. method:: new_event_loop()
 
-   Create and return a new event loop object according to this policy's rules.
-   If there's need to set this loop as the event loop for the current context,
-   :meth:`set_event_loop` must be called explicitly.
+      Create and return a new event loop object according to this policy's
+      rules.
+
+      If there's need to set this loop as the event loop for the current
+      context, :meth:`set_event_loop` must be called explicitly.
+
 
 Access to the global loop policy
 --------------------------------
