@@ -196,6 +196,7 @@ class SubprocessMixin:
 
         self.assertEqual(stdout, b'x' * size)
         self.assertTrue(transport.pause_reading.called)
+        self.assertTrue(transport.resume_reading.called)
 
 
 if sys.platform != 'win32':
