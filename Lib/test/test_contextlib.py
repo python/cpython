@@ -718,58 +718,74 @@ class TestExitStack(unittest.TestCase):
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1], cm)
 
-class TestRedirectStdout(unittest.TestCase):
+
+class TestRedirectStream:
+
+    redirect_stream = None
+    orig_stream = None
 
     @support.requires_docstrings
     def test_instance_docs(self):
         # Issue 19330: ensure context manager instances have good docstrings
-        cm_docstring = redirect_stdout.__doc__
-        obj = redirect_stdout(None)
+        cm_docstring = self.redirect_stream.__doc__
+        obj = self.redirect_stream(None)
         self.assertEqual(obj.__doc__, cm_docstring)
 
     def test_no_redirect_in_init(self):
-        orig_stdout = sys.stdout
-        redirect_stdout(None)
-        self.assertIs(sys.stdout, orig_stdout)
+        orig_stdout = getattr(sys, self.orig_stream)
+        self.redirect_stream(None)
+        self.assertIs(getattr(sys, self.orig_stream), orig_stdout)
 
     def test_redirect_to_string_io(self):
         f = io.StringIO()
         msg = "Consider an API like help(), which prints directly to stdout"
-        orig_stdout = sys.stdout
-        with redirect_stdout(f):
-            print(msg)
-        self.assertIs(sys.stdout, orig_stdout)
+        orig_stdout = getattr(sys, self.orig_stream)
+        with self.redirect_stream(f):
+            print(msg, file=getattr(sys, self.orig_stream))
+        self.assertIs(getattr(sys, self.orig_stream), orig_stdout)
         s = f.getvalue().strip()
         self.assertEqual(s, msg)
 
     def test_enter_result_is_target(self):
         f = io.StringIO()
-        with redirect_stdout(f) as enter_result:
+        with self.redirect_stream(f) as enter_result:
             self.assertIs(enter_result, f)
 
     def test_cm_is_reusable(self):
         f = io.StringIO()
-        write_to_f = redirect_stdout(f)
-        orig_stdout = sys.stdout
+        write_to_f = self.redirect_stream(f)
+        orig_stdout = getattr(sys, self.orig_stream)
         with write_to_f:
-            print("Hello", end=" ")
+            print("Hello", end=" ", file=getattr(sys, self.orig_stream))
         with write_to_f:
-            print("World!")
-        self.assertIs(sys.stdout, orig_stdout)
+            print("World!", file=getattr(sys, self.orig_stream))
+        self.assertIs(getattr(sys, self.orig_stream), orig_stdout)
         s = f.getvalue()
         self.assertEqual(s, "Hello World!\n")
 
     def test_cm_is_reentrant(self):
         f = io.StringIO()
-        write_to_f = redirect_stdout(f)
-        orig_stdout = sys.stdout
+        write_to_f = self.redirect_stream(f)
+        orig_stdout = getattr(sys, self.orig_stream)
         with write_to_f:
-            print("Hello", end=" ")
+            print("Hello", end=" ", file=getattr(sys, self.orig_stream))
             with write_to_f:
-                print("World!")
-        self.assertIs(sys.stdout, orig_stdout)
+                print("World!", file=getattr(sys, self.orig_stream))
+        self.assertIs(getattr(sys, self.orig_stream), orig_stdout)
         s = f.getvalue()
         self.assertEqual(s, "Hello World!\n")
+
+
+class TestRedirectStdout(TestRedirectStream, unittest.TestCase):
+
+    redirect_stream = redirect_stdout
+    orig_stream = "stdout"
+
+
+class TestRedirectStderr(TestRedirectStream, unittest.TestCase):
+
+    redirect_stream = redirect_stderr
+    orig_stream = "stderr"
 
 
 class TestSuppress(unittest.TestCase):

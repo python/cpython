@@ -5,7 +5,7 @@ from collections import deque
 from functools import wraps
 
 __all__ = ["contextmanager", "closing", "ContextDecorator", "ExitStack",
-           "redirect_stdout", "suppress"]
+           "redirect_stdout", "redirect_stderr", "suppress"]
 
 
 class ContextDecorator(object):
@@ -151,8 +151,27 @@ class closing(object):
     def __exit__(self, *exc_info):
         self.thing.close()
 
-class redirect_stdout:
-    """Context manager for temporarily redirecting stdout to another file
+
+class _RedirectStream:
+
+    _stream = None
+
+    def __init__(self, new_target):
+        self._new_target = new_target
+        # We use a list of old targets to make this CM re-entrant
+        self._old_targets = []
+
+    def __enter__(self):
+        self._old_targets.append(getattr(sys, self._stream))
+        setattr(sys, self._stream, self._new_target)
+        return self._new_target
+
+    def __exit__(self, exctype, excinst, exctb):
+        setattr(sys, self._stream, self._old_targets.pop())
+
+
+class redirect_stdout(_RedirectStream):
+    """Context manager for temporarily redirecting stdout to another file.
 
         # How to send help() to stderr
         with redirect_stdout(sys.stderr):
@@ -164,18 +183,13 @@ class redirect_stdout:
                 help(pow)
     """
 
-    def __init__(self, new_target):
-        self._new_target = new_target
-        # We use a list of old targets to make this CM re-entrant
-        self._old_targets = []
+    _stream = "stdout"
 
-    def __enter__(self):
-        self._old_targets.append(sys.stdout)
-        sys.stdout = self._new_target
-        return self._new_target
 
-    def __exit__(self, exctype, excinst, exctb):
-        sys.stdout = self._old_targets.pop()
+class redirect_stderr(_RedirectStream):
+    """Context manager for temporarily redirecting stderr to another file."""
+
+    _stream = "stderr"
 
 
 class suppress:

@@ -172,6 +172,16 @@ Functions and classes provided:
    .. versionadded:: 3.4
 
 
+.. function:: redirect_stderr(new_target)
+
+   Similar to :func:`~contextlib.redirect_stdout` but redirecting
+   :data:`sys.stderr` to another file or file-like object.
+
+   This context manager is :ref:`reentrant <reentrant-cms>`.
+
+   .. versionadded:: 3.5
+
+
 .. class:: ContextDecorator()
 
    A base class that enables a context manager to also be used as a decorator.
