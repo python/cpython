@@ -253,6 +253,11 @@ Future
       future is already done when this is called, the callback is scheduled
       with :meth:`~BaseEventLoop.call_soon`.
 
+      :ref:`Use functools.partial to pass parameters to the callback
+      <asyncio-pass-keywords>`. For example,
+      ``fut.add_done_callback(functools.partial(print, "Future:",
+      flush=True))`` will call ``print("Future:", fut, flush=True)``.
+
    .. method:: remove_done_callback(fn)
 
       Remove all instances of a callback from the "call when done" list.
