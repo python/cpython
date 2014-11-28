@@ -163,13 +163,14 @@ class SubprocessMixin:
         self.loop.run_until_complete(proc.wait())
 
     def test_pause_reading(self):
+        limit = 10
+        size = (limit * 2 + 1)
+
         @asyncio.coroutine
         def test_pause_reading():
-            limit = 100
-
             code = '\n'.join((
                 'import sys',
-                'sys.stdout.write("x" * %s)' % (limit * 2 + 1),
+                'sys.stdout.write("x" * %s)' % size,
                 'sys.stdout.flush()',
             ))
             proc = yield from asyncio.create_subprocess_exec(
@@ -181,17 +182,19 @@ class SubprocessMixin:
             stdout_transport = proc._transport.get_pipe_transport(1)
             stdout_transport.pause_reading = mock.Mock()
 
-            yield from proc.wait()
+            stdout, stderr = yield from proc.communicate()
 
             # The child process produced more than limit bytes of output,
             # the stream reader transport should pause the protocol to not
             # allocate too much memory.
-            return stdout_transport.pause_reading.called
+            return (stdout, stdout_transport)
 
         # Issue #22685: Ensure that the stream reader pauses the protocol
         # when the child process produces too much data
-        called = self.loop.run_until_complete(test_pause_reading())
-        self.assertTrue(called)
+        stdout, transport = self.loop.run_until_complete(test_pause_reading())
+
+        self.assertEqual(stdout, b'x' * size)
+        self.assertTrue(transport.pause_reading.called)
 
 
 if sys.platform != 'win32':
