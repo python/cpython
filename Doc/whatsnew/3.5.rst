@@ -148,6 +148,15 @@ compileall
   can now do parallel bytecode compilation.
   (Contributed by Claudiu Popa in :issue:`16104`.)
 
+contextlib
+----------
+
+* The new :func:`contextlib.redirect_stderr` context manager(similar to
+  :func:`contextlib.redirect_stdout`) makes it easier for utility scripts to
+  handle inflexible APIs that write their output to :data:`sys.stderr` and
+  don't provide any options to redirect it.
+  (Contributed by Berker Peksag in :issue:`22389`.)
+
 doctest
 -------
 
