@@ -67,9 +67,21 @@ Run an event loop
    This is idempotent and irreversible. No other methods should be called after
    this one.
 
+.. _asyncio-pass-keywords:
 
 Calls
 -----
+
+Most :mod:`asyncio` functions don't accept keywords. If you want to pass
+keywords to your callback, use :func:`functools.partial`. For example,
+``loop.call_soon(functools.partial(print, "Hello", flush=True))`` will call
+``print("Hello", flush=True)``.
+
+.. note::
+   :func:`functools.partial` is better than ``lambda`` functions, because
+   :mod:`asyncio` can inspect :func:`functools.partial` object to display
+   parameters in debug mode, whereas ``lambda`` functions have a poor
+   representation.
 
 .. method:: BaseEventLoop.call_soon(callback, \*args)
 
@@ -82,6 +94,9 @@ Calls
    callback when it is called.
 
    An instance of :class:`asyncio.Handle` is returned.
+
+   :ref:`Use functools.partial to pass keywords to the callback
+   <asyncio-pass-keywords>`.
 
 .. method:: BaseEventLoop.call_soon_threadsafe(callback, \*args)
 
@@ -118,6 +133,9 @@ a different clock than :func:`time.time`.
    is called. If you want the callback to be called with some named
    arguments, use a closure or :func:`functools.partial`.
 
+   :ref:`Use functools.partial to pass keywords to the callback
+   <asyncio-pass-keywords>`.
+
 .. method:: BaseEventLoop.call_at(when, callback, *args)
 
    Arrange for the *callback* to be called at the given absolute timestamp
@@ -125,6 +143,9 @@ a different clock than :func:`time.time`.
    :meth:`BaseEventLoop.time`.
 
    This method's behavior is the same as :meth:`call_later`.
+
+   :ref:`Use functools.partial to pass keywords to the callback
+   <asyncio-pass-keywords>`.
 
 .. method:: BaseEventLoop.time()
 
@@ -334,6 +355,9 @@ On Windows with :class:`ProactorEventLoop`, these methods are not supported.
    Start watching the file descriptor for read availability and then call the
    *callback* with specified arguments.
 
+   :ref:`Use functools.partial to pass keywords to the callback
+   <asyncio-pass-keywords>`.
+
 .. method:: BaseEventLoop.remove_reader(fd)
 
    Stop watching the file descriptor for read availability.
@@ -342,6 +366,9 @@ On Windows with :class:`ProactorEventLoop`, these methods are not supported.
 
    Start watching the file descriptor for write availability and then call the
    *callback* with specified arguments.
+
+   :ref:`Use functools.partial to pass keywords to the callback
+   <asyncio-pass-keywords>`.
 
 .. method:: BaseEventLoop.remove_writer(fd)
 
@@ -493,6 +520,9 @@ Availability: UNIX only.
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
+   :ref:`Use functools.partial to pass keywords to the callback
+   <asyncio-pass-keywords>`.
+
 .. method:: BaseEventLoop.remove_signal_handler(sig)
 
    Remove a handler for a signal.
@@ -517,6 +547,9 @@ pool of processes). By default, an event loop uses a thread pool executor
 
    The *executor* argument should be an :class:`~concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
+
+   :ref:`Use functools.partial to pass keywords to the callback
+   <asyncio-pass-keywords>`.
 
    This method is a :ref:`coroutine <coroutine>`.
 
