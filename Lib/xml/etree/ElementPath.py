@@ -295,10 +295,7 @@ def iterfind(elem, path, namespaces=None):
 # Find first matching object.
 
 def find(elem, path, namespaces=None):
-    try:
-        return next(iterfind(elem, path, namespaces))
-    except StopIteration:
-        return None
+    return next(iterfind(elem, path, namespaces), None)
 
 ##
 # Find all matching objects.
