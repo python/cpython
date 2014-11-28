@@ -373,12 +373,6 @@ class HashLibTestCase(unittest.TestCase):
           "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"+
           "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b")
 
-    @unittest.skipIf(sys.maxsize < _4G + 5, 'test cannot run on 32-bit systems')
-    @bigmemtest(size=_4G + 5, memuse=1, dry_run=False)
-    def test_case_sha3_224_huge(self, size):
-        self.check('sha3_224', b'A'*size,
-                   '58ef60057c9dddb6a87477e9ace5a26f0d9db01881cf9b10a9f8c224')
-
     def test_gil(self):
         # Check things work fine with an input larger than the size required
         # for multithreaded operation (which is hardwired to 2048).
