@@ -170,16 +170,22 @@ StreamWriter
 
    .. method:: drain()
 
-      Wait until the write buffer of the underlying transport is flushed.
+      Let the write buffer of the underlying transport a chance to be flushed.
 
       The intended use is to write::
 
           w.write(data)
           yield from w.drain()
 
-      When the transport buffer is full (the protocol is paused), block until
-      the buffer is (partially) drained and the protocol is resumed. When there
-      is nothing to wait for, the yield-from continues immediately.
+      When the size of the transport buffer reaches the high-water limit (the
+      protocol is paused), block until the size of the buffer is drained down
+      to the low-water limit and the protocol is resumed. When there is nothing
+      to wait for, the yield-from continues immediately.
+
+      Yielding from :meth:`drain` gives the opportunity for the loop to
+      schedule the write operation and flush the buffer. It should especially
+      be used when a possibly large amount of data is written to the transport,
+      and the coroutine does not yield-from between calls to :meth:`write`.
 
       This method is a :ref:`coroutine <coroutine>`.
 
