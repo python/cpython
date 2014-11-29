@@ -3,6 +3,7 @@
 
 from io import BytesIO
 import os
+import sysconfig
 import unittest
 import traceback
 
@@ -444,7 +445,8 @@ class HandlerExceptionTest(unittest.TestCase):
                                        "pyexpat.c", "StartElement")
             self.check_traceback_entry(entries[2],
                                        "test_pyexpat.py", "StartElementHandler")
-            self.assertIn('call_with_frame("StartElement"', entries[1][3])
+            if sysconfig.is_python_build():
+                self.assertIn('call_with_frame("StartElement"', entries[1][3])
 
 
 # Test Current* members:
