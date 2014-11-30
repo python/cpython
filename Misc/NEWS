@@ -191,6 +191,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22960: Add a context argument to xmlrpclib.ServerProxy constructor.
+
 - Issue #22389: Add contextlib.redirect_stderr().
 
 - Issue #21356: Make ssl.RAND_egd() optional to support LibreSSL. The
