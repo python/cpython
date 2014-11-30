@@ -321,6 +321,12 @@ class TestUUID(unittest.TestCase):
             self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_ip_getnode(self):
+        node = uuid._ip_getnode()
+        if node is not None:
+            self.check_node(node, 'ip')
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_arp_getnode(self):
         node = uuid._arp_getnode()
         if node is not None:
