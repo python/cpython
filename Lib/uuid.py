@@ -356,6 +356,13 @@ def _ifconfig_getnode():
         if mac:
             return mac
 
+def _ip_getnode():
+    """Get the hardware address on Unix by running ip."""
+    # This works on Linux with iproute2.
+    mac = _find_mac('ip', 'link list', [b'link/ether'], lambda i: i+1)
+    if mac:
+        return mac
+
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
     import os, socket
@@ -538,8 +545,8 @@ def getnode():
     if sys.platform == 'win32':
         getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
     else:
-        getters = [_unixdll_getnode, _ifconfig_getnode, _arp_getnode,
-                   _lanscan_getnode, _netstat_getnode]
+        getters = [_unixdll_getnode, _ifconfig_getnode, _ip_getnode,
+                   _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
     for getter in getters + [_random_getnode]:
         try:
