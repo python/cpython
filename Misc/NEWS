@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22960: Add a context argument to xmlrpclib.ServerProxy constructor.
+
 - Issue #22915: SAX parser now supports files opened with file descriptor or
   bytes path.
 
