@@ -34,7 +34,7 @@ between conformable Python objects and XML on the wire.
 
 .. class:: ServerProxy(uri, transport=None, encoding=None, verbose=False, \
                        allow_none=False, use_datetime=False, \
-                       use_builtin_types=False, context=None)
+                       use_builtin_types=False, *, context=None)
 
    .. versionchanged:: 3.3
       The *use_builtin_types* flag was added.
