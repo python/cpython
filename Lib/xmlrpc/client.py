@@ -1324,6 +1324,11 @@ class Transport:
 class SafeTransport(Transport):
     """Handles an HTTPS transaction to an XML-RPC server."""
 
+    def __init__(self, use_datetime=False, use_builtin_types=False, *,
+                 context=None):
+        super().__init__(use_datetime=use_datetime, use_builtin_types=use_builtin_types)
+        self.context = context
+
     # FIXME: mostly untested
 
     def make_connection(self, host):
@@ -1337,7 +1342,7 @@ class SafeTransport(Transport):
         # host may be a string, or a (host, x509-dict) tuple
         chost, self._extra_headers, x509 = self.get_host_info(host)
         self._connection = host, http.client.HTTPSConnection(chost,
-            None, **(x509 or {}))
+            None, context=self.context, **(x509 or {}))
         return self._connection[1]
 
 ##
@@ -1380,7 +1385,8 @@ class ServerProxy:
     """
 
     def __init__(self, uri, transport=None, encoding=None, verbose=False,
-                 allow_none=False, use_datetime=False, use_builtin_types=False):
+                 allow_none=False, use_datetime=False, use_builtin_types=False,
+                 *, context=None):
         # establish a "logical" server connection
 
         # get the url
@@ -1394,10 +1400,13 @@ class ServerProxy:
         if transport is None:
             if type == "https":
                 handler = SafeTransport
+                extra_kwargs = {"context": context}
             else:
                 handler = Transport
+                extra_kwargs = {}
             transport = handler(use_datetime=use_datetime,
-                                use_builtin_types=use_builtin_types)
+                                use_builtin_types=use_builtin_types,
+                                **extra_kwargs)
         self.__transport = transport
 
         self.__encoding = encoding or 'utf-8'
