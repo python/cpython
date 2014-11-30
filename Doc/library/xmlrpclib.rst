@@ -39,7 +39,7 @@ between conformable Python objects and XML on the wire.
    For https URIs, :mod:`xmlrpclib` now performs all the necessary certificate
    and hostname checks by default
 
-.. class:: ServerProxy(uri[, transport[, encoding[, verbose[,  allow_none[, use_datetime]]]]])
+.. class:: ServerProxy(uri[, transport[, encoding[, verbose[, allow_none[, use_datetime[, context]]]]]])
 
    A :class:`ServerProxy` instance is an object that manages communication with a
    remote XML-RPC server.  The required first argument is a URI (Uniform Resource
@@ -57,11 +57,13 @@ between conformable Python objects and XML on the wire.
    :class:`datetime.datetime` objects may be passed to calls.
 
    Both the HTTP and HTTPS transports support the URL syntax extension for HTTP
-   Basic Authentication: ``http://user:pass@host:port/path``.  The  ``user:pass``
+   Basic Authentication: ``http://user:pass@host:port/path``.  The ``user:pass``
    portion will be base64-encoded as an HTTP 'Authorization' header, and sent to
    the remote server as part of the connection process when invoking an XML-RPC
    method.  You only need to use this if the remote server requires a Basic
-   Authentication user and password.
+   Authentication user and password. If an HTTPS url is provided, *context* may
+   be :class:`ssl.SSLContext` and configures the SSL settings of the underlying
+   HTTPS connection.
 
    The returned instance is a proxy object with methods that can be used to invoke
    corresponding RPC calls on the remote server.  If the remote server supports the
@@ -130,6 +132,9 @@ between conformable Python objects and XML on the wire.
       Instances of :term:`new-style class`\es can be passed in if they have an
       *__dict__* attribute and don't have a base class that is marshalled in a
       special way.
+
+   .. versionchanged:: 2.7.9
+      Added the *context* argument.
 
 
 .. seealso::

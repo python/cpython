@@ -31,6 +31,17 @@ Tools/Demos
   Wieland Hoffmann.
 
 
+What's New in Python 2.7.9?
+===========================
+
+*Release date: 2014-12-XX*
+
+Library
+-------
+
+- Issue #22960: Add a context argument to xmlrpclib.ServerProxy.
+
+
 What's New in Python 2.7.9 release candidate 1?
 ===============================================
 

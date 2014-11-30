@@ -1478,6 +1478,10 @@ class Transport:
 class SafeTransport(Transport):
     """Handles an HTTPS transaction to an XML-RPC server."""
 
+    def __init__(self, use_datetime=0, context=None):
+        Transport.__init__(self, use_datetime=use_datetime)
+        self.context = context
+
     # FIXME: mostly untested
 
     def make_connection(self, host):
@@ -1493,7 +1497,7 @@ class SafeTransport(Transport):
                 )
         else:
             chost, self._extra_headers, x509 = self.get_host_info(host)
-            self._connection = host, HTTPS(chost, None, **(x509 or {}))
+            self._connection = host, HTTPS(chost, None, context=context, **(x509 or {}))
             return self._connection[1]
 
 ##
@@ -1536,7 +1540,7 @@ class ServerProxy:
     """
 
     def __init__(self, uri, transport=None, encoding=None, verbose=0,
-                 allow_none=0, use_datetime=0):
+                 allow_none=0, use_datetime=0, context=None):
         # establish a "logical" server connection
 
         if isinstance(uri, unicode):
@@ -1553,7 +1557,7 @@ class ServerProxy:
 
         if transport is None:
             if type == "https":
-                transport = SafeTransport(use_datetime=use_datetime)
+                transport = SafeTransport(use_datetime=use_datetime, context=context)
             else:
                 transport = Transport(use_datetime=use_datetime)
         self.__transport = transport
