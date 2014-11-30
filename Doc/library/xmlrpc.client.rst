@@ -34,7 +34,7 @@ between conformable Python objects and XML on the wire.
 
 .. class:: ServerProxy(uri, transport=None, encoding=None, verbose=False, \
                        allow_none=False, use_datetime=False, \
-                       use_builtin_types=False)
+                       use_builtin_types=False, context=None)
 
    .. versionchanged:: 3.3
       The *use_builtin_types* flag was added.
@@ -63,7 +63,9 @@ between conformable Python objects and XML on the wire.
    portion will be base64-encoded as an HTTP 'Authorization' header, and sent to
    the remote server as part of the connection process when invoking an XML-RPC
    method.  You only need to use this if the remote server requires a Basic
-   Authentication user and password.
+   Authentication user and password. If an HTTPS url is provided, *context* may
+   be :class:`ssl.SSLContext` and configures the SSL settings of the underlying
+   HTTPS connection.
 
    The returned instance is a proxy object with methods that can be used to invoke
    corresponding RPC calls on the remote server.  If the remote server supports the
@@ -126,6 +128,9 @@ between conformable Python objects and XML on the wire.
 
    :class:`Server` is retained as an alias for :class:`ServerProxy` for backwards
    compatibility.  New code should use :class:`ServerProxy`.
+
+   .. versionchanged:: 3.4.3
+      Added the *context* argument.
 
 
 .. seealso::
