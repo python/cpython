@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21971: Update turtledemo doc and add module to the index.
+
 - Issue #21032. Fixed socket leak if HTTPConnection.getresponse() fails.
   Original patch by Martin Panter.
 
@@ -90,7 +92,7 @@ Library
 
 - Issue #22776: Brought excluded code into the scope of a try block in
   SysLogHandler.emit().
- 
+
 - Issue #22665: Add missing get_terminal_size and SameFileError to
   shutil.__all__.
 
@@ -157,6 +159,26 @@ Library
 
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
+
+IDLE
+----
+
+- Issue #3068: Add Idle extension configuration dialog to Options menu.
+  Changes are written to HOME/.idlerc/config-extensions.cfg.
+  Original patch by Tal Einat.
+
+- Issue #16233: A module browser (File : Class Browser, Alt+C) requires a
+  editor window with a filename.  When Class Browser is requested otherwise,
+  from a shell, output window, or 'Untitled' editor, Idle no longer displays
+  an error box.  It now pops up an  Open Module box (Alt+M). If a valid name
+  is entered and a module is opened, a corresponding browser is also opened.
+
+- Issue #4832: Save As to type Python files automatically adds .py to the
+  name you enter (even if your system does not display it).  Some systems
+  automatically add .txt when type is Text files.
+
+- Issue #21986: Code objects are not normally pickled by the pickle module.
+  To match this, they are no longer pickled when running under Idle.
 
 Tests
 -----
