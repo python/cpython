@@ -521,7 +521,11 @@ form.
    current locale. The use of this flag is discouraged as the locale mechanism
    is very unreliable, and it only handles one "culture" at a time anyway;
    you should use Unicode matching instead, which is the default in Python 3
-   for Unicode (str) patterns.
+   for Unicode (str) patterns. This flag makes sense only with bytes patterns.
+
+   .. deprecated-removed:: 3.5 3.6
+      Deprecated the use of  :const:`re.LOCALE` with string patterns or
+      :const:`re.ASCII`.
 
 
 .. data:: M

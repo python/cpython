@@ -751,6 +751,11 @@ def _parse(source, state):
 def fix_flags(src, flags):
     # Check and fix flags according to the type of pattern (str or bytes)
     if isinstance(src, str):
+        if flags & SRE_FLAG_LOCALE:
+            import warnings
+            warnings.warn("LOCALE flag with a str pattern is deprecated. "
+                          "Will be an error in 3.6",
+                          DeprecationWarning, stacklevel=6)
         if not flags & SRE_FLAG_ASCII:
             flags |= SRE_FLAG_UNICODE
         elif flags & SRE_FLAG_UNICODE:
@@ -758,6 +763,11 @@ def fix_flags(src, flags):
     else:
         if flags & SRE_FLAG_UNICODE:
             raise ValueError("can't use UNICODE flag with a bytes pattern")
+        if flags & SRE_FLAG_LOCALE and flags & SRE_FLAG_ASCII:
+            import warnings
+            warnings.warn("ASCII and LOCALE flags are incompatible. "
+                          "Will be an error in 3.6",
+                          DeprecationWarning, stacklevel=6)
     return flags
 
 def parse(str, flags=0, pattern=None):
