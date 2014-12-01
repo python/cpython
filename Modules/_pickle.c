@@ -1547,10 +1547,16 @@ get_dotted_path(PyObject *obj, PyObject *name, int allow_qualname) {
     n = PyList_GET_SIZE(dotted_path);
     assert(n >= 1);
     if (!allow_qualname && n > 1) {
-        PyErr_Format(PyExc_AttributeError,
-                     "Can't get qualified attribute %R on %R;"
-                     "use protocols >= 4 to enable support",
-                     name, obj);
+        if (obj == NULL)
+            PyErr_Format(PyExc_AttributeError,
+                         "Can't pickle qualified object %R; "
+                         "use protocols >= 4 to enable support",
+                         name);
+        else
+            PyErr_Format(PyExc_AttributeError,
+                         "Can't pickle qualified attribute %R on %R; "
+                         "use protocols >= 4 to enable support",
+                         name, obj);
         Py_DECREF(dotted_path);
         return NULL;
     }
@@ -1562,8 +1568,12 @@ get_dotted_path(PyObject *obj, PyObject *name, int allow_qualname) {
         assert(PyBool_Check(result));
         Py_DECREF(result);
         if (is_equal) {
-            PyErr_Format(PyExc_AttributeError,
-                         "Can't get local attribute %R on %R", name, obj);
+            if (obj == NULL)
+                PyErr_Format(PyExc_AttributeError,
+                             "Can't pickle local object %R", name);
+            else
+                PyErr_Format(PyExc_AttributeError,
+                             "Can't pickle local attribute %R on %R", name, obj);
             Py_DECREF(dotted_path);
             return NULL;
         }
@@ -1653,7 +1663,7 @@ whichmodule(PyObject *global, PyObject *global_name, int allow_qualname)
         return NULL;
     }
 
-    dotted_path = get_dotted_path(module, global_name, allow_qualname);
+    dotted_path = get_dotted_path(NULL, global_name, allow_qualname);
     if (dotted_path == NULL)
         return NULL;
 
