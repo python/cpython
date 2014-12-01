@@ -125,7 +125,7 @@ class Element:
     This class is the reference implementation of the Element interface.
 
     An element's length is its number of subelements.  That means if you
-    you want to check if an element is truly empty, you should check BOTH
+    want to check if an element is truly empty, you should check BOTH
     its length AND its text attribute.
 
     The element tag, attribute names, and attribute values can be either

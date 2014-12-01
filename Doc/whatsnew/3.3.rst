@@ -1540,7 +1540,7 @@ multiprocessing connections.
 to override the default behavior of inheriting the ``daemon`` flag from
 the parent process (:issue:`6064`).
 
-New attribute attribute :data:`multiprocessing.Process.sentinel` allows a
+New attribute :data:`multiprocessing.Process.sentinel` allows a
 program to wait on multiple :class:`~multiprocessing.Process` objects at one
 time using the appropriate OS primitives (for example, :mod:`select` on
 posix systems).
