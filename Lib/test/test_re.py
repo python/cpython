@@ -502,10 +502,6 @@ class ReTests(unittest.TestCase):
                                    "abcd abc bcd bx", re.ASCII).group(1), "bx")
         self.assertEqual(re.search(r"\B(b.)\B",
                                    "abc bcd bc abxd", re.ASCII).group(1), "bx")
-        self.assertEqual(re.search(r"\b(b.)\b",
-                                   "abcd abc bcd bx", re.LOCALE).group(1), "bx")
-        self.assertEqual(re.search(r"\B(b.)\B",
-                                   "abc bcd bc abxd", re.LOCALE).group(1), "bx")
         self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
         self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
         self.assertIsNone(re.search(r"^\Aabc\Z$", "\nabc\n", re.M))
@@ -526,8 +522,6 @@ class ReTests(unittest.TestCase):
                                    b"1aa! a").group(0), b"1aa! a")
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                    "1aa! a", re.ASCII).group(0), "1aa! a")
-        self.assertEqual(re.search(r"\d\D\w\W\s\S",
-                                   "1aa! a", re.LOCALE).group(0), "1aa! a")
         self.assertEqual(re.search(br"\d\D\w\W\s\S",
                                    b"1aa! a", re.LOCALE).group(0), b"1aa! a")
 
@@ -693,9 +687,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(_sre.getlower(ord('A'), 0), ord('a'))
         self.assertEqual(_sre.getlower(ord('A'), re.LOCALE), ord('a'))
         self.assertEqual(_sre.getlower(ord('A'), re.UNICODE), ord('a'))
+        self.assertEqual(_sre.getlower(ord('A'), re.ASCII), ord('a'))
 
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
         self.assertEqual(re.match(b"abc", b"ABC", re.I).group(0), b"ABC")
+        self.assertEqual(re.match("abc", "ABC", re.I|re.A).group(0), "ABC")
+        self.assertEqual(re.match(b"abc", b"ABC", re.I|re.L).group(0), b"ABC")
 
     def test_not_literal(self):
         self.assertEqual(re.search("\s([^a])", " b").group(1), "b")
@@ -780,8 +777,10 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.X, re.VERBOSE)
 
     def test_flags(self):
-        for flag in [re.I, re.M, re.X, re.S, re.L]:
+        for flag in [re.I, re.M, re.X, re.S, re.A, re.U]:
             self.assertTrue(re.compile('^pattern$', flag))
+        for flag in [re.I, re.M, re.X, re.S, re.A, re.L]:
+            self.assertTrue(re.compile(b'^pattern$', flag))
 
     def test_sre_character_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255, 256, 0xFFFF, 0x10000, 0x10FFFF]:
@@ -1146,6 +1145,52 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.compile, '(?a)\w', re.UNICODE)
         self.assertRaises(ValueError, re.compile, '(?au)\w')
 
+    def test_locale_flag(self):
+        import locale
+        _, enc = locale.getlocale(locale.LC_CTYPE)
+        # Search non-ASCII letter
+        for i in range(128, 256):
+            try:
+                c = bytes([i]).decode(enc)
+                sletter = c.lower()
+                if sletter == c: continue
+                bletter = sletter.encode(enc)
+                if len(bletter) != 1: continue
+                if bletter.decode(enc) != sletter: continue
+                bpat = re.escape(bytes([i]))
+                break
+            except (UnicodeError, TypeError):
+                pass
+        else:
+            bletter = None
+            bpat = b'A'
+        # Bytes patterns
+        pat = re.compile(bpat, re.LOCALE | re.IGNORECASE)
+        if bletter:
+            self.assertTrue(pat.match(bletter))
+        pat = re.compile(b'(?L)' + bpat, re.IGNORECASE)
+        if bletter:
+            self.assertTrue(pat.match(bletter))
+        pat = re.compile(bpat, re.IGNORECASE)
+        if bletter:
+            self.assertIsNone(pat.match(bletter))
+        pat = re.compile(b'\w', re.LOCALE)
+        if bletter:
+            self.assertTrue(pat.match(bletter))
+        pat = re.compile(b'(?L)\w')
+        if bletter:
+            self.assertTrue(pat.match(bletter))
+        pat = re.compile(b'\w')
+        if bletter:
+            self.assertIsNone(pat.match(bletter))
+        # Incompatibilities
+        self.assertWarns(DeprecationWarning, re.compile, '', re.LOCALE)
+        self.assertWarns(DeprecationWarning, re.compile, '(?L)')
+        self.assertWarns(DeprecationWarning, re.compile, b'', re.LOCALE | re.ASCII)
+        self.assertWarns(DeprecationWarning, re.compile, b'(?L)', re.ASCII)
+        self.assertWarns(DeprecationWarning, re.compile, b'(?a)', re.LOCALE)
+        self.assertWarns(DeprecationWarning, re.compile, b'(?aL)')
+
     def test_bug_6509(self):
         # Replacement strings of both types must parse properly.
         # all strings
@@ -1477,6 +1522,10 @@ class PatternReprTests(unittest.TestCase):
         self.check_flags(b'bytes pattern', re.A,
                          "re.compile(b'bytes pattern', re.ASCII)")
 
+    def test_locale(self):
+        self.check_flags(b'bytes pattern', re.L,
+                         "re.compile(b'bytes pattern', re.LOCALE)")
+
     def test_quotes(self):
         self.check('random "double quoted" pattern',
             '''re.compile('random "double quoted" pattern')''')
@@ -1590,8 +1639,16 @@ class ExternalTests(unittest.TestCase):
                     pass
                 else:
                     with self.subTest('bytes pattern match'):
-                        bpat = re.compile(bpat)
-                        self.assertTrue(bpat.search(bs))
+                        obj = re.compile(bpat)
+                        self.assertTrue(obj.search(bs))
+
+                    # Try the match with LOCALE enabled, and check that it
+                    # still succeeds.
+                    with self.subTest('locale-sensitive match'):
+                        obj = re.compile(bpat, re.LOCALE)
+                        result = obj.search(bs)
+                        if result is None:
+                            print('=== Fails on locale-sensitive match', t)
 
                 # Try the match with the search area limited to the extent
                 # of the match and see if it still succeeds.  \B will
@@ -1608,13 +1665,6 @@ class ExternalTests(unittest.TestCase):
                 with self.subTest('case-insensitive match'):
                     obj = re.compile(pattern, re.IGNORECASE)
                     self.assertTrue(obj.search(s))
-
-                # Try the match with LOCALE enabled, and check that it
-                # still succeeds.
-                if '(?u)' not in pattern:
-                    with self.subTest('locale-sensitive match'):
-                        obj = re.compile(pattern, re.LOCALE)
-                        self.assertTrue(obj.search(s))
 
                 # Try the match with UNICODE locale enabled, and check
                 # that it still succeeds.
