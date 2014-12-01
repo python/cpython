@@ -517,7 +517,7 @@ def is_unavailable_exception(e):
         return True
 
 def make_request_and_skipIf(condition, reason):
-    # If we skip the test, we have to make a request because the
+    # If we skip the test, we have to make a request because
     # the server created in setUp blocks expecting one to come in.
     if not condition:
         return lambda func: func

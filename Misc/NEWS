@@ -1813,7 +1813,7 @@ Library
 - Issue #15304: concurrent.futures.wait() can block forever even if
   Futures have completed. Patch by Glenn Langford.
 
-- Issue #14455: plistlib: fix serializing integers integers in the range
+- Issue #14455: plistlib: fix serializing integers in the range
   of an unsigned long long but outside of the range of signed long long for
   binary plist files.
 
@@ -1824,7 +1824,7 @@ IDLE
   Patch mostly by Serhiy Storchaka.
 
 - Update the python.gif icon for the Idle classbrowser and pathbowser
-  from the old green snake to the new new blue and yellow snakes.
+  from the old green snake to the new blue and yellow snakes.
 
 - Issue #17721: Remove non-functional configuration dialog help button until we
   make it actually gives some help when clicked. Patch by Guilherme Simões.
@@ -3105,7 +3105,7 @@ Library
   reside in the os module.
 
 - Issue #19205: Don't import the 're' module in site and sysconfig module to
-  to speed up interpreter start.
+  speed up interpreter start.
 
 - Issue #9548: Add a minimal "_bootlocale" module that is imported by the
   _io module instead of the full locale module.
