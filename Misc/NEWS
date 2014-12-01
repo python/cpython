@@ -191,6 +191,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21032. Fixed socket leak if HTTPConnection.getresponse() fails.
+  Original patch by Martin Panter.
+
 - Issue #22407: Deprecated the use of re.LOCALE flag with str patterns or
   re.ASCII. It was newer worked.
 
