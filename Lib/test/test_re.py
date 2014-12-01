@@ -1511,55 +1511,55 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
 
 
-def run_re_tests():
-    from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
-    if verbose:
-        print('Running re_tests test suite')
-    else:
-        # To save time, only run the first and last 10 tests
-        #tests = tests[:10] + tests[-10:]
-        pass
+class ExternalTests(unittest.TestCase):
 
-    for t in tests:
-        sys.stdout.flush()
-        pattern = s = outcome = repl = expected = None
-        if len(t) == 5:
-            pattern, s, outcome, repl, expected = t
-        elif len(t) == 3:
-            pattern, s, outcome = t
-        else:
-            raise ValueError('Test tuples should have 3 or 5 fields', t)
+    def test_re_benchmarks(self):
+        're_tests benchmarks'
+        from test.re_tests import benchmarks
+        for pattern, s in benchmarks:
+            with self.subTest(pattern=pattern, string=s):
+                p = re.compile(pattern)
+                self.assertTrue(p.search(s))
+                self.assertTrue(p.match(s))
+                self.assertTrue(p.fullmatch(s))
+                s2 = ' '*10000 + s + ' '*10000
+                self.assertTrue(p.search(s2))
+                self.assertTrue(p.match(s2, 10000))
+                self.assertTrue(p.match(s2, 10000, 10000 + len(s)))
+                self.assertTrue(p.fullmatch(s2, 10000, 10000 + len(s)))
 
-        try:
-            obj = re.compile(pattern)
-        except re.error:
-            if outcome == SYNTAX_ERROR: pass  # Expected a syntax error
+    def test_re_tests(self):
+        're_tests test suite'
+        from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
+        for t in tests:
+            pattern = s = outcome = repl = expected = None
+            if len(t) == 5:
+                pattern, s, outcome, repl, expected = t
+            elif len(t) == 3:
+                pattern, s, outcome = t
             else:
-                print('=== Syntax error:', t)
-        except KeyboardInterrupt: raise KeyboardInterrupt
-        except:
-            print('*** Unexpected error ***', t)
-            if verbose:
-                traceback.print_exc(file=sys.stdout)
-        else:
-            try:
+                raise ValueError('Test tuples should have 3 or 5 fields', t)
+
+            with self.subTest(pattern=pattern, string=s):
+                if outcome == SYNTAX_ERROR:  # Expected a syntax error
+                    with self.assertRaises(re.error):
+                        re.compile(pattern)
+                    continue
+
+                obj = re.compile(pattern)
                 result = obj.search(s)
-            except re.error as msg:
-                print('=== Unexpected exception', t, repr(msg))
-            if outcome == SYNTAX_ERROR:
-                # This should have been a syntax error; forget it.
-                pass
-            elif outcome == FAIL:
-                if result is None: pass   # No match, as expected
-                else: print('=== Succeeded incorrectly', t)
-            elif outcome == SUCCEED:
-                if result is not None:
+                if outcome == FAIL:
+                    self.assertIsNone(result, 'Succeeded incorrectly')
+                    continue
+
+                with self.subTest():
+                    self.assertTrue(result, 'Failed incorrectly')
                     # Matched, as expected, so now we compute the
                     # result string and compare it to our expected result.
                     start, end = result.span(0)
-                    vardict={'found': result.group(0),
-                             'groups': result.group(),
-                             'flags': result.re.flags}
+                    vardict = {'found': result.group(0),
+                               'groups': result.group(),
+                               'flags': result.re.flags}
                     for i in range(1, 100):
                         try:
                             gi = result.group(i)
@@ -1577,12 +1577,8 @@ def run_re_tests():
                         except IndexError:
                             gi = "Error"
                         vardict[i] = gi
-                    repl = eval(repl, vardict)
-                    if repl != expected:
-                        print('=== grouping error', t, end=' ')
-                        print(repr(repl) + ' should be ' + repr(expected))
-                else:
-                    print('=== Failed incorrectly', t)
+                    self.assertEqual(eval(repl, vardict), expected,
+                                     'grouping error')
 
                 # Try the match with both pattern and string converted to
                 # bytes, and check that it still succeeds.
@@ -1593,55 +1589,39 @@ def run_re_tests():
                     # skip non-ascii tests
                     pass
                 else:
-                    try:
+                    with self.subTest('bytes pattern match'):
                         bpat = re.compile(bpat)
-                    except Exception:
-                        print('=== Fails on bytes pattern compile', t)
-                        if verbose:
-                            traceback.print_exc(file=sys.stdout)
-                    else:
-                        bytes_result = bpat.search(bs)
-                        if bytes_result is None:
-                            print('=== Fails on bytes pattern match', t)
+                        self.assertTrue(bpat.search(bs))
 
                 # Try the match with the search area limited to the extent
                 # of the match and see if it still succeeds.  \B will
                 # break (because it won't match at the end or start of a
                 # string), so we'll ignore patterns that feature it.
-
-                if pattern[:2] != '\\B' and pattern[-2:] != '\\B' \
-                               and result is not None:
-                    obj = re.compile(pattern)
-                    result = obj.search(s, result.start(0), result.end(0) + 1)
-                    if result is None:
-                        print('=== Failed on range-limited match', t)
+                if (pattern[:2] != r'\B' and pattern[-2:] != r'\B'
+                            and result is not None):
+                    with self.subTest('range-limited match'):
+                        obj = re.compile(pattern)
+                        self.assertTrue(obj.search(s, start, end + 1))
 
                 # Try the match with IGNORECASE enabled, and check that it
                 # still succeeds.
-                obj = re.compile(pattern, re.IGNORECASE)
-                result = obj.search(s)
-                if result is None:
-                    print('=== Fails on case-insensitive match', t)
+                with self.subTest('case-insensitive match'):
+                    obj = re.compile(pattern, re.IGNORECASE)
+                    self.assertTrue(obj.search(s))
 
                 # Try the match with LOCALE enabled, and check that it
                 # still succeeds.
                 if '(?u)' not in pattern:
-                    obj = re.compile(pattern, re.LOCALE)
-                    result = obj.search(s)
-                    if result is None:
-                        print('=== Fails on locale-sensitive match', t)
+                    with self.subTest('locale-sensitive match'):
+                        obj = re.compile(pattern, re.LOCALE)
+                        self.assertTrue(obj.search(s))
 
                 # Try the match with UNICODE locale enabled, and check
                 # that it still succeeds.
-                obj = re.compile(pattern, re.UNICODE)
-                result = obj.search(s)
-                if result is None:
-                    print('=== Fails on unicode-sensitive match', t)
+                with self.subTest('unicode-sensitive match'):
+                    obj = re.compile(pattern, re.UNICODE)
+                    self.assertTrue(obj.search(s))
 
-
-def test_main():
-    run_unittest(__name__)
-    run_re_tests()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
