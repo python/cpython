@@ -1636,6 +1636,27 @@ class AbstractPickleTests(unittest.TestCase):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(*args), unpickled(*args))
 
+    def test_local_lookup_error(self):
+        # Test that whichmodule() errors out cleanly when looking up
+        # an assumed globally-reachable object fails.
+        def f():
+            pass
+        # Since the function is local, lookup will fail
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((AttributeError, pickle.PicklingError)):
+                pickletools.dis(self.dumps(f, proto))
+        # Same without a __module__ attribute (exercises a different path
+        # in _pickle.c).
+        del f.__module__
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((AttributeError, pickle.PicklingError)):
+                pickletools.dis(self.dumps(f, proto))
+        # Yet a different path.
+        f.__name__ = f.__qualname__
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((AttributeError, pickle.PicklingError)):
+                pickletools.dis(self.dumps(f, proto))
+
 
 class BigmemPickleTests(unittest.TestCase):
 
