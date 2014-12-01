@@ -122,7 +122,7 @@ Library
 
 - Issue #22776: Brought excluded code into the scope of a try block in
   SysLogHandler.emit().
- 
+
 - Issue #17381: Fixed ranges handling in case-insensitive regular expressions.
 
 - Issue #19329: Optimized compiling charsets in regular expressions.
@@ -316,6 +316,23 @@ Library
 
 IDLE
 ----
+
+- Issue #3068: Add Idle extension configuration dialog to Options menu.
+  Changes are written to HOME/.idlerc/config-extensions.cfg.
+  Original patch by Tal Einat.
+
+- Issue #16233: A module browser (File : Class Browser, Alt+C) requires a
+  editor window with a filename.  When Class Browser is requested otherwise,
+  from a shell, output window, or 'Untitled' editor, Idle no longer displays
+  an error box.  It now pops up an  Open Module box (Alt+M). If a valid name
+  is entered and a module is opened, a corresponding browser is also opened.
+
+- Issue #4832: Save As to type Python files automatically adds .py to the
+  name you enter (even if your system does not display it).  Some systems
+  automatically add .txt when type is Text files.
+
+- Issue #21986: Code objects are not normally pickled by the pickle module.
+  To match this, they are no longer pickled when running under Idle.
 
 - Issue #22221: IDLE now ignores the source encoding declaration on the second
   line if the first line contains anything except a comment.
