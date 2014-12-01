@@ -105,7 +105,7 @@ class ProactorTests(test_utils.TestCase):
 
         _overlapped.SetEvent(event)
 
-        # Wait for for set event;
+        # Wait for set event;
         # result should be True immediately
         fut = self.loop._proactor.wait_for_handle(event, 10)
         start = self.loop.time()

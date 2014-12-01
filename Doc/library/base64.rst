@@ -13,7 +13,7 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
 It provides encoding and decoding functions for the encodings specified in
-in :rfc:`3548`, which defines the Base16, Base32, and Base64 algorithms,
+:rfc:`3548`, which defines the Base16, Base32, and Base64 algorithms,
 and for the de-facto standard Ascii85 and Base85 encodings.
 
 The :rfc:`3548` encodings are suitable for encoding binary data so that it can
