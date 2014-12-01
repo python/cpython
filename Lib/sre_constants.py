@@ -39,18 +39,6 @@ class error(Exception):
             self.lineno = self.colno = None
         super().__init__(msg)
 
-def linecol(doc, pos):
-    if isinstance(pattern, str):
-        newline = '\n'
-    else:
-        newline = b'\n'
-    lineno = pattern.count(newline, 0, pos) + 1
-    if lineno == 1:
-        colno = pos + 1
-    else:
-        colno = pos - doc.rindex(newline, 0, pos)
-    return lineno, colno
-
 
 class _NamedIntConstant(int):
     def __new__(cls, value, name):
