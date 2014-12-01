@@ -3,6 +3,7 @@ import os
 import py_compile
 import shutil
 import stat
+import sys
 import tempfile
 import unittest
 
@@ -107,7 +108,7 @@ class PyCompileTests(unittest.TestCase):
         pyc_path = weird_path + 'c'
         self.assertEqual(
             '/'.join(cache_path.split('/')[-2:]),
-            '__pycache__/foo.bar.cpython-34.pyc')
+            '__pycache__/foo.bar.{}.pyc'.format(sys.implementation.cache_tag))
         with open(weird_path, 'w') as file:
             file.write('x = 123\n')
         py_compile.compile(weird_path)
