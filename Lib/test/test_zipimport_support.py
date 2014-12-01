@@ -57,7 +57,7 @@ class ZipSupportTests(unittest.TestCase):
     # This used to use the ImportHooksBaseTestCase to restore
     # the state of the import related information
     # in the sys module after each test. However, that restores
-    # *too much* information and breaks for the invocation of
+    # *too much* information and breaks for the invocation
     # of test_doctest. So we do our own thing and leave
     # sys.modules alone.
     # We also clear the linecache and zipimport cache

@@ -225,7 +225,7 @@ lcg_urandom(unsigned int x0, unsigned char *buffer, size_t size)
 }
 
 /* Fill buffer with size pseudo-random bytes from the operating system random
-   number generator (RNG). It is suitable for for most cryptographic purposes
+   number generator (RNG). It is suitable for most cryptographic purposes
    except long living private keys for asymmetric encryption.
 
    Return 0 on success, raise an exception and return -1 on error. */
