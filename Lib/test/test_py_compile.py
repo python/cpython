@@ -3,6 +3,7 @@ import os
 import py_compile
 import shutil
 import stat
+import sys
 import tempfile
 import unittest
 
@@ -98,6 +99,22 @@ class PyCompileTests(unittest.TestCase):
             self.assertIsNone(py_compile.compile(bad_coding, doraise=False))
         self.assertFalse(os.path.exists(
             importlib.util.cache_from_source(bad_coding)))
+
+    def test_double_dot_no_clobber(self):
+        # http://bugs.python.org/issue22966
+        # py_compile foo.bar.py -> __pycache__/foo.cpython-34.pyc
+        weird_path = os.path.join(self.directory, 'foo.bar.py')
+        cache_path = importlib.util.cache_from_source(weird_path)
+        pyc_path = weird_path + 'c'
+        self.assertEqual(
+            '/'.join(cache_path.split('/')[-2:]),
+            '__pycache__/foo.bar.{}.pyc'.format(sys.implementation.cache_tag))
+        with open(weird_path, 'w') as file:
+            file.write('x = 123\n')
+        py_compile.compile(weird_path)
+        self.assertTrue(os.path.exists(cache_path))
+        self.assertFalse(os.path.exists(pyc_path))
+
 
 if __name__ == "__main__":
     unittest.main()
