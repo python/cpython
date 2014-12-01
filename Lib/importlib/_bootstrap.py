@@ -453,11 +453,11 @@ def cache_from_source(path, debug_override=None):
     else:
         suffixes = OPTIMIZED_BYTECODE_SUFFIXES
     head, tail = _path_split(path)
-    base_filename, sep, _ = tail.partition('.')
+    base, sep, rest = tail.rpartition('.')
     tag = sys.implementation.cache_tag
     if tag is None:
         raise NotImplementedError('sys.implementation.cache_tag is None')
-    filename = ''.join([base_filename, sep, tag, suffixes[0]])
+    filename = ''.join([(base if base else rest), sep, tag, suffixes[0]])
     return _path_join(head, _PYCACHE, filename)
 
 
