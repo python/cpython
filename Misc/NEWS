@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21032. Fixed socket leak if HTTPConnection.getresponse() fails.
+  Original patch by Martin Panter.
+
 - Issue #22960: Add a context argument to xmlrpclib.ServerProxy constructor.
 
 - Issue #22915: SAX parser now supports files opened with file descriptor or
