@@ -86,7 +86,7 @@ tests = [
     (r'\a[\b]\f\n\r\t\v', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
     (r'[\a][\b][\f][\n][\r][\t][\v]', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
     # NOTE: not an error under PCRE/PRE:
-    # (r'\u', '', SYNTAX_ERROR),    # A Perl escape
+    (r'\u', '', SYNTAX_ERROR),    # A Perl escape
     (r'\c\e\g\h\i\j\k\m\o\p\q\y\z', 'ceghijkmopqyz', SUCCEED, 'found', 'ceghijkmopqyz'),
     (r'\xff', '\377', SUCCEED, 'found', chr(255)),
     # new \x semantics
