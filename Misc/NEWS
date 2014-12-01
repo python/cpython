@@ -191,7 +191,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #21032: Deprecated the use of re.LOCALE flag with str patterns or
+- Issue #22407: Deprecated the use of re.LOCALE flag with str patterns or
   re.ASCII. It was newer worked.
 
 - Issue #22902: The "ip" command is now used on Linux to determine MAC address
