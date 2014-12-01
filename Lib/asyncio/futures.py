@@ -61,7 +61,7 @@ class _TracebackLogger:
     the Future is collected, and the helper is present, the helper
     object is also collected, and its __del__() method will log the
     traceback.  When the Future's result() or exception() method is
-    called (and a helper object is present), it removes the the helper
+    called (and a helper object is present), it removes the helper
     object, after calling its clear() method to prevent it from
     logging.
 

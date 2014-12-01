@@ -10289,7 +10289,7 @@ posix_sysconf(PyObject *self, PyObject *args)
 
 
 /* This code is used to ensure that the tables of configuration value names
- * are in sorted order as required by conv_confname(), and also to build the
+ * are in sorted order as required by conv_confname(), and also to build
  * the exported dictionaries that are used to publish information about the
  * names available on the host platform.
  *
