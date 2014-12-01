@@ -1233,18 +1233,22 @@ class HTTPConnection:
         else:
             response = self.response_class(self.sock, method=self._method)
 
-        response.begin()
-        assert response.will_close != _UNKNOWN
-        self.__state = _CS_IDLE
+        try:
+            response.begin()
+            assert response.will_close != _UNKNOWN
+            self.__state = _CS_IDLE
 
-        if response.will_close:
-            # this effectively passes the connection to the response
-            self.close()
-        else:
-            # remember this, so we can tell when it is complete
-            self.__response = response
+            if response.will_close:
+                # this effectively passes the connection to the response
+                self.close()
+            else:
+                # remember this, so we can tell when it is complete
+                self.__response = response
 
-        return response
+            return response
+        except:
+            response.close()
+            raise
 
 try:
     import ssl
