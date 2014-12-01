@@ -28,6 +28,7 @@ class FakeSocket:
         self.fileclass = fileclass
         self.data = b''
         self.sendall_calls = 0
+        self.file_closed = False
         self.host = host
         self.port = port
 
@@ -38,7 +39,13 @@ class FakeSocket:
     def makefile(self, mode, bufsize=None):
         if mode != 'r' and mode != 'rb':
             raise client.UnimplementedFileMode()
-        return self.fileclass(self.text)
+        # keep the file around so we can check how much was read from it
+        self.file = self.fileclass(self.text)
+        self.file.close = self.file_close #nerf close ()
+        return self.file
+
+    def file_close(self):
+        self.file_closed = True
 
     def close(self):
         pass
@@ -674,6 +681,22 @@ class BasicTest(TestCase):
         body = b'x' * conn.mss
         conn.request('POST', '/', body)
         self.assertGreater(sock.sendall_calls, 1)
+
+    def test_error_leak(self):
+        # Test that the socket is not leaked if getresponse() fails
+        conn = client.HTTPConnection('example.com')
+        response = None
+        class Response(client.HTTPResponse):
+            def __init__(self, *pos, **kw):
+                nonlocal response
+                response = self  # Avoid garbage collector closing the socket
+                client.HTTPResponse.__init__(self, *pos, **kw)
+        conn.response_class = Response
+        conn.sock = FakeSocket('')  # Emulate server dropping connection
+        conn.request('GET', '/')
+        self.assertRaises(client.BadStatusLine, conn.getresponse)
+        self.assertTrue(response.closed)
+        self.assertTrue(conn.sock.file_closed)
 
 class OfflineTest(TestCase):
     def test_responses(self):
