@@ -172,7 +172,7 @@ except ImportError:
 
         def prf(msg, inner=inner, outer=outer):
             # PBKDF2_HMAC uses the password as key. We can re-use the same
-            # digest objects and and just update copies to skip initialization.
+            # digest objects and just update copies to skip initialization.
             icpy = inner.copy()
             ocpy = outer.copy()
             icpy.update(msg)

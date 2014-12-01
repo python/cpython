@@ -221,7 +221,7 @@ find_key(int set_value, int key, void *value)
             goto Done;
         }
         /* Sanity check.  These states should never happen but if
-         * they do we must abort.  Otherwise we'll end up spinning in
+         * they do we must abort.  Otherwise we'll end up spinning
          * in a tight loop with the lock held.  A similar check is done
          * in pystate.c tstate_delete_common().  */
         if (p == prev_p)

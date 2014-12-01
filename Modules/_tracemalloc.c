@@ -104,7 +104,7 @@ static size_t tracemalloc_traced_memory = 0;
    Protected by TABLES_LOCK(). */
 static size_t tracemalloc_peak_traced_memory = 0;
 
-/* Hash table used as a set to to intern filenames:
+/* Hash table used as a set to intern filenames:
    PyObject* => PyObject*.
    Protected by the GIL */
 static _Py_hashtable_t *tracemalloc_filenames = NULL;
