@@ -59,7 +59,7 @@ class DBShelveTestCase(unittest.TestCase):
             return bytes(key, "iso8859-1")  # 8 bits
 
     def populateDB(self, d):
-        for x in string.letters:
+        for x in string.ascii_letters:
             d[self.mk('S' + x)] = 10 * x           # add a string
             d[self.mk('I' + x)] = ord(x)           # add an integer
             d[self.mk('L' + x)] = [x] * 10         # add a list

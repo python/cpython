@@ -10,7 +10,6 @@ from test_all import db, verbose, get_new_database_path
 
 #----------------------------------------------------------------------
 
-@unittest.skip("fails on Windows; see issue 22943")
 class SimpleQueueTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = get_new_database_path()
@@ -37,17 +36,17 @@ class SimpleQueueTestCase(unittest.TestCase):
             print "before appends" + '-' * 30
             pprint(d.stat())
 
-        for x in string.letters:
+        for x in string.ascii_letters:
             d.append(x * 40)
 
-        self.assertEqual(len(d), len(string.letters))
+        self.assertEqual(len(d), len(string.ascii_letters))
 
         d.put(100, "some more data")
         d.put(101, "and some more ")
         d.put(75,  "out of order")
         d.put(1,   "replacement data")
 
-        self.assertEqual(len(d), len(string.letters)+3)
+        self.assertEqual(len(d), len(string.ascii_letters)+3)
 
         if verbose:
             print "before close" + '-' * 30
@@ -108,17 +107,17 @@ class SimpleQueueTestCase(unittest.TestCase):
             print "before appends" + '-' * 30
             pprint(d.stat())
 
-        for x in string.letters:
+        for x in string.ascii_letters:
             d.append(x * 40)
 
-        self.assertEqual(len(d), len(string.letters))
+        self.assertEqual(len(d), len(string.ascii_letters))
 
         d.put(100, "some more data")
         d.put(101, "and some more ")
         d.put(75,  "out of order")
         d.put(1,   "replacement data")
 
-        self.assertEqual(len(d), len(string.letters)+3)
+        self.assertEqual(len(d), len(string.ascii_letters)+3)
 
         if verbose:
             print "before close" + '-' * 30

@@ -30,6 +30,11 @@ Tools/Demos
 - Issue #18905: "pydoc -p 0" now outputs actually used port.  Based on patch by
   Wieland Hoffmann.
 
+Tests
+-----
+
+- Issue #22943: bsddb tests are locale independend now.
+
 
 What's New in Python 2.7.9?
 ===========================

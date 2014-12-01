@@ -999,7 +999,7 @@ class BasicMultiDBTestCase(BasicTestCase):
         for x in "The quick brown fox jumped over the lazy dog".split():
             d2.put(x, self.makeData(x))
 
-        for x in string.letters:
+        for x in string.ascii_letters:
             d3.put(x, x*70)
 
         d1.sync()
@@ -1047,7 +1047,7 @@ class BasicMultiDBTestCase(BasicTestCase):
             if verbose:
                 print rec
             rec = c3.next()
-        self.assertEqual(count, len(string.letters))
+        self.assertEqual(count, len(string.ascii_letters))
 
 
         c1.close()

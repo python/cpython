@@ -26,14 +26,14 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_BTREE, db.DB_CREATE)
         d.set_get_returns_none(1)
 
-        for x in string.letters:
+        for x in string.ascii_letters:
             d.put(x, x * 40)
 
         data = d.get('bad key')
         self.assertEqual(data, None)
 
-        data = d.get(string.letters[0])
-        self.assertEqual(data, string.letters[0]*40)
+        data = d.get(string.ascii_letters[0])
+        self.assertEqual(data, string.ascii_letters[0]*40)
 
         count = 0
         c = d.cursor()
@@ -43,7 +43,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
             rec = c.next()
 
         self.assertEqual(rec, None)
-        self.assertEqual(count, len(string.letters))
+        self.assertEqual(count, len(string.ascii_letters))
 
         c.close()
         d.close()
@@ -54,14 +54,14 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_BTREE, db.DB_CREATE)
         d.set_get_returns_none(0)
 
-        for x in string.letters:
+        for x in string.ascii_letters:
             d.put(x, x * 40)
 
         self.assertRaises(db.DBNotFoundError, d.get, 'bad key')
         self.assertRaises(KeyError, d.get, 'bad key')
 
-        data = d.get(string.letters[0])
-        self.assertEqual(data, string.letters[0]*40)
+        data = d.get(string.ascii_letters[0])
+        self.assertEqual(data, string.ascii_letters[0]*40)
 
         count = 0
         exceptionHappened = 0
@@ -77,7 +77,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
 
         self.assertNotEqual(rec, None)
         self.assertTrue(exceptionHappened)
-        self.assertEqual(count, len(string.letters))
+        self.assertEqual(count, len(string.ascii_letters))
 
         c.close()
         d.close()
