@@ -1055,13 +1055,13 @@ fileio_repr(fileio *self)
         else
             return NULL;
         res = PyUnicode_FromFormat(
-	    "<_io.FileIO fd=%d mode='%s' closefd='%d'>",
-	    self->fd, mode_string(self), self->closefd);
+            "<_io.FileIO fd=%d mode='%s' closefd=%s>",
+            self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
         res = PyUnicode_FromFormat(
-	    "<_io.FileIO name=%R mode='%s' closefd='%d'>",
-	    nameobj, mode_string(self), self->closefd);
+            "<_io.FileIO name=%R mode='%s' closefd=%s>",
+            nameobj, mode_string(self), self->closefd ? "True" : "False");
         Py_DECREF(nameobj);
     }
     return res;
