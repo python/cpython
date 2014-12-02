@@ -3039,6 +3039,13 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return new;
     }
 
+    /* If it's not unicode, there can't be encoding or errors */
+    if (encoding != NULL || errors != NULL) {
+        PyErr_SetString(PyExc_TypeError,
+            "encoding or errors without a string argument");
+        return NULL;
+    }
+
     /* We'd like to call PyObject_Bytes here, but we need to check for an
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
@@ -3076,13 +3083,6 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (new == NULL)
             return NULL;
         return new;
-    }
-
-    /* If it's not unicode, there can't be encoding or errors */
-    if (encoding != NULL || errors != NULL) {
-        PyErr_SetString(PyExc_TypeError,
-            "encoding or errors without a string argument");
-        return NULL;
     }
 
     return PyBytes_FromObject(x);
