@@ -106,9 +106,13 @@ class PyCompileTests(unittest.TestCase):
         weird_path = os.path.join(self.directory, 'foo.bar.py')
         cache_path = importlib.util.cache_from_source(weird_path)
         pyc_path = weird_path + 'c'
+        head, tail = os.path.split(cache_path)
+        penultimate_tail = os.path.basename(head)
         self.assertEqual(
-            '/'.join(cache_path.split('/')[-2:]),
-            '__pycache__/foo.bar.{}.pyc'.format(sys.implementation.cache_tag))
+            os.path.join(penultimate_tail, tail),
+            os.path.join(
+                '__pycache__',
+                'foo.bar.{}.pyc'.format(sys.implementation.cache_tag)))
         with open(weird_path, 'w') as file:
             file.write('x = 123\n')
         py_compile.compile(weird_path)
