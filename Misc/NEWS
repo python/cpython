@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #20335: bytes constructor now raises TypeError when encoding or errors
+  is specified with non-string argument.  Based on patch by Renaud Blanch.
+
 - Issue #22335: Fix crash when trying to enlarge a bytearray to 0x7fffffff
   bytes on a 32-bit platform.
 
