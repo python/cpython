@@ -109,7 +109,7 @@ class Task(futures.Future):
     def get_stack(self, *, limit=None):
         """Return the list of stack frames for this task's coroutine.
 
-        If the coroutine is active, this returns the stack where it is
+        If the coroutine is not done, this returns the stack where it is
         suspended.  If the coroutine has completed successfully or was
         cancelled, this returns an empty list.  If the coroutine was
         terminated by an exception, this returns the list of traceback
