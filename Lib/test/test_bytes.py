@@ -100,6 +100,14 @@ class BaseBytesTest:
         self.assertRaises(TypeError, self.type2test, [0.0])
         self.assertRaises(TypeError, self.type2test, [None])
         self.assertRaises(TypeError, self.type2test, [C()])
+        self.assertRaises(TypeError, self.type2test, 0, 'ascii')
+        self.assertRaises(TypeError, self.type2test, b'', 'ascii')
+        self.assertRaises(TypeError, self.type2test, 0, errors='ignore')
+        self.assertRaises(TypeError, self.type2test, b'', errors='ignore')
+        self.assertRaises(TypeError, self.type2test, '')
+        self.assertRaises(TypeError, self.type2test, '', errors='ignore')
+        self.assertRaises(TypeError, self.type2test, '', b'ascii')
+        self.assertRaises(TypeError, self.type2test, '', 'ascii', b'ignore')
 
     def test_constructor_value_errors(self):
         self.assertRaises(ValueError, self.type2test, [-1])
