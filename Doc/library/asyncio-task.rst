@@ -337,14 +337,9 @@ flow::
     finally:
         loop.close()
 
-In this example, the future is responsible to display the result and to stop
-the loop.
-
-.. note::
-   The "slow_operation" coroutine object is only executed when the event loop
-   starts running, so it is possible to add a "done callback" to the future
-   after creating the task scheduling the coroutine object.
-
+In this example, the future is used to link ``slow_operation()`` to
+``got_result()``: when ``slow_operation()`` is done, ``got_result()`` is called
+with the result.
 
 
 Task
