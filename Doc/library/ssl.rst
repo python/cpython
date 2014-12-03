@@ -192,7 +192,7 @@ instead.
        ------------------------  ---------  ---------  ----------  ---------  -----------  -----------
         *SSLv2*                    yes        no         yes         no         no         no
         *SSLv3*                    no         yes        yes         no         no         no
-        *SSLv23*                   yes        no         yes         no         no         no
+        *SSLv23*                   no         yes        yes         yes        yes        yes
         *TLSv1*                    no         no         yes         yes        no         no
         *TLSv1.1*                  no         no         yes         no         yes        no
         *TLSv1.2*                  no         no         yes         no         no         yes
@@ -201,9 +201,8 @@ instead.
    .. note::
 
       Which connections succeed will vary depending on the version of
-      OpenSSL.  For example, beginning with OpenSSL 1.0.0, an SSLv23 client
-      will not actually attempt SSLv2 connections unless you explicitly
-      enable SSLv2 ciphers (which is not recommended, as SSLv2 is broken).
+      OpenSSL.  For example, before OpenSSL 1.0.0, an SSLv23 client
+      would always attempt SSLv2 connections.
 
    The *ciphers* parameter sets the available ciphers for this SSL object.
    It should be a string in the `OpenSSL cipher list format
