@@ -624,6 +624,25 @@ def _get_decompressor(compress_type):
             raise NotImplementedError("compression type %d" % (compress_type,))
 
 
+class _SharedFile:
+    def __init__(self, file, pos, close):
+        self._file = file
+        self._pos = pos
+        self._close = close
+
+    def read(self, n=-1):
+        self._file.seek(self._pos)
+        data = self._file.read(n)
+        self._pos = self._file.tell()
+        return data
+
+    def close(self):
+        if self._file is not None:
+            fileobj = self._file
+            self._file = None
+            self._close(fileobj)
+
+
 class ZipExtFile(io.BufferedIOBase):
     """File-like object for reading an archive member.
        Is returned by ZipFile.open().
@@ -909,7 +928,7 @@ class ZipFile:
         self.NameToInfo = {}    # Find file info given name
         self.filelist = []      # List of ZipInfo instances for archive
         self.compression = compression  # Method of compression
-        self.mode = key = mode.replace('b', '')[0]
+        self.mode = mode
         self.pwd = None
         self._comment = b''
 
@@ -918,28 +937,33 @@ class ZipFile:
             # No, it's a filename
             self._filePassed = 0
             self.filename = file
-            modeDict = {'r' : 'rb', 'w': 'wb', 'a' : 'r+b'}
-            try:
-                self.fp = io.open(file, modeDict[mode])
-            except OSError:
-                if mode == 'a':
-                    mode = key = 'w'
-                    self.fp = io.open(file, modeDict[mode])
-                else:
+            modeDict = {'r' : 'rb', 'w': 'w+b', 'a' : 'r+b',
+                        'r+b': 'w+b', 'w+b': 'wb'}
+            filemode = modeDict[mode]
+            while True:
+                try:
+                    self.fp = io.open(file, filemode)
+                except OSError:
+                    if filemode in modeDict:
+                        filemode = modeDict[filemode]
+                        continue
                     raise
+                break
         else:
             self._filePassed = 1
             self.fp = file
             self.filename = getattr(file, 'name', None)
+        self._fileRefCnt = 1
 
         try:
-            if key == 'r':
+            if mode == 'r':
                 self._RealGetContents()
-            elif key == 'w':
+            elif mode == 'w':
                 # set the modified flag so central directory gets written
                 # even if no files are added to the archive
                 self._didModify = True
-            elif key == 'a':
+                self.start_dir = 0
+            elif mode == 'a':
                 try:
                     # See if file is a zip file
                     self._RealGetContents()
@@ -952,13 +976,13 @@ class ZipFile:
                     # set the modified flag so central directory gets written
                     # even if no files are added to the archive
                     self._didModify = True
+                    self.start_dir = self.fp.tell()
             else:
                 raise RuntimeError('Mode must be "r", "w" or "a"')
         except:
             fp = self.fp
             self.fp = None
-            if not self._filePassed:
-                fp.close()
+            self._fpclose(fp)
             raise
 
     def __enter__(self):
@@ -1131,23 +1155,17 @@ class ZipFile:
             raise RuntimeError(
                 "Attempt to read ZIP archive that was already closed")
 
-        # Only open a new file for instances where we were not
-        # given a file object in the constructor
-        if self._filePassed:
-            zef_file = self.fp
+        # Make sure we have an info object
+        if isinstance(name, ZipInfo):
+            # 'name' is already an info object
+            zinfo = name
         else:
-            zef_file = io.open(self.filename, 'rb')
+            # Get info object for name
+            zinfo = self.getinfo(name)
 
+        self._fileRefCnt += 1
+        zef_file = _SharedFile(self.fp, zinfo.header_offset, self._fpclose)
         try:
-            # Make sure we have an info object
-            if isinstance(name, ZipInfo):
-                # 'name' is already an info object
-                zinfo = name
-            else:
-                # Get info object for name
-                zinfo = self.getinfo(name)
-            zef_file.seek(zinfo.header_offset, 0)
-
             # Skip the file header:
             fheader = zef_file.read(sizeFileHeader)
             if len(fheader) != sizeFileHeader:
@@ -1206,11 +1224,9 @@ class ZipFile:
                 if h[11] != check_byte:
                     raise RuntimeError("Bad password for file", name)
 
-            return ZipExtFile(zef_file, mode, zinfo, zd,
-                              close_fileobj=not self._filePassed)
+            return ZipExtFile(zef_file, mode, zinfo, zd, True)
         except:
-            if not self._filePassed:
-                zef_file.close()
+            zef_file.close()
             raise
 
     def extract(self, member, path=None, pwd=None):
@@ -1344,6 +1360,7 @@ class ZipFile:
 
         zinfo.file_size = st.st_size
         zinfo.flag_bits = 0x00
+        self.fp.seek(self.start_dir, 0)
         zinfo.header_offset = self.fp.tell()    # Start of header bytes
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
@@ -1360,6 +1377,7 @@ class ZipFile:
             self.filelist.append(zinfo)
             self.NameToInfo[zinfo.filename] = zinfo
             self.fp.write(zinfo.FileHeader(False))
+            self.start_dir = self.fp.tell()
             return
 
         cmpr = _get_compressor(zinfo.compress_type)
@@ -1398,10 +1416,10 @@ class ZipFile:
                 raise RuntimeError('Compressed size larger than uncompressed size')
         # Seek backwards and write file header (which will now include
         # correct CRC and file sizes)
-        position = self.fp.tell()       # Preserve current position in file
+        self.start_dir = self.fp.tell()       # Preserve current position in file
         self.fp.seek(zinfo.header_offset, 0)
         self.fp.write(zinfo.FileHeader(zip64))
-        self.fp.seek(position, 0)
+        self.fp.seek(self.start_dir, 0)
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
@@ -1430,6 +1448,7 @@ class ZipFile:
                 "Attempt to write to ZIP archive that was already closed")
 
         zinfo.file_size = len(data)            # Uncompressed size
+        self.fp.seek(self.start_dir, 0)
         zinfo.header_offset = self.fp.tell()    # Start of header data
         if compress_type is not None:
             zinfo.compress_type = compress_type
@@ -1458,6 +1477,7 @@ class ZipFile:
             self.fp.write(struct.pack(fmt, zinfo.CRC, zinfo.compress_size,
                                       zinfo.file_size))
         self.fp.flush()
+        self.start_dir = self.fp.tell()
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
@@ -1473,7 +1493,7 @@ class ZipFile:
 
         try:
             if self.mode in ("w", "a") and self._didModify: # write ending records
-                pos1 = self.fp.tell()
+                self.fp.seek(self.start_dir, 0)
                 for zinfo in self.filelist:         # write central directory
                     dt = zinfo.date_time
                     dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
@@ -1539,8 +1559,8 @@ class ZipFile:
                 pos2 = self.fp.tell()
                 # Write end-of-zip-archive record
                 centDirCount = len(self.filelist)
-                centDirSize = pos2 - pos1
-                centDirOffset = pos1
+                centDirSize = pos2 - self.start_dir
+                centDirOffset = self.start_dir
                 requires_zip64 = None
                 if centDirCount > ZIP_FILECOUNT_LIMIT:
                     requires_zip64 = "Files count"
@@ -1576,8 +1596,13 @@ class ZipFile:
         finally:
             fp = self.fp
             self.fp = None
-            if not self._filePassed:
-                fp.close()
+            self._fpclose(fp)
+
+    def _fpclose(self, fp):
+        assert self._fileRefCnt > 0
+        self._fileRefCnt -= 1
+        if not self._fileRefCnt and not self._filePassed:
+            fp.close()
 
 
 class PyZipFile(ZipFile):
