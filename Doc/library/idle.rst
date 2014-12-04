@@ -1,14 +1,14 @@
 .. _idle:
 
-IDLE
-====
-
-.. moduleauthor:: Guido van Rossum <guido@Python.org>
-
 .. index::
    single: IDLE
    single: Python Editor
    single: Integrated Development Environment
+
+IDLE
+====
+
+.. moduleauthor:: Guido van Rossum <guido@Python.org>
 
 IDLE is the Python IDE built with the :mod:`tkinter` GUI toolkit.
 
@@ -51,15 +51,15 @@ Open module...
 Recent Files
    Open a list of recent files
 
+.. index::
+   single: Class browser
+   single: Path browser
+
 Class browser
    Show classes and methods in current file
 
 Path browser
    Show sys.path directories, modules, classes and methods
-
-.. index::
-   single: Class browser
-   single: Path browser
 
 Save
    Save current window to the associated file (unsaved windows have a
@@ -137,7 +137,7 @@ Show Completions
 
 
 Format menu (Editor window only)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Indent region
    Shift selected lines right by the indent width (default 4 spaces)
@@ -263,6 +263,14 @@ Python Docs
 Additional help sources may be added here with the Configure IDLE dialog under
 the General tab.
 
+.. index::
+   single: Cut
+   single: Copy
+   single: Paste
+   single: Set Breakpoint
+   single: Clear Breakpoint
+   single: breakpoints
+
 Editor Window context menu
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -282,15 +290,6 @@ Set Breakpoint
 
 Clear Breakpoint
    Clears the breakpoint on that line.
-
-.. index::
-   single: Cut
-   single: Copy
-   single: Paste
-   single: Set Breakpoint
-   single: Clear Breakpoint
-   single: breakpoints
-
 
 Shell Window context menu
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -312,6 +311,9 @@ Go to file/line
 
 Editing and navigation
 ----------------------
+
+In this section, 'C' refers to the Control key on Windows and Unix and
+the Command key on Mac OSX.
 
 * :kbd:`Backspace` deletes to the left; :kbd:`Del` deletes to the right
 
@@ -414,7 +416,6 @@ Python Shell window
 * :kbd:`C-c` interrupts executing command
 
 * :kbd:`C-d` sends end-of-file; closes window if typed at a ``>>>`` prompt
-  (this is :kbd:`C-z` on Windows).
 
 * :kbd:`Alt-/` (Expand word) is also useful to reduce typing
 
@@ -507,6 +508,22 @@ If there are arguments:
    name is '-', no script is executed but an interactive Python session is started;
    the arguments are still available in ``sys.argv``.
 
+Running without a subprocess
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If IDLE is started with the -n command line switch it will run in a
+single process and will not create the subprocess which runs the RPC
+Python execution server.  This can be useful if Python cannot create
+the subprocess or the RPC socket interface on your platform.  However,
+in this mode user code is not isolated from IDLE itself.  Also, the
+environment is not restarted when Run/Run Module (F5) is selected.  If
+your code has been modified, you must reload() the affected modules and
+re-import any specific items (e.g. from foo import baz) if the changes
+are to take effect.  For these reasons, it is preferable to run IDLE
+with the default subprocess if at all possible.
+
+.. deprecated:: 3.4
+
 
 Additional help sources
 -----------------------
@@ -526,6 +543,7 @@ changed via the Configure IDLE menu option.  Be sure to note that
 keys can be user defined, IDLE ships with four built in key sets. In
 addition a user can create a custom key set in the Configure IDLE dialog
 under the keys tab.
+
 
 Extensions
 ----------
