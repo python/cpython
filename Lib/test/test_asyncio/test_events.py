@@ -226,7 +226,8 @@ class EventLoopTestsMixin:
 
     def tearDown(self):
         # just in case if we have transport close callbacks
-        test_utils.run_briefly(self.loop)
+        if not self.loop.is_closed():
+            test_utils.run_briefly(self.loop)
 
         self.loop.close()
         gc.collect()
@@ -1433,6 +1434,38 @@ class EventLoopTestsMixin:
         coro = close_loop(self.loop)
         with self.assertRaises(RuntimeError):
             self.loop.run_until_complete(coro)
+
+    def test_close(self):
+        self.loop.close()
+
+        @asyncio.coroutine
+        def test():
+            pass
+
+        func = lambda: False
+        coro = test()
+        self.addCleanup(coro.close)
+
+        # operation blocked when the loop is closed
+        with self.assertRaises(RuntimeError):
+            self.loop.run_forever()
+        with self.assertRaises(RuntimeError):
+            fut = asyncio.Future(loop=self.loop)
+            self.loop.run_until_complete(fut)
+        with self.assertRaises(RuntimeError):
+            self.loop.call_soon(func)
+        with self.assertRaises(RuntimeError):
+            self.loop.call_soon_threadsafe(func)
+        with self.assertRaises(RuntimeError):
+            self.loop.call_later(1.0, func)
+        with self.assertRaises(RuntimeError):
+            self.loop.call_at(self.loop.time() + .0, func)
+        with self.assertRaises(RuntimeError):
+            self.loop.run_in_executor(None, func)
+        with self.assertRaises(RuntimeError):
+            self.loop.create_task(coro)
+        with self.assertRaises(RuntimeError):
+            self.loop.add_signal_handler(signal.SIGTERM, func)
 
 
 class SubprocessTestsMixin:

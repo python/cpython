@@ -71,6 +71,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         or coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used with add_signal_handler()")
         self._check_signal(sig)
+        self._check_closed()
         try:
             # set_wakeup_fd() raises ValueError if this is not the
             # main thread.  By calling it early we ensure that an
