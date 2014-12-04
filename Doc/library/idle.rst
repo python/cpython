@@ -231,6 +231,10 @@ Configure IDLE
    themes may be altered.  Startup Preferences may be set, and additional
    help sources can be specified.
 
+Configure Extensions
+   Open a configuration dialog for setting preferences for extensions
+   (discussed below).
+
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the section of code which is scrolling off the top of the window.
@@ -525,8 +529,11 @@ with the default subprocess if at all possible.
 .. deprecated:: 3.4
 
 
+Help and preferences
+--------------------
+
 Additional help sources
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 IDLE includes a help menu entry called "Python Docs" that will open the
 extensive sources of help, including tutorials, available at docs.python.org.
@@ -535,22 +542,22 @@ Configure IDLE dialog. See the IDLE help option in the help menu of IDLE for
 more information.
 
 
-Other preferences
------------------
+Setting preferences
+^^^^^^^^^^^^^^^^^^^
 
 The font preferences, highlighting, keys, and general preferences can be
-changed via the Configure IDLE menu option.  Be sure to note that
-keys can be user defined, IDLE ships with four built in key sets. In
-addition a user can create a custom key set in the Configure IDLE dialog
-under the keys tab.
+changed via Configure IDLE on the Option menu.  Keys can be user defined;
+IDLE ships with four built in key sets. In addition a user can create a
+custom key set in the Configure IDLE dialog under the keys tab.
 
 
 Extensions
-----------
+^^^^^^^^^^
 
-IDLE contains an extension facility.  See the beginning of
-config-extensions.def in the idlelib directory for further information.  The
-default extensions are currently:
+IDLE contains an extension facility.  Peferences for extensions can be
+changed with Configure Extensions. See the beginning of config-extensions.def
+in the idlelib directory for further information.  The default extensions
+are currently:
 
 * FormatParagraph
 
@@ -568,3 +575,4 @@ default extensions are currently:
 
 * CodeContext
 
+* RstripExtension
