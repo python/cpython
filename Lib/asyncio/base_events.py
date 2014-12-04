@@ -177,6 +177,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Return a task object.
         """
+        self._check_closed()
         task = tasks.Task(coro, loop=self)
         if task._source_traceback:
             del task._source_traceback[-1]
@@ -360,6 +361,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if (coroutines.iscoroutine(callback)
         or coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used with call_at()")
+        self._check_closed()
         if self._debug:
             self._assert_is_current_event_loop()
         timer = events.TimerHandle(when, callback, args, self)
@@ -390,6 +392,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise TypeError("coroutines cannot be used with call_soon()")
         if self._debug and check_loop:
             self._assert_is_current_event_loop()
+        self._check_closed()
         handle = events.Handle(callback, args, self)
         if handle._source_traceback:
             del handle._source_traceback[-1]
@@ -426,6 +429,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if (coroutines.iscoroutine(callback)
         or coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used with run_in_executor()")
+        self._check_closed()
         if isinstance(callback, events.Handle):
             assert not args
             assert not isinstance(callback, events.TimerHandle)
