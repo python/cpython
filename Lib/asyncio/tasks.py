@@ -41,6 +41,10 @@ class Task(futures.Future):
     # all running event loops.  {EventLoop: Task}
     _current_tasks = {}
 
+    # If False, don't log a message if the task is destroyed whereas its
+    # status is still pending
+    _log_destroy_pending = True
+
     @classmethod
     def current_task(cls, loop=None):
         """Return the currently running task in an event loop or None.
@@ -73,9 +77,6 @@ class Task(futures.Future):
         self._must_cancel = False
         self._loop.call_soon(self._step)
         self.__class__._all_tasks.add(self)
-        # If False, don't log a message if the task is destroyed whereas its
-        # status is still pending
-        self._log_destroy_pending = True
 
     # On Python 3.3 or older, objects with a destructor that are part of a
     # reference cycle are never destroyed. That's not the case any more on
