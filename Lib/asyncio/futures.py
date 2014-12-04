@@ -135,6 +135,7 @@ class Future:
     _result = None
     _exception = None
     _loop = None
+    _source_traceback = None
 
     _blocking = False  # proper use of future (yield vs yield from)
 
@@ -155,8 +156,6 @@ class Future:
         self._callbacks = []
         if self._loop.get_debug():
             self._source_traceback = traceback.extract_stack(sys._getframe(1))
-        else:
-            self._source_traceback = None
 
     def _format_callbacks(self):
         cb = self._callbacks
