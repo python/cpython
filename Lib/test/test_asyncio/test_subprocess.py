@@ -181,6 +181,7 @@ class SubprocessMixin:
                                          loop=self.loop)
             stdout_transport = proc._transport.get_pipe_transport(1)
             stdout_transport.pause_reading = mock.Mock()
+            stdout_transport.resume_reading = mock.Mock()
 
             stdout, stderr = yield from proc.communicate()
 
@@ -195,6 +196,7 @@ class SubprocessMixin:
 
         self.assertEqual(stdout, b'x' * size)
         self.assertTrue(transport.pause_reading.called)
+        self.assertTrue(transport.resume_reading.called)
 
 
 if sys.platform != 'win32':
