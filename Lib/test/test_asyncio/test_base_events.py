@@ -638,6 +638,31 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.assertFalse(self.loop.call_exception_handler.called)
 
+    def test_run_until_complete_baseexception(self):
+        # Python issue #22429: run_until_complete() must not schedule a pending
+        # call to stop() if the future raised a BaseException
+        @asyncio.coroutine
+        def raise_keyboard_interrupt():
+            raise KeyboardInterrupt
+
+        self.loop._process_events = mock.Mock()
+
+        try:
+            self.loop.run_until_complete(raise_keyboard_interrupt())
+        except KeyboardInterrupt:
+            pass
+
+        def func():
+            self.loop.stop()
+            func.called = True
+        func.called = False
+        try:
+            self.loop.call_soon(func)
+            self.loop.run_forever()
+        except KeyboardInterrupt:
+            pass
+        self.assertTrue(func.called)
+
 
 class MyProto(asyncio.Protocol):
     done = None
