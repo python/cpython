@@ -102,6 +102,16 @@ def _raise_stop_error(*args):
     raise _StopError
 
 
+def _run_until_complete_cb(fut):
+    exc = fut._exception
+    if (isinstance(exc, BaseException)
+    and not isinstance(exc, Exception)):
+        # Issue #22429: run_forever() already finished, no need to
+        # stop it.
+        return
+    _raise_stop_error()
+
+
 class Server(events.AbstractServer):
 
     def __init__(self, loop, sockets):
@@ -268,7 +278,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             # is no need to log the "destroy pending task" message
             future._log_destroy_pending = False
 
-        future.add_done_callback(_raise_stop_error)
+        future.add_done_callback(_run_until_complete_cb)
         try:
             self.run_forever()
         except:
@@ -278,7 +288,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # local task.
                 future.exception()
             raise
-        future.remove_done_callback(_raise_stop_error)
+        future.remove_done_callback(_run_until_complete_cb)
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
 
