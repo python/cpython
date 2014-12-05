@@ -29,136 +29,147 @@ IDLE has the following features:
 Menus
 -----
 
-IDLE has two window types, the Shell window and the Editor window. It is
-possible to have multiple editor windows simultaneously. IDLE's
-menus dynamically change based on which window is currently selected. Each menu
-documented below indicates which window type it is associated with. Click on
-the dotted line at the top of a menu to "tear it off": a separate window
-containing the menu is created (for Unix and Windows only).
+IDLE has two main window types, the Shell window and the Editor window.  It is
+possible to have multiple editor windows simultaneously.  Output windows, such
+as used for Edit / Find in Files, are a subtype of edit window.  They currently
+have the same top menu as Editor windows but a different default title and
+context menu.
+
+IDLE's menus dynamically change based on which window is currently selected.
+Each menu documented below indicates which window type it is associated with.
+Click on the dotted line at the top of a menu to "tear it off": a separate
+window containing the menu is created (for Unix and Windows only).
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-New file
-   Create a new file editing window
+New File
+   Create a new file editing window.
 
 Open...
-   Open an existing file
-
-Open module...
-   Open an existing module (searches sys.path)
+   Open an existing file with an Open dialog.
 
 Recent Files
-   Open a list of recent files
+   Open a list of recent files.  Click one to open it.
+
+Open Module...
+   Open an existing module (searches sys.path).
 
 .. index::
    single: Class browser
    single: Path browser
 
-Class browser
-   Show classes and methods in current file
+Class Browser
+   Show functions, classes, and methods in the current Editor file in a
+   tree structure.  In the shell, open a module first.
 
-Path browser
-   Show sys.path directories, modules, classes and methods
+Path Browser
+   Show sys.path directories, modules, functions, classes and methods in a
+   tree structure.
 
 Save
-   Save current window to the associated file (unsaved windows have a
-   \* before and after the window title)
+   Save the current window to the associated file, if there is one.  Windows
+   that have been changed since being opened or last saved have a \* before
+   and after the window title.  If there is no associated file,
+   do Save As instead.
 
 Save As...
-   Save current window to new file, which becomes the associated file
+   Save the current window with a Save As dialog.  The file saved becomes the
+   new associated file for the window.
 
 Save Copy As...
-   Save current window to different file without changing the associated file
+   Save the current window to different file without changing the associated
+   file.
 
 Print Window
-   Print the current window
+   Print the current window to the default printer.
 
 Close
-   Close current window (asks to save if unsaved)
+   Close the current window (ask to save if unsaved).
 
 Exit
-   Close all windows and quit IDLE (asks to save if unsaved)
-
+   Close all windows and quit IDLE (ask to save unsaved windows).
 
 Edit menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Undo
-   Undo last change to current window (a maximum of 1000 changes may be undone)
+   Undo the last change to the current window.  A maximum of 1000 changes may
+   be undone.
 
 Redo
-   Redo last undone change to current window
+   Redo the last undone change to the current window.
 
 Cut
-   Copy selection into system-wide clipboard; then delete the selection
+   Copy selection into the system-wide clipboard; then delete the selection.
 
 Copy
-   Copy selection into system-wide clipboard
+   Copy selection into the system-wide clipboard.
 
 Paste
-   Insert system-wide clipboard into window
+   Insert contents of the system-wide clipboard into the current window.
+
+The clipboard functions are also available in context menus.
 
 Select All
-   Select the entire contents of the edit buffer
+   Select the entire contents of the current window.
 
 Find...
-   Open a search dialog box with many options
+   Open a search dialog with many options
 
-Find again
-   Repeat last search
+Find Again
+   Repeat the last search, if there is one.
 
-Find selection
-   Search for the string in the selection
+Find Selection
+   Search for the currently selected string, if there is one.
 
 Find in Files...
-   Open a search dialog box for searching files
+   Open a file search dialog.  Put results in an new output window.
 
 Replace...
-   Open a search-and-replace dialog box
+   Open a search-and-replace dialog.
 
-Go to line
-   Ask for a line number and show that line
+Go to Line
+   Move cursor to the line number requested and make that line visible.
 
-Expand word
-   Expand the word you have typed to match another word in the same buffer;
-   repeat to get a different expansion
+Show Completions
+   Open a scrollable list allowing selection of keywords and attributes. See
+   Completions in the Tips sections below.
+
+Expand Word
+   Expand a prefix you have typed to match a full word in the same window;
+   repeat to get a different expansion.
 
 Show call tip
    After an unclosed parenthesis for a function, open a small window with
-   function parameter hints
+   function parameter hints.
 
 Show surrounding parens
-   Highlight the surrounding parenthesis
-
-Show Completions
-   Open a scroll window allowing selection keywords and attributes. See
-   Completions below.
-
+   Highlight the surrounding parenthesis.
 
 Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Indent region
-   Shift selected lines right by the indent width (default 4 spaces)
+Indent Region
+   Shift selected lines right by the indent width (default 4 spaces).
 
-Dedent region
-   Shift selected lines left by the indent width (default 4 spaces)
+Dedent Region
+   Shift selected lines left by the indent width (default 4 spaces).
 
-Comment out region
-   Insert ## in front of selected lines
+Comment Out Region
+   Insert ## in front of selected lines.
 
-Uncomment region
-   Remove leading # or ## from selected lines
+Uncomment Region
+   Remove leading # or ## from selected lines.
 
-Tabify region
-   Turns *leading* stretches of spaces into tabs. (Note: We recommend using
+Tabify Region
+   Turn *leading* stretches of spaces into tabs. (Note: We recommend using
    4 space blocks to indent Python code.)
 
-Untabify region
-   Turn *all* tabs into the correct number of spaces
+Untabify Region
+   Turn *all* tabs into the correct number of spaces.
 
-Toggle tabs
+Toggle Tabs
    Open a dialog to switch between indenting with spaces and tabs.
 
 New Indent Width
@@ -166,62 +177,67 @@ New Indent Width
    community is 4 spaces.
 
 Format Paragraph
-   Reformat the current blank-line-separated paragraph. All lines in the
-   paragraph will be formatted to less than 80 columns.
+   Reformat the current blank-line-delimited paragraph in comment block or
+   multiline string or selected line in a string.  All lines in the
+   paragraph will be formatted to less than N columns, where N defaults to 72.
 
 Strip trailing whitespace
-   Removes any space characters after the end of the last non-space character
+   Remove any space characters after the last non-space character of a line.
 
 .. index::
-   single: Import module
    single: Run script
-
 
 Run menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Python Shell
-   Open or wake up the Python Shell window
+   Open or wake up the Python Shell window.
 
-Check module
+Check Module
    Check the syntax of the module currently open in the Editor window. If the
-   module has not been saved IDLE will prompt the user to save the code.
+   module has not been saved IDLE will either prompt the user to save or
+   autosave, as selected in the General tab of the Idle Settings dialog.  If
+   there is a syntax error, the approximate location is indicated in the
+   Editor window.
 
-Run module
-   Restart the shell to clean the environment, then execute the currently
-   open module.  If the module has not been saved IDLE will prompt the user
-   to save the code.
+Run Module
+   Do Check Module (above).  If no error, restart the shell to clean the
+   environment, then execute the module.
 
 Shell menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 View Last Restart
-  Scroll the shell window to the last Shell restart
+  Scroll the shell window to the last Shell restart.
 
 Restart Shell
-  Restart the shell to clean the environment
+  Restart the shell to clean the environment.
 
 Debug menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Go to file/line
-   Look around the insert point for a filename and line number, open the file,
-   and show the line.  Useful to view the source lines referenced in an
-   exception traceback. Available in the context menu of the Shell window.
-
-Debugger (toggle)
-   This feature is not complete and considered experimental. Run commands in
-   the shell under the debugger
-
-Stack viewer
-   Show the stack traceback of the last exception
-
-Auto-open Stack Viewer
-   Toggle automatically opening the stack viewer on unhandled exception
+Go to File/Line
+   Look on the current line. with the cursor, and the line above for a filename
+   and line number.  If found, open the file if not already open, and show the
+   line.  Use this to view source lines referenced in an exception traceback
+   and lines found by Find in Files. Also available in the context menu of
+   the Shell window and Output windows.
 
 .. index::
-   single: stack viewer
    single: debugger
+   single: stack viewer
+
+Debugger (toggle)
+   When actived, code entered in the Shell or run from an Editor will run
+   under the debugger.  In the Editor, breakpoints can be set with the context
+   menu.  This feature is still incomplete and somewhat experimental.
+
+Stack Viewer
+   Show the stack traceback of the last exception in a tree widget, with
+   access to locals and globals.
+
+Auto-open Stack Viewer
+   Toggle automatically opening the stack viewer on an unhandled exception.
 
 Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -229,23 +245,26 @@ Options menu (Shell and Editor)
 Configure IDLE
    Open a configuration dialog.  Fonts, indentation, keybindings, and color
    themes may be altered.  Startup Preferences may be set, and additional
-   help sources can be specified.
+   help sources can be specified.  Non-default user setting are saved in a
+   .idlerc directory in the user's home directory.  Problems caused by bad user
+   configuration files are solved by editing or deleting one or more of the
+   files in .idlerc.
 
 Configure Extensions
    Open a configuration dialog for setting preferences for extensions
-   (discussed below).
+   (discussed below).  See note above about the location of user settings.
 
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
-   of the section of code which is scrolling off the top of the window.
+   of the code which has scrolled above the top of the window.
 
 Windows menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Zoom Height
-   Toggles the window between normal size (40x80 initial setting) and maximum
-   height. The initial size is in the Configure IDLE dialog under the general
-   tab.
+   Toggles the window between normal size and maximum height. The initial size
+   defaults to 40 lines by 80 chars unless changed on the General tab of the
+   Configure IDLE dialog.
 
 The rest of this menu lists the names of all open windows; select one to bring
 it to the foreground (deiconifying it if necessary).
@@ -254,15 +273,18 @@ Help menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 About IDLE
-   Version, copyright, license, credits
+   Display version, copyright, license, credits, and more.
 
 IDLE Help
    Display a help file for IDLE detailing the menu options, basic editing and
    navigation, and other tips.
 
 Python Docs
-   Access local Python documentation, if installed. Or will start a web browser
+   Access local Python documentation, if installed, or start a web browser
    and open docs.python.org showing the latest Python documentation.
+
+Turtle Demo
+   Run the turtledemo module with example python code and turtle drawings.
 
 Additional help sources may be added here with the Configure IDLE dialog under
 the General tab.
@@ -275,39 +297,32 @@ the General tab.
    single: Clear Breakpoint
    single: breakpoints
 
-Editor Window context menu
+Context Menus
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Right-click in Editor window (Control-click on OS X)
+Open a context menu by right-clicking in a window (Control-click on OS X).
+Context menus have the standard clipboard functions also on the Edit menu.
 
 Cut
-   Copy selection into system-wide clipboard; then delete selection
+   Copy selection into the system-wide clipboard; then delete the selection.
 
 Copy
-   Copy selection into system-wide clipboard
+   Copy selection into the system-wide clipboard.
 
 Paste
-   Insert system-wide clipboard into window
+   Insert contents of the system-wide clipboard into the current window.
+
+Editor windows also have breakpoint functions.  Lines with a breakpoint set are
+specially marked.  Breakpoints only have an effect when running under the
+debugger.  Breakpoints for a file are saved in the user's .idlerc directory.
 
 Set Breakpoint
-   Sets a breakpoint.  Breakpoints are only enabled when the debugger is open.
+   Set a breakpoint on the current line.
 
 Clear Breakpoint
-   Clears the breakpoint on that line.
+   Clear the breakpoint on that line.
 
-Shell Window context menu
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* Right-click in Python Shell window (Control-click on OS X)
-
-Cut
-   Copy selection into system-wide clipboard; then delete selection
-
-Copy
-   Copy selection into system-wide clipboard
-
-Paste
-   Insert system-wide clipboard into window
+Shell and Output windows have the following.
 
 Go to file/line
    Same as in Debug menu.
@@ -481,8 +496,8 @@ shell, or for executing import statements to import common modules.
 In addition, ``Tk`` also loads a startup file if it is present.  Note that the
 Tk file is loaded unconditionally.  This additional file is ``.Idle.py`` and is
 looked for in the user's home directory.  Statements in this file will be
-executed in the Tk namespace, so this file is not useful for importing functions
-to be used from IDLE's Python shell.
+executed in the Tk namespace, so this file is not useful for importing
+functions to be used from IDLE's Python shell.
 
 
 Command line usage
@@ -508,9 +523,9 @@ If there are arguments:
 
 #. Otherwise, if neither ``-e`` nor ``-c`` is used, the first
    argument is a script which is executed with the remaining arguments in
-   ``sys.argv[1:...]``  and ``sys.argv[0]`` set to the script name.  If the script
-   name is '-', no script is executed but an interactive Python session is started;
-   the arguments are still available in ``sys.argv``.
+   ``sys.argv[1:...]``  and ``sys.argv[0]`` set to the script name.  If the
+   script name is '-', no script is executed but an interactive Python session
+   is started;    the arguments are still available in ``sys.argv``.
 
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
