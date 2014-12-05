@@ -387,11 +387,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                                            sock, protocol, waiter, extra)
 
     def close(self):
+        if self._running:
+            raise RuntimeError("Cannot close a running event loop")
         if self.is_closed():
             return
-        super().close()
         self._stop_accept_futures()
         self._close_self_pipe()
+        super().close()
         self._proactor.close()
         self._proactor = None
         self._selector = None
