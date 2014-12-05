@@ -9,6 +9,7 @@ TAGS$
 autom4te.cache$
 ^build/
 ^Doc/build/
+^Doc/venv/
 buildno$
 config.cache
 config.log
