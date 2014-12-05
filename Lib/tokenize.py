@@ -24,7 +24,6 @@ __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
                'Michael Foord')
-import builtins
 from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
@@ -430,11 +429,13 @@ def detect_encoding(readline):
     return default, [first, second]
 
 
+_builtin_open = open
+
 def open(filename):
     """Open a file in read only mode using the encoding detected by
     detect_encoding().
     """
-    buffer = builtins.open(filename, 'rb')
+    buffer = _builtin_open(filename, 'rb')
     encoding, lines = detect_encoding(buffer.readline)
     buffer.seek(0)
     text = TextIOWrapper(buffer, encoding, line_buffering=True)
@@ -657,7 +658,7 @@ def main():
         # Tokenize the input
         if args.filename:
             filename = args.filename
-            with builtins.open(filename, 'rb') as f:
+            with _builtin_open(filename, 'rb') as f:
                 tokens = list(tokenize(f.readline))
         else:
             filename = "<stdin>"
