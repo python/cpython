@@ -9,11 +9,7 @@
 *~
 .gdb_history
 Doc/build/
-Doc/tools/docutils/
-Doc/tools/jinja/
-Doc/tools/jinja2/
-Doc/tools/pygments/
-Doc/tools/sphinx/
+Doc/venv/
 Lib/lib2to3/*.pickle
 Lib/test/data/*
 Lib/_sysconfigdata.py

@@ -15,11 +15,12 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
-	autobuild-dev autobuild-stable
+	autobuild-dev autobuild-stable venv
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
+	@echo "  venv       to create a venv with necessary tools"
 	@echo "  html       to make standalone HTML files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
@@ -102,7 +103,11 @@ htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
 
 clean:
-	-rm -rf build/*
+	-rm -rf build/* venv/*
+
+venv:
+	$(PYTHON) -m venv venv
+	./venv/bin/python3 -m pip install -U Sphinx
 
 dist:
 	rm -rf dist
@@ -172,4 +177,3 @@ autobuild-stable:
 		exit 1;; \
 	esac
 	@make autobuild-dev
-
