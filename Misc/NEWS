@@ -1348,6 +1348,10 @@ C API
 Documentation
 -------------
 
+- Issue #22394: Doc/Makefile now supports ``make venv PYTHON=../python`` to
+  create a venv for generating the documentation, e.g.,
+  ``make html PYTHON=venv/bin/python3``.
+
 - Issue #21514: The documentation of the json module now refers to new JSON RFC
   7159 instead of obsoleted RFC 4627.
 
