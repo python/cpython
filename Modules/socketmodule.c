@@ -3493,7 +3493,7 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     for (; ndatabufs < ndataparts; ndatabufs++) {
         if (!PyArg_Parse(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
                          "y*;sendmsg() argument 1 must be an iterable of "
-                         "buffer-compatible objects",
+                         "bytes-like objects",
                          &databufs[ndatabufs]))
             goto finally;
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
@@ -3650,12 +3650,12 @@ PyDoc_STRVAR(sendmsg_doc,
 Send normal and ancillary data to the socket, gathering the\n\
 non-ancillary data from a series of buffers and concatenating it into\n\
 a single message.  The buffers argument specifies the non-ancillary\n\
-data as an iterable of buffer-compatible objects (e.g. bytes objects).\n\
+data as an iterable of bytes-like objects (e.g. bytes objects).\n\
 The ancdata argument specifies the ancillary data (control messages)\n\
 as an iterable of zero or more tuples (cmsg_level, cmsg_type,\n\
 cmsg_data), where cmsg_level and cmsg_type are integers specifying the\n\
 protocol level and protocol-specific type respectively, and cmsg_data\n\
-is a buffer-compatible object holding the associated data.  The flags\n\
+is a bytes-like object holding the associated data.  The flags\n\
 argument defaults to 0 and has the same meaning as for send().  If\n\
 address is supplied and not None, it sets a destination address for\n\
 the message.  The return value is the number of bytes of non-ancillary\n\
