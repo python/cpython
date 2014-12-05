@@ -6,6 +6,8 @@ import unittest
 import re
 from test.support import run_unittest, Error, captured_output
 from test.support import TESTFN, unlink, cpython_only
+from test.script_helper import assert_python_ok
+import textwrap
 
 import traceback
 
@@ -168,6 +170,37 @@ class SyntaxTracebackCases(unittest.TestCase):
                     text, charset, 5)
         # Issue #18960: coding spec should has no effect
         do_test("0\n# coding: GBK\n", "h\xe9 ho", 'utf-8', 5)
+
+    def test_print_traceback_at_exit(self):
+        # Issue #22599: Ensure that it is possible to use the traceback module
+        # to display an exception at Python exit
+        code = textwrap.dedent("""
+            import sys
+            import traceback
+
+            class PrintExceptionAtExit(object):
+                def __init__(self):
+                    try:
+                        x = 1 / 0
+                    except Exception:
+                        self.exc_info = sys.exc_info()
+                        # self.exc_info[1] (traceback) contains frames:
+                        # explicitly clear the reference to self in the current
+                        # frame to break a reference cycle
+                        self = None
+
+                def __del__(self):
+                    traceback.print_exception(*self.exc_info)
+
+            # Keep a reference in the module namespace to call the destructor
+            # when the module is unloaded
+            obj = PrintExceptionAtExit()
+        """)
+        rc, stdout, stderr = assert_python_ok('-c', code)
+        expected = [b'Traceback (most recent call last):',
+                    b'  File "<string>", line 8, in __init__',
+                    b'ZeroDivisionError: division by zero']
+        self.assertEqual(stderr.splitlines(), expected)
 
 
 class TracebackFormatTests(unittest.TestCase):
