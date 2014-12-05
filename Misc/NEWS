@@ -219,6 +219,9 @@ Build
 Documentation
 -------------
 
+- Issue #22914: Update the Python 2/3 porting HOWTO to describe a more automated
+  approach.
+
 - Issue #21514: The documentation of the json module now refers to new JSON RFC
   7159 instead of obsoleted RFC 4627.
 
