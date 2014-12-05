@@ -220,7 +220,7 @@ class _ConnectionBase:
 
     def recv_bytes_into(self, buf, offset=0):
         """
-        Receive bytes data into a writeable buffer-like object.
+        Receive bytes data into a writeable bytes-like object.
         Return the number of bytes read.
         """
         self._check_closed()

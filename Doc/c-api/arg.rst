@@ -65,19 +65,20 @@ Unless otherwise stated, buffers are not NUL-terminated.
    :exc:`UnicodeError` is raised.
 
    .. note::
-      This format does not accept bytes-like objects.  If you want to accept
+      This format does not accept :term:`bytes-like objects
+      <bytes-like object>`.  If you want to accept
       filesystem paths and convert them to C character strings, it is
       preferable to use the ``O&`` format with :c:func:`PyUnicode_FSConverter`
       as *converter*.
 
-``s*`` (:class:`str`, :class:`bytes`, :class:`bytearray` or buffer compatible object) [Py_buffer]
-   This format accepts Unicode objects as well as :term:`bytes-like object`\ s.
+``s*`` (:class:`str` or :term:`bytes-like object`) [Py_buffer]
+   This format accepts Unicode objects as well as bytes-like objects.
    It fills a :c:type:`Py_buffer` structure provided by the caller.
    In this case the resulting C string may contain embedded NUL bytes.
    Unicode objects are converted to C strings using ``'utf-8'`` encoding.
 
-``s#`` (:class:`str`, :class:`bytes` or read-only buffer compatible object) [const char \*, int or :c:type:`Py_ssize_t`]
-   Like ``s*``, except that it doesn't accept mutable buffer-like objects
+``s#`` (:class:`str`, read-only :term:`bytes-like object`) [const char \*, int or :c:type:`Py_ssize_t`]
+   Like ``s*``, except that it doesn't accept mutable bytes-like objects
    such as :class:`bytearray`.  The result is stored into two C variables,
    the first one a pointer to a C string, the second one its length.
    The string may contain embedded null bytes. Unicode objects are converted
@@ -87,28 +88,28 @@ Unless otherwise stated, buffers are not NUL-terminated.
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to *NULL*.
 
-``z*`` (:class:`str`, :class:`bytes`, :class:`bytearray`, buffer compatible object or ``None``) [Py_buffer]
+``z*`` (:class:`str`, :term:`bytes-like object` or ``None``) [Py_buffer]
    Like ``s*``, but the Python object may also be ``None``, in which case the
    ``buf`` member of the :c:type:`Py_buffer` structure is set to *NULL*.
 
-``z#`` (:class:`str`, :class:`bytes`, read-only buffer compatible object or ``None``) [const char \*, int]
+``z#`` (:class:`str`, read-only :term:`bytes-like object` or ``None``) [const char \*, int]
    Like ``s#``, but the Python object may also be ``None``, in which case the C
    pointer is set to *NULL*.
 
-``y`` (:class:`bytes`) [const char \*]
+``y`` (read-only :term:`bytes-like object`) [const char \*]
    This format converts a bytes-like object to a C pointer to a character
    string; it does not accept Unicode objects.  The bytes buffer must not
    contain embedded NUL bytes; if it does, a :exc:`TypeError`
    exception is raised.
 
-``y*`` (:class:`bytes`, :class:`bytearray` or :term:`bytes-like object`) [Py_buffer]
+``y*`` (:term:`bytes-like object`) [Py_buffer]
    This variant on ``s*`` doesn't accept Unicode objects, only
-   :term:`bytes-like object`\ s.  **This is the recommended way to accept
+   bytes-like objects.  **This is the recommended way to accept
    binary data.**
 
-``y#`` (:class:`bytes`) [const char \*, int]
-   This variant on ``s#`` doesn't accept Unicode objects, only :term:`bytes-like
-   object`\ s.
+``y#`` (read-only :term:`bytes-like object`) [const char \*, int]
+   This variant on ``s#`` doesn't accept Unicode objects, only bytes-like
+   objects.
 
 ``S`` (:class:`bytes`) [PyBytesObject \*]
    Requires that the Python object is a :class:`bytes` object, without

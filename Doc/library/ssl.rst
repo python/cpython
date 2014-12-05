@@ -1072,7 +1072,7 @@ to speed up repeated connections from the same clients.
    <http://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
-   PEM-encoded certificates or a bytes-like object of DER-encoded
+   PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
    certificates. Like with *capath* extra lines around PEM-encoded
    certificates are ignored but at least one certificate must be present.
 
