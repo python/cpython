@@ -14369,10 +14369,12 @@ os_confstr_impl(PyModuleDef *module, int name)
     }
 
     if (len >= sizeof(buffer)) {
+        size_t len2;
         char *buf = PyMem_Malloc(len);
         if (buf == NULL)
             return PyErr_NoMemory();
-        confstr(name, buf, len);
+        len2 = confstr(name, buf, len);
+        assert(len == len2);
         result = PyUnicode_DecodeFSDefaultAndSize(buf, len-1);
         PyMem_Free(buf);
     }
