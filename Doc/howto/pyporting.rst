@@ -361,7 +361,7 @@ supported by Python 2. You should also update the classifiers in your
 
 
 .. _2to3: https://docs.python.org/3/library/2to3.html
-.. _caniusepython3:
+.. _caniusepython3: https://pypi.python.org/pypi/caniusepython3
 .. _coverage.py: https://pypi.python.org/pypi/coverage
 .. _Futurize: http://python-future.org/automatic_conversion.html
 .. _Modernize:
