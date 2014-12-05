@@ -678,7 +678,8 @@ function.
         ((5,), {})
 
         >>> for param in sig.parameters.values():
-        ...     if param.name not in ba.arguments:
+        ...     if (param.name not in ba.arguments
+        ...             and param.default is not param.empty):
         ...         ba.arguments[param.name] = param.default
 
         >>> ba.args, ba.kwargs
