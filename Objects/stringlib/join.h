@@ -53,15 +53,15 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 
     /* Here is the general case.  Do a pre-pass to figure out the total
      * amount of space we'll need (sz), and see whether all arguments are
-     * buffer-compatible.
+     * bytes-like.
      */
     for (i = 0, nbufs = 0; i < seqlen; i++) {
         Py_ssize_t itemlen;
         item = PySequence_Fast_GET_ITEM(seq, i);
         if (_getbuffer(item, &buffers[i]) < 0) {
             PyErr_Format(PyExc_TypeError,
-                         "sequence item %zd: expected bytes, bytearray, "
-                         "or an object with the buffer interface, %.80s found",
+                         "sequence item %zd: expected a bytes-like object, "
+                         "%.80s found",
                          i, Py_TYPE(item)->tp_name);
             goto error;
         }
