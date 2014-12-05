@@ -1573,14 +1573,14 @@ frombytes(arrayobject *self, Py_buffer *buffer)
     Py_ssize_t n;
     if (buffer->itemsize != 1) {
         PyBuffer_Release(buffer);
-        PyErr_SetString(PyExc_TypeError, "string/buffer of bytes required.");
+        PyErr_SetString(PyExc_TypeError, "a bytes-like object is required");
         return NULL;
     }
     n = buffer->len;
     if (n % itemsize != 0) {
         PyBuffer_Release(buffer);
         PyErr_SetString(PyExc_ValueError,
-                   "string length not a multiple of item size");
+                   "bytes length not a multiple of item size");
         return NULL;
     }
     n = n / itemsize;

@@ -849,7 +849,7 @@ PyAPI_FUNC(int) PyUnicode_Resize(
 
    Coercion is done in the following way:
 
-   1. bytes, bytearray and other char buffer compatible objects are decoded
+   1. bytes, bytearray and other bytes-like objects are decoded
       under the assumptions that they contain data using the UTF-8
       encoding. Decoding is done in "strict" mode.
 

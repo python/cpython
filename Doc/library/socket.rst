@@ -1123,7 +1123,8 @@ to sockets.
    Send normal and ancillary data to the socket, gathering the
    non-ancillary data from a series of buffers and concatenating it
    into a single message.  The *buffers* argument specifies the
-   non-ancillary data as an iterable of buffer-compatible objects
+   non-ancillary data as an iterable of
+   :term:`bytes-like objects <bytes-like object>`
    (e.g. :class:`bytes` objects); the operating system may set a limit
    (:func:`~os.sysconf` value ``SC_IOV_MAX``) on the number of buffers
    that can be used.  The *ancdata* argument specifies the ancillary
@@ -1131,7 +1132,7 @@ to sockets.
    ``(cmsg_level, cmsg_type, cmsg_data)``, where *cmsg_level* and
    *cmsg_type* are integers specifying the protocol level and
    protocol-specific type respectively, and *cmsg_data* is a
-   buffer-compatible object holding the associated data.  Note that
+   bytes-like object holding the associated data.  Note that
    some systems (in particular, systems without :func:`CMSG_SPACE`)
    might support sending only one control message per call.  The
    *flags* argument defaults to 0 and has the same meaning as for
