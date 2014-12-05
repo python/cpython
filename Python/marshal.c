@@ -527,7 +527,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_lnotab, p);
     }
     else if (PyObject_CheckBuffer(v)) {
-        /* Write unknown buffer-style objects as a string */
+        /* Write unknown bytes-like objects as a byte string */
         Py_buffer view;
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
