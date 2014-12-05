@@ -2940,8 +2940,7 @@ PyUnicode_FromEncodedObject(PyObject *obj,
     /* Retrieve a bytes buffer view through the PEP 3118 buffer interface */
     if (PyObject_GetBuffer(obj, &buffer, PyBUF_SIMPLE) < 0) {
         PyErr_Format(PyExc_TypeError,
-                     "coercing to str: need bytes, bytearray "
-                     "or buffer-like object, %.80s found",
+                     "coercing to str: need a bytes-like object, %.80s found",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }

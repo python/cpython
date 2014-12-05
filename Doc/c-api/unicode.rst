@@ -556,7 +556,8 @@ APIs:
    Coerce an encoded object *obj* to an Unicode object and return a reference with
    incremented refcount.
 
-   :class:`bytes`, :class:`bytearray` and other char buffer compatible objects
+   :class:`bytes`, :class:`bytearray` and other
+   :term:`bytes-like objects <bytes-like object>`
    are decoded according to the given *encoding* and using the error handling
    defined by *errors*. Both can be *NULL* to have the interface use the default
    values (see the next section for details).
