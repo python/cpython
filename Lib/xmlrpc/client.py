@@ -49,6 +49,7 @@
 # 2003-07-12 gp  Correct marshalling of Faults
 # 2003-10-31 mvl Add multicall support
 # 2004-08-20 mvl Bump minimum supported Python version to 2.1
+# 2014-12-02 ch/doko  Add workaround for gzip bomb vulnerability
 #
 # Copyright (c) 1999-2002 by Secret Labs AB.
 # Copyright (c) 1999-2002 by Fredrik Lundh.
@@ -1017,10 +1018,13 @@ def gzip_encode(data):
 # in the HTTP header, as described in RFC 1952
 #
 # @param data The encoded data
+# @keyparam max_decode Maximum bytes to decode (20MB default), use negative
+#    values for unlimited decoding
 # @return the unencoded data
 # @raises ValueError if data is not correctly coded.
+# @raises ValueError if max gzipped payload length exceeded
 
-def gzip_decode(data):
+def gzip_decode(data, max_decode=20971520):
     """gzip encoded data -> unencoded data
 
     Decode data using the gzip content encoding as described in RFC 1952
@@ -1030,11 +1034,16 @@ def gzip_decode(data):
     f = BytesIO(data)
     gzf = gzip.GzipFile(mode="rb", fileobj=f)
     try:
-        decoded = gzf.read()
+        if max_decode < 0: # no limit
+            decoded = gzf.read()
+        else:
+            decoded = gzf.read(max_decode + 1)
     except IOError:
         raise ValueError("invalid data")
     f.close()
     gzf.close()
+    if max_decode >= 0 and len(decoded) > max_decode:
+        raise ValueError("max gzipped payload length exceeded")
     return decoded
 
 ##
