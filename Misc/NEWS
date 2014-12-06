@@ -175,6 +175,9 @@ Library
 IDLE
 ----
 
+- Issue #16893: Update Idle doc chapter to match current Idle and add new
+  information.
+
 - Issue #3068: Add Idle extension configuration dialog to Options menu.
   Changes are written to HOME/.idlerc/config-extensions.cfg.
   Original patch by Tal Einat.
