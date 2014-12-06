@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16043: Add a default limit for the amount of data xmlrpclib.gzip_decode
+  will return. This resolves CVE-2013-1753.
+
 - Issue #14099: ZipFile.open() no longer reopen the underlying file.  Objects
   returned by ZipFile.open() can now operate independently of the ZipFile even
   if the ZipFile was created by passing in a file-like object as the first
