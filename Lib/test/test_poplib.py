@@ -198,6 +198,10 @@ class TestPOP3Class(TestCase):
                     113)
         self.assertEqual(self.client.retr('foo'), expected)
 
+    def test_too_long_lines(self):
+        self.assertRaises(poplib.error_proto, self.client._shortcmd,
+                          'echo +%s' % ((poplib._MAXLINE + 10) * 'a'))
+
     def test_dele(self):
         self.assertOK(self.client.dele('foo'))
 
