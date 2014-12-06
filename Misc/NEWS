@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16043: Add a default limit for the amount of data xmlrpclib.gzip_decode
+  will return. This resolves CVE-2013-1753.
+
 - Issue #16040: CVE-2013-1752: nntplib: Limit maximum line lengths to 2048 to
   prevent readline() calls from consuming too much memory.  Patch by Jyrki
   Pulliainen.
