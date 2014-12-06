@@ -21,6 +21,12 @@ Library
 
 - Issue #22960: Add a context argument to xmlrpclib.ServerProxy.
 
+Build
+-----
+
+- Issue #22935: Allow the ssl module to be compiled if openssl doesn't support
+  SSL 3.
+
 
 What's New in Python 2.7.9 release candidate 1?
 ===============================================
