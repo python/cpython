@@ -63,6 +63,12 @@ Library
 
 - Issue #22960: Add a context argument to xmlrpclib.ServerProxy.
 
+IDLE
+----
+
+- Issue #16893: Update Idle doc chapter to match current Idle and add new
+  information.
+
 
 What's New in Python 2.7.9 release candidate 1?
 ===============================================
