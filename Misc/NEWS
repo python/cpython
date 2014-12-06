@@ -1269,6 +1269,9 @@ IDLE
 Build
 -----
 
+- Issue #22935: Allow the ssl module to be compiled if openssl doesn't support
+  SSL 3.
+
 - Issue #22592: Drop support of the Borland C compiler to build Python. The
   distutils module still supports it to build extensions.
 
