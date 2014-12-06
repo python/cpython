@@ -689,7 +689,7 @@ class TestTLS_FTPClass(TestCase):
 
     def test_auth_ssl(self):
         try:
-            self.client.ssl_version = ssl.PROTOCOL_SSLv3
+            self.client.ssl_version = ssl.PROTOCOL_SSLv23
             self.client.auth()
             self.assertRaises(ValueError, self.client.auth)
         finally:
