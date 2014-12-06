@@ -10,6 +10,9 @@ What's New in Python 2.7.9?
 Library
 -------
 
+- Issue #16041: In poplib, limit maximum line length read from the server to
+  prevent CVE-2013-1752.
+
 - Issue #22960: Add a context argument to xmlrpclib.ServerProxy.
 
 
