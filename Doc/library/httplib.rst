@@ -70,7 +70,7 @@ The module provides the following classes:
       *source_address* was added.
 
 
-.. class:: HTTPSConnection(host[, port[, key_file[, cert_file[, strict[, timeout[, source_address, context, check_hostname]]]]]])
+.. class:: HTTPSConnection(host[, port[, key_file[, cert_file[, strict[, timeout[, source_address[, context]]]]]]])
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it must
@@ -83,13 +83,6 @@ The module provides the following classes:
 
    Please read :ref:`ssl-security` for more information on best practices.
 
-   .. note::
-      If *context* is specified and has a :attr:`~ssl.SSLContext.verify_mode`
-      of either :data:`~ssl.CERT_OPTIONAL` or :data:`~ssl.CERT_REQUIRED`, then
-      by default *host* is matched against the host name(s) allowed by the
-      server's certificate.  If you want to change that behaviour, you can
-      explicitly set *check_hostname* to False.
-
    .. versionadded:: 2.0
 
    .. versionchanged:: 2.6
@@ -99,7 +92,7 @@ The module provides the following classes:
       *source_address* was added.
 
    .. versionchanged:: 2.7.9
-      *context* and *check_hostname* was added.
+      *context* was added.
 
       This class now performs all the necessary certificate and hostname checks
       by default. To revert to the previous, unverified, behavior

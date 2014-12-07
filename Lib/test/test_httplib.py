@@ -639,18 +639,15 @@ class HTTPSTest(TestCase):
         server = self.make_server(CERT_fakehostname)
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = True
         context.load_verify_locations(CERT_fakehostname)
         h = httplib.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
-        # Same with explicit check_hostname=True
-        h = httplib.HTTPSConnection('localhost', server.port, context=context,
-                                   check_hostname=True)
-        with self.assertRaises(ssl.CertificateError):
-            h.request('GET', '/')
-        # With check_hostname=False, the mismatching is ignored
-        h = httplib.HTTPSConnection('localhost', server.port, context=context,
-                                   check_hostname=False)
+        h.close()
+        # With context.check_hostname=False, the mismatching is ignored
+        context.check_hostname = False
+        h = httplib.HTTPSConnection('localhost', server.port, context=context)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         self.assertEqual(resp.status, 404)

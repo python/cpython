@@ -1191,23 +1191,16 @@ else:
 
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                     source_address=None, context=None, check_hostname=None):
+                     source_address=None, context=None):
             HTTPConnection.__init__(self, host, port, strict, timeout,
                                     source_address)
             self.key_file = key_file
             self.cert_file = cert_file
             if context is None:
                 context = ssl._create_default_https_context()
-            will_verify = context.verify_mode != ssl.CERT_NONE
-            if check_hostname is None:
-                check_hostname = will_verify
-            elif check_hostname and not will_verify:
-                raise ValueError("check_hostname needs a SSL context with "
-                                 "either CERT_OPTIONAL or CERT_REQUIRED")
             if key_file or cert_file:
                 context.load_cert_chain(cert_file, key_file)
             self._context = context
-            self._check_hostname = check_hostname
 
         def connect(self):
             "Connect to a host on a given (SSL) port."
@@ -1221,13 +1214,6 @@ else:
 
             self.sock = self._context.wrap_socket(self.sock,
                                                   server_hostname=server_hostname)
-            if not self._context.check_hostname and self._check_hostname:
-                try:
-                    ssl.match_hostname(self.sock.getpeercert(), server_hostname)
-                except Exception:
-                    self.sock.shutdown(socket.SHUT_RDWR)
-                    self.sock.close()
-                    raise
 
     __all__.append("HTTPSConnection")
 
