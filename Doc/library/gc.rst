@@ -186,7 +186,7 @@ values but should not rebind them):
    added to this list rather than freed.
 
    .. versionchanged:: 3.2
-      If this list is non-empty at interpreter shutdown, a
+      If this list is non-empty at :term:`interpreter shutdown`, a
       :exc:`ResourceWarning` is emitted, which is silent by default.  If
       :const:`DEBUG_UNCOLLECTABLE` is set, in addition all uncollectable objects
       are printed.
@@ -252,8 +252,8 @@ The following constants are provided for use with :func:`set_debug`:
    to the ``garbage`` list.
 
    .. versionchanged:: 3.2
-      Also print the contents of the :data:`garbage` list at interpreter
-      shutdown, if it isn't empty.
+      Also print the contents of the :data:`garbage` list at
+      :term:`interpreter shutdown`, if it isn't empty.
 
 .. data:: DEBUG_SAVEALL
 
