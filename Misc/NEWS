@@ -10,6 +10,9 @@ What's New in Python 2.7.9?
 Library
 -------
 
+- Issue #22959: Remove the *check_hostname* parameter of
+  httplib.HTTPSConnection. The *context* parameter should be used instead.
+
 - Issue #16043: Add a default limit for the amount of data xmlrpclib.gzip_decode
   will return. This resolves CVE-2013-1753.
 
