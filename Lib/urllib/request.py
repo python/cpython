@@ -146,10 +146,10 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
             )
         if not _have_ssl:
             raise ValueError('SSL support not available')
-        context = ssl._create_stdlib_context(cert_reqs=ssl.CERT_REQUIRED,
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
                                              cafile=cafile,
                                              capath=capath)
-        https_handler = HTTPSHandler(context=context, check_hostname=True)
+        https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
     elif context:
         https_handler = HTTPSHandler(context=context)
