@@ -718,6 +718,14 @@ always available.
    value of :func:`intern` around to benefit from it.
 
 
+.. function:: is_finalizing()
+
+   Return :const:`True` if the Python interpreter is
+   :term:`shutting down <interpreter shutdown>`, :const:`False` otherwise.
+
+   .. versionadded:: 3.5
+
+
 .. data:: last_type
           last_value
           last_traceback

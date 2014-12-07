@@ -744,6 +744,27 @@ class SysModuleTest(unittest.TestCase):
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
 
+    def test_is_finalizing(self):
+        self.assertIs(sys.is_finalizing(), False)
+        # Don't use the atexit module because _Py_Finalizing is only set
+        # after calling atexit callbacks
+        code = """if 1:
+            import sys
+
+            class AtExit:
+                is_finalizing = sys.is_finalizing
+                print = print
+
+                def __del__(self):
+                    self.print(self.is_finalizing(), flush=True)
+
+            # Keep a reference in the __main__ module namespace, so the
+            # AtExit destructor will be called at Python exit
+            ref = AtExit()
+        """
+        rc, stdout, stderr = assert_python_ok('-c', code)
+        self.assertEqual(stdout.rstrip(), b'True')
+
 
 @test.support.cpython_only
 class SizeofTest(unittest.TestCase):

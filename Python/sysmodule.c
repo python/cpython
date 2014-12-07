@@ -1121,6 +1121,16 @@ PyDoc_STRVAR(sys_clear_type_cache__doc__,
 "_clear_type_cache() -> None\n\
 Clear the internal type lookup cache.");
 
+static PyObject *
+sys_is_finalizing(PyObject* self, PyObject* args)
+{
+    return PyBool_FromLong(_Py_Finalizing != NULL);
+}
+
+PyDoc_STRVAR(is_finalizing_doc,
+"is_finalizing()\n\
+Return True if Python is exiting.");
+
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -1167,6 +1177,7 @@ static PyMethodDef sys_methods[] = {
      getwindowsversion_doc},
 #endif /* MS_WINDOWS */
     {"intern",          sys_intern,     METH_VARARGS, intern_doc},
+    {"is_finalizing",   sys_is_finalizing, METH_NOARGS, is_finalizing_doc},
 #ifdef USE_MALLOPT
     {"mdebug",          sys_mdebug, METH_VARARGS},
 #endif
