@@ -70,7 +70,7 @@ The module provides the following classes:
    :meth:`ssl.SSLContext.load_cert_chain` instead, or let
    :func:`ssl.create_default_context` select the system's trusted CA
    certificates for you.  The *check_hostname* parameter is also deprecated; the
-   :attr:`SSLContext.check_hostname` attribute of *context* should be used
+   :attr:`ssl.SSLContext.check_hostname` attribute of *context* should be used
    instead.
 
    Please read :ref:`ssl-security` for more information on best practices.
