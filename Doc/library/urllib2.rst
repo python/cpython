@@ -292,13 +292,13 @@ The following classes are provided:
    A class to handle opening of HTTP URLs.
 
 
-.. class:: HTTPSHandler([debuglevel[, context[, check_hostname]]])
+.. class:: HTTPSHandler([debuglevel[, context]])
 
-   A class to handle opening of HTTPS URLs. *context* and *check_hostname* have
-   the same meaning as for :class:`httplib.HTTPSConnection`.
+   A class to handle opening of HTTPS URLs. *context* has the same meaning as
+   for :class:`httplib.HTTPSConnection`.
 
    .. versionchanged:: 2.7.9
-      *context* and *check_hostname* were added.
+      *context* added.
 
 
 .. class:: FileHandler()
