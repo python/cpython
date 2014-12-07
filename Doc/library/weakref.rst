@@ -258,7 +258,7 @@ These method have the same issues as the and :meth:`keyrefs` method of
    are called in reverse order of creation.
 
    A finalizer will never invoke its callback during the later part of
-   the interpreter shutdown when module globals are liable to have
+   the :term:`interpreter shutdown` when module globals are liable to have
    been replaced by :const:`None`.
 
    .. method:: __call__()
@@ -527,8 +527,8 @@ follows::
 
 Starting with Python 3.4, :meth:`__del__` methods no longer prevent
 reference cycles from being garbage collected, and module globals are
-no longer forced to :const:`None` during interpreter shutdown. So this
-code should work without any issues on CPython.
+no longer forced to :const:`None` during :term:`interpreter shutdown`.
+So this code should work without any issues on CPython.
 
 However, handling of :meth:`__del__` methods is notoriously implementation
 specific, since it depends on internal details of the interpreter's garbage
