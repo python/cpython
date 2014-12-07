@@ -194,6 +194,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22959: In the constructor of http.client.HTTPSConnection, prefer the
+  context's check_hostname attribute over the *check_hostname* parameter.
+
 - Issue #22696: Add function :func:`sys.is_finalizing` to know about
   interpreter shutdown.
 

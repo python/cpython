@@ -1274,8 +1274,8 @@ else:
                 context = ssl._create_default_https_context()
             will_verify = context.verify_mode != ssl.CERT_NONE
             if check_hostname is None:
-                check_hostname = will_verify
-            elif check_hostname and not will_verify:
+                check_hostname = context.check_hostname
+            if check_hostname and not will_verify:
                 raise ValueError("check_hostname needs a SSL context with "
                                  "either CERT_OPTIONAL or CERT_REQUIRED")
             if key_file or cert_file:
