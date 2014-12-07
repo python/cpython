@@ -1113,6 +1113,7 @@ class HTTPSTest(TestCase):
         server = self.make_server(CERT_fakehostname)
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = True
         context.load_verify_locations(CERT_fakehostname)
         h = client.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):
@@ -1123,11 +1124,24 @@ class HTTPSTest(TestCase):
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
         # With check_hostname=False, the mismatching is ignored
+        context.check_hostname = False
         h = client.HTTPSConnection('localhost', server.port, context=context,
                                    check_hostname=False)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         self.assertEqual(resp.status, 404)
+        # The context's check_hostname setting is used if one isn't passed to
+        # HTTPSConnection.
+        context.check_hostname = False
+        h = client.HTTPSConnection('localhost', server.port, context=context)
+        h.request('GET', '/nonexistent')
+        self.assertEqual(h.getresponse().status, 404)
+        # Passing check_hostname to HTTPSConnection should override the
+        # context's setting.
+        h = client.HTTPSConnection('localhost', server.port, context=context,
+                                   check_hostname=True)
+        with self.assertRaises(ssl.CertificateError):
+            h.request('GET', '/')
 
     @unittest.skipIf(not hasattr(client, 'HTTPSConnection'),
                      'http.client.HTTPSConnection not available')

@@ -69,16 +69,11 @@ The module provides the following classes:
    *key_file* and *cert_file* are deprecated, please use
    :meth:`ssl.SSLContext.load_cert_chain` instead, or let
    :func:`ssl.create_default_context` select the system's trusted CA
-   certificates for you.
+   certificates for you.  The *check_hostname* parameter is also deprecated; the
+   :attr:`SSLContext.check_hostname` attribute of *context* should be used
+   instead.
 
    Please read :ref:`ssl-security` for more information on best practices.
-
-   .. note::
-      If *context* is specified and has a :attr:`~ssl.SSLContext.verify_mode`
-      of either :data:`~ssl.CERT_OPTIONAL` or :data:`~ssl.CERT_REQUIRED`, then
-      by default *host* is matched against the host name(s) allowed by the
-      server's certificate.  If you want to change that behaviour, you can
-      explicitly set *check_hostname* to False.
 
    .. versionchanged:: 3.2
       *source_address*, *context* and *check_hostname* were added.
