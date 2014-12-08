@@ -178,6 +178,12 @@ Library
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
 
+- Issue #22959: In the constructor of http.client.HTTPSConnection, prefer the
+  context's check_hostname attribute over the *check_hostname* parameter.
+
+- Issue #23009: Make sure selectors.EpollSelecrtor.select() works when no
+  FD is registered.
+
 IDLE
 ----
 
