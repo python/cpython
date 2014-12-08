@@ -316,6 +316,11 @@ class BaseSelectorTestCase(unittest.TestCase):
 
         self.assertEqual(bufs, [MSG] * NUM_SOCKETS)
 
+    def test_empty_select(self):
+        s = self.SELECTOR()
+        self.addCleanup(s.close)
+        self.assertEqual(s.select(timeout=0), [])
+
     def test_timeout(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)
