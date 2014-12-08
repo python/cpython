@@ -4,6 +4,7 @@ Test script for doctest.
 
 from test import support
 import doctest
+import functools
 import os
 import sys
 
@@ -434,7 +435,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:18 (1 example)>]
+    [<DocTest sample_func from ...:19 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -2364,6 +2365,22 @@ def test_trailing_space_in_test():
       foo \n
     """
 
+class Wrapper:
+    def __init__(self, func):
+        self.func = func
+        functools.update_wrapper(self, func)
+
+    def __call__(self, *args, **kwargs):
+        self.func(*args, **kwargs)
+
+@Wrapper
+def test_look_in_unwrapped():
+    """
+    Docstrings in wrapped functions must be detected as well.
+
+    >>> 'one other test'
+    'one other test'
+    """
 
 def test_unittest_reportflags():
     """Default unittest reporting flags can be set to control reporting
