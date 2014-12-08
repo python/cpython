@@ -194,6 +194,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21740: Support wrapped callables in pydoc. Patch by Claudiu Popa.
+
 - Issue #23009: Make sure selectors.EpollSelecrtor.select() works when no
   FD is registered.
 

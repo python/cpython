@@ -985,7 +985,8 @@ class DocTestFinder:
             for valname, val in obj.__dict__.items():
                 valname = '%s.%s' % (name, valname)
                 # Recurse to functions & classes.
-                if ((inspect.isroutine(val) or inspect.isclass(val)) and
+                if ((inspect.isroutine(inspect.unwrap(val))
+                     or inspect.isclass(val)) and
                     self._from_module(module, val)):
                     self._find(tests, val, valname, module, source_lines,
                                globs, seen)
