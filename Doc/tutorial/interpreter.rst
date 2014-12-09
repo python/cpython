@@ -63,6 +63,8 @@ When a script file is used, it is sometimes useful to be able to run the script
 and enter interactive mode afterwards.  This can be done by passing :option:`-i`
 before the script.
 
+All command line options are described in :ref:`using-on-general`.
+
 
 .. _tut-argpassing:
 
