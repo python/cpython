@@ -1,7 +1,7 @@
-.. highlightlang:: none
+.. highlightlang:: sh
 
 .. ATTENTION: You probably should update Misc/python.man, too, if you modify
-.. this file.
+   this file.
 
 .. _using-on-general:
 
@@ -148,6 +148,10 @@ source.
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
 
+   .. seealso::
+      :func:`runpy.run_path`
+         Equivalent functionality directly available to Python code
+
 
 If no interface option is given, :option:`-i` is implied, ``sys.argv[0]`` is
 an empty string (``""``) and the current directory will be added to the
@@ -155,10 +159,10 @@ start of :data:`sys.path`.  Also, tab-completion and history editing is
 automatically enabled, if available on your platform (see
 :ref:`rlcompleter-config`).
 
+.. seealso::  :ref:`tut-invoking`
+
 .. versionchanged:: 3.4
    Automatic enabling of tab-completion and history editing.
-
-.. seealso::  :ref:`tut-invoking`
 
 
 Generic options
