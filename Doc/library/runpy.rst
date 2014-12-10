@@ -72,6 +72,9 @@ The :mod:`runpy` module provides two functions:
    arguments. It is recommended that the :mod:`sys` module be left alone when
    invoking this function from threaded code.
 
+   .. seealso::
+      The :option:`-m` option offering equivalent functionality from the
+      command line.
 
    .. versionchanged:: 2.7
          Added ability to execute packages by looking for a ``__main__``
@@ -134,14 +137,18 @@ The :mod:`runpy` module provides two functions:
    limitations still apply, use of this function in threaded code should be
    either serialised with the import lock or delegated to a separate process.
 
+   .. seealso::
+      :ref:`using-on-interface-options` for equivalent functionality on the
+      command line (``python path/to/script``).
+
    .. versionadded:: 2.7
 
 .. seealso::
 
-   :pep:`338` - Executing modules as scripts
+   :pep:`338` -- Executing modules as scripts
       PEP written and implemented by Nick Coghlan.
 
-   :pep:`366` - Main module explicit relative imports
+   :pep:`366` -- Main module explicit relative imports
       PEP written and implemented by Nick Coghlan.
 
    :ref:`using-on-general` - CPython command line details

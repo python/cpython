@@ -1,7 +1,7 @@
-.. highlightlang:: none
+.. highlightlang:: sh
 
 .. ATTENTION: You probably should update Misc/python.man, too, if you modify
-.. this file.
+   this file.
 
 .. _using-on-general:
 
@@ -129,6 +129,10 @@ source.
    If this option is given, the first element of :data:`sys.argv` will be
    ``"-"`` and the current directory will be added to the start of
    :data:`sys.path`.
+
+   .. seealso::
+      :func:`runpy.run_path`
+         Equivalent functionality directly available to Python code
 
 
 .. describe:: <script>
