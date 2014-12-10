@@ -9474,6 +9474,10 @@ C-API
 Documentation
 -------------
 
+- Issue #23006: Improve the documentation and indexing of dict.__missing__.
+  Add an entry in the language datamodel special methods section.
+  Revise and index its discussion in the stdtypes mapping/dict section.
+
 - Issue #13989: Document that GzipFile does not support text mode, and give a
   more helpful error message when opened with an invalid mode string.
 
