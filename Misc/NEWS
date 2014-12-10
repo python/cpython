@@ -5676,6 +5676,10 @@ C-API
 Documentation
 -------------
 
+- Issue #23006: Improve the documentation and indexing of dict.__missing__.
+  Add an entry in the language datamodel special methods section.
+  Revise and index its discussion in the stdtypes mapping/dict section.
+
 - Issue #17701: Improving strftime documentation.
 
 - Issue #18440: Clarify that `hash()` can truncate the value returned from an
