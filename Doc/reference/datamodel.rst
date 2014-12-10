@@ -1926,8 +1926,7 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
    This method is called when an iterator is required for a container. This method
    should return a new iterator object that can iterate over all the objects in the
-   container.  For mappings, it should iterate over the keys of the container, and
-   should also be made available as the method :meth:`keys`.
+   container.  For mappings, it should iterate over the keys of the container.
 
    Iterator objects also need to implement this method; they are required to return
    themselves.  For more information on iterator objects, see :ref:`typeiter`.
