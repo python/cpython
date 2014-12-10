@@ -2031,16 +2031,32 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return the item of *d* with key *key*.  Raises a :exc:`KeyError` if *key*
       is not in the map.
 
+      .. index:: __missing__()
+
+      If a subclass of dict defines a method :meth:`__missing__` and *key*
+      is not present, the ``d[key]`` operation calls that method with the key *key*
+      as argument.  The ``d[key]`` operation then returns or raises whatever is
+      returned or raised by the ``__missing__(key)`` call.
+      No other operations or methods invoke :meth:`__missing__`. If
+      :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
+      :meth:`__missing__` must be a method; it cannot be an instance variable::
+
+          >>> class Counter(dict):
+          ...     def __missing__(self, key):
+          ...         return 0
+          >>> c = Counter()
+          >>> c['red']
+          0
+          >>> c['red'] += 1
+          >>> c['red']
+          1
+
+      The example above shows part of the implementation of
+      :class:`collections.Counter`.  A different ``__missing__`` method is used
+      by :class:`collections.defaultdict`.
+
       .. versionadded:: 2.5
-         If a subclass of dict defines a method :meth:`__missing__`, if the key
-         *key* is not present, the ``d[key]`` operation calls that method with
-         the key *key* as argument.  The ``d[key]`` operation then returns or
-         raises whatever is returned or raised by the ``__missing__(key)`` call
-         if the key is not present. No other operations or methods invoke
-         :meth:`__missing__`. If :meth:`__missing__` is not defined,
-         :exc:`KeyError` is raised.  :meth:`__missing__` must be a method; it
-         cannot be an instance variable. For an example, see
-         :class:`collections.defaultdict`.
+         Recognition of __missing__ methods of dict subclasses.
 
    .. describe:: d[key] = value
 

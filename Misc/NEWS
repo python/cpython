@@ -30,6 +30,11 @@ Library
 Documentation
 -------------
 
+- Issue #23006: Improve the documentation and indexing of dict.__missing__.
+  Add an entry in the language datamodel special methods section.
+  Revise and index its discussion in the stdtypes mapping/dict section.
+  Backport the code example from 3.4.
+
 - Issue #21514: The documentation of the json module now refers to new JSON RFC
   7159 instead of obsoleted RFC 4627.
 
