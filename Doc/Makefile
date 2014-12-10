@@ -8,7 +8,7 @@ PYTHON       = python
 SPHINXBUILD  = sphinx-build
 PAPER        =
 SOURCES      =
-DISTVERSION  = $(shell $(PYTHON) tools/patchlevel.py)
+DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
