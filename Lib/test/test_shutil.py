@@ -1,6 +1,7 @@
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
+import unittest.mock
 import shutil
 import tempfile
 import sys
@@ -763,6 +764,20 @@ class TestShutil(unittest.TestCase):
                                               os.path.split(restrictive_subdir)[1])
         self.assertEqual(os.stat(restrictive_subdir).st_mode,
                           os.stat(restrictive_subdir_dst).st_mode)
+
+    @unittest.mock.patch('os.chmod')
+    def test_copytree_winerror(self, mock_patch):
+        # When copying to VFAT, copystat() raises OSError. On Windows, the
+        # exception object has a meaningful 'winerror' attribute, but not
+        # on other operating systems. Do not assume 'winerror' is set.
+        src_dir = tempfile.mkdtemp()
+        dst_dir = os.path.join(tempfile.mkdtemp(), 'destination')
+        self.addCleanup(shutil.rmtree, src_dir)
+        self.addCleanup(shutil.rmtree, os.path.dirname(dst_dir))
+
+        mock_patch.side_effect = PermissionError('ka-boom')
+        with self.assertRaises(shutil.Error):
+            shutil.copytree(src_dir, dst_dir)
 
     @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
