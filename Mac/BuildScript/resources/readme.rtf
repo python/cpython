@@ -6,8 +6,27 @@
 
 \f0\fs24 \cf0 This package will install Python $FULL_VERSION for Mac OS X $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 
-\b \ul Update your version of Tcl/Tk to use IDLE or other Tk applications
+\b \cf0 \ul \ulc0 Which installer variant should I use?
+\b0 \ulnone \
+\
+Python.org provides two installer variants for download: one that installs a 
+\i 64-bit/32-bit Intel
+\i0  Python capable of running on 
+\i Mac OS X 10.6 (Snow Leopard)
+\i0  or later; and one that installs a 
+\i 32-bit-only (Intel and PPC)
+\i0  Python capable of running on 
+\i Mac OS X 10.5 (Leopard)
+\i0  or later.  This ReadMe was installed with the 
+\i $MACOSX_DEPLOYMENT_TARGET
+\i0  variant.  Unless you are installing to an 10.5 system or you need to build applications that can run on 10.5 systems, use the 10.6 variant if possible.  There are some additional operating system functions that are supported starting with 10.6 and you may see better performance using 64-bit mode.  By default, Python will automatically run in 64-bit mode if your system supports it.  Also see 
+\i Certificate verification and OpenSSL
+\i0  below.
+\b \ul \
+\
+Update your version of Tcl/Tk to use IDLE or other Tk applications
 \b0 \ulnone \
 \
 To use IDLE or other programs that use the Tkinter graphical user interface toolkit, you need to install a newer third-party version of the 
@@ -18,16 +37,19 @@ To use IDLE or other programs that use the Tkinter graphical user interface tool
 
 \b \ul \
 Installing on OS X 10.8 (Mountain Lion) or later systems\
-\ulnone [CHANGED for Python 2.7.9]
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ulnone [CHANGED for Python 2.7.9]
 \b0 \
 \
 As of Python 2.7.9, installer packages from python.org are now compatible with the Gatekeeper security feature introduced in OS X 10.8.   Downloaded packages can now be directly installed by double-clicking with the default system security settings.  Python.org installer packages for OS X are signed with the Developer ID of the builder, as identified on the download page for this release ({\field{\*\fldinst{HYPERLINK "https://www.python.org/downloads/"}}{\fldrslt https://www.python.org/downloads/}}).  To inspect the digital signature of the package, click on the lock icon in the upper right corner of the 
 \i Install Python
 \i0  installer window.  Refer to Apple\'92s support pages for more information on Gatekeeper ({\field{\*\fldinst{HYPERLINK "http://support.apple.com/kb/ht5290"}}{\fldrslt http://support.apple.com/kb/ht5290}}).\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 
-\b \ul Simplified web-based installs\
-\ulnone [NEW for Python 2.7.9]
+\b \cf0 \ul Simplified web-based installs\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ulnone [NEW for Python 2.7.9]
 \b0 \
 \
 With the change to the newer flat format installer package, the download file now has a 
@@ -38,8 +60,9 @@ With the change to the newer flat format installer package, the download file no
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 
-\b \cf0 \ul \ulc0 New Installation Options and Defaults\
-\ulnone [NEW for Python 2.7.9]
+\b \cf0 \ul New Installation Options and Defaults\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ulnone [NEW for Python 2.7.9]
 \b0 \
 \
 The Python installer now includes an option to automatically install or upgrade 
@@ -49,20 +72,79 @@ The Python installer now includes an option to automatically install or upgrade
 \i0  option at the 
 \i Installation Type
 \i0  step and uncheck the 
-\i Install or ugprade pip
+\i Install or upgrade pip
 \i0  option.  For other changes in this release, see the 
 \i Release Notes
 \i0  link for this release at {\field{\*\fldinst{HYPERLINK "https://www.python.org/downloads/"}}{\fldrslt https://www.python.org/downloads/}}.\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 
-\b \ul Binary installer support for OS X 10.4 and 10.3.9 discontinued\
-\ulnone [CHANGED for Python 2.7.9]
+\b \cf0 \ul Certificate verification and OpenSSL\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ulnone [CHANGED for Python 2.7.9]
+\b0 \
+\
+Python 2.7.9 includes a number of network security enhancements that have been approved for inclusion in Python 2.7 maintenance releases.  {\field{\*\fldinst{HYPERLINK "https://www.python.org/dev/peps/pep-0476/"}}{\fldrslt PEP 476}} changes several standard library modules, like 
+\i httplib
+\i0 , 
+\i urllib2
+\i0 , and 
+\i xmlrpclib
+\i0 , to by default verify certificates presented by servers over secure (TLS) connections.  The verification is performed by the OpenSSL libraries that Python is linked to.  Prior to 2.7.9, the python.org installers dynamically linked with Apple-supplied OpenSSL libraries shipped with OS X.  OS X provides a multiple level security framework that stores trust certificates in system and user keychains managed by the 
+\i Keychain Access 
+\i0 application and the 
+\i security
+\i0  command line utility.\
+\
+For OS X 10.5, Apple provides 
+\i OpenSSL 0.9.7
+\i0  libraries.  This version of Apple's OpenSSL 
+\b does not
+\b0  use the certificates from the system security framework, even when used on newer versions of OS X.  Instead it consults a traditional OpenSSL concatenated certificate file (
+\i cafile
+\i0 ) or certificate directory (
+\i capath
+\i0 ), located in 
+\f1 /System/Library/OpenSSL
+\f0 .  These directories are typically empty and not managed by OS X; you must manage them yourself or supply your own SSL contexts.  OpenSSL 0.9.7 is obsolete by current security standards, lacking a number of important features found in later versions.  Among the problems this causes is the inability to verify higher-security certificates now used by python.org services, including 
+\i t{\field{\*\fldinst{HYPERLINK "https://pypi.python.org/pypi"}}{\fldrslt he Python Package Index, PyPI}}
+\i0 .  To solve this problem, as of 2.7.9 the 
+\i 10.5+ 32-bit-only python.org variant
+\i0  is linked with a private copy of 
+\i OpenSSL 1.0.1j
+\i0 ; it consults the same default certificate directory, 
+\f1 /System/Library/OpenSSL
+\f0 .   As before, it is still necessary to manage certificates yourself when you use this Python variant and, with certification verification now enabled by default, you may now need to take additional steps to ensure your Python programs have access to CA certificates you trust.  If you use this Python variant to build standalone applications with third-party tools like {\field{\*\fldinst{HYPERLINK "https://pypi.python.org/pypi/py2app/"}}{\fldrslt 
+\f1 py2app}}, you may now need to bundle CA certificates in them or otherwise supply non-default SSL contexts.\
+\
+For OS X 10.6+, Apple also provides 
+\i OpenSSL
+\i0  
+\i 0.9.8 libraries
+\i0 .  Apple's 0.9.8 version includes an important additional feature: if a certificate cannot be verified using the manually administered certificates in 
+\f1 /System/Library/OpenSSL
+\f0 , the certificates managed by the system security framework In the user and system keychains are also consulted (using Apple private APIs).  For this reason, for 2.7.9 the 
+\i 64-bit/32-bit 10.6+ python.org variant
+\i0  continues to be dynamically linked with Apple's OpenSSL 0.9.8 since it was felt that the loss of the system-provided certificates and management tools outweighs the additional security features provided by newer versions of OpenSSL.  This will likely change in future releases of the python.org installers as Apple has deprecated use of the system-supplied OpenSSL libraries.  If you do need features from newer versions of OpenSSL, there are third-party OpenSSL wrapper packages available through 
+\i PyPI
+\i0 .\
+\
+The bundled 
+\f1 pip
+\f0  included with 2.7.9 has its own default certificate store for verifying download connections.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\b \cf0 \ul \
+Binary installer support for OS X 10.4 and 10.3.9 discontinued\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \ulnone [CHANGED for Python 2.7.9]
 \b0 \
 \
 As previously announced, binary installers for Python 2.7.9 from python.org no longer support Mac OS X 10.3.9 (Panther) and 10.4.x (Tiger) systems.  These systems were last updated by Apple in 2005 and 2007.  As of 2.7.9, the 32-bit-only installer supports PPC and Intel Macs running OS X 10.5 (Leopard).  10.5 was the last OS X release for PPC machines (G4 and G5).  The 64-/32-bit installer configuration remains unchanged and should normally be used on OS X 10.6 (Snow Leopard) and later systems.  This aligns Python 2.7.x installer configurations with those currently provided with Python 3.x.  If needed, it is still possible to build Python from source for 10.3.9 and 10.4.\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 
-\b \ul Python 3 and Python 2 Co-existence\
+\b \cf0 \ul Python 3 and Python 2 Co-existence\
 
 \b0 \ulnone \
 Python.org Python 2.7 and 3.x versions can both be installed on your system and will not conflict.  Python 2.7 command names contain a 2 or no digit: 

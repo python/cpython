@@ -30,6 +30,8 @@ Build
 - Issue #22935: Allow the ssl module to be compiled if openssl doesn't support
   SSL 3.
 
+- Issue #17128: Use private version of OpenSSL for 2.7.9 OS X 10.5+ installer.
+
 
 What's New in Python 2.7.9 release candidate 1?
 ===============================================
