@@ -8,50 +8,20 @@ $DESTROOT, massages that installation to remove .pyc files and such, creates
 an Installer package from the installation plus other files in ``resources`` 
 and ``scripts`` and placed that on a ``.dmg`` disk image.
 
-For Python 2.7.x and 3.x, PSF practice is to build two installer variants
-for each release.
+This installers built by this script are legacy bundle installers that have
+been supported from the early days of OS X.  In particular, they are supported
+on OS X 10.3.9, the earliest supported release for builds from this script.
 
-Beginning with Python 2.7.9, we plan to drop binary installer support for
-Mac OS X 10.3.9 and 10.4.x systems.  To ease the transition, for Python 2.7.7
-and 2.7.8 there were three installers provided:
+Beginning with Python 2.7.9, PSF practice is to build two installer variants
+using the newer flat package format, supported on 10.5+, and signed with the
+builder's Apple developer key, allowing downloaded packages to satisfy Apple's
+default Gatekeeper policy (e.g. starting with 10.8, Apple store downloads and
+Apple developer ID signed apps and installer packages).  The process for
+transforming the output build artifacts into signed flat packages is not
+yet integrated into ``build-installer.py``.
 
-1.  DEPRECATED - 32-bit-only, i386 and PPC universal, capable on running on all
-    machines supported by Mac OS X 10.3.9 through (at least) 10.9::
-
-        /usr/bin/python build-installer.py \
-            --sdk-path=/Developer/SDKs/MacOSX10.4u.sdk \
-            --universal-archs=32-bit \
-            --dep-target=10.3 
-
-    - builds the following third-party libraries
-
-        * Bzip2
-        * NCurses
-        * GNU Readline (GPL)
-        * SQLite 3.7.13
-        * Zlib 1.2.3
-        * Oracle Sleepycat DB 4.8 (Python 2.x only)
-
-    - requires ActiveState ``Tcl/Tk 8.4`` (currently 8.4.19) to be installed for building
-
-    - recommended build environment:
-        
-        * Mac OS X 10.5.8 PPC or Intel
-        * Xcode 3.1.4
-        * ``MacOSX10.4u`` SDK (later SDKs do not support PPC G3 processors)
-        * ``MACOSX_DEPLOYMENT_TARGET=10.3``
-        * Apple ``gcc-4.0``
-        * bootstrap non-framework Python 2.7 for documentation build with
-          Sphinx (as of 2.7.9)
-
-    - alternate build environments:
-
-        * Mac OS X 10.6.8 with Xcode 3.2.6
-            - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
-        * Note Xcode 4.* does not support building for PPC so cannot be used for this build
-
-2.  32-bit-only, i386 and PPC universal, capable on running on all machines
-    supported by Mac OS X 10.5 through (at least) 10.9::
+1.  32-bit-only, i386 and PPC universal, capable on running on all machines
+    supported by Mac OS X 10.5 through (at least) 10.10::
 
         /usr/bin/python  build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.5.sdk \
@@ -60,6 +30,7 @@ and 2.7.8 there were three installers provided:
 
     - builds the following third-party libraries
 
+        * libcrypto and libssl from OpenSSL 1.0.1j
         * NCurses 5.9
         * SQLite 3.7.13
         * Oracle Sleepycat DB 4.8 (Python 2.x only)
@@ -86,7 +57,7 @@ and 2.7.8 there were three installers provided:
             - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
         * Note Xcode 4.* does not support building for PPC so cannot be used for this build
 
-3.  64-bit / 32-bit, x86_64 and i386 universal, for OS X 10.6 (and later)::
+2.  64-bit / 32-bit, x86_64 and i386 universal, for OS X 10.6 (and later)::
 
         /usr/bin/python build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.6.sdk \
@@ -101,6 +72,7 @@ and 2.7.8 there were three installers provided:
 
     - uses system-supplied versions of third-party libraries
 
+        * libcrypto and libssl from Apple OpenSSL 0.9.8
         * readline module links with Apple BSD editline (libedit)
 
     - requires ActiveState Tcl/Tk 8.5.15 (or later) to be installed for building
@@ -164,7 +136,7 @@ Here are the steps you need to follow to build a Python installer:
   ``build-installer.py`` for its usage.
 
   Running this script takes some time, it will not only build Python itself
-  but also some 3th-party libraries that are needed for extensions.
+  but also some 3rd-party libraries that are needed for extensions.
 
 * When done the script will tell you where the DMG image is (by default
   somewhere in ``/tmp/_py``).
