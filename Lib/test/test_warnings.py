@@ -631,6 +631,15 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         finally:
             globals_dict['__file__'] = oldfile
 
+    def test_stderr_none(self):
+        rc, stdout, stderr = assert_python_ok("-c",
+            "import sys; sys.stderr = None; "
+            "import warnings; warnings.simplefilter('always'); "
+            "warnings.warn('Warning!')")
+        self.assertEqual(stdout, b'')
+        self.assertNotIn(b'Warning!', stderr)
+        self.assertNotIn(b'Error', stderr)
+
 
 class WarningsDisplayTests(BaseTest):
 
