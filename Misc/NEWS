@@ -39,6 +39,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #21775: shutil.copytree(): fix crash when copying to VFAT. An exception
+  handler assumed that that OSError objects always have a 'winerror' attribute.
+  That is not the case, so the exception handler itself raised AttributeError
+  when run on Linux (and, presumably, any other non-Windows OS).
+  Patch by Greg Ward.
+
 - Issue #1218234: Fix inspect.getsource() to load updated source of
   reloaded module. Initial patch by Berker Peksag.
 
