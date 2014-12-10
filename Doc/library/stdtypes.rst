@@ -3762,7 +3762,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       not in the map.
 
       .. index:: __missing__()
-  
+
       If a subclass of dict defines a method :meth:`__missing__` and *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
