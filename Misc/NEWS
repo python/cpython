@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23016: A warning no longer produces an AttributeError when the program
+  is run with pythonw.exe.
+
 - Issue #21775: shutil.copytree(): fix crash when copying to VFAT. An exception
   handler assumed that that OSError objects always have a 'winerror' attribute.
   That is not the case, so the exception handler itself raised AttributeError
