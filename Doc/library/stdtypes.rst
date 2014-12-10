@@ -3761,11 +3761,13 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return the item of *d* with key *key*.  Raises a :exc:`KeyError` if *key* is
       not in the map.
 
-      If a subclass of dict defines a method :meth:`__missing__`, if the key *key*
+	  .. index:: __missing__()
+
+      If a subclass of dict defines a method :meth:`__missing__` and *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
-      returned or raised by the ``__missing__(key)`` call if the key is not
-      present. No other operations or methods invoke :meth:`__missing__`. If
+      returned or raised by the ``__missing__(key)`` call.
+      No other operations or methods invoke :meth:`__missing__`. If
       :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
       :meth:`__missing__` must be a method; it cannot be an instance variable::
 
@@ -3779,8 +3781,9 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
           >>> c['red']
           1
 
-      See :class:`collections.Counter` for a complete implementation including
-      other methods helpful for accumulating and managing tallies.
+      The example above shows part of the implementation of
+      :class:`collections.Counter`.  A different ``__missing__`` method is used
+      by :class:`collections.defaultdict`.
 
    .. describe:: d[key] = value
 
