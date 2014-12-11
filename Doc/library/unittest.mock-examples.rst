@@ -756,16 +756,16 @@ When we try to test that ``grob`` calls ``frob`` with the correct argument look
 what happens:
 
     >>> with patch('mymodule.frob') as mock_frob:
-    ...     val = set([6])
+    ...     val = {6}
     ...     mymodule.grob(val)
     ...
     >>> val
-    set([])
-    >>> mock_frob.assert_called_with(set([6]))
+    set()
+    >>> mock_frob.assert_called_with({6})
     Traceback (most recent call last):
         ...
-    AssertionError: Expected: ((set([6]),), {})
-    Called with: ((set([]),), {})
+    AssertionError: Expected: (({6},), {})
+    Called with: ((set(),), {})
 
 One possibility would be for mock to copy the arguments you pass in. This
 could then cause problems if you do assertions that rely on object identity
@@ -793,12 +793,12 @@ me.
     ...
     >>> with patch('mymodule.frob') as mock_frob:
     ...     new_mock = copy_call_args(mock_frob)
-    ...     val = set([6])
+    ...     val = {6}
     ...     mymodule.grob(val)
     ...
-    >>> new_mock.assert_called_with(set([6]))
+    >>> new_mock.assert_called_with({6})
     >>> new_mock.call_args
-    call(set([6]))
+    call({6})
 
 ``copy_call_args`` is called with the mock that will be called. It returns a new
 mock that we do the assertion on. The ``side_effect`` function makes a copy of
@@ -811,10 +811,10 @@ the args and calls our ``new_mock`` with the copy.
     checking inside a ``side_effect`` function.
 
         >>> def side_effect(arg):
-        ...     assert arg == set([6])
+        ...     assert arg == {6}
         ...
         >>> mock = Mock(side_effect=side_effect)
-        >>> mock(set([6]))
+        >>> mock({6})
         >>> mock(set())
         Traceback (most recent call last):
             ...
@@ -839,8 +839,8 @@ Here's an example implementation:
     >>> c.assert_called_with(arg)
     Traceback (most recent call last):
         ...
-    AssertionError: Expected call: mock(set([1]))
-    Actual call: mock(set([]))
+    AssertionError: Expected call: mock({1})
+    Actual call: mock(set())
     >>> c.foo
     <CopyingMock name='mock.foo' id='...'>
 

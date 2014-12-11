@@ -275,13 +275,11 @@ def _copy(value):
     return value
 
 
-_allowed_names = set(
-    [
-        'return_value', '_mock_return_value', 'side_effect',
-        '_mock_side_effect', '_mock_parent', '_mock_new_parent',
-        '_mock_name', '_mock_new_name'
-    ]
-)
+_allowed_names = {
+    'return_value', '_mock_return_value', 'side_effect',
+    '_mock_side_effect', '_mock_parent', '_mock_new_parent',
+    '_mock_name', '_mock_new_name'
+}
 
 
 def _delegating_property(name):
@@ -1679,11 +1677,12 @@ right = ' '.join('r%s' % n for n in numerics.split())
 # (as they are metaclass methods)
 # __del__ is not supported at all as it causes problems if it exists
 
-_non_defaults = set('__%s__' % method for method in [
-    'get', 'set', 'delete', 'reversed', 'missing', 'reduce', 'reduce_ex',
-    'getinitargs', 'getnewargs', 'getstate', 'setstate', 'getformat',
-    'setformat', 'repr', 'dir', 'subclasses', 'format',
-])
+_non_defaults = {
+    '__get__', '__set__', '__delete__', '__reversed__', '__missing__',
+    '__reduce__', '__reduce_ex__', '__getinitargs__', '__getnewargs__',
+    '__getstate__', '__setstate__', '__getformat__', '__setformat__',
+    '__repr__', '__dir__', '__subclasses__', '__format__',
+)
 
 
 def _get_method(name, func):
@@ -1694,19 +1693,19 @@ def _get_method(name, func):
     return method
 
 
-_magics = set(
+_magics = {
     '__%s__' % method for method in
     ' '.join([magic_methods, numerics, inplace, right]).split()
-)
+}
 
 _all_magics = _magics | _non_defaults
 
-_unsupported_magics = set([
+_unsupported_magics = {
     '__getattr__', '__setattr__',
     '__init__', '__new__', '__prepare__'
     '__instancecheck__', '__subclasscheck__',
     '__del__'
-])
+}
 
 _calculate_return_value = {
     '__hash__': lambda self: object.__hash__(self),
