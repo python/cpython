@@ -230,10 +230,6 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
             assert self._buffer is None
             # Pass a copy, except if it's already immutable.
             self._loop_writing(data=bytes(data))
-            # XXX Should we pause the protocol at this point
-            # if len(data) > self._high_water?  (That would
-            # require keeping track of the number of bytes passed
-            # to a send() that hasn't finished yet.)
         elif not self._buffer:  # WRITING -> BACKED UP
             # Make a mutable copy which we can extend.
             self._buffer = bytearray(data)
