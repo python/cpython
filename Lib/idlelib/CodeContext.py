@@ -15,8 +15,8 @@ import re
 from sys import maxint as INFINITY
 from idlelib.configHandler import idleConf
 
-BLOCKOPENERS = set(["class", "def", "elif", "else", "except", "finally", "for",
-                    "if", "try", "while", "with"])
+BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
+                    "if", "try", "while", "with"}
 UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec
 
