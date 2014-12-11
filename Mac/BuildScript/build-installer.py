@@ -844,6 +844,11 @@ def build_universal_openssl(basedir, archList):
     separately then lipo them together into fat libraries.
     """
 
+    # OpenSSL fails to build with Xcode 2.5 (on OS X 10.4).
+    # If we are building on a 10.4.x or earlier system,
+    # unilaterally disable assembly code building to avoid the problem.
+    no_asm = int(platform.release().split(".")[0]) < 9
+
     def build_openssl_arch(archbase, arch):
         "Build one architecture of openssl"
         arch_opts = {
@@ -868,6 +873,8 @@ def build_universal_openssl(basedir, archList):
             "--prefix=%s"%os.path.join("/", *FW_VERSION_PREFIX),
             "--openssldir=/System/Library/OpenSSL",
         ]
+        if no_asm:
+            configure_opts.append("no-asm")
         runCommand(" ".join(["perl", "Configure"]
                         + arch_opts[arch] + configure_opts))
         runCommand("make depend OSX_SDK=%s" % SDKPATH)

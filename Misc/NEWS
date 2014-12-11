@@ -57,6 +57,12 @@ IDLE
 - Issue #16893: Update Idle doc chapter to match current Idle and add new
   information.
 
+Build
+-----
+
+- Issue #23032: Fix installer build failures on OS X 10.4 Tiger
+  by disabling assembly code in the OpenSSL build.
+
 
 What's New in Python 2.7.9?
 ===========================
