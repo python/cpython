@@ -728,6 +728,4 @@ found in the Python wiki.
    <https://wiki.python.org/moin/WebFrameworks>`_.
 
    Most frameworks also have their own mailing lists and IRC channels, look out
-   for these on the projects' web sites.  There is also a general "Python in the
-   Web" IRC channel on freenode called `#python.web
-   <https://wiki.python.org/moin/PoundPythonWeb>`_.
+   for these on the projects' web sites.
