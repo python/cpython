@@ -116,18 +116,14 @@ def _import_symbols(prefix):
 _import_symbols('OP_')
 _import_symbols('ALERT_DESCRIPTION_')
 _import_symbols('SSL_ERROR_')
+_import_symbols('PROTOCOL_')
 
 from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN
 
-from _ssl import PROTOCOL_SSLv3, PROTOCOL_SSLv23, PROTOCOL_TLSv1
 from _ssl import _OPENSSL_API_VERSION
 
 
-_PROTOCOL_NAMES = {
-    PROTOCOL_TLSv1: "TLSv1",
-    PROTOCOL_SSLv23: "SSLv23",
-    PROTOCOL_SSLv3: "SSLv3",
-}
+_PROTOCOL_NAMES = {value: name for name, value in globals().items() if name.startswith('PROTOCOL_')}
 try:
     from _ssl import PROTOCOL_SSLv2
     _SSLv2_IF_EXISTS = PROTOCOL_SSLv2
