@@ -908,7 +908,7 @@ class GzipUtilTestCase(unittest.TestCase):
         data = b'\0' * (max_gzip_decode + 1)
         encoded = xmlrpclib.gzip_encode(data)
 
-        with self.assertRaisesRegexp(ValueError,
+        with self.assertRaisesRegex(ValueError,
                                      "max gzipped payload length exceeded"):
             xmlrpclib.gzip_decode(encoded)
 
