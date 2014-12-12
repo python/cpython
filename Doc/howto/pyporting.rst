@@ -30,16 +30,18 @@ are:
 
 #. Update your code to drop support for Python 2.5 or older (supporting only
    Python 2.7 is ideal)
-#. Make sure you have good test coverage (coverage.py_ can help)
+#. Make sure you have good test coverage (coverage.py_ can help;
+   ``pip install coverage``)
 #. Learn the differences between Python 2 & 3
-#. Use Modernize_ or Futurize_ to update your code
+#. Use Modernize_ or Futurize_ to update your code (``pip install modernize`` or
+   ``pip install future``, respectively)
 #. Use Pylint_ to help make sure you don't regress on your Python 3 support
-   (if only supporting Python 2.7/3.4 or newer)
+   (if only supporting Python 2.7/3.4 or newer; ``pip install pylint``)
 #. Use caniusepython3_ to find out which of your dependencies are blocking your
-   use of Python 3
+   use of Python 3 (``pip install caniusepython3``)
 #. Once your dependencies are no longer blocking you, use continuous integration
    to make sure you stay compatible with Python 2 & 3 (tox_ can help test
-   against multiple versions of Python)
+   against multiple versions of Python; ``pip install tox``)
 
 If you are dropping support for Python 2 entirely, then after you learn the
 differences between Python 2 & 3 you can run 2to3_ over your code and skip the
@@ -71,8 +73,9 @@ Drop support for Python 2.5 and older (at least)
 While you can make Python 2.5 work with Python 3, it is **much** easier if you
 only have to work with Python 2.6 or newer (and easier still if you only have
 to work with Python 2.7). If dropping Python 2.5 is not an option then the six_
-project can help you support Python 2.5 & 3 simultaneously. Do realize, though,
-that nearly all the projects listed in this HOWTO will not be available to you.
+project can help you support Python 2.5 & 3 simultaneously
+(``pip install six``). Do realize, though, that nearly all the projects listed
+in this HOWTO will not be available to you.
 
 If you are able to only support Python 2.6 or newer, then the required changes
 to your code should continue to look and feel like idiomatic Python code. At
@@ -115,7 +118,8 @@ Python 3! But to fully understand how your code is going to change and what
 you want to look out for while you code, you will want to learn what changes
 Python 3 makes in terms of Python 2. Typically the two best ways of doing that
 is reading the `"What's New"`_ doc for each release of Python 3 and the
-`Porting to Python 3`_ book (which is free online).
+`Porting to Python 3`_ book (which is free online). There is also a handy
+`cheat sheet`_ from the Python-Future project.
 
 
 Update your code
@@ -245,6 +249,16 @@ for opening files instead of the built-in :func:`open` function as the :mod:`io`
 module is consistent from Python 2 to 3 while the built-in :func:`open` function
 is not (in Python 3 it's actually :func:`io.open`).
 
+The constructors of both ``str`` and ``bytes`` have different semantics for the
+same arguments between Python 2 & 3. Passing an integer to ``bytes`` in Python 2
+will give you the string representation of the integer: ``bytes(3) == '3'``.
+But in Python 3, an integer argument to ``bytes`` will give you a bytes object
+as long as the integer specified, filled with null bytes:
+``bytes(3) == b'\x00\x00\x00'``. A similar worry is necessary when passing a
+bytes object to ``str``. In Python 2 you just get the bytes object back:
+``str(b'3') == b'3'``. But in Python 3 you get the string representation of the
+bytes object: ``str(b'3') == "b'3'"``.
+
 Finally, the indexing of binary data requires careful handling (slicing does
 **not** require any special handling). In Python 2,
 ``b'123'[1] == b'2'`` while in Python 3 ``b'123'[1] == 50``. Because binary data
@@ -362,6 +376,7 @@ supported by Python 2. You should also update the classifiers in your
 
 .. _2to3: https://docs.python.org/3/library/2to3.html
 .. _caniusepython3: https://pypi.python.org/pypi/caniusepython3
+.. _cheat sheet: http://python-future.org/compatible_idioms.html
 .. _coverage.py: https://pypi.python.org/pypi/coverage
 .. _Futurize: http://python-future.org/automatic_conversion.html
 .. _Modernize:
