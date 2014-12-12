@@ -66,9 +66,11 @@ ppc_getcounter(uint64 *v)
    even in 64-bit mode, we need to use "a" and "d" for the lower and upper
    32-bit pieces of the result. */
 
-#define READ_TIMESTAMP(val) \
-    __asm__ __volatile__("rdtsc" : \
-                         "=a" (((int*)&(val))[0]), "=d" (((int*)&(val))[1]));
+#define READ_TIMESTAMP(val) do {                        \
+    unsigned int h, l;                                  \
+    __asm__ __volatile__("rdtsc" : "=a" (l), "=d" (h)); \
+    (val) = ((uint64)l) | (((uint64)h) << 32);          \
+    } while(0)
 
 
 #else
