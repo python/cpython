@@ -16,7 +16,7 @@ if "%1" == "x64" (
 call "%pcbuild%\env.bat" %vcvars_target%
 
 echo.Attempting to kill Pythons...
-msbuild /v:m /nologo /target:KillPython "%pcbuild%\pythoncore.vcxproj" /p:Configuration=Release /p:Platform=%platform%
+msbuild /v:m /nologo /target:KillPython "%pcbuild%\pythoncore.vcxproj" /p:Configuration=Release /p:Platform=%platform% /p:KillPython=true
 
 echo Deleting .pyc/.pyo files ...
 del /s "%root%\Lib\*.pyc" "%root%\Lib\*.pyo"
