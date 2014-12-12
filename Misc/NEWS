@@ -194,6 +194,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22095: Fixed HTTPConnection.set_tunnel with default port.  The port
+  value in the host header was set to "None".  Patch by Demian Brecht.
+
 - Issue #23016: A warning no longer produces an AttributeError when the program
   is run with pythonw.exe.
 
