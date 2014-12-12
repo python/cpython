@@ -272,11 +272,11 @@ However, there are other representations which are more efficient overall, yet
 the worst cases might be terrible.
 
 Heaps are also very useful in big disk sorts.  You most probably all know that a
-big sort implies producing "runs" (which are pre-sorted sequences, which size is
+big sort implies producing "runs" (which are pre-sorted sequences, whose size is
 usually related to the amount of CPU memory), followed by a merging passes for
 these runs, which merging is often very cleverly organised [#]_. It is very
 important that the initial sort produces the longest runs possible.  Tournaments
-are a good way to that.  If, using all the memory available to hold a
+are a good way to achieve that.  If, using all the memory available to hold a
 tournament, you replace and percolate items that happen to fit the current run,
 you'll produce runs which are twice the size of the memory for random input, and
 much better for input fuzzily ordered.
