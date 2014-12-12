@@ -344,7 +344,8 @@ class BaseSelectorTestCase(unittest.TestCase):
         self.assertFalse(s.select(1))
         t1 = time()
         dt = t1 - t0
-        self.assertTrue(0.8 <= dt <= 1.6, dt)
+        # Tolerate 2.0 seconds for very slow buildbots
+        self.assertTrue(0.8 <= dt <= 2.0, dt)
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
