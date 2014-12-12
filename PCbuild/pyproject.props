@@ -118,7 +118,8 @@ foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses
       </Code>
     </Task>
   </UsingTask>
-  <Target Name="KillPython" BeforeTargets="InitializeBuildStatus" Condition="$([msbuild]::ValueOrDefault($(KillPython), 'false'))">
+  
+  <Target Name="KillPython" BeforeTargets="InitializeBuildStatus" Condition="'$(KillPython)' == 'true'">
     <Message Text="Killing any running python.exe instances..." Importance="high" />
     <KillPython FileName="$(OutDir)python$(PyDebugExt).exe" />
   </Target>
