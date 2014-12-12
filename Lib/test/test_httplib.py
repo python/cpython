@@ -1068,11 +1068,13 @@ class TunnelTests(TestCase):
 
         self.assertEqual(conn.sock.host, 'proxy.com')
         self.assertEqual(conn.sock.port, 80)
-        self.assertTrue(b'CONNECT destination.com' in conn.sock.data)
-        self.assertTrue(b'Host: destination.com' in conn.sock.data)
+        self.assertIn(b'CONNECT destination.com', conn.sock.data)
+        # issue22095
+        self.assertNotIn(b'Host: destination.com:None', conn.sock.data)
+        self.assertIn(b'Host: destination.com', conn.sock.data)
 
         # This test should be removed when CONNECT gets the HTTP/1.1 blessing
-        self.assertTrue(b'Host: proxy.com' not in conn.sock.data)
+        self.assertNotIn(b'Host: proxy.com', conn.sock.data)
 
         conn.close()
         conn.request('PUT', '/', '')
