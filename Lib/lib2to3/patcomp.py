@@ -32,7 +32,7 @@ class PatternSyntaxError(Exception):
 
 def tokenize_wrapper(input):
     """Tokenizes a string suppressing significant whitespace."""
-    skip = set((token.NEWLINE, token.INDENT, token.DEDENT))
+    skip = {token.NEWLINE, token.INDENT, token.DEDENT}
     tokens = tokenize.generate_tokens(io.StringIO(input).readline)
     for quintuple in tokens:
         type, value, start, end, line_text = quintuple
