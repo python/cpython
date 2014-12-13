@@ -52,13 +52,15 @@
   
   <Target Name="FindNasm">
     <PropertyGroup>
-      <nasm Condition="$(Platform) == 'Win32'">"$(nasmDir)nasm.exe" -f win32</nasm>
-      <nasm Condition="$(Platform) == 'x64'">"$(nasmDir)nasm.exe" -f win64 -DNEAR -Ox -g</nasm>
+      <nasm Condition="$(Platform) == 'Win32'">nasm.exe -f win32</nasm>
+      <nasm Condition="$(Platform) == 'x64'">nasm.exe -f win64 -DNEAR -Ox -g</nasm>
     </PropertyGroup>
   </Target>
 
   <Target Name="BuildNasmFiles" BeforeTargets="PreBuildEvent" DependsOnTargets="PrepareForBuild;FindNasm" Inputs="@(NasmCompile)" Outputs="@(NasmCompile->'$(IntDir)%(Filename).obj')">
-    <Exec Command='$(nasm) -o "$(IntDir)%(NasmCompile.Filename).obj" "%(NasmCompile.FullPath)"' />
+    <Exec Command='setlocal
+set PATH=%PATH%;$(nasmDir)
+$(nasm) -o "$(IntDir)%(NasmCompile.Filename).obj" "%(NasmCompile.FullPath)"' />
     <ItemGroup>
       <Link Include="$(IntDir)%(NasmCompile.Filename).obj" />
       <Lib Include="$(IntDir)%(NasmCompile.Filename).obj" />
