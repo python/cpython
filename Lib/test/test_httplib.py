@@ -1314,6 +1314,7 @@ class TunnelTests(TestCase):
         self.assertTrue(b'CONNECT destination.com' in conn.sock.data)
         self.assertTrue(b'Host: destination.com' in conn.sock.data)
 
+@support.reap_threads
 def test_main(verbose=None):
     support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
                          HTTPSTest, RequestBodyTest, SourceAddressTest,
