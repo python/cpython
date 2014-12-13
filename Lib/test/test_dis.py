@@ -178,15 +178,16 @@ dis_compound_stmt_str = """\
   1           0 LOAD_CONST               0 (0)
               3 STORE_NAME               0 (x)
 
-  2           6 SETUP_LOOP              13 (to 22)
+  2           6 SETUP_LOOP              14 (to 23)
 
   3     >>    9 LOAD_NAME                0 (x)
              12 LOAD_CONST               1 (1)
              15 INPLACE_ADD
              16 STORE_NAME               0 (x)
              19 JUMP_ABSOLUTE            9
-        >>   22 LOAD_CONST               2 (None)
-             25 RETURN_VALUE
+             22 POP_BLOCK
+        >>   23 LOAD_CONST               2 (None)
+             26 RETURN_VALUE
 """
 
 dis_traceback = """\
