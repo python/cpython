@@ -1367,6 +1367,8 @@ Build
 
 - Issue #21236: Build _msi.pyd with cabinet.lib instead of fci.lib
 
+- Issue #17128: Use private version of OpenSSL for 2.7.9 OS X 10.5+ installer.
+
 C API
 -----
 
