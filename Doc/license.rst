@@ -654,9 +654,9 @@ OpenSSL
 
 The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
 the OpenSSL library for added performance if made available by the
-operating system. Additionally, the Windows installers for Python
-include a copy of the OpenSSL libraries, so we include a copy of the
-OpenSSL license here::
+operating system. Additionally, the Windows and Mac OS X installers for
+Python may include a copy of the OpenSSL libraries, so we include a copy
+of the OpenSSL license here::
 
 
   LICENSE ISSUES
