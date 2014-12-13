@@ -1716,10 +1716,9 @@ compiler_while(struct compiler *c, stmt_ty s)
        if there is no else clause ?
     */
 
-    if (constant == -1) {
+    if (constant == -1)
         compiler_use_next_block(c, anchor);
-        ADDOP(c, POP_BLOCK);
-    }
+    ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, LOOP, loop);
     if (orelse != NULL) /* what if orelse is just pass? */
         VISIT_SEQ(c, stmt, s->v.While.orelse);
