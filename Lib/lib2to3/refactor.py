@@ -57,7 +57,7 @@ def _get_head_types(pat):
         # Always return leafs
         if pat.type is None:
             raise _EveryNode
-        return set([pat.type])
+        return {pat.type}
 
     if isinstance(pat, pytree.NegatedPattern):
         if pat.content:
@@ -133,7 +133,7 @@ def _detect_future_features(source):
     def advance():
         tok = next(gen)
         return tok[0], tok[1]
-    ignore = frozenset((token.NEWLINE, tokenize.NL, token.COMMENT))
+    ignore = frozenset({token.NEWLINE, tokenize.NL, token.COMMENT})
     features = set()
     try:
         while True:
