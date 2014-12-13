@@ -1516,8 +1516,6 @@ def buildInstaller():
         else:
             patchFile(os.path.join('resources', fn), os.path.join(rsrcDir, fn))
 
-    shutil.copy("../../LICENSE", os.path.join(rsrcDir, 'License.txt'))
-
 
 def installSize(clear=False, _saved=[]):
     if clear:
@@ -1628,9 +1626,9 @@ def main():
     folder = os.path.join(WORKDIR, "_root", "Applications", "Python %s"%(
         getVersion(),))
     fn = os.path.join(folder, "License.rtf")
-    patchFile("resources/license.rtf",  fn)
+    patchFile("resources/License.rtf",  fn)
     fn = os.path.join(folder, "ReadMe.rtf")
-    patchFile("resources/readme.rtf",  fn)
+    patchFile("resources/ReadMe.rtf",  fn)
     fn = os.path.join(folder, "Update Shell Profile.command")
     patchScript("scripts/postflight.patch-profile",  fn)
     os.chmod(folder, STAT_0o755)
@@ -1640,10 +1638,12 @@ def main():
     buildInstaller()
 
     # And copy the readme into the directory containing the installer
-    patchFile('resources/ReadMe.txt', os.path.join(WORKDIR, 'installer', 'ReadMe.txt'))
+    patchFile('resources/ReadMe.rtf',
+                os.path.join(WORKDIR, 'installer', 'ReadMe.rtf'))
 
     # Ditto for the license file.
-    shutil.copy('../../LICENSE', os.path.join(WORKDIR, 'installer', 'License.txt'))
+    patchFile('resources/License.rtf',
+                os.path.join(WORKDIR, 'installer', 'License.rtf'))
 
     fp = open(os.path.join(WORKDIR, 'installer', 'Build.txt'), 'w')
     fp.write("# BUILD INFO\n")
