@@ -295,7 +295,7 @@ at least the following block of code at the top of it::
 
     from __future__ import absolute_import
     from __future__ import division
-    from __future__ import print_statement
+    from __future__ import print_function
     from __future__ import unicode_literals
 
 You can also run Python 2 with the ``-3`` flag to be warned about various
