@@ -36,7 +36,7 @@ from ..fixer_util import Name, Call, LParen, RParen, ArgList, Dot
 from .. import fixer_util
 
 
-iter_exempt = fixer_util.consuming_calls | set(["iter"])
+iter_exempt = fixer_util.consuming_calls | {"iter"}
 
 
 class FixDict(fixer_base.BaseFix):
