@@ -12,7 +12,7 @@ def showwarning(message, category, filename, lineno, file=None, line=None):
     if file is None:
         file = sys.stderr
         if file is None:
-            # sys.stderr is None when ran with pythonw.exe - warnings get lost
+            # sys.stderr is None when run with pythonw.exe - warnings get lost
             return
     try:
         file.write(formatwarning(message, category, filename, lineno, line))
