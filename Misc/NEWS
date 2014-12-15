@@ -62,6 +62,9 @@ IDLE
 Build
 -----
 
+- Issue #15506: Use standard PKG_PROG_PKG_CONFIG autoconf macro in the configure
+  script.
+
 - Issue #23032: Fix installer build failures on OS X 10.4 Tiger
   by disabling assembly code in the OpenSSL build.
 
