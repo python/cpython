@@ -555,22 +555,23 @@ class BaseBytesTest:
                 self.assertEqual(b, q)
 
     def test_iterator_pickling(self):
-        for b in b"", b"a", b"abc", b"\xffab\x80", b"\0\0\377\0\0":
-            it = itorg = iter(self.type2test(b))
-            data = list(self.type2test(b))
-            d = pickle.dumps(it)
-            it = pickle.loads(d)
-            self.assertEqual(type(itorg), type(it))
-            self.assertEqual(list(it), data)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for b in b"", b"a", b"abc", b"\xffab\x80", b"\0\0\377\0\0":
+                it = itorg = iter(self.type2test(b))
+                data = list(self.type2test(b))
+                d = pickle.dumps(it, proto)
+                it = pickle.loads(d)
+                self.assertEqual(type(itorg), type(it))
+                self.assertEqual(list(it), data)
 
-            it = pickle.loads(d)
-            try:
-                next(it)
-            except StopIteration:
-                continue
-            d = pickle.dumps(it)
-            it = pickle.loads(d)
-            self.assertEqual(list(it), data[1:])
+                it = pickle.loads(d)
+                try:
+                    next(it)
+                except StopIteration:
+                    continue
+                d = pickle.dumps(it, proto)
+                it = pickle.loads(d)
+                self.assertEqual(list(it), data[1:])
 
     def test_strip(self):
         b = self.type2test(b'mississippi')

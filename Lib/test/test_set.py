@@ -231,29 +231,30 @@ class TestJointOps:
             self.assertEqual(self.s, dup, "%s != %s" % (self.s, dup))
             if type(self.s) not in (set, frozenset):
                 self.s.x = 10
-                p = pickle.dumps(self.s)
+                p = pickle.dumps(self.s, i)
                 dup = pickle.loads(p)
                 self.assertEqual(self.s.x, dup.x)
 
     def test_iterator_pickling(self):
-        itorg = iter(self.s)
-        data = self.thetype(self.s)
-        d = pickle.dumps(itorg)
-        it = pickle.loads(d)
-        # Set iterators unpickle as list iterators due to the
-        # undefined order of set items.
-        # self.assertEqual(type(itorg), type(it))
-        self.assertTrue(isinstance(it, collections.abc.Iterator))
-        self.assertEqual(self.thetype(it), data)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            itorg = iter(self.s)
+            data = self.thetype(self.s)
+            d = pickle.dumps(itorg, proto)
+            it = pickle.loads(d)
+            # Set iterators unpickle as list iterators due to the
+            # undefined order of set items.
+            # self.assertEqual(type(itorg), type(it))
+            self.assertIsInstance(it, collections.abc.Iterator)
+            self.assertEqual(self.thetype(it), data)
 
-        it = pickle.loads(d)
-        try:
-            drop = next(it)
-        except StopIteration:
-            return
-        d = pickle.dumps(it)
-        it = pickle.loads(d)
-        self.assertEqual(self.thetype(it), data - self.thetype((drop,)))
+            it = pickle.loads(d)
+            try:
+                drop = next(it)
+            except StopIteration:
+                continue
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(self.thetype(it), data - self.thetype((drop,)))
 
     def test_deepcopy(self):
         class Tracer:
@@ -851,10 +852,11 @@ class TestBasicOps:
         self.assertEqual(setiter.__length_hint__(), len(self.set))
 
     def test_pickling(self):
-        p = pickle.dumps(self.set)
-        copy = pickle.loads(p)
-        self.assertEqual(self.set, copy,
-                         "%s != %s" % (self.set, copy))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(self.set, proto)
+            copy = pickle.loads(p)
+            self.assertEqual(self.set, copy,
+                             "%s != %s" % (self.set, copy))
 
 #------------------------------------------------------------------------------
 
