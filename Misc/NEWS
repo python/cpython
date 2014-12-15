@@ -1297,6 +1297,9 @@ IDLE
 Build
 -----
 
+- Issue #15506: Use standard PKG_PROG_PKG_CONFIG autoconf macro in the configure
+  script.
+
 - Issue #22935: Allow the ssl module to be compiled if openssl doesn't support
   SSL 3.
 
