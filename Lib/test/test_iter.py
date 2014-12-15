@@ -76,22 +76,23 @@ class TestCase(unittest.TestCase):
 
     # Helper to check picklability
     def check_pickle(self, itorg, seq):
-        d = pickle.dumps(itorg)
-        it = pickle.loads(d)
-        # Cannot assert type equality because dict iterators unpickle as list
-        # iterators.
-        # self.assertEqual(type(itorg), type(it))
-        self.assertTrue(isinstance(it, collections.abc.Iterator))
-        self.assertEqual(list(it), seq)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            d = pickle.dumps(itorg, proto)
+            it = pickle.loads(d)
+            # Cannot assert type equality because dict iterators unpickle as list
+            # iterators.
+            # self.assertEqual(type(itorg), type(it))
+            self.assertTrue(isinstance(it, collections.abc.Iterator))
+            self.assertEqual(list(it), seq)
 
-        it = pickle.loads(d)
-        try:
-            next(it)
-        except StopIteration:
-            return
-        d = pickle.dumps(it)
-        it = pickle.loads(d)
-        self.assertEqual(list(it), seq[1:])
+            it = pickle.loads(d)
+            try:
+                next(it)
+            except StopIteration:
+                continue
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(list(it), seq[1:])
 
     # Test basic use of iter() function
     def test_iter_basic(self):

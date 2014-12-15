@@ -84,18 +84,19 @@ class NodeListTestCase(unittest.TestCase):
     def test_nodelist_pickle_roundtrip(self):
         # Test pickling and unpickling of a NodeList.
 
-        # Empty NodeList.
-        node_list = NodeList()
-        pickled = pickle.dumps(node_list)
-        unpickled = pickle.loads(pickled)
-        self.assertEqual(unpickled, node_list)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # Empty NodeList.
+            node_list = NodeList()
+            pickled = pickle.dumps(node_list, proto)
+            unpickled = pickle.loads(pickled)
+            self.assertEqual(unpickled, node_list)
 
-        # Non-empty NodeList.
-        node_list.append(1)
-        node_list.append(2)
-        pickled = pickle.dumps(node_list)
-        unpickled = pickle.loads(pickled)
-        self.assertEqual(unpickled, node_list)
+            # Non-empty NodeList.
+            node_list.append(1)
+            node_list.append(2)
+            pickled = pickle.dumps(node_list, proto)
+            unpickled = pickle.loads(pickled)
+            self.assertEqual(unpickled, node_list)
 
 if __name__ == '__main__':
     unittest.main()
