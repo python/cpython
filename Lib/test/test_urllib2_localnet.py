@@ -5,7 +5,6 @@ import urllib2
 import BaseHTTPServer
 import unittest
 import hashlib
-import ssl
 
 from test import test_support
 
@@ -557,7 +556,6 @@ class TestUrlopen(BaseTestCase):
 
     def test_https_with_cafile(self):
         handler = self.start_https_server(certfile=CERT_localhost)
-        import ssl
         # Good cert
         data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
                             cafile=CERT_localhost)
