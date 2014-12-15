@@ -14,9 +14,6 @@ def importable(name):
         return False
 
 class TestUUID(unittest.TestCase):
-    last_node = None
-    source2node = {}
-
     def test_UUID(self):
         equal = self.assertEqual
         ascending = []
@@ -294,113 +291,13 @@ class TestUUID(unittest.TestCase):
         badtype(lambda: setattr(u, 'clock_seq_low', 0))
         badtype(lambda: setattr(u, 'node', 0))
 
-    def check_node(self, node, source):
-        message = "%012x is not an RFC 4122 node ID" % node
-        self.assertTrue(0 < node, message)
-        self.assertTrue(node < (1 << 48), message)
-
-        TestUUID.source2node[source] = node
-        if TestUUID.last_node:
-            if TestUUID.last_node != node:
-                msg = "different sources disagree on node:\n"
-                for s, n in TestUUID.source2node.items():
-                    msg += "    from source %r, node was %012x\n" % (s, n)
-                # There's actually no reason to expect the MAC addresses
-                # to agree across various methods -- e.g., a box may have
-                # multiple network interfaces, and different ways of getting
-                # a MAC address may favor different HW.
-                ##self.fail(msg)
-        else:
-            TestUUID.last_node = node
-
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_ifconfig_getnode(self):
-        node = uuid._ifconfig_getnode()
-        if node is not None:
-            self.check_node(node, 'ifconfig')
-
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_arp_getnode(self):
-        node = uuid._arp_getnode()
-        if node is not None:
-            self.check_node(node, 'arp')
-
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_lanscan_getnode(self):
-        node = uuid._lanscan_getnode()
-        if node is not None:
-            self.check_node(node, 'lanscan')
-
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_netstat_getnode(self):
-        node = uuid._netstat_getnode()
-        if node is not None:
-            self.check_node(node, 'netstat')
-
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_ipconfig_getnode(self):
-        node = uuid._ipconfig_getnode()
-        if node is not None:
-            self.check_node(node, 'ipconfig')
-
-    @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
-    @unittest.skipUnless(importable('netbios'), 'requires netbios')
-    def test_netbios_getnode(self):
-        self.check_node(uuid._netbios_getnode(), 'netbios')
-
-    def test_random_getnode(self):
-        node = uuid._random_getnode()
-        # Least significant bit of first octet must be set.
-        self.assertTrue(node & 0x010000000000)
-        self.assertTrue(node < (1 << 48))
-
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
-    def test_unixdll_getnode(self):
-        try: # Issues 1481, 3581: _uuid_generate_time() might be None.
-            self.check_node(uuid._unixdll_getnode(), 'unixdll')
-        except TypeError:
-            pass
-
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
-    def test_windll_getnode(self):
-        self.check_node(uuid._windll_getnode(), 'windll')
-
     def test_getnode(self):
         node1 = uuid.getnode()
-        self.check_node(node1, "getnode1")
+        self.assertTrue(0 < node1 < (1 << 48), '%012x' % node1)
 
         # Test it again to ensure consistency.
         node2 = uuid.getnode()
-        self.check_node(node2, "getnode2")
-
-        self.assertEqual(node1, node2)
-
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_find_mac(self):
-        data = '''\
-
-fake hwaddr
-cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
-eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
-'''
-        def mock_popen(cmd):
-            return io.StringIO(data)
-
-        if shutil.which('ifconfig') is None:
-            path = os.pathsep.join(('/sbin', '/usr/sbin'))
-            if shutil.which('ifconfig', path=path) is None:
-                self.skipTest('requires ifconfig')
-
-        with support.swap_attr(os, 'popen', mock_popen):
-            mac = uuid._find_mac(
-                command='ifconfig',
-                args='',
-                hw_identifiers=['hwaddr'],
-                get_index=lambda x: x + 1,
-            )
-            self.assertEqual(mac, 0x1234567890ab)
+        self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_uuid1(self):
@@ -510,6 +407,98 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
             child_value = os.read(fds[0], 100).decode('latin-1')
 
             self.assertNotEqual(parent_value, child_value)
+
+
+class TestInternals(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_find_mac(self):
+        data = '''\
+
+fake hwaddr
+cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
+'''
+        def mock_popen(cmd):
+            return io.StringIO(data)
+
+        if shutil.which('ifconfig') is None:
+            path = os.pathsep.join(('/sbin', '/usr/sbin'))
+            if shutil.which('ifconfig', path=path) is None:
+                self.skipTest('requires ifconfig')
+
+        with support.swap_attr(os, 'popen', mock_popen):
+            mac = uuid._find_mac(
+                command='ifconfig',
+                args='',
+                hw_identifiers=['hwaddr'],
+                get_index=lambda x: x + 1,
+            )
+            self.assertEqual(mac, 0x1234567890ab)
+
+    def check_node(self, node, requires=None, network=False):
+        if requires and node is None:
+            self.skipTest('requires ' + requires)
+        hex = '%012x' % node
+        if support.verbose >= 2:
+            print(hex, end=' ')
+        if network:
+            # 47 bit will never be set in IEEE 802 addresses obtained
+            # from network cards.
+            self.assertFalse(node & 0x010000000000, hex)
+        self.assertTrue(0 < node < (1 << 48),
+                        "%s is not an RFC 4122 node ID" % hex)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_ifconfig_getnode(self):
+        node = uuid._ifconfig_getnode()
+        self.check_node(node, 'ifconfig', True)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_arp_getnode(self):
+        node = uuid._arp_getnode()
+        self.check_node(node, 'arp', True)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_lanscan_getnode(self):
+        node = uuid._lanscan_getnode()
+        self.check_node(node, 'lanscan', True)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_netstat_getnode(self):
+        node = uuid._netstat_getnode()
+        self.check_node(node, 'netstat', True)
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_ipconfig_getnode(self):
+        node = uuid._ipconfig_getnode()
+        self.check_node(node, 'ipconfig', True)
+
+    @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
+    @unittest.skipUnless(importable('netbios'), 'requires netbios')
+    def test_netbios_getnode(self):
+        node = uuid._netbios_getnode()
+        self.check_node(node, network=True)
+
+    def test_random_getnode(self):
+        node = uuid._random_getnode()
+        # Least significant bit of first octet must be set.
+        self.assertTrue(node & 0x010000000000, '%012x' % node)
+        self.check_node(node)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    def test_unixdll_getnode(self):
+        try: # Issues 1481, 3581: _uuid_generate_time() might be None.
+            node = uuid._unixdll_getnode()
+        except TypeError:
+            self.skipTest('requires uuid_generate_time')
+        self.check_node(node)
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    def test_windll_getnode(self):
+        node = uuid._windll_getnode()
+        self.check_node(node)
 
 
 if __name__ == '__main__':
