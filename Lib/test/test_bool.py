@@ -305,42 +305,40 @@ class BoolTest(unittest.TestCase):
 
     def test_pickle(self):
         import pickle
-        self.assertIs(pickle.loads(pickle.dumps(True)), True)
-        self.assertIs(pickle.loads(pickle.dumps(False)), False)
-        self.assertIs(pickle.loads(pickle.dumps(True, True)), True)
-        self.assertIs(pickle.loads(pickle.dumps(False, True)), False)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertIs(pickle.loads(pickle.dumps(True, proto)), True)
+            self.assertIs(pickle.loads(pickle.dumps(False, proto)), False)
 
     def test_cpickle(self):
         import cPickle
-        self.assertIs(cPickle.loads(cPickle.dumps(True)), True)
-        self.assertIs(cPickle.loads(cPickle.dumps(False)), False)
-        self.assertIs(cPickle.loads(cPickle.dumps(True, True)), True)
-        self.assertIs(cPickle.loads(cPickle.dumps(False, True)), False)
+        for proto in range(cPickle.HIGHEST_PROTOCOL + 1):
+            self.assertIs(cPickle.loads(cPickle.dumps(True, proto)), True)
+            self.assertIs(cPickle.loads(cPickle.dumps(False, proto)), False)
 
     def test_mixedpickle(self):
         import pickle, cPickle
-        self.assertIs(pickle.loads(cPickle.dumps(True)), True)
-        self.assertIs(pickle.loads(cPickle.dumps(False)), False)
-        self.assertIs(pickle.loads(cPickle.dumps(True, True)), True)
-        self.assertIs(pickle.loads(cPickle.dumps(False, True)), False)
-
-        self.assertIs(cPickle.loads(pickle.dumps(True)), True)
-        self.assertIs(cPickle.loads(pickle.dumps(False)), False)
-        self.assertIs(cPickle.loads(pickle.dumps(True, True)), True)
-        self.assertIs(cPickle.loads(pickle.dumps(False, True)), False)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertIs(pickle.loads(cPickle.dumps(True, proto)), True)
+            self.assertIs(pickle.loads(cPickle.dumps(False, proto)), False)
+            self.assertIs(cPickle.loads(pickle.dumps(True, proto)), True)
+            self.assertIs(cPickle.loads(pickle.dumps(False, proto)), False)
 
     def test_picklevalues(self):
         import pickle, cPickle
 
         # Test for specific backwards-compatible pickle values
-        self.assertEqual(pickle.dumps(True), "I01\n.")
-        self.assertEqual(pickle.dumps(False), "I00\n.")
-        self.assertEqual(cPickle.dumps(True), "I01\n.")
-        self.assertEqual(cPickle.dumps(False), "I00\n.")
-        self.assertEqual(pickle.dumps(True, True), "I01\n.")
-        self.assertEqual(pickle.dumps(False, True), "I00\n.")
-        self.assertEqual(cPickle.dumps(True, True), "I01\n.")
-        self.assertEqual(cPickle.dumps(False, True), "I00\n.")
+        self.assertEqual(pickle.dumps(True, protocol=0), "I01\n.")
+        self.assertEqual(pickle.dumps(False, protocol=0), "I00\n.")
+        self.assertEqual(cPickle.dumps(True, protocol=0), "I01\n.")
+        self.assertEqual(cPickle.dumps(False, protocol=0), "I00\n.")
+        self.assertEqual(pickle.dumps(True, protocol=1), "I01\n.")
+        self.assertEqual(pickle.dumps(False, protocol=1), "I00\n.")
+        self.assertEqual(cPickle.dumps(True, protocol=1), "I01\n.")
+        self.assertEqual(cPickle.dumps(False, protocol=1), "I00\n.")
+        self.assertEqual(pickle.dumps(True, protocol=2), b'\x80\x02\x88.')
+        self.assertEqual(pickle.dumps(False, protocol=2), b'\x80\x02\x89.')
+        self.assertEqual(cPickle.dumps(True, protocol=2), b'\x80\x02\x88.')
+        self.assertEqual(cPickle.dumps(False, protocol=2), b'\x80\x02\x89.')
 
     def test_convert_to_bool(self):
         # Verify that TypeError occurs when bad things are returned

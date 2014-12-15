@@ -3300,7 +3300,7 @@ order (MRO) for bases """
             pass
 
         for p in pickle, cPickle:
-            for bin in 0, 1:
+            for bin in range(p.HIGHEST_PROTOCOL + 1):
                 for cls in C, C1, C2:
                     s = p.dumps(cls, bin)
                     cls2 = p.loads(s)
@@ -3358,30 +3358,31 @@ order (MRO) for bases """
                 __slots__ = ['a']
             class D(C):
                 pass
-            try:
-                pickle.dumps(C())
-            except TypeError:
-                pass
-            else:
-                self.fail("should fail: pickle C instance - %s" % base)
-            try:
-                cPickle.dumps(C())
-            except TypeError:
-                pass
-            else:
-                self.fail("should fail: cPickle C instance - %s" % base)
-            try:
-                pickle.dumps(C())
-            except TypeError:
-                pass
-            else:
-                self.fail("should fail: pickle D instance - %s" % base)
-            try:
-                cPickle.dumps(D())
-            except TypeError:
-                pass
-            else:
-                self.fail("should fail: cPickle D instance - %s" % base)
+            for proto in range(2):
+                try:
+                    pickle.dumps(C(), proto)
+                except TypeError:
+                    pass
+                else:
+                    self.fail("should fail: pickle C instance - %s" % base)
+                try:
+                    cPickle.dumps(C(), proto)
+                except TypeError:
+                    pass
+                else:
+                    self.fail("should fail: cPickle C instance - %s" % base)
+                try:
+                    pickle.dumps(C(), proto)
+                except TypeError:
+                    pass
+                else:
+                    self.fail("should fail: pickle D instance - %s" % base)
+                try:
+                    cPickle.dumps(D(), proto)
+                except TypeError:
+                    pass
+                else:
+                    self.fail("should fail: cPickle D instance - %s" % base)
             # Give C a nice generic __getstate__ and __setstate__
             class C(base):
                 __slots__ = ['a']
@@ -3404,34 +3405,38 @@ order (MRO) for bases """
                 pass
             # Now it should work
             x = C()
-            y = pickle.loads(pickle.dumps(x))
-            self.assertNotHasAttr(y, 'a')
-            y = cPickle.loads(cPickle.dumps(x))
-            self.assertNotHasAttr(y, 'a')
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                y = pickle.loads(pickle.dumps(x, proto))
+                self.assertNotHasAttr(y, 'a')
+                y = cPickle.loads(cPickle.dumps(x, proto))
+                self.assertNotHasAttr(y, 'a')
             x.a = 42
-            y = pickle.loads(pickle.dumps(x))
-            self.assertEqual(y.a, 42)
-            y = cPickle.loads(cPickle.dumps(x))
-            self.assertEqual(y.a, 42)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                y = pickle.loads(pickle.dumps(x, proto))
+                self.assertEqual(y.a, 42)
+                y = cPickle.loads(cPickle.dumps(x, proto))
+                self.assertEqual(y.a, 42)
             x = D()
             x.a = 42
             x.b = 100
-            y = pickle.loads(pickle.dumps(x))
-            self.assertEqual(y.a + y.b, 142)
-            y = cPickle.loads(cPickle.dumps(x))
-            self.assertEqual(y.a + y.b, 142)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                y = pickle.loads(pickle.dumps(x, proto))
+                self.assertEqual(y.a + y.b, 142)
+                y = cPickle.loads(cPickle.dumps(x, proto))
+                self.assertEqual(y.a + y.b, 142)
             # A subclass that adds a slot should also work
             class E(C):
                 __slots__ = ['b']
             x = E()
             x.a = 42
             x.b = "foo"
-            y = pickle.loads(pickle.dumps(x))
-            self.assertEqual(y.a, x.a)
-            self.assertEqual(y.b, x.b)
-            y = cPickle.loads(cPickle.dumps(x))
-            self.assertEqual(y.a, x.a)
-            self.assertEqual(y.b, x.b)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                y = pickle.loads(pickle.dumps(x, proto))
+                self.assertEqual(y.a, x.a)
+                self.assertEqual(y.b, x.b)
+                y = cPickle.loads(cPickle.dumps(x, proto))
+                self.assertEqual(y.a, x.a)
+                self.assertEqual(y.b, x.b)
 
     def test_binary_operator_override(self):
         # Testing overrides of binary operations...

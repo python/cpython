@@ -600,11 +600,12 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(type(d), type(e))
         self.assertEqual(list(d), list(e))
 
-        s = pickle.dumps(d)
-        e = pickle.loads(s)
-        self.assertNotEqual(id(d), id(e))
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(d, proto)
+            e = pickle.loads(s)
+            self.assertNotEqual(id(d), id(e))
+            self.assertEqual(type(d), type(e))
+            self.assertEqual(list(d), list(e))
 
         d = Deque('abcde', maxlen=4)
 
@@ -616,11 +617,12 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(type(d), type(e))
         self.assertEqual(list(d), list(e))
 
-        s = pickle.dumps(d)
-        e = pickle.loads(s)
-        self.assertNotEqual(id(d), id(e))
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(d, proto)
+            e = pickle.loads(s)
+            self.assertNotEqual(id(d), id(e))
+            self.assertEqual(type(d), type(e))
+            self.assertEqual(list(d), list(e))
 
 ##    def test_pickle(self):
 ##        d = Deque('abc')

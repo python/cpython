@@ -358,7 +358,8 @@ class TestBasicOps(unittest.TestCase):
             c = count(value)
             self.assertEqual(next(copy.copy(c)), value)
             self.assertEqual(next(copy.deepcopy(c)), value)
-            self.assertEqual(next(pickle.loads(pickle.dumps(c))), value)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                self.assertEqual(next(pickle.loads(pickle.dumps(c, proto))), value)
 
     def test_count_with_stride(self):
         self.assertEqual(zip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])

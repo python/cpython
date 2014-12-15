@@ -1664,9 +1664,10 @@ class DecimalPythonAPItests(unittest.TestCase):
 
     def test_pickle(self):
         d = Decimal('-3.141590000')
-        p = pickle.dumps(d)
-        e = pickle.loads(p)
-        self.assertEqual(d, e)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(d, proto)
+            e = pickle.loads(p)
+            self.assertEqual(d, e)
 
     def test_int(self):
         for x in range(-250, 250):
@@ -1750,12 +1751,13 @@ class DecimalPythonAPItests(unittest.TestCase):
 class ContextAPItests(unittest.TestCase):
 
     def test_pickle(self):
-        c = Context()
-        e = pickle.loads(pickle.dumps(c))
-        for k in vars(c):
-            v1 = vars(c)[k]
-            v2 = vars(e)[k]
-            self.assertEqual(v1, v2)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            c = Context()
+            e = pickle.loads(pickle.dumps(c, proto))
+            for k in vars(c):
+                v1 = vars(c)[k]
+                v2 = vars(e)[k]
+                self.assertEqual(v1, v2)
 
     def test_equality_with_other_types(self):
         self.assertIn(Decimal(10), ['a', 1.0, Decimal(10), (1,2), {}])
