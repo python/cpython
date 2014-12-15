@@ -121,9 +121,9 @@ def map_char(arg):
 
 class BuiltinTest(unittest.TestCase):
     # Helper to check picklability
-    def check_iter_pickle(self, it, seq):
+    def check_iter_pickle(self, it, seq, proto):
         itorg = it
-        d = pickle.dumps(it)
+        d = pickle.dumps(it, proto)
         it = pickle.loads(d)
         self.assertEqual(type(itorg), type(it))
         self.assertEqual(list(it), seq)
@@ -134,7 +134,7 @@ class BuiltinTest(unittest.TestCase):
             next(it)
         except StopIteration:
             return
-        d = pickle.dumps(it)
+        d = pickle.dumps(it, proto)
         it = pickle.loads(d)
         self.assertEqual(list(it), seq[1:])
 
@@ -636,9 +636,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, list, filter(42, (1, 2)))
 
     def test_filter_pickle(self):
-        f1 = filter(filter_char, "abcdeabcde")
-        f2 = filter(filter_char, "abcdeabcde")
-        self.check_iter_pickle(f1, list(f2))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f1 = filter(filter_char, "abcdeabcde")
+            f2 = filter(filter_char, "abcdeabcde")
+            self.check_iter_pickle(f1, list(f2), proto)
 
     def test_getattr(self):
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
@@ -834,9 +835,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(RuntimeError, list, map(badfunc, range(5)))
 
     def test_map_pickle(self):
-        m1 = map(map_char, "Is this the real life?")
-        m2 = map(map_char, "Is this the real life?")
-        self.check_iter_pickle(m1, list(m2))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            m1 = map(map_char, "Is this the real life?")
+            m2 = map(map_char, "Is this the real life?")
+            self.check_iter_pickle(m1, list(m2), proto)
 
     def test_max(self):
         self.assertEqual(max('123123'), '3')
@@ -1433,8 +1435,9 @@ class BuiltinTest(unittest.TestCase):
         a = (1, 2, 3)
         b = (4, 5, 6)
         t = [(1, 4), (2, 5), (3, 6)]
-        z1 = zip(a, b)
-        self.check_iter_pickle(z1, t)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z1 = zip(a, b)
+            self.check_iter_pickle(z1, t, proto)
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test

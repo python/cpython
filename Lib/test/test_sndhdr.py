@@ -28,8 +28,9 @@ class TestFormats(unittest.TestCase):
     def test_pickleable(self):
         filename = findfile('sndhdr.aifc', subdir="sndhdrdata")
         what = sndhdr.what(filename)
-        dump = pickle.dumps(what)
-        self.assertEqual(pickle.loads(dump), what)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            dump = pickle.dumps(what, proto)
+            self.assertEqual(pickle.loads(dump), what)
 
 
 if __name__ == '__main__':
