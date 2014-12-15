@@ -1566,6 +1566,11 @@ Tools/Demos
 Windows
 -------
 
+- The bundled version of Tcl/Tk has been updated to 8.6.3.  The most visible
+  result of this change is the addition of new native file dialogs when
+  running on Windows Vista or newer.  See Tcl/Tk's TIP 432 for more
+  information.  Also, this version of Tcl/Tk includes support for Windows 10.
+
 - Issue #17896: The Windows build scripts now expect external library sources
   to be in ``PCbuild\..\externals`` rather than ``PCbuild\..\..``.
 
