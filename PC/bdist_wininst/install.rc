@@ -6,90 +6,14 @@
   CHECKED IN AS WELL!
 */
 
-//Microsoft Developer Studio generated resource script.
-//
+#include <winres.h>
 #include "resource.h"
 
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#include "afxres.h"
-
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
-
-/////////////////////////////////////////////////////////////////////////////
-// Neutral resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
-#ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
 
 IDB_BITMAP              BITMAP  DISCARDABLE     "PythonPowered.bmp"
-#endif    // Neutral resources
-/////////////////////////////////////////////////////////////////////////////
 
-
-/////////////////////////////////////////////////////////////////////////////
-// German (Germany) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
-#ifdef _WIN32
-LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
-#pragma code_page(1252)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // German (Germany) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
 
 IDD_INTRO DIALOGEX 0, 0, 379, 178
 STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
@@ -151,78 +75,3 @@ BEGIN
     EDITTEXT        IDC_INFO,125,40,247,131,ES_MULTILINE | ES_READONLY | 
                     WS_VSCROLL | WS_HSCROLL | NOT WS_TABSTOP
 END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_INTRO, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 372
-        VERTGUIDE, 125
-        VERTGUIDE, 372
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 171
-        HORZGUIDE, 8
-        HORZGUIDE, 31
-    END
-
-    IDD_SELECTPYTHON, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 372
-        VERTGUIDE, 125
-        VERTGUIDE, 372
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 171
-        HORZGUIDE, 8
-        HORZGUIDE, 41
-    END
-
-    IDD_INSTALLFILES, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 372
-        VERTGUIDE, 125
-        VERTGUIDE, 371
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 171
-        HORZGUIDE, 8
-        HORZGUIDE, 41
-    END
-
-    IDD_FINISHED, DIALOG
-    BEGIN
-        LEFTMARGIN, 6
-        RIGHTMARGIN, 372
-        VERTGUIDE, 125
-        VERTGUIDE, 372
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 171
-        HORZGUIDE, 8
-        HORZGUIDE, 41
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-#ifndef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 3 resource.
-//
-
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
-
