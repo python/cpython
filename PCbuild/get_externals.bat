@@ -55,8 +55,8 @@ for %%e in (
             bzip2-1.0.6
             nasm-2.11.06
             openssl-1.0.1j
-            tcl-8.6.1.0
-            tk-8.6.1.0
+            tcl-core-8.6.3.1
+            tk-8.6.3.1
             tix-8.4.3.4
             sqlite-3.8.3.1
             xz-5.0.5
