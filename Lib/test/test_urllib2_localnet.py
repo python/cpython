@@ -551,7 +551,6 @@ class TestUrlopen(unittest.TestCase):
 
     def test_https_with_cafile(self):
         handler = self.start_https_server(certfile=CERT_localhost)
-        import ssl
         # Good cert
         data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
                             cafile=CERT_localhost)
