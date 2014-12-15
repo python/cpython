@@ -182,8 +182,9 @@ class TestPartialC(TestPartial, unittest.TestCase):
     def test_pickle(self):
         f = self.partial(signature, 'asdf', bar=True)
         f.add_something_to__dict__ = True
-        f_copy = pickle.loads(pickle.dumps(f))
-        self.assertEqual(signature(f), signature(f_copy))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f_copy = pickle.loads(pickle.dumps(f, proto))
+            self.assertEqual(signature(f), signature(f_copy))
 
     # Issue 6083: Reference counting bug
     def test_setstate_refcount(self):

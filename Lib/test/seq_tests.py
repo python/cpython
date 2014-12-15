@@ -392,6 +392,7 @@ class CommonTest(unittest.TestCase):
 
     def test_pickle(self):
         lst = self.type2test([4, 5, 6, 7])
-        lst2 = pickle.loads(pickle.dumps(lst))
-        self.assertEqual(lst2, lst)
-        self.assertNotEqual(id(lst2), id(lst))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            lst2 = pickle.loads(pickle.dumps(lst, proto))
+            self.assertEqual(lst2, lst)
+            self.assertNotEqual(id(lst2), id(lst))

@@ -169,29 +169,31 @@ class TupleTest(seq_tests.CommonTest):
         # Userlist iterators don't support pickling yet since
         # they are based on generators.
         data = self.type2test([4, 5, 6, 7])
-        itorg = iter(data)
-        d = pickle.dumps(itorg)
-        it = pickle.loads(d)
-        self.assertEqual(type(itorg), type(it))
-        self.assertEqual(self.type2test(it), self.type2test(data))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            itorg = iter(data)
+            d = pickle.dumps(itorg, proto)
+            it = pickle.loads(d)
+            self.assertEqual(type(itorg), type(it))
+            self.assertEqual(self.type2test(it), self.type2test(data))
 
-        it = pickle.loads(d)
-        next(it)
-        d = pickle.dumps(it)
-        self.assertEqual(self.type2test(it), self.type2test(data)[1:])
+            it = pickle.loads(d)
+            next(it)
+            d = pickle.dumps(it, proto)
+            self.assertEqual(self.type2test(it), self.type2test(data)[1:])
 
     def test_reversed_pickle(self):
         data = self.type2test([4, 5, 6, 7])
-        itorg = reversed(data)
-        d = pickle.dumps(itorg)
-        it = pickle.loads(d)
-        self.assertEqual(type(itorg), type(it))
-        self.assertEqual(self.type2test(it), self.type2test(reversed(data)))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            itorg = reversed(data)
+            d = pickle.dumps(itorg, proto)
+            it = pickle.loads(d)
+            self.assertEqual(type(itorg), type(it))
+            self.assertEqual(self.type2test(it), self.type2test(reversed(data)))
 
-        it = pickle.loads(d)
-        next(it)
-        d = pickle.dumps(it)
-        self.assertEqual(self.type2test(it), self.type2test(reversed(data))[1:])
+            it = pickle.loads(d)
+            next(it)
+            d = pickle.dumps(it, proto)
+            self.assertEqual(self.type2test(it), self.type2test(reversed(data))[1:])
 
     def test_no_comdat_folding(self):
         # Issue 8847: In the PGO build, the MSVC linker's COMDAT folding

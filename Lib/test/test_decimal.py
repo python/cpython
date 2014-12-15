@@ -2406,54 +2406,55 @@ class PythonAPItests(unittest.TestCase):
         self.assertNotIsInstance(Decimal(0), numbers.Real)
 
     def test_pickle(self):
-        Decimal = self.decimal.Decimal
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            Decimal = self.decimal.Decimal
 
-        savedecimal = sys.modules['decimal']
+            savedecimal = sys.modules['decimal']
 
-        # Round trip
-        sys.modules['decimal'] = self.decimal
-        d = Decimal('-3.141590000')
-        p = pickle.dumps(d)
-        e = pickle.loads(p)
-        self.assertEqual(d, e)
+            # Round trip
+            sys.modules['decimal'] = self.decimal
+            d = Decimal('-3.141590000')
+            p = pickle.dumps(d, proto)
+            e = pickle.loads(p)
+            self.assertEqual(d, e)
 
-        if C:
-            # Test interchangeability
-            x = C.Decimal('-3.123e81723')
-            y = P.Decimal('-3.123e81723')
+            if C:
+                # Test interchangeability
+                x = C.Decimal('-3.123e81723')
+                y = P.Decimal('-3.123e81723')
 
-            sys.modules['decimal'] = C
-            sx = pickle.dumps(x)
-            sys.modules['decimal'] = P
-            r = pickle.loads(sx)
-            self.assertIsInstance(r, P.Decimal)
-            self.assertEqual(r, y)
+                sys.modules['decimal'] = C
+                sx = pickle.dumps(x, proto)
+                sys.modules['decimal'] = P
+                r = pickle.loads(sx)
+                self.assertIsInstance(r, P.Decimal)
+                self.assertEqual(r, y)
 
-            sys.modules['decimal'] = P
-            sy = pickle.dumps(y)
-            sys.modules['decimal'] = C
-            r = pickle.loads(sy)
-            self.assertIsInstance(r, C.Decimal)
-            self.assertEqual(r, x)
+                sys.modules['decimal'] = P
+                sy = pickle.dumps(y, proto)
+                sys.modules['decimal'] = C
+                r = pickle.loads(sy)
+                self.assertIsInstance(r, C.Decimal)
+                self.assertEqual(r, x)
 
-            x = C.Decimal('-3.123e81723').as_tuple()
-            y = P.Decimal('-3.123e81723').as_tuple()
+                x = C.Decimal('-3.123e81723').as_tuple()
+                y = P.Decimal('-3.123e81723').as_tuple()
 
-            sys.modules['decimal'] = C
-            sx = pickle.dumps(x)
-            sys.modules['decimal'] = P
-            r = pickle.loads(sx)
-            self.assertIsInstance(r, P.DecimalTuple)
-            self.assertEqual(r, y)
+                sys.modules['decimal'] = C
+                sx = pickle.dumps(x, proto)
+                sys.modules['decimal'] = P
+                r = pickle.loads(sx)
+                self.assertIsInstance(r, P.DecimalTuple)
+                self.assertEqual(r, y)
 
-            sys.modules['decimal'] = P
-            sy = pickle.dumps(y)
-            sys.modules['decimal'] = C
-            r = pickle.loads(sy)
-            self.assertIsInstance(r, C.DecimalTuple)
-            self.assertEqual(r, x)
+                sys.modules['decimal'] = P
+                sy = pickle.dumps(y, proto)
+                sys.modules['decimal'] = C
+                r = pickle.loads(sy)
+                self.assertIsInstance(r, C.DecimalTuple)
+                self.assertEqual(r, x)
 
-        sys.modules['decimal'] = savedecimal
+            sys.modules['decimal'] = savedecimal
 
     def test_int(self):
         Decimal = self.decimal.Decimal
@@ -2777,63 +2778,64 @@ class ContextAPItests(unittest.TestCase):
 
     def test_pickle(self):
 
-        Context = self.decimal.Context
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            Context = self.decimal.Context
 
-        savedecimal = sys.modules['decimal']
+            savedecimal = sys.modules['decimal']
 
-        # Round trip
-        sys.modules['decimal'] = self.decimal
-        c = Context()
-        e = pickle.loads(pickle.dumps(c))
+            # Round trip
+            sys.modules['decimal'] = self.decimal
+            c = Context()
+            e = pickle.loads(pickle.dumps(c, proto))
 
-        self.assertEqual(c.prec, e.prec)
-        self.assertEqual(c.Emin, e.Emin)
-        self.assertEqual(c.Emax, e.Emax)
-        self.assertEqual(c.rounding, e.rounding)
-        self.assertEqual(c.capitals, e.capitals)
-        self.assertEqual(c.clamp, e.clamp)
-        self.assertEqual(c.flags, e.flags)
-        self.assertEqual(c.traps, e.traps)
+            self.assertEqual(c.prec, e.prec)
+            self.assertEqual(c.Emin, e.Emin)
+            self.assertEqual(c.Emax, e.Emax)
+            self.assertEqual(c.rounding, e.rounding)
+            self.assertEqual(c.capitals, e.capitals)
+            self.assertEqual(c.clamp, e.clamp)
+            self.assertEqual(c.flags, e.flags)
+            self.assertEqual(c.traps, e.traps)
 
-        # Test interchangeability
-        combinations = [(C, P), (P, C)] if C else [(P, P)]
-        for dumper, loader in combinations:
-            for ri, _ in enumerate(RoundingModes):
-                for fi, _ in enumerate(OrderedSignals[dumper]):
-                    for ti, _ in enumerate(OrderedSignals[dumper]):
+            # Test interchangeability
+            combinations = [(C, P), (P, C)] if C else [(P, P)]
+            for dumper, loader in combinations:
+                for ri, _ in enumerate(RoundingModes):
+                    for fi, _ in enumerate(OrderedSignals[dumper]):
+                        for ti, _ in enumerate(OrderedSignals[dumper]):
 
-                        prec = random.randrange(1, 100)
-                        emin = random.randrange(-100, 0)
-                        emax = random.randrange(1, 100)
-                        caps = random.randrange(2)
-                        clamp = random.randrange(2)
+                            prec = random.randrange(1, 100)
+                            emin = random.randrange(-100, 0)
+                            emax = random.randrange(1, 100)
+                            caps = random.randrange(2)
+                            clamp = random.randrange(2)
 
-                        # One module dumps
-                        sys.modules['decimal'] = dumper
-                        c = dumper.Context(
-                              prec=prec, Emin=emin, Emax=emax,
-                              rounding=RoundingModes[ri],
-                              capitals=caps, clamp=clamp,
-                              flags=OrderedSignals[dumper][:fi],
-                              traps=OrderedSignals[dumper][:ti]
-                        )
-                        s = pickle.dumps(c)
+                            # One module dumps
+                            sys.modules['decimal'] = dumper
+                            c = dumper.Context(
+                                  prec=prec, Emin=emin, Emax=emax,
+                                  rounding=RoundingModes[ri],
+                                  capitals=caps, clamp=clamp,
+                                  flags=OrderedSignals[dumper][:fi],
+                                  traps=OrderedSignals[dumper][:ti]
+                            )
+                            s = pickle.dumps(c, proto)
 
-                        # The other module loads
-                        sys.modules['decimal'] = loader
-                        d = pickle.loads(s)
-                        self.assertIsInstance(d, loader.Context)
+                            # The other module loads
+                            sys.modules['decimal'] = loader
+                            d = pickle.loads(s)
+                            self.assertIsInstance(d, loader.Context)
 
-                        self.assertEqual(d.prec, prec)
-                        self.assertEqual(d.Emin, emin)
-                        self.assertEqual(d.Emax, emax)
-                        self.assertEqual(d.rounding, RoundingModes[ri])
-                        self.assertEqual(d.capitals, caps)
-                        self.assertEqual(d.clamp, clamp)
-                        assert_signals(self, d, 'flags', OrderedSignals[loader][:fi])
-                        assert_signals(self, d, 'traps', OrderedSignals[loader][:ti])
+                            self.assertEqual(d.prec, prec)
+                            self.assertEqual(d.Emin, emin)
+                            self.assertEqual(d.Emax, emax)
+                            self.assertEqual(d.rounding, RoundingModes[ri])
+                            self.assertEqual(d.capitals, caps)
+                            self.assertEqual(d.clamp, clamp)
+                            assert_signals(self, d, 'flags', OrderedSignals[loader][:fi])
+                            assert_signals(self, d, 'traps', OrderedSignals[loader][:ti])
 
-        sys.modules['decimal'] = savedecimal
+            sys.modules['decimal'] = savedecimal
 
     def test_equality_with_other_types(self):
         Decimal = self.decimal.Decimal

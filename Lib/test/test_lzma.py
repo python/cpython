@@ -220,10 +220,11 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     # Pickling raises an exception; there's no way to serialize an lzma_stream.
 
     def test_pickle(self):
-        with self.assertRaises(TypeError):
-            pickle.dumps(LZMACompressor())
-        with self.assertRaises(TypeError):
-            pickle.dumps(LZMADecompressor())
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(TypeError):
+                pickle.dumps(LZMACompressor(), proto)
+            with self.assertRaises(TypeError):
+                pickle.dumps(LZMADecompressor(), proto)
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
