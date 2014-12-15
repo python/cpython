@@ -85,7 +85,9 @@ keywords to your callback, use :func:`functools.partial`. For example,
 
 .. method:: BaseEventLoop.call_soon(callback, \*args)
 
-   Arrange for a callback to be called as soon as possible.
+   Arrange for a callback to be called as soon as possible.  The callback is
+   called after :meth:`call_soon` returns, when control returns to the event
+   loop.
 
    This operates as a FIFO queue, callbacks are called in the order in
    which they are registered.  Each callback will be called exactly once.
