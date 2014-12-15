@@ -293,10 +293,13 @@ class StatAttributeTests(unittest.TestCase):
 
     def test_stat_result_pickle(self):
         result = os.stat(self.fname)
-        p = pickle.dumps(result)
-        self.assertIn(b'\x03cos\nstat_result\n', p)
-        unpickled = pickle.loads(p)
-        self.assertEqual(result, unpickled)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(result, proto)
+            self.assertIn(b'stat_result', p)
+            if proto < 4:
+                self.assertIn(b'cos\nstat_result\n', p)
+            unpickled = pickle.loads(p)
+            self.assertEqual(result, unpickled)
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
@@ -352,10 +355,13 @@ class StatAttributeTests(unittest.TestCase):
             if e.errno == errno.ENOSYS:
                 self.skipTest('os.statvfs() failed with ENOSYS')
 
-        p = pickle.dumps(result)
-        self.assertIn(b'\x03cos\nstatvfs_result\n', p)
-        unpickled = pickle.loads(p)
-        self.assertEqual(result, unpickled)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(result, proto)
+            self.assertIn(b'statvfs_result', p)
+            if proto < 4:
+                self.assertIn(b'cos\nstatvfs_result\n', p)
+            unpickled = pickle.loads(p)
+            self.assertEqual(result, unpickled)
 
     def test_utime_dir(self):
         delta = 1000000

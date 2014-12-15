@@ -269,10 +269,9 @@ class BoolTest(unittest.TestCase):
 
     def test_pickle(self):
         import pickle
-        self.assertIs(pickle.loads(pickle.dumps(True)), True)
-        self.assertIs(pickle.loads(pickle.dumps(False)), False)
-        self.assertIs(pickle.loads(pickle.dumps(True, True)), True)
-        self.assertIs(pickle.loads(pickle.dumps(False, True)), False)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertIs(pickle.loads(pickle.dumps(True, proto)), True)
+            self.assertIs(pickle.loads(pickle.dumps(False, proto)), False)
 
     def test_picklevalues(self):
         # Test for specific backwards-compatible pickle values
