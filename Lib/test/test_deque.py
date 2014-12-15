@@ -474,16 +474,17 @@ class TestBasic(unittest.TestCase):
 
     def test_iterator_pickle(self):
         data = deque(range(200))
-        it = itorg = iter(data)
-        d = pickle.dumps(it)
-        it = pickle.loads(d)
-        self.assertEqual(type(itorg), type(it))
-        self.assertEqual(list(it), list(data))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            it = itorg = iter(data)
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(type(itorg), type(it))
+            self.assertEqual(list(it), list(data))
 
-        it = pickle.loads(d)
-        next(it)
-        d = pickle.dumps(it)
-        self.assertEqual(list(it), list(data)[1:])
+            it = pickle.loads(d)
+            next(it)
+            d = pickle.dumps(it, proto)
+            self.assertEqual(list(it), list(data)[1:])
 
     def test_deepcopy(self):
         mut = [10]
@@ -614,11 +615,12 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(type(d), type(e))
         self.assertEqual(list(d), list(e))
 
-        s = pickle.dumps(d)
-        e = pickle.loads(s)
-        self.assertNotEqual(id(d), id(e))
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(d, proto)
+            e = pickle.loads(s)
+            self.assertNotEqual(id(d), id(e))
+            self.assertEqual(type(d), type(e))
+            self.assertEqual(list(d), list(e))
 
         d = Deque('abcde', maxlen=4)
 
@@ -630,11 +632,12 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(type(d), type(e))
         self.assertEqual(list(d), list(e))
 
-        s = pickle.dumps(d)
-        e = pickle.loads(s)
-        self.assertNotEqual(id(d), id(e))
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(d, proto)
+            e = pickle.loads(s)
+            self.assertNotEqual(id(d), id(e))
+            self.assertEqual(type(d), type(e))
+            self.assertEqual(list(d), list(e))
 
 ##    def test_pickle(self):
 ##        d = Deque('abc')

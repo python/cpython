@@ -366,13 +366,14 @@ class MemoryTestMixin:
         # the module-level.
         import __main__
         PickleTestMemIO.__module__ = '__main__'
+        PickleTestMemIO.__qualname__ = PickleTestMemIO.__name__
         __main__.PickleTestMemIO = PickleTestMemIO
         submemio = PickleTestMemIO(buf, 80)
         submemio.seek(2)
 
         # We only support pickle protocol 2 and onward since we use extended
         # __reduce__ API of PEP 307 to provide pickling support.
-        for proto in range(2, pickle.HIGHEST_PROTOCOL):
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
             for obj in (memio, submemio):
                 obj2 = pickle.loads(pickle.dumps(obj, protocol=proto))
                 self.assertEqual(obj.getvalue(), obj2.getvalue())

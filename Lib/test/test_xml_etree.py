@@ -121,11 +121,11 @@ class ElementTestCase:
     def setUpClass(cls):
         cls.modules = {pyET, ET}
 
-    def pickleRoundTrip(self, obj, name, dumper, loader):
+    def pickleRoundTrip(self, obj, name, dumper, loader, proto):
         save_m = sys.modules[name]
         try:
             sys.modules[name] = dumper
-            temp = pickle.dumps(obj)
+            temp = pickle.dumps(obj, proto)
             sys.modules[name] = loader
             result = pickle.loads(temp)
         except pickle.PicklingError as pe:
@@ -1677,33 +1677,36 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
 
     def test_pickle(self):
         # issue #16076: the C implementation wasn't pickleable.
-        for dumper, loader in product(self.modules, repeat=2):
-            e = dumper.Element('foo', bar=42)
-            e.text = "text goes here"
-            e.tail = "opposite of head"
-            dumper.SubElement(e, 'child').append(dumper.Element('grandchild'))
-            e.append(dumper.Element('child'))
-            e.findall('.//grandchild')[0].set('attr', 'other value')
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            for dumper, loader in product(self.modules, repeat=2):
+                e = dumper.Element('foo', bar=42)
+                e.text = "text goes here"
+                e.tail = "opposite of head"
+                dumper.SubElement(e, 'child').append(dumper.Element('grandchild'))
+                e.append(dumper.Element('child'))
+                e.findall('.//grandchild')[0].set('attr', 'other value')
 
-            e2 = self.pickleRoundTrip(e, 'xml.etree.ElementTree',
-                                      dumper, loader)
+                e2 = self.pickleRoundTrip(e, 'xml.etree.ElementTree',
+                                          dumper, loader, proto)
 
-            self.assertEqual(e2.tag, 'foo')
-            self.assertEqual(e2.attrib['bar'], 42)
-            self.assertEqual(len(e2), 2)
-            self.assertEqualElements(e, e2)
+                self.assertEqual(e2.tag, 'foo')
+                self.assertEqual(e2.attrib['bar'], 42)
+                self.assertEqual(len(e2), 2)
+                self.assertEqualElements(e, e2)
 
     def test_pickle_issue18997(self):
-        for dumper, loader in product(self.modules, repeat=2):
-            XMLTEXT = """<?xml version="1.0"?>
-                <group><dogs>4</dogs>
-                </group>"""
-            e1 = dumper.fromstring(XMLTEXT)
-            if hasattr(e1, '__getstate__'):
-                self.assertEqual(e1.__getstate__()['tag'], 'group')
-            e2 = self.pickleRoundTrip(e1, 'xml.etree.ElementTree', dumper, loader)
-            self.assertEqual(e2.tag, 'group')
-            self.assertEqual(e2[0].tag, 'dogs')
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            for dumper, loader in product(self.modules, repeat=2):
+                XMLTEXT = """<?xml version="1.0"?>
+                    <group><dogs>4</dogs>
+                    </group>"""
+                e1 = dumper.fromstring(XMLTEXT)
+                if hasattr(e1, '__getstate__'):
+                    self.assertEqual(e1.__getstate__()['tag'], 'group')
+                e2 = self.pickleRoundTrip(e1, 'xml.etree.ElementTree',
+                                          dumper, loader, proto)
+                self.assertEqual(e2.tag, 'group')
+                self.assertEqual(e2[0].tag, 'dogs')
 
 
 class ElementTreeTypeTest(unittest.TestCase):

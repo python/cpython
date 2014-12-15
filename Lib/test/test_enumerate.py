@@ -66,20 +66,21 @@ class N:
 class PickleTest:
     # Helper to check picklability
     def check_pickle(self, itorg, seq):
-        d = pickle.dumps(itorg)
-        it = pickle.loads(d)
-        self.assertEqual(type(itorg), type(it))
-        self.assertEqual(list(it), seq)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            d = pickle.dumps(itorg, proto)
+            it = pickle.loads(d)
+            self.assertEqual(type(itorg), type(it))
+            self.assertEqual(list(it), seq)
 
-        it = pickle.loads(d)
-        try:
-            next(it)
-        except StopIteration:
-            self.assertFalse(seq[1:])
-            return
-        d = pickle.dumps(it)
-        it = pickle.loads(d)
-        self.assertEqual(list(it), seq[1:])
+            it = pickle.loads(d)
+            try:
+                next(it)
+            except StopIteration:
+                self.assertFalse(seq[1:])
+                continue
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(list(it), seq[1:])
 
 class EnumerateTestCase(unittest.TestCase, PickleTest):
 

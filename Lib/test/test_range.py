@@ -366,7 +366,7 @@ class RangeTest(unittest.TestCase):
                 it = itorg = iter(range(*t))
                 data = list(range(*t))
 
-                d = pickle.dumps(it)
+                d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
                 self.assertEqual(type(itorg), type(it))
                 self.assertEqual(list(it), data)
@@ -376,33 +376,35 @@ class RangeTest(unittest.TestCase):
                     next(it)
                 except StopIteration:
                     continue
-                d = pickle.dumps(it)
+                d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
                 self.assertEqual(list(it), data[1:])
 
     def test_exhausted_iterator_pickling(self):
-        r = range(2**65, 2**65+2)
-        i = iter(r)
-        while True:
-            r = next(i)
-            if r == 2**65+1:
-                break
-        d = pickle.dumps(i)
-        i2 = pickle.loads(d)
-        self.assertEqual(list(i), [])
-        self.assertEqual(list(i2), [])
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            r = range(2**65, 2**65+2)
+            i = iter(r)
+            while True:
+                r = next(i)
+                if r == 2**65+1:
+                    break
+            d = pickle.dumps(i, proto)
+            i2 = pickle.loads(d)
+            self.assertEqual(list(i), [])
+            self.assertEqual(list(i2), [])
 
     def test_large_exhausted_iterator_pickling(self):
-        r = range(20)
-        i = iter(r)
-        while True:
-            r = next(i)
-            if r == 19:
-                break
-        d = pickle.dumps(i)
-        i2 = pickle.loads(d)
-        self.assertEqual(list(i), [])
-        self.assertEqual(list(i2), [])
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            r = range(20)
+            i = iter(r)
+            while True:
+                r = next(i)
+                if r == 19:
+                    break
+            d = pickle.dumps(i, proto)
+            i2 = pickle.loads(d)
+            self.assertEqual(list(i), [])
+            self.assertEqual(list(i2), [])
 
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"

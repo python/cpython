@@ -1682,11 +1682,12 @@ class TestDateTime(TestDate):
 
     def test_more_pickling(self):
         a = self.theclass(2003, 2, 7, 16, 48, 37, 444116)
-        s = pickle.dumps(a)
-        b = pickle.loads(s)
-        self.assertEqual(b.year, 2003)
-        self.assertEqual(b.month, 2)
-        self.assertEqual(b.day, 7)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(a, proto)
+            b = pickle.loads(s)
+            self.assertEqual(b.year, 2003)
+            self.assertEqual(b.month, 2)
+            self.assertEqual(b.day, 7)
 
     def test_pickling_subclass_datetime(self):
         args = 6, 7, 23, 20, 59, 1, 64**2
