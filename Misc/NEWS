@@ -1584,6 +1584,9 @@ Windows
 - Issue #10747: Use versioned labels in the Windows start menu.
   Patch by Olive Kilburn.
 
+- Issue #22980: .pyd files with a version and platform tag (for example,
+  ".cp35-win32.pyd") will now be loaded in preference to those without tags.
+
 What's New in Python 3.4.0?
 ===========================
 
