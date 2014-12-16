@@ -196,7 +196,9 @@ Core and Builtins
 Library
 -------
 
-- Issue #19858:  pickletools.optimize() now aware of the MEMOIZE opcode, can
+- Issue #15513: Added a __sizeof__ implementation for pickle classes.
+
+- Issue #19858: pickletools.optimize() now aware of the MEMOIZE opcode, can
   produce more compact result and no longer produces invalid output if input
   data contains MEMOIZE opcodes together with PUT or BINPUT opcodes.
 

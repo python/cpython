@@ -34,6 +34,33 @@ PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
 #define _PICKLE_PICKLER_DUMP_METHODDEF    \
     {"dump", (PyCFunction)_pickle_Pickler_dump, METH_O, _pickle_Pickler_dump__doc__},
 
+PyDoc_STRVAR(_pickle_Pickler___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Returns size in memory, in bytes.");
+
+#define _PICKLE_PICKLER___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_pickle_Pickler___sizeof__, METH_NOARGS, _pickle_Pickler___sizeof____doc__},
+
+static Py_ssize_t
+_pickle_Pickler___sizeof___impl(PicklerObject *self);
+
+static PyObject *
+_pickle_Pickler___sizeof__(PicklerObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = _pickle_Pickler___sizeof___impl(self);
+    if ((_return_value == -1) && PyErr_Occurred())
+        goto exit;
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "Pickler(file, protocol=None, fix_imports=True)\n"
 "--\n"
@@ -186,6 +213,33 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *args)
         &module_name, &global_name))
         goto exit;
     return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_pickle_Unpickler___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Returns size in memory, in bytes.");
+
+#define _PICKLE_UNPICKLER___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_pickle_Unpickler___sizeof__, METH_NOARGS, _pickle_Unpickler___sizeof____doc__},
+
+static Py_ssize_t
+_pickle_Unpickler___sizeof___impl(UnpicklerObject *self);
+
+static PyObject *
+_pickle_Unpickler___sizeof__(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = _pickle_Unpickler___sizeof___impl(self);
+    if ((_return_value == -1) && PyErr_Occurred())
+        goto exit;
+    return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
     return return_value;
@@ -488,4 +542,4 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f965b6c7018c898d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3aba79576e240c62 input=a9049054013a1b77]*/
