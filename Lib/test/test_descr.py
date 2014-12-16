@@ -4592,26 +4592,15 @@ class PicklingTests(unittest.TestCase):
 
     def _check_reduce(self, proto, obj, args=(), kwargs={}, state=None,
                       listitems=None, dictitems=None):
-        if proto >= 4:
+        if proto >= 2:
             reduce_value = obj.__reduce_ex__(proto)
-            self.assertEqual(reduce_value[:3],
-                             (copyreg.__newobj_ex__,
-                              (type(obj), args, kwargs),
-                              state))
-            if listitems is not None:
-                self.assertListEqual(list(reduce_value[3]), listitems)
+            if kwargs:
+                self.assertEqual(reduce_value[0], copyreg.__newobj_ex__)
+                self.assertEqual(reduce_value[1], (type(obj), args, kwargs))
             else:
-                self.assertIsNone(reduce_value[3])
-            if dictitems is not None:
-                self.assertDictEqual(dict(reduce_value[4]), dictitems)
-            else:
-                self.assertIsNone(reduce_value[4])
-        elif proto >= 2:
-            reduce_value = obj.__reduce_ex__(proto)
-            self.assertEqual(reduce_value[:3],
-                             (copyreg.__newobj__,
-                              (type(obj),) + args,
-                              state))
+                self.assertEqual(reduce_value[0], copyreg.__newobj__)
+                self.assertEqual(reduce_value[1], (type(obj),) + args)
+            self.assertEqual(reduce_value[2], state)
             if listitems is not None:
                 self.assertListEqual(list(reduce_value[3]), listitems)
             else:
