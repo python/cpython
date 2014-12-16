@@ -20,8 +20,6 @@ from distutils.tests import support
 
 
 def _make_ext_name(modname):
-    if os.name == 'nt' and sys.executable.endswith('_d.exe'):
-        modname += '_d'
     return modname + sysconfig.get_config_var('EXT_SUFFIX')
 
 
