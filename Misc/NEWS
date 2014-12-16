@@ -196,6 +196,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22783: Pickling now uses the NEWOBJ opcode instead of the NEWOBJ_EX
+  opcode if possible.
+
 - Issue #15513: Added a __sizeof__ implementation for pickle classes.
 
 - Issue #19858: pickletools.optimize() now aware of the MEMOIZE opcode, can

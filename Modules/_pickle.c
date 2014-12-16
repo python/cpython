@@ -3506,20 +3506,19 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             }
             PyErr_Clear();
         }
-        else if (self->proto >= 4) {
-            _Py_IDENTIFIER(__newobj_ex__);
-            use_newobj_ex = PyUnicode_Check(name) &&
-                PyUnicode_Compare(
-                    name, _PyUnicode_FromId(&PyId___newobj_ex__)) == 0;
-            Py_DECREF(name);
+        else if (PyUnicode_Check(name)) {
+            if (self->proto >= 4) {
+                _Py_IDENTIFIER(__newobj_ex__);
+                use_newobj_ex = PyUnicode_Compare(
+                        name, _PyUnicode_FromId(&PyId___newobj_ex__)) == 0;
+            }
+            if (!use_newobj_ex) {
+                _Py_IDENTIFIER(__newobj__);
+                use_newobj = PyUnicode_Compare(
+                        name, _PyUnicode_FromId(&PyId___newobj__)) == 0;
+            }
         }
-        else {
-            _Py_IDENTIFIER(__newobj__);
-            use_newobj = PyUnicode_Check(name) &&
-                PyUnicode_Compare(
-                    name, _PyUnicode_FromId(&PyId___newobj__)) == 0;
-            Py_DECREF(name);
-        }
+        Py_XDECREF(name);
     }
 
     if (use_newobj_ex) {
