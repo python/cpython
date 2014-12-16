@@ -375,7 +375,7 @@ static PyTypeObject Pdata_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_pickle.Pdata",              /*tp_name*/
     sizeof(Pdata),                /*tp_basicsize*/
-    0,                            /*tp_itemsize*/
+    sizeof(PyObject *),           /*tp_itemsize*/
     (destructor)Pdata_dealloc,    /*tp_dealloc*/
 };
 
@@ -3930,9 +3930,37 @@ _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+
+_pickle.Pickler.__sizeof__ -> Py_ssize_t
+
+Returns size in memory, in bytes.
+[clinic start generated code]*/
+
+static Py_ssize_t
+_pickle_Pickler___sizeof___impl(PicklerObject *self)
+/*[clinic end generated code: output=106edb3123f332e1 input=8cbbec9bd5540d42]*/
+{
+    Py_ssize_t res, s;
+
+    res = sizeof(PicklerObject);
+    if (self->memo != NULL) {
+        res += sizeof(PyMemoTable);
+        res += self->memo->mt_allocated * sizeof(PyMemoEntry);
+    }
+    if (self->output_buffer != NULL) {
+        s = _PySys_GetSizeOf(self->output_buffer);
+        if (s == -1)
+            return -1;
+        res += s;
+    }
+    return res;
+}
+
 static struct PyMethodDef Pickler_methods[] = {
     _PICKLE_PICKLER_DUMP_METHODDEF
     _PICKLE_PICKLER_CLEAR_MEMO_METHODDEF
+    _PICKLE_PICKLER___SIZEOF___METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
@@ -6289,9 +6317,37 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyObject *module_name, 
     return global;
 }
 
+/*[clinic input]
+
+_pickle.Unpickler.__sizeof__ -> Py_ssize_t
+
+Returns size in memory, in bytes.
+[clinic start generated code]*/
+
+static Py_ssize_t
+_pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
+/*[clinic end generated code: output=119d9d03ad4c7651 input=13333471fdeedf5e]*/
+{
+    Py_ssize_t res;
+
+    res = sizeof(UnpicklerObject);
+    if (self->memo != NULL)
+        res += self->memo_size * sizeof(PyObject *);
+    if (self->marks != NULL)
+        res += self->marks_size * sizeof(Py_ssize_t);
+    if (self->input_line != NULL)
+        res += strlen(self->input_line) + 1;
+    if (self->encoding != NULL)
+        res += strlen(self->encoding) + 1;
+    if (self->errors != NULL)
+        res += strlen(self->errors) + 1;
+    return res;
+}
+
 static struct PyMethodDef Unpickler_methods[] = {
     _PICKLE_UNPICKLER_LOAD_METHODDEF
     _PICKLE_UNPICKLER_FIND_CLASS_METHODDEF
+    _PICKLE_UNPICKLER___SIZEOF___METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
