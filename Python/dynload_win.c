@@ -9,6 +9,7 @@
 #include <ctype.h>
 
 #include "importdl.h"
+#include "patchlevel.h"
 #include <windows.h>
 
 // "activation context" magic - see dl_nt.c...
@@ -17,15 +18,27 @@ extern ULONG_PTR _Py_ActivateActCtx();
 void _Py_DeactivateActCtx(ULONG_PTR cookie);
 #endif
 
-const char *_PyImport_DynLoadFiletab[] = {
 #ifdef _DEBUG
-    "_d.pyd",
+#define PYD_DEBUG_SUFFIX "_d"
 #else
-    ".pyd",
+#define PYD_DEBUG_SUFFIX ""
 #endif
+
+#define STRINGIZE2(x) #x
+#define STRINGIZE(x) STRINGIZE2(x)
+#ifdef PYD_PLATFORM_TAG
+#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" STRINGIZE(PY_MAJOR_VERSION) STRINGIZE(PY_MINOR_VERSION) "-" PYD_PLATFORM_TAG ".pyd"
+#else
+#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" STRINGIZE(PY_MAJOR_VERSION) STRINGIZE(PY_MINOR_VERSION) ".pyd"
+#endif
+
+#define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
+
+const char *_PyImport_DynLoadFiletab[] = {
+    PYD_TAGGED_SUFFIX,
+    PYD_UNTAGGED_SUFFIX,
     NULL
 };
-
 
 /* Case insensitive string compare, to avoid any dependencies on particular
    C RTL implementations */
