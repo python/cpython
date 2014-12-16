@@ -1,7 +1,10 @@
 import pickle
 import io
 import collections
+import struct
+import sys
 
+import unittest
 from test import support
 
 from test.pickletester import AbstractPickleTests
@@ -138,6 +141,71 @@ if has_c_implementation:
         def get_dispatch_table(self):
             return collections.ChainMap({}, pickle.dispatch_table)
 
+    @support.cpython_only
+    class SizeofTests(unittest.TestCase):
+        check_sizeof = support.check_sizeof
+
+        def test_pickler(self):
+            basesize = support.calcobjsize('5P2n3i2n3iP')
+            p = _pickle.Pickler(io.BytesIO())
+            self.assertEqual(object.__sizeof__(p), basesize)
+            MT_size = struct.calcsize('3nP0n')
+            ME_size = struct.calcsize('Pn0P')
+            check = self.check_sizeof
+            check(p, basesize +
+                MT_size + 8 * ME_size +  # Minimal memo table size.
+                sys.getsizeof(b'x'*4096))  # Minimal write buffer size.
+            for i in range(6):
+                p.dump(chr(i))
+            check(p, basesize +
+                MT_size + 32 * ME_size +  # Size of memo table required to
+                                          # save references to 6 objects.
+                0)  # Write buffer is cleared after every dump().
+
+        def test_unpickler(self):
+            basesize = support.calcobjsize('2Pn2P 2P2n2i5P 2P3n6P2n2i')
+            unpickler = _pickle.Unpickler
+            P = struct.calcsize('P')  # Size of memo table entry.
+            n = struct.calcsize('n')  # Size of mark table entry.
+            check = self.check_sizeof
+            for encoding in 'ASCII', 'UTF-16', 'latin-1':
+                for errors in 'strict', 'replace':
+                    u = unpickler(io.BytesIO(),
+                                  encoding=encoding, errors=errors)
+                    self.assertEqual(object.__sizeof__(u), basesize)
+                    check(u, basesize +
+                             32 * P +  # Minimal memo table size.
+                             len(encoding) + 1 + len(errors) + 1)
+
+            stdsize = basesize + len('ASCII') + 1 + len('strict') + 1
+            def check_unpickler(data, memo_size, marks_size):
+                dump = pickle.dumps(data)
+                u = unpickler(io.BytesIO(dump),
+                              encoding='ASCII', errors='strict')
+                u.load()
+                check(u, stdsize + memo_size * P + marks_size * n)
+
+            check_unpickler(0, 32, 0)
+            # 20 is minimal non-empty mark stack size.
+            check_unpickler([0] * 100, 32, 20)
+            # 128 is memo table size required to save references to 100 objects.
+            check_unpickler([chr(i) for i in range(100)], 128, 20)
+            def recurse(deep):
+                data = 0
+                for i in range(deep):
+                    data = [data, data]
+                return data
+            check_unpickler(recurse(0), 32, 0)
+            check_unpickler(recurse(1), 32, 20)
+            check_unpickler(recurse(20), 32, 58)
+            check_unpickler(recurse(50), 64, 58)
+            check_unpickler(recurse(100), 128, 134)
+
+            u = unpickler(io.BytesIO(pickle.dumps('a', 0)),
+                          encoding='ASCII', errors='strict')
+            u.load()
+            check(u, stdsize + 32 * P + 2 + 1)
+
 
 def test_main():
     tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
@@ -148,7 +216,7 @@ def test_main():
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
                       CDispatchTableTests, CChainDispatchTableTests,
-                      InMemoryPickleTests])
+                      InMemoryPickleTests, SizeofTests])
     support.run_unittest(*tests)
     support.run_doctest(pickle)
 
