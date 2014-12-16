@@ -145,9 +145,11 @@ WIN32 is still required for the locale module.
 #if defined(_M_IA64)
 #define COMPILER _Py_PASTE_VERSION("64 bit (Itanium)")
 #define MS_WINI64
+#define PYD_PLATFORM_TAG "win_ia64"
 #elif defined(_M_X64) || defined(_M_AMD64)
 #define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #define MS_WINX64
+#define PYD_PLATFORM_TAG "win_amd64"
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
 #endif
@@ -193,8 +195,10 @@ typedef _W64 int ssize_t;
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #if defined(_M_IX86)
 #define COMPILER _Py_PASTE_VERSION("32 bit (Intel)")
+#define PYD_PLATFORM_TAG "win32"
 #elif defined(_M_ARM)
 #define COMPILER _Py_PASTE_VERSION("32 bit (ARM)")
+#define PYD_PLATFORM_TAG "win_arm"
 #else
 #define COMPILER _Py_PASTE_VERSION("32 bit (Unknown)")
 #endif
