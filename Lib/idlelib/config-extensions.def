@@ -66,6 +66,7 @@ toggle-code-context=
 
 [FormatParagraph]
 enable=True
+max-width=72
 [FormatParagraph_cfgBindings]
 format-paragraph=<Alt-Key-q>
 

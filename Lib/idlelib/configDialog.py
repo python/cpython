@@ -373,7 +373,6 @@ class ConfigDialog(Toplevel):
         parent = self.parent
         self.winWidth = StringVar(parent)
         self.winHeight = StringVar(parent)
-        self.paraWidth = StringVar(parent)
         self.startupEdit = IntVar(parent)
         self.autoSave = IntVar(parent)
         self.encoding = StringVar(parent)
@@ -389,7 +388,6 @@ class ConfigDialog(Toplevel):
         frameSave = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                text=' Autosave Preferences ')
         frameWinSize = Frame(frame, borderwidth=2, relief=GROOVE)
-        frameParaSize = Frame(frame, borderwidth=2, relief=GROOVE)
         frameHelp = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
         #frameRun
@@ -417,11 +415,6 @@ class ConfigDialog(Toplevel):
         labelWinHeightTitle = Label(frameWinSize, text='Height')
         entryWinHeight = Entry(
                 frameWinSize, textvariable=self.winHeight, width=3)
-        #paragraphFormatWidth
-        labelParaWidthTitle = Label(
-                frameParaSize, text='Paragraph reformat width (in characters)')
-        entryParaWidth = Entry(
-                frameParaSize, textvariable=self.paraWidth, width=3)
         #frameHelp
         frameHelpList = Frame(frameHelp)
         frameHelpListButtons = Frame(frameHelpList)
@@ -447,7 +440,6 @@ class ConfigDialog(Toplevel):
         frameRun.pack(side=TOP, padx=5, pady=5, fill=X)
         frameSave.pack(side=TOP, padx=5, pady=5, fill=X)
         frameWinSize.pack(side=TOP, padx=5, pady=5, fill=X)
-        frameParaSize.pack(side=TOP, padx=5, pady=5, fill=X)
         frameHelp.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         #frameRun
         labelRunChoiceTitle.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -463,9 +455,6 @@ class ConfigDialog(Toplevel):
         labelWinHeightTitle.pack(side=RIGHT, anchor=E, pady=5)
         entryWinWidth.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         labelWinWidthTitle.pack(side=RIGHT, anchor=E, pady=5)
-        #paragraphFormatWidth
-        labelParaWidthTitle.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        entryParaWidth.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         #frameHelp
         frameHelpListButtons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frameHelpList.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -492,7 +481,6 @@ class ConfigDialog(Toplevel):
         self.keysAreBuiltin.trace_variable('w', self.VarChanged_keysAreBuiltin)
         self.winWidth.trace_variable('w', self.VarChanged_winWidth)
         self.winHeight.trace_variable('w', self.VarChanged_winHeight)
-        self.paraWidth.trace_variable('w', self.VarChanged_paraWidth)
         self.startupEdit.trace_variable('w', self.VarChanged_startupEdit)
         self.autoSave.trace_variable('w', self.VarChanged_autoSave)
         self.encoding.trace_variable('w', self.VarChanged_encoding)
@@ -576,10 +564,6 @@ class ConfigDialog(Toplevel):
     def VarChanged_winHeight(self, *params):
         value = self.winHeight.get()
         self.AddChangedItem('main', 'EditorWindow', 'height', value)
-
-    def VarChanged_paraWidth(self, *params):
-        value = self.paraWidth.get()
-        self.AddChangedItem('main', 'FormatParagraph', 'paragraph', value)
 
     def VarChanged_startupEdit(self, *params):
         value = self.startupEdit.get()
@@ -1077,9 +1061,6 @@ class ConfigDialog(Toplevel):
                 'main', 'EditorWindow', 'width', type='int'))
         self.winHeight.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
-        #initial paragraph reformat size
-        self.paraWidth.set(idleConf.GetOption(
-                'main', 'FormatParagraph', 'paragraph', type='int'))
         # default source encoding
         self.encoding.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'encoding', default='none'))
