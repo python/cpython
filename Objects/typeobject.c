@@ -3886,48 +3886,87 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
 }
 
 static PyObject *
-reduce_4(PyObject *obj)
+reduce_newobj(PyObject *obj, int proto)
 {
     PyObject *args = NULL, *kwargs = NULL;
     PyObject *copyreg;
     PyObject *newobj, *newargs, *state, *listitems, *dictitems;
     PyObject *result;
-    _Py_IDENTIFIER(__newobj_ex__);
 
-    if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0) {
+    if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0)
         return NULL;
-    }
+
     if (args == NULL) {
         args = PyTuple_New(0);
-        if (args == NULL)
+        if (args == NULL) {
+            Py_XDECREF(kwargs);
             return NULL;
+        }
     }
-    if (kwargs == NULL) {
-        kwargs = PyDict_New();
-        if (kwargs == NULL)
-            return NULL;
-    }
-
     copyreg = import_copyreg();
     if (copyreg == NULL) {
         Py_DECREF(args);
-        Py_DECREF(kwargs);
+        Py_XDECREF(kwargs);
         return NULL;
     }
-    newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj_ex__);
-    Py_DECREF(copyreg);
-    if (newobj == NULL) {
+    if (kwargs == NULL || PyDict_Size(kwargs) == 0) {
+        _Py_IDENTIFIER(__newobj__);
+        PyObject *cls;
+        Py_ssize_t i, n;
+
+        Py_XDECREF(kwargs);
+        newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj__);
+        Py_DECREF(copyreg);
+        if (newobj == NULL) {
+            Py_DECREF(args);
+            return NULL;
+        }
+        n = PyTuple_GET_SIZE(args);
+        newargs = PyTuple_New(n+1);
+        if (newargs == NULL) {
+            Py_DECREF(args);
+            Py_DECREF(newobj);
+            return NULL;
+        }
+        cls = (PyObject *) Py_TYPE(obj);
+        Py_INCREF(cls);
+        PyTuple_SET_ITEM(newargs, 0, cls);
+        for (i = 0; i < n; i++) {
+            PyObject *v = PyTuple_GET_ITEM(args, i);
+            Py_INCREF(v);
+            PyTuple_SET_ITEM(newargs, i+1, v);
+        }
+        Py_DECREF(args);
+    }
+    else if (proto >= 4) {
+        _Py_IDENTIFIER(__newobj_ex__);
+
+        newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj_ex__);
+        Py_DECREF(copyreg);
+        if (newobj == NULL) {
+            Py_DECREF(args);
+            Py_DECREF(kwargs);
+            return NULL;
+        }
+        newargs = PyTuple_Pack(3, Py_TYPE(obj), args, kwargs);
         Py_DECREF(args);
         Py_DECREF(kwargs);
+        if (newargs == NULL) {
+            Py_DECREF(newobj);
+            return NULL;
+        }
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+                        "must use protocol 4 or greater to copy this "
+                        "object; since __getnewargs_ex__ returned "
+                        "keyword arguments.");
+        Py_DECREF(args);
+        Py_DECREF(kwargs);
+        Py_DECREF(copyreg);
         return NULL;
     }
-    newargs = PyTuple_Pack(3, Py_TYPE(obj), args, kwargs);
-    Py_DECREF(args);
-    Py_DECREF(kwargs);
-    if (newargs == NULL) {
-        Py_DECREF(newobj);
-        return NULL;
-    }
+
     state = _PyObject_GetState(obj);
     if (state == NULL) {
         Py_DECREF(newobj);
@@ -3950,79 +3989,6 @@ reduce_4(PyObject *obj)
     return result;
 }
 
-static PyObject *
-reduce_2(PyObject *obj)
-{
-    PyObject *cls;
-    PyObject *args = NULL, *args2 = NULL, *kwargs = NULL;
-    PyObject *state = NULL, *listitems = NULL, *dictitems = NULL;
-    PyObject *copyreg = NULL, *newobj = NULL, *res = NULL;
-    Py_ssize_t i, n;
-    _Py_IDENTIFIER(__newobj__);
-
-    if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0) {
-        return NULL;
-    }
-    if (args == NULL) {
-        assert(kwargs == NULL);
-        args = PyTuple_New(0);
-        if (args == NULL) {
-            return NULL;
-        }
-    }
-    else if (kwargs != NULL) {
-        if (PyDict_Size(kwargs) > 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "must use protocol 4 or greater to copy this "
-                            "object; since __getnewargs_ex__ returned "
-                            "keyword arguments.");
-            Py_DECREF(args);
-            Py_DECREF(kwargs);
-            return NULL;
-        }
-        Py_CLEAR(kwargs);
-    }
-
-    state = _PyObject_GetState(obj);
-    if (state == NULL)
-        goto end;
-
-    if (_PyObject_GetItemsIter(obj, &listitems, &dictitems) < 0)
-        goto end;
-
-    copyreg = import_copyreg();
-    if (copyreg == NULL)
-        goto end;
-    newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj__);
-    if (newobj == NULL)
-        goto end;
-
-    n = PyTuple_GET_SIZE(args);
-    args2 = PyTuple_New(n+1);
-    if (args2 == NULL)
-        goto end;
-    cls = (PyObject *) Py_TYPE(obj);
-    Py_INCREF(cls);
-    PyTuple_SET_ITEM(args2, 0, cls);
-    for (i = 0; i < n; i++) {
-        PyObject *v = PyTuple_GET_ITEM(args, i);
-        Py_INCREF(v);
-        PyTuple_SET_ITEM(args2, i+1, v);
-    }
-
-    res = PyTuple_Pack(5, newobj, args2, state, listitems, dictitems);
-
-  end:
-    Py_XDECREF(args);
-    Py_XDECREF(args2);
-    Py_XDECREF(state);
-    Py_XDECREF(listitems);
-    Py_XDECREF(dictitems);
-    Py_XDECREF(copyreg);
-    Py_XDECREF(newobj);
-    return res;
-}
-
 /*
  * There were two problems when object.__reduce__ and object.__reduce_ex__
  * were implemented in the same function:
@@ -4043,10 +4009,8 @@ _common_reduce(PyObject *self, int proto)
 {
     PyObject *copyreg, *res;
 
-    if (proto >= 4)
-        return reduce_4(self);
-    else if (proto >= 2)
-        return reduce_2(self);
+    if (proto >= 2)
+        return reduce_newobj(self, proto);
 
     copyreg = import_copyreg();
     if (!copyreg)
