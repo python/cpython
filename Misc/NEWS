@@ -56,6 +56,11 @@ Tests
 IDLE
 ----
 
+- Issue #20577: Configuration of the max line length for the FormatParagraph
+  extension has been moved from the General tab of the Idle preferences dialog
+  to the FormatParagraph tab of the Config Extensions dialog.
+  Patch by Tal Einat.
+
 - Issue #16893: Update Idle doc chapter to match current Idle and add new
   information.
 
