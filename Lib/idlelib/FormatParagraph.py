@@ -44,9 +44,11 @@ class FormatParagraph:
 
         The length limit parameter is for testing with a known value.
         """
-        if limit == None:
+        if limit is None:
+            # The default length limit is that defined by pep8
             limit = idleConf.GetOption(
-                    'main', 'FormatParagraph', 'paragraph', type='int')
+                'extensions', 'FormatParagraph', 'max-width',
+                type='int', default=72)
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()
         if first and last:
