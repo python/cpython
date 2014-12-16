@@ -48,7 +48,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unicodedata", "unicodedata.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pyexpat", "pyexpat.vcxproj", "{D06B6426-4762-44CC-8BAD-D79052507F2F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bdist_wininst", "bdist_wininst.vcxproj", "{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bdist_wininst", "..\PC\bdist_wininst\bdist_wininst.vcxproj", "{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_hashlib", "_hashlib.vcxproj", "{447F05A8-F581-4CAC-A466-5AC7936E207E}"
 EndProject
@@ -421,9 +421,7 @@ Global
 		{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}.PGUpdate|Win32.ActiveCfg = Release|Win32
 		{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}.PGUpdate|x64.ActiveCfg = Release|x64
 		{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}.Release|Win32.ActiveCfg = Release|Win32
-		{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}.Release|Win32.Build.0 = Release|Win32
 		{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}.Release|x64.ActiveCfg = Release|x64
-		{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}.Release|x64.Build.0 = Release|x64
 		{447F05A8-F581-4CAC-A466-5AC7936E207E}.Debug|Win32.ActiveCfg = Debug|Win32
 		{447F05A8-F581-4CAC-A466-5AC7936E207E}.Debug|Win32.Build.0 = Debug|Win32
 		{447F05A8-F581-4CAC-A466-5AC7936E207E}.Debug|x64.ActiveCfg = Debug|x64
