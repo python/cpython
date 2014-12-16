@@ -37,8 +37,6 @@
     <Projects Include="python3dll.vcxproj" />
     <!-- py[w].exe -->
     <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
-    <!-- wininst-1x.0.exe -->
-    <Projects Include="bdist_wininst.vcxproj" />
     <!-- _freeze_importlib -->
     <Projects Include="_freeze_importlib.vcxproj" />
     <!-- Extension modules -->
