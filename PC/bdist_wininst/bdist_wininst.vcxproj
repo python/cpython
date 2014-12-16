@@ -40,7 +40,7 @@
     <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
-  <Import Project="python.props" />
+  <Import Project="..\..\PCBuild\python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -52,7 +52,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
+    <Import Project="..\..\PCBuild\pyproject.props" />
   </ImportGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
@@ -68,7 +68,7 @@
     </Midl>
     <ClCompile>
       <Optimization>MinSpace</Optimization>
-      <AdditionalIncludeDirectories>$(PySourcePath)PC\bdist_wininst;$(PySourcePath)Modules\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PySourcePath)Modules\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>
@@ -79,23 +79,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\bdist_wininst\extract.c" />
-    <ClCompile Include="..\PC\bdist_wininst\install.c" />
-    <ClCompile Include="..\Modules\zlib\adler32.c" />
-    <ClCompile Include="..\Modules\zlib\crc32.c" />
-    <ClCompile Include="..\Modules\zlib\inffast.c" />
-    <ClCompile Include="..\Modules\zlib\inflate.c" />
-    <ClCompile Include="..\Modules\zlib\inftrees.c" />
-    <ClCompile Include="..\Modules\zlib\zutil.c" />
+    <ClCompile Include="extract.c" />
+    <ClCompile Include="install.c" />
+    <ClCompile Include="..\..\Modules\zlib\adler32.c" />
+    <ClCompile Include="..\..\Modules\zlib\crc32.c" />
+    <ClCompile Include="..\..\Modules\zlib\inffast.c" />
+    <ClCompile Include="..\..\Modules\zlib\inflate.c" />
+    <ClCompile Include="..\..\Modules\zlib\inftrees.c" />
+    <ClCompile Include="..\..\Modules\zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PC\bdist_wininst\archive.h" />
+    <ClInclude Include="archive.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\PC\bdist_wininst\install.rc" />
+    <ResourceCompile Include="install.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\bdist_wininst\PythonPowered.bmp" />
+    <None Include="PythonPowered.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
