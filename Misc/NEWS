@@ -196,6 +196,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19858:  pickletools.optimize() now aware of the MEMOIZE opcode, can
+  produce more compact result and no longer produces invalid output if input
+  data contains MEMOIZE opcodes together with PUT or BINPUT opcodes.
+
 - Issue #22095: Fixed HTTPConnection.set_tunnel with default port.  The port
   value in the host header was set to "None".  Patch by Demian Brecht.
 
