@@ -65,37 +65,56 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
 	argp = (char *) ALIGN(argp, sizeof(void *));
 
       z = (*p_arg)->size;
-      if (z < sizeof(int))
+      if (z < sizeof(intptr_t))
 	{
-	  z = sizeof(int);
+	  z = sizeof(intptr_t);
 	  switch ((*p_arg)->type)
 	    {
 	    case FFI_TYPE_SINT8:
-	      *(signed int *) argp = (signed int)*(SINT8 *)(* p_argv);
+	      *(intptr_t *) argp = (intptr_t)*(SINT8 *)(* p_argv);
 	      break;
 
 	    case FFI_TYPE_UINT8:
-	      *(unsigned int *) argp = (unsigned int)*(UINT8 *)(* p_argv);
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT8 *)(* p_argv);
 	      break;
 
 	    case FFI_TYPE_SINT16:
-	      *(signed int *) argp = (signed int)*(SINT16 *)(* p_argv);
+	      *(intptr_t *) argp = (intptr_t)*(SINT16 *)(* p_argv);
 	      break;
 
 	    case FFI_TYPE_UINT16:
-	      *(unsigned int *) argp = (unsigned int)*(UINT16 *)(* p_argv);
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT16 *)(* p_argv);
 	      break;
 
 	    case FFI_TYPE_SINT32:
-	      *(signed int *) argp = (signed int)*(SINT32 *)(* p_argv);
+	      *(intptr_t *) argp = (intptr_t)*(SINT32 *)(* p_argv);
 	      break;
 
 	    case FFI_TYPE_UINT32:
-	      *(unsigned int *) argp = (unsigned int)*(UINT32 *)(* p_argv);
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT32 *)(* p_argv);
+	      break;
+
+	    case FFI_TYPE_FLOAT:
+	      *(uintptr_t *) argp = 0;
+	      *(float *) argp = *(float *)(* p_argv);
+	      break;
+
+	    // 64-bit value cases should never be used for x86 and AMD64 builds
+	    case FFI_TYPE_SINT64:
+	      *(intptr_t *) argp = (intptr_t)*(SINT64 *)(* p_argv);
+	      break;
+
+	    case FFI_TYPE_UINT64:
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT64 *)(* p_argv);
 	      break;
 
 	    case FFI_TYPE_STRUCT:
-	      *(unsigned int *) argp = (unsigned int)*(UINT32 *)(* p_argv);
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT32 *)(* p_argv);
+	      break;
+
+	    case FFI_TYPE_DOUBLE:
+	      *(uintptr_t *) argp = 0;
+	      *(double *) argp = *(double *)(* p_argv);
 	      break;
 
 	    default:
