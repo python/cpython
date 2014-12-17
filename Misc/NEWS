@@ -1232,6 +1232,9 @@ Library
 - Issue #21323: Fix http.server to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
 
+- Issue #22733: Fix ffi_prep_args not zero-extending argument values correctly
+  on 64-bit Windows.
+
 IDLE
 ----
 
