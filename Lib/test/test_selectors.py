@@ -4,6 +4,7 @@ import random
 import selectors
 import signal
 import socket
+import sys
 from test import support
 from time import sleep
 import unittest
@@ -316,6 +317,8 @@ class BaseSelectorTestCase(unittest.TestCase):
 
         self.assertEqual(bufs, [MSG] * NUM_SOCKETS)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'select.select() cannot be used with empty fd sets')
     def test_empty_select(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)
