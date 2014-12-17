@@ -250,7 +250,7 @@ The :mod:`functools` module defines the following functions:
    a default when the sequence is empty.  If *initializer* is not given and
    *sequence* contains only one item, the first item is returned.
 
-   Equivalent to::
+   Roughly equivalent to::
 
       def reduce(function, iterable, initializer=None):
           it = iter(iterable)
