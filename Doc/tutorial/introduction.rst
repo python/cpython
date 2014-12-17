@@ -309,7 +309,7 @@ indices, if both are within bounds.  For example, the length of ``word[1:3]`` is
 
 Attempting to use a index that is too large will result in an error::
 
-   >>> word[42]  # the word only has 7 characters
+   >>> word[42]  # the word only has 6 characters
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    IndexError: string index out of range
