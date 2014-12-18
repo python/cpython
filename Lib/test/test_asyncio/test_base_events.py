@@ -8,13 +8,17 @@ import sys
 import time
 import unittest
 from unittest import mock
-from test.script_helper import assert_python_ok
-from test.support import IPV6_ENABLED, gc_collect
 
 import asyncio
 from asyncio import base_events
 from asyncio import constants
 from asyncio import test_utils
+try:
+    from test.script_helper import assert_python_ok
+    from test import support
+except ImportError:
+    from asyncio import test_support as support
+    from asyncio.test_support import assert_python_ok
 
 
 MOCK_ANY = mock.ANY
@@ -634,7 +638,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         except KeyboardInterrupt:
             pass
         self.loop.close()
-        gc_collect()
+        support.gc_collect()
 
         self.assertFalse(self.loop.call_exception_handler.called)
 
@@ -1066,7 +1070,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
-    @unittest.skipUnless(IPV6_ENABLED, 'IPv6 not supported or enabled')
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 not supported or enabled')
     def test_create_datagram_endpoint_no_matching_family(self):
         coro = self.loop.create_datagram_endpoint(
             asyncio.DatagramProtocol,

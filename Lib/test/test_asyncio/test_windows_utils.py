@@ -2,10 +2,13 @@
 
 import socket
 import sys
-import test.support
 import unittest
-from test.support import IPV6_ENABLED
 from unittest import mock
+
+try:
+    from test import support  # gc_collect, IPV6_ENABLED
+except ImportError:
+    from asyncio import test_support as support
 
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
@@ -28,7 +31,7 @@ class WinsocketpairTests(unittest.TestCase):
         ssock, csock = windows_utils.socketpair()
         self.check_winsocketpair(ssock, csock)
 
-    @unittest.skipUnless(IPV6_ENABLED, 'IPv6 not supported or enabled')
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 not supported or enabled')
     def test_winsocketpair_ipv6(self):
         ssock, csock = windows_utils.socketpair(family=socket.AF_INET6)
         self.check_winsocketpair(ssock, csock)
@@ -114,7 +117,7 @@ class PipeTests(unittest.TestCase):
 
         # check garbage collection of p closes handle
         del p
-        test.support.gc_collect()
+        support.gc_collect()
         try:
             _winapi.CloseHandle(h)
         except OSError as e:
