@@ -517,9 +517,9 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
             not self._local._set_called and
             isinstance(threading.current_thread(), threading._MainThread)):
             self.set_event_loop(self.new_event_loop())
-        assert self._local._loop is not None, \
-               ('There is no current event loop in thread %r.' %
-                threading.current_thread().name)
+        if self._local._loop is None:
+            raise RuntimeError('There is no current event loop in thread %r.'
+                               % threading.current_thread().name)
         return self._local._loop
 
     def set_event_loop(self, loop):
