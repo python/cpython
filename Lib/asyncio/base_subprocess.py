@@ -153,7 +153,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if all(p is not None and p.disconnected
                for p in self._pipes.values()):
             self._finished = True
-            self._loop.call_soon(self._call_connection_lost, None)
+            self._call(self._call_connection_lost, None)
 
     def _call_connection_lost(self, exc):
         try:
