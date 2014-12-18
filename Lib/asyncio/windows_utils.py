@@ -134,6 +134,13 @@ class PipeHandle:
     def __init__(self, handle):
         self._handle = handle
 
+    def __repr__(self):
+        if self._handle != -1:
+            handle = 'handle=%r' % self._handle
+        else:
+            handle = 'closed'
+        return '<%s %s>' % (self.__class__.__name__, handle)
+
     @property
     def handle(self):
         return self._handle
