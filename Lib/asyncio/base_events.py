@@ -420,7 +420,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         try:
             current = events.get_event_loop()
-        except AssertionError:
+        except RuntimeError:
             return
         if current is not self:
             raise RuntimeError(
