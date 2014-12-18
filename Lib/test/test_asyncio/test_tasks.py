@@ -6,9 +6,13 @@ import sys
 import types
 import unittest
 import weakref
-from test import support
-from test.script_helper import assert_python_ok
 from unittest import mock
+try:
+    from test import support   # gc_collect
+    from test.script_helper import assert_python_ok
+except ImportError:
+    from asyncio import test_support as support
+    from asyncio.test_support import assert_python_ok
 
 import asyncio
 from asyncio import coroutines

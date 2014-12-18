@@ -5,11 +5,14 @@ import re
 import sys
 import threading
 import unittest
-from test import support
 from unittest import mock
 
 import asyncio
 from asyncio import test_utils
+try:
+    from test import support   # gc_collect
+except ImportError:
+    from asyncio import test_support as support
 
 
 def _fakefunc(f):
