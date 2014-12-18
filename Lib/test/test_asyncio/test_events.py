@@ -20,13 +20,16 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
 
 
 import asyncio
 from asyncio import proactor_events
 from asyncio import selector_events
 from asyncio import test_utils
+try:
+    from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
+except ImportError:
+    from asyncio import test_support as support
 
 
 def data_file(filename):
