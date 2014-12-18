@@ -1,13 +1,17 @@
-from asyncio import subprocess
-from asyncio import test_utils
-import asyncio
 import signal
 import sys
 import unittest
 from unittest import mock
-from test import support
+
+import asyncio
+from asyncio import subprocess
+from asyncio import test_utils
 if sys.platform != 'win32':
     from asyncio import unix_events
+try:
+    from test import support   # PIPE_MAX_SIZE
+except ImportError:
+    from asyncio import test_support as support
 
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
