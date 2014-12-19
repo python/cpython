@@ -98,8 +98,10 @@ class ProactorTests(test_utils.TestCase):
         # result should be False at timeout
         fut = self.loop._proactor.wait_for_handle(event, 0.5)
         start = self.loop.time()
-        self.loop.run_until_complete(fut)
+        done = self.loop.run_until_complete(fut)
         elapsed = self.loop.time() - start
+
+        self.assertEqual(done, False)
         self.assertFalse(fut.result())
         self.assertTrue(0.48 < elapsed < 0.9, elapsed)
 
@@ -109,8 +111,10 @@ class ProactorTests(test_utils.TestCase):
         # result should be True immediately
         fut = self.loop._proactor.wait_for_handle(event, 10)
         start = self.loop.time()
-        self.loop.run_until_complete(fut)
+        done = self.loop.run_until_complete(fut)
         elapsed = self.loop.time() - start
+
+        self.assertEqual(done, True)
         self.assertTrue(fut.result())
         self.assertTrue(0 <= elapsed < 0.3, elapsed)
 
