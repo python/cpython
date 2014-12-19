@@ -427,6 +427,11 @@ class IocpProactor:
         return self._register(ov, None, finish_connect_pipe, wait_for_post=True)
 
     def wait_for_handle(self, handle, timeout=None):
+        """Wait for a handle.
+
+        Return a Future object. The result of the future is True if the wait
+        completed, or False if the wait did not complete (on timeout).
+        """
         if timeout is None:
             ms = _winapi.INFINITE
         else:
