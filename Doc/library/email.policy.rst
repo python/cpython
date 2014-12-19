@@ -99,7 +99,7 @@ separators.
 
 Some email package methods accept a *policy* keyword argument, allowing the
 policy to be overridden for that method.  For example, the following code uses
-the :meth:`~email.message.Message.as_string` method of the *msg* object from
+the :meth:`~email.message.Message.as_bytes` method of the *msg* object from
 the previous example and writes the message to a file using the native line
 separators for the platform on which it is running::
 
