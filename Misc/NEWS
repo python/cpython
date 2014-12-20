@@ -41,6 +41,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19104: pprint now produces evaluable output for wrapped strings.
+
 - Issue #23071: Added missing names to codecs.__all__.  Patch by Martin Panter.
 
 - Issue #15513: Added a __sizeof__ implementation for pickle classes.
