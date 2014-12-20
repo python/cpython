@@ -1656,7 +1656,6 @@ class CodecsModuleTest(unittest.TestCase):
             "register_error", "lookup_error",
             "strict_errors", "replace_errors", "ignore_errors",
             "xmlcharrefreplace_errors", "backslashreplace_errors",
-            "namereplace_errors",
             "open", "EncodedFile",
             "iterencode", "iterdecode",
             "BOM", "BOM_BE", "BOM_LE",
