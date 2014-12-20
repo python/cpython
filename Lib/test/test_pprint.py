@@ -536,9 +536,10 @@ frozenset2({0,
         # pprint tries to wrap strings intelligently
         fox = 'the quick brown fox jumped over a lazy dog'
         self.assertEqual(pprint.pformat(fox, width=20), """\
-'the quick brown '
-'fox jumped over '
-'a lazy dog'""")
+('the quick '
+ 'brown fox '
+ 'jumped over a '
+ 'lazy dog')""")
         self.assertEqual(pprint.pformat({'a': 1, 'b': fox, 'c': 2},
                                         width=26), """\
 {'a': 1,
@@ -552,12 +553,12 @@ frozenset2({0,
         # - non-ASCII is allowed
         # - an apostrophe doesn't disrupt the pprint
         special = "Portons dix bons \"whiskys\"\nà l'avocat goujat\t qui fumait au zoo"
-        self.assertEqual(pprint.pformat(special, width=20), """\
-'Portons dix bons '
-'"whiskys"\\n'
-"à l'avocat "
-'goujat\\t qui '
-'fumait au zoo'""")
+        self.assertEqual(pprint.pformat(special, width=21), """\
+('Portons dix '
+ 'bons "whiskys"\\n'
+ "à l'avocat "
+ 'goujat\\t qui '
+ 'fumait au zoo')""")
         # An unwrappable string is formatted as its repr
         unwrappable = "x" * 100
         self.assertEqual(pprint.pformat(unwrappable, width=80), repr(unwrappable))
@@ -566,7 +567,9 @@ frozenset2({0,
         special *= 10
         for width in range(3, 40):
             formatted = pprint.pformat(special, width=width)
-            self.assertEqual(eval("(" + formatted + ")"), special)
+            self.assertEqual(eval(formatted), special)
+            formatted = pprint.pformat([special] * 2, width=width)
+            self.assertEqual(eval(formatted), [special] * 2)
 
     def test_compact(self):
         o = ([list(range(i * i)) for i in range(5)] +
