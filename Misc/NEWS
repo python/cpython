@@ -41,6 +41,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23071: Added missing names to codecs.__all__.  Patch by Martin Panter.
+
 - Issue #15513: Added a __sizeof__ implementation for pickle classes.
 
 - Issue #19858: pickletools.optimize() now aware of the MEMOIZE opcode, can
