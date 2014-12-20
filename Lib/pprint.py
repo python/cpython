@@ -235,35 +235,41 @@ class PrettyPrinter:
                 return
 
             if issubclass(typ, str) and len(object) > 0 and r is str.__repr__:
-                def _str_parts(s):
-                    """
-                    Return a list of string literals comprising the repr()
-                    of the given string using literal concatenation.
-                    """
-                    lines = s.splitlines(True)
-                    for i, line in enumerate(lines):
-                        rep = repr(line)
-                        if len(rep) <= max_width:
-                            yield rep
-                        else:
-                            # A list of alternating (non-space, space) strings
-                            parts = re.split(r'(\s+)', line) + ['']
-                            current = ''
-                            for i in range(0, len(parts), 2):
-                                part = parts[i] + parts[i+1]
-                                candidate = current + part
-                                if len(repr(candidate)) > max_width:
-                                    if current:
-                                        yield repr(current)
-                                    current = part
-                                else:
-                                    current = candidate
-                            if current:
-                                yield repr(current)
-                for i, rep in enumerate(_str_parts(object)):
+                chunks = []
+                lines = object.splitlines(True)
+                if level == 1:
+                    indent += 1
+                    max_width -= 2
+                for i, line in enumerate(lines):
+                    rep = repr(line)
+                    if len(rep) <= max_width:
+                        chunks.append(rep)
+                    else:
+                        # A list of alternating (non-space, space) strings
+                        parts = re.split(r'(\s+)', line) + ['']
+                        current = ''
+                        for i in range(0, len(parts), 2):
+                            part = parts[i] + parts[i+1]
+                            candidate = current + part
+                            if len(repr(candidate)) > max_width:
+                                if current:
+                                    chunks.append(repr(current))
+                                current = part
+                            else:
+                                current = candidate
+                        if current:
+                            chunks.append(repr(current))
+                if len(chunks) == 1:
+                    write(rep)
+                    return
+                if level == 1:
+                    write('(')
+                for i, rep in enumerate(chunks):
                     if i > 0:
                         write('\n' + ' '*indent)
                     write(rep)
+                if level == 1:
+                    write(')')
                 return
         write(rep)
 
