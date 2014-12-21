@@ -196,6 +196,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22585: On OpenBSD 5.6 and newer, os.urandom() now calls getentropy(),
+  instead of reading /dev/urandom, to get pseudo-random bytes.
+
 - Issue #19104: pprint now produces evaluable output for wrapped strings.
 
 - Issue #23071: Added missing names to codecs.__all__.  Patch by Martin Panter.
