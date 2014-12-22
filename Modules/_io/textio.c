@@ -1152,25 +1152,27 @@ textiowrapper_closed_get(textio *self, void *context);
 
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
-        if (self->detached) { \
-            PyErr_SetString(PyExc_ValueError, \
-                 "underlying buffer has been detached"); \
-        } else {                                   \
-            PyErr_SetString(PyExc_ValueError, \
-                "I/O operation on uninitialized object"); \
-        } \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on uninitialized object"); \
         return NULL; \
     }
 
-#define CHECK_INITIALIZED_INT(self) \
+#define CHECK_ATTACHED(self) \
+    CHECK_INITIALIZED(self); \
+    if (self->detached) { \
+        PyErr_SetString(PyExc_ValueError, \
+             "underlying buffer has been detached"); \
+        return NULL; \
+    }
+
+#define CHECK_ATTACHED_INT(self) \
     if (self->ok <= 0) { \
-        if (self->detached) { \
-            PyErr_SetString(PyExc_ValueError, \
-                 "underlying buffer has been detached"); \
-        } else {                                   \
-            PyErr_SetString(PyExc_ValueError, \
-                "I/O operation on uninitialized object"); \
-        } \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on uninitialized object"); \
+        return -1; \
+    } else if (self->detached) { \
+        PyErr_SetString(PyExc_ValueError, \
+             "underlying buffer has been detached"); \
         return -1; \
     }
 
@@ -1179,7 +1181,7 @@ static PyObject *
 textiowrapper_detach(textio *self)
 {
     PyObject *buffer, *res;
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
     if (res == NULL)
         return NULL;
@@ -1187,7 +1189,6 @@ textiowrapper_detach(textio *self)
     buffer = self->buffer;
     self->buffer = NULL;
     self->detached = 1;
-    self->ok = 0;
     return buffer;
 }
 
@@ -1244,7 +1245,7 @@ textiowrapper_write(textio *self, PyObject *args)
     int haslf = 0;
     int needflush = 0;
 
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
 
     if (!PyArg_ParseTuple(args, "U:write", &text)) {
         return NULL;
@@ -1486,7 +1487,7 @@ textiowrapper_read(textio *self, PyObject *args)
     Py_ssize_t n = -1;
     PyObject *result = NULL, *chunks = NULL;
 
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
 
     if (!PyArg_ParseTuple(args, "|O&:read", &_PyIO_ConvertSsize_t, &n))
         return NULL;
@@ -1849,7 +1850,7 @@ textiowrapper_readline(textio *self, PyObject *args)
     PyObject *limitobj = NULL;
     Py_ssize_t limit = -1;
 
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     if (!PyArg_ParseTuple(args, "|O:readline", &limitobj)) {
         return NULL;
     }
@@ -2004,7 +2005,7 @@ textiowrapper_seek(textio *self, PyObject *args)
     PyObject *res;
     int cmp;
 
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
 
     if (!PyArg_ParseTuple(args, "O|i:seek", &cookieObj, &whence))
         return NULL;
@@ -2189,7 +2190,7 @@ textiowrapper_tell(textio *self, PyObject *args)
     PyObject *saved_state = NULL;
     char *input, *input_end;
 
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
     if (!self->seekable) {
@@ -2353,7 +2354,7 @@ textiowrapper_truncate(textio *self, PyObject *args)
     PyObject *pos = Py_None;
     PyObject *res;
 
-    CHECK_INITIALIZED(self)
+    CHECK_ATTACHED(self)
     if (!PyArg_ParseTuple(args, "|O:truncate", &pos)) {
         return NULL;
     }
@@ -2376,7 +2377,7 @@ textiowrapper_repr(textio *self)
 
     nameobj = PyObject_GetAttrString((PyObject *) self, "name");
     if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_ExceptionMatches(PyExc_Exception))
             PyErr_Clear();
         else
             goto error;
@@ -2408,42 +2409,42 @@ error:
 static PyObject *
 textiowrapper_fileno(textio *self, PyObject *args)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyObject_CallMethod(self->buffer, "fileno", NULL);
 }
 
 static PyObject *
 textiowrapper_seekable(textio *self, PyObject *args)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyObject_CallMethod(self->buffer, "seekable", NULL);
 }
 
 static PyObject *
 textiowrapper_readable(textio *self, PyObject *args)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyObject_CallMethod(self->buffer, "readable", NULL);
 }
 
 static PyObject *
 textiowrapper_writable(textio *self, PyObject *args)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyObject_CallMethod(self->buffer, "writable", NULL);
 }
 
 static PyObject *
 textiowrapper_isatty(textio *self, PyObject *args)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyObject_CallMethod(self->buffer, "isatty", NULL);
 }
 
 static PyObject *
 textiowrapper_flush(textio *self, PyObject *args)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
     self->telling = self->seekable;
     if (_textiowrapper_writeflush(self) < 0)
@@ -2456,7 +2457,7 @@ textiowrapper_close(textio *self, PyObject *args)
 {
     PyObject *res;
     int r;
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
 
     res = textiowrapper_closed_get(self, NULL);
     if (res == NULL)
@@ -2498,7 +2499,7 @@ textiowrapper_iternext(textio *self)
 {
     PyObject *line;
 
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
 
     self->telling = 0;
     if (Py_TYPE(self) == &PyTextIOWrapper_Type) {
@@ -2534,14 +2535,14 @@ textiowrapper_iternext(textio *self)
 static PyObject *
 textiowrapper_name_get(textio *self, void *context)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyObject_GetAttrString(self->buffer, "name");
 }
 
 static PyObject *
 textiowrapper_closed_get(textio *self, void *context)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyObject_GetAttr(self->buffer, _PyIO_str_closed);
 }
 
@@ -2549,7 +2550,7 @@ static PyObject *
 textiowrapper_newlines_get(textio *self, void *context)
 {
     PyObject *res;
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     if (self->decoder == NULL)
         Py_RETURN_NONE;
     res = PyObject_GetAttr(self->decoder, _PyIO_str_newlines);
@@ -2576,7 +2577,7 @@ textiowrapper_errors_get(textio *self, void *context)
 static PyObject *
 textiowrapper_chunk_size_get(textio *self, void *context)
 {
-    CHECK_INITIALIZED(self);
+    CHECK_ATTACHED(self);
     return PyLong_FromSsize_t(self->chunk_size);
 }
 
@@ -2584,7 +2585,7 @@ static int
 textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
 {
     Py_ssize_t n;
-    CHECK_INITIALIZED_INT(self);
+    CHECK_ATTACHED_INT(self);
     n = PyNumber_AsSsize_t(arg, PyExc_TypeError);
     if (n == -1 && PyErr_Occurred())
         return -1;

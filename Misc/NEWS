@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23093: In the io, module allow more operations to work on detached
+  streams.
+
 - Issue #23071: Added missing names to codecs.__all__.  Patch by Martin Panter.
 
 - Issue #23016: A warning no longer produces an AttributeError when sys.stderr

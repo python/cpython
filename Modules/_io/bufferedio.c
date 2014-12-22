@@ -1222,7 +1222,7 @@ buffered_repr(buffered *self)
 
     nameobj = PyObject_GetAttrString((PyObject *) self, "name");
     if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_ExceptionMatches(PyExc_Exception))
             PyErr_Clear();
         else
             return NULL;

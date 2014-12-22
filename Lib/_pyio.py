@@ -775,7 +775,7 @@ class _BufferedIOMixin(BufferedIOBase):
         clsname = self.__class__.__name__
         try:
             name = self.name
-        except AttributeError:
+        except Exception:
             return "<_pyio.{0}>".format(clsname)
         else:
             return "<_pyio.{0} name={1!r}>".format(clsname, name)
@@ -1538,7 +1538,7 @@ class TextIOWrapper(TextIOBase):
     def __repr__(self):
         try:
             name = self.name
-        except AttributeError:
+        except Exception:
             return "<_pyio.TextIOWrapper encoding='{0}'>".format(self.encoding)
         else:
             return "<_pyio.TextIOWrapper name={0!r} encoding='{1}'>".format(
