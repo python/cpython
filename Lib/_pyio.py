@@ -812,7 +812,7 @@ class _BufferedIOMixin(BufferedIOBase):
         clsname = self.__class__.__qualname__
         try:
             name = self.name
-        except AttributeError:
+        except Exception:
             return "<{}.{}>".format(modname, clsname)
         else:
             return "<{}.{} name={!r}>".format(modname, clsname, name)
@@ -1640,13 +1640,13 @@ class TextIOWrapper(TextIOBase):
                                  self.__class__.__qualname__)
         try:
             name = self.name
-        except AttributeError:
+        except Exception:
             pass
         else:
             result += " name={0!r}".format(name)
         try:
             mode = self.mode
-        except AttributeError:
+        except Exception:
             pass
         else:
             result += " mode={0!r}".format(mode)

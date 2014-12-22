@@ -1404,7 +1404,7 @@ buffered_repr(buffered *self)
 
     nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
     if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_ExceptionMatches(PyExc_Exception))
             PyErr_Clear();
         else
             return NULL;
