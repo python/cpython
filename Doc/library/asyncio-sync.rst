@@ -293,7 +293,7 @@ Queue
 
    .. method:: full()
 
-      Return ``True`` if there are maxsize items in the queue.
+      Return ``True`` if there are :attr:`maxsize` items in the queue.
 
       .. note::
 
@@ -302,11 +302,14 @@ Queue
 
    .. method:: get()
 
-      Remove and return an item from the queue.
-
-      If you yield from :meth:`get()`, wait until a item is available.
+      Remove and return an item from the queue. If queue is empty, wait until
+      an item is available.
 
       This method is a :ref:`coroutine <coroutine>`.
+
+      .. seealso::
+
+         The :meth:`empty` method.
 
    .. method:: get_nowait()
 
@@ -317,12 +320,14 @@ Queue
 
    .. method:: put(item)
 
-      Put an item into the queue.
-
-      If you yield from ``put()``, wait until a free slot is available before
-      adding item.
+      Put an item into the queue. If the queue is full, wait until a free slot
+      is available before adding item.
 
       This method is a :ref:`coroutine <coroutine>`.
+
+      .. seealso::
+
+         The :meth:`full` method.
 
    .. method:: put_nowait(item)
 
