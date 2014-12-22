@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23093: In the io, module allow more operations to work on detached
+  streams.
+
 - Issue #19104: pprint now produces evaluable output for wrapped strings.
 
 - Issue #23071: Added missing names to codecs.__all__.  Patch by Martin Panter.
