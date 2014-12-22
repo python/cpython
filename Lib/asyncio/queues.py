@@ -111,8 +111,10 @@ class Queue:
     def put(self, item):
         """Put an item into the queue.
 
-        If you yield from put(), wait until a free slot is available
-        before adding item.
+        Put an item into the queue. If the queue is full, wait until a free
+        slot is available before adding item.
+
+        This method is a coroutine.
         """
         self._consume_done_getters()
         if self._getters:
@@ -161,7 +163,9 @@ class Queue:
     def get(self):
         """Remove and return an item from the queue.
 
-        If you yield from get(), wait until a item is available.
+        If queue is empty, wait until an item is available.
+
+        This method is a coroutine.
         """
         self._consume_done_putters()
         if self._putters:
