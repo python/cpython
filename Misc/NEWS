@@ -196,6 +196,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23093: In the io, module allow more operations to work on detached
+  streams.
+
 - Issue #22585: On OpenBSD 5.6 and newer, os.urandom() now calls getentropy(),
   instead of reading /dev/urandom, to get pseudo-random bytes.
 
