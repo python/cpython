@@ -196,6 +196,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21793: Added http.HTTPStatus enums (i.e. HTTPStatus.OK,
+  HTTPStatus.NOT_FOUND).  Patch by Demian Brecht.
+
 - Issue #23093: In the io, module allow more operations to work on detached
   streams.
 
