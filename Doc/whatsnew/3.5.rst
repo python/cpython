@@ -451,6 +451,11 @@ Changes in the Python API
   **without** caching ``None`` in :data:`sys.path_importer_cache` which is
   different than the typical case (:issue:`22834`).
 
+* HTTP status code and messages from `http.client` and `http.server` were
+  refactored into a common :class:`~http.HTTPStatus` enum.  The values in
+  `http.client` and `http.server` remain available for backwards compatibility.
+  (Contributed by Demian Brecht in :issue:`21793`.)
+
 Changes in the C API
 --------------------
 
