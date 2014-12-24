@@ -35,8 +35,8 @@ might have lines like these::
    PRINT "MISE A JOUR TERMINEE"
    PRINT "PARAMETRES ENREGISTRES"
 
-Those messages should contain accents (completé, caractère, accepté),
-and they just look wrong to someone who can read French.
+Those messages should contain accents (terminée, paramètre, enregistrés) and
+they just look wrong to someone who can read French.
 
 In the 1980s, almost all personal computers were 8-bit, meaning that bytes could
 hold values ranging from 0 to 255.  ASCII codes only went up to 127, so some
