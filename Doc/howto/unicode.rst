@@ -32,8 +32,8 @@ For a while people just wrote programs that didn't display accents.
 In the mid-1980s an Apple II BASIC program written by a French speaker
 might have lines like these::
 
-   PRINT "FICHIER EST COMPLETE."
-   PRINT "CARACTERE NON ACCEPTE."
+   PRINT "MISE A JOUR TERMINEE"
+   PRINT "PARAMETRES ENREGISTRES"
 
 Those messages should contain accents (completé, caractère, accepté),
 and they just look wrong to someone who can read French.
