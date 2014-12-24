@@ -251,6 +251,9 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
 
+   The path argument is copied internally, so the caller may free it after the
+   call completes.
+
 
 .. c:function:: const char* Py_GetVersion()
 
