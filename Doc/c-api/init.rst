@@ -245,6 +245,9 @@ Process-wide parameters
    :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
    if required after calling :c:func:`Py_Initialize`.
 
+   The path argument is copied internally, so the caller may free it after the
+   call completes.
+
 
 .. c:function:: const char* Py_GetVersion()
 
