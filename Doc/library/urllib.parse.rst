@@ -522,7 +522,7 @@ task isn't already covered by the URL parsing functions above.
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, errors=None)
 
    Convert a mapping object or a sequence of two-element tuples, which may
-   either be a :class:`str` or a :class:`bytes`,  to a "percent-encoded"
+   contain :class:`str` or :class:`bytes` objects, to a "percent-encoded"
    string.  If the resultant string is to be used as a *data* for POST
    operation with :func:`~urllib.request.urlopen` function, then it should be
    properly encoded to bytes, otherwise it would result in a :exc:`TypeError`.
@@ -537,8 +537,9 @@ task isn't already covered by the URL parsing functions above.
    the value sequence for the key.  The order of parameters in the encoded
    string will match the order of parameter tuples in the sequence.
 
-   When *query* parameter is a :class:`str`, the *safe*, *encoding* and *error*
-   parameters are passed down to :func:`quote_plus` for encoding.
+   The *safe*, *encoding*, and *errors* parameters are passed down to
+   :func:`quote_plus` (the *encoding* and *errors* parameters are only passed
+   when a query element is a :class:`str`).
 
    To reverse this encoding process, :func:`parse_qs` and :func:`parse_qsl` are
    provided in this module to parse query strings into Python data structures.
