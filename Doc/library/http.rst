@@ -24,6 +24,8 @@ associated messages through the :class:`http.HTTPStatus` enum:
 
 .. class:: HTTPStatus
 
+   .. versionadded:: 3.5
+
    A subclass of :class:`enum.IntEnum` that defines a set of HTTP status codes,
    reason phrases and long descriptions written in English.
 
@@ -42,9 +44,6 @@ associated messages through the :class:`http.HTTPStatus` enum:
       'Request fulfilled, document follows'
       >>> list(HTTPStatus)
       [<HTTPStatus.CONTINUE: 100>, <HTTPStatus.SWITCHING_PROTOCOLS: 101>, ...]
-
-   .. versionadded:: 3.5
-      Added the *HTTPStatus* Enum
 
    The supported HTTP status codes are:
 
