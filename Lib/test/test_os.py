@@ -4,6 +4,7 @@
 
 import os
 import errno
+import getpass
 import unittest
 import warnings
 import sys
@@ -45,11 +46,29 @@ try:
 except ImportError:
     _winapi = None
 try:
+    import grp
+    groups = [g.gr_gid for g in grp.getgrall() if getpass.getuser() in g.gr_mem]
+    if hasattr(os, 'getgid'):
+        process_gid = os.getgid()
+        if process_gid not in groups:
+            groups.append(process_gid)
+except ImportError:
+    groups = []
+try:
+    import pwd
+    all_users = [u.pw_uid for u in pwd.getpwall()]
+except ImportError:
+    all_users = []
+try:
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 from test.script_helper import assert_python_ok
+
+root_in_posix = False
+if hasattr(os, 'geteuid'):
+    root_in_posix = (os.geteuid() == 0)
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", DeprecationWarning)
@@ -962,17 +981,6 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path, mode=mode, exist_ok=True)
         os.umask(old_mask)
 
-    @unittest.skipUnless(hasattr(os, 'chown'), 'test needs os.chown')
-    def test_chown_uid_gid_arguments_must_be_index(self):
-        stat = os.stat(support.TESTFN)
-        uid = stat.st_uid
-        gid = stat.st_gid
-        for value in (-1.0, -1j, decimal.Decimal(-1), fractions.Fraction(-2, 2)):
-            self.assertRaises(TypeError, os.chown, support.TESTFN, value, gid)
-            self.assertRaises(TypeError, os.chown, support.TESTFN, uid, value)
-        self.assertIsNone(os.chown(support.TESTFN, uid, gid))
-        self.assertIsNone(os.chown(support.TESTFN, -1, -1))
-
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(support.TESTFN, 'dir1')
         S_ISGID = stat.S_ISGID
@@ -1021,6 +1029,58 @@ class MakedirTests(unittest.TestCase):
             path = os.path.dirname(path)
 
         os.removedirs(path)
+
+
+@unittest.skipUnless(hasattr(os, 'chown'), "Test needs chown")
+class ChownFileTests(unittest.TestCase):
+
+    def setUpClass():
+        os.mkdir(support.TESTFN)
+
+    def test_chown_uid_gid_arguments_must_be_index(self):
+        stat = os.stat(support.TESTFN)
+        uid = stat.st_uid
+        gid = stat.st_gid
+        for value in (-1.0, -1j, decimal.Decimal(-1), fractions.Fraction(-2, 2)):
+            self.assertRaises(TypeError, os.chown, support.TESTFN, value, gid)
+            self.assertRaises(TypeError, os.chown, support.TESTFN, uid, value)
+        self.assertIsNone(os.chown(support.TESTFN, uid, gid))
+        self.assertIsNone(os.chown(support.TESTFN, -1, -1))
+
+    @unittest.skipUnless(len(groups) > 1, "test needs more than one group")
+    def test_chown(self):
+        gid_1, gid_2 = groups[:2]
+        uid = os.stat(support.TESTFN).st_uid
+        os.chown(support.TESTFN, uid, gid_1)
+        gid = os.stat(support.TESTFN).st_gid
+        self.assertEqual(gid, gid_1)
+        os.chown(support.TESTFN, uid, gid_2)
+        gid = os.stat(support.TESTFN).st_gid
+        self.assertEqual(gid, gid_2)
+
+    @unittest.skipUnless(root_in_posix and len(all_users) > 1,
+                         "test needs root privilege and more than one user")
+    def test_chown_with_root(self):
+        uid_1, uid_2 = all_users[:2]
+        gid = os.stat(support.TESTFN).st_gid
+        os.chown(support.TESTFN, uid_1, gid)
+        uid = os.stat(support.TESTFN).st_uid
+        self.assertEqual(uid, uid_1)
+        os.chown(support.TESTFN, uid_2, gid)
+        uid = os.stat(support.TESTFN).st_uid
+        self.assertEqual(uid, uid_2)
+
+    @unittest.skipUnless(not root_in_posix and len(all_users) > 1,
+                         "test needs non-root account and more than one user")
+    def test_chown_without_permission(self):
+        uid_1, uid_2 = all_users[:2]
+        gid = os.stat(support.TESTFN).st_gid
+        with self.assertRaisesRegex(PermissionError, "Operation not permitted"):
+            os.chown(support.TESTFN, uid_1, gid)
+            os.chown(support.TESTFN, uid_2, gid)
+
+    def tearDownClass():
+        os.rmdir(support.TESTFN)
 
 
 class RemoveDirsTests(unittest.TestCase):
@@ -2083,11 +2143,13 @@ class TestSendfile(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.key = support.threading_setup()
         with open(support.TESTFN, "wb") as f:
             f.write(cls.DATA)
 
     @classmethod
     def tearDownClass(cls):
+        support.threading_cleanup(*cls.key)
         support.unlink(support.TESTFN)
 
     def setUp(self):
@@ -2636,44 +2698,5 @@ class ExportsTests(unittest.TestCase):
         self.assertIn('walk', os.__all__)
 
 
-@support.reap_threads
-def test_main():
-    support.run_unittest(
-        FileTests,
-        StatAttributeTests,
-        EnvironTests,
-        WalkTests,
-        FwalkTests,
-        MakedirTests,
-        DevNullTests,
-        URandomTests,
-        ExecTests,
-        Win32ErrorTests,
-        TestInvalidFD,
-        PosixUidGidTests,
-        Pep383Tests,
-        Win32KillTests,
-        Win32ListdirTests,
-        Win32SymlinkTests,
-        NonLocalSymlinkTests,
-        FSEncodingTests,
-        DeviceEncodingTests,
-        PidTests,
-        LoginTests,
-        LinkTests,
-        TestSendfile,
-        ProgramPriorityTests,
-        ExtendedAttributeTests,
-        Win32DeprecatedBytesAPI,
-        TermsizeTests,
-        OSErrorTests,
-        RemoveDirsTests,
-        CPUCountTests,
-        FDInheritanceTests,
-        Win32JunctionTests,
-        BlockingTests,
-        ExportsTests,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
