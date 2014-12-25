@@ -670,8 +670,8 @@ def quote(string, safe='/', encoding=None, errors=None):
     called on a path where the existing slash characters are used as
     reserved characters.
 
-    string and safe may be either str or bytes objects. encoding must
-    not be specified if string is a str.
+    string and safe may be either str or bytes objects. encoding and errors
+    must not be specified if string is a bytes object.
 
     The optional encoding and errors parameters specify how to deal with
     non-ASCII characters, as accepted by the str.encode method.
@@ -743,8 +743,9 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
     input.
 
     The components of a query arg may each be either a string or a bytes type.
-    When a component is a string, the safe, encoding and error parameters are
-    sent to the quote_plus function for encoding.
+
+    The safe, encoding, and errors parameters are passed down to quote_plus()
+    (encoding and errors only if a component is a str).
     """
 
     if hasattr(query, "items"):
