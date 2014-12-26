@@ -27,7 +27,7 @@ from asyncio import proactor_events
 from asyncio import selector_events
 from asyncio import test_utils
 try:
-    from test import support  # find_unused_port, IPV6_ENABLED, TEST_HOME_DIR
+    from test import support
 except ImportError:
     from asyncio import test_support as support
 
