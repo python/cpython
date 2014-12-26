@@ -440,17 +440,16 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop = EventLoop(self.proactor)
         self.set_event_loop(self.loop, cleanup=False)
 
-    @mock.patch.object(BaseProactorEventLoop, '_call_soon')
+    @mock.patch.object(BaseProactorEventLoop, 'call_soon')
     @mock.patch.object(BaseProactorEventLoop, '_socketpair')
-    def test_ctor(self, socketpair, _call_soon):
+    def test_ctor(self, socketpair, call_soon):
         ssock, csock = socketpair.return_value = (
             mock.Mock(), mock.Mock())
         loop = BaseProactorEventLoop(self.proactor)
         self.assertIs(loop._ssock, ssock)
         self.assertIs(loop._csock, csock)
         self.assertEqual(loop._internal_fds, 1)
-        _call_soon.assert_called_with(loop._loop_self_reading, (),
-                                      check_loop=False)
+        call_soon.assert_called_with(loop._loop_self_reading)
 
     def test_close_self_pipe(self):
         self.loop._close_self_pipe()

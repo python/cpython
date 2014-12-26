@@ -233,19 +233,12 @@ if sys.platform != 'win32':
         def setUp(self):
             policy = asyncio.get_event_loop_policy()
             self.loop = policy.new_event_loop()
-
-            # ensure that the event loop is passed explicitly in asyncio
-            policy.set_event_loop(None)
+            self.set_event_loop(self.loop)
 
             watcher = self.Watcher()
             watcher.attach_loop(self.loop)
             policy.set_child_watcher(watcher)
-
-        def tearDown(self):
-            policy = asyncio.get_event_loop_policy()
-            policy.set_child_watcher(None)
-            self.loop.close()
-            super().tearDown()
+            self.addCleanup(policy.set_child_watcher, None)
 
     class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
                                      test_utils.TestCase):
@@ -262,17 +255,8 @@ else:
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
 
         def setUp(self):
-            policy = asyncio.get_event_loop_policy()
             self.loop = asyncio.ProactorEventLoop()
-
-            # ensure that the event loop is passed explicitly in asyncio
-            policy.set_event_loop(None)
-
-        def tearDown(self):
-            policy = asyncio.get_event_loop_policy()
-            self.loop.close()
-            policy.set_event_loop(None)
-            super().tearDown()
+            self.set_event_loop(self.loop)
 
 
 if __name__ == '__main__':
