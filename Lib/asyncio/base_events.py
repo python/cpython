@@ -22,6 +22,7 @@ import logging
 import os
 import socket
 import subprocess
+import threading
 import time
 import traceback
 import sys
@@ -168,7 +169,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._scheduled = []
         self._default_executor = None
         self._internal_fds = 0
-        self._running = False
+        # Identifier of the thread running the event loop, or None if the
+        # event loop is not running
+        self._owner = None
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self._debug = (not sys.flags.ignore_environment
@@ -246,9 +249,9 @@ class BaseEventLoop(events.AbstractEventLoop):
     def run_forever(self):
         """Run until stop() is called."""
         self._check_closed()
-        if self._running:
+        if self.is_running():
             raise RuntimeError('Event loop is running.')
-        self._running = True
+        self._owner = threading.get_ident()
         try:
             while True:
                 try:
@@ -256,7 +259,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 except _StopError:
                     break
         finally:
-            self._running = False
+            self._owner = None
 
     def run_until_complete(self, future):
         """Run until the Future is done.
@@ -311,7 +314,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         The event loop must not be running.
         """
-        if self._running:
+        if self.is_running():
             raise RuntimeError("Cannot close a running event loop")
         if self._closed:
             return
@@ -331,7 +334,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def is_running(self):
         """Returns True if the event loop is running."""
-        return self._running
+        return (self._owner is not None)
 
     def time(self):
         """Return the time according to the event loop's clock.
@@ -373,7 +376,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise TypeError("coroutines cannot be used with call_at()")
         self._check_closed()
         if self._debug:
-            self._assert_is_current_event_loop()
+            self._check_thread()
         timer = events.TimerHandle(when, callback, args, self)
         if timer._source_traceback:
             del timer._source_traceback[-1]
@@ -391,17 +394,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
-        handle = self._call_soon(callback, args, check_loop=True)
+        if self._debug:
+            self._check_thread()
+        handle = self._call_soon(callback, args)
         if handle._source_traceback:
             del handle._source_traceback[-1]
         return handle
 
-    def _call_soon(self, callback, args, check_loop):
+    def _call_soon(self, callback, args):
         if (coroutines.iscoroutine(callback)
         or coroutines.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used with call_soon()")
-        if self._debug and check_loop:
-            self._assert_is_current_event_loop()
         self._check_closed()
         handle = events.Handle(callback, args, self)
         if handle._source_traceback:
@@ -409,8 +412,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._ready.append(handle)
         return handle
 
-    def _assert_is_current_event_loop(self):
-        """Asserts that this event loop is the current event loop.
+    def _check_thread(self):
+        """Check that the current thread is the thread running the event loop.
 
         Non-thread-safe methods of this class make this assumption and will
         likely behave incorrectly when the assumption is violated.
@@ -418,18 +421,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         Should only be called when (self._debug == True).  The caller is
         responsible for checking this condition for performance reasons.
         """
-        try:
-            current = events.get_event_loop()
-        except RuntimeError:
+        if self._owner is None:
             return
-        if current is not self:
+        thread_id = threading.get_ident()
+        if thread_id != self._owner:
             raise RuntimeError(
                 "Non-thread-safe operation invoked on an event loop other "
                 "than the current one")
 
     def call_soon_threadsafe(self, callback, *args):
         """Like call_soon(), but thread-safe."""
-        handle = self._call_soon(callback, args, check_loop=False)
+        handle = self._call_soon(callback, args)
         if handle._source_traceback:
             del handle._source_traceback[-1]
         self._write_to_self()
