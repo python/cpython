@@ -1,11 +1,9 @@
 """Tests for unix_events.py."""
 
 import collections
-import gc
 import errno
 import io
 import os
-import pprint
 import signal
 import socket
 import stat
