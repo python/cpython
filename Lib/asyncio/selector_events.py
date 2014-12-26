@@ -68,7 +68,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                           address, waiter, extra)
 
     def close(self):
-        if self._running:
+        if self.is_running():
             raise RuntimeError("Cannot close a running event loop")
         if self.is_closed():
             return

@@ -383,7 +383,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                                            sock, protocol, waiter, extra)
 
     def close(self):
-        if self._running:
+        if self.is_running():
             raise RuntimeError("Cannot close a running event loop")
         if self.is_closed():
             return
@@ -432,9 +432,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._ssock.setblocking(False)
         self._csock.setblocking(False)
         self._internal_fds += 1
-        # don't check the current loop because _make_self_pipe() is called
-        # from the event loop constructor
-        self._call_soon(self._loop_self_reading, (), check_loop=False)
+        self.call_soon(self._loop_self_reading)
 
     def _loop_self_reading(self, f=None):
         try:
