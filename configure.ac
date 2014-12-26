@@ -2913,6 +2913,7 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 AC_CHECK_FUNCS(alarm setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid execv fchmod fchown fork fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
+ getentropy \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  initgroups kill killpg lchmod lchown lstat mkfifo mknod mktime mmap \
  mremap nice pathconf pause plock poll pthread_init \

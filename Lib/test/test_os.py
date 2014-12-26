@@ -9,6 +9,7 @@ import warnings
 import sys
 import signal
 import subprocess
+import sysconfig
 import time
 try:
     import resource
@@ -567,6 +568,12 @@ class URandomTests (unittest.TestCase):
         data2 = self.get_urandom_subprocess(16)
         self.assertNotEqual(data1, data2)
 
+
+HAVE_GETENTROPY = (sysconfig.get_config_var('HAVE_GETENTROPY') == 1)
+
+@unittest.skipIf(HAVE_GETENTROPY,
+                 "getentropy() does not use a file descriptor")
+class URandomFDTests(unittest.TestCase):
     @unittest.skipUnless(resource, "test requires the resource module")
     def test_urandom_failure(self):
         # Check urandom() failing when it is not able to open /dev/random.

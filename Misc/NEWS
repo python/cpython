@@ -18,6 +18,9 @@ Library
 - Issue #23112: Fix SimpleHTTPServer to correctly carry the query string and
   fragment when it redirects to add a trailing slash.
 
+- Issue #22585: On OpenBSD 5.6 and newer, os.urandom() now calls getentropy(),
+  instead of reading /dev/urandom, to get pseudo-random bytes.
+
 - Issue #23093: In the io, module allow more operations to work on detached
   streams.
 
