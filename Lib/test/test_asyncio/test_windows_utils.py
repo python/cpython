@@ -5,18 +5,17 @@ import sys
 import unittest
 from unittest import mock
 
-try:
-    from test import support  # gc_collect, IPV6_ENABLED
-except ImportError:
-    from asyncio import test_support as support
-
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
 import _winapi
 
-from asyncio import windows_utils
 from asyncio import _overlapped
+from asyncio import windows_utils
+try:
+    from test import support
+except ImportError:
+    from asyncio import test_support as support
 
 
 class WinsocketpairTests(unittest.TestCase):

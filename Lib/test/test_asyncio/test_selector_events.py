@@ -1,10 +1,7 @@
 """Tests for selector_events.py"""
 
 import errno
-import gc
-import pprint
 import socket
-import sys
 import unittest
 from unittest import mock
 try:

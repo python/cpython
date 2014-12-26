@@ -6,12 +6,12 @@ from unittest import mock
 import asyncio
 from asyncio import subprocess
 from asyncio import test_utils
-if sys.platform != 'win32':
-    from asyncio import unix_events
 try:
-    from test import support   # PIPE_MAX_SIZE
+    from test import support
 except ImportError:
     from asyncio import test_support as support
+if sys.platform != 'win32':
+    from asyncio import unix_events
 
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
