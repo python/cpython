@@ -65,10 +65,10 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         return entry;
 
     while (1) {
-        if (entry->key == key)
-            return entry;
         if (entry->hash == hash && entry->key != dummy) {         /* dummy match unlikely */
             PyObject *startkey = entry->key;
+            if (startkey == key)
+                return entry;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
@@ -86,10 +86,10 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
-            if (entry->key == key)
-                return entry;
             if (entry->hash == hash && entry->key != dummy) {
                 PyObject *startkey = entry->key;
+                if (startkey == key)
+                    return entry;
                 Py_INCREF(startkey);
                 cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                 Py_DECREF(startkey);
@@ -145,10 +145,10 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         return entry;
 
     while (1) {
-        if (entry->key == key
-            || (entry->hash == hash
-                && entry->key != dummy                            /* unlikely */
-                && unicode_eq(entry->key, key)))                  /* likely */
+        if (entry->hash == hash
+            && (entry->key == key
+                || (entry->key != dummy                           /* unlikely */
+                    && unicode_eq(entry->key, key))))             /* likely */
             return entry;
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
@@ -157,10 +157,10 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
-            if (entry->key == key
-                || (entry->hash == hash
-                    && entry->key != dummy
-                    && unicode_eq(entry->key, key)))
+            if (entry->hash == hash
+                && (entry->key == key
+                    || (entry->key != dummy                       /* unlikely */
+                        && unicode_eq(entry->key, key))))         /* likely */
                 return entry;
             if (entry->key == dummy && freeslot == NULL)
                 freeslot = entry;
@@ -196,10 +196,7 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t j;
 
     while (1) {
-        entry = &table[i & mask];
-        if (entry->key == NULL)
-            goto found_null;
-        for (j = 1 ; j <= LINEAR_PROBES ; j++) {
+        for (j = 0 ; j <= LINEAR_PROBES ; j++) {
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
@@ -234,9 +231,9 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
         return -1;
     if (entry->key == NULL) {
         /* UNUSED */
-        so->fill++;
         entry->key = key;
         entry->hash = hash;
+        so->fill++;
         so->used++;
     } else if (entry->key == dummy) {
         /* DUMMY */
@@ -260,7 +257,8 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 {
     Py_ssize_t newsize;
     setentry *oldtable, *newtable, *entry;
-    Py_ssize_t i;
+    Py_ssize_t oldfill = so->fill;
+    Py_ssize_t oldused = so->used;
     int is_oldtable_malloced;
     setentry small_copy[PySet_MINSIZE];
 
@@ -311,19 +309,27 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 
     /* Make the set empty, using the new table. */
     assert(newtable != oldtable);
-    so->table = newtable;
-    so->mask = newsize - 1;
     memset(newtable, 0, sizeof(setentry) * newsize);
-    i = so->used;
-    so->used = 0;
     so->fill = 0;
+    so->used = 0;
+    so->mask = newsize - 1;
+    so->table = newtable;
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
-    for (entry = oldtable; i > 0; entry++) {
-        if (entry->key != NULL && entry->key != dummy) {
-            --i;
-            set_insert_clean(so, entry->key, entry->hash);
+    if (oldfill == oldused) {
+        for (entry = oldtable; oldused > 0; entry++) {
+            if (entry->key != NULL) {
+                oldused--;
+                set_insert_clean(so, entry->key, entry->hash);
+            }
+        }
+    } else {
+        for (entry = oldtable; oldused > 0; entry++) {
+            if (entry->key != NULL && entry->key != dummy) {
+                oldused--;
+                set_insert_clean(so, entry->key, entry->hash);
+            }
         }
     }
 
@@ -438,20 +444,15 @@ set_empty_to_minsize(PySetObject *so)
 static int
 set_clear_internal(PySetObject *so)
 {
-    setentry *entry, *table;
-    int table_is_malloced;
-    Py_ssize_t fill;
+    setentry *entry;
+    setentry *table = so->table;
+    Py_ssize_t fill = so->fill;
+    Py_ssize_t used = so->used;
+    int table_is_malloced = table != so->smalltable;
     setentry small_copy[PySet_MINSIZE];
 
-#ifdef Py_DEBUG
-    Py_ssize_t i = 0;
-    Py_ssize_t n = so->mask + 1;
-#endif
-
     assert (PyAnySet_Check(so));
-    table = so->table;
     assert(table != NULL);
-    table_is_malloced = table != so->smalltable;
 
     /* This is delicate.  During the process of clearing the set,
      * decrefs can cause the set to mutate.  To avoid fatal confusion
@@ -459,7 +460,6 @@ set_clear_internal(PySetObject *so)
      * clearing the slots, and never refer to anything via so->ref while
      * clearing.
      */
-    fill = so->fill;
     if (table_is_malloced)
         set_empty_to_minsize(so);
 
@@ -478,20 +478,11 @@ set_clear_internal(PySetObject *so)
      * assert that the refcount on table is 1 now, i.e. that this function
      * has unique access to it, so decref side-effects can't alter it.
      */
-    for (entry = table; fill > 0; ++entry) {
-#ifdef Py_DEBUG
-        assert(i < n);
-        ++i;
-#endif
-        if (entry->key) {
-            --fill;
-            if (entry->key != dummy)
-                Py_DECREF(entry->key);
+    for (entry = table; used > 0; entry++) {
+        if (entry->key && entry->key != dummy) {
+            used--;
+            Py_DECREF(entry->key);
         }
-#ifdef Py_DEBUG
-        else
-            assert(entry->key == NULL);
-#endif
     }
 
     if (table_is_malloced)
@@ -538,16 +529,16 @@ static void
 set_dealloc(PySetObject *so)
 {
     setentry *entry;
-    Py_ssize_t fill = so->fill;
+    Py_ssize_t used = so->used;
+
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_SAFE_BEGIN(so)
     if (so->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) so);
 
-    for (entry = so->table; fill > 0; entry++) {
-        if (entry->key) {
-            --fill;
-            if (entry->key != dummy)
+    for (entry = so->table; used > 0; entry++) {
+        if (entry->key && entry->key != dummy) {
+                used--;
                 Py_DECREF(entry->key);
         }
     }
