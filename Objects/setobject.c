@@ -362,8 +362,8 @@ set_add_entry(PySetObject *so, setentry *entry)
 static int
 set_add_key(PySetObject *so, PyObject *key)
 {
+    setentry entry;
     Py_hash_t hash;
-    Py_ssize_t n_used;
 
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
@@ -371,16 +371,9 @@ set_add_key(PySetObject *so, PyObject *key)
         if (hash == -1)
             return -1;
     }
-    assert(so->fill <= so->mask);  /* at least one empty slot */
-    n_used = so->used;
-    Py_INCREF(key);
-    if (set_insert_key(so, key, hash) == -1) {
-        Py_DECREF(key);
-        return -1;
-    }
-    if (!(so->used > n_used && so->fill*3 >= (so->mask+1)*2))
-        return 0;
-    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
+    entry.key = key;
+    entry.hash = hash;
+    return set_add_entry(so, &entry);
 }
 
 #define DISCARD_NOTFOUND 0
@@ -388,7 +381,8 @@ set_add_key(PySetObject *so, PyObject *key)
 
 static int
 set_discard_entry(PySetObject *so, setentry *oldentry)
-{       setentry *entry;
+{
+    setentry *entry;
     PyObject *old_key;
 
     entry = (so->lookup)(so, oldentry->key, oldentry->hash);
@@ -406,9 +400,8 @@ set_discard_entry(PySetObject *so, setentry *oldentry)
 static int
 set_discard_key(PySetObject *so, PyObject *key)
 {
+    setentry entry;
     Py_hash_t hash;
-    setentry *entry;
-    PyObject *old_key;
 
     assert (PyAnySet_Check(so));
 
@@ -418,16 +411,9 @@ set_discard_key(PySetObject *so, PyObject *key)
         if (hash == -1)
             return -1;
     }
-    entry = (so->lookup)(so, key, hash);
-    if (entry == NULL)
-        return -1;
-    if (entry->key == NULL  ||  entry->key == dummy)
-        return DISCARD_NOTFOUND;
-    old_key = entry->key;
-    entry->key = dummy;
-    so->used--;
-    Py_DECREF(old_key);
-    return DISCARD_FOUND;
+    entry.key = key;
+    entry.hash = hash;
+    return set_discard_entry(so, &entry);
 }
 
 static void
@@ -640,25 +626,6 @@ set_merge(PySetObject *so, PyObject *otherset)
 }
 
 static int
-set_contains_key(PySetObject *so, PyObject *key)
-{
-    Py_hash_t hash;
-    setentry *entry;
-
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
-    }
-    entry = (so->lookup)(so, key, hash);
-    if (entry == NULL)
-        return -1;
-    key = entry->key;
-    return key != NULL && key != dummy;
-}
-
-static int
 set_contains_entry(PySetObject *so, setentry *entry)
 {
     PyObject *key;
@@ -669,6 +636,23 @@ set_contains_entry(PySetObject *so, setentry *entry)
         return -1;
     key = lu_entry->key;
     return key != NULL && key != dummy;
+}
+
+static int
+set_contains_key(PySetObject *so, PyObject *key)
+{
+    setentry entry;
+    Py_hash_t hash;
+
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return -1;
+    }
+    entry.key = key;
+    entry.hash = hash;
+    return set_contains_entry(so, &entry);
 }
 
 static PyObject *
