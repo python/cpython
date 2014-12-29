@@ -18,8 +18,8 @@ hosts are on the same subnet, iterating over all hosts in a particular
 subnet, checking whether or not a string represents a valid IP address or
 network definition, and so on.
 
-This is the full module API reference - for an overview and introduction,
-see :ref:`ipaddress-howto`.
+This is the full module API reference—for an overview and introduction, see
+:ref:`ipaddress-howto`.
 
 .. versionadded:: 3.3
 
