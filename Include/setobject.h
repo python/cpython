@@ -22,9 +22,8 @@ no meaning otherwise.
 #define PySet_MINSIZE 8
 
 typedef struct {
-    /* Cached hash code of the key. */
     PyObject *key;
-    Py_hash_t hash;
+    Py_hash_t hash;             /* Cached hash code of the key */
 } setentry;
 
 /* The SetObject data structure is shared by set and frozenset objects.
