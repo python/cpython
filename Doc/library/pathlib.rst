@@ -670,6 +670,18 @@ call fails (for example because the path doesn't exist):
       symlink *points to* an existing file or directory.
 
 
+.. method:: Path.expanduser()
+
+   Return a new path with expanded ``~`` and ``~user`` constructs,
+   as returned by :meth:`os.path.expanduser`::
+
+      >>> p = PosixPath('~/films/Monty Python')
+      >>> p.expanduser()
+      PosixPath('/home/eric/films/Monty Python')
+
+   .. versionadded:: 3.5
+
+
 .. method:: Path.glob(pattern)
 
    Glob the given *pattern* in the directory represented by this path,
@@ -1002,8 +1014,5 @@ call fails (for example because the path doesn't exist):
       18
       >>> p.read_text()
       'Text file contents'
-
-   An existing file of the same name is overwritten.  The optional parameters
-   have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
