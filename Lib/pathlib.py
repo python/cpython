@@ -227,11 +227,11 @@ class _WindowsFlavour(_Flavour):
         elif 'USERPROFILE' in os.environ:
             userhome = os.environ['USERPROFILE']
         elif 'HOMEPATH' in os.environ:
-                try:
-                    drv = os.environ['HOMEDRIVE']
-                except KeyError:
-                    drv = ''
-                userhome = drv + os.environ['HOMEPATH']
+            try:
+                drv = os.environ['HOMEDRIVE']
+            except KeyError:
+                drv = ''
+            userhome = drv + os.environ['HOMEPATH']
         else:
             raise RuntimeError("Can't determine home directory")
 
