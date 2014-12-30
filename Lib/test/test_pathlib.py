@@ -1286,6 +1286,19 @@ class _BasePathTest(object):
         p = self.cls('')
         self.assertEqual(p.stat(), os.stat('.'))
 
+    def test_expanduser_common(self):
+        P = self.cls
+        p = P('~')
+        self.assertEqual(p.expanduser(), P(os.path.expanduser('~')))
+        p = P('foo')
+        self.assertEqual(p.expanduser(), p)
+        p = P('/~')
+        self.assertEqual(p.expanduser(), p)
+        p = P('../~')
+        self.assertEqual(p.expanduser(), p)
+        p = P(P('').absolute().anchor) / '~'
+        self.assertEqual(p.expanduser(), p)
+
     def test_exists(self):
         P = self.cls
         p = P(BASE)
@@ -1959,6 +1972,48 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(given, expect)
         self.assertEqual(set(p.rglob("FILEd*")), set())
 
+    def test_expanduser(self):
+        P = self.cls
+        support.import_module('pwd')
+        import pwd
+        pwdent = pwd.getpwuid(os.getuid())
+        username = pwdent.pw_name
+        userhome = pwdent.pw_dir.rstrip('/')
+        # find arbitrary different user (if exists)
+        for pwdent in pwd.getpwall():
+            othername = pwdent.pw_name
+            otherhome = pwdent.pw_dir.rstrip('/')
+            if othername != username:
+                break
+
+        p1 = P('~/Documents')
+        p2 = P('~' + username + '/Documents')
+        p3 = P('~' + othername + '/Documents')
+        p4 = P('../~' + username + '/Documents')
+        p5 = P('/~' + username + '/Documents')
+        p6 = P('')
+        p7 = P('~fakeuser/Documents')
+
+        with support.EnvironmentVarGuard() as env:
+            env.pop('HOME', None)
+
+            self.assertEqual(p1.expanduser(), P(userhome) / 'Documents')
+            self.assertEqual(p2.expanduser(), P(userhome) / 'Documents')
+            self.assertEqual(p3.expanduser(), P(otherhome) / 'Documents')
+            self.assertEqual(p4.expanduser(), p4)
+            self.assertEqual(p5.expanduser(), p5)
+            self.assertEqual(p6.expanduser(), p6)
+            self.assertRaises(RuntimeError, p7.expanduser)
+
+            env['HOME'] = '/tmp'
+            self.assertEqual(p1.expanduser(), P('/tmp/Documents'))
+            self.assertEqual(p2.expanduser(), P(userhome) / 'Documents')
+            self.assertEqual(p3.expanduser(), P(otherhome) / 'Documents')
+            self.assertEqual(p4.expanduser(), p4)
+            self.assertEqual(p5.expanduser(), p5)
+            self.assertEqual(p6.expanduser(), p6)
+            self.assertRaises(RuntimeError, p7.expanduser)
+
 
 @only_nt
 class WindowsPathTest(_BasePathTest, unittest.TestCase):
@@ -1973,6 +2028,61 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
+
+    def test_expanduser(self):
+        P = self.cls
+        with support.EnvironmentVarGuard() as env:
+            env.pop('HOME', None)
+            env.pop('USERPROFILE', None)
+            env.pop('HOMEPATH', None)
+            env.pop('HOMEDRIVE', None)
+            env['USERNAME'] = 'alice'
+
+            # test that the path returns unchanged
+            p1 = P('~/My Documents')
+            p2 = P('~alice/My Documents')
+            p3 = P('~bob/My Documents')
+            p4 = P('/~/My Documents')
+            p5 = P('d:~/My Documents')
+            p6 = P('')
+            self.assertRaises(RuntimeError, p1.expanduser)
+            self.assertRaises(RuntimeError, p2.expanduser)
+            self.assertRaises(RuntimeError, p3.expanduser)
+            self.assertEqual(p4.expanduser(), p4)
+            self.assertEqual(p5.expanduser(), p5)
+            self.assertEqual(p6.expanduser(), p6)
+
+            def check():
+                env.pop('USERNAME', None)
+                self.assertEqual(p1.expanduser(),
+                                 P('C:/Users/alice/My Documents'))
+                self.assertRaises(KeyError, p2.expanduser)
+                env['USERNAME'] = 'alice'
+                self.assertEqual(p2.expanduser(),
+                                 P('C:/Users/alice/My Documents'))
+                self.assertEqual(p3.expanduser(),
+                                 P('C:/Users/bob/My Documents'))
+                self.assertEqual(p4.expanduser(), p4)
+                self.assertEqual(p5.expanduser(), p5)
+                self.assertEqual(p6.expanduser(), p6)
+
+            # test the first lookup key in the env vars
+            env['HOME'] = 'C:\\Users\\alice'
+            check()
+
+            # test that HOMEPATH is available instead
+            env.pop('HOME', None)
+            env['HOMEPATH'] = 'C:\\Users\\alice'
+            check()
+
+            env['HOMEDRIVE'] = 'C:\\'
+            env['HOMEPATH'] = 'Users\\alice'
+            check()
+
+            env.pop('HOMEDRIVE', None)
+            env.pop('HOMEPATH', None)
+            env['USERPROFILE'] = 'C:\\Users\\alice'
+            check()
 
 
 if __name__ == "__main__":

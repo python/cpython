@@ -196,6 +196,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19776: Add a expanduser() method on Path objects.
+
 - Issue #23112: Fix SimpleHTTPServer to correctly carry the query string and
   fragment when it redirects to add a trailing slash.
 
