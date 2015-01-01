@@ -113,76 +113,85 @@ def wraps(wrapped,
 # underlying user provided method. Using this scheme, the __gt__ derived
 # from a user provided __lt__ becomes:
 #
-#    lambda self, other: _not_op_and_not_eq(self.__lt__, self, other))
+#    'def __gt__(self, other):' + _not_op_and_not_eq % '__lt__'
 
-def _not_op(op, other):
-    # "not a < b" handles "a >= b"
-    # "not a <= b" handles "a > b"
-    # "not a >= b" handles "a < b"
-    # "not a > b" handles "a <= b"
-    op_result = op(other)
+# "not a < b" handles "a >= b"
+# "not a <= b" handles "a > b"
+# "not a >= b" handles "a < b"
+# "not a > b" handles "a <= b"
+_not_op = '''
+    op_result = self.%s(other)
     if op_result is NotImplemented:
         return NotImplemented
     return not op_result
+'''
 
-def _op_or_eq(op, self, other):
-    # "a < b or a == b" handles "a <= b"
-    # "a > b or a == b" handles "a >= b"
-    op_result = op(other)
+# "a > b or a == b" handles "a >= b"
+# "a < b or a == b" handles "a <= b"
+_op_or_eq = '''
+    op_result = self.%s(other)
     if op_result is NotImplemented:
         return NotImplemented
     return op_result or self == other
+'''
 
-def _not_op_and_not_eq(op, self, other):
-    # "not (a < b or a == b)" handles "a > b"
-    # "not a < b and a != b" is equivalent
-    # "not (a > b or a == b)" handles "a < b"
-    # "not a > b and a != b" is equivalent
-    op_result = op(other)
+# "not (a < b or a == b)" handles "a > b"
+# "not a < b and a != b" is equivalent
+# "not (a > b or a == b)" handles "a < b"
+# "not a > b and a != b" is equivalent
+_not_op_and_not_eq = '''
+    op_result = self.%s(other)
     if op_result is NotImplemented:
         return NotImplemented
     return not op_result and self != other
+'''
 
-def _not_op_or_eq(op, self, other):
-    # "not a <= b or a == b" handles "a >= b"
-    # "not a >= b or a == b" handles "a <= b"
-    op_result = op(other)
+# "not a <= b or a == b" handles "a >= b"
+# "not a >= b or a == b" handles "a <= b"
+_not_op_or_eq = '''
+    op_result = self.%s(other)
     if op_result is NotImplemented:
         return NotImplemented
     return not op_result or self == other
+'''
 
-def _op_and_not_eq(op, self, other):
-    # "a <= b and not a == b" handles "a < b"
-    # "a >= b and not a == b" handles "a > b"
-    op_result = op(other)
+# "a <= b and not a == b" handles "a < b"
+# "a >= b and not a == b" handles "a > b"
+_op_and_not_eq = '''
+    op_result = self.%s(other)
     if op_result is NotImplemented:
         return NotImplemented
     return op_result and self != other
+'''
 
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
     convert = {
-        '__lt__': [('__gt__', lambda self, other: _not_op_and_not_eq(self.__lt__, self, other)),
-                   ('__le__', lambda self, other: _op_or_eq(self.__lt__, self, other)),
-                   ('__ge__', lambda self, other: _not_op(self.__lt__, other))],
-        '__le__': [('__ge__', lambda self, other: _not_op_or_eq(self.__le__, self, other)),
-                   ('__lt__', lambda self, other: _op_and_not_eq(self.__le__, self, other)),
-                   ('__gt__', lambda self, other: _not_op(self.__le__, other))],
-        '__gt__': [('__lt__', lambda self, other: _not_op_and_not_eq(self.__gt__, self, other)),
-                   ('__ge__', lambda self, other: _op_or_eq(self.__gt__, self, other)),
-                   ('__le__', lambda self, other: _not_op(self.__gt__, other))],
-        '__ge__': [('__le__', lambda self, other: _not_op_or_eq(self.__ge__, self, other)),
-                   ('__gt__', lambda self, other: _op_and_not_eq(self.__ge__, self, other)),
-                   ('__lt__', lambda self, other: _not_op(self.__ge__, other))]
+        '__lt__': {'__gt__': _not_op_and_not_eq,
+                   '__le__': _op_or_eq,
+                   '__ge__': _not_op},
+        '__le__': {'__ge__': _not_op_or_eq,
+                   '__lt__': _op_and_not_eq,
+                   '__gt__': _not_op},
+        '__gt__': {'__lt__': _not_op_and_not_eq,
+                   '__ge__': _op_or_eq,
+                   '__le__': _not_op},
+        '__ge__': {'__le__': _not_op_or_eq,
+                   '__gt__': _op_and_not_eq,
+                   '__lt__': _not_op}
     }
     # Find user-defined comparisons (not those inherited from object).
     roots = [op for op in convert if getattr(cls, op, None) is not getattr(object, op, None)]
     if not roots:
         raise ValueError('must define at least one ordering operation: < > <= >=')
     root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
-    for opname, opfunc in convert[root]:
+    for opname, opfunc in convert[root].items():
         if opname not in roots:
-            opfunc.__name__ = opname
+            namespace = {}
+            exec('def %s(self, other):%s' % (opname, opfunc % root), namespace)
+            opfunc = namespace[opname]
+            opfunc.__qualname__ = '%s.%s' % (cls.__qualname__, opname)
+            opfunc.__module__ = cls.__module__
             opfunc.__doc__ = getattr(int, opname).__doc__
             setattr(cls, opname, opfunc)
     return cls
