@@ -196,6 +196,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23143: Remove compatibility with OpenSSLs older than 0.9.8.
+
 - Issue #23132: Improve performance and introspection support of comparison
   methods created by functool.total_ordering.
 
