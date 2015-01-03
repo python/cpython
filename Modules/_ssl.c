@@ -162,13 +162,6 @@ static unsigned int _ssl_locks_count = 0;
 
 #define X509_NAME_MAXLEN 256
 
-/* RAND_* APIs got added to OpenSSL in 0.9.5 */
-#if OPENSSL_VERSION_NUMBER >= 0x0090500fL
-# define HAVE_OPENSSL_RAND 1
-#else
-# undef HAVE_OPENSSL_RAND
-#endif
-
 /* SSL_CTX_clear_options() and SSL_clear_options() were first added in
  * OpenSSL 0.9.8m but do not appear in some 0.9.9-dev versions such the
  * 0.9.9 from "May 2008" that NetBSD 5.0 uses. */
@@ -181,28 +174,6 @@ static unsigned int _ssl_locks_count = 0;
 /* In case of 'tls-unique' it will be 12 bytes for TLS, 36 bytes for
  * older SSL, but let's be safe */
 #define PySSL_CB_MAXLEN 128
-
-/* SSL_get_finished got added to OpenSSL in 0.9.5 */
-#if OPENSSL_VERSION_NUMBER >= 0x0090500fL
-# define HAVE_OPENSSL_FINISHED 1
-#else
-# define HAVE_OPENSSL_FINISHED 0
-#endif
-
-/* ECDH support got added to OpenSSL in 0.9.8 */
-#if OPENSSL_VERSION_NUMBER < 0x0090800fL && !defined(OPENSSL_NO_ECDH)
-# define OPENSSL_NO_ECDH
-#endif
-
-/* compression support got added to OpenSSL in 0.9.8 */
-#if OPENSSL_VERSION_NUMBER < 0x0090800fL && !defined(OPENSSL_NO_COMP)
-# define OPENSSL_NO_COMP
-#endif
-
-/* X509_VERIFY_PARAM got added to OpenSSL in 0.9.8 */
-#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
-# define HAVE_OPENSSL_VERIFY_PARAM
-#endif
 
 
 typedef struct {
@@ -817,12 +788,7 @@ _get_peer_alt_names (X509 *certificate) {
     char buf[2048];
     char *vptr;
     int len;
-    /* Issue #2973: ASN1_item_d2i() API changed in OpenSSL 0.9.6m */
-#if OPENSSL_VERSION_NUMBER >= 0x009060dfL
     const unsigned char *p;
-#else
-    unsigned char *p;
-#endif
 
     if (certificate == NULL)
         return peer_alt_names;
@@ -1998,7 +1964,6 @@ PyDoc_STRVAR(PySSL_SSLshutdown_doc,
 Does the SSL shutdown handshake with the remote end, and returns\n\
 the underlying socket object.");
 
-#if HAVE_OPENSSL_FINISHED
 static PyObject *
 PySSL_tls_unique_cb(PySSLSocket *self)
 {
@@ -2031,8 +1996,6 @@ Returns the 'tls-unique' channel binding data, as defined by RFC 5929.\n\
 \n\
 If the TLS handshake is not yet complete, None is returned");
 
-#endif /* HAVE_OPENSSL_FINISHED */
-
 static PyGetSetDef ssl_getsetlist[] = {
     {"context", (getter) PySSL_get_context,
                 (setter) PySSL_set_context, PySSL_set_context_doc},
@@ -2063,10 +2026,8 @@ static PyMethodDef PySSLMethods[] = {
     {"compression", (PyCFunction)PySSL_compression, METH_NOARGS},
     {"shutdown", (PyCFunction)PySSL_SSLshutdown, METH_NOARGS,
      PySSL_SSLshutdown_doc},
-#if HAVE_OPENSSL_FINISHED
     {"tls_unique_cb", (PyCFunction)PySSL_tls_unique_cb, METH_NOARGS,
      PySSL_tls_unique_cb_doc},
-#endif
     {NULL, NULL}
 };
 
@@ -2380,7 +2341,6 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
-#ifdef HAVE_OPENSSL_VERIFY_PARAM
 static PyObject *
 get_verify_flags(PySSLContext *self, void *c)
 {
@@ -2418,7 +2378,6 @@ set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
     }
     return 0;
 }
-#endif
 
 static PyObject *
 get_options(PySSLContext *self, void *c)
@@ -3303,10 +3262,8 @@ static PyGetSetDef context_getsetlist[] = {
                        (setter) set_check_hostname, NULL},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
-#ifdef HAVE_OPENSSL_VERIFY_PARAM
     {"verify_flags", (getter) get_verify_flags,
                      (setter) set_verify_flags, NULL},
-#endif
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
     {NULL},            /* sentinel */
@@ -3606,8 +3563,6 @@ static PyTypeObject PySSLMemoryBIO_Type = {
 };
 
 
-#ifdef HAVE_OPENSSL_RAND
-
 /* helper routines for seeding the SSL PRNG */
 static PyObject *
 PySSL_RAND_add(PyObject *self, PyObject *args)
@@ -3744,8 +3699,6 @@ Queries the entropy gather daemon (EGD) on the socket named by 'path'.\n\
 Returns number of bytes read.  Raises SSLError if connection to EGD\n\
 fails or if it does not provide enough data to seed PRNG.");
 #endif /* HAVE_RAND_EGD */
-
-#endif /* HAVE_OPENSSL_RAND */
 
 
 PyDoc_STRVAR(PySSL_get_default_verify_paths_doc,
@@ -4132,7 +4085,6 @@ PySSL_enum_crls(PyObject *self, PyObject *args, PyObject *kwds)
 static PyMethodDef PySSL_methods[] = {
     {"_test_decode_cert",       PySSL_test_decode_certificate,
      METH_VARARGS},
-#ifdef HAVE_OPENSSL_RAND
     {"RAND_add",            PySSL_RAND_add, METH_VARARGS,
      PySSL_RAND_add_doc},
     {"RAND_bytes",          PySSL_RAND_bytes, METH_VARARGS,
@@ -4145,7 +4097,6 @@ static PyMethodDef PySSL_methods[] = {
 #endif
     {"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
      PySSL_RAND_status_doc},
-#endif
     {"get_default_verify_paths", (PyCFunction)PySSL_get_default_verify_paths,
      METH_NOARGS, PySSL_get_default_verify_paths_doc},
 #ifdef _MSC_VER
@@ -4500,11 +4451,7 @@ PyInit__ssl(void)
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_SNI", r);
 
-#if HAVE_OPENSSL_FINISHED
     r = Py_True;
-#else
-    r = Py_False;
-#endif
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_TLS_UNIQUE", r);
 
