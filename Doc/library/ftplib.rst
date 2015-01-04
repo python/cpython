@@ -55,17 +55,25 @@ The module defines the following items:
       *timeout* was added.
 
 
-.. class:: FTP_TLS([host[, user[, passwd[, acct[, keyfile[, certfile[, timeout]]]]]]])
+.. class:: FTP_TLS([host[, user[, passwd[, acct[, keyfile[, certfile[, context[, timeout]]]]]]]])
 
-   A :class:`FTP` subclass which adds TLS support to FTP as described in
+    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
    Connect as usual to port 21 implicitly securing the FTP control connection
    before authenticating. Securing the data connection requires the user to
-   explicitly ask for it by calling the :meth:`prot_p` method.
-   *keyfile* and *certfile* are optional -- they can contain a PEM formatted
-   private key and certificate chain file name for the SSL connection.
+   explicitly ask for it by calling the :meth:`prot_p` method.  *context*
+   is a :class:`ssl.SSLContext` object which allows bundling SSL configuration
+   options, certificates and private keys into a single (potentially
+   long-lived) structure.  Please read :ref:`ssl-security` for best practices.
+
+   *keyfile* and *certfile* are a legacy alternative to *context* -- they
+   can point to PEM-formatted private key and certificate chain files
+   (respectively) for the SSL connection.
 
    .. versionadded:: 2.7
+
+   .. versionchanged:: 2.7.10
+      The *context* parameter was added.
 
    Here's a sample session using the :class:`FTP_TLS` class:
 
