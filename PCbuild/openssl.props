@@ -2,6 +2,12 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="pyproject.props" />
 
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <IntDir>$(opensslDir)tmp\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(opensslDir)tmp\$(ArchName)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+
   <ItemGroup>
     <PreprocessorDefinitions Include="DSO_WIN32" />
     <PreprocessorDefinitions Include="WIN32_LEAN_AND_MEAN" />
