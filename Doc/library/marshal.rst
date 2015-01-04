@@ -106,7 +106,7 @@ In addition, the following constants are defined:
    format, version 1 shares interned strings and version 2 uses a binary format
    for floating point numbers.
    Version 3 adds support for object instancing and recursion.
-   The current version is 3.
+   The current version is 4.
 
 
 .. rubric:: Footnotes
