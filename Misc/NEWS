@@ -38,6 +38,9 @@ Core and Builtins
 
 - Issue #22518: Fix integer overflow issues in latin-1 encoding.
 
+- Issue #23165: Perform overflow checks before allocating memory in the
+  _Py_char2wchar function.
+
 Library
 -------
 
