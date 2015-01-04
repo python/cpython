@@ -42,12 +42,6 @@
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="openssl.props" />
-
-  <PropertyGroup Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <IntDir Condition="'$(Platform)' != 'x64'">$(opensslDir)tmp32\libeay\</IntDir>
-    <IntDir Condition="'$(Platform)' == 'x64'">$(opensslDir)tmp64\libeay\</IntDir>
-  </PropertyGroup>
   
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
 
