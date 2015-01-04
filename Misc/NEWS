@@ -10,6 +10,9 @@ What's New in Python 3.2.6?
 Core and Builtins
 -----------------
 
+- Issue #23165: Perform overflow checks before allocating memory in the
+  _Py_char2wchar function.
+
 - Issue #19529: Fix a potential crash in converting Unicode objects to wchar_t
   when Py_UNICODE is 4 bytes but wchar_t is 2 bytes, for example on AIX.
 
