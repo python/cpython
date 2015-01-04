@@ -193,6 +193,9 @@ Core and Builtins
   exception. In versions prior to 3.5, '#' with 'c' had no effect. Now
   specifying it is an error.  Patch by Torsten Landschoff.
 
+- Issue #23165: Perform overflow checks before allocating memory in the
+  _Py_char2wchar function.
+
 Library
 -------
 
