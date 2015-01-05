@@ -20,12 +20,17 @@ source file by including the header ``"Python.h"``.
 The compilation of an extension module depends on its intended use as well as on
 your system setup; details are given in later chapters.
 
-Do note that if your use case is calling C library functions or system calls,
-you should consider using the :mod:`ctypes` module rather than writing custom
-C code. Not only does :mod:`ctypes` let you write Python code to interface
-with C code, but it is more portable between implementations of Python than
-writing and compiling an extension module which typically ties you to CPython.
+.. note::
 
+   The C extension interface is specific to CPython, and extension modules do
+   not work on other Python implementations.  In many cases, it is possible to
+   avoid writing C extensions and preserve portability to other implementations.
+   For example, if your use case is calling C library functions or system calls,
+   you should consider using the :mod:`ctypes` module or the `cffi
+   <http://cffi.readthedocs.org>`_ library rather than writing custom C code.
+   These modules let you write Python code to interface with C code and are more
+   portable between implementations of Python than writing and compiling a C
+   extension module.
 
 
 .. _extending-simpleexample:
