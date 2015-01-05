@@ -269,6 +269,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             self.assertEqual(data, body)
         return body
 
+    @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(support.TESTFN_UNDECODABLE,
                          'need support.TESTFN_UNDECODABLE')
     def test_undecodable_filename(self):
