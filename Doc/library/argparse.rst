@@ -1216,8 +1216,8 @@ Action classes implement the Action API, a callable which returns a callable
 which processes arguments from the command-line. Any object which follows this
 API may be passed as the ``action`` parameter to :meth:`add_argument`.
 
-.. class:: Action(option_strings, dest, nargs=None, const=None, default=None,
-                  type=None, choices=None, required=False, help=None,
+.. class:: Action(option_strings, dest, nargs=None, const=None, default=None, \
+                  type=None, choices=None, required=False, help=None, \
                   metavar=None)
 
 Action objects are used by an ArgumentParser to represent the information needed
