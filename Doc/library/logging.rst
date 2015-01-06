@@ -227,8 +227,9 @@ is the module's name in the Python package namespace.
 .. method:: Logger.exception(msg, *args, **kwargs)
 
    Logs a message with level :const:`ERROR` on this logger. The arguments are
-   interpreted as for :meth:`debug`. Exception info is added to the logging
-   message. This method should only be called from an exception handler.
+   interpreted as for :meth:`debug`, except that any passed *exc_info* is not
+   inspected. Exception info is always added to the logging message. This method
+   should only be called from an exception handler.
 
 
 .. method:: Logger.addFilter(filt)
@@ -845,8 +846,9 @@ functions.
 .. function:: exception(msg[, *args[, **kwargs]])
 
    Logs a message with level :const:`ERROR` on the root logger. The arguments are
-   interpreted as for :func:`debug`. Exception info is added to the logging
-   message. This function should only be called from an exception handler.
+   interpreted as for :func:`debug`, except that any passed *exc_info* is not
+   inspected. Exception info is always added to the logging message. This
+   function should only be called from an exception handler.
 
 
 .. function:: log(level, msg[, *args[, **kwargs]])
