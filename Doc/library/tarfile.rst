@@ -794,7 +794,7 @@ metadata must be either decoded or encoded. If *encoding* is not set
 appropriately, this conversion may fail.
 
 The *errors* argument defines how characters are treated that cannot be
-converted. Possible values are listed in section :ref:`codec-base-classes`.
+converted. Possible values are listed in section :ref:`error-handlers`.
 The default scheme is ``'surrogateescape'`` which Python also uses for its
 file system calls, see :ref:`os-filenames`.
 
