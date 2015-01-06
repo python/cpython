@@ -44,6 +44,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #20896, #22935: The :func:`ssl.get_server_certificate` function now
+  uses the :data:`~ssl.PROTOCOL_SSLv23` protocol by default, not
+  :data:`~ssl.PROTOCOL_SSLv3`, for maximum compatibility and support platforms
+  where :data:`~ssl.PROTOCOL_SSLv3` support is disabled.
+
 - Issue #23111: In the ftplib, make ssl.PROTOCOL_SSLv23 the default protocol
   version.
 
