@@ -1086,7 +1086,6 @@ class PlaceHolder(object):
 #
 #   Determine which class to use when instantiating loggers.
 #
-_loggerClass = None
 
 def setLoggerClass(klass):
     """
@@ -1105,7 +1104,6 @@ def getLoggerClass():
     """
     Return the class to be used when instantiating a logger.
     """
-
     return _loggerClass
 
 class Manager(object):
