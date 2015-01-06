@@ -299,6 +299,8 @@ Random generation
    See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for sources
    of entropy-gathering daemons.
 
+   Availability: not available with LibreSSL.
+
 .. function:: RAND_add(bytes, entropy)
 
    Mixes the given *bytes* into the SSL pseudo-random number generator.  The

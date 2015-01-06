@@ -15,6 +15,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21356: Make ssl.RAND_egd() optional to support LibreSSL. The
+  availability of the function is checked during the compilation. Patch written
+  by Bernard Spil.
+
 - Backport the context argument to ftplib.FTP_TLS.
 
 - Issue #23111: Maximize compatibility in protocol versions of ftplib.FTP_TLS.
