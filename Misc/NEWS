@@ -44,6 +44,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21356: Make ssl.RAND_egd() optional to support LibreSSL. The
+  availability of the function is checked during the compilation. Patch written
+  by Bernard Spil.
+
 - Issue #20896, #22935: The :func:`ssl.get_server_certificate` function now
   uses the :data:`~ssl.PROTOCOL_SSLv23` protocol by default, not
   :data:`~ssl.PROTOCOL_SSLv3`, for maximum compatibility and support platforms
