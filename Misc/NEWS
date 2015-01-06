@@ -47,6 +47,8 @@ Library
 - Issue #23111: In the ftplib, make ssl.PROTOCOL_SSLv23 the default protocol
   version.
 
+- Issue #23132: Mitigate regression in speed and clarity in functools.total_ordering.
+
 - Issue #22585: On OpenBSD 5.6 and newer, os.urandom() now calls getentropy(),
   instead of reading /dev/urandom, to get pseudo-random bytes.
 
