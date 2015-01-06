@@ -71,8 +71,8 @@ the event loop.
 
 .. seealso::
 
-   See the :ref:`Synchronization primitives <asyncio-sync>` section to
-   synchronize tasks.
+   The :ref:`Synchronization primitives <asyncio-sync>` section describes ways
+   to synchronize tasks.
 
 
 .. _asyncio-handle-blocking:
@@ -112,8 +112,8 @@ Detect coroutine objects never scheduled
 ----------------------------------------
 
 When a coroutine function is called and its result is not passed to
-:func:`async` or to the :meth:`BaseEventLoop.create_task` method: the execution
-of the coroutine objet will never be scheduled and it is probably a bug.
+:func:`async` or to the :meth:`BaseEventLoop.create_task` method, the execution
+of the coroutine object will never be scheduled which is probably a bug.
 :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to :ref:`log a
 warning <asyncio-logger>` to detect it.
 
@@ -147,7 +147,7 @@ Detect exceptions never consumed
 
 Python usually calls :func:`sys.displayhook` on unhandled exceptions. If
 :meth:`Future.set_exception` is called, but the exception is never consumed,
-:func:`sys.displayhook` is not called. Instead, a :ref:`a log is emitted
+:func:`sys.displayhook` is not called. Instead, :ref:`a log is emitted
 <asyncio-logger>` when the future is deleted by the garbage collector, with the
 traceback where the exception was raised.
 
@@ -195,7 +195,7 @@ traceback where the task was created. Output in debug mode::
         raise Exception("not consumed")
     Exception: not consumed
 
-There are different options to fix this issue. The first option is to chain to
+There are different options to fix this issue. The first option is to chain the
 coroutine in another coroutine and use classic try/except::
 
     @asyncio.coroutine
@@ -218,10 +218,12 @@ function::
     except Exception:
         print("exception consumed")
 
-See also the :meth:`Future.exception` method.
+.. seealso::
+
+   The :meth:`Future.exception` method.
 
 
-Chain correctly coroutines
+Chain coroutines correctly
 --------------------------
 
 When a coroutine function calls other coroutine functions and tasks, they
