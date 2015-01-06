@@ -223,6 +223,34 @@ class SubprocessMixin:
         self.assertEqual(output.rstrip(), b'3')
         self.assertEqual(exitcode, 0)
 
+    def test_cancel_process_wait(self):
+        # Issue #23140: cancel Process.wait()
+
+        @asyncio.coroutine
+        def wait_proc(proc, event):
+            event.set()
+            yield from proc.wait()
+
+        @asyncio.coroutine
+        def cancel_wait():
+            proc = yield from asyncio.create_subprocess_exec(
+                                          *PROGRAM_BLOCKED,
+                                          loop=self.loop)
+
+            # Create an internal future waiting on the process exit
+            event = asyncio.Event(loop=self.loop)
+            task = self.loop.create_task(wait_proc(proc, event))
+            yield from event.wait()
+
+            # Cancel the future
+            task.cancel()
+
+            # Kill the process and wait until it is done
+            proc.kill()
+            yield from proc.wait()
+
+        self.loop.run_until_complete(cancel_wait())
+
 
 if sys.platform != 'win32':
     # Unix
