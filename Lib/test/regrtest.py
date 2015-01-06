@@ -1276,6 +1276,10 @@ def runtest_inner(test, verbose, quiet,
                 def test_runner():
                     loader = unittest.TestLoader()
                     tests = loader.loadTestsFromModule(the_module)
+                    for error in loader.errors:
+                        print(error, file=sys.stderr)
+                    if loader.errors:
+                        raise Exception("errors while loading tests")
                     support.run_unittest(tests)
             test_runner()
             if huntrleaks:
