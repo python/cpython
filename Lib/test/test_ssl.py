@@ -312,10 +312,10 @@ class BasicSocketTests(unittest.TestCase):
         # Version string as returned by {Open,Libre}SSL, the format might change
         if "LibreSSL" in s:
             self.assertTrue(s.startswith("LibreSSL {:d}.{:d}".format(major, minor)),
-                            (s, t))
+                            (s, t, hex(n)))
         else:
             self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
-                            (s, t))
+                            (s, t, hex(n)))
 
     @support.cpython_only
     def test_refcycle(self):
