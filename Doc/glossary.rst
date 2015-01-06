@@ -834,10 +834,13 @@ Glossary
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
       include :data:`sys.float_info` and the return value of :func:`os.stat`.
 
+   text encoding
+      A codec which encodes Unicode strings to bytes.
+
    text file
       A :term:`file object` able to read and write :class:`str` objects.
       Often, a text file actually accesses a byte-oriented datastream
-      and handles the text encoding automatically.
+      and handles the :term:`text encoding` automatically.
 
       .. seealso::
          A :term:`binary file` reads and write :class:`bytes` objects.

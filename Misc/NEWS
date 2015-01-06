@@ -1441,6 +1441,10 @@ C API
 Documentation
 -------------
 
+- Issue #19548: Update the codecs module documentation to better cover the
+  distinction between text encodings and other codecs, together with other
+  clarifications. Patch by Martin Panter.
+
 - Issue #22394: Doc/Makefile now supports ``make venv PYTHON=../python`` to
   create a venv for generating the documentation, e.g.,
   ``make html PYTHON=venv/bin/python3``.
@@ -1476,6 +1480,10 @@ Documentation
 
 Tests
 -----
+
+- Issue #19548: Added some additional checks to test_codecs to ensure that
+  statements in the updated documentation remain accurate. Patch by Martin
+  Panter.
 
 - Issue #22838: All test_re tests now work with unittest test discovery.
 
