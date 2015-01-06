@@ -35,7 +35,7 @@ from .coroutines import coroutine
 from .log import logger
 
 
-__all__ = ['BaseEventLoop', 'Server']
+__all__ = ['BaseEventLoop']
 
 
 # Argument for default thread pool executor creation.
