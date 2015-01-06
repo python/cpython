@@ -2238,6 +2238,9 @@ AC_MSG_RESULT($SHLIBS)
 AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
+AC_CHECK_LIB(crypto, RAND_egd,
+             AC_DEFINE(HAVE_RAND_EGD, 1,
+             [Define if the libcrypto has RAND_egd]))
 
 # only check for sem_init if thread support is requested
 if test "$with_threads" = "yes" -o -z "$with_threads"; then
