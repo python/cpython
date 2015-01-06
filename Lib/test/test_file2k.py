@@ -230,14 +230,20 @@ class OtherFileTests(unittest.TestCase):
             else:
                 f.close()
 
-    def testStdin(self):
-        # This causes the interpreter to exit on OSF1 v5.1.
-        if sys.platform != 'osf1V5':
-            self.assertRaises(IOError, sys.stdin.seek, -1)
-        else:
-            print >>sys.__stdout__, (
-                '  Skipping sys.stdin.seek(-1), it may crash the interpreter.'
-                ' Test manually.')
+    def testStdinSeek(self):
+        if sys.platform == 'osf1V5':
+            # This causes the interpreter to exit on OSF1 v5.1.
+            self.skipTest('Skipping sys.stdin.seek(-1), it may crash '
+                          'the interpreter. Test manually.')
+
+        if not sys.stdin.isatty():
+            # Issue #23168: if stdin is redirected to a file, stdin becomes
+            # seekable
+            self.skipTest('stdin must be a TTY in this test')
+
+        self.assertRaises(IOError, sys.stdin.seek, -1)
+
+    def testStdinTruncate(self):
         self.assertRaises(IOError, sys.stdin.truncate)
 
     def testUnicodeOpen(self):
