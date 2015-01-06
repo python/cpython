@@ -57,7 +57,7 @@ The module defines the following items:
 
 .. class:: FTP_TLS([host[, user[, passwd[, acct[, keyfile[, certfile[, context[, timeout]]]]]]]])
 
-    A :class:`FTP` subclass which adds TLS support to FTP as described in
+   A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
    Connect as usual to port 21 implicitly securing the FTP control connection
    before authenticating. Securing the data connection requires the user to
