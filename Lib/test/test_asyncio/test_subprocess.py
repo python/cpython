@@ -227,20 +227,18 @@ class SubprocessMixin:
         # Issue #23140: cancel Process.wait()
 
         @asyncio.coroutine
-        def wait_proc(proc, event):
-            event.set()
-            yield from proc.wait()
-
-        @asyncio.coroutine
         def cancel_wait():
             proc = yield from asyncio.create_subprocess_exec(
                                           *PROGRAM_BLOCKED,
                                           loop=self.loop)
 
             # Create an internal future waiting on the process exit
-            event = asyncio.Event(loop=self.loop)
-            task = self.loop.create_task(wait_proc(proc, event))
-            yield from event.wait()
+            task = self.loop.create_task(proc.wait())
+            self.loop.call_soon(task.cancel)
+            try:
+                yield from task
+            except asyncio.CancelledError:
+                pass
 
             # Cancel the future
             task.cancel()
