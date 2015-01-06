@@ -96,7 +96,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         returncode = self._transport.get_returncode()
         while self._waiters:
             waiter = self._waiters.popleft()
-            waiter.set_result(returncode)
+            if not waiter.cancelled():
+                waiter.set_result(returncode)
 
 
 class Process:
