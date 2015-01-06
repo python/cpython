@@ -940,15 +940,17 @@ are always available.  They are listed here in alphabetical order.
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
    dependent (whatever :func:`locale.getpreferredencoding` returns), but any
-   encoding supported by Python can be used.  See the :mod:`codecs` module for
+   :term:`text encoding` supported by Python
+   can be used.  See the :mod:`codecs` module for
    the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled--this cannot be used in binary mode.
-   A variety of standard error handlers are available, though any
+   A variety of standard error handlers are available
+   (listed under :ref:`error-handlers`), though any
    error handling name that has been registered with
    :func:`codecs.register_error` is also valid.  The standard names
-   are:
+   include:
 
    * ``'strict'`` to raise a :exc:`ValueError` exception if there is
      an encoding error.  The default value of ``None`` has the same
