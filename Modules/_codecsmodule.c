@@ -54,9 +54,9 @@ PyDoc_STRVAR(register__doc__,
 "register(search_function)\n\
 \n\
 Register a codec search function. Search functions are expected to take\n\
-one argument, the encoding name in all lower case letters, and return\n\
-a tuple of functions (encoder, decoder, stream_reader, stream_writer)\n\
-(or a CodecInfo object).");
+one argument, the encoding name in all lower case letters, and either\n\
+return None, or a tuple of functions (encoder, decoder, stream_reader,\n\
+stream_writer) (or a CodecInfo object).");
 
 static
 PyObject *codec_register(PyObject *self, PyObject *search_function)
