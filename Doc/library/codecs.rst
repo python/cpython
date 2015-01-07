@@ -256,7 +256,6 @@ and writing to platform dependent files:
    encodings.
 
 
-.. _surrogateescape:
 .. _codec-base-classes:
 
 Codec Base Classes
@@ -273,6 +272,7 @@ implement the file protocols. Codec authors also need to define how the
 codec will handle encoding and decoding errors.
 
 
+.. _surrogateescape:
 .. _error-handlers:
 
 Error Handlers
@@ -319,7 +319,8 @@ The following error handlers are only applicable to
 |                         | :func:`backslashreplace_errors`.              |
 +-------------------------+-----------------------------------------------+
 | ``'namereplace'``       | Replace with ``\N{...}`` escape sequences     |
-|                         | (only for encoding).                          |
+|                         | (only for encoding).  Implemented in          |
+|                         | :func:`namereplace_errors`.                   |
 +-------------------------+-----------------------------------------------+
 | ``'surrogateescape'``   | On decoding, replace byte with individual     |
 |                         | surrogate code ranging from ``U+DC80`` to     |
@@ -422,7 +423,8 @@ functions:
 
 .. function:: namereplace_errors(exception)
 
-   Implements the ``namereplace`` error handling (for encoding only): the
+   Implements the ``'namereplace'`` error handling (for encoding with
+   :term:`text encodings <text encoding>` only): the
    unencodable character is replaced by a ``\N{...}`` escape sequence.
 
    .. versionadded:: 3.5
