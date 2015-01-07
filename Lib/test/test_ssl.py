@@ -3172,7 +3172,6 @@ else:
             self.assertGreater(len(ciphers), 0)
             for name, tls_version, bits in ciphers:
                 self.assertIn("DES-CBC3-", name)
-                self.assertEqual(bits, 112)
 
         def test_read_write_after_close_raises_valuerror(self):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
