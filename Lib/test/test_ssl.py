@@ -3171,8 +3171,7 @@ else:
             ciphers = stats['server_shared_ciphers'][0]
             self.assertGreater(len(ciphers), 0)
             for name, tls_version, bits in ciphers:
-                self.assertIn("AES128", name.split("-"))
-                self.assertEqual(bits, 128)
+                self.assertIn("RC4", name.split("-"))
 
         def test_read_write_after_close_raises_valuerror(self):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
