@@ -572,6 +572,10 @@ class SSLObject:
         ssl_version, secret_bits)``."""
         return self._sslobj.cipher()
 
+    def shared_ciphers(self):
+        """Return the ciphers shared by the client during the handshake."""
+        return self._sslobj.shared_ciphers()
+
     def compression(self):
         """Return the current compression algorithm in use, or ``None`` if
         compression was not negotiated or not supported by one of the peers."""
@@ -783,6 +787,12 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.cipher()
+
+    def shared_ciphers(self):
+        self._checkClosed()
+        if not self._sslobj:
+            return None
+        return self._sslobj.shared_ciphers()
 
     def compression(self):
         self._checkClosed()

@@ -1698,11 +1698,13 @@ class NetworkedBIOTests(unittest.TestCase):
             sslobj = ctx.wrap_bio(incoming, outgoing, False, 'svn.python.org')
             self.assertIs(sslobj._sslobj.owner, sslobj)
             self.assertIsNone(sslobj.cipher())
+            self.assertIsNone(sslobj.shared_ciphers())
             self.assertRaises(ValueError, sslobj.getpeercert)
             if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
                 self.assertIsNone(sslobj.get_channel_binding('tls-unique'))
             self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
             self.assertTrue(sslobj.cipher())
+            self.assertIsNone(sslobj.shared_ciphers())
             self.assertTrue(sslobj.getpeercert())
             if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
                 self.assertTrue(sslobj.get_channel_binding('tls-unique'))
@@ -1776,6 +1778,7 @@ else:
                     self.close()
                     return False
                 else:
+                    self.server.shared_ciphers.append(self.sslconn.shared_ciphers())
                     if self.server.context.verify_mode == ssl.CERT_REQUIRED:
                         cert = self.sslconn.getpeercert()
                         if support.verbose and self.server.chatty:
@@ -1891,6 +1894,7 @@ else:
             self.flag = None
             self.active = False
             self.selected_protocols = []
+            self.shared_ciphers = []
             self.conn_errors = []
             threading.Thread.__init__(self)
             self.daemon = True
@@ -2121,6 +2125,7 @@ else:
                 })
                 s.close()
             stats['server_npn_protocols'] = server.selected_protocols
+            stats['server_shared_ciphers'] = server.shared_ciphers
         return stats
 
     def try_protocol_combo(server_protocol, client_protocol, expect_success,
@@ -3156,6 +3161,18 @@ else:
                                            sni_name='supermessage')
             self.assertEqual(cm.exception.reason, 'TLSV1_ALERT_INTERNAL_ERROR')
             self.assertIn("TypeError", stderr.getvalue())
+
+        def test_shared_ciphers(self):
+            server_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            client_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            client_context.set_ciphers("3DES")
+            server_context.set_ciphers("3DES:AES")
+            stats = server_params_test(client_context, server_context)
+            ciphers = stats['server_shared_ciphers'][0]
+            self.assertGreater(len(ciphers), 0)
+            for name, tls_version, bits in ciphers:
+                self.assertIn("DES-CBC3-", name)
+                self.assertEqual(bits, 112)
 
         def test_read_write_after_close_raises_valuerror(self):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
