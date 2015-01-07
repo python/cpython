@@ -3163,7 +3163,7 @@ else:
             self.assertIn("TypeError", stderr.getvalue())
 
         def test_shared_ciphers(self):
-            server_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             client_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             client_context.set_ciphers("3DES")
             server_context.set_ciphers("3DES:AES")
