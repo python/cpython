@@ -1360,52 +1360,81 @@ If the optional argument is True, returns a DER-encoded copy of the\n\
 peer certificate, or None if no certificate was provided.  This will\n\
 return the certificate even if it wasn't validated.");
 
-static PyObject *PySSL_cipher (PySSLSocket *self) {
-
-    PyObject *retval, *v;
-    const SSL_CIPHER *current;
-    char *cipher_name;
-    char *cipher_protocol;
-
-    if (self->ssl == NULL)
-        Py_RETURN_NONE;
-    current = SSL_get_current_cipher(self->ssl);
-    if (current == NULL)
-        Py_RETURN_NONE;
-
-    retval = PyTuple_New(3);
+static PyObject *
+cipher_to_tuple(const SSL_CIPHER *cipher)
+{
+    const char *cipher_name, *cipher_protocol;
+    PyObject *v, *retval = PyTuple_New(3);
     if (retval == NULL)
         return NULL;
 
-    cipher_name = (char *) SSL_CIPHER_get_name(current);
+    cipher_name = SSL_CIPHER_get_name(cipher);
     if (cipher_name == NULL) {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(retval, 0, Py_None);
     } else {
         v = PyUnicode_FromString(cipher_name);
         if (v == NULL)
-            goto fail0;
+            goto fail;
         PyTuple_SET_ITEM(retval, 0, v);
     }
-    cipher_protocol = (char *) SSL_CIPHER_get_version(current);
+
+    cipher_protocol = SSL_CIPHER_get_version(cipher);
     if (cipher_protocol == NULL) {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(retval, 1, Py_None);
     } else {
         v = PyUnicode_FromString(cipher_protocol);
         if (v == NULL)
-            goto fail0;
+            goto fail;
         PyTuple_SET_ITEM(retval, 1, v);
     }
-    v = PyLong_FromLong(SSL_CIPHER_get_bits(current, NULL));
+
+    v = PyLong_FromLong(SSL_CIPHER_get_bits(cipher, NULL));
     if (v == NULL)
-        goto fail0;
+        goto fail;
     PyTuple_SET_ITEM(retval, 2, v);
+
     return retval;
 
-  fail0:
+  fail:
     Py_DECREF(retval);
     return NULL;
+}
+
+static PyObject *PySSL_shared_ciphers(PySSLSocket *self)
+{
+    STACK_OF(SSL_CIPHER) *ciphers;
+    int i;
+    PyObject *res;
+
+    if (!self->ssl->session || !self->ssl->session->ciphers)
+        Py_RETURN_NONE;
+    ciphers = self->ssl->session->ciphers;
+    res = PyList_New(sk_SSL_CIPHER_num(ciphers));
+    if (!res)
+        return NULL;
+    for (i = 0; i < sk_SSL_CIPHER_num(ciphers); i++) {
+        PyObject *tup = cipher_to_tuple(sk_SSL_CIPHER_value(ciphers, i));
+        if (!tup) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        PyList_SET_ITEM(res, i, tup);
+    }
+    return res;
+}
+
+static PyObject *PySSL_cipher (PySSLSocket *self)
+{
+    const SSL_CIPHER *current;
+
+    if (self->ssl == NULL)
+        Py_RETURN_NONE;
+    current = SSL_get_current_cipher(self->ssl);
+    if (current == NULL)
+        Py_RETURN_NONE;
+    return cipher_to_tuple(current);
 }
 
 static PyObject *PySSL_version(PySSLSocket *self)
@@ -2019,6 +2048,7 @@ static PyMethodDef PySSLMethods[] = {
     {"peer_certificate", (PyCFunction)PySSL_peercert, METH_VARARGS,
      PySSL_peercert_doc},
     {"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
+    {"shared_ciphers", (PyCFunction)PySSL_shared_ciphers, METH_NOARGS},
     {"version", (PyCFunction)PySSL_version, METH_NOARGS},
 #ifdef OPENSSL_NPN_NEGOTIATED
     {"selected_npn_protocol", (PyCFunction)PySSL_selected_npn_protocol, METH_NOARGS},
