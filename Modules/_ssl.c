@@ -1404,13 +1404,14 @@ cipher_to_tuple(const SSL_CIPHER *cipher)
 
 static PyObject *PySSL_shared_ciphers(PySSLSocket *self)
 {
+    SSL_SESSION *sess = SSL_get_session(self->ssl);
     STACK_OF(SSL_CIPHER) *ciphers;
     int i;
     PyObject *res;
 
-    if (!self->ssl->session || !self->ssl->session->ciphers)
+    if (!sess || !sess->ciphers)
         Py_RETURN_NONE;
-    ciphers = self->ssl->session->ciphers;
+    ciphers = sess->ciphers;
     res = PyList_New(sk_SSL_CIPHER_num(ciphers));
     if (!res)
         return NULL;
