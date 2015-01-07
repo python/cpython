@@ -1720,9 +1720,10 @@ For example:
    >>> object() in mock
    False
 
-The two equality method, :meth:`__eq__` and :meth:`__ne__`, are special.
-They do the default equality comparison on identity, using a side
-effect, unless you change their return value to return something else:
+The two equality methods, :meth:`__eq__` and :meth:`__ne__`, are special.
+They do the default equality comparison on identity, using the
+:attr:`~Mock.side_effect` attribute, unless you change their return value to
+return something else::
 
    >>> MagicMock() == 3
    False
