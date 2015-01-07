@@ -925,6 +925,17 @@ SSL sockets also have the following additional methods and attributes:
    version of the SSL protocol that defines its use, and the number of secret
    bits being used.  If no connection has been established, returns ``None``.
 
+.. method:: SSLSocket.shared_ciphers()
+
+   Return the list of ciphers shared by the client during the handshake.  Each
+   entry of the returned list is a three-value tuple containing the name of the
+   cipher, the version of the SSL protocol that defines its use, and the number
+   of secret bits the cipher uses.  :meth:`~SSLSocket.shared_ciphers` returns
+   ``None`` if no connection has been established or the socket is a client
+   socket.
+
+   .. versionadded:: 3.5
+
 .. method:: SSLSocket.compression()
 
    Return the compression algorithm being used as a string, or ``None``
@@ -1784,6 +1795,7 @@ provided.
    - :meth:`~SSLSocket.getpeercert`
    - :meth:`~SSLSocket.selected_npn_protocol`
    - :meth:`~SSLSocket.cipher`
+   - :meth:`~SSLSocket.shared_ciphers`
    - :meth:`~SSLSocket.compression`
    - :meth:`~SSLSocket.pending`
    - :meth:`~SSLSocket.do_handshake`
