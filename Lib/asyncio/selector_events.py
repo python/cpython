@@ -55,7 +55,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return _SelectorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
-    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter, *,
+    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None, *,
                             server_side=False, server_hostname=None,
                             extra=None, server=None):
         return _SelectorSslTransport(
@@ -165,7 +165,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             if sslcontext:
                 self._make_ssl_transport(
-                    conn, protocol_factory(), sslcontext, None,
+                    conn, protocol_factory(), sslcontext,
                     server_side=True, extra={'peername': addr}, server=server)
             else:
                 self._make_socket_transport(
