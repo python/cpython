@@ -3164,7 +3164,10 @@ else:
 
         def test_shared_ciphers(self):
             server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            client_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            server_context.load_cert_chain(SIGNED_CERTFILE)
+            client_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            client_context.verify_mode = ssl.CERT_REQUIRED
+            client_context.load_verify_locations(SIGNING_CA)
             client_context.set_ciphers("RC4")
             server_context.set_ciphers("AES:RC4")
             stats = server_params_test(client_context, server_context)
