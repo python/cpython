@@ -69,7 +69,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         """
         if (coroutines.iscoroutine(callback)
         or coroutines.iscoroutinefunction(callback)):
-            raise TypeError("coroutines cannot be used with add_signal_handler()")
+            raise TypeError("coroutines cannot be used "
+                            "with add_signal_handler()")
         self._check_signal(sig)
         self._check_closed()
         try:

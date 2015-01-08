@@ -115,7 +115,9 @@ class SubprocessMixin:
     def test_send_signal(self):
         code = 'import time; print("sleeping", flush=True); time.sleep(3600)'
         args = [sys.executable, '-c', code]
-        create = asyncio.create_subprocess_exec(*args, loop=self.loop, stdout=subprocess.PIPE)
+        create = asyncio.create_subprocess_exec(*args,
+                                                stdout=subprocess.PIPE,
+                                                loop=self.loop)
         proc = self.loop.run_until_complete(create)
 
         @asyncio.coroutine
