@@ -208,7 +208,8 @@ class TaskTests(test_utils.TestCase):
         self.assertEqual(notmuch.__name__, 'notmuch')
         if PY35:
             self.assertEqual(notmuch.__qualname__,
-                             'TaskTests.test_task_repr_coro_decorator.<locals>.notmuch')
+                             'TaskTests.test_task_repr_coro_decorator'
+                             '.<locals>.notmuch')
         self.assertEqual(notmuch.__module__, __name__)
 
         # test coroutine object
@@ -218,7 +219,8 @@ class TaskTests(test_utils.TestCase):
             # function, as expected, and have a qualified name (__qualname__
             # attribute).
             coro_name = 'notmuch'
-            coro_qualname = 'TaskTests.test_task_repr_coro_decorator.<locals>.notmuch'
+            coro_qualname = ('TaskTests.test_task_repr_coro_decorator'
+                             '.<locals>.notmuch')
         else:
             # On Python < 3.5, generators inherit the name of the code, not of
             # the function. See: http://bugs.python.org/issue21205
@@ -239,7 +241,8 @@ class TaskTests(test_utils.TestCase):
             else:
                 code = gen.gi_code
                 coro = ('%s() running at %s:%s'
-                        % (coro_qualname, code.co_filename, code.co_firstlineno))
+                        % (coro_qualname, code.co_filename,
+                           code.co_firstlineno))
 
             self.assertEqual(repr(gen), '<CoroWrapper %s>' % coro)
 
@@ -1678,7 +1681,8 @@ class TaskTests(test_utils.TestCase):
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
         func_filename, func_lineno = test_utils.get_function_source(coro_noop)
-        regex = (r'^<CoroWrapper %s\(\) .* at %s:%s, .*> was never yielded from\n'
+        regex = (r'^<CoroWrapper %s\(\) .* at %s:%s, .*> '
+                    r'was never yielded from\n'
                  r'Coroutine object created at \(most recent call last\):\n'
                  r'.*\n'
                  r'  File "%s", line %s, in test_coroutine_never_yielded\n'
