@@ -36,15 +36,16 @@ else:
     def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
         """A socket pair usable as a self-pipe, for Windows.
 
-        Origin: https://gist.github.com/4325783, by Geert Jansen.  Public domain.
+        Origin: https://gist.github.com/4325783, by Geert Jansen.
+        Public domain.
         """
         if family == socket.AF_INET:
             host = '127.0.0.1'
         elif family == socket.AF_INET6:
             host = '::1'
         else:
-            raise ValueError("Only AF_INET and AF_INET6 socket address families "
-                             "are supported")
+            raise ValueError("Only AF_INET and AF_INET6 socket address "
+                             "families are supported")
         if type != socket.SOCK_STREAM:
             raise ValueError("Only SOCK_STREAM socket type is supported")
         if proto != 0:
