@@ -3166,7 +3166,7 @@ else:
             server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             client_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             client_context.set_ciphers("AES")
-            server_context.set_ciphers("RC4:AES")
+            server_context.set_ciphers("AES:RC4")
             stats = server_params_test(client_context, server_context)
             ciphers = stats['server_shared_ciphers'][0]
             self.assertGreater(len(ciphers), 0)
