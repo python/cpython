@@ -3165,13 +3165,13 @@ else:
         def test_shared_ciphers(self):
             server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             client_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            client_context.set_ciphers("AES")
+            client_context.set_ciphers("RC4")
             server_context.set_ciphers("AES:RC4")
             stats = server_params_test(client_context, server_context)
             ciphers = stats['server_shared_ciphers'][0]
             self.assertGreater(len(ciphers), 0)
             for name, tls_version, bits in ciphers:
-                self.assertIn("AES", name)
+                self.assertIn("RC4", name.split("-"))
 
         def test_read_write_after_close_raises_valuerror(self):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
