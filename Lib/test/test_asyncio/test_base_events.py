@@ -285,7 +285,8 @@ class BaseEventLoopTests(test_utils.TestCase):
     @mock.patch('asyncio.base_events.logger')
     def test__run_once_logging(self, m_logger):
         def slow_select(timeout):
-            # Sleep a bit longer than a second to avoid timer resolution issues.
+            # Sleep a bit longer than a second to avoid timer resolution
+            # issues.
             time.sleep(1.1)
             return []
 
@@ -1217,14 +1218,16 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_forever()
         fmt, *args = m_logger.warning.call_args[0]
         self.assertRegex(fmt % tuple(args),
-                         "^Executing <Handle.*stop_loop_cb.*> took .* seconds$")
+                         "^Executing <Handle.*stop_loop_cb.*> "
+                         "took .* seconds$")
 
         # slow task
         asyncio.async(stop_loop_coro(self.loop), loop=self.loop)
         self.loop.run_forever()
         fmt, *args = m_logger.warning.call_args[0]
         self.assertRegex(fmt % tuple(args),
-                         "^Executing <Task.*stop_loop_coro.*> took .* seconds$")
+                         "^Executing <Task.*stop_loop_coro.*> "
+                         "took .* seconds$")
 
 
 if __name__ == '__main__':
