@@ -182,14 +182,18 @@ def _format_coroutine(coro):
     and not inspect.isgeneratorfunction(coro.func)):
         filename, lineno = events._get_function_source(coro.func)
         if coro.gi_frame is None:
-            coro_repr = '%s() done, defined at %s:%s' % (coro_name, filename, lineno)
+            coro_repr = ('%s() done, defined at %s:%s'
+                         % (coro_name, filename, lineno))
         else:
-            coro_repr = '%s() running, defined at %s:%s' % (coro_name, filename, lineno)
+            coro_repr = ('%s() running, defined at %s:%s'
+                         % (coro_name, filename, lineno))
     elif coro.gi_frame is not None:
         lineno = coro.gi_frame.f_lineno
-        coro_repr = '%s() running at %s:%s' % (coro_name, filename, lineno)
+        coro_repr = ('%s() running at %s:%s'
+                     % (coro_name, filename, lineno))
     else:
         lineno = coro.gi_code.co_firstlineno
-        coro_repr = '%s() done, defined at %s:%s' % (coro_name, filename, lineno)
+        coro_repr = ('%s() done, defined at %s:%s'
+                     % (coro_name, filename, lineno))
 
     return coro_repr

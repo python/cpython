@@ -68,7 +68,7 @@ class Task(futures.Future):
         return {t for t in cls._all_tasks if t._loop is loop}
 
     def __init__(self, coro, *, loop=None):
-        assert coroutines.iscoroutine(coro), repr(coro)  # Not a coroutine function!
+        assert coroutines.iscoroutine(coro), repr(coro)
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]

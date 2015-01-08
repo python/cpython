@@ -55,8 +55,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return _SelectorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
-    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None, *,
-                            server_side=False, server_hostname=None,
+    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
+                            *, server_side=False, server_hostname=None,
                             extra=None, server=None):
         return _SelectorSslTransport(
             self, rawsock, protocol, sslcontext, waiter,
@@ -484,7 +484,8 @@ class _SelectorTransport(transports._FlowControlMixin,
                 info.append('read=idle')
 
             polling = _test_selector_event(self._loop._selector,
-                                           self._sock_fd, selectors.EVENT_WRITE)
+                                           self._sock_fd,
+                                           selectors.EVENT_WRITE)
             if polling:
                 state = 'polling'
             else:

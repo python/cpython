@@ -133,7 +133,8 @@ class FutureTests(test_utils.TestCase):
         exc = RuntimeError()
         f_exception = asyncio.Future(loop=self.loop)
         f_exception.set_exception(exc)
-        self.assertEqual(repr(f_exception), '<Future finished exception=RuntimeError()>')
+        self.assertEqual(repr(f_exception),
+                         '<Future finished exception=RuntimeError()>')
         self.assertIs(f_exception.exception(), exc)
 
         def func_repr(func):
@@ -332,16 +333,21 @@ class FutureTests(test_utils.TestCase):
             if debug:
                 frame = source_traceback[-1]
                 regex = (r'^Future exception was never retrieved\n'
-                         r'future: <Future finished exception=MemoryError\(\) created at {filename}:{lineno}>\n'
-                         r'source_traceback: Object created at \(most recent call last\):\n'
+                         r'future: <Future finished exception=MemoryError\(\) '
+                             r'created at {filename}:{lineno}>\n'
+                         r'source_traceback: Object '
+                            r'created at \(most recent call last\):\n'
                          r'  File'
                          r'.*\n'
-                         r'  File "{filename}", line {lineno}, in check_future_exception_never_retrieved\n'
+                         r'  File "{filename}", line {lineno}, '
+                            r'in check_future_exception_never_retrieved\n'
                          r'    future = asyncio\.Future\(loop=self\.loop\)$'
-                         ).format(filename=re.escape(frame[0]), lineno=frame[1])
+                         ).format(filename=re.escape(frame[0]),
+                                  lineno=frame[1])
             else:
                 regex = (r'^Future exception was never retrieved\n'
-                         r'future: <Future finished exception=MemoryError\(\)>$'
+                         r'future: '
+                            r'<Future finished exception=MemoryError\(\)>$'
                          )
             exc_info = (type(exc), exc, exc.__traceback__)
             m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
@@ -352,12 +358,14 @@ class FutureTests(test_utils.TestCase):
                          r'Future/Task created at \(most recent call last\):\n'
                          r'  File'
                          r'.*\n'
-                         r'  File "{filename}", line {lineno}, in check_future_exception_never_retrieved\n'
+                         r'  File "{filename}", line {lineno}, '
+                            r'in check_future_exception_never_retrieved\n'
                          r'    future = asyncio\.Future\(loop=self\.loop\)\n'
                          r'Traceback \(most recent call last\):\n'
                          r'.*\n'
                          r'MemoryError$'
-                         ).format(filename=re.escape(frame[0]), lineno=frame[1])
+                         ).format(filename=re.escape(frame[0]),
+                                  lineno=frame[1])
             else:
                 regex = (r'^Future/Task exception was never retrieved\n'
                          r'Traceback \(most recent call last\):\n'
