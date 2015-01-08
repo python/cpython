@@ -576,7 +576,8 @@ if hasattr(select, 'kqueue'):
             super().close()
 
 
-# Choose the best implementation: roughly, epoll|kqueue|devpoll > poll > select.
+# Choose the best implementation, roughly:
+#    epoll|kqueue|devpoll > poll > select.
 # select() also can't accept a FD > FD_SETSIZE (usually around 1024)
 if 'KqueueSelector' in globals():
     DefaultSelector = KqueueSelector
