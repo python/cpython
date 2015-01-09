@@ -256,6 +256,7 @@ class _BaseSelectorImpl(BaseSelector):
 
     def close(self):
         self._fd_to_key.clear()
+        self._map = None
 
     def get_map(self):
         return self._map
