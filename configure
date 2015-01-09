@@ -15703,6 +15703,71 @@ $as_echo "#define HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
     esac
 fi
 
+# Check for stdatomic.h
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdatomic.h" >&5
+$as_echo_n "checking for stdatomic.h... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    #include <stdatomic.h>
+    _Atomic int value = ATOMIC_VAR_INIT(1);
+    int main() {
+      int loaded_value = atomic_load(&value);
+      return 0;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  have_stdatomic_h=yes
+else
+  have_stdatomic_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_stdatomic_h" >&5
+$as_echo "$have_stdatomic_h" >&6; }
+
+if test "$have_stdatomic_h" = yes; then
+
+$as_echo "#define HAVE_STD_ATOMIC 1" >>confdefs.h
+
+fi
+
+# Check for GCC >= 4.7 __atomic builtins
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GCC >= 4.7 __atomic builtins" >&5
+$as_echo_n "checking for GCC >= 4.7 __atomic builtins... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    volatile int val = 1;
+    int main() {
+      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      return 0;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  have_builtin_atomic=yes
+else
+  have_builtin_atomic=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_builtin_atomic" >&5
+$as_echo "$have_builtin_atomic" >&6; }
+
+if test "$have_builtin_atomic" = yes; then
+
+$as_echo "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
+
+fi
+
 # ensurepip option
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ensurepip" >&5
 $as_echo_n "checking for ensurepip... " >&6; }

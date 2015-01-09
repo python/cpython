@@ -10,6 +10,10 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22038: pyatomic.h now uses stdatomic.h or GCC built-in functions for
+  atomic memory access if available. Patch written by Vitor de Lima and Gustavo
+  Temple.
+
 - Issue #23048: Fix jumping out of an infinite while loop in the pdb.
 
 - Issue #20335: bytes constructor now raises TypeError when encoding or errors

@@ -1,11 +1,14 @@
 #ifndef Py_LIMITED_API
 #ifndef Py_ATOMIC_H
 #define Py_ATOMIC_H
-/* XXX: When compilers start offering a stdatomic.h with lock-free
-   atomic_int and atomic_address types, include that here and rewrite
-   the atomic operations in terms of it. */
 
 #include "dynamic_annotations.h"
+
+#include "pyconfig.h"
+
+#if defined(HAVE_STD_ATOMIC)
+#include <stdatomic.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +22,76 @@ extern "C" {
  *
  * Beware, the implementations here are deep magic.
  */
+
+#if defined(HAVE_STD_ATOMIC)
+
+typedef enum _Py_memory_order {
+    _Py_memory_order_relaxed = memory_order_relaxed,
+    _Py_memory_order_acquire = memory_order_acquire,
+    _Py_memory_order_release = memory_order_release,
+    _Py_memory_order_acq_rel = memory_order_acq_rel,
+    _Py_memory_order_seq_cst = memory_order_seq_cst
+} _Py_memory_order;
+
+typedef struct _Py_atomic_address {
+    _Atomic void *_value;
+} _Py_atomic_address;
+
+typedef struct _Py_atomic_int {
+    atomic_int _value;
+} _Py_atomic_int;
+
+#define _Py_atomic_signal_fence(/*memory_order*/ ORDER) \
+    atomic_signal_fence(ORDER)
+
+#define _Py_atomic_thread_fence(/*memory_order*/ ORDER) \
+    atomic_thread_fence(ORDER)
+
+#define _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, ORDER) \
+    atomic_store_explicit(&(ATOMIC_VAL)->_value, NEW_VAL, ORDER)
+
+#define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
+    atomic_load_explicit(&(ATOMIC_VAL)->_value, ORDER)
+
+/* Use builtin atomic operations in GCC >= 4.7 */
+#elif defined(HAVE_BUILTIN_ATOMIC)
+
+typedef enum _Py_memory_order {
+    _Py_memory_order_relaxed = __ATOMIC_RELAXED,
+    _Py_memory_order_acquire = __ATOMIC_ACQUIRE,
+    _Py_memory_order_release = __ATOMIC_RELEASE,
+    _Py_memory_order_acq_rel = __ATOMIC_ACQ_REL,
+    _Py_memory_order_seq_cst = __ATOMIC_SEQ_CST
+} _Py_memory_order;
+
+typedef struct _Py_atomic_address {
+    void *_value;
+} _Py_atomic_address;
+
+typedef struct _Py_atomic_int {
+    int _value;
+} _Py_atomic_int;
+
+#define _Py_atomic_signal_fence(/*memory_order*/ ORDER) \
+    __atomic_signal_fence(ORDER)
+
+#define _Py_atomic_thread_fence(/*memory_order*/ ORDER) \
+    __atomic_thread_fence(ORDER)
+
+#define _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, ORDER) \
+    (assert((ORDER) == __ATOMIC_RELAXED                       \
+            || (ORDER) == __ATOMIC_SEQ_CST                    \
+            || (ORDER) == __ATOMIC_RELEASE),                  \
+     __atomic_store_n(&(ATOMIC_VAL)->_value, NEW_VAL, ORDER))
+
+#define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER)           \
+    (assert((ORDER) == __ATOMIC_RELAXED                       \
+            || (ORDER) == __ATOMIC_SEQ_CST                    \
+            || (ORDER) == __ATOMIC_ACQUIRE                    \
+            || (ORDER) == __ATOMIC_CONSUME),                  \
+     __atomic_load_n(&(ATOMIC_VAL)->_value, ORDER))
+
+#else
 
 typedef enum _Py_memory_order {
     _Py_memory_order_relaxed,
@@ -162,6 +235,7 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
     ((ATOMIC_VAL)->_value)
 
 #endif  /* !gcc x86 */
+#endif
 
 /* Standardized shortcuts. */
 #define _Py_atomic_store(ATOMIC_VAL, NEW_VAL) \
