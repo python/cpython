@@ -182,6 +182,7 @@ class WriteSubprocessPipeProto(protocols.BaseProtocol):
     def connection_lost(self, exc):
         self.disconnected = True
         self.proc._pipe_connection_lost(self.fd, exc)
+        self.proc = None
 
     def pause_writing(self):
         self.proc._protocol.pause_writing()
