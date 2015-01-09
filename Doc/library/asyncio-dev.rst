@@ -74,6 +74,11 @@ the event loop.
    The :ref:`Synchronization primitives <asyncio-sync>` section describes ways
    to synchronize tasks.
 
+   The :ref:`Subprocess and threads <asyncio-subprocess-threads>` section lists
+   asyncio limitations to run subprocesses from different threads.
+
+
+
 
 .. _asyncio-handle-blocking:
 
