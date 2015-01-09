@@ -139,7 +139,7 @@ PyDoc_STRVAR(range_doc,
 "range(stop) -> range object\n\
 range(start, stop[, step]) -> range object\n\
 \n\
-Return a virtual sequence of numbers from start to stop by step.");
+Return a sequence of numbers from start to stop by step.");
 
 static void
 range_dealloc(rangeobject *r)
