@@ -456,6 +456,14 @@ Changes in the Python API
   `http.client` and `http.server` remain available for backwards compatibility.
   (Contributed by Demian Brecht in :issue:`21793`.)
 
+* When an import loader defines :meth:`~importlib.machinery.Loader.exec_module`
+  it is now expected to also define
+  :meth:`~importlib.machinery.Loader.create_module` (raises a
+  :exc:`DeprecationWarning` now, will be an error in Python 3.6). If the loader
+  inherits from :class:`importlib.abc.Loader` then there is nothing to do, else
+  simply define :meth:`~importlib.machinery.Loader.create_module` to return
+  ``None`` (:issue:`23014`).
+
 Changes in the C API
 --------------------
 

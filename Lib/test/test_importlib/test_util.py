@@ -41,10 +41,16 @@ class DecodeSourceBytesTests:
 class ModuleFromSpecTests:
 
     def test_no_create_module(self):
-        class Loader(self.abc.Loader):
-            pass
+        class Loader:
+            def exec_module(self, module):
+                pass
         spec = self.machinery.ModuleSpec('test', Loader())
-        module = self.util.module_from_spec(spec)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            module = self.util.module_from_spec(spec)
+        self.assertEqual(1, len(w))
+        self.assertTrue(issubclass(w[0].category, DeprecationWarning))
+        self.assertIn('create_module', str(w[0].message))
         self.assertIsInstance(module, types.ModuleType)
         self.assertEqual(module.__name__, spec.name)
 

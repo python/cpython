@@ -11,6 +11,9 @@ class SpecLoaderMock:
     def find_spec(self, fullname, path=None, target=None):
         return machinery.ModuleSpec(fullname, self)
 
+    def create_module(self, spec):
+        return None
+
     def exec_module(self, module):
         pass
 

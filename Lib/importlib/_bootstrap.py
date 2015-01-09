@@ -1055,6 +1055,10 @@ def module_from_spec(spec):
         # If create_module() returns `None` then it means default
         # module creation should be used.
         module = spec.loader.create_module(spec)
+    elif hasattr(spec.loader, 'exec_module'):
+        _warnings.warn('starting in Python 3.6, loaders defining exec_module() '
+                       'must also define create_module()',
+                       DeprecationWarning, stacklevel=2)
     if module is None:
         module = _new_module(spec.name)
     _init_module_attrs(spec, module)
@@ -1298,6 +1302,10 @@ class FrozenImporter:
         """
         return cls if _imp.is_frozen(fullname) else None
 
+    @classmethod
+    def create_module(cls, spec):
+        """Use default semantics for module creation."""
+
     @staticmethod
     def exec_module(module):
         name = module.__spec__.name
@@ -1410,6 +1418,9 @@ class _LoaderBasics:
         filename_base = filename.rsplit('.', 1)[0]
         tail_name = fullname.rpartition('.')[2]
         return filename_base == '__init__' and tail_name != '__init__'
+
+    def create_module(self, spec):
+        """Use default semantics for module creation."""
 
     def exec_module(self, module):
         """Execute the module."""
@@ -1770,6 +1781,9 @@ class _NamespaceLoader:
 
     def get_code(self, fullname):
         return compile('', '<string>', 'exec', dont_inherit=True)
+
+    def create_module(self, spec):
+        """Use default semantics for module creation."""
 
     def exec_module(self, module):
         pass

@@ -104,6 +104,9 @@ class PkgutilTests(unittest.TestCase):
 class PkgutilPEP302Tests(unittest.TestCase):
 
     class MyTestLoader(object):
+        def create_module(self, spec):
+            return None
+
         def exec_module(self, mod):
             # Count how many times the module is reloaded
             mod.__dict__['loads'] = mod.__dict__.get('loads', 0) + 1

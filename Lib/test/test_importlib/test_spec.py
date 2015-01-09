@@ -34,6 +34,9 @@ class TestLoader:
     def _is_package(self, name):
         return self.package
 
+    def create_module(self, spec):
+        return None
+
 
 class NewLoader(TestLoader):
 

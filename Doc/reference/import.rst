@@ -339,6 +339,7 @@ of what happens during the loading portion of import::
 
     module = None
     if spec.loader is not None and hasattr(spec.loader, 'create_module'):
+        # It is assumed 'exec_module' will also be defined on the loader.
         module = spec.loader.create_module(spec)
     if module is None:
         module = ModuleType(spec.name)
@@ -427,7 +428,7 @@ Module loaders may opt in to creating the module object during loading
 by implementing a :meth:`~importlib.abc.Loader.create_module` method.
 It takes one argument, the module spec, and returns the new module object
 to use during loading.  ``create_module()`` does not need to set any attributes
-on the module object.  If the loader does not define ``create_module()``, the
+on the module object.  If the method returns ``None``, the
 import machinery will create the new module itself.
 
 .. versionadded:: 3.4
@@ -461,6 +462,11 @@ import machinery will create the new module itself.
       into :data:`sys.modules`, but it must remove **only** the failing
       module(s), and only if the loader itself has loaded the module(s)
       explicitly.
+
+.. versionchanged:: 3.5
+   A :exc:`DeprecationWarning` is raised when ``exec_module()`` is defined but
+   ``create_module()`` is not. Starting in Python 3.6 it will be an error to not
+   define ``create_module()`` on a loader attached to a ModuleSpec.
 
 Module spec
 -----------
