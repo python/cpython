@@ -496,9 +496,6 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
     def can_write_eof(self):
         return True
 
-    # TODO: Make the relationships between write_eof(), close(),
-    # abort(), _fatal_error() and _close() more straightforward.
-
     def write_eof(self):
         if self._closing:
             return
@@ -897,7 +894,7 @@ class FastChildWatcher(BaseChildWatcher):
 
 
 class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
-    """XXX"""
+    """UNIX event loop policy with a watcher for child processes."""
     _loop_factory = _UnixSelectorEventLoop
 
     def __init__(self):
