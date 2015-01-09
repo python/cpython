@@ -87,7 +87,8 @@ Common limits of Windows event loops:
 
 :class:`SelectorEventLoop` specific limits:
 
-- :class:`~selectors.SelectSelector` is used but it only supports sockets
+- :class:`~selectors.SelectSelector` is used which only supports sockets
+  and is limited to 512 sockets.
 - :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` only
   accept file descriptors of sockets
 - Pipes are not supported
