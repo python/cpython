@@ -405,5 +405,5 @@ def wrap_future(fut, *, loop=None):
     new_future.add_done_callback(_check_cancel_other)
     fut.add_done_callback(
         lambda future: loop.call_soon_threadsafe(
-            new_future._copy_state, fut))
+            new_future._copy_state, future))
     return new_future
