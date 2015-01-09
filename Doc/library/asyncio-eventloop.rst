@@ -681,12 +681,12 @@ Handle
 
 
 Event loop examples
-===================
+-------------------
 
 .. _asyncio-hello-world-callback:
 
 Hello World with call_soon()
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example using the :meth:`BaseEventLoop.call_soon` method to schedule a
 callback. The callback displays ``"Hello World"`` and then stops the event
@@ -716,7 +716,7 @@ loop::
 .. _asyncio-date-callback:
 
 Display the current date with call_later()
-------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example of callback displaying the current date every second. The callback uses
 the :meth:`BaseEventLoop.call_later` method to reschedule itself during 5
@@ -752,7 +752,7 @@ seconds, and then stops the event loop::
 .. _asyncio-watch-read-event:
 
 Watch a file descriptor for read events
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Wait until a file descriptor received some data using the
 :meth:`BaseEventLoop.add_reader` method and then close the event loop::
@@ -801,7 +801,7 @@ Wait until a file descriptor received some data using the
 
 
 Set signal handlers for SIGINT and SIGTERM
-------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM` using
 the :meth:`BaseEventLoop.add_signal_handler` method::
