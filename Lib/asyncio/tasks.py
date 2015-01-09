@@ -582,11 +582,12 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
 
     def _done_callback(i, fut):
         nonlocal nfinished
-        if outer._state != futures._PENDING:
-            if fut._exception is not None:
+        if outer.done():
+            if not fut.cancelled():
                 # Mark exception retrieved.
                 fut.exception()
             return
+
         if fut._state == futures._CANCELLED:
             res = futures.CancelledError()
             if not return_exceptions:
@@ -644,9 +645,11 @@ def shield(arg, *, loop=None):
 
     def _done_callback(inner):
         if outer.cancelled():
-            # Mark inner's result as retrieved.
-            inner.cancelled() or inner.exception()
+            if not inner.cancelled():
+                # Mark inner's result as retrieved.
+                inner.exception()
             return
+
         if inner.cancelled():
             outer.cancel()
         else:
