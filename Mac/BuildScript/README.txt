@@ -21,9 +21,6 @@ transforming the output build artifacts into signed flat packages is not
 yet integrated into ``build-installer.py``.  The steps prior to the flat
 package creation are the same as for 3.4.1 below.
 
-For Python 3.4.0 and 3.4.1, PSF practice was to build two installer variants
-for each release.
-
 1.  32-bit-only, i386 and PPC universal, capable on running on all machines
     supported by Mac OS X 10.5 through (at least) 10.9::
 
@@ -34,6 +31,7 @@ for each release.
 
     - builds the following third-party libraries
 
+        * libcrypto and libssl from OpenSSL 1.0.1 (new, as of 3.4.3)
         * NCurses 5.9 (http://bugs.python.org/issue15037)
         * SQLite 3.8.3.1
         * XZ 5.0.5
@@ -75,6 +73,7 @@ for each release.
 
     - uses system-supplied versions of third-party libraries
 
+        * libcrypto and libssl from Apple OpenSSL 0.9.8
         * readline module links with Apple BSD editline (libedit)
 
     - requires ActiveState Tcl/Tk 8.5.15.1 (or later) to be installed for building
@@ -101,47 +100,6 @@ for each release.
           available on the deprecated Xcode 4.x for 10.6 were early releases
           and did not receive the level of exposure in production environments
           that the Xcode 3 gcc-4.2 compiler has had.
-
-
-*   For Python 2.7.x and 3.2.x, the 32-bit-only installer was configured to
-    support Mac OS X 10.3.9 through (at least) 10.6.  Because it is
-    believed that there are few systems still running OS X 10.3 or 10.4
-    and because it has become increasingly difficult to test and
-    support the differences in these earlier systems, as of Python 3.3.0 the PSF
-    32-bit installer no longer supports them.  For reference in building such
-    an installer yourself, the details are::
-
-        /usr/bin/python build-installer.py \
-            --sdk-path=/Developer/SDKs/MacOSX10.4u.sdk \
-            --universal-archs=32-bit \
-            --dep-target=10.3 
-
-    - builds the following third-party libraries
-
-        * Bzip2
-        * NCurses
-        * GNU Readline (GPL)
-        * SQLite 3
-        * XZ
-        * Zlib 1.2.3
-        * Oracle Sleepycat DB 4.8 (Python 2.x only)
-
-    - requires ActiveState ``Tcl/Tk 8.4`` (currently 8.4.20) to be installed for building
-
-    - recommended build environment:
-        
-        * Mac OS X 10.5.8 PPC or Intel
-        * Xcode 3.1.4 (or later)
-        * ``MacOSX10.4u`` SDK (later SDKs do not support PPC G3 processors)
-        * ``MACOSX_DEPLOYMENT_TARGET=10.3``
-        * Apple ``gcc-4.0``
-        * system Python 2.5 for documentation build with Sphinx
-
-    - alternate build environments:
-
-        * Mac OS X 10.6.8 with Xcode 3.2.6
-            - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
-
 
 
 General Prerequisites
