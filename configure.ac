@@ -4884,6 +4884,45 @@ if test "$have_gcc_asm_for_x87" = yes; then
     esac
 fi
 
+# Check for stdatomic.h
+AC_MSG_CHECKING(for stdatomic.h)
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <stdatomic.h>
+    _Atomic int value = ATOMIC_VAR_INIT(1);
+    int main() {
+      int loaded_value = atomic_load(&value);
+      return 0;
+    }
+  ]])
+],[have_stdatomic_h=yes],[have_stdatomic_h=no])
+
+AC_MSG_RESULT($have_stdatomic_h)
+
+if test "$have_stdatomic_h" = yes; then
+    AC_DEFINE(HAVE_STD_ATOMIC, 1, [Has stdatomic.h])
+fi
+
+# Check for GCC >= 4.7 __atomic builtins
+AC_MSG_CHECKING(for GCC >= 4.7 __atomic builtins)
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    volatile int val = 1;
+    int main() {
+      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      return 0;
+    }
+  ]])
+],[have_builtin_atomic=yes],[have_builtin_atomic=no])
+
+AC_MSG_RESULT($have_builtin_atomic)
+
+if test "$have_builtin_atomic" = yes; then
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin atomics])
+fi
+
 # ensurepip option
 AC_MSG_CHECKING(for ensurepip)
 AC_ARG_WITH(ensurepip,
