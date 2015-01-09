@@ -297,6 +297,25 @@ Process
       ``N`` (Unix only).
 
 
+.. _asyncio-subprocess-threads:
+
+Subprocess and threads
+======================
+
+asyncio supports running subprocesses from different threads, but there
+are limits:
+
+* An event loop must run in the main thread
+* The child watcher must be instantiated in the main thread, before executing
+  subprocesses from other threads. Call the :func:`get_child_watcher`
+  function in the main thread to instantiate the child watcher.
+
+.. seealso::
+
+   The :ref:`Concurrency and multithreading in asyncio
+   <asyncio-multithreading>` section.
+
+
 Subprocess examples
 ===================
 
