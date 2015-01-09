@@ -101,6 +101,9 @@
 /* Define if `unsetenv` does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
+/* Has builtin atomics */
+#undef HAVE_BUILTIN_ATOMIC
+
 /* Define this if you have the type _Bool. */
 #undef HAVE_C99_BOOL
 
@@ -876,6 +879,9 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Has stdatomic.h */
+#undef HAVE_STD_ATOMIC
 
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
