@@ -625,6 +625,25 @@ os.close(fd)
         data = self.loop.run_until_complete(reader.read(-1))
         self.assertEqual(data, b'data')
 
+    def test_streamreader_constructor(self):
+        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
+
+        # Tulip issue #184: Ensure that StreamReaderProtocol constructor
+        # retrieves the current loop if the loop parameter is not set
+        reader = asyncio.StreamReader()
+        self.assertIs(reader._loop, self.loop)
+
+    def test_streamreaderprotocol_constructor(self):
+        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
+
+        # Tulip issue #184: Ensure that StreamReaderProtocol constructor
+        # retrieves the current loop if the loop parameter is not set
+        reader = mock.Mock()
+        protocol = asyncio.StreamReaderProtocol(reader)
+        self.assertIs(protocol._loop, self.loop)
+
 
 if __name__ == '__main__':
     unittest.main()

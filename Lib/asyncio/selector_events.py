@@ -145,7 +145,6 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass  # False alarm.
         except OSError as exc:
             # There's nowhere to send the error, so just log it.
-            # TODO: Someone will want an error handler for this.
             if exc.errno in (errno.EMFILE, errno.ENFILE,
                              errno.ENOBUFS, errno.ENOMEM):
                 # Some platforms (e.g. Linux keep reporting the FD as
