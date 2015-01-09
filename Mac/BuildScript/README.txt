@@ -30,7 +30,7 @@ yet integrated into ``build-installer.py``.
 
     - builds the following third-party libraries
 
-        * libcrypto and libssl from OpenSSL 1.0.1j
+        * libcrypto and libssl from OpenSSL 1.0.1
         * NCurses 5.9
         * SQLite 3.7.13
         * Oracle Sleepycat DB 4.8 (Python 2.x only)

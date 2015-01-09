@@ -92,6 +92,8 @@ Build
 - Issue #23032: Fix installer build failures on OS X 10.4 Tiger
   by disabling assembly code in the OpenSSL build.
 
+- Issue #23212: Update 10.5 OS X installer build to use OpenSSL 1.0.1k.
+
 
 What's New in Python 2.7.9?
 ===========================
