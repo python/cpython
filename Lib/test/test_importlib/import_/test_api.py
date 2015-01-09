@@ -17,6 +17,10 @@ class BadSpecFinderLoader:
             return spec
 
     @staticmethod
+    def create_module(spec):
+        return None
+
+    @staticmethod
     def exec_module(module):
         if module.__name__ == SUBMOD_NAME:
             raise ImportError('I cannot be loaded!')

@@ -122,9 +122,6 @@ class Loader(metaclass=abc.ABCMeta):
         This method should raise ImportError if anything prevents it
         from creating a new module.  It may return None to indicate
         that the spec should create the new module.
-
-        create_module() is optional.
-
         """
         # By default, defer to default semantics for the new module.
         return None
