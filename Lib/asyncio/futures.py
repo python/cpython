@@ -20,7 +20,6 @@ _FINISHED = 'FINISHED'
 
 _PY34 = sys.version_info >= (3, 4)
 
-# TODO: Do we really want to depend on concurrent.futures internals?
 Error = concurrent.futures._base.Error
 CancelledError = concurrent.futures.CancelledError
 TimeoutError = concurrent.futures.TimeoutError
@@ -30,7 +29,6 @@ STACK_DEBUG = logging.DEBUG - 1  # heavy-duty debugging
 
 class InvalidStateError(Error):
     """The operation is not allowed in this state."""
-    # TODO: Show the future, its state, the method, and the required state.
 
 
 class _TracebackLogger:

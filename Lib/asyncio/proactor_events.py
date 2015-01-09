@@ -487,7 +487,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self.call_soon(loop)
 
     def _process_events(self, event_list):
-        pass    # XXX hard work currently done in poll
+        # Events are processed in the IocpProactor._poll() method
+        pass
 
     def _stop_accept_futures(self):
         for future in self._accept_futures.values():
