@@ -1983,7 +1983,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         for pwdent in pwd.getpwall():
             othername = pwdent.pw_name
             otherhome = pwdent.pw_dir.rstrip('/')
-            if othername != username:
+            if othername != username and otherhome:
                 break
 
         p1 = P('~/Documents')
