@@ -243,6 +243,12 @@ re
 * Now unmatched groups are replaced with empty strings in :func:`re.sub`
   and :func:`re.subn`.  (Contributed by Serhiy Storchaka in :issue:`1519638`.)
 
+math
+----
+
+* :data:`math.inf` and :data:`math.nan` constants added.  (Contributed by Mark
+  Dickinson in :issue:`23185`.)
+
 shutil
 ------
 

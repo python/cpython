@@ -983,6 +983,17 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isinf(0.))
         self.assertFalse(math.isinf(1.))
 
+    @requires_IEEE_754
+    def test_nan_constant(self):
+        self.assertTrue(math.isnan(math.nan))
+
+    @requires_IEEE_754
+    def test_inf_constant(self):
+        self.assertTrue(math.isinf(math.inf))
+        self.assertGreater(math.inf, 0.0)
+        self.assertEqual(math.inf, float("inf"))
+        self.assertEqual(-math.inf, float("-inf"))
+
     # RED_FLAG 16-Oct-2000 Tim
     # While 2.0 is more consistent about exceptions than previous releases, it
     # still fails this part of the test on some platforms.  For now, we only

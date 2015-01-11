@@ -223,6 +223,35 @@ lanczos_sum(double x)
     return num/den;
 }
 
+/* Constant for +infinity, generated in the same way as float('inf'). */
+
+static double
+m_inf(void)
+{
+#ifndef PY_NO_SHORT_FLOAT_REPR
+    return _Py_dg_infinity(0);
+#else
+    return Py_HUGE_VAL;
+#endif
+}
+
+/* Constant nan value, generated in the same way as float('nan'). */
+/* We don't currently assume that Py_NAN is defined everywhere. */
+
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+
+static double
+m_nan(void)
+{
+#ifndef PY_NO_SHORT_FLOAT_REPR
+    return _Py_dg_stdnan(0);
+#else
+    return Py_NAN;
+#endif
+}
+
+#endif
+
 static double
 m_tgamma(double x)
 {
@@ -2009,7 +2038,11 @@ PyInit_math(void)
 
     PyModule_AddObject(m, "pi", PyFloat_FromDouble(Py_MATH_PI));
     PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
+    PyModule_AddObject(m, "inf", PyFloat_FromDouble(m_inf()));
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+    PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));
+#endif
 
-    finally:
+  finally:
     return m;
 }
