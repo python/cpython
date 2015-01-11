@@ -203,6 +203,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23185: Add math.inf and math.nan constants.
+
 - Issue #23186: Add ssl.SSLObject.shared_ciphers() and
   ssl.SSLSocket.shared_ciphers() to fetch the client's list ciphers sent at
   handshake.

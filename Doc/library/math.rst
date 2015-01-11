@@ -383,6 +383,22 @@ Constants
    The mathematical constant e = 2.718281..., to available precision.
 
 
+.. data:: inf
+
+   A floating-point positive infinity.  (For negative infinity, use
+   ``-math.inf``.)  Equivalent to the output of ``float('inf')``.
+
+   .. versionadded:: 3.5
+
+
+.. data:: nan
+
+   A floating-point "not a number" (NaN) value.  Equivalent to the output of
+   ``float('nan')``.
+
+   .. versionadded:: 3.5
+
+
 .. impl-detail::
 
    The :mod:`math` module consists mostly of thin wrappers around the platform C
