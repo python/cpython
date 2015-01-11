@@ -186,7 +186,6 @@ endpats = {"'": Single, '"': Double,
            "rB'''": Single3, 'rB"""': Double3,
            "RB'''": Single3, 'RB"""': Double3,
            "u'''": Single3, 'u"""': Double3,
-           "R'''": Single3, 'R"""': Double3,
            "U'''": Single3, 'U"""': Double3,
            'r': None, 'R': None, 'b': None, 'B': None,
            'u': None, 'U': None}
