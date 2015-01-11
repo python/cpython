@@ -161,13 +161,13 @@ Hyperbolic functions
 
 .. function:: acosh(x)
 
-   Return the hyperbolic arc cosine of *x*. There is one branch cut, extending left
-   from 1 along the real axis to -∞, continuous from above.
+   Return the inverse hyperbolic cosine of *x*. There is one branch cut,
+   extending left from 1 along the real axis to -∞, continuous from above.
 
 
 .. function:: asinh(x)
 
-   Return the hyperbolic arc sine of *x*. There are two branch cuts:
+   Return the inverse hyperbolic sine of *x*. There are two branch cuts:
    One extends from ``1j`` along the imaginary axis to ``∞j``,
    continuous from the right.  The other extends from ``-1j`` along
    the imaginary axis to ``-∞j``, continuous from the left.
@@ -178,7 +178,7 @@ Hyperbolic functions
 
 .. function:: atanh(x)
 
-   Return the hyperbolic arc tangent of *x*. There are two branch cuts: One
+   Return the inverse hyperbolic tangent of *x*. There are two branch cuts: One
    extends from ``1`` along the real axis to ``∞``, continuous from below. The
    other extends from ``-1`` along the real axis to ``-∞``, continuous from
    above.
