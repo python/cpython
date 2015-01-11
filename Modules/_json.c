@@ -47,7 +47,7 @@ typedef struct _PyEncoderObject {
     PyObject *item_separator;
     PyObject *sort_keys;
     PyObject *skipkeys;
-    int fast_encode;
+    PyCFunction fast_encode;
     int allow_nan;
 } PyEncoderObject;
 
@@ -212,6 +212,97 @@ ascii_escape_unicode(PyObject *pystr)
         }
     }
     output[chars++] = '"';
+#ifdef Py_DEBUG
+    assert(_PyUnicode_CheckConsistency(rval, 1));
+#endif
+    return rval;
+}
+
+static PyObject *
+escape_unicode(PyObject *pystr)
+{
+    /* Take a PyUnicode pystr and return a new escaped PyUnicode */
+    Py_ssize_t i;
+    Py_ssize_t input_chars;
+    Py_ssize_t output_size;
+    Py_ssize_t chars;
+    PyObject *rval;
+    void *input;
+    int kind;
+    Py_UCS4 maxchar;
+
+    if (PyUnicode_READY(pystr) == -1)
+        return NULL;
+
+    maxchar = PyUnicode_MAX_CHAR_VALUE(pystr);
+    input_chars = PyUnicode_GET_LENGTH(pystr);
+    input = PyUnicode_DATA(pystr);
+    kind = PyUnicode_KIND(pystr);
+
+    /* Compute the output size */
+    for (i = 0, output_size = 2; i < input_chars; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, input, i);
+        switch (c) {
+        case '\\': case '"': case '\b': case '\f':
+        case '\n': case '\r': case '\t':
+            output_size += 2;
+            break;
+        default:
+            if (c <= 0x1f)
+                output_size += 6;
+            else
+                output_size++;
+        }
+    }
+
+    rval = PyUnicode_New(output_size, maxchar);
+    if (rval == NULL)
+        return NULL;
+
+    kind = PyUnicode_KIND(rval);
+
+#define ENCODE_OUTPUT do { \
+        chars = 0; \
+        output[chars++] = '"'; \
+        for (i = 0; i < input_chars; i++) { \
+            Py_UCS4 c = PyUnicode_READ(kind, input, i); \
+            switch (c) { \
+            case '\\': output[chars++] = '\\'; output[chars++] = c; break; \
+            case '"':  output[chars++] = '\\'; output[chars++] = c; break; \
+            case '\b': output[chars++] = '\\'; output[chars++] = 'b'; break; \
+            case '\f': output[chars++] = '\\'; output[chars++] = 'f'; break; \
+            case '\n': output[chars++] = '\\'; output[chars++] = 'n'; break; \
+            case '\r': output[chars++] = '\\'; output[chars++] = 'r'; break; \
+            case '\t': output[chars++] = '\\'; output[chars++] = 't'; break; \
+            default: \
+                if (c <= 0x1f) { \
+                    output[chars++] = '\\'; \
+                    output[chars++] = 'u'; \
+                    output[chars++] = '0'; \
+                    output[chars++] = '0'; \
+                    output[chars++] = Py_hexdigits[(c >> 4) & 0xf]; \
+                    output[chars++] = Py_hexdigits[(c     ) & 0xf]; \
+                } else { \
+                    output[chars++] = c; \
+                } \
+            } \
+        } \
+        output[chars++] = '"'; \
+    } while (0)
+
+    if (kind == PyUnicode_1BYTE_KIND) {
+        Py_UCS1 *output = PyUnicode_1BYTE_DATA(rval);
+        ENCODE_OUTPUT;
+    } else if (kind == PyUnicode_2BYTE_KIND) {
+        Py_UCS2 *output = PyUnicode_2BYTE_DATA(rval);
+        ENCODE_OUTPUT;
+    } else {
+        Py_UCS4 *output = PyUnicode_4BYTE_DATA(rval);
+        assert(kind == PyUnicode_4BYTE_KIND);
+        ENCODE_OUTPUT;
+    }
+#undef ENCODE_OUTPUT
+
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(rval, 1));
 #endif
@@ -520,6 +611,31 @@ py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr)
     /* METH_O */
     if (PyUnicode_Check(pystr)) {
         rval = ascii_escape_unicode(pystr);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "first argument must be a string, not %.80s",
+                     Py_TYPE(pystr)->tp_name);
+        return NULL;
+    }
+    return rval;
+}
+
+
+PyDoc_STRVAR(pydoc_encode_basestring,
+    "encode_basestring(string) -> string\n"
+    "\n"
+    "Return a JSON representation of a Python string"
+);
+
+static PyObject *
+py_encode_basestring(PyObject* self UNUSED, PyObject *pystr)
+{
+    PyObject *rval;
+    /* Return a JSON representation of a Python string */
+    /* METH_O */
+    if (PyUnicode_Check(pystr)) {
+        rval = escape_unicode(pystr);
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -1223,7 +1339,14 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
     s->item_separator = item_separator;
     s->sort_keys = sort_keys;
     s->skipkeys = skipkeys;
-    s->fast_encode = (PyCFunction_Check(s->encoder) && PyCFunction_GetFunction(s->encoder) == (PyCFunction)py_encode_basestring_ascii);
+    s->fast_encode = NULL;
+    if (PyCFunction_Check(s->encoder)) {
+        PyCFunction f = PyCFunction_GetFunction(s->encoder);
+        if (f == (PyCFunction)py_encode_basestring_ascii ||
+                f == (PyCFunction)py_encode_basestring) {
+            s->fast_encode = f;
+        }
+    }
     s->allow_nan = PyObject_IsTrue(allow_nan);
 
     Py_INCREF(s->markers);
@@ -1372,7 +1495,7 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
 {
     /* Return the JSON representation of a string */
     if (s->fast_encode)
-        return py_encode_basestring_ascii(NULL, obj);
+        return s->fast_encode(NULL, obj);
     else
         return PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
 }
@@ -1840,6 +1963,10 @@ static PyMethodDef speedups_methods[] = {
         (PyCFunction)py_encode_basestring_ascii,
         METH_O,
         pydoc_encode_basestring_ascii},
+    {"encode_basestring",
+        (PyCFunction)py_encode_basestring,
+        METH_O,
+        pydoc_encode_basestring},
     {"scanstring",
         (PyCFunction)py_scanstring,
         METH_VARARGS,
