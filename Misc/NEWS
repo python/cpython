@@ -203,6 +203,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23206: Make ``json.dumps(..., ensure_ascii=False)`` as fast as the
+  default case of ``ensure_ascii=True``.  Patch by Naoki Inada.
+
 - Issue #23185: Add math.inf and math.nan constants.
 
 - Issue #23186: Add ssl.SSLObject.shared_ciphers() and
