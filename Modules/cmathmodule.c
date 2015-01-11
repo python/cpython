@@ -207,7 +207,7 @@ static Py_complex acosh_special_values[7][7];
 /*[clinic input]
 cmath.acosh = cmath.acos
 
-Return the hyperbolic arccosine of z.
+Return the inverse hyperbolic cosine of z.
 [clinic start generated code]*/
 
 static Py_complex
@@ -262,7 +262,7 @@ static Py_complex asinh_special_values[7][7];
 /*[clinic input]
 cmath.asinh = cmath.acos
 
-Return the hyperbolic arc sine of z.
+Return the inverse hyperbolic sine of z.
 [clinic start generated code]*/
 
 static Py_complex
@@ -353,7 +353,7 @@ static Py_complex atanh_special_values[7][7];
 /*[clinic input]
 cmath.atanh = cmath.acos
 
-Return the hyperbolic arc tangent of z.
+Return the inverse hyperbolic tangent of z.
 [clinic start generated code]*/
 
 static Py_complex
