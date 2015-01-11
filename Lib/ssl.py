@@ -573,8 +573,8 @@ class SSLObject:
         return self._sslobj.cipher()
 
     def shared_ciphers(self):
-        """Return the a list of ciphers shared by the client during the
-        handshake or None if this is not a valid server connection.
+        """Return a list of ciphers shared by the client during the handshake or
+        None if this is not a valid server connection.
         """
         return self._sslobj.shared_ciphers()
 
