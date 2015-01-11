@@ -49,7 +49,7 @@ PyDoc_STRVAR(cmath_acosh__doc__,
 "acosh($module, z, /)\n"
 "--\n"
 "\n"
-"Return the hyperbolic arccosine of z.");
+"Return the inverse hyperbolic cosine of z.");
 
 #define CMATH_ACOSH_METHODDEF    \
     {"acosh", (PyCFunction)cmath_acosh, METH_VARARGS, cmath_acosh__doc__},
@@ -135,7 +135,7 @@ PyDoc_STRVAR(cmath_asinh__doc__,
 "asinh($module, z, /)\n"
 "--\n"
 "\n"
-"Return the hyperbolic arc sine of z.");
+"Return the inverse hyperbolic sine of z.");
 
 #define CMATH_ASINH_METHODDEF    \
     {"asinh", (PyCFunction)cmath_asinh, METH_VARARGS, cmath_asinh__doc__},
@@ -221,7 +221,7 @@ PyDoc_STRVAR(cmath_atanh__doc__,
 "atanh($module, z, /)\n"
 "--\n"
 "\n"
-"Return the hyperbolic arc tangent of z.");
+"Return the inverse hyperbolic tangent of z.");
 
 #define CMATH_ATANH_METHODDEF    \
     {"atanh", (PyCFunction)cmath_atanh, METH_VARARGS, cmath_atanh__doc__},
