@@ -192,7 +192,7 @@ c_acosh(Py_complex z)
 PyDoc_STRVAR(c_acosh_doc,
 "acosh(x)\n"
 "\n"
-"Return the hyperbolic arccosine of x.");
+"Return the inverse hyperbolic cosine of x.");
 
 
 static Py_complex
@@ -249,7 +249,7 @@ c_asinh(Py_complex z)
 PyDoc_STRVAR(c_asinh_doc,
 "asinh(x)\n"
 "\n"
-"Return the hyperbolic arc sine of x.");
+"Return the inverse hyperbolic sine of x.");
 
 
 static Py_complex
@@ -353,7 +353,7 @@ c_atanh(Py_complex z)
 PyDoc_STRVAR(c_atanh_doc,
 "atanh(x)\n"
 "\n"
-"Return the hyperbolic arc tangent of x.");
+"Return the inverse hyperbolic tangent of x.");
 
 
 static Py_complex
