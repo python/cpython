@@ -203,6 +203,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19777: Provide a home() classmethod on Path objects.  Contributed
+  by Victor Salgado and Mayank Tripathi.
+
 - Issue #23206: Make ``json.dumps(..., ensure_ascii=False)`` as fast as the
   default case of ``ensure_ascii=True``.  Patch by Naoki Inada.
 
