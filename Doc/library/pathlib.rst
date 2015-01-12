@@ -628,6 +628,17 @@ call fails (for example because the path doesn't exist):
       PosixPath('/home/antoine/pathlib')
 
 
+.. classmethod:: Path.home()
+
+   Return a new path object representing the user's home directory (as
+   returned by :func:`os.path.expanduser` with ``~`` construct)::
+
+      >>> Path.home()
+      PosixPath('/home/antoine')
+
+   .. versionadded:: 3.5
+
+
 .. method:: Path.stat()
 
    Return information about this path (similarly to :func:`os.stat`).
