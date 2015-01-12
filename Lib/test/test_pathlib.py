@@ -1261,6 +1261,17 @@ class _BasePathTest(object):
         p = self.cls.cwd()
         self._test_cwd(p)
 
+    def _test_home(self, p):
+        q = self.cls(os.path.expanduser('~'))
+        self.assertEqual(p, q)
+        self.assertEqual(str(p), str(q))
+        self.assertIs(type(p), type(q))
+        self.assertTrue(p.is_absolute())
+
+    def test_home(self):
+        p = self.cls.home()
+        self._test_home(p)
+
     def test_samefile(self):
         fileA_path = os.path.join(BASE, 'fileA')
         fileB_path = os.path.join(BASE, 'dirB', 'fileB')

@@ -1008,6 +1008,13 @@ class Path(PurePath):
         """
         return cls(os.getcwd())
 
+    @classmethod
+    def home(cls):
+        """Return a new path pointing to the user's home directory (as
+        returned by os.path.expanduser('~')).
+        """
+        return cls(cls()._flavour.gethomedir(None))
+
     def samefile(self, other_path):
         """Return whether `other_file` is the same or not as this file.
         (as returned by os.path.samefile(file, other_file)).
