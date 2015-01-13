@@ -178,14 +178,17 @@ class BaseSelectorTestCase(unittest.TestCase):
         s = self.SELECTOR()
         self.addCleanup(s.close)
 
+        mapping = s.get_map()
         rd, wr = self.make_socketpair()
 
         s.register(rd, selectors.EVENT_READ)
         s.register(wr, selectors.EVENT_WRITE)
 
         s.close()
-        self.assertRaises(KeyError, s.get_key, rd)
-        self.assertRaises(KeyError, s.get_key, wr)
+        self.assertRaises(RuntimeError, s.get_key, rd)
+        self.assertRaises(RuntimeError, s.get_key, wr)
+        self.assertRaises(KeyError, mapping.__getitem__, rd)
+        self.assertRaises(KeyError, mapping.__getitem__, wr)
 
     def test_get_key(self):
         s = self.SELECTOR()
@@ -252,8 +255,8 @@ class BaseSelectorTestCase(unittest.TestCase):
             sel.register(rd, selectors.EVENT_READ)
             sel.register(wr, selectors.EVENT_WRITE)
 
-        self.assertRaises(KeyError, s.get_key, rd)
-        self.assertRaises(KeyError, s.get_key, wr)
+        self.assertRaises(RuntimeError, s.get_key, rd)
+        self.assertRaises(RuntimeError, s.get_key, wr)
 
     def test_fileno(self):
         s = self.SELECTOR()
