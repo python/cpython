@@ -10,6 +10,7 @@ import collections
 import errno
 import functools
 import socket
+import sys
 try:
     import ssl
 except ImportError:  # pragma: no cover
@@ -21,6 +22,7 @@ from . import events
 from . import futures
 from . import selectors
 from . import transports
+from . import sslproto
 from .log import logger
 
 
@@ -58,6 +60,24 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
                             *, server_side=False, server_hostname=None,
                             extra=None, server=None):
+        if not sslproto._is_sslproto_available():
+            return self._make_legacy_ssl_transport(
+                rawsock, protocol, sslcontext, waiter,
+                server_side=server_side, server_hostname=server_hostname,
+                extra=extra, server=server)
+
+        ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
+                                            server_side, server_hostname)
+        _SelectorSocketTransport(self, rawsock, ssl_protocol,
+                                 extra=extra, server=server)
+        return ssl_protocol._app_transport
+
+    def _make_legacy_ssl_transport(self, rawsock, protocol, sslcontext,
+                                   waiter, *,
+                                   server_side=False, server_hostname=None,
+                                   extra=None, server=None):
+        # Use the legacy API: SSL_write, SSL_read, etc. The legacy API is used
+        # on Python 3.4 and older, when ssl.MemoryBIO is not available.
         return _SelectorSslTransport(
             self, rawsock, protocol, sslcontext, waiter,
             server_side, server_hostname, extra, server)
@@ -508,7 +528,8 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.
-        if isinstance(exc, (BrokenPipeError, ConnectionResetError)):
+        if isinstance(exc, (BrokenPipeError,
+                            ConnectionResetError, ConnectionAbortedError)):
             if self._loop.get_debug():
                 logger.debug("%r: %s", self, message, exc_info=True)
         else:
@@ -683,26 +704,8 @@ class _SelectorSslTransport(_SelectorTransport):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 
-        if server_side:
-            if not sslcontext:
-                raise ValueError('Server side ssl needs a valid SSLContext')
-        else:
-            if not sslcontext:
-                # Client side may pass ssl=True to use a default
-                # context; in that case the sslcontext passed is None.
-                # The default is secure for client connections.
-                if hasattr(ssl, 'create_default_context'):
-                    # Python 3.4+: use up-to-date strong settings.
-                    sslcontext = ssl.create_default_context()
-                    if not server_hostname:
-                        sslcontext.check_hostname = False
-                else:
-                    # Fallback for Python 3.3.
-                    sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                    sslcontext.options |= ssl.OP_NO_SSLv2
-                    sslcontext.options |= ssl.OP_NO_SSLv3
-                    sslcontext.set_default_verify_paths()
-                    sslcontext.verify_mode = ssl.CERT_REQUIRED
+        if not sslcontext:
+            sslcontext = sslproto._create_transport_context(server_side, server_hostname)
 
         wrap_kwargs = {
             'server_side': server_side,

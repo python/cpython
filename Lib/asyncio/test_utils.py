@@ -434,3 +434,8 @@ def mock_nonblocking_socket():
     sock = mock.Mock(socket.socket)
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+def force_legacy_ssl_support():
+    return mock.patch('asyncio.sslproto._is_sslproto_available',
+                      return_value=False)
