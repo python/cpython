@@ -18,7 +18,7 @@ from cookielib import (_warn_unhandled_exception, FileCookieJar, LoadError,
                        iso2time, time2isoz)
 
 def lwp_cookie_str(cookie):
-    """Return string representation of Cookie in an the LWP cookie file format.
+    """Return string representation of Cookie in the LWP cookie file format.
 
     Actually, the format is extended a bit -- see module docstring.
 
