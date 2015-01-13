@@ -180,6 +180,7 @@ class BaseSelectorTestCase(unittest.TestCase):
         s = self.SELECTOR()
         self.addCleanup(s.close)
 
+        mapping = s.get_map()
         rd, wr = self.make_socketpair()
 
         s.register(rd, selectors.EVENT_READ)
@@ -188,6 +189,8 @@ class BaseSelectorTestCase(unittest.TestCase):
         s.close()
         self.assertRaises(KeyError, s.get_key, rd)
         self.assertRaises(KeyError, s.get_key, wr)
+        self.assertRaises(KeyError, mapping.__getitem__, rd)
+        self.assertRaises(KeyError, mapping.__getitem__, wr)
 
     def test_get_key(self):
         s = self.SELECTOR()
