@@ -203,6 +203,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #23209, #23225: selectors.BaseSelector.get_key() now raises a
+  RuntimeError if the selector is closed. And selectors.BaseSelector.close()
+  now clears its internal reference to the selector mapping to break a
+  reference cycle. Initial patch written by Martin Richard.
+
 - Issue #19777: Provide a home() classmethod on Path objects.  Contributed
   by Victor Salgado and Mayank Tripathi.
 
