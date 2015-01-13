@@ -650,6 +650,10 @@ class EventLoopTestsMixin:
                 *httpd.address)
             self._test_create_ssl_connection(httpd, create_connection)
 
+    def test_legacy_create_ssl_connection(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_ssl_connection()
+
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_ssl_unix_connection(self):
@@ -665,6 +669,10 @@ class EventLoopTestsMixin:
 
             self._test_create_ssl_connection(httpd, create_connection,
                                              check_sockname)
+
+    def test_legacy_create_ssl_unix_connection(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_ssl_unix_connection()
 
     def test_create_connection_local_addr(self):
         with test_utils.run_test_server() as httpd:
@@ -826,6 +834,10 @@ class EventLoopTestsMixin:
         # stop serving
         server.close()
 
+    def test_legacy_create_server_ssl(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_server_ssl()
+
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server_ssl(self):
@@ -857,6 +869,10 @@ class EventLoopTestsMixin:
         # stop serving
         server.close()
 
+    def test_legacy_create_unix_server_ssl(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_unix_server_ssl()
+
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
@@ -880,6 +896,10 @@ class EventLoopTestsMixin:
         # close connection
         self.assertIsNone(proto.transport)
         server.close()
+
+    def test_legacy_create_server_ssl_verify_failed(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_server_ssl_verify_failed()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
@@ -906,6 +926,10 @@ class EventLoopTestsMixin:
         # close connection
         self.assertIsNone(proto.transport)
         server.close()
+
+    def test_legacy_create_unix_server_ssl_verify_failed(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_unix_server_ssl_verify_failed()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_match_failed(self):
@@ -934,6 +958,10 @@ class EventLoopTestsMixin:
         proto.transport.close()
         server.close()
 
+    def test_legacy_create_server_ssl_match_failed(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_server_ssl_match_failed()
+
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_server_ssl_verified(self):
@@ -958,6 +986,11 @@ class EventLoopTestsMixin:
         proto.transport.close()
         client.close()
         server.close()
+        self.loop.run_until_complete(proto.done)
+
+    def test_legacy_create_unix_server_ssl_verified(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_unix_server_ssl_verified()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_verified(self):
@@ -982,6 +1015,11 @@ class EventLoopTestsMixin:
         proto.transport.close()
         client.close()
         server.close()
+        self.loop.run_until_complete(proto.done)
+
+    def test_legacy_create_server_ssl_verified(self):
+        with test_utils.force_legacy_ssl_support():
+            self.test_create_server_ssl_verified()
 
     def test_create_server_sock(self):
         proto = asyncio.Future(loop=self.loop)
@@ -1746,20 +1784,20 @@ if sys.platform == 'win32':
         def create_event_loop(self):
             return asyncio.ProactorEventLoop()
 
-        def test_create_ssl_connection(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
+        def test_legacy_create_ssl_connection(self):
+            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
 
-        def test_create_server_ssl(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
+        def test_legacy_create_server_ssl(self):
+            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
 
-        def test_create_server_ssl_verify_failed(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
+        def test_legacy_create_server_ssl_verify_failed(self):
+            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
 
-        def test_create_server_ssl_match_failed(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
+        def test_legacy_create_server_ssl_match_failed(self):
+            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
 
-        def test_create_server_ssl_verified(self):
-            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
+        def test_legacy_create_server_ssl_verified(self):
+            raise unittest.SkipTest("IocpEventLoop incompatible with legacy SSL")
 
         def test_reader_callback(self):
             raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
