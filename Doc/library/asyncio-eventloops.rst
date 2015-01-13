@@ -100,8 +100,6 @@ Common limits of Windows event loops:
 
 :class:`ProactorEventLoop` specific limits:
 
-- SSL is not supported: :meth:`~BaseEventLoop.create_connection` and
-  :meth:`~BaseEventLoop.create_server` cannot be used with SSL for example
 - :meth:`~BaseEventLoop.create_datagram_endpoint` (UDP) is not supported
 - :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` are
   not supported
@@ -111,6 +109,10 @@ The best resolution is 0.5 msec. The resolution depends on the hardware
 (availability of `HPET
 <http://fr.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
 configuration. See :ref:`asyncio delayed calls <asyncio-delayed-calls>`.
+
+.. versionchanged:: 3.5
+
+   :class:`ProactorEventLoop` now supports SSL.
 
 
 Mac OS X
