@@ -11,6 +11,7 @@ import socket
 from . import base_events
 from . import constants
 from . import futures
+from . import sslproto
 from . import transports
 from .log import logger
 
@@ -367,6 +368,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return _ProactorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
+    def _make_ssl_transport(self, rawsock, protocol, sslcontext, waiter=None,
+                            *, server_side=False, server_hostname=None,
+                            extra=None, server=None):
+        if not sslproto._is_sslproto_available():
+            raise NotImplementedError("Proactor event loop requires Python 3.5"
+                                      " or newer (ssl.MemoryBIO) to support "
+                                      "SSL")
+
+        ssl_protocol = sslproto.SSLProtocol(self, protocol, sslcontext, waiter,
+                                            server_side, server_hostname)
+        _ProactorSocketTransport(self, rawsock, ssl_protocol,
+                                 extra=extra, server=server)
+        return ssl_protocol._app_transport
+
     def _make_duplex_pipe_transport(self, sock, protocol, waiter=None,
                                     extra=None):
         return _ProactorDuplexPipeTransport(self,
@@ -455,9 +470,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def _write_to_self(self):
         self._csock.send(b'\0')
 
-    def _start_serving(self, protocol_factory, sock, ssl=None, server=None):
-        if ssl:
-            raise ValueError('IocpEventLoop is incompatible with SSL.')
+    def _start_serving(self, protocol_factory, sock,
+                       sslcontext=None, server=None):
 
         def loop(f=None):
             try:
@@ -467,9 +481,14 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                         logger.debug("%r got a new connection from %r: %r",
                                      server, addr, conn)
                     protocol = protocol_factory()
-                    self._make_socket_transport(
-                        conn, protocol,
-                        extra={'peername': addr}, server=server)
+                    if sslcontext is not None:
+                        self._make_ssl_transport(
+                            conn, protocol, sslcontext, server_side=True,
+                            extra={'peername': addr}, server=server)
+                    else:
+                        self._make_socket_transport(
+                            conn, protocol,
+                            extra={'peername': addr}, server=server)
                 if self.is_closed():
                     return
                 f = self._proactor.accept(sock)
