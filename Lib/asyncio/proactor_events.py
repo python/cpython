@@ -387,12 +387,18 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             raise RuntimeError("Cannot close a running event loop")
         if self.is_closed():
             return
+
+        # Call these methods before closing the event loop (before calling
+        # BaseEventLoop.close), because they can schedule callbacks with
+        # call_soon(), which is forbidden when the event loop is closed.
         self._stop_accept_futures()
         self._close_self_pipe()
-        super().close()
         self._proactor.close()
         self._proactor = None
         self._selector = None
+
+        # Close the event loop
+        super().close()
 
     def sock_recv(self, sock, n):
         return self._proactor.recv(sock, n)
