@@ -1541,7 +1541,7 @@ where we have imported it. The patching should look like::
 However, consider the alternative scenario where instead of ``from a import
 SomeClass`` module b does ``import a`` and ``some_function`` uses ``a.SomeClass``. Both
 of these import forms are common. In this case the class we want to patch is
-being looked up on the a module and so we have to patch ``a.SomeClass`` instead::
+being looked up in the module and so we have to patch ``a.SomeClass`` instead::
 
     @patch('a.SomeClass')
 

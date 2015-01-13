@@ -150,7 +150,7 @@
 
   /* Report that a new memory at "address" of size "size" has been allocated.
      This might be used when the memory has been retrieved from a free list and
-     is about to be reused, or when a the locking discipline for a variable
+     is about to be reused, or when the locking discipline for a variable
      changes. */
 #define _Py_ANNOTATE_NEW_MEMORY(address, size) \
     AnnotateNewMemory(__FILE__, __LINE__, address, size)

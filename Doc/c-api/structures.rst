@@ -131,7 +131,7 @@ The :attr:`ml_meth` is a C function pointer.  The functions may be of different
 types, but they always return :c:type:`PyObject\*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
-:c:type:`PyObject\*`, it is common that the method implementation uses a the
+:c:type:`PyObject\*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
 The :attr:`ml_flags` field is a bitfield which can include the following flags.
