@@ -81,7 +81,7 @@ def create_tree(base_dir, files, mode=0o777, verbose=1, dry_run=0):
     """Create all the empty directories under 'base_dir' needed to put 'files'
     there.
 
-    'base_dir' is just the a name of a directory which doesn't necessarily
+    'base_dir' is just the name of a directory which doesn't necessarily
     exist yet; 'files' is a list of filenames to be interpreted relative to
     'base_dir'.  'base_dir' + the directory portion of every file in 'files'
     will be created if it doesn't already exist.  'mode', 'verbose' and
