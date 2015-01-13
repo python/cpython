@@ -350,7 +350,7 @@ Querying the error indicator
       Do not compare the return value to a specific exception; use
       :c:func:`PyErr_ExceptionMatches` instead, shown below.  (The comparison could
       easily fail since the exception may be an instance instead of a class, in the
-      case of a class exception, or it may the a subclass of the expected exception.)
+      case of a class exception, or it may be a subclass of the expected exception.)
 
 
 .. c:function:: int PyErr_ExceptionMatches(PyObject *exc)
