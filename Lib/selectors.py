@@ -175,6 +175,8 @@ class BaseSelector(metaclass=ABCMeta):
         """
         mapping = self.get_map()
         try:
+            if mapping is None:
+                raise KeyError
             return mapping[fileobj]
         except KeyError:
             raise KeyError("{!r} is not registered".format(fileobj)) from None
@@ -256,6 +258,7 @@ class _BaseSelectorImpl(BaseSelector):
 
     def close(self):
         self._fd_to_key.clear()
+        self._map = None
 
     def get_map(self):
         return self._map
