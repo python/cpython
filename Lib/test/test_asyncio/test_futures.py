@@ -29,6 +29,7 @@ class FutureTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = self.new_test_loop()
+        self.addCleanup(self.loop.close)
 
     def test_initial_state(self):
         f = asyncio.Future(loop=self.loop)

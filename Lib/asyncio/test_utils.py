@@ -307,6 +307,7 @@ class TestLoop(base_events.BaseEventLoop):
             self._time += advance
 
     def close(self):
+        super().close()
         if self._check_on_close:
             try:
                 self._gen.send(0)

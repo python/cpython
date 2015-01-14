@@ -301,7 +301,12 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
     def __repr__(self):
-        info = [self.__class__.__name__, 'fd=%s' % self._fileno]
+        info = [self.__class__.__name__]
+        if self._pipe is None:
+            info.append('closed')
+        elif self._closing:
+            info.append('closing')
+        info.append('fd=%s' % self._fileno)
         if self._pipe is not None:
             polling = selector_events._test_selector_event(
                           self._loop._selector,
@@ -404,7 +409,12 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
     def __repr__(self):
-        info = [self.__class__.__name__, 'fd=%s' % self._fileno]
+        info = [self.__class__.__name__]
+        if self._pipe is None:
+            info.append('closed')
+        elif self._closing:
+            info.append('closing')
+        info.append('fd=%s' % self._fileno)
         if self._pipe is not None:
             polling = selector_events._test_selector_event(
                           self._loop._selector,
