@@ -841,7 +841,7 @@ methods and attributes from the underlying stream.
 Encodings and Unicode
 ---------------------
 
-Strings are stored internally as sequences of codepoints in
+Strings are stored internally as sequences of code points in
 range ``0x0``-``0x10FFFF``.  (See :pep:`393` for
 more details about the implementation.)
 Once a string object is used outside of CPU and memory, endianness
@@ -852,23 +852,23 @@ There are a variety of different text serialisation codecs, which are
 collectivity referred to as :term:`text encodings <text encoding>`.
 
 The simplest text encoding (called ``'latin-1'`` or ``'iso-8859-1'``) maps
-the codepoints 0-255 to the bytes ``0x0``-``0xff``, which means that a string
-object that contains codepoints above ``U+00FF`` can't be encoded with this
+the code points 0-255 to the bytes ``0x0``-``0xff``, which means that a string
+object that contains code points above ``U+00FF`` can't be encoded with this
 codec. Doing so will raise a :exc:`UnicodeEncodeError` that looks
 like the following (although the details of the error message may differ):
 ``UnicodeEncodeError: 'latin-1' codec can't encode character '\u1234' in
 position 3: ordinal not in range(256)``.
 
 There's another group of encodings (the so called charmap encodings) that choose
-a different subset of all Unicode code points and how these codepoints are
+a different subset of all Unicode code points and how these code points are
 mapped to the bytes ``0x0``-``0xff``. To see how this is done simply open
 e.g. :file:`encodings/cp1252.py` (which is an encoding that is used primarily on
 Windows). There's a string constant with 256 characters that shows you which
 character is mapped to which byte value.
 
-All of these encodings can only encode 256 of the 1114112 codepoints
+All of these encodings can only encode 256 of the 1114112 code points
 defined in Unicode. A simple and straightforward way that can store each Unicode
-code point, is to store each codepoint as four consecutive bytes. There are two
+code point, is to store each code point as four consecutive bytes. There are two
 possibilities: store the bytes in big endian or in little endian order. These
 two encodings are called ``UTF-32-BE`` and ``UTF-32-LE`` respectively. Their
 disadvantage is that if e.g. you use ``UTF-32-BE`` on a little endian machine you

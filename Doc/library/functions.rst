@@ -156,7 +156,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: chr(i)
 
-   Return the string representing a character whose Unicode codepoint is the
+   Return the string representing a character whose Unicode code point is the
    integer *i*.  For example, ``chr(97)`` returns the string ``'a'``, while
    ``chr(931)`` returns the string ``'Σ'``. This is the inverse of :func:`ord`.
 
