@@ -7,13 +7,13 @@ import sys
 if sys.platform != 'win32':  # pragma: no cover
     raise ImportError('win32 only')
 
-import socket
+import _winapi
 import itertools
 import msvcrt
 import os
+import socket
 import subprocess
 import tempfile
-import _winapi
 
 
 __all__ = ['socketpair', 'pipe', 'Popen', 'PIPE', 'PipeHandle']
@@ -136,7 +136,7 @@ class PipeHandle:
         self._handle = handle
 
     def __repr__(self):
-        if self._handle != -1:
+        if self._handle is not None:
             handle = 'handle=%r' % self._handle
         else:
             handle = 'closed'
@@ -150,9 +150,9 @@ class PipeHandle:
         return self._handle
 
     def close(self, *, CloseHandle=_winapi.CloseHandle):
-        if self._handle != -1:
+        if self._handle is not None:
             CloseHandle(self._handle)
-            self._handle = -1
+            self._handle = None
 
     __del__ = close
 

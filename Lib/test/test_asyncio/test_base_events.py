@@ -409,6 +409,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_run_until_complete_loop(self):
         task = asyncio.Future(loop=self.loop)
         other_loop = self.new_test_loop()
+        self.addCleanup(other_loop.close)
         self.assertRaises(ValueError,
             other_loop.run_until_complete, task)
 
