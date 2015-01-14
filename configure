@@ -15711,7 +15711,8 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 
     #include <stdatomic.h>
-    _Atomic int value = ATOMIC_VAR_INIT(1);
+    atomic_int value = ATOMIC_VAR_INIT(1);
+    _Atomic void *py_atomic_address = (void*) &value;
     int main() {
       int loaded_value = atomic_load(&value);
       return 0;
