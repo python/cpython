@@ -533,7 +533,7 @@ The RFC does not explicitly forbid JSON strings which contain byte sequences
 that don't correspond to valid Unicode characters (e.g. unpaired UTF-16
 surrogates), but it does note that they may cause interoperability problems.
 By default, this module accepts and outputs (when present in the original
-:class:`str`) codepoints for such sequences.
+:class:`str`) code points for such sequences.
 
 
 Infinite and NaN Number Values

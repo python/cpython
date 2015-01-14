@@ -185,14 +185,14 @@ can be handled using simple textual substitution in the Latin-1 character set
 
 .. data:: name2codepoint
 
-   A dictionary that maps HTML entity names to the Unicode codepoints.
+   A dictionary that maps HTML entity names to the Unicode code points.
 
    .. versionadded:: 2.3
 
 
 .. data:: codepoint2name
 
-   A dictionary that maps Unicode codepoints to HTML entity names.
+   A dictionary that maps Unicode code points to HTML entity names.
 
    .. versionadded:: 2.3
 

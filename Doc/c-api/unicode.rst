@@ -547,7 +547,7 @@ These are the UTF-32 codec APIs:
    After completion, *\*byteorder* is set to the current byte order at the end
    of input data.
 
-   In a narrow build codepoints outside the BMP will be decoded as surrogate pairs.
+   In a narrow build code points outside the BMP will be decoded as surrogate pairs.
 
    If *byteorder* is *NULL*, the codec starts in native order mode.
 
@@ -580,7 +580,7 @@ These are the UTF-32 codec APIs:
    mark (U+FEFF). In the other two modes, no BOM mark is prepended.
 
    If *Py_UNICODE_WIDE* is not defined, surrogate pairs will be output
-   as a single codepoint.
+   as a single code point.
 
    Return *NULL* if an exception was raised by the codec.
 

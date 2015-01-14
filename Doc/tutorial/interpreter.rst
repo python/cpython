@@ -140,7 +140,7 @@ encodings can be found in the Python Library Reference, in the section on
 For example, to write Unicode literals including the Euro currency symbol, the
 ISO-8859-15 encoding can be used, with the Euro symbol having the ordinal value
 164.  This script, when saved in the ISO-8859-15 encoding, will print the value
-8364 (the Unicode codepoint corresponding to the Euro symbol) and then exit::
+8364 (the Unicode code point corresponding to the Euro symbol) and then exit::
 
    # -*- coding: iso-8859-15 -*-
 
