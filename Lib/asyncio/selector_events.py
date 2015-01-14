@@ -774,7 +774,8 @@ class _SelectorSslTransport(_SelectorTransport):
                                        "on matching the hostname",
                                        self, exc_info=True)
                     self._sock.close()
-                    if self._waiter is not None:
+                    if (self._waiter is not None
+                    and not self._waiter.cancelled()):
                         self._waiter.set_exception(exc)
                     return
 
