@@ -685,7 +685,7 @@ the same type, the lexicographical comparison is carried out recursively.  If
 all items of two sequences compare equal, the sequences are considered equal.
 If one sequence is an initial sub-sequence of the other, the shorter sequence is
 the smaller (lesser) one.  Lexicographical ordering for strings uses the Unicode
-codepoint number to order individual characters.  Some examples of comparisons
+code point number to order individual characters.  Some examples of comparisons
 between sequences of the same type::
 
    (1, 2, 3)              < (1, 2, 4)

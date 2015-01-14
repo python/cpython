@@ -194,7 +194,7 @@ Here are the classes:
    minor type and defaults to :mimetype:`plain`.  *_charset* is the character
    set of the text and is passed as an argument to the
    :class:`~email.mime.nonmultipart.MIMENonMultipart` constructor; it defaults
-   to ``us-ascii`` if the string contains only ``ascii`` codepoints, and
+   to ``us-ascii`` if the string contains only ``ascii`` code points, and
    ``utf-8`` otherwise.  The *_charset* parameter accepts either a string or a
    :class:`~email.charset.Charset` instance.
 
