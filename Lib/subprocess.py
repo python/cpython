@@ -920,6 +920,22 @@ class Popen(object):
             self._devnull = os.open(os.devnull, os.O_RDWR)
         return self._devnull
 
+    def _stdin_write(self, input):
+        if input:
+            try:
+                self.stdin.write(input)
+            except BrokenPipeError:
+                # communicate() must ignore broken pipe error
+                pass
+            except OSError as e:
+                if e.errno == errno.EINVAL and self.poll() is not None:
+                    # Issue #19612: On Windows, stdin.write() fails with EINVAL
+                    # if the process already exited before the write
+                    pass
+                else:
+                    raise
+        self.stdin.close()
+
     def communicate(self, input=None, timeout=None):
         """Interact with process: Send data to stdin.  Read data from
         stdout and stderr, until end-of-file is reached.  Wait for
@@ -945,13 +961,7 @@ class Popen(object):
             stdout = None
             stderr = None
             if self.stdin:
-                if input:
-                    try:
-                        self.stdin.write(input)
-                    except OSError as e:
-                        if e.errno != errno.EPIPE and e.errno != errno.EINVAL:
-                            raise
-                self.stdin.close()
+                self._stdin_write(input)
             elif self.stdout:
                 stdout = _eintr_retry_call(self.stdout.read)
                 self.stdout.close()
@@ -1200,21 +1210,7 @@ class Popen(object):
                 self.stderr_thread.start()
 
             if self.stdin:
-                if input is not None:
-                    try:
-                        self.stdin.write(input)
-                    except OSError as e:
-                        if e.errno == errno.EPIPE:
-                            # communicate() should ignore pipe full error
-                            pass
-                        elif (e.errno == errno.EINVAL
-                              and self.poll() is not None):
-                            # Issue #19612: stdin.write() fails with EINVAL
-                            # if the process already exited before the write
-                            pass
-                        else:
-                            raise
-                self.stdin.close()
+                self._stdin_write(input)
 
             # Wait for the reader threads, or time out.  If we time out, the
             # threads remain reading and the fds left open in case the user
@@ -1425,9 +1421,8 @@ class Popen(object):
             if errpipe_data:
                 try:
                     _eintr_retry_call(os.waitpid, self.pid, 0)
-                except OSError as e:
-                    if e.errno != errno.ECHILD:
-                        raise
+                except ChildProcessError:
+                    pass
                 try:
                     exception_name, hex_errno, err_msg = (
                             errpipe_data.split(b':', 2))
@@ -1511,9 +1506,7 @@ class Popen(object):
             """All callers to this function MUST hold self._waitpid_lock."""
             try:
                 (pid, sts) = _eintr_retry_call(os.waitpid, self.pid, wait_flags)
-            except OSError as e:
-                if e.errno != errno.ECHILD:
-                    raise
+            except ChildProcessError:
                 # This happens if SIGCLD is set to be ignored or waiting
                 # for child processes has otherwise been disabled for our
                 # process.  This child is dead, we can't get the status.
@@ -1625,12 +1618,9 @@ class Popen(object):
                                                self._input_offset + _PIPE_BUF]
                             try:
                                 self._input_offset += os.write(key.fd, chunk)
-                            except OSError as e:
-                                if e.errno == errno.EPIPE:
-                                    selector.unregister(key.fileobj)
-                                    key.fileobj.close()
-                                else:
-                                    raise
+                            except BrokenPipeError:
+                                selector.unregister(key.fileobj)
+                                key.fileobj.close()
                             else:
                                 if self._input_offset >= len(self._input):
                                     selector.unregister(key.fileobj)
