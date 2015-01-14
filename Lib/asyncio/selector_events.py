@@ -182,13 +182,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             else:
                 raise  # The event loop will catch, log and ignore it.
         else:
+            protocol = protocol_factory()
             if sslcontext:
                 self._make_ssl_transport(
-                    conn, protocol_factory(), sslcontext,
+                    conn, protocol, sslcontext,
                     server_side=True, extra={'peername': addr}, server=server)
             else:
                 self._make_socket_transport(
-                    conn, protocol_factory(), extra={'peername': addr},
+                    conn, protocol , extra={'peername': addr},
                     server=server)
         # It's now up to the protocol to handle the connection.
 
