@@ -750,7 +750,7 @@ class _SelectorSslTransport(_SelectorTransport):
             self._loop.remove_reader(self._sock_fd)
             self._loop.remove_writer(self._sock_fd)
             self._sock.close()
-            if self._waiter is not None:
+            if self._waiter is not None and not self._waiter.cancelled():
                 self._waiter.set_exception(exc)
             if isinstance(exc, Exception):
                 return
