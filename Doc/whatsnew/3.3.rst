@@ -228,7 +228,7 @@ Functionality
 
 Changes introduced by :pep:`393` are the following:
 
-* Python now always supports the full range of Unicode codepoints, including
+* Python now always supports the full range of Unicode code points, including
   non-BMP ones (i.e. from ``U+0000`` to ``U+10FFFF``).  The distinction between
   narrow and wide builds no longer exists and Python now behaves like a wide
   build, even under Windows.
@@ -246,7 +246,7 @@ Changes introduced by :pep:`393` are the following:
     so ``'\U0010FFFF'[0]`` now returns ``'\U0010FFFF'`` and not ``'\uDBFF'``;
 
   * all other functions in the standard library now correctly handle
-    non-BMP codepoints.
+    non-BMP code points.
 
 * The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
   in hexadecimal).  The :c:func:`PyUnicode_GetMax` function still returns
@@ -258,13 +258,13 @@ Changes introduced by :pep:`393` are the following:
 Performance and resource usage
 ------------------------------
 
-The storage of Unicode strings now depends on the highest codepoint in the string:
+The storage of Unicode strings now depends on the highest code point in the string:
 
-* pure ASCII and Latin1 strings (``U+0000-U+00FF``) use 1 byte per codepoint;
+* pure ASCII and Latin1 strings (``U+0000-U+00FF``) use 1 byte per code point;
 
-* BMP strings (``U+0000-U+FFFF``) use 2 bytes per codepoint;
+* BMP strings (``U+0000-U+FFFF``) use 2 bytes per code point;
 
-* non-BMP strings (``U+10000-U+10FFFF``) use 4 bytes per codepoint.
+* non-BMP strings (``U+10000-U+10FFFF``) use 4 bytes per code point.
 
 The net effect is that for most applications, memory usage of string
 storage should decrease significantly - especially compared to former
