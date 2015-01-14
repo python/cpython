@@ -111,6 +111,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             if hasattr(self._sock, 'shutdown'):
                 self._sock.shutdown(socket.SHUT_RDWR)
             self._sock.close()
+            self._sock = None
             server = self._server
             if server is not None:
                 server._detach()
