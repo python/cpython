@@ -174,28 +174,29 @@ def _lt_from_ge(self, other):
         return op_result
     return not op_result
 
+_convert = {
+    '__lt__': [('__gt__', _gt_from_lt),
+               ('__le__', _le_from_lt),
+               ('__ge__', _ge_from_lt)],
+    '__le__': [('__ge__', _ge_from_le),
+               ('__lt__', _lt_from_le),
+               ('__gt__', _gt_from_le)],
+    '__gt__': [('__lt__', _lt_from_gt),
+               ('__ge__', _ge_from_gt),
+               ('__le__', _le_from_gt)],
+    '__ge__': [('__le__', _le_from_ge),
+               ('__gt__', _gt_from_ge),
+               ('__lt__', _lt_from_ge)]
+}
+
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
-    convert = {
-        '__lt__': [('__gt__', _gt_from_lt),
-                   ('__le__', _le_from_lt),
-                   ('__ge__', _ge_from_lt)],
-        '__le__': [('__ge__', _ge_from_le),
-                   ('__lt__', _lt_from_le),
-                   ('__gt__', _gt_from_le)],
-        '__gt__': [('__lt__', _lt_from_gt),
-                   ('__ge__', _ge_from_gt),
-                   ('__le__', _le_from_gt)],
-        '__ge__': [('__le__', _le_from_ge),
-                   ('__gt__', _gt_from_ge),
-                   ('__lt__', _lt_from_ge)]
-    }
     # Find user-defined comparisons (not those inherited from object).
-    roots = [op for op in convert if getattr(cls, op, None) is not getattr(object, op, None)]
+    roots = [op for op in _convert if getattr(cls, op, None) is not getattr(object, op, None)]
     if not roots:
         raise ValueError('must define at least one ordering operation: < > <= >=')
     root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
-    for opname, opfunc in convert[root]:
+    for opname, opfunc in _convert[root]:
         if opname not in roots:
             opfunc.__name__ = opname
             setattr(cls, opname, opfunc)
