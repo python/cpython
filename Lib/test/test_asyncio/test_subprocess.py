@@ -251,6 +251,42 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(cancel_wait())
 
+    def test_cancel_make_subprocess_transport_exec(self):
+        @asyncio.coroutine
+        def cancel_make_transport():
+            coro = asyncio.create_subprocess_exec(*PROGRAM_BLOCKED,
+                                                  loop=self.loop)
+            task = self.loop.create_task(coro)
+
+            self.loop.call_soon(task.cancel)
+            try:
+                yield from task
+            except asyncio.CancelledError:
+                pass
+
+        # ignore the log:
+        # "Exception during subprocess creation, kill the subprocess"
+        with test_utils.disable_logger():
+            self.loop.run_until_complete(cancel_make_transport())
+
+    def test_cancel_post_init(self):
+        @asyncio.coroutine
+        def cancel_make_transport():
+            coro = self.loop.subprocess_exec(asyncio.SubprocessProtocol,
+                                             *PROGRAM_BLOCKED)
+            task = self.loop.create_task(coro)
+
+            self.loop.call_soon(task.cancel)
+            try:
+                yield from task
+            except asyncio.CancelledError:
+                pass
+
+        # ignore the log:
+        # "Exception during subprocess creation, kill the subprocess"
+        with test_utils.disable_logger():
+            self.loop.run_until_complete(cancel_make_transport())
+
 
 if sys.platform != 'win32':
     # Unix
