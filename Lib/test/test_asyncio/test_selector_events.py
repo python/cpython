@@ -1148,16 +1148,28 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.assertTrue(self.sslsock.close.called)
 
     def test_on_handshake_base_exc(self):
+        waiter = asyncio.Future(loop=self.loop)
         transport = _SelectorSslTransport(
-            self.loop, self.sock, self.protocol, self.sslcontext)
-        transport._waiter = asyncio.Future(loop=self.loop)
+            self.loop, self.sock, self.protocol, self.sslcontext, waiter)
         exc = BaseException()
         self.sslsock.do_handshake.side_effect = exc
         with test_utils.disable_logger():
             self.assertRaises(BaseException, transport._on_handshake, 0)
         self.assertTrue(self.sslsock.close.called)
-        self.assertTrue(transport._waiter.done())
-        self.assertIs(exc, transport._waiter.exception())
+        self.assertTrue(waiter.done())
+        self.assertIs(exc, waiter.exception())
+
+    def test_cancel_handshake(self):
+        # Python issue #23197: cancelling an handshake must not raise an
+        # exception or log an error, even if the handshake failed
+        waiter = asyncio.Future(loop=self.loop)
+        transport = _SelectorSslTransport(
+            self.loop, self.sock, self.protocol, self.sslcontext, waiter)
+        waiter.cancel()
+        exc = ValueError()
+        self.sslsock.do_handshake.side_effect = exc
+        with test_utils.disable_logger():
+            transport._on_handshake(0)
 
     def test_pause_resume_reading(self):
         tr = self._make_one()
