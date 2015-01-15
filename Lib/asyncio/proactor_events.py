@@ -43,12 +43,12 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        fd = self._sock.fileno()
-        if fd < 0:
+        if self._sock is None:
             info.append('closed')
         elif self._closing:
             info.append('closing')
-        info.append('fd=%s' % fd)
+        if self._sock is not None:
+            info.append('fd=%s' % self._sock.fileno())
         if self._read_fut is not None:
             info.append('read=%s' % self._read_fut)
         if self._write_fut is not None:
