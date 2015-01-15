@@ -67,7 +67,7 @@
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(PySourcePath)Python;$(PySourcePath)Modules\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -335,7 +335,6 @@
     <ClCompile Include="..\Parser\tokenizer.c" />
     <ClCompile Include="..\PC\winreg.c" />
     <ClCompile Include="..\PC\config.c" />
-    <ClCompile Include="..\PC\dl_nt.c" />
     <ClCompile Include="..\PC\getpathp.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\Python\pyhash.c" />
@@ -387,13 +386,16 @@
     <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\PC\dl_nt.c" />
+  </ItemGroup>
+  <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   
-  <Target Name="_GetBuildInfo" AfterTargets="PrepareForBuild">
+  <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <Exec Command='hg id -b &gt; "$(IntDir)hgbranch.txt"' ContinueOnError="true" />
     <Exec Command='hg id -i &gt; "$(IntDir)hgversion.txt"' ContinueOnError="true" />
     <Exec Command='hg id -t &gt; "$(IntDir)hgtag.txt"' ContinueOnError="true" />
