@@ -577,7 +577,7 @@ class SSLProtocol(protocols.Protocol):
         # _on_handshake_complete() can be called indirectly from
         # _process_write_backlog(), and _process_write_backlog() is not
         # reentrant.
-        self._loop.call(self._process_write_backlog)
+        self._loop.call_soon(self._process_write_backlog)
 
     def _process_write_backlog(self):
         # Try to make progress on the write backlog.
