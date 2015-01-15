@@ -272,7 +272,12 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         transp = _WindowsSubprocessTransport(self, protocol, args, shell,
                                              stdin, stdout, stderr, bufsize,
                                              extra=extra, **kwargs)
-        yield from transp._post_init()
+        try:
+            yield from transp._post_init()
+        except:
+            transp.close()
+            raise
+
         return transp
 
 
