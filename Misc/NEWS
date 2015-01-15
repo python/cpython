@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23063: In the disutils' check command, fix parsing of reST with code or
+  code-block directives.
+
 - Issue #21356: Make ssl.RAND_egd() optional to support LibreSSL. The
   availability of the function is checked during the compilation. Patch written
   by Bernard Spil.
