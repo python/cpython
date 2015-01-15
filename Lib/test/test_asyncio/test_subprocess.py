@@ -286,6 +286,7 @@ class SubprocessMixin:
         # "Exception during subprocess creation, kill the subprocess"
         with test_utils.disable_logger():
             self.loop.run_until_complete(cancel_make_transport())
+            test_utils.run_briefly(self.loop)
 
 
 if sys.platform != 'win32':
