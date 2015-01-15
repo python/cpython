@@ -1180,6 +1180,8 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.sslsock.do_handshake.side_effect = exc
         with test_utils.disable_logger():
             transport._on_handshake(0)
+        transport.close()
+        test_utils.run_briefly(self.loop)
 
     def test_pause_resume_reading(self):
         tr = self._make_one()
