@@ -404,7 +404,7 @@ enumerations; the others auto-assign increasing integers starting with 1.  A
 new class derived from :class:`Enum` is returned.  In other words, the above
 assignment to :class:`Animal` is equivalent to::
 
-    >>> class Animals(Enum):
+    >>> class Animal(Enum):
     ...     ant = 1
     ...     bee = 2
     ...     cat = 3
@@ -421,7 +421,7 @@ enumeration is being created in (e.g. it will fail if you use a utility
 function in separate module, and also may not work on IronPython or Jython).
 The solution is to specify the module name explicitly as follows::
 
-    >>> Animals = Enum('Animals', 'ant bee cat dog', module=__name__)
+    >>> Animal = Enum('Animal', 'ant bee cat dog', module=__name__)
 
 .. warning::
 
@@ -434,7 +434,7 @@ The new pickle protocol 4 also, in some circumstances, relies on
 to find the class.  For example, if the class was made available in class
 SomeData in the global scope::
 
-    >>> Animals = Enum('Animals', 'ant bee cat dog', qualname='SomeData.Animals')
+    >>> Animal = Enum('Animal', 'ant bee cat dog', qualname='SomeData.Animal')
 
 The complete signature is::
 
@@ -446,6 +446,10 @@ The complete signature is::
   (values will start at 1)::
 
     'red green blue' | 'red,green,blue' | 'red, green, blue'
+
+  or an iterator of names::
+
+    ['red', 'green', 'blue']
 
   or an iterator of (name, value) pairs::
 
