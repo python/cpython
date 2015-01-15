@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23063: In the disutils' check command, fix parsing of reST with code or
+  code-block directives.
+
 - Issue #23209, #23225: selectors.BaseSelector.close() now clears its internal
   reference to the selector mapping to break a reference cycle. Initial patch
   written by Martin Richard.
