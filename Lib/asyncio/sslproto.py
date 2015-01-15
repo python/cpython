@@ -417,6 +417,7 @@ class SSLProtocol(protocols.Protocol):
         self._session_established = False
         self._in_handshake = False
         self._in_shutdown = False
+        self._transport = None
 
     def connection_made(self, transport):
         """Called when the low-level connection is made.
