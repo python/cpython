@@ -138,15 +138,12 @@ _ssl
     obtaining external sources then you don't need to manually get the source
     above via subversion. **
 
-    Alternatively, get the latest version from http://www.openssl.org.
-    You can (theoretically) use any version of OpenSSL you like - the
-    build process will automatically select the latest version.
-
-    You must install the NASM assembler from
-        http://nasm.sf.net
-    for x86 builds.  Put nasm.exe anywhere in your PATH.  If you use the
+    The NASM assembler is required to build OpenSSL.  If you use the
     Tools\buildbot\external(-amd64).bat method for getting sources, it also
     downloads a version of NASM, which the ssl build script will add to PATH.
+    Otherwise, you can download the NASM installer from
+        http://www.nasm.us/
+    and add NASM to your PATH.
 
     You can also install ActivePerl from
         http://www.activestate.com/activeperl/
