@@ -87,7 +87,7 @@
     <WriteLinesToFile File="$(PySourcePath)PC\pythonnt_rc$(PyDebugExt).h" Overwrite="true" Encoding="ascii"
                       Lines='/* This file created by python.props /t:GeneratePythonNtRcH */
 #define FIELD3 $(Field3Value)
-#define MS_DLL_ID "$(PythonMajorVersion).$(PythonMinorVersion)"
+#define MS_DLL_ID "$(SysWinVer)"
 #define PYTHON_DLL_NAME "$(PyDllName).dll"
 ' />
     <ItemGroup>
