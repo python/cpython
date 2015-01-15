@@ -33,12 +33,16 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         waiter.cancel()
         transport = mock.Mock()
         sslpipe = mock.Mock()
+        sslpipe.shutdown.return_value = b''
         sslpipe.do_handshake.side_effect = do_handshake
         with mock.patch('asyncio.sslproto._SSLPipe', return_value=sslpipe):
             ssl_proto.connection_made(transport)
 
         with test_utils.disable_logger():
             self.loop.run_until_complete(handshake_fut)
+
+        # Close the transport
+        ssl_proto._app_transport.close()
 
 
 if __name__ == '__main__':
