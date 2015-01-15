@@ -1705,6 +1705,33 @@ class TaskTests(test_utils.TestCase):
                           'test_task_source_traceback'))
         self.loop.run_until_complete(task)
 
+    def _test_cancel_wait_for(self, timeout):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        @asyncio.coroutine
+        def blocking_coroutine():
+            fut = asyncio.Future(loop=loop)
+            # Block: fut result is never set
+            yield from fut
+
+        task = loop.create_task(blocking_coroutine())
+
+        wait = loop.create_task(asyncio.wait_for(task, timeout, loop=loop))
+        loop.call_soon(wait.cancel)
+
+        self.assertRaises(asyncio.CancelledError,
+                          loop.run_until_complete, wait)
+
+        # Python issue #23219: cancelling the wait must also cancel the task
+        self.assertTrue(task.cancelled())
+
+    def test_cancel_blocking_wait_for(self):
+        self._test_cancel_wait_for(None)
+
+    def test_cancel_wait_for(self):
+        self._test_cancel_wait_for(60.0)
+
 
 class GatherTestsBase:
 
