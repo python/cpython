@@ -590,6 +590,7 @@ class BaseEventLoopTests(test_utils.TestCase):
                 raise ValueError('spam')
 
         loop = Loop()
+        self.addCleanup(loop.close)
         asyncio.set_event_loop(loop)
 
         def run_loop():

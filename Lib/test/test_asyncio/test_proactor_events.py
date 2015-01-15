@@ -16,6 +16,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
 
     def setUp(self):
         self.loop = self.new_test_loop()
+        self.addCleanup(self.loop.close)
         self.proactor = mock.Mock()
         self.loop._proactor = self.proactor
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
@@ -458,6 +459,9 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.csock.close.called)
         self.assertIsNone(self.loop._ssock)
         self.assertIsNone(self.loop._csock)
+
+        # Don't call close(): _close_self_pipe() cannot be called twice
+        self.loop._closed = True
 
     def test_close(self):
         self.loop._close_self_pipe = mock.Mock()
