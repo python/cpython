@@ -292,7 +292,7 @@ Glossary
    generator
       A function which returns an iterator.  It looks like a normal function
       except that it contains :keyword:`yield` statements for producing a series
-      a values usable in a for-loop or that can be retrieved one at a time with
+      of values usable in a for-loop or that can be retrieved one at a time with
       the :func:`next` function. Each :keyword:`yield` temporarily suspends
       processing, remembering the location execution state (including local
       variables and pending try-statements).  When the generator resumes, it
