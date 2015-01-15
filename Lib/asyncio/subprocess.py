@@ -94,8 +94,11 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                 reader.set_exception(exc)
 
     def process_exited(self):
-        # wake up futures waiting for wait()
         returncode = self._transport.get_returncode()
+        self._transport.close()
+        self._transport = None
+
+        # wake up futures waiting for wait()
         while self._waiters:
             waiter = self._waiters.popleft()
             if not waiter.cancelled():
