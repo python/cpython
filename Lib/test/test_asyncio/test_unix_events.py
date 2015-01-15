@@ -766,6 +766,9 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         tr.close()
         tr.write_eof.assert_called_with()
 
+        # closing the transport twice must not fail
+        tr.close()
+
     def test_close_closing(self):
         tr = unix_events._UnixWritePipeTransport(
             self.loop, self.pipe, self.protocol)
