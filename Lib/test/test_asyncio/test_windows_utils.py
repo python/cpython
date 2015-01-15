@@ -3,6 +3,7 @@
 import socket
 import sys
 import unittest
+import warnings
 from unittest import mock
 
 if sys.platform != 'win32':
@@ -115,8 +116,10 @@ class PipeTests(unittest.TestCase):
         self.assertEqual(p.handle, h)
 
         # check garbage collection of p closes handle
-        del p
-        support.gc_collect()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "",  ResourceWarning)
+            del p
+            support.gc_collect()
         try:
             _winapi.CloseHandle(h)
         except OSError as e:
@@ -170,7 +173,9 @@ class PopenTests(unittest.TestCase):
         self.assertTrue(msg.upper().rstrip().startswith(out))
         self.assertTrue(b"stderr".startswith(err))
 
-        p.wait()
+        # The context manager calls wait() and closes resources
+        with p:
+            pass
 
 
 if __name__ == '__main__':
