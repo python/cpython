@@ -24,6 +24,11 @@ MOCK_ANY = mock.ANY
 
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
 
+    def close(self):
+        # Don't call the close() method of the parent class, because the
+        # selector is mocked
+        self._closed = True
+
     def _make_self_pipe(self):
         self._ssock = mock.Mock()
         self._csock = mock.Mock()
@@ -40,7 +45,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.selector = mock.Mock()
         self.selector.select.return_value = []
         self.loop = TestBaseSelectorEventLoop(self.selector)
-        self.set_event_loop(self.loop, cleanup=False)
+        self.set_event_loop(self.loop)
 
     def test_make_socket_transport(self):
         m = mock.Mock()
@@ -76,6 +81,15 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
             self.loop._make_ssl_transport(m, m, m, m)
 
     def test_close(self):
+        class EventLoop(BaseSelectorEventLoop):
+            def _make_self_pipe(self):
+                self._ssock = mock.Mock()
+                self._csock = mock.Mock()
+                self._internal_fds += 1
+
+        self.loop = EventLoop(self.selector)
+        self.set_event_loop(self.loop)
+
         ssock = self.loop._ssock
         ssock.fileno.return_value = 7
         csock = self.loop._csock
