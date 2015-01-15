@@ -347,10 +347,9 @@ def wait_for(fut, timeout, *, loop=None):
     it cancels the task and raises TimeoutError.  To avoid the task
     cancellation, wrap it in shield().
 
-    Usage:
+    If the wait is cancelled, the task is also cancelled.
 
-        result = yield from asyncio.wait_for(fut, 10.0)
-
+    This function is a coroutine.
     """
     if loop is None:
         loop = events.get_event_loop()
@@ -367,7 +366,12 @@ def wait_for(fut, timeout, *, loop=None):
 
     try:
         # wait until the future completes or the timeout
-        yield from waiter
+        try:
+            yield from waiter
+        except futures.CancelledError:
+            fut.remove_done_callback(cb)
+            fut.cancel()
+            raise
 
         if fut.done():
             return fut.result()
