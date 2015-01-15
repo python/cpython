@@ -72,6 +72,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._loop.call_soon(self._call_connection_lost, None)
         if self._read_fut is not None:
             self._read_fut.cancel()
+            self._read_fut = None
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         if isinstance(exc, (BrokenPipeError, ConnectionResetError)):
@@ -93,9 +94,10 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._conn_lost += 1
         if self._write_fut:
             self._write_fut.cancel()
+            self._write_fut = None
         if self._read_fut:
             self._read_fut.cancel()
-        self._write_fut = self._read_fut = None
+            self._read_fut = None
         self._pending_write = 0
         self._buffer = None
         self._loop.call_soon(self._call_connection_lost, exc)
