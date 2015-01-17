@@ -114,7 +114,7 @@ class CookieTests(unittest.TestCase):
         C['Customer']['secure'] = True
         C['Customer']['httponly'] = True
         self.assertEqual(C.output(),
-            'Set-Cookie: Customer="WILE_E_COYOTE"; httponly; secure')
+            'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Secure')
 
     def test_secure_httponly_false_if_not_present(self):
         C = cookies.SimpleCookie()
@@ -152,7 +152,7 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie()
         C.load('eggs  =  scrambled  ;  secure  ;  path  =  bar   ; foo=foo   ')
         self.assertEqual(C.output(),
-            'Set-Cookie: eggs=scrambled; Path=bar; secure\r\nSet-Cookie: foo=foo')
+            'Set-Cookie: eggs=scrambled; Path=bar; Secure\r\nSet-Cookie: foo=foo')
 
     def test_quoted_meta(self):
         # Try cookie with quoted meta-data
