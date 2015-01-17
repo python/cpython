@@ -203,6 +203,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23250: In the http.cookies module, capitalize "HttpOnly" and "Secure"
+  as they are written in the standard.
+
 - Issue #23063: In the disutils' check command, fix parsing of reST with code or
   code-block directives.
 
