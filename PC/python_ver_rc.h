@@ -4,7 +4,7 @@
 #include "winver.h"
 
 #define PYTHON_COMPANY   "Python Software Foundation"
-#define PYTHON_COPYRIGHT "Copyright © 2001-2014 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC."
+#define PYTHON_COPYRIGHT "Copyright © 2001-2015 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC."
 
 #define MS_WINDOWS
 #include "modsupport.h"
