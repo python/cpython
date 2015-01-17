@@ -330,8 +330,8 @@ class Morsel(dict):
         "comment"  : "Comment",
         "domain"   : "Domain",
         "max-age"  : "Max-Age",
-        "secure"   : "secure",
-        "httponly" : "httponly",
+        "secure"   : "Secure",
+        "httponly" : "HttpOnly",
         "version"  : "Version",
     }
 
