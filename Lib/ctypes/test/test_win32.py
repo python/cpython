@@ -38,7 +38,7 @@ class WindowsTestCase(unittest.TestCase):
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class FunctionCallTestCase(unittest.TestCase):
     @unittest.skipUnless('MSC' in sys.version, "SEH only supported by MSC")
-    @unittest.skipIf(sys.executable.endswith('_d.exe'),
+    @unittest.skipIf(sys.executable.lower().endswith('_d.exe'),
                      "SEH not enabled in debug builds")
     def test_SEH(self):
         # Call functions with invalid arguments, and make sure
