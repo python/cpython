@@ -480,6 +480,32 @@ class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, unittest.TestCase)
             ref)
         self.assertRaises(ValueError, bad_map)
 
+    @classmethod
+    def _test_traceback(cls):
+        raise RuntimeError(123) # some comment
+
+    def test_traceback(self):
+        # We want ensure that the traceback from the child process is
+        # contained in the traceback raised in the main process.
+        future = self.executor.submit(self._test_traceback)
+        with self.assertRaises(Exception) as cm:
+            future.result()
+
+        exc = cm.exception
+        self.assertIs(type(exc), RuntimeError)
+        self.assertEqual(exc.args, (123,))
+        cause = exc.__cause__
+        self.assertIs(type(cause), futures.process._RemoteTraceback)
+        self.assertIn('raise RuntimeError(123) # some comment', cause.tb)
+
+        with test.support.captured_stderr() as f1:
+            try:
+                raise exc
+            except RuntimeError:
+                sys.excepthook(*sys.exc_info())
+        self.assertIn('raise RuntimeError(123) # some comment',
+                      f1.getvalue())
+
 
 class FutureTests(unittest.TestCase):
     def test_done_callback_with_result(self):
