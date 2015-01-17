@@ -221,13 +221,32 @@ Compressing and decompressing data in memory
       decompress a multi-stream input with :class:`LZMADecompressor`, you must
       create a new decompressor for each stream.
 
-   .. method:: decompress(data)
+   .. method:: decompress(data, max_length=-1)
 
-      Decompress *data* (a :class:`bytes` object), returning a :class:`bytes`
-      object containing the decompressed data for at least part of the input.
-      Some of *data* may be buffered internally, for use in later calls to
-      :meth:`decompress`. The returned data should be concatenated with the
-      output of any previous calls to :meth:`decompress`.
+      Decompress *data* (a :term:`bytes-like object`), returning
+      uncompressed data as bytes. Some of *data* may be buffered
+      internally, for use in later calls to :meth:`decompress`. The
+      returned data should be concatenated with the output of any
+      previous calls to :meth:`decompress`.
+
+      If *max_length* is nonnegative, returns at most *max_length*
+      bytes of decompressed data. If this limit is reached and further
+      output can be produced, the :attr:`~.needs_input` attribute will
+      be set to ``False``. In this case, the next call to
+      :meth:`~.decompress` may provide *data* as ``b''`` to obtain
+      more of the output.
+
+      If all of the input data was decompressed and returned (either
+      because this was less than *max_length* bytes, or because
+      *max_length* was negative), the :attr:`~.needs_input` attribute
+      will be set to ``True``.
+
+      Attempting to decompress data after the end of stream is reached
+      raises an `EOFError`.  Any data found after the end of the
+      stream is ignored and saved in the :attr:`~.unused_data` attribute.
+
+      .. versionchanged:: 3.5
+         Added the *max_length* parameter.
 
    .. attribute:: check
 
@@ -245,6 +264,12 @@ Compressing and decompressing data in memory
 
       Before the end of the stream is reached, this will be ``b""``.
 
+   .. attribute:: needs_input
+
+      ``False`` if the :meth:`.decompress` method can provide more
+      decompressed data before requiring new uncompressed input.
+
+      .. versionadded:: 3.5
 
 .. function:: compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None)
 

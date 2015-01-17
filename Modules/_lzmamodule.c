@@ -66,6 +66,9 @@ typedef struct {
     int check;
     char eof;
     PyObject *unused_data;
+    char needs_input;
+    uint8_t *input_buffer;
+    size_t input_buffer_size;
 #ifdef WITH_THREAD
     PyThread_type_lock lock;
 #endif
@@ -142,10 +145,15 @@ PyLzma_Free(void *opaque, void *ptr)
 #endif
 
 static int
-grow_buffer(PyObject **buf)
+grow_buffer(PyObject **buf, Py_ssize_t max_length)
 {
-    size_t size = PyBytes_GET_SIZE(*buf);
-    return _PyBytes_Resize(buf, size + (size >> 3) + 6);
+    Py_ssize_t size = PyBytes_GET_SIZE(*buf);
+    Py_ssize_t newsize = size + (size >> 3) + 6;
+    
+    if (max_length > 0 && newsize > max_length)
+        newsize = max_length;
+    
+    return _PyBytes_Resize(buf, newsize);
 }
 
 
@@ -504,7 +512,7 @@ class lzma_filter_converter(CConverter):
 static PyObject *
 compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
 {
-    size_t data_size = 0;
+    Py_ssize_t data_size = 0;
     PyObject *result;
 
     result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
@@ -527,13 +535,13 @@ compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
             (action == LZMA_FINISH && lzret == LZMA_STREAM_END)) {
             break;
         } else if (c->lzs.avail_out == 0) {
-            if (grow_buffer(&result) == -1)
+            if (grow_buffer(&result, -1) == -1)
                 goto error;
             c->lzs.next_out = (uint8_t *)PyBytes_AS_STRING(result) + data_size;
             c->lzs.avail_out = PyBytes_GET_SIZE(result) - data_size;
         }
     }
-    if (data_size != (size_t)PyBytes_GET_SIZE(result))
+    if (data_size != PyBytes_GET_SIZE(result))
         if (_PyBytes_Resize(&result, data_size) == -1)
             goto error;
     return result;
@@ -888,25 +896,33 @@ static PyTypeObject Compressor_type = {
 
 /* LZMADecompressor class. */
 
-static PyObject *
-decompress(Decompressor *d, uint8_t *data, size_t len)
+/* Decompress data of length d->lzs.avail_in in d->lzs.next_in.  The output
+   buffer is allocated dynamically and returned.  At most max_length bytes are
+   returned, so some of the input may not be consumed. d->lzs.next_in and
+   d->lzs.avail_in are updated to reflect the consumed input. */
+static PyObject*
+decompress_buf(Decompressor *d, Py_ssize_t max_length)
 {
-    size_t data_size = 0;
+    Py_ssize_t data_size = 0;
     PyObject *result;
-
-    result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
+    lzma_stream *lzs = &d->lzs;
+    
+    if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
+        result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
+    else
+        result = PyBytes_FromStringAndSize(NULL, max_length);
     if (result == NULL)
         return NULL;
-    d->lzs.next_in = data;
-    d->lzs.avail_in = len;
-    d->lzs.next_out = (uint8_t *)PyBytes_AS_STRING(result);
-    d->lzs.avail_out = PyBytes_GET_SIZE(result);
+
+    lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result);
+    lzs->avail_out = PyBytes_GET_SIZE(result);
+    
     for (;;) {
         lzma_ret lzret;
 
         Py_BEGIN_ALLOW_THREADS
-        lzret = lzma_code(&d->lzs, LZMA_RUN);
-        data_size = (char *)d->lzs.next_out - PyBytes_AS_STRING(result);
+        lzret = lzma_code(lzs, LZMA_RUN);
+        data_size = (char *)lzs->next_out - PyBytes_AS_STRING(result);
         Py_END_ALLOW_THREADS
         if (catch_lzma_error(lzret))
             goto error;
@@ -914,26 +930,131 @@ decompress(Decompressor *d, uint8_t *data, size_t len)
             d->check = lzma_get_check(&d->lzs);
         if (lzret == LZMA_STREAM_END) {
             d->eof = 1;
-            if (d->lzs.avail_in > 0) {
-                Py_CLEAR(d->unused_data);
-                d->unused_data = PyBytes_FromStringAndSize(
-                        (char *)d->lzs.next_in, d->lzs.avail_in);
-                if (d->unused_data == NULL)
-                    goto error;
-            }
             break;
-        } else if (d->lzs.avail_in == 0) {
+        } else if (lzs->avail_in == 0) {
             break;
-        } else if (d->lzs.avail_out == 0) {
-            if (grow_buffer(&result) == -1)
+        } else if (lzs->avail_out == 0) {
+            if (data_size == max_length)
+                break;
+            if (grow_buffer(&result, max_length) == -1)
                 goto error;
-            d->lzs.next_out = (uint8_t *)PyBytes_AS_STRING(result) + data_size;
-            d->lzs.avail_out = PyBytes_GET_SIZE(result) - data_size;
+            lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result) + data_size;
+            lzs->avail_out = PyBytes_GET_SIZE(result) - data_size;
         }
     }
-    if (data_size != (size_t)PyBytes_GET_SIZE(result))
+    if (data_size != PyBytes_GET_SIZE(result))
         if (_PyBytes_Resize(&result, data_size) == -1)
             goto error;
+
+    return result;
+    
+error:
+    Py_XDECREF(result);
+    return NULL;
+}
+
+static PyObject *
+decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
+{
+    char input_buffer_in_use;
+    PyObject *result;
+    lzma_stream *lzs = &d->lzs;
+    
+    /* Prepend unconsumed input if necessary */
+    if (lzs->next_in != NULL) {
+        size_t avail_now, avail_total;
+        
+        /* Number of bytes we can append to input buffer */
+        avail_now = (d->input_buffer + d->input_buffer_size)
+            - (lzs->next_in + lzs->avail_in);
+
+        /* Number of bytes we can append if we move existing
+           contents to beginning of buffer (overwriting
+           consumed input) */
+        avail_total = d->input_buffer_size - lzs->avail_in;
+
+        if (avail_total < len) {
+            size_t offset = lzs->next_in - d->input_buffer;
+            uint8_t *tmp;
+            size_t new_size = d->input_buffer_size + len - avail_now;
+
+            /* Assign to temporary variable first, so we don't
+               lose address of allocated buffer if realloc fails */
+            tmp = PyMem_Realloc(d->input_buffer, new_size);
+            if (tmp == NULL) {
+                PyErr_SetNone(PyExc_MemoryError);
+                return NULL;
+            }
+            d->input_buffer = tmp;
+            d->input_buffer_size = new_size;
+            
+            lzs->next_in = d->input_buffer + offset;
+        }
+        else if (avail_now < len) {
+            memmove(d->input_buffer, lzs->next_in,
+                    lzs->avail_in);
+            lzs->next_in = d->input_buffer;
+        }
+        memcpy((void*)(lzs->next_in + lzs->avail_in), data, len);
+        lzs->avail_in += len;
+        input_buffer_in_use = 1;
+    }
+    else {
+        lzs->next_in = data;
+        lzs->avail_in = len;
+        input_buffer_in_use = 0;
+    }
+
+    result = decompress_buf(d, max_length);
+    if(result == NULL)
+        return NULL;
+
+    if (d->eof) {
+        d->needs_input = 0;
+        if (lzs->avail_in > 0) {
+            Py_CLEAR(d->unused_data);
+            d->unused_data = PyBytes_FromStringAndSize(
+                (char *)lzs->next_in, lzs->avail_in);
+            if (d->unused_data == NULL)
+                goto error;
+        }
+    }
+    else if (lzs->avail_in == 0) {
+        lzs->next_in = NULL;
+        d->needs_input = 1;
+    }
+    else {
+        d->needs_input = 0;
+
+        /* If we did not use the input buffer, we now have
+           to copy the tail from the caller's buffer into the
+           input buffer */
+        if (!input_buffer_in_use) {
+
+            /* Discard buffer if it's too small
+               (resizing it may needlessly copy the current contents) */
+            if (d->input_buffer != NULL &&
+                d->input_buffer_size < lzs->avail_in) {
+                PyMem_Free(d->input_buffer);
+                d->input_buffer = NULL;
+            }
+
+            /* Allocate if necessary */
+            if (d->input_buffer == NULL) {
+                d->input_buffer = PyMem_Malloc(lzs->avail_in);
+                if (d->input_buffer == NULL) {
+                    PyErr_SetNone(PyExc_MemoryError);
+                    goto error;
+                }
+                d->input_buffer_size = lzs->avail_in;
+            }
+
+            /* Copy tail */
+            memcpy(d->input_buffer, lzs->next_in, lzs->avail_in);
+            lzs->next_in = d->input_buffer;
+        }
+    }
+    
     return result;
 
 error:
@@ -946,20 +1067,27 @@ _lzma.LZMADecompressor.decompress
 
     self: self(type="Decompressor *")
     data: Py_buffer
-    /
+    max_length: Py_ssize_t=-1
 
-Provide data to the decompressor object.
+Decompress *data*, returning uncompressed data as bytes.
 
-Returns a chunk of decompressed data if possible, or b'' otherwise.
+If *max_length* is nonnegative, returns at most *max_length* bytes of
+decompressed data. If this limit is reached and further output can be
+produced, *self.needs_input* will be set to ``False``. In this case, the next
+call to *decompress()* may provide *data* as b'' to obtain more of the output.
 
-Attempting to decompress data after the end of stream is reached
-raises an EOFError.  Any data found after the end of the stream
-is ignored and saved in the unused_data attribute.
+If all of the input data was decompressed and returned (either because this
+was less than *max_length* bytes, or because *max_length* was negative),
+*self.needs_input* will be set to True.
+
+Attempting to decompress data after the end of stream is reached raises an
+EOFError.  Any data found after the end of the stream is ignored and saved in
+the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
-_lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data)
-/*[clinic end generated code: output=d86e78da7ff0ff21 input=50c4768b821bf0ef]*/
+_lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data, Py_ssize_t max_length)
+/*[clinic end generated code: output=1532a5bb23629001 input=262e4e217f49039b]*/
 {
     PyObject *result = NULL;
 
@@ -967,7 +1095,7 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data)
     if (self->eof)
         PyErr_SetString(PyExc_EOFError, "Already at end of stream");
     else
-        result = decompress(self, data->buf, data->len);
+        result = decompress(self, data->buf, data->len, max_length);
     RELEASE_LOCK(self);
     return result;
 }
@@ -1055,6 +1183,7 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format, PyObject *m
     self->alloc.alloc = PyLzma_Malloc;
     self->alloc.free = PyLzma_Free;
     self->lzs.allocator = &self->alloc;
+    self->lzs.next_in = NULL;
 
 #ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
@@ -1065,6 +1194,9 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format, PyObject *m
 #endif
 
     self->check = LZMA_CHECK_UNKNOWN;
+    self->needs_input = 1;
+    self->input_buffer = NULL;
+    self->input_buffer_size = 0;
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL)
         goto error;
@@ -1113,6 +1245,9 @@ error:
 static void
 Decompressor_dealloc(Decompressor *self)
 {
+    if(self->input_buffer != NULL)
+        PyMem_Free(self->input_buffer);
+    
     lzma_end(&self->lzs);
     Py_CLEAR(self->unused_data);
 #ifdef WITH_THREAD
@@ -1134,6 +1269,9 @@ PyDoc_STRVAR(Decompressor_check_doc,
 PyDoc_STRVAR(Decompressor_eof_doc,
 "True if the end-of-stream marker has been reached.");
 
+PyDoc_STRVAR(Decompressor_needs_input_doc,
+"True if more input is needed before more decompressed data can be produced.");
+
 PyDoc_STRVAR(Decompressor_unused_data_doc,
 "Data found after the end of the compressed stream.");
 
@@ -1142,6 +1280,8 @@ static PyMemberDef Decompressor_members[] = {
      Decompressor_check_doc},
     {"eof", T_BOOL, offsetof(Decompressor, eof), READONLY,
      Decompressor_eof_doc},
+    {"needs_input", T_BOOL, offsetof(Decompressor, needs_input), READONLY,
+     Decompressor_needs_input_doc},
     {"unused_data", T_OBJECT_EX, offsetof(Decompressor, unused_data), READONLY,
      Decompressor_unused_data_doc},
     {NULL}
