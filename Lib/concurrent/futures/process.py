@@ -57,6 +57,7 @@ import threading
 import weakref
 from functools import partial
 import itertools
+import traceback
 
 # Workers are created as daemon threads and processes. This is done to allow the
 # interpreter to exit when there are still idle processes in a
@@ -89,6 +90,27 @@ def _python_exit():
 # work while a larger number will make Future.cancel() succeed less frequently
 # (Futures in the call queue cannot be cancelled).
 EXTRA_QUEUED_CALLS = 1
+
+# Hack to embed stringification of remote traceback in local traceback
+
+class _RemoteTraceback(Exception):
+    def __init__(self, tb):
+        self.tb = tb
+    def __str__(self):
+        return self.tb
+
+class _ExceptionWithTraceback:
+    def __init__(self, exc, tb):
+        tb = traceback.format_exception(type(exc), exc, tb)
+        tb = ''.join(tb)
+        self.exc = exc
+        self.tb = '\n"""\n%s"""' % tb
+    def __reduce__(self):
+        return _rebuild_exc, (self.exc, self.tb)
+
+def _rebuild_exc(exc, tb):
+    exc.__cause__ = _RemoteTraceback(tb)
+    return exc
 
 class _WorkItem(object):
     def __init__(self, future, fn, args, kwargs):
@@ -152,8 +174,8 @@ def _process_worker(call_queue, result_queue):
         try:
             r = call_item.fn(*call_item.args, **call_item.kwargs)
         except BaseException as e:
-            result_queue.put(_ResultItem(call_item.work_id,
-                                         exception=e))
+            exc = _ExceptionWithTraceback(e, e.__traceback__)
+            result_queue.put(_ResultItem(call_item.work_id, exception=exc))
         else:
             result_queue.put(_ResultItem(call_item.work_id,
                                          result=r))

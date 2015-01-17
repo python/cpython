@@ -203,6 +203,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21817: When an exception is raised in a task submitted to a
+  ProcessPoolExecutor, the remote traceback is now displayed in the
+  parent process.  Patch by Claudiu Popa.
+
 - Issue #15955: Add an option to limit output size when decompressing LZMA
   data.  Patch by Nikolaus Rath and Martin Panter.
 
