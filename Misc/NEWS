@@ -203,6 +203,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15955: Add an option to limit output size when decompressing LZMA
+  data.  Patch by Nikolaus Rath and Martin Panter.
+
 - Issue #23250: In the http.cookies module, capitalize "HttpOnly" and "Secure"
   as they are written in the standard.
 
