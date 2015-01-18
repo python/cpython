@@ -203,6 +203,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23133: Pickling of ipaddress objects now produces more compact and
+  portable representation.
+
 - Issue #23248: Update ssl error codes from latest OpenSSL git master.
 
 - Issue #23266: Much faster implementation of ipaddress.collapse_addresses()
