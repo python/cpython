@@ -86,6 +86,9 @@ IDLE
 - Issue #16893: Update Idle doc chapter to match current Idle and add new
   information.
 
+- Issue #23180: Rename IDLE "Windows" menu item to "Window".
+  Patch by Al Sweigart.
+
 Build
 -----
 

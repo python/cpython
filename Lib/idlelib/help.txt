@@ -100,7 +100,7 @@ Options Menu:
 			  which is scrolling off the top or the window.
 			  (Not present in Shell window.)
 
-Windows Menu:
+Window Menu:
 
 	Zoom Height -- toggles the window between configured size
 	and maximum height.

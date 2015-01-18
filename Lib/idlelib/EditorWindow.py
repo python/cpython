@@ -469,12 +469,9 @@ class EditorWindow(object):
         ("format", "F_ormat"),
         ("run", "_Run"),
         ("options", "_Options"),
-        ("windows", "_Windows"),
+        ("windows", "_Window"),
         ("help", "_Help"),
     ]
-
-    if sys.platform == "darwin":
-        menu_specs[-2] = ("windows", "_Window")
 
 
     def createmenubar(self):
