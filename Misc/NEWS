@@ -203,6 +203,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23248: Update ssl error codes from latest OpenSSL git master.
+
 - Issue #23266: Much faster implementation of ipaddress.collapse_addresses()
   when there are many non-consecutive addresses.
 
