@@ -8,6 +8,7 @@ import unittest
 import re
 import contextlib
 import operator
+import pickle
 import ipaddress
 
 
@@ -81,6 +82,13 @@ class CommonTestMixin:
         self.assertRaises(TypeError, operator.index, self.factory(1))
         self.assertRaises(TypeError, hex, self.factory(1))
         self.assertRaises(TypeError, bytes, self.factory(1))
+
+    def pickle_test(self, addr):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                x = self.factory(addr)
+                y = pickle.loads(pickle.dumps(x, proto))
+                self.assertEqual(y, x)
 
 
 class CommonTestMixin_v4(CommonTestMixin):
@@ -247,6 +255,9 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
         assertBadOctet("257.0.0.0", 257)
         assertBadOctet("192.168.0.999", 999)
 
+    def test_pickle(self):
+        self.pickle_test('192.0.2.1')
+
 
 class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     factory = ipaddress.IPv6Address
@@ -379,6 +390,9 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
         assertBadPart("02001:db8::", "02001")
         assertBadPart('2001:888888::1', "888888")
 
+    def test_pickle(self):
+        self.pickle_test('2001:db8::')
+
 
 class NetmaskTestMixin_v4(CommonTestMixin_v4):
     """Input validation on interfaces and networks is very similar"""
@@ -446,6 +460,11 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
 class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Interface
 
+    def test_pickle(self):
+        self.pickle_test('192.0.2.0/27')
+        self.pickle_test('192.0.2.0/31')  # IPV4LENGTH - 1
+        self.pickle_test('192.0.2.0')     # IPV4LENGTH
+
 
 class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Network
@@ -499,6 +518,11 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
         assertBadNetmask("::1", "1.2.3.4")
         assertBadNetmask("::1", "pudding")
         assertBadNetmask("::", "::")
+
+    def test_pickle(self):
+        self.pickle_test('2001:db8::1000/124')
+        self.pickle_test('2001:db8::1000/127')  # IPV6LENGTH - 1
+        self.pickle_test('2001:db8::1000')      # IPV6LENGTH
 
 
 class InterfaceTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
@@ -773,13 +797,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(nitems, 1)
         self.assertEqual(128, ipaddress._count_righthand_zero_bits(0, 128))
         self.assertEqual("IPv4Network('1.2.3.0/24')", repr(self.ipv4_network))
-
-    def testMissingAddressVersion(self):
-        class Broken(ipaddress._BaseAddress):
-            pass
-        broken = Broken('127.0.0.1')
-        with self.assertRaisesRegex(NotImplementedError, "Broken.*version"):
-            broken.version
 
     def testMissingNetworkVersion(self):
         class Broken(ipaddress._BaseNetwork):
