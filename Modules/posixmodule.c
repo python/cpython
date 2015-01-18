@@ -617,6 +617,29 @@ fail:
 #endif /* MS_WINDOWS */
 
 
+#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
+static int
+_Py_Dev_Converter(PyObject *obj, void *p)
+{
+#ifdef HAVE_LONG_LONG
+    *((dev_t *)p) = PyLong_AsUnsignedLongLong(obj);
+#else
+    *((dev_t *)p) = PyLong_AsUnsignedLong(obj);
+#endif
+    if (PyErr_Occurred())
+        return 0;
+    return 1;
+}
+
+#ifdef HAVE_LONG_LONG
+#  define _PyLong_FromDev PyLong_FromLongLong
+#else
+#  define _PyLong_FromDev PyLong_FromLong
+#endif
+
+#endif
+
+
 #ifdef AT_FDCWD
 /*
  * Why the (int) cast?  Solaris 10 defines AT_FDCWD as 0xffd19553 (-3041965);
@@ -2208,11 +2231,8 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #endif
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
-#elif defined(HAVE_LONG_LONG)
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((PY_LONG_LONG)st->st_dev));
 #else
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long)st->st_dev));
+    PyStructSequence_SET_ITEM(v, 2, _PyLong_FromDev(st->st_dev));
 #endif
     PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long)st->st_nlink));
 #if defined(MS_WINDOWS)
@@ -2589,6 +2609,15 @@ class gid_t_converter(CConverter):
     type = "gid_t"
     converter = '_Py_Gid_Converter'
 
+class dev_t_converter(CConverter):
+    type = 'dev_t'
+    converter = '_Py_Dev_Converter'
+
+class dev_t_return_converter(unsigned_long_return_converter):
+    type = 'dev_t'
+    conversion_fn = '_PyLong_FromDev'
+    unsigned_cast = '(dev_t)'
+
 class FSConverter_converter(CConverter):
     type = 'PyObject *'
     converter = 'PyUnicode_FSConverter'
@@ -2639,7 +2668,7 @@ class sched_param_converter(CConverter):
     impl_by_reference = True;
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=147ba8f52a05aca4]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=affe68316f160401]*/
 
 /*[clinic input]
 
@@ -12348,7 +12377,7 @@ os.mknod
 
     path: path_t
     mode: int=0o600
-    device: int=0
+    device: dev_t=0
     *
     dir_fd: dir_fd(requires='mknodat')=None
 
@@ -12389,7 +12418,7 @@ PyDoc_STRVAR(os_mknod__doc__,
     {"mknod", (PyCFunction)os_mknod, METH_VARARGS|METH_KEYWORDS, os_mknod__doc__},
 
 static PyObject *
-os_mknod_impl(PyModuleDef *module, path_t *path, int mode, int device, int dir_fd);
+os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device, int dir_fd);
 
 static PyObject *
 os_mknod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -12398,12 +12427,12 @@ os_mknod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"path", "mode", "device", "dir_fd", NULL};
     path_t path = PATH_T_INITIALIZE("mknod", "path", 0, 0);
     int mode = 384;
-    int device = 0;
+    dev_t device = 0;
     int dir_fd = DEFAULT_DIR_FD;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|ii$O&:mknod", _keywords,
-        path_converter, &path, &mode, &device, MKNODAT_DIR_FD_CONVERTER, &dir_fd))
+        "O&|iO&$O&:mknod", _keywords,
+        path_converter, &path, &mode, _Py_Dev_Converter, &device, MKNODAT_DIR_FD_CONVERTER, &dir_fd))
         goto exit;
     return_value = os_mknod_impl(module, &path, mode, device, dir_fd);
 
@@ -12415,8 +12444,8 @@ exit:
 }
 
 static PyObject *
-os_mknod_impl(PyModuleDef *module, path_t *path, int mode, int device, int dir_fd)
-/*[clinic end generated code: output=c688739c15ca7bbb input=30e02126aba9732e]*/
+os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device, int dir_fd)
+/*[clinic end generated code: output=f71d54eaf9bb6f1a input=ee44531551a4d83b]*/
 {
     int result;
 
@@ -12441,7 +12470,7 @@ os_mknod_impl(PyModuleDef *module, path_t *path, int mode, int device, int dir_f
 /*[clinic input]
 os.major -> unsigned_int
 
-    device: int
+    device: dev_t
     /
 
 Extracts a device major number from a raw device number.
@@ -12457,18 +12486,18 @@ PyDoc_STRVAR(os_major__doc__,
     {"major", (PyCFunction)os_major, METH_VARARGS, os_major__doc__},
 
 static unsigned int
-os_major_impl(PyModuleDef *module, int device);
+os_major_impl(PyModuleDef *module, dev_t device);
 
 static PyObject *
 os_major(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    int device;
+    dev_t device;
     unsigned int _return_value;
 
     if (!PyArg_ParseTuple(args,
-        "i:major",
-        &device))
+        "O&:major",
+        _Py_Dev_Converter, &device))
         goto exit;
     _return_value = os_major_impl(module, device);
     if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
@@ -12480,8 +12509,8 @@ exit:
 }
 
 static unsigned int
-os_major_impl(PyModuleDef *module, int device)
-/*[clinic end generated code: output=52e6743300dcf4ad input=ea48820b7e10d310]*/
+os_major_impl(PyModuleDef *module, dev_t device)
+/*[clinic end generated code: output=a2d06e908ebf95b5 input=1e16a4d30c4d4462]*/
 {
     return major(device);
 }
@@ -12490,7 +12519,7 @@ os_major_impl(PyModuleDef *module, int device)
 /*[clinic input]
 os.minor -> unsigned_int
 
-    device: int
+    device: dev_t
     /
 
 Extracts a device minor number from a raw device number.
@@ -12506,18 +12535,18 @@ PyDoc_STRVAR(os_minor__doc__,
     {"minor", (PyCFunction)os_minor, METH_VARARGS, os_minor__doc__},
 
 static unsigned int
-os_minor_impl(PyModuleDef *module, int device);
+os_minor_impl(PyModuleDef *module, dev_t device);
 
 static PyObject *
 os_minor(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    int device;
+    dev_t device;
     unsigned int _return_value;
 
     if (!PyArg_ParseTuple(args,
-        "i:minor",
-        &device))
+        "O&:minor",
+        _Py_Dev_Converter, &device))
         goto exit;
     _return_value = os_minor_impl(module, device);
     if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
@@ -12529,15 +12558,15 @@ exit:
 }
 
 static unsigned int
-os_minor_impl(PyModuleDef *module, int device)
-/*[clinic end generated code: output=aebe4bd7f455b755 input=089733ebbf9754e8]*/
+os_minor_impl(PyModuleDef *module, dev_t device)
+/*[clinic end generated code: output=6332287ee3f006e2 input=0842c6d23f24c65e]*/
 {
     return minor(device);
 }
 
 
 /*[clinic input]
-os.makedev -> unsigned_int
+os.makedev -> dev_t
 
     major: int
     minor: int
@@ -12555,7 +12584,7 @@ PyDoc_STRVAR(os_makedev__doc__,
 #define OS_MAKEDEV_METHODDEF    \
     {"makedev", (PyCFunction)os_makedev, METH_VARARGS, os_makedev__doc__},
 
-static unsigned int
+static dev_t
 os_makedev_impl(PyModuleDef *module, int major, int minor);
 
 static PyObject *
@@ -12564,24 +12593,24 @@ os_makedev(PyModuleDef *module, PyObject *args)
     PyObject *return_value = NULL;
     int major;
     int minor;
-    unsigned int _return_value;
+    dev_t _return_value;
 
     if (!PyArg_ParseTuple(args,
         "ii:makedev",
         &major, &minor))
         goto exit;
     _return_value = os_makedev_impl(module, major, minor);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
+    if ((_return_value == (dev_t)-1) && PyErr_Occurred())
         goto exit;
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = _PyLong_FromDev(_return_value);
 
 exit:
     return return_value;
 }
 
-static unsigned int
+static dev_t
 os_makedev_impl(PyModuleDef *module, int major, int minor)
-/*[clinic end generated code: output=5cb79d9c9eac58b0 input=f55bf7cffb028a08]*/
+/*[clinic end generated code: output=38e9a9774c96511a input=4b9fd8fc73cbe48f]*/
 {
     return makedev(major, minor);
 }
