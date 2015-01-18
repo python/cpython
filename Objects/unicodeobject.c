@@ -2039,7 +2039,7 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
                see http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
                (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt
                Uncomment the 2 lines below to make them invalid,
-               codepoints: d800-dfff; UTF-8: \xed\xa0\x80-\xed\xbf\xbf. */
+               code points: d800-dfff; UTF-8: \xed\xa0\x80-\xed\xbf\xbf. */
             if ((s[1] & 0xc0) != 0x80 ||
                 (s[2] & 0xc0) != 0x80 ||
                 ((unsigned char)s[0] == 0xE0 &&
@@ -2337,7 +2337,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     }
 
     /* On narrow builds we split characters outside the BMP into two
-       codepoints => count how much extra space we need. */
+       code points => count how much extra space we need. */
 #ifndef Py_UNICODE_WIDE
     for (qq = q; e - qq >= 4; qq += 4)
         if (qq[iorder[2]] != 0 || qq[iorder[3]] != 0)
@@ -2372,7 +2372,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 
         if (ch >= 0x110000)
         {
-            errmsg = "codepoint not in range(0x110000)";
+            errmsg = "code point not in range(0x110000)";
             startinpos = ((const char *)q)-starts;
             endinpos = startinpos+4;
             goto utf32Error;
@@ -2449,7 +2449,7 @@ PyUnicode_EncodeUTF32(const Py_UNICODE *s,
         p += 4;                                 \
     } while(0)
 
-    /* In narrow builds we can output surrogate pairs as one codepoint,
+    /* In narrow builds we can output surrogate pairs as one code point,
        so we need less space. */
 #ifndef Py_UNICODE_WIDE
     for (i = pairs = 0; i < size-1; i++)

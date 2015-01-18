@@ -153,7 +153,7 @@ A single exception is defined as well:
 
 .. method:: SGMLParser.convert_codepoint(codepoint)
 
-   Convert a codepoint to a :class:`str` value.  Encodings can be handled here if
+   Convert a code point to a :class:`str` value.  Encodings can be handled here if
    appropriate, though the rest of :mod:`sgmllib` is oblivious on this matter.
 
    .. versionadded:: 2.5

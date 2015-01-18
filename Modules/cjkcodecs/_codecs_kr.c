@@ -64,7 +64,7 @@ ENCODER(euc_kr)
             OUT1(EUCKR_JAMO_FIRSTBYTE)
             OUT2(EUCKR_JAMO_FILLER)
 
-            /* All codepoints in CP949 extension are in unicode
+            /* All code points in CP949 extension are in unicode
              * Hangul Syllable area. */
             assert(0xac00 <= c && c <= 0xd7a3);
             c -= 0xac00;
