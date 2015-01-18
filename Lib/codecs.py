@@ -124,7 +124,7 @@ class Codec:
                     Python will use the official U+FFFD REPLACEMENT
                     CHARACTER for the builtin Unicode codecs on
                     decoding and '?' on encoding.
-         'surrogateescape' - replace with private codepoints U+DCnn.
+         'surrogateescape' - replace with private code points U+DCnn.
          'xmlcharrefreplace' - Replace with the appropriate XML
                                character reference (only for encoding).
          'backslashreplace'  - Replace with backslashed escape sequences
