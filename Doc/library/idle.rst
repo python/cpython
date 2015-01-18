@@ -258,8 +258,8 @@ Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.
 
-Windows menu (Shell and Editor)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Window menu (Shell and Editor)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Zoom Height
    Toggles the window between normal size and maximum height. The initial size
