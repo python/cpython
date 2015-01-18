@@ -623,6 +623,29 @@ fail:
 #endif /* MS_WINDOWS */
 
 
+#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
+static int
+_Py_Dev_Converter(PyObject *obj, void *p)
+{
+#ifdef HAVE_LONG_LONG
+    *((dev_t *)p) = PyLong_AsUnsignedLongLong(obj);
+#else
+    *((dev_t *)p) = PyLong_AsUnsignedLong(obj);
+#endif
+    if (PyErr_Occurred())
+        return 0;
+    return 1;
+}
+
+#ifdef HAVE_LONG_LONG
+#  define _PyLong_FromDev PyLong_FromLongLong
+#else
+#  define _PyLong_FromDev PyLong_FromLong
+#endif
+
+#endif
+
+
 #ifdef AT_FDCWD
 /*
  * Why the (int) cast?  Solaris 10 defines AT_FDCWD as 0xffd19553 (-3041965);
@@ -2218,11 +2241,8 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #endif
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
-#elif defined(HAVE_LONG_LONG)
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((PY_LONG_LONG)st->st_dev));
 #else
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long)st->st_dev));
+    PyStructSequence_SET_ITEM(v, 2, _PyLong_FromDev(st->st_dev));
 #endif
     PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long)st->st_nlink));
 #if defined(MS_WINDOWS)
@@ -8633,16 +8653,16 @@ posix_mknod(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     path_t path;
     int mode = 0666;
-    int device = 0;
+    dev_t device = 0;
     int dir_fd = DEFAULT_DIR_FD;
     int result;
     PyObject *return_value = NULL;
     static char *keywords[] = {"path", "mode", "device", "dir_fd", NULL};
 
     memset(&path, 0, sizeof(path));
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|ii$O&:mknod", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|iO&$O&:mknod", keywords,
         path_converter, &path,
-        &mode, &device,
+        &mode, _Py_Dev_Converter, &device,
 #ifdef HAVE_MKNODAT
         dir_fd_converter, &dir_fd
 #else
@@ -8682,8 +8702,8 @@ Extracts a device major number from a raw device number.");
 static PyObject *
 posix_major(PyObject *self, PyObject *args)
 {
-    int device;
-    if (!PyArg_ParseTuple(args, "i:major", &device))
+    dev_t device;
+    if (!PyArg_ParseTuple(args, "O&:major", _Py_Dev_Converter, &device))
         return NULL;
     return PyLong_FromLong((long)major(device));
 }
@@ -8695,8 +8715,8 @@ Extracts a device minor number from a raw device number.");
 static PyObject *
 posix_minor(PyObject *self, PyObject *args)
 {
-    int device;
-    if (!PyArg_ParseTuple(args, "i:minor", &device))
+    dev_t device;
+    if (!PyArg_ParseTuple(args, "O&:minor", _Py_Dev_Converter, &device))
         return NULL;
     return PyLong_FromLong((long)minor(device));
 }
@@ -8711,7 +8731,7 @@ posix_makedev(PyObject *self, PyObject *args)
     int major, minor;
     if (!PyArg_ParseTuple(args, "ii:makedev", &major, &minor))
         return NULL;
-    return PyLong_FromLong((long)makedev(major, minor));
+    return _PyLong_FromDev(makedev(major, minor));
 }
 #endif /* device macros */
 
