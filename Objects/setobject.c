@@ -668,32 +668,22 @@ set_pop(PySetObject *so)
         return NULL;
     }
 
-    /* Set entry to "the first" unused or dummy set entry.  We abuse
-     * the hash field of slot 0 to hold a search finger:
-     * If slot 0 has a value, use slot 0.
-     * Else slot 0 is being used to hold a search finger,
-     * and we use its hash value as the first index to look.
+    i = so->finger;
+    /* This may be a legit search finger, or it may be a once legit
+     * search finger that's out of bounds now (due to wrapping or
+     * resizing).  We simply make sure it's in bounds now.
      */
-    entry = &so->table[0];
-    if (entry->key == NULL || entry->key == dummy) {
-        i = entry->hash;
-        /* The hash field may be a real hash value, or it may be a
-         * legit search finger, or it may be a once-legit search
-         * finger that's out of bounds now because it wrapped around
-         * or the table shrunk -- simply make sure it's in bounds now.
-         */
-        if (i > so->mask || i < 1)
-            i = 1;              /* skip slot 0 */
-        while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
-            i++;
-            if (i > so->mask)
-                i = 1;
-        }
+    if (i > so->mask)
+        i = 0;
+    while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
+        i++;
+        if (i > so->mask)
+            i = 0;
     }
     key = entry->key;
     entry->key = dummy;
     so->used--;
-    so->table[0].hash = i + 1;  /* next place to start */
+    so->finger = i + 1;         /* next place to start */
     return key;
 }
 
@@ -1012,6 +1002,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     so->table = so->smalltable;
     so->lookup = set_lookkey_unicode;
     so->hash = -1;
+    so->finger = 0;
     so->weakreflist = NULL;
 
     if (iterable != NULL) {

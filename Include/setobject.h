@@ -14,9 +14,7 @@ extern "C" {
 2. Active:  key != NULL and key != dummy
 3. Dummy:   key == dummy
 
-Note: .pop() abuses the hash field of an Unused or Dummy slot to
-hold a search finger.  The hash field of Unused or Dummy slots has
-no meaning otherwise.
+The hash field of Unused or Dummy slots have no meaning.
 */
 
 #define PySet_MINSIZE 8
@@ -59,6 +57,7 @@ typedef struct _setobject {
     Py_hash_t hash;             /* Only used by frozenset objects */
     setentry smalltable[PySet_MINSIZE];
 
+    Py_ssize_t finger;          /* Search finger for pop() */
     PyObject *weakreflist;      /* List of weak references */
 } PySetObject;
 
