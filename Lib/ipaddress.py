@@ -567,6 +567,9 @@ class _IPAddressBase(_TotalOrderingMixin):
         except ValueError:
             cls._report_invalid_netmask(ip_str)
 
+    def __reduce__(self):
+        return self.__class__, (str(self),)
+
 
 class _BaseAddress(_IPAddressBase):
 
@@ -575,11 +578,6 @@ class _BaseAddress(_IPAddressBase):
     This IP class contains the version independent methods which are
     used by single IP addresses.
     """
-
-    def __init__(self, address):
-        if (not isinstance(address, bytes)
-            and '/' in str(address)):
-            raise AddressValueError("Unexpected '/' in %r" % address)
 
     def __int__(self):
         return self._ip
@@ -625,6 +623,9 @@ class _BaseAddress(_IPAddressBase):
 
     def _get_address_key(self):
         return (self._version, self)
+
+    def __reduce__(self):
+        return self.__class__, (self._ip,)
 
 
 class _BaseNetwork(_IPAddressBase):
@@ -1295,7 +1296,6 @@ class IPv4Address(_BaseV4, _BaseAddress):
             AddressValueError: If ipaddress isn't a valid IPv4 address.
 
         """
-        _BaseAddress.__init__(self, address)
         _BaseV4.__init__(self, address)
 
         # Efficient constructor from integer.
@@ -1313,6 +1313,8 @@ class IPv4Address(_BaseV4, _BaseAddress):
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
         addr_str = str(address)
+        if '/' in addr_str:
+            raise AddressValueError("Unexpected '/' in %r" % address)
         self._ip = self._ip_int_from_string(addr_str)
 
     @property
@@ -1445,6 +1447,8 @@ class IPv4Interface(IPv4Address):
 
     def __hash__(self):
         return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+
+    __reduce__ = _IPAddressBase.__reduce__
 
     @property
     def ip(self):
@@ -1920,7 +1924,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
             AddressValueError: If address isn't a valid IPv6 address.
 
         """
-        _BaseAddress.__init__(self, address)
         _BaseV6.__init__(self, address)
 
         # Efficient constructor from integer.
@@ -1938,6 +1941,8 @@ class IPv6Address(_BaseV6, _BaseAddress):
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
         addr_str = str(address)
+        if '/' in addr_str:
+            raise AddressValueError("Unexpected '/' in %r" % address)
         self._ip = self._ip_int_from_string(addr_str)
 
     @property
@@ -2133,6 +2138,8 @@ class IPv6Interface(IPv6Address):
 
     def __hash__(self):
         return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+
+    __reduce__ = _IPAddressBase.__reduce__
 
     @property
     def ip(self):
