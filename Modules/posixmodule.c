@@ -474,6 +474,36 @@ OverflowUp:
 #endif /* MS_WINDOWS */
 
 
+#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
+static int
+_Py_Dev_Converter(PyObject *obj, void *p)
+{
+#ifdef HAVE_LONG_LONG
+    *((dev_t *)p) = PyLong_AsUnsignedLongLong(obj);
+#else
+    *((dev_t *)p) = PyLong_AsUnsignedLong(obj);
+#endif
+    if (PyErr_Occurred())
+        return 0;
+    return 1;
+}
+
+#ifdef HAVE_LONG_LONG
+static PyObject *
+_PyInt_FromDev(PY_LONG_LONG v)
+{
+    if (LONG_MIN <= v && v <= LONG_MAX)
+        return PyInt_FromLong((long)v);
+    else
+        return PyLong_FromLongLong(v);
+}
+#else
+#  define _PyInt_FromDev PyInt_FromLong
+#endif
+
+#endif
+
+
 #if defined _MSC_VER && _MSC_VER >= 1400
 /* Microsoft CRT in VS2005 and higher will verify that a filehandle is
  * valid and raise an assertion if it isn't.
@@ -1426,11 +1456,10 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #else
     PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long)st->st_ino));
 #endif
-#if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((PY_LONG_LONG)st->st_dev));
+#ifdef MS_WINDOWS
+    PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
 #else
-    PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long)st->st_dev));
+    PyStructSequence_SET_ITEM(v, 2, _PyInt_FromDev(st->st_dev));
 #endif
     PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long)st->st_nlink));
 #if defined(MS_WINDOWS)
@@ -7009,9 +7038,11 @@ posix_mknod(PyObject *self, PyObject *args)
 {
     char *filename;
     int mode = 0600;
-    int device = 0;
+    dev_t device = 0;
     int res;
-    if (!PyArg_ParseTuple(args, "s|ii:mknod", &filename, &mode, &device))
+    if (!PyArg_ParseTuple(args, "s|iO&:mknod",
+        &filename, &mode,
+        _Py_Dev_Converter, &device))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
     res = mknod(filename, mode, device);
@@ -7031,8 +7062,8 @@ Extracts a device major number from a raw device number.");
 static PyObject *
 posix_major(PyObject *self, PyObject *args)
 {
-    int device;
-    if (!PyArg_ParseTuple(args, "i:major", &device))
+    dev_t device;
+    if (!PyArg_ParseTuple(args, "O&:major", _Py_Dev_Converter, &device))
         return NULL;
     return PyInt_FromLong((long)major(device));
 }
@@ -7044,8 +7075,8 @@ Extracts a device minor number from a raw device number.");
 static PyObject *
 posix_minor(PyObject *self, PyObject *args)
 {
-    int device;
-    if (!PyArg_ParseTuple(args, "i:minor", &device))
+    dev_t device;
+    if (!PyArg_ParseTuple(args, "O&:minor", _Py_Dev_Converter, &device))
         return NULL;
     return PyInt_FromLong((long)minor(device));
 }
@@ -7060,7 +7091,7 @@ posix_makedev(PyObject *self, PyObject *args)
     int major, minor;
     if (!PyArg_ParseTuple(args, "ii:makedev", &major, &minor))
         return NULL;
-    return PyInt_FromLong((long)makedev(major, minor));
+    return _PyInt_FromDev(makedev(major, minor));
 }
 #endif /* device macros */
 
@@ -8522,7 +8553,6 @@ setup_confname_table(struct constdef *table, size_t tablesize,
 {
     PyObject *d = NULL;
     size_t i;
-
     qsort(table, tablesize, sizeof(struct constdef), cmp_constdefs);
     d = PyDict_New();
     if (d == NULL)
