@@ -926,10 +926,10 @@ class SMTPHandlerTest(BaseTest):
     TIMEOUT = 8.0
     def test_basic(self):
         sockmap = {}
-        server = TestSMTPServer(('localhost', 0), self.process_message, 0.001,
+        server = TestSMTPServer((support.HOST, 0), self.process_message, 0.001,
                                 sockmap)
         server.start()
-        addr = ('localhost', server.port)
+        addr = (support.HOST, server.port)
         h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log',
                                          timeout=self.TIMEOUT)
         self.assertEqual(h.toaddrs, ['you'])
