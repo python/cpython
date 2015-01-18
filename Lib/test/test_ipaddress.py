@@ -766,10 +766,11 @@ class IpaddrUnitTest(unittest.TestCase):
                           2 ** ipaddress.IPV6LENGTH)
 
     def testInternals(self):
-        first, last = ipaddress._find_address_range([
+        first, last, nitems = ipaddress._find_address_range([
             ipaddress.IPv4Address('10.10.10.10'),
             ipaddress.IPv4Address('10.10.10.12')])
         self.assertEqual(first, last)
+        self.assertEqual(nitems, 1)
         self.assertEqual(128, ipaddress._count_righthand_zero_bits(0, 128))
         self.assertEqual("IPv4Network('1.2.3.0/24')", repr(self.ipv4_network))
 
