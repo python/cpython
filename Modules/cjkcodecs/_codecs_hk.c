@@ -171,7 +171,7 @@ DECODER(big5hkscs)
         default: return 1;
         }
 
-        NEXT_IN(2); /* all decoded codepoints are pairs, above. */
+        NEXT_IN(2); /* all decoded code points are pairs, above. */
     }
 
     return 0;

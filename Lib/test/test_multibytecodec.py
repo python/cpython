@@ -80,7 +80,7 @@ class Test_IncrementalEncoder(unittest.TestCase):
         self.assertEqual(encoder.reset(), None)
 
     def test_stateful(self):
-        # jisx0213 encoder is stateful for a few codepoints. eg)
+        # jisx0213 encoder is stateful for a few code points. eg)
         #   U+00E6 => A9DC
         #   U+00E6 U+0300 => ABC4
         #   U+0300 => ABDC
