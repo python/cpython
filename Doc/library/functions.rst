@@ -156,7 +156,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: chr(i)
 
-   Return the string representing a character whose Unicode codepoint is the integer
+   Return the string representing a character whose Unicode code point is the integer
    *i*.  For example, ``chr(97)`` returns the string ``'a'``. This is the
    inverse of :func:`ord`.  The valid range for the argument is from 0 through
    1,114,111 (0x10FFFF in base 16).  :exc:`ValueError` will be raised if *i* is

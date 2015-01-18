@@ -15,7 +15,7 @@
 #undef hz
 #endif
 
-/* GBK and GB2312 map differently in few codepoints that are listed below:
+/* GBK and GB2312 map differently in few code points that are listed below:
  *
  *              gb2312                          gbk
  * A1A4         U+30FB KATAKANA MIDDLE DOT      U+00B7 MIDDLE DOT

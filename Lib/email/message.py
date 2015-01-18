@@ -273,7 +273,7 @@ class Message:
                     bpayload = payload.encode('ascii')
                 except UnicodeError:
                     # This won't happen for RFC compliant messages (messages
-                    # containing only ASCII codepoints in the unicode input).
+                    # containing only ASCII code points in the unicode input).
                     # If it does happen, turn the string into bytes in a way
                     # guaranteed not to fail.
                     bpayload = payload.encode('raw-unicode-escape')

@@ -1134,7 +1134,7 @@ These are the UTF-32 codec APIs:
    mark (U+FEFF). In the other two modes, no BOM mark is prepended.
 
    If *Py_UNICODE_WIDE* is not defined, surrogate pairs will be output
-   as a single codepoint.
+   as a single code point.
 
    Return *NULL* if an exception was raised by the codec.
 

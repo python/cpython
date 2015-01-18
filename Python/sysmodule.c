@@ -1368,7 +1368,7 @@ hexversion -- version information encoded as a single integer\n\
 implementation -- Python implementation information.\n\
 int_info -- a struct sequence with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
-maxunicode -- the value of the largest Unicode codepoint\n\
+maxunicode -- the value of the largest Unicode code point\n\
 platform -- platform identifier\n\
 prefix -- prefix used to find the Python library\n\
 thread_info -- a struct sequence with information about the thread implementation.\n\

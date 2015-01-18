@@ -34,7 +34,7 @@ MAX_TABLE_SIZE = 8192
 # Standard undefined Unicode code point
 UNI_UNDEFINED = chr(0xFFFE)
 
-# Placeholder for a missing codepoint
+# Placeholder for a missing code point
 MISSING_CODE = -1
 
 mapRE = re.compile('((?:0x[0-9a-fA-F]+\+?)+)'
