@@ -44,6 +44,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23248: Update ssl error codes from latest OpenSSL git master.
+
 - Issue #23098: 64-bit dev_t is now supported in the os module.
 
 - Issue #23250: In the http.cookies module, capitalize "HttpOnly" and "Secure"
