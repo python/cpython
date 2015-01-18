@@ -456,14 +456,14 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
         assertBadNetmask("1.1.1.1", "pudding")
         assertBadNetmask("1.1.1.1", "::")
 
-
-class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
-    factory = ipaddress.IPv4Interface
-
     def test_pickle(self):
         self.pickle_test('192.0.2.0/27')
         self.pickle_test('192.0.2.0/31')  # IPV4LENGTH - 1
         self.pickle_test('192.0.2.0')     # IPV4LENGTH
+
+
+class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
+    factory = ipaddress.IPv4Interface
 
 
 class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
