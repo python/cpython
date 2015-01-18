@@ -164,25 +164,23 @@ def _split_optional_netmask(address):
 
 
 def _find_address_range(addresses):
-    """Find a sequence of IPv#Address.
+    """Find a sequence of sorted deduplicated IPv#Address.
 
     Args:
         addresses: a list of IPv#Address objects.
 
-    Returns:
-        A tuple containing the first and last IP addresses in the sequence,
-        and the number of distinct IP addresses in the sequence.
+    Yields:
+        A tuple containing the first and last IP addresses in the sequence.
 
     """
-    first = last = addresses[0]
-    i = 1
-    for ip in addresses[1:]:
-        if ip._ip == last._ip + 1:
-            last = ip
-            i += 1
-        else:
-            break
-    return (first, last, i)
+    it = iter(addresses)
+    first = last = next(it)
+    for ip in it:
+        if ip._ip != last._ip + 1:
+            yield first, last
+            first = ip
+        last = ip
+    yield first, last
 
 
 def _count_righthand_zero_bits(number, bits):
@@ -323,7 +321,6 @@ def collapse_addresses(addresses):
         TypeError: If passed a list of mixed version objects.
 
     """
-    i = 0
     addrs = []
     ips = []
     nets = []
@@ -349,14 +346,13 @@ def collapse_addresses(addresses):
                                  ip, nets[-1]))
             nets.append(ip)
 
-    # sort
-    ips = sorted(ips)
+    # sort and dedup
+    ips = sorted(set(ips))
 
     # find consecutive address ranges in the sorted sequence and summarize them
-    while i < len(ips):
-        (first, last, items) = _find_address_range(ips[i:])
-        i = items + i
-        addrs.extend(summarize_address_range(first, last))
+    if ips:
+        for first, last in _find_address_range(ips):
+            addrs.extend(summarize_address_range(first, last))
 
     return _collapse_addresses_internal(addrs + nets)
 
