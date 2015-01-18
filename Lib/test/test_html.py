@@ -48,10 +48,10 @@ class HtmlTests(unittest.TestCase):
                 check(s % num, char)
                 for end in [' ', 'X']:
                     check((s+end) % num, char+end)
-        # check invalid codepoints
+        # check invalid code points
         for cp in [0xD800, 0xDB00, 0xDC00, 0xDFFF, 0x110000]:
             check_num(cp, '\uFFFD')
-        # check more invalid codepoints
+        # check more invalid code points
         for cp in [0x1, 0xb, 0xe, 0x7f, 0xfffe, 0xffff, 0x10fffe, 0x10ffff]:
             check_num(cp, '')
         # check invalid numbers
