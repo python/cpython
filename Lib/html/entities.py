@@ -1,6 +1,6 @@
 """HTML character entity references."""
 
-# maps the HTML entity name to the Unicode codepoint
+# maps the HTML entity name to the Unicode code point
 name2codepoint = {
     'AElig':    0x00c6, # latin capital letter AE = latin capital ligature AE, U+00C6 ISOlat1
     'Aacute':   0x00c1, # latin capital letter A with acute, U+00C1 ISOlat1
@@ -2492,7 +2492,7 @@ html5 = {
     'zwnj;': '\u200c',
 }
 
-# maps the Unicode codepoint to the HTML entity name
+# maps the Unicode code point to the HTML entity name
 codepoint2name = {}
 
 # maps the HTML entity name to the character

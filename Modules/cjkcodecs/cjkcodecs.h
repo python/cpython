@@ -12,10 +12,10 @@
 #include "multibytecodec.h"
 
 
-/* a unicode "undefined" codepoint */
+/* a unicode "undefined" code point */
 #define UNIINV  0xFFFE
 
-/* internal-use DBCS codepoints which aren't used by any charsets */
+/* internal-use DBCS code points which aren't used by any charsets */
 #define NOCHAR  0xFFFF
 #define MULTIC  0xFFFE
 #define DBCINV  0xFFFD
