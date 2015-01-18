@@ -272,6 +272,9 @@ IDLE
 - Issue #21986: Code objects are not normally pickled by the pickle module.
   To match this, they are no longer pickled when running under Idle.
 
+- Issue #23180: Rename IDLE "Windows" menu item to "Window".
+  Patch by Al Sweigart.
+
 Tests
 -----
 
