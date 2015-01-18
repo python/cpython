@@ -138,7 +138,7 @@ Options Menu (Shell and Editor):
                                  window. This is not present in the Shell
                                  window only the Editor window.
 
-Windows Menu (Shell and Editor):
+Window Menu (Shell and Editor):
 
         Zoom Height -- Toggles the window between normal size (40x80 initial
         setting) and maximum height.  The initial size is in the Configure
