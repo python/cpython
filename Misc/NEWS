@@ -1374,6 +1374,9 @@ IDLE
 - Issue #17654: Ensure IDLE menus are customized properly on OS X for
   non-framework builds and for all variants of Tk.
 
+- Issue #23180: Rename IDLE "Windows" menu item to "Window".
+  Patch by Al Sweigart.
+
 Build
 -----
 

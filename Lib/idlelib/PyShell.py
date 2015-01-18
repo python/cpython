@@ -848,12 +848,9 @@ class PyShell(OutputWindow):
         ("edit", "_Edit"),
         ("debug", "_Debug"),
         ("options", "_Options"),
-        ("windows", "_Windows"),
+        ("windows", "_Window"),
         ("help", "_Help"),
     ]
-
-    if sys.platform == "darwin":
-        menu_specs[-2] = ("windows", "_Window")
 
 
     # New classes
