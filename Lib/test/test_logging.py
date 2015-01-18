@@ -41,7 +41,7 @@ import sys
 import tempfile
 from test.script_helper import assert_python_ok
 from test.support import (captured_stdout, run_with_locale, run_unittest,
-                          patch, requires_zlib, TestHandler, Matcher)
+                          patch, requires_zlib, TestHandler, Matcher, HOST)
 import textwrap
 import time
 import unittest
@@ -930,10 +930,10 @@ class SMTPHandlerTest(BaseTest):
     TIMEOUT = 8.0
     def test_basic(self):
         sockmap = {}
-        server = TestSMTPServer((support.HOST, 0), self.process_message, 0.001,
+        server = TestSMTPServer((HOST, 0), self.process_message, 0.001,
                                 sockmap)
         server.start()
-        addr = (support.HOST, server.port)
+        addr = (HOST, server.port)
         h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log',
                                          timeout=self.TIMEOUT)
         self.assertEqual(h.toaddrs, ['you'])
