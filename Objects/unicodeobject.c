@@ -5013,7 +5013,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
         }
 
         if (Py_UNICODE_IS_SURROGATE(ch)) {
-            errmsg = "codepoint in surrogate code point range(0xd800, 0xe000)";
+            errmsg = "code point in surrogate code point range(0xd800, 0xe000)";
             startinpos = ((const char *)q) - starts;
             endinpos = startinpos + 4;
         }
@@ -5032,7 +5032,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
                 q += 4;
                 continue;
             }
-            errmsg = "codepoint not in range(0x110000)";
+            errmsg = "code point not in range(0x110000)";
             startinpos = ((const char *)q) - starts;
             endinpos = startinpos + 4;
         }

@@ -21,7 +21,7 @@ class TestBase:
     roundtriptest   = 1    # set if roundtrip is possible with unicode
     has_iso10646    = 0    # set if this encoding contains whole iso10646 map
     xmlcharnametest = None # string to test xmlcharrefreplace
-    unmappedunicode = '\udeee' # a unicode codepoint that is not mapped.
+    unmappedunicode = '\udeee' # a unicode code point that is not mapped.
 
     def setUp(self):
         if self.codec is None:
