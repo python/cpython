@@ -671,7 +671,8 @@ set_pop(PySetObject *so)
 
     while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
         i++;
-        i &= so->mask;
+        if (i > so->mask)
+            i = 0;
     }
     key = entry->key;
     entry->key = dummy;
