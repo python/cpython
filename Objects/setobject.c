@@ -4,7 +4,7 @@
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
-   Copyright (c) 2003-2014 Python Software Foundation.
+   Copyright (c) 2003-2015 Python Software Foundation.
    All rights reserved.
 
    The basic lookup function used by all operations.
