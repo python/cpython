@@ -658,7 +658,8 @@ set_contains_key(PySetObject *so, PyObject *key)
 static PyObject *
 set_pop(PySetObject *so)
 {
-    Py_ssize_t i = 0;
+    /* Make sure the search finger is in bounds */
+    Py_ssize_t i = so->finger & so->mask;
     setentry *entry;
     PyObject *key;
 
@@ -668,17 +669,9 @@ set_pop(PySetObject *so)
         return NULL;
     }
 
-    i = so->finger;
-    /* This may be a legit search finger, or it may be a once legit
-     * search finger that's out of bounds now (due to wrapping or
-     * resizing).  We simply make sure it's in bounds now.
-     */
-    if (i > so->mask)
-        i = 0;
     while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
         i++;
-        if (i > so->mask)
-            i = 0;
+        i &= so->mask;
     }
     key = entry->key;
     entry->key = dummy;
