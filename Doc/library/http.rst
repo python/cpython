@@ -117,7 +117,6 @@ Code    Enum Name                           Details
 ======= =================================== ==================================================================
 
 In order to preserve backwards compatibility, enum values are also present
-in the :mod:`http.client` and :mod:`http.server` modules in the form of
-constants. The enum name is equal to the constant name (i.e.
-``http.HTTPStatus.OK`` is also available as ``http.client.OK`` and
-``http.server.OK``).
+in the :mod:`http.client` module in the form of constants. The enum name is
+equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
+``http.client.OK``).
