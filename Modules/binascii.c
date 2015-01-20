@@ -1147,6 +1147,20 @@ binascii_b2a_hex_impl(PyModuleDef *module, Py_buffer *data)
     return retval;
 }
 
+/*[clinic input]
+binascii.hexlify = binascii.b2a_hex
+
+Hexadecimal representation of binary data.
+
+The return value is a bytes object.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_hexlify_impl(PyModuleDef *module, Py_buffer *data)
+/*[clinic end generated code: output=6098440091fb61dc input=2e3afae7f083f061]*/
+{
+    return binascii_b2a_hex_impl(module, data);
+}
 
 static int
 to_int(int c)
@@ -1219,6 +1233,21 @@ binascii_a2b_hex_impl(PyModuleDef *module, Py_buffer *hexstr)
   finally:
     Py_DECREF(retval);
     return NULL;
+}
+
+/*[clinic input]
+binascii.unhexlify = binascii.a2b_hex
+
+Binary data of hexadecimal representation.
+
+hexstr must contain an even number of hex digits (upper or lower case).
+[clinic start generated code]*/
+
+static PyObject *
+binascii_unhexlify_impl(PyModuleDef *module, Py_buffer *hexstr)
+/*[clinic end generated code: output=17cec7544499803e input=dd8c012725f462da]*/
+{
+    return binascii_a2b_hex_impl(module, hexstr);
 }
 
 static int table_hex[128] = {
@@ -1535,10 +1564,8 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_B2A_HQX_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
-    {"unhexlify", (PyCFunction)binascii_a2b_hex, METH_VARARGS,
-        binascii_a2b_hex__doc__},
-    {"hexlify", (PyCFunction)binascii_b2a_hex, METH_VARARGS,
-        binascii_b2a_hex__doc__},
+    BINASCII_HEXLIFY_METHODDEF
+    BINASCII_UNHEXLIFY_METHODDEF
     BINASCII_RLECODE_HQX_METHODDEF
     BINASCII_RLEDECODE_HQX_METHODDEF
     BINASCII_CRC_HQX_METHODDEF
