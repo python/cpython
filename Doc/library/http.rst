@@ -10,7 +10,7 @@
 
 **Source code:** :source:`Lib/http/__init__.py`
 
-:mod:`http` is a also package that collects several modules for working with the
+:mod:`http` is a package that collects several modules for working with the
 HyperText Transfer Protocol:
 
 * :mod:`http.client` is a low-level HTTP protocol client; for high-level URL
@@ -45,85 +45,79 @@ associated messages through the :class:`http.HTTPStatus` enum:
       >>> list(HTTPStatus)
       [<HTTPStatus.CONTINUE: 100>, <HTTPStatus.SWITCHING_PROTOCOLS: 101>, ...]
 
-   The supported HTTP status codes are:
+.. _http-status-codes:
 
-   === ==============================
-   100 Continue
-   101 Switching Protocols
-   102 Processing
-   200 OK
-   201 Created
-   202 Accepted
-   203 Non-Authoritative Information
-   204 No Content
-   205 Reset Content
-   206 Partial Content
-   207 Multi-Status
-   208 Already Reported
-   226 IM Used
-   300 Multiple Choices
-   301 Moved Permanently
-   302 Found
-   303 See Other
-   304 Not Modified
-   305 Use Proxy
-   306 Switch Proxy
-   307 Temporary Redirect
-   308 Permanent Redirect
-   400 Bad Request
-   401 Unauthorized
-   402 Payment Required
-   403 Forbidden
-   404 Not Found
-   405 Method Not Allowed
-   406 Not Acceptable
-   407 Proxy Authentication Required
-   408 Request Timeout
-   409 Conflict
-   410 Gone
-   411 Length Required
-   412 Precondition Failed
-   413 Request Entity Too Large
-   414 Request URI Too Long
-   415 Unsupported Media Type
-   416 Request Range Not Satisfiable
-   417 Expectation Failed
-   418 I'm a teapot
-   419 Authentication Timeout
-   420 Method Failure *(Spring framework)*
-   422 Unprocessable Entity
-   423 Locked
-   424 Failed Dependency
-   426 Upgrade Required
-   428 Precondition Required
-   429 Too Many Requests
-   431 Request Header Field Too Large
-   440 Login Timeout *(Microsoft)*
-   444 No Response *(Nginx)*
-   449 Retry With *(Microsoft)*
-   450 Blocked By Windows Parental Controls *(Microsoft)*
-   494 Request Header Too Large *(Nginx)*
-   495 Cert Error *(Nginx)*
-   496 No Cert *(Nginx)*
-   497 HTTP To HTTPS *(Nginx)*
-   499 Client Closed Request *(Nginx)*
-   500 Internal Server Error
-   501 Not Implemented
-   502 Bad Gateway
-   503 Service Unavailable
-   504 Gateway Timeout
-   505 HTTP Version Not Supported
-   506 Variant Also Negotiates
-   507 Insufficient Storage
-   508 Loop Detected
-   509 Bandwidth Limit Exceeded
-   510 Not Extended
-   511 Network Authentication Required
-   520 Origin Error *(CloudFlare)*
-   521 Web Server Is Down *(CloudFlare)*
-   522 Connection Timed Out *(CloudFlare)*
-   523 Proxy Declined Request *(CloudFlare)*
-   524 A Timeout Occurred *(CloudFlare)*
-   598 Network Read Timeout Error
-   599 Network Connect Timeout Error
-   === ==============================
+HTTP status codes
+-----------------
+
+Supported,
+`IANA-registered <http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
+status codes available in :class:`http.HTTPStatus` are:
+
+======= =================================== ==================================================================
+Code    Enum Name                           Details
+======= =================================== ==================================================================
+``100`` ``CONTINUE``                        HTTP/1.1 :rfc:`7231`, Section 6.2.1
+``101`` ``SWITCHING_PROTOCOLS``             HTTP/1.1 :rfc:`7231`, Section 6.2.2
+``102`` ``PROCESSING``                      WebDAV :rfc:`2518`, Section 10.1
+``200`` ``OK``                              HTTP/1.1 :rfc:`7231`, Section 6.3.1
+``201`` ``CREATED``                         HTTP/1.1 :rfc:`7231`, Section 6.3.2
+``202`` ``ACCEPTED``                        HTTP/1.1 :rfc:`7231`, Section 6.3.3
+``203`` ``NON_AUTHORITATIVE_INFORMATION``   HTTP/1.1 :rfc:`7231`, Section 6.3.4
+``204`` ``NO_CONTENT``                      HTTP/1.1 :rfc:`7231`, Section 6.3.5
+``205`` ``RESET_CONTENT``                   HTTP/1.1 :rfc:`7231`, Section 6.3.6
+``206`` ``PARTIAL_CONTENT``                 HTTP/1.1 :rfc:`7233`, Section 4.1
+``207`` ``MULTI_STATUS``                    WebDAV :rfc:`4918`, Section 11.1
+``208`` ``ALREADY_REPORTED``                WebDAV Binding Extensions :rfc:`5842`, Section 7.1 (Experimental)
+``226`` ``IM_USED``                         Delta Encoding in HTTP :rfc:`3229`, Section 10.4.1
+``300`` ``MULTIPLE_CHOICES``                HTTP/1.1 :rfc:`7231`, Section 6.4.1
+``301`` ``MOVED_PERMANENTLY``               HTTP/1.1 :rfc:`7231`, Section 6.4.2
+``302`` ``FOUND``                           HTTP/1.1 :rfc:`7231`, Section 6.4.3
+``303`` ``SEE_OTHER``                       HTTP/1.1 :rfc:`7231`, Section 6.4.4
+``304`` ``NOT_MODIFIED``                    HTTP/1.1 :rfc:`7232`, Section 4.1
+``305`` ``USE_PROXY``                       HTTP/1.1 :rfc:`7231`, Section 6.4.5
+``307`` ``TEMPORARY_REDIRECT``              HTTP/1.1 :rfc:`7231`, Section 6.4.7
+``308`` ``PERMANENT_REDIRECT``              Permanent Redirect :rfc:`7238`, Section 3 (Experimental)
+``400`` ``BAD_REQUEST``                     HTTP/1.1 :rfc:`7231`, Section 6.5.1
+``401`` ``UNAUTHORIZED``                    HTTP/1.1 Authentication :rfc:`7235`, Section 3.1
+``402`` ``PAYMENT_REQUIRED``                HTTP/1.1 :rfc:`7231`, Section 6.5.2
+``403`` ``FORBIDDEN``                       HTTP/1.1 :rfc:`7231`, Section 6.5.3
+``404`` ``NOT_FOUND``                       HTTP/1.1 :rfc:`7231`, Section 6.5.4
+``405`` ``METHOD_NOT_ALLOWED``              HTTP/1.1 :rfc:`7231`, Section 6.5.5
+``406`` ``NOT_ACCEPTABLE``                  HTTP/1.1 :rfc:`7231`, Section 6.5.6
+``407`` ``PROXY_AUTHENTICATION_REQUIRED``   HTTP/1.1 Authentication :rfc:`7235`, Section 3.2
+``408`` ``REQUEST_TIMEOUT``                 HTTP/1.1 :rfc:`7231`, Section 6.5.7
+``409`` ``CONFLICT``                        HTTP/1.1 :rfc:`7231`, Section 6.5.8
+``410`` ``GONE``                            HTTP/1.1 :rfc:`7231`, Section 6.5.9
+``411`` ``LENGTH_REQUIRED``                 HTTP/1.1 :rfc:`7231`, Section 6.5.10
+``412`` ``PRECONDITION_FAILED``             HTTP/1.1 :rfc:`7232`, Section 4.2
+``413`` ``REQUEST_ENTITY_TOO_LARGE``        HTTP/1.1 :rfc:`7231`, Section 6.5.11
+``414`` ``REQUEST_URI_TOO_LONG``            HTTP/1.1 :rfc:`7231`, Section 6.5.12
+``415`` ``UNSUPPORTED_MEDIA_TYPE``          HTTP/1.1 :rfc:`7231`, Section 6.5.13
+``416`` ``REQUEST_RANGE_NOT_SATISFIABLE``   HTTP/1.1 Range Requests :rfc:`7233`, Section 4.4
+``417`` ``EXPECTATION_FAILED``              HTTP/1.1 :rfc:`7231`, Section 6.5.14
+``422`` ``UNPROCESSABLE_ENTITY``            WebDAV :rfc:`4918`, Section 11.2
+``423`` ``LOCKED``                          WebDAV :rfc:`4918`, Section 11.3
+``424`` ``FAILED_DEPENDENCY``               WebDAV :rfc:`4918`, Section 11.4
+``426`` ``UPGRADE_REQUIRED``                HTTP/1.1 :rfc:`7231`, Section 6.5.15
+``428`` ``PRECONDITION_REQUIRED``           Additional HTTP Status Codes :rfc:`6585`
+``429`` ``TOO_MANY_REQUESTS``               Additional HTTP Status Codes :rfc:`6585`
+``431`` ``REQUEST_HEADER_FIELDS_TOO_LARGE`` Additional HTTP Status Codes :rfc:`6585`
+``500`` ``INTERNAL_SERVER_ERROR``           HTTP/1.1 :rfc:`7231`, Section 6.6.1
+``501`` ``NOT_IMPLEMENTED``                 HTTP/1.1 :rfc:`7231`, Section 6.6.2
+``502`` ``BAD_GATEWAY``                     HTTP/1.1 :rfc:`7231`, Section 6.6.3
+``503`` ``SERVICE_UNAVAILABLE``             HTTP/1.1 :rfc:`7231`, Section 6.6.4
+``504`` ``GATEWAY_TIMEOUT``                 HTTP/1.1 :rfc:`7231`, Section 6.6.5
+``505`` ``HTTP_VERSION_NOT_SUPPORTED``      HTTP/1.1 :rfc:`7231`, Section 6.6.6
+``506`` ``VARIANT_ALSO_NEGOTIATES``         Transparent Content Negotiation in HTTP :rfc:`2295`, Section 8.1 (Experimental)
+``507`` ``INSUFFICIENT_STORAGE``            WebDAV :rfc:`4918`, Section 11.5
+``508`` ``LOOP_DETECTED``                   WebDAV Binding Extensions :rfc:`5842`, Section 7.2 (Experimental)
+``510`` ``NOT_EXTENDED``                    An HTTP Extension Framework :rfc:`2774`, Section 7 (Experimental)
+``511`` ``NETWORK_AUTHENTICATION_REQUIRED`` Additional HTTP Status Codes :rfc:`6585`, Section 6
+======= =================================== ==================================================================
+
+In order to preserve backwards compatibility, enum values are also present
+in the :mod:`http.client` and :mod:`http.server` modules in the form of
+constants. The enum name is equal to the constant name (i.e.
+``http.HTTPStatus.OK`` is also available as ``http.client.OK`` and
+``http.server.OK``).
