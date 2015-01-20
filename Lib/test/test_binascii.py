@@ -162,7 +162,9 @@ class BinASCIITest(unittest.TestCase):
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1])
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1] + b'q')
 
-        self.assertEqual(binascii.hexlify(b'a'), b'61')
+        # Confirm that b2a_hex == hexlify and a2b_hex == unhexlify
+        self.assertEqual(binascii.hexlify(self.type2test(s)), t)
+        self.assertEqual(binascii.unhexlify(self.type2test(t)), u)
 
     def test_qp(self):
         # A test for SF bug 534347 (segfaults without the proper fix)

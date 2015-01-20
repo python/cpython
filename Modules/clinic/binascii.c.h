@@ -367,6 +367,40 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(binascii_hexlify__doc__,
+"hexlify($module, data, /)\n"
+"--\n"
+"\n"
+"Hexadecimal representation of binary data.\n"
+"\n"
+"The return value is a bytes object.");
+
+#define BINASCII_HEXLIFY_METHODDEF    \
+    {"hexlify", (PyCFunction)binascii_hexlify, METH_VARARGS, binascii_hexlify__doc__},
+
+static PyObject *
+binascii_hexlify_impl(PyModuleDef *module, Py_buffer *data);
+
+static PyObject *
+binascii_hexlify(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (!PyArg_ParseTuple(args,
+        "y*:hexlify",
+        &data))
+        goto exit;
+    return_value = binascii_hexlify_impl(module, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(binascii_a2b_hex__doc__,
 "a2b_hex($module, hexstr, /)\n"
 "--\n"
@@ -393,6 +427,40 @@ binascii_a2b_hex(PyModuleDef *module, PyObject *args)
         ascii_buffer_converter, &hexstr))
         goto exit;
     return_value = binascii_a2b_hex_impl(module, &hexstr);
+
+exit:
+    /* Cleanup for hexstr */
+    if (hexstr.obj)
+       PyBuffer_Release(&hexstr);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(binascii_unhexlify__doc__,
+"unhexlify($module, hexstr, /)\n"
+"--\n"
+"\n"
+"Binary data of hexadecimal representation.\n"
+"\n"
+"hexstr must contain an even number of hex digits (upper or lower case).");
+
+#define BINASCII_UNHEXLIFY_METHODDEF    \
+    {"unhexlify", (PyCFunction)binascii_unhexlify, METH_VARARGS, binascii_unhexlify__doc__},
+
+static PyObject *
+binascii_unhexlify_impl(PyModuleDef *module, Py_buffer *hexstr);
+
+static PyObject *
+binascii_unhexlify(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    Py_buffer hexstr = {NULL, NULL};
+
+    if (!PyArg_ParseTuple(args,
+        "O&:unhexlify",
+        ascii_buffer_converter, &hexstr))
+        goto exit;
+    return_value = binascii_unhexlify_impl(module, &hexstr);
 
 exit:
     /* Cleanup for hexstr */
@@ -475,4 +543,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=68e2bcc6956b6213 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e46d29f8c9adae7e input=a9049054013a1b77]*/
