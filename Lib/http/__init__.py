@@ -13,16 +13,8 @@ class HTTPStatus(IntEnum):
         * RFC 4918: HTTP Extensions for WebDAV, obsoletes 2518
         * RFC 5842: Binding Extensions to WebDAV
         * RFC 7238: Permanent Redirect
-        * RFC 2324: Hyper Text Coffee Pot Control Protocol (HTCPCP/1.0)
         * RFC 2295: Transparent Content Negotiation in HTTP
         * RFC 2774: An HTTP Extension Framework
-
-    Non-standard vendor codes include:
-
-        * Spring framework: 420
-        * Nginx: 444, 494, 495, 496, 497, 499
-        * Microsoft: 440, 449, 450
-        * Cloudflare: 520, 521, 522, 523, 524, 598, 599
     """
     def __new__(cls, value, phrase, description=''):
         obj = int.__new__(cls, value)
@@ -63,7 +55,6 @@ class HTTPStatus(IntEnum):
         'Document has not changed since given time')
     USE_PROXY = (305, 'Use Proxy',
         'You must use proxy specified in Location to access this resource')
-    SWITCH_PROXY = 306, 'Switch Proxy'
     TEMPORARY_REDIRECT = (307, 'Temporary Redirect',
         'Object moved temporarily -- see URI list')
     PERMANENT_REDIRECT = (308, 'Permanent Redirect',
@@ -107,9 +98,6 @@ class HTTPStatus(IntEnum):
         'Cannot satisfy request range')
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
-    IM_A_TEAPOT = 418, 'I\'m a teapot'
-    AUTHENTICATION_TIMEOUT = 419, 'Authentication Timeout'
-    METHOD_FAILURE = 420, 'Method Failure' # Spring framework
     UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
     LOCKED = 423, 'Locked'
     FAILED_DEPENDENCY = 424, 'Failed Dependency'
@@ -123,16 +111,6 @@ class HTTPStatus(IntEnum):
         'Request Header Field Too Large',
         'The server is unwilling to process the request because its header '
         'fields are too large')
-    LOGIN_TIMEOUT = 440, 'Login Timeout'  # microsoft
-    NO_RESPONSE = 444, 'No Response'  # nginx
-    RETRY_WITH = 449, 'Retry With'  # microsoft
-    BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = (450,
-        'Blocked By Windows Parental Controls')  # microsoft
-    REQUEST_HEADER_TOO_LARGE = 494, 'Request Header Too Large'  # nginx
-    CERT_ERROR = 495, 'Cert Error'  # nginx
-    NO_CERT = 496, 'No Cert'  # nginx
-    HTTP_TO_HTTPS = 497, 'HTTP To HTTPS'  # nginx
-    CLIENT_CLOSED_REQUEST = 499, 'Client Closed Request'  # nginx
 
     # server errors
     INTERNAL_SERVER_ERROR = (500, 'Internal Server Error',
@@ -150,15 +128,7 @@ class HTTPStatus(IntEnum):
     VARIANT_ALSO_NEGOTIATES = 506, 'Variant Also Negotiates'
     INSUFFICIENT_STORAGE = 507, 'Insufficient Storage'
     LOOP_DETECTED = 508, 'Loop Detected'
-    BANDWIDTH_LIMIT_EXCEEDED = 509, 'Bandwidth Limit Exceeded'
     NOT_EXTENDED = 510, 'Not Extended'
     NETWORK_AUTHENTICATION_REQUIRED = (511,
         'Network Authentication Required',
         'The client needs to authenticate to gain network access')
-    ORIGIN_ERROR = 520, 'Origin Error'  # cloudflare
-    WEB_SERVER_IS_DOWN = 521, 'Web Server Is Down'  # cloudflare
-    CONNECTON_TIMED_OUT = 522, 'Connection Timed Out'  # cloudflare
-    PROXY_DECLINED_REQUEST = 523, 'Proxy Declined Request'  # cloudflare
-    A_TIMEOUT_OCCURRED = 524, 'A Timeout Occurred', ''  # cloudflare
-    NETWORK_READ_TIMEOUT_ERROR = 598, 'Network Read Timeout Error'
-    NETWORK_CONNECT_TIMEOUT_ERROR = 599, 'Network Connect Timeout Error'
