@@ -309,6 +309,29 @@ overlapped_UnregisterWait(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(
+    UnregisterWaitEx_doc,
+    "UnregisterWaitEx(WaitHandle, Event) -> None\n\n"
+    "Unregister wait handle.\n");
+
+static PyObject *
+overlapped_UnregisterWaitEx(PyObject *self, PyObject *args)
+{
+    HANDLE WaitHandle, Event;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE F_HANDLE, &WaitHandle, &Event))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = UnregisterWaitEx(WaitHandle, Event);
+    Py_END_ALLOW_THREADS
+
+    if (!ret)
+        return SetFromWindowsErr(0);
+    Py_RETURN_NONE;
+}
+
 /*
  * Event functions -- currently only used by tests
  */
@@ -1319,6 +1342,8 @@ static PyMethodDef overlapped_functions[] = {
      METH_VARARGS, RegisterWaitWithQueue_doc},
     {"UnregisterWait", overlapped_UnregisterWait,
      METH_VARARGS, UnregisterWait_doc},
+    {"UnregisterWaitEx", overlapped_UnregisterWaitEx,
+     METH_VARARGS, UnregisterWaitEx_doc},
     {"CreateEvent", overlapped_CreateEvent,
      METH_VARARGS, CreateEvent_doc},
     {"SetEvent", overlapped_SetEvent,
