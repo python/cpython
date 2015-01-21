@@ -523,9 +523,10 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def test_loop_self_reading_exception(self):
         self.loop.close = mock.Mock()
+        self.loop.call_exception_handler = mock.Mock()
         self.proactor.recv.side_effect = OSError()
-        self.assertRaises(OSError, self.loop._loop_self_reading)
-        self.assertTrue(self.loop.close.called)
+        self.loop._loop_self_reading()
+        self.assertTrue(self.loop.call_exception_handler.called)
 
     def test_write_to_self(self):
         self.loop._write_to_self()
