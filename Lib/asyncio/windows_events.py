@@ -163,6 +163,9 @@ class _WaitCancelFuture(_BaseWaitHandleFuture):
 
         self._done_callback = None
 
+    def cancel(self):
+        raise RuntimeError("_WaitCancelFuture must not be cancelled")
+
     def _schedule_callbacks(self):
         super(_WaitCancelFuture, self)._schedule_callbacks()
         if self._done_callback is not None:
@@ -693,6 +696,9 @@ class IocpProactor:
             # FIXME: Tulip issue 196: remove this case, it should not happen
             elif fut.done() and not fut.cancelled():
                 del self._cache[address]
+            elif isinstance(fut, _WaitCancelFuture):
+                # _WaitCancelFuture must not be cancelled
+                pass
             else:
                 try:
                     fut.cancel()
