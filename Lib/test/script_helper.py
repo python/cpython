@@ -51,8 +51,9 @@ def _assert_python(expected_success, *args, **env_vars):
     err = strip_python_stderr(err)
     if (rc and expected_success) or (not rc and not expected_success):
         raise AssertionError(
-            "Process return code is %d, "
-            "stderr follows:\n%s" % (rc, err.decode('ascii', 'ignore')))
+            "Process return code is %d, command line was: %r, "
+            "stderr follows:\n%s" % (rc, cmd_line,
+                                     err.decode('ascii', 'ignore')))
     return rc, out, err
 
 def assert_python_ok(*args, **env_vars):
