@@ -463,9 +463,15 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             if f is not None:
                 f.result()  # may raise
             f = self._proactor.recv(self._ssock, 4096)
-        except:
-            self.close()
-            raise
+        except futures.CancelledError:
+            # _close_self_pipe() has been called, stop waiting for data
+            return
+        except Exception as exc:
+            self.call_exception_handler({
+                'message': 'Error on reading from the event loop self pipe',
+                'exception': exc,
+                'loop': self,
+            })
         else:
             self._self_reading_future = f
             f.add_done_callback(self._loop_self_reading)
