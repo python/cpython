@@ -10,7 +10,6 @@ import collections
 import errno
 import functools
 import socket
-import sys
 try:
     import ssl
 except ImportError:  # pragma: no cover
