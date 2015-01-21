@@ -636,7 +636,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         try:
             yield from waiter
-        except Exception:
+        except:
             transport.close()
             raise
 
