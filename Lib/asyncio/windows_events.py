@@ -490,16 +490,21 @@ class IocpProactor:
     def accept_pipe(self, pipe):
         self._register_with_iocp(pipe)
         ov = _overlapped.Overlapped(NULL)
-        ov.ConnectNamedPipe(pipe.fileno())
+        connected = ov.ConnectNamedPipe(pipe.fileno())
+
+        if connected:
+            # ConnectNamePipe() failed with ERROR_PIPE_CONNECTED which means
+            # that the pipe is connected. There is no need to wait for the
+            # completion of the connection.
+            f = futures.Future(loop=self._loop)
+            f.set_result(pipe)
+            return f
 
         def finish_accept_pipe(trans, key, ov):
             ov.getresult()
             return pipe
 
-        # FIXME: Tulip issue 196: why do we need register=False?
-        # See also the comment in the _register() method
-        return self._register(ov, pipe, finish_accept_pipe,
-                              register=False)
+        return self._register(ov, pipe, finish_accept_pipe)
 
     def _connect_pipe(self, fut, address, delay):
         # Unfortunately there is no way to do an overlapped connect to a pipe.
@@ -581,15 +586,14 @@ class IocpProactor:
             # to avoid sending notifications to completion port of ops
             # that succeed immediately.
 
-    def _register(self, ov, obj, callback,
-                  wait_for_post=False, register=True):
+    def _register(self, ov, obj, callback):
         # Return a future which will be set with the result of the
         # operation when it completes.  The future's value is actually
         # the value returned by callback().
         f = _OverlappedFuture(ov, loop=self._loop)
         if f._source_traceback:
             del f._source_traceback[-1]
-        if not ov.pending and not wait_for_post:
+        if not ov.pending:
             # The operation has completed, so no need to postpone the
             # work.  We cannot take this short cut if we need the
             # NumberOfBytes, CompletionKey values returned by
@@ -605,18 +609,11 @@ class IocpProactor:
             # Register the overlapped operation to keep a reference to the
             # OVERLAPPED object, otherwise the memory is freed and Windows may
             # read uninitialized memory.
-            #
-            # For an unknown reason, ConnectNamedPipe() behaves differently:
-            # the completion is not notified by GetOverlappedResult() if we
-            # already called GetOverlappedResult(). For this specific case, we
-            # don't expect notification (register is set to False).
-        else:
-            register = True
-        if register:
-            # Register the overlapped operation for later.  Note that
-            # we only store obj to prevent it from being garbage
-            # collected too early.
-            self._cache[ov.address] = (f, ov, obj, callback)
+
+        # Register the overlapped operation for later.  Note that
+        # we only store obj to prevent it from being garbage
+        # collected too early.
+        self._cache[ov.address] = (f, ov, obj, callback)
         return f
 
     def _unregister(self, ov):
@@ -708,10 +705,6 @@ class IocpProactor:
             elif isinstance(fut, _WaitCancelFuture):
                 # _WaitCancelFuture must not be cancelled
                 pass
-            elif fut.done():
-                # FIXME: Tulip issue 196: remove this case, it should not
-                # happen
-                del self._cache[address]
             else:
                 try:
                     fut.cancel()
