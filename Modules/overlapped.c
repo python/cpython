@@ -1117,10 +1117,10 @@ Overlapped_ConnectNamedPipe(OverlappedObject *self, PyObject *args)
     switch (err) {
         case ERROR_PIPE_CONNECTED:
             mark_as_completed(&self->overlapped);
-            Py_RETURN_NONE;
+            Py_RETURN_TRUE;
         case ERROR_SUCCESS:
         case ERROR_IO_PENDING:
-            Py_RETURN_NONE;
+            Py_RETURN_FALSE;
         default:
             self->type = TYPE_NOT_STARTED;
             return SetFromWindowsErr(err);
