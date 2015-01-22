@@ -693,12 +693,16 @@ class IocpProactor:
                 # queues a task to Windows' thread pool.  This cannot
                 # be cancelled, so just forget it.
                 del self._cache[address]
-            # FIXME: Tulip issue 196: remove this case, it should not happen
-            elif fut.done() and not fut.cancelled():
-                del self._cache[address]
+            elif fut.cancelled():
+                # Nothing to do with cancelled futures
+                pass
             elif isinstance(fut, _WaitCancelFuture):
                 # _WaitCancelFuture must not be cancelled
                 pass
+            elif fut.done():
+                # FIXME: Tulip issue 196: remove this case, it should not
+                # happen
+                del self._cache[address]
             else:
                 try:
                     fut.cancel()
