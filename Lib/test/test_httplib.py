@@ -70,6 +70,9 @@ class FakeSocket:
     def close(self):
         pass
 
+    def setsockopt(self, level, optname, value):
+        pass
+
 class EPipeSocket(FakeSocket):
 
     def __init__(self, text, pipe_trigger):
@@ -657,28 +660,6 @@ class BasicTest(TestCase):
         self.assertFalse(resp.closed)
         resp.close()
         self.assertTrue(resp.closed)
-
-    def test_delayed_ack_opt(self):
-        # Test that Nagle/delayed_ack optimistaion works correctly.
-
-        # For small payloads, it should coalesce the body with
-        # headers, resulting in a single sendall() call
-        conn = client.HTTPConnection('example.com')
-        sock = FakeSocket(None)
-        conn.sock = sock
-        body = b'x' * (conn.mss - 1)
-        conn.request('POST', '/', body)
-        self.assertEqual(sock.sendall_calls, 1)
-
-        # For large payloads, it should send the headers and
-        # then the body, resulting in more than one sendall()
-        # call
-        conn = client.HTTPConnection('example.com')
-        sock = FakeSocket(None)
-        conn.sock = sock
-        body = b'x' * conn.mss
-        conn.request('POST', '/', body)
-        self.assertGreater(sock.sendall_calls, 1)
 
     def test_error_leak(self):
         # Test that the socket is not leaked if getresponse() fails

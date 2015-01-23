@@ -1308,6 +1308,10 @@ Library
 - Issue #22733: Fix ffi_prep_args not zero-extending argument values correctly
   on 64-bit Windows.
 
+- Issue #23302: Default to TCP_NODELAY=1 upon establishing an HTTPConnection.
+  Removed use of hard-coded MSS as it's an optimization that's no longer needed
+  with Nagle disabled.
+
 IDLE
 ----
 
