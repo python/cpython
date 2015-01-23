@@ -269,15 +269,16 @@ module, supports rotation of disk log files.
    You can use the *maxBytes* and *backupCount* values to allow the file to
    :dfn:`rollover` at a predetermined size. When the size is about to be exceeded,
    the file is closed and a new file is silently opened for output. Rollover occurs
-   whenever the current log file is nearly *maxBytes* in length; if *maxBytes* is
-   zero, rollover never occurs.  If *backupCount* is non-zero, the system will save
-   old log files by appending the extensions '.1', '.2' etc., to the filename. For
-   example, with a *backupCount* of 5 and a base file name of :file:`app.log`, you
-   would get :file:`app.log`, :file:`app.log.1`, :file:`app.log.2`, up to
-   :file:`app.log.5`. The file being written to is always :file:`app.log`.  When
-   this file is filled, it is closed and renamed to :file:`app.log.1`, and if files
-   :file:`app.log.1`, :file:`app.log.2`, etc.  exist, then they are renamed to
-   :file:`app.log.2`, :file:`app.log.3` etc.  respectively.
+   whenever the current log file is nearly *maxBytes* in length; if either of
+   *maxBytes* or *backupCount* is zero, rollover never occurs.  If *backupCount*
+   is non-zero, the system will save old log files by appending the extensions
+   '.1', '.2' etc., to the filename. For example, with a *backupCount* of 5 and
+   a base file name of :file:`app.log`, you would get :file:`app.log`,
+   :file:`app.log.1`, :file:`app.log.2`, up to :file:`app.log.5`. The file being
+   written to is always :file:`app.log`.  When this file is filled, it is closed
+   and renamed to :file:`app.log.1`, and if files :file:`app.log.1`,
+   :file:`app.log.2`, etc.  exist, then they are renamed to :file:`app.log.2`,
+   :file:`app.log.3` etc.  respectively.
 
 
    .. method:: doRollover()
