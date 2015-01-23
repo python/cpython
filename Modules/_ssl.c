@@ -2149,18 +2149,25 @@ set_ciphers(PySSLContext *self, PyObject *args)
 }
 
 static int
-do_protocol_selection(unsigned char **out, unsigned char *outlen,
-                      const unsigned char *remote_protocols, unsigned int remote_protocols_len,
-                      unsigned char *our_protocols, unsigned int our_protocols_len)
+do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
+                      const unsigned char *server_protocols, unsigned int server_protocols_len,
+                      const unsigned char *client_protocols, unsigned int client_protocols_len)
 {
-    if (our_protocols == NULL) {
-        our_protocols = (unsigned char*)"";
-        our_protocols_len = 0;
+    int ret;
+    if (client_protocols == NULL) {
+        client_protocols = (unsigned char *)"";
+        client_protocols_len = 0;
+    }
+    if (server_protocols == NULL) {
+        server_protocols = (unsigned char *)"";
+        server_protocols_len = 0;
     }
 
-    SSL_select_next_proto(out, outlen,
-                          remote_protocols, remote_protocols_len,
-                          our_protocols, our_protocols_len);
+    ret = SSL_select_next_proto(out, outlen,
+                                server_protocols, server_protocols_len,
+                                client_protocols, client_protocols_len);
+    if (alpn && ret != OPENSSL_NPN_NEGOTIATED)
+        return SSL_TLSEXT_ERR_NOACK;
 
     return SSL_TLSEXT_ERR_OK;
 }
@@ -2192,7 +2199,7 @@ _selectNPN_cb(SSL *s,
               void *args)
 {
     PySSLContext *ctx = (PySSLContext *)args;
-    return do_protocol_selection(out, outlen, server, server_len,
+    return do_protocol_selection(0, out, outlen, server, server_len,
                                  ctx->npn_protocols, ctx->npn_protocols_len);
 }
 #endif
@@ -2244,9 +2251,9 @@ _selectALPN_cb(SSL *s,
               void *args)
 {
     PySSLContext *ctx = (PySSLContext *)args;
-    return do_protocol_selection((unsigned char **)out, outlen,
-                                 client_protocols, client_protocols_len,
-                                 ctx->alpn_protocols, ctx->alpn_protocols_len);
+    return do_protocol_selection(1, (unsigned char **)out, outlen,
+                                 ctx->alpn_protocols, ctx->alpn_protocols_len,
+                                 client_protocols, client_protocols_len);
 }
 #endif
 
