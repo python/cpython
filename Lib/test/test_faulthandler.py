@@ -260,17 +260,25 @@ class FaultHandlerTests(unittest.TestCase):
     def test_disabled_by_default(self):
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
-        args = (sys.executable, '-E', '-c', code)
-        # don't use assert_python_ok() because it always enable faulthandler
-        output = subprocess.check_output(args)
+        args = filter(None, (sys.executable,
+                             "-E" if sys.flags.ignore_environment else "",
+                             "-c", code))
+        env = os.environ.copy()
+        env.pop("PYTHONFAULTHANDLER", None)
+        # don't use assert_python_ok() because it always enables faulthandler
+        output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"False")
 
     def test_sys_xoptions(self):
         # Test python -X faulthandler
         code = "import faulthandler; print(faulthandler.is_enabled())"
-        args = (sys.executable, "-E", "-X", "faulthandler", "-c", code)
-        # don't use assert_python_ok() because it always enable faulthandler
-        output = subprocess.check_output(args)
+        args = filter(None, (sys.executable,
+                             "-E" if sys.flags.ignore_environment else "",
+                             "-X", "faulthandler", "-c", code))
+        env = os.environ.copy()
+        env.pop("PYTHONFAULTHANDLER", None)
+        # don't use assert_python_ok() because it always enables faulthandler
+        output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"True")
 
     def test_env_var(self):
@@ -279,7 +287,7 @@ class FaultHandlerTests(unittest.TestCase):
         args = (sys.executable, "-c", code)
         env = os.environ.copy()
         env['PYTHONFAULTHANDLER'] = ''
-        # don't use assert_python_ok() because it always enable faulthandler
+        # don't use assert_python_ok() because it always enables faulthandler
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"False")
 
