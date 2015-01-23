@@ -3054,9 +3054,9 @@ else:
             server_protocols = ['foo', 'bar', 'milkshake']
             protocol_tests = [
                 (['foo', 'bar'], 'foo'),
-                (['bar', 'foo'], 'bar'),
+                (['bar', 'foo'], 'foo'),
                 (['milkshake'], 'milkshake'),
-                (['http/3.0', 'http/4.0'], 'foo')
+                (['http/3.0', 'http/4.0'], None)
             ]
             for client_protocols, expected in protocol_tests:
                 server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)

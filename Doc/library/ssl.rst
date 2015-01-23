@@ -970,7 +970,8 @@ SSL sockets also have the following additional methods and attributes:
 
    Return the protocol that was selected during the TLS handshake.  If
    :meth:`SSLContext.set_alpn_protocols` was not called, if the other party does
-   not support ALPN, or if the handshake has not happened yet, ``None`` is
+   not support ALPN, if this socket does not support any of the client's
+   proposed protocols, or if the handshake has not happened yet, ``None`` is
    returned.
 
    .. versionadded:: 3.5
