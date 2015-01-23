@@ -122,7 +122,7 @@ _import_symbols('OP_')
 _import_symbols('ALERT_DESCRIPTION_')
 _import_symbols('SSL_ERROR_')
 
-from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN
+from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
 
 from _ssl import _OPENSSL_API_VERSION
 
@@ -374,6 +374,17 @@ class SSLContext(_SSLContext):
 
         self._set_npn_protocols(protos)
 
+    def set_alpn_protocols(self, alpn_protocols):
+        protos = bytearray()
+        for protocol in alpn_protocols:
+            b = bytes(protocol, 'ascii')
+            if len(b) == 0 or len(b) > 255:
+                raise SSLError('ALPN protocols must be 1 to 255 in length')
+            protos.append(len(b))
+            protos.extend(b)
+
+        self._set_alpn_protocols(protos)
+
     def _load_windows_store_certs(self, storename, purpose):
         certs = bytearray()
         for cert, encoding, trust in enum_certificates(storename):
@@ -566,6 +577,13 @@ class SSLObject:
         of the peers."""
         if _ssl.HAS_NPN:
             return self._sslobj.selected_npn_protocol()
+
+    def selected_alpn_protocol(self):
+        """Return the currently selected ALPN protocol as a string, or ``None``
+        if a next protocol was not negotiated or if ALPN is not supported by one
+        of the peers."""
+        if _ssl.HAS_ALPN:
+            return self._sslobj.selected_alpn_protocol()
 
     def cipher(self):
         """Return the currently selected cipher as a 3-tuple ``(name,
@@ -782,6 +800,13 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.selected_npn_protocol()
+
+    def selected_alpn_protocol(self):
+        self._checkClosed()
+        if not self._sslobj or not _ssl.HAS_ALPN:
+            return None
+        else:
+            return self._sslobj.selected_alpn_protocol()
 
     def cipher(self):
         self._checkClosed()
