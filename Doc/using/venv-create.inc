@@ -57,8 +57,11 @@ The command, if run with ``-h``, will show the available options::
    Installs pip by default, added the ``--without-pip``  and ``--copies``
    options
 
-If the target directory already exists an error will be raised, unless
-the ``--clear`` or ``--upgrade`` option was provided.
+.. versionchanged:: 3.4
+   In earlier versions, if the target directory already existed, an error was
+   raised, unless the ``--clear`` or ``--upgrade`` option was provided. Now,
+   if an existing directory is specified, its contents are removed and
+   the directory is processed as if it had been newly created.
 
 The created ``pyvenv.cfg`` file also includes the
 ``include-system-site-packages`` key, set to ``true`` if ``venv`` is
