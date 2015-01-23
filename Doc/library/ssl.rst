@@ -643,7 +643,7 @@ Constants
    Whether the OpenSSL library has built-in support for the *Application-Layer
    Protocol Negotiation* TLS extension as described in :rfc:`7301`.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 2.7.10
 
 .. data:: HAS_ECDH
 
@@ -878,7 +878,7 @@ SSL sockets also have the following additional methods and attributes:
    not support ALPN, or if the handshake has not happened yet, ``None`` is
    returned.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 2.7.10
 
 .. method:: SSLSocket.selected_npn_protocol()
 
@@ -1062,7 +1062,7 @@ to speed up repeated connections from the same clients.
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ALPN` is
    False.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 2.7.10
 
 .. method:: SSLContext.set_npn_protocols(protocols)
 
