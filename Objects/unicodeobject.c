@@ -13893,8 +13893,8 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
  * CAUTION:  o, x and X conversions on regular ints can never
  * produce a '-' sign, but can for Python's unbounded ints.
  */
-static PyObject*
-formatlong(PyObject *val, struct unicode_format_arg_t *arg)
+PyObject *
+_PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
 {
     PyObject *result = NULL;
     char *buf;
@@ -13904,8 +13904,6 @@ formatlong(PyObject *val, struct unicode_format_arg_t *arg)
     Py_ssize_t llen;
     int numdigits;      /* len == numnondigits + numdigits */
     int numnondigits = 0;
-    int prec = arg->prec;
-    int type = arg->ch;
 
     /* Avoid exceeding SSIZE_T_MAX */
     if (prec > INT_MAX-3) {
@@ -13954,7 +13952,7 @@ formatlong(PyObject *val, struct unicode_format_arg_t *arg)
     if (llen > INT_MAX) {
         Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError,
-                        "string too large in _PyBytes_FormatLong");
+                        "string too large in _PyUnicode_FormatLong");
         return NULL;
     }
     len = (int)llen;
@@ -13964,7 +13962,7 @@ formatlong(PyObject *val, struct unicode_format_arg_t *arg)
     assert(numdigits > 0);
 
     /* Get rid of base marker unless F_ALT */
-    if (((arg->flags & F_ALT) == 0 &&
+    if (((alt) == 0 &&
         (type == 'o' || type == 'x' || type == 'X'))) {
         assert(buf[sign] == '0');
         assert(buf[sign+1] == 'x' || buf[sign+1] == 'X' ||
@@ -14099,7 +14097,7 @@ mainformatlong(PyObject *v,
         return 1;
     }
 
-    res = formatlong(iobj, arg);
+    res = _PyUnicode_FormatLong(iobj, arg->flags & F_ALT, arg->prec, type);
     Py_DECREF(iobj);
     if (res == NULL)
         return -1;

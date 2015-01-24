@@ -3057,6 +3057,197 @@ place, and instead produce new objects.
       always produces a new object, even if no changes were made.
 
 
+.. _bytes-formatting:
+
+``printf``-style Bytes Formatting
+----------------------------------
+
+.. index::
+   single: formatting, bytes (%)
+   single: formatting, bytearray (%)
+   single: interpolation, bytes (%)
+   single: interpolation, bytearray (%)
+   single: bytes; formatting
+   single: bytearray; formatting
+   single: bytes; interpolation
+   single: bytearray; interpolation
+   single: printf-style formatting
+   single: sprintf-style formatting
+   single: % formatting
+   single: % interpolation
+
+.. note::
+
+   The formatting operations described here exhibit a variety of quirks that
+   lead to a number of common errors (such as failing to display tuples and
+   dictionaries correctly).  If the value being printed may be a tuple or
+   dictionary, wrap it in a tuple.
+
+Bytes objects (``bytes``/``bytearray``) have one unique built-in operation:
+the ``%`` operator (modulo).
+This is also known as the bytes *formatting* or *interpolation* operator.
+Given ``format % values`` (where *format* is a bytes object), ``%`` conversion
+specifications in *format* are replaced with zero or more elements of *values*.
+The effect is similar to using the :c:func:`sprintf` in the C language.
+
+If *format* requires a single argument, *values* may be a single non-tuple
+object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
+items specified by the format bytes object, or a single mapping object (for
+example, a dictionary).
+
+A conversion specifier contains two or more characters and has the following
+components, which must occur in this order:
+
+#. The ``'%'`` character, which marks the start of the specifier.
+
+#. Mapping key (optional), consisting of a parenthesised sequence of characters
+   (for example, ``(somename)``).
+
+#. Conversion flags (optional), which affect the result of some conversion
+   types.
+
+#. Minimum field width (optional).  If specified as an ``'*'`` (asterisk), the
+   actual width is read from the next element of the tuple in *values*, and the
+   object to convert comes after the minimum field width and optional precision.
+
+#. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
+   specified as ``'*'`` (an asterisk), the actual precision is read from the next
+   element of the tuple in *values*, and the value to convert comes after the
+   precision.
+
+#. Length modifier (optional).
+
+#. Conversion type.
+
+When the right argument is a dictionary (or other mapping type), then the
+formats in the bytes object *must* include a parenthesised mapping key into that
+dictionary inserted immediately after the ``'%'`` character. The mapping key
+selects the value to be formatted from the mapping.  For example:
+
+   >>> print(b'%(language)s has %(number)03d quote types.' %
+   ...       {b'language': b"Python", b"number": 2})
+   b'Python has 002 quote types.'
+
+In this case no ``*`` specifiers may occur in a format (since they require a
+sequential parameter list).
+
+The conversion flag characters are:
+
++---------+---------------------------------------------------------------------+
+| Flag    | Meaning                                                             |
++=========+=====================================================================+
+| ``'#'`` | The value conversion will use the "alternate form" (where defined   |
+|         | below).                                                             |
++---------+---------------------------------------------------------------------+
+| ``'0'`` | The conversion will be zero padded for numeric values.              |
++---------+---------------------------------------------------------------------+
+| ``'-'`` | The converted value is left adjusted (overrides the ``'0'``         |
+|         | conversion if both are given).                                      |
++---------+---------------------------------------------------------------------+
+| ``' '`` | (a space) A blank should be left before a positive number (or empty |
+|         | string) produced by a signed conversion.                            |
++---------+---------------------------------------------------------------------+
+| ``'+'`` | A sign character (``'+'`` or ``'-'``) will precede the conversion   |
+|         | (overrides a "space" flag).                                         |
++---------+---------------------------------------------------------------------+
+
+A length modifier (``h``, ``l``, or ``L``) may be present, but is ignored as it
+is not necessary for Python -- so e.g. ``%ld`` is identical to ``%d``.
+
+The conversion types are:
+
++------------+-----------------------------------------------------+-------+
+| Conversion | Meaning                                             | Notes |
++============+=====================================================+=======+
+| ``'d'``    | Signed integer decimal.                             |       |
++------------+-----------------------------------------------------+-------+
+| ``'i'``    | Signed integer decimal.                             |       |
++------------+-----------------------------------------------------+-------+
+| ``'o'``    | Signed octal value.                                 | \(1)  |
++------------+-----------------------------------------------------+-------+
+| ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(7)  |
++------------+-----------------------------------------------------+-------+
+| ``'x'``    | Signed hexadecimal (lowercase).                     | \(2)  |
++------------+-----------------------------------------------------+-------+
+| ``'X'``    | Signed hexadecimal (uppercase).                     | \(2)  |
++------------+-----------------------------------------------------+-------+
+| ``'e'``    | Floating point exponential format (lowercase).      | \(3)  |
++------------+-----------------------------------------------------+-------+
+| ``'E'``    | Floating point exponential format (uppercase).      | \(3)  |
++------------+-----------------------------------------------------+-------+
+| ``'f'``    | Floating point decimal format.                      | \(3)  |
++------------+-----------------------------------------------------+-------+
+| ``'F'``    | Floating point decimal format.                      | \(3)  |
++------------+-----------------------------------------------------+-------+
+| ``'g'``    | Floating point format. Uses lowercase exponential   | \(4)  |
+|            | format if exponent is less than -4 or not less than |       |
+|            | precision, decimal format otherwise.                |       |
++------------+-----------------------------------------------------+-------+
+| ``'G'``    | Floating point format. Uses uppercase exponential   | \(4)  |
+|            | format if exponent is less than -4 or not less than |       |
+|            | precision, decimal format otherwise.                |       |
++------------+-----------------------------------------------------+-------+
+| ``'c'``    | Single byte (accepts integer or single              |       |
+|            | byte objects).                                      |       |
++------------+-----------------------------------------------------+-------+
+| ``'b'``    | Bytes (any object that follows the                  | \(5)  |
+|            | :ref:`buffer protocol <bufferobjects>` or has       |       |
+|            | :meth:`__bytes__`).                                 |       |
++------------+-----------------------------------------------------+-------+
+| ``'s'``    | ``'s'`` is an alias for ``'b'`` and should only     | \(6)  |
+|            | be used for Python2/3 code bases.                   |       |
++------------+-----------------------------------------------------+-------+
+| ``'a'``    | Bytes (converts any Python object using             | \(5)  |
+|            | ``repr(obj).encode('ascii','backslashreplace)``).   |       |
++------------+-----------------------------------------------------+-------+
+| ``'%'``    | No argument is converted, results in a ``'%'``      |       |
+|            | character in the result.                            |       |
++------------+-----------------------------------------------------+-------+
+
+Notes:
+
+(1)
+   The alternate form causes a leading zero (``'0'``) to be inserted between
+   left-hand padding and the formatting of the number if the leading character
+   of the result is not already a zero.
+
+(2)
+   The alternate form causes a leading ``'0x'`` or ``'0X'`` (depending on whether
+   the ``'x'`` or ``'X'`` format was used) to be inserted between left-hand padding
+   and the formatting of the number if the leading character of the result is not
+   already a zero.
+
+(3)
+   The alternate form causes the result to always contain a decimal point, even if
+   no digits follow it.
+
+   The precision determines the number of digits after the decimal point and
+   defaults to 6.
+
+(4)
+   The alternate form causes the result to always contain a decimal point, and
+   trailing zeroes are not removed as they would otherwise be.
+
+   The precision determines the number of significant digits before and after the
+   decimal point and defaults to 6.
+
+(5)
+   If precision is ``N``, the output is truncated to ``N`` characters.
+
+(6)
+   ``b'%s'`` is deprecated, but will not be removed during the 3.x series.
+
+(7)
+   See :pep:`237`.
+
+.. note::
+
+   The bytearray version of this method does *not* operate in place - it
+   always produces a new object, even if no changes were made.
+
+.. seealso:: :pep:`461`.
+.. versionadded:: 3.5
+
 .. _typememoryview:
 
 Memory Views

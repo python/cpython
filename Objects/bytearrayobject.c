@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "structmember.h"
 #include "bytes_methods.h"
+#include "bytesobject.h"
 
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
@@ -292,6 +293,31 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
     if (vb.len != -1)
         PyBuffer_Release(&vb);
     return (PyObject *)result;
+}
+
+static PyObject *
+bytearray_format(PyByteArrayObject *self, PyObject *args)
+{
+    PyObject *bytes_in, *bytes_out, *res;
+    char *bytestring;
+
+    if (self == NULL || !PyByteArray_Check(self) || args == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    bytestring = PyByteArray_AS_STRING(self);
+    bytes_in = PyBytes_FromString(bytestring);
+    if (bytes_in == NULL)
+        return NULL;
+    bytes_out = _PyBytes_Format(bytes_in, args);
+    Py_DECREF(bytes_in);
+    if (bytes_out == NULL)
+        return NULL;
+    res = PyByteArray_FromObject(bytes_out);
+    Py_DECREF(bytes_out);
+    if (res == NULL)
+        return NULL;
+    return res;
 }
 
 /* Functions stuffed into the type object */
@@ -3723,6 +3749,21 @@ bytearray_methods[] = {
     {NULL}
 };
 
+static PyObject *
+bytearray_mod(PyObject *v, PyObject *w)
+{
+    if (!PyByteArray_Check(v))
+        Py_RETURN_NOTIMPLEMENTED;
+    return bytearray_format((PyByteArrayObject *)v, w);
+}
+
+static PyNumberMethods bytearray_as_number = {
+    0,              /*nb_add*/
+    0,              /*nb_subtract*/
+    0,              /*nb_multiply*/
+    bytearray_mod,  /*nb_remainder*/
+};
+
 PyDoc_STRVAR(bytearray_doc,
 "bytearray(iterable_of_ints) -> bytearray\n\
 bytearray(string, encoding[, errors]) -> bytearray\n\
@@ -3751,7 +3792,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_setattr */
     0,                                  /* tp_reserved */
     (reprfunc)bytearray_repr,           /* tp_repr */
-    0,                                  /* tp_as_number */
+    &bytearray_as_number,               /* tp_as_number */
     &bytearray_as_sequence,             /* tp_as_sequence */
     &bytearray_as_mapping,              /* tp_as_mapping */
     0,                                  /* tp_hash */

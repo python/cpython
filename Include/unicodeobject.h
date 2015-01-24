@@ -2245,6 +2245,8 @@ PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strrchr(
     Py_UNICODE c
     );
 
+PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
+
 /* Create a copy of a unicode string ending with a nul character. Return NULL
    and raise a MemoryError exception on memory allocation failure, otherwise
    return a new allocated buffer (use PyMem_Free() to free the buffer). */
