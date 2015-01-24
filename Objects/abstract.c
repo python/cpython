@@ -686,8 +686,9 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     Py_DECREF(meth);
 
     if (result && !PyUnicode_Check(result)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "__format__ method did not return string");
+        PyErr_Format(PyExc_TypeError,
+             "__format__ must return a str, not %.200s",
+             Py_TYPE(result)->tp_name);
         Py_DECREF(result);
         result = NULL;
         goto done;
