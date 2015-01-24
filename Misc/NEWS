@@ -14,6 +14,9 @@ Core and Builtins
   atomic memory access if available. Patch written by Vitor de Lima and Gustavo
   Temple.
 
+- Issue #20284: %-interpolation (aka printf) formatting added for bytes and
+  bytearray.
+
 - Issue #23048: Fix jumping out of an infinite while loop in the pdb.
 
 - Issue #20335: bytes constructor now raises TypeError when encoding or errors
