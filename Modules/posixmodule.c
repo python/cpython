@@ -15128,6 +15128,37 @@ The filepath is relative to the current directory.  If you want to use\n\
 an absolute path, make sure the first character is not a slash (\"/\");\n\
 the underlying Win32 ShellExecute function doesn't work if it is.");
 
+/* Grab ShellExecute dynamically from shell32 */
+static int has_ShellExecute = -1;
+static HINSTANCE (CALLBACK *Py_ShellExecuteA)(HWND, LPCSTR, LPCSTR, LPCSTR,
+                                              LPCSTR, INT);
+static HINSTANCE (CALLBACK *Py_ShellExecuteW)(HWND, LPCWSTR, LPCWSTR, LPCWSTR,
+                                              LPCWSTR, INT);
+static int
+check_ShellExecute()
+{
+    HINSTANCE hShell32;
+
+    /* only recheck */
+    if (-1 == has_ShellExecute) {
+        Py_BEGIN_ALLOW_THREADS
+        hShell32 = LoadLibraryW(L"SHELL32");
+        Py_END_ALLOW_THREADS
+        if (hShell32) {
+            *(FARPROC*)&Py_ShellExecuteA = GetProcAddress(hShell32,
+                                            "ShellExecuteA");
+            *(FARPROC*)&Py_ShellExecuteW = GetProcAddress(hShell32,
+                                            "ShellExecuteW");
+            has_ShellExecute = Py_ShellExecuteA &&
+                               Py_ShellExecuteW;
+        } else {
+            has_ShellExecute = 0;
+        }
+    }
+    return has_ShellExecute;
+}
+
+
 static PyObject *
 win32_startfile(PyObject *self, PyObject *args)
 {
@@ -15138,6 +15169,14 @@ win32_startfile(PyObject *self, PyObject *args)
     HINSTANCE rc;
 
     PyObject *unipath, *uoperation = NULL;
+
+    if(!check_ShellExecute()) {
+        /* If the OS doesn't have ShellExecute, return a
+           NotImplementedError. */
+        return PyErr_Format(PyExc_NotImplementedError,
+            "startfile not available on this platform");
+    }
+
     if (!PyArg_ParseTuple(args, "U|s:startfile",
                           &unipath, &operation)) {
         PyErr_Clear();
@@ -15166,8 +15205,8 @@ win32_startfile(PyObject *self, PyObject *args)
         woperation = NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    rc = ShellExecuteW((HWND)0, woperation, wpath,
-                       NULL, NULL, SW_SHOWNORMAL);
+    rc = Py_ShellExecuteW((HWND)0, woperation, wpath,
+                          NULL, NULL, SW_SHOWNORMAL);
     Py_END_ALLOW_THREADS
 
     Py_XDECREF(uoperation);
@@ -15189,8 +15228,8 @@ normal:
     }
     filepath = PyBytes_AsString(ofilepath);
     Py_BEGIN_ALLOW_THREADS
-    rc = ShellExecute((HWND)0, operation, filepath,
-                      NULL, NULL, SW_SHOWNORMAL);
+    rc = Py_ShellExecuteA((HWND)0, operation, filepath,
+                          NULL, NULL, SW_SHOWNORMAL);
     Py_END_ALLOW_THREADS
     if (rc <= (HINSTANCE)32) {
         PyObject *errval = win32_error("startfile", filepath);
