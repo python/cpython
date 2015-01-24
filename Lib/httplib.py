@@ -723,7 +723,7 @@ class HTTPConnection:
         endpoint passed to set_tunnel. This is done by sending a HTTP CONNECT
         request to the proxy server when the connection is established.
 
-        This method must be called before the HTML connection has been
+        This method must be called before the HTTP connection has been
         established.
 
         The headers argument should be a mapping of extra HTTP headers
@@ -1129,7 +1129,7 @@ class HTTP:
         "Accept arguments to set the host/port, since the superclass doesn't."
 
         if host is not None:
-            self._conn._set_hostport(host, port)
+            (self._conn.host, self._conn.port) = self._conn._get_hostport(host, port)
         self._conn.connect()
 
     def getfile(self):
