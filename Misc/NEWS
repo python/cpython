@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #23253: Delay-load ShellExecute[AW] in os.startfile for reduced
+  startup overhead on Windows.
+
 - Issue #22038: pyatomic.h now uses stdatomic.h or GCC built-in functions for
   atomic memory access if available. Patch written by Vitor de Lima and Gustavo
   Temple.
