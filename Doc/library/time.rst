@@ -342,7 +342,8 @@ The module defines the following functions and data items:
 
 .. function:: sleep(secs)
 
-   Suspend execution for the given number of seconds.  The argument may be a
+   Suspend execution of the calling thread for the given number of seconds.
+   The argument may be a
    floating point number to indicate a more precise sleep time. The actual
    suspension time may be less than that requested because any caught signal will
    terminate the :func:`sleep` following execution of that signal's catching
