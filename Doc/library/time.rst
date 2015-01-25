@@ -342,12 +342,13 @@ The module defines the following functions and data items:
 
 .. function:: sleep(secs)
 
-   Suspend execution for the given number of seconds.  The argument may be a
-   floating point number to indicate a more precise sleep time. The actual
-   suspension time may be less than that requested because any caught signal will
-   terminate the :func:`sleep` following execution of that signal's catching
-   routine.  Also, the suspension time may be longer than requested by an arbitrary
-   amount because of the scheduling of other activity in the system.
+   Suspend execution of the calling thread for the given number of seconds.
+   The argument may be a floating point number to indicate a more precise sleep
+   time. The actual suspension time may be less than that requested because any
+   caught signal will terminate the :func:`sleep` following execution of that
+   signal's catching routine.  Also, the suspension time may be longer than
+   requested by an arbitrary amount because of the scheduling of other activity
+   in the system.
 
 
 .. function:: strftime(format[, t])
