@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #23321: Fixed a crash in str.decode() when error handler returned
+  replacment string longer than mailformed input data.
+
 - Issue #23048: Fix jumping out of an infinite while loop in the pdb.
 
 - Issue #20335: bytes constructor now raises TypeError when encoding or errors
