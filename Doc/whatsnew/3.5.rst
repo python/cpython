@@ -118,7 +118,9 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* None yet.
+* Added the ``'namereplace'`` error handlers.  The ``'backslashreplace'``
+  error handlers now works with decoding and translating.
+  (Contributed by Serhiy Storchaka in :issue:`19676` and :issue:`22286`.)
 
 
 

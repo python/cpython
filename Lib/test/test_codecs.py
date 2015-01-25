@@ -378,6 +378,10 @@ class ReadTest(MixInCheckStateHandling):
                              before + after)
             self.assertEqual(test_sequence.decode(self.encoding, "replace"),
                              before + self.ill_formed_sequence_replace + after)
+            backslashreplace = ''.join('\\x%02x' % b
+                                       for b in self.ill_formed_sequence)
+            self.assertEqual(test_sequence.decode(self.encoding, "backslashreplace"),
+                             before + backslashreplace + after)
 
 class UTF32Test(ReadTest, unittest.TestCase):
     encoding = "utf-32"
@@ -1300,14 +1304,19 @@ class UnicodeInternalTest(unittest.TestCase):
                                   "unicode_internal")
         if sys.byteorder == "little":
             invalid = b"\x00\x00\x11\x00"
+            invalid_backslashreplace = r"\x00\x00\x11\x00"
         else:
             invalid = b"\x00\x11\x00\x00"
+            invalid_backslashreplace = r"\x00\x11\x00\x00"
         with support.check_warnings():
             self.assertRaises(UnicodeDecodeError,
                               invalid.decode, "unicode_internal")
         with support.check_warnings():
             self.assertEqual(invalid.decode("unicode_internal", "replace"),
                              '\ufffd')
+        with support.check_warnings():
+            self.assertEqual(invalid.decode("unicode_internal", "backslashreplace"),
+                             invalid_backslashreplace)
 
     @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
     def test_decode_error_attributes(self):
@@ -2043,6 +2052,16 @@ class CharmapTest(unittest.TestCase):
         )
 
         self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "backslashreplace", "ab"),
+            ("ab\\x02", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "backslashreplace", "ab\ufffe"),
+            ("ab\\x02", 3)
+        )
+
+        self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "ignore", "ab"),
             ("ab", 3)
         )
@@ -2116,6 +2135,25 @@ class CharmapTest(unittest.TestCase):
             codecs.charmap_decode(b"\x00\x01\x02", "replace",
                                   {0: 'a', 1: 'b', 2: '\ufffe'}),
             ("ab\ufffd", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "backslashreplace",
+                                  {0: 'a', 1: 'b'}),
+            ("ab\\x02", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "backslashreplace",
+                                  {0: 'a', 1: 'b', 2: None}),
+            ("ab\\x02", 3)
+        )
+
+        # Issue #14850
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "backslashreplace",
+                                  {0: 'a', 1: 'b', 2: '\ufffe'}),
+            ("ab\\x02", 3)
         )
 
         self.assertEqual(
@@ -2195,6 +2233,18 @@ class CharmapTest(unittest.TestCase):
         )
 
         self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "backslashreplace",
+                                  {0: a, 1: b}),
+            ("ab\\x02", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "backslashreplace",
+                                  {0: a, 1: b, 2: 0xFFFE}),
+            ("ab\\x02", 3)
+        )
+
+        self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "ignore",
                                   {0: a, 1: b}),
             ("ab", 3)
@@ -2253,9 +2303,13 @@ class TypesTest(unittest.TestCase):
 
         self.assertRaises(UnicodeDecodeError, codecs.unicode_escape_decode, br"\U00110000")
         self.assertEqual(codecs.unicode_escape_decode(r"\U00110000", "replace"), ("\ufffd", 10))
+        self.assertEqual(codecs.unicode_escape_decode(r"\U00110000", "backslashreplace"),
+                         (r"\x5c\x55\x30\x30\x31\x31\x30\x30\x30\x30", 10))
 
         self.assertRaises(UnicodeDecodeError, codecs.raw_unicode_escape_decode, br"\U00110000")
         self.assertEqual(codecs.raw_unicode_escape_decode(r"\U00110000", "replace"), ("\ufffd", 10))
+        self.assertEqual(codecs.raw_unicode_escape_decode(r"\U00110000", "backslashreplace"),
+                         (r"\x5c\x55\x30\x30\x31\x31\x30\x30\x30\x30", 10))
 
 
 class UnicodeEscapeTest(unittest.TestCase):
@@ -2894,11 +2948,13 @@ class CodePageTest(unittest.TestCase):
             (b'[\xff]', 'strict', None),
             (b'[\xff]', 'ignore', '[]'),
             (b'[\xff]', 'replace', '[\ufffd]'),
+            (b'[\xff]', 'backslashreplace', '[\\xff]'),
             (b'[\xff]', 'surrogateescape', '[\udcff]'),
             (b'[\xff]', 'surrogatepass', None),
             (b'\x81\x00abc', 'strict', None),
             (b'\x81\x00abc', 'ignore', '\x00abc'),
             (b'\x81\x00abc', 'replace', '\ufffd\x00abc'),
+            (b'\x81\x00abc', 'backslashreplace', '\\xff\x00abc'),
         ))
 
     def test_cp1252(self):

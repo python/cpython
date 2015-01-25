@@ -246,6 +246,11 @@ class CodecCallbackTest(unittest.TestCase):
                     "\u0000\ufffd"
                 )
 
+                self.assertEqual(
+                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "backslashreplace"),
+                    "\u0000\\x00"
+                )
+
                 codecs.register_error("test.hui", handler_unicodeinternal)
 
                 self.assertEqual(
@@ -565,17 +570,6 @@ class CodecCallbackTest(unittest.TestCase):
            codecs.backslashreplace_errors,
            UnicodeError("ouch")
         )
-        # "backslashreplace" can only be used for encoding
-        self.assertRaises(
-            TypeError,
-            codecs.backslashreplace_errors,
-            UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")
-        )
-        self.assertRaises(
-            TypeError,
-            codecs.backslashreplace_errors,
-            UnicodeTranslateError("\u3042", 0, 1, "ouch")
-        )
         # Use the correct exception
         self.assertEqual(
             codecs.backslashreplace_errors(
@@ -701,6 +695,16 @@ class CodecCallbackTest(unittest.TestCase):
                     UnicodeEncodeError("ascii", "\udfff", 0, 1, "ouch")),
                 ("\\udfff", 1)
             )
+        self.assertEqual(
+            codecs.backslashreplace_errors(
+                UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")),
+            ("\\xff", 1)
+        )
+        self.assertEqual(
+            codecs.backslashreplace_errors(
+                UnicodeTranslateError("\u3042", 0, 1, "ouch")),
+            ("\\u3042", 1)
+        )
 
     def test_badhandlerresults(self):
         results = ( 42, "foo", (1,2,3), ("foo", 1, 3), ("foo", None), ("foo",), ("foo", 1, 3), ("foo", None), ("foo",) )

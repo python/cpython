@@ -973,9 +973,8 @@ are always available.  They are listed here in alphabetical order.
      Characters not supported by the encoding are replaced with the
      appropriate XML character reference ``&#nnn;``.
 
-   * ``'backslashreplace'`` (also only supported when writing)
-     replaces unsupported characters with Python's backslashed escape
-     sequences.
+   * ``'backslashreplace'`` replaces malformed data by Python's backslashed
+     escape sequences.
 
    * ``'namereplace'`` (also only supported when writing)
      replaces unsupported characters with ``\N{...}`` escape sequences.
