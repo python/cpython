@@ -4155,9 +4155,13 @@ unicode_decode_call_errorhandler_writer(
     if (PyUnicode_READY(repunicode) < 0)
         goto onError;
     replen = PyUnicode_GET_LENGTH(repunicode);
-    writer->min_length += replen;
-    if (replen > 1)
+    if (replen > 1) {
+        writer->min_length += replen - 1;
         writer->overallocate = 1;
+        if (_PyUnicodeWriter_Prepare(writer, writer->min_length,
+                            PyUnicode_MAX_CHAR_VALUE(repunicode)) == -1)
+            goto onError;
+    }
     if (_PyUnicodeWriter_WriteStr(writer, repunicode) == -1)
         goto onError;
 

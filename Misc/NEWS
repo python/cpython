@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #23321: Fixed a crash in str.decode() when error handler returned
+  replacment string longer than mailformed input data.
+
 - Issue #22286: The "backslashreplace" error handlers now works with
   decoding and translating.
 
