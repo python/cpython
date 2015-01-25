@@ -1253,8 +1253,7 @@ class HTTPResponseTest(TestCase):
         self.assertEqual(header, 42)
 
 class TunnelTests(TestCase):
-
-    def test_connect(self):
+    def setUp(self):
         response_text = (
             'HTTP/1.0 200 OK\r\n\r\n' # Reply to CONNECT
             'HTTP/1.1 200 OK\r\n' # Reply to HEAD
@@ -1262,38 +1261,56 @@ class TunnelTests(TestCase):
         )
 
         def create_connection(address, timeout=None, source_address=None):
-            return FakeSocket(response_text, host=address[0],
-                              port=address[1])
+            return FakeSocket(response_text, host=address[0], port=address[1])
 
-        conn = client.HTTPConnection('proxy.com')
-        conn._create_connection = create_connection
+        self.host = 'proxy.com'
+        self.conn = client.HTTPConnection(self.host)
+        self.conn._create_connection = create_connection
 
+    def tearDown(self):
+        self.conn.close()
+
+    def test_set_tunnel_host_port_headers(self):
+        tunnel_host = 'destination.com'
+        tunnel_port = 8888
+        tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)'}
+        self.conn.set_tunnel(tunnel_host, port=tunnel_port,
+                             headers=tunnel_headers)
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertEqual(self.conn._tunnel_host, tunnel_host)
+        self.assertEqual(self.conn._tunnel_port, tunnel_port)
+        self.assertEqual(self.conn._tunnel_headers, tunnel_headers)
+
+    def test_disallow_set_tunnel_after_connect(self):
         # Once connected, we shouldn't be able to tunnel anymore
-        conn.connect()
-        self.assertRaises(RuntimeError, conn.set_tunnel,
+        self.conn.connect()
+        self.assertRaises(RuntimeError, self.conn.set_tunnel,
                           'destination.com')
 
-        # But if we close the connection, we're good
-        conn.close()
-        conn.set_tunnel('destination.com')
-        conn.request('HEAD', '/', '')
-
-        self.assertEqual(conn.sock.host, 'proxy.com')
-        self.assertEqual(conn.sock.port, 80)
-        self.assertIn(b'CONNECT destination.com', conn.sock.data)
+    def test_connect_with_tunnel(self):
+        self.conn.set_tunnel('destination.com')
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertIn(b'CONNECT destination.com', self.conn.sock.data)
         # issue22095
-        self.assertNotIn(b'Host: destination.com:None', conn.sock.data)
-        self.assertIn(b'Host: destination.com', conn.sock.data)
+        self.assertNotIn(b'Host: destination.com:None', self.conn.sock.data)
+        self.assertIn(b'Host: destination.com', self.conn.sock.data)
 
         # This test should be removed when CONNECT gets the HTTP/1.1 blessing
-        self.assertNotIn(b'Host: proxy.com', conn.sock.data)
+        self.assertNotIn(b'Host: proxy.com', self.conn.sock.data)
 
-        conn.close()
-        conn.request('PUT', '/', '')
-        self.assertEqual(conn.sock.host, 'proxy.com')
-        self.assertEqual(conn.sock.port, 80)
-        self.assertTrue(b'CONNECT destination.com' in conn.sock.data)
-        self.assertTrue(b'Host: destination.com' in conn.sock.data)
+    def test_connect_put_request(self):
+        self.conn.set_tunnel('destination.com')
+        self.conn.request('PUT', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertIn(b'CONNECT destination.com', self.conn.sock.data)
+        self.assertIn(b'Host: destination.com', self.conn.sock.data)
+
+
 
 @support.reap_threads
 def test_main(verbose=None):
