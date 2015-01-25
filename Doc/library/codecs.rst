@@ -314,8 +314,8 @@ The following error handlers are only applicable to
 |                         | reference (only for encoding).  Implemented   |
 |                         | in :func:`xmlcharrefreplace_errors`.          |
 +-------------------------+-----------------------------------------------+
-| ``'backslashreplace'``  | Replace with backslashed escape sequences     |
-|                         | (only for encoding).  Implemented in          |
+| ``'backslashreplace'``  | Replace with backslashed escape sequences.    |
+|                         | Implemented in                                |
 |                         | :func:`backslashreplace_errors`.              |
 +-------------------------+-----------------------------------------------+
 | ``'namereplace'``       | Replace with ``\N{...}`` escape sequences     |
@@ -349,6 +349,10 @@ In addition, the following error handler is specific to the given codecs:
 
 .. versionadded:: 3.5
    The ``'namereplace'`` error handler.
+
+.. versionchanged:: 3.5
+   The ``'backslashreplace'`` error handlers now works with decoding and
+   translating.
 
 The set of allowed values can be extended by registering a new named error
 handler:
@@ -417,9 +421,9 @@ functions:
 
 .. function:: backslashreplace_errors(exception)
 
-   Implements the ``'backslashreplace'`` error handling (for encoding with
-   :term:`text encodings <text encoding>` only): the
-   unencodable character is replaced by a backslashed escape sequence.
+   Implements the ``'backslashreplace'`` error handling (for
+   :term:`text encodings <text encoding>` only): malformed data is
+   replaced by a backslashed escape sequence.
 
 .. function:: namereplace_errors(exception)
 

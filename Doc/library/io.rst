@@ -825,11 +825,12 @@ Text I/O
    exception if there is an encoding error (the default of ``None`` has the same
    effect), or pass ``'ignore'`` to ignore errors.  (Note that ignoring encoding
    errors can lead to data loss.)  ``'replace'`` causes a replacement marker
-   (such as ``'?'``) to be inserted where there is malformed data.  When
-   writing, ``'xmlcharrefreplace'`` (replace with the appropriate XML character
-   reference), ``'backslashreplace'`` (replace with backslashed escape
-   sequences) or ``'namereplace'`` (replace with ``\N{...}`` escape sequences)
-   can be used.  Any other error handling name that has been registered with
+   (such as ``'?'``) to be inserted where there is malformed data.
+   ``'backslashreplace'`` causes malformed data to be replaced by a
+   backslashed escape sequence.  When writing, ``'xmlcharrefreplace'``
+   (replace with the appropriate XML character reference)  or ``'namereplace'``
+   (replace with ``\N{...}`` escape sequences) can be used.  Any other error
+   handling name that has been registered with
    :func:`codecs.register_error` is also valid.
 
    .. index::
