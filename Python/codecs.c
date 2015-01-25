@@ -864,74 +864,112 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
+    PyObject *object;
+    Py_ssize_t i;
+    Py_ssize_t start;
+    Py_ssize_t end;
+    PyObject *res;
+    unsigned char *outp;
+    int ressize;
+    Py_UCS4 c;
+
+    if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+        unsigned char *p;
+        if (PyUnicodeDecodeError_GetStart(exc, &start))
+            return NULL;
+        if (PyUnicodeDecodeError_GetEnd(exc, &end))
+            return NULL;
+        if (!(object = PyUnicodeDecodeError_GetObject(exc)))
+            return NULL;
+        if (!(p = (unsigned char*)PyBytes_AsString(object))) {
+            Py_DECREF(object);
+            return NULL;
+        }
+        res = PyUnicode_New(4 * (end - start), 127);
+        if (res == NULL) {
+            Py_DECREF(object);
+            return NULL;
+        }
+        outp = PyUnicode_1BYTE_DATA(res);
+        for (i = start; i < end; i++, outp += 4) {
+            unsigned char c = p[i];
+            outp[0] = '\\';
+            outp[1] = 'x';
+            outp[2] = Py_hexdigits[(c>>4)&0xf];
+            outp[3] = Py_hexdigits[c&0xf];
+        }
+
+        assert(_PyUnicode_CheckConsistency(res, 1));
+        Py_DECREF(object);
+        return Py_BuildValue("(Nn)", res, end);
+    }
     if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
-        PyObject *restuple;
-        PyObject *object;
-        Py_ssize_t i;
-        Py_ssize_t start;
-        Py_ssize_t end;
-        PyObject *res;
-        unsigned char *outp;
-        Py_ssize_t ressize;
-        Py_UCS4 c;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
-        if (end - start > PY_SSIZE_T_MAX / (1+1+8))
-            end = start + PY_SSIZE_T_MAX / (1+1+8);
-        for (i = start, ressize = 0; i < end; ++i) {
-            /* object is guaranteed to be "ready" */
-            c = PyUnicode_READ_CHAR(object, i);
-            if (c >= 0x10000) {
-                ressize += 1+1+8;
-            }
-            else if (c >= 0x100) {
-                ressize += 1+1+4;
-            }
-            else
-                ressize += 1+1+2;
-        }
-        res = PyUnicode_New(ressize, 127);
-        if (res == NULL) {
-            Py_DECREF(object);
+    }
+    else if (PyObject_IsInstance(exc, PyExc_UnicodeTranslateError)) {
+        if (PyUnicodeTranslateError_GetStart(exc, &start))
             return NULL;
-        }
-        for (i = start, outp = PyUnicode_1BYTE_DATA(res);
-            i < end; ++i) {
-            c = PyUnicode_READ_CHAR(object, i);
-            *outp++ = '\\';
-            if (c >= 0x00010000) {
-                *outp++ = 'U';
-                *outp++ = Py_hexdigits[(c>>28)&0xf];
-                *outp++ = Py_hexdigits[(c>>24)&0xf];
-                *outp++ = Py_hexdigits[(c>>20)&0xf];
-                *outp++ = Py_hexdigits[(c>>16)&0xf];
-                *outp++ = Py_hexdigits[(c>>12)&0xf];
-                *outp++ = Py_hexdigits[(c>>8)&0xf];
-            }
-            else if (c >= 0x100) {
-                *outp++ = 'u';
-                *outp++ = Py_hexdigits[(c>>12)&0xf];
-                *outp++ = Py_hexdigits[(c>>8)&0xf];
-            }
-            else
-                *outp++ = 'x';
-            *outp++ = Py_hexdigits[(c>>4)&0xf];
-            *outp++ = Py_hexdigits[c&0xf];
-        }
-
-        assert(_PyUnicode_CheckConsistency(res, 1));
-        restuple = Py_BuildValue("(Nn)", res, end);
-        Py_DECREF(object);
-        return restuple;
+        if (PyUnicodeTranslateError_GetEnd(exc, &end))
+            return NULL;
+        if (!(object = PyUnicodeTranslateError_GetObject(exc)))
+            return NULL;
     }
     else {
         wrong_exception_type(exc);
         return NULL;
     }
+
+    if (end - start > PY_SSIZE_T_MAX / (1+1+8))
+        end = start + PY_SSIZE_T_MAX / (1+1+8);
+    for (i = start, ressize = 0; i < end; ++i) {
+        /* object is guaranteed to be "ready" */
+        c = PyUnicode_READ_CHAR(object, i);
+        if (c >= 0x10000) {
+            ressize += 1+1+8;
+        }
+        else if (c >= 0x100) {
+            ressize += 1+1+4;
+        }
+        else
+            ressize += 1+1+2;
+    }
+    res = PyUnicode_New(ressize, 127);
+    if (res == NULL) {
+        Py_DECREF(object);
+        return NULL;
+    }
+    outp = PyUnicode_1BYTE_DATA(res);
+    for (i = start; i < end; ++i) {
+        c = PyUnicode_READ_CHAR(object, i);
+        *outp++ = '\\';
+        if (c >= 0x00010000) {
+            *outp++ = 'U';
+            *outp++ = Py_hexdigits[(c>>28)&0xf];
+            *outp++ = Py_hexdigits[(c>>24)&0xf];
+            *outp++ = Py_hexdigits[(c>>20)&0xf];
+            *outp++ = Py_hexdigits[(c>>16)&0xf];
+            *outp++ = Py_hexdigits[(c>>12)&0xf];
+            *outp++ = Py_hexdigits[(c>>8)&0xf];
+        }
+        else if (c >= 0x100) {
+            *outp++ = 'u';
+            *outp++ = Py_hexdigits[(c>>12)&0xf];
+            *outp++ = Py_hexdigits[(c>>8)&0xf];
+        }
+        else
+            *outp++ = 'x';
+        *outp++ = Py_hexdigits[(c>>4)&0xf];
+        *outp++ = Py_hexdigits[c&0xf];
+    }
+
+    assert(_PyUnicode_CheckConsistency(res, 1));
+    Py_DECREF(object);
+    return Py_BuildValue("(Nn)", res, end);
 }
 
 static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
@@ -1444,8 +1482,8 @@ static int _PyCodecRegistry_Init(void)
                 backslashreplace_errors,
                 METH_O,
                 PyDoc_STR("Implements the 'backslashreplace' error handling, "
-                          "which replaces an unencodable character with a "
-                          "backslashed escape sequence.")
+                          "which replaces malformed data with a backslashed "
+                          "escape sequence.")
             }
         },
         {

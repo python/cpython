@@ -127,7 +127,8 @@ class Codec:
          'surrogateescape' - replace with private code points U+DCnn.
          'xmlcharrefreplace' - Replace with the appropriate XML
                                character reference (only for encoding).
-         'backslashreplace'  - Replace with backslashed escape sequences
+         'backslashreplace'  - Replace with backslashed escape sequences.
+         'namereplace'       - Replace with \\N{...} escape sequences
                                (only for encoding).
 
         The set of allowed values can be extended via register_error.
@@ -359,7 +360,8 @@ class StreamWriter(Codec):
              'xmlcharrefreplace' - Replace with the appropriate XML
                                    character reference.
              'backslashreplace'  - Replace with backslashed escape
-                                   sequences (only for encoding).
+                                   sequences.
+             'namereplace'       - Replace with \\N{...} escape sequences.
 
             The set of allowed parameter values can be extended via
             register_error.
@@ -429,7 +431,8 @@ class StreamReader(Codec):
 
              'strict' - raise a ValueError (or a subclass)
              'ignore' - ignore the character and continue with the next
-             'replace'- replace with a suitable replacement character;
+             'replace'- replace with a suitable replacement character
+             'backslashreplace' - Replace with backslashed escape sequences;
 
             The set of allowed parameter values can be extended via
             register_error.

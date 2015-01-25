@@ -280,8 +280,9 @@ and optionally an *errors* argument.
 The *errors* argument specifies the response when the input string can't be
 converted according to the encoding's rules.  Legal values for this argument are
 ``'strict'`` (raise a :exc:`UnicodeDecodeError` exception), ``'replace'`` (use
-``U+FFFD``, ``REPLACEMENT CHARACTER``), or ``'ignore'`` (just leave the
-character out of the Unicode result).
+``U+FFFD``, ``REPLACEMENT CHARACTER``), ``'ignore'`` (just leave the
+character out of the Unicode result), or ``'backslashreplace'`` (inserts a
+``\xNN`` escape sequence).
 The following examples show the differences::
 
     >>> b'\x80abc'.decode("utf-8", "strict")  #doctest: +NORMALIZE_WHITESPACE
@@ -291,6 +292,8 @@ The following examples show the differences::
       invalid start byte
     >>> b'\x80abc'.decode("utf-8", "replace")
     '\ufffdabc'
+    >>> b'\x80abc'.decode("utf-8", "backslashreplace")
+    '\\x80abc'
     >>> b'\x80abc'.decode("utf-8", "ignore")
     'abc'
 
