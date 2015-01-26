@@ -179,6 +179,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # In debug mode, if the execution of a callback or a step of a task
         # exceed this duration in seconds, the slow callback/task is logged.
         self.slow_callback_duration = 0.1
+        self._current_handle = None
 
     def __repr__(self):
         return ('<%s running=%s closed=%s debug=%s>'
@@ -955,6 +956,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             exc_info = False
 
+        if (self._current_handle is not None
+        and self._current_handle._source_traceback):
+            context['handle_traceback'] = self._current_handle._source_traceback
+
         log_lines = [message]
         for key in sorted(context):
             if key in {'message', 'exception'}:
@@ -963,6 +968,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             if key == 'source_traceback':
                 tb = ''.join(traceback.format_list(value))
                 value = 'Object created at (most recent call last):\n'
+                value += tb.rstrip()
+            elif key == 'handle_traceback':
+                tb = ''.join(traceback.format_list(value))
+                value = 'Handle created at (most recent call last):\n'
                 value += tb.rstrip()
             else:
                 value = repr(value)
@@ -1121,12 +1130,16 @@ class BaseEventLoop(events.AbstractEventLoop):
             if handle._cancelled:
                 continue
             if self._debug:
-                t0 = self.time()
-                handle._run()
-                dt = self.time() - t0
-                if dt >= self.slow_callback_duration:
-                    logger.warning('Executing %s took %.3f seconds',
-                                   _format_handle(handle), dt)
+                try:
+                    self._current_handle = handle
+                    t0 = self.time()
+                    handle._run()
+                    dt = self.time() - t0
+                    if dt >= self.slow_callback_duration:
+                        logger.warning('Executing %s took %.3f seconds',
+                                       _format_handle(handle), dt)
+                finally:
+                    self._current_handle = None
             else:
                 handle._run()
         handle = None  # Needed to break cycles when an exception occurs.
