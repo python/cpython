@@ -123,6 +123,12 @@ class Timer:
         self.timer = timer
         ns = {}
         if isinstance(stmt, basestring):
+            # Check that the code can be compiled outside a function
+            if isinstance(setup, basestring):
+                compile(setup, dummy_src_name, "exec")
+                compile(setup + '\n' + stmt, dummy_src_name, "exec")
+            else:
+                compile(stmt, dummy_src_name, "exec")
             stmt = reindent(stmt, 8)
             if isinstance(setup, basestring):
                 setup = reindent(setup, 4)
