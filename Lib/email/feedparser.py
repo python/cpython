@@ -33,7 +33,7 @@ NLCRE_eol = re.compile('(\r\n|\r|\n)\Z')
 NLCRE_crack = re.compile('(\r\n|\r|\n)')
 # RFC 2822 $3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
 # except controls, SP, and ":".
-headerRE = re.compile(r'^(From |[\041-\071\073-\176]{1,}:|[\t ])')
+headerRE = re.compile(r'^(From |[\041-\071\073-\176]*:|[\t ])')
 EMPTYSTRING = ''
 NL = '\n'
 
@@ -511,6 +511,15 @@ class FeedParser:
             # There will always be a colon, because if there wasn't the part of
             # the parser that calls us would have started parsing the body.
             i = line.find(':')
+
+            # If the colon is on the start of the line the header is clearly
+            # malformed, but we might be able to salvage the rest of the
+            # message. Track the error but keep going.
+            if i == 0:
+                defect = errors.InvalidHeaderDefect("Missing header name.")
+                self._cur.defects.append(defect)
+                continue
+
             assert i>0, "_parse_headers fed line with no : and no leading WS"
             lastheader = line[:i]
             lastvalue = [line]
