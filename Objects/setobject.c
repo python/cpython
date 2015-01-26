@@ -337,6 +337,7 @@ set_discard_entry(PySetObject *so, setentry *oldentry)
         return DISCARD_NOTFOUND;
     old_key = entry->key;
     entry->key = dummy;
+    entry->hash = -1;
     so->used--;
     Py_DECREF(old_key);
     return DISCARD_FOUND;
@@ -621,6 +622,7 @@ set_pop(PySetObject *so)
     }
     key = entry->key;
     entry->key = dummy;
+    entry->hash = -1;
     so->used--;
     so->finger = i + 1;         /* next place to start */
     return key;
