@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19996: :class:`email.feedparser.FeedParser` now handles (malformed)
+  headers with no key rather than amusing the body has started.
+
 - Issue #23248: Update ssl error codes from latest OpenSSL git master.
 
 - Issue #23098: 64-bit dev_t is now supported in the os module.

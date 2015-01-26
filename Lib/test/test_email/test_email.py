@@ -3389,6 +3389,12 @@ class TestFeedParsers(TestEmailBase):
             feedparser.feed(chunk)
         return feedparser.close()
 
+    def test_empty_header_name_handled(self):
+        # Issue 19996
+        msg = self.parse("First: val\n: bad\nSecond: val")
+        self.assertEqual(msg['First'], 'val')
+        self.assertEqual(msg['Second'], 'val')
+
     def test_newlines(self):
         m = self.parse(['a:\nb:\rc:\r\nd:\n'])
         self.assertEqual(m.keys(), ['a', 'b', 'c', 'd'])
