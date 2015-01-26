@@ -83,6 +83,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #11578: Backported test for the timeit module.
+
 - Issue #22943: bsddb tests are locale independend now.
 
 IDLE

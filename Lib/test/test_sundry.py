@@ -71,7 +71,6 @@ class TestUntestedModules(unittest.TestCase):
             import sunaudio
             import symbol
             import tabnanny
-            import timeit
             import toaiff
             import token
             try:
