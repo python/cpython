@@ -69,6 +69,10 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             PyObject *startkey = entry->key;
             if (startkey == key)
                 return entry;
+            if (PyUnicode_CheckExact(startkey)
+                && PyUnicode_CheckExact(key)
+                && unicode_eq(startkey, key))
+                return entry;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
@@ -90,6 +94,10 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 PyObject *startkey = entry->key;
                 if (startkey == key)
                     return entry;
+                if (PyUnicode_CheckExact(startkey)
+                    && PyUnicode_CheckExact(key)
+                    && unicode_eq(startkey, key))
+                    return entry;
                 Py_INCREF(startkey);
                 cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                 Py_DECREF(startkey);
@@ -100,68 +108,6 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 if (cmp > 0)
                     return entry;
             }
-            if (entry->key == dummy && freeslot == NULL)
-                freeslot = entry;
-        }
-
-        perturb >>= PERTURB_SHIFT;
-        i = i * 5 + 1 + perturb;
-
-        entry = &table[i & mask];
-        if (entry->key == NULL)
-            goto found_null;
-    }
-  found_null:
-    return freeslot == NULL ? entry : freeslot;
-}
-
-/*
- * Hacked up version of set_lookkey which can assume keys are always unicode;
- * This means we can always use unicode_eq directly and not have to check to
- * see if the comparison altered the table.
- */
-static setentry *
-set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
-{
-    setentry *table = so->table;
-    setentry *freeslot = NULL;
-    setentry *entry;
-    size_t perturb = hash;
-    size_t mask = so->mask;
-    size_t i = (size_t)hash;
-    size_t j;
-
-    /* Make sure this function doesn't have to handle non-unicode keys,
-       including subclasses of str; e.g., one reason to subclass
-       strings is to override __eq__, and for speed we don't cater to
-       that here. */
-    if (!PyUnicode_CheckExact(key)) {                             /* unlikely */
-        so->lookup = set_lookkey;
-        return set_lookkey(so, key, hash);
-    }
-
-    entry = &table[i & mask];
-    if (entry->key == NULL)
-        return entry;
-
-    while (1) {
-        if (entry->hash == hash
-            && (entry->key == key
-                || (entry->key != dummy                           /* unlikely */
-                    && unicode_eq(entry->key, key))))             /* likely */
-            return entry;
-        if (entry->key == dummy && freeslot == NULL)
-            freeslot = entry;
-
-        for (j = 1 ; j <= LINEAR_PROBES ; j++) {
-            entry = &table[(i + j) & mask];
-            if (entry->key == NULL)
-                goto found_null;
-            if (entry->hash == hash
-                && (entry->key == key
-                    || (entry->key != dummy                       /* unlikely */
-                        && unicode_eq(entry->key, key))))         /* likely */
-                return entry;
             if (entry->key == dummy && freeslot == NULL)
                 freeslot = entry;
         }
@@ -225,8 +171,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *entry;
 
-    assert(so->lookup != NULL);
-    entry = so->lookup(so, key, hash);
+    entry = set_lookkey(so, key, hash);
     if (entry == NULL)
         return -1;
     if (entry->key == NULL) {
@@ -385,7 +330,7 @@ set_discard_entry(PySetObject *so, setentry *oldentry)
     setentry *entry;
     PyObject *old_key;
 
-    entry = (so->lookup)(so, oldentry->key, oldentry->hash);
+    entry = set_lookkey(so, oldentry->key, oldentry->hash);
     if (entry == NULL)
         return -1;
     if (entry->key == NULL  ||  entry->key == dummy)
@@ -631,7 +576,7 @@ set_contains_entry(PySetObject *so, setentry *entry)
     PyObject *key;
     setentry *lu_entry;
 
-    lu_entry = (so->lookup)(so, entry->key, entry->hash);
+    lu_entry = set_lookkey(so, entry->key, entry->hash);
     if (lu_entry == NULL)
         return -1;
     key = lu_entry->key;
@@ -994,7 +939,6 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     so->used = 0;
     so->mask = PySet_MINSIZE - 1;
     so->table = so->smalltable;
-    so->lookup = set_lookkey_unicode;
     so->hash = -1;
     so->finger = 0;
     so->weakreflist = NULL;
@@ -1095,7 +1039,6 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 {
     Py_ssize_t t;
     setentry *u;
-    setentry *(*f)(PySetObject *so, PyObject *key, Py_ssize_t hash);
     setentry tab[PySet_MINSIZE];
     Py_hash_t h;
 
@@ -1110,8 +1053,6 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     if (b->table == b->smalltable)
         a->table = a->smalltable;
     b->table = u;
-
-    f = a->lookup;   a->lookup = b->lookup;      b->lookup = f;
 
     if (a->table == a->smalltable || b->table == b->smalltable) {
         memcpy(tab, a->smalltable, sizeof(tab));
