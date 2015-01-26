@@ -710,9 +710,6 @@ class PurePath(object):
             return NotImplemented
         return self._cparts == other._cparts and self._flavour is other._flavour
 
-    def __ne__(self, other):
-        return not self == other
-
     def __hash__(self):
         try:
             return self._hash

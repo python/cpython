@@ -64,16 +64,6 @@ class Base(object):
 
     __hash__ = None # For Py3 compatibility.
 
-    def __ne__(self, other):
-        """
-        Compare two nodes for inequality.
-
-        This calls the method _eq().
-        """
-        if self.__class__ is not other.__class__:
-            return NotImplemented
-        return not self._eq(other)
-
     def _eq(self, other):
         """
         Compare two nodes for equality.

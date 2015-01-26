@@ -1342,9 +1342,6 @@ class FunctionTestCase(TestCase):
                self._testFunc == other._testFunc and \
                self._description == other._description
 
-    def __ne__(self, other):
-        return not self == other
-
     def __hash__(self):
         return hash((type(self), self._setUpFunc, self._tearDownFunc,
                      self._testFunc, self._description))
