@@ -7431,6 +7431,11 @@ encode_code_page(int code_page,
     Py_ssize_t offset;
     int chunk_len, ret, done;
 
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+
     if (PyUnicode_READY(unicode) == -1)
         return NULL;
     len = PyUnicode_GET_LENGTH(unicode);
@@ -7504,10 +7509,6 @@ PyUnicode_EncodeCodePage(int code_page,
 PyObject *
 PyUnicode_AsMBCSString(PyObject *unicode)
 {
-    if (!PyUnicode_Check(unicode)) {
-        PyErr_BadArgument();
-        return NULL;
-    }
     return PyUnicode_EncodeCodePage(CP_ACP, unicode, NULL);
 }
 
