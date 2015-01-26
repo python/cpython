@@ -5,9 +5,9 @@ from StringIO import StringIO
 import time
 from textwrap import dedent
 
-from test.support import run_unittest
-from test.support import captured_stdout
-from test.support import captured_stderr
+from test.test_support import run_unittest
+from test.test_support import captured_stdout
+from test.test_support import captured_stderr
 
 # timeit's default number of iterations.
 DEFAULT_NUMBER = 1000000
