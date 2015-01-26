@@ -994,7 +994,7 @@ class SizeofTest(unittest.TestCase):
         # frozenset
         PySet_MINSIZE = 8
         samples = [[], range(10), range(50)]
-        s = size('3n2P' + PySet_MINSIZE*'nP' + '2nP')
+        s = size('3nP' + PySet_MINSIZE*'nP' + '2nP')
         for sample in samples:
             minused = len(sample)
             if minused == 0: tmp = 1

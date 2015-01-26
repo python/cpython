@@ -35,7 +35,7 @@ Invariants for frozensets:
 
 */
 
-typedef struct _setobject {
+typedef struct {
     PyObject_HEAD
 
     Py_ssize_t fill;            /* Number active and dummy entries*/
@@ -53,7 +53,6 @@ typedef struct _setobject {
      * runtime null-tests.
      */
     setentry *table;
-    setentry *(*lookup)(struct _setobject *so, PyObject *key, Py_hash_t hash);
     Py_hash_t hash;             /* Only used by frozenset objects */
     setentry smalltable[PySet_MINSIZE];
 
