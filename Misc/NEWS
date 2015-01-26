@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19996: Make :mod:`httplib` ignore headers with no name rather than
+  assuming the body has started.
+
 - Issue #20188: Support Application-Layer Protocol Negotiation (ALPN) in the ssl
   module.
 

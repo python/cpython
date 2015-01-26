@@ -313,6 +313,11 @@ class HTTPMessage(mimetools.Message):
                 hlist.append(line)
                 self.addheader(headerseen, line[len(headerseen)+1:].strip())
                 continue
+            elif headerseen is not None:
+                # An empty header name. These aren't allowed in HTTP, but it's
+                # probably a benign mistake. Don't add the header, just keep
+                # going.
+                continue
             else:
                 # It's not a header line; throw it back and stop here.
                 if not self.dict:

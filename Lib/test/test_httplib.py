@@ -164,6 +164,16 @@ class HeaderTests(TestCase):
         conn.request('GET', '/foo')
         self.assertTrue(sock.data.startswith(expected))
 
+    def test_malformed_headers_coped_with(self):
+        # Issue 19996
+        body = "HTTP/1.1 200 OK\r\nFirst: val\r\n: nval\r\nSecond: val\r\n\r\n"
+        sock = FakeSocket(body)
+        resp = httplib.HTTPResponse(sock)
+        resp.begin()
+
+        self.assertEqual(resp.getheader('First'), 'val')
+        self.assertEqual(resp.getheader('Second'), 'val')
+
 
 class BasicTest(TestCase):
     def test_status_lines(self):

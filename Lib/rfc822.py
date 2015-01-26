@@ -179,6 +179,11 @@ class Message:
                 lst.append(line)
                 self.dict[headerseen] = line[len(headerseen)+1:].strip()
                 continue
+            elif headerseen is not None:
+                # An empty header name. These aren't allowed in HTTP, but it's
+                # probably a benign mistake. Don't add the header, just keep
+                # going.
+                continue
             else:
                 # It's not a header line; throw it back and stop here.
                 if not self.dict:
@@ -202,7 +207,7 @@ class Message:
         data in RFC 2822-like formats with special header formats.
         """
         i = line.find(':')
-        if i > 0:
+        if i > -1:
             return line[:i].lower()
         return None
 
