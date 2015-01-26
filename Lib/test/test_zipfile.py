@@ -1668,6 +1668,34 @@ class LzmaTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
     compression = zipfile.ZIP_LZMA
 
 
+# Privide the tell() method but not seek()
+class Tellable:
+    def __init__(self, fp):
+        self.fp = fp
+        self.offset = 0
+
+    def write(self, data):
+        self.offset += self.fp.write(data)
+
+    def tell(self):
+        return self.offset
+
+    def flush(self):
+        pass
+
+class UnseekableTests(unittest.TestCase):
+    def test_writestr_tellable(self):
+        f = io.BytesIO()
+        with zipfile.ZipFile(Tellable(f), 'w', zipfile.ZIP_STORED) as zipfp:
+            zipfp.writestr('ones', b'111')
+            zipfp.writestr('twos', b'222')
+        with zipfile.ZipFile(f, mode='r') as zipf:
+            with zipf.open('ones') as zopen:
+                self.assertEqual(zopen.read(), b'111')
+            with zipf.open('twos') as zopen:
+                self.assertEqual(zopen.read(), b'222')
+
+
 @requires_zlib
 class TestsWithMultipleOpens(unittest.TestCase):
     @classmethod
