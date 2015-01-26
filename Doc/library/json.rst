@@ -250,7 +250,7 @@ Basic Usage
    will be passed to the constructor of the class.
 
    If the data being deserialized is not a valid JSON document, a
-   :exc:`ValueError` will be raised.
+   :exc:`JSONDecodeError` will be raised.
 
 .. function:: loads(s, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
@@ -261,7 +261,7 @@ Basic Usage
    *encoding* which is ignored and deprecated.
 
    If the data being deserialized is not a valid JSON document, a
-   :exc:`ValueError` will be raised.
+   :exc:`JSONDecodeError` will be raised.
 
 Encoders and Decoders
 ---------------------
@@ -334,12 +334,15 @@ Encoders and Decoders
    ``'\n'``, ``'\r'`` and ``'\0'``.
 
    If the data being deserialized is not a valid JSON document, a
-   :exc:`ValueError` will be raised.
+   :exc:`JSONDecodeError` will be raised.
 
    .. method:: decode(s)
 
       Return the Python representation of *s* (a :class:`str` instance
       containing a JSON document)
+
+      :exc:`JSONDecodeError` will be raised if the given JSON document is not
+      valid.
 
    .. method:: raw_decode(s)
 
@@ -467,6 +470,36 @@ Encoders and Decoders
 
             for chunk in json.JSONEncoder().iterencode(bigobject):
                 mysocket.write(chunk)
+
+
+Exceptions
+----------
+
+.. exception:: JSONDecodeError(msg, doc, pos, end=None)
+
+    Subclass of :exc:`ValueError` with the following additional attributes:
+
+    .. attribute:: msg
+
+        The unformatted error message.
+
+    .. attribute:: doc
+
+        The JSON document being parsed.
+
+    .. attribute:: pos
+
+        The start index of *doc* where parsing failed.
+
+    .. attribute:: lineno
+
+        The line corresponding to *pos*.
+
+    .. attribute:: colno
+
+        The column corresponding to *pos*.
+
+   .. versionadded:: 3.5
 
 
 Standard Compliance and Interoperability

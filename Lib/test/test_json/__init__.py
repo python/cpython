@@ -9,12 +9,15 @@ from test import support
 # import json with and without accelerations
 cjson = support.import_fresh_module('json', fresh=['_json'])
 pyjson = support.import_fresh_module('json', blocked=['_json'])
+# JSONDecodeError is cached inside the _json module
+cjson.JSONDecodeError = cjson.decoder.JSONDecodeError = json.JSONDecodeError
 
 # create two base classes that will be used by the other tests
 class PyTest(unittest.TestCase):
     json = pyjson
     loads = staticmethod(pyjson.loads)
     dumps = staticmethod(pyjson.dumps)
+    JSONDecodeError = staticmethod(pyjson.JSONDecodeError)
 
 @unittest.skipUnless(cjson, 'requires _json')
 class CTest(unittest.TestCase):
@@ -22,6 +25,7 @@ class CTest(unittest.TestCase):
         json = cjson
         loads = staticmethod(cjson.loads)
         dumps = staticmethod(cjson.dumps)
+        JSONDecodeError = staticmethod(cjson.JSONDecodeError)
 
 # test PyTest and CTest checking if the functions come from the right module
 class TestPyTest(PyTest):

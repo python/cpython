@@ -129,7 +129,7 @@ class TestScanstring:
             '"\\ud834\\u0X20"',
         ]
         for s in bad_escapes:
-            with self.assertRaises(ValueError, msg=s):
+            with self.assertRaises(self.JSONDecodeError, msg=s):
                 scanstring(s, 1, True)
 
     def test_overflow(self):
