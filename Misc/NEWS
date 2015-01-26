@@ -50,6 +50,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23094: Fixed readline with frames in Python implementation of pickle.
+
 - Issue #23268: Fixed bugs in the comparison of ipaddress classes.
 
 - Issue #21408: Removed incorrect implementations of __ne__() which didn't
