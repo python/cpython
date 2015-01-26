@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21408: The default __ne__() now returns NotImplemented if __eq__()
+  returned NotImplemented.
+
 - Issue #23321: Fixed a crash in str.decode() when error handler returned
   replacment string longer than mailformed input data.
 
@@ -214,6 +217,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #21408: Removed incorrect implementations of __ne__() which didn't
+  returned NotImplemented if __eq__() returned NotImplemented.  The default
+  __ne__() now works correctly.
 
 - Issue #19996: :class:`email.feedparser.FeedParser` now handles (malformed)
   headers with no key rather than amusing the body has started.
