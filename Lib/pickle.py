@@ -242,7 +242,7 @@ class _Unframer:
             if not data:
                 self.current_frame = None
                 return self.file_readline()
-            if data[-1] != b'\n':
+            if data[-1] != b'\n'[0]:
                 raise UnpicklingError(
                     "pickle exhausted before end of frame")
             return data
