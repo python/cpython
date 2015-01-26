@@ -230,6 +230,9 @@ json
   of dictionaries alphabetically by key.  (Contributed by Berker Peksag in
   :issue:`21650`.)
 
+* JSON decoder now raises :exc:`json.JSONDecodeError` instead of
+  :exc:`ValueError`.   (Contributed by Serhiy Storchaka in :issue:`19361`.)
+
 os
 --
 

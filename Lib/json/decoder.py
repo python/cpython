@@ -8,7 +8,7 @@ try:
 except ImportError:
     c_scanstring = None
 
-__all__ = ['JSONDecoder']
+__all__ = ['JSONDecoder', 'JSONDecodeError']
 
 FLAGS = re.VERBOSE | re.MULTILINE | re.DOTALL
 
@@ -17,32 +17,30 @@ PosInf = float('inf')
 NegInf = float('-inf')
 
 
-def linecol(doc, pos):
-    if isinstance(doc, bytes):
-        newline = b'\n'
-    else:
-        newline = '\n'
-    lineno = doc.count(newline, 0, pos) + 1
-    if lineno == 1:
-        colno = pos + 1
-    else:
-        colno = pos - doc.rindex(newline, 0, pos)
-    return lineno, colno
+class JSONDecodeError(ValueError):
+    """Subclass of ValueError with the following additional properties:
 
+    msg: The unformatted error message
+    doc: The JSON document being parsed
+    pos: The start index of doc where parsing failed
+    lineno: The line corresponding to pos
+    colno: The column corresponding to pos
 
-def errmsg(msg, doc, pos, end=None):
-    # Note that this function is called from _json
-    lineno, colno = linecol(doc, pos)
-    if end is None:
-        fmt = '{0}: line {1} column {2} (char {3})'
-        return fmt.format(msg, lineno, colno, pos)
-        #fmt = '%s: line %d column %d (char %d)'
-        #return fmt % (msg, lineno, colno, pos)
-    endlineno, endcolno = linecol(doc, end)
-    fmt = '{0}: line {1} column {2} - line {3} column {4} (char {5} - {6})'
-    return fmt.format(msg, lineno, colno, endlineno, endcolno, pos, end)
-    #fmt = '%s: line %d column %d - line %d column %d (char %d - %d)'
-    #return fmt % (msg, lineno, colno, endlineno, endcolno, pos, end)
+    """
+    # Note that this exception is used from _json
+    def __init__(self, msg, doc, pos):
+        lineno = doc.count('\n', 0, pos) + 1
+        colno = pos - doc.rfind('\n', 0, pos)
+        errmsg = '%s: line %d column %d (char %d)' % (msg, lineno, colno, pos)
+        ValueError.__init__(self, errmsg)
+        self.msg = msg
+        self.doc = doc
+        self.pos = pos
+        self.lineno = lineno
+        self.colno = colno
+
+    def __reduce__(self):
+        return self.__class__, (self.msg, self.doc, self.pos)
 
 
 _CONSTANTS = {
@@ -66,7 +64,7 @@ def _decode_uXXXX(s, pos):
         except ValueError:
             pass
     msg = "Invalid \\uXXXX escape"
-    raise ValueError(errmsg(msg, s, pos))
+    raise JSONDecodeError(msg, s, pos)
 
 def py_scanstring(s, end, strict=True,
         _b=BACKSLASH, _m=STRINGCHUNK.match):
@@ -84,8 +82,7 @@ def py_scanstring(s, end, strict=True,
     while 1:
         chunk = _m(s, end)
         if chunk is None:
-            raise ValueError(
-                errmsg("Unterminated string starting at", s, begin))
+            raise JSONDecodeError("Unterminated string starting at", s, begin)
         end = chunk.end()
         content, terminator = chunk.groups()
         # Content is contains zero or more unescaped string characters
@@ -99,22 +96,21 @@ def py_scanstring(s, end, strict=True,
             if strict:
                 #msg = "Invalid control character %r at" % (terminator,)
                 msg = "Invalid control character {0!r} at".format(terminator)
-                raise ValueError(errmsg(msg, s, end))
+                raise JSONDecodeError(msg, s, end)
             else:
                 _append(terminator)
                 continue
         try:
             esc = s[end]
         except IndexError:
-            raise ValueError(
-                errmsg("Unterminated string starting at", s, begin))
+            raise JSONDecodeError("Unterminated string starting at", s, begin)
         # If not a unicode escape sequence, must be in the lookup table
         if esc != 'u':
             try:
                 char = _b[esc]
             except KeyError:
                 msg = "Invalid \\escape: {0!r}".format(esc)
-                raise ValueError(errmsg(msg, s, end))
+                raise JSONDecodeError(msg, s, end)
             end += 1
         else:
             uni = _decode_uXXXX(s, end)
@@ -163,8 +159,8 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
                 pairs = object_hook(pairs)
             return pairs, end + 1
         elif nextchar != '"':
-            raise ValueError(errmsg(
-                "Expecting property name enclosed in double quotes", s, end))
+            raise JSONDecodeError(
+                "Expecting property name enclosed in double quotes", s, end)
     end += 1
     while True:
         key, end = scanstring(s, end, strict)
@@ -174,7 +170,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
         if s[end:end + 1] != ':':
             end = _w(s, end).end()
             if s[end:end + 1] != ':':
-                raise ValueError(errmsg("Expecting ':' delimiter", s, end))
+                raise JSONDecodeError("Expecting ':' delimiter", s, end)
         end += 1
 
         try:
@@ -188,7 +184,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
         try:
             value, end = scan_once(s, end)
         except StopIteration as err:
-            raise ValueError(errmsg("Expecting value", s, err.value)) from None
+            raise JSONDecodeError("Expecting value", s, err.value) from None
         pairs_append((key, value))
         try:
             nextchar = s[end]
@@ -202,13 +198,13 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
         if nextchar == '}':
             break
         elif nextchar != ',':
-            raise ValueError(errmsg("Expecting ',' delimiter", s, end - 1))
+            raise JSONDecodeError("Expecting ',' delimiter", s, end - 1)
         end = _w(s, end).end()
         nextchar = s[end:end + 1]
         end += 1
         if nextchar != '"':
-            raise ValueError(errmsg(
-                "Expecting property name enclosed in double quotes", s, end - 1))
+            raise JSONDecodeError(
+                "Expecting property name enclosed in double quotes", s, end - 1)
     if object_pairs_hook is not None:
         result = object_pairs_hook(pairs)
         return result, end
@@ -232,7 +228,7 @@ def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
         try:
             value, end = scan_once(s, end)
         except StopIteration as err:
-            raise ValueError(errmsg("Expecting value", s, err.value)) from None
+            raise JSONDecodeError("Expecting value", s, err.value) from None
         _append(value)
         nextchar = s[end:end + 1]
         if nextchar in _ws:
@@ -242,7 +238,7 @@ def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
         if nextchar == ']':
             break
         elif nextchar != ',':
-            raise ValueError(errmsg("Expecting ',' delimiter", s, end - 1))
+            raise JSONDecodeError("Expecting ',' delimiter", s, end - 1)
         try:
             if s[end] in _ws:
                 end += 1
@@ -343,7 +339,7 @@ class JSONDecoder(object):
         obj, end = self.raw_decode(s, idx=_w(s, 0).end())
         end = _w(s, end).end()
         if end != len(s):
-            raise ValueError(errmsg("Extra data", s, end, len(s)))
+            raise JSONDecodeError("Extra data", s, end)
         return obj
 
     def raw_decode(self, s, idx=0):
@@ -358,5 +354,5 @@ class JSONDecoder(object):
         try:
             obj, end = self.scan_once(s, idx)
         except StopIteration as err:
-            raise ValueError(errmsg("Expecting value", s, err.value)) from None
+            raise JSONDecodeError("Expecting value", s, err.value) from None
         return obj, end

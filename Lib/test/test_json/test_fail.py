@@ -87,7 +87,7 @@ class TestFail:
                 continue
             try:
                 self.loads(doc)
-            except ValueError:
+            except self.JSONDecodeError:
                 pass
             else:
                 self.fail("Expected failure for fail{0}.json: {1!r}".format(idx, doc))
@@ -124,10 +124,16 @@ class TestFail:
             ('"spam', 'Unterminated string starting at', 0),
         ]
         for data, msg, idx in test_cases:
-            self.assertRaisesRegex(ValueError,
-                r'^{0}: line 1 column {1} \(char {2}\)'.format(
-                    re.escape(msg), idx + 1, idx),
-                self.loads, data)
+            with self.assertRaises(self.JSONDecodeError) as cm:
+                self.loads(data)
+            err = cm.exception
+            self.assertEqual(err.msg, msg)
+            self.assertEqual(err.pos, idx)
+            self.assertEqual(err.lineno, 1)
+            self.assertEqual(err.colno, idx + 1)
+            self.assertEqual(str(err),
+                             '%s: line 1 column %d (char %d)' %
+                             (msg, idx + 1, idx))
 
     def test_unexpected_data(self):
         test_cases = [
@@ -154,10 +160,16 @@ class TestFail:
             ('{"spam":42,}', 'Expecting property name enclosed in double quotes', 11),
         ]
         for data, msg, idx in test_cases:
-            self.assertRaisesRegex(ValueError,
-                r'^{0}: line 1 column {1} \(char {2}\)'.format(
-                    re.escape(msg), idx + 1, idx),
-                self.loads, data)
+            with self.assertRaises(self.JSONDecodeError) as cm:
+                self.loads(data)
+            err = cm.exception
+            self.assertEqual(err.msg, msg)
+            self.assertEqual(err.pos, idx)
+            self.assertEqual(err.lineno, 1)
+            self.assertEqual(err.colno, idx + 1)
+            self.assertEqual(str(err),
+                             '%s: line 1 column %d (char %d)' %
+                             (msg, idx + 1, idx))
 
     def test_extra_data(self):
         test_cases = [
@@ -171,11 +183,16 @@ class TestFail:
             ('"spam",42', 'Extra data', 6),
         ]
         for data, msg, idx in test_cases:
-            self.assertRaisesRegex(ValueError,
-                r'^{0}: line 1 column {1} - line 1 column {2}'
-                r' \(char {3} - {4}\)'.format(
-                    re.escape(msg), idx + 1, len(data) + 1, idx, len(data)),
-                self.loads, data)
+            with self.assertRaises(self.JSONDecodeError) as cm:
+                self.loads(data)
+            err = cm.exception
+            self.assertEqual(err.msg, msg)
+            self.assertEqual(err.pos, idx)
+            self.assertEqual(err.lineno, 1)
+            self.assertEqual(err.colno, idx + 1)
+            self.assertEqual(str(err),
+                             '%s: line 1 column %d (char %d)' %
+                             (msg, idx + 1, idx))
 
     def test_linecol(self):
         test_cases = [
@@ -185,10 +202,16 @@ class TestFail:
             ('\n  \n\n     !', 4, 6, 10),
         ]
         for data, line, col, idx in test_cases:
-            self.assertRaisesRegex(ValueError,
-                r'^Expecting value: line {0} column {1}'
-                r' \(char {2}\)$'.format(line, col, idx),
-                self.loads, data)
+            with self.assertRaises(self.JSONDecodeError) as cm:
+                self.loads(data)
+            err = cm.exception
+            self.assertEqual(err.msg, 'Expecting value')
+            self.assertEqual(err.pos, idx)
+            self.assertEqual(err.lineno, line)
+            self.assertEqual(err.colno, col)
+            self.assertEqual(str(err),
+                             'Expecting value: line %s column %d (char %d)' %
+                             (line, col, idx))
 
 class TestPyFail(TestFail, PyTest): pass
 class TestCFail(TestFail, CTest): pass
