@@ -1146,10 +1146,13 @@ ConnectPipe(OverlappedObject *self, PyObject *args)
     if (Address == NULL)
         return NULL;
 
+    Py_BEGIN_ALLOW_THREADS
     PipeHandle = CreateFileW(Address,
                              GENERIC_READ | GENERIC_WRITE,
                              0, NULL, OPEN_EXISTING,
                              FILE_FLAG_OVERLAPPED, NULL);
+    Py_END_ALLOW_THREADS
+
     PyMem_Free(Address);
     if (PipeHandle == INVALID_HANDLE_VALUE)
         return SetFromWindowsErr(0);
