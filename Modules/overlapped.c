@@ -730,7 +730,7 @@ Overlapped_ReadFile(OverlappedObject *self, PyObject *args)
     switch (err) {
         case ERROR_BROKEN_PIPE:
             mark_as_completed(&self->overlapped);
-            Py_RETURN_NONE;
+            return SetFromWindowsErr(err);
         case ERROR_SUCCESS:
         case ERROR_MORE_DATA:
         case ERROR_IO_PENDING:
@@ -789,7 +789,7 @@ Overlapped_WSARecv(OverlappedObject *self, PyObject *args)
     switch (err) {
         case ERROR_BROKEN_PIPE:
             mark_as_completed(&self->overlapped);
-            Py_RETURN_NONE;
+            return SetFromWindowsErr(err);
         case ERROR_SUCCESS:
         case ERROR_MORE_DATA:
         case ERROR_IO_PENDING:
