@@ -64,12 +64,6 @@ The module defines three convenience functions and a public class:
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.timeit` method with *number* executions.
 
-   .. note::
-
-        Because :meth:`.timeit` is executing *stmt*, placing a return statement
-        in *stmt* will prevent :meth:`.timeit` from returning execution time.
-        It will instead return the data specified by your return statement.
-
 
 .. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000)
 
