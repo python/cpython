@@ -48,8 +48,69 @@ class ComparisonTest(unittest.TestCase):
     def test_ne_defaults_to_not_eq(self):
         a = Cmp(1)
         b = Cmp(1)
-        self.assertTrue(a == b)
-        self.assertFalse(a != b)
+        c = Cmp(2)
+        self.assertIs(a == b, True)
+        self.assertIs(a != b, False)
+        self.assertIs(a != c, True)
+
+    def test_ne_high_priority(self):
+        """object.__ne__() should allow reflected __ne__() to be tried"""
+        calls = []
+        class Left:
+            # Inherits object.__ne__()
+            def __eq__(*args):
+                calls.append('Left.__eq__')
+                return NotImplemented
+        class Right:
+            def __eq__(*args):
+                calls.append('Right.__eq__')
+                return NotImplemented
+            def __ne__(*args):
+                calls.append('Right.__ne__')
+                return NotImplemented
+        Left() != Right()
+        self.assertSequenceEqual(calls, ['Left.__eq__', 'Right.__ne__'])
+
+    def test_ne_low_priority(self):
+        """object.__ne__() should not invoke reflected __eq__()"""
+        calls = []
+        class Base:
+            # Inherits object.__ne__()
+            def __eq__(*args):
+                calls.append('Base.__eq__')
+                return NotImplemented
+        class Derived(Base):  # Subclassing forces higher priority
+            def __eq__(*args):
+                calls.append('Derived.__eq__')
+                return NotImplemented
+            def __ne__(*args):
+                calls.append('Derived.__ne__')
+                return NotImplemented
+        Base() != Derived()
+        self.assertSequenceEqual(calls, ['Derived.__ne__', 'Base.__eq__'])
+
+    def test_other_delegation(self):
+        """No default delegation between operations except __ne__()"""
+        ops = (
+            ('__eq__', lambda a, b: a == b),
+            ('__lt__', lambda a, b: a < b),
+            ('__le__', lambda a, b: a <= b),
+            ('__gt__', lambda a, b: a > b),
+            ('__ge__', lambda a, b: a >= b),
+        )
+        for name, func in ops:
+            with self.subTest(name):
+                def unexpected(*args):
+                    self.fail('Unexpected operator method called')
+                class C:
+                    __ne__ = unexpected
+                for other, _ in ops:
+                    if other != name:
+                        setattr(C, other, unexpected)
+                if name == '__eq__':
+                    self.assertIs(func(C(), object()), False)
+                else:
+                    self.assertRaises(TypeError, func, C(), object())
 
     def test_issue_1393(self):
         x = lambda: None
