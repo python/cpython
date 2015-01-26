@@ -2954,7 +2954,7 @@ class CodePageTest(unittest.TestCase):
             (b'\x81\x00abc', 'strict', None),
             (b'\x81\x00abc', 'ignore', '\x00abc'),
             (b'\x81\x00abc', 'replace', '\ufffd\x00abc'),
-            (b'\x81\x00abc', 'backslashreplace', '\\xff\x00abc'),
+            (b'\x81\x00abc', 'backslashreplace', '\\x81\x00abc'),
         ))
 
     def test_cp1252(self):
