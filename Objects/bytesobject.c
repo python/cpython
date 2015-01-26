@@ -529,7 +529,7 @@ formatchar(char *buf, size_t buflen, PyObject *v)
                 "%c requires an integer in range(256) or a single byte");
             goto error;
         }
-        buf[0] = ival;
+        buf[0] = (char)ival;
     }
     Py_XDECREF(w);
     buf[1] = '\0';
