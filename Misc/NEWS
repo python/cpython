@@ -218,6 +218,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14099: Restored support of writing ZIP files to tellable but
+  non-seekable streams.
+
 - Issue #14099: Writing to ZipFile and reading multiple ZipExtFiles is
   threadsafe now.
 
