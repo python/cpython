@@ -1504,7 +1504,14 @@ class ZipFile:
 
         zinfo.file_size = len(data)            # Uncompressed size
         with self._lock:
-            self.fp.seek(self.start_dir, 0)
+            try:
+                self.fp.seek(self.start_dir)
+            except (AttributeError, io.UnsupportedOperation):
+                # Some file-like objects can provide tell() but not seek()
+                pass
+            zinfo.header_offset = self.fp.tell()    # Start of header data
+            if compress_type is not None:
+                zinfo.compress_type = compress_type
             zinfo.header_offset = self.fp.tell()    # Start of header data
             if compress_type is not None:
                 zinfo.compress_type = compress_type
@@ -1550,7 +1557,11 @@ class ZipFile:
         try:
             if self.mode in ("w", "a") and self._didModify: # write ending records
                 with self._lock:
-                    self.fp.seek(self.start_dir, 0)
+                    try:
+                        self.fp.seek(self.start_dir)
+                    except (AttributeError, io.UnsupportedOperation):
+                        # Some file-like objects can provide tell() but not seek()
+                        pass
                     self._write_end_record()
         finally:
             fp = self.fp
@@ -1558,7 +1569,6 @@ class ZipFile:
             self._fpclose(fp)
 
     def _write_end_record(self):
-        self.fp.seek(self.start_dir, 0)
         for zinfo in self.filelist:         # write central directory
             dt = zinfo.date_time
             dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
