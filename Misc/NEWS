@@ -53,11 +53,6 @@ Library
 - Issue #23016: A warning no longer produces an AttributeError when sys.stderr
   is None.
 
-- Issue #14099: ZipFile.open() no longer reopen the underlying file.  Objects
-  returned by ZipFile.open() can now operate independently of the ZipFile even
-  if the ZipFile was created by passing in a file-like object as the first
-  argument to the constructor.
-
 - Issue #21032. Fixed socket leak if HTTPConnection.getresponse() fails.
   Original patch by Martin Panter.
 

@@ -36,19 +36,7 @@ SMALL_TEST_DATA = [('_ziptest1', '1q2w3e4r5t'),
                    ('ziptest2dir/ziptest3dir/ziptest4dir/_ziptest3', '6y7u8i9o0p')]
 
 def getrandbytes(size):
-    return getrandbits(8 * size).to_bytes(size, 'little')
-
-def getrandbytes(size):
     return bytes(bytearray.fromhex('%0*x' % (2 * size, getrandbits(8 * size))))
-
-def get_files(test):
-    yield TESTFN2
-    with TemporaryFile() as f:
-        yield f
-        test.assertFalse(f.closed)
-    with io.BytesIO() as f:
-        yield f
-        test.assertFalse(f.closed)
 
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
@@ -1427,91 +1415,85 @@ class TestsWithMultipleOpens(unittest.TestCase):
     def test_same_file(self):
         # Verify that (when the ZipFile is in control of creating file objects)
         # multiple open() calls can be made without interfering with each other.
-        for f in get_files(self):
-            self.make_test_archive(f)
-            with zipfile.ZipFile(f, mode="r") as zipf:
-                with zipf.open('ones') as zopen1, zipf.open('ones') as zopen2:
-                    data1 = zopen1.read(500)
-                    data2 = zopen2.read(500)
-                    data1 += zopen1.read()
-                    data2 += zopen2.read()
-                self.assertEqual(data1, data2)
-                self.assertEqual(data1, self.data1)
-
-    def test_different_file(self):
-        # Verify that (when the ZipFile is in control of creating file objects)
-        # multiple open() calls can be made without interfering with each other.
-        for f in get_files(self):
-            self.make_test_archive(f)
-            with zipfile.ZipFile(f, mode="r") as zipf:
-                with zipf.open('ones') as zopen1, zipf.open('twos') as zopen2:
-                    data1 = zopen1.read(500)
-                    data2 = zopen2.read(500)
-                    data1 += zopen1.read()
-                    data2 += zopen2.read()
-                self.assertEqual(data1, self.data1)
-                self.assertEqual(data2, self.data2)
-
-    def test_interleaved(self):
-        # Verify that (when the ZipFile is in control of creating file objects)
-        # multiple open() calls can be made without interfering with each other.
-        for f in get_files(self):
-            self.make_test_archive(f)
-            with zipfile.ZipFile(f, mode="r") as zipf:
-                with zipf.open('ones') as zopen1, zipf.open('twos') as zopen2:
-                    data1 = zopen1.read(500)
-                    data2 = zopen2.read(500)
-                    data1 += zopen1.read()
-                    data2 += zopen2.read()
-                self.assertEqual(data1, self.data1)
-                self.assertEqual(data2, self.data2)
-
-    def test_read_after_close(self):
-        for f in get_files(self):
-            self.make_test_archive(f)
-            zopen1 = zopen2 = None
-            try:
-                with zipfile.ZipFile(f, 'r') as zipf:
-                    zopen1 = zipf.open('ones')
-                    zopen2 = zipf.open('twos')
+        self.make_test_archive(TESTFN2)
+        with zipfile.ZipFile(TESTFN2, mode="r") as zipf:
+            with zipf.open('ones') as zopen1, zipf.open('ones') as zopen2:
                 data1 = zopen1.read(500)
                 data2 = zopen2.read(500)
                 data1 += zopen1.read()
                 data2 += zopen2.read()
-            finally:
-                if zopen1:
-                    zopen1.close()
-                if zopen2:
-                    zopen2.close()
+            self.assertEqual(data1, data2)
+            self.assertEqual(data1, self.data1)
+
+    def test_different_file(self):
+        # Verify that (when the ZipFile is in control of creating file objects)
+        # multiple open() calls can be made without interfering with each other.
+        self.make_test_archive(TESTFN2)
+        with zipfile.ZipFile(TESTFN2, mode="r") as zipf:
+            with zipf.open('ones') as zopen1, zipf.open('twos') as zopen2:
+                data1 = zopen1.read(500)
+                data2 = zopen2.read(500)
+                data1 += zopen1.read()
+                data2 += zopen2.read()
             self.assertEqual(data1, self.data1)
             self.assertEqual(data2, self.data2)
+
+    def test_interleaved(self):
+        # Verify that (when the ZipFile is in control of creating file objects)
+        # multiple open() calls can be made without interfering with each other.
+        self.make_test_archive(TESTFN2)
+        with zipfile.ZipFile(TESTFN2, mode="r") as zipf:
+            with zipf.open('ones') as zopen1, zipf.open('twos') as zopen2:
+                data1 = zopen1.read(500)
+                data2 = zopen2.read(500)
+                data1 += zopen1.read()
+                data2 += zopen2.read()
+            self.assertEqual(data1, self.data1)
+            self.assertEqual(data2, self.data2)
+
+    def test_read_after_close(self):
+        self.make_test_archive(TESTFN2)
+        zopen1 = zopen2 = None
+        try:
+            with zipfile.ZipFile(TESTFN2, 'r') as zipf:
+                zopen1 = zipf.open('ones')
+                zopen2 = zipf.open('twos')
+            data1 = zopen1.read(500)
+            data2 = zopen2.read(500)
+            data1 += zopen1.read()
+            data2 += zopen2.read()
+        finally:
+            if zopen1:
+                zopen1.close()
+            if zopen2:
+                zopen2.close()
+        self.assertEqual(data1, self.data1)
+        self.assertEqual(data2, self.data2)
 
     def test_read_after_write(self):
-        for f in get_files(self):
-            with zipfile.ZipFile(f, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                zipf.writestr('ones', self.data1)
-                zipf.writestr('twos', self.data2)
-                with zipf.open('ones') as zopen1:
-                    data1 = zopen1.read(500)
-            self.assertEqual(data1, self.data1[:500])
-            with zipfile.ZipFile(f, 'r') as zipf:
-                data1 = zipf.read('ones')
-                data2 = zipf.read('twos')
-            self.assertEqual(data1, self.data1)
-            self.assertEqual(data2, self.data2)
+        with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.writestr('ones', self.data1)
+            zipf.writestr('twos', self.data2)
+            with zipf.open('ones') as zopen1:
+                data1 = zopen1.read(500)
+        self.assertEqual(data1, self.data1[:500])
+        with zipfile.ZipFile(TESTFN2, 'r') as zipf:
+            data1 = zipf.read('ones')
+            data2 = zipf.read('twos')
+        self.assertEqual(data1, self.data1)
+        self.assertEqual(data2, self.data2)
 
     def test_write_after_read(self):
-        for f in get_files(self):
-            with zipfile.ZipFile(f, "w", zipfile.ZIP_DEFLATED) as zipf:
-                zipf.writestr('ones', self.data1)
-                with zipf.open('ones') as zopen1:
-                    zopen1.read(500)
-                    zipf.writestr('twos', self.data2)
-            with zipfile.ZipFile(f, 'r') as zipf:
-                data1 = zipf.read('ones')
-                data2 = zipf.read('twos')
-            self.assertEqual(data1, self.data1)
-            self.assertEqual(data2, self.data2)
+        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_DEFLATED) as zipf:
+            zipf.writestr('ones', self.data1)
+            with zipf.open('ones') as zopen1:
+                zopen1.read(500)
+                zipf.writestr('twos', self.data2)
+        with zipfile.ZipFile(TESTFN2, 'r') as zipf:
+            data1 = zipf.read('ones')
+            data2 = zipf.read('twos')
+        self.assertEqual(data1, self.data1)
+        self.assertEqual(data2, self.data2)
 
     def test_many_opens(self):
         # Verify that read() and open() promptly close the file descriptor,
