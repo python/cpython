@@ -12,7 +12,7 @@ Core and Builtins
 -----------------
 
 - Issue #21408: The default __ne__() now returns NotImplemented if __eq__()
-  returned NotImplemented.
+  returned NotImplemented.  Original patch by Martin Panter.
 
 - Issue #23321: Fixed a crash in str.decode() when error handler returned
   replacment string longer than mailformed input data.
