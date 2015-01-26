@@ -470,7 +470,7 @@ class BaseBytesTest:
         self.assertFalse(b is orig)
         b = b'%s / 100 = %d%%'
         a = b % (b'seventy-nine', 79)
-        self.assertEquals(a, b'seventy-nine / 100 = 79%')
+        self.assertEqual(a, b'seventy-nine / 100 = 79%')
 
     def test_imod(self):
         b = b'hello, %b!'
@@ -481,7 +481,7 @@ class BaseBytesTest:
         self.assertFalse(b is orig)
         b = b'%s / 100 = %d%%'
         b %= (b'seventy-nine', 79)
-        self.assertEquals(b, b'seventy-nine / 100 = 79%')
+        self.assertEqual(b, b'seventy-nine / 100 = 79%')
 
     def test_replace(self):
         b = self.type2test(b'mississippi')
@@ -1021,7 +1021,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertFalse(b is orig)
         b = bytearray(b'%s / 100 = %d%%')
         a = b % (b'seventy-nine', 79)
-        self.assertEquals(a, bytearray(b'seventy-nine / 100 = 79%'))
+        self.assertEqual(a, bytearray(b'seventy-nine / 100 = 79%'))
 
     def test_imod(self):
         b = bytearray(b'hello, %b!')
@@ -1032,7 +1032,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertFalse(b is orig)
         b = bytearray(b'%s / 100 = %d%%')
         b %= (b'seventy-nine', 79)
-        self.assertEquals(b, bytearray(b'seventy-nine / 100 = 79%'))
+        self.assertEqual(b, bytearray(b'seventy-nine / 100 = 79%'))
 
     def test_iconcat(self):
         b = bytearray(b"abc")
