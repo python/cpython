@@ -23,7 +23,7 @@
 
    All arithmetic on hash should ignore overflow.
 
-   Unlike the dictionary implementation, the lookkey functions can return
+   Unlike the dictionary implementation, the lookkey function can return
    NULL if the rich comparison returns an error.
 */
 
@@ -1028,10 +1028,8 @@ set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
      t=set(a); a.clear(); a.update(b); b.clear(); b.update(t); del t
 
    The function always succeeds and it leaves both objects in a stable state.
-   Useful for creating temporary frozensets from sets for membership testing
-   in __contains__(), discard(), and remove().  Also useful for operations
-   that update in-place (by allowing an intermediate result to be swapped
-   into one of the original inputs).
+   Useful for operations that update in-place (by allowing an intermediate
+   result to be swapped into one of the original inputs).
 */
 
 static void
