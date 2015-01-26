@@ -10,6 +10,11 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #15859: PyUnicode_EncodeFSDefault(), PyUnicode_EncodeMBCS() and
+  PyUnicode_EncodeCodePage() now raise an exception if the object is not an
+  Unicode object. For PyUnicode_EncodeFSDefault(), it was already the case on
+  platforms other than Windows. Patch written by Campbell Barton.
+
 - Issue #21408: The default __ne__() now returns NotImplemented if __eq__()
   returned NotImplemented.  Original patch by Martin Panter.
 
