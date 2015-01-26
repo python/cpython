@@ -870,9 +870,9 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                             temp = format_long(iobj, flags, prec, c,
                                     &pbuf, &ilen);
                             Py_DECREF(iobj);
-                            len = ilen;
                             if (!temp)
                                 goto error;
+                            len = ilen;
                             sign = 1;
                         }
                         else {
