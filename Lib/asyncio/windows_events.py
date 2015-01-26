@@ -257,7 +257,7 @@ class PipeServer(object):
 
     def _server_pipe_handle(self, first):
         # Return a wrapper for a new pipe handle.
-        if self._address is None:
+        if self.closed():
             return None
         flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
         if first:
@@ -272,6 +272,9 @@ class PipeServer(object):
         pipe = windows_utils.PipeHandle(h)
         self._free_instances.add(pipe)
         return pipe
+
+    def closed(self):
+        return (self._address is None)
 
     def close(self):
         if self._accept_pipe_future is not None:
@@ -325,12 +328,21 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                 if f:
                     pipe = f.result()
                     server._free_instances.discard(pipe)
+
+                    if server.closed():
+                        # A client connected before the server was closed:
+                        # drop the client (close the pipe) and exit
+                        pipe.close()
+                        return
+
                     protocol = protocol_factory()
                     self._make_duplex_pipe_transport(
                         pipe, protocol, extra={'addr': address})
+
                 pipe = server._get_unconnected_pipe()
                 if pipe is None:
                     return
+
                 f = self._proactor.accept_pipe(pipe)
             except OSError as exc:
                 if pipe and pipe.fileno() != -1:
