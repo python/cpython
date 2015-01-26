@@ -694,12 +694,7 @@ class IocpProactor:
     def close(self):
         # Cancel remaining registered operations.
         for address, (fut, ov, obj, callback) in list(self._cache.items()):
-            if obj is None:
-                # The operation was started with connect_pipe() which
-                # queues a task to Windows' thread pool.  This cannot
-                # be cancelled, so just forget it.
-                del self._cache[address]
-            elif fut.cancelled():
+            if fut.cancelled():
                 # Nothing to do with cancelled futures
                 pass
             elif isinstance(fut, _WaitCancelFuture):
