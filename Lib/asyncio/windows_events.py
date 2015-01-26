@@ -406,13 +406,21 @@ class IocpProactor:
         self._results = []
         return tmp
 
+    def _result(self, value):
+        fut = futures.Future(loop=self._loop)
+        fut.set_result(value)
+        return fut
+
     def recv(self, conn, nbytes, flags=0):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)
-        if isinstance(conn, socket.socket):
-            ov.WSARecv(conn.fileno(), nbytes, flags)
-        else:
-            ov.ReadFile(conn.fileno(), nbytes)
+        try:
+            if isinstance(conn, socket.socket):
+                ov.WSARecv(conn.fileno(), nbytes, flags)
+            else:
+                ov.ReadFile(conn.fileno(), nbytes)
+        except BrokenPipeError:
+            return self._result(b'')
 
         def finish_recv(trans, key, ov):
             try:
@@ -505,9 +513,7 @@ class IocpProactor:
             # ConnectNamePipe() failed with ERROR_PIPE_CONNECTED which means
             # that the pipe is connected. There is no need to wait for the
             # completion of the connection.
-            f = futures.Future(loop=self._loop)
-            f.set_result(pipe)
-            return f
+            return self._result(pipe)
 
         def finish_accept_pipe(trans, key, ov):
             ov.getresult()
