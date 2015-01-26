@@ -281,13 +281,14 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.abspath("C:\\")', "C:\\")
 
     def test_relpath(self):
-        currentdir = os.path.split(os.getcwd())[-1]
         tester('ntpath.relpath("a")', 'a')
         tester('ntpath.relpath(os.path.abspath("a"))', 'a')
         tester('ntpath.relpath("a/b")', 'a\\b')
         tester('ntpath.relpath("../a/b")', '..\\a\\b')
-        tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
-        tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
+        with test_support.temp_cwd(test_support.TESTFN) as cwd_dir:
+            currentdir = os.path.basename(cwd_dir)
+            tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
+            tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
         tester('ntpath.relpath("a", "b/c")', '..\\..\\a')
         tester('ntpath.relpath("//conky/mountpoint/a", "//conky/mountpoint/b/c")', '..\\..\\a')
         tester('ntpath.relpath("a", "a")', '.')
