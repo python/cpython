@@ -126,14 +126,12 @@ class _BaseWaitHandleFuture(futures.Future):
             return
         self._registered = False
 
+        wait_handle = self._wait_handle
+        self._wait_handle = None
         try:
-            _overlapped.UnregisterWait(self._wait_handle)
+            _overlapped.UnregisterWait(wait_handle)
         except OSError as exc:
-            self._wait_handle = None
-            if exc.winerror == _overlapped.ERROR_IO_PENDING:
-                # ERROR_IO_PENDING is not an error, the wait was unregistered
-                self._unregister_wait_cb(None)
-            elif exc.winerror != _overlapped.ERROR_IO_PENDING:
+            if exc.winerror != _overlapped.ERROR_IO_PENDING:
                 context = {
                     'message': 'Failed to unregister the wait handle',
                     'exception': exc,
@@ -142,9 +140,10 @@ class _BaseWaitHandleFuture(futures.Future):
                 if self._source_traceback:
                     context['source_traceback'] = self._source_traceback
                 self._loop.call_exception_handler(context)
-        else:
-            self._wait_handle = None
-            self._unregister_wait_cb(None)
+                return
+            # ERROR_IO_PENDING means that the unregister is pending
+
+        self._unregister_wait_cb(None)
 
     def cancel(self):
         self._unregister_wait()
@@ -209,14 +208,12 @@ class _WaitHandleFuture(_BaseWaitHandleFuture):
             return
         self._registered = False
 
+        wait_handle = self._wait_handle
+        self._wait_handle = None
         try:
-            _overlapped.UnregisterWaitEx(self._wait_handle, self._event)
+            _overlapped.UnregisterWaitEx(wait_handle, self._event)
         except OSError as exc:
-            self._wait_handle = None
-            if exc.winerror == _overlapped.ERROR_IO_PENDING:
-                # ERROR_IO_PENDING is not an error, the wait was unregistered
-                self._unregister_wait_cb(None)
-            elif exc.winerror != _overlapped.ERROR_IO_PENDING:
+            if exc.winerror != _overlapped.ERROR_IO_PENDING:
                 context = {
                     'message': 'Failed to unregister the wait handle',
                     'exception': exc,
@@ -225,11 +222,11 @@ class _WaitHandleFuture(_BaseWaitHandleFuture):
                 if self._source_traceback:
                     context['source_traceback'] = self._source_traceback
                 self._loop.call_exception_handler(context)
-        else:
-            self._wait_handle = None
-            self._event_fut = self._proactor._wait_cancel(
-                                                self._event,
-                                                self._unregister_wait_cb)
+                return
+            # ERROR_IO_PENDING is not an error, the wait was unregistered
+
+        self._event_fut = self._proactor._wait_cancel(self._event,
+                                                      self._unregister_wait_cb)
 
 
 class PipeServer(object):
