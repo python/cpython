@@ -224,9 +224,6 @@ class Set(Sized, Iterable, Container):
             return NotImplemented
         return len(self) == len(other) and self.__le__(other)
 
-    def __ne__(self, other):
-        return not (self == other)
-
     @classmethod
     def _from_iterable(cls, it):
         '''Construct an instance of the class from any iterable input.
@@ -450,9 +447,6 @@ class Mapping(Sized, Iterable, Container):
         if not isinstance(other, Mapping):
             return NotImplemented
         return dict(self.items()) == dict(other.items())
-
-    def __ne__(self, other):
-        return not (self == other)
 
 Mapping.register(mappingproxy)
 
