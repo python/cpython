@@ -15,6 +15,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #19996: Make :mod:`httplib` ignore headers with no name rather than
+  assuming the body has started.
+
+- Issue #20188: Support Application-Layer Protocol Negotiation (ALPN) in the ssl
+  module.
+
+- Issue #23248: Update ssl error codes from latest OpenSSL git master.
+
 - Issue #23098: 64-bit dev_t is now supported in the os module.
 
 - Issue #23063: In the disutils' check command, fix parsing of reST with code or

@@ -638,6 +638,13 @@ Constants
 
    .. versionadded:: 2.7.9
 
+.. data:: HAS_ALPN
+
+   Whether the OpenSSL library has built-in support for the *Application-Layer
+   Protocol Negotiation* TLS extension as described in :rfc:`7301`.
+
+   .. versionadded:: 2.7.10
+
 .. data:: HAS_ECDH
 
    Whether the OpenSSL library has built-in support for Elliptic Curve-based
@@ -864,9 +871,19 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 2.7.9
 
+.. method:: SSLSocket.selected_alpn_protocol()
+
+   Return the protocol that was selected during the TLS handshake.  If
+   :meth:`SSLContext.set_alpn_protocols` was not called, if the other party does
+   not support ALPN, if this socket does not support any of the client's
+   proposed protocols, or if the handshake has not happened yet, ``None`` is
+   returned.
+
+   .. versionadded:: 2.7.10
+
 .. method:: SSLSocket.selected_npn_protocol()
 
-   Returns the higher-level protocol that was selected during the TLS/SSL
+   Return the higher-level protocol that was selected during the TLS/SSL
    handshake. If :meth:`SSLContext.set_npn_protocols` was not called, or
    if the other party does not support NPN, or if the handshake has not yet
    happened, this will return ``None``.
@@ -1034,6 +1051,20 @@ to speed up repeated connections from the same clients.
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
 
+.. method:: SSLContext.set_alpn_protocols(protocols)
+
+   Specify which protocols the socket should advertise during the SSL/TLS
+   handshake. It should be a list of ASCII strings, like ``['http/1.1',
+   'spdy/2']``, ordered by preference. The selection of a protocol will happen
+   during the handshake, and will play out according to :rfc:`7301`. After a
+   successful handshake, the :meth:`SSLSocket.selected_alpn_protocol` method will
+   return the agreed-upon protocol.
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_ALPN` is
+   False.
+
+   .. versionadded:: 2.7.10
+
 .. method:: SSLContext.set_npn_protocols(protocols)
 
    Specify which protocols the socket should advertise during the SSL/TLS
@@ -1072,7 +1103,7 @@ to speed up repeated connections from the same clients.
 
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
-   :meth:`SSLSocket.selected_npn_protocol` and :attr:`SSLSocket.context`.
+   :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
    :meth:`SSLSocket.getpeercert`, :meth:`SSLSocket.getpeercert`,
    :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compress` methods require that
    the TLS connection has progressed beyond the TLS Client Hello and therefore

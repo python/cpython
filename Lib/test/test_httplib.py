@@ -164,6 +164,16 @@ class HeaderTests(TestCase):
         conn.request('GET', '/foo')
         self.assertTrue(sock.data.startswith(expected))
 
+    def test_malformed_headers_coped_with(self):
+        # Issue 19996
+        body = "HTTP/1.1 200 OK\r\nFirst: val\r\n: nval\r\nSecond: val\r\n\r\n"
+        sock = FakeSocket(body)
+        resp = httplib.HTTPResponse(sock)
+        resp.begin()
+
+        self.assertEqual(resp.getheader('First'), 'val')
+        self.assertEqual(resp.getheader('Second'), 'val')
+
 
 class BasicTest(TestCase):
     def test_status_lines(self):
@@ -461,7 +471,11 @@ class OfflineTest(TestCase):
         self.assertEqual(httplib.responses[httplib.NOT_FOUND], "Not Found")
 
 
-class SourceAddressTest(TestCase):
+class TestServerMixin:
+    """A limited socket server mixin.
+
+    This is used by test cases for testing http connection end points.
+    """
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.port = test_support.bind_port(self.serv)
@@ -476,6 +490,7 @@ class SourceAddressTest(TestCase):
         self.serv.close()
         self.serv = None
 
+class SourceAddressTest(TestServerMixin, TestCase):
     def testHTTPConnectionSourceAddress(self):
         self.conn = httplib.HTTPConnection(HOST, self.port,
                 source_address=('', self.source_port))
@@ -490,6 +505,24 @@ class SourceAddressTest(TestCase):
         # We don't test anything here other the constructor not barfing as
         # this code doesn't deal with setting up an active running SSL server
         # for an ssl_wrapped connect() to actually return from.
+
+
+class HTTPTest(TestServerMixin, TestCase):
+    def testHTTPConnection(self):
+        self.conn = httplib.HTTP(host=HOST, port=self.port, strict=None)
+        self.conn.connect()
+        self.assertEqual(self.conn._conn.host, HOST)
+        self.assertEqual(self.conn._conn.port, self.port)
+
+    def testHTTPWithConnectHostPort(self):
+        testhost = 'unreachable.test.domain'
+        testport = '80'
+        self.conn = httplib.HTTP(host=testhost, port=testport)
+        self.conn.connect(host=HOST, port=self.port)
+        self.assertNotEqual(self.conn._conn.host, testhost)
+        self.assertNotEqual(self.conn._conn.port, testport)
+        self.assertEqual(self.conn._conn.host, HOST)
+        self.assertEqual(self.conn._conn.port, self.port)
 
 
 class TimeoutTest(TestCase):
@@ -536,6 +569,7 @@ class TimeoutTest(TestCase):
         httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
+
 
 class HTTPSTest(TestCase):
 
@@ -713,7 +747,8 @@ class TunnelTests(TestCase):
 @test_support.reap_threads
 def test_main(verbose=None):
     test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
-                              HTTPSTest, SourceAddressTest, TunnelTests)
+                              HTTPTest, HTTPSTest, SourceAddressTest,
+                              TunnelTests)
 
 if __name__ == '__main__':
     test_main()

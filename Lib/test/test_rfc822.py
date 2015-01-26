@@ -248,6 +248,12 @@ A test message.
         eq(rfc822.quote('foo\\wacky"name'), 'foo\\\\wacky\\"name')
         eq(rfc822.unquote('"foo\\\\wacky\\"name"'), 'foo\\wacky"name')
 
+    def test_invalid_headers(self):
+        eq = self.assertEqual
+        msg = self.create_message("First: val\n: otherval\nSecond: val2\n")
+        eq(msg.getheader('First'), 'val')
+        eq(msg.getheader('Second'), 'val2')
+
 
 def test_main():
     test_support.run_unittest(MessageTestCase)
