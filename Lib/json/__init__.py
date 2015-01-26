@@ -98,12 +98,12 @@ Using json.tool from the shell to validate and pretty-print::
 __version__ = '2.0.9'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
-    'JSONDecoder', 'JSONEncoder',
+    'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
 ]
 
 __author__ = 'Bob Ippolito <bob@redivi.com>'
 
-from .decoder import JSONDecoder
+from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 
 _default_encoder = JSONEncoder(
@@ -311,7 +311,8 @@ def loads(s, encoding=None, cls=None, object_hook=None, parse_float=None,
         raise TypeError('the JSON object must be str, not {!r}'.format(
                             s.__class__.__name__))
     if s.startswith(u'\ufeff'):
-        raise ValueError("Unexpected UTF-8 BOM (decode using utf-8-sig)")
+        raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
+                              s, 0)
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
             parse_constant is None and object_pairs_hook is None and not kw):
