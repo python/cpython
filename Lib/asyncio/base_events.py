@@ -723,7 +723,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                 logger.debug("Datagram endpoint remote_addr=%r created: "
                              "(%r, %r)",
                              remote_addr, transport, protocol)
-        yield from waiter
+
+        try:
+            yield from waiter
+        except:
+            transport.close()
+            raise
+
         return transport, protocol
 
     @coroutine
@@ -815,7 +821,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         protocol = protocol_factory()
         waiter = futures.Future(loop=self)
         transport = self._make_read_pipe_transport(pipe, protocol, waiter)
-        yield from waiter
+
+        try:
+            yield from waiter
+        except:
+            transport.close()
+            raise
+
         if self._debug:
             logger.debug('Read pipe %r connected: (%r, %r)',
                          pipe.fileno(), transport, protocol)
@@ -826,7 +838,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         protocol = protocol_factory()
         waiter = futures.Future(loop=self)
         transport = self._make_write_pipe_transport(pipe, protocol, waiter)
-        yield from waiter
+
+        try:
+            yield from waiter
+        except:
+            transport.close()
+            raise
+
         if self._debug:
             logger.debug('Write pipe %r connected: (%r, %r)',
                          pipe.fileno(), transport, protocol)
