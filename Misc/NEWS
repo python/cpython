@@ -215,6 +215,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19996: :class:`email.feedparser.FeedParser` now handles (malformed)
+  headers with no key rather than amusing the body has started.
+
 - Issue #20188: Support Application-Layer Protocol Negotiation (ALPN) in the ssl
   module.
 
