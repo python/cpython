@@ -3348,9 +3348,14 @@ object_richcompare(PyObject *self, PyObject *other, int op)
         break;
 
     case Py_NE:
-        /* By default, != returns the opposite of ==,
+        /* By default, __ne__() delegates to __eq__() and inverts the result,
            unless the latter returns NotImplemented. */
-        res = PyObject_RichCompare(self, other, Py_EQ);
+        if (self->ob_type->tp_richcompare == NULL) {
+            res = Py_NotImplemented;
+            Py_INCREF(res);
+            break;
+        }
+        res = (*self->ob_type->tp_richcompare)(self, other, Py_EQ);
         if (res != NULL && res != Py_NotImplemented) {
             int ok = PyObject_IsTrue(res);
             Py_DECREF(res);
