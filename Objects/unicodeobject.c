@@ -2335,6 +2335,8 @@ parse_format_flags(const char *f,
             f--;
         }
     }
+    if (width < precision)
+        width = precision;
     if (*f == '\0') {
         /* bogus format "%.1" => go backward, f points to "1" */
         f--;
