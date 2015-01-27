@@ -85,10 +85,8 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (cmp > 0)                                          /* likely */
                 return entry;
         }
-        if (entry->hash == -1 && freeslot == NULL) {
-            assert(entry->key == dummy);
+        if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
-        }
 
         for (j = 1 ; j <= LINEAR_PROBES ; j++) {
             entry = &table[(i + j) & mask];
@@ -113,10 +111,8 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 if (cmp > 0)
                     return entry;
             }
-            if (entry->hash == -1 && freeslot == NULL) {
-                assert(entry->key == dummy);
+            if (entry->key == dummy && freeslot == NULL)
                 freeslot = entry;
-            }
         }
 
         perturb >>= PERTURB_SHIFT;
