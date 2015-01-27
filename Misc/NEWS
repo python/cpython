@@ -2,6 +2,18 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.7?
+============================
+
+*Release date: XXXX-XX-XX*
+
+Core and Builtins
+-----------------
+
+- Issue #23055: Fixed a buffer overflow in PyUnicode_FromFormatV.  Analysis
+  and fix by Guido Vranken.
+
+
 What's New in Python 3.3.6?
 ===========================
 
