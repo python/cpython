@@ -14,7 +14,10 @@ extern "C" {
 2. Active:  key != NULL and key != dummy
 3. Dummy:   key == dummy
 
-The hash field of Unused or Dummy slots have no meaning.
+The hash field of Unused slots have no meaning.
+The hash field of Dummny slots are set to -1
+meaning that dummy entries can be detected by
+either entry->key==dummy or by entry->hash==-1.
 */
 
 #define PySet_MINSIZE 8
