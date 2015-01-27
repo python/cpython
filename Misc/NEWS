@@ -86,6 +86,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #19949: The test_xpickle test now 
+
 - Issue #11578: Backported test for the timeit module.
 
 - Issue #22943: bsddb tests are locale independend now.
