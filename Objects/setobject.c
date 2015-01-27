@@ -65,8 +65,10 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         return entry;
 
     while (1) {
-        if (entry->hash == hash && entry->key != dummy) {         /* dummy match unlikely */
+        if (entry->hash == hash) {
             PyObject *startkey = entry->key;
+            /* startkey cannot be a dummy because the dummy hash field is -1 */
+            assert(startkey != dummy);
             if (startkey == key)
                 return entry;
             if (PyUnicode_CheckExact(startkey)
@@ -83,15 +85,18 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (cmp > 0)                                          /* likely */
                 return entry;
         }
-        if (entry->key == dummy && freeslot == NULL)
+        if (entry->hash == -1 && freeslot == NULL) {
+            assert(entry->key == dummy);
             freeslot = entry;
+        }
 
         for (j = 1 ; j <= LINEAR_PROBES ; j++) {
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
-            if (entry->hash == hash && entry->key != dummy) {
+            if (entry->hash == hash) {
                 PyObject *startkey = entry->key;
+                assert(startkey != dummy);
                 if (startkey == key)
                     return entry;
                 if (PyUnicode_CheckExact(startkey)
@@ -108,8 +113,10 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 if (cmp > 0)
                     return entry;
             }
-            if (entry->key == dummy && freeslot == NULL)
+            if (entry->hash == -1 && freeslot == NULL) {
+                assert(entry->key == dummy);
                 freeslot = entry;
+            }
         }
 
         perturb >>= PERTURB_SHIFT;
