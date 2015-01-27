@@ -1700,6 +1700,9 @@ class UnicodeTest(
         if sys.maxunicode > 0xffff:
             check_format(u'\U0010ffff',
                          b'%c', c_int(0x10ffff))
+        else:
+            with self.assertRaises(OverflowError):
+                PyUnicode_FromFormat(b'%c', c_int(0x10000))
         with self.assertRaises(OverflowError):
             PyUnicode_FromFormat(b'%c', c_int(0x110000))
         # Issue #18183
@@ -1750,7 +1753,44 @@ class UnicodeTest(
                      b'%zu', c_size_t(123))
 
         # test long output
+        min_long = -(2 ** (8 * sizeof(c_long) - 1))
+        max_long = -min_long - 1
+        check_format(unicode(min_long),
+                     b'%ld', c_long(min_long))
+        check_format(unicode(max_long),
+                     b'%ld', c_long(max_long))
+        max_ulong = 2 ** (8 * sizeof(c_ulong)) - 1
+        check_format(unicode(max_ulong),
+                     b'%lu', c_ulong(max_ulong))
         PyUnicode_FromFormat(b'%p', c_void_p(-1))
+
+        # test padding (width and/or precision)
+        check_format(u'123'.rjust(10, u'0'),
+                     b'%010i', c_int(123))
+        check_format(u'123'.rjust(100),
+                     b'%100i', c_int(123))
+        check_format(u'123'.rjust(100, u'0'),
+                     b'%.100i', c_int(123))
+        check_format(u'123'.rjust(80, u'0').rjust(100),
+                     b'%100.80i', c_int(123))
+
+        check_format(u'123'.rjust(10, u'0'),
+                     b'%010u', c_uint(123))
+        check_format(u'123'.rjust(100),
+                     b'%100u', c_uint(123))
+        check_format(u'123'.rjust(100, u'0'),
+                     b'%.100u', c_uint(123))
+        check_format(u'123'.rjust(80, u'0').rjust(100),
+                     b'%100.80u', c_uint(123))
+
+        check_format(u'123'.rjust(10, u'0'),
+                     b'%010x', c_int(0x123))
+        check_format(u'123'.rjust(100),
+                     b'%100x', c_int(0x123))
+        check_format(u'123'.rjust(100, u'0'),
+                     b'%.100x', c_int(0x123))
+        check_format(u'123'.rjust(80, u'0').rjust(100),
+                     b'%100.80x', c_int(0x123))
 
         # test %V
         check_format(u'repr=abc',

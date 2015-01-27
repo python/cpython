@@ -735,15 +735,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
       * objects once during step 3 and put the result in an array) */
     for (f = format; *f; f++) {
          if (*f == '%') {
-             if (*(f+1)=='%')
-                 continue;
-             if (*(f+1)=='S' || *(f+1)=='R')
-                 ++callcount;
-             while (isdigit((unsigned)*f))
-                 width = (width*10) + *f++ - '0';
-             while (*++f && *f != '%' && !isalpha((unsigned)*f))
-                 ;
-             if (*f == 's')
+             f++;
+             while (*f && *f != '%' && !isalpha((unsigned)*f))
+                 f++;
+             if (*f == 's' || *f=='S' || *f=='R')
                  ++callcount;
          }
     }
@@ -760,12 +755,16 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     /* step 3: figure out how large a buffer we need */
     for (f = format; *f; f++) {
         if (*f == '%') {
-            const char* p = f;
+            const char* p = f++;
             width = 0;
             while (isdigit((unsigned)*f))
                 width = (width*10) + *f++ - '0';
-            while (*++f && *f != '%' && !isalpha((unsigned)*f))
-                ;
+            precision = 0;
+            if (*f == '.') {
+                f++;
+                while (isdigit((unsigned)*f))
+                    precision = (precision*10) + *f++ - '0';
+            }
 
             /* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
              * they don't affect the amount of space we reserve.
@@ -800,6 +799,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 break;
             case 'd': case 'u': case 'i': case 'x':
                 (void) va_arg(count, int);
+                if (width < precision)
+                    width = precision;
                 /* 20 bytes is enough to hold a 64-bit
                    integer.  Decimal takes the most space.
                    This isn't enough for octal.
