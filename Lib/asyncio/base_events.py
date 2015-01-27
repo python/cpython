@@ -956,7 +956,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             exc_info = False
 
-        if (self._current_handle is not None
+        if ('source_traceback' not in context
+        and self._current_handle is not None
         and self._current_handle._source_traceback):
             context['handle_traceback'] = self._current_handle._source_traceback
 
