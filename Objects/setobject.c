@@ -138,17 +138,28 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *entry;
     size_t perturb = hash;
     size_t mask = (size_t)so->mask;
-    size_t i = (size_t)hash;
+    size_t i = (size_t)hash & mask;
     size_t j;
 
     while (1) {
-        for (j = 0 ; j <= LINEAR_PROBES ; j++) {
-            entry = &table[(i + j) & mask];
-            if (entry->key == NULL)
-                goto found_null;
+        entry = &table[i];
+        if (entry->key == NULL)
+            goto found_null;
+        if (i + LINEAR_PROBES <= mask) {
+            for (j = 1; j <= LINEAR_PROBES; j++) {
+                entry = &table[i + j];
+                if (entry->key == NULL)
+                    goto found_null;
+            }
+        } else {
+            for (j = 1; j <= LINEAR_PROBES; j++) {
+                entry = &table[(i + j) & mask];
+                if (entry->key == NULL)
+                    goto found_null;
+            }
         }
         perturb >>= PERTURB_SHIFT;
-        i = i * 5 + 1 + perturb;
+        i = (i * 5 + 1 + perturb) & mask;
     }
   found_null:
     entry->key = key;
