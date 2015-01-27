@@ -759,15 +759,10 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
      * result in an array) */
     for (f = format; *f; f++) {
          if (*f == '%') {
-             if (*(f+1)=='%')
-                 continue;
-             if (*(f+1)=='S' || *(f+1)=='R' || *(f+1)=='A' || *(f+1) == 'V')
-                 ++callcount;
-             while (Py_ISDIGIT((unsigned)*f))
-                 width = (width*10) + *f++ - '0';
-             while (*++f && *f != '%' && !Py_ISALPHA((unsigned)*f))
-                 ;
-             if (*f == 's')
+             f++;
+             while (*f && *f != '%' && !Py_ISALPHA((unsigned)*f))
+                 f++;
+             if (*f == 's' || *f=='S' || *f=='R' || *f=='A' || *f=='V')
                  ++callcount;
          }
          else if (128 <= (unsigned char)*f) {
@@ -794,12 +789,16 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 #ifdef HAVE_LONG_LONG
             int longlongflag = 0;
 #endif
-            const char* p = f;
+            const char* p = f++;
             width = 0;
             while (Py_ISDIGIT((unsigned)*f))
                 width = (width*10) + *f++ - '0';
-            while (*++f && *f != '%' && !Py_ISALPHA((unsigned)*f))
-                ;
+            precision = 0;
+            if (*f == '.') {
+                f++;
+                while (Py_ISDIGIT((unsigned)*f))
+                    precision = (precision*10) + *f++ - '0';
+            }
 
             /* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
              * they don't affect the amount of space we reserve.
@@ -823,16 +822,18 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             switch (*f) {
             case 'c':
             {
-#ifndef Py_UNICODE_WIDE
                 int ordinal = va_arg(count, int);
+                if (ordinal < 0 || ordinal > 0x10ffff) {
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "%c arg not in range(0x110000)");
+                    goto fail;
+                }
+#ifndef Py_UNICODE_WIDE
                 if (ordinal > 0xffff)
                     n += 2;
                 else
-                    n++;
-#else
-                (void)va_arg(count, int);
-                n++;
 #endif
+                n++;
                 break;
             }
             case '%':
@@ -840,6 +841,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 break;
             case 'd': case 'u': case 'i': case 'x':
                 (void) va_arg(count, int);
+                if (width < precision)
+                    width = precision;
 #ifdef HAVE_LONG_LONG
                 if (longlongflag) {
                     if (width < MAX_LONG_LONG_CHARS)
