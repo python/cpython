@@ -2,6 +2,10 @@
 
 import unittest
 from unittest import mock
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 import asyncio
 from asyncio import sslproto
@@ -14,6 +18,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop)
 
+    @unittest.skipIf(ssl is None, 'No ssl module')
     def test_cancel_handshake(self):
         # Python issue #23197: cancelling an handshake must not raise an
         # exception or log an error, even if the handshake failed
