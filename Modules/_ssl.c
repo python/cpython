@@ -110,7 +110,7 @@ struct py_ssl_library_code {
 #endif
 
 /* ALPN added in OpenSSL 1.0.2 */
-#if OPENSSL_VERSION_NUMBER >= 0x1000200fL && !defined(OPENSSL_NO_TLSEXT)
+#if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x1000200fL && !defined(OPENSSL_NO_TLSEXT)
 # define HAVE_ALPN
 #endif
 
