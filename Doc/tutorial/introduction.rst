@@ -391,7 +391,7 @@ means that the following slice returns a new (shallow) copy of the list::
    >>> squares[:]
    [1, 4, 9, 16, 25]
 
-Lists also supports operations like concatenation::
+Lists also support operations like concatenation::
 
    >>> squares + [36, 49, 64, 81, 100]
    [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
