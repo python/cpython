@@ -408,7 +408,6 @@ class SSLProtocol(protocols.Protocol):
         self._write_buffer_size = 0
 
         self._waiter = waiter
-        self._closing = False
         self._loop = loop
         self._app_protocol = app_protocol
         self._app_transport = _SSLProtocolTransport(self._loop,
