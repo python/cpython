@@ -159,6 +159,13 @@ contextlib
   don't provide any options to redirect it.
   (Contributed by Berker Peksag in :issue:`22389`.)
 
+distutils
+---------
+
+* The ``build`` and ``build_ext`` commands now accept a ``-j``
+  option to enable parallel building of extension modules.
+  (Contributed by Antoine Pitrou in :issue:`5309`.)
+
 doctest
 -------
 
