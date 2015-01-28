@@ -578,10 +578,12 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._eof = False
         self._paused = False
 
-        self._loop.add_reader(self._sock_fd, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
+        # only start reading when connection_made() has been called
+        self._loop.call_soon(self._loop.add_reader,
+                             self._sock_fd, self._read_ready)
         if waiter is not None:
-            # wait until protocol.connection_made() has been called
+            # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
     def pause_reading(self):
@@ -732,6 +734,16 @@ class _SelectorSslTransport(_SelectorTransport):
             start_time = None
         self._on_handshake(start_time)
 
+    def _wakeup_waiter(self, exc=None):
+        if self._waiter is None:
+            return
+        if not self._waiter.cancelled():
+            if exc is not None:
+                self._waiter.set_exception(exc)
+            else:
+                self._waiter.set_result(None)
+        self._waiter = None
+
     def _on_handshake(self, start_time):
         try:
             self._sock.do_handshake()
@@ -750,8 +762,7 @@ class _SelectorSslTransport(_SelectorTransport):
             self._loop.remove_reader(self._sock_fd)
             self._loop.remove_writer(self._sock_fd)
             self._sock.close()
-            if self._waiter is not None and not self._waiter.cancelled():
-                self._waiter.set_exception(exc)
+            self._wakeup_waiter(exc)
             if isinstance(exc, Exception):
                 return
             else:
@@ -774,9 +785,7 @@ class _SelectorSslTransport(_SelectorTransport):
                                        "on matching the hostname",
                                        self, exc_info=True)
                     self._sock.close()
-                    if (self._waiter is not None
-                    and not self._waiter.cancelled()):
-                        self._waiter.set_exception(exc)
+                    self._wakeup_waiter(exc)
                     return
 
         # Add extra info that becomes available after handshake.
@@ -789,10 +798,8 @@ class _SelectorSslTransport(_SelectorTransport):
         self._write_wants_read = False
         self._loop.add_reader(self._sock_fd, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
-        if self._waiter is not None:
-            # wait until protocol.connection_made() has been called
-            self._loop.call_soon(self._waiter._set_result_unless_cancelled,
-                                 None)
+        # only wake up the waiter when connection_made() has been called
+        self._loop.call_soon(self._wakeup_waiter)
 
         if self._loop.get_debug():
             dt = self._loop.time() - start_time
@@ -924,7 +931,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
         self._loop.add_reader(self._sock_fd, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
-            # wait until protocol.connection_made() has been called
+            # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
     def get_write_buffer_size(self):
