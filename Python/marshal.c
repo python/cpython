@@ -1520,8 +1520,10 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     wf.depth = 0;
     wf.version = version;
     if (version >= 3) {
-        if ((wf.refs = PyDict_New()) == NULL)
+        if ((wf.refs = PyDict_New()) == NULL) {
+            Py_DECREF(wf.str);
             return NULL;
+        }
     } else
         wf.refs = NULL;
     w_object(x, &wf);
