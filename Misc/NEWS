@@ -117,6 +117,12 @@ Build
 
 - Issue #23212: Update 10.5 OS X installer build to use OpenSSL 1.0.1k.
 
+C API
+-----
+
+- Issue #22079: PyType_Ready() now checks that statically allocated type has
+  no dynamically allocated bases.
+
 
 What's New in Python 2.7.9?
 ===========================
