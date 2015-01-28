@@ -59,6 +59,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
     def test_make_socket_transport(self):
         m = mock.Mock()
         self.loop.add_reader = mock.Mock()
+        self.loop.add_reader._is_coroutine = False
         transport = self.loop._make_socket_transport(m, asyncio.Protocol())
         self.assertIsInstance(transport, _SelectorSocketTransport)
         close_transport(transport)
@@ -67,6 +68,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
     def test_make_ssl_transport(self):
         m = mock.Mock()
         self.loop.add_reader = mock.Mock()
+        self.loop.add_reader._is_coroutine = False
         self.loop.add_writer = mock.Mock()
         self.loop.remove_reader = mock.Mock()
         self.loop.remove_writer = mock.Mock()
@@ -770,20 +772,24 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        tr = self.socket_transport()
+        waiter = asyncio.Future(loop=self.loop)
+        tr = self.socket_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
+
         self.loop.assert_reader(7, tr._read_ready)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_made.assert_called_with(tr)
 
     def test_ctor_with_waiter(self):
-        fut = asyncio.Future(loop=self.loop)
+        waiter = asyncio.Future(loop=self.loop)
+        self.socket_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
 
-        self.socket_transport(waiter=fut)
-        test_utils.run_briefly(self.loop)
-        self.assertIsNone(fut.result())
+        self.assertIsNone(waiter.result())
 
     def test_pause_resume_reading(self):
         tr = self.socket_transport()
+        test_utils.run_briefly(self.loop)
         self.assertFalse(tr._paused)
         self.loop.assert_reader(7, tr._read_ready)
         tr.pause_reading()
