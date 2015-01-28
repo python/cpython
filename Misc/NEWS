@@ -1519,6 +1519,9 @@ Build
 C API
 -----
 
+- Issue #22079: PyType_Ready() now checks that statically allocated type has
+  no dynamically allocated bases.
+
 - Issue #22453: Removed non-documented macro PyObject_REPR().
 
 - Issue #18395: Rename ``_Py_char2wchar()`` to :c:func:`Py_DecodeLocale`,
