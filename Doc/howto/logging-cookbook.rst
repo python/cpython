@@ -2033,3 +2033,58 @@ A couple of extra points to note:
   information on how logging supports using user-defined objects in its
   configuration, and see the other cookbook recipe :ref:`custom-handlers` above.
 
+
+.. _custom-format-exception:
+
+Customized exception formatting
+-------------------------------
+
+There might be times when you want to do customized exception formatting - for
+argument's sake, let's say you want exactly one line per logged event, even
+when exception information is present. You can do this with a custom formatter
+class, as shown in the following example::
+
+    import logging
+
+    class OneLineExceptionFormatter(logging.Formatter):
+        def formatException(self, exc_info):
+            """
+            Format an exception so that it prints on a single line.
+            """
+            result = super(OneLineExceptionFormatter, self).formatException(exc_info)
+            return repr(result) # or format into one line however you want to
+
+        def format(self, record):
+            s = super(OneLineExceptionFormatter, self).format(record)
+            if record.exc_text:
+                s = s.replace('\n', '') + '|'
+            return s
+
+    def configure_logging():
+        fh = logging.FileHandler('output.txt', 'w')
+        f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
+                                      '%d/%m/%Y %H:%M:%S')
+        fh.setFormatter(f)
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+        root.addHandler(fh)
+
+    def main():
+        configure_logging()
+        logging.info('Sample message')
+        try:
+            x = 1 / 0
+        except ZeroDivisionError as e:
+            logging.exception('ZeroDivisionError: %s', e)
+
+    if __name__ == '__main__':
+        main()
+
+When run, this produces a file with exactly two lines::
+
+    28/01/2015 07:21:23|INFO|Sample message|
+    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
+
+While the above treatment is simplistic, it points the way to how exception
+information can be formatted to your liking. The :mod:`traceback` module may be
+helpful for more specialized needs.
