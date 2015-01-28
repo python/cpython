@@ -332,6 +332,12 @@ Build
 
 - Issue #17128: Use private version of OpenSSL for 2.7.9 OS X 10.5+ installer.
 
+C API
+-----
+
+- Issue #22079: PyType_Ready() now checks that statically allocated type has
+  no dynamically allocated bases.
+
 Documentation
 -------------
 
@@ -1136,6 +1142,7 @@ Build
 
 C API
 -----
+
 - Issue #20942: PyImport_ImportFrozenModuleObject() no longer sets __file__ to
   match what importlib does; this affects _frozen_importlib as well as any
   module loaded using imp.init_frozen().
