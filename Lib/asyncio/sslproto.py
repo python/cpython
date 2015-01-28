@@ -489,6 +489,10 @@ class SSLProtocol(protocols.Protocol):
         try:
             if self._loop.get_debug():
                 logger.debug("%r received EOF", self)
+
+            if self._waiter is not None and not self._waiter.done():
+                self._waiter.set_exception(ConnectionResetError())
+
             if not self._in_handshake:
                 keep_open = self._app_protocol.eof_received()
                 if keep_open:
