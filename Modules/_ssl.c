@@ -2275,6 +2275,7 @@ set_ciphers(PySSLContext *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#ifdef OPENSSL_NPN_NEGOTIATED
 static int
 do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
                       const unsigned char *server_protocols, unsigned int server_protocols_len,
@@ -2299,7 +2300,6 @@ do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
     return SSL_TLSEXT_ERR_OK;
 }
 
-#ifdef OPENSSL_NPN_NEGOTIATED
 /* this callback gets passed to SSL_CTX_set_next_protos_advertise_cb */
 static int
 _advertiseNPN_cb(SSL *s,
