@@ -418,6 +418,16 @@ class SSLProtocol(protocols.Protocol):
         self._in_shutdown = False
         self._transport = None
 
+    def _wakeup_waiter(self, exc=None):
+        if self._waiter is None:
+            return
+        if not self._waiter.cancelled():
+            if exc is not None:
+                self._waiter.set_exception(exc)
+            else:
+                self._waiter.set_result(None)
+        self._waiter = None
+
     def connection_made(self, transport):
         """Called when the low-level connection is made.
 
@@ -490,8 +500,7 @@ class SSLProtocol(protocols.Protocol):
             if self._loop.get_debug():
                 logger.debug("%r received EOF", self)
 
-            if self._waiter is not None and not self._waiter.done():
-                self._waiter.set_exception(ConnectionResetError())
+            self._wakeup_waiter(ConnectionResetError)
 
             if not self._in_handshake:
                 keep_open = self._app_protocol.eof_received()
@@ -556,8 +565,7 @@ class SSLProtocol(protocols.Protocol):
                                    self, exc_info=True)
             self._transport.close()
             if isinstance(exc, Exception):
-                if self._waiter is not None and not self._waiter.cancelled():
-                    self._waiter.set_exception(exc)
+                self._wakeup_waiter(exc)
                 return
             else:
                 raise
@@ -572,9 +580,7 @@ class SSLProtocol(protocols.Protocol):
                            compression=sslobj.compression(),
                            )
         self._app_protocol.connection_made(self._app_transport)
-        if self._waiter is not None:
-            # wait until protocol.connection_made() has been called
-            self._waiter._set_result_unless_cancelled(None)
+        self._wakeup_waiter()
         self._session_established = True
         # In case transport.write() was already called. Don't call
         # immediatly _process_write_backlog(), but schedule it:

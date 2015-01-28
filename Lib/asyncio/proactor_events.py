@@ -38,7 +38,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._server._attach()
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
-            # wait until protocol.connection_made() has been called
+            # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
 
     def __repr__(self):
