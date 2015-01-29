@@ -14,6 +14,7 @@ import os
 import socket
 import subprocess
 import tempfile
+import warnings
 
 
 __all__ = ['socketpair', 'pipe', 'Popen', 'PIPE', 'PipeHandle']
@@ -156,7 +157,10 @@ class PipeHandle:
             CloseHandle(self._handle)
             self._handle = None
 
-    __del__ = close
+    def __del__(self):
+        if self._handle is not None:
+            warnings.warn("unclosed %r" % self, ResourceWarning)
+            self.close()
 
     def __enter__(self):
         return self

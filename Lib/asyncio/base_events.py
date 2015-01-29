@@ -26,6 +26,7 @@ import threading
 import time
 import traceback
 import sys
+import warnings
 
 from . import coroutines
 from . import events
@@ -332,6 +333,16 @@ class BaseEventLoop(events.AbstractEventLoop):
     def is_closed(self):
         """Returns True if the event loop was closed."""
         return self._closed
+
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if not self.is_closed():
+                warnings.warn("unclosed event loop %r" % self, ResourceWarning)
+                if not self.is_running():
+                    self.close()
 
     def is_running(self):
         """Returns True if the event loop is running."""
