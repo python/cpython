@@ -16,6 +16,7 @@ from . import base_subprocess
 from . import constants
 from . import coroutines
 from . import events
+from . import futures
 from . import selector_events
 from . import selectors
 from . import transports
@@ -175,16 +176,20 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                    stdin, stdout, stderr, bufsize,
                                    extra=None, **kwargs):
         with events.get_child_watcher() as watcher:
+            waiter = futures.Future(loop=self)
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
                                               stdin, stdout, stderr, bufsize,
-                                              extra=extra, **kwargs)
-            try:
-                yield from transp._post_init()
-            except:
-                transp.close()
-                raise
+                                              waiter=waiter, extra=extra,
+                                              **kwargs)
+
             watcher.add_child_handler(transp.get_pid(),
                                       self._child_watcher_callback, transp)
+            try:
+                yield from waiter
+            except:
+                transp.close()
+                yield from transp.wait()
+                raise
 
         return transp
 
@@ -774,7 +779,7 @@ class SafeChildWatcher(BaseChildWatcher):
         pass
 
     def add_child_handler(self, pid, callback, *args):
-        self._callbacks[pid] = callback, args
+        self._callbacks[pid] = (callback, args)
 
         # Prevent a race condition in case the child is already terminated.
         self._do_waitpid(pid)
