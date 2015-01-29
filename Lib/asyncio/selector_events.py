@@ -22,6 +22,7 @@ from . import futures
 from . import selectors
 from . import transports
 from . import sslproto
+from .coroutines import coroutine
 from .log import logger
 
 
@@ -181,16 +182,47 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             else:
                 raise  # The event loop will catch, log and ignore it.
         else:
+            extra = {'peername': addr}
+            accept = self._accept_connection2(protocol_factory, conn, extra,
+                                              sslcontext, server)
+            self.create_task(accept)
+
+    @coroutine
+    def _accept_connection2(self, protocol_factory, conn, extra,
+                            sslcontext=None, server=None):
+        protocol = None
+        transport = None
+        try:
             protocol = protocol_factory()
+            waiter = futures.Future(loop=self)
             if sslcontext:
-                self._make_ssl_transport(
-                    conn, protocol, sslcontext,
-                    server_side=True, extra={'peername': addr}, server=server)
+                transport = self._make_ssl_transport(
+                    conn, protocol, sslcontext, waiter=waiter,
+                    server_side=True, extra=extra, server=server)
             else:
-                self._make_socket_transport(
-                    conn, protocol , extra={'peername': addr},
+                transport = self._make_socket_transport(
+                    conn, protocol, waiter=waiter, extra=extra,
                     server=server)
-        # It's now up to the protocol to handle the connection.
+
+            try:
+                yield from waiter
+            except:
+                transport.close()
+                raise
+
+            # It's now up to the protocol to handle the connection.
+        except Exception as exc:
+            if self.get_debug():
+                context = {
+                    'message': ('Error on transport creation '
+                                'for incoming connection'),
+                    'exception': exc,
+                }
+                if protocol is not None:
+                    context['protocol'] = protocol
+                if transport is not None:
+                    context['transport'] = transport
+                self.call_exception_handler(context)
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
