@@ -7,6 +7,8 @@ proactor is only implemented on Windows with IOCP.
 __all__ = ['BaseProactorEventLoop']
 
 import socket
+import sys
+import warnings
 
 from . import base_events
 from . import constants
@@ -73,6 +75,15 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         if self._read_fut is not None:
             self._read_fut.cancel()
             self._read_fut = None
+
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if self._sock is not None:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         if isinstance(exc, (BrokenPipeError, ConnectionResetError)):
