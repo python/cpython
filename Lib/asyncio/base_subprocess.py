@@ -117,11 +117,14 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             proc.stderr.close()
         if proc.stdin:
             proc.stdin.close()
+
         try:
             proc.kill()
         except ProcessLookupError:
             pass
         self._returncode = proc.wait()
+
+        self.close()
 
     @coroutine
     def _post_init(self):
