@@ -78,6 +78,11 @@ class Protocol(BaseProtocol):
     State machine of calls:
 
       start -> CM [-> DR*] [-> ER?] -> CL -> end
+
+    * CM: connection_made()
+    * DR: data_received()
+    * ER: eof_received()
+    * CL: connection_lost()
     """
 
     def data_received(self, data):
