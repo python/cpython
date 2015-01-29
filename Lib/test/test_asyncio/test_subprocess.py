@@ -4,6 +4,7 @@ import unittest
 from unittest import mock
 
 import asyncio
+from asyncio import base_subprocess
 from asyncio import subprocess
 from asyncio import test_utils
 try:
@@ -22,6 +23,70 @@ PROGRAM_CAT = [
     ';'.join(('import sys',
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
+
+class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
+    def _start(self, *args, **kwargs):
+        self._proc = mock.Mock()
+        self._proc.stdin = None
+        self._proc.stdout = None
+        self._proc.stderr = None
+
+
+class SubprocessTransportTests(test_utils.TestCase):
+    def setUp(self):
+        self.loop = self.new_test_loop()
+        self.set_event_loop(self.loop)
+
+
+    def create_transport(self, waiter=None):
+        protocol = mock.Mock()
+        protocol.connection_made._is_coroutine = False
+        protocol.process_exited._is_coroutine = False
+        transport = TestSubprocessTransport(
+                        self.loop, protocol, ['test'], False,
+                        None, None, None, 0, waiter=waiter)
+        return (transport, protocol)
+
+    def test_close(self):
+        waiter = asyncio.Future(loop=self.loop)
+        transport, protocol = self.create_transport(waiter)
+        transport._process_exited(0)
+        transport.close()
+
+        # The loop didn't run yet
+        self.assertFalse(protocol.connection_made.called)
+
+        # methods must raise ProcessLookupError if the transport was closed
+        self.assertRaises(ValueError, transport.send_signal, signal.SIGTERM)
+        self.assertRaises(ValueError, transport.terminate)
+        self.assertRaises(ValueError, transport.kill)
+
+        self.loop.run_until_complete(waiter)
+
+    def test_proc_exited(self):
+        waiter = asyncio.Future(loop=self.loop)
+        transport, protocol = self.create_transport(waiter)
+        transport._process_exited(6)
+        self.loop.run_until_complete(waiter)
+
+        self.assertEqual(transport.get_returncode(), 6)
+
+        self.assertTrue(protocol.connection_made.called)
+        self.assertTrue(protocol.process_exited.called)
+        self.assertTrue(protocol.connection_lost.called)
+        self.assertEqual(protocol.connection_lost.call_args[0], (None,))
+
+        self.assertFalse(transport._closed)
+        self.assertIsNone(transport._loop)
+        self.assertIsNone(transport._proc)
+        self.assertIsNone(transport._protocol)
+
+        # methods must raise ProcessLookupError if the process exited
+        self.assertRaises(ProcessLookupError,
+                          transport.send_signal, signal.SIGTERM)
+        self.assertRaises(ProcessLookupError, transport.terminate)
+        self.assertRaises(ProcessLookupError, transport.kill)
+
 
 class SubprocessMixin:
 
