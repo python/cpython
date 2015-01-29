@@ -10,6 +10,8 @@ import collections
 import errno
 import functools
 import socket
+import sys
+import warnings
 try:
     import ssl
 except ImportError:  # pragma: no cover
@@ -499,6 +501,11 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     _buffer_factory = bytearray  # Constructs initial value for self._buffer.
 
+    # Attribute used in the destructor: it must be set even if the constructor
+    # is not called (see _SelectorSslTransport which may start by raising an
+    # exception)
+    _sock = None
+
     def __init__(self, loop, sock, protocol, extra=None, server=None):
         super().__init__(extra, loop)
         self._extra['socket'] = sock
@@ -558,6 +565,15 @@ class _SelectorTransport(transports._FlowControlMixin,
         if not self._buffer:
             self._conn_lost += 1
             self._loop.call_soon(self._call_connection_lost, None)
+
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if self._sock is not None:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self._sock.close()
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.

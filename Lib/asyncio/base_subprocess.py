@@ -1,5 +1,7 @@
 import collections
 import subprocess
+import sys
+import warnings
 
 from . import protocols
 from . import transports
@@ -13,6 +15,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
                  stdin, stdout, stderr, bufsize,
                  extra=None, **kwargs):
         super().__init__(extra)
+        self._closed = False
         self._protocol = protocol
         self._loop = loop
         self._pid = None
@@ -40,7 +43,10 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
                          program, self._pid)
 
     def __repr__(self):
-        info = [self.__class__.__name__, 'pid=%s' % self._pid]
+        info = [self.__class__.__name__]
+        if self._closed:
+            info.append('closed')
+        info.append('pid=%s' % self._pid)
         if self._returncode is not None:
             info.append('returncode=%s' % self._returncode)
 
@@ -70,12 +76,22 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         raise NotImplementedError
 
     def close(self):
+        self._closed = True
         for proto in self._pipes.values():
             if proto is None:
                 continue
             proto.pipe.close()
         if self._returncode is None:
             self.terminate()
+
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if not self._closed:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self.close()
 
     def get_pid(self):
         return self._pid
@@ -104,6 +120,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         Function called when an exception is raised during the creation
         of a subprocess.
         """
+        self._closed = True
         if self._loop.get_debug():
             logger.warning('Exception during subprocess creation, '
                            'kill the subprocess %r',
