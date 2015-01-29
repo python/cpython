@@ -467,7 +467,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     _buffer_factory = bytearray  # Constructs initial value for self._buffer.
 
-    def __init__(self, loop, sock, protocol, extra, server=None):
+    def __init__(self, loop, sock, protocol, extra=None, server=None):
         super().__init__(extra, loop)
         self._extra['socket'] = sock
         self._extra['sockname'] = sock.getsockname()
@@ -479,6 +479,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._sock = sock
         self._sock_fd = sock.fileno()
         self._protocol = protocol
+        self._protocol_connected = True
         self._server = server
         self._buffer = self._buffer_factory()
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
@@ -555,7 +556,8 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def _call_connection_lost(self, exc):
         try:
-            self._protocol.connection_lost(exc)
+            if self._protocol_connected:
+                self._protocol.connection_lost(exc)
         finally:
             self._sock.close()
             self._sock = None
@@ -718,6 +720,8 @@ class _SelectorSslTransport(_SelectorTransport):
         sslsock = sslcontext.wrap_socket(rawsock, **wrap_kwargs)
 
         super().__init__(loop, sslsock, protocol, extra, server)
+        # the protocol connection is only made after the SSL handshake
+        self._protocol_connected = False
 
         self._server_hostname = server_hostname
         self._waiter = waiter
@@ -797,6 +801,7 @@ class _SelectorSslTransport(_SelectorTransport):
         self._read_wants_write = False
         self._write_wants_read = False
         self._loop.add_reader(self._sock_fd, self._read_ready)
+        self._protocol_connected = True
         self._loop.call_soon(self._protocol.connection_made, self)
         # only wake up the waiter when connection_made() has been called
         self._loop.call_soon(self._wakeup_waiter)
@@ -928,8 +933,10 @@ class _SelectorDatagramTransport(_SelectorTransport):
                  waiter=None, extra=None):
         super().__init__(loop, sock, protocol, extra)
         self._address = address
-        self._loop.add_reader(self._sock_fd, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
+        # only start reading when connection_made() has been called
+        self._loop.call_soon(self._loop.add_reader,
+                             self._sock_fd, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
