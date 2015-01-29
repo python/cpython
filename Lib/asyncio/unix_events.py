@@ -188,7 +188,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 yield from waiter
             except:
                 transp.close()
-                yield from transp.wait()
+                yield from transp._wait()
                 raise
 
         return transp

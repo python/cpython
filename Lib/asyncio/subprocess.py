@@ -115,7 +115,7 @@ class Process:
         """Wait until the process exit and return the process return code.
 
         This method is a coroutine."""
-        return (yield from self._transport.wait())
+        return (yield from self._transport._wait())
 
     def send_signal(self, signal):
         self._transport.send_signal(signal)
