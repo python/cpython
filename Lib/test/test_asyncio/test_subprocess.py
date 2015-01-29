@@ -87,6 +87,8 @@ class SubprocessTransportTests(test_utils.TestCase):
         self.assertRaises(ProcessLookupError, transport.terminate)
         self.assertRaises(ProcessLookupError, transport.kill)
 
+        transport.close()
+
 
 class SubprocessMixin:
 
