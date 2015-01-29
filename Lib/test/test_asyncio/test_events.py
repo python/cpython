@@ -1551,9 +1551,10 @@ class SubprocessTestsMixin:
         stdin = transp.get_pipe_transport(0)
         stdin.write(b'Python The Winner')
         self.loop.run_until_complete(proto.got_data[1].wait())
-        transp.close()
+        with test_utils.disable_logger():
+            transp.close()
         self.loop.run_until_complete(proto.completed)
-        self.check_terminated(proto.returncode)
+        self.check_killed(proto.returncode)
         self.assertEqual(b'Python The Winner', proto.data[1])
 
     def test_subprocess_interactive(self):
@@ -1567,21 +1568,20 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
 
-        try:
-            stdin = transp.get_pipe_transport(0)
-            stdin.write(b'Python ')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            proto.got_data[1].clear()
-            self.assertEqual(b'Python ', proto.data[1])
+        stdin = transp.get_pipe_transport(0)
+        stdin.write(b'Python ')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        proto.got_data[1].clear()
+        self.assertEqual(b'Python ', proto.data[1])
 
-            stdin.write(b'The Winner')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            self.assertEqual(b'Python The Winner', proto.data[1])
-        finally:
+        stdin.write(b'The Winner')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        self.assertEqual(b'Python The Winner', proto.data[1])
+
+        with test_utils.disable_logger():
             transp.close()
-
         self.loop.run_until_complete(proto.completed)
-        self.check_terminated(proto.returncode)
+        self.check_killed(proto.returncode)
 
     def test_subprocess_shell(self):
         connect = self.loop.subprocess_shell(
@@ -1739,9 +1739,10 @@ class SubprocessTestsMixin:
             # GetLastError()==ERROR_INVALID_NAME on Windows!?!  (Using
             # WriteFile() we get ERROR_BROKEN_PIPE as expected.)
             self.assertEqual(b'ERR:OSError', proto.data[2])
-        transp.close()
+        with test_utils.disable_logger():
+            transp.close()
         self.loop.run_until_complete(proto.completed)
-        self.check_terminated(proto.returncode)
+        self.check_killed(proto.returncode)
 
     def test_subprocess_wait_no_same_group(self):
         # start the new process in a new session
