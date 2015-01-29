@@ -350,16 +350,13 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        tr = self.read_pipe_transport()
-        self.loop.assert_reader(5, tr._read_ready)
-        test_utils.run_briefly(self.loop)
-        self.protocol.connection_made.assert_called_with(tr)
+        waiter = asyncio.Future(loop=self.loop)
+        tr = self.read_pipe_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
 
-    def test_ctor_with_waiter(self):
-        fut = asyncio.Future(loop=self.loop)
-        tr = self.read_pipe_transport(waiter=fut)
-        test_utils.run_briefly(self.loop)
-        self.assertIsNone(fut.result())
+        self.protocol.connection_made.assert_called_with(tr)
+        self.loop.assert_reader(5, tr._read_ready)
+        self.assertIsNone(waiter.result())
 
     @mock.patch('os.read')
     def test__read_ready(self, m_read):
@@ -502,17 +499,13 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        tr = self.write_pipe_transport()
-        self.loop.assert_reader(5, tr._read_ready)
-        test_utils.run_briefly(self.loop)
-        self.protocol.connection_made.assert_called_with(tr)
+        waiter = asyncio.Future(loop=self.loop)
+        tr = self.write_pipe_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
 
-    def test_ctor_with_waiter(self):
-        fut = asyncio.Future(loop=self.loop)
-        tr = self.write_pipe_transport(waiter=fut)
+        self.protocol.connection_made.assert_called_with(tr)
         self.loop.assert_reader(5, tr._read_ready)
-        test_utils.run_briefly(self.loop)
-        self.assertEqual(None, fut.result())
+        self.assertEqual(None, waiter.result())
 
     def test_can_write_eof(self):
         tr = self.write_pipe_transport()
