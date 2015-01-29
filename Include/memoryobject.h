@@ -45,7 +45,7 @@ typedef struct {
 } _PyManagedBufferObject;
 
 
-/* static storage used for casting between formats */
+/* deprecated, removed in 3.5 */
 #define _Py_MEMORYVIEW_MAX_FORMAT 3 /* must be >= 3 */
 
 /* memoryview state flags */
@@ -62,7 +62,7 @@ typedef struct {
     int flags;                    /* state flags */
     Py_ssize_t exports;           /* number of buffer re-exports */
     Py_buffer view;               /* private copy of the exporter's view */
-    char format[_Py_MEMORYVIEW_MAX_FORMAT]; /* used for casting */
+    char format[_Py_MEMORYVIEW_MAX_FORMAT]; /* deprecated, removed in 3.5 */
     PyObject *weakreflist;
     Py_ssize_t ob_array[1];       /* shape, strides, suboffsets */
 } PyMemoryViewObject;
