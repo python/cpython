@@ -485,6 +485,12 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
+* The undocumented :c:member:`~PyMemoryViewObject.format` member of the
+  (non-public) :c:type:`PyMemoryViewObject` structure has been removed.
+
+  All extensions relying on the relevant parts in ``memoryobject.h``
+  must be rebuilt.
+
 * The :c:type:`PyMemAllocator` structure was renamed to
   :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
 
