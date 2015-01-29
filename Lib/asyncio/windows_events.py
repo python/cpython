@@ -375,7 +375,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             yield from waiter
         except:
             transp.close()
-            yield from transp.wait()
+            yield from transp._wait()
             raise
 
         return transp
