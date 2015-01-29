@@ -623,6 +623,13 @@ fail:
 #endif /* MS_WINDOWS */
 
 
+#ifdef HAVE_LONG_LONG
+#  define _PyLong_FromDev PyLong_FromLongLong
+#else
+#  define _PyLong_FromDev PyLong_FromLong
+#endif
+
+
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
@@ -636,14 +643,7 @@ _Py_Dev_Converter(PyObject *obj, void *p)
         return 0;
     return 1;
 }
-
-#ifdef HAVE_LONG_LONG
-#  define _PyLong_FromDev PyLong_FromLongLong
-#else
-#  define _PyLong_FromDev PyLong_FromLong
-#endif
-
-#endif
+#endif /* HAVE_MKNOD && HAVE_MAKEDEV */
 
 
 #ifdef AT_FDCWD
