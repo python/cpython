@@ -8,6 +8,7 @@ import stat
 import subprocess
 import sys
 import threading
+import warnings
 
 
 from . import base_events
@@ -353,6 +354,15 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         if not self._closing:
             self._close(None)
 
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if self._pipe is not None:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self._pipe.close()
+
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         # should be called by exception handler only
         if (isinstance(exc, OSError) and exc.errno == errno.EIO):
@@ -528,6 +538,15 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         if self._pipe is not None and not self._closing:
             # write_eof is all what we needed to close the write pipe
             self.write_eof()
+
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if self._pipe is not None:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self._pipe.close()
 
     def abort(self):
         self._close(None)
