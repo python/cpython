@@ -592,7 +592,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 fut.exception()
             return
 
-        if fut._state == futures._CANCELLED:
+        if fut.cancelled():
             res = futures.CancelledError()
             if not return_exceptions:
                 outer.set_exception(res)

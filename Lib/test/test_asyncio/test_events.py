@@ -886,13 +886,18 @@ class EventLoopTestsMixin:
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
+
         # no CA loaded
         f_c = self.loop.create_connection(MyProto, host, port,
                                           ssl=sslcontext_client)
-        with test_utils.disable_logger():
-            with self.assertRaisesRegex(ssl.SSLError,
-                                        'certificate verify failed '):
-                self.loop.run_until_complete(f_c)
+        with mock.patch.object(self.loop, 'call_exception_handler'):
+            with test_utils.disable_logger():
+                with self.assertRaisesRegex(ssl.SSLError,
+                                            'certificate verify failed '):
+                    self.loop.run_until_complete(f_c)
+
+            # execute the loop to log the connection error
+            test_utils.run_briefly(self.loop)
 
         # close connection
         self.assertIsNone(proto.transport)
@@ -919,14 +924,19 @@ class EventLoopTestsMixin:
         f_c = self.loop.create_unix_connection(MyProto, path,
                                                ssl=sslcontext_client,
                                                server_hostname='invalid')
-        with test_utils.disable_logger():
-            with self.assertRaisesRegex(ssl.SSLError,
-                                        'certificate verify failed '):
-                self.loop.run_until_complete(f_c)
+        with mock.patch.object(self.loop, 'call_exception_handler'):
+            with test_utils.disable_logger():
+                with self.assertRaisesRegex(ssl.SSLError,
+                                            'certificate verify failed '):
+                    self.loop.run_until_complete(f_c)
+
+            # execute the loop to log the connection error
+            test_utils.run_briefly(self.loop)
 
         # close connection
         self.assertIsNone(proto.transport)
         server.close()
+
 
     def test_legacy_create_unix_server_ssl_verify_failed(self):
         with test_utils.force_legacy_ssl_support():
@@ -949,11 +959,12 @@ class EventLoopTestsMixin:
         # incorrect server_hostname
         f_c = self.loop.create_connection(MyProto, host, port,
                                           ssl=sslcontext_client)
-        with test_utils.disable_logger():
-            with self.assertRaisesRegex(
-                    ssl.CertificateError,
-                    "hostname '127.0.0.1' doesn't match 'localhost'"):
-                self.loop.run_until_complete(f_c)
+        with mock.patch.object(self.loop, 'call_exception_handler'):
+            with test_utils.disable_logger():
+                with self.assertRaisesRegex(
+                        ssl.CertificateError,
+                        "hostname '127.0.0.1' doesn't match 'localhost'"):
+                    self.loop.run_until_complete(f_c)
 
         # close connection
         proto.transport.close()

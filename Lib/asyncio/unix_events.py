@@ -298,8 +298,10 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         _set_nonblocking(self._fileno)
         self._protocol = protocol
         self._closing = False
-        self._loop.add_reader(self._fileno, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
+        # only start reading when connection_made() has been called
+        self._loop.call_soon(self._loop.add_reader,
+                             self._fileno, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
@@ -401,13 +403,16 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._conn_lost = 0
         self._closing = False  # Set when close() or write_eof() called.
 
-        # On AIX, the reader trick only works for sockets.
-        # On other platforms it works for pipes and sockets.
-        # (Exception: OS X 10.4?  Issue #19294.)
-        if is_socket or not sys.platform.startswith("aix"):
-            self._loop.add_reader(self._fileno, self._read_ready)
-
         self._loop.call_soon(self._protocol.connection_made, self)
+
+        # On AIX, the reader trick (to be notified when the read end of the
+        # socket is closed) only works for sockets. On other platforms it
+        # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
+        if is_socket or not sys.platform.startswith("aix"):
+            # only start reading when connection_made() has been called
+            self._loop.call_soon(self._loop.add_reader,
+                                 self._fileno, self._read_ready)
+
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
