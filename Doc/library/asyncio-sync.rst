@@ -4,6 +4,29 @@
 Synchronization primitives
 ==========================
 
+Locks:
+
+* :class:`Lock`
+* :class:`Event`
+* :class:`Condition`
+* :class:`Semaphore`
+* :class:`BoundedSemaphore`
+
+Queues:
+
+* :class:`Queue`
+* :class:`PriorityQueue`
+* :class:`LifoQueue`
+* :class:`JoinableQueue`
+
+asyncio locks and queues API were designed to be close to classes of the
+:mod:`threading` module (:class:`~threading.Lock`, :class:`~threading.Event`,
+:class:`~threading.Condition`, :class:`~threading.Semaphore`,
+:class:`~threading.BoundedSemaphore`) and the :mod:`queue` module
+(:class:`~queue.Queue`, :class:`~queue.PriorityQueue`,
+:class:`~queue.LifoQueue`), but they have no *timeout* parameter. The
+:func:`asyncio.wait_for` function can be used to cancel a task after a timeout.
+
 Locks
 -----
 
