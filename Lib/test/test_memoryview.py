@@ -367,12 +367,12 @@ class AbstractMemoryTests:
         d = memoryview(b)
 
         del b
-    
+
         self.assertEqual(c[0], 256)
         self.assertEqual(d[0], 256)
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
-    
+
         _ = m.cast('I')
         self.assertEqual(c[0], 256)
         self.assertEqual(d[0], 256)
