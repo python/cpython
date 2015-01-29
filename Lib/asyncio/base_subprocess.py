@@ -208,7 +208,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
                 waiter.set_result(returncode)
         self._exit_waiters = None
 
-    def wait(self):
+    def _wait(self):
         """Wait until the process exit and return the process return code.
 
         This method is a coroutine."""
