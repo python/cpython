@@ -40,6 +40,43 @@ Examples of effects of the debug mode:
    <asyncio-logger>`.
 
 
+Cancellation
+------------
+
+Cancellation of tasks is not common in classic programming. In asynchronous
+programming, not only it is something common, but you have to prepare your
+code to handle it.
+
+Futures and tasks can be cancelled explicitly with their :meth:`Future.cancel`
+method. The :func:`wait_for` function cancels the waited task when the timeout
+occurs. There are many other cases where a task can be cancelled indirectly.
+
+Don't call :meth:`~Future.set_result` or :meth:`~Future.set_exception` method
+of :class:`Future` if the future is cancelled: it would fail with an exception.
+For example, write::
+
+    if not fut.cancelled():
+        fut.set_result('done')
+
+Don't schedule directly a call to the :meth:`~Future.set_result` or the
+:meth:`~Future.set_exception` method of a future with
+:meth:`BaseEventLoop.call_soon`: the future can be cancelled before its method
+is called.
+
+If you wait for a future, you should check early if the future was cancelled to
+avoid useless operations. Example::
+
+    @coroutine
+    def slow_operation(fut):
+        if fut.cancelled():
+            return
+        # ... slow computation ...
+        yield from fut
+        # ...
+
+The :func:`shield` function can also be used to ignore cancellation.
+
+
 .. _asyncio-multithreading:
 
 Concurrency and multithreading
