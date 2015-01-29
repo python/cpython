@@ -361,18 +361,20 @@ class AbstractMemoryTests:
             self.assertEqual(list(reversed(m)), list(m[::-1]))
 
     def test_issue22668(self):
-        m = memoryview(bytes(range(8)))
+        a = array.array('H', [256, 256, 256, 256])
+        x = memoryview(a)
+        m = x.cast('B')
         b = m.cast('H')
         c = b[0:2]
         d = memoryview(b)
 
         del b
-    
+ 
         self.assertEqual(c[0], 256)
         self.assertEqual(d[0], 256)
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
-    
+ 
         _ = m.cast('I')
         self.assertEqual(c[0], 256)
         self.assertEqual(d[0], 256)
