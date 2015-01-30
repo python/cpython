@@ -372,3 +372,14 @@ traceback where the task was created. Example of log in debug mode::
 
    :ref:`Detect coroutine objects never scheduled <asyncio-coroutine-not-scheduled>`.
 
+
+Close transports
+----------------
+
+When a transport is no more needed, call its ``close()`` method to release
+resources.
+
+If a transport (or an event loop) is not closed explicitly, a
+:exc:`ResourceWarning` warning will be emitted in its destructor. The
+:exc:`ResourceWarning` warnings are hidden by default: use the ``-Wd`` command
+line option of Python to show them.
