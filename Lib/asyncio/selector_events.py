@@ -10,6 +10,8 @@ import collections
 import errno
 import functools
 import socket
+import sys
+import warnings
 try:
     import ssl
 except ImportError:  # pragma: no cover
@@ -22,6 +24,7 @@ from . import futures
 from . import selectors
 from . import transports
 from . import sslproto
+from .coroutines import coroutine
 from .log import logger
 
 
@@ -181,16 +184,47 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             else:
                 raise  # The event loop will catch, log and ignore it.
         else:
+            extra = {'peername': addr}
+            accept = self._accept_connection2(protocol_factory, conn, extra,
+                                              sslcontext, server)
+            self.create_task(accept)
+
+    @coroutine
+    def _accept_connection2(self, protocol_factory, conn, extra,
+                            sslcontext=None, server=None):
+        protocol = None
+        transport = None
+        try:
             protocol = protocol_factory()
+            waiter = futures.Future(loop=self)
             if sslcontext:
-                self._make_ssl_transport(
-                    conn, protocol, sslcontext,
-                    server_side=True, extra={'peername': addr}, server=server)
+                transport = self._make_ssl_transport(
+                    conn, protocol, sslcontext, waiter=waiter,
+                    server_side=True, extra=extra, server=server)
             else:
-                self._make_socket_transport(
-                    conn, protocol , extra={'peername': addr},
+                transport = self._make_socket_transport(
+                    conn, protocol, waiter=waiter, extra=extra,
                     server=server)
-        # It's now up to the protocol to handle the connection.
+
+            try:
+                yield from waiter
+            except:
+                transport.close()
+                raise
+
+            # It's now up to the protocol to handle the connection.
+        except Exception as exc:
+            if self.get_debug():
+                context = {
+                    'message': ('Error on transport creation '
+                                'for incoming connection'),
+                    'exception': exc,
+                }
+                if protocol is not None:
+                    context['protocol'] = protocol
+                if transport is not None:
+                    context['transport'] = transport
+                self.call_exception_handler(context)
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
@@ -467,7 +501,12 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     _buffer_factory = bytearray  # Constructs initial value for self._buffer.
 
-    def __init__(self, loop, sock, protocol, extra, server=None):
+    # Attribute used in the destructor: it must be set even if the constructor
+    # is not called (see _SelectorSslTransport which may start by raising an
+    # exception)
+    _sock = None
+
+    def __init__(self, loop, sock, protocol, extra=None, server=None):
         super().__init__(extra, loop)
         self._extra['socket'] = sock
         self._extra['sockname'] = sock.getsockname()
@@ -479,6 +518,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._sock = sock
         self._sock_fd = sock.fileno()
         self._protocol = protocol
+        self._protocol_connected = True
         self._server = server
         self._buffer = self._buffer_factory()
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
@@ -526,6 +566,15 @@ class _SelectorTransport(transports._FlowControlMixin,
             self._conn_lost += 1
             self._loop.call_soon(self._call_connection_lost, None)
 
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if self._sock is not None:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self._sock.close()
+
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.
         if isinstance(exc, (BrokenPipeError,
@@ -555,7 +604,8 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def _call_connection_lost(self, exc):
         try:
-            self._protocol.connection_lost(exc)
+            if self._protocol_connected:
+                self._protocol.connection_lost(exc)
         finally:
             self._sock.close()
             self._sock = None
@@ -718,6 +768,8 @@ class _SelectorSslTransport(_SelectorTransport):
         sslsock = sslcontext.wrap_socket(rawsock, **wrap_kwargs)
 
         super().__init__(loop, sslsock, protocol, extra, server)
+        # the protocol connection is only made after the SSL handshake
+        self._protocol_connected = False
 
         self._server_hostname = server_hostname
         self._waiter = waiter
@@ -797,6 +849,7 @@ class _SelectorSslTransport(_SelectorTransport):
         self._read_wants_write = False
         self._write_wants_read = False
         self._loop.add_reader(self._sock_fd, self._read_ready)
+        self._protocol_connected = True
         self._loop.call_soon(self._protocol.connection_made, self)
         # only wake up the waiter when connection_made() has been called
         self._loop.call_soon(self._wakeup_waiter)
@@ -928,8 +981,10 @@ class _SelectorDatagramTransport(_SelectorTransport):
                  waiter=None, extra=None):
         super().__init__(loop, sock, protocol, extra)
         self._address = address
-        self._loop.add_reader(self._sock_fd, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
+        # only start reading when connection_made() has been called
+        self._loop.call_soon(self._loop.add_reader,
+                             self._sock_fd, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)

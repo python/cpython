@@ -22,7 +22,9 @@ class SslProtoHandshakeTests(test_utils.TestCase):
     def ssl_protocol(self, waiter=None):
         sslcontext = test_utils.dummy_ssl_context()
         app_proto = asyncio.Protocol()
-        return sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter)
+        proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter)
+        self.addCleanup(proto._app_transport.close)
+        return proto
 
     def connection_made(self, ssl_proto, do_handshake=None):
         transport = mock.Mock()
@@ -55,9 +57,6 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
         with test_utils.disable_logger():
             self.loop.run_until_complete(handshake_fut)
-
-        # Close the transport
-        ssl_proto._app_transport.close()
 
     def test_eof_received_waiter(self):
         waiter = asyncio.Future(loop=self.loop)

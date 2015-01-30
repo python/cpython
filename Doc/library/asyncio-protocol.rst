@@ -374,6 +374,14 @@ The following callbacks are called on :class:`Protocol` instances:
 a connection.  However, :meth:`eof_received` is called at most once
 and, if called, :meth:`data_received` won't be called after it.
 
+State machine:
+
+    start -> :meth:`~BaseProtocol.connection_made`
+    [-> :meth:`~Protocol.data_received` \*]
+    [-> :meth:`~Protocol.eof_received` ?]
+    -> :meth:`~BaseProtocol.connection_lost` -> end
+
+
 Datagram protocols
 ------------------
 
