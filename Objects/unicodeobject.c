@@ -893,7 +893,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     }
   expand:
     if (abuffersize > 20) {
-        abuffer = PyObject_Malloc(abuffersize);
+        /* add 1 for sprintf's trailing null byte */
+        abuffer = PyObject_Malloc(abuffersize + 1);
         if (!abuffer) {
             PyErr_NoMemory();
             goto fail;
