@@ -376,6 +376,53 @@ test_broken_memoryview(PyObject* self)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_to_contiguous(PyObject* self, PyObject *noargs)
+{
+    int data[9] = {0, -1, 1, -1, 2, -1,  3, -1, 4};
+    int result[5];
+    Py_ssize_t itemsize = sizeof(int);
+    Py_ssize_t shape = 5;
+    Py_ssize_t strides = 2 * itemsize;
+    Py_buffer view = {
+        data,
+        NULL,
+        5 * itemsize,
+        itemsize,
+        1,
+        1,
+        NULL,
+        &shape,
+        &strides,
+        NULL,
+        {0, 0},
+        NULL
+    };
+    int i;
+
+    PyBuffer_ToContiguous(result, &view, view.len, 'C');
+    for (i = 0; i < 5; i++) {
+        if (result[i] != i) {
+            PyErr_SetString(TestError,
+                "test_to_contiguous: incorrect result");
+            return NULL;
+        }
+    }
+
+    view.buf = &data[8];
+    view.strides[0] = -2 * itemsize;
+
+    PyBuffer_ToContiguous(result, &view, view.len, 'C');
+    for (i = 0; i < 5; i++) {
+        if (result[i] != 4-i) {
+            PyErr_SetString(TestError,
+                "test_to_contiguous: incorrect result");
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
+}
 
 /* Tests of PyLong_{As, From}{Unsigned,}Long(), and (#ifdef HAVE_LONG_LONG)
    PyLong_{As, From}{Unsigned,}LongLong().
@@ -1785,6 +1832,7 @@ static PyMethodDef TestMethods[] = {
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"test_lazy_hash_inheritance",      (PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
     {"test_broken_memoryview",          (PyCFunction)test_broken_memoryview,METH_NOARGS},
+    {"test_to_contiguous",      (PyCFunction)test_to_contiguous, METH_NOARGS},
     {"test_long_api",           (PyCFunction)test_long_api,      METH_NOARGS},
     {"test_long_and_overflow", (PyCFunction)test_long_and_overflow,
      METH_NOARGS},
