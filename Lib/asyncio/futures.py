@@ -195,9 +195,9 @@ class Future:
         info = self._repr_info()
         return '<%s %s>' % (self.__class__.__name__, ' '.join(info))
 
-    # On Python 3.3 or older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks to
-    # the PEP 442.
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
     if _PY34:
         def __del__(self):
             if not self._log_traceback:

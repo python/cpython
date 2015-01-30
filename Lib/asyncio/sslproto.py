@@ -1,4 +1,6 @@
 import collections
+import sys
+import warnings
 try:
     import ssl
 except ImportError:  # pragma: no cover
@@ -295,6 +297,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         self._loop = loop
         self._ssl_protocol = ssl_protocol
         self._app_protocol = app_protocol
+        self._closed = False
 
     def get_extra_info(self, name, default=None):
         """Get optional transport information."""
@@ -308,7 +311,17 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         protocol's connection_lost() method will (eventually) called
         with None as its argument.
         """
+        self._closed = True
         self._ssl_protocol._start_shutdown()
+
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if not self._closed:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self.close()
 
     def pause_reading(self):
         """Pause the receiving end.
