@@ -47,22 +47,6 @@ class SubprocessTransportTests(test_utils.TestCase):
                         None, None, None, 0, waiter=waiter)
         return (transport, protocol)
 
-    def test_close(self):
-        waiter = asyncio.Future(loop=self.loop)
-        transport, protocol = self.create_transport(waiter)
-        transport._process_exited(0)
-        transport.close()
-
-        # The loop didn't run yet
-        self.assertFalse(protocol.connection_made.called)
-
-        # methods must raise ProcessLookupError if the transport was closed
-        self.assertRaises(ValueError, transport.send_signal, signal.SIGTERM)
-        self.assertRaises(ValueError, transport.terminate)
-        self.assertRaises(ValueError, transport.kill)
-
-        self.loop.run_until_complete(waiter)
-
     def test_proc_exited(self):
         waiter = asyncio.Future(loop=self.loop)
         transport, protocol = self.create_transport(waiter)
