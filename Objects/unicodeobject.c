@@ -738,6 +738,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
              f++;
              while (*f && *f != '%' && !isalpha((unsigned)*f))
                  f++;
+             if (!*f)
+                 break;
              if (*f == 's' || *f=='S' || *f=='R')
                  ++callcount;
          }
