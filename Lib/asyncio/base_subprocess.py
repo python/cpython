@@ -84,6 +84,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         raise NotImplementedError
 
     def close(self):
+        if self._closed:
+            return
         self._closed = True
 
         for proto in self._pipes.values():
@@ -100,8 +102,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             except ProcessLookupError:
                 pass
 
-            # Don't clear the _proc reference yet because _post_init() may
-            # still run
+            # Don't clear the _proc reference yet: _post_init() may still run
 
     # On Python 3.3 and older, objects with a destructor part of a reference
     # cycle are never destroyed. It's not more the case on Python 3.4 thanks
@@ -125,8 +126,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             return None
 
     def _check_proc(self):
-        if self._closed:
-            raise ValueError("operation on closed transport")
         if self._proc is None:
             raise ProcessLookupError()
 
