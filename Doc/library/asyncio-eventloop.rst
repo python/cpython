@@ -641,7 +641,7 @@ Server
    Server listening on sockets.
 
    Object created by the :meth:`BaseEventLoop.create_server` method and the
-   :func:`start_server` function. Don't instanciate the class directly.
+   :func:`start_server` function. Don't instantiate the class directly.
 
    .. method:: close()
 
