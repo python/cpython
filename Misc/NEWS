@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22986: Allow changing an object's __class__ between a dynamic type and
+  static type in some cases.
+
 - Issue #15859: PyUnicode_EncodeFSDefault(), PyUnicode_EncodeMBCS() and
   PyUnicode_EncodeCodePage() now raise an exception if the object is not an
   Unicode object. For PyUnicode_EncodeFSDefault(), it was already the case on
