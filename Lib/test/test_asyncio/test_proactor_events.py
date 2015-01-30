@@ -499,8 +499,12 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.proactor.accept.assert_called_with(self.sock)
 
     def test_socketpair(self):
+        class EventLoop(BaseProactorEventLoop):
+            # override the destructor to not log a ResourceWarning
+            def __del__(self):
+                pass
         self.assertRaises(
-            NotImplementedError, BaseProactorEventLoop, self.proactor)
+            NotImplementedError, EventLoop, self.proactor)
 
     def test_make_socket_transport(self):
         tr = self.loop._make_socket_transport(self.sock, asyncio.Protocol())

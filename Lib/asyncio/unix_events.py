@@ -8,6 +8,7 @@ import stat
 import subprocess
 import sys
 import threading
+import warnings
 
 
 from . import base_events
@@ -15,6 +16,7 @@ from . import base_subprocess
 from . import constants
 from . import coroutines
 from . import events
+from . import futures
 from . import selector_events
 from . import selectors
 from . import transports
@@ -174,16 +176,20 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                    stdin, stdout, stderr, bufsize,
                                    extra=None, **kwargs):
         with events.get_child_watcher() as watcher:
+            waiter = futures.Future(loop=self)
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
                                               stdin, stdout, stderr, bufsize,
-                                              extra=extra, **kwargs)
-            try:
-                yield from transp._post_init()
-            except:
-                transp.close()
-                raise
+                                              waiter=waiter, extra=extra,
+                                              **kwargs)
+
             watcher.add_child_handler(transp.get_pid(),
                                       self._child_watcher_callback, transp)
+            try:
+                yield from waiter
+            except:
+                transp.close()
+                yield from transp._wait()
+                raise
 
         return transp
 
@@ -298,8 +304,10 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         _set_nonblocking(self._fileno)
         self._protocol = protocol
         self._closing = False
-        self._loop.add_reader(self._fileno, self._read_ready)
         self._loop.call_soon(self._protocol.connection_made, self)
+        # only start reading when connection_made() has been called
+        self._loop.call_soon(self._loop.add_reader,
+                             self._fileno, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
@@ -351,6 +359,15 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         if not self._closing:
             self._close(None)
 
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if self._pipe is not None:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self._pipe.close()
+
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         # should be called by exception handler only
         if (isinstance(exc, OSError) and exc.errno == errno.EIO):
@@ -401,13 +418,16 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._conn_lost = 0
         self._closing = False  # Set when close() or write_eof() called.
 
-        # On AIX, the reader trick only works for sockets.
-        # On other platforms it works for pipes and sockets.
-        # (Exception: OS X 10.4?  Issue #19294.)
-        if is_socket or not sys.platform.startswith("aix"):
-            self._loop.add_reader(self._fileno, self._read_ready)
-
         self._loop.call_soon(self._protocol.connection_made, self)
+
+        # On AIX, the reader trick (to be notified when the read end of the
+        # socket is closed) only works for sockets. On other platforms it
+        # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
+        if is_socket or not sys.platform.startswith("aix"):
+            # only start reading when connection_made() has been called
+            self._loop.call_soon(self._loop.add_reader,
+                                 self._fileno, self._read_ready)
+
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(waiter._set_result_unless_cancelled, None)
@@ -523,6 +543,15 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         if self._pipe is not None and not self._closing:
             # write_eof is all what we needed to close the write pipe
             self.write_eof()
+
+    # On Python 3.3 and older, objects with a destructor part of a reference
+    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
+    # to the PEP 442.
+    if sys.version_info >= (3, 4):
+        def __del__(self):
+            if self._pipe is not None:
+                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                self._pipe.close()
 
     def abort(self):
         self._close(None)
@@ -750,7 +779,7 @@ class SafeChildWatcher(BaseChildWatcher):
         pass
 
     def add_child_handler(self, pid, callback, *args):
-        self._callbacks[pid] = callback, args
+        self._callbacks[pid] = (callback, args)
 
         # Prevent a race condition in case the child is already terminated.
         self._do_waitpid(pid)

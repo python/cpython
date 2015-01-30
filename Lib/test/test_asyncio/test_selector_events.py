@@ -1427,7 +1427,7 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.assertFalse(tr.can_write_eof())
         self.assertRaises(NotImplementedError, tr.write_eof)
 
-    def test_close(self):
+    def check_close(self):
         tr = self._make_one()
         tr.close()
 
@@ -1438,6 +1438,19 @@ class SelectorSslTransportTests(test_utils.TestCase):
         tr.close()
         self.assertEqual(tr._conn_lost, 1)
         self.assertEqual(1, self.loop.remove_reader_count[1])
+
+        test_utils.run_briefly(self.loop)
+
+    def test_close(self):
+        self.check_close()
+        self.assertTrue(self.protocol.connection_made.called)
+        self.assertTrue(self.protocol.connection_lost.called)
+
+    def test_close_not_connected(self):
+        self.sslsock.do_handshake.side_effect = ssl.SSLWantReadError
+        self.check_close()
+        self.assertFalse(self.protocol.connection_made.called)
+        self.assertFalse(self.protocol.connection_lost.called)
 
     @unittest.skipIf(ssl is None, 'No SSL support')
     def test_server_hostname(self):

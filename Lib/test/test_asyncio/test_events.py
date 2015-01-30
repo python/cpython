@@ -886,13 +886,18 @@ class EventLoopTestsMixin:
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
+
         # no CA loaded
         f_c = self.loop.create_connection(MyProto, host, port,
                                           ssl=sslcontext_client)
-        with test_utils.disable_logger():
-            with self.assertRaisesRegex(ssl.SSLError,
-                                        'certificate verify failed '):
-                self.loop.run_until_complete(f_c)
+        with mock.patch.object(self.loop, 'call_exception_handler'):
+            with test_utils.disable_logger():
+                with self.assertRaisesRegex(ssl.SSLError,
+                                            'certificate verify failed '):
+                    self.loop.run_until_complete(f_c)
+
+            # execute the loop to log the connection error
+            test_utils.run_briefly(self.loop)
 
         # close connection
         self.assertIsNone(proto.transport)
@@ -919,14 +924,19 @@ class EventLoopTestsMixin:
         f_c = self.loop.create_unix_connection(MyProto, path,
                                                ssl=sslcontext_client,
                                                server_hostname='invalid')
-        with test_utils.disable_logger():
-            with self.assertRaisesRegex(ssl.SSLError,
-                                        'certificate verify failed '):
-                self.loop.run_until_complete(f_c)
+        with mock.patch.object(self.loop, 'call_exception_handler'):
+            with test_utils.disable_logger():
+                with self.assertRaisesRegex(ssl.SSLError,
+                                            'certificate verify failed '):
+                    self.loop.run_until_complete(f_c)
+
+            # execute the loop to log the connection error
+            test_utils.run_briefly(self.loop)
 
         # close connection
         self.assertIsNone(proto.transport)
         server.close()
+
 
     def test_legacy_create_unix_server_ssl_verify_failed(self):
         with test_utils.force_legacy_ssl_support():
@@ -949,11 +959,12 @@ class EventLoopTestsMixin:
         # incorrect server_hostname
         f_c = self.loop.create_connection(MyProto, host, port,
                                           ssl=sslcontext_client)
-        with test_utils.disable_logger():
-            with self.assertRaisesRegex(
-                    ssl.CertificateError,
-                    "hostname '127.0.0.1' doesn't match 'localhost'"):
-                self.loop.run_until_complete(f_c)
+        with mock.patch.object(self.loop, 'call_exception_handler'):
+            with test_utils.disable_logger():
+                with self.assertRaisesRegex(
+                        ssl.CertificateError,
+                        "hostname '127.0.0.1' doesn't match 'localhost'"):
+                    self.loop.run_until_complete(f_c)
 
         # close connection
         proto.transport.close()
@@ -1540,9 +1551,10 @@ class SubprocessTestsMixin:
         stdin = transp.get_pipe_transport(0)
         stdin.write(b'Python The Winner')
         self.loop.run_until_complete(proto.got_data[1].wait())
-        transp.close()
+        with test_utils.disable_logger():
+            transp.close()
         self.loop.run_until_complete(proto.completed)
-        self.check_terminated(proto.returncode)
+        self.check_killed(proto.returncode)
         self.assertEqual(b'Python The Winner', proto.data[1])
 
     def test_subprocess_interactive(self):
@@ -1556,21 +1568,20 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.connected)
         self.assertEqual('CONNECTED', proto.state)
 
-        try:
-            stdin = transp.get_pipe_transport(0)
-            stdin.write(b'Python ')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            proto.got_data[1].clear()
-            self.assertEqual(b'Python ', proto.data[1])
+        stdin = transp.get_pipe_transport(0)
+        stdin.write(b'Python ')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        proto.got_data[1].clear()
+        self.assertEqual(b'Python ', proto.data[1])
 
-            stdin.write(b'The Winner')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            self.assertEqual(b'Python The Winner', proto.data[1])
-        finally:
+        stdin.write(b'The Winner')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        self.assertEqual(b'Python The Winner', proto.data[1])
+
+        with test_utils.disable_logger():
             transp.close()
-
         self.loop.run_until_complete(proto.completed)
-        self.check_terminated(proto.returncode)
+        self.check_killed(proto.returncode)
 
     def test_subprocess_shell(self):
         connect = self.loop.subprocess_shell(
@@ -1728,9 +1739,10 @@ class SubprocessTestsMixin:
             # GetLastError()==ERROR_INVALID_NAME on Windows!?!  (Using
             # WriteFile() we get ERROR_BROKEN_PIPE as expected.)
             self.assertEqual(b'ERR:OSError', proto.data[2])
-        transp.close()
+        with test_utils.disable_logger():
+            transp.close()
         self.loop.run_until_complete(proto.completed)
-        self.check_terminated(proto.returncode)
+        self.check_killed(proto.returncode)
 
     def test_subprocess_wait_no_same_group(self):
         # start the new process in a new session

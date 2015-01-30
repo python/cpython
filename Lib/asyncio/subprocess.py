@@ -25,8 +25,6 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         super().__init__(loop=loop)
         self._limit = limit
         self.stdin = self.stdout = self.stderr = None
-        self.waiter = futures.Future(loop=loop)
-        self._waiters = collections.deque()
         self._transport = None
 
     def __repr__(self):
@@ -61,9 +59,6 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                               reader=None,
                                               loop=self._loop)
 
-        if not self.waiter.cancelled():
-            self.waiter.set_result(None)
-
     def pipe_data_received(self, fd, data):
         if fd == 1:
             reader = self.stdout
@@ -94,15 +89,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                 reader.set_exception(exc)
 
     def process_exited(self):
-        returncode = self._transport.get_returncode()
         self._transport.close()
         self._transport = None
-
-        # wake up futures waiting for wait()
-        while self._waiters:
-            waiter = self._waiters.popleft()
-            if not waiter.cancelled():
-                waiter.set_result(returncode)
 
 
 class Process:
@@ -124,30 +112,18 @@ class Process:
 
     @coroutine
     def wait(self):
-        """Wait until the process exit and return the process return code."""
-        returncode = self._transport.get_returncode()
-        if returncode is not None:
-            return returncode
+        """Wait until the process exit and return the process return code.
 
-        waiter = futures.Future(loop=self._loop)
-        self._protocol._waiters.append(waiter)
-        yield from waiter
-        return waiter.result()
-
-    def _check_alive(self):
-        if self._transport.get_returncode() is not None:
-            raise ProcessLookupError()
+        This method is a coroutine."""
+        return (yield from self._transport._wait())
 
     def send_signal(self, signal):
-        self._check_alive()
         self._transport.send_signal(signal)
 
     def terminate(self):
-        self._check_alive()
         self._transport.terminate()
 
     def kill(self):
-        self._check_alive()
         self._transport.kill()
 
     @coroutine
@@ -221,11 +197,6 @@ def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
                                             protocol_factory,
                                             cmd, stdin=stdin, stdout=stdout,
                                             stderr=stderr, **kwds)
-    try:
-        yield from protocol.waiter
-    except:
-        transport._kill_wait()
-        raise
     return Process(transport, protocol, loop)
 
 @coroutine
@@ -241,9 +212,4 @@ def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                                             program, *args,
                                             stdin=stdin, stdout=stdout,
                                             stderr=stderr, **kwds)
-    try:
-        yield from protocol.waiter
-    except:
-        transport._kill_wait()
-        raise
     return Process(transport, protocol, loop)

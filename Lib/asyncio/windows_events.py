@@ -366,13 +366,16 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     def _make_subprocess_transport(self, protocol, args, shell,
                                    stdin, stdout, stderr, bufsize,
                                    extra=None, **kwargs):
+        waiter = futures.Future(loop=self)
         transp = _WindowsSubprocessTransport(self, protocol, args, shell,
                                              stdin, stdout, stderr, bufsize,
-                                             extra=extra, **kwargs)
+                                             waiter=waiter, extra=extra,
+                                             **kwargs)
         try:
-            yield from transp._post_init()
+            yield from waiter
         except:
             transp.close()
+            yield from transp._wait()
             raise
 
         return transp
