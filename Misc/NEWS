@@ -86,7 +86,8 @@ Tools/Demos
 Tests
 -----
 
-- Issue #19949: The test_xpickle test now 
+- Issue #19949: The test_xpickle test now tests compatibility with installed
+  Python 2.7 and reports skipped tests.  Based on patch by Zachary Ware.
 
 - Issue #11578: Backported test for the timeit module.
 
