@@ -56,11 +56,11 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *entry;
     size_t perturb = hash;
     size_t mask = so->mask;
-    size_t i = (size_t)hash; /* Unsigned for defined overflow behavior. */
+    size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
     size_t j;
     int cmp;
 
-    entry = &table[i & mask];
+    entry = &table[i];
     if (entry->key == NULL)
         return entry;
 
@@ -116,9 +116,9 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         }
 
         perturb >>= PERTURB_SHIFT;
-        i = i * 5 + 1 + perturb;
+        i = (i * 5 + 1 + perturb) & mask;
 
-        entry = &table[i & mask];
+        entry = &table[i];
         if (entry->key == NULL)
             goto found_null;
     }
