@@ -226,6 +226,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #23353: Fix the exception handling of generators in
+  PyEval_EvalFrameEx(). At entry, save or swap the exception state even if
+  PyEval_EvalFrameEx() is called with throwflag=0. At exit, the exception state
+  is now always restored or swapped, not only if why is WHY_YIELD or
+  WHY_RETURN. Patch co-written with Antoine Pitrou.
+
 - Issue #14099: Restored support of writing ZIP files to tellable but
   non-seekable streams.
 
