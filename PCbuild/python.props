@@ -34,7 +34,7 @@
     <sqlite3Dir>$(ExternalsDir)sqlite-3.8.3.1\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.0.5\</lzmaDir>
-    <opensslDir>$(ExternalsDir)openssl-1.0.1j\</opensslDir>
+    <opensslDir>$(ExternalsDir)openssl-1.0.1l\</opensslDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     
     <!-- Suffix for all binaries when building for debug -->
