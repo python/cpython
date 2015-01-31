@@ -123,6 +123,25 @@ class DebuggerTests(unittest.TestCase):
         # Generate a list of commands in gdb's language:
         commands = ['set breakpoint pending yes',
                     'break %s' % breakpoint,
+
+                    # GDB as of 7.4 (?) onwards can distinguish between the
+                    # value of a variable at entry vs current value:
+                    #   http://sourceware.org/gdb/onlinedocs/gdb/Variables.html
+                    # which leads to the selftests failing with errors like this:
+                    #   AssertionError: 'v@entry=()' != '()'
+                    # Disable this:
+                    'set print entry-values no',
+
+                    # The tests assume that the first frame of printed
+                    #  backtrace will not contain program counter,
+                    #  that is however not guaranteed by gdb
+                    #  therefore we need to use 'set print address off' to
+                    #  make sure the counter is not there. For example:
+                    # #0 in PyObject_Print ...
+                    #  is assumed, but sometimes this can be e.g.
+                    # #0 0x00003fffb7dd1798 in PyObject_Print ...
+                    'set print address off',
+
                     'run']
         if cmds_after_breakpoint:
             commands += cmds_after_breakpoint
