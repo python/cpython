@@ -158,8 +158,10 @@ class AbstractCompatTests(AbstractPickleTests):
 
     # This is a cut-down version of pickletester's test_unicode. Backwards
     # compatibility was explicitly broken in r67934 to fix a bug.
-    @unittest.skipUnless(test_support.have_unicode, 'no unicode support')
     def test_unicode(self):
+        if not test_support.have_unicode:
+            # Python 2.5 has no unittest.skipUnless
+            self.skipTest('no unicode support')
         endcases = [u'', u'<\\u>', u'<\\%c>' % 0x1234, u'<\n>', u'<\\>']
         for proto in pickletester.protocols:
             for u in endcases:
@@ -218,7 +220,7 @@ class CPicklePython27Compat(AbstractCompatTests):
     python = "python2.7"
     error = cPickle.BadPickleGet
 
-class PicklePython27Compat(CPicklePython26Compat):
+class PicklePython27Compat(CPicklePython27Compat):
 
     module = pickle
     error = KeyError
