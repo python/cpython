@@ -223,8 +223,6 @@ def cmp_to_key(mycmp):
             return mycmp(self.obj, other.obj) <= 0
         def __ge__(self, other):
             return mycmp(self.obj, other.obj) >= 0
-        def __ne__(self, other):
-            return mycmp(self.obj, other.obj) != 0
         __hash__ = None
     return K
 

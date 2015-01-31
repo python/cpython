@@ -1305,8 +1305,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 return isinstance(other, LargerThanAnything)
             def __eq__(self, other):
                 return isinstance(other, LargerThanAnything)
-            def __ne__(self, other):
-                return not isinstance(other, LargerThanAnything)
             def __gt__(self, other):
                 return not isinstance(other, LargerThanAnything)
             def __ge__(self, other):

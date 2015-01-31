@@ -545,9 +545,6 @@ class NamedNodeMap(object):
     def __lt__(self, other):
         return self._cmp(other) < 0
 
-    def __ne__(self, other):
-        return self._cmp(other) != 0
-
     def __getitem__(self, attname_or_tuple):
         if isinstance(attname_or_tuple, tuple):
             return self._attrsNS[attname_or_tuple]

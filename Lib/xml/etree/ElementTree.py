@@ -532,10 +532,6 @@ class QName:
         if isinstance(other, QName):
             return self.text == other.text
         return self.text == other
-    def __ne__(self, other):
-        if isinstance(other, QName):
-            return self.text != other.text
-        return self.text != other
 
 # --------------------------------------------------------------------
 

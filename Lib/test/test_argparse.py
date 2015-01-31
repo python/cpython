@@ -69,9 +69,6 @@ class NS(object):
     def __eq__(self, other):
         return vars(self) == vars(other)
 
-    def __ne__(self, other):
-        return not (self == other)
-
 
 class ArgumentParserError(Exception):
 
