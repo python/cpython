@@ -2066,7 +2066,7 @@ order (MRO) for bases """
                                  "attr on a property" % attr)
 
         class D(object):
-            __getitem__ = property(lambda s: 1/0)
+            __getitem__ = property(lambda s: 1.0/0.0)
 
         d = D()
         try:

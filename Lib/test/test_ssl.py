@@ -2954,7 +2954,7 @@ else:
             server_context, other_context, client_context = self.sni_contexts()
 
             def cb_raising(ssl_sock, server_name, initial_context):
-                1/0
+                1.0/0.0
             server_context.set_servername_callback(cb_raising)
 
             with self.assertRaises(ssl.SSLError) as cm, \

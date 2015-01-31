@@ -197,7 +197,7 @@ class TestTimeit(unittest.TestCase):
 
     def test_print_exc(self):
         s = StringIO()
-        t = timeit.Timer("1/0")
+        t = timeit.Timer("1.0/0.0")
         try:
             t.timeit()
         except:

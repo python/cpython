@@ -797,7 +797,7 @@ class ThreadingExceptionTests(BaseTestCase):
                 running = True
                 while running:
                     time.sleep(0.01)
-                1/0
+                1.0/0.0
             t = threading.Thread(target=run)
             t.start()
             while not running:
@@ -824,7 +824,7 @@ class ThreadingExceptionTests(BaseTestCase):
                 running = True
                 while running:
                     time.sleep(0.01)
-                1/0
+                1.0/0.0
             t = threading.Thread(target=run)
             t.start()
             while not running:
@@ -852,7 +852,7 @@ class ThreadingExceptionTests(BaseTestCase):
                 running = True
                 while running:
                     time.sleep(0.01)
-                1/0
+                1.0/0.0
             sys.stderr = None
             t = threading.Thread(target=run)
             t.start()
