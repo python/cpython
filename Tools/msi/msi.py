@@ -132,34 +132,32 @@ docfile = 'python%s%s%s.chm' % (major, minor, docfile)
 
 # Build the mingw import library, libpythonXY.a
 # This requires 'nm' and 'dlltool' executables on your PATH
-def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
+def build_mingw_lib(dll_path, def_file, dll_file, mingw_lib):
     warning = "WARNING: %s - libpythonXX.a not built"
-    nm = find_executable('nm')
+    gendef = find_executable('gendef')
     dlltool = find_executable('dlltool')
 
-    if not nm or not dlltool:
-        print warning % "nm and/or dlltool were not found"
+    if not gendef or not dlltool:
+        print warning % "gendef and/or dlltool were not found"
         return False
 
-    nm_command = '%s -Cs %s' % (nm, lib_file)
+    gendef_command = '%s - %s' % (gendef, dll_path)
     dlltool_command = "%s --dllname %s --def %s --output-lib %s" % \
         (dlltool, dll_file, def_file, mingw_lib)
-    export_match = re.compile(r"^_imp__(.*) in python\d+\.dll").match
+    if msilib.Win64:
+        dlltool_command += " -m i386:x86-64"
+    else:
+        dlltool_command += " -m i386"
 
     f = open(def_file,'w')
-    print >>f, "LIBRARY %s" % dll_file
-    print >>f, "EXPORTS"
-
-    nm_pipe = os.popen(nm_command)
-    for line in nm_pipe.readlines():
-        m = export_match(line)
-        if m:
-            print >>f, m.group(1)
+    gendef_pipe = os.popen(gendef_command)
+    for line in gendef_pipe.readlines():
+        print >>f, line
     f.close()
-    exit = nm_pipe.close()
+    exit = gendef_pipe.close()
 
     if exit:
-        print warning % "nm did not run successfully"
+        print warning % "gendef did not run successfully"
         return False
 
     if os.system(dlltool_command) != 0:
@@ -169,12 +167,10 @@ def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
     return True
 
 # Target files (.def and .a) go in PCBuild directory
-lib_file = os.path.join(srcdir, PCBUILD, "python%s%s.lib" % (major, minor))
+dll_path = os.path.join(srcdir, PCBUILD, "python%s%s.dll" % (major, minor))
 def_file = os.path.join(srcdir, PCBUILD, "python%s%s.def" % (major, minor))
 dll_file = "python%s%s.dll" % (major, minor)
 mingw_lib = os.path.join(srcdir, PCBUILD, "libpython%s%s.a" % (major, minor))
-
-have_mingw = build_mingw_lib(lib_file, def_file, dll_file, mingw_lib)
 
 # Determine the target architecture
 if os.system("nmake /nologo /c /f msisupport.mak") != 0:
@@ -183,12 +179,15 @@ dll_path = os.path.join(srcdir, PCBUILD, dll_file)
 msilib.set_arch_from_file(dll_path)
 if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
     raise SystemError, "msisupport.dll for incorrect architecture"
+
 if msilib.Win64:
     upgrade_code = upgrade_code_64
     # Bump the last digit of the code by one, so that 32-bit and 64-bit
     # releases get separate product codes
     digit = hex((int(product_code[-2],16)+1)%16)[-1]
     product_code = product_code[:-2] + digit + '}'
+
+have_mingw = build_mingw_lib(dll_path, def_file, dll_file, mingw_lib)
 
 if testpackage:
     ext = 'px'
