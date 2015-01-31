@@ -66,7 +66,8 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(OutDir)$(TargetName)stub.lib</AdditionalDependencies>
-      <ModuleDefinitionFile>$(PySourcePath)PC\python3.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile Condition="$(Configuration) != 'Debug'">$(PySourcePath)PC\python3.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile Condition="$(Configuration) == 'Debug'">$(IntDir)python3_d.def</ModuleDefinitionFile>
       <EntryPointSymbol>DllMain</EntryPointSymbol>
     </Link>
     <PreLinkEvent>
@@ -87,9 +88,37 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="BuildStubDef" BeforeTargets="PreLinkEvent" Inputs="..\PC\python3.def" Outputs="$(IntDir)python3stub.def">
+  
+  <Target Name="BuildPython3_dDef" BeforeTargets="BuildStubDef" Inputs="..\PC\python3.def" Outputs="$(IntDir)python3_d.def" Condition="$(Configuration) == 'Debug'">
+    <ItemGroup>
+      <_DefLines Remove="@(_DefLines)" />
+      <_Lines Remove="@(_Lines)" />
+    </ItemGroup>
     <ReadLinesFromFile File="..\PC\python3.def">
-      <Output TaskParameter="Lines" ItemName="DefLines" />
+      <Output TaskParameter="Lines" ItemName="_DefLines" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_Pattern1>(=python$(MajorVersionNumber)$(MinorVersionNumber))\.</_Pattern1>
+      <_Sub1>$1_d.</_Sub1>
+      <_Pattern2>"python3"</_Pattern2>
+      <_Sub2>"python3_d"</_Sub2>
+    </PropertyGroup>
+    <ItemGroup>
+      <_Lines Include="@(_DefLines)">
+        <New>$([System.Text.RegularExpressions.Regex]::Replace($([System.Text.RegularExpressions.Regex]::Replace(`%(Identity)`, `$(_Pattern1)`, `$(_Sub1)`)), `$(_Pattern2)`, `$(_Sub2)`))</New>
+      </_Lines>
+    </ItemGroup>
+    <MakeDir Directories="$(IntDir)" />
+    <WriteLinesToFile File="$(IntDir)python3_d.def" Lines="@(_Lines->'%(New)')" />
+  </Target>
+  
+  <Target Name="BuildStubDef" BeforeTargets="PreLinkEvent" Inputs="..\PC\python3.def" Outputs="$(IntDir)python3stub.def">
+    <ItemGroup>
+      <_DefLines Remove="@(_DefLines)" />
+      <_Lines Remove="@(_Lines)" />
+    </ItemGroup>
+    <ReadLinesFromFile File="..\PC\python3.def">
+      <Output TaskParameter="Lines" ItemName="_DefLines" />
     </ReadLinesFromFile>
     <PropertyGroup>
       <_Pattern>^[\w.]+=.+?\.([^ ]+).*$</_Pattern>
@@ -97,7 +126,7 @@
     </PropertyGroup>
     <ItemGroup>
       <_Lines Include="EXPORTS" />
-      <_Symbols Include="@(DefLines)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(`%(Identity)`, `$(_Pattern)`))">
+      <_Symbols Include="@(_DefLines)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(`%(Identity)`, `$(_Pattern)`))">
         <Symbol>$([System.Text.RegularExpressions.Regex]::Replace(`%(Identity)`, `$(_Pattern)`, `$(_Sub)`))</Symbol>
       </_Symbols>
       <_Lines Include="@(_Symbols->'%(Symbol)')" />
