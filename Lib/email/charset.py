@@ -249,9 +249,6 @@ class Charset:
     def __eq__(self, other):
         return str(self) == str(other).lower()
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def get_body_encoding(self):
         """Return the content-transfer-encoding used for body encoding.
 

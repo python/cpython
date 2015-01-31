@@ -340,10 +340,6 @@ class DateTime:
         s, o = self.make_comparable(other)
         return s == o
 
-    def __ne__(self, other):
-        s, o = self.make_comparable(other)
-        return s != o
-
     def timetuple(self):
         return time.strptime(self.value, "%Y%m%dT%H:%M:%S")
 
@@ -406,11 +402,6 @@ class Binary:
         if isinstance(other, Binary):
             other = other.data
         return self.data == other
-
-    def __ne__(self, other):
-        if isinstance(other, Binary):
-            other = other.data
-        return self.data != other
 
     def decode(self, data):
         self.data = base64.decodebytes(data)

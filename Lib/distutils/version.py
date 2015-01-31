@@ -48,12 +48,6 @@ class Version:
             return c
         return c == 0
 
-    def __ne__(self, other):
-        c = self._cmp(other)
-        if c is NotImplemented:
-            return c
-        return c != 0
-
     def __lt__(self, other):
         c = self._cmp(other)
         if c is NotImplemented:

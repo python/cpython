@@ -567,12 +567,6 @@ class timedelta:
         else:
             return False
 
-    def __ne__(self, other):
-        if isinstance(other, timedelta):
-            return self._cmp(other) != 0
-        else:
-            return True
-
     def __le__(self, other):
         if isinstance(other, timedelta):
             return self._cmp(other) <= 0
@@ -802,11 +796,6 @@ class date:
     def __eq__(self, other):
         if isinstance(other, date):
             return self._cmp(other) == 0
-        return NotImplemented
-
-    def __ne__(self, other):
-        if isinstance(other, date):
-            return self._cmp(other) != 0
         return NotImplemented
 
     def __le__(self, other):
@@ -1078,12 +1067,6 @@ class time:
             return self._cmp(other, allow_mixed=True) == 0
         else:
             return False
-
-    def __ne__(self, other):
-        if isinstance(other, time):
-            return self._cmp(other, allow_mixed=True) != 0
-        else:
-            return True
 
     def __le__(self, other):
         if isinstance(other, time):
@@ -1650,14 +1633,6 @@ class datetime(date):
             return NotImplemented
         else:
             return False
-
-    def __ne__(self, other):
-        if isinstance(other, datetime):
-            return self._cmp(other, allow_mixed=True) != 0
-        elif not isinstance(other, date):
-            return NotImplemented
-        else:
-            return True
 
     def __le__(self, other):
         if isinstance(other, datetime):

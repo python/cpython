@@ -226,6 +226,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23326: Removed __ne__ implementations.  Since fixing default __ne__
+  implementation in issue #21408 they are redundant.
+
 - Issue #14099: Restored support of writing ZIP files to tellable but
   non-seekable streams.
 

@@ -178,10 +178,6 @@ class TimerHandle(Handle):
                     self._cancelled == other._cancelled)
         return NotImplemented
 
-    def __ne__(self, other):
-        equal = self.__eq__(other)
-        return NotImplemented if equal is NotImplemented else not equal
-
     def cancel(self):
         if not self._cancelled:
             self._loop._timer_handle_cancelled(self)
