@@ -50,6 +50,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #23353: Fix the exception handling of generators in
+  PyEval_EvalFrameEx(). At entry, save or swap the exception state even if
+  PyEval_EvalFrameEx() is called with throwflag=0. At exit, the exception state
+  is now always restored or swapped, not only if why is WHY_YIELD or
+  WHY_RETURN. Patch co-written with Antoine Pitrou.
+
 - Issue #18518: timeit now rejects statements which can't be compiled outside
   a function or a loop (e.g. "return" or "break").
 
