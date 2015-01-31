@@ -987,7 +987,6 @@ class UserList(MutableSequence):
     def __lt__(self, other): return self.data <  self.__cast(other)
     def __le__(self, other): return self.data <= self.__cast(other)
     def __eq__(self, other): return self.data == self.__cast(other)
-    def __ne__(self, other): return self.data != self.__cast(other)
     def __gt__(self, other): return self.data >  self.__cast(other)
     def __ge__(self, other): return self.data >= self.__cast(other)
     def __cast(self, other):
@@ -1064,10 +1063,6 @@ class UserString(Sequence):
         if isinstance(string, UserString):
             return self.data == string.data
         return self.data == string
-    def __ne__(self, string):
-        if isinstance(string, UserString):
-            return self.data != string.data
-        return self.data != string
     def __lt__(self, string):
         if isinstance(string, UserString):
             return self.data < string.data

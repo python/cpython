@@ -599,8 +599,6 @@ class LongTest(unittest.TestCase):
                 return (x > y) - (x < y)
             def __eq__(self, other):
                 return self._cmp__(other) == 0
-            def __ne__(self, other):
-                return self._cmp__(other) != 0
             def __ge__(self, other):
                 return self._cmp__(other) >= 0
             def __gt__(self, other):

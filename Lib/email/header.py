@@ -262,9 +262,6 @@ class Header:
         # args and do another comparison.
         return other == str(self)
 
-    def __ne__(self, other):
-        return not self == other
-
     def append(self, s, charset=None, errors='strict'):
         """Append a string to the MIME header.
 

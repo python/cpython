@@ -923,15 +923,6 @@ class Decimal(object):
             return False
         return self._cmp(other) == 0
 
-    def __ne__(self, other, context=None):
-        self, other = _convert_for_comparison(self, other, equality_op=True)
-        if other is NotImplemented:
-            return other
-        if self._check_nans(other, context):
-            return True
-        return self._cmp(other) != 0
-
-
     def __lt__(self, other, context=None):
         self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:

@@ -185,11 +185,6 @@ class UUID(object):
             return self.int == other.int
         return NotImplemented
 
-    def __ne__(self, other):
-        if isinstance(other, UUID):
-            return self.int != other.int
-        return NotImplemented
-
     # Q. What's the value of being able to sort UUIDs?
     # A. Use them as keys in a B-Tree or similar mapping.
 
