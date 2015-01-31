@@ -14,7 +14,7 @@ cd externals
 @rem if exist tk-8.6.1.0 rd /s/q tk-8.6.1.0
 @rem if exist tix-8.4.3.4 rd /s/q tix-8.4.3.4
 @rem if exist db-4.4.20 rd /s/q db-4.4.20
-@rem if exist openssl-1.0.1j rd /s/q openssl-1.0.1j
+@rem if exist openssl-1.0.1l rd /s/q openssl-1.0.1l
 @rem if exist sqlite-3.7.12 rd /s/q sqlite-3.7.12
 
 @rem bzip
@@ -28,9 +28,9 @@ if not exist bzip2-1.0.6 (
 if not exist nasm-2.11.06 svn export %SVNROOT%nasm-2.11.06
 
 @rem OpenSSL
-if not exist openssl-1.0.1j (
-    rd /s/q openssl-1.0.1i
-    svn export %SVNROOT%openssl-1.0.1j
+if not exist openssl-1.0.1l (
+    rd /s/q openssl-1.0.1j
+    svn export %SVNROOT%openssl-1.0.1l
 )
 
 @rem tcl/tk
