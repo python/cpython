@@ -1191,6 +1191,7 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
+        test_spwd
         test_threadsignals
         test_timing
         test_wait3
