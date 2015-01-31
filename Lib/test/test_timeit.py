@@ -296,12 +296,12 @@ class TestTimeit(unittest.TestCase):
 
     def test_main_exception(self):
         with captured_stderr() as error_stringio:
-            s = self.run_main(switches=['1/0'])
+            s = self.run_main(switches=['1.0/0.0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
     def test_main_exception_fixed_reps(self):
         with captured_stderr() as error_stringio:
-            s = self.run_main(switches=['-n1', '1/0'])
+            s = self.run_main(switches=['-n1', '1.0/0.0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
 
