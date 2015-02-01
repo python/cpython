@@ -1531,6 +1531,10 @@ Build
 C API
 -----
 
+- Issue #22445: PyBuffer_IsContiguous() now implements precise contiguity
+  tests, compatible with NumPy's NPY_RELAXED_STRIDES_CHECKING compilation
+  flag.  Previously the function reported false negatives for corner cases.
+
 - Issue #22079: PyType_Ready() now checks that statically allocated type has
   no dynamically allocated bases.
 

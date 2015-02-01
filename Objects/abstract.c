@@ -367,16 +367,35 @@ _IsFortranContiguous(const Py_buffer *view)
     Py_ssize_t sd, dim;
     int i;
 
-    if (view->ndim == 0) return 1;
-    if (view->strides == NULL) return (view->ndim == 1);
+    /* 1) len = product(shape) * itemsize
+       2) itemsize > 0
+       3) len = 0 <==> exists i: shape[i] = 0 */
+    if (view->len == 0) return 1;
+    if (view->strides == NULL) {  /* C-contiguous by definition */
+        /* Trivially F-contiguous */
+        if (view->ndim <= 1) return 1;
+
+        /* ndim > 1 implies shape != NULL */
+        assert(view->shape != NULL);
+
+        /* Effectively 1-d */
+        sd = 0;
+        for (i=0; i<view->ndim; i++) {
+            if (view->shape[i] > 1) sd += 1;
+        }
+        return sd <= 1;
+    }
+
+    /* strides != NULL implies both of these */
+    assert(view->ndim > 0);
+    assert(view->shape != NULL);
 
     sd = view->itemsize;
-    if (view->ndim == 1) return (view->shape[0] == 1 ||
-                               sd == view->strides[0]);
     for (i=0; i<view->ndim; i++) {
         dim = view->shape[i];
-        if (dim == 0) return 1;
-        if (view->strides[i] != sd) return 0;
+        if (dim > 1 && view->strides[i] != sd) {
+            return 0;
+        }
         sd *= dim;
     }
     return 1;
@@ -388,16 +407,22 @@ _IsCContiguous(const Py_buffer *view)
     Py_ssize_t sd, dim;
     int i;
 
-    if (view->ndim == 0) return 1;
-    if (view->strides == NULL) return 1;
+    /* 1) len = product(shape) * itemsize
+       2) itemsize > 0
+       3) len = 0 <==> exists i: shape[i] = 0 */
+    if (view->len == 0) return 1;
+    if (view->strides == NULL) return 1; /* C-contiguous by definition */
+
+    /* strides != NULL implies both of these */
+    assert(view->ndim > 0);
+    assert(view->shape != NULL);
 
     sd = view->itemsize;
-    if (view->ndim == 1) return (view->shape[0] == 1 ||
-                               sd == view->strides[0]);
     for (i=view->ndim-1; i>=0; i--) {
         dim = view->shape[i];
-        if (dim == 0) return 1;
-        if (view->strides[i] != sd) return 0;
+        if (dim > 1 && view->strides[i] != sd) {
+            return 0;
+        }
         sd *= dim;
     }
     return 1;
