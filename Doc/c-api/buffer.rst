@@ -99,7 +99,7 @@ The new-style Py_buffer struct
       occur (striding in a contiguous memory block).
 
       If all suboffsets are negative (i.e. no de-referencing is needed, then
-      this field must be NULL (the default value). 
+      this field must be NULL (the default value).
 
       Here is a function that returns a pointer to the element in an N-D array
       pointed to by an N-dimensional index when there are both non-NULL strides
