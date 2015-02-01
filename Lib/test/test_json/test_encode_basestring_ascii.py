@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
+from test.support import bigaddrspacetest
 
 
 CASES = [
@@ -41,4 +42,10 @@ class TestEncodeBasestringAscii:
 
 
 class TestPyEncodeBasestringAscii(TestEncodeBasestringAscii, PyTest): pass
-class TestCEncodeBasestringAscii(TestEncodeBasestringAscii, CTest): pass
+class TestCEncodeBasestringAscii(TestEncodeBasestringAscii, CTest):
+    @bigaddrspacetest
+    def test_overflow(self):
+        s = "\uffff"*((2**32)//6 + 1)
+        with self.assertRaises(OverflowError):
+            self.json.encoder.encode_basestring_ascii(s)
+
