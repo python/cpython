@@ -1002,7 +1002,7 @@ class ZipFile:
                 # set the modified flag so central directory gets written
                 # even if no files are added to the archive
                 self._didModify = True
-                self.start_dir = 0
+                self.start_dir = self.fp.tell()
             elif mode == 'a':
                 try:
                     # See if file is a zip file
