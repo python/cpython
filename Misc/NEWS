@@ -13,6 +13,12 @@ Core and Builtins
 - Issue #23055: Fixed a buffer overflow in PyUnicode_FromFormatV.  Analysis
   and fix by Guido Vranken.
 
+Library
+-------
+
+- Issue #23369: Fixed possible integer overflow in
+  _json.encode_basestring_ascii.
+
 
 What's New in Python 3.3.6?
 ===========================
