@@ -2468,6 +2468,56 @@ make_memoryview_from_NULL_pointer(PyObject *self)
         return NULL;
     return PyMemoryView_FromBuffer(&info);
 }
+ 
+static PyObject *
+test_from_contiguous(PyObject* self, PyObject *noargs)
+{
+    int data[9] = {-1,-1,-1,-1,-1,-1,-1,-1,-1};
+    int init[5] = {0, 1, 2, 3, 4};
+    Py_ssize_t itemsize = sizeof(int);
+    Py_ssize_t shape = 5;
+    Py_ssize_t strides = 2 * itemsize;
+    Py_buffer view = {
+        data,
+        NULL,
+        5 * itemsize,
+        itemsize,
+        1,
+        1,
+        NULL,
+        &shape,
+        &strides,
+        NULL,
+        NULL
+    };
+    int *ptr;
+    int i;
+
+    PyBuffer_FromContiguous(&view, init, view.len, 'C');
+    ptr = view.buf;
+    for (i = 0; i < 5; i++) {
+        if (ptr[2*i] != i) {
+            PyErr_SetString(TestError,
+                "test_from_contiguous: incorrect result");
+            return NULL;
+        }
+    }
+
+    view.buf = &data[8];
+    view.strides[0] = -2 * itemsize;
+
+    PyBuffer_FromContiguous(&view, init, view.len, 'C');
+    ptr = view.buf;
+    for (i = 0; i < 5; i++) {
+        if (*(ptr-2*i) != i) {
+            PyErr_SetString(TestError,
+                "test_from_contiguous: incorrect result");
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
+}
 
 /* Test that the fatal error from not having a current thread doesn't
    cause an infinite loop.  Run via Lib/test/test_capi.py */
@@ -3128,6 +3178,7 @@ static PyMethodDef TestMethods[] = {
     {"test_string_to_double", (PyCFunction)test_string_to_double, METH_NOARGS},
     {"test_unicode_compare_with_ascii", (PyCFunction)test_unicode_compare_with_ascii, METH_NOARGS},
     {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
+    {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_keywords", (PyCFunction)getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},
