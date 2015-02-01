@@ -1510,6 +1510,19 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
         view->shape = NULL;
     }
 
+    /* Ascertain that the new buffer has the same contiguity as the exporter */
+    if (ND_C_CONTIGUOUS(baseflags) != PyBuffer_IsContiguous(view, 'C') ||
+        /* skip cast to 1-d */
+        (view->format != NULL && view->shape != NULL &&
+         ND_FORTRAN_CONTIGUOUS(baseflags) != PyBuffer_IsContiguous(view, 'F')) ||
+        /* cast to 1-d */
+        (view->format == NULL && view->shape == NULL &&
+         !PyBuffer_IsContiguous(view, 'F'))) {
+        PyErr_SetString(PyExc_BufferError,
+            "ndarray: contiguity mismatch in getbuf()");
+            return -1;
+    }
+
     view->obj = (PyObject *)self;
     Py_INCREF(view->obj);
     self->head->exports++;
@@ -2206,6 +2219,8 @@ ndarray_add_suboffsets(PyObject *self, PyObject *dummy)
     for (i = 0; i < base->ndim; i++)
         base->suboffsets[i] = -1;
 
+    nd->head->flags &= ~(ND_C|ND_FORTRAN);
+
     Py_RETURN_NONE;
 }
 
@@ -2469,13 +2484,12 @@ arraycmp(const Py_ssize_t *a1, const Py_ssize_t *a2, const Py_ssize_t *shape,
 {
     Py_ssize_t i;
 
-    if (ndim == 1 && shape && shape[0] == 1) {
-        /* This is for comparing strides: For example, the array
-           [175], shape=[1], strides=[-5] is considered contiguous. */
-        return 1;
-    }
 
     for (i = 0; i < ndim; i++) {
+        if (shape && shape[i] <= 1) {
+            /* strides can differ if the dimension is less than 2 */
+            continue;
+        }
         if (a1[i] != a2[i]) {
             return 0;
         }
@@ -2555,30 +2569,35 @@ is_contiguous(PyObject *self, PyObject *args)
     PyObject *obj;
     PyObject *order;
     PyObject *ret = NULL;
-    Py_buffer view;
+    Py_buffer view, *base;
     char ord;
 
     if (!PyArg_ParseTuple(args, "OO", &obj, &order)) {
         return NULL;
     }
 
-    if (PyObject_GetBuffer(obj, &view, PyBUF_FULL_RO) < 0) {
-        PyErr_SetString(PyExc_TypeError,
-            "is_contiguous: object does not implement the buffer "
-            "protocol");
+    ord = get_ascii_order(order);
+    if (ord == CHAR_MAX) {
         return NULL;
     }
 
-    ord = get_ascii_order(order);
-    if (ord == CHAR_MAX) {
-        goto release;
+    if (NDArray_Check(obj)) {
+        /* Skip the buffer protocol to check simple etc. buffers directly. */
+        base = &((NDArrayObject *)obj)->head->base;
+        ret = PyBuffer_IsContiguous(base, ord) ? Py_True : Py_False;
+    }
+    else {
+        if (PyObject_GetBuffer(obj, &view, PyBUF_FULL_RO) < 0) {
+            PyErr_SetString(PyExc_TypeError,
+                "is_contiguous: object does not implement the buffer "
+                "protocol");
+            return NULL;
+        }
+        ret = PyBuffer_IsContiguous(&view, ord) ? Py_True : Py_False;
+        PyBuffer_Release(&view);
     }
 
-    ret = PyBuffer_IsContiguous(&view, ord) ? Py_True : Py_False;
     Py_INCREF(ret);
-
-release:
-    PyBuffer_Release(&view);
     return ret;
 }
 
