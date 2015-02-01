@@ -1007,6 +1007,7 @@ class TestBufferProtocol(unittest.TestCase):
         # shape, strides, offset
         structure = (
             ([], [], 0),
+            ([1,3,1], [], 0),
             ([12], [], 0),
             ([12], [-1], 11),
             ([6], [2], 0),
@@ -1077,6 +1078,18 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(BufferError, ndarray, ex, getbuf=PyBUF_F_CONTIGUOUS)
         self.assertRaises(BufferError, ndarray, ex, getbuf=PyBUF_ANY_CONTIGUOUS)
         nd = ndarray(ex, getbuf=PyBUF_SIMPLE)
+
+        # Issue #22445: New precise contiguity definition.
+        for shape in [1,12,1], [7,0,7]:
+            for order in 0, ND_FORTRAN:
+                ex = ndarray(items, shape=shape, flags=order|ND_WRITABLE)
+                self.assertTrue(is_contiguous(ex, 'F'))
+                self.assertTrue(is_contiguous(ex, 'C'))
+
+                for flags in requests:
+                    nd = ndarray(ex, getbuf=flags)
+                    self.assertTrue(is_contiguous(nd, 'F'))
+                    self.assertTrue(is_contiguous(nd, 'C'))
 
     def test_ndarray_exceptions(self):
         nd = ndarray([9], [1])
