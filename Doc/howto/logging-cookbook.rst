@@ -2088,3 +2088,57 @@ When run, this produces a file with exactly two lines::
 While the above treatment is simplistic, it points the way to how exception
 information can be formatted to your liking. The :mod:`traceback` module may be
 helpful for more specialized needs.
+
+.. _spoken-messages:
+
+Speaking logging messages
+-------------------------
+
+There might be situations when it is desirable to have logging messages rendered
+in an audible rather than a visible format. This is easy to do if you have text-
+to-speech (TTS) functionality available in your system, even if it doesn't have
+a Python binding. Most TTS systems have a command line program you can run, and
+this can be invoked from a handler using :mod:`subprocess`. It's assumed here
+that TTS command line programs won't expect to interact with users or take a
+long time to complete, and that the frequency of logged messages will be not so
+high as to swamp the user with messages, and that it's acceptable to have the
+messages spoken one at a time rather than concurrently, The example implementation
+below waits for one message to be spoken before the next is processed, and this
+might cause other handlers to be kept waiting. Here is a short example showing
+the approach, which assumes that the ``espeak`` TTS package is available::
+
+    import logging
+    import subprocess
+    import sys
+
+    class TTSHandler(logging.Handler):
+        def emit(self, record):
+            msg = self.format(record)
+            # Speak slowly in a female English voice
+            cmd = ['espeak', '-s150', '-ven+f3', msg]
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+            # wait for the program to finish
+            p.communicate()
+
+    def configure_logging():
+        h = TTSHandler()
+        root = logging.getLogger()
+        root.addHandler(h)
+        # the default formatter just returns the message
+        root.setLevel(logging.DEBUG)
+
+    def main():
+        logging.info('Hello')
+        logging.debug('Goodbye')
+
+    if __name__ == '__main__':
+        configure_logging()
+        sys.exit(main())
+
+When run, this script should say "Hello" and then "Goodbye" in a female voice.
+
+The above approach can, of course, be adapted to other TTS systems and even
+other systems altogether which can process messages via external programs run
+from a command line.
+
