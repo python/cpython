@@ -229,6 +229,9 @@ Library
 - Issue #23326: Removed __ne__ implementations.  Since fixing default __ne__
   implementation in issue #21408 they are redundant.
 
+- Issue #23369: Fixed possible integer overflow in
+  _json.encode_basestring_ascii.
+
 - Issue #23353: Fix the exception handling of generators in
   PyEval_EvalFrameEx(). At entry, save or swap the exception state even if
   PyEval_EvalFrameEx() is called with throwflag=0. At exit, the exception state
