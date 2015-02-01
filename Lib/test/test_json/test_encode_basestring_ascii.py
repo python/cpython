@@ -48,4 +48,3 @@ class TestCEncodeBasestringAscii(TestEncodeBasestringAscii, CTest):
         s = "\uffff"*((2**32)//6 + 1)
         with self.assertRaises(OverflowError):
             self.json.encoder.encode_basestring_ascii(s)
-
