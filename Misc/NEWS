@@ -21,6 +21,9 @@ Library
 
 - Issue #23366: Fixed possible integer overflow in itertools.combinations.
 
+- Issue #23365: Fixed possible integer overflow in
+  itertools.combinations_with_replacement.
+
 
 What's New in Python 3.3.6?
 ===========================
