@@ -534,13 +534,13 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             if (m > leftindex)
                 m = leftindex;
             assert (m > 0 && m <= len);
-            src = &rightblock->data[rightindex];
-            dest = &leftblock->data[leftindex - 1];
             rightindex -= m;
             leftindex -= m;
+            src = &rightblock->data[rightindex + 1];
+            dest = &leftblock->data[leftindex];
             n -= m;
             do {
-                *(dest--) = *(src--);
+                *(dest++) = *(src++);
             } while (--m);
         }
         if (rightindex == -1) {
