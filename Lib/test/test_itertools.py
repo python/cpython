@@ -418,6 +418,13 @@ class TestBasicOps(unittest.TestCase):
 
                 self.pickletest(permutations(values, r))                # test pickling
 
+    @support.bigaddrspacetest
+    def test_permutations_overflow(self):
+        with self.assertRaises(OverflowError):
+            permutations("A", 2**30)
+        with self.assertRaises(OverflowError):
+            permutations("A", 2, 2**30)
+
     @support.impl_detail("tuple resuse is CPython specific")
     def test_permutations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
@@ -929,6 +936,11 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(list(product(*args)), list(product2(*args)))
             args = map(iter, args)
             self.assertEqual(len(list(product(*args))), expected_len)
+
+    @support.bigaddrspacetest
+    def test_product_overflow(self):
+        with self.assertRaises(OverflowError):
+            product(["a"]*(2**16), repeat=2**16)
 
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_product_tuple_reuse(self):
