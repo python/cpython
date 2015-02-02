@@ -12,33 +12,6 @@ class bytes "PyBytesObject*" "&PyBytes_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=1a1d9102afc1b00c]*/
 
-static Py_ssize_t
-_getbuffer(PyObject *obj, Py_buffer *view)
-{
-    PyBufferProcs *bufferprocs;
-    if (PyBytes_CheckExact(obj)) {
-        /* Fast path, e.g. for .join() of many bytes objects */
-        Py_INCREF(obj);
-        view->obj = obj;
-        view->buf = PyBytes_AS_STRING(obj);
-        view->len = PyBytes_GET_SIZE(obj);
-        return view->len;
-    }
-
-    bufferprocs = Py_TYPE(obj)->tp_as_buffer;
-    if (bufferprocs == NULL || bufferprocs->bf_getbuffer == NULL)
-    {
-        PyErr_Format(PyExc_TypeError,
-                     "a bytes-like object is required, not '%.100s'",
-                     Py_TYPE(obj)->tp_name);
-        return -1;
-    }
-
-    if (bufferprocs->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
-        return -1;
-    return view->len;
-}
-
 #ifdef COUNT_ALLOCS
 Py_ssize_t null_strings, one_strings;
 #endif
@@ -1349,8 +1322,8 @@ bytes_concat(PyObject *a, PyObject *b)
 
     va.len = -1;
     vb.len = -1;
-    if (_getbuffer(a, &va) < 0  ||
-        _getbuffer(b, &vb) < 0) {
+    if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
+        PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                      Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
         goto done;
@@ -1448,7 +1421,7 @@ bytes_contains(PyObject *self, PyObject *arg)
         Py_buffer varg;
         Py_ssize_t pos;
         PyErr_Clear();
-        if (_getbuffer(arg, &varg) < 0)
+        if (PyObject_GetBuffer(arg, &varg, PyBUF_SIMPLE) != 0)
             return -1;
         pos = stringlib_find(PyBytes_AS_STRING(self), Py_SIZE(self),
                              varg.buf, varg.len, 0);
@@ -1737,7 +1710,7 @@ bytes_split_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit)
         maxsplit = PY_SSIZE_T_MAX;
     if (sep == Py_None)
         return stringlib_split_whitespace((PyObject*) self, s, len, maxsplit);
-    if (_getbuffer(sep, &vsub) < 0)
+    if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
@@ -1751,7 +1724,7 @@ bytes_split_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit)
 bytes.partition
 
     self: self(type="PyBytesObject *")
-    sep: object
+    sep: Py_buffer
     /
 
 Partition the bytes into three parts using the given separator.
@@ -1778,26 +1751,39 @@ PyDoc_STRVAR(bytes_partition__doc__,
 "object and two empty bytes objects.");
 
 #define BYTES_PARTITION_METHODDEF    \
-    {"partition", (PyCFunction)bytes_partition, METH_O, bytes_partition__doc__},
+    {"partition", (PyCFunction)bytes_partition, METH_VARARGS, bytes_partition__doc__},
 
 static PyObject *
-bytes_partition(PyBytesObject *self, PyObject *sep)
-/*[clinic end generated code: output=b41e119c873c08bc input=6c5b9dcc5a9fd62e]*/
+bytes_partition_impl(PyBytesObject *self, Py_buffer *sep);
+
+static PyObject *
+bytes_partition(PyBytesObject *self, PyObject *args)
 {
-    const char *sep_chars;
-    Py_ssize_t sep_len;
+    PyObject *return_value = NULL;
+    Py_buffer sep = {NULL, NULL};
 
-    if (PyBytes_Check(sep)) {
-        sep_chars = PyBytes_AS_STRING(sep);
-        sep_len = PyBytes_GET_SIZE(sep);
-    }
-    else if (PyObject_AsCharBuffer(sep, &sep_chars, &sep_len))
-        return NULL;
+    if (!PyArg_ParseTuple(args,
+        "y*:partition",
+        &sep))
+        goto exit;
+    return_value = bytes_partition_impl(self, &sep);
 
+exit:
+    /* Cleanup for sep */
+    if (sep.obj)
+       PyBuffer_Release(&sep);
+
+    return return_value;
+}
+
+static PyObject *
+bytes_partition_impl(PyBytesObject *self, Py_buffer *sep)
+/*[clinic end generated code: output=3006727cfbf83aa4 input=bc855dc63ca949de]*/
+{
     return stringlib_partition(
         (PyObject*) self,
         PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-        sep, sep_chars, sep_len
+        sep->obj, (const char *)sep->buf, sep->len
         );
 }
 
@@ -1805,7 +1791,7 @@ bytes_partition(PyBytesObject *self, PyObject *sep)
 bytes.rpartition
 
     self: self(type="PyBytesObject *")
-    sep: object
+    sep: Py_buffer
     /
 
 Partition the bytes into three parts using the given separator.
@@ -1832,26 +1818,39 @@ PyDoc_STRVAR(bytes_rpartition__doc__,
 "objects and the original bytes object.");
 
 #define BYTES_RPARTITION_METHODDEF    \
-    {"rpartition", (PyCFunction)bytes_rpartition, METH_O, bytes_rpartition__doc__},
+    {"rpartition", (PyCFunction)bytes_rpartition, METH_VARARGS, bytes_rpartition__doc__},
 
 static PyObject *
-bytes_rpartition(PyBytesObject *self, PyObject *sep)
-/*[clinic end generated code: output=3a620803657196ee input=79bc2932e78e5ce0]*/
+bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep);
+
+static PyObject *
+bytes_rpartition(PyBytesObject *self, PyObject *args)
 {
-    const char *sep_chars;
-    Py_ssize_t sep_len;
+    PyObject *return_value = NULL;
+    Py_buffer sep = {NULL, NULL};
 
-    if (PyBytes_Check(sep)) {
-        sep_chars = PyBytes_AS_STRING(sep);
-        sep_len = PyBytes_GET_SIZE(sep);
-    }
-    else if (PyObject_AsCharBuffer(sep, &sep_chars, &sep_len))
-        return NULL;
+    if (!PyArg_ParseTuple(args,
+        "y*:rpartition",
+        &sep))
+        goto exit;
+    return_value = bytes_rpartition_impl(self, &sep);
 
+exit:
+    /* Cleanup for sep */
+    if (sep.obj)
+       PyBuffer_Release(&sep);
+
+    return return_value;
+}
+
+static PyObject *
+bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
+/*[clinic end generated code: output=57b169dc47fa90e8 input=6588fff262a9170e]*/
+{
     return stringlib_rpartition(
         (PyObject*) self,
         PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-        sep, sep_chars, sep_len
+        sep->obj, (const char *)sep->buf, sep->len
         );
 }
 
@@ -1916,7 +1915,7 @@ bytes_rsplit_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit)
         maxsplit = PY_SSIZE_T_MAX;
     if (sep == Py_None)
         return stringlib_rsplit_whitespace((PyObject*) self, s, len, maxsplit);
-    if (_getbuffer(sep, &vsub) < 0)
+    if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
@@ -2003,7 +2002,7 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
         return -2;
 
     if (subobj) {
-        if (_getbuffer(subobj, &subbuf) < 0)
+        if (PyObject_GetBuffer(subobj, &subbuf, PyBUF_SIMPLE) != 0)
             return -2;
 
         sub = subbuf.buf;
@@ -2118,7 +2117,7 @@ do_xstrip(PyBytesObject *self, int striptype, PyObject *sepobj)
     Py_ssize_t seplen;
     Py_ssize_t i, j;
 
-    if (_getbuffer(sepobj, &vsep) < 0)
+    if (PyObject_GetBuffer(sepobj, &vsep, PyBUF_SIMPLE) != 0)
         return NULL;
     sep = vsep.buf;
     seplen = vsep.len;
@@ -2360,7 +2359,7 @@ bytes_count(PyBytesObject *self, PyObject *args)
         return NULL;
 
     if (sub_obj) {
-        if (_getbuffer(sub_obj, &vsub) < 0)
+        if (PyObject_GetBuffer(sub_obj, &vsub, PyBUF_SIMPLE) != 0)
             return NULL;
 
         sub = vsub.buf;
@@ -2450,6 +2449,8 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, Py
 /*[clinic end generated code: output=f0f29a57f41df5d8 input=d8fa5519d7cc4be7]*/
 {
     char *input, *output;
+    Py_buffer table_view = {NULL, NULL};
+    Py_buffer del_table_view = {NULL, NULL};
     const char *table_chars;
     Py_ssize_t i, c, changed = 0;
     PyObject *input_obj = (PyObject*)self;
@@ -2466,12 +2467,17 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, Py
         table_chars = NULL;
         tablen = 256;
     }
-    else if (PyObject_AsCharBuffer(table, &table_chars, &tablen))
-        return NULL;
+    else {
+        if (PyObject_GetBuffer(table, &table_view, PyBUF_SIMPLE) != 0)
+            return NULL;
+        table_chars = table_view.buf;
+        tablen = table_view.len;
+    }
 
     if (tablen != 256) {
         PyErr_SetString(PyExc_ValueError,
           "translation table must be 256 characters long");
+        PyBuffer_Release(&table_view);
         return NULL;
     }
 
@@ -2480,8 +2486,14 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, Py
             del_table_chars = PyBytes_AS_STRING(deletechars);
             dellen = PyBytes_GET_SIZE(deletechars);
         }
-        else if (PyObject_AsCharBuffer(deletechars, &del_table_chars, &dellen))
-            return NULL;
+        else {
+            if (PyObject_GetBuffer(deletechars, &del_table_view, PyBUF_SIMPLE) != 0) {
+                PyBuffer_Release(&table_view);
+                return NULL;
+            }
+            del_table_chars = del_table_view.buf;
+            dellen = del_table_view.len;
+        }
     }
     else {
         del_table_chars = NULL;
@@ -2490,8 +2502,11 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, Py
 
     inlen = PyBytes_GET_SIZE(input_obj);
     result = PyBytes_FromStringAndSize((char *)NULL, inlen);
-    if (result == NULL)
+    if (result == NULL) {
+        PyBuffer_Release(&del_table_view);
+        PyBuffer_Release(&table_view);
         return NULL;
+    }
     output_start = output = PyBytes_AsString(result);
     input = PyBytes_AS_STRING(input_obj);
 
@@ -2502,11 +2517,14 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, Py
             if (Py_CHARMASK((*output++ = table_chars[c])) != c)
                 changed = 1;
         }
-        if (changed || !PyBytes_CheckExact(input_obj))
-            return result;
-        Py_DECREF(result);
-        Py_INCREF(input_obj);
-        return input_obj;
+        if (!changed && PyBytes_CheckExact(input_obj)) {
+            Py_INCREF(input_obj);
+            Py_DECREF(result);
+            result = input_obj;
+        }
+        PyBuffer_Release(&del_table_view);
+        PyBuffer_Release(&table_view);
+        return result;
     }
 
     if (table_chars == NULL) {
@@ -2516,9 +2534,11 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, Py
         for (i = 0; i < 256; i++)
             trans_table[i] = Py_CHARMASK(table_chars[i]);
     }
+    PyBuffer_Release(&table_view);
 
     for (i = 0; i < dellen; i++)
         trans_table[(int) Py_CHARMASK(del_table_chars[i])] = -1;
+    PyBuffer_Release(&del_table_view);
 
     for (i = inlen; --i >= 0; ) {
         c = Py_CHARMASK(*input++);
@@ -2544,8 +2564,8 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, Py
 @staticmethod
 bytes.maketrans
 
-    frm: object
-    to: object
+    frm: Py_buffer
+    to: Py_buffer
     /
 
 Return a translation table useable for the bytes or bytearray translate method.
@@ -2571,28 +2591,35 @@ PyDoc_STRVAR(bytes_maketrans__doc__,
     {"maketrans", (PyCFunction)bytes_maketrans, METH_VARARGS|METH_STATIC, bytes_maketrans__doc__},
 
 static PyObject *
-bytes_maketrans_impl(PyObject *frm, PyObject *to);
+bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
 bytes_maketrans(void *null, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyObject *frm;
-    PyObject *to;
+    Py_buffer frm = {NULL, NULL};
+    Py_buffer to = {NULL, NULL};
 
-    if (!PyArg_UnpackTuple(args, "maketrans",
-        2, 2,
+    if (!PyArg_ParseTuple(args,
+        "y*y*:maketrans",
         &frm, &to))
         goto exit;
-    return_value = bytes_maketrans_impl(frm, to);
+    return_value = bytes_maketrans_impl(&frm, &to);
 
 exit:
+    /* Cleanup for frm */
+    if (frm.obj)
+       PyBuffer_Release(&frm);
+    /* Cleanup for to */
+    if (to.obj)
+       PyBuffer_Release(&to);
+
     return return_value;
 }
 
 static PyObject *
-bytes_maketrans_impl(PyObject *frm, PyObject *to)
-/*[clinic end generated code: output=89a3c3556975e466 input=d204f680f85da382]*/
+bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to)
+/*[clinic end generated code: output=7df47390c476ac60 input=de7a8fc5632bb8f1]*/
 {
     return _Py_bytes_maketrans(frm, to);
 }
@@ -3093,8 +3120,8 @@ replace(PyBytesObject *self,
 /*[clinic input]
 bytes.replace
 
-    old: object
-    new: object
+    old: Py_buffer
+    new: Py_buffer
     count: Py_ssize_t = -1
         Maximum number of occurrences to replace.
         -1 (the default value) means replace all occurrences.
@@ -3123,50 +3150,40 @@ PyDoc_STRVAR(bytes_replace__doc__,
     {"replace", (PyCFunction)bytes_replace, METH_VARARGS, bytes_replace__doc__},
 
 static PyObject *
-bytes_replace_impl(PyBytesObject*self, PyObject *old, PyObject *new, Py_ssize_t count);
+bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new, Py_ssize_t count);
 
 static PyObject *
 bytes_replace(PyBytesObject*self, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyObject *old;
-    PyObject *new;
+    Py_buffer old = {NULL, NULL};
+    Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
     if (!PyArg_ParseTuple(args,
-        "OO|n:replace",
+        "y*y*|n:replace",
         &old, &new, &count))
         goto exit;
-    return_value = bytes_replace_impl(self, old, new, count);
+    return_value = bytes_replace_impl(self, &old, &new, count);
 
 exit:
+    /* Cleanup for old */
+    if (old.obj)
+       PyBuffer_Release(&old);
+    /* Cleanup for new */
+    if (new.obj)
+       PyBuffer_Release(&new);
+
     return return_value;
 }
 
 static PyObject *
-bytes_replace_impl(PyBytesObject*self, PyObject *old, PyObject *new, Py_ssize_t count)
-/*[clinic end generated code: output=14ce72f4f9cb91cf input=d3ac254ea50f4ac1]*/
+bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new, Py_ssize_t count)
+/*[clinic end generated code: output=f07bd9ecf29ee8d8 input=b2fbbf0bf04de8e5]*/
 {
-    const char *old_s, *new_s;
-    Py_ssize_t old_len, new_len;
-
-    if (PyBytes_Check(old)) {
-        old_s = PyBytes_AS_STRING(old);
-        old_len = PyBytes_GET_SIZE(old);
-    }
-    else if (PyObject_AsCharBuffer(old, &old_s, &old_len))
-        return NULL;
-
-    if (PyBytes_Check(new)) {
-        new_s = PyBytes_AS_STRING(new);
-        new_len = PyBytes_GET_SIZE(new);
-    }
-    else if (PyObject_AsCharBuffer(new, &new_s, &new_len))
-        return NULL;
-
     return (PyObject *)replace((PyBytesObject *) self,
-                               old_s, old_len,
-                               new_s, new_len, count);
+                               (const char *)old->buf, old->len,
+                               (const char *)new->buf, new->len, count);
 }
 
 /** End DALKE **/
@@ -3181,6 +3198,7 @@ _bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self);
     Py_ssize_t slen;
+    Py_buffer sub_view = {NULL, NULL};
     const char* sub;
     const char* str;
 
@@ -3188,8 +3206,12 @@ _bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
         sub = PyBytes_AS_STRING(substr);
         slen = PyBytes_GET_SIZE(substr);
     }
-    else if (PyObject_AsCharBuffer(substr, &sub, &slen))
-        return -1;
+    else {
+        if (PyObject_GetBuffer(substr, &sub_view, PyBUF_SIMPLE) != 0)
+            return -1;
+        sub = sub_view.buf;
+        slen = sub_view.len;
+    }
     str = PyBytes_AS_STRING(self);
 
     ADJUST_INDICES(start, end, len);
@@ -3197,17 +3219,25 @@ _bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
     if (direction < 0) {
         /* startswith */
         if (start+slen > len)
-            return 0;
+            goto notfound;
     } else {
         /* endswith */
         if (end-start < slen || start > len)
-            return 0;
+            goto notfound;
 
         if (end-slen > start)
             start = end - slen;
     }
-    if (end-start >= slen)
-        return ! memcmp(str+start, sub, slen);
+    if (end-start < slen)
+        goto notfound;
+    if (memcmp(str+start, sub, slen) != 0)
+        goto notfound;
+
+    PyBuffer_Release(&sub_view);
+    return 1;
+
+notfound:
+    PyBuffer_Release(&sub_view);
     return 0;
 }
 
@@ -3978,7 +4008,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         Py_buffer wb;
 
         wb.len = -1;
-        if (_getbuffer(w, &wb) < 0) {
+        if (PyObject_GetBuffer(w, &wb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                          Py_TYPE(w)->tp_name, Py_TYPE(*pv)->tp_name);
             Py_CLEAR(*pv);

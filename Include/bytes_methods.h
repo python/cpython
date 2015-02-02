@@ -22,7 +22,7 @@ extern void _Py_bytes_capitalize(char *result, char *s, Py_ssize_t len);
 extern void _Py_bytes_swapcase(char *result, char *s, Py_ssize_t len);
 
 /* The maketrans() static method. */
-extern PyObject* _Py_bytes_maketrans(PyObject *frm, PyObject *to);
+extern PyObject* _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to);
 
 /* Shared __doc__ strings. */
 extern const char _Py_isspace__doc__[];
