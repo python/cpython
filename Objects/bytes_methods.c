@@ -363,41 +363,20 @@ for use in the bytes or bytearray translate method where each byte\n\
 in frm is mapped to the byte at the same position in to.\n\
 The bytes objects frm and to must be of the same length.");
 
-static Py_ssize_t
-_getbuffer(PyObject *obj, Py_buffer *view)
-{
-    PyBufferProcs *buffer = Py_TYPE(obj)->tp_as_buffer;
-
-    if (buffer == NULL || buffer->bf_getbuffer == NULL)
-    {
-        PyErr_Format(PyExc_TypeError,
-                     "Type %.100s doesn't support the buffer API",
-                     Py_TYPE(obj)->tp_name);
-        return -1;
-    }
-
-    if (buffer->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
-        return -1;
-    return view->len;
-}
-
 PyObject *
 _Py_bytes_maketrans(PyObject *args)
 {
-    PyObject *frm, *to, *res = NULL;
-    Py_buffer bfrm, bto;
+    PyObject *res = NULL;
+    Py_buffer bfrm = {NULL, NULL};
+    Py_buffer bto = {NULL, NULL};
     Py_ssize_t i;
     char *p;
 
     bfrm.len = -1;
     bto.len = -1;
 
-    if (!PyArg_ParseTuple(args, "OO:maketrans", &frm, &to))
+    if (!PyArg_ParseTuple(args, "y*y*:maketrans", &bfrm, &bto))
         return NULL;
-    if (_getbuffer(frm, &bfrm) < 0)
-        return NULL;
-    if (_getbuffer(to, &bto) < 0)
-        goto done;
     if (bfrm.len != bto.len) {
         PyErr_Format(PyExc_ValueError,
                      "maketrans arguments must have same length");
@@ -415,9 +394,9 @@ _Py_bytes_maketrans(PyObject *args)
     }
 
 done:
-    if (bfrm.len != -1)
+    if (bfrm.obj != NULL)
         PyBuffer_Release(&bfrm);
-    if (bto.len != -1)
+    if (bfrm.obj != NULL)
         PyBuffer_Release(&bto);
     return res;
 }

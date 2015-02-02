@@ -250,28 +250,7 @@ PyObject_AsCharBuffer(PyObject *obj,
                       const char **buffer,
                       Py_ssize_t *buffer_len)
 {
-    PyBufferProcs *pb;
-    Py_buffer view;
-
-    if (obj == NULL || buffer == NULL || buffer_len == NULL) {
-        null_error();
-        return -1;
-    }
-    pb = obj->ob_type->tp_as_buffer;
-    if (pb == NULL || pb->bf_getbuffer == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "expected bytes, bytearray "
-                        "or buffer compatible object");
-        return -1;
-    }
-    if ((*pb->bf_getbuffer)(obj, &view, PyBUF_SIMPLE)) return -1;
-
-    *buffer = view.buf;
-    *buffer_len = view.len;
-    if (pb->bf_releasebuffer != NULL)
-        (*pb->bf_releasebuffer)(obj, &view);
-    Py_XDECREF(view.obj);
-    return 0;
+    return PyObject_AsReadBuffer(obj, (const void **)buffer, buffer_len);
 }
 
 int
@@ -295,28 +274,18 @@ int PyObject_AsReadBuffer(PyObject *obj,
                           const void **buffer,
                           Py_ssize_t *buffer_len)
 {
-    PyBufferProcs *pb;
     Py_buffer view;
 
     if (obj == NULL || buffer == NULL || buffer_len == NULL) {
         null_error();
         return -1;
     }
-    pb = obj->ob_type->tp_as_buffer;
-    if (pb == NULL ||
-        pb->bf_getbuffer == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "expected an object with a buffer interface");
+    if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
         return -1;
-    }
-
-    if ((*pb->bf_getbuffer)(obj, &view, PyBUF_SIMPLE)) return -1;
 
     *buffer = view.buf;
     *buffer_len = view.len;
-    if (pb->bf_releasebuffer != NULL)
-        (*pb->bf_releasebuffer)(obj, &view);
-    Py_XDECREF(view.obj);
+    PyBuffer_Release(&view);
     return 0;
 }
 
@@ -342,9 +311,7 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 
     *buffer = view.buf;
     *buffer_len = view.len;
-    if (pb->bf_releasebuffer != NULL)
-        (*pb->bf_releasebuffer)(obj, &view);
-    Py_XDECREF(view.obj);
+    PyBuffer_Release(&view);
     return 0;
 }
 
@@ -353,13 +320,15 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 int
 PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 {
-    if (!PyObject_CheckBuffer(obj)) {
+    PyBufferProcs *pb = obj->ob_type->tp_as_buffer;
+
+    if (pb == NULL || pb->bf_getbuffer == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "'%.100s' does not support the buffer interface",
                      Py_TYPE(obj)->tp_name);
         return -1;
     }
-    return (*(obj->ob_type->tp_as_buffer->bf_getbuffer))(obj, view, flags);
+    return (*pb->bf_getbuffer)(obj, view, flags);
 }
 
 static int
@@ -652,10 +621,14 @@ void
 PyBuffer_Release(Py_buffer *view)
 {
     PyObject *obj = view->obj;
-    if (obj && Py_TYPE(obj)->tp_as_buffer && Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer)
-        Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer(obj, view);
-    Py_XDECREF(obj);
+    PyBufferProcs *pb;
+    if (obj == NULL)
+        return;
+    pb = Py_TYPE(obj)->tp_as_buffer;
+    if (pb && pb->bf_releasebuffer)
+        pb->bf_releasebuffer(obj, view);
     view->obj = NULL;
+    Py_DECREF(obj);
 }
 
 PyObject *
@@ -1249,8 +1222,7 @@ PyNumber_Long(PyObject *o)
 {
     PyNumberMethods *m;
     PyObject *trunc_func;
-    const char *buffer;
-    Py_ssize_t buffer_len;
+    Py_buffer view;
     _Py_IDENTIFIER(__trunc__);
 
     if (o == NULL)
@@ -1288,21 +1260,22 @@ PyNumber_Long(PyObject *o)
     if (PyErr_Occurred())
         return NULL;
 
-    if (PyBytes_Check(o))
+    if (PyUnicode_Check(o))
+        /* The below check is done in PyLong_FromUnicode(). */
+        return PyLong_FromUnicodeObject(o, 10);
+
+    if (PyObject_GetBuffer(o, &view, PyBUF_SIMPLE) == 0) {
         /* need to do extra error checking that PyLong_FromString()
          * doesn't do.  In particular int('9\x005') must raise an
          * exception, not truncate at the null.
          */
-        return _PyLong_FromBytes(PyBytes_AS_STRING(o),
-                                 PyBytes_GET_SIZE(o), 10);
-    if (PyUnicode_Check(o))
-        /* The above check is done in PyLong_FromUnicode(). */
-        return PyLong_FromUnicodeObject(o, 10);
-    if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
-        return _PyLong_FromBytes(buffer, buffer_len, 10);
+        PyObject *result = _PyLong_FromBytes(view.buf, view.len, 10);
+        PyBuffer_Release(&view);
+        return result;
+    }
 
-    return type_error("int() argument must be a string or a "
-                      "number, not '%.200s'", o);
+    return type_error("int() argument must be a string, a bytes-like object "
+                      "or a number, not '%.200s'", o);
 }
 
 PyObject *

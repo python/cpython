@@ -94,7 +94,6 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
 {
     int rc = SQLITE_OK;
-    const char* buffer;
     char* string;
     Py_ssize_t buflen;
     parameter_type paramtype;
@@ -145,18 +144,22 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
             }
             rc = sqlite3_bind_text(self->st, pos, string, (int)buflen, SQLITE_TRANSIENT);
             break;
-        case TYPE_BUFFER:
-            if (PyObject_AsCharBuffer(parameter, &buffer, &buflen) != 0) {
+        case TYPE_BUFFER: {
+            Py_buffer view;
+            if (PyObject_GetBuffer(parameter, &view, PyBUF_SIMPLE) != 0) {
                 PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
                 return -1;
             }
-            if (buflen > INT_MAX) {
+            if (view.len > INT_MAX) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "BLOB longer than INT_MAX bytes");
+                PyBuffer_Release(&view);
                 return -1;
             }
-            rc = sqlite3_bind_blob(self->st, pos, buffer, buflen, SQLITE_TRANSIENT);
+            rc = sqlite3_bind_blob(self->st, pos, view.buf, (int)view.len, SQLITE_TRANSIENT);
+            PyBuffer_Release(&view);
             break;
+        }
         case TYPE_UNKNOWN:
             rc = -1;
     }

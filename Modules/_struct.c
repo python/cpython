@@ -1842,8 +1842,8 @@ static PyObject *
 s_pack_into(PyObject *self, PyObject *args)
 {
     PyStructObject *soself;
-    char *buffer;
-    Py_ssize_t buffer_len, offset;
+    Py_buffer buffer;
+    Py_ssize_t offset;
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = (PyStructObject *)self;
@@ -1868,34 +1868,37 @@ s_pack_into(PyObject *self, PyObject *args)
     }
 
     /* Extract a writable memory buffer from the first argument */
-    if ( PyObject_AsWriteBuffer(PyTuple_GET_ITEM(args, 0),
-                                                            (void**)&buffer, &buffer_len) == -1 ) {
+    if (!PyArg_Parse(PyTuple_GET_ITEM(args, 0), "w*", &buffer))
         return NULL;
-    }
-    assert( buffer_len >= 0 );
+    assert(buffer.len >= 0);
 
     /* Extract the offset from the first argument */
     offset = PyNumber_AsSsize_t(PyTuple_GET_ITEM(args, 1), PyExc_IndexError);
-    if (offset == -1 && PyErr_Occurred())
+    if (offset == -1 && PyErr_Occurred()) {
+        PyBuffer_Release(&buffer);
         return NULL;
+    }
 
     /* Support negative offsets. */
     if (offset < 0)
-        offset += buffer_len;
+        offset += buffer.len;
 
     /* Check boundaries */
-    if (offset < 0 || (buffer_len - offset) < soself->s_size) {
+    if (offset < 0 || (buffer.len - offset) < soself->s_size) {
         PyErr_Format(StructError,
                      "pack_into requires a buffer of at least %zd bytes",
                      soself->s_size);
+        PyBuffer_Release(&buffer);
         return NULL;
     }
 
     /* Call the guts */
-    if ( s_pack_internal(soself, args, 2, buffer + offset) != 0 ) {
+    if (s_pack_internal(soself, args, 2, (char*)buffer.buf + offset) != 0) {
+        PyBuffer_Release(&buffer);
         return NULL;
     }
 
+    PyBuffer_Release(&buffer);
     Py_RETURN_NONE;
 }
 
