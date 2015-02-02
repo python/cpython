@@ -723,10 +723,10 @@ builtin_chr_impl(PyModuleDef *module, int i)
 }
 
 
-static char *
-source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
+static const char *
+source_as_string(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, Py_buffer *view)
 {
-    char *str;
+    const char *str;
     Py_ssize_t size;
 
     if (PyUnicode_Check(cmd)) {
@@ -735,19 +735,21 @@ source_as_string(PyObject *cmd, char *funcname, char *what, PyCompilerFlags *cf)
         if (str == NULL)
             return NULL;
     }
-    else if (!PyObject_CheckReadBuffer(cmd)) {
+    else if (PyObject_GetBuffer(cmd, view, PyBUF_SIMPLE) == 0) {
+        str = (const char *)view->buf;
+        size = view->len;
+    }
+    else {
         PyErr_Format(PyExc_TypeError,
           "%s() arg 1 must be a %s object",
           funcname, what);
         return NULL;
     }
-    else if (PyObject_AsReadBuffer(cmd, (const void **)&str, &size) < 0) {
-        return NULL;
-    }
 
-    if (strlen(str) != (size_t)size)  {
+    if (strlen(str) != (size_t)size) {
         PyErr_SetString(PyExc_ValueError,
                         "source code string cannot contain null bytes");
+        PyBuffer_Release(view);
         return NULL;
     }
     return str;
@@ -827,7 +829,8 @@ static PyObject *
 builtin_compile_impl(PyModuleDef *module, PyObject *source, PyObject *filename, const char *mode, int flags, int dont_inherit, int optimize)
 /*[clinic end generated code: output=c72d197809d178fc input=c6212a9d21472f7e]*/
 {
-    char *str;
+    Py_buffer view = {NULL, NULL};
+    const char *str;
     int compile_mode = -1;
     int is_ast;
     PyCompilerFlags cf;
@@ -898,11 +901,12 @@ builtin_compile_impl(PyModuleDef *module, PyObject *source, PyObject *filename, 
         goto finally;
     }
 
-    str = source_as_string(source, "compile", "string, bytes or AST", &cf);
+    str = source_as_string(source, "compile", "string, bytes or AST", &cf, &view);
     if (str == NULL)
         goto error;
 
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+    PyBuffer_Release(&view);
     goto finally;
 
 error:
@@ -1042,7 +1046,8 @@ builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyOb
 /*[clinic end generated code: output=644fd59012538ce6 input=31e42c1d2125b50b]*/
 {
     PyObject *result, *tmp = NULL;
-    char *str;
+    Py_buffer view = {NULL, NULL};
+    const char *str;
     PyCompilerFlags cf;
 
     if (locals != Py_None && !PyMapping_Check(locals)) {
@@ -1089,7 +1094,7 @@ builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyOb
     }
 
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-    str = source_as_string(source, "eval", "string, bytes or code", &cf);
+    str = source_as_string(source, "eval", "string, bytes or code", &cf, &view);
     if (str == NULL)
         return NULL;
 
@@ -1098,6 +1103,7 @@ builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyOb
 
     (void)PyEval_MergeCompilerFlags(&cf);
     result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
+    PyBuffer_Release(&view);
     Py_XDECREF(tmp);
     return result;
 }
@@ -1204,11 +1210,12 @@ builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyOb
         v = PyEval_EvalCode(source, globals, locals);
     }
     else {
-        char *str;
+        Py_buffer view = {NULL, NULL};
+        const char *str;
         PyCompilerFlags cf;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         str = source_as_string(source, "exec",
-                                       "string, bytes or code", &cf);
+                                       "string, bytes or code", &cf, &view);
         if (str == NULL)
             return NULL;
         if (PyEval_MergeCompilerFlags(&cf))
@@ -1216,6 +1223,7 @@ builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyOb
                                   locals, &cf);
         else
             v = PyRun_String(str, Py_file_input, globals, locals);
+        PyBuffer_Release(&view);
     }
     if (v == NULL)
         return NULL;

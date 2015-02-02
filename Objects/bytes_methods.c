@@ -363,59 +363,27 @@ for use in the bytes or bytearray translate method where each byte\n\
 in frm is mapped to the byte at the same position in to.\n\
 The bytes objects frm and to must be of the same length.");
 
-static Py_ssize_t
-_getbuffer(PyObject *obj, Py_buffer *view)
-{
-    PyBufferProcs *buffer = Py_TYPE(obj)->tp_as_buffer;
-
-    if (buffer == NULL || buffer->bf_getbuffer == NULL)
-    {
-        PyErr_Format(PyExc_TypeError,
-                     "a bytes-like object is required, not '%.100s'",
-                     Py_TYPE(obj)->tp_name);
-        return -1;
-    }
-
-    if (buffer->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
-        return -1;
-    return view->len;
-}
-
 PyObject *
-_Py_bytes_maketrans(PyObject *frm, PyObject *to)
+_Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 {
     PyObject *res = NULL;
-    Py_buffer bfrm, bto;
     Py_ssize_t i;
     char *p;
 
-    bfrm.len = -1;
-    bto.len = -1;
-
-    if (_getbuffer(frm, &bfrm) < 0)
-        return NULL;
-    if (_getbuffer(to, &bto) < 0)
-        goto done;
-    if (bfrm.len != bto.len) {
+    if (frm->len != to->len) {
         PyErr_Format(PyExc_ValueError,
                      "maketrans arguments must have same length");
-        goto done;
+        return NULL;
     }
     res = PyBytes_FromStringAndSize(NULL, 256);
-    if (!res) {
-        goto done;
-    }
+    if (!res)
+        return NULL;
     p = PyBytes_AS_STRING(res);
     for (i = 0; i < 256; i++)
         p[i] = (char) i;
-    for (i = 0; i < bfrm.len; i++) {
-        p[((unsigned char *)bfrm.buf)[i]] = ((char *)bto.buf)[i];
+    for (i = 0; i < frm->len; i++) {
+        p[((unsigned char *)frm->buf)[i]] = ((char *)to->buf)[i];
     }
 
-done:
-    if (bfrm.len != -1)
-        PyBuffer_Release(&bfrm);
-    if (bto.len != -1)
-        PyBuffer_Release(&bto);
     return res;
 }
