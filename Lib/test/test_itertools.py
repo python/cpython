@@ -258,6 +258,11 @@ class TestBasicOps(unittest.TestCase):
 
                 self.pickletest(combinations(values, r))                 # test pickling
 
+    @support.bigaddrspacetest
+    def test_combinations_overflow(self):
+        with self.assertRaises(OverflowError):
+            combinations("AA", 2**29)
+
         # Test implementation detail:  tuple re-use
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_tuple_reuse(self):
