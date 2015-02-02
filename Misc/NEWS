@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23366: Fixed possible integer overflow in itertools.combinations.
+
 - Issue #23191: fnmatch functions that use caching are now threadsafe.
 
 - Issue #18518: timeit now rejects statements which can't be compiled outside
