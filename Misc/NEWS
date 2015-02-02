@@ -229,6 +229,10 @@ Library
 - Issue #23326: Removed __ne__ implementations.  Since fixing default __ne__
   implementation in issue #21408 they are redundant.
 
+- Issue #23363: Fix possible overflow in itertools.permutations.
+
+- Issue #23364: Fix possible overflow in itertools.product.
+
 - Issue #23366: Fixed possible integer overflow in itertools.combinations.
 
 - Issue #23366: Fixed possible integer overflow in itertools.combinations.
