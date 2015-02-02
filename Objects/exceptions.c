@@ -1922,8 +1922,6 @@ static int
 UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyUnicodeErrorObject *ude;
-    const char *data;
-    Py_ssize_t size;
 
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
@@ -1944,21 +1942,27 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
              return -1;
     }
 
-    if (!PyBytes_Check(ude->object)) {
-        if (PyObject_AsReadBuffer(ude->object, (const void **)&data, &size)) {
-            ude->encoding = ude->object = ude->reason = NULL;
-            return -1;
-        }
-        ude->object = PyBytes_FromStringAndSize(data, size);
-    }
-    else {
-        Py_INCREF(ude->object);
-    }
-
     Py_INCREF(ude->encoding);
+    Py_INCREF(ude->object);
     Py_INCREF(ude->reason);
 
+    if (!PyBytes_Check(ude->object)) {
+        Py_buffer view;
+        if (PyObject_GetBuffer(ude->object, &view, PyBUF_SIMPLE) != 0)
+            goto error;
+        Py_CLEAR(ude->object);
+        ude->object = PyBytes_FromStringAndSize(view.buf, view.len);
+        PyBuffer_Release(&view);
+        if (!ude->object)
+            goto error;
+    }
     return 0;
+
+error:
+    Py_CLEAR(ude->encoding);
+    Py_CLEAR(ude->object);
+    Py_CLEAR(ude->reason);
+    return -1;
 }
 
 static PyObject *

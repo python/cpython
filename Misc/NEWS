@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22896: Avoid using PyObject_AsCharBuffer(), PyObject_AsReadBuffer()
+  and PyObject_AsWriteBuffer().
+
 - Issue #21295: Revert some changes (issue #16795) to AST line numbers and
   column offsets that constituted a regression.
 

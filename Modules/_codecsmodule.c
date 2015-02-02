@@ -288,8 +288,6 @@ unicode_internal_decode(PyObject *self,
 {
     PyObject *obj;
     const char *errors = NULL;
-    const char *data;
-    Py_ssize_t size;
 
     if (!PyArg_ParseTuple(args, "O|z:unicode_internal_decode",
                           &obj, &errors))
@@ -302,11 +300,16 @@ unicode_internal_decode(PyObject *self,
         return codec_tuple(obj, PyUnicode_GET_LENGTH(obj));
     }
     else {
-        if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
+        Py_buffer view;
+        PyObject *result;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
             return NULL;
 
-        return codec_tuple(_PyUnicode_DecodeUnicodeInternal(data, size, errors),
-                           size);
+        result = codec_tuple(
+                _PyUnicode_DecodeUnicodeInternal(view.buf, view.len, errors),
+                view.len);
+        PyBuffer_Release(&view);
+        return result;
     }
 }
 
@@ -731,8 +734,6 @@ unicode_internal_encode(PyObject *self,
 {
     PyObject *obj;
     const char *errors = NULL;
-    const char *data;
-    Py_ssize_t len, size;
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "unicode_internal codec has been deprecated",
@@ -745,6 +746,7 @@ unicode_internal_encode(PyObject *self,
 
     if (PyUnicode_Check(obj)) {
         Py_UNICODE *u;
+        Py_ssize_t len, size;
 
         if (PyUnicode_READY(obj) < 0)
             return NULL;
@@ -759,9 +761,13 @@ unicode_internal_encode(PyObject *self,
                            PyUnicode_GET_LENGTH(obj));
     }
     else {
-        if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
+        Py_buffer view;
+        PyObject *result;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
             return NULL;
-        return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
+        result = codec_tuple(PyBytes_FromStringAndSize(view.buf, view.len), view.len);
+        PyBuffer_Release(&view);
+        return result;
     }
 }
 
