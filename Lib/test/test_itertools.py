@@ -266,7 +266,7 @@ class TestBasicOps(unittest.TestCase):
 
     @support.bigaddrspacetest
     def test_combinations_overflow(self):
-        with self.assertRaises(OverflowError):
+        with self.assertRaises((OverflowError, MemoryError)):
             combinations("AA", 2**29)
 
         # Test implementation detail:  tuple re-use
@@ -353,7 +353,7 @@ class TestBasicOps(unittest.TestCase):
 
     @support.bigaddrspacetest
     def test_combinations_with_replacement_overflow(self):
-        with self.assertRaises(OverflowError):
+        with self.assertRaises((OverflowError, MemoryError)):
             combinations_with_replacement("AA", 2**30)
 
         # Test implementation detail:  tuple re-use
@@ -428,10 +428,8 @@ class TestBasicOps(unittest.TestCase):
 
     @support.bigaddrspacetest
     def test_permutations_overflow(self):
-        with self.assertRaises(OverflowError):
+        with self.assertRaises((OverflowError, MemoryError)):
             permutations("A", 2**30)
-        with self.assertRaises(OverflowError):
-            permutations("A", 2, 2**30)
 
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_permutations_tuple_reuse(self):
@@ -964,8 +962,8 @@ class TestBasicOps(unittest.TestCase):
 
     @support.bigaddrspacetest
     def test_product_overflow(self):
-        with self.assertRaises(OverflowError):
-            product(["a"]*(2**16), repeat=2**16)
+        with self.assertRaises((OverflowError, MemoryError)):
+            product(*(['ab']*2**5), repeat=2**25)
 
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_product_tuple_reuse(self):
