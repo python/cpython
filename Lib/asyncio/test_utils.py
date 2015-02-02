@@ -416,6 +416,10 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         events.set_event_loop(None)
 
+        # Detect CPython bug #23353: ensure that yield/yield-from is not used
+        # in an except block of a generator
+        self.assertEqual(sys.exc_info(), (None, None, None))
+
 
 @contextlib.contextmanager
 def disable_logger():

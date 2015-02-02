@@ -186,10 +186,18 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                       self._child_watcher_callback, transp)
             try:
                 yield from waiter
-            except:
+            except Exception as exc:
+                # Workaround CPython bug #23353: using yield/yield-from in an
+                # except block of a generator doesn't clear properly
+                # sys.exc_info()
+                err = exc
+            else:
+                err = None
+
+            if err is not None:
                 transp.close()
                 yield from transp._wait()
-                raise
+                raise err
 
         return transp
 
