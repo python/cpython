@@ -1123,7 +1123,7 @@ ast_for_arg(struct compiling *c, const node *n)
     identifier name;
     expr_ty annotation = NULL;
     node *ch;
-    arg_ty tmp;
+    arg_ty ret;
 
     assert(TYPE(n) == tfpdef || TYPE(n) == vfpdef);
     ch = CHILD(n, 0);
@@ -1139,13 +1139,12 @@ ast_for_arg(struct compiling *c, const node *n)
             return NULL;
     }
 
-    tmp = arg(name, annotation, c->c_arena);
-    if (!tmp)
+    ret = arg(name, annotation, c->c_arena);
+    if (!ret)
         return NULL;
-
-    tmp->lineno = LINENO(n);
-    tmp->col_offset = n->n_col_offset;
-    return tmp;
+    ret->lineno = LINENO(n);
+    ret->col_offset = n->n_col_offset;
+    return ret;
 }
 
 /* returns -1 if failed to handle keyword only arguments
@@ -2103,22 +2102,15 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
         if (NCH(n) == 2)
             return Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n),
                         n->n_col_offset, c->c_arena);
-        else {
-            expr_ty tmp = ast_for_call(c, CHILD(n, 1), left_expr);
-            if (!tmp)
-                return NULL;
-
-            tmp->lineno = LINENO(n);
-            tmp->col_offset = n->n_col_offset;
-            return tmp;
-        }
+        else
+            return ast_for_call(c, CHILD(n, 1), left_expr);
     }
-    else if (TYPE(CHILD(n, 0)) == DOT ) {
+    else if (TYPE(CHILD(n, 0)) == DOT) {
         PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
         if (!attr_id)
             return NULL;
         return Attribute(left_expr, attr_id, Load,
-                         LINENO(CHILD(n, 1)), CHILD(n, 1)->n_col_offset, c->c_arena);
+                         LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
         REQ(CHILD(n, 0), LSQB);
@@ -2219,16 +2211,15 @@ ast_for_power(struct compiling *c, const node *n)
         tmp = ast_for_trailer(c, ch, e);
         if (!tmp)
             return NULL;
+        tmp->lineno = e->lineno;
+        tmp->col_offset = e->col_offset;
         e = tmp;
     }
     if (TYPE(CHILD(n, NCH(n) - 1)) == factor) {
         expr_ty f = ast_for_expr(c, CHILD(n, NCH(n) - 1));
         if (!f)
             return NULL;
-        tmp = BinOp(e, Pow, f, LINENO(n), n->n_col_offset, c->c_arena);
-        if (!tmp)
-            return NULL;
-        e = tmp;
+        e = BinOp(e, Pow, f, LINENO(n), n->n_col_offset, c->c_arena);
     }
     return e;
 }
