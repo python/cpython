@@ -373,7 +373,7 @@ def setcopyright():
         dirs.extend([os.path.join(here, os.pardir), here, os.curdir])
     builtins.license = _sitebuiltins._Printer(
         "license",
-        "See http://www.python.org/psf/license/",
+        "See https://www.python.org/psf/license/",
         files, dirs)
 
 
