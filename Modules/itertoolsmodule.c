@@ -2704,6 +2704,10 @@ cwr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    if (r > PY_SSIZE_T_MAX/sizeof(Py_ssize_t)) {
+        PyErr_SetString(PyExc_OverflowError, "r is too big");
+        goto error;
+    }
     indices = PyMem_Malloc(r * sizeof(Py_ssize_t));
     if (indices == NULL) {
         PyErr_NoMemory();
