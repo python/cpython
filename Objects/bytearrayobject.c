@@ -74,24 +74,6 @@ bytearray_releasebuffer(PyByteArrayObject *obj, Py_buffer *view)
     obj->ob_exports--;
 }
 
-static Py_ssize_t
-_getbuffer(PyObject *obj, Py_buffer *view)
-{
-    PyBufferProcs *buffer = Py_TYPE(obj)->tp_as_buffer;
-
-    if (buffer == NULL || buffer->bf_getbuffer == NULL)
-    {
-        PyErr_Format(PyExc_TypeError,
-                     "Type %.100s doesn't support the buffer API",
-                     Py_TYPE(obj)->tp_name);
-        return -1;
-    }
-
-    if (buffer->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
-            return -1;
-    return view->len;
-}
-
 static int
 _canresize(PyByteArrayObject *self)
 {
@@ -262,8 +244,8 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 
     va.len = -1;
     vb.len = -1;
-    if (_getbuffer(a, &va) < 0  ||
-        _getbuffer(b, &vb) < 0) {
+    if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
+        PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                          Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
             goto done;
@@ -304,7 +286,7 @@ bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
     Py_ssize_t size;
     Py_buffer vo;
 
-    if (_getbuffer(other, &vo) < 0) {
+    if (PyObject_GetBuffer(other, &vo, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                      Py_TYPE(other)->tp_name, Py_TYPE(self)->tp_name);
         return NULL;
@@ -562,14 +544,14 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
         needed = 0;
     }
     else {
-            if (_getbuffer(values, &vbytes) < 0) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "can't set bytearray slice from %.100s",
-                                 Py_TYPE(values)->tp_name);
-                    return -1;
-            }
-            needed = vbytes.len;
-            bytes = vbytes.buf;
+        if (PyObject_GetBuffer(values, &vbytes, PyBUF_SIMPLE) != 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "can't set bytearray slice from %.100s",
+                         Py_TYPE(values)->tp_name);
+            return -1;
+        }
+        needed = vbytes.len;
+        bytes = vbytes.buf;
     }
 
     if (lo < 0)
@@ -1012,18 +994,18 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    self_size = _getbuffer(self, &self_bytes);
-    if (self_size < 0) {
+    if (PyObject_GetBuffer(self, &self_bytes, PyBUF_SIMPLE) != 0) {
         PyErr_Clear();
         Py_RETURN_NOTIMPLEMENTED;
     }
+    self_size = self_bytes.len;
 
-    other_size = _getbuffer(other, &other_bytes);
-    if (other_size < 0) {
+    if (PyObject_GetBuffer(other, &other_bytes, PyBUF_SIMPLE) != 0) {
         PyErr_Clear();
         PyBuffer_Release(&self_bytes);
         Py_RETURN_NOTIMPLEMENTED;
     }
+    other_size = other_bytes.len;
 
     if (self_size != other_size && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the objects differ */
@@ -1135,7 +1117,7 @@ bytearray_find_internal(PyByteArrayObject *self, PyObject *args, int dir)
         return -2;
 
     if (subobj) {
-        if (_getbuffer(subobj, &subbuf) < 0)
+        if (PyObject_GetBuffer(subobj, &subbuf, PyBUF_SIMPLE) != 0)
             return -2;
 
         sub = subbuf.buf;
@@ -1203,7 +1185,7 @@ bytearray_count(PyByteArrayObject *self, PyObject *args)
         return NULL;
 
     if (sub_obj) {
-        if (_getbuffer(sub_obj, &vsub) < 0)
+        if (PyObject_GetBuffer(sub_obj, &vsub, PyBUF_SIMPLE) != 0)
             return NULL;
 
         sub = vsub.buf;
@@ -1318,7 +1300,7 @@ bytearray_contains(PyObject *self, PyObject *arg)
         Py_buffer varg;
         Py_ssize_t pos;
         PyErr_Clear();
-        if (_getbuffer(arg, &varg) < 0)
+        if (PyObject_GetBuffer(arg, &varg, PyBUF_SIMPLE) != 0)
             return -1;
         pos = stringlib_find(PyByteArray_AS_STRING(self), Py_SIZE(self),
                              varg.buf, varg.len, 0);
@@ -1349,7 +1331,7 @@ _bytearray_tailmatch(PyByteArrayObject *self, PyObject *substr, Py_ssize_t start
 
     str = PyByteArray_AS_STRING(self);
 
-    if (_getbuffer(substr, &vsubstr) < 0)
+    if (PyObject_GetBuffer(substr, &vsubstr, PyBUF_SIMPLE) != 0)
         return -1;
 
     ADJUST_INDICES(start, end, len);
@@ -1493,7 +1475,7 @@ bytearray_translate(PyByteArrayObject *self, PyObject *args)
     if (tableobj == Py_None) {
         table = NULL;
         tableobj = NULL;
-    } else if (_getbuffer(tableobj, &vtable) < 0) {
+    } else if (PyObject_GetBuffer(tableobj, &vtable, PyBUF_SIMPLE) != 0) {
         return NULL;
     } else {
         if (vtable.len != 256) {
@@ -1506,7 +1488,7 @@ bytearray_translate(PyByteArrayObject *self, PyObject *args)
     }
 
     if (delobj != NULL) {
-        if (_getbuffer(delobj, &vdel) < 0) {
+        if (PyObject_GetBuffer(delobj, &vdel, PyBUF_SIMPLE) != 0) {
             if (tableobj != NULL)
                 PyBuffer_Release(&vtable);
             return NULL;
@@ -2070,26 +2052,20 @@ given, only the first count occurrences are replaced.");
 static PyObject *
 bytearray_replace(PyByteArrayObject *self, PyObject *args)
 {
+    PyObject *res;
+    Py_buffer old = {NULL, NULL};
+    Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
-    PyObject *from, *to, *res;
-    Py_buffer vfrom, vto;
 
-    if (!PyArg_ParseTuple(args, "OO|n:replace", &from, &to, &count))
+    if (!PyArg_ParseTuple(args, "y*y*|n:replace", &old, &new, &count))
         return NULL;
-
-    if (_getbuffer(from, &vfrom) < 0)
-        return NULL;
-    if (_getbuffer(to, &vto) < 0) {
-        PyBuffer_Release(&vfrom);
-        return NULL;
-    }
 
     res = (PyObject *)replace((PyByteArrayObject *) self,
-                              vfrom.buf, vfrom.len,
-                              vto.buf, vto.len, count);
+                              (const char *)old.buf, old.len,
+                              (const char *)new.buf, new.len, count);
 
-    PyBuffer_Release(&vfrom);
-    PyBuffer_Release(&vto);
+    PyBuffer_Release(&old);
+    PyBuffer_Release(&new);
     return res;
 }
 
@@ -2120,7 +2096,7 @@ bytearray_split(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (subobj == Py_None)
         return stringlib_split_whitespace((PyObject*) self, s, len, maxsplit);
 
-    if (_getbuffer(subobj, &vsub) < 0)
+    if (PyObject_GetBuffer(subobj, &vsub, PyBUF_SIMPLE) != 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
@@ -2215,7 +2191,7 @@ bytearray_rsplit(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (subobj == Py_None)
         return stringlib_rsplit_whitespace((PyObject*) self, s, len, maxsplit);
 
-    if (_getbuffer(subobj, &vsub) < 0)
+    if (PyObject_GetBuffer(subobj, &vsub, PyBUF_SIMPLE) != 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
@@ -2503,7 +2479,7 @@ bytearray_strip(PyByteArrayObject *self, PyObject *args)
         argsize = 6;
     }
     else {
-        if (_getbuffer(arg, &varg) < 0)
+        if (PyObject_GetBuffer(arg, &varg, PyBUF_SIMPLE) != 0)
             return NULL;
         argptr = (char *) varg.buf;
         argsize = varg.len;
@@ -2540,7 +2516,7 @@ bytearray_lstrip(PyByteArrayObject *self, PyObject *args)
         argsize = 6;
     }
     else {
-        if (_getbuffer(arg, &varg) < 0)
+        if (PyObject_GetBuffer(arg, &varg, PyBUF_SIMPLE) != 0)
             return NULL;
         argptr = (char *) varg.buf;
         argsize = varg.len;
@@ -2574,7 +2550,7 @@ bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
         argsize = 6;
     }
     else {
-        if (_getbuffer(arg, &varg) < 0)
+        if (PyObject_GetBuffer(arg, &varg, PyBUF_SIMPLE) != 0)
             return NULL;
         argptr = (char *) varg.buf;
         argsize = varg.len;

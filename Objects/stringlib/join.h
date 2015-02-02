@@ -58,7 +58,14 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
     for (i = 0, nbufs = 0; i < seqlen; i++) {
         Py_ssize_t itemlen;
         item = PySequence_Fast_GET_ITEM(seq, i);
-        if (_getbuffer(item, &buffers[i]) < 0) {
+        if (PyBytes_CheckExact(item)) {
+            /* Fast path. */
+            Py_INCREF(item);
+            buffers[i].obj = item;
+            buffers[i].buf = PyBytes_AS_STRING(item);
+            buffers[i].len = PyBytes_GET_SIZE(item);
+        }
+        else if (PyObject_GetBuffer(item, &buffers[i], PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError,
                          "sequence item %zd: expected a bytes-like object, "
                          "%.80s found",
