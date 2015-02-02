@@ -2022,15 +2022,14 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         nargs = 0;
     } else {
         nargs = PyTuple_GET_SIZE(args);
-        if (repeat > PY_SSIZE_T_MAX/sizeof(Py_ssize_t) ||
-            nargs > PY_SSIZE_T_MAX/(repeat * sizeof(Py_ssize_t))) {
+        if ((size_t)nargs > PY_SSIZE_T_MAX/sizeof(Py_ssize_t)/repeat) {
             PyErr_SetString(PyExc_OverflowError, "repeat argument too large");
             return NULL;
         }
     }
     npools = nargs * repeat;
 
-    indices = PyMem_Malloc(npools * sizeof(Py_ssize_t));
+    indices = PyMem_New(Py_ssize_t, npools);
     if (indices == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -2368,11 +2367,7 @@ combinations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (r > PY_SSIZE_T_MAX/sizeof(Py_ssize_t)) {
-        PyErr_SetString(PyExc_OverflowError, "r is too big");
-        goto error;
-    }
-    indices = PyMem_Malloc(r * sizeof(Py_ssize_t));
+    indices = PyMem_New(Py_ssize_t, r);
     if (indices == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -2713,11 +2708,7 @@ cwr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (r > PY_SSIZE_T_MAX/sizeof(Py_ssize_t)) {
-        PyErr_SetString(PyExc_OverflowError, "r is too big");
-        goto error;
-    }
-    indices = PyMem_Malloc(r * sizeof(Py_ssize_t));
+    indices = PyMem_New(Py_ssize_t, r);
     if (indices == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -3058,13 +3049,8 @@ permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (n > PY_SSIZE_T_MAX/sizeof(Py_ssize_t) ||
-        r > PY_SSIZE_T_MAX/sizeof(Py_ssize_t)) {
-        PyErr_SetString(PyExc_OverflowError, "parameters too large");
-        goto error;
-    }
-    indices = PyMem_Malloc(n * sizeof(Py_ssize_t));
-    cycles = PyMem_Malloc(r * sizeof(Py_ssize_t));
+    indices = PyMem_New(Py_ssize_t, n);
+    cycles = PyMem_New(Py_ssize_t, r);
     if (indices == NULL || cycles == NULL) {
         PyErr_NoMemory();
         goto error;
