@@ -88,31 +88,60 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
-        for (j = 1 ; j <= LINEAR_PROBES ; j++) {
-            entry = &table[(i + j) & mask];
-            if (entry->key == NULL)
-                goto found_null;
-            if (entry->hash == hash) {
-                PyObject *startkey = entry->key;
-                assert(startkey != dummy);
-                if (startkey == key)
-                    return entry;
-                if (PyUnicode_CheckExact(startkey)
-                    && PyUnicode_CheckExact(key)
-                    && unicode_eq(startkey, key))
-                    return entry;
-                Py_INCREF(startkey);
-                cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                Py_DECREF(startkey);
-                if (cmp < 0)
-                    return NULL;
-                if (table != so->table || entry->key != startkey)
-                    return set_lookkey(so, key, hash);
-                if (cmp > 0)
-                    return entry;
+        if (i + LINEAR_PROBES <= mask) {
+            for (j = 1 ; j <= LINEAR_PROBES ; j++) {
+                entry++;
+                if (entry->key == NULL)
+                    goto found_null;
+                if (entry->hash == hash) {
+                    PyObject *startkey = entry->key;
+                    assert(startkey != dummy);
+                    if (startkey == key)
+                        return entry;
+                    if (PyUnicode_CheckExact(startkey)
+                        && PyUnicode_CheckExact(key)
+                        && unicode_eq(startkey, key))
+                        return entry;
+                    Py_INCREF(startkey);
+                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                    Py_DECREF(startkey);
+                    if (cmp < 0)
+                        return NULL;
+                    if (table != so->table || entry->key != startkey)
+                        return set_lookkey(so, key, hash);
+                    if (cmp > 0)
+                        return entry;
+                }
+                if (entry->key == dummy && freeslot == NULL)
+                    freeslot = entry;
             }
-            if (entry->key == dummy && freeslot == NULL)
-                freeslot = entry;
+        } else {
+            for (j = 1 ; j <= LINEAR_PROBES ; j++) {
+                entry = &table[(i + j) & mask];
+                if (entry->key == NULL)
+                    goto found_null;
+                if (entry->hash == hash) {
+                    PyObject *startkey = entry->key;
+                    assert(startkey != dummy);
+                    if (startkey == key)
+                        return entry;
+                    if (PyUnicode_CheckExact(startkey)
+                        && PyUnicode_CheckExact(key)
+                        && unicode_eq(startkey, key))
+                        return entry;
+                    Py_INCREF(startkey);
+                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                    Py_DECREF(startkey);
+                    if (cmp < 0)
+                        return NULL;
+                    if (table != so->table || entry->key != startkey)
+                        return set_lookkey(so, key, hash);
+                    if (cmp > 0)
+                        return entry;
+                }
+                if (entry->key == dummy && freeslot == NULL)
+                    freeslot = entry;
+            }
         }
 
         perturb >>= PERTURB_SHIFT;
