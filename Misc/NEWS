@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23363: Fix possible overflow in itertools.permutations.
+
+- Issue #23364: Fix possible overflow in itertools.product.
+
 - Issue #23365: Fixed possible integer overflow in
   itertools.combinations_with_replacement.
 
