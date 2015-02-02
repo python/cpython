@@ -622,14 +622,13 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             int isnumok;
             PyObject *v = NULL;
             PyObject *temp = NULL;
-            Py_buffer buf;
+            Py_buffer buf = {NULL, NULL};
             char *pbuf;
             int sign;
             Py_ssize_t len;
             char formatbuf[FORMATBUFLEN];
                  /* For format{int,char}() */
 
-            buf.obj = NULL;
             fmt++;
             if (*fmt == '(') {
                 char *keystart;
@@ -790,7 +789,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     Py_DECREF(temp);
                     goto error;
                 }
-                if (_getbuffer(repr, &buf) < 0) {
+                if (PyObject_GetBuffer(repr, &buf, PyBUF_SIMPLE) != 0) {
                     temp = format_obj(repr);
                     if (temp == NULL) {
                         Py_DECREF(repr);
