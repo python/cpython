@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23365: Fixed possible integer overflow in
+  itertools.combinations_with_replacement.
+
 - Issue #23366: Fixed possible integer overflow in itertools.combinations.
 
 - Issue #23191: fnmatch functions that use caching are now threadsafe.

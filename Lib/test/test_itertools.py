@@ -213,6 +213,11 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(result, list(cwr1(values, r)))         # matches first pure python version
                 self.assertEqual(result, list(cwr2(values, r)))         # matches second pure python version
 
+    @test_support.bigaddrspacetest
+    def test_combinations_with_replacement_overflow(self):
+        with self.assertRaises(OverflowError):
+            combinations_with_replacement("AA", 2**30)
+
     @test_support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_with_replacement_tuple_reuse(self):
         cwr = combinations_with_replacement
