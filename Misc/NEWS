@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21295: Revert some changes (issue #16795) to AST line numbers and
+  column offsets that constituted a regression.
+
 - Issue #22986: Allow changing an object's __class__ between a dynamic type and
   static type in some cases.
 
