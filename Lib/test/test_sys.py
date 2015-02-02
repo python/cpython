@@ -539,6 +539,7 @@ class SysModuleTest(unittest.TestCase):
         test.support.get_attribute(sys, "getwindowsversion")
         self.assert_raise_on_new_sys_type(sys.getwindowsversion())
 
+    @test.test_support.cpython_only
     def test_clear_type_cache(self):
         sys._clear_type_cache()
 
