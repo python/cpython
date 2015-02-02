@@ -344,8 +344,12 @@ class TestBasicOps(unittest.TestCase):
 
                 self.pickletest(cwr(values,r))                          # test pickling
 
-        # Test implementation detail:  tuple re-use
+    @support.bigaddrspacetest
+    def test_combinations_with_replacement_overflow(self):
+        with self.assertRaises(OverflowError):
+            combinations_with_replacement("AA", 2**30)
 
+        # Test implementation detail:  tuple re-use
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_with_replacement_tuple_reuse(self):
         cwr = combinations_with_replacement
