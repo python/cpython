@@ -42,6 +42,7 @@ class TestPyEncodeBasestringAscii(TestEncodeBasestringAscii, PyTest): pass
 class TestCEncodeBasestringAscii(TestEncodeBasestringAscii, CTest):
     @bigaddrspacetest
     def test_overflow(self):
-        s = "\uffff"*((2**32)//6 + 1)
+        size = (2**32)//6 + 1
+        s = "\x00"*size
         with self.assertRaises(OverflowError):
             self.json.encoder.encode_basestring_ascii(s)
