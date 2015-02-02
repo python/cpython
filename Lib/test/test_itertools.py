@@ -264,6 +264,11 @@ class TestBasicOps(unittest.TestCase):
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     self.pickletest(proto, combinations(values, r))      # test pickling
 
+    @support.bigaddrspacetest
+    def test_combinations_overflow(self):
+        with self.assertRaises(OverflowError):
+            combinations("AA", 2**29)
+
         # Test implementation detail:  tuple re-use
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_tuple_reuse(self):
