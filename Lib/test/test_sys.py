@@ -425,6 +425,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
         self.assertTrue(repr(sys.flags))
 
+    @test.test_support.cpython_only
     def test_clear_type_cache(self):
         sys._clear_type_cache()
 
