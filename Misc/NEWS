@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21295: Revert some changes (issue #16795) to AST line numbers and
+  column offsets that constituted a regression.
+
 - Issue #21408: The default __ne__() now returns NotImplemented if __eq__()
   returned NotImplemented.  Original patch by Martin Panter.
 
