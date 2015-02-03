@@ -414,8 +414,11 @@ def _compile_info(code, pattern, flags):
     # this contains min/max pattern width, and an optional literal
     # prefix or a character map
     lo, hi = pattern.getwidth()
+    if hi > MAXCODE:
+        hi = MAXCODE
     if lo == 0:
-        return # not worth it
+        code.extend([INFO, 4, 0, lo, hi])
+        return
     # look for a literal prefix
     prefix = []
     prefixappend = prefix.append
@@ -495,10 +498,7 @@ def _compile_info(code, pattern, flags):
     else:
         emit(MAXCODE)
         prefix = prefix[:MAXCODE]
-    if hi < MAXCODE:
-        emit(hi)
-    else:
-        emit(0)
+    emit(min(hi, MAXCODE))
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length

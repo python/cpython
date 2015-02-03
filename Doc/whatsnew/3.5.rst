@@ -482,6 +482,13 @@ Changes in the Python API
   simply define :meth:`~importlib.machinery.Loader.create_module` to return
   ``None`` (:issue:`23014`).
 
+* :func:`re.split` always ignored empty pattern matches, so the ``'x*'``
+  pattern worked the same as ``'x+'``, and the ``'\b'`` pattern never worked.
+  Now :func:`re.split` raises a warning if the pattern could match
+  an empty string.  For compatibility use patterns that never match an empty
+  string (e.g. ``'x+'`` instead of ``'x*'``).  Patterns that could only match
+  an empty string (such as ``'\b'``) now raise an error.
+
 Changes in the C API
 --------------------
 
