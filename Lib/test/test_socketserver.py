@@ -2,7 +2,6 @@
 Test suite for socketserver.
 """
 
-import _imp as imp
 import contextlib
 import os
 import select
@@ -313,12 +312,18 @@ class SocketServerTest(unittest.TestCase):
                                        socketserver.StreamRequestHandler)
 
 
-def test_main():
-    if imp.lock_held():
-        # If the import lock is held, the threads will hang
-        raise unittest.SkipTest("can't run when import lock is held")
+class MiscTestCase(unittest.TestCase):
 
-    test.support.run_unittest(SocketServerTest)
+    def test_all(self):
+        # objects defined in the module should be in __all__
+        expected = []
+        for name in dir(socketserver):
+            if not name.startswith('_'):
+                mod_object = getattr(socketserver, name)
+                if getattr(mod_object, '__module__', None) == 'socketserver':
+                    expected.append(name)
+        self.assertCountEqual(socketserver.__all__, expected)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
