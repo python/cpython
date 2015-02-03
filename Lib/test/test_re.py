@@ -251,28 +251,28 @@ class ReTests(unittest.TestCase):
         for string in ":a:b::c", S(":a:b::c"):
             self.assertTypedEqual(re.split(":", string),
                                   ['', 'a', 'b', '', 'c'])
-            self.assertTypedEqual(re.split(":*", string),
+            self.assertTypedEqual(re.split(":+", string),
                                   ['', 'a', 'b', 'c'])
-            self.assertTypedEqual(re.split("(:*)", string),
+            self.assertTypedEqual(re.split("(:+)", string),
                                   ['', ':', 'a', ':', 'b', '::', 'c'])
         for string in (b":a:b::c", B(b":a:b::c"), bytearray(b":a:b::c"),
                        memoryview(b":a:b::c")):
             self.assertTypedEqual(re.split(b":", string),
                                   [b'', b'a', b'b', b'', b'c'])
-            self.assertTypedEqual(re.split(b":*", string),
+            self.assertTypedEqual(re.split(b":+", string),
                                   [b'', b'a', b'b', b'c'])
-            self.assertTypedEqual(re.split(b"(:*)", string),
+            self.assertTypedEqual(re.split(b"(:+)", string),
                                   [b'', b':', b'a', b':', b'b', b'::', b'c'])
         for a, b, c in ("\xe0\xdf\xe7", "\u0430\u0431\u0432",
                         "\U0001d49c\U0001d49e\U0001d4b5"):
             string = ":%s:%s::%s" % (a, b, c)
             self.assertEqual(re.split(":", string), ['', a, b, '', c])
-            self.assertEqual(re.split(":*", string), ['', a, b, c])
-            self.assertEqual(re.split("(:*)", string),
+            self.assertEqual(re.split(":+", string), ['', a, b, c])
+            self.assertEqual(re.split("(:+)", string),
                              ['', ':', a, ':', b, '::', c])
 
-        self.assertEqual(re.split("(?::*)", ":a:b::c"), ['', 'a', 'b', 'c'])
-        self.assertEqual(re.split("(:)*", ":a:b::c"),
+        self.assertEqual(re.split("(?::+)", ":a:b::c"), ['', 'a', 'b', 'c'])
+        self.assertEqual(re.split("(:)+", ":a:b::c"),
                          ['', ':', 'a', ':', 'b', ':', 'c'])
         self.assertEqual(re.split("([b:]+)", ":a:b::c"),
                          ['', ':', 'a', ':b::', 'c'])
@@ -282,13 +282,34 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.split("(?:b)|(?::+)", ":a:b::c"),
                          ['', 'a', '', '', 'c'])
 
+        for sep, expected in [
+            (':*', ['', 'a', 'b', 'c']),
+            ('(?::*)', ['', 'a', 'b', 'c']),
+            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c']),
+            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c']),
+        ]:
+            with self.subTest(sep=sep), self.assertWarns(FutureWarning):
+                self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
+
+        for sep, expected in [
+            ('', [':a:b::c']),
+            (r'\b', [':a:b::c']),
+            (r'(?=:)', [':a:b::c']),
+            (r'(?<=:)', [':a:b::c']),
+        ]:
+            with self.subTest(sep=sep), self.assertRaises(ValueError):
+                self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
+
     def test_qualified_re_split(self):
         self.assertEqual(re.split(":", ":a:b::c", maxsplit=2), ['', 'a', 'b::c'])
         self.assertEqual(re.split(':', 'a:b:c:d', maxsplit=2), ['a', 'b', 'c:d'])
         self.assertEqual(re.split("(:)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
-        self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
+        self.assertEqual(re.split("(:+)", ":a:b::c", maxsplit=2),
                          ['', ':', 'a', ':', 'b::c'])
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
+                             ['', ':', 'a', ':', 'b::c'])
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
