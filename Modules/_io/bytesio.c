@@ -38,7 +38,8 @@ typedef struct {
         return NULL; \
     }
 
-#define SHARED_BUF(self) (Py_REFCNT((self)->buf) > 1)
+#define SHARED_BUF(self) (Py_REFCNT((self)->buf) > 1 || \
+                          PyBytes_GET_SIZE((self)->buf) <= 1)
 
 
 /* Internal routine to get a line from the buffer of a BytesIO
@@ -308,6 +309,7 @@ read_bytes(bytesio *self, Py_ssize_t size)
     char *output;
 
     assert(self->buf != NULL);
+    assert(size <= self->string_size);
     if (size > 1 &&
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
         self->exports == 0) {
