@@ -19,7 +19,7 @@ typedef struct {
 
 /* The bytesio object can be in three states:
   * Py_REFCNT(buf) == 1, exports == 0.
-  * Py_REFCNT(buf) > 1.  exports == 0, string_size == PyBytes_GET_SIZE(buf),
+  * Py_REFCNT(buf) > 1.  exports == 0,
     first modification or export causes the internal buffer copying.
   * exports > 0.  Py_REFCNT(buf) == 1, any modifications are forbidden.
 */
@@ -38,8 +38,7 @@ typedef struct {
         return NULL; \
     }
 
-#define SHARED_BUF(self) (Py_REFCNT((self)->buf) > 1 || \
-                          PyBytes_GET_SIZE((self)->buf) <= 1)
+#define SHARED_BUF(self) (Py_REFCNT((self)->buf) > 1)
 
 
 /* Internal routine to get a line from the buffer of a BytesIO
@@ -152,16 +151,18 @@ resize_buffer(bytesio *self, size_t size)
 static Py_ssize_t
 write_bytes(bytesio *self, const char *bytes, Py_ssize_t len)
 {
+    size_t endpos;
     assert(self->buf != NULL);
     assert(self->pos >= 0);
     assert(len >= 0);
 
-    if ((size_t)self->pos + len > (size_t)PyBytes_GET_SIZE(self->buf)) {
-        if (resize_buffer(self, (size_t)self->pos + len) < 0)
+    endpos = (size_t)self->pos + len;
+    if (endpos > (size_t)PyBytes_GET_SIZE(self->buf)) {
+        if (resize_buffer(self, endpos) < 0)
             return -1;
     }
     else if (SHARED_BUF(self)) {
-        if (unshare_buffer(self, self->string_size) < 0)
+        if (unshare_buffer(self, Py_MAX(endpos, (size_t)self->string_size)) < 0)
             return -1;
     }
 
@@ -181,11 +182,11 @@ write_bytes(bytesio *self, const char *bytes, Py_ssize_t len)
     /* Copy the data to the internal buffer, overwriting some of the existing
        data if self->pos < self->string_size. */
     memcpy(PyBytes_AS_STRING(self->buf) + self->pos, bytes, len);
-    self->pos += len;
+    self->pos = endpos;
 
     /* Set the new length of the internal string if it has changed. */
-    if (self->string_size < self->pos) {
-        self->string_size = self->pos;
+    if ((size_t)self->string_size < endpos) {
+        self->string_size = endpos;
     }
 
     return len;
