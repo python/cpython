@@ -852,7 +852,13 @@ class BytesIO(BufferedIOBase):
     def getbuffer(self):
         """Return a readable and writable view of the buffer.
         """
+        if self.closed:
+            raise ValueError("getbuffer on closed file")
         return memoryview(self._buffer)
+
+    def close(self):
+        self._buffer.clear()
+        super().close()
 
     def read(self, size=None):
         if self.closed:

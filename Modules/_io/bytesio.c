@@ -779,6 +779,7 @@ PyDoc_STRVAR(close_doc,
 static PyObject *
 bytesio_close(bytesio *self)
 {
+    CHECK_EXPORTS(self);
     reset(self);
     Py_RETURN_NONE;
 }
