@@ -776,6 +776,9 @@ class HTTPConnection:
             if line in (b'\r\n', b'\n', b''):
                 break
 
+            if self.debuglevel > 0:
+                print('header:', line.decode())
+
     def connect(self):
         """Connect to the host and port specified in __init__."""
         self.sock = self._create_connection(
