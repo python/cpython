@@ -1028,23 +1028,24 @@ PyTypeObject PyBytesIO_Type = {
 static int
 bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
 {
-    int ret;
     bytesio *b = (bytesio *) obj->source;
+
+    if (view == NULL) {
+        PyErr_SetString(PyExc_BufferError,
+            "bytesiobuf_getbuffer: view==NULL argument is obsolete");
+        return -1;
+    }
     if (SHARED_BUF(b)) {
         if (unshare_buffer(b, b->string_size) < 0)
             return -1;
     }
-    if (view == NULL) {
-        b->exports++;
-        return 0;
-    }
-    ret = PyBuffer_FillInfo(view, (PyObject*)obj,
+
+    /* cannot fail if view != NULL and readonly == 0 */
+    (void)PyBuffer_FillInfo(view, (PyObject*)obj,
                             PyBytes_AS_STRING(b->buf), b->string_size,
                             0, flags);
-    if (ret >= 0) {
-        b->exports++;
-    }
-    return ret;
+    b->exports++;
+    return 0;
 }
 
 static void

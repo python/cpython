@@ -1224,6 +1224,10 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(BufferError, delslice)
         self.assertEqual(b, orig)
 
+    @test.support.cpython_only
+    def test_obsolete_write_lock(self):
+        from _testcapi import getbuffer_with_null_view
+        self.assertRaises(BufferError, getbuffer_with_null_view, bytearray())
 
 class AssortedBytesTest(unittest.TestCase):
     #

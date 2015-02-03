@@ -1560,9 +1560,9 @@ Build
 C API
 -----
 
-- Issue #14203: Remove obsolete support for view==NULL in PyBuffer_FillInfo()
-  and bytearray_getbuffer().  Both functions now raise BufferError in that
-  case.
+- Issue #14203: Remove obsolete support for view==NULL in PyBuffer_FillInfo(),
+  bytearray_getbuffer(), bytesiobuf_getbuffer() and array_buffer_getbuf().
+  All functions now raise BufferError in that case.
 
 - Issue #22445: PyBuffer_IsContiguous() now implements precise contiguity
   tests, compatible with NumPy's NPY_RELAXED_STRIDES_CHECKING compilation

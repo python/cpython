@@ -2518,21 +2518,26 @@ test_from_contiguous(PyObject* self, PyObject *noargs)
 
     Py_RETURN_NONE;
 }
- 
+
+extern PyTypeObject _PyBytesIOBuffer_Type;
+
 static PyObject *
 test_pep3118_obsolete_write_locks(PyObject* self, PyObject *noargs)
 {
+    PyTypeObject *type = &_PyBytesIOBuffer_Type;
     PyObject *b;
     char *dummy[1];
     int ret, match;
 
+    /* PyBuffer_FillInfo() */
     ret = PyBuffer_FillInfo(NULL, NULL, dummy, 1, 0, PyBUF_SIMPLE);
     match = PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_BufferError);
     PyErr_Clear();
     if (ret != -1 || match == 0)
         goto error;
 
-    b = PyByteArray_FromStringAndSize("", 0);
+    /* bytesiobuf_getbuffer() */
+    b = type->tp_alloc(type, 0);
     if (b == NULL) {
         return NULL;
     }
@@ -2550,6 +2555,18 @@ error:
     PyErr_SetString(TestError,
         "test_pep3118_obsolete_write_locks: failure");
     return NULL;
+}
+
+/* This tests functions that historically supported write locks.  It is
+   wrong to call getbuffer() with view==NULL and a compliant getbufferproc
+   is entitled to segfault in that case. */
+static PyObject *
+getbuffer_with_null_view(PyObject* self, PyObject *obj)
+{
+    if (PyObject_GetBuffer(obj, NULL, PyBUF_SIMPLE) < 0)
+        return NULL;
+
+    Py_RETURN_NONE;
 }
 
 /* Test that the fatal error from not having a current thread doesn't
@@ -3213,6 +3230,7 @@ static PyMethodDef TestMethods[] = {
     {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
     {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
     {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
+    {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_keywords", (PyCFunction)getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},

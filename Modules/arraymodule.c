@@ -2530,7 +2530,11 @@ static const void *emptybuf = "";
 static int
 array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
 {
-    if (view==NULL) goto finish;
+    if (view == NULL) {
+        PyErr_SetString(PyExc_BufferError,
+            "array_buffer_getbuf: view==NULL argument is obsolete");
+        return -1;
+    }
 
     view->buf = (void *)self->ob_item;
     view->obj = (PyObject*)self;
@@ -2560,7 +2564,6 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
 #endif
     }
 
- finish:
     self->ob_exports++;
     return 0;
 }

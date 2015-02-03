@@ -1041,6 +1041,11 @@ class BaseTest:
             a = array.array(self.typecode, "foo")
             a = array.array(self.typecode, array.array('u', 'foo'))
 
+    @support.cpython_only
+    def test_obsolete_write_lock(self):
+        from _testcapi import getbuffer_with_null_view
+        a = array.array('B', b"")
+        self.assertRaises(BufferError, getbuffer_with_null_view, a)
 
 class StringTest(BaseTest):
 
