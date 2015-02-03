@@ -232,6 +232,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23099: Closing io.BytesIO with exported buffer is rejected now to
+  prevent corrupting exported buffer.
+
 - Issue #23326: Removed __ne__ implementations.  Since fixing default __ne__
   implementation in issue #21408 they are redundant.
 
