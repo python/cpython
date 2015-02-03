@@ -398,14 +398,19 @@ class BytesIOMixin:
         # raises a BufferError.
         self.assertRaises(BufferError, memio.write, b'x' * 100)
         self.assertRaises(BufferError, memio.truncate)
+        self.assertRaises(BufferError, memio.close)
+        self.assertFalse(memio.closed)
         # Mutating the buffer updates the BytesIO
         buf[3:6] = b"abc"
         self.assertEqual(bytes(buf), b"123abc7890")
         self.assertEqual(memio.getvalue(), b"123abc7890")
-        # After the buffer gets released, we can resize the BytesIO again
+        # After the buffer gets released, we can resize and close the BytesIO
+        # again
         del buf
         support.gc_collect()
         memio.truncate()
+        memio.close()
+        self.assertRaises(ValueError, memio.getbuffer)
 
 
 class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin,

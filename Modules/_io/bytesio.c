@@ -657,6 +657,7 @@ PyDoc_STRVAR(close_doc,
 static PyObject *
 bytesio_close(bytesio *self)
 {
+    CHECK_EXPORTS(self);
     if (self->buf != NULL) {
         PyMem_Free(self->buf);
         self->buf = NULL;

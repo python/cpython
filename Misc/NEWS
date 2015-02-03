@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23099: Closing io.BytesIO with exported buffer is rejected now to
+  prevent corrupting exported buffer.
+
 - Issue #23363: Fix possible overflow in itertools.permutations.
 
 - Issue #23364: Fix possible overflow in itertools.product.
