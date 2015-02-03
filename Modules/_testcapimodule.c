@@ -2518,6 +2518,39 @@ test_from_contiguous(PyObject* self, PyObject *noargs)
 
     Py_RETURN_NONE;
 }
+ 
+static PyObject *
+test_pep3118_obsolete_write_locks(PyObject* self, PyObject *noargs)
+{
+    PyObject *b;
+    char *dummy[1];
+    int ret, match;
+
+    ret = PyBuffer_FillInfo(NULL, NULL, dummy, 1, 0, PyBUF_SIMPLE);
+    match = PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_BufferError);
+    PyErr_Clear();
+    if (ret != -1 || match == 0)
+        goto error;
+
+    b = PyByteArray_FromStringAndSize("", 0);
+    if (b == NULL) {
+        return NULL;
+    }
+
+    ret = PyObject_GetBuffer(b, NULL, PyBUF_SIMPLE);
+    Py_DECREF(b);
+    match = PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_BufferError);
+    PyErr_Clear();
+    if (ret != -1 || match == 0)
+        goto error;
+
+    Py_RETURN_NONE;
+
+error:
+    PyErr_SetString(TestError,
+        "test_pep3118_obsolete_write_locks: failure");
+    return NULL;
+}
 
 /* Test that the fatal error from not having a current thread doesn't
    cause an infinite loop.  Run via Lib/test/test_capi.py */
@@ -3179,6 +3212,7 @@ static PyMethodDef TestMethods[] = {
     {"test_unicode_compare_with_ascii", (PyCFunction)test_unicode_compare_with_ascii, METH_NOARGS},
     {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
     {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
+    {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_keywords", (PyCFunction)getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},
