@@ -138,10 +138,10 @@ except ImportError:
     import dummy_threading as threading
 from time import monotonic as time
 
-__all__ = ["TCPServer","UDPServer","ForkingUDPServer","ForkingTCPServer",
-           "ThreadingUDPServer","ThreadingTCPServer","BaseRequestHandler",
-           "StreamRequestHandler","DatagramRequestHandler",
-           "ThreadingMixIn", "ForkingMixIn"]
+__all__ = ["BaseServer", "TCPServer", "UDPServer", "ForkingUDPServer",
+           "ForkingTCPServer", "ThreadingUDPServer", "ThreadingTCPServer",
+           "BaseRequestHandler", "StreamRequestHandler",
+           "DatagramRequestHandler", "ThreadingMixIn", "ForkingMixIn"]
 if hasattr(socket, "AF_UNIX"):
     __all__.extend(["UnixStreamServer","UnixDatagramServer",
                     "ThreadingUnixStreamServer",
