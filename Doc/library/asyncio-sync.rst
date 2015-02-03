@@ -428,13 +428,11 @@ Exceptions
 
 .. exception:: QueueEmpty
 
-   Exception raised when non-blocking :meth:`~Queue.get` (or
-   :meth:`~Queue.get_nowait`) is called
-   on a :class:`Queue` object which is empty.
+   Exception raised when the :meth:`~Queue.get_nowait` method is called on a
+   :class:`Queue` object which is empty.
 
 
 .. exception:: QueueFull
 
-   Exception raised when non-blocking :meth:`~Queue.put` (or
-   :meth:`~Queue.put_nowait`) is called
-   on a :class:`Queue` object which is full.
+   Exception raised when the :meth:`~Queue.put_nowait` method is called on a
+   :class:`Queue` object which is full.
