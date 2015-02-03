@@ -232,6 +232,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15381: Optimized io.BytesIO to make less allocations and copyings.
+
 - Issue #22818: Splitting on a pattern that could match an empty string now
   raises a warning.  Patterns that can only match empty strings are now
   rejected.
