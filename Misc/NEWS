@@ -232,6 +232,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13128: Print response headers for CONNECT requests when debuglevel
+  > 0. Patch by Demian Brecht.
+
 - Issue #15381: Optimized io.BytesIO to make less allocations and copyings.
 
 - Issue #22818: Splitting on a pattern that could match an empty string now
