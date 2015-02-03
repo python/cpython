@@ -362,6 +362,9 @@ The following performance enhancements have been added:
   The speed up can range from 3x to 15x.
   (:issue:`21486`, :issue:`21487`, :issue:`20826`)
 
+* Many operations on :class:`io.BytesIO` are now 50% to 100% faster.
+  (Contributed by Serhiy Storchaka in :issue:`15381`.)
+
 
 Build and C API Changes
 =======================
