@@ -1269,16 +1269,17 @@ class TunnelTests(TestCase):
             'HTTP/1.1 200 OK\r\n' # Reply to HEAD
             'Content-Length: 42\r\n\r\n'
         )
-
-        def create_connection(address, timeout=None, source_address=None):
-            return FakeSocket(response_text, host=address[0], port=address[1])
-
         self.host = 'proxy.com'
         self.conn = client.HTTPConnection(self.host)
-        self.conn._create_connection = create_connection
+        self.conn._create_connection = self._create_connection(response_text)
 
     def tearDown(self):
         self.conn.close()
+
+    def _create_connection(self, response_text):
+        def create_connection(address, timeout=None, source_address=None):
+            return FakeSocket(response_text, host=address[0], port=address[1])
+        return create_connection
 
     def test_set_tunnel_host_port_headers(self):
         tunnel_host = 'destination.com'
@@ -1320,6 +1321,18 @@ class TunnelTests(TestCase):
         self.assertIn(b'CONNECT destination.com', self.conn.sock.data)
         self.assertIn(b'Host: destination.com', self.conn.sock.data)
 
+    def test_tunnel_debuglog(self):
+        expected_header = 'X-Dummy: 1'
+        response_text = 'HTTP/1.0 200 OK\r\n{}\r\n\r\n'.format(expected_header)
+
+        self.conn.set_debuglevel(1)
+        self.conn._create_connection = self._create_connection(response_text)
+        self.conn.set_tunnel('destination.com')
+
+        with support.captured_stdout() as output:
+            self.conn.request('PUT', '/', '')
+        lines = output.getvalue().splitlines()
+        self.assertIn('header: {}'.format(expected_header), lines)
 
 
 @support.reap_threads
