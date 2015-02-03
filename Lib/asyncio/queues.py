@@ -13,12 +13,16 @@ from .tasks import coroutine
 
 
 class QueueEmpty(Exception):
-    'Exception raised by Queue.get(block=0)/get_nowait().'
+    """Exception raised when Queue.get_nowait() is called on a Queue object
+    which is empty.
+    """
     pass
 
 
 class QueueFull(Exception):
-    'Exception raised by Queue.put(block=0)/put_nowait().'
+    """Exception raised when the Queue.put_nowait() method is called on a Queue
+    object which is full.
+    """
     pass
 
 
