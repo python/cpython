@@ -718,12 +718,11 @@ class CBytesIOTest(PyBytesIOTest):
 
     @support.cpython_only
     def test_sizeof(self):
-        basesize = support.calcobjsize('P2nN2PnP')
+        basesize = support.calcobjsize('P2n2Pn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
         check(io.BytesIO(), basesize )
-        check(io.BytesIO(b'a'), basesize + 1 )
-        check(io.BytesIO(b'a' * 1000), basesize + 1000)
+        check(io.BytesIO(b'a' * 1000), basesize + sys.getsizeof(b'a' * 1000))
 
     # Various tests of copy-on-write behaviour for BytesIO.
 
