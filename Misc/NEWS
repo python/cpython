@@ -232,6 +232,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22818: Splitting on a pattern that could match an empty string now
+  raises a warning.  Patterns that can only match empty strings are now
+  rejected.
+
 - Issue #23099: Closing io.BytesIO with exported buffer is rejected now to
   prevent corrupting exported buffer.
 
