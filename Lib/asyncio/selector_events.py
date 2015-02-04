@@ -214,7 +214,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
             # It's now up to the protocol to handle the connection.
         except Exception as exc:
-            if self.get_debug():
+            if self._debug:
                 context = {
                     'message': ('Error on transport creation '
                                 'for incoming connection'),
@@ -312,7 +312,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
-        if self.get_debug() and sock.gettimeout() != 0:
+        if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         self._sock_recv(fut, False, sock, n)
@@ -350,7 +350,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
-        if self.get_debug() and sock.gettimeout() != 0:
+        if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         if data:
@@ -393,7 +393,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
-        if self.get_debug() and sock.gettimeout() != 0:
+        if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         try:
@@ -453,7 +453,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
-        if self.get_debug() and sock.gettimeout() != 0:
+        if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         self._sock_accept(fut, False, sock)
