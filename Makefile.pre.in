@@ -488,14 +488,14 @@ profile-opt:
 	$(MAKE) build_all_use_profile
 
 build_all_generate_profile:
-	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-generate" LIBS="$(LIBS) -lgcov"
+	$(MAKE) all CFLAGS_NODIST="$(CFLAGS) -fprofile-generate" LDFLAGS="-fprofile-generate" LIBS="$(LIBS) -lgcov"
 
 run_profile_task:
 	: # FIXME: can't run for a cross build
 	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 
 build_all_use_profile:
-	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-use -fprofile-correction"
+	$(MAKE) all CFLAGS_NODIST="$(CFLAGS) -fprofile-use -fprofile-correction"
 
 # Compile and run with gcov
 .PHONY=coverage coverage-lcov coverage-report
