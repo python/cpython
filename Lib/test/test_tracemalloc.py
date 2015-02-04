@@ -5,7 +5,7 @@ import tracemalloc
 import unittest
 from unittest.mock import patch
 from test.script_helper import assert_python_ok, assert_python_failure
-from test import support
+from test import script_helper, support
 try:
     import threading
 except ImportError:
@@ -755,6 +755,8 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'False')
 
+    @unittest.skipIf(script_helper._interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
     def test_env_var_ignored_with_E(self):
         """PYTHON* environment variables must be ignored when -E is present."""
         code = 'import tracemalloc; print(tracemalloc.is_tracing())'

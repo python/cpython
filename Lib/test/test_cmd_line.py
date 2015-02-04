@@ -8,6 +8,7 @@ import shutil
 import sys
 import subprocess
 import tempfile
+from test import script_helper
 from test.script_helper import (spawn_python, kill_python, assert_python_ok,
     assert_python_failure)
 
@@ -439,7 +440,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
         self.assertEqual(b'', out)
 
-
+    @unittest.skipIf(script_helper._interpreter_requires_environment(),
+                     'Cannot run -I tests when PYTHON env vars are required.')
     def test_isolatedmode(self):
         self.verify_valid_flag('-I')
         self.verify_valid_flag('-IEs')
