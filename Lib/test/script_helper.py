@@ -15,6 +15,41 @@ import zipfile
 from importlib.util import source_from_cache
 from test.support import make_legacy_pyc, strip_python_stderr, temp_dir
 
+
+# Cached result of the expensive test performed in the function below.
+__cached_interp_requires_environment = None
+
+def _interpreter_requires_environment():
+    """
+    Returns True if our sys.executable interpreter requires environment
+    variables in order to be able to run at all.
+
+    This is designed to be used with @unittest.skipIf() to annotate tests
+    that need to use an assert_python*() function to launch an isolated
+    mode (-I) or no environment mode (-E) sub-interpreter process.
+
+    A normal build & test does not run into this situation but it can happen
+    when trying to run the standard library test suite from an interpreter that
+    doesn't have an obvious home with Python's current home finding logic.
+
+    Setting PYTHONHOME is one way to get most of the testsuite to run in that
+    situation.  PYTHONPATH or PYTHONUSERSITE are other common envirnonment
+    variables that might impact whether or not the interpreter can start.
+    """
+    global __cached_interp_requires_environment
+    if __cached_interp_requires_environment is None:
+        # Try running an interpreter with -E to see if it works or not.
+        try:
+            subprocess.check_call([sys.executable, '-E',
+                                   '-c', 'import sys; sys.exit(0)'])
+        except subprocess.CalledProcessError:
+            __cached_interp_requires_environment = True
+        else:
+            __cached_interp_requires_environment = False
+
+    return __cached_interp_requires_environment
+
+
 # Executing the interpreter in a subprocess
 def _assert_python(expected_success, *args, **env_vars):
     if '__isolated' in env_vars:
