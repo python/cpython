@@ -437,7 +437,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def sock_connect(self, sock, address):
         try:
-            base_events._check_resolved_address(sock, address)
+            if self._debug:
+                base_events._check_resolved_address(sock, address)
         except ValueError as err:
             fut = futures.Future(loop=self)
             fut.set_exception(err)
