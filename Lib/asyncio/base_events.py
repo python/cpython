@@ -75,7 +75,11 @@ class _StopError(BaseException):
 def _check_resolved_address(sock, address):
     # Ensure that the address is already resolved to avoid the trap of hanging
     # the entire event loop when the address requires doing a DNS lookup.
+    #
+    # getaddrinfo() is slow (around 10 us per call): this function should only
+    # be called in debug mode
     family = sock.family
+
     if family == socket.AF_INET:
         host, port = address
     elif family == socket.AF_INET6:
@@ -83,22 +87,34 @@ def _check_resolved_address(sock, address):
     else:
         return
 
-    type_mask = 0
-    if hasattr(socket, 'SOCK_NONBLOCK'):
-        type_mask |= socket.SOCK_NONBLOCK
-    if hasattr(socket, 'SOCK_CLOEXEC'):
-        type_mask |= socket.SOCK_CLOEXEC
-    # Use getaddrinfo(flags=AI_NUMERICHOST) to ensure that the address is
-    # already resolved.
-    try:
-        socket.getaddrinfo(host, port,
-                           family=family,
-                           type=(sock.type & ~type_mask),
-                           proto=sock.proto,
-                           flags=socket.AI_NUMERICHOST)
-    except socket.gaierror as err:
-        raise ValueError("address must be resolved (IP address), got %r: %s"
-                         % (address, err))
+    # On Windows, socket.inet_pton() is only available since Python 3.4
+    if hasattr(socket, 'inet_pton'):
+        # getaddrinfo() is slow and has known issue: prefer inet_pton()
+        # if available
+        try:
+            socket.inet_pton(family, host)
+        except OSError as exc:
+            raise ValueError("address must be resolved (IP address), "
+                             "got host %r: %s"
+                             % (host, exc))
+    else:
+        # Use getaddrinfo(flags=AI_NUMERICHOST) to ensure that the address is
+        # already resolved.
+        type_mask = 0
+        if hasattr(socket, 'SOCK_NONBLOCK'):
+            type_mask |= socket.SOCK_NONBLOCK
+        if hasattr(socket, 'SOCK_CLOEXEC'):
+            type_mask |= socket.SOCK_CLOEXEC
+        try:
+            socket.getaddrinfo(host, port,
+                               family=family,
+                               type=(sock.type & ~type_mask),
+                               proto=sock.proto,
+                               flags=socket.AI_NUMERICHOST)
+        except socket.gaierror as err:
+            raise ValueError("address must be resolved (IP address), "
+                             "got host %r: %s"
+                             % (host, err))
 
 def _raise_stop_error(*args):
     raise _StopError
