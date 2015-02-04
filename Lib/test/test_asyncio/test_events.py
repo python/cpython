@@ -1437,6 +1437,10 @@ class EventLoopTestsMixin:
              'selector': self.loop._selector.__class__.__name__})
 
     def test_sock_connect_address(self):
+        # In debug mode, sock_connect() must ensure that the address is already
+        # resolved (call _check_resolved_address())
+        self.loop.set_debug(True)
+
         addresses = [(socket.AF_INET, ('www.python.org', 80))]
         if support.IPV6_ENABLED:
             addresses.extend((
