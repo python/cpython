@@ -14,16 +14,22 @@ This page lists common traps and explains how to avoid them.
 Debug mode of asyncio
 ---------------------
 
-To enable the debug mode globally, set the environment variable
-:envvar:`PYTHONASYNCIODEBUG` to ``1``. To see debug traces, set the log level
-of the :ref:`asyncio logger <asyncio-logger>` to :py:data:`logging.DEBUG`.  The
-simplest configuration is::
+The implementation of :mod:`asyncio` module has been written for performances.
+To development with asyncio, it's required to enable the debug checks to ease
+the development of asynchronous code.
 
-   import logging
-   # ...
-   logging.basicConfig(level=logging.DEBUG)
+Setup an application to enable all debug checks:
 
-Examples of effects of the debug mode:
+* Enable the asyncio debug mode globally by setting the environment variable
+  :envvar:`PYTHONASYNCIODEBUG` to ``1``
+* Set the log level of the :ref:`asyncio logger <asyncio-logger>` to
+  :py:data:`logging.DEBUG`. For example, call
+  ``logging.basicConfig(level=logging.DEBUG)`` at startup.
+* Configure the :mod:`warnings` module to display :exc:`ResourceWarning`
+  warnings. For example, use the ``-Wdefault`` command line option of Python to
+  display them.
+
+Examples debug checks:
 
 * Log :ref:`coroutines defined but never "yielded from"
   <asyncio-coroutine-not-scheduled>`
@@ -33,6 +39,8 @@ Examples of effects of the debug mode:
 * Log callbacks taking more than 100 ms to be executed. The
   :attr:`BaseEventLoop.slow_callback_duration` attribute is the minimum
   duration in seconds of "slow" callbacks.
+* :exc:`ResourceWarning` warnings are emitted when transports and event loops
+  are :ref:`not closed explicitly <asyncio-close-transports>`.
 
 .. seealso::
 
@@ -372,14 +380,15 @@ traceback where the task was created. Example of log in debug mode::
 
    :ref:`Detect coroutine objects never scheduled <asyncio-coroutine-not-scheduled>`.
 
+.. _asyncio-close-transports:
 
-Close transports
-----------------
+Close transports and event loops
+--------------------------------
 
 When a transport is no more needed, call its ``close()`` method to release
-resources.
+resources. Event loops must also be closed explicitly.
 
-If a transport (or an event loop) is not closed explicitly, a
-:exc:`ResourceWarning` warning will be emitted in its destructor. The
-:exc:`ResourceWarning` warnings are hidden by default: use the ``-Wd`` command
-line option of Python to show them.
+If a transport or an event loop is not closed explicitly, a
+:exc:`ResourceWarning` warning will be emitted in its destructor. By default,
+:exc:`ResourceWarning` warnings are ignored. The :ref:`Debug mode of asyncio
+<asyncio-debug-mode>` section explains how to display them.
