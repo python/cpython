@@ -89,7 +89,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
-            for (j = 1 ; j <= LINEAR_PROBES ; j++) {
+            for (j = 0 ; j < LINEAR_PROBES ; j++) {
                 entry++;
                 if (entry->key == NULL)
                     goto found_null;
@@ -151,7 +151,7 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == NULL)
             goto found_null;
         if (i + LINEAR_PROBES <= mask) {
-            for (j = 1; j <= LINEAR_PROBES; j++) {
+            for (j = 0; j < LINEAR_PROBES; j++) {
                 entry++;
                 if (entry->key == NULL)
                     goto found_null;
