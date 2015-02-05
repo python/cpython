@@ -188,7 +188,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._internal_fds = 0
         # Identifier of the thread running the event loop, or None if the
         # event loop is not running
-        self._owner = None
+        self._thread_id = None
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self._debug = (not sys.flags.ignore_environment
@@ -269,7 +269,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
         if self.is_running():
             raise RuntimeError('Event loop is running.')
-        self._owner = threading.get_ident()
+        self._thread_id = threading.get_ident()
         try:
             while True:
                 try:
@@ -277,7 +277,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 except _StopError:
                     break
         finally:
-            self._owner = None
+            self._thread_id = None
 
     def run_until_complete(self, future):
         """Run until the Future is done.
@@ -362,7 +362,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def is_running(self):
         """Returns True if the event loop is running."""
-        return (self._owner is not None)
+        return (self._thread_id is not None)
 
     def time(self):
         """Return the time according to the event loop's clock.
@@ -449,10 +449,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         Should only be called when (self._debug == True).  The caller is
         responsible for checking this condition for performance reasons.
         """
-        if self._owner is None:
+        if self._thread_id is None:
             return
         thread_id = threading.get_ident()
-        if thread_id != self._owner:
+        if thread_id != self._thread_id:
             raise RuntimeError(
                 "Non-thread-safe operation invoked on an event loop other "
                 "than the current one")
