@@ -306,7 +306,7 @@ class BasicSocketTests(unittest.TestCase):
         self.assertGreaterEqual(fix, 0)
         self.assertLess(fix, 256)
         self.assertGreaterEqual(patch, 0)
-        self.assertLessEqual(patch, 26)
+        self.assertLessEqual(patch, 63)
         self.assertGreaterEqual(status, 0)
         self.assertLessEqual(status, 15)
         # Version string as returned by {Open,Libre}SSL, the format might change
