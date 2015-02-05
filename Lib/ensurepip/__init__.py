@@ -14,7 +14,7 @@ __all__ = ["version", "bootstrap"]
 
 _SETUPTOOLS_VERSION = "12.0.5"
 
-_PIP_VERSION = "6.0.7"
+_PIP_VERSION = "6.0.8"
 
 # pip currently requires ssl support, so we try to provide a nicer
 # error message when that is missing (http://bugs.python.org/issue19744)
