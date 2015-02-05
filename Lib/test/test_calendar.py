@@ -471,6 +471,9 @@ class LeapdaysTestCase(unittest.TestCase):
         self.assertEqual(calendar.leapdays(1997,2020), 5)
 
 
+def conv(s):
+    return s.replace('\n', os.linesep)
+
 class CommandLineTestCase(unittest.TestCase):
     def run_ok(self, *args):
         return assert_python_ok('-m', 'calendar', *args)[1]
@@ -501,17 +504,17 @@ class CommandLineTestCase(unittest.TestCase):
 
     def test_output_year(self):
         stdout = self.run_ok('2004')
-        self.assertEqual(stdout.strip(), result_2004_text.strip())
+        self.assertEqual(stdout.strip(), conv(result_2004_text).strip())
 
     def test_output_month(self):
         stdout = self.run_ok('2004', '1')
-        self.assertEqual(stdout.strip(), result_2004_01_text.strip())
+        self.assertEqual(stdout.strip(), conv(result_2004_01_text).strip())
 
     def test_option_encoding(self):
         self.assertFailure('-e')
         self.assertFailure('--encoding')
         stdout = self.run_ok('--encoding', 'rot-13', '2004')
-        self.assertEqual(stdout.strip(), result_2004_text.encode('rot-13').strip())
+        self.assertEqual(stdout.strip(), conv(result_2004_text.encode('rot-13')).strip())
 
     def test_option_locale(self):
         self.assertFailure('-L')
@@ -543,7 +546,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('--lines')
         self.assertFailure('-l', 'spam')
         stdout = self.run_ok('--lines', '2', '2004')
-        self.assertIn('December\n\nMo Tu We', stdout)
+        self.assertIn(conv('December\n\nMo Tu We'), stdout)
 
     def test_option_spacing(self):
         self.assertFailure('-s')
@@ -557,14 +560,14 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('--month')
         self.assertFailure('-m', 'spam')
         stdout = self.run_ok('--months', '1', '2004')
-        self.assertIn('\nMo Tu We Th Fr Sa Su\n', stdout)
+        self.assertIn(conv('\nMo Tu We Th Fr Sa Su\n'), stdout)
 
     def test_option_type(self):
         self.assertFailure('-t')
         self.assertFailure('--type')
         self.assertFailure('-t', 'spam')
         stdout = self.run_ok('--type', 'text', '2004')
-        self.assertEqual(stdout.strip(), result_2004_text.strip())
+        self.assertEqual(stdout.strip(), conv(result_2004_text).strip())
         stdout = self.run_ok('--type', 'html', '2004')
         self.assertEqual(stdout[:6], b'<?xml ')
         self.assertIn(b'<title>Calendar for 2004</title>', stdout)
@@ -579,7 +582,7 @@ class CommandLineTestCase(unittest.TestCase):
 
     def test_html_output_year_encoding(self):
         stdout = self.run_ok('-t', 'html', '--encoding', 'ascii', '2004')
-        self.assertEqual(stdout.strip(), result_2004_html.strip())
+        self.assertEqual(stdout.strip(), conv(result_2004_html).strip())
 
     def test_html_output_year_css(self):
         self.assertFailure('-t', 'html', '-c')
