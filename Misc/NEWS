@@ -92,6 +92,9 @@ Tools/Demos
 - Issue #18905: "pydoc -p 0" now outputs actually used port.  Based on patch by
   Wieland Hoffmann.
 
+- Issue #23345: Prevent test_ssl failures with large OpenSSL patch level
+  values (like 0.9.8zc).
+
 Tests
 -----
 
