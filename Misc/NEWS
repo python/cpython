@@ -98,6 +98,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #18982: Add tests for CLI of the calendar module.
+
 - Issue #19949: The test_xpickle test now tests compatibility with installed
   Python 2.7 and reports skipped tests.  Based on patch by Zachary Ware.
 
