@@ -1727,6 +1727,9 @@ Tests
 
 - Issue #23211: Workaround test_logging failure on some OS X 10.6 systems.
 
+- Issue #23345: Prevent test_ssl failures with large OpenSSL patch level
+  values (like 0.9.8zc).
+
 Tools/Demos
 -----------
 
