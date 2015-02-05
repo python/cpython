@@ -170,7 +170,7 @@ and special characters::
    >>> print '"Isn\'t," she said.'
    "Isn't," she said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
-   >>> s  # without print(), \n is included in the output
+   >>> s  # without print, \n is included in the output
    'First line.\nSecond line.'
    >>> print s  # with print, \n produces a new line
    First line.
