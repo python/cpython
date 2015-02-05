@@ -323,6 +323,8 @@ IDLE
 Tests
 -----
 
+- Issue #18982: Add tests for CLI of the calendar module.
+
 - Issue #19548: Added some additional checks to test_codecs to ensure that
   statements in the updated documentation remain accurate. Patch by Martin
   Panter.
