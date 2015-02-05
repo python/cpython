@@ -33,6 +33,39 @@ class TestScriptHelper(unittest.TestCase):
         self.assertIn('import sys; sys.exit(0)', error_msg,
                       msg='unexpected command line.')
 
+    @mock.patch('subprocess.Popen')
+    def test_assert_python_isolated_when_env_not_required(self, mock_popen):
+        with mock.patch.object(script_helper,
+                               '_interpreter_requires_environment',
+                               return_value=False) as mock_ire_func:
+            mock_popen.side_effect = RuntimeError('bail out of unittest')
+            try:
+                script_helper._assert_python(True, '-c', 'None')
+            except RuntimeError as err:
+                self.assertEqual('bail out of unittest', err.args[0])
+            self.assertEqual(1, mock_popen.call_count)
+            self.assertEqual(1, mock_ire_func.call_count)
+            popen_command = mock_popen.call_args[0][0]
+            self.assertEqual(sys.executable, popen_command[0])
+            self.assertIn('None', popen_command)
+            self.assertIn('-I', popen_command)
+            self.assertNotIn('-E', popen_command)  # -I overrides this
+
+    @mock.patch('subprocess.Popen')
+    def test_assert_python_not_isolated_when_env_is_required(self, mock_popen):
+        """Ensure that -I is not passed when the environment is required."""
+        with mock.patch.object(script_helper,
+                               '_interpreter_requires_environment',
+                               return_value=True) as mock_ire_func:
+            mock_popen.side_effect = RuntimeError('bail out of unittest')
+            try:
+                script_helper._assert_python(True, '-c', 'None')
+            except RuntimeError as err:
+                self.assertEqual('bail out of unittest', err.args[0])
+            popen_command = mock_popen.call_args[0][0]
+            self.assertNotIn('-I', popen_command)
+            self.assertNotIn('-E', popen_command)
+
 
 class TestScriptHelperEnvironment(unittest.TestCase):
     """Code coverage for _interpreter_requires_environment()."""
