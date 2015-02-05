@@ -2,13 +2,14 @@ import calendar
 import unittest
 
 from test import support
-from test.script_helper import assert_python_ok
+from test.script_helper import assert_python_ok, assert_python_failure
 import time
 import locale
 import sys
 import datetime
+import os
 
-result_2004_01_text = """
+result_2004_01_text = """\
     January 2004
 Mo Tu We Th Fr Sa Su
           1  2  3  4
@@ -18,7 +19,7 @@ Mo Tu We Th Fr Sa Su
 26 27 28 29 30 31
 """
 
-result_2004_text = """
+result_2004_text = """\
                                   2004
 
       January                   February                   March
@@ -56,7 +57,7 @@ Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
 25 26 27 28 29 30 31      29 30                     27 28 29 30 31
 """
 
-result_2004_html = """
+result_2004_html = """\
 <?xml version="1.0" encoding="%(e)s"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
@@ -327,8 +328,8 @@ class OutputTestCase(unittest.TestCase):
     def check_htmlcalendar_encoding(self, req, res):
         cal = calendar.HTMLCalendar()
         self.assertEqual(
-            cal.formatyearpage(2004, encoding=req).strip(b' \t\n'),
-            (result_2004_html % {'e': res}).strip(' \t\n').encode(res)
+            cal.formatyearpage(2004, encoding=req),
+            (result_2004_html % {'e': res}).encode(res)
         )
 
     def test_output(self):
@@ -339,8 +340,8 @@ class OutputTestCase(unittest.TestCase):
 
     def test_output_textcalendar(self):
         self.assertEqual(
-            calendar.TextCalendar().formatyear(2004).strip(),
-            result_2004_text.strip()
+            calendar.TextCalendar().formatyear(2004),
+            result_2004_text
         )
 
     def test_output_htmlcalendar_encoding_ascii(self):
@@ -383,8 +384,8 @@ class OutputTestCase(unittest.TestCase):
 
     def test_formatmonth(self):
         self.assertEqual(
-            calendar.TextCalendar().formatmonth(2004, 1).strip(),
-            result_2004_01_text.strip()
+            calendar.TextCalendar().formatmonth(2004, 1),
+            result_2004_01_text
         )
 
     def test_formatmonthname_with_year(self):
@@ -692,23 +693,127 @@ class LeapdaysTestCase(unittest.TestCase):
         self.assertEqual(calendar.leapdays(1997,2020), 5)
 
 
-class ConsoleOutputTestCase(unittest.TestCase):
-    def test_outputs_bytes(self):
-        (return_code, stdout, stderr) = assert_python_ok('-m', 'calendar', '--type=html', '2010')
-        self.assertEqual(stdout[:6], b'<?xml ')
+def conv(s):
+    return s.replace('\n', os.linesep).encode()
 
-def test_main():
-    support.run_unittest(
-        OutputTestCase,
-        CalendarTestCase,
-        MondayTestCase,
-        SundayTestCase,
-        TimegmTestCase,
-        MonthRangeTestCase,
-        LeapdaysTestCase,
-        ConsoleOutputTestCase
-    )
+class CommandLineTestCase(unittest.TestCase):
+    def run_ok(self, *args):
+        return assert_python_ok('-m', 'calendar', *args)[1]
+
+    def assertFailure(self, *args):
+        rc, stdout, stderr = assert_python_failure('-m', 'calendar', *args)
+        self.assertIn(b'Usage:', stderr)
+        self.assertEqual(rc, 2)
+
+    def test_help(self):
+        stdout = self.run_ok('-h')
+        self.assertIn(b'Usage:', stdout)
+        self.assertIn(b'calendar.py', stdout)
+        self.assertIn(b'--help', stdout)
+
+    def test_illegal_arguments(self):
+        self.assertFailure('-z')
+        #self.assertFailure('spam')
+        #self.assertFailure('2004', 'spam')
+        self.assertFailure('-t', 'html', '2004', '1')
+
+    def test_output_current_year(self):
+        stdout = self.run_ok()
+        year = datetime.datetime.now().year
+        self.assertIn((' %s' % year).encode(), stdout)
+        self.assertIn(b'January', stdout)
+        self.assertIn(b'Mo Tu We Th Fr Sa Su', stdout)
+
+    def test_output_year(self):
+        stdout = self.run_ok('2004')
+        self.assertEqual(stdout, conv(result_2004_text))
+
+    def test_output_month(self):
+        stdout = self.run_ok('2004', '1')
+        self.assertEqual(stdout, conv(result_2004_01_text))
+
+    def test_option_encoding(self):
+        self.assertFailure('-e')
+        self.assertFailure('--encoding')
+        stdout = self.run_ok('--encoding', 'utf-16-le', '2004')
+        self.assertEqual(stdout, result_2004_text.encode('utf-16-le'))
+
+    def test_option_locale(self):
+        self.assertFailure('-L')
+        self.assertFailure('--locale')
+        self.assertFailure('-L', 'en')
+        lang, enc = locale.getdefaultlocale()
+        lang = lang or 'C'
+        enc = enc or 'UTF-8'
+        try:
+            oldlocale = locale.getlocale(locale.LC_TIME)
+            try:
+                locale.setlocale(locale.LC_TIME, (lang, enc))
+            finally:
+                locale.setlocale(locale.LC_TIME, oldlocale)
+        except (locale.Error, ValueError):
+            self.skipTest('cannot set the system default locale')
+        stdout = self.run_ok('--locale', lang, '--encoding', enc, '2004')
+        self.assertIn('2004'.encode(enc), stdout)
+
+    def test_option_width(self):
+        self.assertFailure('-w')
+        self.assertFailure('--width')
+        self.assertFailure('-w', 'spam')
+        stdout = self.run_ok('--width', '3', '2004')
+        self.assertIn(b'Mon Tue Wed Thu Fri Sat Sun', stdout)
+
+    def test_option_lines(self):
+        self.assertFailure('-l')
+        self.assertFailure('--lines')
+        self.assertFailure('-l', 'spam')
+        stdout = self.run_ok('--lines', '2', '2004')
+        self.assertIn(conv('December\n\nMo Tu We'), stdout)
+
+    def test_option_spacing(self):
+        self.assertFailure('-s')
+        self.assertFailure('--spacing')
+        self.assertFailure('-s', 'spam')
+        stdout = self.run_ok('--spacing', '8', '2004')
+        self.assertIn(b'Su        Mo', stdout)
+
+    def test_option_months(self):
+        self.assertFailure('-m')
+        self.assertFailure('--month')
+        self.assertFailure('-m', 'spam')
+        stdout = self.run_ok('--months', '1', '2004')
+        self.assertIn(conv('\nMo Tu We Th Fr Sa Su\n'), stdout)
+
+    def test_option_type(self):
+        self.assertFailure('-t')
+        self.assertFailure('--type')
+        self.assertFailure('-t', 'spam')
+        stdout = self.run_ok('--type', 'text', '2004')
+        self.assertEqual(stdout, conv(result_2004_text))
+        stdout = self.run_ok('--type', 'html', '2004')
+        self.assertEqual(stdout[:6], b'<?xml ')
+        self.assertIn(b'<title>Calendar for 2004</title>', stdout)
+
+    def test_html_output_current_year(self):
+        stdout = self.run_ok('--type', 'html')
+        year = datetime.datetime.now().year
+        self.assertIn(('<title>Calendar for %s</title>' % year).encode(),
+                      stdout)
+        self.assertIn(b'<tr><th colspan="7" class="month">January</th></tr>',
+                      stdout)
+
+    def test_html_output_year_encoding(self):
+        stdout = self.run_ok('-t', 'html', '--encoding', 'ascii', '2004')
+        self.assertEqual(stdout,
+                         (result_2004_html % {'e': 'ascii'}).encode('ascii'))
+
+    def test_html_output_year_css(self):
+        self.assertFailure('-t', 'html', '-c')
+        self.assertFailure('-t', 'html', '--css')
+        stdout = self.run_ok('-t', 'html', '--css', 'custom.css', '2004')
+        self.assertIn(b'<link rel="stylesheet" type="text/css" '
+                      b'href="custom.css" />', stdout)
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
