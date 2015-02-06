@@ -613,6 +613,8 @@ Library
 - Issue #17442: InteractiveInterpreter now displays the full chained traceback
   in its showtraceback method, to match the built in interactive interpreter.
 
+- Issue #23392: Added tests for marshal C API that works with FILE*.
+
 - Issue #10510: distutils register and upload methods now use HTML standards
   compliant CRLF line endings.
 
