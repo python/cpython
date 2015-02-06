@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="launcher">
+            <!-- The All Users launcher is always the 32-bit version -->
+            <MsiPackage Id="launcher_AllUsers"
+                        SourceFile="launcher.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        EnableFeatureSelection="yes"
+                        InstallCondition="InstallAllUsers and Include_launcher" />
+
+            <MsiPackage Id="launcher_JustForMe"
+                        SourceFile="launcher.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        EnableFeatureSelection="yes"
+                        InstallCondition="not InstallAllUsers and Include_launcher" />
+        </PackageGroup>
+    </Fragment>
+</Wix>

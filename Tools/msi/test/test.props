@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="*.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    <ItemGroup>
+        <InstallFiles Include="$(PySourcePath)Lib\test\**\*"
+                      Exclude="$(PySourcePath)Lib\**\*.pyc;$(PySourcePath)Lib\**\*.pyo">
+            <SourceBase>$(PySourcePath)</SourceBase>
+            <Source>!(bindpath.src)</Source>
+            <TargetBase>$(PySourcePath)</TargetBase>
+            <Target_></Target_>
+            <Group>test_py</Group>
+        </InstallFiles>
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
+</Project>

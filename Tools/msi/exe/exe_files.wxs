@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <ComponentGroup Id="exe_txt">
+            <Component Id="LICENSE.txt" Directory="InstallDirectory" Guid="*">
+                <File Name="LICENSE.txt" Source="LICENSE" KeyPath="yes" />
+            </Component>
+            <Component Id="NEWS.txt" Directory="InstallDirectory" Guid="*">
+                <File Name="NEWS.txt" Source="!(bindpath.src)Misc\NEWS" KeyPath="yes" />
+            </Component>
+            <Component Id="README.txt" Directory="InstallDirectory" Guid="*">
+                <File Name="README.txt" Source="!(bindpath.src)README" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+
+    <Fragment>
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <ComponentGroup Id="exe_python">
+            <Component Id="python.exe" Directory="InstallDirectory" Guid="$(var.PythonExeComponentGuid)">
+                <File Name="python.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="pythonw.exe" Directory="InstallDirectory" Guid="$(var.PythonwExeComponentGuid)">
+                <File Name="pythonw.exe" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="exe_python_symbols">
+            <Component Id="python.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="python.pdb" />
+            </Component>
+            <Component Id="pythonw.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="pythonw.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+        
+    <Fragment>
+        <ComponentGroup Id="exe_python_d">
+            <Component Id="python_d.exe" Directory="InstallDirectory" Guid="*">
+                <File Name="python_d.exe" />
+            </Component>
+            <Component Id="python_d.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="python_d.pdb" />
+            </Component>
+            <Component Id="pythonw_d.exe" Directory="InstallDirectory" Guid="*">
+                <File Name="pythonw_d.exe" />
+            </Component>
+            <Component Id="pythonw_d.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="pythonw_d.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <ComponentGroup Id="exe_icons">
+            <Component Id="py.ico" Directory="DLLs" Guid="*">
+                <File Name="py.ico" Source="!(bindpath.src)PC\py.ico" KeyPath="yes" />
+            </Component>
+            <Component Id="pyc.ico" Directory="DLLs" Guid="*">
+                <File Name="pyc.ico" Source="!(bindpath.src)PC\pyc.ico" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

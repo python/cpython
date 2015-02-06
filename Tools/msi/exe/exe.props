@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <!-- Shortcut validation is not necessary -->
+        <SuppressICEs>ICE43</SuppressICEs>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="*.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+        <WxlTemplate Include="*.wxl_template" />
+    </ItemGroup>
+    
+    <Target Name="_GenerateLicense" AfterTargets="PrepareForBuild">
+        <ItemGroup>
+            <LicenseFiles Include="$(PySourcePath)LICENSE;
+                                   crtlicense.txt;
+                                   $(bz2Dir)LICENSE;
+                                   $(opensslDir)LICENSE;
+                                   $(tclDir)license.terms;
+                                   $(tkDir)license.terms;
+                                   $(tixDir)license.terms" />
+            <_LicenseFiles Include="@(LicenseFiles)">
+                <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
+            </_LicenseFiles>
+        </ItemGroup>
+        
+        <WriteLinesToFile File="$(BuildPath)LICENSE"
+                          Overwrite="true"
+                          Lines="@(_LicenseFiles->'%(Content)')" />
+    </Target>
+        
+    <Import Project="..\msi.targets" />
+</Project>

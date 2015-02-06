@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{DE0B7CC2-4358-4131-B3F4-C31C7F2CD468}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>test</OutputName>
+        <OutputType>Package</OutputType>
+        <DefineConstants>IncludeDefaultFeature=1;$(DefineConstants)</DefineConstants>
+    </PropertyGroup>
+    <Import Project="test.props" />
+</Project>

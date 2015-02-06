@@ -1778,6 +1778,8 @@ Tools/Demos
 Windows
 -------
 
+- Issue #23260: Update Windows installer
+
 - The bundled version of Tcl/Tk has been updated to 8.6.3.  The most visible
   result of this change is the addition of new native file dialogs when
   running on Windows Vista or newer.  See Tcl/Tk's TIP 432 for more

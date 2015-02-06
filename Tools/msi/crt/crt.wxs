@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        
+        <PropertyRef Id="UpgradeTable" />
+        
+        <?if $(var.Platform)~=x64 ?>
+        <?define DirName=System64?>
+        <?else ?>
+        <?define DirName=System?>
+        <?endif ?>
+        <DirectoryRef Id="TARGETDIR">
+            <Directory Id="$(var.DirName)Folder" Name="$(var.DirName)">
+                <Directory Id="SystemInstallDirectory" Name="." />
+            </Directory>
+        </DirectoryRef>
+        <?undef DirName ?>
+        
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="crt_files" />
+        </Feature>
+    </Product>
+</Wix>
+

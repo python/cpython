@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_msi;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3 ?>
+    <Fragment>
+        <ComponentGroup Id="lib_extensions">
+            <?foreach ext in $(var.exts)?>
+        
+            <Component Id="$(var.ext).pyd" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext).pyd" KeyPath="yes" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="sqlite3.dll" Directory="DLLs" Guid="*">
+                <File Name="sqlite3.dll" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <ComponentGroup Id="lib_extensions_symbols">
+            <?foreach ext in $(var.exts)?>
+            
+            <Component Id="$(var.ext).pdb" Directory="DLLs" Guid="*">
+                <Condition>SYMBOLS=1</Condition>
+                <File Name="$(var.ext).pdb" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="sqlite3.pdb" Directory="DLLs" Guid="*">
+                <File Name="sqlite3.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <ComponentGroup Id="lib_extensions_d">
+            <?foreach ext in $(var.exts)?>
+            
+            <Component Id="$(var.ext)_d.pyd" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)_d.pyd" />
+            </Component>
+            <Component Id="$(var.ext)_d.pdb" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)_d.pdb" />
+            </Component>
+            
+            <?endforeach ?>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <ComponentGroup Id="lib_files">
+            <Component Id="PythonPathRegistry" Directory="Lib" Guid="*">
+                <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
+                    <RegistryValue Key="PythonPath" Type="string" Value="[Lib];[DLLs]" />
+                </RegistryKey>
+            </Component>
+            <Component Id="Lib_site_packages_README" Directory="Lib_site_packages" Guid="*">
+                <File Id="Lib_site_packages_README" Name="README.txt" Source="!(bindpath.src)Lib\site-packages\README" KeyPath="yes" />
+            </Component>
+            <Component Id="Lib2to3_pickle_remove" Directory="Lib_lib2to3" Guid="$(var.RemoveLib2to3PickleComponentGuid)">
+                <RemoveFile Id="Lib2to3_pickle_remove_files" Name="*.pickle" On="uninstall" />
+                <RemoveFolder Id="Lib2to3_pickle_remove_folder" On="uninstall" />
+            </Component>
+        </ComponentGroup>
+        <DirectoryRef Id="Lib">
+            <Directory Id="Lib_site_packages" Name="site-packages" />
+        </DirectoryRef>
+    </Fragment>
+</Wix>

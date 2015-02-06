@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <ComponentGroup Id="test_extensions">
+            <Component Id="_testcapi.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testcapi.pyd" Name="_testcapi.pyd" KeyPath="yes" />
+            </Component>
+            <Component Id="_ctypes_test.pyd" Directory="DLLs" Guid="*">
+                <File Id="_ctypes_test.pyd" Name="_ctypes_test.pyd" KeyPath="yes" />
+            </Component>
+            <Component Id="_testbuffer.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testbuffer.pyd" Name="_testbuffer.pyd" KeyPath="yes" />
+            </Component>
+            <Component Id="_testimportmultiple.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testimportmultiple.pyd" Name="_testimportmultiple.pyd" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <ComponentGroup Id="test_extensions_symbols">
+            <Component Id="_testcapi.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testcapi.pdb" Name="_testcapi.pdb" />
+            </Component>
+            <Component Id="_ctypes_test.pdb" Directory="DLLs" Guid="*">
+                <File Id="_ctypes_test.pdb" Name="_ctypes_test.pdb" />
+            </Component>
+            <Component Id="_testbuffer.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testbuffer.pdb" Name="_testbuffer.pdb" />
+            </Component>
+            <Component Id="_testimportmultiple.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testimportmultiple.pdb" Name="_testimportmultiple.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <ComponentGroup Id="test_extensions_d">
+            <Component Id="_testcapi_d.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testcapi_d.pyd" Name="_testcapi_d.pyd" />
+            </Component>
+            <Component Id="_ctypes_test_d.pyd" Directory="DLLs" Guid="*">
+                <File Id="_ctypes_test_d.pyd" Name="_ctypes_test_d.pyd" />
+            </Component>
+            <Component Id="_testbuffer_d.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testbuffer_d.pyd" Name="_testbuffer_d.pyd" />
+            </Component>
+            <Component Id="_testimportmultiple_d.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testimportmultiple_d.pyd" Name="_testimportmultiple_d.pyd" />
+            </Component>
+            <Component Id="_testcapi_d.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testcapi_d.pdb" Name="_testcapi_d.pdb" />
+            </Component>
+            <Component Id="_ctypes_test_d.pdb" Directory="DLLs" Guid="*">
+                <File Id="_ctypes_test_d.pdb" Name="_ctypes_test_d.pdb" />
+            </Component>
+            <Component Id="_testbuffer_d.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testbuffer_d.pdb" Name="_testbuffer_d.pdb" />
+            </Component>
+            <Component Id="_testimportmultiple_d.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testimportmultiple_d.pdb" Name="_testimportmultiple_d.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

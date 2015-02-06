@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="doc" />
+            
+            <Component Id="doc_shortcut" Directory="MenuDir" Guid="*">
+                <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
+                    <RegistryValue Key="Help\Main Python Documentation" Type="string" Value="[#python.chm]" KeyPath="yes" />
+                </RegistryKey>
+                <Shortcut Id="python.chm"
+                          Target="[#python.chm]"
+                          Name="!(loc.ShortcutName)"
+                          Description="!(loc.ShortcutDescription)" />
+                <RemoveFolder Id="Remove_MenuDir" On="uninstall" />
+            </Component>
+
+        </Feature>
+    </Product>
+</Wix>

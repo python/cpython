@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{7CF48ADD-CFAA-499F-9A05-BA18440A3344}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>test_pdb</OutputName>
+        <OutputType>Package</OutputType>
+        <DefineConstants>IncludeSymbols=1;$(DefineConstants)</DefineConstants>
+    </PropertyGroup>
+    <Import Project="test.props" />
+</Project>

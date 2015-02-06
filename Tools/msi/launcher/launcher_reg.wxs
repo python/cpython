@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <ComponentGroup Id="launcher_reg">
+            <Component Id="file_association" Directory="LauncherInstallDirectory" Guid="{5AF84D9A-D820-456B-B230-6E0105A50276}">
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher\AssociateFiles" Value="1" Type="integer" />
+                
+                <ProgId Id="$(var.TestPrefix)Python.File" Description="!(loc.PythonFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
+                    <Extension Id="$(var.FileExtension)" ContentType="text/plain">
+                        <Verb Id="open" TargetFile="py.exe" Argument="&quot;%L&quot; %*" />
+                    </Extension>
+                </ProgId>
+                <RegistryValue Root="HKCR" Key="$(var.TestPrefix)Python.File\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+                
+                <ProgId Id="$(var.TestPrefix)Python.NoConFile" Description="!(loc.PythonNoConFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
+                    <Extension Id="$(var.FileExtension)w" ContentType="text/plain">
+                        <Verb Id="open" TargetFile="pyw.exe" Argument="&quot;%L&quot; %*" />
+                    </Extension>
+                </ProgId>
+                <RegistryValue Root="HKCR" Key="$(var.TestPrefix)Python.NoConFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+                
+                <ProgId Id="$(var.TestPrefix)Python.CompiledFile" Description="!(loc.PythonCompiledFileDescription)" Advertise="no" Icon="py.exe" IconIndex="2">
+                    <Extension Id="$(var.FileExtension)c">
+                        <Verb Id="open" TargetFile="py.exe" Argument="&quot;%L&quot; %*" />
+                    </Extension>
+                    <Extension Id="$(var.FileExtension)o" />
+                </ProgId>
+                <RegistryValue Root="HKCR" Key="$(var.TestPrefix)Python.CompiledFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

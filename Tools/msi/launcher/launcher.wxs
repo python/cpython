@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        
+        <Property Id="Suppress_TARGETDIR_Check" Value="1" />
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="ARPPRODUCTICON" />
+
+        <?ifdef IncludeDefaultFeature ?>
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="launcher_exe" Primary="yes" />
+        </Feature>
+        <Feature Id="AssociateFiles" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="launcher_exe" />
+            <ComponentGroupRef Id="launcher_reg" />
+        </Feature>
+        <?endif ?>
+        <?ifdef IncludeSymbols ?>
+        <Feature Id="Symbols" AllowAdvertise="no" Title="!(loc.TitlePdb)" Description="!(loc.DescriptionPdb)">
+            <ComponentGroupRef Id="launcher_pdb" />
+        </Feature>
+        <?endif ?>
+        
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="LauncherInstallDirectory" />
+        </Directory>
+        
+        <CustomAction Id="SetLauncherInstallDirectoryLM" Property="LauncherInstallDirectory" Value="[WindowsFolder]" />
+        <CustomAction Id="SetLauncherInstallDirectoryCU" Property="LauncherInstallDirectory" Value="[LocalAppDataFolder]Programs\Python\Launcher" />
+        
+        <InstallExecuteSequence>
+            <Custom Before="SetLauncherInstallDirectoryLM" Action="SetLauncherInstallDirectoryCU">NOT Installed AND NOT ALLUSERS=1</Custom>
+            <Custom Before="CostFinalize" Action="SetLauncherInstallDirectoryLM">NOT Installed AND ALLUSERS=1</Custom>
+        </InstallExecuteSequence>
+    </Product>
+</Wix>

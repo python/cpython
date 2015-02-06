@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="tools">
+            <MsiPackage Id="tools_AllUsers"
+                        SourceFile="tools.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and Include_tools">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+            
+            <MsiPackage Id="tools_JustForMe"
+                        SourceFile="tools.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and Include_tools">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+        </PackageGroup>
+    </Fragment>
+</Wix>

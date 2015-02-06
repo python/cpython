@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <?if $(var.Platform)~=x64 ?>
+        <?define msvcr120Guid={0835C947-D6D2-4E52-AF14-0231D04E88EA}?>
+        <?else ?>
+        <?define msvcr120Guid={E5B92048-5859-4AF1-AEAD-B97EBF00B087} ?>
+        <?endif ?>
+        <ComponentGroup Id="crt_files">
+            <Component Id="msvcr120.dll_LM" Directory="SystemInstallDirectory" Guid="$(var.msvcr120Guid)" Shared="yes" SharedDllRefCount="yes">
+                <Condition>ALLUSERS=1</Condition>
+                <File Id="msvcr120.dll_LM" Source="!(bindpath.crt)\msvcr120.dll" />
+            </Component>
+            <Component Id="msvcr120.dll_CU" Directory="InstallDirectory" Guid="*">
+                <Condition>NOT ALLUSERS=1</Condition>
+                <File Id="msvcr120.dll_CU" Source="!(bindpath.crt)\msvcr120.dll" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="ReleaseUri">
+    <PropertyGroup>
+        <DefineSolutionProperties>false</DefineSolutionProperties>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <SuppressIces>$(SuppressIces);ICE03;ICE57;ICE61</SuppressIces>
+        <CompilerSuppressSpecificWarnings>1026</CompilerSuppressSpecificWarnings>
+        <BuildForRelease Condition="'$(BuildForRelease)' == ''">false</BuildForRelease>
+        <SignOutput Condition="'$(SigningCertificate)' != ''">true</SignOutput>
+        <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+        <Platform Condition="'$(Platform)' == ''">x86</Platform>
+        <InstallScope Condition="'$(InstallScope)' != 'perMachine'">perUser</InstallScope>
+        <!--
+        This URI is used to generate the various GUIDs used by the installer.
+        Installers built with the same URI will upgrade each other or block
+        when attempting to downgrade.
+        
+        By default, this is the local computer name, which will produce
+        installers that do not interfere with other installers. Products
+        that intend to bundle Python should rebuild these modules with their
+        own URI to avoid conflicting with the official releases.
+        
+        The official releases are built with http://www.python.org/.
+        
+        This is not the same as the DownloadUrl property used in the bundle
+        projects.
+        -->
+        <ReleaseUri Condition="'$(ReleaseUri)' == ''">$(ComputerName)</ReleaseUri>
+        <ReleaseUri Condition="!$(ReleaseUri.EndsWith(`/`))">$(ReleaseUri)/</ReleaseUri>
+    </PropertyGroup>
+
+    <Import Project="wix.props" />
+    <Import Project="..\..\PCBuild\tcltk.props" />
+    
+    <ItemGroup>
+        <Compile Include="$(MSBuildThisFileDirectory)common.wxs" />
+        <WxlTemplate Include="$(MSBuildThisFileDirectory)\*.wxl_template" />
+        <WixExtension Include="WixUtilExtension">
+            <HintPath>WixUtilExtension</HintPath>
+            <Name>WixUtilExtension</Name>
+        </WixExtension>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <IntermediateOutputPath>$(MSBuildThisFileDirectory)\obj\$(Configuration)_$(Platform)\$(OutputName)</IntermediateOutputPath>
+        <IntermediateOutputPath Condition="'$(OutputSuffix)' != ''">$(IntermediateOutputPath)_$(OutputSuffix)</IntermediateOutputPath>
+        <OutputPath Condition="'$(OutputPath)' == ''">$(BuildPath)</OutputPath>
+        <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
+        <OutDir>$(OutputPath)</OutDir>
+        <ReuseCabinetCache>true</ReuseCabinetCache>
+        <CRTModule Condition="'$(VisualStudioVersion)' == '12.0'">$(CommonProgramFiles)\Merge Modules\Microsoft_VC120_CRT_$(Platform).msm</CRTModule>
+        <CRTModule Condition="'$(VisualStudioVersion)' == '14.0'">$(CommonProgramFiles)\Merge Modules\Microsoft_VC140_CRT_$(Platform).msm</CRTModule>
+        <CRTRedist Condition="'$(VisualStudioVersion)' == '12.0'">$([System.IO.Path]::GetFullPath(`$(VS120COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC120.CRT`))</CRTRedist>
+        <CRTRedist Condition="'$(VisualStudioVersion)' == '14.0'">$([System.IO.Path]::GetFullPath(`$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT`))</CRTRedist>
+        <CRTRedist Condition="'$(CRTRedist)' != '' and !Exists($(CRTRedist))"></CRTRedist>
+
+        <RevisionNumber>$(ReleaseLevelNumber)</RevisionNumber>
+        <RevisionNumber Condition="!$(BuildForRelease)">$([System.Math]::Floor($([System.DateTime]::Now.Subtract($([System.DateTime]::new(2001, 1, 1))).TotalDays)))</RevisionNumber>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <Bitness>32-bit</Bitness>
+        <Bitness Condition="$(Platform) == 'x64'">64-bit</Bitness>
+        <DefineConstants>
+            $(DefineConstants);
+            Version=$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber).$(RevisionNumber);
+            ShortVersion=$(MajorVersionNumber).$(MinorVersionNumber);
+            LongVersion=$(PythonVersion);
+            MajorVersionNumber=$(MajorVersionNumber);
+            MinorVersionNumber=$(MinorVersionNumber);
+            UpgradeMinimumVersion=$(MajorVersionNumber).$(MinorVersionNumber).0.0;
+            UpgradeMaximumVersion=$(MajorVersionNumber).$(MinorVersionNumber).150.0;
+            NextMajorVersionNumber=$(MajorVersionNumber).$([msbuild]::Add($(MinorVersionNumber), 1)).0.0;
+            PyDebugExt=$(PyDebugExt);
+        </DefineConstants>
+        <DefineConstants Condition="'$(CRTModule)' != '' and Exists($(CRTModule))">
+            $(DefineConstants);CRTModule=$(CRTModule);
+        </DefineConstants>
+        <DefineConstants Condition="'$(CRTRedist)' != ''">
+            $(DefineConstants);CRTRedist=$(CRTRedist);
+        </DefineConstants>
+        <DefineConstants Condition="$(Configuration) != 'Debug'">
+            $(DefineConstants);TestPrefix=;FileExtension=py;
+        </DefineConstants>
+        <DefineConstants Condition="$(Configuration) == 'Debug'">
+            $(DefineConstants);TestPrefix=x;FileExtension=px;
+        </DefineConstants>
+        <DefineConstants Condition="$(Platform) != 'x64'">
+            $(DefineConstants);Suffix32=-32;
+        </DefineConstants>
+        <DefineConstants Condition="$(Platform) == 'x64'">
+            $(DefineConstants);Suffix32=;
+        </DefineConstants>
+    </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <InstallFiles>
+            <Group>generated_filelist</Group>
+            <Condition></Condition>
+            <DiskId></DiskId>
+        </InstallFiles>
+        <LinkerBindInputPaths>
+            <Visible>false</Visible>
+        </LinkerBindInputPaths>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <LinkerBindInputPaths Include="$(BuildPath);$(PySourcePath)Doc\build\htmlhelp">
+            <BindName></BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(PySourcePath)">
+            <BindName>src</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(tcltkDir)">
+            <BindName>tcltk</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(CRTRedist)" Condition="'$(CRTRedist)' != ''">
+            <BindName>crt</BindName>
+        </LinkerBindInputPaths>
+    </ItemGroup>
+
+    <Target Name="_ValidateMsiProps" BeforeTargets="PrepareForBuild">
+        <Error Text="Platform '$(Platform)' is not supported. Use 'x86' or 'x64'." Condition="$(Platform) != 'x86' and $(Platform) != 'x64'" />
+    </Target>
+    
+    <ItemGroup>
+        <_Uuid Include="CoreUpgradeCode">
+            <Uri>upgradecode</Uri>
+        </_Uuid>
+        <_Uuid Include="UpgradeCode">
+            <Uri>upgradecode/$(OutputName)</Uri>
+        </_Uuid>
+        <_Uuid Include="InstallDirectoryGuidSeed">
+            <Uri>installdirectoryseed</Uri>
+        </_Uuid>
+        <_Uuid Include="PythonExeComponentGuid">
+            <Uri>python.exe</Uri>
+        </_Uuid>
+        <_Uuid Include="PythonwExeComponentGuid">
+            <Uri>pythonw.exe</Uri>
+        </_Uuid>
+        <_Uuid Include="RemoveLib2to3PickleComponentGuid">
+            <Uri>lib2to3/pickles</Uri>
+        </_Uuid>
+    </ItemGroup>
+    <Target Name="_GenerateGuids" AfterTargets="PrepareForBuild">
+        <PropertyGroup>
+            <_Uuids>@(_Uuid->'("%(Identity)", "%(Uri)")',',')</_Uuids>
+            <_GenerateCommand>import uuid; print('\n'.join('{}={}'.format(i, uuid.uuid5(uuid.UUID('c8d9733e-a70c-43ff-ab0c-e26456f11083'), '$(ReleaseUri)' + j)) for i,j in [$(_Uuids.Replace(`"`,`'`))]))</_GenerateCommand>
+        </PropertyGroup>
+        
+        <Exec Command='"$(PythonExe)" -c "$(_GenerateCommand)" &gt; "$(IntermediateOutputPath)$(OutputName)guids.txt"' IgnoreExitCode="false" />
+        
+        <ReadLinesFromFile File="$(IntermediateOutputPath)$(OutputName)guids.txt">
+            <Output TaskParameter="Lines" ItemName="_UuidValue" />
+        </ReadLinesFromFile>
+        
+        <PropertyGroup>
+            <DefineConstants>$(DefineConstants);@(_UuidValue,';');</DefineConstants>
+        </PropertyGroup>
+    </Target>
+</Project>

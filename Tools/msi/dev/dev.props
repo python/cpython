@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="..\msi.props" />
+    <PropertyGroup>
+        <DefineConstants Condition="$(BuildForRelease)">
+            $(DefineConstants);
+            IncludeMinGWLib=1;
+        </DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="*.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    <ItemGroup>
+        <InstallFiles Include="$(PySourcePath)include\*.h">
+            <SourceBase>$(PySourcePath)</SourceBase>
+            <Source>!(bindpath.src)</Source>
+            <TargetBase>$(PySourcePath)</TargetBase>
+            <Target_></Target_>
+            <Group>dev_include</Group>
+        </InstallFiles>
+    </ItemGroup>
+    
+    <Target Name="BuildMinGWLib"
+            Inputs="$(BuildPath)$(PyDllName).dll"
+            Outputs="$(BuildPath)lib$(PyDllName).a"
+            AfterTargets="PrepareForBuild"
+            Condition="$(BuildForRelease)">
+        <!-- Build libpython##.a as part of this project. This requires gendef and dlltool on the path. -->
+        <PropertyGroup>
+            <_GenDefPlatform>i386</_GenDefPlatform>
+            <_GenDefPlatform Condition="$(Platform) == 'x64'">i386:x86-64</_GenDefPlatform>
+        </PropertyGroup>
+
+        <Exec Command='gendef - "$(BuildPath)$(PyDllName).dll" &gt; "$(IntermediateOutputPath)mingwlib.def"' ContinueOnError="false" />
+        <Exec Command='dlltool --dllname $(PyDllName).dll --def "$(IntermediateOutputPath)mingwlib.def" --output-lib "$(BuildPath)lib$(PyDllName).a" -m $(_GenDefPlatform)' />
+    </Target>
+
+    <Import Project="..\msi.targets" />
+</Project>

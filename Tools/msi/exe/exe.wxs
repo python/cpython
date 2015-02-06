@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <?ifdef IncludeDefaultFeature ?>
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="exe_python" />
+            <ComponentGroupRef Id="exe_txt" />
+            <ComponentGroupRef Id="exe_icons" />
+            
+            <Component Id="exe_shortcut" Directory="MenuDir" Guid="*">
+                <Shortcut Id="python.exe"
+                          Target="[#python.exe]"
+                          Name="!(loc.ShortcutName)"
+                          Description="!(loc.ShortcutDescription)" />
+                <RemoveFolder Id="Remove_MenuDir" Directory="MenuDir" On="uninstall" />
+                <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
+                    <RegistryValue Key="InstallPath" Type="string" Value="[InstallDirectory]" KeyPath="yes" />
+                    <RegistryValue Key="InstallPath\InstallGroup" Type="string" Value="Python $(var.ShortVersion)" />
+                </RegistryKey>
+            </Component>
+        </Feature>
+        <?endif ?>
+        <?ifdef IncludeSymbols ?>
+        <Feature Id="Symbols" AllowAdvertise="no" Title="!(loc.TitlePdb)" Description="!(loc.DescriptionPdb)">
+            <ComponentGroupRef Id="exe_python_symbols" />
+        </Feature>
+        <?endif ?>
+        <?ifdef IncludeDebugBinaries ?>
+        <Feature Id="DebugBinaries" AllowAdvertise="no" Title="!(loc.Title_d)" Description="!(loc.Description_d)">
+            <ComponentGroupRef Id="exe_python_d" />
+        </Feature>
+        <?endif ?>
+    </Product>
+</Wix>
