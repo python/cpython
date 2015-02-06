@@ -326,6 +326,8 @@ IDLE
 Tests
 -----
 
+- Issue #23392: Added tests for marshal C API that works with FILE*.
+
 - Issue #18982: Add tests for CLI of the calendar module.
 
 - Issue #19548: Added some additional checks to test_codecs to ensure that
