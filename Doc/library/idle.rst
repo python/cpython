@@ -1,12 +1,12 @@
 .. _idle:
 
+IDLE
+====
+
 .. index::
    single: IDLE
    single: Python Editor
    single: Integrated Development Environment
-
-IDLE
-====
 
 .. moduleauthor:: Guido van Rossum <guido@Python.org>
 
