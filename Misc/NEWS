@@ -235,6 +235,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20289: cgi.FieldStorage() now supports the context management
+  protocol.
+
 - Issue #13128: Print response headers for CONNECT requests when debuglevel
   > 0. Patch by Demian Brecht.
 

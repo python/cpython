@@ -157,6 +157,9 @@ return bytes)::
            if not line: break
            linecount = linecount + 1
 
+:class:`FieldStorage` objects also support being used in a :keyword:`with`
+statement, which will automatically close them when done.
+
 If an error is encountered when obtaining the contents of an uploaded file
 (for example, when the user interrupts the form submission by clicking on
 a Back or Cancel button) the :attr:`~FieldStorage.done` attribute of the
@@ -181,6 +184,10 @@ A form submitted via POST that also has a query string will contain both
 .. versionchanged:: 3.4
    The :attr:`~FieldStorage.file` attribute is automatically closed upon the
    garbage collection of the creating :class:`FieldStorage` instance.
+
+.. versionchanged:: 3.5
+   Added support for the context management protocol to the
+   :class:`FieldStorage` class.
 
 
 Higher Level Interface

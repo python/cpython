@@ -566,6 +566,12 @@ class FieldStorage:
         except AttributeError:
             pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.file.close()
+
     def __repr__(self):
         """Return a printable representation."""
         return "FieldStorage(%r, %r, %r)" % (
