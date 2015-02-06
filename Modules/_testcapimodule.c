@@ -9,6 +9,7 @@
 #include <float.h>
 #include "structmember.h"
 #include "datetime.h"
+#include "marshal.h"
 
 #ifdef WITH_THREAD
 #include "pythread.h"
@@ -1875,6 +1876,159 @@ exit:
 }
 #endif   /* WITH_THREAD */
 
+/* marshal */
+
+static PyObject*
+pymarshal_write_long_to_file(PyObject* self, PyObject *args)
+{
+    long value;
+    char *filename;
+    int version;
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, "lsi:pymarshal_write_long_to_file",
+                          &value, &filename, &version))
+        return NULL;
+
+    fp = fopen(filename, "wb");
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    PyMarshal_WriteLongToFile(value, fp, version);
+
+    fclose(fp);
+    if (PyErr_Occurred())
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+pymarshal_write_object_to_file(PyObject* self, PyObject *args)
+{
+    PyObject *obj;
+    char *filename;
+    int version;
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, "Osi:pymarshal_write_object_to_file",
+                          &obj, &filename, &version))
+        return NULL;
+
+    fp = fopen(filename, "wb");
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    PyMarshal_WriteObjectToFile(obj, fp, version);
+
+    fclose(fp);
+    if (PyErr_Occurred())
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+pymarshal_read_short_from_file(PyObject* self, PyObject *args)
+{
+    int value;
+    long pos;
+    char *filename;
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, "s:pymarshal_read_short_from_file", &filename))
+        return NULL;
+
+    fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    value = PyMarshal_ReadShortFromFile(fp);
+    pos = ftell(fp);
+
+    fclose(fp);
+    if (PyErr_Occurred())
+        return NULL;
+    return Py_BuildValue("il", value, pos);
+}
+
+static PyObject*
+pymarshal_read_long_from_file(PyObject* self, PyObject *args)
+{
+    long value, pos;
+    char *filename;
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, "s:pymarshal_read_long_from_file", &filename))
+        return NULL;
+
+    fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    value = PyMarshal_ReadLongFromFile(fp);
+    pos = ftell(fp);
+
+    fclose(fp);
+    if (PyErr_Occurred())
+        return NULL;
+    return Py_BuildValue("ll", value, pos);
+}
+
+static PyObject*
+pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
+{
+    PyObject *obj;
+    long pos;
+    char *filename;
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, "s:pymarshal_read_last_object_from_file", &filename))
+        return NULL;
+
+    fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    obj = PyMarshal_ReadLastObjectFromFile(fp);
+    pos = ftell(fp);
+
+    fclose(fp);
+    return Py_BuildValue("Nl", obj, pos);
+}
+
+static PyObject*
+pymarshal_read_object_from_file(PyObject* self, PyObject *args)
+{
+    PyObject *obj;
+    long pos;
+    char *filename;
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, "s:pymarshal_read_object_from_file", &filename))
+        return NULL;
+
+    fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    obj = PyMarshal_ReadObjectFromFile(fp);
+    pos = ftell(fp);
+
+    fclose(fp);
+    return Py_BuildValue("Nl", obj, pos);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -1940,6 +2094,18 @@ static PyMethodDef TestMethods[] = {
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
 #endif
+    {"pymarshal_write_long_to_file",
+        pymarshal_write_long_to_file, METH_VARARGS},
+    {"pymarshal_write_object_to_file",
+        pymarshal_write_object_to_file, METH_VARARGS},
+    {"pymarshal_read_short_from_file",
+        pymarshal_read_short_from_file, METH_VARARGS},
+    {"pymarshal_read_long_from_file",
+        pymarshal_read_long_from_file, METH_VARARGS},
+    {"pymarshal_read_last_object_from_file",
+        pymarshal_read_last_object_from_file, METH_VARARGS},
+    {"pymarshal_read_object_from_file",
+        pymarshal_read_object_from_file, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
