@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="postinstall">
+            <MsiPackage Id="pip_AllUsers"
+                        SourceFile="pip.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and Include_pip">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+            <MsiPackage Id="pip_JustForMe"
+                        SourceFile="pip.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and Include_pip">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+            
+            <MsiPackage Id="path_AllUsers"
+                        SourceFile="path.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and PrependPath">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+            <MsiPackage Id="path_JustForMe"
+                        SourceFile="path.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and PrependPath">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+            
+            <?define CompileAllCommand=-$(var.ShortVersion)$(var.Suffix32) -Wi "[TargetDir]\Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|lib2to3\\tests|venv\\scripts" "[TargetDir]\Lib"?>
+            <ExePackage Id="compileall_AllUsers"
+                        SourceFile="py.exe"
+                        Compressed="yes"
+                        DisplayName="!(loc.CompileAllDescription)"
+                        InstallCommand='$(var.CompileAllCommand)'
+                        RepairCommand='$(var.CompileAllCommand)'
+                        Permanent="yes"
+                        PerMachine="yes"
+                        Vital="no"
+                        InstallCondition="InstallAllUsers and CompileAll" />
+            <ExePackage Id="compileall_JustForMe"
+                        SourceFile="py.exe"
+                        Compressed="yes"
+                        DisplayName="!(loc.CompileAllDescription)"
+                        InstallCommand='$(var.CompileAllCommand)'
+                        RepairCommand='$(var.CompileAllCommand)'
+                        Permanent="yes"
+                        PerMachine="no"
+                        Vital="no"
+                        InstallCondition="not InstallAllUsers and CompileAll" />
+        </PackageGroup>
+    </Fragment>
+</Wix>

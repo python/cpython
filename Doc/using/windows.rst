@@ -7,6 +7,7 @@
 *************************
 
 .. sectionauthor:: Robert Lehmann <lehmannro@gmail.com>
+.. sectionauthor:: Steve Dower <steve.dower@microsoft.com>
 
 This document aims to give an overview of Windows-specific behaviour you should
 know about when using Python on Microsoft Windows.
@@ -19,10 +20,172 @@ know about when using Python on Microsoft Windows.
 Installing Python
 =================
 
-Unlike most Unix systems and services, Windows does not require Python natively
-and thus does not pre-install a version of Python.  However, the CPython team
+Unlike most Unix systems and services, Windows does not include a system
+supported installation of Python. To make Python available, the CPython team
 has compiled Windows installers (MSI packages) with every `release
-<https://www.python.org/download/releases/>`_ for many years.
+<https://www.python.org/download/releases/>`_ for many years. These installers
+are primarily intended to add a system-wide installation of Python, with the
+core interpreter and library being shared by all application. Non-shared
+layouts of the Python interpreter may also be created with the same installer,
+however, the released installer is not intended for embedding in other
+installers.
+
+Installation Steps
+------------------
+
+Four Python 3.5 installers are available for download - two each for the 32-bit
+and 64-bit versions of the interpreter. The *web installer* is a small initial
+download, and it will automatically download the required components as
+necessary. The *offline installer* includes the components necessary for a
+default installation and only requires an internet connection for optional
+features. See :ref:`install-layout-option` for other ways to avoid downloading
+during installation.
+
+After starting the installer, one of three options may be selected:
+
+.. image:: win_installer.png
+
+If you select "Install for All Users":
+
+* You may be required to provide administrative credentials or approval
+* Python will be installed into your Program Files directory
+* The :ref:`launcher` will be installed into your Windows directory
+* The standard library, test suite, launcher and pip will be installed
+* After installation, the standard library will be pre-compiled to bytecode
+* If selected, the install directory will be added to :envvar:`PATH`
+
+If you select "Install Just for Me":
+
+* You will *not* need to be an administrator
+* Python will be installed into your user directory
+* The :ref:`launcher` will *also* be installed into your user directory
+* The standard library, test suite, launcher and pip will be installed
+* If selected, the install directory will be added to :envvar:`PATH`
+
+Selecting "Customize installation" will allow you to select the features to
+install, the installation location and other options or post-install actions.
+To install debugging symbols or binaries, you will need to use this option.
+
+.. _install-quiet-option:
+
+Installing Without UI
+---------------------
+
+All of the options available in the installer UI can also be specified from the
+command line, allowing scripted installers to replicate an installation on many
+machines without user interaction.  These options may also be set without
+suppressing the UI in order to change some of the defaults.
+
+To completely hide the installer UI and install Python silently, pass the
+``/quiet`` (``/q``) option. To skip past the user interaction but still display
+progress and errors, pass the ``/passive`` (``/p``) option. The ``/uninstall``
+option may be passed to immediately begin removing Python - no prompt will be
+displayed.
+
+All other options are passed as ``name=value``, where the value is usually
+``0`` to disable a feature, ``1`` to enable a feature, or a path. The full list
+of available options is shown below.
+
++---------------------------+--------------------------------------+--------------------------+
+| Name                      | Description                          | Default                  |
++===========================+======================================+==========================+
+| InstallAllUsers           | Perform a system-wide installation.  | 1                        |
++---------------------------+--------------------------------------+--------------------------+
+| TargetDir                 | The installation directory           | Selected based on        |
+|                           |                                      | InstallAllUsers          |
++---------------------------+--------------------------------------+--------------------------+
+| DefaultAllUsersTargetDir  | The default installation directory   | :file:`%ProgramFiles%\\\ |
+|                           | for all-user installs                | Python X.Y` or :file:`\  |
+|                           |                                      | %ProgramFiles(x86)%\\\   |
+|                           |                                      | Python X.Y`              |
++---------------------------+--------------------------------------+--------------------------+
+| DefaultJustForMeTargetDir | The default install directory for    | :file:`%LocalAppData%\\\ |
+|                           | just-for-me installs                 | Programs\\PythonXY` or   |
+|                           |                                      | :file:`%LocalAppData%\\\ |
+|                           |                                      | Programs\\PythonXY-32`   |
++---------------------------+--------------------------------------+--------------------------+
+| DefaultCustomTargetDir    | The default custom install directory | (empty)                  |
+|                           | displayed in the UI                  |                          |
++---------------------------+--------------------------------------+--------------------------+
+| AssociateFiles            | Create file associations if the      | 1                        |
+|                           | launcher is also installed.          |                          |
++---------------------------+--------------------------------------+--------------------------+
+| CompileAll                | Compile all ``.py`` files to         | 0                        |
+|                           | ``.pyc`` and ``.pyo``.               |                          |
++---------------------------+--------------------------------------+--------------------------+
+| PrependPath               | Add install and Scripts directories  | 0                        |
+|                           | tho :envvar:`PATH` and ``.PY`` to    |                          |
+|                           | :envvar:`PATHEXT`                    |                          |
++---------------------------+--------------------------------------+--------------------------+
+| Include_doc               | Install Python manual                | 1                        |
++---------------------------+--------------------------------------+--------------------------+
+| Include_debug             | Install debug binaries               | 0                        |
++---------------------------+--------------------------------------+--------------------------+
+| Include_dev               | Install developer headers and        | 1                        |
+|                           | libraries                            |                          |
++---------------------------+--------------------------------------+--------------------------+
+| Include_exe               | Install :file:`python.exe` and       | 1                        |
+|                           | related files                        |                          |
++---------------------------+--------------------------------------+--------------------------+
+| Include_launcher          | Install :ref:`launcher`.             | 1                        |
++---------------------------+--------------------------------------+--------------------------+
+| Include_lib               | Install standard library and         | 1                        |
+|                           | extension modules                    |                          |
++---------------------------+--------------------------------------+--------------------------+
+| Include_pip               | Install bundled pip and setuptools   | 1                        |
++---------------------------+--------------------------------------+--------------------------+
+| Include_symbols           | Install debugging symbols (`*`.pdb)  | 0                        |
++---------------------------+--------------------------------------+--------------------------+
+| Include_tcltk             | Install Tcl/Tk support and IDLE      | 1                        |
++---------------------------+--------------------------------------+--------------------------+
+| Include_test              | Install standard library test suite  | 1                        |
++---------------------------+--------------------------------------+--------------------------+
+| Include_tools             | Install utility scripts              | 1                        |
++---------------------------+--------------------------------------+--------------------------+
+| SimpleInstall             | Disable most install UI              | 0                        |
++---------------------------+--------------------------------------+--------------------------+
+
+For example, to silently install a default, system-wide Python installation,
+you could use the following command (from an elevated command prompt)::
+
+    python-3.5.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+
+To allow users to easily install a personal copy of Python without the test
+suite, you could provide a shortcut with the following command::
+
+    python-3.5.0.exe /passive InstallAllUsers=0 Include_launcher=0 Include_test=0 SimpleInstall=1
+
+(Note that omitting the launcher also omits file associations, and is only
+recommended for per-user installs when there is also a system-wide installation
+that included the launcher.)
+
+.. _install-layout-option:
+
+Installing Without Downloading
+------------------------------
+
+As some features of Python are not included in the initial installer download,
+selecting those features may require an internet connection.  To avoid this
+need, all possible components may be downloaded on-demand to create a complete
+*layout* that will no longer require an internet connection regardless of the
+selected features. Note that this download may be bigger than required, but
+where a large number of installations are going to be performed it is very
+useful to have a locally cached copy.
+
+Execute the following command from Command Prompt to download all possible
+required files.  Remember to substitute ``python-3.5.0.exe`` for the actual
+name of your installer, and to create layouts in their own directories to
+avoid collisions between files with the same name.
+
+::
+
+    python-3.5.0.exe /layout [optional target directory]
+
+You may also specify the ``/quiet`` option to hide the progress display.
+
+
+Other Platforms
+---------------
 
 With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
@@ -66,19 +229,31 @@ key features:
 `ActivePython <http://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Enthought Python Distribution <https://www.enthought.com/products/epd/>`_
-    Popular modules (such as PyWin32) with their respective documentation, tool
-    suite for building extensible Python applications
+`Anaconda <http://www.continuum.io/downloads/>`_
+    Popular scientific modules (such as numpy, scipy and pandas) and the
+    ``conda`` package manager.
 
-Notice that these packages are likely to install *older* versions of Python.
+`Canopy <https://www.enthought.com/products/canopy/>`_
+    A "comprehensive Python analysis environment" with editors and other
+    development tools.
+
+`WinPython <https://winpython.github.io/>`_
+    Windows-specific distribution with prebuilt scientific packages and
+    tools for building packages.
+
+Note that these packages may not include the latest versions of Python or
+other libraries, and are not maintained or supported by the core Python team.
 
 
 
 Configuring Python
 ==================
 
-In order to run Python flawlessly, you might have to change certain environment
-settings in Windows.
+To run Python conveniently from a command prompt, you might consider changing
+some default environment variables in Windows.  While the installer provides an
+option to configure the PATH and PATHEXT variables for you, this is only
+reliable for a single, system-wide installation.  If you regularly use multiple
+versions of Python, consider using the :ref:`launcher`.
 
 
 .. _setting-envvars:
@@ -86,163 +261,86 @@ settings in Windows.
 Excursus: Setting environment variables
 ---------------------------------------
 
-Windows has a built-in dialog for changing environment variables (following
-guide applies to XP classical view): Right-click the icon for your machine
-(usually located on your Desktop and called "My Computer") and choose
-:menuselection:`Properties` there.  Then, open the :guilabel:`Advanced` tab
-and click the :guilabel:`Environment Variables` button.
+Windows allows environment variables to be configured permanently at both the
+User level and the System level, or temporarily in a command prompt.
 
-In short, your path is:
+To temporarily set environment variables, open Command Prompt and use the
+:command:`set` command::
 
-    :menuselection:`My Computer
-    --> Properties
-    --> Advanced
-    --> Environment Variables`
+    C:\>set PATH=C:\Program Files\Python 3.5;%PATH%
+    C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
+    C:\>python
 
+These changes will apply to any further commands executed in that console, and
+will be inherited by any applications started from the console.
+
+Including the variable name within percent signs will expand to the existing
+value, allowing you to add your new value at either the start or the end.
+Modifying :envvar:`PATH` by adding the directory containing
+:program:`python.exe` to the start is a common way to ensure the correct version
+of Python is launched.
+
+To permanently modify the default environment variables, click Start and search
+for 'edit environment variables', or open System properties, :guilabel:`Advanced
+system settings` and click the :guilabel:`Environment Variables` button.
 In this dialog, you can add or modify User and System variables. To change
 System variables, you need non-restricted access to your machine
 (i.e. Administrator rights).
 
-Another way of adding variables to your environment is using the :command:`set`
-command::
+.. note::
 
-    set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
+    Windows will concatenate User variables *after* System variables, which may
+    cause unexpected results when modifying :envvar:`PATH`.
 
-To make this setting permanent, you could add the corresponding command line to
-your :file:`autoexec.bat`. :program:`msconfig` is a graphical interface to this
-file.
-
-Viewing environment variables can also be done more straight-forward: The
-command prompt will expand strings wrapped into percent signs automatically::
-
-    echo %PATH%
-
-Consult :command:`set /?` for details on this behaviour.
+    The :envvar:`PYTHONPATH` variable is used by all versions of Python 2 and
+    Python 3, so you should not permanently configure this variable unless it
+    only includes code that is compatible all of your installed Python
+    versions.
 
 .. seealso::
 
-   http://support.microsoft.com/kb/100843
+    http://support.microsoft.com/kb/100843
       Environment variables in Windows NT
 
-   http://support.microsoft.com/kb/310519
+    http://technet.microsoft.com/en-us/library/cc754250.aspx
+      The SET command, for temporarily modifying environment variables
+
+    http://technet.microsoft.com/en-us/library/cc755104.aspx
+      The SETX command, for permanently modifying environment variables
+
+    http://support.microsoft.com/kb/310519
       How To Manage Environment Variables in Windows XP
 
-   http://www.chem.gla.ac.uk/~louis/software/faq/q1.html
+    http://www.chem.gla.ac.uk/~louis/software/faq/q1.html
       Setting Environment variables, Louis J. Farrugia
-
 
 .. _windows-path-mod:
 
 Finding the Python executable
 -----------------------------
 
-.. versionchanged:: 3.3
+.. versionchanged:: 3.5
 
 Besides using the automatically created start menu entry for the Python
-interpreter, you might want to start Python in the command prompt. As of
-Python 3.3, the installer has an option to set that up for you.
+interpreter, you might want to start Python in the command prompt. The
+installer for Python 3.5 and later has an option to set that up for you.
 
-At the "Customize Python 3.3" screen, an option called
-"Add python.exe to search path" can be enabled to have the installer place
-your installation into the :envvar:`%PATH%`. This allows you to type
-:command:`python` to run the interpreter. Thus, you can also execute your
+On the first page of the installer, an option labelled "Add Python 3.5 to
+PATH" can be selected to have the installer add the install location into the
+:envvar:`PATH`.  The location of the :file:`Scripts\\` folder is also added.
+This allows you to type :command:`python` to run the interpreter, and
+:command:`pip` or . Thus, you can also execute your
 scripts with command line options, see :ref:`using-on-cmdline` documentation.
 
 If you don't enable this option at install time, you can always re-run the
-installer to choose it.
+installer, select Modify, and enable it.  Alternatively, you can manually
+modify the :envvar:`PATH` using the directions in :ref:`setting-envvars`.  You
+need to set your :envvar:`PATH` environment variable to include the directory
+of your Python installation, delimited by a semicolon from other entries.  An
+example variable could look like this (assuming the first two entries already
+existed)::
 
-The alternative is manually modifying the :envvar:`%PATH%` using the
-directions in :ref:`setting-envvars`. You need to set your :envvar:`%PATH%`
-environment variable to include the directory of your Python distribution,
-delimited by a semicolon from other entries. An example variable could look
-like this (assuming the first two entries are Windows' default)::
-
-    C:\WINDOWS\system32;C:\WINDOWS;C:\Python33
-
-
-Finding modules
----------------
-
-Python usually stores its library (and thereby your site-packages folder) in the
-installation directory.  So, if you had installed Python to
-:file:`C:\\Python\\`, the default library would reside in
-:file:`C:\\Python\\Lib\\` and third-party modules should be stored in
-:file:`C:\\Python\\Lib\\site-packages\\`.
-
-This is how :data:`sys.path` is populated on Windows:
-
-* An empty entry is added at the start, which corresponds to the current
-  directory.
-
-* If the environment variable :envvar:`PYTHONPATH` exists, as described in
-  :ref:`using-on-envvars`, its entries are added next.  Note that on Windows,
-  paths in this variable must be separated by semicolons, to distinguish them
-  from the colon used in drive identifiers (``C:\`` etc.).
-
-* Additional "application paths" can be added in the registry as subkeys of
-  :samp:`\\SOFTWARE\\Python\\PythonCore\\{version}\\PythonPath` under both the
-  ``HKEY_CURRENT_USER`` and ``HKEY_LOCAL_MACHINE`` hives.  Subkeys which have
-  semicolon-delimited path strings as their default value will cause each path
-  to be added to :data:`sys.path`.  (Note that all known installers only use
-  HKLM, so HKCU is typically empty.)
-
-* If the environment variable :envvar:`PYTHONHOME` is set, it is assumed as
-  "Python Home".  Otherwise, the path of the main Python executable is used to
-  locate a "landmark file" (``Lib\os.py``) to deduce the "Python Home".  If a
-  Python home is found, the relevant sub-directories added to :data:`sys.path`
-  (``Lib``, ``plat-win``, etc) are based on that folder.  Otherwise, the core
-  Python path is constructed from the PythonPath stored in the registry.
-
-* If the Python Home cannot be located, no :envvar:`PYTHONPATH` is specified in
-  the environment, and no registry entries can be found, a default path with
-  relative entries is used (e.g. ``.\Lib;.\plat-win``, etc).
-
-The end result of all this is:
-
-* When running :file:`python.exe`, or any other .exe in the main Python
-  directory (either an installed version, or directly from the PCbuild
-  directory), the core path is deduced, and the core paths in the registry are
-  ignored.  Other "application paths" in the registry are always read.
-
-* When Python is hosted in another .exe (different directory, embedded via COM,
-  etc), the "Python Home" will not be deduced, so the core path from the
-  registry is used.  Other "application paths" in the registry are always read.
-
-* If Python can't find its home and there is no registry (eg, frozen .exe, some
-  very strange installation setup) you get a path with some default, but
-  relative, paths.
-
-
-Executing scripts
------------------
-
-As of Python 3.3, Python includes a launcher which facilitates running Python
-scripts. See :ref:`launcher` for more information.
-
-Executing scripts without the Python launcher
----------------------------------------------
-
-Without the Python launcher installed, Python scripts (files with the extension
-``.py``) will be executed by :program:`python.exe` by default.  This executable
-opens a terminal, which stays open even if the program uses a GUI.  If you do
-not want this to happen, use the extension ``.pyw`` which will cause the script
-to be executed by :program:`pythonw.exe` by default (both executables are
-located in the top-level of your Python installation directory).  This
-suppresses the terminal window on startup.
-
-You can also make all ``.py`` scripts execute with :program:`pythonw.exe`,
-setting this through the usual facilities, for example (might require
-administrative rights):
-
-#. Launch a command prompt.
-#. Associate the correct file group with ``.py`` scripts::
-
-      assoc .py=Python.File
-
-#. Redirect all Python files to the new executable::
-
-      ftype Python.File=C:\Path\to\pythonw.exe "%1" %*
-
+    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.5
 
 .. _launcher:
 
@@ -251,10 +349,15 @@ Python Launcher for Windows
 
 .. versionadded:: 3.3
 
-The Python launcher for Windows is a utility which aids in the location and
-execution of different Python versions.  It allows scripts (or the
+The Python launcher for Windows is a utility which aids in locating and
+executing of different Python versions.  It allows scripts (or the
 command-line) to indicate a preference for a specific Python version, and
 will locate and execute that version.
+
+Unlike the :envvar:`PATH` variable, the launcher will correctly select the most
+appropriate version of Python. It will prefer per-user installations over
+system-wide ones, and orders by language version rather than using the most
+recently installed version.
 
 Getting started
 ---------------
@@ -262,10 +365,10 @@ Getting started
 From the command-line
 ^^^^^^^^^^^^^^^^^^^^^
 
-You should ensure the launcher is on your PATH - depending on how it was
-installed it may already be there, but check just in case it is not.
-
-From a command-prompt, execute the following command:
+System-wide installations of Python 3.3 and later will put the launcher on your
+:envvar:`PATH`. The launcher is compatible with all available versions of
+Python, so it does not matter which version is installed. To check that the
+launcher is available, execute the following command in Command Prompt:
 
 ::
 
@@ -290,6 +393,16 @@ If you have a Python 3.x installed, try the command:
   py -3
 
 You should find the latest version of Python 3.x starts.
+
+If you see the following error, you do not have the launcher installed:
+
+::
+
+  'py' is not recognized as an internal or external command,
+  operable program or batch file.
+
+Per-user installations of Python do not add the launcher to :envvar:`PATH`
+unless the option was selected on installation.
 
 From a script
 ^^^^^^^^^^^^^
@@ -383,17 +496,16 @@ Customization
 Customization via INI files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Two .ini files will be searched by the launcher - ``py.ini`` in the
-    current user's "application data" directory (i.e. the directory returned
-    by calling the Windows function SHGetFolderPath with CSIDL_LOCAL_APPDATA)
-    and ``py.ini`` in the same directory as the launcher.  The same .ini
-    files are used for both the 'console' version of the launcher (i.e.
-    py.exe) and for the 'windows' version (i.e. pyw.exe)
+Two .ini files will be searched by the launcher - ``py.ini`` in the current
+user's "application data" directory (i.e. the directory returned by calling the
+Windows function SHGetFolderPath with CSIDL_LOCAL_APPDATA) and ``py.ini`` in the
+same directory as the launcher. The same .ini files are used for both the
+'console' version of the launcher (i.e. py.exe) and for the 'windows' version
+(i.e. pyw.exe)
 
-    Customization specified in the "application directory" will have
-    precedence over the one next to the executable, so a user, who may not
-    have write access to the .ini file next to the launcher, can override
-    commands in that global .ini file)
+Customization specified in the "application directory" will have precedence over
+the one next to the executable, so a user, who may not have write access to the
+.ini file next to the launcher, can override commands in that global .ini file)
 
 Customizing default Python versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -488,6 +600,78 @@ particular version was chosen and the exact command-line used to execute the
 target Python.
 
 
+
+Finding modules
+===============
+
+Python usually stores its library (and thereby your site-packages folder) in the
+installation directory.  So, if you had installed Python to
+:file:`C:\\Python\\`, the default library would reside in
+:file:`C:\\Python\\Lib\\` and third-party modules should be stored in
+:file:`C:\\Python\\Lib\\site-packages\\`.
+
+This is how :data:`sys.path` is populated on Windows:
+
+* An empty entry is added at the start, which corresponds to the current
+  directory.
+
+* If the environment variable :envvar:`PYTHONPATH` exists, as described in
+  :ref:`using-on-envvars`, its entries are added next.  Note that on Windows,
+  paths in this variable must be separated by semicolons, to distinguish them
+  from the colon used in drive identifiers (``C:\`` etc.).
+
+* Additional "application paths" can be added in the registry as subkeys of
+  :samp:`\\SOFTWARE\\Python\\PythonCore\\{version}\\PythonPath` under both the
+  ``HKEY_CURRENT_USER`` and ``HKEY_LOCAL_MACHINE`` hives.  Subkeys which have
+  semicolon-delimited path strings as their default value will cause each path
+  to be added to :data:`sys.path`.  (Note that all known installers only use
+  HKLM, so HKCU is typically empty.)
+
+* If the environment variable :envvar:`PYTHONHOME` is set, it is assumed as
+  "Python Home".  Otherwise, the path of the main Python executable is used to
+  locate a "landmark file" (``Lib\os.py``) to deduce the "Python Home".  If a
+  Python home is found, the relevant sub-directories added to :data:`sys.path`
+  (``Lib``, ``plat-win``, etc) are based on that folder.  Otherwise, the core
+  Python path is constructed from the PythonPath stored in the registry.
+
+* If the Python Home cannot be located, no :envvar:`PYTHONPATH` is specified in
+  the environment, and no registry entries can be found, a default path with
+  relative entries is used (e.g. ``.\Lib;.\plat-win``, etc).
+
+The end result of all this is:
+
+* When running :file:`python.exe`, or any other .exe in the main Python
+  directory (either an installed version, or directly from the PCbuild
+  directory), the core path is deduced, and the core paths in the registry are
+  ignored.  Other "application paths" in the registry are always read.
+
+* When Python is hosted in another .exe (different directory, embedded via COM,
+  etc), the "Python Home" will not be deduced, so the core path from the
+  registry is used.  Other "application paths" in the registry are always read.
+
+* If Python can't find its home and there is no registry (eg, frozen .exe, some
+  very strange installation setup) you get a path with some default, but
+  relative, paths.
+
+For those who want to bundle Python into their application or distribution, the
+following advice will prevent conflicts with other installations:
+
+* If you are loading :file:`python3.dll` or :file:`python35.dll` in your own
+  executable, explicitly call :c:func:`Py_SetPath` or (at least)
+  :c:func:`Py_SetProgramName` before :c:func:`Py_Initialize`.
+
+* Clear and/or overwrite :envvar:`PYTHONPATH` and set :envvar:`PYTHONHOME`
+  before launching :file:`python.exe` from your application.
+
+* If you cannot use the previous suggestions (for example, you are a
+  distribution that allows people to run :file:`python.exe` directly), ensure
+  that the landmark file (:file:`Lib\\os.py`) exists in your bundled library.
+  (Note that it will not be detected inside a ZIP file.)
+
+These will ensure that the files in a system-wide installation will not take
+precedence over the copy of the standard library bundled with your application.
+Otherwise, your users may experience problems using your application.
+
 Additional modules
 ==================
 
@@ -497,7 +681,6 @@ and external, and snippets exist to use these features.
 
 The Windows-specific standard modules are documented in
 :ref:`mswin-specific-services`.
-
 
 PyWin32
 -------
@@ -557,20 +740,8 @@ latest release's source or just grab a fresh `checkout
 <https://docs.python.org/devguide/setup.html#getting-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
-Visual C++, which is the compiler used to build the official Python releases.
-View the :file:`readme.txt` in their respective directories:
-
-+--------------------+--------------+-----------------------+
-| Directory          | MSVC version | Visual Studio version |
-+====================+==============+=======================+
-| :file:`PC/VS9.0/`  | 9.0          | 2008                  |
-+--------------------+--------------+-----------------------+
-| :file:`PCbuild/`   | 10.0         | 2010                  |
-+--------------------+--------------+-----------------------+
-
-Note that any build directories within the :file:`PC` directory are not
-necessarily fully supported.  The :file:`PCbuild` directory contains the files
-for the compiler used to build the official release.
+Visual Studio 2015, which is the compiler used to build the official Python
+releases. These files are in the :file:`PCbuild` directory.
 
 Check :file:`PCbuild/readme.txt` for general information on the build process.
 

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <ComponentGroup Id="doc">
+            <Component Id="python.chm" Directory="Doc" Guid="*">
+                <File Id="python.chm" Name="$(var.DocFilename)" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

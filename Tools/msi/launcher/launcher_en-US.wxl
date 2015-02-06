@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+    <String Id="Descriptor">Launcher</String>
+    <String Id="ShortDescriptor">launcher</String>
+    <String Id="PythonFileDescription">Python File</String>
+    <String Id="PythonNoConFileDescription">Python File (no console)</String>
+    <String Id="PythonCompiledFileDescription">Compiled Python File</String>
+</WixLocalization>

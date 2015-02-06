@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="crt">
+            <MsiPackage Id="crt_AllUsers"
+                        SourceFile="crt.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip)">
+                <!-- TARGETDIR will be ignored, but must still be provided -->
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+            
+            <MsiPackage Id="crt_JustForMe"
+                        SourceFile="crt.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip)">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+        </PackageGroup>
+    </Fragment>
+</Wix>

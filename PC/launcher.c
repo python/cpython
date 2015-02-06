@@ -157,14 +157,19 @@ static INSTALLED_PYTHON installed_pythons[MAX_INSTALLED_PYTHONS];
 
 static size_t num_installed_pythons = 0;
 
-/* to hold SOFTWARE\Python\PythonCore\X.Y\InstallPath */
+/*
+ * To hold SOFTWARE\Python\PythonCore\X.Y...\InstallPath
+ * The version name can be longer than MAX_VERSION_SIZE, but will be
+ * truncated to just X.Y for comparisons.
+ */
 #define IP_BASE_SIZE 40
-#define IP_SIZE (IP_BASE_SIZE + MAX_VERSION_SIZE)
+#define IP_VERSION_SIZE 8
+#define IP_SIZE (IP_BASE_SIZE + IP_VERSION_SIZE)
 #define CORE_PATH L"SOFTWARE\\Python\\PythonCore"
 
 static wchar_t * location_checks[] = {
     L"\\",
-    L"\\PCBuild\\",
+    L"\\PCBuild\\win32\\",
     L"\\PCBuild\\amd64\\",
     NULL
 };
@@ -196,6 +201,7 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
     BOOL ok;
     DWORD type, data_size, attrs;
     INSTALLED_PYTHON * ip, * pip;
+    wchar_t ip_version[IP_VERSION_SIZE];
     wchar_t ip_path[IP_SIZE];
     wchar_t * check;
     wchar_t ** checkp;
@@ -207,19 +213,21 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
     else {
         ip = &installed_pythons[num_installed_pythons];
         for (i = 0; num_installed_pythons < MAX_INSTALLED_PYTHONS; i++) {
-            status = RegEnumKeyW(core_root, i, ip->version, MAX_VERSION_SIZE);
+            status = RegEnumKeyW(core_root, i, ip_version, IP_VERSION_SIZE);
             if (status != ERROR_SUCCESS) {
                 if (status != ERROR_NO_MORE_ITEMS) {
                     /* unexpected error */
                     winerror(status, message, MSGSIZE);
                     debug(L"Can't enumerate registry key for version %ls: %ls\n",
-                          ip->version, message);
+                          ip_version, message);
                 }
                 break;
             }
             else {
+                wcsncpy_s(ip->version, MAX_VERSION_SIZE, ip_version,
+                          MAX_VERSION_SIZE-1);
                 _snwprintf_s(ip_path, IP_SIZE, _TRUNCATE,
-                             L"%ls\\%ls\\InstallPath", CORE_PATH, ip->version);
+                             L"%ls\\%ls\\InstallPath", CORE_PATH, ip_version);
                 status = RegOpenKeyExW(root, ip_path, 0, flags, &ip_key);
                 if (status != ERROR_SUCCESS) {
                     winerror(status, message, MSGSIZE);

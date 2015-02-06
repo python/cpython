@@ -11,6 +11,9 @@
     <GenerateManifest>false</GenerateManifest>
     <EmbedManifest>false</EmbedManifest>
     <SupportPGO Condition="'$(SupportPGO)' == ''">true</SupportPGO>
+    <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
+    <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
+    <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -137,5 +140,17 @@ foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses
              StopOnFirstFailure="false"
              Condition="Exists(%(FullPath))"
              Targets="CleanAll" />
+  </Target>
+
+  <PropertyGroup Condition="'$(SigningCertificate)' != '' and $(SupportSigning)">
+    <SignToolPath Condition="'$(SignToolPath)' == '' or !Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot81)\bin\x86\signtool.exe</SignToolPath>
+    <SignToolPath Condition="!Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86\signtool.exe</SignToolPath>
+    <SignToolPath Condition="!Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\signtool.exe</SignToolPath>
+    <_SignCommand Condition="Exists($(SignToolPath))">"$(SignToolPath)" sign /q /n "$(SigningCertificate)" /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+  </PropertyGroup>
+  
+  <Target Name="_SignBuild" AfterTargets="AfterBuild" Condition="'$(SigningCertificate)' != '' and $(SupportSigning)">
+    <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
+    <Exec Command='$(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)"' ContinueOnError="false" />
   </Target>
 </Project>

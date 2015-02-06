@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <ComponentGroup Id="launcher_exe">
+            <Component Id="py.exe" Directory="LauncherInstallDirectory" Guid="{B5107402-6958-461B-8B0A-4037D3327160}">
+                <File Id="py.exe" Name="py.exe" Source="py.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="pyw.exe" Directory="LauncherInstallDirectory" Guid="{8E52B8CD-48BB-4D74-84CD-6238BCD11F20}">
+                <File Id="pyw.exe" Name="pyw.exe" Source="pyw.exe" KeyPath="yes" />
+            </Component>
+
+            <Component Id="launcher_path_cu" Directory="LauncherInstallDirectory" Guid="{95AEB930-367C-475C-A17E-A89BFCD4C670}">
+                <Condition>NOT ALLUSERS=1</Condition>
+                
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher\InstallDir" Value="[LauncherInstallDirectory]" Type="string" />
+                <Environment Id="PATH_CU" Action="set" Name="PATH" Part="first" Value="[LauncherInstallDirectory]" />
+            </Component>
+            <Component Id="launcher_path_lm" Directory="LauncherInstallDirectory" Guid="{4A41C365-4E27-4D38-A6D1-4A01B4A6500C}">
+                <Condition>ALLUSERS=1</Condition>
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher\InstallDir" Value="[LauncherInstallDirectory]" Type="string" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <ComponentGroup Id="launcher_pdb">
+            <Component Id="py.pdb" Directory="LauncherInstallDirectory" Guid="*">
+                <File Id="py.pdb" Name="py.pdb" Source="py.pdb" />
+            </Component>
+            <Component Id="pyw.pdb" Directory="LauncherInstallDirectory" Guid="*">
+                <File Id="pyw.pdb" Name="pyw.pdb" Source="pyw.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="Platform">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <Platform Condition="'$(Platform)' == '' or '$(Platform)' == 'x86'">Win32</Platform>
+    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <!--
     Use the latest available version of Visual Studio to build. To override
@@ -98,12 +98,12 @@
     <PyDllName>python$(MajorVersionNumber)$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
 
     <!-- The version and platform tag to include in .pyd filenames -->
-    <PydTag Condition="$(Platform) == 'Win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
+    <PydTag Condition="$(Platform) == 'Win32' or $(Platform) == 'x86'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
     <PydTag Condition="$(Platform) == 'x64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_amd64</PydTag>
     
     <!-- The version number for sys.winver -->
     <SysWinVer>$(MajorVersionNumber).$(MinorVersionNumber)</SysWinVer>
-    <SysWinVer Condition="$(Platform) == 'Win32'">$(SysWinVer)-32</SysWinVer>
+    <SysWinVer Condition="$(Platform) == 'Win32' or $(Platform) == 'x86'">$(SysWinVer)-32</SysWinVer>
   </PropertyGroup>
   
   <!-- Displays the calculated version info -->

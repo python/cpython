@@ -8,11 +8,15 @@ set this=%~n0
 if "%SPHINXBUILD%" EQU "" set SPHINXBUILD=sphinx-build
 if "%PYTHON%" EQU "" set PYTHON=py
 
-if DEFINED ProgramFiles(x86) set _PRGMFLS=%ProgramFiles(x86)%
-if NOT DEFINED ProgramFiles(x86) set _PRGMFLS=%ProgramFiles%
-if "%HTMLHELP%" EQU "" set HTMLHELP=%_PRGMFLS%\HTML Help Workshop\hhc.exe
+if "%HTMLHELP%" EQU "" (
+    where hhc 2>nul >"%TEMP%\hhc.loc"
+    if errorlevel 1 dir "..\externals\hhc.exe" /s/b > "%TEMP%\hhc.loc"
+    if errorlevel 1 echo Cannot find HHC on PATH or in externals & exit /B 1
+    set /P HTMLHELP= < "%TEMP%\hhc.loc"
+    del "%TEMP%\hhc.loc"
+)
 
-if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/patchlevel.py`) do set DISTVERSION=%%v
+if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py`) do set DISTVERSION=%%v
 
 if "%BUILDDIR%" EQU "" set BUILDDIR=build
 
@@ -36,7 +40,8 @@ if errorlevel 9009 (
     echo.
     echo.If you don't have Sphinx installed, grab it from
     echo.http://sphinx-doc.org/
-    goto end
+    popd
+    exit /B 1
 )
 
 rem Targets that do require sphinx-build and have their own label

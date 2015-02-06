@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <ComponentGroup Id="doc">
+            <!--
+            This file is included when the CHM is not available.
+            
+            This way, snapshot builds can succeed without having to
+            build the docs.
+            -->
+            <Component Id="EmptyDocFolder" Directory="Doc" Guid="{22FD42DB-EC66-4B1C-B1FC-44E0CF7B2462}">
+                <CreateFolder />
+                <RemoveFolder Id="Remove_EmptyDocFolder" On="uninstall" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>
