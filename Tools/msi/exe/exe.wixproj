@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{6BD53305-B03E-49DC-85FB-5551B8CCC843}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>exe</OutputName>
+        <OutputType>Package</OutputType>
+        <DefineConstants>IncludeDefaultFeature=1;$(DefineConstants)</DefineConstants>
+    </PropertyGroup>
+    <Import Project="exe.props" />
+</Project>

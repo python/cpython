@@ -41,8 +41,12 @@
 
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+   
   <Import Project="openssl.props" />
-  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
 
   <Target Name="CreateBuildinfH" Inputs="$(MSBuildProjectFullPath)" Outputs="$(IntDir)\buildinf.h" AfterTargets="PrepareForBuild">

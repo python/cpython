@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{DB350600-186C-4E52-BA98-26A7CECB067F}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>tcltk</OutputName>
+        <OutputType>Package</OutputType>
+        <DefineConstants>IncludeDefaultFeature=1;$(DefineConstants)</DefineConstants>
+    </PropertyGroup>
+    <Import Project="tcltk.props" />
+</Project>

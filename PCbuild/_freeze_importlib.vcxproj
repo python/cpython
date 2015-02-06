@@ -81,7 +81,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="RebuildImportLib" AfterTargets="AfterBuild">
+  <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'">
     <Exec Command='"$(TargetPath)" "$(PySourcePath)Lib\importlib\_bootstrap.py" "$(IntDir)importlib.g.h"' />
     
     <PropertyGroup>
@@ -93,9 +93,10 @@
           DestinationFiles="$(PySourcePath)Python\importlib.h"
           Condition="Exists('$(IntDir)importlib.g.h') and '$(_OldContent)' != '$(_NewContent)'" />
     
-    <Message Text="importlib.h has been updated. You will need to rebuild pythoncore to see the changes."
-             Importance="high"
-             Condition="Exists('$(IntDir)importlib.g.h') and '$(_OldContent)' != '$(_NewContent)'" />
+    <Warning Text="importlib.h has been updated. You will need to rebuild pythoncore to see the changes."
+             Condition="Exists('$(IntDir)importlib.g.h') and '$(_OldContent)' != '$(_NewContent)' and $(Configuration) == 'Debug'" />
+    <Error Text="importlib.h has been updated. You will need to rebuild pythoncore to see the changes."
+           Condition="Exists('$(IntDir)importlib.g.h') and '$(_OldContent)' != '$(_NewContent)' and $(Configuration) == 'Release'" />
   </Target>
   <Target Name="_CleanImportLib" BeforeTargets="CoreClean">
     <ItemGroup>

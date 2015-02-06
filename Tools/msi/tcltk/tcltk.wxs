@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <Property Id="PYTHON_EXE" Secure="yes">
+            <ComponentSearch Id="PythonExe" Guid="$(var.PythonwExeComponentGuid)">
+                <FileSearch Name="pythonw.exe" />
+            </ComponentSearch>
+        </Property>
+        
+        <Condition Message="!(loc.NoPython)">PYTHON_EXE</Condition>
+
+        <?ifdef IncludeDefaultFeature ?>
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="tkinter_extension" />
+            <ComponentGroupRef Id="tcltk_dlls" />
+            <ComponentGroupRef Id="tcltk_lib" />
+            <ComponentGroupRef Id="tkinter_lib" />
+            
+            <Component Id="idle_shortcut" Directory="MenuDir">
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="[REGISTRYKEY]\Idle" Type="string" Value="[#Lib_idlelib_idle.pyw]" />
+                <RemoveFolder Id="Remove_MenuDir" On="uninstall" />
+
+                <Shortcut Id="IDLE"
+                          Directory="MenuDir"
+                          Name="!(loc.ShortcutName)"
+                          Description="!(loc.ShortcutDescription)"
+                          Target="[PYTHON_EXE]"
+                          Arguments='"[#Lib_idlelib_idle.pyw]"'
+                          Icon="idle.exe">
+                    <Icon Id="idle.exe" SourceFile="!(bindpath.src)Lib\idlelib\Icons\idle.ico" />
+                </Shortcut>
+            </Component>
+        </Feature>
+        <?endif ?>
+        <?ifdef IncludeSymbols ?>
+        <Feature Id="Symbols" AllowAdvertise="no" Title="!(loc.TitlePdb)" Description="!(loc.DescriptionPdb)">
+            <ComponentGroupRef Id="tkinter_extension_symbols" />
+        </Feature>
+        <?endif ?>
+        <?ifdef IncludeDebugBinaries ?>
+        <Feature Id="DebugBinaries" AllowAdvertise="no" Title="!(loc.Title_d)" Description="!(loc.Description_d)">
+            <ComponentGroupRef Id="tkinter_extension_d" />
+            <ComponentGroupRef Id="tcltk_dlls_d" />
+        </Feature>
+        <?endif ?>
+    </Product>
+</Wix>

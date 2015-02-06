@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <?if $(var.Platform)~=x64 ?>
+        <?define appcrt140Guid={CC160FA9-B519-38EC-B358-B4146E8506C8}?>
+        <?define desktopcrt140Guid={4DB78A79-8D7F-35DD-B0E8-736DE44D25F3}?>
+        <?define vcruntime140Guid={B33258FD-750C-3B42-8BE4-535B48E97DB4}?>
+        <?else ?>
+        <?define appcrt140Guid={E3854F9C-4CFB-3B85-90BD-86AA22D82DC8}?>
+        <?define desktopcrt140Guid={46EAB1CD-C362-3139-BD7E-D8782E65253A}?>
+        <?define vcruntime140Guid={E8E39D3B-4F35-36D8-B892-4B28336FE041}?>
+        <?endif ?>
+        <ComponentGroup Id="crt_files">
+            <Component Id="appcrt140.dll_LM" Directory="SystemInstallDirectory" Guid="$(var.appcrt140Guid)" Shared="yes" SharedDllRefCount="yes">
+                <Condition>ALLUSERS=1</Condition>
+                <File Id="appcrt140.dll_LM" Source="!(bindpath.crt)\appcrt140.dll" />
+            </Component>
+            <Component Id="desktopcrt140.dll_LM" Directory="SystemInstallDirectory" Guid="$(var.desktopcrt140Guid)" Shared="yes" SharedDllRefCount="yes">
+                <Condition>ALLUSERS=1</Condition>
+                <File Id="desktopcrt140.dll_LM" Source="!(bindpath.crt)\desktopcrt140.dll" />
+            </Component>
+            <Component Id="vcruntime140.dll_LM" Directory="SystemInstallDirectory" Guid="$(var.vcruntime140Guid)" Shared="yes" SharedDllRefCount="yes">
+                <Condition>ALLUSERS=1</Condition>
+                <File Id="vcruntime140.dll_LM" Source="!(bindpath.crt)\vcruntime140.dll" />
+            </Component>
+            <Component Id="appcrt140.dll_CU" Directory="InstallDirectory" Guid="*">
+                <Condition>NOT ALLUSERS=1</Condition>
+                <File Id="appcrt140.dll_CU" Source="!(bindpath.crt)\appcrt140.dll" />
+            </Component>
+            <Component Id="desktopcrt140.dll_CU" Directory="InstallDirectory" Guid="*">
+                <Condition>NOT ALLUSERS=1</Condition>
+                <File Id="desktopcrt140.dll_CU" Source="!(bindpath.crt)\desktopcrt140.dll" />
+            </Component>
+            <Component Id="vcruntime140.dll_CU" Directory="InstallDirectory" Guid="*">
+                <Condition>NOT ALLUSERS=1</Condition>
+                <File Id="vcruntime140.dll_CU" Source="!(bindpath.crt)\vcruntime140.dll" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

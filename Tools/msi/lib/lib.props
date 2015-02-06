@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="*.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    <ItemGroup>
+        <ExcludeFolders Include="Lib\test;Lib\tests;Lib\tkinter;Lib\idlelib;Lib\turtledemo" />
+        <InstallFiles Include="$(PySourcePath)Lib\**\*"
+                      Exclude="$(PySourcePath)Lib\**\*.pyc;
+                               $(PySourcePath)Lib\**\*.pyo;
+                               $(PySourcePath)Lib\site-packages\README;
+                               @(ExcludeFolders->'$(PySourcePath)%(Identity)\*');
+                               @(ExcludeFolders->'$(PySourcePath)%(Identity)\**\*')">
+            <SourceBase>$(PySourcePath)Lib</SourceBase>
+            <Source>!(bindpath.src)Lib\</Source>
+            <TargetBase>$(PySourcePath)Lib</TargetBase>
+            <Target_>Lib\</Target_>
+            <Group>lib_py</Group>
+        </InstallFiles>
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
+</Project>
