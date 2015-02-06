@@ -44,6 +44,9 @@ call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
 
+where hg >nul 2>nul
+if errorlevel 1 echo Cannot find hg on PATH & exit /B 1
+
 where dlltool 2>nul >"%TEMP%\dlltool.loc"
 if errorlevel 1 dir "%D%..\..\externals\dlltool.exe" /s/b > "%TEMP%\dlltool.loc"
 if errorlevel 1 echo Cannot find binutils on PATH or in externals & exit /B 1
