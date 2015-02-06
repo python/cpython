@@ -361,7 +361,7 @@ Build
 
 - Issue #17219: Add library build dir for Python extension cross-builds.
 
-- Issue #17128: Use private version of OpenSSL for 2.7.9 OS X 10.5+ installer.
+- Issue #17128: Use private version of OpenSSL for 3.4.3 OS X 10.5+ installer.
 
 C API
 -----
