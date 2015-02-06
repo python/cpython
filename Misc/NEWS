@@ -235,6 +235,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23399: pyvenv creates relative symlinks where possible.
+
 - Issue #20289: cgi.FieldStorage() now supports the context management
   protocol.
 
