@@ -119,14 +119,6 @@ class DebuggerTests(unittest.TestCase):
         commands = ['set breakpoint pending yes',
                     'break %s' % breakpoint,
 
-                    # GDB as of 7.4 (?) onwards can distinguish between the
-                    # value of a variable at entry vs current value:
-                    #   http://sourceware.org/gdb/onlinedocs/gdb/Variables.html
-                    # which leads to the selftests failing with errors like this:
-                    #   AssertionError: 'v@entry=()' != '()'
-                    # Disable this:
-                    'set print entry-values no',
-
                     # The tests assume that the first frame of printed
                     #  backtrace will not contain program counter,
                     #  that is however not guaranteed by gdb
@@ -138,6 +130,16 @@ class DebuggerTests(unittest.TestCase):
                     'set print address off',
 
                     'run']
+
+        # GDB as of 7.4 onwards can distinguish between the
+        # value of a variable at entry vs current value:
+        #   http://sourceware.org/gdb/onlinedocs/gdb/Variables.html
+        # which leads to the selftests failing with errors like this:
+        #   AssertionError: 'v@entry=()' != '()'
+        # Disable this:
+        if (gdb_major_version, gdb_minor_version) >= (7, 4):
+            commands += ['set print entry-values no']
+
         if cmds_after_breakpoint:
             commands += cmds_after_breakpoint
         else:
