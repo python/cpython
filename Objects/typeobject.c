@@ -540,7 +540,7 @@ type_get_bases(PyTypeObject *type, void *context)
 
 static PyTypeObject *best_base(PyObject *);
 static int mro_internal(PyTypeObject *, PyObject **);
-static int type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
+Py_LOCAL_INLINE(int) type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
 static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, char *);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
 static int add_all_subclasses(PyTypeObject *type, PyObject *bases);
