@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22735: Fix many edge cases (including crashes) involving custom mro()
+  implementations.
+
 - Issue #22896: Avoid using PyObject_AsCharBuffer(), PyObject_AsReadBuffer()
   and PyObject_AsWriteBuffer().
 
