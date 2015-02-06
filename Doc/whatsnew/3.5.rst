@@ -141,7 +141,7 @@ code
 
 * The :func:`code.InteractiveInterpreter.showtraceback` method now prints
   the full chained traceback, just like the interactive interpreter.
-  (Contributed by Claudiu.Popa in :issue:`17442`.)
+  (Contributed by Claudiu Popa in :issue:`17442`.)
 
 compileall
 ----------
@@ -192,7 +192,7 @@ imghdr
 ------
 
 * :func:`~imghdr.what` now recognizes the `OpenEXR <http://www.openexr.com>`_
-  format.  (Contributed by Martin vignali and Cladui Popa in :issue:`20295`.)
+  format.  (Contributed by Martin Vignali and Claudiu Popa in :issue:`20295`.)
 
 importlib
 ---------
@@ -472,10 +472,10 @@ Changes in the Python API
   **without** caching ``None`` in :data:`sys.path_importer_cache` which is
   different than the typical case (:issue:`22834`).
 
-* HTTP status code and messages from `http.client` and `http.server` were
-  refactored into a common :class:`~http.HTTPStatus` enum.  The values in
-  `http.client` and `http.server` remain available for backwards compatibility.
-  (Contributed by Demian Brecht in :issue:`21793`.)
+* HTTP status code and messages from :mod:`http.client` and :mod:`http.server`
+  were refactored into a common :class:`~http.HTTPStatus` enum.  The values in
+  :mod:`http.client` and :mod:`http.server` remain available for backwards
+  compatibility.  (Contributed by Demian Brecht in :issue:`21793`.)
 
 * When an import loader defines :meth:`~importlib.machinery.Loader.exec_module`
   it is now expected to also define
