@@ -136,6 +136,12 @@ New Modules
 Improved Modules
 ================
 
+cgi
+---
+
+* :class:`FieldStorage` now supports the context management protocol.
+  (Contributed by Berker Peksag in :issue:`20289`.)
+
 code
 ----
 
