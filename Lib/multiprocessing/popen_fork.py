@@ -1,7 +1,6 @@
 import os
 import sys
 import signal
-import errno
 
 from . import util
 
@@ -29,8 +28,6 @@ class Popen(object):
                 try:
                     pid, sts = os.waitpid(self.pid, flag)
                 except OSError as e:
-                    if e.errno == errno.EINTR:
-                        continue
                     # Child process not yet created. See #1731717
                     # e.errno == errno.ECHILD == 10
                     return None

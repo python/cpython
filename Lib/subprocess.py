@@ -489,14 +489,6 @@ STDOUT = -2
 DEVNULL = -3
 
 
-def _eintr_retry_call(func, *args):
-    while True:
-        try:
-            return func(*args)
-        except InterruptedError:
-            continue
-
-
 # XXX This function is only used by multiprocessing and the test suite,
 # but it's here so that it can be imported when Python is compiled without
 # threads.
@@ -963,10 +955,10 @@ class Popen(object):
             if self.stdin:
                 self._stdin_write(input)
             elif self.stdout:
-                stdout = _eintr_retry_call(self.stdout.read)
+                stdout = self.stdout.read()
                 self.stdout.close()
             elif self.stderr:
-                stderr = _eintr_retry_call(self.stderr.read)
+                stderr = self.stderr.read()
                 self.stderr.close()
             self.wait()
         else:
@@ -1410,7 +1402,7 @@ class Popen(object):
                 # exception (limited in size)
                 errpipe_data = bytearray()
                 while True:
-                    part = _eintr_retry_call(os.read, errpipe_read, 50000)
+                    part = os.read(errpipe_read, 50000)
                     errpipe_data += part
                     if not part or len(errpipe_data) > 50000:
                         break
@@ -1420,7 +1412,7 @@ class Popen(object):
 
             if errpipe_data:
                 try:
-                    _eintr_retry_call(os.waitpid, self.pid, 0)
+                    os.waitpid(self.pid, 0)
                 except ChildProcessError:
                     pass
                 try:
@@ -1505,7 +1497,7 @@ class Popen(object):
         def _try_wait(self, wait_flags):
             """All callers to this function MUST hold self._waitpid_lock."""
             try:
-                (pid, sts) = _eintr_retry_call(os.waitpid, self.pid, wait_flags)
+                (pid, sts) = os.waitpid(self.pid, wait_flags)
             except ChildProcessError:
                 # This happens if SIGCLD is set to be ignored or waiting
                 # for child processes has otherwise been disabled for our

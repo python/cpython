@@ -137,9 +137,6 @@ def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
             try:
                 pid, status = os.waitpid(pid, 0)
             except OSError as exc:
-                import errno
-                if exc.errno == errno.EINTR:
-                    continue
                 if not DEBUG:
                     cmd = executable
                 raise DistutilsExecError(

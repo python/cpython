@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #23285: PEP 475 - EINTR handling.
+
 - Issue #22735: Fix many edge cases (including crashes) involving custom mro()
   implementations.
 
