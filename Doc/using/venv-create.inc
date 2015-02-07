@@ -21,16 +21,16 @@ subdirectory (on Windows, this is ``Lib\site-packages``).
 On Windows, you may have to invoke the ``pyvenv`` script as follows, if you
 don't have the relevant PATH and PATHEXT settings::
 
-    c:\Temp>c:\Python33\python c:\Python33\Tools\Scripts\pyvenv.py myenv
+    c:\Temp>c:\Python35\python c:\Python35\Tools\Scripts\pyvenv.py myenv
 
 or equivalently::
 
-    c:\Temp>c:\Python33\python -m venv myenv
+    c:\Temp>c:\Python35\python -m venv myenv
 
 The command, if run with ``-h``, will show the available options::
 
-    usage: pyvenv [-h] [--system-site-packages] [--symlinks] [--clear]
-                  [--upgrade] [--without-pip] ENV_DIR [ENV_DIR ...]
+    usage: venv [-h] [--system-site-packages] [--symlinks] [--clear]
+                [--upgrade] [--without-pip] ENV_DIR [ENV_DIR ...]
 
     Creates virtual Python environments in one or more target directories.
 
@@ -52,6 +52,9 @@ The command, if run with ``-h``, will show the available options::
                              of Python, assuming Python has been upgraded in-place.
       --without-pip          Skips installing or upgrading pip in the virtual
                              environment (pip is bootstrapped by default)
+
+Depending on how the ``venv`` functionality has been invoked, the usage message
+may vary slightly, e.g. referencing ``pyvenv`` rather than ``venv``.
 
 .. versionchanged:: 3.4
    Installs pip by default, added the ``--without-pip``  and ``--copies``
