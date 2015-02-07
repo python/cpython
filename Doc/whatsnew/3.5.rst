@@ -111,6 +111,16 @@ Please read on for a comprehensive list of user-facing changes.
        PEP written by Carl Meyer
 
 
+PEP 475: Retry system calls failing with EINTR
+----------------------------------------------
+
+:pep:`475` adds support for automatic retry of system calls failing with EINTR:
+this means that user code doesn't have to deal with EINTR or InterruptedError
+manually, and should make it more robust against asynchronous signal reception.
+
+.. seealso::
+
+   :pep:`475` -- Retry system calls failing with EINTR
 
 
 Other Language Changes

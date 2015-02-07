@@ -553,8 +553,6 @@ class ForkingMixIn:
             try:
                 pid, _ = os.waitpid(-1, 0)
                 self.active_children.discard(pid)
-            except InterruptedError:
-                pass
             except ChildProcessError:
                 # we don't have any children, we're done
                 self.active_children.clear()

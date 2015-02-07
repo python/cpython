@@ -1012,10 +1012,7 @@ class BufferedReader(_BufferedIOMixin):
             current_size = 0
             while True:
                 # Read until EOF or until read() would block.
-                try:
-                    chunk = self.raw.read()
-                except InterruptedError:
-                    continue
+                chunk = self.raw.read()
                 if chunk in empty_values:
                     nodata_val = chunk
                     break
@@ -1034,10 +1031,7 @@ class BufferedReader(_BufferedIOMixin):
         chunks = [buf[pos:]]
         wanted = max(self.buffer_size, n)
         while avail < n:
-            try:
-                chunk = self.raw.read(wanted)
-            except InterruptedError:
-                continue
+            chunk = self.raw.read(wanted)
             if chunk in empty_values:
                 nodata_val = chunk
                 break
@@ -1066,12 +1060,7 @@ class BufferedReader(_BufferedIOMixin):
         have = len(self._read_buf) - self._read_pos
         if have < want or have <= 0:
             to_read = self.buffer_size - have
-            while True:
-                try:
-                    current = self.raw.read(to_read)
-                except InterruptedError:
-                    continue
-                break
+            current = self.raw.read(to_read)
             if current:
                 self._read_buf = self._read_buf[self._read_pos:] + current
                 self._read_pos = 0
@@ -1220,8 +1209,6 @@ class BufferedWriter(_BufferedIOMixin):
         while self._write_buf:
             try:
                 n = self.raw.write(self._write_buf)
-            except InterruptedError:
-                continue
             except BlockingIOError:
                 raise RuntimeError("self.raw should implement RawIOBase: it "
                                    "should not raise BlockingIOError")
