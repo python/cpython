@@ -21,7 +21,7 @@ subdirectory (on Windows, this is ``Lib\site-packages``).
 On Windows, you may have to invoke the ``pyvenv`` script as follows, if you
 don't have the relevant PATH and PATHEXT settings::
 
-    c:\Temp>c:\Python34\python c:\Python33\Tools\Scripts\pyvenv.py myenv
+    c:\Temp>c:\Python34\python c:\Python34\Tools\Scripts\pyvenv.py myenv
 
 or equivalently::
 
