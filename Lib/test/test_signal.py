@@ -587,7 +587,7 @@ class SiginterruptTest(unittest.TestCase):
             r, w = os.pipe()
 
             def handler(signum, frame):
-                pass
+                1 / 0
 
             signal.signal(signal.SIGALRM, handler)
             if interrupt is not None:
@@ -604,9 +604,8 @@ class SiginterruptTest(unittest.TestCase):
                     try:
                         # blocking call: read from a pipe without data
                         os.read(r, 1)
-                    except OSError as err:
-                        if err.errno != errno.EINTR:
-                            raise
+                    except ZeroDivisionError:
+                        pass
                     else:
                         sys.exit(2)
                 sys.exit(3)

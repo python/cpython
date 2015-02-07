@@ -572,8 +572,6 @@ class SocketIO(io.RawIOBase):
             except timeout:
                 self._timeout_occurred = True
                 raise
-            except InterruptedError:
-                continue
             except error as e:
                 if e.args[0] in _blocking_errnos:
                     return None
