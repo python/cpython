@@ -3627,7 +3627,7 @@ class InterruptedRecvTimeoutTest(InterruptedTimeoutBase, UDPTestBase):
         self.serv.settimeout(self.timeout)
 
     def checkInterruptedRecv(self, func, *args, **kwargs):
-        # Check that func(*args, **kwargs) raises 
+        # Check that func(*args, **kwargs) raises
         # errno of EINTR when interrupted by a signal.
         self.setAlarm(self.alarm_time)
         with self.assertRaises(ZeroDivisionError) as cm:
