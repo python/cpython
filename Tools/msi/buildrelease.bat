@@ -22,6 +22,7 @@ set PCBUILD=%D%..\..\PCBuild\
 set BUILDX86=
 set BUILDX64=
 set TARGET=Rebuild
+set TESTTARGETDIR=
 
 
 :CheckOpts
@@ -30,6 +31,7 @@ if "%1" EQU "-o" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "-D" (set SKIPDOC=1) && shift && goto CheckOpts
 if "%1" EQU "-B" (set SKIPBUILD=1) && shift && goto CheckOpts
 if "%1" EQU "--download" (set DOWNLOAD_URL=%~2) && shift && shift && goto CheckOpts
+if "%1" EQU "--test" (set TESTTARGETDIR=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "-b" (set TARGET=Build) && shift && goto CheckOpts
 if '%1' EQU '-x86' (set BUILDX86=1) && shift && goto CheckOpts
 if '%1' EQU '-x64' (set BUILDX64=1) && shift && goto CheckOpts
@@ -64,6 +66,10 @@ if defined BUILDX86 (
 if defined BUILDX64 (
     call :build x64
     if errorlevel 1 exit /B
+)
+
+if defined TESTTARGETDIR (
+    call "%D%testrelease.bat" -t "%TESTTARGETDIR%"
 )
 
 exit /B 0
