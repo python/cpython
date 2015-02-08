@@ -69,7 +69,6 @@
             MajorVersionNumber=$(MajorVersionNumber);
             MinorVersionNumber=$(MinorVersionNumber);
             UpgradeMinimumVersion=$(MajorVersionNumber).$(MinorVersionNumber).0.0;
-            UpgradeMaximumVersion=$(MajorVersionNumber).$(MinorVersionNumber).150.0;
             NextMajorVersionNumber=$(MajorVersionNumber).$([msbuild]::Add($(MinorVersionNumber), 1)).0.0;
             PyDebugExt=$(PyDebugExt);
         </DefineConstants>

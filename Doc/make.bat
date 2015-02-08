@@ -8,13 +8,17 @@ set this=%~n0
 if "%SPHINXBUILD%" EQU "" set SPHINXBUILD=sphinx-build
 if "%PYTHON%" EQU "" set PYTHON=py
 
-if "%HTMLHELP%" EQU "" (
-    where hhc 2>nul >"%TEMP%\hhc.loc"
-    if errorlevel 1 dir "..\externals\hhc.exe" /s/b > "%TEMP%\hhc.loc"
-    if errorlevel 1 echo Cannot find HHC on PATH or in externals & exit /B 1
-    set /P HTMLHELP= < "%TEMP%\hhc.loc"
-    del "%TEMP%\hhc.loc"
-)
+if "%1" NEQ "htmlhelp" goto :skiphhcsearch
+if exist "%HTMLHELP%" goto :skiphhcsearch
+
+rem Search for HHC in likely places
+set HTMLHELP=
+where hhc /q && set HTMLHELP=hhc && goto :skiphhcsearch
+where /R ..\externals hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
+if not exist "%HTMLHELP%" where /R "%ProgramFiles(x86)%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
+if not exist "%HTMLHELP%" where /R "%ProgramFiles%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
+if not exist "%HTMLHELP%" echo Cannot find HHC on PATH or in externals & exit /B 1
+:skiphhcsearch
 
 if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py`) do set DISTVERSION=%%v
 
