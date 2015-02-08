@@ -14,7 +14,7 @@
         <OutputPath>$(OutputPath)en-us\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         
-        <DownloadUrl Condition="'$(DownloadUrl)' == '' and '$(DownloadUrlBase)' != ''">$(DownloadUrlBase.TrimEnd(`/`))/$(PythonVersion)/$(ArchName)/{2}</DownloadUrl>
+        <DownloadUrl Condition="'$(DownloadUrl)' == '' and '$(DownloadUrlBase)' != ''">$(DownloadUrlBase.TrimEnd(`/`))/$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)/$(ArchName)$(ReleaseLevelName)/{2}</DownloadUrl>
         <DefineConstants Condition="'$(DownloadUrl)' != ''">$(DefineConstants);DownloadUrl=$(DownloadUrl)</DefineConstants>
         <DefineConstants Condition="'$(DownloadUrl)' == ''">$(DefineConstants);DownloadUrl={2}</DefineConstants>
     </PropertyGroup>
