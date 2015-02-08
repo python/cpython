@@ -14,8 +14,8 @@
         <OutputPath>$(OutputPath)en-us\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         
-        <DownloadUrl Condition="'$(DownloadUrl)' == '' and '$(DownloadUrlBase)' != ''">$(DownloadUrlBase.TrimEnd(`/`))/$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)/$(ArchName)$(ReleaseLevelName)/{2}</DownloadUrl>
-        <DefineConstants Condition="'$(DownloadUrl)' != ''">$(DefineConstants);DownloadUrl=$(DownloadUrl)</DefineConstants>
+        <DownloadUrl Condition="'$(DownloadUrl)' == '' and '$(DownloadUrlBase)' != ''">$(DownloadUrlBase.TrimEnd(`/`))/$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)/$(ArchName)$(ReleaseLevelName)/</DownloadUrl>
+        <DefineConstants Condition="'$(DownloadUrl)' != ''">$(DefineConstants);DownloadUrl=$(DownloadUrl){2}</DefineConstants>
         <DefineConstants Condition="'$(DownloadUrl)' == ''">$(DefineConstants);DownloadUrl={2}</DefineConstants>
     </PropertyGroup>
     

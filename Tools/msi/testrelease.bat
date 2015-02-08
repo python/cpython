@@ -11,11 +11,15 @@ set TESTALLUSER=
 set TESTPERUSER=
 
 :CheckOpts
-if '%1' EQU '-x86' (set TESTX86=1) && shift && goto CheckOpts
-if '%1' EQU '-x64' (set TESTX64=1) && shift && goto CheckOpts
-if '%1' EQU '-t' (set TARGETDIR=%~2) && shift && shift && goto CheckOpts
-if '%1' EQU '-a' (set TESTALLUSER=1) && shift && goto CheckOpts
-if '%1' EQU '-p' (set TESTPERUSER=1) && shift && goto CheckOpts
+if "%1" EQU "-h" goto Help
+if "%1" EQU "-x86" (set TESTX86=1) && shift && goto CheckOpts
+if "%1" EQU "-x64" (set TESTX64=1) && shift && goto CheckOpts
+if "%1" EQU "-t" (set TARGETDIR=%~2) && shift && shift && goto CheckOpts
+if "%1" EQU "--target" (set TARGETDIR=%~2) && shift && shift && goto CheckOpts
+if "%1" EQU "-a" (set TESTALLUSER=1) && shift && goto CheckOpts
+if "%1" EQU "--alluser" (set TESTALLUSER=1) && shift && goto CheckOpts
+if "%1" EQU "-p" (set TESTPERUSER=1) && shift && goto CheckOpts
+if "%1" EQU "--peruser" (set TESTPERUSER=1) && shift && goto CheckOpts
 
 if not defined TESTX86 if not defined TESTX64 (set TESTX86=1) && (set TESTX64=1)
 if not defined TESTALLUSER if not defined TESTPERUSER (set TESTALLUSER=1) && (set TESTPERUSER=1)
@@ -23,16 +27,18 @@ if not defined TESTALLUSER if not defined TESTPERUSER (set TESTALLUSER=1) && (se
 
 if defined TESTX86 (
     for %%f in ("%PCBUILD%win32\en-us\*.exe") do (
-        if defined TESTALLUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-alluser" InstallAllUsers=1
-        if defined TESTPERUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-peruser" InstallAllUsers=0
+        if defined TESTALLUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-alluser" "InstallAllUsers=1 CompileAll=1"
+        if errorlevel 1 exit /B
+        if defined TESTPERUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-peruser" "InstallAllUsers=0 CompileAll=0"
         if errorlevel 1 exit /B
     )
 )
 
 if defined TESTX64 (
     for %%f in ("%PCBUILD%amd64\en-us\*.exe") do (
-        if defined TESTALLUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-alluser" InstallAllUsers=1
-        if defined TESTPERUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-peruser" InstallAllUsers=0
+        if defined TESTALLUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-alluser" "InstallAllUsers=1 CompileAll=1"
+        if errorlevel 1 exit /B
+        if defined TESTPERUSER call :test "%%~ff" "%TARGETDIR%\%%~nf-peruser" "InstallAllUsers=0 CompileAll=0"
         if errorlevel 1 exit /B
     )
 )
@@ -47,7 +53,7 @@ exit /B 0
 
 @set EXITCODE=0
 @echo Installing %1 into %2
-"%~1" /passive /log "%~2\install\log.txt" %~3 TargetDir="%~2\Python" Include_debug=1 Include_symbols=1 CompileAll=1
+"%~1" /passive /log "%~2\install\log.txt" TargetDir="%~2\Python" Include_debug=1 Include_symbols=1 %~3
 
 @if not errorlevel 1 (
     @echo Printing version
@@ -57,7 +63,7 @@ exit /B 0
     @echo Installing package
     "%~2\Python\python.exe" -m pip install azure > "%~2\pip.txt" 2>&1
     @if not errorlevel 1 (
-        "%~2\Python\python.exe" -m pip uninstall -y azure python-dateutil six > "%~2\pip.txt" 2>&1
+        "%~2\Python\python.exe" -m pip uninstall -y azure python-dateutil six >> "%~2\pip.txt" 2>&1
     )
 )
 @if not errorlevel 1 (
@@ -78,3 +84,17 @@ exit /B 0
 
 @echo off
 exit /B %EXITCODE%
+
+:Help
+echo testrelease.bat [--target TARGET] [-x86] [-x64] [--alluser] [--peruser] [-h]
+echo.
+echo    --target (-t)   Specify the target directory for installs and logs
+echo    -x86            Run tests for x86 installers
+echo    -x64            Run tests for x64 installers
+echo    --alluser (-a)  Run tests for all-user installs (requires Administrator)
+echo    --peruser (-p)  Run tests for per-user installs
+echo    -h              Display this help information
+echo.
+echo If no test architecture is specified, all architectures will be tested.
+echo If no install type is selected, all install types will be tested.
+echo.
