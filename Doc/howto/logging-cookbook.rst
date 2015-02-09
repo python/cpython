@@ -325,6 +325,15 @@ which, when run, will produce::
 
     MainThread: Look out!
 
+.. versionchanged:: 3.5
+   Prior to Python 3.5, the :class:`QueueListener` always passed every message
+   received from the queue to every handler it was initialized with. (This was
+   because it was assumed that level filtering was all done on the other side,
+   where the queue is filled.) From 3.5 onwards, this behaviour can be changed
+   by passing a keyword argument ``respect_handler_level=True`` to the
+   listener's constructor. When this is done, the listener compares the level
+   of each message with the handler's level, and only passes a message to a
+   handler if it's appropriate to do so.
 
 .. _network-logging:
 

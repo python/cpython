@@ -1,4 +1,4 @@
-# Copyright 2001-2013 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2015 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2015 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -1350,7 +1350,7 @@ if threading:
         """
         _sentinel = None
 
-        def __init__(self, queue, *handlers):
+        def __init__(self, queue, *handlers, respect_handler_level=False):
             """
             Initialise an instance with the specified queue and
             handlers.
@@ -1359,6 +1359,7 @@ if threading:
             self.handlers = handlers
             self._stop = threading.Event()
             self._thread = None
+            self.respect_handler_level = respect_handler_level
 
         def dequeue(self, block):
             """
@@ -1399,7 +1400,12 @@ if threading:
             """
             record = self.prepare(record)
             for handler in self.handlers:
-                handler.handle(record)
+                if not self.respect_handler_level:
+                    process = True
+                else:
+                    process = record.levelno >= handler.level
+                if process:
+                    handler.handle(record)
 
         def _monitor(self):
             """

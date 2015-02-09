@@ -953,13 +953,20 @@ applications where threads servicing clients need to respond as quickly as
 possible, while any potentially slow operations (such as sending an email via
 :class:`SMTPHandler`) are done on a separate thread.
 
-.. class:: QueueListener(queue, *handlers)
+.. class:: QueueListener(queue, *handlers, respect_handler_level=False)
 
    Returns a new instance of the :class:`QueueListener` class. The instance is
    initialized with the queue to send messages to and a list of handlers which
    will handle entries placed on the queue. The queue can be any queue-
    like object; it's passed as-is to the :meth:`dequeue` method, which needs
-   to know how to get messages from it.
+   to know how to get messages from it. If ``respect_handler_level`` is ``True``,
+   a handler's level is respected (compared with the level for the message) when
+   deciding whether to pass messages to that handler; otherwise, the behaviour
+   is as in previous Python versions - to always pass each message to each
+   handler.
+
+   .. versionchanged:: 3.5
+      The ``respect_handler_levels`` argument was added.
 
    .. method:: dequeue(block)
 
