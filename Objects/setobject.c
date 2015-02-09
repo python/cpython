@@ -84,8 +84,9 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 return set_lookkey(so, key, hash);
             if (cmp > 0)                                          /* likely */
                 return entry;
+            mask = so->mask;                 /* help avoid a register spill */
         }
-        if (entry->key == dummy && freeslot == NULL)
+        if (entry->hash == -1 && freeslot == NULL)
             freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
@@ -111,8 +112,9 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                         return set_lookkey(so, key, hash);
                     if (cmp > 0)
                         return entry;
+                    mask = so->mask;
                 }
-                if (entry->key == dummy && freeslot == NULL)
+                if (entry->hash == -1 && freeslot == NULL)
                     freeslot = entry;
             }
         }
