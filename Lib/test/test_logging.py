@@ -3006,6 +3006,25 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(handler.matches(levelno=logging.WARNING, message='1'))
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))
+        handler.close()
+
+        # Now test with respect_handler_level set
+
+        handler = support.TestHandler(support.Matcher())
+        handler.setLevel(logging.CRITICAL)
+        listener = logging.handlers.QueueListener(self.queue, handler,
+                                                  respect_handler_level=True)
+        listener.start()
+        try:
+            self.que_logger.warning(self.next_message())
+            self.que_logger.error(self.next_message())
+            self.que_logger.critical(self.next_message())
+        finally:
+            listener.stop()
+        self.assertFalse(handler.matches(levelno=logging.WARNING, message='4'))
+        self.assertFalse(handler.matches(levelno=logging.ERROR, message='5'))
+        self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='6'))
+
 
 ZERO = datetime.timedelta(0)
 
