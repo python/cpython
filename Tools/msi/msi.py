@@ -929,9 +929,9 @@ def generate_license():
                       ("Tk", "tk8*", "license.terms"),
                       ("Tix", "tix-*", "license.terms")):
         out.write("\nThis copy of Python includes a copy of %s, which is licensed under the following terms:\n\n" % name)
-        dirs = glob.glob(srcdir+"/../"+pat)
+        dirs = glob.glob(srcdir+"/externals/"+pat)
         if not dirs:
-            raise ValueError, "Could not find "+srcdir+"/../"+pat
+            raise ValueError, "Could not find "+srcdir+"/externals/"+pat
         if len(dirs) > 2 and not snapshot:
             raise ValueError, "Multiple copies of "+pat
         dir = dirs[0]
@@ -1115,7 +1115,7 @@ def add_files(db):
             lib.start_component("TkDLLs", tcltk)
             lib.add_file("_tkinter.pyd")
             dlls.append("_tkinter.pyd")
-            tcldir = os.path.normpath(srcdir+("/../tcltk%s/bin" % tclsuffix))
+            tcldir = os.path.normpath(srcdir+("/externals/tcltk%s/bin" % tclsuffix))
             for f in glob.glob1(tcldir, "*.dll"):
                 lib.add_file(f, src=os.path.join(tcldir, f))
     # check whether there are any unknown extensions
@@ -1140,7 +1140,7 @@ def add_files(db):
         lib.add_file('libpython%s%s.a' % (major, minor))
     if have_tcl:
         # Add Tcl/Tk
-        tcldirs = [(root, '../tcltk%s/lib' % tclsuffix, 'tcl')]
+        tcldirs = [(root, 'externals/tcltk%s/lib' % tclsuffix, 'tcl')]
         tcltk.set_current()
         while tcldirs:
             parent, phys, dir = tcldirs.pop()
