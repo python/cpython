@@ -349,6 +349,61 @@ class SubprocessMixin:
             self.loop.run_until_complete(cancel_make_transport())
             test_utils.run_briefly(self.loop)
 
+    def test_close_kill_running(self):
+        @asyncio.coroutine
+        def kill_running():
+            create = self.loop.subprocess_exec(asyncio.SubprocessProtocol,
+                                               *PROGRAM_BLOCKED)
+            transport, protocol = yield from create
+            proc = transport.get_extra_info('subprocess')
+            proc.kill = mock.Mock()
+            returncode = transport.get_returncode()
+            transport.close()
+            return (returncode, proc.kill.called)
+
+        # Ignore "Close running child process: kill ..." log
+        with test_utils.disable_logger():
+            returncode, killed = self.loop.run_until_complete(kill_running())
+        self.assertIsNone(returncode)
+
+        # transport.close() must kill the process if it is still running
+        self.assertTrue(killed)
+        test_utils.run_briefly(self.loop)
+
+    def test_close_dont_kill_finished(self):
+        @asyncio.coroutine
+        def kill_running():
+            create = self.loop.subprocess_exec(asyncio.SubprocessProtocol,
+                                               *PROGRAM_BLOCKED)
+            transport, protocol = yield from create
+            proc = transport.get_extra_info('subprocess')
+
+            # kill the process (but asyncio is not notified immediatly)
+            proc.kill()
+            proc.wait()
+
+            proc.kill = mock.Mock()
+            proc_returncode = proc.poll()
+            transport_returncode = transport.get_returncode()
+            transport.close()
+            return (proc_returncode, transport_returncode, proc.kill.called)
+
+        # Ignore "Unknown child process pid ..." log of SafeChildWatcher,
+        # emitted because the test already consumes the exit status:
+        # proc.wait()
+        with test_utils.disable_logger():
+            result = self.loop.run_until_complete(kill_running())
+            test_utils.run_briefly(self.loop)
+
+        proc_returncode, transport_return_code, killed = result
+
+        self.assertIsNotNone(proc_returncode)
+        self.assertIsNone(transport_return_code)
+
+        # transport.close() must not kill the process if it finished, even if
+        # the transport was not notified yet
+        self.assertFalse(killed)
+
 
 if sys.platform != 'win32':
     # Unix
