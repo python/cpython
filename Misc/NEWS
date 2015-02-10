@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23361: Fix possible overflow in Windows subprocess creation code.
+
 - Issue #23363: Fix possible overflow in itertools.permutations.
 
 - Issue #23364: Fix possible overflow in itertools.product.
