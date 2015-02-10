@@ -535,13 +535,23 @@ getenvironment(PyObject* environment)
                 "environment can only contain strings");
             goto error;
         }
+        if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(key) - 1) {
+            PyErr_SetString(PyExc_OverflowError, "environment too long");
+            goto error;
+        }
         totalsize += PyUnicode_GET_LENGTH(key) + 1;    /* +1 for '=' */
+        if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(value) - 1) {
+            PyErr_SetString(PyExc_OverflowError, "environment too long");
+            goto error;
+        }
         totalsize += PyUnicode_GET_LENGTH(value) + 1;  /* +1 for '\0' */
     }
 
-    buffer = PyMem_Malloc(totalsize * sizeof(Py_UCS4));
-    if (! buffer)
+    buffer = PyMem_NEW(Py_UCS4, totalsize);
+    if (! buffer) {
+        PyErr_NoMemory();
         goto error;
+    }
     p = buffer;
     end = buffer + totalsize;
 
