@@ -93,7 +93,12 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
                 continue
             proto.pipe.close()
 
-        if self._proc is not None and self._returncode is None:
+        if (self._proc is not None
+        # the child process finished?
+        and self._returncode is None
+        # the child process finished but the transport was not notified yet?
+        and self._proc.poll() is None
+        ):
             if self._loop.get_debug():
                 logger.warning('Close running child process: kill %r', self)
 
