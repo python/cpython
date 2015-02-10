@@ -2491,16 +2491,16 @@ def main():
         _, ext = os.path.splitext(tar_name)
         compressions = {
             # gz
-            'gz': 'gz',
-            'tgz': 'gz',
+            '.gz': 'gz',
+            '.tgz': 'gz',
             # xz
-            'xz': 'xz',
-            'txz': 'xz',
+            '.xz': 'xz',
+            '.txz': 'xz',
             # bz2
-            'bz2': 'bz2',
-            'tbz': 'bz2',
-            'tbz2': 'bz2',
-            'tb2': 'bz2',
+            '.bz2': 'bz2',
+            '.tbz': 'bz2',
+            '.tbz2': 'bz2',
+            '.tb2': 'bz2',
         }
         tar_mode = 'w:' + compressions[ext] if ext in compressions else 'w'
         tar_files = args.create
