@@ -1994,6 +1994,21 @@ class CommandLineTest(unittest.TestCase):
         finally:
             support.unlink(tar_name)
 
+    def test_create_command_compressed(self):
+        files = [support.findfile('tokenize_tests.txt'),
+                 support.findfile('tokenize_tests-no-coding-cookie-'
+                                  'and-utf8-bom-sig-only.txt')]
+        for filetype in (GzipTest, Bz2Test, LzmaTest):
+            if not filetype.open:
+                continue
+            try:
+                tar_name = tmpname + '.' + filetype.suffix
+                out = self.tarfilecmd('-c', tar_name, *files)
+                with filetype.taropen(tar_name) as tar:
+                    tar.getmembers()
+            finally:
+                support.unlink(tar_name)
+
     def test_extract_command(self):
         self.make_simple_tarfile(tmpname)
         for opt in '-e', '--extract':
