@@ -433,105 +433,46 @@ formatfloat(PyObject *v, int flags, int prec, int type)
     return result;
 }
 
-/* format_long emulates the format codes d, u, o, x and X, and
- * the F_ALT flag, for Python's long (unbounded) ints.  It's not used for
- * Python's regular ints.
- * Return value:  a new PyBytes*, or NULL if error.
- *  .  *pbuf is set to point into it,
- *     *plen set to the # of chars following that.
- *     Caller must decref it when done using pbuf.
- *     The string starting at *pbuf is of the form
- *         "-"? ("0x" | "0X")? digit+
- *     "0x"/"0X" are present only for x and X conversions, with F_ALT
- *         set in flags.  The case of hex digits will be correct,
- *     There will be at least prec digits, zero-filled on the left if
- *         necessary to get that many.
- * val          object to be converted
- * flags        bitmask of format flags; only F_ALT is looked at
- * prec         minimum number of digits; 0-fill on left if needed
- * type         a character in [duoxX]; u acts the same as d
- *
- * CAUTION:  o, x and X conversions on regular ints can never
- * produce a '-' sign, but can for Python's unbounded ints.
- */
-
-static PyObject *
-format_long(PyObject *val, int flags, int prec, int type,
-	    char **pbuf, int *plen)
-{
-    PyObject *s;
-    PyObject *result = NULL;
-
-    s = _PyUnicode_FormatLong(val, flags & F_ALT, prec, type);
-    if (!s)
-        return NULL;
-    result = _PyUnicode_AsASCIIString(s, "strict");
-    Py_DECREF(s);
-    if (!result)
-        return NULL;
-    *pbuf = PyBytes_AS_STRING(result);
-    *plen = PyBytes_GET_SIZE(result);
-    return result;
-}
-
 Py_LOCAL_INLINE(int)
-formatchar(char *buf, size_t buflen, PyObject *v)
+byte_converter(PyObject *arg, char *p)
 {
-    PyObject *w = NULL;
-    /* convert bytearray to bytes */
-    if (PyByteArray_Check(v)) {
-        w = PyBytes_FromObject(v);
-        if (w == NULL)
-            goto error;
-        v = w;
+    if (PyBytes_Check(arg) && PyBytes_Size(arg) == 1) {
+        *p = PyBytes_AS_STRING(arg)[0];
+        return 1;
     }
-    /* presume that the buffer is at least 2 characters long */
-    if (PyBytes_Check(v)) {
-        if (!PyArg_Parse(v, "c;%c requires an integer in range(256) or a single byte", &buf[0]))
-            goto error;
+    else if (PyByteArray_Check(arg) && PyByteArray_Size(arg) == 1) {
+        *p = PyByteArray_AS_STRING(arg)[0];
+        return 1;
     }
     else {
-        long ival = PyLong_AsLong(v);
-        if (ival == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_TypeError,
-                "%c requires an integer in range(256) or a single byte");
-            goto error;
+        long ival = PyLong_AsLong(arg);
+        if (0 <= ival && ival <= 255) {
+            *p = (char)ival;
+            return 1;
         }
-        if (ival < 0 || ival > 255) {
-            PyErr_SetString(PyExc_TypeError,
-                "%c requires an integer in range(256) or a single byte");
-            goto error;
-        }
-        buf[0] = (char)ival;
     }
-    Py_XDECREF(w);
-    buf[1] = '\0';
-    return 1;
-
- error:
-    Py_XDECREF(w);
-    return -1;
+    PyErr_SetString(PyExc_TypeError,
+        "%c requires an integer in range(256) or a single byte");
+    return 0;
 }
 
 static PyObject *
-format_obj(PyObject *v)
+format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
-    PyObject *result = NULL, *w = NULL;
-    PyObject *func;
+    PyObject *func, *result;
     _Py_IDENTIFIER(__bytes__);
-    /* convert bytearray to bytes */
-    if (PyByteArray_Check(v)) {
-        w = PyBytes_FromObject(v);
-        if (w == NULL)
-            return NULL;
-        v = w;
-    }
     /* is it a bytes object? */
     if (PyBytes_Check(v)) {
-        result = v;
+        *pbuf = PyBytes_AS_STRING(v);
+        *plen = PyBytes_GET_SIZE(v);
         Py_INCREF(v);
-        Py_XDECREF(w);
-        return result;
+        return v;
+    }
+    if (PyByteArray_Check(v)) {
+        *pbuf = PyByteArray_AS_STRING(v);
+        *plen = PyByteArray_GET_SIZE(v);
+        Py_INCREF(v);
+        return v;
     }
     /* does it support __bytes__? */
     func = _PyObject_LookupSpecial(v, &PyId___bytes__);
@@ -547,6 +488,8 @@ format_obj(PyObject *v)
             Py_DECREF(result);
             return NULL;
         }
+        *pbuf = PyBytes_AS_STRING(result);
+        *plen = PyBytes_GET_SIZE(result);
         return result;
     }
     PyErr_Format(PyExc_TypeError,
@@ -573,7 +516,6 @@ _PyBytes_Format(PyObject *format, PyObject *args)
     Py_ssize_t reslen, rescnt, fmtcnt;
     int args_owned = 0;
     PyObject *result;
-    PyObject *repr;
     PyObject *dict = NULL;
     if (format == NULL || !PyBytes_Check(format) || args == NULL) {
         PyErr_BadInternalCall();
@@ -619,15 +561,13 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             int prec = -1;
             int c = '\0';
             int fill;
-            int isnumok;
+            PyObject *iobj;
             PyObject *v = NULL;
             PyObject *temp = NULL;
-            Py_buffer buf = {NULL, NULL};
-            char *pbuf;
+            const char *pbuf = NULL;
             int sign;
-            Py_ssize_t len;
-            char formatbuf[FORMATBUFLEN];
-                 /* For format{int,char}() */
+            Py_ssize_t len = 0;
+            char onechar; /* For byte_converter() */
 
             fmt++;
             if (*fmt == '(') {
@@ -781,37 +721,21 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 len = 1;
                 break;
             case 'a':
-                temp = PyObject_Repr(v);
+                temp = PyObject_ASCII(v);
                 if (temp == NULL)
                     goto error;
-                repr = PyUnicode_AsEncodedObject(temp, "ascii", "backslashreplace");
-                if (repr == NULL) {
-                    Py_DECREF(temp);
-                    goto error;
-                }
-                if (PyObject_GetBuffer(repr, &buf, PyBUF_SIMPLE) != 0) {
-                    temp = format_obj(repr);
-                    if (temp == NULL) {
-                        Py_DECREF(repr);
-                        goto error;
-                    }
-                    Py_DECREF(repr);
-                    repr = temp;
-                }
-                pbuf = PyBytes_AS_STRING(repr);
-                len = PyBytes_GET_SIZE(repr);
-                Py_DECREF(repr);
+                assert(PyUnicode_IS_ASCII(temp));
+                pbuf = (const char *)PyUnicode_1BYTE_DATA(temp);
+                len = PyUnicode_GET_LENGTH(temp);
                 if (prec >= 0 && len > prec)
                     len = prec;
                 break;
             case 's':
                 // %s is only for 2/3 code; 3 only code should use %b
             case 'b':
-                temp = format_obj(v);
+                temp = format_obj(v, &pbuf, &len);
                 if (temp == NULL)
                     goto error;
-                pbuf = PyBytes_AS_STRING(temp);
-                len = PyBytes_GET_SIZE(temp);
                 if (prec >= 0 && len > prec)
                     len = prec;
                 break;
@@ -823,41 +747,32 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             case 'X':
                 if (c == 'i')
                     c = 'd';
-                isnumok = 0;
+                iobj = NULL;
                 if (PyNumber_Check(v)) {
-                    PyObject *iobj=NULL;
-
                     if ((PyLong_Check(v))) {
                         iobj = v;
                         Py_INCREF(iobj);
                     }
                     else {
                         iobj = PyNumber_Long(v);
-                    }
-                    if (iobj!=NULL) {
-                        if (PyLong_Check(iobj)) {
-                            int ilen;
-
-                            isnumok = 1;
-                            temp = format_long(iobj, flags, prec, c,
-                                    &pbuf, &ilen);
-                            Py_DECREF(iobj);
-                            if (!temp)
-                                goto error;
-                            len = ilen;
-                            sign = 1;
-                        }
-                        else {
-                            Py_DECREF(iobj);
-                        }
+                        if (iobj != NULL && !PyLong_Check(iobj))
+                            Py_CLEAR(iobj);
                     }
                 }
-                if (!isnumok) {
+                if (iobj == NULL) {
                     PyErr_Format(PyExc_TypeError,
                         "%%%c format: a number is required, "
                         "not %.200s", c, Py_TYPE(v)->tp_name);
                     goto error;
                 }
+                temp = _PyUnicode_FormatLong(iobj, flags & F_ALT, prec, c);
+                Py_DECREF(iobj);
+                if (!temp)
+                    goto error;
+                assert(PyUnicode_IS_ASCII(temp));
+                pbuf = (const char *)PyUnicode_1BYTE_DATA(temp);
+                len = PyUnicode_GET_LENGTH(temp);
+                sign = 1;
                 if (flags & F_ZERO)
                     fill = '0';
                 break;
@@ -877,9 +792,9 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     fill = '0';
                 break;
             case 'c':
-                pbuf = formatbuf;
-                len = formatchar(pbuf, sizeof(formatbuf), v);
-                if (len < 0)
+                pbuf = &onechar;
+                len = byte_converter(v, &onechar);
+                if (!len)
                     goto error;
                 break;
             default:
@@ -911,12 +826,10 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 reslen += rescnt;
                 if (reslen < 0) {
                     Py_DECREF(result);
-                    PyBuffer_Release(&buf);
                     Py_XDECREF(temp);
                     return PyErr_NoMemory();
                 }
                 if (_PyBytes_Resize(&result, reslen)) {
-                    PyBuffer_Release(&buf);
                     Py_XDECREF(temp);
                     return NULL;
                 }
@@ -970,11 +883,9 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             if (dict && (argidx < arglen) && c != '%') {
                 PyErr_SetString(PyExc_TypeError,
                            "not all arguments converted during bytes formatting");
-                PyBuffer_Release(&buf);
                 Py_XDECREF(temp);
                 goto error;
             }
-            PyBuffer_Release(&buf);
             Py_XDECREF(temp);
         } /* '%' */
     } /* until end */
