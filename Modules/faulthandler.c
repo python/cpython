@@ -911,12 +911,12 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 }
 
 #if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
-static void*
-stack_overflow(void *min_sp, void *max_sp, size_t *depth)
+static Py_uintptr_t
+stack_overflow(Py_uintptr_t min_sp, Py_uintptr_t max_sp, size_t *depth)
 {
     /* allocate 4096 bytes on the stack at each call */
     unsigned char buffer[4096];
-    void *sp = &buffer;
+    Py_uintptr_t sp = (Py_uintptr_t)&buffer;
     *depth += 1;
     if (sp < min_sp || max_sp < sp)
         return sp;
@@ -929,7 +929,8 @@ static PyObject *
 faulthandler_stack_overflow(PyObject *self)
 {
     size_t depth, size;
-    char *sp = (char *)&depth, *stop;
+    Py_uintptr_t sp = (Py_uintptr_t)&depth;
+    Py_uintptr_t stop;
 
     depth = 0;
     stop = stack_overflow(sp - STACK_OVERFLOW_MAX_SIZE,
