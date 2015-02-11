@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23344: marshal.dumps() is now 20-25% faster on average.
+
 - Issue #20416: marshal.dumps() with protocols 3 and 4 is now 40-50% faster on
   average.
 

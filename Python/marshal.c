@@ -78,42 +78,75 @@ typedef struct {
     int version;
 } WFILE;
 
-#define w_byte(c, p) if (((p)->fp)) putc((c), (p)->fp); \
-                      else if ((p)->ptr != (p)->end) *(p)->ptr++ = (c); \
-                           else w_more((c), p)
+#define w_byte(c, p) do {                               \
+        if ((p)->ptr != (p)->end || w_reserve((p), 1))  \
+            *(p)->ptr++ = (c);                          \
+    } while(0)
 
 static void
-w_more(char c, WFILE *p)
+w_flush(WFILE *p)
 {
-    Py_ssize_t size, newsize;
-    if (p->str == NULL)
-        return; /* An error already occurred */
-    size = PyBytes_Size(p->str);
-    newsize = size + size + 1024;
-    if (newsize > 32*1024*1024) {
-        newsize = size + (size >> 3);           /* 12.5% overallocation */
+    assert(p->fp != NULL);
+    fwrite(p->buf, 1, p->ptr - p->buf, p->fp);
+    p->ptr = p->buf;
+}
+
+static int
+w_reserve(WFILE *p, Py_ssize_t needed)
+{
+    Py_ssize_t pos, size, delta;
+    if (p->ptr == NULL)
+        return 0; /* An error already occurred */
+    if (p->fp != NULL) {
+        w_flush(p);
+        return needed <= p->end - p->ptr;
     }
-    if (_PyBytes_Resize(&p->str, newsize) != 0) {
-        p->ptr = p->end = NULL;
+    assert(p->str != NULL);
+    pos = p->ptr - p->buf;
+    size = PyBytes_Size(p->str);
+    if (size > 16*1024*1024)
+        delta = (size >> 3);            /* 12.5% overallocation */
+    else
+        delta = size + 1024;
+    delta = Py_MAX(delta, needed);
+    if (delta > PY_SSIZE_T_MAX - size) {
+        p->error = WFERR_NOMEMORY;
+        return 0;
+    }
+    size += delta;
+    if (_PyBytes_Resize(&p->str, size) != 0) {
+        p->ptr = p->buf = p->end = NULL;
+        return 0;
     }
     else {
-        p->ptr = PyBytes_AS_STRING((PyBytesObject *)p->str) + size;
-        p->end =
-            PyBytes_AS_STRING((PyBytesObject *)p->str) + newsize;
-        *p->ptr++ = c;
+        p->buf = PyBytes_AS_STRING(p->str);
+        p->ptr = p->buf + pos;
+        p->end = p->buf + size;
+        return 1;
     }
 }
 
 static void
 w_string(const char *s, Py_ssize_t n, WFILE *p)
 {
+    Py_ssize_t m;
+    if (!n || p->ptr == NULL)
+        return;
+    m = p->end - p->ptr;
     if (p->fp != NULL) {
-        fwrite(s, 1, n, p->fp);
+        if (n <= m) {
+            Py_MEMCPY(p->ptr, s, n);
+            p->ptr += n;
+        }
+        else {
+            w_flush(p);
+            fwrite(s, 1, n, p->fp);
+        }
     }
     else {
-        while (--n >= 0) {
-            w_byte(*s, p);
-            s++;
+        if (n <= m || w_reserve(p, n - m)) {
+            Py_MEMCPY(p->ptr, s, n);
+            p->ptr += n;
         }
     }
 }
@@ -573,26 +606,34 @@ w_clear_refs(WFILE *wf)
 void
 PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {
+    char buf[4];
     WFILE wf;
     memset(&wf, 0, sizeof(wf));
     wf.fp = fp;
+    wf.ptr = wf.buf = buf;
+    wf.end = wf.ptr + sizeof(buf);
     wf.error = WFERR_OK;
     wf.version = version;
     w_long(x, &wf);
+    w_flush(&wf);
 }
 
 void
 PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
+    char buf[BUFSIZ];
     WFILE wf;
     memset(&wf, 0, sizeof(wf));
     wf.fp = fp;
+    wf.ptr = wf.buf = buf;
+    wf.end = wf.ptr + sizeof(buf);
     wf.error = WFERR_OK;
     wf.version = version;
     if (w_init_refs(&wf, version))
         return; /* caller mush check PyErr_Occurred() */
     w_object(x, &wf);
     w_clear_refs(&wf);
+    w_flush(&wf);
 }
 
 typedef WFILE RFILE; /* Same struct with different invariants */
@@ -1533,7 +1574,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
     if (wf.str == NULL)
         return NULL;
-    wf.ptr = PyBytes_AS_STRING((PyBytesObject *)wf.str);
+    wf.ptr = wf.buf = PyBytes_AS_STRING((PyBytesObject *)wf.str);
     wf.end = wf.ptr + PyBytes_Size(wf.str);
     wf.error = WFERR_OK;
     wf.version = version;
