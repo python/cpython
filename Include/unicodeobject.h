@@ -1052,7 +1052,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_AsWideChar(
    always ends with a nul character. If size is not NULL, write the number of
    wide characters (excluding the null character) into *size.
 
-   Returns a buffer allocated by PyMem_Alloc() (use PyMem_Free() to free it)
+   Returns a buffer allocated by PyMem_Malloc() (use PyMem_Free() to free it)
    on success. On error, returns NULL, *size is undefined and raises a
    MemoryError. */
 
