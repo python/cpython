@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20416: marshal.dumps() with protocols 3 and 4 is now 40-50% faster on
+  average.
+
 - Issue #23421: Fixed compression in tarfile CLI.  Patch by wdv4758h.
 
 - Issue #23361: Fix possible overflow in Windows subprocess creation code.
