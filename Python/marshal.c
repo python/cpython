@@ -65,15 +65,10 @@ typedef struct {
     FILE *fp;
     int error;  /* see WFERR_* values */
     int depth;
-    /* If fp == NULL, the following are valid: */
-    PyObject *readable;    /* Stream-like object being read from */
     PyObject *str;
-    PyObject *current_filename;
     char *ptr;
     char *end;
     char *buf;
-    Py_ssize_t buf_size;
-    PyObject *refs; /* dict on marshal, list on unmarshal */
     _Py_hashtable_t *hashtable;
     int version;
 } WFILE;
@@ -636,7 +631,17 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     w_flush(&wf);
 }
 
-typedef WFILE RFILE; /* Same struct with different invariants */
+typedef struct {
+    FILE *fp;
+    int depth;
+    PyObject *readable;  /* Stream-like object being read from */
+    PyObject *current_filename;
+    char *ptr;
+    char *end;
+    char *buf;
+    Py_ssize_t buf_size;
+    PyObject *refs;  /* a list */
+} RFILE;
 
 static char *
 r_string(Py_ssize_t n, RFILE *p)
