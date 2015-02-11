@@ -17,6 +17,12 @@ Library
 
 - Issue #23361: Fix possible overflow in Windows subprocess creation code.
 
+Build
+-----
+
+- Issue #23445: pydebug builds now use "gcc -Og" where possible, to make
+  the resulting executable faster.
+
 
 What's New in Python 3.4.3rc1?
 ==============================
