@@ -149,7 +149,7 @@ Improved Modules
 cgi
 ---
 
-* :class:`FieldStorage` now supports the context management protocol.
+* :class:`~cgi.FieldStorage` now supports the context management protocol.
   (Contributed by Berker Peksag in :issue:`20289`.)
 
 code
@@ -340,8 +340,8 @@ time
 * The :func:`time.monotonic` function is now always available.  (Contributed by
   Victor Stinner in :issue:`22043`.)
 
-time
-----
+urllib
+------
 
 * A new :class:`urllib.request.HTTPBasicPriorAuthHandler` allows HTTP Basic
   Authentication credentials to be sent unconditionally with the first HTTP
