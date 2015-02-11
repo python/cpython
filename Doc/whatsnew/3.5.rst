@@ -381,6 +381,9 @@ The following performance enhancements have been added:
 * Many operations on :class:`io.BytesIO` are now 50% to 100% faster.
   (Contributed by Serhiy Storchaka in :issue:`15381`.)
 
+* :func:`marshal.dumps` with versions 3 and 4 is now 40-50% faster on average.
+  (Contributed by Serhiy Storchaka in :issue:`20416`.)
+
 
 Build and C API Changes
 =======================
