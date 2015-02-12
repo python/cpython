@@ -89,7 +89,7 @@ Lock
 
       Return ``True`` if the lock is acquired.
 
-   .. method:: acquire()
+   .. coroutinemethod:: acquire()
 
       Acquire a lock.
 
@@ -139,7 +139,7 @@ Event
       true are awakened. Coroutine that call :meth:`wait` once the flag is true
       will not block at all.
 
-   .. method:: wait()
+   .. coroutinemethod:: wait()
 
       Block until the internal flag is true.
 
@@ -166,7 +166,7 @@ Condition
    object, and it is used as the underlying lock.  Otherwise,
    a new :class:`Lock` object is created and used as the underlying lock.
 
-   .. method:: acquire()
+   .. coroutinemethod:: acquire()
 
       Acquire the underlying lock.
 
@@ -213,7 +213,7 @@ Condition
 
       There is no return value.
 
-   .. method:: wait()
+   .. coroutinemethod:: wait()
 
       Wait until notified.
 
@@ -227,7 +227,7 @@ Condition
 
       This method is a :ref:`coroutine <coroutine>`.
 
-   .. method:: wait_for(predicate)
+   .. coroutinemethod:: wait_for(predicate)
 
       Wait until a predicate becomes true.
 
@@ -258,7 +258,7 @@ Semaphore
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
    is raised.
 
-   .. method:: acquire()
+   .. coroutinemethod:: acquire()
 
       Acquire a semaphore.
 
@@ -273,7 +273,7 @@ Semaphore
 
       Returns ``True`` if semaphore can not be acquired immediately.
 
-   .. method:: release()
+   .. coroutinemethod:: release()
 
       Release a semaphore, incrementing the internal counter by one. When it
       was zero on entry and another coroutine is waiting for it to become
@@ -323,7 +323,7 @@ Queue
          If the Queue was initialized with ``maxsize=0`` (the default), then
          :meth:`full()` is never ``True``.
 
-   .. method:: get()
+   .. coroutinemethod:: get()
 
       Remove and return an item from the queue. If queue is empty, wait until
       an item is available.
@@ -341,7 +341,7 @@ Queue
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
 
-   .. method:: put(item)
+   .. coroutinemethod:: put(item)
 
       Put an item into the queue. If the queue is full, wait until a free slot
       is available before adding item.
@@ -395,7 +395,7 @@ JoinableQueue
    A subclass of :class:`Queue` with :meth:`task_done` and :meth:`join`
    methods.
 
-   .. method:: join()
+   .. coroutinemethod:: join()
 
       Block until all items in the queue have been gotten and processed.
 
