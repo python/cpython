@@ -27,7 +27,7 @@ Example to use it on Windows::
 Create a subprocess: high-level API using Process
 -------------------------------------------------
 
-.. function:: create_subprocess_exec(\*args, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
+.. coroutinefunction:: create_subprocess_exec(\*args, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
    Create a subprocess.
 
@@ -39,7 +39,7 @@ Create a subprocess: high-level API using Process
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. function:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
+.. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None, loop=None, limit=None, \*\*kwds)
 
    Run the shell command *cmd*.
 
@@ -67,7 +67,7 @@ Create a subprocess: low-level API using subprocess.Popen
 
 Run subprocesses asynchronously using the :mod:`subprocess` module.
 
-.. method:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
+.. coroutinemethod:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
 
    Create a subprocess from one or more string arguments (character strings or
    bytes strings encoded to the :ref:`filesystem encoding
@@ -116,7 +116,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
-.. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
+.. coroutinemethod:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \*\*kwargs)
 
    Create a subprocess from *cmd*, which is a character string or a bytes
    string encoded to the :ref:`filesystem encoding <filesystem-encoding>`,
@@ -193,7 +193,7 @@ Process
      :meth:`~subprocess.Popen.wait` method of the :class:`~subprocess.Popen`
      class is implemented as a busy loop.
 
-   .. method:: wait()
+   .. coroutinemethod:: wait()
 
       Wait for child process to terminate.  Set and return :attr:`returncode`
       attribute.
@@ -207,7 +207,7 @@ Process
          blocks waiting for the OS pipe buffer to accept more data. Use the
          :meth:`communicate` method when using pipes to avoid that.
 
-   .. method:: communicate(input=None)
+   .. coroutinemethod:: communicate(input=None)
 
       Interact with process: Send data to stdin.  Read data from stdout and
       stderr, until end-of-file is reached.  Wait for process to terminate.
