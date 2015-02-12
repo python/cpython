@@ -180,7 +180,7 @@ Coroutines
 Creating connections
 --------------------
 
-.. method:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
+.. coroutinemethod:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
 
    Create a streaming transport connection to a given Internet *host* and
    *port*: socket family :py:data:`~socket.AF_INET` or
@@ -253,7 +253,7 @@ Creating connections
       (:class:`StreamReader`, :class:`StreamWriter`) instead of a protocol.
 
 
-.. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
+.. coroutinemethod:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
 
    Create datagram connection: socket family :py:data:`~socket.AF_INET` or
    :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
@@ -271,7 +271,7 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
 
-.. method:: BaseEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
+.. coroutinemethod:: BaseEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
@@ -290,7 +290,7 @@ Creating connections
 Creating listening connections
 ------------------------------
 
-.. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
+.. coroutinemethod:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
    *host* and *port*.
@@ -336,10 +336,12 @@ Creating listening connections
       :class:`StreamWriter`) pair and calls back a function with this pair.
 
 
-.. method:: BaseEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
+.. coroutinemethod:: BaseEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
 
    Similar to :meth:`BaseEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
+
+   This method is a :ref:`coroutine <coroutine>`.
 
    Availability: UNIX.
 
@@ -384,7 +386,7 @@ the file descriptor of a socket.
 Low-level socket operations
 ---------------------------
 
-.. method:: BaseEventLoop.sock_recv(sock, nbytes)
+.. coroutinemethod:: BaseEventLoop.sock_recv(sock, nbytes)
 
    Receive data from the socket.  The return value is a bytes object
    representing the data received.  The maximum amount of data to be received
@@ -399,7 +401,7 @@ Low-level socket operations
 
       The :meth:`socket.socket.recv` method.
 
-.. method:: BaseEventLoop.sock_sendall(sock, data)
+.. coroutinemethod:: BaseEventLoop.sock_sendall(sock, data)
 
    Send data to the socket.  The socket must be connected to a remote socket.
    This method continues to send data from *data* until either all data has
@@ -416,7 +418,7 @@ Low-level socket operations
 
       The :meth:`socket.socket.sendall` method.
 
-.. method:: BaseEventLoop.sock_connect(sock, address)
+.. coroutinemethod:: BaseEventLoop.sock_connect(sock, address)
 
    Connect to a remote socket at *address*.
 
@@ -438,7 +440,7 @@ Low-level socket operations
       method.
 
 
-.. method:: BaseEventLoop.sock_accept(sock)
+.. coroutinemethod:: BaseEventLoop.sock_accept(sock)
 
    Accept a connection. The socket must be bound to an address and listening
    for connections. The return value is a pair ``(conn, address)`` where *conn*
@@ -459,12 +461,12 @@ Low-level socket operations
 Resolve host name
 -----------------
 
-.. method:: BaseEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
+.. coroutinemethod:: BaseEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
 
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getaddrinfo` function but non-blocking.
 
-.. method:: BaseEventLoop.getnameinfo(sockaddr, flags=0)
+.. coroutinemethod:: BaseEventLoop.getnameinfo(sockaddr, flags=0)
 
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getnameinfo` function but non-blocking.
@@ -476,7 +478,7 @@ Connect pipes
 On Windows with :class:`SelectorEventLoop`, these methods are not supported.
 Use :class:`ProactorEventLoop` to support pipes on Windows.
 
-.. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
+.. coroutinemethod:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
    Register read pipe in eventloop.
 
@@ -490,7 +492,7 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
 
    This method is a :ref:`coroutine <coroutine>`.
 
-.. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
+.. coroutinemethod:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
 
    Register write pipe in eventloop.
 
@@ -543,7 +545,7 @@ Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
 pool of processes). By default, an event loop uses a thread pool executor
 (:class:`~concurrent.futures.ThreadPoolExecutor`).
 
-.. method:: BaseEventLoop.run_in_executor(executor, callback, \*args)
+.. coroutinemethod:: BaseEventLoop.run_in_executor(executor, callback, \*args)
 
    Arrange for a callback to be called in the specified executor.
 
@@ -654,7 +656,7 @@ Server
       The server is closed asynchonously, use the :meth:`wait_closed` coroutine
       to wait until the server is closed.
 
-   .. method:: wait_closed()
+   .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
 
