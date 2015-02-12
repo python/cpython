@@ -325,7 +325,11 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
 
         case ID_CUSTOM1_BACK_BUTTON:
             SavePageSettings();
-            GoToPage(PAGE_INSTALL);
+            if (_modifying) {
+                GoToPage(PAGE_MODIFY);
+            } else {
+                GoToPage(PAGE_INSTALL);
+            }
             break;
 
         case ID_INSTALL_CUSTOM_BUTTON: __fallthrough;
@@ -412,6 +416,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             _engine->SetVariableString(L"InstallAllUsersState", L"disable");
             _engine->SetVariableString(L"TargetDirState", L"disable");
             _engine->SetVariableString(L"CustomBrowseButtonState", L"disable");
+            _modifying = TRUE;
             GoToPage(PAGE_CUSTOM1);
             break;
 
@@ -2518,6 +2523,7 @@ public:
 
         _suppressDowngradeFailure = FALSE;
         _suppressRepair = FALSE;
+        _modifying = FALSE;
 
         _overridableVariables = nullptr;
         _taskbarList = nullptr;
@@ -2598,6 +2604,7 @@ private:
 
     BOOL _suppressDowngradeFailure;
     BOOL _suppressRepair;
+    BOOL _modifying;
 
     STRINGDICT_HANDLE _overridableVariables;
 

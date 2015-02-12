@@ -10,6 +10,7 @@
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="doc" />
             
+            <?ifdef DocFilename ?>
             <Component Id="doc_shortcut" Directory="MenuDir" Guid="*">
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
                     <RegistryValue Key="Help\Main Python Documentation" Type="string" Value="[#python.chm]" KeyPath="yes" />
@@ -20,6 +21,7 @@
                           Description="!(loc.ShortcutDescription)" />
                 <RemoveFolder Id="Remove_MenuDir" On="uninstall" />
             </Component>
+            <?endif ?>
 
         </Feature>
     </Product>
