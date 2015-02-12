@@ -505,7 +505,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
     PyObject *fdobj;
-    SOCKET_T fd, old_fd;
+    SOCKET_T sockfd, old_sockfd;
     int res;
     int res_size = sizeof res;
     PyObject *mod;
@@ -515,8 +515,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:set_wakeup_fd", &fdobj))
         return NULL;
 
-    fd = PyLong_AsSocket_t(fdobj);
-    if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+    sockfd = PyLong_AsSocket_t(fdobj);
+    if (sockfd == (SOCKET_T)(-1) && PyErr_Occurred())
         return NULL;
 #else
     int fd, old_fd;
@@ -536,7 +536,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 
 #ifdef MS_WINDOWS
     is_socket = 0;
-    if (fd != INVALID_FD) {
+    if (sockfd != INVALID_FD) {
         /* Import the _socket module to call WSAStartup() */
         mod = PyImport_ImportModuleNoBlock("_socket");
         if (mod == NULL)
@@ -544,15 +544,18 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         Py_DECREF(mod);
 
         /* test the socket */
-        if (getsockopt(fd, SOL_SOCKET, SO_ERROR,
+        if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR,
                        (char *)&res, &res_size) != 0) {
-            int err = WSAGetLastError();
+            int fd, err;
+
+            err = WSAGetLastError();
             if (err != WSAENOTSOCK) {
                 PyErr_SetExcFromWindowsErr(PyExc_OSError, err);
                 return NULL;
             }
 
-            if (!_PyVerify_fd(fd)) {
+            fd = (int)sockfd;
+            if ((SOCKET_T)fd != sockfd || !_PyVerify_fd(fd)) {
                 PyErr_SetString(PyExc_ValueError, "invalid fd");
                 return NULL;
             }
@@ -572,12 +575,12 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         }
     }
 
-    old_fd = wakeup.fd;
-    wakeup.fd = fd;
+    old_sockfd = wakeup.fd;
+    wakeup.fd = sockfd;
     wakeup.use_send = is_socket;
 
-    if (old_fd != INVALID_FD)
-        return PyLong_FromSocket_t(old_fd);
+    if (old_sockfd != INVALID_FD)
+        return PyLong_FromSocket_t(old_sockfd);
     else
         return PyLong_FromLong(-1);
 #else
