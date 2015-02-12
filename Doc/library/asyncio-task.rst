@@ -545,7 +545,7 @@ Task functions
    Return ``True`` if *func* is a decorated :ref:`coroutine function
    <coroutine>`.
 
-.. function:: sleep(delay, result=None, \*, loop=None)
+.. coroutinefunction:: sleep(delay, result=None, \*, loop=None)
 
    Create a :ref:`coroutine <coroutine>` that completes after a given
    time (in seconds).  If *result* is provided, it is produced to the caller
@@ -553,6 +553,8 @@ Task functions
 
    The resolution of the sleep depends on the :ref:`granularity of the event
    loop <asyncio-delayed-calls>`.
+
+   This function is a :ref:`coroutine <coroutine>`.
 
 .. function:: shield(arg, \*, loop=None)
 
@@ -581,7 +583,7 @@ Task functions
        except CancelledError:
            res = None
 
-.. function:: wait(futures, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
+.. coroutinefunction:: wait(futures, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
 
    Wait for the Futures and coroutine objects given by the sequence *futures*
    to complete.  Coroutines will be wrapped in Tasks. Returns two sets of
@@ -626,7 +628,7 @@ Task functions
       when the timeout occurs are returned in the second set.
 
 
-.. function:: wait_for(fut, timeout, \*, loop=None)
+.. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
 
    Wait for the single :class:`Future` or :ref:`coroutine object <coroutine>`
    to complete with timeout. If *timeout* is ``None``, block until the future
