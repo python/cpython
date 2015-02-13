@@ -46,13 +46,18 @@ __all__ = ['RawValue', 'RawArray', 'Value', 'Array', 'copy', 'synchronized']
 #
 
 typecode_to_type = {
-    'c': ctypes.c_char,  'u': ctypes.c_wchar,
+    'c': ctypes.c_char,
     'b': ctypes.c_byte,  'B': ctypes.c_ubyte,
     'h': ctypes.c_short, 'H': ctypes.c_ushort,
     'i': ctypes.c_int,   'I': ctypes.c_uint,
     'l': ctypes.c_long,  'L': ctypes.c_ulong,
     'f': ctypes.c_float, 'd': ctypes.c_double
     }
+try:
+    typecode_to_type['u'] = ctypes.c_wchar
+except AttributeError:
+    pass
+
 
 #
 #

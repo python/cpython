@@ -1371,6 +1371,16 @@ SERIALIZER = 'xmlrpclib'
 class _TestRemoteManager(BaseTestCase):
 
     ALLOWED_TYPES = ('manager',)
+    values = ['hello world', None, True, 2.25,
+              #'hall\xc3\xa5 v\xc3\xa4rlden'] # UTF-8
+              ]
+    result = values[:]
+    if test_support.have_unicode:
+        #result[-1] = u'hall\xe5 v\xe4rlden'
+        uvalue = test_support.u(r'\u043f\u0440\u0438\u0432\u0456\u0442 '
+                                r'\u0441\u0432\u0456\u0442')
+        values.append(uvalue)
+        result.append(uvalue)
 
     @classmethod
     def _putter(cls, address, authkey):
@@ -1379,7 +1389,8 @@ class _TestRemoteManager(BaseTestCase):
             )
         manager.connect()
         queue = manager.get_queue()
-        queue.put(('hello world', None, True, 2.25))
+        # Note that xmlrpclib will deserialize object as a list not a tuple
+        queue.put(tuple(cls.values))
 
     def test_remote(self):
         authkey = os.urandom(32)
@@ -1399,8 +1410,7 @@ class _TestRemoteManager(BaseTestCase):
         manager2.connect()
         queue = manager2.get_queue()
 
-        # Note that xmlrpclib will deserialize object as a list not a tuple
-        self.assertEqual(queue.get(), ['hello world', None, True, 2.25])
+        self.assertEqual(queue.get(), self.result)
 
         # Because we are using xmlrpclib for serialization instead of
         # pickle this will cause a serialization error.
@@ -2392,12 +2402,12 @@ class TestNoForkBomb(unittest.TestCase):
         name = os.path.join(os.path.dirname(__file__), 'mp_fork_bomb.py')
         if WIN32:
             rc, out, err = test.script_helper.assert_python_failure(name)
-            self.assertEqual('', out.decode('ascii'))
-            self.assertIn('RuntimeError', err.decode('ascii'))
+            self.assertEqual(out, '')
+            self.assertIn('RuntimeError', err)
         else:
             rc, out, err = test.script_helper.assert_python_ok(name)
-            self.assertEqual('123', out.decode('ascii').rstrip())
-            self.assertEqual('', err.decode('ascii'))
+            self.assertEqual(out.rstrip(), '123')
+            self.assertEqual(err, '')
 
 #
 # Issue 12098: check sys.flags of child matches that for parent
@@ -2421,6 +2431,7 @@ class TestFlags(unittest.TestCase):
         flags = (tuple(sys.flags), grandchild_flags)
         print(json.dumps(flags))
 
+    @test_support.requires_unicode  # XXX json needs unicode support
     def test_flags(self):
         import json, subprocess
         # start child process using unusual flags

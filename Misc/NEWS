@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21849: Fixed xmlrpclib serialization of non-ASCII unicode strings in
+  the multiprocessing module.
+
 - Issue #21840: Fixed expanding unicode variables of form $var in
   posixpath.expandvars().  Fixed all os.path implementations on
   unicode-disabled builds.
