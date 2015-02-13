@@ -1409,9 +1409,9 @@ class TarFile(object):
            can be determined, `mode' is overridden by `fileobj's mode.
            `fileobj' is not closed, when TarFile is closed.
         """
-        modes = {"r": "rb", "a": "r+b", "w": "wb"}
+        modes = {"r": "rb", "a": "r+b", "w": "wb", "x": "xb"}
         if mode not in modes:
-            raise ValueError("mode must be 'r', 'a' or 'w'")
+            raise ValueError("mode must be 'r', 'a', 'w' or 'x'")
         self.mode = mode
         self._mode = modes[mode]
 
@@ -1524,6 +1524,15 @@ class TarFile(object):
            'w:bz2'      open for writing with bzip2 compression
            'w:xz'       open for writing with lzma compression
 
+           'x' or 'x:'  create a tarfile exclusively without compression, raise
+                        an exception if the file is already created
+           'x:gz'       create an gzip compressed tarfile, raise an exception
+                        if the file is already created
+           'x:bz2'      create an bzip2 compressed tarfile, raise an exception
+                        if the file is already created
+           'x:xz'       create an lzma compressed tarfile, raise an exception
+                        if the file is already created
+
            'r|*'        open a stream of tar blocks with transparent compression
            'r|'         open an uncompressed stream of tar blocks for reading
            'r|gz'       open a gzip compressed stream of tar blocks
@@ -1582,7 +1591,7 @@ class TarFile(object):
             t._extfileobj = False
             return t
 
-        elif mode in ("a", "w"):
+        elif mode in ("a", "w", "x"):
             return cls.taropen(name, mode, fileobj, **kwargs)
 
         raise ValueError("undiscernible mode")
@@ -1591,8 +1600,8 @@ class TarFile(object):
     def taropen(cls, name, mode="r", fileobj=None, **kwargs):
         """Open uncompressed tar archive name for reading or writing.
         """
-        if mode not in ("r", "a", "w"):
-            raise ValueError("mode must be 'r', 'a' or 'w'")
+        if mode not in ("r", "a", "w", "x"):
+            raise ValueError("mode must be 'r', 'a', 'w' or 'x'")
         return cls(name, mode, fileobj, **kwargs)
 
     @classmethod
@@ -1600,8 +1609,8 @@ class TarFile(object):
         """Open gzip compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
-        if mode not in ("r", "w"):
-            raise ValueError("mode must be 'r' or 'w'")
+        if mode not in ("r", "w", "x"):
+            raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
             import gzip
@@ -1634,8 +1643,8 @@ class TarFile(object):
         """Open bzip2 compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
-        if mode not in ("r", "w"):
-            raise ValueError("mode must be 'r' or 'w'.")
+        if mode not in ("r", "w", "x"):
+            raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
             import bz2
@@ -1663,8 +1672,8 @@ class TarFile(object):
         """Open lzma compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
-        if mode not in ("r", "w"):
-            raise ValueError("mode must be 'r' or 'w'")
+        if mode not in ("r", "w", "x"):
+            raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
             import lzma
@@ -1751,7 +1760,7 @@ class TarFile(object):
            addfile(). If given, `arcname' specifies an alternative name for the
            file in the archive.
         """
-        self._check("aw")
+        self._check("awx")
 
         # When fileobj is given, replace name by
         # fileobj's real name.
@@ -1885,7 +1894,7 @@ class TarFile(object):
            TarInfo object, if it returns None the TarInfo object will be
            excluded from the archive.
         """
-        self._check("aw")
+        self._check("awx")
 
         if arcname is None:
             arcname = name
@@ -1942,7 +1951,7 @@ class TarFile(object):
            On Windows platforms, `fileobj' should always be opened with mode
            'rb' to avoid irritation about the file size.
         """
-        self._check("aw")
+        self._check("awx")
 
         tarinfo = copy.copy(tarinfo)
 
