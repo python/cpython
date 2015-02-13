@@ -5,6 +5,7 @@ import warnings
 from stat import *
 import genericpath
 from genericpath import *
+from genericpath import _unicode
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -186,7 +187,7 @@ def walk(top, func, arg):
 def abspath(path):
     """Return an absolute path."""
     if not isabs(path):
-        if isinstance(path, unicode):
+        if isinstance(path, _unicode):
             cwd = os.getcwdu()
         else:
             cwd = os.getcwd()

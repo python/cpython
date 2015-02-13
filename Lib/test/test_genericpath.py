@@ -243,11 +243,13 @@ class CommonTest(GenericTest):
     def test_realpath(self):
         self.assertIn("foo", self.pathmodule.realpath("foo"))
 
+    @test_support.requires_unicode
     def test_normpath_issue5827(self):
         # Make sure normpath preserves unicode
         for path in (u'', u'.', u'/', u'\\', u'///foo/.//bar//'):
             self.assertIsInstance(self.pathmodule.normpath(path), unicode)
 
+    @test_support.requires_unicode
     def test_abspath_issue3426(self):
         # Check that abspath returns unicode when the arg is unicode
         # with both ASCII and non-ASCII cwds.

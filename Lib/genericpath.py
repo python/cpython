@@ -10,6 +10,14 @@ __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
            'getsize', 'isdir', 'isfile']
 
 
+try:
+    _unicode = unicode
+except NameError:
+    # If Python is built without Unicode support, the unicode type
+    # will not exist. Fake one.
+    class _unicode(object):
+        pass
+
 # Does a path exist?
 # This is false for dangling symbolic links on systems that support them.
 def exists(path):

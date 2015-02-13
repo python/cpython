@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21840: Fixed expanding unicode variables of form $var in
+  posixpath.expandvars().  Fixed all os.path implementations on
+  unicode-disabled builds.
+
 - Issue #23363: Fix possible overflow in itertools.permutations.
 
 - Issue #23364: Fix possible overflow in itertools.product.

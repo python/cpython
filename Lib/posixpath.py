@@ -16,14 +16,7 @@ import stat
 import genericpath
 import warnings
 from genericpath import *
-
-try:
-    _unicode = unicode
-except NameError:
-    # If Python is built without Unicode support, the unicode type
-    # will not exist. Fake one.
-    class _unicode(object):
-        pass
+from genericpath import _unicode
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -294,16 +287,16 @@ def expandvars(path):
     if '$' not in path:
         return path
     if isinstance(path, _unicode):
+        if not _uvarprog:
+            import re
+            _uvarprog = re.compile(ur'\$(\w+|\{[^}]*\})', re.UNICODE)
+        varprog = _uvarprog
+        encoding = sys.getfilesystemencoding()
+    else:
         if not _varprog:
             import re
             _varprog = re.compile(r'\$(\w+|\{[^}]*\})')
         varprog = _varprog
-        encoding = sys.getfilesystemencoding()
-    else:
-        if not _uvarprog:
-            import re
-            _uvarprog = re.compile(_unicode(r'\$(\w+|\{[^}]*\})'), re.UNICODE)
-        varprog = _uvarprog
         encoding = None
     i = 0
     while True:

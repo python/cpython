@@ -8,6 +8,7 @@ module as os.path.
 import os
 import stat
 from genericpath import *
+from genericpath import _unicode
 from ntpath import (expanduser, expandvars, isabs, islink, splitdrive,
                     splitext, split, walk)
 
@@ -146,7 +147,7 @@ def normpath(path):
 def abspath(path):
     """Return the absolute version of a path"""
     if not isabs(path):
-        if isinstance(path, unicode):
+        if isinstance(path, _unicode):
             cwd = os.getcwdu()
         else:
             cwd = os.getcwd()

@@ -1,7 +1,9 @@
 import unittest
 from test import test_support, test_genericpath
 
-import posixpath, os
+import posixpath
+import os
+import sys
 from posixpath import realpath, abspath, dirname, basename
 
 # An absolute path to a temporary filename for testing. We can't rely on TESTFN
@@ -408,6 +410,21 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(posixpath.relpath("/a/b", "/a/b"), '.')
         finally:
             os.getcwd = real_getcwd
+
+    @test_support.requires_unicode
+    def test_expandvars_nonascii_word(self):
+        encoding = sys.getfilesystemencoding()
+        # Non-ASCII word characters
+        letters = test_support.u(r'\xe6\u0130\u0141\u03c6\u041a\u05d0\u062a\u0e01')
+        uwnonascii = letters.encode(encoding, 'ignore').decode(encoding)[:3]
+        swnonascii = uwnonascii.encode(encoding)
+        if not swnonascii:
+            self.skip('Needs non-ASCII word characters')
+        with test_support.EnvironmentVarGuard() as env:
+            env.clear()
+            env[swnonascii] = 'baz' + swnonascii
+            self.assertEqual(posixpath.expandvars(u'$%s bar' % uwnonascii),
+                             u'baz%s bar' % uwnonascii)
 
 
 class PosixCommonTest(test_genericpath.CommonTest):

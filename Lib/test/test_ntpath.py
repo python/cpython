@@ -69,8 +69,9 @@ class TestNtpath(unittest.TestCase):
                ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
         tester('ntpath.splitunc("//conky//mountpoint/foo/bar")',
                ('', '//conky//mountpoint/foo/bar'))
-        self.assertEqual(ntpath.splitunc(u'//conky/MOUNTPO\u0130NT/foo/bar'),
-                         (u'//conky/MOUNTPO\u0130NT', u'/foo/bar'))
+        if test_support.have_unicode:
+            self.assertEqual(ntpath.splitunc(u'//conky/MOUNTPO%cNT/foo/bar' % 0x0130),
+                             (u'//conky/MOUNTPO%cNT' % 0x0130, u'/foo/bar'))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
