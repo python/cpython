@@ -334,6 +334,12 @@ socket
   :meth:`socket.socket.send`.
   (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
+tarfile
+-------
+
+* The :func:`tarfile.open` function now supports ``'x'`` (exclusive creation)
+  mode.  (Contributed by Berker Peksag in :issue:`21717`.)
+
 time
 ----
 

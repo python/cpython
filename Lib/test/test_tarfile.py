@@ -1428,6 +1428,88 @@ class GNUWriteTest(unittest.TestCase):
                    ("longlnk/" * 127) + "longlink_")
 
 
+class CreateTest(TarTest, unittest.TestCase):
+
+    prefix = "x:"
+
+    file_path = os.path.join(TEMPDIR, "spameggs42")
+
+    def setUp(self):
+        support.unlink(tmpname)
+
+    @classmethod
+    def setUpClass(cls):
+        with open(cls.file_path, "wb") as fobj:
+            fobj.write(b"aaa")
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(cls.file_path)
+
+    def test_create(self):
+        with tarfile.open(tmpname, self.mode) as tobj:
+            tobj.add(self.file_path)
+
+        with self.taropen(tmpname) as tobj:
+            names = tobj.getnames()
+        self.assertEqual(len(names), 1)
+        self.assertIn('spameggs42', names[0])
+
+    def test_create_existing(self):
+        with tarfile.open(tmpname, self.mode) as tobj:
+            tobj.add(self.file_path)
+
+        with self.assertRaises(FileExistsError):
+            tobj = tarfile.open(tmpname, self.mode)
+
+        with self.taropen(tmpname) as tobj:
+            names = tobj.getnames()
+        self.assertEqual(len(names), 1)
+        self.assertIn('spameggs42', names[0])
+
+    def test_create_taropen(self):
+        with self.taropen(tmpname, "x") as tobj:
+            tobj.add(self.file_path)
+
+        with self.taropen(tmpname) as tobj:
+            names = tobj.getnames()
+        self.assertEqual(len(names), 1)
+        self.assertIn('spameggs42', names[0])
+
+    def test_create_existing_taropen(self):
+        with self.taropen(tmpname, "x") as tobj:
+            tobj.add(self.file_path)
+
+        with self.assertRaises(FileExistsError):
+            with self.taropen(tmpname, "x"):
+                pass
+
+        with self.taropen(tmpname) as tobj:
+            names = tobj.getnames()
+        self.assertEqual(len(names), 1)
+        self.assertIn("spameggs42", names[0])
+
+
+class GzipCreateTest(GzipTest, CreateTest):
+    pass
+
+
+class Bz2CreateTest(Bz2Test, CreateTest):
+    pass
+
+
+class LzmaCreateTest(LzmaTest, CreateTest):
+    pass
+
+
+class CreateWithXModeTest(CreateTest):
+
+    prefix = "x"
+
+    test_create_taropen = None
+    test_create_existing_taropen = None
+
+
 @unittest.skipUnless(hasattr(os, "link"), "Missing hardlink implementation")
 class HardlinkTest(unittest.TestCase):
     # Test the creation of LNKTYPE (hardlink) members in an archive.
