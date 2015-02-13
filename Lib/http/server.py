@@ -82,7 +82,10 @@ XXX To do:
 
 __version__ = "0.6"
 
-__all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
+__all__ = [
+    "HTTPServer", "BaseHTTPRequestHandler",
+    "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
+]
 
 import html
 import http.client
