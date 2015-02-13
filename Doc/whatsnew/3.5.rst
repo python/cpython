@@ -146,6 +146,14 @@ New Modules
 Improved Modules
 ================
 
+argparse
+--------
+
+* :class:`~argparse.ArgumentParser` now allows to disable
+  :ref:`abbreviated usage <prefix-matching>` of long options by setting
+  :ref:`allow_abbrev` to ``False``.
+  (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and Daniel Eriksson.)
+
 cgi
 ---
 

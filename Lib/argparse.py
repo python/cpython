@@ -1590,6 +1590,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - argument_default -- The default value for all arguments
         - conflict_handler -- String indicating how to handle conflicts
         - add_help -- Add a -h/-help option
+        - allow_abbrev -- Allow long options to be abbreviated unambiguously
     """
 
     def __init__(self,
@@ -1603,7 +1604,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  fromfile_prefix_chars=None,
                  argument_default=None,
                  conflict_handler='error',
-                 add_help=True):
+                 add_help=True,
+                 allow_abbrev=True):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1621,6 +1623,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.formatter_class = formatter_class
         self.fromfile_prefix_chars = fromfile_prefix_chars
         self.add_help = add_help
+        self.allow_abbrev = allow_abbrev
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2098,23 +2101,24 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 action = self._option_string_actions[option_string]
                 return action, option_string, explicit_arg
 
-        # search through all possible prefixes of the option string
-        # and all actions in the parser for possible interpretations
-        option_tuples = self._get_option_tuples(arg_string)
+        if self.allow_abbrev:
+            # search through all possible prefixes of the option string
+            # and all actions in the parser for possible interpretations
+            option_tuples = self._get_option_tuples(arg_string)
 
-        # if multiple actions match, the option string was ambiguous
-        if len(option_tuples) > 1:
-            options = ', '.join([option_string
-                for action, option_string, explicit_arg in option_tuples])
-            args = {'option': arg_string, 'matches': options}
-            msg = _('ambiguous option: %(option)s could match %(matches)s')
-            self.error(msg % args)
+            # if multiple actions match, the option string was ambiguous
+            if len(option_tuples) > 1:
+                options = ', '.join([option_string
+                    for action, option_string, explicit_arg in option_tuples])
+                args = {'option': arg_string, 'matches': options}
+                msg = _('ambiguous option: %(option)s could match %(matches)s')
+                self.error(msg % args)
 
-        # if exactly one action matched, this segmentation is good,
-        # so return the parsed action
-        elif len(option_tuples) == 1:
-            option_tuple, = option_tuples
-            return option_tuple
+            # if exactly one action matched, this segmentation is good,
+            # so return the parsed action
+            elif len(option_tuples) == 1:
+                option_tuple, = option_tuples
+                return option_tuple
 
         # if it was not found as an option, but it looks like a negative
         # number, it was meant to be positional
