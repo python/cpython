@@ -62,6 +62,23 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | ``'r:xz'``       | Open for reading with lzma compression.     |
    +------------------+---------------------------------------------+
+   | ``'x'`` or       | Create a tarfile exclusively without        |
+   | ``'x:'``         | compression.                                |
+   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | if it is already exists.                    |
+   +------------------+---------------------------------------------+
+   | ``'x:gz'``       | Create a tarfile with gzip compression.     |
+   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | if it is already exists.                    |
+   +------------------+---------------------------------------------+
+   | ``'x:bz2'``      | Create a tarfile with bzip2 compression.    |
+   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | if it is already exists.                    |
+   +------------------+---------------------------------------------+
+   | ``'x:xz'``       | Create a tarfile with lzma compression.     |
+   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | if it is already exists.                    |
+   +------------------+---------------------------------------------+
    | ``'a' or 'a:'``  | Open for appending with no compression. The |
    |                  | file is created if it does not exist.       |
    +------------------+---------------------------------------------+
@@ -82,9 +99,9 @@ Some facts and figures:
    If *fileobj* is specified, it is used as an alternative to a :term:`file object`
    opened in binary mode for *name*. It is supposed to be at position 0.
 
-   For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, :func:`tarfile.open`
-   accepts the keyword argument *compresslevel* to specify the compression level of
-   the file.
+   For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, ``'x:gz'``,
+   ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
+   *compresslevel* to specify the compression level of the file.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
@@ -127,6 +144,8 @@ Some facts and figures:
    |             | writing.                                   |
    +-------------+--------------------------------------------+
 
+   .. versionchanged:: 3.5
+      The ``'x'`` (exclusive creation) mode was added.
 
 .. class:: TarFile
 
@@ -252,8 +271,8 @@ be finalized; only the internally used file object will be closed. See the
    In this case, the file object's :attr:`name` attribute is used if it exists.
 
    *mode* is either ``'r'`` to read from an existing archive, ``'a'`` to append
-   data to an existing file or ``'w'`` to create a new file overwriting an existing
-   one.
+   data to an existing file, ``'w'`` to create a new file overwriting an existing
+   one or ``'x'`` to create a new file only if it's not exists.
 
    If *fileobj* is given, it is used for reading or writing data. If it can be
    determined, *mode* is overridden by *fileobj*'s mode. *fileobj* will be used
@@ -292,12 +311,14 @@ be finalized; only the internally used file object will be closed. See the
    to be handled. The default settings will work for most users.
    See section :ref:`tar-unicode` for in-depth information.
 
-   .. versionchanged:: 3.2
-      Use ``'surrogateescape'`` as the default for the *errors* argument.
-
    The *pax_headers* argument is an optional dictionary of strings which
    will be added as a pax global header if *format* is :const:`PAX_FORMAT`.
 
+   .. versionchanged:: 3.2
+      Use ``'surrogateescape'`` as the default for the *errors* argument.
+
+   .. versionchanged:: 3.5
+      The ``'x'`` (exclusive creation) mode was added.
 
 .. classmethod:: TarFile.open(...)
 
