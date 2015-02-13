@@ -419,7 +419,7 @@ class PosixPathTest(unittest.TestCase):
         uwnonascii = letters.encode(encoding, 'ignore').decode(encoding)[:3]
         swnonascii = uwnonascii.encode(encoding)
         if not swnonascii:
-            self.skip('Needs non-ASCII word characters')
+            self.skipTest('Needs non-ASCII word characters')
         with test_support.EnvironmentVarGuard() as env:
             env.clear()
             env[swnonascii] = 'baz' + swnonascii
