@@ -342,6 +342,13 @@ socket
   :meth:`socket.socket.send`.
   (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
+sysconfig
+---------
+
+* The user scripts directory on Windows is now versioned.
+  (Contributed by Paul Moore in :issue:`23437`.)
+
+
 tarfile
 -------
 
