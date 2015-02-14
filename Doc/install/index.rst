@@ -361,7 +361,7 @@ And here are the values used on Windows:
 Type of file    Installation directory
 =============== ===========================================================
 modules         :file:`{userbase}\\Python{XY}\\site-packages`
-scripts         :file:`{userbase}\\Scripts`
+scripts         :file:`{userbase}\\Python{XY}\\Scripts`
 data            :file:`{userbase}`
 C headers       :file:`{userbase}\\Python{XY}\\Include\\{distname}`
 =============== ===========================================================

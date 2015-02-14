@@ -22,7 +22,8 @@ def modify():
     scripts = os.path.join(pythonpath, "Scripts")
     appdata = os.environ["APPDATA"]
     if hasattr(site, "USER_SITE"):
-        userpath = site.USER_SITE.replace(appdata, "%APPDATA%")
+        usersite = site.USER_SITE.replace(appdata, "%APPDATA%")
+        userpath = os.path.dirname(usersite)
         userscripts = os.path.join(userpath, "Scripts")
     else:
         userscripts = None

@@ -51,7 +51,7 @@ if HAS_USER_SITE:
         'purelib': '$usersite',
         'platlib': '$usersite',
         'headers': '$userbase/Python$py_version_nodot/Include/$dist_name',
-        'scripts': '$userbase/Scripts',
+        'scripts': '$userbase/Python$py_version_nodot/Scripts',
         'data'   : '$userbase',
         }
 
