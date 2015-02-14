@@ -35,7 +35,8 @@ Py_FrozenMain(int argc, char **argv)
 #ifdef MS_WINDOWS
     PyInitFrozenExtensions();
 #endif /* MS_WINDOWS */
-    Py_SetProgramName(argv[0]);
+    if (argc >= 1)
+        Py_SetProgramName(argv[0]);
     Py_Initialize();
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeInit();
