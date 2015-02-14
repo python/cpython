@@ -400,7 +400,8 @@ The following performance enhancements have been added:
   (:issue:`21486`, :issue:`21487`, :issue:`20826`)
 
 * Many operations on :class:`io.BytesIO` are now 50% to 100% faster.
-  (Contributed by Serhiy Storchaka in :issue:`15381`.)
+  (Contributed by Serhiy Storchaka in :issue:`15381` and David Wilson in
+  :issue:`22003`.)
 
 * :func:`marshal.dumps` is now faster (65%-85% with versions 3--4, 20-25% with
   versions 0--2 on typical data, and up to 5x in best cases).
