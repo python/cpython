@@ -8,7 +8,8 @@
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <ItemGroup>
-        <Compile Include="*.wxs" />
+        <Compile Include="tools.wxs" />
+        <Compile Include="tools_files.wxs" />
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="*.wxl" />

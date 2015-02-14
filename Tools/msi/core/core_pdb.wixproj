@@ -5,7 +5,15 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>core_pdb</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>IncludeSymbols=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
-    <Import Project="core.props" />
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="core_pdb.wxs" />
+        <Compile Include="core_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+
+    <Import Project="..\msi.targets" />
 </Project>

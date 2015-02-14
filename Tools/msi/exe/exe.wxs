@@ -7,7 +7,6 @@
         <PropertyRef Id="UpgradeTable" />
         <PropertyRef Id="REGISTRYKEY" />
         
-        <?ifdef IncludeDefaultFeature ?>
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="exe_python" />
             <ComponentGroupRef Id="exe_txt" />
@@ -25,16 +24,5 @@
                 </RegistryKey>
             </Component>
         </Feature>
-        <?endif ?>
-        <?ifdef IncludeSymbols ?>
-        <Feature Id="Symbols" AllowAdvertise="no" Title="!(loc.TitlePdb)" Description="!(loc.DescriptionPdb)">
-            <ComponentGroupRef Id="exe_python_symbols" />
-        </Feature>
-        <?endif ?>
-        <?ifdef IncludeDebugBinaries ?>
-        <Feature Id="DebugBinaries" AllowAdvertise="no" Title="!(loc.Title_d)" Description="!(loc.Description_d)">
-            <ComponentGroupRef Id="exe_python_d" />
-        </Feature>
-        <?endif ?>
     </Product>
 </Wix>

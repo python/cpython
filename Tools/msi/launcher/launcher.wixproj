@@ -5,7 +5,16 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>launcher</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>IncludeDefaultFeature=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
-    <Import Project="launcher.props" />
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="launcher.wxs" />
+        <Compile Include="launcher_files.wxs" />
+        <Compile Include="launcher_reg.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
 </Project>
