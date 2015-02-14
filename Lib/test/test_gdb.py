@@ -185,6 +185,8 @@ class DebuggerTests(unittest.TestCase):
             'linux-vdso.so',
             'warning: Could not load shared library symbols for '
             'linux-gate.so',
+            'warning: Could not load shared library symbols for '
+            'linux-vdso64.so',
             'Do you need "set solib-search-path" or '
             '"set sysroot"?',
             'warning: Source file is more recent than executable.',
