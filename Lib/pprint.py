@@ -161,7 +161,7 @@ class PrettyPrinter:
             return
         rep = self._repr(object, context, level - 1)
         typ = type(object)
-        max_width = self._width - 1 - indent - allowance
+        max_width = self._width - indent - allowance
         sepLines = len(rep) > max_width
         write = stream.write
 
@@ -174,24 +174,14 @@ class PrettyPrinter:
                 length = len(object)
                 if length:
                     context[objid] = 1
-                    indent = indent + self._indent_per_level
                     if issubclass(typ, _OrderedDict):
                         items = list(object.items())
                     else:
                         items = sorted(object.items(), key=_safe_tuple)
-                    key, ent = items[0]
-                    rep = self._repr(key, context, level)
-                    write(rep)
-                    write(': ')
-                    self._format(ent, stream, indent + len(rep) + 2,
-                                  allowance + 1, context, level)
-                    if length > 1:
-                        for key, ent in items[1:]:
-                            rep = self._repr(key, context, level)
-                            write(',\n%s%s: ' % (' '*indent, rep))
-                            self._format(ent, stream, indent + len(rep) + 2,
-                                          allowance + 1, context, level)
-                    indent = indent - self._indent_per_level
+                    self._format_dict_items(items, stream,
+                                            indent + self._indent_per_level,
+                                            allowance + 1,
+                                            context, level)
                     del context[objid]
                 write('}')
                 return
@@ -207,7 +197,10 @@ class PrettyPrinter:
                     endchar = ']'
                 elif issubclass(typ, tuple):
                     write('(')
-                    endchar = ')'
+                    if length == 1:
+                        endchar = ',)'
+                    else:
+                        endchar = ')'
                 else:
                     if not length:
                         write(rep)
@@ -227,10 +220,9 @@ class PrettyPrinter:
                     context[objid] = 1
                     self._format_items(object, stream,
                                        indent + self._indent_per_level,
-                                       allowance + 1, context, level)
+                                       allowance + len(endchar),
+                                       context, level)
                     del context[objid]
-                if issubclass(typ, tuple) and length == 1:
-                    write(',')
                 write(endchar)
                 return
 
@@ -239,19 +231,27 @@ class PrettyPrinter:
                 lines = object.splitlines(True)
                 if level == 1:
                     indent += 1
-                    max_width -= 2
+                    allowance += 1
+                max_width1 = max_width = self._width - indent
                 for i, line in enumerate(lines):
                     rep = repr(line)
-                    if len(rep) <= max_width:
+                    if i == len(lines) - 1:
+                        max_width1 -= allowance
+                    if len(rep) <= max_width1:
                         chunks.append(rep)
                     else:
                         # A list of alternating (non-space, space) strings
-                        parts = re.split(r'(\s+)', line) + ['']
+                        parts = re.findall(r'\S*\s*', line)
+                        assert parts
+                        assert not parts[-1]
+                        parts.pop()  # drop empty last part
+                        max_width2 = max_width
                         current = ''
-                        for i in range(0, len(parts), 2):
-                            part = parts[i] + parts[i+1]
+                        for j, part in enumerate(parts):
                             candidate = current + part
-                            if len(repr(candidate)) > max_width:
+                            if j == len(parts) - 1 and i == len(lines) - 1:
+                                max_width2 -= allowance
+                            if len(repr(candidate)) > max_width2:
                                 if current:
                                     chunks.append(repr(current))
                                 current = part
@@ -273,12 +273,41 @@ class PrettyPrinter:
                 return
         write(rep)
 
+    def _format_dict_items(self, items, stream, indent, allowance, context,
+                           level):
+        write = stream.write
+        delimnl = ',\n' + ' ' * indent
+        last_index = len(items) - 1
+        for i, (key, ent) in enumerate(items):
+            last = i == last_index
+            rep = self._repr(key, context, level)
+            write(rep)
+            write(': ')
+            self._format(ent, stream, indent + len(rep) + 2,
+                         allowance if last else 1,
+                         context, level)
+            if not last:
+                write(delimnl)
+
     def _format_items(self, items, stream, indent, allowance, context, level):
         write = stream.write
         delimnl = ',\n' + ' ' * indent
         delim = ''
-        width = max_width = self._width - indent - allowance + 2
-        for ent in items:
+        width = max_width = self._width - indent + 1
+        it = iter(items)
+        try:
+            next_ent = next(it)
+        except StopIteration:
+            return
+        last = False
+        while not last:
+            ent = next_ent
+            try:
+                next_ent = next(it)
+            except StopIteration:
+                last = True
+                max_width -= allowance
+                width -= allowance
             if self._compact:
                 rep = self._repr(ent, context, level)
                 w = len(rep) + 2
@@ -294,7 +323,9 @@ class PrettyPrinter:
                     continue
             write(delim)
             delim = delimnl
-            self._format(ent, stream, indent, allowance, context, level)
+            self._format(ent, stream, indent,
+                         allowance if last else 1,
+                         context, level)
 
     def _repr(self, object, context, level):
         repr, readable, recursive = self.format(object, context.copy(),

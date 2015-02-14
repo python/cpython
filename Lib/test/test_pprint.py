@@ -192,10 +192,52 @@ class QueryTestCase(unittest.TestCase):
         o = [o1, o2]
         expected = """\
 [   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    {'first': 1, 'second': 2, 'third': 3}]"""
+        self.assertEqual(pprint.pformat(o, indent=4, width=42), expected)
+        expected = """\
+[   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     {   'first': 1,
         'second': 2,
         'third': 3}]"""
-        self.assertEqual(pprint.pformat(o, indent=4, width=42), expected)
+        self.assertEqual(pprint.pformat(o, indent=4, width=41), expected)
+
+    def test_width(self):
+        expected = """\
+[[[[[[1, 2, 3],
+     '1 2']]]],
+ {1: [1, 2, 3],
+  2: [12, 34]},
+ 'abc def ghi',
+ ('ab cd ef',),
+ set2({1, 23}),
+ [[[[[1, 2, 3],
+     '1 2']]]]]"""
+        o = eval(expected)
+        self.assertEqual(pprint.pformat(o, width=15), expected)
+        self.assertEqual(pprint.pformat(o, width=16), expected)
+        self.assertEqual(pprint.pformat(o, width=25), expected)
+        self.assertEqual(pprint.pformat(o, width=14), """\
+[[[[[[1,
+      2,
+      3],
+     '1 '
+     '2']]]],
+ {1: [1,
+      2,
+      3],
+  2: [12,
+      34]},
+ 'abc def '
+ 'ghi',
+ ('ab cd '
+  'ef',),
+ set2({1,
+       23}),
+ [[[[[1,
+      2,
+      3],
+     '1 '
+     '2']]]]]""")
 
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
@@ -535,13 +577,12 @@ frozenset2({0,
     def test_str_wrap(self):
         # pprint tries to wrap strings intelligently
         fox = 'the quick brown fox jumped over a lazy dog'
-        self.assertEqual(pprint.pformat(fox, width=20), """\
-('the quick '
- 'brown fox '
- 'jumped over a '
- 'lazy dog')""")
+        self.assertEqual(pprint.pformat(fox, width=19), """\
+('the quick brown '
+ 'fox jumped over '
+ 'a lazy dog')""")
         self.assertEqual(pprint.pformat({'a': 1, 'b': fox, 'c': 2},
-                                        width=26), """\
+                                        width=25), """\
 {'a': 1,
  'b': 'the quick brown '
       'fox jumped over '
@@ -553,12 +594,34 @@ frozenset2({0,
         # - non-ASCII is allowed
         # - an apostrophe doesn't disrupt the pprint
         special = "Portons dix bons \"whiskys\"\nà l'avocat goujat\t qui fumait au zoo"
-        self.assertEqual(pprint.pformat(special, width=21), """\
-('Portons dix '
- 'bons "whiskys"\\n'
+        self.assertEqual(pprint.pformat(special, width=68), repr(special))
+        self.assertEqual(pprint.pformat(special, width=31), """\
+('Portons dix bons "whiskys"\\n'
+ "à l'avocat goujat\\t qui "
+ 'fumait au zoo')""")
+        self.assertEqual(pprint.pformat(special, width=20), """\
+('Portons dix bons '
+ '"whiskys"\\n'
  "à l'avocat "
  'goujat\\t qui '
  'fumait au zoo')""")
+        self.assertEqual(pprint.pformat([[[[[special]]]]], width=35), """\
+[[[[['Portons dix bons "whiskys"\\n'
+     "à l'avocat goujat\\t qui "
+     'fumait au zoo']]]]]""")
+        self.assertEqual(pprint.pformat([[[[[special]]]]], width=25), """\
+[[[[['Portons dix bons '
+     '"whiskys"\\n'
+     "à l'avocat "
+     'goujat\\t qui '
+     'fumait au zoo']]]]]""")
+        self.assertEqual(pprint.pformat([[[[[special]]]]], width=23), """\
+[[[[['Portons dix '
+     'bons "whiskys"\\n'
+     "à l'avocat "
+     'goujat\\t qui '
+     'fumait au '
+     'zoo']]]]]""")
         # An unwrappable string is formatted as its repr
         unwrappable = "x" * 100
         self.assertEqual(pprint.pformat(unwrappable, width=80), repr(unwrappable))
@@ -581,7 +644,19 @@ frozenset2({0,
   14, 15],
  [], [0], [0, 1], [0, 1, 2], [0, 1, 2, 3],
  [0, 1, 2, 3, 4]]"""
-        self.assertEqual(pprint.pformat(o, width=48, compact=True), expected)
+        self.assertEqual(pprint.pformat(o, width=47, compact=True), expected)
+
+    def test_compact_width(self):
+        levels = 20
+        number = 10
+        o = [0] * number
+        for i in range(levels - 1):
+            o = [o]
+        for w in range(levels * 2 + 1, levels + 3 * number - 1):
+            lines = pprint.pformat(o, width=w, compact=True).splitlines()
+            maxwidth = max(map(len, lines))
+            self.assertLessEqual(maxwidth, w)
+            self.assertGreater(maxwidth, w - 3)
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
