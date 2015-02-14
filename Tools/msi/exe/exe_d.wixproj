@@ -5,7 +5,16 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>exe_d</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>IncludeDebugBinaries=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
-    <Import Project="exe.props" />
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="exe_d.wxs" />
+        <Compile Include="exe_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+        <WxlTemplate Include="*.wxl_template" />
+    </ItemGroup>
+
+    <Import Project="..\msi.targets" />
 </Project>

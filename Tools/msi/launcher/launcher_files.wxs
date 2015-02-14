@@ -21,15 +21,4 @@
             </Component>
         </ComponentGroup>
     </Fragment>
-    
-    <Fragment>
-        <ComponentGroup Id="launcher_pdb">
-            <Component Id="py.pdb" Directory="LauncherInstallDirectory" Guid="*">
-                <File Id="py.pdb" Name="py.pdb" Source="py.pdb" />
-            </Component>
-            <Component Id="pyw.pdb" Directory="LauncherInstallDirectory" Guid="*">
-                <File Id="pyw.pdb" Name="pyw.pdb" Source="pyw.pdb" />
-            </Component>
-        </ComponentGroup>
-    </Fragment>
 </Wix>

@@ -5,7 +5,15 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>test_d</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>IncludeDebugBinaries=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
-    <Import Project="test.props" />
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="test_d.wxs" />
+        <Compile Include="test_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
 </Project>
