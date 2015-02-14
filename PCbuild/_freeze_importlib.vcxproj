@@ -85,8 +85,8 @@
     <Exec Command='"$(TargetPath)" "$(PySourcePath)Lib\importlib\_bootstrap.py" "$(IntDir)importlib.g.h"' />
     
     <PropertyGroup>
-      <_OldContent Condition="Exists('$(PySourcePath)Python\importlib.h')">$([System.IO.File]::ReadAllText('$(PySourcePath)Python\importlib.h'))</_OldContent>
-      <_NewContent Condition="Exists('$(IntDir)importlib.g.h')">$([System.IO.File]::ReadAllText('$(IntDir)importlib.g.h'))</_NewContent>
+      <_OldContent Condition="Exists('$(PySourcePath)Python\importlib.h')">$([System.IO.File]::ReadAllText('$(PySourcePath)Python\importlib.h').Replace(`&#x0D;&#x0A;`, `&#x0A;`))</_OldContent>
+      <_NewContent Condition="Exists('$(IntDir)importlib.g.h')">$([System.IO.File]::ReadAllText('$(IntDir)importlib.g.h').Replace(`&#x0D;&#x0A;`, `&#x0A;`))</_NewContent>
     </PropertyGroup>
     
     <Copy SourceFiles="$(IntDir)importlib.g.h"
