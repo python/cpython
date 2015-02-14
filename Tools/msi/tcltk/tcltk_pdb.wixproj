@@ -5,7 +5,15 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>tcltk_pdb</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>IncludeSymbols=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
-    <Import Project="tcltk.props" />
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="tcltk_pdb.wxs" />
+        <Compile Include="tcltk_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <WxlTemplate Include="*.wxl_template" />
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
 </Project>

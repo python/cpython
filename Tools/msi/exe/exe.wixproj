@@ -5,7 +5,39 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>exe</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>IncludeDefaultFeature=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
-    <Import Project="exe.props" />
+    <PropertyGroup>
+        <!-- Shortcut validation is not necessary -->
+        <SuppressICEs>ICE43</SuppressICEs>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="exe.wxs" />
+        <Compile Include="exe_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+        <WxlTemplate Include="*.wxl_template" />
+    </ItemGroup>
+    
+    <Target Name="_GenerateLicense" AfterTargets="PrepareForBuild">
+        <ItemGroup>
+            <LicenseFiles Include="$(PySourcePath)LICENSE;
+                                   crtlicense.txt;
+                                   $(bz2Dir)LICENSE;
+                                   $(opensslDir)LICENSE;
+                                   $(tclDir)license.terms;
+                                   $(tkDir)license.terms;
+                                   $(tixDir)license.terms" />
+            <_LicenseFiles Include="@(LicenseFiles)">
+                <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
+            </_LicenseFiles>
+        </ItemGroup>
+        
+        <WriteLinesToFile File="$(BuildPath)LICENSE"
+                          Overwrite="true"
+                          Lines="@(_LicenseFiles->'%(Content)')" />
+    </Target>
+        
+    <Import Project="..\msi.targets" />
 </Project>

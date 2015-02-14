@@ -5,7 +5,24 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>tcltk_d</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>IncludeDebugBinaries=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
-    <Import Project="tcltk.props" />
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="tcltk_d.wxs" />
+        <Compile Include="tcltk_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <WxlTemplate Include="*.wxl_template" />
+    </ItemGroup>
+    <ItemGroup>
+        <InstallFiles Include="$(tcltkDir)bin\*g.dll">
+            <SourceBase>$(tcltkDir)</SourceBase>
+            <Source>!(bindpath.tcltk)</Source>
+            <TargetBase>$(tcltkDir)bin</TargetBase>
+            <Target_>DLLs\</Target_>
+            <Group>tcltk_dlls_d</Group>
+        </InstallFiles>
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
 </Project>
