@@ -57,7 +57,7 @@ _INSTALL_SCHEMES = {
         'purelib': '{userbase}/Python{py_version_nodot}/site-packages',
         'platlib': '{userbase}/Python{py_version_nodot}/site-packages',
         'include': '{userbase}/Python{py_version_nodot}/Include',
-        'scripts': '{userbase}/Scripts',
+        'scripts': '{userbase}/Python{py_version_nodot}/Scripts',
         'data': '{userbase}',
         },
     'posix_user': {
