@@ -39,6 +39,12 @@ Build
 - Issue #23445: pydebug builds now use "gcc -Og" where possible, to make
   the resulting executable faster.
 
+Windows
+-------
+
+- Issue #23437: Make user scripts directory versioned on Windows. Patch by Paul
+  Moore.
+
 
 What's New in Python 3.5 alpha 1?
 =================================
