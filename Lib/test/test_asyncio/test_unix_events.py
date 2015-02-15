@@ -295,7 +295,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def test_create_unix_connection_path_sock(self):
         coro = self.loop.create_unix_connection(
-            lambda: None, '/dev/null', sock=object())
+            lambda: None, os.devnull, sock=object())
         with self.assertRaisesRegex(ValueError, 'path and sock can not be'):
             self.loop.run_until_complete(coro)
 
@@ -308,14 +308,14 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def test_create_unix_connection_nossl_serverhost(self):
         coro = self.loop.create_unix_connection(
-            lambda: None, '/dev/null', server_hostname='spam')
+            lambda: None, os.devnull, server_hostname='spam')
         with self.assertRaisesRegex(ValueError,
                                     'server_hostname is only meaningful'):
             self.loop.run_until_complete(coro)
 
     def test_create_unix_connection_ssl_noserverhost(self):
         coro = self.loop.create_unix_connection(
-            lambda: None, '/dev/null', ssl=True)
+            lambda: None, os.devnull, ssl=True)
 
         with self.assertRaisesRegex(
             ValueError, 'you have to pass server_hostname when using ssl'):
