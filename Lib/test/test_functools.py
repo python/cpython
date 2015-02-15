@@ -155,9 +155,9 @@ class TestPartialC(TestPartial, unittest.TestCase):
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
-        #kwargs = {'a': object(), 'b': object()}
-        kwargs = {'a': object()}
-        kwargs_repr = ', '.join("%s=%r" % (k, v) for k, v in kwargs.items())
+        kwargs = {'a': object(), 'b': object()}
+        kwargs_reprs = ['a={a!r}, b={b!r}'.format_map(kwargs),
+                        'b={b!r}, a={a!r}'.format_map(kwargs)]
         if self.partial is c_functools.partial:
             name = 'functools.partial'
         else:
@@ -172,12 +172,14 @@ class TestPartialC(TestPartial, unittest.TestCase):
                          repr(f))
 
         f = self.partial(capture, **kwargs)
-        self.assertEqual('{}({!r}, {})'.format(name, capture, kwargs_repr),
-                         repr(f))
+        self.assertIn(repr(f),
+                      ['{}({!r}, {})'.format(name, capture, kwargs_repr)
+                       for kwargs_repr in kwargs_reprs])
 
         f = self.partial(capture, *args, **kwargs)
-        self.assertEqual('{}({!r}, {}, {})'.format(name, capture, args_repr, kwargs_repr),
-                         repr(f))
+        self.assertIn(repr(f),
+                      ['{}({!r}, {}, {})'.format(name, capture, args_repr, kwargs_repr)
+                       for kwargs_repr in kwargs_reprs])
 
     def test_pickle(self):
         f = self.partial(signature, 'asdf', bar=True)
