@@ -1979,7 +1979,7 @@ save_float(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &op, 1) < 0)
             goto done;
 
-        buf = PyOS_double_to_string(x, 'g', 17, 0, NULL);
+        buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
         if (!buf) {
             PyErr_NoMemory();
             goto done;
