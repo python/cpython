@@ -1922,7 +1922,7 @@ class POSIXProcessTestCase(BaseTestCase):
         open_fds = set(fds)
         # add a bunch more fds
         for _ in range(9):
-            fd = os.open("/dev/null", os.O_RDONLY)
+            fd = os.open(os.devnull, os.O_RDONLY)
             self.addCleanup(os.close, fd)
             open_fds.add(fd)
 
@@ -1984,7 +1984,7 @@ class POSIXProcessTestCase(BaseTestCase):
         open_fds = set()
         # Add a bunch more fds to pass down.
         for _ in range(40):
-            fd = os.open("/dev/null", os.O_RDONLY)
+            fd = os.open(os.devnull, os.O_RDONLY)
             open_fds.add(fd)
 
         # Leave a two pairs of low ones available for use by the
