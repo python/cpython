@@ -294,7 +294,7 @@ class TestSysConfig(unittest.TestCase):
         if 'MACOSX_DEPLOYMENT_TARGET' in env:
             del env['MACOSX_DEPLOYMENT_TARGET']
 
-        with open('/dev/null', 'w') as devnull_fp:
+        with open(os.devnull, 'w') as devnull_fp:
             p = subprocess.Popen([
                     sys.executable, '-c',
                    'import sysconfig; print(sysconfig.get_platform())',
@@ -320,7 +320,7 @@ class TestSysConfig(unittest.TestCase):
                 'import sysconfig; print(sysconfig.get_platform())',
             ],
             stdout=subprocess.PIPE,
-            stderr=open('/dev/null'),
+            stderr=open(os.devnull),
             env=env)
         test_platform = p.communicate()[0].strip()
         test_platform = test_platform.decode('utf-8')

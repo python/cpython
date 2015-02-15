@@ -194,9 +194,9 @@ class CgiTests(unittest.TestCase):
         cgi.initlog("%s", "Testing initlog 1")
         cgi.log("%s", "Testing log 2")
         self.assertEqual(cgi.logfp.getvalue(), "Testing initlog 1\nTesting log 2\n")
-        if os.path.exists("/dev/null"):
+        if os.path.exists(os.devnull):
             cgi.logfp = None
-            cgi.logfile = "/dev/null"
+            cgi.logfile = os.devnull
             cgi.initlog("%s", "Testing log 3")
             cgi.log("Testing log 4")
 
