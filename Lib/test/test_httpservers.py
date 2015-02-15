@@ -760,6 +760,19 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(path, self.translated)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test_all(self):
+        expected = []
+        blacklist = {'executable', 'nobody_uid', 'test'}
+        for name in dir(server):
+            if name.startswith('_') or name in blacklist:
+                continue
+            module_object = getattr(server, name)
+            if getattr(module_object, '__module__', None) == 'http.server':
+                expected.append(name)
+        self.assertCountEqual(server.__all__, expected)
+
+
 def test_main(verbose=None):
     cwd = os.getcwd()
     try:
@@ -769,6 +782,7 @@ def test_main(verbose=None):
             SimpleHTTPServerTestCase,
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
+            MiscTestCase,
         )
     finally:
         os.chdir(cwd)
