@@ -21,6 +21,7 @@ is read when the database is opened, and some updates rewrite the whole index)
 
 """
 
+import ast as _ast
 import io as _io
 import os as _os
 import collections
@@ -85,7 +86,7 @@ class _Database(collections.MutableMapping):
             with f:
                 for line in f:
                     line = line.rstrip()
-                    key, pos_and_siz_pair = eval(line)
+                    key, pos_and_siz_pair = _ast.literal_eval(line)
                     key = key.encode('Latin-1')
                     self._index[key] = pos_and_siz_pair
 
