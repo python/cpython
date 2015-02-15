@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23239: ssl.match_hostname() now supports matching of IP addresses.
+
 - Issue #23146: Fix mishandling of absolute Windows paths with forward
   slashes in pathlib.
 
