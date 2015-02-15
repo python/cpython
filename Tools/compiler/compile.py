@@ -1,4 +1,3 @@
-import os
 import sys
 import getopt
 
@@ -17,7 +16,11 @@ def main():
             VERBOSE = 1
             visitor.ASTVisitor.VERBOSE = visitor.ASTVisitor.VERBOSE + 1
         if k == '-q':
-            sys.stdout = open(os.devnull, 'wb')
+            if sys.platform[:3]=="win":
+                f = open('nul', 'wb') # /dev/null fails on Windows...
+            else:
+                f = open('/dev/null', 'wb')
+            sys.stdout = f
         if k == '-d':
             DISPLAY = 1
         if k == '-c':
