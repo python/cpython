@@ -4,6 +4,7 @@ import unittest
 import itertools
 import select
 import signal
+import stat
 import subprocess
 import time
 from array import array
@@ -430,17 +431,22 @@ class OtherFileTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'test requires a posix system.')
     def test_write_full(self):
-        # Issue #17976
-        try:
-            f = open('/dev/full', 'w', 1)
-        except IOError:
-            self.skipTest("requires '/dev/full'")
-        try:
+        devfull = '/dev/full'
+        if not (os.path.exists(devfull) and
+                stat.S_ISCHR(os.stat(devfull).st_mode)):
+            # Issue #21934: OpenBSD does not have a /dev/full character device
+            self.skipTest('requires %r' % devfull)
+        with open(devfull, 'wb', 1) as f:
             with self.assertRaises(IOError):
+                f.write('hello\n')
+        with open(devfull, 'wb', 1) as f:
+            with self.assertRaises(IOError):
+                # Issue #17976
                 f.write('hello')
                 f.write('\n')
-        finally:
-            f.close()
+        with open(devfull, 'wb', 0) as f:
+            with self.assertRaises(IOError):
+                f.write('h')
 
     @unittest.skipUnless(sys.maxsize > 2**31, "requires 64-bit system")
     @test_support.precisionbigmemtest(2**31, 2.5, dry_run=False)
