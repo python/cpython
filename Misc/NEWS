@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23146: Fix mishandling of absolute Windows paths with forward
+  slashes in pathlib.
+
 - Issue #23096: Pickle representation of floats with protocol 0 now is the same
   for both Python and C implementations.
 
