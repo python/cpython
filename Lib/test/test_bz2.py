@@ -87,11 +87,11 @@ class BZ2FileTest(BaseTest):
 
     def testBadArgs(self):
         self.assertRaises(TypeError, BZ2File, 123.456)
-        self.assertRaises(ValueError, BZ2File, "/dev/null", "z")
-        self.assertRaises(ValueError, BZ2File, "/dev/null", "rx")
-        self.assertRaises(ValueError, BZ2File, "/dev/null", "rbt")
-        self.assertRaises(ValueError, BZ2File, "/dev/null", compresslevel=0)
-        self.assertRaises(ValueError, BZ2File, "/dev/null", compresslevel=10)
+        self.assertRaises(ValueError, BZ2File, os.devnull, "z")
+        self.assertRaises(ValueError, BZ2File, os.devnull, "rx")
+        self.assertRaises(ValueError, BZ2File, os.devnull, "rbt")
+        self.assertRaises(ValueError, BZ2File, os.devnull, compresslevel=0)
+        self.assertRaises(ValueError, BZ2File, os.devnull, compresslevel=10)
 
     def testRead(self):
         self.createTempFile()
