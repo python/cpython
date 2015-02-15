@@ -225,6 +225,15 @@ class DumbDBMTestCase(unittest.TestCase):
         with dumbdbm.open(_fname, 'n') as f:
             self.assertEqual(f.keys(), [])
 
+    def test_eval(self):
+        with open(_fname + '.dir', 'w') as stream:
+            stream.write("str(print('Hacked!')), 0\n")
+        with support.captured_stdout() as stdout:
+            with self.assertRaises(ValueError):
+                with dumbdbm.open(_fname) as f:
+                    pass
+            self.assertEqual(stdout.getvalue(), '')
+
     def tearDown(self):
         _delete_files()
 
