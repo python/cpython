@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22885: Fixed arbitrary code execution vulnerability in the dumbdbm
+  module.  Original patch by Claudiu Popa.
+
 - Issue #21849: Fixed xmlrpclib serialization of non-ASCII unicode strings in
   the multiprocessing module.
 

@@ -21,6 +21,7 @@ is read when the database is opened, and some updates rewrite the whole index)
 
 """
 
+import ast as _ast
 import os as _os
 import __builtin__
 import UserDict
@@ -85,7 +86,7 @@ class _Database(UserDict.DictMixin):
             with f:
                 for line in f:
                     line = line.rstrip()
-                    key, pos_and_siz_pair = eval(line)
+                    key, pos_and_siz_pair = _ast.literal_eval(line)
                     self._index[key] = pos_and_siz_pair
 
     # Write the index dict to the directory file.  The original directory
