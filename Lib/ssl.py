@@ -87,6 +87,7 @@ ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
 ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
+import ipaddress
 import textwrap
 import re
 import sys
@@ -242,6 +243,17 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
     return pat.match(hostname)
 
 
+def _ipaddress_match(ipname, host_ip):
+    """Exact matching of IP addresses.
+
+    RFC 6125 explicitly doesn't define an algorithm for this
+    (section 1.7.2 - "Out of Scope").
+    """
+    # OpenSSL may add a trailing newline to a subjectAltName's IP address
+    ip = ipaddress.ip_address(ipname.rstrip())
+    return ip == host_ip
+
+
 def match_hostname(cert, hostname):
     """Verify that *cert* (in decoded format as returned by
     SSLSocket.getpeercert()) matches the *hostname*.  RFC 2818 and RFC 6125
@@ -254,11 +266,20 @@ def match_hostname(cert, hostname):
         raise ValueError("empty or no certificate, match_hostname needs a "
                          "SSL socket or SSL context with either "
                          "CERT_OPTIONAL or CERT_REQUIRED")
+    try:
+        host_ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        # Not an IP address (common case)
+        host_ip = None
     dnsnames = []
     san = cert.get('subjectAltName', ())
     for key, value in san:
         if key == 'DNS':
-            if _dnsname_match(value, hostname):
+            if host_ip is None and _dnsname_match(value, hostname):
+                return
+            dnsnames.append(value)
+        elif key == 'IP Address':
+            if host_ip is not None and _ipaddress_match(value, host_ip):
                 return
             dnsnames.append(value)
     if not dnsnames:

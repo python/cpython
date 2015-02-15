@@ -383,6 +383,8 @@ class BasicSocketTests(unittest.TestCase):
             self.assertRaises(ssl.CertificateError,
                               ssl.match_hostname, cert, hostname)
 
+        # -- Hostname matching --
+
         cert = {'subject': ((('commonName', 'example.com'),),)}
         ok(cert, 'example.com')
         ok(cert, 'ExAmple.cOm')
@@ -467,6 +469,28 @@ class BasicSocketTests(unittest.TestCase):
         fail(cert, 'gmail.com')
         # Only commonName is considered
         fail(cert, 'California')
+
+        # -- IPv4 matching --
+        cert = {'subject': ((('commonName', 'example.com'),),),
+                'subjectAltName': (('DNS', 'example.com'),
+                                   ('IP Address', '10.11.12.13'),
+                                   ('IP Address', '14.15.16.17'))}
+        ok(cert, '10.11.12.13')
+        ok(cert, '14.15.16.17')
+        fail(cert, '14.15.16.18')
+        fail(cert, 'example.net')
+
+        # -- IPv6 matching --
+        cert = {'subject': ((('commonName', 'example.com'),),),
+                'subjectAltName': (('DNS', 'example.com'),
+                                   ('IP Address', '2001:0:0:0:0:0:0:CAFE\n'),
+                                   ('IP Address', '2003:0:0:0:0:0:0:BABA\n'))}
+        ok(cert, '2001::cafe')
+        ok(cert, '2003::baba')
+        fail(cert, '2003::bebe')
+        fail(cert, 'example.net')
+
+        # -- Miscellaneous --
 
         # Neither commonName nor subjectAltName
         cert = {'notAfter': 'Dec 18 23:59:59 2011 GMT',
