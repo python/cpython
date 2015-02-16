@@ -279,7 +279,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
             PyErr_SetString(PyExc_ValueError, "too many objects");
             goto err;
         }
-        w = s;
+        w = (int)s;
         Py_INCREF(v);
         if (_Py_HASHTABLE_SET(p->hashtable, v, w) < 0) {
             Py_DECREF(v);

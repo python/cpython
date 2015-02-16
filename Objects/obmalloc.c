@@ -1339,7 +1339,7 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
         pool = (poolp)usable_arenas->pool_address;
         assert((block*)pool <= (block*)usable_arenas->address +
                                ARENA_SIZE - POOL_SIZE);
-        pool->arenaindex = usable_arenas - arenas;
+        pool->arenaindex = (uint)(usable_arenas - arenas);
         assert(&arenas[pool->arenaindex] == usable_arenas);
         pool->szidx = DUMMY_SIZE_IDX;
         usable_arenas->pool_address += POOL_SIZE;
