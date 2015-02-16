@@ -1075,7 +1075,7 @@ class ChownFileTests(unittest.TestCase):
     def test_chown_without_permission(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(support.TESTFN).st_gid
-        with self.assertRaisesRegex(PermissionError, "Operation not permitted"):
+        with self.assertRaises(PermissionError):
             os.chown(support.TESTFN, uid_1, gid)
             os.chown(support.TESTFN, uid_2, gid)
 
