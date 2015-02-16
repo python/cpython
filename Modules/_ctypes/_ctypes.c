@@ -301,7 +301,7 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
     char *new_prefix;
     char *result;
     char buf[32];
-    int prefix_len;
+    Py_ssize_t prefix_len;
     int k;
 
     prefix_len = 32 * ndim + 3;

@@ -1006,7 +1006,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             c = PyUnicode_READ_CHAR(object, i);
             if (ucnhash_CAPI &&
                 ucnhash_CAPI->getname(NULL, c, buffer, sizeof(buffer), 1)) {
-                replsize = 1+1+1+strlen(buffer)+1;
+                replsize = 1+1+1+(int)strlen(buffer)+1;
             }
             else if (c >= 0x10000) {
                 replsize = 1+1+8;
