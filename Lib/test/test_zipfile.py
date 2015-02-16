@@ -680,7 +680,9 @@ class PyZipFileTests(unittest.TestCase):
             self.assertIn(name + 'c', namelist)
 
     def requiresWriteAccess(self, path):
-        if not os.access(path, os.W_OK, effective_ids=True):
+        # effective_ids unavailable on windows
+        if not os.access(path, os.W_OK,
+                         effective_ids=os.access in os.supports_effective_ids):
             self.skipTest('requires write access to the installed location')
 
     def test_write_pyfile(self):
