@@ -292,7 +292,7 @@ iso2022processesc(const void *config, MultibyteCodec_State *state,
                   const unsigned char **inbuf, Py_ssize_t *inleft)
 {
     unsigned char charset, designation;
-    Py_ssize_t i, esclen;
+    Py_ssize_t i, esclen = 0;
 
     for (i = 1;i < MAX_ESCSEQLEN;i++) {
         if (i >= *inleft)
@@ -307,10 +307,9 @@ iso2022processesc(const void *config, MultibyteCodec_State *state,
         }
     }
 
-    if (i >= MAX_ESCSEQLEN)
-        return 1; /* unterminated escape sequence */
-
     switch (esclen) {
+    case 0:
+        return 1; /* unterminated escape sequence */
     case 3:
         if (INBYTE2 == '$') {
             charset = INBYTE3 | CHARSET_DBCS;
