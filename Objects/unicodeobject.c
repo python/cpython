@@ -2186,7 +2186,7 @@ _PyUnicode_AsKind(PyObject *s, unsigned int kind)
     }
     switch (kind) {
     case PyUnicode_2BYTE_KIND:
-        result = PyMem_Malloc(len * sizeof(Py_UCS2));
+        result = PyMem_New(Py_UCS2, len);
         if (!result)
             return PyErr_NoMemory();
         assert(skind == PyUnicode_1BYTE_KIND);
@@ -2197,7 +2197,7 @@ _PyUnicode_AsKind(PyObject *s, unsigned int kind)
             result);
         return result;
     case PyUnicode_4BYTE_KIND:
-        result = PyMem_Malloc(len * sizeof(Py_UCS4));
+        result = PyMem_New(Py_UCS4, len);
         if (!result)
             return PyErr_NoMemory();
         if (skind == PyUnicode_2BYTE_KIND) {
@@ -2239,11 +2239,7 @@ as_ucs4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
     if (copy_null)
         targetlen++;
     if (!target) {
-        if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(Py_UCS4) < targetlen) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        target = PyMem_Malloc(targetlen * sizeof(Py_UCS4));
+        target = PyMem_New(Py_UCS4, targetlen);
         if (!target) {
             PyErr_NoMemory();
             return NULL;
@@ -2817,12 +2813,7 @@ PyUnicode_AsWideCharString(PyObject *unicode,
     buflen = unicode_aswidechar(unicode, NULL, 0);
     if (buflen == -1)
         return NULL;
-    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < buflen) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    buffer = PyMem_MALLOC(buflen * sizeof(wchar_t));
+    buffer = PyMem_NEW(wchar_t, buflen);
     if (buffer == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -3515,10 +3506,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
             wstr = smallbuf;
         }
         else {
-            if (wlen > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1)
-                return PyErr_NoMemory();
-
-            wstr = PyMem_Malloc((wlen+1) * sizeof(wchar_t));
+            wstr = PyMem_New(wchar_t, wlen+1);
             if (!wstr)
                 return PyErr_NoMemory();
         }

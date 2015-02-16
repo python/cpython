@@ -254,7 +254,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
 
     /* assume no change in size, first */
     n1 = n1 + 1;
-    buf = PyMem_Malloc(n1 * sizeof(wchar_t));
+    buf = PyMem_New(wchar_t, n1);
     if (!buf) {
         PyErr_NoMemory();
         goto exit;
