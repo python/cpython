@@ -102,7 +102,7 @@ static int
 py_getentropy(unsigned char *buffer, Py_ssize_t size, int fatal)
 {
     while (size > 0) {
-        Py_ssize_t len = Py_MIN(size, 256);
+        Py_ssize_t len = size < 256 ? size : 256;
         int res = getentropy(buffer, len);
         if (res < 0) {
             if (fatal) {
