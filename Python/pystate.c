@@ -403,7 +403,7 @@ tstate_delete_common(PyThreadState *tstate)
 void
 PyThreadState_Delete(PyThreadState *tstate)
 {
-    if (tstate == _Py_atomic_load_relaxed(&_PyThreadState_Current))
+    if (tstate == (PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
         Py_FatalError("PyThreadState_Delete: tstate is still current");
 #ifdef WITH_THREAD
     if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
@@ -662,7 +662,7 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
 {
     /* Must be the tstate for this thread */
     assert(PyGILState_GetThisThreadState()==tstate);
-    return tstate == _Py_atomic_load_relaxed(&_PyThreadState_Current);
+    return tstate == (PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current);
 }
 
 /* Internal initialization/finalization functions called by
