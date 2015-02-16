@@ -939,7 +939,7 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                 wchar_t *data = (wchar_t *)retDataBuf;
                 int len = retDataSize / 2;
                 int s = countStrings(data, len);
-                wchar_t **str = (wchar_t **)PyMem_Malloc(sizeof(wchar_t *)*s);
+                wchar_t **str = PyMem_New(wchar_t *, s);
                 if (str == NULL)
                     return PyErr_NoMemory();
 
@@ -1206,7 +1206,7 @@ PyEnumValue(PyObject *self, PyObject *args)
     ++retDataSize;
     bufDataSize = retDataSize;
     bufValueSize = retValueSize;
-    retValueBuf = (wchar_t *)PyMem_Malloc(sizeof(wchar_t) * retValueSize);
+    retValueBuf = PyMem_New(wchar_t, retValueSize);
     if (retValueBuf == NULL)
         return PyErr_NoMemory();
     retDataBuf = (BYTE *)PyMem_Malloc(retDataSize);
@@ -1277,7 +1277,7 @@ PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
         return PyErr_SetFromWindowsErrWithFunction(retValueSize,
                                         "ExpandEnvironmentStrings");
     }
-    retValue = (wchar_t *)PyMem_Malloc(retValueSize * sizeof(wchar_t));
+    retValue = PyMem_New(wchar_t, retValueSize);
     if (retValue == NULL) {
         return PyErr_NoMemory();
     }

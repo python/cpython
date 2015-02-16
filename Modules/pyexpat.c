@@ -1093,7 +1093,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self, const ch
     for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
-    new_parser->handlers = PyMem_Malloc(sizeof(PyObject *) * i);
+    new_parser->handlers = PyMem_New(PyObject *, i);
     if (!new_parser->handlers) {
         Py_DECREF(new_parser);
         return PyErr_NoMemory();
@@ -1416,7 +1416,7 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
     for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
-    self->handlers = PyMem_Malloc(sizeof(PyObject *) * i);
+    self->handlers = PyMem_New(PyObject *, i);
     if (!self->handlers) {
         Py_DECREF(self);
         return PyErr_NoMemory();

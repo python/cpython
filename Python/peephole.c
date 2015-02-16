@@ -290,7 +290,7 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts, PyObject *v
 static unsigned int *
 markblocks(unsigned char *code, Py_ssize_t len)
 {
-    unsigned int *blocks = (unsigned int *)PyMem_Malloc(len*sizeof(int));
+    unsigned int *blocks = PyMem_New(unsigned int, len);
     int i,j, opcode, blockcnt = 0;
 
     if (blocks == NULL) {
@@ -398,7 +398,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         goto exitUnchanged;
 
     /* Mapping to new jump targets after NOPs are removed */
-    addrmap = (int *)PyMem_Malloc(codelen * sizeof(int));
+    addrmap = PyMem_New(int, codelen);
     if (addrmap == NULL) {
         PyErr_NoMemory();
         goto exitError;
