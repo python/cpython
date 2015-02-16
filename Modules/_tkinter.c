@@ -21,6 +21,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 */
 
+#define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #include <ctype.h>
@@ -34,7 +35,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #define CHECK_SIZE(size, elemsize) \
-    ((size_t)(size) <= Py_MAX((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
+    ((size_t)(size) <= Py_MIN((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
 
 /* If Tcl is compiled for threads, we must also define TCL_THREAD. We define
    it always; if Tcl is not threaded, the thread functions in
@@ -409,7 +410,7 @@ static PyObject *
 SplitObj(PyObject *arg)
 {
     if (PyTuple_Check(arg)) {
-        int i, size;
+        Py_ssize_t i, size;
         PyObject *elem, *newelem, *result;
 
         size = PyTuple_Size(arg);
@@ -425,7 +426,7 @@ SplitObj(PyObject *arg)
                 return NULL;
             }
             if (!result) {
-                int k;
+                Py_ssize_t k;
                 if (newelem == elem) {
                     Py_DECREF(newelem);
                     continue;
@@ -446,7 +447,7 @@ SplitObj(PyObject *arg)
         /* Fall through, returning arg. */
     }
     else if (PyList_Check(arg)) {
-        int i, size;
+        Py_ssize_t i, size;
         PyObject *elem, *newelem, *result;
 
         size = PyList_GET_SIZE(arg);
@@ -632,12 +633,12 @@ Tkapp_New(const char *screenName, const char *className,
     /* some initial arguments need to be in argv */
     if (sync || use) {
         char *args;
-        int len = 0;
+        Py_ssize_t len = 0;
 
         if (sync)
             len += sizeof "-sync";
         if (use)
-            len += strlen(use) + sizeof "-use ";
+            len += strlen(use) + sizeof "-use ";  /* never overflows */
 
         args = (char*)PyMem_Malloc(len);
         if (!args) {
@@ -887,9 +888,14 @@ AsObj(PyObject *value)
     long longVal;
     int overflow;
 
-    if (PyBytes_Check(value))
+    if (PyBytes_Check(value)) {
+        if (PyBytes_GET_SIZE(value) >= INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "bytes object is too long");
+            return NULL;
+        }
         return Tcl_NewByteArrayObj((unsigned char *)PyBytes_AS_STRING(value),
-                                   PyBytes_GET_SIZE(value));
+                                   (int)PyBytes_GET_SIZE(value));
+    }
     else if (PyBool_Check(value))
         return Tcl_NewBooleanObj(PyObject_IsTrue(value));
     else if (PyLong_CheckExact(value) &&
@@ -921,7 +927,7 @@ AsObj(PyObject *value)
         }
         for (i = 0; i < size; i++)
           argv[i] = AsObj(PySequence_Fast_GET_ITEM(value,i));
-        result = Tcl_NewListObj(size, argv);
+        result = Tcl_NewListObj((int)size, argv);
         PyMem_Free(argv);
         return result;
     }
@@ -946,7 +952,7 @@ AsObj(PyObject *value)
         }
         kind = PyUnicode_KIND(value);
         if (kind == sizeof(Tcl_UniChar))
-            return Tcl_NewUnicodeObj(inbuf, size);
+            return Tcl_NewUnicodeObj(inbuf, (int)size);
         allocsize = ((size_t)size) * sizeof(Tcl_UniChar);
         outbuf = (Tcl_UniChar*)PyMem_Malloc(allocsize);
         /* Else overflow occurred, and we take the next exit */
@@ -971,7 +977,7 @@ AsObj(PyObject *value)
 #endif
             outbuf[i] = ch;
         }
-        result = Tcl_NewUnicodeObj(outbuf, size);
+        result = Tcl_NewUnicodeObj(outbuf, (int)size);
         PyMem_Free(outbuf);
         return result;
     }
@@ -1139,10 +1145,10 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
             Tcl_IncrRefCount(objv[i]);
         }
     }
-    *pobjc = objc;
+    *pobjc = (int)objc;
     return objv;
 finally:
-    Tkapp_CallDeallocArgs(objv, objStore, objc);
+    Tkapp_CallDeallocArgs(objv, objStore, (int)objc);
     return NULL;
 }
 
@@ -1495,7 +1501,6 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
 #ifdef WITH_THREAD
     TkappObject *self = (TkappObject*)selfptr;
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
-        TkappObject *self = (TkappObject*)selfptr;
         VarEvent *ev;
         PyObject *res, *exc_type, *exc_val;
         Tcl_Condition cond = NULL;
@@ -2721,20 +2726,20 @@ static PyType_Spec Tkapp_Type_spec = {
 
 typedef struct {
     PyObject* tuple;
-    int size; /* current size */
-    int maxsize; /* allocated size */
+    Py_ssize_t size; /* current size */
+    Py_ssize_t maxsize; /* allocated size */
 } FlattenContext;
 
 static int
-_bump(FlattenContext* context, int size)
+_bump(FlattenContext* context, Py_ssize_t size)
 {
     /* expand tuple to hold (at least) size new items.
        return true if successful, false if an exception was raised */
 
-    int maxsize = context->maxsize * 2;
+    Py_ssize_t maxsize = context->maxsize * 2;  /* never overflows */
 
     if (maxsize < context->size + size)
-        maxsize = context->size + size;
+        maxsize = context->size + size;  /* never overflows */
 
     context->maxsize = maxsize;
 
@@ -2746,7 +2751,7 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
 {
     /* add tuple or list to argument tuple (recursively) */
 
-    int i, size;
+    Py_ssize_t i, size;
 
     if (depth > 1000) {
         PyErr_SetString(PyExc_ValueError,

@@ -11,6 +11,8 @@
  *--------------------------------------------------------------------
  */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -185,8 +187,8 @@ typedef struct {
     PyObject* attrib;
 
     /* child elements */
-    int length; /* actual number of items */
-    int allocated; /* allocated items */
+    Py_ssize_t length; /* actual number of items */
+    Py_ssize_t allocated; /* allocated items */
 
     /* this either points to _children or to a malloced buffer */
     PyObject* *children;
@@ -251,7 +253,7 @@ LOCAL(void)
 dealloc_extra(ElementObject* self)
 {
     ElementObjectExtra *myextra;
-    int i;
+    Py_ssize_t i;
 
     if (!self->extra)
         return;
@@ -429,9 +431,9 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 LOCAL(int)
-element_resize(ElementObject* self, int extra)
+element_resize(ElementObject* self, Py_ssize_t extra)
 {
-    int size;
+    Py_ssize_t size;
     PyObject* *children;
 
     /* make sure self->children can hold the given number of extra
@@ -442,7 +444,7 @@ element_resize(ElementObject* self, int extra)
             return -1;
     }
 
-    size = self->extra->length + extra;
+    size = self->extra->length + extra;  /* never overflows */
 
     if (size > self->extra->allocated) {
         /* use Python 2.4's list growth strategy */
@@ -453,6 +455,8 @@ element_resize(ElementObject* self, int extra)
          * be safe.
          */
         size = size ? size : 1;
+        if ((size_t)size > PY_SSIZE_T_MAX/sizeof(PyObject*))
+            goto nomemory;
         if (self->extra->children != self->extra->_children) {
             /* Coverity CID #182 size_error: Allocating 1 bytes to pointer
              * "children", which needs at least 4 bytes. Although it's a
@@ -613,7 +617,7 @@ element_gc_traverse(ElementObject *self, visitproc visit, void *arg)
     Py_VISIT(JOIN_OBJ(self->tail));
 
     if (self->extra) {
-        int i;
+        Py_ssize_t i;
         Py_VISIT(self->extra->attrib);
 
         for (i = 0; i < self->extra->length; ++i)
@@ -689,7 +693,7 @@ element_clearmethod(ElementObject* self, PyObject* args)
 static PyObject*
 element_copy(ElementObject* self, PyObject* args)
 {
-    int i;
+    Py_ssize_t i;
     ElementObject* element;
 
     if (!PyArg_ParseTuple(args, ":__copy__"))
@@ -728,7 +732,7 @@ element_copy(ElementObject* self, PyObject* args)
 static PyObject*
 element_deepcopy(ElementObject* self, PyObject* args)
 {
-    int i;
+    Py_ssize_t i;
     ElementObject* element;
     PyObject* tag;
     PyObject* attrib;
@@ -839,7 +843,7 @@ element_sizeof(PyObject* myself, PyObject* args)
 static PyObject *
 element_getstate(ElementObject *self)
 {
-    int i, noattrib;
+    Py_ssize_t i, noattrib;
     PyObject *instancedict = NULL, *children;
 
     /* Build a list of children. */
@@ -1077,7 +1081,7 @@ element_extend(ElementObject* self, PyObject* args)
 static PyObject*
 element_find(ElementObject *self, PyObject *args, PyObject *kwds)
 {
-    int i;
+    Py_ssize_t i;
     PyObject* tag;
     PyObject* namespaces = Py_None;
     static char *kwlist[] = {"path", "namespaces", 0};
@@ -1112,7 +1116,7 @@ element_find(ElementObject *self, PyObject *args, PyObject *kwds)
 static PyObject*
 element_findtext(ElementObject *self, PyObject *args, PyObject *kwds)
 {
-    int i;
+    Py_ssize_t i;
     PyObject* tag;
     PyObject* default_value = Py_None;
     PyObject* namespaces = Py_None;
@@ -1153,7 +1157,7 @@ element_findtext(ElementObject *self, PyObject *args, PyObject *kwds)
 static PyObject*
 element_findall(ElementObject *self, PyObject *args, PyObject *kwds)
 {
-    int i;
+    Py_ssize_t i;
     PyObject* out;
     PyObject* tag;
     PyObject* namespaces = Py_None;
@@ -1238,7 +1242,7 @@ element_get(ElementObject* self, PyObject* args, PyObject* kwds)
 static PyObject*
 element_getchildren(ElementObject* self, PyObject* args)
 {
-    int i;
+    Py_ssize_t i;
     PyObject* list;
 
     /* FIXME: report as deprecated? */
@@ -1310,11 +1314,9 @@ element_getitem(PyObject* self_, Py_ssize_t index)
 static PyObject*
 element_insert(ElementObject* self, PyObject* args)
 {
-    int i;
-
-    int index;
+    Py_ssize_t index, i;
     PyObject* element;
-    if (!PyArg_ParseTuple(args, "iO!:insert", &index,
+    if (!PyArg_ParseTuple(args, "nO!:insert", &index,
                           &Element_Type, &element))
         return NULL;
 
@@ -1402,7 +1404,7 @@ element_makeelement(PyObject* self, PyObject* args, PyObject* kw)
 static PyObject*
 element_remove(ElementObject* self, PyObject* args)
 {
-    int i;
+    Py_ssize_t i;
 
     PyObject* element;
     if (!PyArg_ParseTuple(args, "O!:remove", &Element_Type, &element))
@@ -1481,7 +1483,7 @@ static int
 element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
 {
     ElementObject* self = (ElementObject*) self_;
-    int i;
+    Py_ssize_t i;
     PyObject* old;
 
     if (!self->extra || index < 0 || index >= self->extra->length) {
@@ -2819,12 +2821,13 @@ makeuniversal(XMLParserObject* self, const char* string)
  * message string is the default for the given error_code.
 */
 static void
-expat_set_error(enum XML_Error error_code, int line, int column, char *message)
+expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
+                const char *message)
 {
     PyObject *errmsg, *error, *position, *code;
     elementtreestate *st = ET_STATE_GLOBAL;
 
-    errmsg = PyUnicode_FromFormat("%s: line %d, column %d",
+    errmsg = PyUnicode_FromFormat("%s: line %zd, column %zd",
                 message ? message : EXPAT(ErrorString)(error_code),
                 line, column);
     if (errmsg == NULL)
@@ -2848,7 +2851,7 @@ expat_set_error(enum XML_Error error_code, int line, int column, char *message)
     }
     Py_DECREF(code);
 
-    position = Py_BuildValue("(ii)", line, column);
+    position = Py_BuildValue("(nn)", line, column);
     if (!position) {
         Py_DECREF(error);
         return;
@@ -3477,8 +3480,14 @@ xmlparser_parse_whole(XMLParserObject* self, PyObject* args)
             break;
         }
 
+        if (PyBytes_GET_SIZE(buffer) > INT_MAX) {
+            Py_DECREF(buffer);
+            Py_DECREF(reader);
+            PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
+            return NULL;
+        }
         res = expat_parse(
-            self, PyBytes_AS_STRING(buffer), PyBytes_GET_SIZE(buffer), 0
+            self, PyBytes_AS_STRING(buffer), (int)PyBytes_GET_SIZE(buffer), 0
             );
 
         Py_DECREF(buffer);

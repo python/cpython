@@ -673,7 +673,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                             "* wants int");
                         goto error;
                     }
-                    prec = PyLong_AsSsize_t(v);
+                    prec = _PyLong_AsInt(v);
                     if (prec == -1 && PyErr_Occurred())
                         goto error;
                     if (prec < 0)
