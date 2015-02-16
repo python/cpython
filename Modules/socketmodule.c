@@ -4213,9 +4213,11 @@ socket_gethostname(PyObject *self, PyObject *unused)
 
     /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
        names */
-    name = PyMem_Malloc(size * sizeof(wchar_t));
-    if (!name)
+    name = PyMem_New(wchar_t, size);
+    if (!name) {
+        PyErr_NoMemory();
         return NULL;
+    }
     if (!GetComputerNameExW(ComputerNamePhysicalDnsHostname,
                            name,
                            &size))
