@@ -1258,7 +1258,7 @@ Py_FatalError(const char *msg)
         PyErr_PrintEx(0);
     }
     else {
-        tstate = _Py_atomic_load_relaxed(&_PyThreadState_Current);
+        tstate = (PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current);
         if (tstate != NULL) {
             fputc('\n', stderr);
             fflush(stderr);

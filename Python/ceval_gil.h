@@ -191,7 +191,7 @@ static void drop_gil(PyThreadState *tstate)
     if (_Py_atomic_load_relaxed(&gil_drop_request) && tstate != NULL) {
         MUTEX_LOCK(switch_mutex);
         /* Not switched yet => wait */
-        if (_Py_atomic_load_relaxed(&gil_last_holder) == tstate) {
+        if ((PyThreadState*)_Py_atomic_load_relaxed(&gil_last_holder) == tstate) {
         RESET_GIL_DROP_REQUEST();
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
@@ -239,7 +239,7 @@ _ready:
     _Py_atomic_store_relaxed(&gil_locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil_locked, /*is_write=*/1);
 
-    if (tstate != _Py_atomic_load_relaxed(&gil_last_holder)) {
+    if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil_last_holder)) {
         _Py_atomic_store_relaxed(&gil_last_holder, tstate);
         ++gil_switch_number;
     }
