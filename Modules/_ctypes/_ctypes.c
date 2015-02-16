@@ -4469,8 +4469,11 @@ Array_subscript(PyObject *_self, PyObject *item)
                                               slicelen);
             }
 
-            dest = (wchar_t *)PyMem_Malloc(
-                                    slicelen * sizeof(wchar_t));
+            dest = PyMem_New(wchar_t, slicelen);
+            if (dest == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
 
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
@@ -5250,7 +5253,7 @@ Pointer_subscript(PyObject *_self, PyObject *item)
                 return PyUnicode_FromWideChar(ptr + start,
                                               len);
             }
-            dest = (wchar_t *)PyMem_Malloc(len * sizeof(wchar_t));
+            dest = PyMem_New(wchar_t, len);
             if (dest == NULL)
                 return PyErr_NoMemory();
             for (cur = start, i = 0; i < len; cur += step, i++) {

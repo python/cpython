@@ -314,7 +314,7 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     }
     /* Convert the unicode strings to wchar[]. */
     len1 = PyUnicode_GET_SIZE(os1) + 1;
-    ws1 = PyMem_MALLOC(len1 * sizeof(wchar_t));
+    ws1 = PyMem_NEW(wchar_t, len1);
     if (!ws1) {
         PyErr_NoMemory();
         goto done;
@@ -323,7 +323,7 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
         goto done;
     ws1[len1 - 1] = 0;
     len2 = PyUnicode_GET_SIZE(os2) + 1;
-    ws2 = PyMem_MALLOC(len2 * sizeof(wchar_t));
+    ws2 = PyMem_NEW(wchar_t, len2);
     if (!ws2) {
         PyErr_NoMemory();
         goto done;
