@@ -148,17 +148,12 @@ class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
 class PyCoroutineMixin(object):
     def handle_signature(self, sig, signode):
         ret = super(PyCoroutineMixin, self).handle_signature(sig, signode)
-#        signode.insert(0, addnodes.desc_addname('coroutine ', 'coroutine '))
         signode.insert(0, addnodes.desc_annotation('coroutine ', 'coroutine '))
         return ret
-
-    def needs_arglist(self):
-        return False
 
 
 class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
     def run(self):
-        # a decorator function is a function after all
         self.name = 'py:function'
         return PyModulelevel.run(self)
 
