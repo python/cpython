@@ -367,6 +367,7 @@ class SubprocessMixin:
             proc.kill = kill
             returncode = transport.get_returncode()
             transport.close()
+            yield from transport._wait()
             return (returncode, kill_called)
 
         # Ignore "Close running child process: kill ..." log
