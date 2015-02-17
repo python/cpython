@@ -34,8 +34,8 @@ except ImportError:
 # > ** Changed from previous "range-and-a-half" to "none"; the
 # > range-and-a-half checking wasn't particularly useful.
 #
-# Plus a C API or two, e.g. PyInt_AsLongMask() ->
-# unsigned long and PyInt_AsLongLongMask() -> unsigned
+# Plus a C API or two, e.g. PyLong_AsUnsignedLongMask() ->
+# unsigned long and PyLong_AsUnsignedLongLongMask() -> unsigned
 # long long (if that exists).
 
 LARGE = 0x7FFFFFFF

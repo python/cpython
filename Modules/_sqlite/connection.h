@@ -52,7 +52,7 @@ typedef struct
      * first get called with count=0? */
     double timeout_started;
 
-    /* None for autocommit, otherwise a PyString with the isolation level */
+    /* None for autocommit, otherwise a PyUnicode with the isolation level */
     PyObject* isolation_level;
 
     /* NULL for autocommit, otherwise a string with the BEGIN statement; will be
