@@ -3,12 +3,15 @@ import sys
 import builtins
 import contextlib
 import difflib
+import importlib.util
 import inspect
 import pydoc
+import py_compile
 import keyword
 import _pickle
 import pkgutil
 import re
+import stat
 import string
 import test.support
 import time
@@ -557,6 +560,18 @@ class PydocDocTest(unittest.TestCase):
 
         self.assertEqual(synopsis, expected)
 
+    def test_synopsis_sourceless_empty_doc(self):
+        with test.support.temp_cwd() as test_dir:
+            init_path = os.path.join(test_dir, 'foomod42.py')
+            cached_path = importlib.util.cache_from_source(init_path)
+            with open(init_path, 'w') as fobj:
+                fobj.write("foo = 1")
+            py_compile.compile(init_path)
+            synopsis = pydoc.synopsis(init_path, {})
+            self.assertIsNone(synopsis)
+            synopsis_cached = pydoc.synopsis(cached_path, {})
+            self.assertIsNone(synopsis_cached)
+
     def test_splitdoc_with_description(self):
         example_string = "I Am A Doc\n\n\nHere is my description"
         self.assertEqual(pydoc.splitdoc(example_string),
@@ -612,6 +627,7 @@ class PydocImportTest(PydocBaseTest):
     def setUp(self):
         self.test_dir = os.mkdir(TESTFN)
         self.addCleanup(rmtree, TESTFN)
+        importlib.invalidate_caches()
 
     def test_badimport(self):
         # This tests the fix for issue 5230, where if pydoc found the module
@@ -669,6 +685,22 @@ class PydocImportTest(PydocBaseTest):
         # No result, no error
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
+
+    def test_apropos_empty_doc(self):
+        pkgdir = os.path.join(TESTFN, 'walkpkg')
+        os.mkdir(pkgdir)
+        self.addCleanup(rmtree, pkgdir)
+        init_path = os.path.join(pkgdir, '__init__.py')
+        with open(init_path, 'w') as fobj:
+            fobj.write("foo = 1")
+        current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
+        try:
+            os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
+            with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
+                pydoc.apropos('')
+            self.assertIn('walkpkg', stdout.getvalue())
+        finally:
+            os.chmod(pkgdir, current_mode)
 
     @unittest.skip('causes undesireable side-effects (#20128)')
     def test_modules(self):
