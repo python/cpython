@@ -310,6 +310,9 @@ Queue
    be interrupted between calling :meth:`qsize` and doing an operation on the
    Queue.
 
+   .. versionchanged:: 3.4.3
+      New :meth:`join` and :meth:`task_done` methods.
+
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
@@ -341,6 +344,20 @@ Queue
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
 
+   .. coroutinemethod:: join()
+
+      Block until all items in the queue have been gotten and processed.
+
+      The count of unfinished tasks goes up whenever an item is added to the
+      queue. The count goes down whenever a consumer thread calls
+      :meth:`task_done` to indicate that the item was retrieved and all work on
+      it is complete.  When the count of unfinished tasks drops to zero,
+      :meth:`join` unblocks.
+
+      This method is a :ref:`coroutine <coroutine>`.
+
+      .. versionadded:: 3.4.3
+
    .. coroutinemethod:: put(item)
 
       Put an item into the queue. If the queue is full, wait until a free slot
@@ -361,6 +378,23 @@ Queue
    .. method:: qsize()
 
       Number of items in the queue.
+
+   .. method:: task_done()
+
+      Indicate that a formerly enqueued task is complete.
+
+      Used by queue consumers. For each :meth:`~Queue.get` used to fetch a task, a
+      subsequent call to :meth:`task_done` tells the queue that the processing
+      on the task is complete.
+
+      If a :meth:`join` is currently blocking, it will resume when all items
+      have been processed (meaning that a :meth:`task_done` call was received
+      for every item that had been :meth:`~Queue.put` into the queue).
+
+      Raises :exc:`ValueError` if called more times than there were items
+      placed in the queue.
+
+      .. versionadded:: 3.4.3
 
    .. attribute:: maxsize
 
@@ -392,35 +426,9 @@ JoinableQueue
 
 .. class:: JoinableQueue
 
-   A subclass of :class:`Queue` with :meth:`task_done` and :meth:`join`
-   methods.
+   Deprecated alias for :class:`Queue`.
 
-   .. coroutinemethod:: join()
-
-      Block until all items in the queue have been gotten and processed.
-
-      The count of unfinished tasks goes up whenever an item is added to the
-      queue. The count goes down whenever a consumer thread calls
-      :meth:`task_done` to indicate that the item was retrieved and all work on
-      it is complete.  When the count of unfinished tasks drops to zero,
-      :meth:`join` unblocks.
-
-      This method is a :ref:`coroutine <coroutine>`.
-
-   .. method:: task_done()
-
-      Indicate that a formerly enqueued task is complete.
-
-      Used by queue consumers. For each :meth:`~Queue.get` used to fetch a task, a
-      subsequent call to :meth:`task_done` tells the queue that the processing
-      on the task is complete.
-
-      If a :meth:`join` is currently blocking, it will resume when all items
-      have been processed (meaning that a :meth:`task_done` call was received
-      for every item that had been :meth:`~Queue.put` into the queue).
-
-      Raises :exc:`ValueError` if called more times than there were items
-      placed in the queue.
+   .. deprecated:: 3.4.3
 
 
 Exceptions
