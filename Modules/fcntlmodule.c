@@ -152,11 +152,8 @@ fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code, PyObject *ob_ar
 /*[clinic end generated code: output=ad47738c118622bf input=a55a6ee8e494c449]*/
 {
 #define IOCTL_BUFSZ 1024
-    /* We use the unsigned non-checked 'I'
-       format for the 'code' parameter because Python turns 0x8000000
-       into either a large positive number (PyLong or PyInt on 64-bit
-       platforms) or a negative number on others (32-bit PyInt)
-       whereas the system expects it to be a 32bit bit field value
+    /* We use the unsigned non-checked 'I' format for the 'code' parameter
+       because the system expects it to be a 32bit bit field value
        regardless of it being passed as an int or unsigned long on
        various platforms.  See the termios.TIOCSWINSZ constant across
        platforms for an example of this.
