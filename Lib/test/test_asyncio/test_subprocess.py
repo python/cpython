@@ -355,11 +355,19 @@ class SubprocessMixin:
             create = self.loop.subprocess_exec(asyncio.SubprocessProtocol,
                                                *PROGRAM_BLOCKED)
             transport, protocol = yield from create
+
+            kill_called = False
+            def kill():
+                nonlocal kill_called
+                kill_called = True
+                orig_kill()
+
             proc = transport.get_extra_info('subprocess')
-            proc.kill = mock.Mock()
+            orig_kill = proc.kill
+            proc.kill = kill
             returncode = transport.get_returncode()
             transport.close()
-            return (returncode, proc.kill.called)
+            return (returncode, kill_called)
 
         # Ignore "Close running child process: kill ..." log
         with test_utils.disable_logger():
