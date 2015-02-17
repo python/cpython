@@ -408,14 +408,14 @@ class PriorityQueueTests(_QueueTestBase):
         self.assertEqual([1, 2, 3], items)
 
 
-class JoinableQueueTests(_QueueTestBase):
+class QueueJoinTests(_QueueTestBase):
 
     def test_task_done_underflow(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = asyncio.Queue(loop=self.loop)
         self.assertRaises(ValueError, q.task_done)
 
     def test_task_done(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = asyncio.Queue(loop=self.loop)
         for i in range(100):
             q.put_nowait(i)
 
@@ -452,7 +452,7 @@ class JoinableQueueTests(_QueueTestBase):
         self.loop.run_until_complete(asyncio.wait(tasks, loop=self.loop))
 
     def test_join_empty_queue(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = asyncio.Queue(loop=self.loop)
 
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
@@ -465,7 +465,7 @@ class JoinableQueueTests(_QueueTestBase):
         self.loop.run_until_complete(join())
 
     def test_format(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = asyncio.Queue(loop=self.loop)
         self.assertEqual(q._format(), 'maxsize=0')
 
         q._unfinished_tasks = 2
