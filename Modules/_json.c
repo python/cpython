@@ -827,7 +827,7 @@ bail:
 
 static PyObject *
 _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
-    /* Read a JSON array from PyString pystr.
+    /* Read a JSON array from PyUnicode pystr.
     idx is the index of the first character after the opening brace.
     *next_idx_ptr is a return-by-reference index to the first character after
         the closing brace.
@@ -899,8 +899,8 @@ bail:
 }
 
 static PyObject *
-_parse_constant(PyScannerObject *s, char *constant, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
-    /* Read a JSON constant from PyString pystr.
+_parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
+    /* Read a JSON constant.
     constant is the constant string that was found
         ("NaN", "Infinity", "-Infinity").
     idx is the index of the first character of the constant
@@ -932,7 +932,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
         the number.
 
     Returns a new PyObject representation of that number:
-        PyInt, PyLong, or PyFloat.
+        PyLong, or PyFloat.
         May return other types if parse_int or parse_float are set
     */
     void *str;

@@ -4606,7 +4606,7 @@ ext_call_fail:
     return result;
 }
 
-/* Extract a slice index from a PyInt or PyLong or an object with the
+/* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
    and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.

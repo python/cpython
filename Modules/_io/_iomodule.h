@@ -69,7 +69,7 @@ extern int _PyIO_trap_eintr(void);
  * Offset type for positioning.
  */
 
-/* Printing a variable of type off_t (with e.g., PyString_FromFormat)
+/* Printing a variable of type off_t (with e.g., PyUnicode_FromFormat)
    correctly and without producing compiler warnings is surprisingly painful.
    We identify an integer type whose size matches off_t and then: (1) cast the
    off_t to that integer type and (2) use the appropriate conversion

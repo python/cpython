@@ -3874,7 +3874,7 @@ typedef struct {
 
 fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
-    assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyInt(1));
+    assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyLong(1));
     Advances with:  cnt += 1
     When count hits Y_SSIZE_T_MAX, switch to slow_mode.
 
