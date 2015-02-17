@@ -57,6 +57,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         info.append('pid=%s' % self._pid)
         if self._returncode is not None:
             info.append('returncode=%s' % self._returncode)
+        else:
+            info.append('running')
 
         stdin = self._pipes.get(0)
         if stdin is not None:
