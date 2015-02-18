@@ -20,7 +20,6 @@ python.pc.in            Package configuration info template for pkg-config
 python-wing*.wpr        Wing IDE project file
 README                  The file you're reading now
 README.valgrind         Information for Valgrind users, see valgrind-python.supp
-RPM                     (Old) tools to build RPMs
 SpecialBuilds.txt       Describes extra symbols you can set for debug builds
 TextMate                A TextMate bundle for Python development
 valgrind-python.supp    Valgrind suppression file, see README.valgrind
