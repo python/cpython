@@ -34,7 +34,6 @@ README.klocwork         Information about running Klocwork's K7 on Python
 README.OpenBSD          Help for building problems on OpenBSD
 README.valgrind         Information for Valgrind users, see valgrind-python.supp
 RFD                     Request For Discussion about a Python newsgroup
-RPM                     (Old) tools to build RPMs
 setuid-prog.c           C helper program for set-uid Python scripts
 SpecialBuilds.txt       Describes extra symbols you can set for debug builds
 TextMate                A TextMate bundle for Python development
