@@ -64,6 +64,18 @@ of which this module provides three different variants:
 
       Contains the server instance.
 
+   .. attribute:: close_connection
+
+      Boolean that should be set before :meth:`handle_one_request` returns,
+      indicating if another request may be expected, or if the connection should
+      be shut down.
+
+   .. attribute:: requestline
+
+      Contains the string representation of the HTTP request line. The
+      terminating CRLF is stripped. This attribute should be set by
+      :meth:`handle_one_request`. If no valid request line was processed, it
+      should be set to the empty string.
 
    .. attribute:: command
 
