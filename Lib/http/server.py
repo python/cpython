@@ -275,7 +275,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         """
         self.command = None  # set in case of error on the first line
         self.request_version = version = self.default_request_version
-        self.close_connection = 1
+        self.close_connection = True
         requestline = str(self.raw_requestline, 'iso-8859-1')
         requestline = requestline.rstrip('\r\n')
         self.requestline = requestline
@@ -305,7 +305,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     "Bad request version (%r)" % version)
                 return False
             if version_number >= (1, 1) and self.protocol_version >= "HTTP/1.1":
-                self.close_connection = 0
+                self.close_connection = False
             if version_number >= (2, 0):
                 self.send_error(
                     HTTPStatus.HTTP_VERSION_NOT_SUPPORTED,
@@ -313,7 +313,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 return False
         elif len(words) == 2:
             command, path = words
-            self.close_connection = 1
+            self.close_connection = True
             if command != 'GET':
                 self.send_error(
                     HTTPStatus.BAD_REQUEST,
@@ -340,10 +340,10 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
-            self.close_connection = 1
+            self.close_connection = True
         elif (conntype.lower() == 'keep-alive' and
               self.protocol_version >= "HTTP/1.1"):
-            self.close_connection = 0
+            self.close_connection = False
         # Examine the headers and look for an Expect directive
         expect = self.headers.get('Expect', "")
         if (expect.lower() == "100-continue" and
@@ -388,7 +388,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 self.send_error(HTTPStatus.REQUEST_URI_TOO_LONG)
                 return
             if not self.raw_requestline:
-                self.close_connection = 1
+                self.close_connection = True
                 return
             if not self.parse_request():
                 # An error code has been sent, just exit
@@ -405,12 +405,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         except socket.timeout as e:
             #a read or a write timed out.  Discard this connection
             self.log_error("Request timed out: %r", e)
-            self.close_connection = 1
+            self.close_connection = True
             return
 
     def handle(self):
         """Handle multiple requests if necessary."""
-        self.close_connection = 1
+        self.close_connection = True
 
         self.handle_one_request()
         while not self.close_connection:
@@ -496,9 +496,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         if keyword.lower() == 'connection':
             if value.lower() == 'close':
-                self.close_connection = 1
+                self.close_connection = True
             elif value.lower() == 'keep-alive':
-                self.close_connection = 0
+                self.close_connection = False
 
     def end_headers(self):
         """Send the blank line ending the MIME headers."""
