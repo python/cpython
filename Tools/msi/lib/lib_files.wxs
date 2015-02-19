@@ -46,6 +46,13 @@
             </Component>
             
             <?endforeach ?>
+            
+            <Component Id="sqlite3_d.dll" Directory="DLLs" Guid="*">
+                <File Name="sqlite3_d.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="sqlite3_d.pdb" Directory="DLLs" Guid="*">
+                <File Name="sqlite3_d.pdb" KeyPath="yes" />
+            </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
