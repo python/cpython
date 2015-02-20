@@ -163,8 +163,14 @@ class FinderTests:
     def test_deleted_cwd(self):
         # Issue #22834
         self.addCleanup(os.chdir, os.getcwd())
-        with tempfile.TemporaryDirectory() as path:
-            os.chdir(path)
+        try:
+            with tempfile.TemporaryDirectory() as path:
+                os.chdir(path)
+        except OSError as exc:
+            if exc.errno == 22:
+                # issue #22834
+                self.skipTest("platform does not allow the deletion of the cwd")
+            raise
         with util.import_state(path=['']):
             # Do not want FileNotFoundError raised.
             self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
