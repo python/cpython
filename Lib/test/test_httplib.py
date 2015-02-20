@@ -939,6 +939,67 @@ class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEqual(client.responses[client.NOT_FOUND], "Not Found")
 
+    def test_client_constants(self):
+        # Make sure we don't break backward compatibility with 3.4
+        expected = [
+            'CONTINUE',
+            'SWITCHING_PROTOCOLS',
+            'PROCESSING',
+            'OK',
+            'CREATED',
+            'ACCEPTED',
+            'NON_AUTHORITATIVE_INFORMATION',
+            'NO_CONTENT',
+            'RESET_CONTENT',
+            'PARTIAL_CONTENT',
+            'MULTI_STATUS',
+            'IM_USED',
+            'MULTIPLE_CHOICES',
+            'MOVED_PERMANENTLY',
+            'FOUND',
+            'SEE_OTHER',
+            'NOT_MODIFIED',
+            'USE_PROXY',
+            'TEMPORARY_REDIRECT',
+            'BAD_REQUEST',
+            'UNAUTHORIZED',
+            'PAYMENT_REQUIRED',
+            'FORBIDDEN',
+            'NOT_FOUND',
+            'METHOD_NOT_ALLOWED',
+            'NOT_ACCEPTABLE',
+            'PROXY_AUTHENTICATION_REQUIRED',
+            'REQUEST_TIMEOUT',
+            'CONFLICT',
+            'GONE',
+            'LENGTH_REQUIRED',
+            'PRECONDITION_FAILED',
+            'REQUEST_ENTITY_TOO_LARGE',
+            'REQUEST_URI_TOO_LONG',
+            'UNSUPPORTED_MEDIA_TYPE',
+            'REQUESTED_RANGE_NOT_SATISFIABLE',
+            'EXPECTATION_FAILED',
+            'UNPROCESSABLE_ENTITY',
+            'LOCKED',
+            'FAILED_DEPENDENCY',
+            'UPGRADE_REQUIRED',
+            'PRECONDITION_REQUIRED',
+            'TOO_MANY_REQUESTS',
+            'REQUEST_HEADER_FIELDS_TOO_LARGE',
+            'INTERNAL_SERVER_ERROR',
+            'NOT_IMPLEMENTED',
+            'BAD_GATEWAY',
+            'SERVICE_UNAVAILABLE',
+            'GATEWAY_TIMEOUT',
+            'HTTP_VERSION_NOT_SUPPORTED',
+            'INSUFFICIENT_STORAGE',
+            'NOT_EXTENDED',
+            'NETWORK_AUTHENTICATION_REQUIRED',
+        ]
+        for const in expected:
+            with self.subTest(constant=const):
+                self.assertTrue(hasattr(client, const))
+
 
 class SourceAddressTest(TestCase):
     def setUp(self):
