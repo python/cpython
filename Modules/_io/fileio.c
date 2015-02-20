@@ -126,11 +126,18 @@ internal_close(fileio *self)
 static PyObject *
 fileio_close(fileio *self)
 {
+    PyObject *res;
+    PyObject *exc, *val, *tb;
+    int rc;
     _Py_IDENTIFIER(close);
+    res = _PyObject_CallMethodId((PyObject*)&PyRawIOBase_Type,
+                                 &PyId_close, "O", self);
     if (!self->closefd) {
         self->fd = -1;
-        Py_RETURN_NONE;
+        return res;
     }
+    if (res == NULL)
+        PyErr_Fetch(&exc, &val, &tb);
     if (self->finalizing) {
         PyObject *r = fileio_dealloc_warn(self, (PyObject *) self);
         if (r)
@@ -138,12 +145,12 @@ fileio_close(fileio *self)
         else
             PyErr_Clear();
     }
-    errno = internal_close(self);
-    if (errno < 0)
-        return NULL;
-
-    return _PyObject_CallMethodId((PyObject*)&PyRawIOBase_Type,
-                                  &PyId_close, "O", self);
+    rc = internal_close(self);
+    if (res == NULL)
+        _PyErr_ChainExceptions(exc, val, tb);
+    if (rc < 0)
+        Py_CLEAR(res);
+    return res;
 }
 
 static PyObject *
