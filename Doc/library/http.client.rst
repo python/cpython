@@ -169,6 +169,12 @@ The following exceptions are raised as appropriate:
    status code that we don't understand.
 
 
+.. exception:: LineTooLong
+
+   A subclass of :exc:`HTTPException`.  Raised if an excessively long line
+   is received in the HTTP protocol from the server.
+
+
 The constants defined in this module are:
 
 .. data:: HTTP_PORT

@@ -75,12 +75,14 @@ import socket
 import collections
 from urllib.parse import urlsplit
 
+# HTTPMessage, parse_headers(), and the HTTP status code constants are
+# intentionally omitted for simplicity
 __all__ = ["HTTPResponse", "HTTPConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",
            "UnknownTransferEncoding", "UnimplementedFileMode",
            "IncompleteRead", "InvalidURL", "ImproperConnectionState",
            "CannotSendRequest", "CannotSendHeader", "ResponseNotReady",
-           "BadStatusLine", "error", "responses"]
+           "BadStatusLine", "LineTooLong", "error", "responses"]
 
 HTTP_PORT = 80
 HTTPS_PORT = 443
