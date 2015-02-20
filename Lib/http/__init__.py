@@ -93,8 +93,8 @@ class HTTPStatus(IntEnum):
         'URI is too long')
     UNSUPPORTED_MEDIA_TYPE = (415, 'Unsupported Media Type',
         'Entity body in unsupported format')
-    REQUEST_RANGE_NOT_SATISFIABLE = (416,
-        'Request Range Not Satisfiable',
+    REQUESTED_RANGE_NOT_SATISFIABLE = (416,
+        'Requested Range Not Satisfiable',
         'Cannot satisfy request range')
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
@@ -107,8 +107,8 @@ class HTTPStatus(IntEnum):
     TOO_MANY_REQUESTS = (429, 'Too Many Requests',
         'The user has sent too many requests in '
         'a given amount of time ("rate limiting")')
-    REQUEST_HEADER_FIELD_TOO_LARGE = (431,
-        'Request Header Field Too Large',
+    REQUEST_HEADER_FIELDS_TOO_LARGE = (431,
+        'Request Header Fields Too Large',
         'The server is unwilling to process the request because its header '
         'fields are too large')
 
