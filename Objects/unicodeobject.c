@@ -1535,6 +1535,10 @@ _PyUnicode_Ready(PyObject *unicode)
         /* in case the native representation is 2-bytes, we need to allocate a
            new normalized 4-byte version. */
         length_wo_surrogates = _PyUnicode_WSTR_LENGTH(unicode) - num_surrogates;
+        if (length_wo_surrogates > PY_SSIZE_T_MAX / 4 - 1) {
+            PyErr_NoMemory();
+            return -1;
+        }
         _PyUnicode_DATA_ANY(unicode) = PyObject_MALLOC(4 * (length_wo_surrogates + 1));
         if (!_PyUnicode_DATA_ANY(unicode)) {
             PyErr_NoMemory();
@@ -3846,6 +3850,11 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
 #endif
         }
         else {
+            if ((size_t)_PyUnicode_LENGTH(unicode) >
+                    PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
+                PyErr_NoMemory();
+                return NULL;
+            }
             _PyUnicode_WSTR(unicode) = (wchar_t *) PyObject_MALLOC(sizeof(wchar_t) *
                                                   (_PyUnicode_LENGTH(unicode) + 1));
             if (!_PyUnicode_WSTR(unicode)) {
