@@ -564,13 +564,43 @@ class IOTest(unittest.TestCase):
         with self.open(zero, "r") as f:
             self.assertRaises(OverflowError, f.read)
 
-    def test_flush_error_on_close(self):
-        f = self.open(support.TESTFN, "wb", buffering=0)
+    def check_flush_error_on_close(self, *args, **kwargs):
+        # Test that the file is closed despite failed flush
+        # and that flush() is called before file closed.
+        f = self.open(*args, **kwargs)
+        closed = []
         def bad_flush():
+            closed[:] = [f.closed]
             raise IOError()
         f.flush = bad_flush
         self.assertRaises(IOError, f.close) # exception not swallowed
         self.assertTrue(f.closed)
+        self.assertTrue(closed)      # flush() called
+        self.assertFalse(closed[0])  # flush() called before file closed
+
+    def test_flush_error_on_close(self):
+        # raw file
+        # Issue #5700: io.FileIO calls flush() after file closed
+        self.check_flush_error_on_close(support.TESTFN, 'wb', buffering=0)
+        fd = os.open(support.TESTFN, os.O_WRONLY|os.O_CREAT)
+        self.check_flush_error_on_close(fd, 'wb', buffering=0)
+        fd = os.open(support.TESTFN, os.O_WRONLY|os.O_CREAT)
+        self.check_flush_error_on_close(fd, 'wb', buffering=0, closefd=False)
+        os.close(fd)
+        # buffered io
+        self.check_flush_error_on_close(support.TESTFN, 'wb')
+        fd = os.open(support.TESTFN, os.O_WRONLY|os.O_CREAT)
+        self.check_flush_error_on_close(fd, 'wb')
+        fd = os.open(support.TESTFN, os.O_WRONLY|os.O_CREAT)
+        self.check_flush_error_on_close(fd, 'wb', closefd=False)
+        os.close(fd)
+        # text io
+        self.check_flush_error_on_close(support.TESTFN, 'w')
+        fd = os.open(support.TESTFN, os.O_WRONLY|os.O_CREAT)
+        self.check_flush_error_on_close(fd, 'w')
+        fd = os.open(support.TESTFN, os.O_WRONLY|os.O_CREAT)
+        self.check_flush_error_on_close(fd, 'w', closefd=False)
+        os.close(fd)
 
     def test_multi_close(self):
         f = self.open(support.TESTFN, "wb", buffering=0)
@@ -741,13 +771,21 @@ class CommonBufferedTests:
         self.assertEqual(repr(b), "<%s name='dummy'>" % clsname)
 
     def test_flush_error_on_close(self):
+        # Test that buffered file is closed despite failed flush
+        # and that flush() is called before file closed.
         raw = self.MockRawIO()
+        closed = []
         def bad_flush():
+            closed[:] = [b.closed, raw.closed]
             raise IOError()
         raw.flush = bad_flush
         b = self.tp(raw)
         self.assertRaises(IOError, b.close) # exception not swallowed
         self.assertTrue(b.closed)
+        self.assertTrue(raw.closed)
+        self.assertTrue(closed)      # flush() called
+        self.assertFalse(closed[0])  # flush() called before file closed
+        self.assertFalse(closed[1])
 
     def test_close_error_on_close(self):
         raw = self.MockRawIO()
@@ -2484,12 +2522,20 @@ class TextIOWrapperTest(unittest.TestCase):
                 self.assertEqual(content.count("Thread%03d\n" % n), 1)
 
     def test_flush_error_on_close(self):
+        # Test that text file is closed despite failed flush
+        # and that flush() is called before file closed.
         txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
+        closed = []
         def bad_flush():
+            closed[:] = [txt.closed, txt.buffer.closed]
             raise IOError()
         txt.flush = bad_flush
         self.assertRaises(IOError, txt.close) # exception not swallowed
         self.assertTrue(txt.closed)
+        self.assertTrue(txt.buffer.closed)
+        self.assertTrue(closed)      # flush() called
+        self.assertFalse(closed[0])  # flush() called before file closed
+        self.assertFalse(closed[1])
 
     def test_multi_close(self):
         txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")

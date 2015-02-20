@@ -101,16 +101,16 @@ internal_close(fileio *self)
 static PyObject *
 fileio_close(fileio *self)
 {
+    PyObject *res;
+    res = PyObject_CallMethod((PyObject*)&PyRawIOBase_Type,
+                              "close", "O", self);
     if (!self->closefd) {
         self->fd = -1;
-        Py_RETURN_NONE;
+        return res;
     }
-    errno = internal_close(self);
-    if (errno < 0)
-        return NULL;
-
-    return PyObject_CallMethod((PyObject*)&PyRawIOBase_Type,
-                               "close", "O", self);
+    if (internal_close(self) < 0)
+        Py_CLEAR(res);
+    return res;
 }
 
 static PyObject *

@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5700: io.FileIO() called flush() after closing the file.
+  flush() was not called in close() if closefd=False.
+
 - Issue #21548: Fix pydoc.synopsis() and pydoc.apropos() on modules with empty
   docstrings.  Initial patch by Yuyang Guo.
 
