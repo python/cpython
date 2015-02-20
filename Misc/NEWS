@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23215: Multibyte codecs with custom error handlers that ignores errors
+  consumed too much memory and raised SystemError or MemoryError.
+  Original patch by Aleksi Torhamo.
+
 - Issue #5700: io.FileIO() called flush() after closing the file.
   flush() was not called in close() if closefd=False.
 

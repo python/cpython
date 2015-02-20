@@ -170,8 +170,10 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
     orgsize = PyString_GET_SIZE(buf->outobj);
     incsize = (esize < (orgsize >> 1) ? (orgsize >> 1) | 1 : esize);
 
-    if (orgsize > PY_SSIZE_T_MAX - incsize)
+    if (orgsize > PY_SSIZE_T_MAX - incsize) {
+        PyErr_NoMemory();
         return -1;
+    }
 
     if (_PyString_Resize(&buf->outobj, orgsize + incsize) == -1)
         return -1;
@@ -182,11 +184,11 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
 
     return 0;
 }
-#define REQUIRE_ENCODEBUFFER(buf, s) {                                  \
-    if ((s) < 1 || (buf)->outbuf + (s) > (buf)->outbuf_end)             \
+#define REQUIRE_ENCODEBUFFER(buf, s) do {                               \
+    if ((s) < 0 || (s) > (buf)->outbuf_end - (buf)->outbuf)             \
         if (expand_encodebuffer(buf, s) == -1)                          \
             goto errorexit;                                             \
-}
+} while(0)
 
 static int
 expand_decodebuffer(MultibyteDecodeBuffer *buf, Py_ssize_t esize)
@@ -205,11 +207,11 @@ expand_decodebuffer(MultibyteDecodeBuffer *buf, Py_ssize_t esize)
 
     return 0;
 }
-#define REQUIRE_DECODEBUFFER(buf, s) {                                  \
-    if ((s) < 1 || (buf)->outbuf + (s) > (buf)->outbuf_end)             \
+#define REQUIRE_DECODEBUFFER(buf, s) do {                               \
+    if ((s) < 0 || (s) > (buf)->outbuf_end - (buf)->outbuf)             \
         if (expand_decodebuffer(buf, s) == -1)                          \
             goto errorexit;                                             \
-}
+} while(0)
 
 
 /**
@@ -327,10 +329,11 @@ multibytecodec_encerror(MultibyteCodec *codec,
     }
 
     retstrsize = PyString_GET_SIZE(retstr);
-    REQUIRE_ENCODEBUFFER(buf, retstrsize);
-
-    memcpy(buf->outbuf, PyString_AS_STRING(retstr), retstrsize);
-    buf->outbuf += retstrsize;
+    if (retstrsize > 0) {
+        REQUIRE_ENCODEBUFFER(buf, retstrsize);
+        memcpy(buf->outbuf, PyString_AS_STRING(retstr), retstrsize);
+        buf->outbuf += retstrsize;
+    }
 
     newpos = PyInt_AsSsize_t(PyTuple_GET_ITEM(retobj, 1));
     if (newpos < 0 && !PyErr_Occurred())
