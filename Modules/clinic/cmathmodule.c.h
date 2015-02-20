@@ -848,4 +848,4 @@ cmath_isinf(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4407f898ae07c83d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9b6d81711e4e3c4b input=a9049054013a1b77]*/

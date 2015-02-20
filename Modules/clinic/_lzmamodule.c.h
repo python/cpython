@@ -65,7 +65,7 @@ PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
 "\n"
-"Decompresses *data*, returning uncompressed data as bytes.\n"
+"Decompress *data*, returning uncompressed data as bytes.\n"
 "\n"
 "If *max_length* is nonnegative, returns at most *max_length* bytes of\n"
 "decompressed data. If this limit is reached and further output can be\n"
@@ -251,4 +251,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d17fac38b09626d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc42b73890609369 input=a9049054013a1b77]*/
