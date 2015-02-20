@@ -78,8 +78,8 @@
 
 typedef struct {
     PyObject_HEAD
-    unsigned long state[N];
     int index;
+    unsigned long state[N];
 } RandomObject;
 
 static PyTypeObject Random_Type;
