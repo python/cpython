@@ -1067,7 +1067,7 @@ Comparison of objects of the same type depends on the type:
 * Numbers are compared arithmetically.
 
 * The values :const:`float('NaN')` and :const:`Decimal('NaN')` are special.
-  The are identical to themselves, ``x is x`` but are not equal to themselves,
+  They are identical to themselves, ``x is x`` but are not equal to themselves,
   ``x != x``.  Additionally, comparing any value to a not-a-number value
   will return ``False``.  For example, both ``3 < float('NaN')`` and
   ``float('NaN') < 3`` will return ``False``.
