@@ -69,6 +69,10 @@ Functions
 
     An implementation of the built-in :func:`__import__` function.
 
+    .. note::
+       Programmatic importing of modules should use :func:`import_module`
+       instead of this function.
+
 .. function:: import_module(name, package=None)
 
     Import a module. The *name* argument specifies what module to
@@ -81,12 +85,15 @@ Functions
 
     The :func:`import_module` function acts as a simplifying wrapper around
     :func:`importlib.__import__`. This means all semantics of the function are
-    derived from :func:`importlib.__import__`, including requiring the package
-    from which an import is occurring to have been previously imported
-    (i.e., *package* must already be imported). The most important difference
-    is that :func:`import_module` returns the specified package or module
-    (e.g. ``pkg.mod``), while :func:`__import__` returns the
-    top-level package or module (e.g. ``pkg``).
+    derived from :func:`importlib.__import__`. The most important difference
+    between these two functions is that :func:`import_module` returns the
+    specified package or module (e.g. ``pkg.mod``), while :func:`__import__`
+    returns the top-level package or module (e.g. ``pkg``).
+
+    If you are dynamically importing a module that was created since the
+    interpreter began execution (e.g., created a Python source file), you may
+    need to call :func:`invalidate_caches` in order for the new module to be
+    noticed by the import system.
 
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
