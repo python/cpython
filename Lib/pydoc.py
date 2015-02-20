@@ -1405,9 +1405,6 @@ class _PlainTextDoc(TextDoc):
 def pager(text):
     """The first time this is called, determine what kind of pager to use."""
     global pager
-    # Escape non-encodable characters to avoid encoding errors later
-    encoding = sys.getfilesystemencoding()
-    text = text.encode(encoding, 'backslashreplace').decode(encoding)
     pager = getpager()
     pager(text)
 
@@ -1450,10 +1447,12 @@ def plain(text):
 
 def pipepager(text, cmd):
     """Page through text by feeding it to another program."""
-    pipe = os.popen(cmd, 'w')
+    import subprocess
+    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE)
     try:
-        pipe.write(text)
-        pipe.close()
+        with proc:
+            with io.TextIOWrapper(proc.stdin, errors='backslashreplace') as pipe:
+                pipe.write(text)
     except OSError:
         pass # Ignore broken pipes caused by quitting the pager program.
 
@@ -1461,16 +1460,21 @@ def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
     filename = tempfile.mktemp()
-    with open(filename, 'w') as file:
+    with open(filename, 'w', errors='backslashreplace') as file:
         file.write(text)
     try:
         os.system(cmd + ' "' + filename + '"')
     finally:
         os.unlink(filename)
 
+def _escape_stdout(text):
+    # Escape non-encodable characters to avoid encoding errors later
+    encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+    return text.encode(encoding, 'backslashreplace').decode(encoding)
+
 def ttypager(text):
     """Page through text on a text terminal."""
-    lines = plain(text).split('\n')
+    lines = plain(_escape_stdout(text)).split('\n')
     try:
         import tty
         fd = sys.stdin.fileno()
@@ -1514,7 +1518,7 @@ def ttypager(text):
 
 def plainpager(text):
     """Simply print unformatted text.  This is the ultimate fallback."""
-    sys.stdout.write(plain(text))
+    sys.stdout.write(plain(_escape_stdout(text)))
 
 def describe(thing):
     """Produce a short description of the given thing."""
