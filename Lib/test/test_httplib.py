@@ -708,7 +708,22 @@ class BasicTest(TestCase):
         self.assertTrue(response.closed)
         self.assertTrue(conn.sock.file_closed)
 
+
 class OfflineTest(TestCase):
+    def test_all(self):
+        # Documented objects defined in the module should be in __all__
+        expected = {"responses"}  # White-list documented dict() object
+        # HTTPMessage, parse_headers(), and the HTTP status code constants are
+        # intentionally omitted for simplicity
+        blacklist = {"HTTPMessage", "parse_headers"}
+        for name in dir(client):
+            if name in blacklist:
+                continue
+            module_object = getattr(client, name)
+            if getattr(module_object, "__module__", None) == "http.client":
+                expected.add(name)
+        self.assertCountEqual(client.__all__, expected)
+
     def test_responses(self):
         self.assertEqual(client.responses[client.NOT_FOUND], "Not Found")
 
