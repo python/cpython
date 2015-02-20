@@ -34,6 +34,10 @@ try:
 except ImportError:
     threading = None
 
+class nonascii:
+    'Це не латиниця'
+    pass
+
 if test.support.HAVE_DOCSTRINGS:
     expected_data_docstrings = (
         'dictionary for instance variables (if defined)',
@@ -459,6 +463,11 @@ class PydocDocTest(unittest.TestCase):
         expected = missing_pattern % missing_module
         self.assertEqual(expected, result,
             "documentation for missing module found")
+
+    def test_not_ascii(self):
+        result = run_pydoc('test.test_pydoc.nonascii', PYTHONIOENCODING='ascii')
+        encoded = nonascii.__doc__.encode('ascii', 'backslashreplace')
+        self.assertIn(encoded, result)
 
     def test_input_strip(self):
         missing_module = " test.i_am_not_here "
