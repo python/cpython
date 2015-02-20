@@ -255,7 +255,7 @@ def synopsis(filename, cache={}):
         if info and 'b' in info[2]: # binary modules have to be imported
             try: module = imp.load_module('__temp__', file, filename, info[1:])
             except: return None
-            result = (module.__doc__ or '').splitlines()[0]
+            result = module.__doc__.splitlines()[0] if module.__doc__ else None
             del sys.modules['__temp__']
         else: # text modules can be directly examined
             result = source_synopsis(file)
@@ -2020,7 +2020,7 @@ class ModuleScanner:
                         path = None
                 else:
                     module = loader.load_module(modname)
-                    desc = (module.__doc__ or '').splitlines()[0]
+                    desc = module.__doc__.splitlines()[0] if module.__doc__ else ''
                     path = getattr(module,'__file__',None)
                 if find(lower(modname + ' - ' + desc), key) >= 0:
                     callback(path, modname, desc)

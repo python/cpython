@@ -3,6 +3,7 @@ import sys
 import difflib
 import __builtin__
 import re
+import py_compile
 import pydoc
 import contextlib
 import inspect
@@ -381,6 +382,34 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(stripid('42'), '42')
         self.assertEqual(stripid("<type 'exceptions.Exception'>"),
                          "<type 'exceptions.Exception'>")
+
+    def test_synopsis(self):
+        with test.test_support.temp_cwd() as test_dir:
+            init_path = os.path.join(test_dir, 'dt.py')
+            with open(init_path, 'w') as fobj:
+                fobj.write('''\
+"""
+my doc
+
+second line
+"""
+foo = 1
+''')
+            py_compile.compile(init_path)
+            synopsis = pydoc.synopsis(init_path, {})
+            self.assertEqual(synopsis, 'my doc')
+
+    def test_synopsis_sourceless_empty_doc(self):
+        with test.test_support.temp_cwd() as test_dir:
+            init_path = os.path.join(test_dir, 'foomod42.py')
+            cached_path = os.path.join(test_dir, 'foomod42.pyc')
+            with open(init_path, 'w') as fobj:
+                fobj.write("foo = 1")
+            py_compile.compile(init_path)
+            synopsis = pydoc.synopsis(init_path, {})
+            self.assertIsNone(synopsis)
+            synopsis_cached = pydoc.synopsis(cached_path, {})
+            self.assertIsNone(synopsis_cached)
 
 
 class PydocImportTest(PydocBaseTest):
