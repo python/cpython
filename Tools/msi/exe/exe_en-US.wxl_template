@@ -4,6 +4,4 @@
     <String Id="ShortDescriptor">executable</String>
     <String Id="ShortcutName">Python {{ShortVersion}} ({{Bitness}})</String>
     <String Id="ShortcutDescription">Launches the !(loc.ProductName) interpreter.</String>
-    <String Id="PathTitle">Add to PATH</String>
-    <String Id="PathDescription">Adds the install directory to PATH and .py to PATHEXT.</String>
 </WixLocalization>
