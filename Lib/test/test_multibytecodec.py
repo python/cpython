@@ -44,6 +44,13 @@ class Test_MultibyteCodec(unittest.TestCase):
         self.assertRaises(IndexError, dec,
                           b'apple\x92ham\x93spam', 'test.cjktest')
 
+    def test_errorcallback_custom_ignore(self):
+        # Issue #23215: MemoryError with custom error handlers and multibyte codecs
+        data = 100 * "\udc00"
+        codecs.register_error("test.ignore", codecs.ignore_errors)
+        for enc in ALL_CJKENCODINGS:
+            self.assertEqual(data.encode(enc, "test.ignore"), b'')
+
     def test_codingspec(self):
         try:
             for enc in ALL_CJKENCODINGS:
