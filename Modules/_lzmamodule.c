@@ -1087,7 +1087,7 @@ the unused_data attribute.
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=1532a5bb23629001 input=262e4e217f49039b]*/
+/*[clinic end generated code: output=1532a5bb23629001 input=f2bb902cc1caf203]*/
 {
     PyObject *result = NULL;
 
