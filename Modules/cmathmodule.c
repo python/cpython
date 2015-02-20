@@ -212,7 +212,7 @@ Return the inverse hyperbolic cosine of z.
 
 static Py_complex
 cmath_acosh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=c23c776429def981 input=bc016412080bb3e9]*/
+/*[clinic end generated code: output=c23c776429def981 input=3f61bee7d703e53c]*/
 {
     Py_complex s1, s2, r;
 
@@ -267,7 +267,7 @@ Return the inverse hyperbolic sine of z.
 
 static Py_complex
 cmath_asinh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=0c6664823c7b1b35 input=5a21fa0242928c9b]*/
+/*[clinic end generated code: output=0c6664823c7b1b35 input=5c09448fcfc89a79]*/
 {
     Py_complex s1, s2, r;
 
@@ -358,7 +358,7 @@ Return the inverse hyperbolic tangent of z.
 
 static Py_complex
 cmath_atanh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=279e0b9fefc8da7c input=df19cdc9f9d431c9]*/
+/*[clinic end generated code: output=279e0b9fefc8da7c input=2b3fdb82fb34487b]*/
 {
     Py_complex r;
     double ay, h;
