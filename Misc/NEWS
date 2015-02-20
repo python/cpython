@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23374: Fixed pydoc failure with non-ASCII files when stdout encoding
+  differs from file system encoding (e.g. on Mac OS).
+
 - Issue #23481: Remove RC4 from the SSL module's default cipher list.
 
 - Issue #21548: Fix pydoc.synopsis() and pydoc.apropos() on modules with empty
