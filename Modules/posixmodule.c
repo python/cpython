@@ -1451,24 +1451,6 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STAT_NSEC 1
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 
-struct win32_stat{
-    unsigned long st_dev;
-    __int64 st_ino;
-    unsigned short st_mode;
-    int st_nlink;
-    int st_uid;
-    int st_gid;
-    unsigned long st_rdev;
-    __int64 st_size;
-    time_t st_atime;
-    int st_atime_nsec;
-    time_t st_mtime;
-    int st_mtime_nsec;
-    time_t st_ctime;
-    int st_ctime_nsec;
-    unsigned long st_file_attributes;
-};
-
 static BOOL
 attributes_from_dir(LPCSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
 {
@@ -1579,7 +1561,7 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
 }
 
 /* defined in fileutils.c */
-int
+void
 _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result);
 
 static int
@@ -6221,7 +6203,7 @@ exit:
 
 #ifdef MS_WINDOWS
 void
-time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr);
+_Py_time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr);
 #endif
 
 static PyObject *
@@ -6327,8 +6309,8 @@ os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times, PyObject *ns, 
         atime = mtime;
     }
     else {
-        time_t_to_FILE_TIME(utime.atime_s, utime.atime_ns, &atime);
-        time_t_to_FILE_TIME(utime.mtime_s, utime.mtime_ns, &mtime);
+        _Py_time_t_to_FILE_TIME(utime.atime_s, utime.atime_ns, &atime);
+        _Py_time_t_to_FILE_TIME(utime.mtime_s, utime.mtime_ns, &mtime);
     }
     if (!SetFileTime(hFile, NULL, &atime, &mtime)) {
         /* Avoid putting the file name into the error here,

@@ -563,7 +563,7 @@ FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, time_t *time_out, int* nsec_out)
 }
 
 void
-time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr)
+_Py_time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr)
 {
     /* XXX endianness */
     __int64 out;
@@ -591,7 +591,7 @@ attributes_to_mode(DWORD attr)
     return m;
 }
 
-int
+void
 _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
@@ -611,8 +611,6 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, 
         result->st_mode |= S_IFLNK;
     }
     result->st_file_attributes = info->dwFileAttributes;
-
-    return 0;
 }
 #endif
 
