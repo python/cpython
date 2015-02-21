@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22113: struct.pack_into() now supports new buffer protocol (in
+  particular accepts writable memoryview).
+
 - Issues #814253, #9179: Warnings now are raised when group references and
   conditional group references are used in lookbehind assertions in regular
   expressions.
