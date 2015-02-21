@@ -297,6 +297,9 @@ The special characters are:
       >>> m.group(0)
       'egg'
 
+   .. versionchanged: 3.5
+      Added support for group references of fixed length.
+
 ``(?<!...)``
    Matches if the current position in the string is not preceded by a match for
    ``...``.  This is called a :dfn:`negative lookbehind assertion`.  Similar to

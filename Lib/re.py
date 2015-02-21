@@ -351,10 +351,11 @@ class Scanner:
         s = sre_parse.Pattern()
         s.flags = flags
         for phrase, action in lexicon:
+            gid = s.opengroup()
             p.append(sre_parse.SubPattern(s, [
-                (SUBPATTERN, (len(p)+1, sre_parse.parse(phrase, flags))),
+                (SUBPATTERN, (gid, sre_parse.parse(phrase, flags))),
                 ]))
-        s.groups = len(p)+1
+            s.closegroup(gid, p[-1])
         p = sre_parse.SubPattern(s, [(BRANCH, (None, p))])
         self.scanner = sre_compile.compile(p)
     def scan(self, string):
