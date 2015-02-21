@@ -592,7 +592,7 @@ attributes_to_mode(DWORD attr)
 }
 
 int
-attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result)
+_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
     result->st_mode = attributes_to_mode(info->dwFileAttributes);
@@ -671,7 +671,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
         return -1;
     }
 
-    attribute_data_to_stat(&info, 0, result);
+    _Py_attribute_data_to_stat(&info, 0, result);
     /* specific to fstat() */
     result->st_ino = (((__int64)info.nFileIndexHigh)<<32) + info.nFileIndexLow;
     return 0;
