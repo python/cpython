@@ -71,8 +71,8 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
 
     if (fp != NULL) {
         int i;
-        struct stat statb;
-        if (fstat(fileno(fp), &statb) == -1) {
+        struct _Py_stat_struct statb;
+        if (_Py_fstat(fileno(fp), &statb) == -1) {
             PyErr_SetFromErrno(PyExc_IOError);
             return NULL;
         }

@@ -503,13 +503,13 @@ signal_siginterrupt(PyObject *self, PyObject *args)
 static PyObject *
 signal_set_wakeup_fd(PyObject *self, PyObject *args)
 {
+    struct _Py_stat_struct st;
 #ifdef MS_WINDOWS
     PyObject *fdobj;
     SOCKET_T sockfd, old_sockfd;
     int res;
     int res_size = sizeof res;
     PyObject *mod;
-    struct stat st;
     int is_socket;
 
     if (!PyArg_ParseTuple(args, "O:set_wakeup_fd", &fdobj))
@@ -520,7 +520,6 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         return NULL;
 #else
     int fd, old_fd;
-    struct stat st;
 
     if (!PyArg_ParseTuple(args, "i:set_wakeup_fd", &fd))
         return NULL;
@@ -560,7 +559,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
                 return NULL;
             }
 
-            if (fstat(fd, &st) != 0) {
+            if (_Py_fstat(fd, &st) != 0) {
                 PyErr_SetFromErrno(PyExc_OSError);
                 return NULL;
             }
@@ -592,7 +591,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        if (fstat(fd, &st) != 0) {
+        if (_Py_fstat(fd, &st) != 0) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
