@@ -68,12 +68,15 @@ class Pattern:
     # master pattern object.  keeps track of global attributes
     def __init__(self):
         self.flags = 0
-        self.open = []
-        self.groups = 1
         self.groupdict = {}
+        self.subpatterns = [None]  # group 0
+        self.lookbehindgroups = None
+    @property
+    def groups(self):
+        return len(self.subpatterns)
     def opengroup(self, name=None):
         gid = self.groups
-        self.groups = gid + 1
+        self.subpatterns.append(None)
         if self.groups > MAXGROUPS:
             raise error("groups number is too large")
         if name is not None:
@@ -82,12 +85,19 @@ class Pattern:
                 raise error("redefinition of group name %r as group %d; "
                             "was group %d" % (name, gid,  ogid))
             self.groupdict[name] = gid
-        self.open.append(gid)
         return gid
-    def closegroup(self, gid):
-        self.open.remove(gid)
+    def closegroup(self, gid, p):
+        self.subpatterns[gid] = p
     def checkgroup(self, gid):
-        return gid < self.groups and gid not in self.open
+        return gid < self.groups and self.subpatterns[gid] is not None
+
+    def checklookbehindgroup(self, gid, source):
+        if self.lookbehindgroups is not None:
+            if not self.checkgroup(gid):
+                raise source.error('cannot refer to an open group')
+            if gid >= self.lookbehindgroups:
+                raise source.error('cannot refer to group defined in the same '
+                                   'lookbehind subpattern')
 
 class SubPattern:
     # a subpattern, in intermediate form
@@ -183,7 +193,21 @@ class SubPattern:
             elif op in _UNITCODES:
                 lo = lo + 1
                 hi = hi + 1
-            elif op == SUCCESS:
+            elif op is GROUPREF:
+                i, j = self.pattern.subpatterns[av].getwidth()
+                lo = lo + i
+                hi = hi + j
+            elif op is GROUPREF_EXISTS:
+                i, j = av[1].getwidth()
+                if av[2] is not None:
+                    l, h = av[2].getwidth()
+                    i = min(i, l)
+                    j = max(j, h)
+                else:
+                    i = 0
+                lo = lo + i
+                hi = hi + j
+            elif op is SUCCESS:
                 break
         self.width = min(lo, MAXREPEAT - 1), min(hi, MAXREPEAT)
         return self.width
@@ -379,6 +403,7 @@ def _escape(source, escape, state):
                 if not state.checkgroup(group):
                     raise source.error("cannot refer to open group",
                                        len(escape))
+                state.checklookbehindgroup(group, source)
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
@@ -641,6 +666,7 @@ def _parse(source, state):
                         if gid is None:
                             msg = "unknown group name: {0!r}".format(name)
                             raise source.error(msg, len(name) + 1)
+                        state.checklookbehindgroup(gid, source)
                         subpatternappend((GROUPREF, gid))
                         continue
                     else:
@@ -668,7 +694,13 @@ def _parse(source, state):
                         if char is None or char not in "=!":
                             raise source.error("syntax error")
                         dir = -1 # lookbehind
+                        lookbehindgroups = state.lookbehindgroups
+                        if lookbehindgroups is None:
+                            state.lookbehindgroups = state.groups
                     p = _parse_sub(source, state)
+                    if dir < 0:
+                        if lookbehindgroups is None:
+                            state.lookbehindgroups = None
                     if not sourcematch(")"):
                         raise source.error("unbalanced parenthesis")
                     if char == "=":
@@ -701,6 +733,7 @@ def _parse(source, state):
                         if condgroup >= MAXGROUPS:
                             raise source.error("the group number is too large",
                                                len(condname) + 1)
+                    state.checklookbehindgroup(condgroup, source)
                 elif char in FLAGS:
                     # flags
                     state.flags |= FLAGS[char]
@@ -726,7 +759,7 @@ def _parse(source, state):
                 if not sourcematch(")"):
                     raise source.error("unbalanced parenthesis")
                 if group is not None:
-                    state.closegroup(group)
+                    state.closegroup(group, p)
                 subpatternappend((SUBPATTERN, (group, p)))
             else:
                 while True:
