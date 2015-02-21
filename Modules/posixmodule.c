@@ -1580,7 +1580,7 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
 
 /* defined in fileutils.c */
 int
-attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result);
+_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result);
 
 static int
 win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
@@ -1669,7 +1669,7 @@ win32_xstat_impl(const char *path, struct _Py_stat_struct *result,
         } else
             CloseHandle(hFile);
     }
-    attribute_data_to_stat(&info, reparse_tag, result);
+    _Py_attribute_data_to_stat(&info, reparse_tag, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
     dot = strrchr(path, '.');
@@ -1765,7 +1765,7 @@ win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
         } else
             CloseHandle(hFile);
     }
-    attribute_data_to_stat(&info, reparse_tag, result);
+    _Py_attribute_data_to_stat(&info, reparse_tag, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
     dot = wcsrchr(path, '.');
