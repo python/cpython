@@ -35,7 +35,7 @@ main(int argc, char *argv[])
 {
     char *inpath, *outpath;
     FILE *infile = NULL, *outfile = NULL;
-    struct stat st;
+    struct _Py_stat_struct st;
     size_t text_size, data_size, n;
     char *text = NULL;
     unsigned char *data;
@@ -54,7 +54,7 @@ main(int argc, char *argv[])
         fprintf(stderr, "cannot open '%s' for reading\n", inpath);
         goto error;
     }
-    if (fstat(fileno(infile), &st)) {
+    if (_Py_fstat(fileno(infile), &st)) {
         fprintf(stderr, "cannot fstat '%s'\n", inpath);
         goto error;
     }

@@ -1481,16 +1481,20 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     return res;
 }
 
-#ifdef HAVE_FSTAT
-/* Return size of file in bytes; < 0 if unknown. */
+#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
+/* Return size of file in bytes; < 0 if unknown or INT_MAX if too big */
 static off_t
 getfilesize(FILE *fp)
 {
-    struct stat st;
-    if (fstat(fileno(fp), &st) != 0)
+    struct _Py_stat_struct st;
+    if (_Py_fstat(fileno(fp), &st) != 0)
         return -1;
+#if SIZEOF_OFF_T == 4
+    else if (st.st_size >= INT_MAX)
+        return (off_t)INT_MAX;
+#endif
     else
-        return st.st_size;
+        return (off_t)st.st_size;
 }
 #endif
 
@@ -1505,7 +1509,7 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
 {
 /* REASONABLE_FILE_LIMIT is by defn something big enough for Tkinter.pyc. */
 #define REASONABLE_FILE_LIMIT (1L << 18)
-#ifdef HAVE_FSTAT
+#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
     off_t filesize;
     filesize = getfilesize(fp);
     if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {

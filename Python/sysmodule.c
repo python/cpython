@@ -1681,8 +1681,8 @@ _PySys_Init(void)
     the shell already prevents that. */
 #if !defined(MS_WINDOWS)
     {
-        struct stat sb;
-        if (fstat(fileno(stdin), &sb) == 0 &&
+        struct _Py_stat_struct sb;
+        if (_Py_fstat(fileno(stdin), &sb) == 0 &&
             S_ISDIR(sb.st_mode)) {
             /* There's nothing more we can do. */
             /* Py_FatalError() will core dump, so just exit. */

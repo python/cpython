@@ -459,8 +459,8 @@ mmap_size_method(mmap_object *self,
 
 #ifdef UNIX
     {
-        struct stat buf;
-        if (-1 == fstat(self->fd, &buf)) {
+        struct _Py_stat_struct buf;
+        if (-1 == _Py_fstat(self->fd, &buf)) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
@@ -1107,7 +1107,7 @@ static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
 #ifdef HAVE_FSTAT
-    struct stat st;
+    struct _Py_stat_struct st;
 #endif
     mmap_object *m_obj;
     PyObject *map_size_obj = NULL;
@@ -1174,7 +1174,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         (void)fcntl(fd, F_FULLFSYNC);
 #endif
 #ifdef HAVE_FSTAT
-    if (fd != -1 && fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
+    if (fd != -1 && _Py_fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
         if (map_size == 0) {
             if (st.st_size == 0) {
                 PyErr_SetString(PyExc_ValueError,
