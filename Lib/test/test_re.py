@@ -557,7 +557,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match("a.*b", "a\n\nb", re.DOTALL).group(0),
                          "a\n\nb")
 
-    def test_non_consuming(self):
+    def test_lookahead(self):
         self.assertEqual(re.match("(a(?=\s[^a]))", "a b").group(1), "a")
         self.assertEqual(re.match("(a(?=\s[^a]*))", "a b").group(1), "a")
         self.assertEqual(re.match("(a(?=\s[abc]))", "a b").group(1), "a")
@@ -570,6 +570,37 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"(a(?!\s[abc]))", "a d").group(1), "a")
         self.assertEqual(re.match(r"(a)(?!\s\1)", "a b").group(1), "a")
         self.assertEqual(re.match(r"(a)(?!\s(abc|a))", "a b").group(1), "a")
+
+        # Group reference.
+        self.assertTrue(re.match(r'(a)b(?=\1)a', 'aba'))
+        self.assertIsNone(re.match(r'(a)b(?=\1)c', 'abac'))
+        # Named group reference.
+        self.assertTrue(re.match(r'(?P<g>a)b(?=(?P=g))a', 'aba'))
+        self.assertIsNone(re.match(r'(?P<g>a)b(?=(?P=g))c', 'abac'))
+        # Conditional group reference.
+        self.assertTrue(re.match(r'(?:(a)|(x))b(?=(?(2)x|c))c', 'abc'))
+        self.assertIsNone(re.match(r'(?:(a)|(x))b(?=(?(2)c|x))c', 'abc'))
+        self.assertTrue(re.match(r'(?:(a)|(x))b(?=(?(2)x|c))c', 'abc'))
+        self.assertIsNone(re.match(r'(?:(a)|(x))b(?=(?(1)b|x))c', 'abc'))
+        self.assertTrue(re.match(r'(?:(a)|(x))b(?=(?(1)c|x))c', 'abc'))
+        # Group used before defined.
+        self.assertTrue(re.match(r'(a)b(?=(?(2)x|c))(c)', 'abc'))
+        self.assertIsNone(re.match(r'(a)b(?=(?(2)b|x))(c)', 'abc'))
+        self.assertTrue(re.match(r'(a)b(?=(?(1)c|x))(c)', 'abc'))
+
+    def test_lookbehind(self):
+        self.assertTrue(re.match(r'ab(?<=b)c', 'abc'))
+        self.assertIsNone(re.match(r'ab(?<=c)c', 'abc'))
+        self.assertIsNone(re.match(r'ab(?<!b)c', 'abc'))
+        self.assertTrue(re.match(r'ab(?<!c)c', 'abc'))
+        # Group reference.
+        self.assertWarns(RuntimeWarning, re.compile, r'(a)a(?<=\1)c')
+        # Named group reference.
+        self.assertWarns(RuntimeWarning, re.compile, r'(?P<g>a)a(?<=(?P=g))c')
+        # Conditional group reference.
+        self.assertWarns(RuntimeWarning, re.compile, r'(a)b(?<=(?(1)b|x))c')
+        # Group used before defined.
+        self.assertWarns(RuntimeWarning, re.compile, r'(a)b(?<=(?(2)b|x))(c)')
 
     def test_ignore_case(self):
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")

@@ -69,6 +69,8 @@ class Pattern:
         self.open = []
         self.groups = 1
         self.groupdict = {}
+        self.lookbehind = 0
+
     def opengroup(self, name=None):
         gid = self.groups
         self.groups = gid + 1
@@ -352,6 +354,11 @@ def _escape(source, escape, state):
             if group < state.groups:
                 if not state.checkgroup(group):
                     raise error("cannot refer to open group")
+                if state.lookbehind:
+                    import warnings
+                    warnings.warn('group references in lookbehind '
+                                  'assertions are not supported',
+                                  RuntimeWarning)
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
@@ -630,6 +637,11 @@ def _parse(source, state):
                         if gid is None:
                             msg = "unknown group name: {0!r}".format(name)
                             raise error(msg)
+                        if state.lookbehind:
+                            import warnings
+                            warnings.warn('group references in lookbehind '
+                                          'assertions are not supported',
+                                          RuntimeWarning)
                         subpatternappend((GROUPREF, gid))
                         continue
                     else:
@@ -658,7 +670,10 @@ def _parse(source, state):
                             raise error("syntax error")
                         dir = -1 # lookbehind
                         char = sourceget()
+                        state.lookbehind += 1
                     p = _parse_sub(source, state)
+                    if dir < 0:
+                        state.lookbehind -= 1
                     if not sourcematch(")"):
                         raise error("unbalanced parenthesis")
                     if char == "=":
@@ -689,6 +704,11 @@ def _parse(source, state):
                             condgroup = int(condname)
                         except ValueError:
                             raise error("bad character in group name")
+                    if state.lookbehind:
+                        import warnings
+                        warnings.warn('group references in lookbehind '
+                                      'assertions are not supported',
+                                      RuntimeWarning)
                 else:
                     # flags
                     if not source.next in FLAGS:
