@@ -276,7 +276,9 @@ The special characters are:
    assertion`. ``(?<=abc)def`` will find a match in ``abcdef``, since the
    lookbehind will back up 3 characters and check if the contained pattern matches.
    The contained pattern must only match strings of some fixed length, meaning that
-   ``abc`` or ``a|b`` are allowed, but ``a*`` and ``a{3,4}`` are not.  Note that
+   ``abc`` or ``a|b`` are allowed, but ``a*`` and ``a{3,4}`` are not.  Group
+   references are not supported even if they match strings of some fixed length.
+   Note that
    patterns which start with positive lookbehind assertions will not match at the
    beginning of the string being searched; you will most likely want to use the
    :func:`search` function rather than the :func:`match` function:
@@ -296,7 +298,8 @@ The special characters are:
    Matches if the current position in the string is not preceded by a match for
    ``...``.  This is called a :dfn:`negative lookbehind assertion`.  Similar to
    positive lookbehind assertions, the contained pattern must only match strings of
-   some fixed length.  Patterns which start with negative lookbehind assertions may
+   some fixed length and shouldn't contain group references.
+   Patterns which start with negative lookbehind assertions may
    match at the beginning of the string being searched.
 
 ``(?(id/name)yes-pattern|no-pattern)``
