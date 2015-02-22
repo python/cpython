@@ -372,6 +372,12 @@ static int win32_can_symlink = 0;
 
 #define DWORD_MAX 4294967295U
 
+#ifdef MS_WINDOWS
+/* defined in fileutils.c */
+PyAPI_FUNC(void) _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
+PyAPI_FUNC(void) _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
+                                            ULONG, struct _Py_stat_struct *);
+#endif
 
 #ifdef MS_WINDOWS
 static int
