@@ -606,6 +606,7 @@ class IOTest(unittest.TestCase):
         self.assertTrue(f.closed)
         self.assertTrue(closed)      # flush() called
         self.assertFalse(closed[0])  # flush() called before file closed
+        f.flush = lambda: None  # break reference loop
 
     def test_flush_error_on_close(self):
         # raw file
@@ -833,6 +834,7 @@ class CommonBufferedTests:
         self.assertTrue(closed)      # flush() called
         self.assertFalse(closed[0])  # flush() called before file closed
         self.assertFalse(closed[1])
+        raw.flush = lambda: None  # break reference loop
 
     def test_close_error_on_close(self):
         raw = self.MockRawIO()
@@ -2670,6 +2672,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertTrue(closed)      # flush() called
         self.assertFalse(closed[0])  # flush() called before file closed
         self.assertFalse(closed[1])
+        txt.flush = lambda: None  # break reference loop
 
     def test_close_error_on_close(self):
         buffer = self.BytesIO(self.testdata)
