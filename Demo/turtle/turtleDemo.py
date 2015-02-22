@@ -231,6 +231,8 @@ class DemoWindow(object):
             else:
                 self.state = DONE
         except turtle.Terminator:
+            if self.root is None:
+                return
             self.state = DONE
             result = "stopped!"
         if self.state == DONE:
@@ -257,7 +259,9 @@ class DemoWindow(object):
             turtle.TurtleScreen._RUNNING = False
 
     def _destroy(self):
+        turtle.TurtleScreen._RUNNING = False
         self.root.destroy()
+        self.root = None
         #sys.exit()
 
 def main():

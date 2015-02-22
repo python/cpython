@@ -116,6 +116,9 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #6639: Module-level turtle functions no longer raise TclError after
+  closing the window.
+
 - Issue #22314: pydoc now works when the LINES environment variable is set.
 
 - Issue #18905: "pydoc -p 0" now outputs actually used port.  Based on patch by
