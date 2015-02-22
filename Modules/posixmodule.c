@@ -1560,10 +1560,6 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
     return TRUE;
 }
 
-/* defined in fileutils.c */
-void
-_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result);
-
 static int
 win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
                    BOOL traverse);
@@ -6200,11 +6196,6 @@ exit:
 
     return return_value;
 }
-
-#ifdef MS_WINDOWS
-void
-_Py_time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr);
-#endif
 
 static PyObject *
 os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times, PyObject *ns, int dir_fd, int follow_symlinks)
