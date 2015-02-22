@@ -21,6 +21,7 @@ PyAPI_FUNC(int) _Py_wstat(
     struct stat *buf);
 #endif
 
+#ifndef Py_LIMITED_API
 #if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
 
 #ifdef MS_WINDOWS
@@ -41,6 +42,10 @@ struct _Py_stat_struct {
     int st_ctime_nsec;
     unsigned long st_file_attributes;
 };
+
+PyAPI_FUNC(void) _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
+PyAPI_FUNC(void) _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
+                                            ULONG, struct _Py_stat_struct *);
 #else
 #  define _Py_stat_struct stat
 #endif
@@ -49,6 +54,7 @@ PyAPI_FUNC(int) _Py_fstat(
     int fd,
     struct _Py_stat_struct *stat);
 #endif   /* HAVE_FSTAT || MS_WINDOWS */
+#endif   /* Py_LIMITED_API */
 
 #ifdef HAVE_STAT
 PyAPI_FUNC(int) _Py_stat(
