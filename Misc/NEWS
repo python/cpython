@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6639: Module-level turtle functions no longer raise TclError after
+  closing the window.
+
 - Issues #814253, #9179: Warnings now are raised when group references and
   conditional group references are used in lookbehind assertions in regular
   expressions.
