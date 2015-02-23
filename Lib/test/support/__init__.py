@@ -2151,6 +2151,7 @@ class SuppressCrashReport:
     disable the creation of coredump file.
     """
     old_value = None
+    old_modes = None
 
     def __enter__(self):
         """On Windows, disable Windows Error Reporting dialogs using
@@ -2168,6 +2169,26 @@ class SuppressCrashReport:
             SEM_NOGPFAULTERRORBOX = 0x02
             self.old_value = self._k32.SetErrorMode(SEM_NOGPFAULTERRORBOX)
             self._k32.SetErrorMode(self.old_value | SEM_NOGPFAULTERRORBOX)
+
+            # Suppress assert dialogs in debug builds
+            # (see http://bugs.python.org/issue23314)
+            try:
+                import msvcrt
+                msvcrt.CrtSetReportMode
+            except (AttributeError, ImportError):
+                # no msvcrt or a release build
+                pass
+            else:
+                self.old_modes = {}
+                for report_type in [msvcrt.CRT_WARN,
+                                    msvcrt.CRT_ERROR,
+                                    msvcrt.CRT_ASSERT]:
+                    old_mode = msvcrt.CrtSetReportMode(report_type,
+                            msvcrt.CRTDBG_MODE_FILE)
+                    old_file = msvcrt.CrtSetReportFile(report_type,
+                            msvcrt.CRTDBG_FILE_STDERR)
+                    self.old_modes[report_type] = old_mode, old_file
+
         else:
             if resource is not None:
                 try:
@@ -2199,6 +2220,12 @@ class SuppressCrashReport:
 
         if sys.platform.startswith('win'):
             self._k32.SetErrorMode(self.old_value)
+
+            if self.old_modes:
+                import msvcrt
+                for report_type, (old_mode, old_file) in self.old_modes.items():
+                    msvcrt.CrtSetReportMode(report_type, old_mode)
+                    msvcrt.CrtSetReportFile(report_type, old_file)
         else:
             if resource is not None:
                 try:
