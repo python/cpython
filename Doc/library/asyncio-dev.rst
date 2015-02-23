@@ -212,6 +212,7 @@ Example of unhandled exception::
     loop = asyncio.get_event_loop()
     asyncio.async(bug())
     loop.run_forever()
+    loop.close()
 
 Output::
 
@@ -258,6 +259,7 @@ coroutine in another coroutine and use classic try/except::
     loop = asyncio.get_event_loop()
     asyncio.async(handle_exception())
     loop.run_forever()
+    loop.close()
 
 Another option is to use the :meth:`BaseEventLoop.run_until_complete`
 function::
