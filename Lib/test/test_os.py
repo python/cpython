@@ -569,6 +569,8 @@ class URandomTests (unittest.TestCase):
         data2 = self.get_urandom_subprocess(16)
         self.assertNotEqual(data1, data2)
 
+    # os.urandom() doesn't use a file descriptor on Windows
+    @unittest.skipIf(sys.platform == "win32", "POSIX specific tests")
     def test_urandom_fd_non_inheritable(self):
         # Issue #23458: os.urandom() keeps a file descriptor open, but it
         # must be non inheritable
