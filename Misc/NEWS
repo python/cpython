@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23458: On POSIX, the file descriptor kept open by os.urandom() is now
+  set to non inheritable
+
 - Issue #22113: struct.pack_into() now supports new buffer protocol (in
   particular accepts writable memoryview).
 

@@ -188,6 +188,7 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
     int fd;
     Py_ssize_t n;
     struct stat st;
+    int attr;
 
     if (size <= 0)
         return 0;
@@ -219,6 +220,14 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
                 PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
+
+        /* try to make the file descriptor non-inheritable, ignore errors */
+        attr = fcntl(fd, F_GETFD);
+        if (attr >= 0) {
+            attr |= FD_CLOEXEC;
+            (void)fcntl(fd, F_SETFD, attr);
+        }
+
         if (urandom_cache.fd >= 0) {
             /* urandom_fd was initialized by another thread while we were
                not holding the GIL, keep it. */
