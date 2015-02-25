@@ -58,6 +58,7 @@ Table of contents:
    asyncio-stream.rst
    asyncio-subprocess.rst
    asyncio-sync.rst
+   asyncio-queue.rst
    asyncio-dev.rst
 
 .. seealso::
