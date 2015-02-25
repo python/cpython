@@ -193,6 +193,9 @@ Process
      :meth:`~subprocess.Popen.wait` method of the :class:`~subprocess.Popen`
      class is implemented as a busy loop.
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`. See also the
+   :ref:`Subprocess and threads <asyncio-subprocess-threads>` section.
+
    .. coroutinemethod:: wait()
 
       Wait for child process to terminate.  Set and return :attr:`returncode`
@@ -309,6 +312,8 @@ are limits:
 * The child watcher must be instantiated in the main thread, before executing
   subprocesses from other threads. Call the :func:`get_child_watcher`
   function in the main thread to instantiate the child watcher.
+
+The :class:`asyncio.subprocess.Process` class is not thread safe.
 
 .. seealso::
 
