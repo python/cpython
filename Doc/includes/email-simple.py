@@ -6,10 +6,9 @@ from email.mime.text import MIMEText
 
 # Open a plain text file for reading.  For this example, assume that
 # the text file contains only ASCII characters.
-fp = open(textfile, 'rb')
-# Create a text/plain message
-msg = MIMEText(fp.read())
-fp.close()
+with open(textfile) as fp:
+    # Create a text/plain message
+    msg = MIMEText(fp.read())
 
 # me == the sender's email address
 # you == the recipient's email address
