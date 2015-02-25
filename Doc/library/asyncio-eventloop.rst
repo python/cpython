@@ -22,6 +22,8 @@ It provides multiple facilities, amongst which:
 
    Base class of event loops.
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
 Run an event loop
 -----------------
 
@@ -103,6 +105,9 @@ keywords to your callback, use :func:`functools.partial`. For example,
 .. method:: BaseEventLoop.call_soon_threadsafe(callback, \*args)
 
    Like :meth:`call_soon`, but thread safe.
+
+   See the :ref:`concurrency and multithreading <asyncio-multithreading>`
+   section of the documentation.
 
 
 .. _asyncio-delayed-calls:
