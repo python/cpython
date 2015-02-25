@@ -9,7 +9,6 @@ import doctest
 import math
 import random
 import sys
-import types
 import unittest
 
 from decimal import Decimal
