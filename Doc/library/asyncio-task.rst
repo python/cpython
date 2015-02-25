@@ -209,6 +209,8 @@ Future
      :func:`~concurrent.futures.as_completed` functions in the
      :mod:`concurrent.futures` package.
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
    .. method:: cancel()
 
       Cancel the future and schedule callbacks.
@@ -374,6 +376,8 @@ Task
 
    Don't directly create :class:`Task` instances: use the :func:`async`
    function or the :meth:`BaseEventLoop.create_task` method.
+
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
 
    .. classmethod:: all_tasks(loop=None)
 

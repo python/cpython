@@ -85,6 +85,8 @@ StreamReader
 
 .. class:: StreamReader(limit=None, loop=None)
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
    .. method:: exception()
 
       Get the exception.
@@ -154,6 +156,8 @@ StreamWriter
    :meth:`drain` which returns an optional :class:`Future` on which you can
    wait for flow control.  It also adds a transport attribute which references
    the :class:`Transport` directly.
+
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
 
    .. attribute:: transport
 
