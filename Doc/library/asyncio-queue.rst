@@ -31,6 +31,8 @@ Queue
    be interrupted between calling :meth:`qsize` and doing an operation on the
    Queue.
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
    .. versionchanged:: 3.4.3
       New :meth:`join` and :meth:`task_done` methods.
 
