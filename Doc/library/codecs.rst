@@ -403,7 +403,7 @@ functions:
    Implements the ``'replace'`` error handling (for :term:`text encodings
    <text encoding>` only): substitutes ``'?'`` for encoding errors
    (to be encoded by the codec), and ``'\ufffd'`` (the Unicode replacement
-   character, ``'�'``) for decoding errors.
+   character) for decoding errors.
 
 
 .. function:: ignore_errors(exception)
