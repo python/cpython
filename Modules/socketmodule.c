@@ -1966,8 +1966,15 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wtautological-compare"
     #endif
+    #ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wtype-limits"
+    #endif
     if (msg->msg_controllen < 0)
         return 0;
+    #ifdef __GNUC__
+    #pragma GCC diagnostic pop
+    #endif
     #ifdef __clang__
     #pragma clang diagnostic pop
     #endif

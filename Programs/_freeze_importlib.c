@@ -17,7 +17,7 @@
    of frozen modules instead, left deliberately blank so as to avoid
    unintentional import of a stale version of _frozen_importlib. */
 
-const static struct _frozen _PyImport_FrozenModules[] = {
+static const struct _frozen _PyImport_FrozenModules[] = {
     {0, 0, 0} /* sentinel */
 };
 
