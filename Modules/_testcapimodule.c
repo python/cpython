@@ -69,6 +69,10 @@ test_config(PyObject *self)
 static PyObject*
 test_sizeof_c_types(PyObject *self)
 {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
 #define CHECK_SIZEOF(TYPE, EXPECTED)         \
     if (EXPECTED != sizeof(TYPE))  {         \
         PyErr_Format(TestError,              \
@@ -126,6 +130,9 @@ test_sizeof_c_types(PyObject *self)
 #undef IS_SIGNED
 #undef CHECK_SIGNESS
 #undef CHECK_SIZEOF
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 }
 
 

@@ -2819,8 +2819,9 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
                src->b_ptr,
                size);
 
-        if (PyCPointerTypeObject_Check(type))
-            /* XXX */;
+        if (PyCPointerTypeObject_Check(type)) {
+            /* XXX */
+        }
 
         value = GetKeepedObjects(src);
         if (value == NULL)
