@@ -404,6 +404,16 @@ If you see the following error, you do not have the launcher installed:
 Per-user installations of Python do not add the launcher to :envvar:`PATH`
 unless the option was selected on installation.
 
+Virtual environments
+^^^^^^^^^^^^^^^^^^^^
+
+If the launcher is run with no explicit Python version specification, and a
+virtual environment (created with the standard library :mod:`venv` module or
+the external ``virtualenv`` tool) active, the launcher will run the virtual
+environment's interpreter rather than the global one.  To run the global
+interpreter, either deactivate the virtual environment, or explicitly specify
+the global Python version.
+
 From a script
 ^^^^^^^^^^^^^
 
@@ -477,6 +487,16 @@ to work on Unix will already have this line, you should find these scripts can
 be used by the launcher without modification.  If you are writing a new script
 on Windows which you hope will be useful on Unix, you should use one of the
 shebang lines starting with ``/usr``.
+
+Any of the above virtual commands can be suffixed with an explicit version
+(either just the major version, or the major and minor version) - for example
+``/usr/bin/python2.7`` - which will cause that specific version to be located
+and used.
+
+The ``/usr/bin/env`` form of shebang line has one further special property.
+Before looking for installed Python interpreters, this form will search the
+executable :envvar:`PATH` for a Python executable. This corresponds to the
+behaviour of the Unix ``env`` program, which performs a :envvar:`PATH` search.
 
 Arguments in shebang lines
 --------------------------
