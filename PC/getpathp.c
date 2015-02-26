@@ -451,11 +451,12 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
                                      tmpbuffer, MAXPATHLEN * 2);
             Py_DECREF(decoded);
             if (k >= 0) {
-                wchar_t * tok = wcstok(tmpbuffer, L" \t\r\n");
+                wchar_t * context = NULL;
+                wchar_t * tok = wcstok_s(tmpbuffer, L" \t\r\n", &context);
                 if ((tok != NULL) && !wcscmp(tok, key)) {
-                    tok = wcstok(NULL, L" \t");
+                    tok = wcstok_s(NULL, L" \t", &context);
                     if ((tok != NULL) && !wcscmp(tok, L"=")) {
-                        tok = wcstok(NULL, L"\r\n");
+                        tok = wcstok_s(NULL, L"\r\n", &context);
                         if (tok != NULL) {
                             wcsncpy(value, tok, MAXPATHLEN);
                             result = 1;
