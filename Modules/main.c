@@ -520,16 +520,16 @@ Py_Main(int argc, wchar_t **argv)
 #ifdef MS_WINDOWS
     if (!Py_IgnoreEnvironmentFlag && (wp = _wgetenv(L"PYTHONWARNINGS")) &&
         *wp != L'\0') {
-        wchar_t *buf, *warning;
+        wchar_t *buf, *warning, *context = NULL;
 
         buf = (wchar_t *)PyMem_RawMalloc((wcslen(wp) + 1) * sizeof(wchar_t));
         if (buf == NULL)
             Py_FatalError(
                "not enough memory to copy PYTHONWARNINGS");
         wcscpy(buf, wp);
-        for (warning = wcstok(buf, L",");
+        for (warning = wcstok_s(buf, L",", &context);
              warning != NULL;
-             warning = wcstok(NULL, L",")) {
+             warning = wcstok_s(NULL, L",", &context)) {
             PySys_AddWarnOption(warning);
         }
         PyMem_RawFree(buf);
