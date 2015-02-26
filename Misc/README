@@ -21,7 +21,6 @@ README                  The file you're reading now
 README.AIX              Information about using Python on AIX
 README.coverity         Information about running Coverity's Prevent on Python
 README.valgrind         Information for Valgrind users, see valgrind-python.supp
-RPM                     (Old) tools to build RPMs
 SpecialBuilds.txt       Describes extra symbols you can set for debug builds
 svnmap.txt              Map of old SVN revs and branches to hg changeset ids
 valgrind-python.supp    Valgrind suppression file, see README.valgrind

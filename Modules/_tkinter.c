@@ -34,7 +34,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #define CHECK_SIZE(size, elemsize) \
-    ((size_t)(size) <= Py_MAX((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
+    ((size_t)(size) <= Py_MIN((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
 
 /* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
    making _tkinter correct for this API means to break earlier

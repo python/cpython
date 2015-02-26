@@ -1516,7 +1516,7 @@ unicode_aswidechar(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "Un", &unicode, &buflen))
         return NULL;
-    buffer = PyMem_Malloc(buflen * sizeof(wchar_t));
+    buffer = PyMem_New(wchar_t, buflen);
     if (buffer == NULL)
         return PyErr_NoMemory();
 

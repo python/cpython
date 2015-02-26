@@ -24,11 +24,13 @@ Py_FrozenMain(int argc, char **argv)
     /* We need a second copies, as Python might modify the first one. */
     wchar_t **argv_copy2 = NULL;
 
-    argv_copy = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
-    argv_copy2 = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
-    if (!argv_copy || !argv_copy2) {
-        fprintf(stderr, "out of memory\n");
-        goto error;
+    if (argc > 0) {
+        argv_copy = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
+        argv_copy2 = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
+        if (!argv_copy || !argv_copy2) {
+            fprintf(stderr, "out of memory\n");
+            goto error;
+        }
     }
 
     Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
@@ -68,7 +70,8 @@ Py_FrozenMain(int argc, char **argv)
 #ifdef MS_WINDOWS
     PyInitFrozenExtensions();
 #endif /* MS_WINDOWS */
-    Py_SetProgramName(argv_copy[0]);
+    if (argc >= 1)
+        Py_SetProgramName(argv_copy[0]);
     Py_Initialize();
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeInit();

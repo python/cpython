@@ -850,7 +850,7 @@ seq_as_ssize_array(PyObject *seq, Py_ssize_t len, int is_shape)
     Py_ssize_t *dest;
     Py_ssize_t x, i;
 
-    dest = PyMem_Malloc(len * (sizeof *dest));
+    dest = PyMem_New(Py_ssize_t, len);
     if (dest == NULL) {
         PyErr_NoMemory();
         return NULL;

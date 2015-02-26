@@ -616,6 +616,11 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.verify_expected_headers(result[1:-1])
         self.verify_get_called()
         self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+        self.assertEqual(self.handler.requestline, 'GET / HTTP/1.1')
+        self.assertEqual(self.handler.command, 'GET')
+        self.assertEqual(self.handler.path, '/')
+        self.assertEqual(self.handler.request_version, 'HTTP/1.1')
+        self.assertSequenceEqual(self.handler.headers.items(), ())
 
     def test_http_1_0(self):
         result = self.send_typical_request(b'GET / HTTP/1.0\r\n\r\n')
@@ -623,6 +628,11 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.verify_expected_headers(result[1:-1])
         self.verify_get_called()
         self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+        self.assertEqual(self.handler.requestline, 'GET / HTTP/1.0')
+        self.assertEqual(self.handler.command, 'GET')
+        self.assertEqual(self.handler.path, '/')
+        self.assertEqual(self.handler.request_version, 'HTTP/1.0')
+        self.assertSequenceEqual(self.handler.headers.items(), ())
 
     def test_http_0_9(self):
         result = self.send_typical_request(b'GET / HTTP/0.9\r\n\r\n')
@@ -636,6 +646,12 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.verify_expected_headers(result[1:-1])
         self.verify_get_called()
         self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+        self.assertEqual(self.handler.requestline, 'GET / HTTP/1.0')
+        self.assertEqual(self.handler.command, 'GET')
+        self.assertEqual(self.handler.path, '/')
+        self.assertEqual(self.handler.request_version, 'HTTP/1.0')
+        headers = (("Expect", "100-continue"),)
+        self.assertSequenceEqual(self.handler.headers.items(), headers)
 
     def test_with_continue_1_1(self):
         result = self.send_typical_request(b'GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n')
@@ -645,6 +661,12 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.verify_expected_headers(result[2:-1])
         self.verify_get_called()
         self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+        self.assertEqual(self.handler.requestline, 'GET / HTTP/1.1')
+        self.assertEqual(self.handler.command, 'GET')
+        self.assertEqual(self.handler.path, '/')
+        self.assertEqual(self.handler.request_version, 'HTTP/1.1')
+        headers = (("Expect", "100-continue"),)
+        self.assertSequenceEqual(self.handler.headers.items(), headers)
 
     def test_header_buffering_of_send_error(self):
 
@@ -730,6 +752,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         result = self.send_typical_request(b'GET ' + b'x' * 65537)
         self.assertEqual(result[0], b'HTTP/1.1 414 Request-URI Too Long\r\n')
         self.assertFalse(self.handler.get_called)
+        self.assertIsInstance(self.handler.requestline, str)
 
     def test_header_length(self):
         # Issue #6791: same for headers
@@ -737,6 +760,22 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
             b'GET / HTTP/1.1\r\nX-Foo: bar' + b'r' * 65537 + b'\r\n\r\n')
         self.assertEqual(result[0], b'HTTP/1.1 400 Line too long\r\n')
         self.assertFalse(self.handler.get_called)
+        self.assertEqual(self.handler.requestline, 'GET / HTTP/1.1')
+
+    def test_close_connection(self):
+        # handle_one_request() should be repeatedly called until
+        # it sets close_connection
+        def handle_one_request():
+            self.handler.close_connection = next(close_values)
+        self.handler.handle_one_request = handle_one_request
+
+        close_values = iter((True,))
+        self.handler.handle()
+        self.assertRaises(StopIteration, next, close_values)
+
+        close_values = iter((False, False, True))
+        self.handler.handle()
+        self.assertRaises(StopIteration, next, close_values)
 
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
     """ Test url parsing """
@@ -760,6 +799,19 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(path, self.translated)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test_all(self):
+        expected = []
+        blacklist = {'executable', 'nobody_uid', 'test'}
+        for name in dir(server):
+            if name.startswith('_') or name in blacklist:
+                continue
+            module_object = getattr(server, name)
+            if getattr(module_object, '__module__', None) == 'http.server':
+                expected.append(name)
+        self.assertCountEqual(server.__all__, expected)
+
+
 def test_main(verbose=None):
     cwd = os.getcwd()
     try:
@@ -769,6 +821,7 @@ def test_main(verbose=None):
             SimpleHTTPServerTestCase,
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
+            MiscTestCase,
         )
     finally:
         os.chdir(cwd)
