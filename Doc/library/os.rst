@@ -2159,7 +2159,8 @@ features:
    contain :func:`os.access`, otherwise it will be empty.
 
    To check whether you can use the *effective_ids* parameter for
-   :func:`os.access`, use the ``in`` operator on ``supports_dir_fd``, like so::
+   :func:`os.access`, use the ``in`` operator on ``supports_effective_ids``,
+   like so::
 
        os.access in os.supports_effective_ids
 

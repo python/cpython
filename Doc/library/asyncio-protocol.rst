@@ -23,6 +23,8 @@ then call the transport's methods for various purposes.
 subprocess pipes.  The methods available on a transport depend on
 the transport's kind.
 
+The transport classes are :ref:`not thread safe <asyncio-multithreading>`.
+
 
 BaseTransport
 -------------

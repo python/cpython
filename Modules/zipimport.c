@@ -233,7 +233,7 @@ make_filename(PyObject *prefix, PyObject *name)
     Py_ssize_t len;
 
     len = PyUnicode_GET_LENGTH(prefix) + PyUnicode_GET_LENGTH(name) + 1;
-    p = buf = PyMem_Malloc(sizeof(Py_UCS4) * len);
+    p = buf = PyMem_New(Py_UCS4, len);
     if (buf == NULL) {
         PyErr_NoMemory();
         return NULL;

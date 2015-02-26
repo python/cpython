@@ -1205,7 +1205,7 @@ Here is an example::
    {
        if (strcmp(name, "data") == 0)
        {
-           return PyInt_FromLong(obj->data);
+           return PyLong_FromLong(obj->data);
        }
 
        PyErr_Format(PyExc_AttributeError,

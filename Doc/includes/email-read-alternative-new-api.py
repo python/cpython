@@ -12,7 +12,8 @@ from email.parser import BytesParser
 from imaginary import magic_html_parser
 
 # In a real program you'd get the filename from the arguments.
-msg = BytesParser(policy=policy.default).parse(open('outgoing.msg', 'rb'))
+with open('outgoing.msg', 'rb') as fp:
+    msg = BytesParser(policy=policy.default).parse(fp)
 
 # Now the header items can be accessed as a dictionary, and any non-ASCII will
 # be converted to unicode:
