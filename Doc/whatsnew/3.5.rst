@@ -123,6 +123,18 @@ manually, and should make it more robust against asynchronous signal reception.
    :pep:`475` -- Retry system calls failing with EINTR
 
 
+PEP 486: Make the Python Launcher aware of virtual environments
+---------------------------------------------------------------
+
+:pep:`486` makes the Windows launcher (see :pep:`397`) aware of an active
+virtual environment. When the default interpreter would be used and the
+``VIRTUAL_ENV`` environment variable is set, the interpreter in the virtual
+environment will be used.
+
+.. seealso::
+
+    :pep:`486` -- Make the Python Launcher aware of virtual environments
+
 Other Language Changes
 ======================
 
