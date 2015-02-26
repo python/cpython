@@ -5,6 +5,7 @@ import unittest
 from io import BytesIO
 import os
 import pickle
+import glob
 import random
 import subprocess
 import sys
@@ -50,6 +51,19 @@ class BaseTest(unittest.TestCase):
     DATA = b'BZh91AY&SY.\xc8N\x18\x00\x01>_\x80\x00\x10@\x02\xff\xf0\x01\x07n\x00?\xe7\xff\xe00\x01\x99\xaa\x00\xc0\x03F\x86\x8c#&\x83F\x9a\x03\x06\xa6\xd0\xa6\x93M\x0fQ\xa7\xa8\x06\x804hh\x12$\x11\xa4i4\xf14S\xd2<Q\xb5\x0fH\xd3\xd4\xdd\xd5\x87\xbb\xf8\x94\r\x8f\xafI\x12\xe1\xc9\xf8/E\x00pu\x89\x12]\xc9\xbbDL\nQ\x0e\t1\x12\xdf\xa0\xc0\x97\xac2O9\x89\x13\x94\x0e\x1c7\x0ed\x95I\x0c\xaaJ\xa4\x18L\x10\x05#\x9c\xaf\xba\xbc/\x97\x8a#C\xc8\xe1\x8cW\xf9\xe2\xd0\xd6M\xa7\x8bXa<e\x84t\xcbL\xb3\xa7\xd9\xcd\xd1\xcb\x84.\xaf\xb3\xab\xab\xad`n}\xa0lh\tE,\x8eZ\x15\x17VH>\x88\xe5\xcd9gd6\x0b\n\xe9\x9b\xd5\x8a\x99\xf7\x08.K\x8ev\xfb\xf7xw\xbb\xdf\xa1\x92\xf1\xdd|/";\xa2\xba\x9f\xd5\xb1#A\xb6\xf6\xb3o\xc9\xc5y\\\xebO\xe7\x85\x9a\xbc\xb6f8\x952\xd5\xd7"%\x89>V,\xf7\xa6z\xe2\x9f\xa3\xdf\x11\x11"\xd6E)I\xa9\x13^\xca\xf3r\xd0\x03U\x922\xf26\xec\xb6\xed\x8b\xc3U\x13\x9d\xc5\x170\xa4\xfa^\x92\xacDF\x8a\x97\xd6\x19\xfe\xdd\xb8\xbd\x1a\x9a\x19\xa3\x80ankR\x8b\xe5\xd83]\xa9\xc6\x08\x82f\xf6\xb9"6l$\xb8j@\xc0\x8a\xb0l1..\xbak\x83ls\x15\xbc\xf4\xc1\x13\xbe\xf8E\xb8\x9d\r\xa8\x9dk\x84\xd3n\xfa\xacQ\x07\xb1%y\xaav\xb4\x08\xe0z\x1b\x16\xf5\x04\xe9\xcc\xb9\x08z\x1en7.G\xfc]\xc9\x14\xe1B@\xbb!8`'
     EMPTY_DATA = b'BZh9\x17rE8P\x90\x00\x00\x00\x00'
     BAD_DATA = b'this is not a valid bzip2 file'
+
+    # Some tests need more than one block of uncompressed data. Since one block
+    # is at least 100 kB, we gather some data dynamically and compress it.
+    # Note that this assumes that compression works correctly, so we cannot
+    # simply use the bigger test data for all tests.
+    test_size = 0
+    BIG_TEXT = bytearray(128*1024)
+    for fname in glob.glob(os.path.join(os.path.dirname(__file__), '*.py')):
+        with open(fname, 'rb') as fh:
+            test_size += fh.readinto(memoryview(BIG_TEXT)[test_size:])
+        if test_size > 128*1024:
+            break
+    BIG_DATA = bz2.compress(BIG_TEXT, compresslevel=1)
 
     def setUp(self):
         self.filename = support.TESTFN
@@ -707,6 +721,95 @@ class BZ2DecompressorTest(BaseTest):
             with self.assertRaises(TypeError):
                 pickle.dumps(BZ2Decompressor(), proto)
 
+    def testDecompressorChunksMaxsize(self):
+        bzd = BZ2Decompressor()
+        max_length = 100
+        out = []
+
+        # Feed some input
+        len_ = len(self.BIG_DATA) - 64
+        out.append(bzd.decompress(self.BIG_DATA[:len_],
+                                  max_length=max_length))
+        self.assertFalse(bzd.needs_input)
+        self.assertEqual(len(out[-1]), max_length)
+
+        # Retrieve more data without providing more input
+        out.append(bzd.decompress(b'', max_length=max_length))
+        self.assertFalse(bzd.needs_input)
+        self.assertEqual(len(out[-1]), max_length)
+
+        # Retrieve more data while providing more input
+        out.append(bzd.decompress(self.BIG_DATA[len_:],
+                                  max_length=max_length))
+        self.assertLessEqual(len(out[-1]), max_length)
+
+        # Retrieve remaining uncompressed data
+        while not bzd.eof:
+            out.append(bzd.decompress(b'', max_length=max_length))
+            self.assertLessEqual(len(out[-1]), max_length)
+
+        out = b"".join(out)
+        self.assertEqual(out, self.BIG_TEXT)
+        self.assertEqual(bzd.unused_data, b"")
+
+    def test_decompressor_inputbuf_1(self):
+        # Test reusing input buffer after moving existing
+        # contents to beginning
+        bzd = BZ2Decompressor()
+        out = []
+
+        # Create input buffer and fill it
+        self.assertEqual(bzd.decompress(self.DATA[:100],
+                                        max_length=0), b'')
+
+        # Retrieve some results, freeing capacity at beginning
+        # of input buffer
+        out.append(bzd.decompress(b'', 2))
+
+        # Add more data that fits into input buffer after
+        # moving existing data to beginning
+        out.append(bzd.decompress(self.DATA[100:105], 15))
+
+        # Decompress rest of data
+        out.append(bzd.decompress(self.DATA[105:]))
+        self.assertEqual(b''.join(out), self.TEXT)
+
+    def test_decompressor_inputbuf_2(self):
+        # Test reusing input buffer by appending data at the
+        # end right away
+        bzd = BZ2Decompressor()
+        out = []
+
+        # Create input buffer and empty it
+        self.assertEqual(bzd.decompress(self.DATA[:200],
+                                        max_length=0), b'')
+        out.append(bzd.decompress(b''))
+
+        # Fill buffer with new data
+        out.append(bzd.decompress(self.DATA[200:280], 2))
+
+        # Append some more data, not enough to require resize
+        out.append(bzd.decompress(self.DATA[280:300], 2))
+
+        # Decompress rest of data
+        out.append(bzd.decompress(self.DATA[300:]))
+        self.assertEqual(b''.join(out), self.TEXT)
+
+    def test_decompressor_inputbuf_3(self):
+        # Test reusing input buffer after extending it
+
+        bzd = BZ2Decompressor()
+        out = []
+
+        # Create almost full input buffer
+        out.append(bzd.decompress(self.DATA[:200], 5))
+
+        # Add even more data to it, requiring resize
+        out.append(bzd.decompress(self.DATA[200:300], 5))
+
+        # Decompress rest of data
+        out.append(bzd.decompress(self.DATA[300:]))
+        self.assertEqual(b''.join(out), self.TEXT)
 
 class CompressDecompressTest(BaseTest):
     def testCompress(self):

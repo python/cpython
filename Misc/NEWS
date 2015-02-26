@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15955: Add an option to limit the output size in bz2.decompress().
+  Patch by Nikolaus Rath.
+
 - Issue #6639: Module-level turtle functions no longer raise TclError after
   closing the window.
 
