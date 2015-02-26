@@ -54,6 +54,8 @@ Lock
    Locks also support the context management protocol.  ``(yield from lock)``
    should be used as context manager expression.
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
    Usage::
 
        lock = Lock()
@@ -117,6 +119,8 @@ Event
    method.  The :meth:`wait` method blocks until the flag is true. The flag is
    initially false.
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
    .. method:: clear()
 
       Reset the internal flag to false. Subsequently, coroutines calling
@@ -159,6 +163,8 @@ Condition
    If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
    object, and it is used as the underlying lock.  Otherwise,
    a new :class:`Lock` object is created and used as the underlying lock.
+
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
 
    .. coroutinemethod:: acquire()
 
@@ -252,6 +258,8 @@ Semaphore
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
    is raised.
 
+   This class is :ref:`not thread safe <asyncio-multithreading>`.
+
    .. coroutinemethod:: acquire()
 
       Acquire a semaphore.
@@ -279,8 +287,8 @@ BoundedSemaphore
 
 .. class:: BoundedSemaphore(value=1, \*, loop=None)
 
-    A bounded semaphore implementation. Inherit from :class:`Semaphore`.
+   A bounded semaphore implementation. Inherit from :class:`Semaphore`.
 
-    This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
-    increase the value above the initial value.
+   This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
+   increase the value above the initial value.
 
