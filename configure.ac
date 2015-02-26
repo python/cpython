@@ -1119,7 +1119,11 @@ then
 	    if test "$Py_DEBUG" = 'true' ; then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
-		OPT="-g -O0 -Wall $STRICT_PROTO"
+                if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
+                    OPT="-g -Og -Wall $STRICT_PROTO"
+                else
+                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                fi
 	    else
 		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
 	    fi

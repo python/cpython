@@ -228,13 +228,13 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
     if (PyObject_GetBuffer(arg, buf, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError,
                      "argument should be bytes, buffer or ASCII string, "
-                     "not %R", Py_TYPE(arg));
+                     "not '%.100s'", Py_TYPE(arg)->tp_name);
         return 0;
     }
     if (!PyBuffer_IsContiguous(buf, 'C')) {
         PyErr_Format(PyExc_TypeError,
                      "argument should be a contiguous buffer, "
-                     "not %R", Py_TYPE(arg));
+                     "not '%.100s'", Py_TYPE(arg)->tp_name);
         PyBuffer_Release(buf);
         return 0;
     }
