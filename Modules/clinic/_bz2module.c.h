@@ -95,34 +95,43 @@ exit:
 }
 
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
-"decompress($self, data, /)\n"
+"decompress($self, /, data, max_length=-1)\n"
 "--\n"
 "\n"
-"Provide data to the decompressor object.\n"
+"Decompress *data*, returning uncompressed data as bytes.\n"
 "\n"
-"Returns a chunk of decompressed data if possible, or b\'\' otherwise.\n"
+"If *max_length* is nonnegative, returns at most *max_length* bytes of\n"
+"decompressed data. If this limit is reached and further output can be\n"
+"produced, *self.needs_input* will be set to ``False``. In this case, the next\n"
+"call to *decompress()* may provide *data* as b\'\' to obtain more of the output.\n"
 "\n"
-"Attempting to decompress data after the end of stream is reached\n"
-"raises an EOFError.  Any data found after the end of the stream\n"
-"is ignored and saved in the unused_data attribute.");
+"If all of the input data was decompressed and returned (either because this\n"
+"was less than *max_length* bytes, or because *max_length* was negative),\n"
+"*self.needs_input* will be set to True.\n"
+"\n"
+"Attempting to decompress data after the end of stream is reached raises an\n"
+"EOFError.  Any data found after the end of the stream is ignored and saved in\n"
+"the unused_data attribute.");
 
 #define _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)_bz2_BZ2Decompressor_decompress, METH_VARARGS, _bz2_BZ2Decompressor_decompress__doc__},
+    {"decompress", (PyCFunction)_bz2_BZ2Decompressor_decompress, METH_VARARGS|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
 
 static PyObject *
-_bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data);
+_bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data, Py_ssize_t max_length);
 
 static PyObject *
-_bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *args)
+_bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    static char *_keywords[] = {"data", "max_length", NULL};
     Py_buffer data = {NULL, NULL};
+    Py_ssize_t max_length = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "y*:decompress",
-        &data))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "y*|n:decompress", _keywords,
+        &data, &max_length))
         goto exit;
-    return_value = _bz2_BZ2Decompressor_decompress_impl(self, &data);
+    return_value = _bz2_BZ2Decompressor_decompress_impl(self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -159,4 +168,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=21ca4405519a0931 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e65e3953430bc3d input=a9049054013a1b77]*/
