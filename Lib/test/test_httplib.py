@@ -1113,6 +1113,7 @@ class HTTPSTest(TestCase):
                                        context=context)
             h.request('GET', '/')
             resp = h.getresponse()
+            h.close()
             self.assertIn('nginx', resp.getheader('server'))
 
     @support.system_must_validate_cert
@@ -1124,6 +1125,7 @@ class HTTPSTest(TestCase):
             h.request('GET', '/')
             resp = h.getresponse()
             content_type = resp.getheader('content-type')
+            h.close()
             self.assertIn('text/html', content_type)
 
     def test_networked_good_cert(self):
@@ -1138,6 +1140,7 @@ class HTTPSTest(TestCase):
             h.request('GET', '/')
             resp = h.getresponse()
             server_string = resp.getheader('server')
+            h.close()
             self.assertIn('nginx', server_string)
 
     def test_networked_bad_cert(self):
