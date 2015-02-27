@@ -169,8 +169,9 @@ things:
    division or continue using ``/`` and expect a float
 
 The reason that ``/`` isn't simply translated to ``//`` automatically is that if
-an object defines its own ``__div__`` method but not ``__floordiv__`` then your
-code would begin to fail.
+an object defines a ``__truediv__`` method but not ``__floordiv__`` then your
+code would begin to fail (e.g. a user-defined class that uses ``/`` to
+signify some operation but not ``//`` for the same thing or at all).
 
 Text versus binary data
 +++++++++++++++++++++++
