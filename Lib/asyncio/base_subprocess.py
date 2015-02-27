@@ -79,12 +79,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         raise NotImplementedError
 
-    def _make_write_subprocess_pipe_proto(self, fd):
-        raise NotImplementedError
-
-    def _make_read_subprocess_pipe_proto(self, fd):
-        raise NotImplementedError
-
     def close(self):
         if self._closed:
             return
