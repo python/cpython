@@ -3,6 +3,7 @@ from .. import util
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 
+import errno
 import os
 import sys
 import tempfile
@@ -167,8 +168,7 @@ class FinderTests:
             with tempfile.TemporaryDirectory() as path:
                 os.chdir(path)
         except OSError as exc:
-            if exc.errno == 22:
-                # issue #22834
+            if exc.errno == errno.EINVAL:
                 self.skipTest("platform does not allow the deletion of the cwd")
             raise
         with util.import_state(path=['']):
