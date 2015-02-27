@@ -10,14 +10,11 @@
 /* The block length may be set to any number over 1.  Larger numbers
  * reduce the number of calls to the memory allocator, give faster
  * indexing and rotation, and reduce the link::data overhead ratio.
- *
- * Ideally, the block length will be set to two less than some
- * multiple of the cache-line length (so that the full block
- * including the leftlink and rightlink will fit neatly into
- * cache lines).
+ * Making the block length a power of two speeds-up the modulo
+ * calculation in deque_item().
  */
 
-#define BLOCKLEN 62
+#define BLOCKLEN 64
 #define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
