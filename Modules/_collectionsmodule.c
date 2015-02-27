@@ -142,7 +142,7 @@ typedef struct {
 
 static PyTypeObject deque_type;
 
-/* XXX Todo: 
+/* XXX Todo:
    If aligned memory allocations become available, make the
    deque object 64 byte aligned so that all of the fields
    can be retrieved or updated in a single cache line.
@@ -780,7 +780,9 @@ deque_item(dequeobject *deque, Py_ssize_t i)
         b = deque->rightblock;
     } else {
         i += deque->leftindex;
-        n = i / BLOCKLEN;
+        assert(i >= 0);
+        n = (Py_ssize_t)((unsigned) i / BLOCKLEN);
+        i = (Py_ssize_t)((unsigned) i % BLOCKLEN);
         i %= BLOCKLEN;
         if (index < (Py_SIZE(deque) >> 1)) {
             b = deque->leftblock;
@@ -1848,7 +1850,7 @@ _count_elements(PyObject *self, PyObject *args)
                 (hash = ((PyASCIIObject *) key)->hash) == -1)
             {
                 hash = PyObject_Hash(key);
-                if (hash == -1) 
+                if (hash == -1)
                     goto done;
             }
 
