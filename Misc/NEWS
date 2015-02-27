@@ -119,8 +119,6 @@ Library
 
 - Issue #23366: Fixed possible integer overflow in itertools.combinations.
 
-- Issue #23366: Fixed possible integer overflow in itertools.combinations.
-
 - Issue #23369: Fixed possible integer overflow in
   _json.encode_basestring_ascii.
 
@@ -142,7 +140,7 @@ Library
   __ne__() now works correctly.
 
 - Issue #19996: :class:`email.feedparser.FeedParser` now handles (malformed)
-  headers with no key rather than amusing the body has started.
+  headers with no key rather than assuming the body has started.
 
 - Issue #23248: Update ssl error codes from latest OpenSSL git master.
 
