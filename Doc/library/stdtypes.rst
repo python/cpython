@@ -2880,8 +2880,8 @@ place, and instead produce new objects.
 .. method:: bytes.isupper()
             bytearray.isupper()
 
-   Return true if there is at least one lowercase alphabetic ASCII character
-   in the sequence and no uppercase ASCII characters, false otherwise.
+   Return true if there is at least one uppercase alphabetic ASCII character
+   in the sequence and no lowercase ASCII characters, false otherwise.
 
    For example::
 
