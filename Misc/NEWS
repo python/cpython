@@ -12,6 +12,10 @@ Core and Builtins
 
 Library
 -------
+- Issue #23521: Corrected pure python implementation of timedelta division.
+
+ * Eliminated OverflowError from timedelta * float for some floats;
+ * Corrected rounding in timedlta true division.
 
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
   statement if the pipe was broken.  Patch by Martin Panter.

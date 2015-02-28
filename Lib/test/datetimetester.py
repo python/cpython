@@ -62,6 +62,33 @@ class TestModule(unittest.TestCase):
                        'tzinfo'])
         self.assertEqual(names - allowed, set([]))
 
+    def test_divide_and_round(self):
+        if '_Fast' in str(self):
+            return
+        dar = datetime_module._divide_and_round
+
+        self.assertEqual(dar(-10, -3), 3)
+        self.assertEqual(dar(5, -2), -2)
+
+        # four cases: (2 signs of a) x (2 signs of b)
+        self.assertEqual(dar(7, 3), 2)
+        self.assertEqual(dar(-7, 3), -2)
+        self.assertEqual(dar(7, -3), -2)
+        self.assertEqual(dar(-7, -3), 2)
+
+        # ties to even - eight cases:
+        # (2 signs of a) x (2 signs of b) x (even / odd quotient)
+        self.assertEqual(dar(10, 4), 2)
+        self.assertEqual(dar(-10, 4), -2)
+        self.assertEqual(dar(10, -4), -2)
+        self.assertEqual(dar(-10, -4), 2)
+
+        self.assertEqual(dar(6, 4), 2)
+        self.assertEqual(dar(-6, 4), -2)
+        self.assertEqual(dar(6, -4), -2)
+        self.assertEqual(dar(-6, -4), 2)
+
+
 #############################################################################
 # tzinfo tests
 
@@ -394,6 +421,10 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq((-3*us) * 0.5, -2*us)
         eq((-5*us) * 0.5, -2*us)
 
+        # Issue #23521
+        eq(td(seconds=1) * 0.123456, td(microseconds=123456))
+        eq(td(seconds=1) * 0.6112295, td(microseconds=611229))
+
         # Division by int and float
         eq((3*us) / 2, 2*us)
         eq((5*us) / 2, 2*us)
@@ -407,6 +438,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             eq((i*us/3)//us, round(i/3))
         for i in range(-10, 10):
             eq((i*us/-3)//us, round(i/-3))
+
+        # Issue #23521
+        eq(td(seconds=1) / (1 / 0.6112295), td(microseconds=611229))
 
         # Issue #11576
         eq(td(999999999, 86399, 999999) - td(999999999, 86399, 999998),
