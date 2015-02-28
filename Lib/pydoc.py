@@ -1577,7 +1577,10 @@ def resolve(thing, forceload=0):
     if isinstance(thing, str):
         object = locate(thing, forceload)
         if not object:
-            raise ImportError('no Python documentation found for %r' % thing)
+            raise ImportError('''\
+No Python documentation found for %r.
+Use help() to get the interactive help utility.
+Use help(str) for help on the str class.''' % thing)
         return object, thing
     else:
         name = getattr(thing, '__name__', None)
@@ -1848,7 +1851,10 @@ has the same effect as typing a particular string at the help> prompt.
                 break
             request = replace(request, '"', '', "'", '').strip()
             if request.lower() in ('q', 'quit'): break
-            self.help(request)
+            if request == 'help':
+                self.intro()
+            else:
+                self.help(request)
 
     def getline(self, prompt):
         """Read one line, using input() when appropriate."""
@@ -1862,8 +1868,7 @@ has the same effect as typing a particular string at the help> prompt.
     def help(self, request):
         if type(request) is type(''):
             request = request.strip()
-            if request == 'help': self.intro()
-            elif request == 'keywords': self.listkeywords()
+            if request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
             elif request == 'modules': self.listmodules()
@@ -1876,6 +1881,7 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output)
+            else: doc(str, 'Help on %s:', output=self._output)
         elif isinstance(request, Helper): self()
         else: doc(request, 'Help on %s:', output=self._output)
         self.output.write('\n')

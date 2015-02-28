@@ -12,6 +12,11 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #19980: Improved help() for non-recognized strings.  help('') now
+  shows the help on str.  help('help') now shows the help on help().
+  Original patch by Mark Lawrence.
+
 - Issue #23521: Corrected pure python implementation of timedelta division.
 
  * Eliminated OverflowError from timedelta * float for some floats;

@@ -256,7 +256,10 @@ expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
                                       for s in expected_data_docstrings)
 
 # output pattern for missing module
-missing_pattern = "no Python documentation found for '%s'"
+missing_pattern = '''\
+No Python documentation found for %r.
+Use help() to get the interactive help utility.
+Use help(str) for help on the str class.'''.replace('\n', os.linesep)
 
 # output pattern for module with bad imports
 badimport_pattern = "problem in %s - ImportError: No module named %r"
