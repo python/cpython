@@ -280,6 +280,25 @@ def _cmperror(x, y):
     raise TypeError("can't compare '%s' to '%s'" % (
                     type(x).__name__, type(y).__name__))
 
+def _divide_and_round(a, b):
+    """divide a by b and round result to the nearest integer
+
+    When the ratio is exactly half-way between two integers,
+    the even integer is returned.
+    """
+    # Based on the reference implementation for divmod_near
+    # in Objects/longobject.c.
+    q, r = divmod(a, b)
+    # round up if either r / b > 0.5, or r / b == 0.5 and q is odd.
+    # The expression r / b > 0.5 is equivalent to 2 * r > b if b is
+    # positive, 2 * r < b if b negative.
+    r *= 2
+    greater_than_half = r > b if b > 0 else r < b
+    if greater_than_half or r == b and q % 2 == 1:
+        q += 1
+
+    return q
+
 class timedelta:
     """Represent the difference between two datetime objects.
 
@@ -506,8 +525,9 @@ class timedelta:
                              self._seconds * other,
                              self._microseconds * other)
         if isinstance(other, float):
+            usec = self._to_microseconds()
             a, b = other.as_integer_ratio()
-            return self * a / b
+            return timedelta(0, 0, _divide_and_round(usec * a, b))
         return NotImplemented
 
     __rmul__ = __mul__
@@ -532,10 +552,10 @@ class timedelta:
         if isinstance(other, timedelta):
             return usec / other._to_microseconds()
         if isinstance(other, int):
-            return timedelta(0, 0, usec / other)
+            return timedelta(0, 0, _divide_and_round(usec, other))
         if isinstance(other, float):
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, b * usec / a)
+            return timedelta(0, 0, _divide_and_round(b * usec, a))
 
     def __mod__(self, other):
         if isinstance(other, timedelta):
