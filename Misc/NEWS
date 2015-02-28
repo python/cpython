@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21619: Popen objects no longer leave a zombie after exit in the with
+  statement if the pipe was broken.  Patch by Martin Panter.
+
 - Issue #6639: Module-level turtle functions no longer raise TclError after
   closing the window.
 

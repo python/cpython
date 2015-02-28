@@ -896,10 +896,12 @@ class Popen(object):
             self.stdout.close()
         if self.stderr:
             self.stderr.close()
-        if self.stdin:
-            self.stdin.close()
-        # Wait for the process to terminate, to avoid zombies.
-        self.wait()
+        try:  # Flushing a BufferedWriter may raise an error
+            if self.stdin:
+                self.stdin.close()
+        finally:
+            # Wait for the process to terminate, to avoid zombies.
+            self.wait()
 
     def __del__(self, _maxsize=sys.maxsize):
         if not self._child_created:
