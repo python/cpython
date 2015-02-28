@@ -788,7 +788,9 @@ deque_item(dequeobject *deque, Py_ssize_t i)
             while (n--)
                 b = b->rightlink;
         } else {
-            n = (deque->leftindex + Py_SIZE(deque) - 1) / BLOCKLEN - n;
+            n = (Py_ssize_t)(
+                    ((unsigned)(deque->leftindex + Py_SIZE(deque) - 1))
+                    / BLOCKLEN - n);
             b = deque->rightblock;
             while (n--)
                 b = b->leftlink;
