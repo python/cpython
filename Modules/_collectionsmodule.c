@@ -783,7 +783,6 @@ deque_item(dequeobject *deque, Py_ssize_t i)
         assert(i >= 0);
         n = (Py_ssize_t)((unsigned) i / BLOCKLEN);
         i = (Py_ssize_t)((unsigned) i % BLOCKLEN);
-        i %= BLOCKLEN;
         if (index < (Py_SIZE(deque) >> 1)) {
             b = deque->leftblock;
             while (n--)
