@@ -2512,7 +2512,7 @@ class ContextManagerTests(BaseTestCase):
         proc.stdout.read()  # Make sure subprocess has closed its input
         proc.stdin.write(b"buffered data")
         self.assertIsNone(proc.returncode)
-        self.assertRaises(BrokenPipeError, proc.__exit__, None, None, None)
+        self.assertRaises(OSError, proc.__exit__, None, None, None)
         self.assertEqual(0, proc.returncode)
         self.assertTrue(proc.stdin.closed)
         self.assertTrue(proc.stdout.closed)
