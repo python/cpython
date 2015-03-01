@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #20204: Added the __module__ attribute to _tkinter classes.
+
 - Issue #19980: Improved help() for non-recognized strings.  help('') now
   shows the help on str.  help('help') now shows the help on help().
   Original patch by Mark Lawrence.
