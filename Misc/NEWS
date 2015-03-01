@@ -88,6 +88,12 @@ Build
 - Issue #23445: pydebug builds now use "gcc -Og" where possible, to make
   the resulting executable faster.
 
+C API
+-----
+
+- Issue #20204: Deprecation warning is now raised for builtin type without the
+  __module__ attribute.
+
 Windows
 -------
 
