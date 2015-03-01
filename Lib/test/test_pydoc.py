@@ -399,6 +399,8 @@ foo = 1
             synopsis = pydoc.synopsis(init_path, {})
             self.assertEqual(synopsis, 'my doc')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     'Docstrings are omitted with -OO and above')
     def test_synopsis_sourceless_empty_doc(self):
         with test.test_support.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, 'foomod42.py')
