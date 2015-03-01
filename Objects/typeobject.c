@@ -2810,7 +2810,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
                 spec->name, (Py_ssize_t)(s - spec->name)));
     else {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "builtin type %.200s has no the __module__ attribute",
+                "builtin type %.200s has no __module__ attribute",
                 spec->name))
             goto fail;
     }
