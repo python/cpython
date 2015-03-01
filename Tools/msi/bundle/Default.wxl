@@ -11,6 +11,11 @@
   <String Id="Uninstalling">Removing</String>
   <String Id="Uninstallation">Uninstall</String>
   
+  <String Id="ElevateForCRTInstall">You will be prompted for Administrator privileges to install a C Runtime Library update (KB2999226).
+
+
+Continue?</String>
+  
   <String Id="CancelButton">&amp;Cancel</String>
   <String Id="CloseButton">&amp;Close</String>
   <String Id="InstallHeader">Install [WixBundleName]</String>
