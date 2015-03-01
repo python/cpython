@@ -780,7 +780,6 @@ deque_item(dequeobject *deque, Py_ssize_t i)
         b = deque->rightblock;
     } else {
         i += deque->leftindex;
-        assert(i >= 0);
         n = (Py_ssize_t)((unsigned) i / BLOCKLEN);
         i = (Py_ssize_t)((unsigned) i % BLOCKLEN);
         if (index < (Py_SIZE(deque) >> 1)) {
@@ -840,14 +839,16 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
         return deque_del_item(deque, i);
 
     i += deque->leftindex;
-    n = i / BLOCKLEN;
-    i %= BLOCKLEN;
+    n = (Py_ssize_t)((unsigned) i / BLOCKLEN);
+    i = (Py_ssize_t)((unsigned) i % BLOCKLEN);
     if (index <= halflen) {
         b = deque->leftblock;
         while (n--)
             b = b->rightlink;
     } else {
-        n = (deque->leftindex + len - 1) / BLOCKLEN - n;
+        n = (Py_ssize_t)(
+                ((unsigned)(deque->leftindex + Py_SIZE(deque) - 1))
+                / BLOCKLEN - n);
         b = deque->rightblock;
         while (n--)
             b = b->leftlink;
