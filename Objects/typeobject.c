@@ -2808,6 +2808,12 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         _PyDict_SetItemId(type->tp_dict, &PyId___module__,
             PyUnicode_FromStringAndSize(
                 spec->name, (Py_ssize_t)(s - spec->name)));
+    else {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "builtin type %.200s has no the __module__ attribute",
+                spec->name))
+            goto fail;
+    }
 
     return (PyObject*)res;
 
