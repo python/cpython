@@ -10,8 +10,6 @@
 
 #include "pch.h"
 
-static const LPCWSTR WIXBUNDLE_VARIABLE_ELEVATED = L"WixBundleElevated";
-
 static const LPCWSTR PYBA_WINDOW_CLASS = L"PythonBA";
 static const LPCWSTR PYBA_VARIABLE_LAUNCH_TARGET_PATH = L"LaunchTarget";
 static const LPCWSTR PYBA_VARIABLE_LAUNCH_TARGET_ELEVATED_ID = L"LaunchTargetElevatedId";
@@ -232,7 +230,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
     void OnCommand(CONTROL_ID id) {
         LPWSTR defaultDir = nullptr;
         LPWSTR targetDir = nullptr;
-        LONGLONG elevated;
+        LONGLONG elevated, crtInstalled;
         BOOL checked;
         WCHAR wzPath[MAX_PATH] = { };
         BROWSEINFOW browseInfo = { };
@@ -320,6 +318,10 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             ReleaseStr(targetDir);
             BalExitOnFailure(hr, "Failed to set install target directory");
 
+            if (!QueryElevateForCrtInstall()) {
+                break;
+            }
+
             OnPlan(BOOTSTRAPPER_ACTION_INSTALL);
             break;
 
@@ -350,6 +352,11 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             if (SUCCEEDED(hr)) {
                 // TODO: Check whether directory exists and contains another installation
                 ReleaseStr(targetDir);
+            }
+
+            checked = ThemeIsControlChecked(_theme, ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX);
+            if (!checked && !QueryElevateForCrtInstall()) {
+                break;
             }
 
             OnPlan(_command.action);
@@ -2311,6 +2318,75 @@ private:
         }
     }
 
+    BOOL IsCrtInstalled() {
+        if (_crtInstalledToken > 0) {
+            return TRUE;
+        } else if (_crtInstalledToken == 0) {
+            return FALSE;
+        }
+        
+        // Check whether at least CRT v10.0.9920.0 is available.
+        // It should only be installed as a Windows Update package, which means
+        // we don't need to worry about 32-bit/64-bit.
+        // However, since the WU package does not include vcruntime140.dll, we
+        // still install that ourselves.
+        LPCWSTR crtFile = L"api-ms-win-crt-runtime-l1-1-0.dll";
+
+        DWORD cbVer = GetFileVersionInfoSizeW(crtFile, nullptr);
+        if (!cbVer) {
+            _crtInstalledToken = 0;
+            return FALSE;
+        }
+
+        void *pData = malloc(cbVer);
+        if (!pData) {
+            _crtInstalledToken = 0;
+            return FALSE;
+        }
+
+        if (!GetFileVersionInfoW(crtFile, 0, cbVer, pData)) {
+            free(pData);
+            _crtInstalledToken = 0;
+            return FALSE;
+        }
+
+        VS_FIXEDFILEINFO *ffi;
+        UINT cb;
+        BOOL result = FALSE;
+
+        if (VerQueryValueW(pData, L"\\", (LPVOID*)&ffi, &cb) &&
+            ffi->dwFileVersionMS == 0x000A0000 && ffi->dwFileVersionLS >= 0x26C00000) {
+            result = TRUE;
+        }
+        
+        free(pData);
+        _crtInstalledToken = result ? 1 : 0;
+        return result;
+    }
+
+    BOOL QueryElevateForCrtInstall() {
+        // Called to prompt the user that even though they think they won't need
+        // to elevate, they actually will because of the CRT install.
+        if (IsCrtInstalled()) {
+            // CRT is already installed - no need to prompt
+            return TRUE;
+        }
+        
+        LONGLONG elevated;
+        HRESULT hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
+        if (SUCCEEDED(hr) && elevated) {
+            // Already elevated - no need to prompt
+            return TRUE;
+        }
+
+        LOC_STRING *locStr;
+        hr = LocGetString(_wixLoc, L"#(loc.ElevateForCRTInstall)", &locStr);
+        if (FAILED(hr)) {
+            BalLogError(hr, "Failed to get ElevateForCRTInstall string");
+            return FALSE;
+        }
+        return ::MessageBoxW(_hWnd, locStr->wzText, _theme->sczCaption, MB_YESNO) != IDNO;
+    }
 
     HRESULT EvaluateConditions() {
         HRESULT hr = S_OK;
@@ -2498,6 +2574,8 @@ public:
             }
         }
 
+        pEngine->SetVariableNumeric(L"CRTInstalled", IsCrtInstalled() ? 1 : 0);
+
         _wixLoc = nullptr;
         memset(&_bundle, 0, sizeof(_bundle));
         memset(&_conditions, 0, sizeof(_conditions));
@@ -2524,6 +2602,8 @@ public:
         _suppressDowngradeFailure = FALSE;
         _suppressRepair = FALSE;
         _modifying = FALSE;
+
+        _crtInstalledToken = -1;
 
         _overridableVariables = nullptr;
         _taskbarList = nullptr;
@@ -2605,6 +2685,8 @@ private:
     BOOL _suppressDowngradeFailure;
     BOOL _suppressRepair;
     BOOL _modifying;
+
+    int _crtInstalledToken;
 
     STRINGDICT_HANDLE _overridableVariables;
 
