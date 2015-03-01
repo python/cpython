@@ -478,6 +478,8 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(expected, result,
             "documentation for missing module found")
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     'Docstrings are omitted with -OO and above')
     def test_not_ascii(self):
         result = run_pydoc('test.test_pydoc.nonascii', PYTHONIOENCODING='ascii')
         encoded = nonascii.__doc__.encode('ascii', 'backslashreplace')
@@ -562,6 +564,8 @@ class PydocDocTest(unittest.TestCase):
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     'Docstrings are omitted with -OO and above')
     def test_synopsis_sourceless(self):
         expected = os.__doc__.splitlines()[0]
         filename = os.__cached__
