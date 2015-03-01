@@ -2409,7 +2409,7 @@ static PyType_Slot Tktt_Type_slots[] = {
 };
 
 static PyType_Spec Tktt_Type_spec = {
-    "tktimertoken",
+    "_tkinter.tktimertoken",
     sizeof(TkttObject),
     0,
     Py_TPFLAGS_DEFAULT,
@@ -2713,7 +2713,7 @@ static PyType_Slot Tkapp_Type_slots[] = {
 
 
 static PyType_Spec Tkapp_Type_spec = {
-    "tkapp",
+    "_tkinter.tkapp",
     sizeof(TkappObject),
     0,
     Py_TPFLAGS_DEFAULT,
