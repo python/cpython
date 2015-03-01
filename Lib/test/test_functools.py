@@ -131,6 +131,16 @@ class TestPartial:
         join = self.partial(''.join)
         self.assertEqual(join(data), '0123456789')
 
+    def test_nested_optimization(self):
+        partial = self.partial
+        # Only "true" partial is optimized
+        if partial.__name__ != 'partial':
+            return
+        inner = partial(signature, 'asdf')
+        nested = partial(inner, bar=True)
+        flat = partial(signature, 'asdf', bar=True)
+        self.assertEqual(signature(nested), signature(flat))
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
