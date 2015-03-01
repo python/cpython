@@ -561,3 +561,8 @@ Changes in the C API
 * Removed non-documented macro :c:macro:`PyObject_REPR` which leaked references.
   Use format character ``%R`` in :c:func:`PyUnicode_FromFormat`-like functions
   to format the :func:`repr` of the object.
+
+* Because the lack of the :attr:`__module__` attribute breaks pickling and
+  introspection, a deprecation warning now is raised for builtin type without
+  the :attr:`__module__` attribute.  Would be an AttributeError in future.
+  (:issue:`20204`)
