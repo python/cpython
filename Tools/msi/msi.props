@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="ReleaseUri">
     <PropertyGroup>
+        <TargetName>$(OutputName)</TargetName>
         <DefineSolutionProperties>false</DefineSolutionProperties>
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
         <SuppressIces>$(SuppressIces);ICE03;ICE57;ICE61</SuppressIces>
@@ -48,10 +49,8 @@
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         <ReuseCabinetCache>true</ReuseCabinetCache>
-        <CRTModule Condition="'$(VisualStudioVersion)' == '12.0'">$(CommonProgramFiles)\Merge Modules\Microsoft_VC120_CRT_$(Platform).msm</CRTModule>
-        <CRTModule Condition="'$(VisualStudioVersion)' == '14.0'">$(CommonProgramFiles)\Merge Modules\Microsoft_VC140_CRT_$(Platform).msm</CRTModule>
-        <CRTRedist Condition="'$(VisualStudioVersion)' == '12.0'">$([System.IO.Path]::GetFullPath(`$(VS120COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC120.CRT`))</CRTRedist>
-        <CRTRedist Condition="'$(VisualStudioVersion)' == '14.0'">$([System.IO.Path]::GetFullPath(`$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT`))</CRTRedist>
+        <CRTRedist Condition="">$([System.IO.Path]::GetFullPath(`$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT`))</CRTRedist>
+        <CRTRedist Condition="'$(CRTRedist)' != '' and !Exists($(CRTRedist))">$(MSBuildThisFileDirectory)\redist\$(Platform)</CRTRedist>
         <CRTRedist Condition="'$(CRTRedist)' != '' and !Exists($(CRTRedist))"></CRTRedist>
 
         <RevisionNumber>$(ReleaseLevelNumber)</RevisionNumber>
@@ -71,9 +70,6 @@
             UpgradeMinimumVersion=$(MajorVersionNumber).$(MinorVersionNumber).0.0;
             NextMajorVersionNumber=$(MajorVersionNumber).$([msbuild]::Add($(MinorVersionNumber), 1)).0.0;
             PyDebugExt=$(PyDebugExt);
-        </DefineConstants>
-        <DefineConstants Condition="'$(CRTModule)' != '' and Exists($(CRTModule))">
-            $(DefineConstants);CRTModule=$(CRTModule);
         </DefineConstants>
         <DefineConstants Condition="'$(CRTRedist)' != ''">
             $(DefineConstants);CRTRedist=$(CRTRedist);
@@ -114,6 +110,9 @@
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(CRTRedist)" Condition="'$(CRTRedist)' != ''">
             <BindName>crt</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(MSBuildThisFileDirectory)\redist">
+            <BindName>redist</BindName>
         </LinkerBindInputPaths>
     </ItemGroup>
 

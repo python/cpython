@@ -10,6 +10,8 @@
         <OutputName Condition="!$(BuildForRelease)">$(OutputName)-$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber).$(RevisionNumber)</OutputName>
         <OutputName Condition="$(Platform) == 'x64'">$(OutputName)-amd64</OutputName>
         <OutputName Condition="'$(OutputSuffix)' != ''">$(OutputName)-$(OutputSuffix)</OutputName>
+        <OutputName Condition="'$(Configuration)' == 'Debug'">$(OutputName)-d</OutputName>
+        <TargetName>$(OutputName)</TargetName>
 
         <OutputPath>$(OutputPath)en-us\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
@@ -43,6 +45,7 @@
         <Content Include="SideBar.png" />
     </ItemGroup>
     <ItemGroup>
+        <EmbeddedResource Include="bundle.wxl" />
         <WxlTemplate Include="*_en-US.wxl_template" />
     </ItemGroup>
     <ItemGroup>
