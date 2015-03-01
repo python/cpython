@@ -772,7 +772,7 @@ deque_item(dequeobject *deque, Py_ssize_t i)
     PyObject *item;
     Py_ssize_t n, index=i;
 
-    if (i < 0 || i >= Py_SIZE(deque)) {
+    if ((size_t)i >= (size_t)Py_SIZE(deque)) {
         PyErr_SetString(PyExc_IndexError,
                         "deque index out of range");
         return NULL;
@@ -836,7 +836,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
 
-    if (i < 0 || i >= len) {
+    if ((size_t)i >= (size_t)len) {
         PyErr_SetString(PyExc_IndexError,
                         "deque index out of range");
         return -1;
