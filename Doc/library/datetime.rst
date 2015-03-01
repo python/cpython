@@ -759,13 +759,19 @@ Other constructors, all class methods:
    :attr:`tzinfo` ``None``. This may raise :exc:`OverflowError`, if the timestamp is
    out of the range of values supported by the platform C :c:func:`gmtime` function,
    and :exc:`OSError` on :c:func:`gmtime` failure.
-   It's common for this to be restricted to years in 1970 through 2038. See also
-   :meth:`fromtimestamp`.
+   It's common for this to be restricted to years in 1970 through 2038.
 
-   On the POSIX compliant platforms, ``utcfromtimestamp(timestamp)``
-   is equivalent to the following expression::
+   To get an aware :class:`.datetime` object, call :meth:`fromtimestamp`::
 
-     datetime(1970, 1, 1) + timedelta(seconds=timestamp)
+     datetime.fromtimestamp(timestamp, timezone.utc)
+
+   On the POSIX compliant platforms, it is equivalent to the following
+   expression::
+
+     datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(seconds=timestamp)
+
+   except the latter formula always supports the full years range: between
+   :const:`MINYEAR` and :const:`MAXYEAR` inclusive.
 
    .. versionchanged:: 3.3
       Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
