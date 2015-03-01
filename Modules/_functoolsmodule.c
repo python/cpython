@@ -25,7 +25,7 @@ static PyTypeObject partial_type;
 static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func;
+    PyObject *func, *pargs, *nargs, *pkw;
     partialobject *pto;
 
     if (PyTuple_GET_SIZE(args) < 1) {
@@ -34,7 +34,16 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    pargs = pkw = Py_None;
     func = PyTuple_GET_ITEM(args, 0);
+    if (Py_TYPE(func) == &partial_type && type == &partial_type) {
+        partialobject *part = (partialobject *)func;
+        if (part->dict == NULL) {
+            pargs = part->args;
+            pkw = part->kw;
+            func = part->fn;
+        }
+    }
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "the first argument must be callable");
@@ -48,21 +57,53 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pto->fn = func;
     Py_INCREF(func);
-    pto->args = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
-    if (pto->args == NULL) {
+
+    nargs = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
+    if (nargs == NULL) {
+        pto->args = NULL;
         pto->kw = NULL;
         Py_DECREF(pto);
         return NULL;
     }
+    if (pargs == Py_None || PyTuple_GET_SIZE(pargs) == 0) {
+        pto->args = nargs;
+        Py_INCREF(nargs);
+    }
+    else if (PyTuple_GET_SIZE(nargs) == 0) {
+        pto->args = pargs;
+        Py_INCREF(pargs);
+    }
+    else {
+        pto->args = PySequence_Concat(pargs, nargs);
+        if (pto->args == NULL) {
+            pto->kw = NULL;
+            Py_DECREF(pto);
+            return NULL;
+        }
+    }
+    Py_DECREF(nargs);
+
     if (kw != NULL) {
-        pto->kw = PyDict_Copy(kw);
+        if (pkw == Py_None) {
+            pto->kw = PyDict_Copy(kw);
+        }
+        else {
+            pto->kw = PyDict_Copy(pkw);
+            if (pto->kw != NULL) {
+                if (PyDict_Merge(pto->kw, kw, 1) != 0) {
+                    Py_DECREF(pto);
+                    return NULL;
+                }
+            }
+        }
         if (pto->kw == NULL) {
             Py_DECREF(pto);
             return NULL;
         }
-    } else {
-        pto->kw = Py_None;
-        Py_INCREF(Py_None);
+    }
+    else {
+        pto->kw = pkw;
+        Py_INCREF(pkw);
     }
 
     pto->weakreflist = NULL;

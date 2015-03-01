@@ -241,6 +241,14 @@ def partial(func, *args, **keywords):
     """New function with partial application of the given arguments
     and keywords.
     """
+    if hasattr(func, 'func'):
+        args = func.args + args
+        tmpkw = func.keywords.copy()
+        tmpkw.update(keywords)
+        keywords = tmpkw
+        del tmpkw
+        func = func.func
+
     def newfunc(*fargs, **fkeywords):
         newkeywords = keywords.copy()
         newkeywords.update(fkeywords)

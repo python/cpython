@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7830: Flatten nested functools.partial.
+
 - Issue #20204: Added the __module__ attribute to _tkinter classes.
 
 - Issue #19980: Improved help() for non-recognized strings.  help('') now
