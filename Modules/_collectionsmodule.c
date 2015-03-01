@@ -1,6 +1,12 @@
 #include "Python.h"
 #include "structmember.h"
 
+#ifdef STDC_HEADERS
+#include <stddef.h>
+#else
+#include <sys/types.h>          /* For size_t */
+#endif
+
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Copyright (c) 2004-2015 Python Software Foundation.
@@ -780,15 +786,15 @@ deque_item(dequeobject *deque, Py_ssize_t i)
         b = deque->rightblock;
     } else {
         i += deque->leftindex;
-        n = (Py_ssize_t)((unsigned) i / BLOCKLEN);
-        i = (Py_ssize_t)((unsigned) i % BLOCKLEN);
+        n = (Py_ssize_t)((size_t) i / BLOCKLEN);
+        i = (Py_ssize_t)((size_t) i % BLOCKLEN);
         if (index < (Py_SIZE(deque) >> 1)) {
             b = deque->leftblock;
             while (n--)
                 b = b->rightlink;
         } else {
             n = (Py_ssize_t)(
-                    ((unsigned)(deque->leftindex + Py_SIZE(deque) - 1))
+                    ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                     / BLOCKLEN - n);
             b = deque->rightblock;
             while (n--)
@@ -839,15 +845,15 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
         return deque_del_item(deque, i);
 
     i += deque->leftindex;
-    n = (Py_ssize_t)((unsigned) i / BLOCKLEN);
-    i = (Py_ssize_t)((unsigned) i % BLOCKLEN);
+    n = (Py_ssize_t)((size_t) i / BLOCKLEN);
+    i = (Py_ssize_t)((size_t) i % BLOCKLEN);
     if (index <= halflen) {
         b = deque->leftblock;
         while (n--)
             b = b->rightlink;
     } else {
         n = (Py_ssize_t)(
-                ((unsigned)(deque->leftindex + Py_SIZE(deque) - 1))
+                ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                 / BLOCKLEN - n);
         b = deque->rightblock;
         while (n--)
