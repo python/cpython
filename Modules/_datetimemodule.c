@@ -5020,8 +5020,7 @@ static PyMethodDef datetime_methods[] = {
 
     {"utcfromtimestamp", (PyCFunction)datetime_utcfromtimestamp,
      METH_VARARGS | METH_CLASS,
-     PyDoc_STR("timestamp -> UTC datetime from a POSIX timestamp "
-               "(like time.time()).")},
+     PyDoc_STR("Construct a naive UTC datetime from a POSIX timestamp.")},
 
     {"strptime", (PyCFunction)datetime_strptime,
      METH_VARARGS | METH_CLASS,

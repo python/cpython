@@ -1393,7 +1393,7 @@ class datetime(date):
 
     @classmethod
     def utcfromtimestamp(cls, t):
-        "Construct a UTC datetime from a POSIX timestamp (like time.time())."
+        """Construct a naive UTC datetime from a POSIX timestamp."""
         t, frac = divmod(t, 1.0)
         us = int(frac * 1e6)
 
