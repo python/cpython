@@ -773,21 +773,55 @@ class Pathname_Tests(unittest.TestCase):
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
+    # In Python 3 this test class is moved to test_urlparse.
+
+    def test_splittype(self):
+        splittype = urllib.splittype
+        self.assertEqual(splittype('type:opaquestring'), ('type', 'opaquestring'))
+        self.assertEqual(splittype('opaquestring'), (None, 'opaquestring'))
+        self.assertEqual(splittype(':opaquestring'), (None, ':opaquestring'))
+        self.assertEqual(splittype('type:'), ('type', ''))
+        self.assertEqual(splittype('type:opaque:string'), ('type', 'opaque:string'))
+
+    def test_splithost(self):
+        splithost = urllib.splithost
+        self.assertEqual(splithost('//www.example.org:80/foo/bar/baz.html'),
+                         ('www.example.org:80', '/foo/bar/baz.html'))
+        self.assertEqual(splithost('//www.example.org:80'),
+                         ('www.example.org:80', ''))
+        self.assertEqual(splithost('/foo/bar/baz.html'),
+                         (None, '/foo/bar/baz.html'))
+
+    def test_splituser(self):
+        splituser = urllib.splituser
+        self.assertEqual(splituser('User:Pass@www.python.org:080'),
+                         ('User:Pass', 'www.python.org:080'))
+        self.assertEqual(splituser('@www.python.org:080'),
+                         ('', 'www.python.org:080'))
+        self.assertEqual(splituser('www.python.org:080'),
+                         (None, 'www.python.org:080'))
+        self.assertEqual(splituser('User:Pass@'),
+                         ('User:Pass', ''))
+        self.assertEqual(splituser('User@example.com:Pass@www.python.org:080'),
+                         ('User@example.com:Pass', 'www.python.org:080'))
 
     def test_splitpasswd(self):
-        """Some of the password examples are not sensible, but it is added to
-        confirming to RFC2617 and addressing issue4675.
-        """
-        self.assertEqual(('user', 'ab'),urllib.splitpasswd('user:ab'))
-        self.assertEqual(('user', 'a\nb'),urllib.splitpasswd('user:a\nb'))
-        self.assertEqual(('user', 'a\tb'),urllib.splitpasswd('user:a\tb'))
-        self.assertEqual(('user', 'a\rb'),urllib.splitpasswd('user:a\rb'))
-        self.assertEqual(('user', 'a\fb'),urllib.splitpasswd('user:a\fb'))
-        self.assertEqual(('user', 'a\vb'),urllib.splitpasswd('user:a\vb'))
-        self.assertEqual(('user', 'a:b'),urllib.splitpasswd('user:a:b'))
-        self.assertEqual(('user', 'a b'),urllib.splitpasswd('user:a b'))
-        self.assertEqual(('user 2', 'ab'),urllib.splitpasswd('user 2:ab'))
-        self.assertEqual(('user+1', 'a+b'),urllib.splitpasswd('user+1:a+b'))
+        # Some of the password examples are not sensible, but it is added to
+        # confirming to RFC2617 and addressing issue4675.
+        splitpasswd = urllib.splitpasswd
+        self.assertEqual(splitpasswd('user:ab'), ('user', 'ab'))
+        self.assertEqual(splitpasswd('user:a\nb'), ('user', 'a\nb'))
+        self.assertEqual(splitpasswd('user:a\tb'), ('user', 'a\tb'))
+        self.assertEqual(splitpasswd('user:a\rb'), ('user', 'a\rb'))
+        self.assertEqual(splitpasswd('user:a\fb'), ('user', 'a\fb'))
+        self.assertEqual(splitpasswd('user:a\vb'), ('user', 'a\vb'))
+        self.assertEqual(splitpasswd('user:a:b'), ('user', 'a:b'))
+        self.assertEqual(splitpasswd('user:a b'), ('user', 'a b'))
+        self.assertEqual(splitpasswd('user 2:ab'), ('user 2', 'ab'))
+        self.assertEqual(splitpasswd('user+1:a+b'), ('user+1', 'a+b'))
+        self.assertEqual(splitpasswd('user:'), ('user', ''))
+        self.assertEqual(splitpasswd('user'), ('user', None))
+        self.assertEqual(splitpasswd(':ab'), ('', 'ab'))
 
     def test_splitport(self):
         splitport = urllib.splitport
@@ -796,6 +830,9 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splitport('parrot:'), ('parrot', None))
         self.assertEqual(splitport('127.0.0.1'), ('127.0.0.1', None))
         self.assertEqual(splitport('parrot:cheese'), ('parrot:cheese', None))
+        self.assertEqual(splitport('[::1]:88'), ('[::1]', '88'))
+        self.assertEqual(splitport('[::1]'), ('[::1]', None))
+        self.assertEqual(splitport(':88'), ('', '88'))
 
     def test_splitnport(self):
         splitnport = urllib.splitnport
@@ -808,6 +845,59 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splitnport('127.0.0.1', 55), ('127.0.0.1', 55))
         self.assertEqual(splitnport('parrot:cheese'), ('parrot', None))
         self.assertEqual(splitnport('parrot:cheese', 55), ('parrot', None))
+
+    def test_splitquery(self):
+        # Normal cases are exercised by other tests; ensure that we also
+        # catch cases with no port specified (testcase ensuring coverage)
+        splitquery = urllib.splitquery
+        self.assertEqual(splitquery('http://python.org/fake?foo=bar'),
+                         ('http://python.org/fake', 'foo=bar'))
+        self.assertEqual(splitquery('http://python.org/fake?foo=bar?'),
+                         ('http://python.org/fake?foo=bar', ''))
+        self.assertEqual(splitquery('http://python.org/fake'),
+                         ('http://python.org/fake', None))
+        self.assertEqual(splitquery('?foo=bar'), ('', 'foo=bar'))
+
+    def test_splittag(self):
+        splittag = urllib.splittag
+        self.assertEqual(splittag('http://example.com?foo=bar#baz'),
+                         ('http://example.com?foo=bar', 'baz'))
+        self.assertEqual(splittag('http://example.com?foo=bar#'),
+                         ('http://example.com?foo=bar', ''))
+        self.assertEqual(splittag('#baz'), ('', 'baz'))
+        self.assertEqual(splittag('http://example.com?foo=bar'),
+                         ('http://example.com?foo=bar', None))
+        self.assertEqual(splittag('http://example.com?foo=bar#baz#boo'),
+                         ('http://example.com?foo=bar#baz', 'boo'))
+
+    def test_splitattr(self):
+        splitattr = urllib.splitattr
+        self.assertEqual(splitattr('/path;attr1=value1;attr2=value2'),
+                         ('/path', ['attr1=value1', 'attr2=value2']))
+        self.assertEqual(splitattr('/path;'), ('/path', ['']))
+        self.assertEqual(splitattr(';attr1=value1;attr2=value2'),
+                         ('', ['attr1=value1', 'attr2=value2']))
+        self.assertEqual(splitattr('/path'), ('/path', []))
+
+    def test_splitvalue(self):
+        # Normal cases are exercised by other tests; test pathological cases
+        # with no key/value pairs. (testcase ensuring coverage)
+        splitvalue = urllib.splitvalue
+        self.assertEqual(splitvalue('foo=bar'), ('foo', 'bar'))
+        self.assertEqual(splitvalue('foo='), ('foo', ''))
+        self.assertEqual(splitvalue('=bar'), ('', 'bar'))
+        self.assertEqual(splitvalue('foobar'), ('foobar', None))
+        self.assertEqual(splitvalue('foo=bar=baz'), ('foo', 'bar=baz'))
+
+    def test_toBytes(self):
+        result = urllib.toBytes(u'http://www.python.org')
+        self.assertEqual(result, 'http://www.python.org')
+        self.assertRaises(UnicodeError, urllib.toBytes,
+                          test_support.u(r'http://www.python.org/medi\u00e6val'))
+
+    def test_unwrap(self):
+        url = urllib.unwrap('<URL:type://host/path>')
+        self.assertEqual(url, 'type://host/path')
 
 
 class URLopener_Tests(unittest.TestCase):
