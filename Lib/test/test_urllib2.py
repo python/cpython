@@ -1469,17 +1469,18 @@ class MiscTests(unittest.TestCase):
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'test requires network access')
     def test_issue16464(self):
-        opener = urllib.request.build_opener()
-        request = urllib.request.Request("http://www.example.com/")
-        self.assertEqual(None, request.data)
+        with support.transient_internet("http://www.example.com/"):
+            opener = urllib.request.build_opener()
+            request = urllib.request.Request("http://www.example.com/")
+            self.assertEqual(None, request.data)
 
-        opener.open(request, "1".encode("us-ascii"))
-        self.assertEqual(b"1", request.data)
-        self.assertEqual("1", request.get_header("Content-length"))
+            opener.open(request, "1".encode("us-ascii"))
+            self.assertEqual(b"1", request.data)
+            self.assertEqual("1", request.get_header("Content-length"))
 
-        opener.open(request, "1234567890".encode("us-ascii"))
-        self.assertEqual(b"1234567890", request.data)
-        self.assertEqual("10", request.get_header("Content-length"))
+            opener.open(request, "1234567890".encode("us-ascii"))
+            self.assertEqual(b"1234567890", request.data)
+            self.assertEqual("10", request.get_header("Content-length"))
 
     def test_HTTPError_interface(self):
         """
@@ -1630,17 +1631,6 @@ class RequestTests(unittest.TestCase):
             req = Request(url)
             self.assertEqual(req.get_full_url(), req.full_url)
 
-def test_main(verbose=None):
-    from test import test_urllib2
-    support.run_doctest(test_urllib2, verbose)
-    support.run_doctest(urllib.request, verbose)
-    tests = (TrivialTests,
-             OpenerDirectorTests,
-             HandlerTests,
-             MiscTests,
-             RequestTests,
-             RequestHdrsTests)
-    support.run_unittest(*tests)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()
