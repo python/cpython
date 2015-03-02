@@ -1001,6 +1001,12 @@ PyDoc_STRVAR(GetVersion_doc,
 \n\
 Return the version number of the current operating system.");
 
+/* Disable deprecation warnings about GetVersionEx as the result is
+   being passed straight through to the caller, who is responsible for
+   using it correctly. */
+#pragma warning(push)
+#pragma warning(disable:4996)
+
 static PyObject *
 winapi_GetVersion(PyObject* self, PyObject* args)
 {
@@ -1009,6 +1015,8 @@ winapi_GetVersion(PyObject* self, PyObject* args)
 
     return PyLong_FromUnsignedLong(GetVersion());
 }
+
+#pragma warning(pop)
 
 static PyObject *
 winapi_OpenProcess(PyObject *self, PyObject *args)

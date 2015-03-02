@@ -519,10 +519,6 @@ unicode_result_unchanged(PyObject *unicode)
         return _PyUnicode_Copy(unicode);
 }
 
-#ifdef HAVE_MBCS
-static OSVERSIONINFOEX winver;
-#endif
-
 /* --- Bloom Filters ----------------------------------------------------- */
 
 /* stuff to implement simple "bloom filters" for Unicode characters.
@@ -7112,13 +7108,7 @@ static DWORD
 encode_code_page_flags(UINT code_page, const char *errors)
 {
     if (code_page == CP_UTF8) {
-        if (winver.dwMajorVersion >= 6)
-            /* CP_UTF8 supports WC_ERR_INVALID_CHARS on Windows Vista
-               and later */
-            return WC_ERR_INVALID_CHARS;
-        else
-            /* CP_UTF8 only supports flags=0 on Windows older than Vista */
-            return 0;
+        return WC_ERR_INVALID_CHARS;
     }
     else if (code_page == CP_UTF7) {
         /* CP_UTF7 only supports flags=0 */
@@ -14976,13 +14966,6 @@ int _PyUnicode_Init(void)
     if (PyType_Ready(&PyFormatterIter_Type) < 0)
         Py_FatalError("Can't initialize formatter iter type");
 
-#ifdef HAVE_MBCS
-    winver.dwOSVersionInfoSize = sizeof(winver);
-    if (!GetVersionEx((OSVERSIONINFO*)&winver)) {
-        PyErr_SetFromWindowsErr(0);
-        return -1;
-    }
-#endif
     return 0;
 }
 

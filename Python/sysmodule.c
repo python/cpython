@@ -772,6 +772,12 @@ static PyStructSequence_Desc windows_version_desc = {
                                  via indexing, the rest are name only */
 };
 
+/* Disable deprecation warnings about GetVersionEx as the result is
+   being passed straight through to the caller, who is responsible for
+   using it correctly. */
+#pragma warning(push)
+#pragma warning(disable:4996)
+
 static PyObject *
 sys_getwindowsversion(PyObject *self)
 {
@@ -802,6 +808,8 @@ sys_getwindowsversion(PyObject *self)
     }
     return version;
 }
+
+#pragma warning(pop)
 
 #endif /* MS_WINDOWS */
 
