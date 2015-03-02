@@ -8501,7 +8501,7 @@ _PyUnicode_TranslateCharmap(PyObject *input,
     /* allocate enough for a simple 1:1 translation without
        replacements, if we need more, we'll resize */
     osize = size;
-    output = PyMem_Malloc(osize * sizeof(Py_UCS4));
+    output = PyMem_NEW(Py_UCS4, osize);
     opos = 0;
     if (output == NULL) {
         PyErr_NoMemory();
