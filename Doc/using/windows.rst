@@ -407,6 +407,8 @@ unless the option was selected on installation.
 Virtual environments
 ^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 3.5
+
 If the launcher is run with no explicit Python version specification, and a
 virtual environment (created with the standard library :mod:`venv` module or
 the external ``virtualenv`` tool) active, the launcher will run the virtual
