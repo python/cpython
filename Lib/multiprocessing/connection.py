@@ -844,7 +844,7 @@ if sys.platform == 'win32':
                     try:
                         ov, err = _winapi.ReadFile(fileno(), 0, True)
                     except OSError as e:
-                        err = e.winerror
+                        ov, err = None, e.winerror
                         if err not in _ready_errors:
                             raise
                     if err == _winapi.ERROR_IO_PENDING:
@@ -853,7 +853,16 @@ if sys.platform == 'win32':
                     else:
                         # If o.fileno() is an overlapped pipe handle and
                         # err == 0 then there is a zero length message
-                        # in the pipe, but it HAS NOT been consumed.
+                        # in the pipe, but it HAS NOT been consumed...
+                        if ov and sys.getwindowsversion()[:2] >= (6, 2):
+                            # ... except on Windows 8 and later, where
+                            # the message HAS been consumed.
+                            try:
+                                _, err = ov.GetOverlappedResult(False)
+                            except OSError as e:
+                                err = e.winerror
+                            if not err and hasattr(o, '_got_empty_message'):
+                                o._got_empty_message = True
                         ready_objects.add(o)
                         timeout = 0
 
