@@ -14,6 +14,13 @@
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
+/* Windows 'supports' CMSG_LEN, but does not follow the POSIX standard
+ * interface at all, so there is no point including the code that
+ * attempts to use it.
+ */
+# ifdef PySocket_BUILDING_SOCKET
+#  undef CMSG_LEN
+# endif
 # include <ws2tcpip.h>
 /* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
  * Separate SDKs have all the functions we want, but older ones don't have
