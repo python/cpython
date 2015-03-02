@@ -507,10 +507,17 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 
     stackptr = 0;
     isize = PyUnicode_GET_LENGTH(input);
+    space = isize;
     /* Overallocate at most 10 characters. */
-    space = (isize > 10 ? 10 : isize) + isize;
+    if (space > 10) {
+        if (space <= PY_SSIZE_T_MAX - 10)
+            space += 10;
+    }
+    else {
+        space *= 2;
+    }
     osize = space;
-    output = PyMem_Malloc(space * sizeof(Py_UCS4));
+    output = PyMem_NEW(Py_UCS4, space);
     if (!output) {
         PyErr_NoMemory();
         return NULL;
@@ -657,7 +664,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     /* We allocate a buffer for the output.
        If we find that we made no changes, we still return
        the NFD result. */
-    output = PyMem_Malloc(len * sizeof(Py_UCS4));
+    output = PyMem_NEW(Py_UCS4, len);
     if (!output) {
         PyErr_NoMemory();
         Py_DECREF(result);
