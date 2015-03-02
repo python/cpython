@@ -1825,9 +1825,6 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 
 #endif
 
-/* Hack to force loading of pycapsule.o */
-PyTypeObject *_PyCapsule_hack = &PyCapsule_Type;
-
 
 /* Hack to force loading of abstract.o */
 Py_ssize_t (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
