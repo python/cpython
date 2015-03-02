@@ -544,12 +544,12 @@ the stack so that it is available for further iterations of the loop.
 
 .. opcode:: YIELD_VALUE
 
-   Pops ``TOS`` and yields it from a :term:`generator`.
+   Pops TOS and yields it from a :term:`generator`.
 
 
 .. opcode:: YIELD_FROM
 
-   Pops ``TOS`` and delegates to it as a subiterator from a :term:`generator`.
+   Pops TOS and delegates to it as a subiterator from a :term:`generator`.
 
    .. versionadded:: 3.3
 
@@ -770,9 +770,9 @@ the more significant byte last.
 
 .. opcode:: FOR_ITER (delta)
 
-   ``TOS`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
+   TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
    If this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted ``TOS`` is popped, and the
+   it).  If the iterator indicates it is exhausted TOS is popped, and the
    byte code counter is incremented by *delta*.
 
 
