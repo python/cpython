@@ -21,7 +21,7 @@ def check_ssl_verifiy(host, port):
 
 class SmtpTest(unittest.TestCase):
     testServer = 'smtp.gmail.com'
-    remotePort = 25
+    remotePort = 587
 
     def test_connect_starttls(self):
         support.get_attribute(smtplib, 'SMTP_SSL')
