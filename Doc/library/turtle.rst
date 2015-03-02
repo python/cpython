@@ -2351,6 +2351,9 @@ The demo scripts are:
 |                | pairwise in opposite         | shapesize, tilt,      |
 |                | direction                    | get_shapepoly, update |
 +----------------+------------------------------+-----------------------+
+| sorting_animate| visual demonstration of      | simple alignment,     |
+|                | different sorting methods    | randomization         |
++----------------+------------------------------+-----------------------+
 | tree           | a (graphical) breadth        | :func:`clone`         |
 |                | first tree (using generators)|                       |
 +----------------+------------------------------+-----------------------+
