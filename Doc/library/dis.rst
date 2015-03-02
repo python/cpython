@@ -62,7 +62,7 @@ compiled code.
    the disassembled code object.
 
    If *current_offset* is not None, it refers to an instruction offset
-   in the disassembled code. Setting this means :meth:`dis` will display
+   in the disassembled code. Setting this means :meth:`.dis` will display
    a "current instruction" marker against the specified opcode.
 
    .. classmethod:: from_traceback(tb)
@@ -81,8 +81,8 @@ compiled code.
 
    .. method:: dis()
 
-      Return a formatted view of the bytecode operations (the same as
-      printed by :func:`dis`, but returned as a multi-line string).
+      Return a formatted view of the bytecode operations (the same as printed by
+      :func:`dis.dis`, but returned as a multi-line string).
 
    .. method:: info()
 
