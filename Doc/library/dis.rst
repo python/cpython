@@ -9,9 +9,9 @@
 --------------
 
 The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
-disassembling it. The CPython bytecode which this module takes as an
-input is defined in the file :file:`Include/opcode.h` and used by the compiler
-and the interpreter.
+disassembling it. The CPython bytecode which this module takes as an input is
+defined in the file :file:`Include/opcode.h` and used by the compiler and the
+interpreter.
 
 .. impl-detail::
 
@@ -43,33 +43,31 @@ Bytecode analysis
 .. versionadded:: 3.4
 
 The bytecode analysis API allows pieces of Python code to be wrapped in a
-:class:`Bytecode` object that provides easy access to details of the
-compiled code.
+:class:`Bytecode` object that provides easy access to details of the compiled
+code.
 
 .. class:: Bytecode(x, *, first_line=None, current_offset=None)
 
-   Analyse the bytecode corresponding to a function, method, string of
-   source code, or a code object (as returned by :func:`compile`).
+   Analyse the bytecode corresponding to a function, method, string of source
+   code, or a code object (as returned by :func:`compile`).
 
-   This is a convenience wrapper around many of the functions listed below,
-   most notably :func:`get_instructions`, as iterating over a
-   :class:`Bytecode` instance yields the bytecode operations as
-   :class:`Instruction` instances.
+   This is a convenience wrapper around many of the functions listed below, most
+   notably :func:`get_instructions`, as iterating over a :class:`Bytecode`
+   instance yields the bytecode operations as :class:`Instruction` instances.
 
-   If *first_line* is not None, it indicates the line number that should
-   be reported for the first source line in the disassembled code.
-   Otherwise, the source line information (if any) is taken directly from
-   the disassembled code object.
+   If *first_line* is not None, it indicates the line number that should be
+   reported for the first source line in the disassembled code.  Otherwise, the
+   source line information (if any) is taken directly from the disassembled code
+   object.
 
-   If *current_offset* is not None, it refers to an instruction offset
-   in the disassembled code. Setting this means :meth:`.dis` will display
-   a "current instruction" marker against the specified opcode.
+   If *current_offset* is not None, it refers to an instruction offset in the
+   disassembled code. Setting this means :meth:`.dis` will display a "current
+   instruction" marker against the specified opcode.
 
    .. classmethod:: from_traceback(tb)
 
-      Construct a :class:`Bytecode` instance from the given traceback,
-      setting *current_offset* to the instruction responsible for the
-      exception.
+      Construct a :class:`Bytecode` instance from the given traceback, setting
+      *current_offset* to the instruction responsible for the exception.
 
    .. data:: codeobj
 
@@ -104,10 +102,9 @@ Example::
 Analysis functions
 ------------------
 
-The :mod:`dis` module also defines the following analysis functions that
-convert the input directly to the desired output. They can be useful if
-only a single operation is being performed, so the intermediate analysis
-object isn't useful:
+The :mod:`dis` module also defines the following analysis functions that convert
+the input directly to the desired output. They can be useful if only a single
+operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: code_info(x)
 
@@ -196,13 +193,13 @@ object isn't useful:
    Return an iterator over the instructions in the supplied function, method,
    source code string or code object.
 
-   The iterator generates a series of :class:`Instruction` named tuples
-   giving the details of each operation in the supplied code.
+   The iterator generates a series of :class:`Instruction` named tuples giving
+   the details of each operation in the supplied code.
 
-   If *first_line* is not None, it indicates the line number that should
-   be reported for the first source line in the disassembled code.
-   Otherwise, the source line information (if any) is taken directly from
-   the disassembled code object.
+   If *first_line* is not None, it indicates the line number that should be
+   reported for the first source line in the disassembled code.  Otherwise, the
+   source line information (if any) is taken directly from the disassembled code
+   object.
 
    .. versionadded:: 3.4
 
@@ -501,8 +498,8 @@ the original TOS1.
 .. opcode:: PRINT_EXPR
 
    Implements the expression statement for the interactive mode.  TOS is removed
-   from the stack and printed.  In non-interactive mode, an expression statement is
-   terminated with :opcode:`POP_TOP`.
+   from the stack and printed.  In non-interactive mode, an expression statement
+   is terminated with :opcode:`POP_TOP`.
 
 
 .. opcode:: BREAK_LOOP
@@ -532,9 +529,9 @@ the original TOS1.
    comprehensions.
 
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
-instructions, while the
-added value or key/value pair is popped off, the container object remains on
-the stack so that it is available for further iterations of the loop.
+instructions, while the added value or key/value pair is popped off, the
+container object remains on the stack so that it is available for further
+iterations of the loop.
 
 
 .. opcode:: RETURN_VALUE
@@ -556,23 +553,23 @@ the stack so that it is available for further iterations of the loop.
 
 .. opcode:: IMPORT_STAR
 
-   Loads all symbols not starting with ``'_'`` directly from the module TOS to the
-   local namespace. The module is popped after loading all names. This opcode
-   implements ``from module import *``.
+   Loads all symbols not starting with ``'_'`` directly from the module TOS to
+   the local namespace. The module is popped after loading all names. This
+   opcode implements ``from module import *``.
 
 
 .. opcode:: POP_BLOCK
 
-   Removes one block from the block stack.  Per frame, there is a  stack of blocks,
-   denoting nested loops, try statements, and such.
+   Removes one block from the block stack.  Per frame, there is a stack of
+   blocks, denoting nested loops, try statements, and such.
 
 
 .. opcode:: POP_EXCEPT
 
    Removes one block from the block stack. The popped block must be an exception
-   handler block, as implicitly created when entering an except handler.
-   In addition to popping extraneous values from the frame stack, the
-   last three popped values are used to restore the exception state.
+   handler block, as implicitly created when entering an except handler.  In
+   addition to popping extraneous values from the frame stack, the last three
+   popped values are used to restore the exception state.
 
 
 .. opcode:: END_FINALLY
@@ -602,9 +599,9 @@ the stack so that it is available for further iterations of the loop.
 
 .. opcode:: WITH_CLEANUP
 
-   Cleans up the stack when a :keyword:`with` statement block exits.  TOS is
-   the context manager's :meth:`__exit__` bound method. Below TOS are 1--3
-   values indicating how/why the finally clause was entered:
+   Cleans up the stack when a :keyword:`with` statement block exits.  TOS is the
+   context manager's :meth:`__exit__` bound method. Below TOS are 1--3 values
+   indicating how/why the finally clause was entered:
 
    * SECOND = ``None``
    * (SECOND, THIRD) = (``WHY_{RETURN,CONTINUE}``), retval
@@ -614,10 +611,10 @@ the stack so that it is available for further iterations of the loop.
    In the last case, ``TOS(SECOND, THIRD, FOURTH)`` is called, otherwise
    ``TOS(None, None, None)``.  In addition, TOS is removed from the stack.
 
-   If the stack represents an exception, *and* the function call returns
-   a 'true' value, this information is "zapped" and replaced with a single
-   ``WHY_SILENCED`` to prevent :opcode:`END_FINALLY` from re-raising the exception.
-   (But non-local gotos will still be resumed.)
+   If the stack represents an exception, *and* the function call returns a
+   'true' value, this information is "zapped" and replaced with a single
+   ``WHY_SILENCED`` to prevent :opcode:`END_FINALLY` from re-raising the
+   exception.  (But non-local gotos will still be resumed.)
 
    .. XXX explain the WHY stuff!
 
@@ -628,8 +625,8 @@ the more significant byte last.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = TOS``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use :opcode:`STORE_FAST`
-   or :opcode:`STORE_GLOBAL` if possible.
+   :attr:`co_names` of the code object. The compiler tries to use
+   :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
@@ -689,8 +686,8 @@ the more significant byte last.
 
 .. opcode:: BUILD_TUPLE (count)
 
-   Creates a tuple consuming *count* items from the stack, and pushes the resulting
-   tuple onto the stack.
+   Creates a tuple consuming *count* items from the stack, and pushes the
+   resulting tuple onto the stack.
 
 
 .. opcode:: BUILD_LIST (count)
@@ -724,8 +721,8 @@ the more significant byte last.
 
    Imports the module ``co_names[namei]``.  TOS and TOS1 are popped and provide
    the *fromlist* and *level* arguments of :func:`__import__`.  The module
-   object is pushed onto the stack.  The current namespace is not affected:
-   for a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
+   object is pushed onto the stack.  The current namespace is not affected: for
+   a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
    modifies the namespace.
 
 
@@ -753,14 +750,14 @@ the more significant byte last.
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
 
-   If TOS is true, sets the bytecode counter to *target* and leaves TOS
-   on the stack.  Otherwise (TOS is false), TOS is popped.
+   If TOS is true, sets the bytecode counter to *target* and leaves TOS on the
+   stack.  Otherwise (TOS is false), TOS is popped.
 
 
 .. opcode:: JUMP_IF_FALSE_OR_POP (target)
 
-   If TOS is false, sets the bytecode counter to *target* and leaves
-   TOS on the stack.  Otherwise (TOS is true), TOS is popped.
+   If TOS is false, sets the bytecode counter to *target* and leaves TOS on the
+   stack.  Otherwise (TOS is true), TOS is popped.
 
 
 .. opcode:: JUMP_ABSOLUTE (target)
@@ -770,10 +767,10 @@ the more significant byte last.
 
 .. opcode:: FOR_ITER (delta)
 
-   TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
-   If this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted TOS is popped, and the
-   byte code counter is incremented by *delta*.
+   TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
+   this yields a new value, push it on the stack (leaving the iterator below
+   it).  If the iterator indicates it is exhausted TOS is popped, and the byte
+   code counter is incremented by *delta*.
 
 
 .. opcode:: LOAD_GLOBAL (namei)
@@ -789,19 +786,19 @@ the more significant byte last.
 
 .. opcode:: SETUP_EXCEPT (delta)
 
-   Pushes a try block from a try-except clause onto the block stack. *delta* points
-   to the first except block.
+   Pushes a try block from a try-except clause onto the block stack. *delta*
+   points to the first except block.
 
 
 .. opcode:: SETUP_FINALLY (delta)
 
-   Pushes a try block from a try-except clause onto the block stack. *delta* points
-   to the finally block.
+   Pushes a try block from a try-except clause onto the block stack. *delta*
+   points to the finally block.
 
 .. opcode:: STORE_MAP
 
-   Store a key and value pair in a dictionary.  Pops the key and value while leaving
-   the dictionary on the stack.
+   Store a key and value pair in a dictionary.  Pops the key and value while
+   leaving the dictionary on the stack.
 
 .. opcode:: LOAD_FAST (var_num)
 
@@ -821,8 +818,8 @@ the more significant byte last.
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot *i* of the cell and free
-   variable storage.  The name of the variable is  ``co_cellvars[i]`` if *i* is
-   less than the length of *co_cellvars*.  Otherwise it is  ``co_freevars[i -
+   variable storage.  The name of the variable is ``co_cellvars[i]`` if *i* is
+   less than the length of *co_cellvars*.  Otherwise it is ``co_freevars[i -
    len(co_cellvars)]``.
 
 
@@ -862,11 +859,12 @@ the more significant byte last.
 
    Calls a function.  The low byte of *argc* indicates the number of positional
    parameters, the high byte the number of keyword parameters. On the stack, the
-   opcode finds the keyword parameters first.  For each keyword argument, the value
-   is on top of the key.  Below the keyword parameters, the positional parameters
-   are on the stack, with the right-most parameter on top.  Below the parameters,
-   the function object to call is on the stack.  Pops all function arguments, and
-   the function itself off the stack, and pushes the return value.
+   opcode finds the keyword parameters first.  For each keyword argument, the
+   value is on top of the key.  Below the keyword parameters, the positional
+   parameters are on the stack, with the right-most parameter on top.  Below the
+   parameters, the function object to call is on the stack.  Pops all function
+   arguments, and the function itself off the stack, and pushes the return
+   value.
 
 
 .. opcode:: MAKE_FUNCTION (argc)
@@ -889,8 +887,8 @@ the more significant byte last.
    Creates a new function object, sets its *__closure__* slot, and pushes it on
    the stack.  TOS is the :term:`qualified name` of the function, TOS1 is the
    code associated with the function, and TOS2 is the tuple containing cells for
-   the closure's free variables.  The function also has *argc* default parameters,
-   which are found below the cells.
+   the closure's free variables.  The function also has *argc* default
+   parameters, which are found below the cells.
 
 
 .. opcode:: BUILD_SLICE (argc)
@@ -906,36 +904,37 @@ the more significant byte last.
 
    Prefixes any opcode which has an argument too big to fit into the default two
    bytes.  *ext* holds two additional bytes which, taken together with the
-   subsequent opcode's argument, comprise a four-byte argument, *ext* being the two
-   most-significant bytes.
+   subsequent opcode's argument, comprise a four-byte argument, *ext* being the
+   two most-significant bytes.
 
 
 .. opcode:: CALL_FUNCTION_VAR (argc)
 
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The top element
-   on the stack contains the variable argument list, followed by keyword and
-   positional arguments.
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
+   top element on the stack contains the variable argument list, followed by
+   keyword and positional arguments.
 
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The top element
-   on the stack contains the keyword arguments dictionary,  followed by explicit
-   keyword and positional arguments.
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
+   top element on the stack contains the keyword arguments dictionary, followed
+   by explicit keyword and positional arguments.
 
 
 .. opcode:: CALL_FUNCTION_VAR_KW (argc)
 
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The top
-   element on the stack contains the keyword arguments dictionary, followed by the
-   variable-arguments tuple, followed by explicit keyword and positional arguments.
+   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The
+   top element on the stack contains the keyword arguments dictionary, followed
+   by the variable-arguments tuple, followed by explicit keyword and positional
+   arguments.
 
 
 .. opcode:: HAVE_ARGUMENT
 
-   This is not really an opcode.  It identifies the dividing line between opcodes
-   which don't take arguments ``< HAVE_ARGUMENT`` and those which do ``>=
-   HAVE_ARGUMENT``.
+   This is not really an opcode.  It identifies the dividing line between
+   opcodes which don't take arguments ``< HAVE_ARGUMENT`` and those which do
+   ``>= HAVE_ARGUMENT``.
 
 .. _opcode_collections:
 
@@ -967,10 +966,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable (note that 'free' in
-   this context refers to names in the current scope that are referenced by
-   inner scopes or names in outer scopes that are referenced from this scope.
-   It does *not* include references to global or builtin scopes).
+   Sequence of bytecodes that access a free variable (note that 'free' in this
+   context refers to names in the current scope that are referenced by inner
+   scopes or names in outer scopes that are referenced from this scope.  It does
+   *not* include references to global or builtin scopes).
 
 
 .. data:: hasname
