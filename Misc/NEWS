@@ -86,6 +86,9 @@ Library
   argument which, if set to True, will pass messages to handlers taking handler
   levels into account.
 
+- Issue #19705: turtledemo now has a visual sorting algorithm demo.  Original
+  patch from Jason Yeo.
+
 Build
 -----
 
