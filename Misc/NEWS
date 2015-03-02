@@ -50,6 +50,8 @@ Library
   posixpath.expandvars().  Fixed all os.path implementations on
   unicode-disabled builds.
 
+- Issue #23367: Fix possible overflows in the unicodedata module.
+
 - Issue #23363: Fix possible overflow in itertools.permutations.
 
 - Issue #23364: Fix possible overflow in itertools.product.

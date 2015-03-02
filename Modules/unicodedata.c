@@ -506,8 +506,15 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 
     stackptr = 0;
     isize = PyUnicode_GET_SIZE(input);
+    space = isize;
     /* Overallocate at most 10 characters. */
-    space = (isize > 10 ? 10 : isize) + isize;
+    if (space > 10) {
+        if (space <= PY_SSIZE_T_MAX - 10)
+            space += 10;
+    }
+    else {
+        space *= 2;
+    }
     result = PyUnicode_FromUnicode(NULL, space);
     if (!result)
         return NULL;
