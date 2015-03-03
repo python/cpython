@@ -130,22 +130,6 @@ typedef struct {
     PyObject *weakreflist; /* List of weak references */
 } dequeobject;
 
-/* The deque's size limit is d.maxlen.  The limit can be zero or positive.
- * If there is no limit, then d.maxlen == -1.
- *
- * After an item is added to a deque, we check to see if the size has grown past
- * the limit. If it has, we get the size back down to the limit by popping an
- * item off of the opposite end.  The methods that can trigger this are append(),
- * appendleft(), extend(), and extendleft().
- */
-
-#define TRIM(d, popfunction)                                    \
-    if (d->maxlen != -1 && Py_SIZE(d) > d->maxlen) {       \
-        PyObject *rv = popfunction(d, NULL);                \
-        assert(rv != NULL  &&  Py_SIZE(d) <= d->maxlen);    \
-        Py_DECREF(rv);                                      \
-    }
-
 static PyTypeObject deque_type;
 
 /* XXX Todo:
@@ -261,6 +245,37 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 
 PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
 
+/* The deque's size limit is d.maxlen.  The limit can be zero or positive.
+ * If there is no limit, then d.maxlen == -1.
+ *
+ * After an item is added to a deque, we check to see if the size has grown past
+ * the limit. If it has, we get the size back down to the limit by popping an
+ * item off of the opposite end.  The methods that can trigger this are append(),
+ * appendleft(), extend(), and extendleft().
+ */
+
+static void
+deque_trim_right(dequeobject *deque)
+{
+    if (deque->maxlen != -1 && Py_SIZE(deque) > deque->maxlen) {
+        PyObject *rv = deque_pop(deque, NULL);
+        assert(rv != NULL);
+        assert(Py_SIZE(deque) <= deque->maxlen);
+        Py_DECREF(rv);
+    }
+}
+
+static void
+deque_trim_left(dequeobject *deque)
+{
+    if (deque->maxlen != -1 && Py_SIZE(deque) > deque->maxlen) {
+        PyObject *rv = deque_popleft(deque, NULL);
+        assert(rv != NULL);
+        assert(Py_SIZE(deque) <= deque->maxlen);
+        Py_DECREF(rv);
+    }
+}
+
 static PyObject *
 deque_append(dequeobject *deque, PyObject *item)
 {
@@ -280,7 +295,7 @@ deque_append(dequeobject *deque, PyObject *item)
     Py_SIZE(deque)++;
     deque->rightindex++;
     deque->rightblock->data[deque->rightindex] = item;
-    TRIM(deque, deque_popleft);
+    deque_trim_left(deque);
     Py_RETURN_NONE;
 }
 
@@ -305,7 +320,7 @@ deque_appendleft(dequeobject *deque, PyObject *item)
     Py_SIZE(deque)++;
     deque->leftindex--;
     deque->leftblock->data[deque->leftindex] = item;
-    TRIM(deque, deque_pop);
+    deque_trim_right(deque);
     Py_RETURN_NONE;
 }
 
@@ -378,7 +393,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         Py_SIZE(deque)++;
         deque->rightindex++;
         deque->rightblock->data[deque->rightindex] = item;
-        TRIM(deque, deque_popleft);
+        deque_trim_left(deque);
     }
     Py_DECREF(it);
     if (PyErr_Occurred())
@@ -439,7 +454,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         Py_SIZE(deque)++;
         deque->leftindex--;
         deque->leftblock->data[deque->leftindex] = item;
-        TRIM(deque, deque_pop);
+        deque_trim_right(deque);
     }
     Py_DECREF(it);
     if (PyErr_Occurred())
