@@ -869,12 +869,12 @@ def splittype(url):
     """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
     global _typeprog
     if _typeprog is None:
-        _typeprog = re.compile('^([^/:]+):')
+        _typeprog = re.compile('([^/:]+):(.*)', re.DOTALL)
 
     match = _typeprog.match(url)
     if match:
-        scheme = match.group(1)
-        return scheme.lower(), url[len(scheme) + 1:]
+        scheme, data = match.groups()
+        return scheme.lower(), data
     return None, url
 
 _hostprog = None
@@ -882,38 +882,25 @@ def splithost(url):
     """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
     global _hostprog
     if _hostprog is None:
-        _hostprog = re.compile('^//([^/?]*)(.*)$')
+        _hostprog = re.compile('//([^/?]*)(.*)', re.DOTALL)
 
     match = _hostprog.match(url)
     if match:
-        host_port = match.group(1)
-        path = match.group(2)
-        if path and not path.startswith('/'):
+        host_port, path = match.groups()
+        if path and path[0] != '/':
             path = '/' + path
         return host_port, path
     return None, url
 
-_userprog = None
 def splituser(host):
     """splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'."""
-    global _userprog
-    if _userprog is None:
-        _userprog = re.compile('^(.*)@(.*)$')
+    user, delim, host = host.rpartition('@')
+    return (user if delim else None), host
 
-    match = _userprog.match(host)
-    if match: return match.group(1, 2)
-    return None, host
-
-_passwdprog = None
 def splitpasswd(user):
     """splitpasswd('user:passwd') -> 'user', 'passwd'."""
-    global _passwdprog
-    if _passwdprog is None:
-        _passwdprog = re.compile('^([^:]*):(.*)$',re.S)
-
-    match = _passwdprog.match(user)
-    if match: return match.group(1, 2)
-    return user, None
+    user, delim, passwd = user.partition(':')
+    return user, (passwd if delim else None)
 
 # splittag('/path#tag') --> '/path', 'tag'
 _portprog = None
@@ -921,7 +908,7 @@ def splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
-        _portprog = re.compile('^(.*):([0-9]*)$')
+        _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
 
     match = _portprog.match(host)
     if match:
@@ -930,47 +917,34 @@ def splitport(host):
             return host, port
     return host, None
 
-_nportprog = None
 def splitnport(host, defport=-1):
     """Split host and port, returning numeric port.
     Return given default port if no ':' found; defaults to -1.
     Return numerical port if a valid number are found after ':'.
     Return None if ':' but not a valid number."""
-    global _nportprog
-    if _nportprog is None:
-        _nportprog = re.compile('^(.*):(.*)$')
-
-    match = _nportprog.match(host)
-    if match:
-        host, port = match.group(1, 2)
-        if port:
-            try:
-                nport = int(port)
-            except ValueError:
-                nport = None
-            return host, nport
+    host, delim, port = host.rpartition(':')
+    if not delim:
+        host = port
+    elif port:
+        try:
+            nport = int(port)
+        except ValueError:
+            nport = None
+        return host, nport
     return host, defport
 
-_queryprog = None
 def splitquery(url):
     """splitquery('/path?query') --> '/path', 'query'."""
-    global _queryprog
-    if _queryprog is None:
-        _queryprog = re.compile('^(.*)\?([^?]*)$')
-
-    match = _queryprog.match(url)
-    if match: return match.group(1, 2)
+    path, delim, query = url.rpartition('?')
+    if delim:
+        return path, query
     return url, None
 
-_tagprog = None
 def splittag(url):
     """splittag('/path#tag') --> '/path', 'tag'."""
-    global _tagprog
-    if _tagprog is None:
-        _tagprog = re.compile('^(.*)#([^#]*)$')
-
-    match = _tagprog.match(url)
-    if match: return match.group(1, 2)
+    path, delim, tag = url.rpartition('#')
+    if delim:
+        return path, tag
     return url, None
 
 def splitattr(url):
@@ -979,13 +953,7 @@ def splitattr(url):
     words = url.split(';')
     return words[0], words[1:]
 
-_valueprog = None
 def splitvalue(attr):
     """splitvalue('attr=value') --> 'attr', 'value'."""
-    global _valueprog
-    if _valueprog is None:
-        _valueprog = re.compile('^([^=]*)=(.*)$')
-
-    match = _valueprog.match(attr)
-    if match: return match.group(1, 2)
-    return attr, None
+    attr, delim, value = attr.partition('=')
+    return attr, (value if delim else None)
