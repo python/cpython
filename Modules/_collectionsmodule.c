@@ -158,14 +158,14 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     MARK_END(b->rightlink);
 
     assert(BLOCKLEN >= 2);
+    Py_SIZE(deque) = 0;
     deque->leftblock = b;
     deque->rightblock = b;
     deque->leftindex = CENTER + 1;
     deque->rightindex = CENTER;
-    Py_SIZE(deque) = 0;
     deque->state = 0;
-    deque->weakreflist = NULL;
     deque->maxlen = -1;
+    deque->weakreflist = NULL;
 
     return (PyObject *)deque;
 }
@@ -775,9 +775,9 @@ deque_clear(dequeobject *deque)
         assert (item != NULL);
         Py_DECREF(item);
     }
-    assert(deque->leftblock == deque->rightblock &&
-           deque->leftindex - 1 == deque->rightindex &&
-           Py_SIZE(deque) == 0);
+    assert(deque->leftblock == deque->rightblock);
+    assert(deque->leftindex - 1 == deque->rightindex);
+    assert(Py_SIZE(deque) == 0);
 }
 
 static int
@@ -1152,10 +1152,10 @@ static PySequenceMethods deque_as_sequence = {
     0,                                  /* sq_repeat */
     (ssizeargfunc)deque_item,           /* sq_item */
     0,                                  /* sq_slice */
-    (ssizeobjargproc)deque_ass_item,            /* sq_ass_item */
+    (ssizeobjargproc)deque_ass_item,    /* sq_ass_item */
     0,                                  /* sq_ass_slice */
     0,                                  /* sq_contains */
-    (binaryfunc)deque_inplace_concat,           /* sq_inplace_concat */
+    (binaryfunc)deque_inplace_concat,   /* sq_inplace_concat */
     0,                                  /* sq_inplace_repeat */
 
 };
@@ -1254,8 +1254,8 @@ static PyTypeObject deque_type = {
 
 typedef struct {
     PyObject_HEAD
-    Py_ssize_t index;
     block *b;
+    Py_ssize_t index;
     dequeobject *deque;
     size_t state;          /* state when the iterator is created */
     Py_ssize_t counter;    /* number of items remaining for iteration */
@@ -1374,7 +1374,7 @@ static PyMethodDef dequeiter_methods[] = {
 
 static PyTypeObject dequeiter_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_collections._deque_iterator",              /* tp_name */
+    "_collections._deque_iterator",             /* tp_name */
     sizeof(dequeiterobject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
@@ -1393,7 +1393,7 @@ static PyTypeObject dequeiter_type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)dequeiter_traverse,           /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1496,7 +1496,7 @@ dequereviter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 static PyTypeObject dequereviter_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_collections._deque_reverse_iterator",      /* tp_name */
+    "_collections._deque_reverse_iterator",     /* tp_name */
     sizeof(dequeiterobject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
@@ -1515,7 +1515,7 @@ static PyTypeObject dequereviter_type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)dequeiter_traverse,           /* tp_traverse */
     0,                                          /* tp_clear */
