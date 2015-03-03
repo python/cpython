@@ -765,6 +765,14 @@ deque_clear(dequeobject *deque)
            Py_SIZE(deque) == 0);
 }
 
+static int
+valid_index(Py_ssize_t i, Py_ssize_t limit)
+{
+    /* The cast to size_t let us use just a single comparison
+       to check whether i is in the range: 0 <= i < limit */
+    return (size_t) i < (size_t) limit;
+}
+
 static PyObject *
 deque_item(dequeobject *deque, Py_ssize_t i)
 {
@@ -772,9 +780,8 @@ deque_item(dequeobject *deque, Py_ssize_t i)
     PyObject *item;
     Py_ssize_t n, index=i;
 
-    if ((size_t)i >= (size_t)Py_SIZE(deque)) {
-        PyErr_SetString(PyExc_IndexError,
-                        "deque index out of range");
+    if (!valid_index(i, Py_SIZE(deque))) {
+        PyErr_SetString(PyExc_IndexError, "deque index out of range");
         return NULL;
     }
 
@@ -836,9 +843,8 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
 
-    if ((size_t)i >= (size_t)len) {
-        PyErr_SetString(PyExc_IndexError,
-                        "deque index out of range");
+    if (!valid_index(i, len)) {
+        PyErr_SetString(PyExc_IndexError, "deque index out of range");
         return -1;
     }
     if (v == NULL)
