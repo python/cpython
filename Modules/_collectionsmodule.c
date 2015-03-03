@@ -15,9 +15,9 @@
 
 /* The block length may be set to any number over 1.  Larger numbers
  * reduce the number of calls to the memory allocator, give faster
- * indexing and rotation, and reduce the link::data overhead ratio.
+ * indexing and rotation, and reduce the link to data overhead ratio.
  * Making the block length a power of two speeds-up the modulo
- * calculation in deque_item().
+ * and division calculations in deque_item() and deque_ass_item().
  */
 
 #define BLOCKLEN 64
@@ -55,6 +55,19 @@ typedef struct BLOCK {
     PyObject *data[BLOCKLEN];
     struct BLOCK *rightlink;
 } block;
+
+typedef struct {
+    PyObject_VAR_HEAD
+    block *leftblock;
+    block *rightblock;
+    Py_ssize_t leftindex;       /* in range(BLOCKLEN) */
+    Py_ssize_t rightindex;      /* in range(BLOCKLEN) */
+    long state;                 /* incremented whenever the indices move */
+    Py_ssize_t maxlen;
+    PyObject *weakreflist; /* List of weak references */
+} dequeobject;
+
+static PyTypeObject deque_type;
 
 /* For debug builds, add error checking to track the endpoints
  * in the chain of links.  The goal is to make sure that link
@@ -118,19 +131,6 @@ freeblock(block *b)
         PyMem_Free(b);
     }
 }
-
-typedef struct {
-    PyObject_VAR_HEAD
-    block *leftblock;
-    block *rightblock;
-    Py_ssize_t leftindex;       /* in range(BLOCKLEN) */
-    Py_ssize_t rightindex;      /* in range(BLOCKLEN) */
-    long state;                 /* incremented whenever the indices move */
-    Py_ssize_t maxlen;
-    PyObject *weakreflist; /* List of weak references */
-} dequeobject;
-
-static PyTypeObject deque_type;
 
 /* XXX Todo:
    If aligned memory allocations become available, make the
