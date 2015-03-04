@@ -441,6 +441,13 @@ Library
   now clears its internal reference to the selector mapping to break a
   reference cycle. Initial patch written by Martin Richard.
 
+- Issue #17911: Provide a way to seed the linecache for a PEP-302 module
+  without actually loading the code.
+
+- Issue #17911: Provide a new object API for traceback, including the ability
+  to not lookup lines at all until the traceback is actually rendered, without
+  any trace of the original objects being kept alive.
+
 - Issue #19777: Provide a home() classmethod on Path objects.  Contributed
   by Victor Salgado and Mayank Tripathi.
 

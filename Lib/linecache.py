@@ -5,6 +5,7 @@ is not found, it will look down the module search path for a file by
 that name.
 """
 
+import functools
 import sys
 import os
 import tokenize
@@ -21,7 +22,9 @@ def getline(filename, lineno, module_globals=None):
 
 # The cache
 
-cache = {} # The cache
+# The cache. Maps filenames to either a thunk which will provide source code,
+# or a tuple (size, mtime, lines, fullname) once loaded.
+cache = {}
 
 
 def clearcache():
@@ -36,6 +39,9 @@ def getlines(filename, module_globals=None):
     Update the cache if it doesn't contain an entry for this file already."""
 
     if filename in cache:
+        entry = cache[filename]
+        if len(entry) == 1:
+            return updatecache(filename, module_globals)
         return cache[filename][2]
     else:
         return updatecache(filename, module_globals)
@@ -54,7 +60,11 @@ def checkcache(filename=None):
             return
 
     for filename in filenames:
-        size, mtime, lines, fullname = cache[filename]
+        entry = cache[filename]
+        if len(entry) == 1:
+            # lazy cache entry, leave it lazy.
+            continue
+        size, mtime, lines, fullname = entry
         if mtime is None:
             continue   # no-op for files loaded via a __loader__
         try:
@@ -72,7 +82,8 @@ def updatecache(filename, module_globals=None):
     and return an empty list."""
 
     if filename in cache:
-        del cache[filename]
+        if len(cache[filename]) != 1:
+            del cache[filename]
     if not filename or (filename.startswith('<') and filename.endswith('>')):
         return []
 
@@ -82,27 +93,23 @@ def updatecache(filename, module_globals=None):
     except OSError:
         basename = filename
 
-        # Try for a __loader__, if available
-        if module_globals and '__loader__' in module_globals:
-            name = module_globals.get('__name__')
-            loader = module_globals['__loader__']
-            get_source = getattr(loader, 'get_source', None)
-
-            if name and get_source:
-                try:
-                    data = get_source(name)
-                except (ImportError, OSError):
-                    pass
-                else:
-                    if data is None:
-                        # No luck, the PEP302 loader cannot find the source
-                        # for this module.
-                        return []
-                    cache[filename] = (
-                        len(data), None,
-                        [line+'\n' for line in data.splitlines()], fullname
-                    )
-                    return cache[filename][2]
+        # Realise a lazy loader based lookup if there is one
+        # otherwise try to lookup right now.
+        if lazycache(filename, module_globals):
+            try:
+                data = cache[filename][0]()
+            except (ImportError, OSError):
+                pass
+            else:
+                if data is None:
+                    # No luck, the PEP302 loader cannot find the source
+                    # for this module.
+                    return []
+                cache[filename] = (
+                    len(data), None,
+                    [line+'\n' for line in data.splitlines()], fullname
+                )
+                return cache[filename][2]
 
         # Try looking through the module search path, which is only useful
         # when handling a relative filename.
@@ -132,3 +139,36 @@ def updatecache(filename, module_globals=None):
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
     return lines
+
+
+def lazycache(filename, module_globals):
+    """Seed the cache for filename with module_globals.
+
+    The module loader will be asked for the source only when getlines is
+    called, not immediately.
+
+    If there is an entry in the cache already, it is not altered.
+
+    :return: True if a lazy load is registered in the cache,
+        otherwise False. To register such a load a module loader with a
+        get_source method must be found, the filename must be a cachable
+        filename, and the filename must not be already cached.
+    """
+    if filename in cache:
+        if len(cache[filename]) == 1:
+            return True
+        else:
+            return False
+    if not filename or (filename.startswith('<') and filename.endswith('>')):
+        return False
+    # Try for a __loader__, if available
+    if module_globals and '__loader__' in module_globals:
+        name = module_globals.get('__name__')
+        loader = module_globals['__loader__']
+        get_source = getattr(loader, 'get_source', None)
+
+        if name and get_source:
+            get_lines = functools.partial(get_source, name)
+            cache[filename] = (get_lines,)
+            return True
+    return False
