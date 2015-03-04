@@ -14,19 +14,12 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
 # Formatting and printing lists of traceback lines.
 #
 
-def _format_list_iter(extracted_list):
-    for filename, lineno, name, line in extracted_list:
-        item = '  File "{}", line {}, in {}\n'.format(filename, lineno, name)
-        if line:
-            item = item + '    {}\n'.format(line.strip())
-        yield item
-
 def print_list(extracted_list, file=None):
     """Print the list of tuples as returned by extract_tb() or
     extract_stack() as a formatted stack trace to the given file."""
     if file is None:
         file = sys.stderr
-    for item in _format_list_iter(extracted_list):
+    for item in StackSummary.from_list(extracted_list).format():
         print(item, file=file, end="")
 
 def format_list(extracted_list):
@@ -39,44 +32,11 @@ def format_list(extracted_list):
     the strings may contain internal newlines as well, for those items
     whose source text line is not None.
     """
-    return list(_format_list_iter(extracted_list))
+    return StackSummary.from_list(extracted_list).format()
 
 #
 # Printing and Extracting Tracebacks.
 #
-
-# extractor takes curr and needs to return a tuple of:
-# - Frame object
-# - Line number
-# - Next item (same type as curr)
-# In practice, curr is either a traceback or a frame.
-def _extract_tb_or_stack_iter(curr, limit, extractor):
-    if limit is None:
-        limit = getattr(sys, 'tracebacklimit', None)
-
-    n = 0
-    while curr is not None and (limit is None or n < limit):
-        f, lineno, next_item = extractor(curr)
-        co = f.f_code
-        filename = co.co_filename
-        name = co.co_name
-
-        linecache.checkcache(filename)
-        line = linecache.getline(filename, lineno, f.f_globals)
-
-        if line:
-            line = line.strip()
-        else:
-            line = None
-
-        yield (filename, lineno, name, line)
-        curr = next_item
-        n += 1
-
-def _extract_tb_iter(tb, limit):
-    return _extract_tb_or_stack_iter(
-                tb, limit,
-                operator.attrgetter("tb_frame", "tb_lineno", "tb_next"))
 
 def print_tb(tb, limit=None, file=None):
     """Print up to 'limit' stack trace entries from the traceback 'tb'.
@@ -90,7 +50,7 @@ def print_tb(tb, limit=None, file=None):
 
 def format_tb(tb, limit=None):
     """A shorthand for 'format_list(extract_tb(tb, limit))'."""
-    return format_list(extract_tb(tb, limit=limit))
+    return extract_tb(tb, limit=limit).format()
 
 def extract_tb(tb, limit=None):
     """Return list of up to limit pre-processed entries from traceback.
@@ -103,7 +63,7 @@ def extract_tb(tb, limit=None):
     leading and trailing whitespace stripped; if the source is not
     available it is None.
     """
-    return list(_extract_tb_iter(tb, limit=limit))
+    return StackSummary.extract(walk_tb(tb), limit=limit)
 
 #
 # Exception formatting and output.
@@ -111,47 +71,12 @@ def extract_tb(tb, limit=None):
 
 _cause_message = (
     "\nThe above exception was the direct cause "
-    "of the following exception:\n")
+    "of the following exception:\n\n")
 
 _context_message = (
     "\nDuring handling of the above exception, "
-    "another exception occurred:\n")
+    "another exception occurred:\n\n")
 
-def _iter_chain(exc, custom_tb=None, seen=None):
-    if seen is None:
-        seen = set()
-    seen.add(exc)
-    its = []
-    context = exc.__context__
-    cause = exc.__cause__
-    if cause is not None and cause not in seen:
-        its.append(_iter_chain(cause, False, seen))
-        its.append([(_cause_message, None)])
-    elif (context is not None and
-          not exc.__suppress_context__ and
-          context not in seen):
-        its.append(_iter_chain(context, None, seen))
-        its.append([(_context_message, None)])
-    its.append([(exc, custom_tb or exc.__traceback__)])
-    # itertools.chain is in an extension module and may be unavailable
-    for it in its:
-        yield from it
-
-def _format_exception_iter(etype, value, tb, limit, chain):
-    if chain:
-        values = _iter_chain(value, tb)
-    else:
-        values = [(value, tb)]
-
-    for value, tb in values:
-        if isinstance(value, str):
-            # This is a cause/context message line
-            yield value + '\n'
-            continue
-        if tb:
-            yield 'Traceback (most recent call last):\n'
-            yield from _format_list_iter(_extract_tb_iter(tb, limit=limit))
-        yield from _format_exception_only_iter(type(value), value)
 
 def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
@@ -166,8 +91,10 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     """
     if file is None:
         file = sys.stderr
-    for line in _format_exception_iter(etype, value, tb, limit, chain):
+    for line in TracebackException(
+            etype, value, tb, limit=limit).format(chain=chain):
         print(line, file=file, end="")
+
 
 def format_exception(etype, value, tb, limit=None, chain=True):
     """Format a stack trace and the exception information.
@@ -178,7 +105,9 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
-    return list(_format_exception_iter(etype, value, tb, limit, chain))
+    return list(TracebackException(
+        etype, value, tb, limit=limit).format(chain=chain))
+
 
 def format_exception_only(etype, value):
     """Format the exception part of a traceback.
@@ -196,46 +125,14 @@ def format_exception_only(etype, value):
     string in the list.
 
     """
-    return list(_format_exception_only_iter(etype, value))
+    return list(TracebackException(etype, value, None).format_exception_only())
 
-def _format_exception_only_iter(etype, value):
-    # Gracefully handle (the way Python 2.4 and earlier did) the case of
-    # being called with (None, None).
-    if etype is None:
-        yield _format_final_exc_line(etype, value)
-        return
 
-    stype = etype.__qualname__
-    smod = etype.__module__
-    if smod not in ("__main__", "builtins"):
-        stype = smod + '.' + stype
-
-    if not issubclass(etype, SyntaxError):
-        yield _format_final_exc_line(stype, value)
-        return
-
-    # It was a syntax error; show exactly where the problem was found.
-    filename = value.filename or "<string>"
-    lineno = str(value.lineno) or '?'
-    yield '  File "{}", line {}\n'.format(filename, lineno)
-
-    badline = value.text
-    offset = value.offset
-    if badline is not None:
-        yield '    {}\n'.format(badline.strip())
-        if offset is not None:
-            caretspace = badline.rstrip('\n')
-            offset = min(len(caretspace), offset) - 1
-            caretspace = caretspace[:offset].lstrip()
-            # non-space whitespace (likes tabs) must be kept for alignment
-            caretspace = ((c.isspace() and c or ' ') for c in caretspace)
-            yield '    {}^\n'.format(''.join(caretspace))
-    msg = value.msg or "<no detail available>"
-    yield "{}: {}\n".format(stype, msg)
+# -- not offical API but folk probably use these two functions.
 
 def _format_final_exc_line(etype, value):
     valuestr = _some_str(value)
-    if value is None or not valuestr:
+    if value == 'None' or value is None or not valuestr:
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, valuestr)
@@ -246,6 +143,8 @@ def _some_str(value):
         return str(value)
     except:
         return '<unprintable %s object>' % type(value).__name__
+
+# --
 
 def print_exc(limit=None, file=None, chain=True):
     """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
@@ -267,15 +166,6 @@ def print_last(limit=None, file=None, chain=True):
 # Printing and Extracting Stacks.
 #
 
-def _extract_stack_iter(f, limit=None):
-    return _extract_tb_or_stack_iter(
-                f, limit, lambda f: (f, f.f_lineno, f.f_back))
-
-def _get_stack(f):
-    if f is None:
-        f = sys._getframe().f_back.f_back
-    return f
-
 def print_stack(f=None, limit=None, file=None):
     """Print a stack trace from its invocation point.
 
@@ -283,11 +173,13 @@ def print_stack(f=None, limit=None, file=None):
     stack frame at which to start. The optional 'limit' and 'file'
     arguments have the same meaning as for print_exception().
     """
-    print_list(extract_stack(_get_stack(f), limit=limit), file=file)
+    print_list(extract_stack(f, limit=limit), file=file)
+
 
 def format_stack(f=None, limit=None):
     """Shorthand for 'format_list(extract_stack(f, limit))'."""
-    return format_list(extract_stack(_get_stack(f), limit=limit))
+    return format_list(extract_stack(f, limit=limit))
+
 
 def extract_stack(f=None, limit=None):
     """Extract the raw traceback from the current stack frame.
@@ -298,9 +190,10 @@ def extract_stack(f=None, limit=None):
     line number, function name, text), and the entries are in order
     from oldest to newest stack frame.
     """
-    stack = list(_extract_stack_iter(_get_stack(f), limit=limit))
+    stack = StackSummary.extract(walk_stack(f), limit=limit)
     stack.reverse()
     return stack
+
 
 def clear_frames(tb):
     "Clear all references to local variables in the frames of a traceback."
@@ -311,3 +204,328 @@ def clear_frames(tb):
             # Ignore the exception raised if the frame is still executing.
             pass
         tb = tb.tb_next
+
+
+class FrameSummary:
+    """A single frame from a traceback.
+
+    - :attr:`filename` The filename for the frame.
+    - :attr:`lineno` The line within filename for the frame that was
+      active when the frame was captured.
+    - :attr:`name` The name of the function or method that was executing
+      when the frame was captured.
+    - :attr:`line` The text from the linecache module for the
+      of code that was running when the frame was captured.
+    - :attr:`locals` Either None if locals were not supplied, or a dict
+      mapping the name to the str() of the variable.
+    """
+
+    __slots__ = ('filename', 'lineno', 'name', '_line', 'locals')
+
+    def __init__(self, filename, lineno, name, lookup_line=True, locals=None,
+            line=None):
+        """Construct a FrameSummary.
+
+        :param lookup_line: If True, `linecache` is consulted for the source
+            code line. Otherwise, the line will be looked up when first needed.
+        :param locals: If supplied the frame locals, which will be captured as
+            strings.
+        :param line: If provided, use this instead of looking up the line in
+            the linecache.
+        """
+        self.filename = filename
+        self.lineno = lineno
+        self.name = name
+        self._line = line
+        if lookup_line:
+            self.line
+        self.locals = \
+            dict((k, str(v)) for k, v in locals.items()) if locals else None
+
+    def __eq__(self, other):
+        return (self.filename == other.filename and
+                self.lineno == other.lineno and
+                self.name == other.name and
+                self.locals == other.locals)
+
+    def __getitem__(self, pos):
+        return (self.filename, self.lineno, self.name, self.line)[pos]
+
+    def __iter__(self):
+        return iter([self.filename, self.lineno, self.name, self.line])
+
+    def __repr__(self):
+        return "<FrameSummary file {filename}, line {lineno} in {name}>".format(
+            filename=self.filename, lineno=self.lineno, name=self.name)
+
+    @property
+    def line(self):
+        if self._line is None:
+            self._line = linecache.getline(self.filename, self.lineno).strip()
+        return self._line
+
+
+def walk_stack(f):
+    """Walk a stack yielding the frame and line number for each frame.
+
+    This will follow f.f_back from the given frame. If no frame is given, the
+    current stack is used. Usually used with StackSummary.extract.
+    """
+    if f is None:
+        f = sys._getframe().f_back.f_back
+    while f is not None:
+        yield f, f.f_lineno
+        f = f.f_back
+
+
+def walk_tb(tb):
+    """Walk a traceback yielding the frame and line number for each frame.
+
+    This will follow tb.tb_next (and thus is in the opposite order to
+    walk_stack). Usually used with StackSummary.extract.
+    """
+    while tb is not None:
+        yield tb.tb_frame, tb.tb_lineno
+        tb = tb.tb_next
+
+
+class StackSummary(list):
+    """A stack of frames."""
+
+    @classmethod
+    def extract(klass, frame_gen, limit=None, lookup_lines=True):
+        """Create a StackSummary from a traceback or stack object.
+
+        :param frame_gen: A generator that yields (frame, lineno) tuples to
+            include in the stack.
+        :param limit: None to include all frames or the number of frames to
+            include.
+        :param lookup_lines: If True, lookup lines for each frame immediately,
+            otherwise lookup is deferred until the frame is rendered.
+        """
+        if limit is None:
+            limit = getattr(sys, 'tracebacklimit', None)
+
+        result = klass()
+        fnames = set()
+        for pos, (f, lineno) in enumerate(frame_gen):
+            if limit is not None and pos >= limit:
+                break
+            co = f.f_code
+            filename = co.co_filename
+            name = co.co_name
+
+            fnames.add(filename)
+            linecache.lazycache(filename, f.f_globals)
+            # Must defer line lookups until we have called checkcache.
+            result.append(FrameSummary(filename, lineno, name, lookup_line=False))
+        for filename in fnames:
+            linecache.checkcache(filename)
+        # If immediate lookup was desired, trigger lookups now.
+        if lookup_lines:
+            for f in result:
+                f.line
+        return result
+
+    @classmethod
+    def from_list(klass, a_list):
+        """Create a StackSummary from a simple list of tuples.
+
+        This method supports the older Python API. Each tuple should be a
+        4-tuple with (filename, lineno, name, line) elements.
+        """
+        if isinstance(a_list, StackSummary):
+            return StackSummary(a_list)
+        result = StackSummary()
+        for filename, lineno, name, line in a_list:
+            result.append(FrameSummary(filename, lineno, name, line=line))
+        return result
+
+    def format(self):
+        """Format the stack ready for printing.
+
+        Returns a list of strings ready for printing.  Each string in the
+        resulting list corresponds to a single frame from the stack.
+        Each string ends in a newline; the strings may contain internal
+        newlines as well, for those items with source text lines.
+        """
+        result = []
+        for filename, lineno, name, line in self:
+            item = '  File "{}", line {}, in {}\n'.format(filename, lineno, name)
+            if line:
+                item = item + '    {}\n'.format(line.strip())
+            result.append(item)
+        return result
+
+
+class TracebackException:
+    """An exception ready for rendering.
+
+    The traceback module captures enough attributes from the original exception
+    to this intermediary form to ensure that no references are held, while
+    still being able to fully print or format it.
+
+    Use `from_exception` to create TracebackException instances from exception
+    objects, or the constructor to create TracebackException instances from
+    individual components.
+
+    - :attr:`__cause__` A TracebackException of the original *__cause__*.
+    - :attr:`__context__` A TracebackException of the original *__context__*.
+    - :attr:`__suppress_context__` The *__suppress_context__* value from the
+      original exception.
+    - :attr:`stack` A `StackSummary` representing the traceback.
+    - :attr:`exc_type` The class of the original traceback.
+    - :attr:`filename` For syntax errors - the filename where the error
+      occured.
+    - :attr:`lineno` For syntax errors - the linenumber where the error
+      occured.
+    - :attr:`text` For syntax errors - the text where the error
+      occured.
+    - :attr:`offset` For syntax errors - the offset into the text where the
+      error occured.
+    - :attr:`msg` For syntax errors - the compiler error message.
+    """
+
+    def __init__(self, exc_type, exc_value, exc_traceback, limit=None,
+            lookup_lines=True, _seen=None):
+        # NB: we need to accept exc_traceback, exc_value, exc_traceback to
+        # permit backwards compat with the existing API, otherwise we
+        # need stub thunk objects just to glue it together.
+        # Handle loops in __cause__ or __context__.
+        if _seen is None:
+            _seen = set()
+        _seen.add(exc_value)
+        # Gracefully handle (the way Python 2.4 and earlier did) the case of
+        # being called with no type or value (None, None, None).
+        if (exc_value and exc_value.__cause__ is not None
+            and exc_value.__cause__ not in _seen):
+            cause = TracebackException(
+                type(exc_value.__cause__),
+                exc_value.__cause__,
+                exc_value.__cause__.__traceback__,
+                limit=limit,
+                lookup_lines=False,
+                _seen=_seen)
+        else:
+            cause = None
+        if (exc_value and exc_value.__context__ is not None
+            and exc_value.__context__ not in _seen):
+            context = TracebackException(
+                type(exc_value.__context__),
+                exc_value.__context__,
+                exc_value.__context__.__traceback__,
+                limit=limit,
+                lookup_lines=False,
+                _seen=_seen)
+        else:
+            context = None
+        self.__cause__ = cause
+        self.__context__ = context
+        self.__suppress_context__ = \
+            exc_value.__suppress_context__ if exc_value else False
+        # TODO: locals.
+        self.stack = StackSummary.extract(
+            walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines)
+        self.exc_type = exc_type
+        # Capture now to permit freeing resources: only complication is in the
+        # unofficial API _format_final_exc_line
+        self._str = _some_str(exc_value)
+        if exc_type and issubclass(exc_type, SyntaxError):
+            # Handle SyntaxError's specially
+            self.filename = exc_value.filename
+            self.lineno = str(exc_value.lineno)
+            self.text = exc_value.text
+            self.offset = exc_value.offset
+            self.msg = exc_value.msg
+        if lookup_lines:
+            self._load_lines()
+
+    @classmethod
+    def from_exception(self, exc, *args, **kwargs):
+        """Create a TracebackException from an exception."""
+        return TracebackException(
+            type(exc), exc, exc.__traceback__, *args, **kwargs)
+
+    def _load_lines(self):
+        """Private API. force all lines in the stack to be loaded."""
+        for frame in self.stack:
+            frame.line
+        if self.__context__:
+            self.__context__._load_lines()
+        if self.__cause__:
+            self.__cause__._load_lines()
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __str__(self):
+        return self._str
+
+    def format_exception_only(self):
+        """Format the exception part of the traceback.
+
+        The return value is a generator of strings, each ending in a newline.
+
+        Normally, the generator emits a single string; however, for
+        SyntaxError exceptions, it emites several lines that (when
+        printed) display detailed information about where the syntax
+        error occurred.
+
+        The message indicating which exception occurred is always the last
+        string in the output.
+        """
+        if self.exc_type is None:
+            yield _format_final_exc_line(None, self._str)
+            return
+
+        stype = self.exc_type.__qualname__
+        smod = self.exc_type.__module__
+        if smod not in ("__main__", "builtins"):
+            stype = smod + '.' + stype
+
+        if not issubclass(self.exc_type, SyntaxError):
+            yield _format_final_exc_line(stype, self._str)
+            return
+
+        # It was a syntax error; show exactly where the problem was found.
+        filename = self.filename or "<string>"
+        lineno = str(self.lineno) or '?'
+        yield '  File "{}", line {}\n'.format(filename, lineno)
+
+        badline = self.text
+        offset = self.offset
+        if badline is not None:
+            yield '    {}\n'.format(badline.strip())
+            if offset is not None:
+                caretspace = badline.rstrip('\n')
+                offset = min(len(caretspace), offset) - 1
+                caretspace = caretspace[:offset].lstrip()
+                # non-space whitespace (likes tabs) must be kept for alignment
+                caretspace = ((c.isspace() and c or ' ') for c in caretspace)
+                yield '    {}^\n'.format(''.join(caretspace))
+        msg = self.msg or "<no detail available>"
+        yield "{}: {}\n".format(stype, msg)
+
+    def format(self, chain=True):
+        """Format the exception.
+
+        If chain is not *True*, *__cause__* and *__context__* will not be formatted.
+
+        The return value is a generator of strings, each ending in a newline and
+        some containing internal newlines. `print_exception` is a wrapper around
+        this method which just prints the lines to a file.
+
+        The message indicating which exception occurred is always the last
+        string in the output.
+        """
+        if chain:
+            if self.__cause__ is not None:
+                yield from self.__cause__.format(chain=chain)
+                yield _cause_message
+            elif (self.__context__ is not None and
+                not self.__suppress_context__):
+                yield from self.__context__.format(chain=chain)
+                yield _context_message
+        yield 'Traceback (most recent call last):\n'
+        yield from self.stack.format()
+        yield from self.format_exception_only()
