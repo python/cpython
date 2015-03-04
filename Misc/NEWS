@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23576: Avoid stalling in SSL reads when EOF has been reached in the
+  SSL layer but the underlying connection hasn't been closed.
+
 - Issue #23504: Added an __all__ to the types module.
 
 - Issue #23458: On POSIX, the file descriptor kept open by os.urandom() is now
