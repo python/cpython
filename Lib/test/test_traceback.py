@@ -591,10 +591,9 @@ class TestTracebackException(unittest.TestCase):
         except Exception as e:
             exc_info = sys.exc_info()
             self.expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]), limit=1, lookup_lines=False,
-                capture_locals=True)
+                traceback.walk_tb(exc_info[2]), limit=1, lookup_lines=False)
             self.exc = traceback.TracebackException.from_exception(
-                e, limit=1, lookup_lines=False, capture_locals=True)
+                e, limit=1, lookup_lines=False)
         expected_stack = self.expected_stack
         exc = self.exc
         self.assertEqual(None, exc.__cause__)
