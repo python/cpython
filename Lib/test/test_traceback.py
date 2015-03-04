@@ -1,6 +1,8 @@
 """Test cases for traceback module"""
 
+from collections import namedtuple
 from io import StringIO
+import linecache
 import sys
 import unittest
 import re
@@ -10,6 +12,11 @@ from test.script_helper import assert_python_ok
 import textwrap
 
 import traceback
+
+
+test_code = namedtuple('code', ['co_filename', 'co_name'])
+test_frame = namedtuple('frame', ['f_code', 'f_globals'])
+test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next'])
 
 
 class SyntaxTracebackCases(unittest.TestCase):
@@ -475,6 +482,195 @@ class MiscTracebackCases(unittest.TestCase):
 
         # Local variable dict should now be empty.
         self.assertEqual(len(inner_frame.f_locals), 0)
+
+
+class TestFrame(unittest.TestCase):
+
+    def test_basics(self):
+        linecache.clearcache()
+        linecache.lazycache("f", globals())
+        f = traceback.FrameSummary("f", 1, "dummy")
+        self.assertEqual(
+            ("f", 1, "dummy", '"""Test cases for traceback module"""'),
+            tuple(f))
+        self.assertEqual(None, f.locals)
+
+    def test_lazy_lines(self):
+        linecache.clearcache()
+        f = traceback.FrameSummary("f", 1, "dummy", lookup_line=False)
+        self.assertEqual(None, f._line)
+        linecache.lazycache("f", globals())
+        self.assertEqual(
+            '"""Test cases for traceback module"""',
+            f.line)
+
+    def test_explicit_line(self):
+        f = traceback.FrameSummary("f", 1, "dummy", line="line")
+        self.assertEqual("line", f.line)
+
+
+class TestStack(unittest.TestCase):
+
+    def test_walk_stack(self):
+        s = list(traceback.walk_stack(None))
+        self.assertGreater(len(s), 10)
+
+    def test_walk_tb(self):
+        try:
+            1/0
+        except Exception:
+            _, _, tb = sys.exc_info()
+        s = list(traceback.walk_tb(tb))
+        self.assertEqual(len(s), 1)
+
+    def test_extract_stack(self):
+        s = traceback.StackSummary.extract(traceback.walk_stack(None))
+        self.assertIsInstance(s, traceback.StackSummary)
+
+    def test_extract_stack_limit(self):
+        s = traceback.StackSummary.extract(traceback.walk_stack(None), limit=5)
+        self.assertEqual(len(s), 5)
+
+    def test_extract_stack_lookup_lines(self):
+        linecache.clearcache()
+        linecache.updatecache('/foo.py', globals())
+        c = test_code('/foo.py', 'method')
+        f = test_frame(c, None)
+        s = traceback.StackSummary.extract(iter([(f, 6)]), lookup_lines=True)
+        linecache.clearcache()
+        self.assertEqual(s[0].line, "import sys")
+
+    def test_extract_stackup_deferred_lookup_lines(self):
+        linecache.clearcache()
+        c = test_code('/foo.py', 'method')
+        f = test_frame(c, None)
+        s = traceback.StackSummary.extract(iter([(f, 6)]), lookup_lines=False)
+        self.assertEqual({}, linecache.cache)
+        linecache.updatecache('/foo.py', globals())
+        self.assertEqual(s[0].line, "import sys")
+
+    def test_from_list(self):
+        s = traceback.StackSummary([('foo.py', 1, 'fred', 'line')])
+        self.assertEqual(
+            ['  File "foo.py", line 1, in fred\n    line\n'],
+            s.format())
+
+    def test_format_smoke(self):
+        # For detailed tests see the format_list tests, which consume the same
+        # code.
+        s = traceback.StackSummary([('foo.py', 1, 'fred', 'line')])
+        self.assertEqual(
+            ['  File "foo.py", line 1, in fred\n    line\n'],
+            s.format())
+
+
+
+class TestTracebackException(unittest.TestCase):
+
+    def test_smoke(self):
+        try:
+            1/0
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]))
+        self.assertEqual(None, exc.__cause__)
+        self.assertEqual(None, exc.__context__)
+        self.assertEqual(False, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_from_exception(self):
+        # Check all the parameters are accepted.
+        def foo():
+            1/0
+        try:
+            foo()
+        except Exception as e:
+            exc_info = sys.exc_info()
+            self.expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]), limit=1, lookup_lines=False,
+                capture_locals=True)
+            self.exc = traceback.TracebackException.from_exception(
+                e, limit=1, lookup_lines=False, capture_locals=True)
+        expected_stack = self.expected_stack
+        exc = self.exc
+        self.assertEqual(None, exc.__cause__)
+        self.assertEqual(None, exc.__context__)
+        self.assertEqual(False, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_cause(self):
+        try:
+            try:
+                1/0
+            finally:
+                exc_info_context = sys.exc_info()
+                exc_context = traceback.TracebackException(*exc_info_context)
+                cause = Exception("cause")
+                raise Exception("uh oh") from cause
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]))
+        exc_cause = traceback.TracebackException(Exception, cause, None)
+        self.assertEqual(exc_cause, exc.__cause__)
+        self.assertEqual(exc_context, exc.__context__)
+        self.assertEqual(True, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_context(self):
+        try:
+            try:
+                1/0
+            finally:
+                exc_info_context = sys.exc_info()
+                exc_context = traceback.TracebackException(*exc_info_context)
+                raise Exception("uh oh")
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]))
+        self.assertEqual(None, exc.__cause__)
+        self.assertEqual(exc_context, exc.__context__)
+        self.assertEqual(False, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_limit(self):
+        def recurse(n):
+            if n:
+                recurse(n-1)
+            else:
+                1/0
+        try:
+            recurse(10)
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info, limit=5)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]), limit=5)
+        self.assertEqual(expected_stack, exc.stack)
+
+    def test_lookup_lines(self):
+        linecache.clearcache()
+        e = Exception("uh oh")
+        c = test_code('/foo.py', 'method')
+        f = test_frame(c, None)
+        tb = test_tb(f, 6, None)
+        exc = traceback.TracebackException(Exception, e, tb, lookup_lines=False)
+        self.assertEqual({}, linecache.cache)
+        linecache.updatecache('/foo.py', globals())
+        self.assertEqual(exc.stack[0].line, "import sys")
 
 
 def test_main():

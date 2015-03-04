@@ -136,6 +136,130 @@ The module defines the following functions:
 
    .. versionadded:: 3.4
 
+.. function:: walk_stack(f)
+
+   Walk a stack following f.f_back from the given frame, yielding the frame and
+   line number for each frame. If f is None, the current stack is used.
+   This helper is used with *Stack.extract*.
+
+   .. versionadded:: 3.5
+
+.. function:: walk_tb(tb)
+
+   Walk a traceback following tb_next yielding the frame and line number for
+   each frame. This helper is used with *Stack.extract*.
+
+   .. versionadded:: 3.5
+
+The module also defines the following classes:
+
+:class:`TracebackException` Objects
+-----------------------------------
+
+:class:`.TracebackException` objects are created from actual exceptions to
+capture data for later printing in a lightweight fashion.
+
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, limit=None, lookup_lines=True)
+
+   Capture an exception for later rendering. limit, lookup_lines are as for
+   the :class:`.StackSummary` class.
+
+   .. versionadded:: 3.5
+
+.. classmethod:: `.from_exception`(exc, limit=None, lookup_lines=True)
+
+   Capture an exception for later rendering. limit and lookup_lines
+   are as for the :class:`.StackSummary` class.
+
+   .. versionadded:: 3.5
+
+.. attribute:: `.__cause__` A TracebackException of the original *__cause__*.
+
+.. attribute:: `.__context__` A TracebackException of the original *__context__*.
+.. attribute:: `.__suppress_context__` The *__suppress_context__* value from the
+               original exception.
+.. attribute:: `.stack` A `StackSummary` representing the traceback.
+.. attribute:: `.exc_type` The class of the original traceback.
+.. attribute:: `.filename` For syntax errors - the filename where the error
+               occured.
+.. attribute:: `.lineno` For syntax errors - the linenumber where the error
+               occured.
+.. attribute:: `.text` For syntax errors - the text where the error
+               occured.
+.. attribute:: `.offset` For syntax errors - the offset into the text where the
+               error occured.
+.. attribute:: `.msg` For syntax errors - the compiler error message.
+
+.. method::  TracebackException.format(chain=True)
+
+    Format the exception.
+
+    If chain is not *True*, *__cause__* and *__context__* will not be formatted.
+
+    The return value is a generator of strings, each ending in a newline and
+    some containing internal newlines. `print_exception` is a wrapper around
+    this method which just prints the lines to a file.
+
+    The message indicating which exception occurred is always the last
+    string in the output.
+
+   .. versionadded:: 3.5
+
+.. method::  TracebackException.format_exception_only()
+
+    Format the exception part of the traceback.
+
+    The return value is a generator of strings, each ending in a newline.
+
+    Normally, the generator emits a single string; however, for
+    SyntaxError exceptions, it emites several lines that (when
+    printed) display detailed information about where the syntax
+    error occurred.
+
+    The message indicating which exception occurred is always the last
+    string in the output.
+
+   .. versionadded:: 3.5
+
+
+:class:`StackSummary` Objects
+-----------------------------
+
+:class:`.StackSummary` objects represent a call stack ready for formatting.
+
+.. classmethod:: StackSummary.extract(frame_gen, limit=None, lookup_lines=True)
+
+   Construct a StackSummary object from a frame generator (such as is returned by
+   `walk_stack` or `walk_tb`.
+
+   If limit is supplied, only this many frames are taken from frame_gen.
+   If lookup_lines is False, the returned FrameSummary objects will not have read
+   their lines in yet, making the cost of creating the StackSummary cheaper (which
+   may be valuable if it may not actually get formatted).
+
+   .. versionadded:: 3.5
+
+.. classmethod:: StackSummary.from_list(a_list)
+
+   Construct a StackSummary object from a supplied old-style list of tuples. Each
+   tuple should be a 4-tuple with filename, lineno, name, line as the elements.
+
+   .. versionadded:: 3.5
+
+:class:`FrameSummary` Objects
+-----------------------------
+
+FrameSummary objects represent a single frame in a traceback.
+
+.. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None)
+   :noindex:
+
+   Represent a single frame in the traceback or stack that is being formatted
+   or printed. It may optionally have a stringified version of the frames
+   locals included in it. If *lookup_line* is False, the source code is not
+   looked up until the FrameSummary has the :attr:`line` attribute accessed (which
+   also happens when casting it to a tuple). Line may be directly provided, and
+   will prevent line lookups happening at all.
 
 .. _traceback-example:
 

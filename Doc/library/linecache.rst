@@ -43,6 +43,14 @@ The :mod:`linecache` module defines the following functions:
    changed on disk, and you require the updated version.  If *filename* is omitted,
    it will check all the entries in the cache.
 
+.. function:: lazycache(filename, module_globals)
+
+   Capture enough detail about a non-file based module to permit getting its
+   lines later via :func:`getline` even if *module_globals* is None in the later
+   call. This avoids doing I/O until a line is actually needed, without having
+   to carry the module globals around indefinitely.
+
+   .. versionadded:: 3.5
 
 Example::
 

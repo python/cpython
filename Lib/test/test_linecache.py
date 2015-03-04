@@ -7,6 +7,7 @@ from test import support
 
 
 FILENAME = linecache.__file__
+NONEXISTENT_FILENAME = FILENAME + '.missing'
 INVALID_NAME = '!@$)(!@#_1'
 EMPTY = ''
 TESTS = 'inspect_fodder inspect_fodder2 mapping_tests'
@@ -125,6 +126,49 @@ class LineCacheTests(unittest.TestCase):
             for index, line in enumerate(source):
                 self.assertEqual(line, getline(source_name, index + 1))
                 source_list.append(line)
+
+    def test_lazycache_no_globals(self):
+        lines = linecache.getlines(FILENAME)
+        linecache.clearcache()
+        self.assertEqual(False, linecache.lazycache(FILENAME, None))
+        self.assertEqual(lines, linecache.getlines(FILENAME))
+
+    def test_lazycache_smoke(self):
+        lines = linecache.getlines(NONEXISTENT_FILENAME, globals())
+        linecache.clearcache()
+        self.assertEqual(
+            True, linecache.lazycache(NONEXISTENT_FILENAME, globals()))
+        self.assertEqual(1, len(linecache.cache[NONEXISTENT_FILENAME]))
+        # Note here that we're looking up a non existant filename with no
+        # globals: this would error if the lazy value wasn't resolved.
+        self.assertEqual(lines, linecache.getlines(NONEXISTENT_FILENAME))
+
+    def test_lazycache_provide_after_failed_lookup(self):
+        linecache.clearcache()
+        lines = linecache.getlines(NONEXISTENT_FILENAME, globals())
+        linecache.clearcache()
+        linecache.getlines(NONEXISTENT_FILENAME)
+        linecache.lazycache(NONEXISTENT_FILENAME, globals())
+        self.assertEqual(lines, linecache.updatecache(NONEXISTENT_FILENAME))
+
+    def test_lazycache_check(self):
+        linecache.clearcache()
+        linecache.lazycache(NONEXISTENT_FILENAME, globals())
+        linecache.checkcache()
+
+    def test_lazycache_bad_filename(self):
+        linecache.clearcache()
+        self.assertEqual(False, linecache.lazycache('', globals()))
+        self.assertEqual(False, linecache.lazycache('<foo>', globals()))
+
+    def test_lazycache_already_cached(self):
+        linecache.clearcache()
+        lines = linecache.getlines(NONEXISTENT_FILENAME, globals())
+        self.assertEqual(
+            False,
+            linecache.lazycache(NONEXISTENT_FILENAME, globals()))
+        self.assertEqual(4, len(linecache.cache[NONEXISTENT_FILENAME]))
+
 
 def test_main():
     support.run_unittest(LineCacheTests)
