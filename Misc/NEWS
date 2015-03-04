@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23504: Added an __all__ to the types module.
+
 - Issue #23563: Optimized utility functions in urllib.parse.
 
 - Issue #7830: Flatten nested functools.partial.
