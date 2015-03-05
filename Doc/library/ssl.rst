@@ -520,9 +520,9 @@ Constants
 
 .. data:: VERIFY_DEFAULT
 
-   Possible value for :attr:`SSLContext.verify_flags`. In this mode,
-   certificate revocation lists (CRLs) are not checked. By default OpenSSL
-   does neither require nor verify CRLs.
+   Possible value for :attr:`SSLContext.verify_flags`. In this mode, certificate
+   revocation lists (CRLs) are not checked. By default OpenSSL does neither
+   require nor verify CRLs.
 
    .. versionadded:: 3.4
 
@@ -549,6 +549,14 @@ Constants
    for broken X.509 certificates.
 
    .. versionadded:: 3.4
+
+.. data:: VERIFY_X509_TRUSTED_FIRST
+
+   Possible value for :attr:`SSLContext.verify_flags`. It instructs OpenSSL to
+   prefer trusted certificates when building the trust chain to validate a
+   certificate. This flag is enabled by default.
+
+   .. versionadded:: 3.4.5
 
 .. data:: PROTOCOL_SSLv23
 
