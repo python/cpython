@@ -89,10 +89,13 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
+    # format_exception has ignored etype for some time, and code such as cgitb
+    # passes in bogus values as a result. For compatibility with such code we
+    # ignore it here (rather than in the new TracebackException API).
     if file is None:
         file = sys.stderr
     for line in TracebackException(
-            etype, value, tb, limit=limit).format(chain=chain):
+            type(value), value, tb, limit=limit).format(chain=chain):
         print(line, file=file, end="")
 
 
@@ -105,8 +108,11 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
+    # format_exception has ignored etype for some time, and code such as cgitb
+    # passes in bogus values as a result. For compatibility with such code we
+    # ignore it here (rather than in the new TracebackException API).
     return list(TracebackException(
-        etype, value, tb, limit=limit).format(chain=chain))
+        type(value), value, tb, limit=limit).format(chain=chain))
 
 
 def format_exception_only(etype, value):
