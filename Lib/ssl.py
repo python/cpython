@@ -103,8 +103,6 @@ from _ssl import (
     SSLSyscallError, SSLEOFError,
     )
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
-from _ssl import (VERIFY_DEFAULT, VERIFY_CRL_CHECK_LEAF, VERIFY_CRL_CHECK_CHAIN,
-    VERIFY_X509_STRICT)
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add
 try:
@@ -122,6 +120,7 @@ _import_symbols('OP_')
 _import_symbols('ALERT_DESCRIPTION_')
 _import_symbols('SSL_ERROR_')
 _import_symbols('PROTOCOL_')
+_import_symbols('VERIFY_')
 
 from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
 
