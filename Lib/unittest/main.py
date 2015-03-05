@@ -74,7 +74,7 @@ class TestProgram(object):
         self.verbosity = verbosity
         self.buffer = buffer
         if warnings is None and not sys.warnoptions:
-            # even if DreprecationWarnings are ignored by default
+            # even if DeprecationWarnings are ignored by default
             # print them anyway unless other warnings settings are
             # specified by the warnings arg or the -W python flag
             self.warnings = 'default'
