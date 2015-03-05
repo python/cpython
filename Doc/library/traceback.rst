@@ -159,17 +159,21 @@ The module also defines the following classes:
 :class:`.TracebackException` objects are created from actual exceptions to
 capture data for later printing in a lightweight fashion.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, limit=None, lookup_lines=True)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False)
 
-   Capture an exception for later rendering. limit, lookup_lines are as for
-   the :class:`.StackSummary` class.
+   Capture an exception for later rendering. limit, lookup_lines and
+   capture_locals=False are as for the :class:`.StackSummary` class.
+
+   Note that when locals are captured, they are also shown in the traceback.
 
    .. versionadded:: 3.5
 
-.. classmethod:: `.from_exception`(exc, limit=None, lookup_lines=True)
+.. classmethod:: `.from_exception`(exc, *, limit=None, lookup_lines=True, capture_locals=False)
 
-   Capture an exception for later rendering. limit and lookup_lines
-   are as for the :class:`.StackSummary` class.
+   Capture an exception for later rendering. limit, lookup_lines and
+   capture_locals=False are as for the :class:`.StackSummary` class.
+
+   Note that when locals are captured, they are also shown in the traceback.
 
    .. versionadded:: 3.5
 
@@ -190,7 +194,7 @@ capture data for later printing in a lightweight fashion.
                error occured.
 .. attribute:: `.msg` For syntax errors - the compiler error message.
 
-.. method::  TracebackException.format(chain=True)
+.. method::  TracebackException.format(*, chain=True)
 
     Format the exception.
 
@@ -227,7 +231,7 @@ capture data for later printing in a lightweight fashion.
 
 :class:`.StackSummary` objects represent a call stack ready for formatting.
 
-.. classmethod:: StackSummary.extract(frame_gen, limit=None, lookup_lines=True)
+.. classmethod:: StackSummary.extract(frame_gen, *, limit=None, lookup_lines=True, capture_locals=False)
 
    Construct a StackSummary object from a frame generator (such as is returned by
    `walk_stack` or `walk_tb`.
@@ -236,6 +240,8 @@ capture data for later printing in a lightweight fashion.
    If lookup_lines is False, the returned FrameSummary objects will not have read
    their lines in yet, making the cost of creating the StackSummary cheaper (which
    may be valuable if it may not actually get formatted).
+   If capture_locals is True the local variables in each *FrameSummary* are
+   captured as object representations.
 
    .. versionadded:: 3.5
 
@@ -258,8 +264,10 @@ FrameSummary objects represent a single frame in a traceback.
    or printed. It may optionally have a stringified version of the frames
    locals included in it. If *lookup_line* is False, the source code is not
    looked up until the FrameSummary has the :attr:`line` attribute accessed (which
-   also happens when casting it to a tuple). Line may be directly provided, and
-   will prevent line lookups happening at all.
+   also happens when casting it to a tuple). *line* may be directly provided, and
+   will prevent line lookups happening at all. *locals* is an optional local variable
+   dictionary, and if supplied the variable representations are stored in the summary
+   for later display.
 
 .. _traceback-example:
 
