@@ -140,6 +140,7 @@ if not "%OUTDIR%" EQU "" (
     copy /Y "%BUILD%en-us\*.cab" "%OUTDIR%\%OUTDIR_PLAT%"
     copy /Y "%BUILD%en-us\*.exe" "%OUTDIR%\%OUTDIR_PLAT%"
     copy /Y "%BUILD%en-us\*.msi" "%OUTDIR%\%OUTDIR_PLAT%"
+    copy /Y "%BUILD%en-us\*.msu" "%OUTDIR%\%OUTDIR_PLAT%"
 )
 
 exit /B 0

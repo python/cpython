@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{2D69F2AB-D5D0-4344-84B5-EF6DB34A9BC9}</ProjectGuid>
+        <OutputName>python</OutputName>
+        <OutputSuffix></OutputSuffix>
+        
+        <DownloadUrlBase Condition="'$(DownloadUrlBase)' == ''">$(TARGET)</DownloadUrlBase>
+        <DownloadUrlBase Condition="'$(DownloadUrlBase)' == ''">/srv/www.python.org/ftp/python</DownloadUrlBase>
+        <IncludeDoc Condition="'$(IncludeDoc)' == ''">true</IncludeDoc>
+        <DryRun Condition="'$(DryRun)' == ''">false</DryRun>
+    </PropertyGroup>
+
+    <Import Project="msi.props" />
+    <Import Project="bundle\bundle.targets" />
+    
+    <PropertyGroup>
+        <EXETarget>$(DownloadUrlBase.TrimEnd(`/`))/$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</EXETarget>
+        <MSITarget>$(DownloadUrl.TrimEnd(`/`))</MSITarget>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <File Include="$(OutputPath)\*.msi;$(OutputPath)\*.msu">
+            <CopyTo>$(MSITarget)</CopyTo>
+        </File>
+        <File Include="$(OutputPath)\*.exe">
+            <CopyTo>$(EXETarget)</CopyTo>
+        </File>
+        <File Include="$(PySourcePath)Doc\build\htmlhelp\python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm" Condition="$(IncludeDoc)">
+            <CopyTo>$(EXETarget)</CopyTo>
+        </File>
+    </ItemGroup>
+    
+    <Target Name="_ValidateProperties">
+        <Error Text="No value for Host provided" Condition="'$(Host)' == ''" />
+        <Error Text="No value for User provided" Condition="'$(User)' == ''" />
+        <Error Text="No path for PSCP provided" Condition="'$(PSCP)' == ''" />
+        <Error Text="No path for PLINK provided" Condition="'$(PLINK)' == ''" />
+    </Target>
+    
+    <Target Name="_Upload" Condition="!$(DryRun)">
+        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)
+&quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)
+&quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/* ^&amp;^&amp; chmod g-w,o+r %(File.CopyTo)/*
+" />
+    </Target>
+    
+    <Target Name="_PrintNames" Condition="$(DryRun)">
+        <Exec Command="echo &quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)
+echo &quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)
+echo &quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/* ^&amp;^&amp; chmod g-w,o+r %(File.CopyTo)/*
+echo.
+echo." />
+    </Target>
+    
+    <Target Name="Upload" DependsOnTargets="_ValidateProperties;_PrintNames;_Upload" />
+    
+    <Target Name="Build">
+        <Error Text="This script should be invoked using uploadrelease.bat." />
+    </Target>
+</Project>
