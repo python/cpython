@@ -2523,13 +2523,16 @@ class ContextManagerTests(BaseTestCase):
 
     def test_broken_pipe_cleanup(self):
         """Broken pipe error should not prevent wait() (Issue 21619)"""
-        proc = subprocess.Popen([sys.executable, "-c",
-                "import sys;"
-                "sys.stdin.close();"
-                "sys.stdout.close();"  # Signals that input pipe is closed
-        ], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        args = [sys.executable, "-c",
+               "import sys;"
+               "sys.stdin.close();"
+               "sys.stdout.close();"]   # Signals that input pipe is closed
+        proc = subprocess.Popen(args,
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                                bufsize=support.PIPE_MAX_SIZE*2)
         proc.stdout.read()  # Make sure subprocess has closed its input
-        proc.stdin.write(b"buffered data")
+        proc.stdin.write(b"x" * support.PIPE_MAX_SIZE)
         self.assertIsNone(proc.returncode)
         self.assertRaises(OSError, proc.__exit__, None, None, None)
         self.assertEqual(0, proc.returncode)
