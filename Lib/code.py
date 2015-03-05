@@ -140,32 +140,15 @@ class InteractiveInterpreter:
         sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
         sys.last_traceback = last_tb
         try:
-            lines = []
-            for value, tb in traceback._iter_chain(*ei[1:]):
-                if isinstance(value, str):
-                    lines.append(value)
-                    lines.append('\n')
-                    continue
-                if tb:
-                    tblist = traceback.extract_tb(tb)
-                    if tb is last_tb:
-                        # The last traceback includes the frame we
-                        # exec'd in
-                        del tblist[:1]
-                    tblines = traceback.format_list(tblist)
-                    if tblines:
-                        lines.append("Traceback (most recent call last):\n")
-                        lines.extend(tblines)
-                lines.extend(traceback.format_exception_only(type(value),
-                                                             value))
+            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next)
+            if sys.excepthook is sys.__excepthook__:
+                self.write(''.join(lines))
+            else:
+                # If someone has set sys.excepthook, we let that take precedence
+                # over self.write
+                sys.excepthook(ei[0], ei[1], last_tb)
         finally:
-            tblist = last_tb = ei = None
-        if sys.excepthook is sys.__excepthook__:
-            self.write(''.join(lines))
-        else:
-            # If someone has set sys.excepthook, we let that take precedence
-            # over self.write
-            sys.excepthook(type, value, last_tb)
+            last_tb = ei = None
 
     def write(self, data):
         """Write a string.
