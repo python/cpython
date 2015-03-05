@@ -2072,6 +2072,15 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                                    sizeof(SID_CTX));
 #undef SID_CTX
 
+#ifdef X509_V_FLAG_TRUSTED_FIRST
+    {
+        /* Improve trust chain building when cross-signed intermediate
+           certificates are present. See https://bugs.python.org/issue23476. */
+        X509_STORE *store = SSL_CTX_get_cert_store(self->ctx);
+        X509_STORE_set_flags(store, X509_V_FLAG_TRUSTED_FIRST);
+    }
+#endif
+
     return (PyObject *)self;
 }
 
