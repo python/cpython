@@ -69,7 +69,7 @@ test_config(PyObject *self)
 static PyObject*
 test_sizeof_c_types(PyObject *self)
 {
-#ifdef __GNUC__
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
@@ -130,7 +130,7 @@ test_sizeof_c_types(PyObject *self)
 #undef IS_SIGNED
 #undef CHECK_SIGNESS
 #undef CHECK_SIZEOF
-#ifdef __GNUC__
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic pop
 #endif
 }
