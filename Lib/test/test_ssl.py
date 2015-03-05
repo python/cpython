@@ -2065,7 +2065,8 @@ else:
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_verify_locations(SIGNING_CA)
-            self.assertEqual(context.verify_flags, ssl.VERIFY_DEFAULT)
+            tf = getattr(ssl, "VERIFY_X509_TRUSTED_FIRST", 0)
+            self.assertEqual(context.verify_flags, ssl.VERIFY_DEFAULT | tf)
 
             # VERIFY_DEFAULT should pass
             server = ThreadedEchoServer(context=server_context, chatty=True)
