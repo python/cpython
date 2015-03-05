@@ -15,7 +15,7 @@ import traceback
 
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
-test_frame = namedtuple('frame', ['f_code', 'f_globals'])
+test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next'])
 
 
@@ -535,7 +535,7 @@ class TestStack(unittest.TestCase):
         linecache.clearcache()
         linecache.updatecache('/foo.py', globals())
         c = test_code('/foo.py', 'method')
-        f = test_frame(c, None)
+        f = test_frame(c, None, None)
         s = traceback.StackSummary.extract(iter([(f, 6)]), lookup_lines=True)
         linecache.clearcache()
         self.assertEqual(s[0].line, "import sys")
@@ -543,14 +543,14 @@ class TestStack(unittest.TestCase):
     def test_extract_stackup_deferred_lookup_lines(self):
         linecache.clearcache()
         c = test_code('/foo.py', 'method')
-        f = test_frame(c, None)
+        f = test_frame(c, None, None)
         s = traceback.StackSummary.extract(iter([(f, 6)]), lookup_lines=False)
         self.assertEqual({}, linecache.cache)
         linecache.updatecache('/foo.py', globals())
         self.assertEqual(s[0].line, "import sys")
 
     def test_from_list(self):
-        s = traceback.StackSummary([('foo.py', 1, 'fred', 'line')])
+        s = traceback.StackSummary.from_list([('foo.py', 1, 'fred', 'line')])
         self.assertEqual(
             ['  File "foo.py", line 1, in fred\n    line\n'],
             s.format())
@@ -558,10 +558,41 @@ class TestStack(unittest.TestCase):
     def test_format_smoke(self):
         # For detailed tests see the format_list tests, which consume the same
         # code.
-        s = traceback.StackSummary([('foo.py', 1, 'fred', 'line')])
+        s = traceback.StackSummary.from_list([('foo.py', 1, 'fred', 'line')])
         self.assertEqual(
             ['  File "foo.py", line 1, in fred\n    line\n'],
             s.format())
+
+    def test_locals(self):
+        linecache.updatecache('/foo.py', globals())
+        c = test_code('/foo.py', 'method')
+        f = test_frame(c, globals(), {'something': 1})
+        s = traceback.StackSummary.extract(iter([(f, 6)]), capture_locals=True)
+        self.assertEqual(s[0].locals, {'something': '1'})
+
+    def test_no_locals(self):
+        linecache.updatecache('/foo.py', globals())
+        c = test_code('/foo.py', 'method')
+        f = test_frame(c, globals(), {'something': 1})
+        s = traceback.StackSummary.extract(iter([(f, 6)]))
+        self.assertEqual(s[0].locals, None)
+
+    def test_format_locals(self):
+        def some_inner(k, v):
+            a = 1
+            b = 2
+            return traceback.StackSummary.extract(
+                traceback.walk_stack(None), capture_locals=True, limit=1)
+        s = some_inner(3, 4)
+        self.assertEqual(
+            ['  File "' + __file__ + '", line 585, '
+             'in some_inner\n'
+             '    traceback.walk_stack(None), capture_locals=True, limit=1)\n'
+             '    a = 1\n'
+             '    b = 2\n'
+             '    k = 3\n'
+             '    v = 4\n'
+            ], s.format())
 
 
 
@@ -591,9 +622,10 @@ class TestTracebackException(unittest.TestCase):
         except Exception as e:
             exc_info = sys.exc_info()
             self.expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]), limit=1, lookup_lines=False)
+                traceback.walk_tb(exc_info[2]), limit=1, lookup_lines=False,
+                capture_locals=True)
             self.exc = traceback.TracebackException.from_exception(
-                e, limit=1, lookup_lines=False)
+                e, limit=1, lookup_lines=False, capture_locals=True)
         expected_stack = self.expected_stack
         exc = self.exc
         self.assertEqual(None, exc.__cause__)
@@ -664,12 +696,32 @@ class TestTracebackException(unittest.TestCase):
         linecache.clearcache()
         e = Exception("uh oh")
         c = test_code('/foo.py', 'method')
-        f = test_frame(c, None)
+        f = test_frame(c, None, None)
         tb = test_tb(f, 6, None)
         exc = traceback.TracebackException(Exception, e, tb, lookup_lines=False)
         self.assertEqual({}, linecache.cache)
         linecache.updatecache('/foo.py', globals())
         self.assertEqual(exc.stack[0].line, "import sys")
+
+    def test_locals(self):
+        linecache.updatecache('/foo.py', globals())
+        e = Exception("uh oh")
+        c = test_code('/foo.py', 'method')
+        f = test_frame(c, globals(), {'something': 1, 'other': 'string'})
+        tb = test_tb(f, 6, None)
+        exc = traceback.TracebackException(
+            Exception, e, tb, capture_locals=True)
+        self.assertEqual(
+            exc.stack[0].locals, {'something': '1', 'other': "'string'"})
+
+    def test_no_locals(self):
+        linecache.updatecache('/foo.py', globals())
+        e = Exception("uh oh")
+        c = test_code('/foo.py', 'method')
+        f = test_frame(c, globals(), {'something': 1})
+        tb = test_tb(f, 6, None)
+        exc = traceback.TracebackException(Exception, e, tb)
+        self.assertEqual(exc.stack[0].locals, None)
 
 
 def test_main():
