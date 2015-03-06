@@ -32,17 +32,6 @@ PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyFile_NewStdPrinter(int);
 PyAPI_DATA(PyTypeObject) PyStdPrinter_Type;
-
-#if defined _MSC_VER && _MSC_VER >= 1400
-/* A routine to check if a file descriptor is valid on Windows.  Returns 0
- * and sets errno to EBADF if it isn't.  This is to avoid Assertions
- * from various functions in the Windows CRT beginning with
- * Visual Studio 2005
- */
-int _PyVerify_fd(int fd);
-#else
-#define _PyVerify_fd(A) (1) /* dummy */
-#endif
 #endif /* Py_LIMITED_API */
 
 /* A routine to check if a file descriptor can be select()-ed. */

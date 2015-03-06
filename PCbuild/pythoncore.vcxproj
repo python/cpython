@@ -333,6 +333,7 @@
     <ClCompile Include="..\Parser\parser.c" />
     <ClCompile Include="..\Parser\parsetok.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
+    <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\winreg.c" />
     <ClCompile Include="..\PC\config.c" />
     <ClCompile Include="..\PC\getpathp.c" />
@@ -394,25 +395,21 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
-    <Exec Command='hg id -b &gt; "$(IntDir)hgbranch.txt"' ContinueOnError="true" />
-    <Exec Command='hg id -i &gt; "$(IntDir)hgversion.txt"' ContinueOnError="true" />
-    <Exec Command='hg id -t &gt; "$(IntDir)hgtag.txt"' ContinueOnError="true" />
-    
+    <Exec Command="hg id -b &gt; &quot;$(IntDir)hgbranch.txt&quot;" ContinueOnError="true" />
+    <Exec Command="hg id -i &gt; &quot;$(IntDir)hgversion.txt&quot;" ContinueOnError="true" />
+    <Exec Command="hg id -t &gt; &quot;$(IntDir)hgtag.txt&quot;" ContinueOnError="true" />
     <PropertyGroup>
       <HgBranch Condition="Exists('$(IntDir)hgbranch.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgbranch.txt').Trim())</HgBranch>
       <HgVersion Condition="Exists('$(IntDir)hgversion.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgversion.txt').Trim())</HgVersion>
       <HgTag Condition="Exists('$(IntDir)hgtag.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgtag.txt').Trim())</HgTag>
     </PropertyGroup>
-    
     <ItemGroup>
       <ClCompile Include="..\Modules\getbuildinfo.c">
         <PreprocessorDefinitions>HGVERSION="$(HgVersion)";HGTAG="$(HgTag)";HGBRANCH="$(HgBranch)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       </ClCompile>
     </ItemGroup>
   </Target>
-
   <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v140'">
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
   </Target>
