@@ -39,7 +39,8 @@ Library
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
   statement if the pipe was broken.  Patch by Martin Panter.
 
-- Issue #22936: Make it possible to show local variables in tracebacks.
+- Issue #22936: Make it possible to show local variables in tracebacks for
+  both the traceback module and unittest.
 
 - Issue #15955: Add an option to limit the output size in bz2.decompress().
   Patch by Nikolaus Rath.

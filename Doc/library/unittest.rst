@@ -223,8 +223,15 @@ Command-line options
 
    Stop the test run on the first error or failure.
 
+.. cmdoption:: --locals
+
+   Show local variables in tracebacks.
+
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.
+
+.. versionadded:: 3.5
+   The command-line option ``--locals``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -1782,11 +1789,9 @@ Loading and running tests
 
       Set to ``True`` when the execution of tests should stop by :meth:`stop`.
 
-
    .. attribute:: testsRun
 
       The total number of tests run so far.
-
 
    .. attribute:: buffer
 
@@ -1797,7 +1802,6 @@ Loading and running tests
 
       .. versionadded:: 3.2
 
-
    .. attribute:: failfast
 
       If set to true :meth:`stop` will be called on the first failure or error,
@@ -1805,6 +1809,11 @@ Loading and running tests
 
       .. versionadded:: 3.2
 
+   .. attribute:: tb_locals
+
+      If set to true then local variables will be shown in tracebacks.
+
+      .. versionadded:: 3.5
 
    .. method:: wasSuccessful()
 
@@ -1814,7 +1823,6 @@ Loading and running tests
       .. versionchanged:: 3.4
          Returns ``False`` if there were any :attr:`unexpectedSuccesses`
          from tests marked with the :func:`expectedFailure` decorator.
-
 
    .. method:: stop()
 
@@ -1947,12 +1955,14 @@ Loading and running tests
 
 
 .. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, failfast=False, \
-                          buffer=False, resultclass=None, warnings=None)
+                          buffer=False, resultclass=None, warnings=None, *, tb_locals=False)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
    is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class
    has a few configurable parameters, but is essentially very simple.  Graphical
-   applications which run test suites should provide alternate implementations.
+   applications which run test suites should provide alternate implementations. Such
+   implementations should accept ``**kwargs`` as the interface to construct runners
+   changes when features are added to unittest.
 
    By default this runner shows :exc:`DeprecationWarning`,
    :exc:`PendingDeprecationWarning`, :exc:`ResourceWarning` and
@@ -1970,6 +1980,9 @@ Loading and running tests
    .. versionchanged:: 3.2
       The default stream is set to :data:`sys.stderr` at instantiation time rather
       than import time.
+
+   .. versionchanged:: 3.5
+      Added the tb_locals parameter.
 
    .. method:: _makeResult()
 

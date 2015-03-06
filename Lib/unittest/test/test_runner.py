@@ -158,7 +158,7 @@ class Test_TextTestRunner(unittest.TestCase):
         self.assertEqual(runner.warnings, None)
         self.assertTrue(runner.descriptions)
         self.assertEqual(runner.resultclass, unittest.TextTestResult)
-
+        self.assertFalse(runner.tb_locals)
 
     def test_multiple_inheritance(self):
         class AResult(unittest.TestResult):
@@ -172,20 +172,24 @@ class Test_TextTestRunner(unittest.TestCase):
         # on arguments in its __init__ super call
         ATextResult(None, None, 1)
 
-
     def testBufferAndFailfast(self):
         class Test(unittest.TestCase):
             def testFoo(self):
                 pass
         result = unittest.TestResult()
         runner = unittest.TextTestRunner(stream=io.StringIO(), failfast=True,
-                                           buffer=True)
+                                         buffer=True)
         # Use our result object
         runner._makeResult = lambda: result
         runner.run(Test('testFoo'))
 
         self.assertTrue(result.failfast)
         self.assertTrue(result.buffer)
+
+    def test_locals(self):
+        runner = unittest.TextTestRunner(stream=io.StringIO(), tb_locals=True)
+        result = runner.run(unittest.TestSuite())
+        self.assertEqual(True, result.tb_locals)
 
     def testRunnerRegistersResult(self):
         class Test(unittest.TestCase):
