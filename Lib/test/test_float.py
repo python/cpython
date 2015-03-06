@@ -94,10 +94,6 @@ class GeneralFloatCases(unittest.TestCase):
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
-        class Foo0:
-            def __float__(self):
-                return 42.
-
         class Foo1(object):
             def __float__(self):
                 return 42.
@@ -123,7 +119,6 @@ class GeneralFloatCases(unittest.TestCase):
             def __float__(self):
                 return float(str(self)) + 1
 
-        self.assertAlmostEqual(float(Foo0()), 42.)
         self.assertAlmostEqual(float(Foo1()), 42.)
         self.assertAlmostEqual(float(Foo2()), 42.)
         self.assertAlmostEqual(float(Foo3(21)), 42.)
