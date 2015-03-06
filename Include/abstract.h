@@ -266,6 +266,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable_object,
                                           PyObject *args, PyObject *kw);
 
+#ifndef Py_LIMITED_API
+     PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *obj,
+                                                    const char *func_name);
+#endif
+
        /*
      Call a callable Python object, callable_object, with
      arguments and keywords arguments.  The 'args' argument can not be

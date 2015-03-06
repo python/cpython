@@ -2073,37 +2073,70 @@ PyObject_CallObject(PyObject *o, PyObject *a)
     return PyEval_CallObjectWithKeywords(o, a, NULL);
 }
 
+PyObject*
+_Py_CheckFunctionResult(PyObject *result, const char *func_name)
+{
+    int err_occurred = (PyErr_Occurred() != NULL);
+
+#ifdef NDEBUG
+    /* In debug mode: abort() with an assertion error. Use two different
+       assertions, so if an assertion fails, it's possible to know
+       if result was set or not and if an exception was raised or not. */
+    if (result != NULL)
+        assert(!err_occurred);
+    else
+        assert(err_occurred);
+#endif
+
+    if (result == NULL) {
+        if (!err_occurred) {
+            PyErr_Format(PyExc_SystemError,
+                         "NULL result without error in %s", func_name);
+            return NULL;
+        }
+    }
+    else {
+        if (err_occurred) {
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+
+            Py_DECREF(result);
+
+            PyErr_Format(PyExc_SystemError,
+                         "result with error in %s", func_name);
+            _PyErr_ChainExceptions(exc, val, tb);
+            return NULL;
+        }
+    }
+    return result;
+}
+
 PyObject *
 PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
 {
     ternaryfunc call;
+    PyObject *result;
 
     /* PyObject_Call() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
        caller looses its exception */
     assert(!PyErr_Occurred());
 
-    if ((call = func->ob_type->tp_call) != NULL) {
-        PyObject *result;
-        if (Py_EnterRecursiveCall(" while calling a Python object"))
-            return NULL;
-        result = (*call)(func, arg, kw);
-        Py_LeaveRecursiveCall();
-#ifdef NDEBUG
-        if (result == NULL && !PyErr_Occurred()) {
-            PyErr_SetString(
-                PyExc_SystemError,
-                "NULL result without error in PyObject_Call");
-        }
-#else
-        assert((result != NULL && !PyErr_Occurred())
-                || (result == NULL && PyErr_Occurred()));
-#endif
-        return result;
+    call = func->ob_type->tp_call;
+    if (call == NULL) {
+        PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
+                     func->ob_type->tp_name);
+        return NULL;
     }
-    PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                 func->ob_type->tp_name);
-    return NULL;
+
+    if (Py_EnterRecursiveCall(" while calling a Python object"))
+        return NULL;
+
+    result = (*call)(func, arg, kw);
+
+    Py_LeaveRecursiveCall();
+
+    return _Py_CheckFunctionResult(result, "PyObject_Call");
 }
 
 static PyObject*
