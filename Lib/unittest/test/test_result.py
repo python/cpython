@@ -8,6 +8,20 @@ import traceback
 import unittest
 
 
+class MockTraceback(object):
+    class TracebackException:
+        def __init__(self, *args, **kwargs):
+            self.capture_locals = kwargs.get('capture_locals', False)
+        def format(self):
+            result = ['A traceback']
+            if self.capture_locals:
+                result.append('locals')
+            return result
+
+def restore_traceback():
+    unittest.result.traceback = traceback
+
+
 class Test_TestResult(unittest.TestCase):
     # Note: there are not separate tests for TestResult.wasSuccessful(),
     # TestResult.errors, TestResult.failures, TestResult.testsRun or
@@ -227,6 +241,25 @@ class Test_TestResult(unittest.TestCase):
         self.assertIs(test_case, test)
         self.assertIsInstance(formatted_exc, str)
 
+    def test_addError_locals(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                1/0
+
+        test = Foo('test_1')
+        result = unittest.TestResult()
+        result.tb_locals = True
+
+        unittest.result.traceback = MockTraceback
+        self.addCleanup(restore_traceback)
+        result.startTestRun()
+        test.run(result)
+        result.stopTestRun()
+
+        self.assertEqual(len(result.errors), 1)
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual('A tracebacklocals', formatted_exc)
+
     def test_addSubTest(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -398,6 +431,7 @@ def __init__(self, stream=None, descriptions=None, verbosity=None):
     self.testsRun = 0
     self.shouldStop = False
     self.buffer = False
+    self.tb_locals = False
 
 classDict['__init__'] = __init__
 OldResult = type('OldResult', (object,), classDict)
@@ -452,15 +486,6 @@ class Test_OldTestResult(unittest.TestCase):
         # This will raise an exception if TextTestRunner can't handle old
         # test result objects
         runner.run(Test('testFoo'))
-
-
-class MockTraceback(object):
-    @staticmethod
-    def format_exception(*_):
-        return ['A traceback']
-
-def restore_traceback():
-    unittest.result.traceback = traceback
 
 
 class TestOutputBuffering(unittest.TestCase):
