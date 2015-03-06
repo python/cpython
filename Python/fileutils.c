@@ -3,6 +3,7 @@
 #include <locale.h>
 
 #ifdef MS_WINDOWS
+#  include <malloc.h>
 #  include <windows.h>
 #endif
 
@@ -636,14 +637,10 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
     else
         h = (HANDLE)_get_osfhandle(fd);
 
-    /* Protocol violation: we explicitly clear errno, instead of
-       setting it to a POSIX error. Callers should use GetLastError. */
     errno = 0;
 
     if (h == INVALID_HANDLE_VALUE) {
-        /* This is really a C library error (invalid file handle).
-           We set the Win32 error to the closes one matching. */
-        SetLastError(ERROR_INVALID_HANDLE);
+        errno = EBADF;
         return -1;
     }
     memset(result, 0, sizeof(*result));
@@ -652,6 +649,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
     if (type == FILE_TYPE_UNKNOWN) {
         DWORD error = GetLastError();
         if (error != 0) {
+            errno = EINVAL;
             return -1;
         }
         /* else: valid but unknown file */
@@ -666,6 +664,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
     }
 
     if (!GetFileInformationByHandle(h, &info)) {
+        errno = EINVAL;
         return -1;
     }
 
@@ -1267,3 +1266,102 @@ error:
 }
 #endif
 
+#ifdef _MSC_VER
+#if _MSC_VER >= 1900
+
+/* This function lets the Windows CRT validate the file handle without
+   terminating the process if it's invalid. */
+int
+_PyVerify_fd(int fd)
+{
+    intptr_t osh;
+    /* Fast check for the only condition we know */
+    if (fd < 0) {
+        _set_errno(EBADF);
+        return 0;
+    }
+    osh = _get_osfhandle(fd);
+    return osh != (intptr_t)-1;
+}
+
+#elif _MSC_VER >= 1400
+/* Legacy implementation of _PyVerify_fd while transitioning to
+ * MSVC 14.0. This should eventually be removed. (issue23524)
+ */
+
+/* Microsoft CRT in VS2005 and higher will verify that a filehandle is
+ * valid and raise an assertion if it isn't.
+ * Normally, an invalid fd is likely to be a C program error and therefore
+ * an assertion can be useful, but it does contradict the POSIX standard
+ * which for write(2) states:
+ *    "Otherwise, -1 shall be returned and errno set to indicate the error."
+ *    "[EBADF] The fildes argument is not a valid file descriptor open for
+ *     writing."
+ * Furthermore, python allows the user to enter any old integer
+ * as a fd and should merely raise a python exception on error.
+ * The Microsoft CRT doesn't provide an official way to check for the
+ * validity of a file descriptor, but we can emulate its internal behaviour
+ * by using the exported __pinfo data member and knowledge of the
+ * internal structures involved.
+ * The structures below must be updated for each version of visual studio
+ * according to the file internal.h in the CRT source, until MS comes
+ * up with a less hacky way to do this.
+ * (all of this is to avoid globally modifying the CRT behaviour using
+ * _set_invalid_parameter_handler() and _CrtSetReportMode())
+ */
+/* The actual size of the structure is determined at runtime.
+ * Only the first items must be present.
+ */
+typedef struct {
+    intptr_t osfhnd;
+    char osfile;
+} my_ioinfo;
+
+extern __declspec(dllimport) char * __pioinfo[];
+#define IOINFO_L2E 5
+#define IOINFO_ARRAYS 64
+#define IOINFO_ARRAY_ELTS   (1 << IOINFO_L2E)
+#define _NHANDLE_           (IOINFO_ARRAYS * IOINFO_ARRAY_ELTS)
+#define FOPEN 0x01
+#define _NO_CONSOLE_FILENO (intptr_t)-2
+
+/* This function emulates what the windows CRT does to validate file handles */
+int
+_PyVerify_fd(int fd)
+{
+    const int i1 = fd >> IOINFO_L2E;
+    const int i2 = fd & ((1 << IOINFO_L2E) - 1);
+
+    static size_t sizeof_ioinfo = 0;
+
+    /* Determine the actual size of the ioinfo structure,
+     * as used by the CRT loaded in memory
+     */
+    if (sizeof_ioinfo == 0 && __pioinfo[0] != NULL) {
+        sizeof_ioinfo = _msize(__pioinfo[0]) / IOINFO_ARRAY_ELTS;
+    }
+    if (sizeof_ioinfo == 0) {
+        /* This should not happen... */
+        goto fail;
+    }
+
+    /* See that it isn't a special CLEAR fileno */
+    if (fd != _NO_CONSOLE_FILENO) {
+        /* Microsoft CRT would check that 0<=fd<_nhandle but we can't do that.  Instead
+         * we check pointer validity and other info
+         */
+        if (0 <= i1 && i1 < IOINFO_ARRAYS && __pioinfo[i1] != NULL) {
+            /* finally, check that the file is open */
+            my_ioinfo* info = (my_ioinfo*)(__pioinfo[i1] + i2 * sizeof_ioinfo);
+            if (info->osfile & FOPEN) {
+                return 1;
+            }
+        }
+    }
+  fail:
+    errno = EBADF;
+    return 0;
+}
+
+#endif /* _MSC_VER >= 1900 || _MSC_VER >= 1400 */
+#endif /* defined _MSC_VER */

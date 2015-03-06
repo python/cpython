@@ -959,6 +959,9 @@
     <ClCompile Include="..\Modules\hashtable.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\PC\invalid_parameter_handler.c">
+      <Filter>PC</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc">
