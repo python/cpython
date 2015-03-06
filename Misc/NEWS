@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22853: Fixed a deadlock when use multiprocessing.Queue at import time.
+  Patch by Florian Finkernagel and Davin Potts.
+
 - Issue #23476: In the ssl module, enable OpenSSL's X509_V_FLAG_TRUSTED_FIRST
   flag on certificate stores when it is available.
 
