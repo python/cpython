@@ -78,68 +78,71 @@ PyCFunction_GetFlags(PyObject *op)
 }
 
 PyObject *
-PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
+PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
 {
-#define CHECK_RESULT(res) assert(res != NULL || PyErr_Occurred())
-
     PyCFunctionObject* f = (PyCFunctionObject*)func;
     PyCFunction meth = PyCFunction_GET_FUNCTION(func);
     PyObject *self = PyCFunction_GET_SELF(func);
-    PyObject *res;
+    PyObject *arg, *res;
     Py_ssize_t size;
+    int flags;
 
-    switch (PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST)) {
-    case METH_VARARGS:
-        if (kw == NULL || PyDict_Size(kw) == 0) {
-            res = (*meth)(self, arg);
-            CHECK_RESULT(res);
-            return res;
-        }
-        break;
-    case METH_VARARGS | METH_KEYWORDS:
-        res = (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
-        CHECK_RESULT(res);
-        return res;
-    case METH_NOARGS:
-        if (kw == NULL || PyDict_Size(kw) == 0) {
-            size = PyTuple_GET_SIZE(arg);
-            if (size == 0) {
-                res = (*meth)(self, NULL);
-                CHECK_RESULT(res);
-                return res;
-            }
-            PyErr_Format(PyExc_TypeError,
-                "%.200s() takes no arguments (%zd given)",
-                f->m_ml->ml_name, size);
-            return NULL;
-        }
-        break;
-    case METH_O:
-        if (kw == NULL || PyDict_Size(kw) == 0) {
-            size = PyTuple_GET_SIZE(arg);
-            if (size == 1) {
-                res = (*meth)(self, PyTuple_GET_ITEM(arg, 0));
-                CHECK_RESULT(res);
-                return res;
-            }
-            PyErr_Format(PyExc_TypeError,
-                "%.200s() takes exactly one argument (%zd given)",
-                f->m_ml->ml_name, size);
-            return NULL;
-        }
-        break;
-    default:
-        PyErr_SetString(PyExc_SystemError, "Bad call flags in "
-                        "PyCFunction_Call. METH_OLDARGS is no "
-                        "longer supported!");
+    /* PyCFunction_Call() must not be called with an exception set,
+       because it may clear it (directly or indirectly) and so the
+       caller looses its exception */
+    assert(!PyErr_Occurred());
 
-        return NULL;
+    flags = PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+
+    if (flags == (METH_VARARGS | METH_KEYWORDS)) {
+        res = (*(PyCFunctionWithKeywords)meth)(self, args, kwds);
     }
-    PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                 f->m_ml->ml_name);
-    return NULL;
+    else {
+        if (kwds != NULL && PyDict_Size(kwds) != 0) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+                         f->m_ml->ml_name);
+            return NULL;
+        }
 
-#undef CHECK_RESULT
+        switch (flags) {
+        case METH_VARARGS:
+            res = (*meth)(self, args);
+            break;
+
+        case METH_NOARGS:
+            size = PyTuple_GET_SIZE(args);
+            if (size != 0) {
+                PyErr_Format(PyExc_TypeError,
+                    "%.200s() takes no arguments (%zd given)",
+                    f->m_ml->ml_name, size);
+                return NULL;
+            }
+
+            res = (*meth)(self, NULL);
+            break;
+
+        case METH_O:
+            size = PyTuple_GET_SIZE(args);
+            if (size != 1) {
+                PyErr_Format(PyExc_TypeError,
+                    "%.200s() takes exactly one argument (%zd given)",
+                    f->m_ml->ml_name, size);
+                return NULL;
+            }
+
+            arg = PyTuple_GET_ITEM(args, 0);
+            res = (*meth)(self, arg);
+            break;
+
+        default:
+            PyErr_SetString(PyExc_SystemError,
+                            "Bad call flags in PyCFunction_Call. "
+                            "METH_OLDARGS is no longer supported!");
+            return NULL;
+        }
+    }
+
+    return _Py_CheckFunctionResult(res, "PyCFunction_Call");
 }
 
 /* Methods (the standard built-in methods, that is) */
