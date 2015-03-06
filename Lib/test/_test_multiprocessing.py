@@ -713,6 +713,27 @@ class _TestQueue(BaseTestCase):
         for p in workers:
             p.join()
 
+    def test_no_import_lock_contention(self):
+        with test.support.temp_cwd():
+            module_name = 'imported_by_an_imported_module'
+            with open(module_name + '.py', 'w') as f:
+                f.write("""if 1:
+                    import multiprocessing
+
+                    q = multiprocessing.Queue()
+                    q.put('knock knock')
+                    q.get(timeout=3)
+                    q.close()
+                    del q
+                """)
+
+            with test.support.DirsOnSysPath(os.getcwd()):
+                try:
+                    __import__(module_name)
+                except pyqueue.Empty:
+                    self.fail("Probable regression on import lock contention;"
+                              " see Issue #22853")
+
     def test_timeout(self):
         q = multiprocessing.Queue()
         start = time.time()
