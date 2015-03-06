@@ -177,7 +177,7 @@ Build
 - Issue #23032: Fix installer build failures on OS X 10.4 Tiger
   by disabling assembly code in the OpenSSL build.
 
-- Issue #23594: Update OS X 10.5 installer build to use OpenSSL 1.0.2.
+- Issue #23593: Update OS X 10.5 installer build to use OpenSSL 1.0.2.
 
 C API
 -----
