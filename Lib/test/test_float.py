@@ -6,6 +6,7 @@ from test import support
 import math
 from math import isinf, isnan, copysign, ldexp
 import operator
+import time
 import random, fractions
 
 INF = float("inf")
@@ -128,6 +129,11 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertAlmostEqual(float(Foo3(21)), 42.)
         self.assertRaises(TypeError, float, Foo4(42))
         self.assertAlmostEqual(float(FooStr('8')), 9.)
+
+        class Foo5:
+            def __float__(self):
+                return ""
+        self.assertRaises(TypeError, time.sleep, Foo5())
 
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
