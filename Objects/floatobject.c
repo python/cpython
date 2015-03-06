@@ -271,6 +271,7 @@ PyFloat_AsDouble(PyObject *op)
     if (fo == NULL)
         return -1;
     if (!PyFloat_Check(fo)) {
+        Py_DECREF(fo);
         PyErr_SetString(PyExc_TypeError,
                         "nb_float should return float object");
         return -1;
