@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21793: BaseHTTPRequestHandler again logs response code as numeric,
+  not as stringified enum.  Patch by Demian Brecht.
+
 - Issue #23476: In the ssl module, enable OpenSSL's X509_V_FLAG_TRUSTED_FIRST
   flag on certificate stores when it is available.
 
