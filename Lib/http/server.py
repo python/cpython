@@ -517,7 +517,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         This is called by send_response().
 
         """
-
+        if isinstance(code, HTTPStatus):
+            code = code.value
         self.log_message('"%s" %s %s',
                          self.requestline, str(code), str(size))
 
