@@ -35,13 +35,13 @@ is maintained at ActiveState.)
    `Tcl/Tk manual <http://www.tcl.tk/man/tcl8.5/>`_
       Official manual for the latest tcl/tk version.
 
-   `Programming Python <http://www.amazon.com/Programming-Python-Mark-Lutz/dp/0596158106/>`_
+   `Programming Python <http://www.rmi.net/~lutz/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
    `Modern Tkinter for Busy Python Developers <http://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
       Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
-   `Python and Tkinter Programming <http://www.amazon.com/exec/obidos/ASIN/1884777813>`_
+   `Python and Tkinter Programming <http://www.manning.com/grayson/>`_
       The book by John Grayson (ISBN 1-884777-81-3).
 
 
@@ -190,7 +190,7 @@ documentation that exists. Here are some hints:
    `Tcl and the Tk Toolkit <http://www.amazon.com/exec/obidos/ASIN/020163337X>`_
       The book by John Ousterhout, the inventor of Tcl.
 
-   `Practical Programming in Tcl and Tk <http://www.amazon.com/exec/obidos/ASIN/0130220280>`_
+   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
       Brent Welch's encyclopedic book.
 
 

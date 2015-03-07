@@ -39,7 +39,7 @@ available for Python:
       low-level device context drawing, drag and drop, system clipboard access,
       an XML-based resource format and more, including an ever growing library
       of user-contributed modules.  wxPython has a book, `wxPython in Action
-      <http://www.amazon.com/exec/obidos/ASIN/1932394621>`_, by Noel Rappin and
+      <http://www.manning.com/rappin/>`_, by Noel Rappin and
       Robin Dunn.
 
 PyGTK, PyQt, and wxPython, all have a modern look and feel and more
