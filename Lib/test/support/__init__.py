@@ -2134,16 +2134,15 @@ def skip_unless_xattr(test):
 
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory is case-insensitive."""
-    base_fp, base_path = tempfile.mkstemp(dir=directory)
-    case_path = base_path.upper()
-    if case_path == base_path:
-        case_path = base_path.lower()
-    try:
-        return os.path.samefile(base_path, case_path)
-    except FileNotFoundError:
-        return False
-    finally:
-        os.unlink(base_path)
+    with tempfile.NamedTemporaryFile(dir=directory) as base:
+        base_path = base.name
+        case_path = base_path.upper()
+        if case_path == base_path:
+            case_path = base_path.lower()
+        try:
+            return os.path.samefile(base_path, case_path)
+        except FileNotFoundError:
+            return False
 
 
 class SuppressCrashReport:
