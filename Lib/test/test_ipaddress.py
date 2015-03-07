@@ -11,6 +11,7 @@ import functools
 import operator
 import pickle
 import ipaddress
+import weakref
 
 
 class BaseTestCase(unittest.TestCase):
@@ -259,6 +260,9 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     def test_pickle(self):
         self.pickle_test('192.0.2.1')
 
+    def test_weakref(self):
+        weakref.ref(self.factory('192.0.2.1'))
+
 
 class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     factory = ipaddress.IPv6Address
@@ -393,6 +397,9 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_pickle(self):
         self.pickle_test('2001:db8::')
+
+    def test_weakref(self):
+        weakref.ref(self.factory('2001:db8::'))
 
 
 class NetmaskTestMixin_v4(CommonTestMixin_v4):
