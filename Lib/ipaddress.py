@@ -386,6 +386,8 @@ class _IPAddressBase:
 
     """The mother class."""
 
+    __slots__ = ()
+
     @property
     def exploded(self):
         """Return the longhand version of the IP address as a string."""
@@ -542,6 +544,8 @@ class _BaseAddress(_IPAddressBase):
     This IP class contains the version independent methods which are
     used by single IP addresses.
     """
+
+    __slots__ = ()
 
     def __int__(self):
         return self._ip
@@ -1051,6 +1055,8 @@ class _BaseV4:
 
     """
 
+    __slots__ = ()
+    _version = 4
     # Equivalent to 255.255.255.255 or 32 bits of 1's.
     _ALL_ONES = (2**IPV4LENGTH) - 1
     _DECIMAL_DIGITS = frozenset('0123456789')
@@ -1062,9 +1068,6 @@ class _BaseV4:
     # There are only a handful of valid v4 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
     _netmask_cache = {}
-
-    def __init__(self, address):
-        self._version = 4
 
     def _explode_shorthand_ip_string(self):
         return str(self)
@@ -1243,6 +1246,8 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
     """Represent and manipulate single IPv4 Addresses."""
 
+    __slots__ = ('_ip', '__weakref__')
+
     def __init__(self, address):
 
         """
@@ -1259,8 +1264,6 @@ class IPv4Address(_BaseV4, _BaseAddress):
             AddressValueError: If ipaddress isn't a valid IPv4 address.
 
         """
-        _BaseV4.__init__(self, address)
-
         # Efficient constructor from integer.
         if isinstance(address, int):
             self._check_int_address(address)
@@ -1485,8 +1488,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               supplied.
 
         """
-
-        _BaseV4.__init__(self, address)
         _BaseNetwork.__init__(self, address)
 
         # Constructing from a packed address or integer
@@ -1590,6 +1591,8 @@ class _BaseV6:
 
     """
 
+    __slots__ = ()
+    _version = 6
     _ALL_ONES = (2**IPV6LENGTH) - 1
     _HEXTET_COUNT = 8
     _HEX_DIGITS = frozenset('0123456789ABCDEFabcdef')
@@ -1598,9 +1601,6 @@ class _BaseV6:
     # There are only a bunch of valid v6 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
     _netmask_cache = {}
-
-    def __init__(self, address):
-        self._version = 6
 
     @classmethod
     def _make_netmask(cls, arg):
@@ -1870,6 +1870,8 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
     """Represent and manipulate single IPv6 Addresses."""
 
+    __slots__ = ('_ip', '__weakref__')
+
     def __init__(self, address):
         """Instantiate a new IPv6 address object.
 
@@ -1887,8 +1889,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
             AddressValueError: If address isn't a valid IPv6 address.
 
         """
-        _BaseV6.__init__(self, address)
-
         # Efficient constructor from integer.
         if isinstance(address, int):
             self._check_int_address(address)
@@ -2180,7 +2180,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               supplied.
 
         """
-        _BaseV6.__init__(self, address)
         _BaseNetwork.__init__(self, address)
 
         # Efficient constructor from integer or packed address
