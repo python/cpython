@@ -4175,7 +4175,15 @@ AC_SUBST(SOABI)
 AC_MSG_CHECKING(ABIFLAGS)
 AC_MSG_RESULT($ABIFLAGS)
 AC_MSG_CHECKING(SOABI)
-SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}
+
+case $ac_sys_system in
+    Linux*|GNU*)
+        BITNESS_SUFFIX=-$(($ac_cv_sizeof_void_p * 8))b;;
+    *)
+        BITNESS_SUFFIX=;;
+esac
+SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${BITNESS_SUFFIX}
+
 AC_MSG_RESULT($SOABI)
 
 AC_SUBST(EXT_SUFFIX)
