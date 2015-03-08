@@ -16364,7 +16364,9 @@ typedef struct {
     __int64 win32_file_index;
     int got_file_index;
 #else /* POSIX */
+#ifdef HAVE_DIRENT_D_TYPE
     unsigned char d_type;
+#endif
     ino_t d_ino;
 #endif
 } DirEntry;
@@ -16389,11 +16391,15 @@ DirEntry_is_symlink(DirEntry *self)
 {
 #ifdef MS_WINDOWS
     return (self->win32_lstat.st_mode & S_IFMT) == S_IFLNK;
-#else /* POSIX */
+#elif defined(HAVE_DIRENT_D_TYPE)
+    /* POSIX */
     if (self->d_type != DT_UNKNOWN)
         return self->d_type == DT_LNK;
     else
         return DirEntry_test_mode(self, 0, S_IFLNK);
+#else
+    /* POSIX without d_type */
+    return DirEntry_test_mode(self, 0, S_IFLNK);
 #endif
 }
 
@@ -16505,22 +16511,26 @@ DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits
     PyObject *st_mode = NULL;
     long mode;
     int result;
+#if defined(MS_WINDOWS) || defined(HAVE_DIRENT_D_TYPE)
     int is_symlink;
     int need_stat;
-    _Py_IDENTIFIER(st_mode);
+#endif
 #ifdef MS_WINDOWS
     unsigned long dir_bits;
 #endif
+    _Py_IDENTIFIER(st_mode);
 
 #ifdef MS_WINDOWS
     is_symlink = (self->win32_lstat.st_mode & S_IFMT) == S_IFLNK;
     need_stat = follow_symlinks && is_symlink;
-#else /* POSIX */
+#elif defined(HAVE_DIRENT_D_TYPE)
     is_symlink = self->d_type == DT_LNK;
     need_stat = self->d_type == DT_UNKNOWN || (follow_symlinks && is_symlink);
 #endif
 
+#if defined(MS_WINDOWS) || defined(HAVE_DIRENT_D_TYPE)
     if (need_stat) {
+#endif
         stat = DirEntry_get_stat(self, follow_symlinks);
         if (!stat) {
             if (PyErr_ExceptionMatches(PyExc_FileNotFoundError)) {
@@ -16541,6 +16551,7 @@ DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits
         Py_CLEAR(st_mode);
         Py_CLEAR(stat);
         result = (mode & S_IFMT) == mode_bits;
+#if defined(MS_WINDOWS) || defined(HAVE_DIRENT_D_TYPE)
     }
     else if (is_symlink) {
         assert(mode_bits != S_IFLNK);
@@ -16561,6 +16572,7 @@ DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits
             result = self->d_type == DT_REG;
 #endif
     }
+#endif
 
     return result;
 
@@ -16812,7 +16824,11 @@ join_path_filename(char *path_narrow, char* filename, Py_ssize_t filename_len)
 
 static PyObject *
 DirEntry_from_posix_info(path_t *path, char *name, Py_ssize_t name_len,
-                         unsigned char d_type, ino_t d_ino)
+                         ino_t d_ino
+#ifdef HAVE_DIRENT_D_TYPE
+                         , unsigned char d_type
+#endif
+                         )
 {
     DirEntry *entry;
     char *joined_path;
@@ -16841,7 +16857,9 @@ DirEntry_from_posix_info(path_t *path, char *name, Py_ssize_t name_len,
     if (!entry->name || !entry->path)
         goto error;
 
+#ifdef HAVE_DIRENT_D_TYPE
     entry->d_type = d_type;
+#endif
     entry->d_ino = d_ino;
 
     return (PyObject *)entry;
@@ -16941,7 +16959,6 @@ ScandirIterator_iternext(ScandirIterator *iterator)
     struct dirent *direntp;
     Py_ssize_t name_len;
     int is_dot;
-    unsigned char d_type;
 
     /* Happens if the iterator is iterated twice */
     if (!iterator->dirp) {
@@ -16967,13 +16984,12 @@ ScandirIterator_iternext(ScandirIterator *iterator)
         is_dot = direntp->d_name[0] == '.' &&
                  (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
         if (!is_dot) {
-#if defined(__GLIBC__) && !defined(_DIRENT_HAVE_D_TYPE)
-            d_type = DT_UNKNOWN;  /* System doesn't support d_type */
-#else
-            d_type = direntp->d_type;
-#endif
             return DirEntry_from_posix_info(&iterator->path, direntp->d_name,
-                                            name_len, d_type, direntp->d_ino);
+                                            name_len, direntp->d_ino
+#ifdef HAVE_DIRENT_D_TYPE
+                                            , direntp->d_type
+#endif
+                                            );
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
