@@ -15798,6 +15798,38 @@ esac
 $as_echo "$ENSUREPIP" >&6; }
 
 
+# check if the dirent structure of a d_type field and DT_UNKNOWN is defined
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if the dirent structure of a d_type field" >&5
+$as_echo_n "checking if the dirent structure of a d_type field... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    #include <dirent.h>
+
+    int main() {
+      struct dirent entry;
+      return entry.d_type == DT_UNKNOWN;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  have_dirent_d_type=yes
+else
+  have_dirent_d_type=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_dirent_d_type" >&5
+$as_echo "$have_dirent_d_type" >&6; }
+
+if test "$have_dirent_d_type" = yes; then
+
+$as_echo "#define HAVE_DIRENT_D_TYPE 1" >>confdefs.h
+
+fi
+
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh"
 
