@@ -1199,8 +1199,10 @@ class URandomFDTests(unittest.TestCase):
         code = """if 1:
             import os
             import sys
+            import test.support
             os.urandom(4)
-            os.closerange(3, 256)
+            with test.support.SuppressCrashReport():
+                os.closerange(3, 256)
             sys.stdout.buffer.write(os.urandom(4))
             """
         rc, out, err = assert_python_ok('-Sc', code)
@@ -1214,16 +1216,18 @@ class URandomFDTests(unittest.TestCase):
         code = """if 1:
             import os
             import sys
+            import test.support
             os.urandom(4)
-            for fd in range(3, 256):
-                try:
-                    os.close(fd)
-                except OSError:
-                    pass
-                else:
-                    # Found the urandom fd (XXX hopefully)
-                    break
-            os.closerange(3, 256)
+            with test.support.SuppressCrashReport():
+                for fd in range(3, 256):
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+                    else:
+                        # Found the urandom fd (XXX hopefully)
+                        break
+                os.closerange(3, 256)
             with open({TESTFN!r}, 'rb') as f:
                 os.dup2(f.fileno(), fd)
                 sys.stdout.buffer.write(os.urandom(4))
