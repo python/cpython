@@ -340,7 +340,8 @@ class CmdLineTest(unittest.TestCase):
         # Issue #5319: if stdout.flush() fails at shutdown, an error should
         # be printed out.
         code = """if 1:
-            import os, sys
+            import os, sys, test.support
+            test.support.SuppressCrashReport().__enter__()
             sys.stdout.write('x')
             os.close(sys.stdout.fileno())"""
         rc, out, err = assert_python_ok('-c', code)
