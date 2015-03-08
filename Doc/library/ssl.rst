@@ -535,7 +535,7 @@ Constants
    prefer trusted certificates when building the trust chain to validate a
    certificate. This flag is enabled by default.
 
-   .. versionadded:: 3.4.5
+   .. versionadded:: 3.4.4
 
 .. data:: PROTOCOL_SSLv23
 
