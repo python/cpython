@@ -2,11 +2,11 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
   <Bundle Name="!(loc.FullProductName)"
-          UpgradeCode="$(var.UpgradeCode)"
+          UpgradeCode="$(var.CoreUpgradeCode)"
           Version="$(var.Version)"
           IconSourceFile="bundle.ico"
           Manufacturer="!(loc.Manufacturer)"
-          UpdateUrl="http://www.python.org/"
+          AboutUrl="http://www.python.org/"
           DisableModify="button"
           Compressed="no">
     <BootstrapperApplication Id="PythonBA" SourceFile="$(var.BootstrapApp)">

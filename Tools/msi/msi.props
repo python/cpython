@@ -62,7 +62,7 @@
         <Bitness Condition="$(Platform) == 'x64'">64-bit</Bitness>
         <DefineConstants>
             $(DefineConstants);
-            Version=$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber).$(RevisionNumber);
+            Version=$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0;
             ShortVersion=$(MajorVersionNumber).$(MinorVersionNumber);
             LongVersion=$(PythonVersion);
             MajorVersionNumber=$(MajorVersionNumber);
@@ -142,7 +142,7 @@
     </ItemGroup>
     <Target Name="_GenerateGuids" AfterTargets="PrepareForBuild">
         <PropertyGroup>
-            <_Uuids>@(_Uuid->'("%(Identity)", "%(Uri)")',',')</_Uuids>
+            <_Uuids>@(_Uuid->'("%(Identity)", "$(MajorVersionNumber).$(MinorVersionNumber)/%(Uri)")',',')</_Uuids>
             <_GenerateCommand>import uuid; print('\n'.join('{}={}'.format(i, uuid.uuid5(uuid.UUID('c8d9733e-a70c-43ff-ab0c-e26456f11083'), '$(ReleaseUri)' + j)) for i,j in [$(_Uuids.Replace(`"`,`'`))]))</_GenerateCommand>
         </PropertyGroup>
         
