@@ -17,6 +17,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22524: New os.scandir() function, part of the PEP 471: "os.scandir()
+  function -- a better and faster directory iterator". Patch written by Ben
+  Hoyt.
+
 - Issue #23103: Reduced the memory consumption of IPv4Address and IPv6Address.
 
 - Issue #21793: BaseHTTPRequestHandler again logs response code as numeric,
