@@ -182,7 +182,13 @@ check_fd(int fd)
 {
 #if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
     struct _Py_stat_struct buf;
-    if (_Py_fstat(fd, &buf) < 0 && errno == EBADF) {
+    if (_Py_fstat(fd, &buf) < 0 &&
+#ifdef MS_WINDOWS
+        GetLastError() == ERROR_INVALID_HANDLE
+#else
+        errno == EBADF
+#endif
+        ) {
         PyObject *exc;
         char *msg = strerror(EBADF);
         exc = PyObject_CallFunction(PyExc_OSError, "(is)",

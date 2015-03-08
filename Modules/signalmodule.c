@@ -560,7 +560,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
             }
 
             if (_Py_fstat(fd, &st) != 0) {
-                PyErr_SetFromErrno(PyExc_OSError);
+                PyErr_SetExcFromWindowsErr(PyExc_OSError, GetLastError());
                 return NULL;
             }
 

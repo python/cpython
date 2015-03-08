@@ -637,10 +637,14 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
     else
         h = (HANDLE)_get_osfhandle(fd);
 
+    /* Protocol violation: we explicitly clear errno, instead of
+       setting it to a POSIX error. Callers should use GetLastError. */
     errno = 0;
 
     if (h == INVALID_HANDLE_VALUE) {
-        errno = EBADF;
+        /* This is really a C library error (invalid file handle).
+           We set the Win32 error to the closes one matching. */
+        SetLastError(ERROR_INVALID_HANDLE);
         return -1;
     }
     memset(result, 0, sizeof(*result));
@@ -649,7 +653,6 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
     if (type == FILE_TYPE_UNKNOWN) {
         DWORD error = GetLastError();
         if (error != 0) {
-            errno = EINVAL;
             return -1;
         }
         /* else: valid but unknown file */
@@ -664,7 +667,6 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
     }
 
     if (!GetFileInformationByHandle(h, &info)) {
-        errno = EINVAL;
         return -1;
     }
 
