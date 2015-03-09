@@ -1,13 +1,16 @@
 
-import unittest, struct
-import os
-import sys
-from test import support
+import fractions
 import math
-from math import isinf, isnan, copysign, ldexp
 import operator
+import os
+import random
+import sys
+import struct
 import time
-import random, fractions
+import unittest
+
+from test import support
+from math import isinf, isnan, copysign, ldexp
 
 INF = float("inf")
 NAN = float("nan")
