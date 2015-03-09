@@ -2078,7 +2078,7 @@ _Py_CheckFunctionResult(PyObject *result, const char *func_name)
 {
     int err_occurred = (PyErr_Occurred() != NULL);
 
-#ifdef NDEBUG
+#ifndef NDEBUG
     /* In debug mode: abort() with an assertion error. Use two different
        assertions, so if an assertion fails, it's possible to know
        if result was set or not and if an exception was raised or not. */
