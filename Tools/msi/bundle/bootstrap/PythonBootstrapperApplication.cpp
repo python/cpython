@@ -2574,6 +2574,7 @@ public:
             }
         }
 
+        _crtInstalledToken = -1;
         pEngine->SetVariableNumeric(L"CRTInstalled", IsCrtInstalled() ? 1 : 0);
 
         _wixLoc = nullptr;
@@ -2602,8 +2603,6 @@ public:
         _suppressDowngradeFailure = FALSE;
         _suppressRepair = FALSE;
         _modifying = FALSE;
-
-        _crtInstalledToken = -1;
 
         _overridableVariables = nullptr;
         _taskbarList = nullptr;
