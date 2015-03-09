@@ -389,6 +389,12 @@ class TestSysConfig(unittest.TestCase):
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
 
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
+    def test_bitness_in_ext_suffix(self):
+        suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        bitness = '-32b' if sys.maxsize < 2**32 else '-64b'
+        self.assertTrue(suffix.endswith(bitness + '.so'), suffix)
+
 
 class MakefileTests(unittest.TestCase):
 

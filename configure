@@ -14200,7 +14200,15 @@ $as_echo_n "checking ABIFLAGS... " >&6; }
 $as_echo "$ABIFLAGS" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking SOABI" >&5
 $as_echo_n "checking SOABI... " >&6; }
-SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}
+
+case $ac_sys_system in
+    Linux*|GNU*)
+        BITNESS_SUFFIX=-$(($ac_cv_sizeof_void_p * 8))b;;
+    *)
+        BITNESS_SUFFIX=;;
+esac
+SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${BITNESS_SUFFIX}
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 $as_echo "$SOABI" >&6; }
 
