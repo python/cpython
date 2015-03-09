@@ -30,9 +30,10 @@ if not defined PSCP echo Cannot locate pscp.exe & exit /B 1
 echo Found pscp.exe at %PSCP%
 
 call "%PCBUILD%env.bat" > nul 2> nul
+pushd "%D%"
 msbuild /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x86
 msbuild /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x64 /p:IncludeDoc=false
-
+popd
 exit /B 0
 
 :Help
