@@ -41,7 +41,9 @@ if os.name == "nt":
         elif version <= 13:
             clibname = 'msvcr%d' % (version * 10)
         else:
-            clibname = 'appcrt%d' % (version * 10)
+            # CRT is no longer directly loadable. See issue23606 for the
+            # discussion about alternative approaches.
+            return None
 
         # If python was built with in debug mode
         import importlib.machinery
