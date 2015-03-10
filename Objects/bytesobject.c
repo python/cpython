@@ -2370,18 +2370,6 @@ bytes_fromhex(PyObject *cls, PyObject *args)
     return NULL;
 }
 
-PyDoc_STRVAR(sizeof__doc__,
-"B.__sizeof__() -> size of B in memory, in bytes");
-
-static PyObject *
-bytes_sizeof(PyBytesObject *v)
-{
-    Py_ssize_t res;
-    res = PyBytesObject_SIZE + Py_SIZE(v) * Py_TYPE(v)->tp_itemsize;
-    return PyLong_FromSsize_t(res);
-}
-
-
 static PyObject *
 bytes_getnewargs(PyBytesObject *v)
 {
@@ -2447,8 +2435,6 @@ bytes_methods[] = {
      translate__doc__},
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
-    {"__sizeof__", (PyCFunction)bytes_sizeof, METH_NOARGS,
-     sizeof__doc__},
     {NULL,     NULL}                         /* sentinel */
 };
 
