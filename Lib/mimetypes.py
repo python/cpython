@@ -246,7 +246,8 @@ class MimeTypes:
                 except EnvironmentError:
                     break
                 else:
-                    yield ctype
+                    if '\0' not in ctype:
+                        yield ctype
                 i += 1
 
         with _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT, '') as hkcr:
