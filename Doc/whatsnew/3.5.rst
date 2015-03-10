@@ -115,13 +115,17 @@ Please read on for a comprehensive list of user-facing changes.
 PEP 471 - os.scandir() function -- a better and faster directory iterator
 -------------------------------------------------------------------------
 
-:pep:`471`  includes a new directory iteration function, :func:`os.scandir`,
-in the standard library.
+:pep:`471` adds a new directory iteration function, :func:`os.scandir`,
+to the standard library. Additionally, :func:`os.walk` is now
+implemented using :func:`os.scandir`, which speeds it up by 3-5 times
+on POSIX systems and by 7-20 times on Windows systems.
+
+PEP and implementation written by Ben Hoyt with the help of Victor Stinner.
 
 .. seealso::
 
    :pep:`471` -- os.scandir() function -- a better and faster directory
-   iterator.
+   iterator
 
 
 PEP 475: Retry system calls failing with EINTR
@@ -130,8 +134,6 @@ PEP 475: Retry system calls failing with EINTR
 :pep:`475` adds support for automatic retry of system calls failing with EINTR:
 this means that user code doesn't have to deal with EINTR or InterruptedError
 manually, and should make it more robust against asynchronous signal reception.
-
-PEP and implementation written by Ben Hoyt with the help of Victor Stinner.
 
 .. seealso::
 
@@ -294,9 +296,11 @@ json
 os
 --
 
-* New :func:`os.scandir` function: Return an iterator of :class:`os.DirEntry`
-  objects corresponding to the entries in the directory given by *path*.
-  (Implementation written by Ben Hoyt with the help of Victor Stinner.)
+* New :func:`os.scandir` function that exposes file information from
+  the operating system when listing a directory. :func:`os.scandir`
+  returns an iterator of :class:`os.DirEntry` objects corresponding to
+  the entries in the directory given by *path*. (Contributed by Ben
+  Hoyt with the help of Victor Stinner in :issue:`22524`.)
 
 * :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
   attribute on Windows.  (Contributed by Ben Hoyt in :issue:`21719`.)
@@ -418,6 +422,12 @@ Optimizations
 =============
 
 The following performance enhancements have been added:
+
+* :func:`os.walk` has been sped up by 3-5x on POSIX systems and 7-20x
+  on Windows. This was done using the new :func:`os.scandir` function,
+  which exposes file information from the underlying ``readdir`` and
+  ``FindFirstFile``/``FindNextFile`` system calls. (Contributed by
+  Ben Hoyt with help from Victor Stinner in :issue:`23605`.)
 
 * Construction of ``bytes(int)`` (filled by zero bytes) is faster and use less
   memory for large objects. ``calloc()`` is used instead of ``malloc()`` to
