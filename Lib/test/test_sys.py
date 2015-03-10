@@ -778,6 +778,9 @@ class SizeofTest(unittest.TestCase):
             check(x, vsize('n2Pi') + x.__alloc__())
         # bytearray_iterator
         check(iter(bytearray()), size('nP'))
+        # bytes
+        check(b'', vsize('n') + 1)
+        check(b'x' * 10, vsize('n') + 11)
         # cell
         def get_cell():
             x = 42
@@ -897,8 +900,6 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE), vsize('') + 2*self.longdigit)
         check(int(PyLong_BASE**2-1), vsize('') + 2*self.longdigit)
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
-        # memoryview
-        check(memoryview(b''), size('Pnin 2P2n2i5P 3cPn'))
         # module
         check(unittest, size('PnPPP'))
         # None
