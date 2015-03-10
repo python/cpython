@@ -54,11 +54,14 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         info = [self.__class__.__name__]
         if self._closed:
             info.append('closed')
-        info.append('pid=%s' % self._pid)
+        if self._pid is not None:
+            info.append('pid=%s' % self._pid)
         if self._returncode is not None:
             info.append('returncode=%s' % self._returncode)
-        else:
+        elif self._pid is not None:
             info.append('running')
+        else:
+            info.append('not started')
 
         stdin = self._pipes.get(0)
         if stdin is not None:
