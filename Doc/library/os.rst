@@ -2618,6 +2618,11 @@ features:
           for name in dirs:
               os.rmdir(os.path.join(root, name))
 
+   .. versionchanged:: 3.5
+      The function now calls :func:`os.scandir` instead of :func:`os.listdir`.
+      The usage of :func:`os.scandir` reduces the number of calls to
+      :func:`os.stat`.
+
 
 .. function:: fwalk(top='.', topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None)
 
