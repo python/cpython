@@ -323,7 +323,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     the value of topdown, the list of subdirectories is retrieved before the
     tuples for the directory and its subdirectories are generated.
 
-    By default errors from the os.listdir() call are ignored.  If
+    By default errors from the os.scandir() call are ignored.  If
     optional arg 'onerror' is specified, it should be a function; it
     will be called with one argument, an OSError instance.  It can
     report the error to continue with the walk, or raise the exception
@@ -352,7 +352,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     """
 
-    islink, join, isdir = path.islink, path.join, path.isdir
+    dirs = []
+    nondirs = []
+    symlinks = set()
 
     # We may not have read permission for top, in which case we can't
     # get a list of the files the directory contains.  os.walk
@@ -360,27 +362,46 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     # minor reason when (say) a thousand readable directories are still
     # left to visit.  That logic is copied here.
     try:
-        # Note that listdir is global in this module due
+        # Note that scandir is global in this module due
         # to earlier import-*.
-        names = listdir(top)
-    except OSError as err:
+        for entry in scandir(top):
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
+                # If is_dir() raises an OSError, consider that the entry is not
+                # a directory, same behaviour than os.path.isdir().
+                is_dir = False
+
+            if is_dir:
+                dirs.append(entry.name)
+
+                try:
+                    if entry.is_symlink():
+                        symlinks.add(entry.name)
+                except OSError:
+                    # If is_symlink() raises an OSError, consider that the
+                    # entry is not a symbolik link, same behaviour than
+                    # os.path.islink().
+                    pass
+            else:
+                nondirs.append(entry.name)
+    except OSError as error:
+        # scandir() or iterating into scandir() iterator raised an OSError
         if onerror is not None:
-            onerror(err)
+            onerror(error)
         return
 
-    dirs, nondirs = [], []
-    for name in names:
-        if isdir(join(top, name)):
-            dirs.append(name)
-        else:
-            nondirs.append(name)
-
+    # Yield before recursion if going top down
     if topdown:
         yield top, dirs, nondirs
+
+    # Recurse into sub-directories
     for name in dirs:
-        new_path = join(top, name)
-        if followlinks or not islink(new_path):
+        if followlinks or name not in symlinks:
+            new_path = path.join(top, name)
             yield from walk(new_path, topdown, onerror, followlinks)
+
+    # Yield after recursion if going bottom up
     if not topdown:
         yield top, dirs, nondirs
 
