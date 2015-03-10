@@ -3507,7 +3507,7 @@ object_sizeof(PyObject *self, PyObject *args)
     res = 0;
     isize = self->ob_type->tp_itemsize;
     if (isize > 0)
-        res = self->ob_type->ob_size * isize;
+        res = Py_SIZE(self) * isize;
     res += self->ob_type->tp_basicsize;
 
     return PyInt_FromSsize_t(res);
