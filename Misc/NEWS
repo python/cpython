@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23605: os.walk() now calls os.scandir() instead of os.listdir().
+  The usage of os.scandir() reduces the number of calls to os.stat().
+  Initial patch written by Ben Hoyt.
+
 
 What's New in Python 3.5 alpha 2?
 =================================
