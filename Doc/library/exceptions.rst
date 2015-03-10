@@ -353,17 +353,16 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: SystemExit
 
-   This exception is raised by the :func:`sys.exit` function.  When it is not
-   handled, the Python interpreter exits; no stack traceback is printed.  If the
-   associated value is an integer, it specifies the system exit status (passed
-   to C's :c:func:`exit` function); if it is ``None``, the exit status is zero;
-   if it has another type (such as a string), the object's value is printed and
+   This exception is raised by the :func:`sys.exit` function.  It inherits from
+   :exc:`BaseException` instead of :exc:`Exception` so that it is not accidentally
+   caught by code that catches :exc:`Exception`.  This allows the exception to
+   properly propagate up and cause the interpreter to exit.  When it is not
+   handled, the Python interpreter exits; no stack traceback is printed.  The
+   constructor accepts the same optional argument passed to :func:`sys.exit`.
+   If the value is an integer, it specifies the system exit status (passed to
+   C's :c:func:`exit` function); if it is ``None``, the exit status is zero; if
+   it has another type (such as a string), the object's value is printed and
    the exit status is one.
-
-   Instances have an attribute :attr:`!code` which is set to the proposed exit
-   status or error message (defaulting to ``None``). Also, this exception derives
-   directly from :exc:`BaseException` and not :exc:`Exception`, since it is not
-   technically an error.
 
    A call to :func:`sys.exit` is translated into an exception so that clean-up
    handlers (:keyword:`finally` clauses of :keyword:`try` statements) can be
@@ -372,9 +371,10 @@ The following exceptions are the exceptions that are usually raised.
    absolutely positively necessary to exit immediately (for example, in the child
    process after a call to :func:`os.fork`).
 
-   The exception inherits from :exc:`BaseException` instead of :exc:`Exception` so
-   that it is not accidentally caught by code that catches :exc:`Exception`.  This
-   allows the exception to properly propagate up and cause the interpreter to exit.
+   .. attribute:: code
+
+      The exit status or error message that is passed to the constructor.
+      (Defaults to ``None``.)
 
 
 .. exception:: TypeError
