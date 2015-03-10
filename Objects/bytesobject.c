@@ -3463,42 +3463,6 @@ bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
     return NULL;
 }
 
-/*[clinic input]
-bytes.__sizeof__ as bytes_sizeof
-
-    self: self(type="PyBytesObject *")
-
-Returns the size of the bytes object in memory, in bytes.
-[clinic start generated code]*/
-
-PyDoc_STRVAR(bytes_sizeof__doc__,
-"__sizeof__($self, /)\n"
-"--\n"
-"\n"
-"Returns the size of the bytes object in memory, in bytes.");
-
-#define BYTES_SIZEOF_METHODDEF    \
-    {"__sizeof__", (PyCFunction)bytes_sizeof, METH_NOARGS, bytes_sizeof__doc__},
-
-static PyObject *
-bytes_sizeof_impl(PyBytesObject *self);
-
-static PyObject *
-bytes_sizeof(PyBytesObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return bytes_sizeof_impl(self);
-}
-
-static PyObject *
-bytes_sizeof_impl(PyBytesObject *self)
-/*[clinic end generated code: output=44933279343f24ae input=bee4c64bb42078ed]*/
-{
-    Py_ssize_t res;
-    res = PyBytesObject_SIZE + Py_SIZE(self) * Py_TYPE(self)->tp_itemsize;
-    return PyLong_FromSsize_t(res);
-}
-
-
 static PyObject *
 bytes_getnewargs(PyBytesObject *v)
 {
@@ -3559,7 +3523,6 @@ bytes_methods[] = {
     BYTES_TRANSLATE_METHODDEF
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
-    BYTES_SIZEOF_METHODDEF
     {NULL,     NULL}                         /* sentinel */
 };
 
