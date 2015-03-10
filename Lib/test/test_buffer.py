@@ -2449,6 +2449,21 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertEqual(m.tobytes(), b'')
             self.assertEqual(m.tolist(), [])
 
+    check_sizeof = support.check_sizeof
+
+    def test_memoryview_sizeof(self):
+        check = self.check_sizeof
+        vsize = support.calcvobjsize
+        base_struct = 'Pnin 2P2n2i5P 3cP'
+        per_dim = '3n'
+
+        items = list(range(8))
+        check(memoryview(b''), vsize(base_struct + 1 * per_dim))
+        a = ndarray(items, shape=[2, 4], format="b")
+        check(memoryview(a), vsize(base_struct + 2 * per_dim))
+        a = ndarray(items, shape=[2, 2, 2], format="b")
+        check(memoryview(a), vsize(base_struct + 3 * per_dim))
+
     def test_memoryview_struct_module(self):
 
         class INT(object):
