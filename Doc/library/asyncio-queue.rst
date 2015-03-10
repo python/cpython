@@ -33,7 +33,7 @@ Queue
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
-   .. versionchanged:: 3.4.3
+   .. versionchanged:: 3.4.4
       New :meth:`join` and :meth:`task_done` methods.
 
    .. method:: empty()
@@ -79,7 +79,7 @@ Queue
 
       This method is a :ref:`coroutine <coroutine>`.
 
-      .. versionadded:: 3.4.3
+      .. versionadded:: 3.4.4
 
    .. coroutinemethod:: put(item)
 
@@ -117,7 +117,7 @@ Queue
       Raises :exc:`ValueError` if called more times than there were items
       placed in the queue.
 
-      .. versionadded:: 3.4.3
+      .. versionadded:: 3.4.4
 
    .. attribute:: maxsize
 
@@ -151,7 +151,7 @@ JoinableQueue
 
    Deprecated alias for :class:`Queue`.
 
-   .. deprecated:: 3.4.3
+   .. deprecated:: 3.4.4
 
 
 Exceptions
