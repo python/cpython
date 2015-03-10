@@ -242,9 +242,12 @@ class MimeTypes:
             i = 0
             while True:
                 try:
-                    yield _winreg.EnumKey(mimedb, i)
+                    ctype = _winreg.EnumKey(mimedb, i)
                 except EnvironmentError:
                     break
+                else:
+                    if '\0' not in ctype:
+                        yield ctype
                 i += 1
 
         default_encoding = sys.getdefaultencoding()
