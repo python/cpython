@@ -1,4 +1,4 @@
-_orig_open = open
+from builtins import open as _orig_open
 
 class _BkFile:
     def __init__(self, file, mode, bufsize):

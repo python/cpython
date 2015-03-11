@@ -24,6 +24,7 @@ __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
                'Michael Foord')
+from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
@@ -428,8 +429,6 @@ def detect_encoding(readline):
 
     return default, [first, second]
 
-
-_builtin_open = open
 
 def open(filename):
     """Open a file in read only mode using the encoding detected by
