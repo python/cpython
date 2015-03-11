@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23615: Module tarfile is now can be reloaded with imp.reload().
+
 - Issue #22853: Fixed a deadlock when use multiprocessing.Queue at import time.
   Patch by Florian Finkernagel and Davin Potts.
 
