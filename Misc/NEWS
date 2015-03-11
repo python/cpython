@@ -10,6 +10,8 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #23192: Fixed generator lambdas.  Patch by Bruno Cauet.
+
 - Issue #23629: Fix the default __sizeof__ implementation for variable-sized
   objects.
 
