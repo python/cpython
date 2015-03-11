@@ -260,7 +260,7 @@ directory\n",
                         }
                         else if (find_existing_python(ip->executable)) {
                             debug(L"locate_pythons_for_key: %s: already \
-found: %s\n", ip->executable);
+found\n", ip->executable);
                         }
                         else {
                             /* check the executable type. */
