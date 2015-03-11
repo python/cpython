@@ -1897,12 +1897,12 @@ compiler_lambda(struct compiler *c, expr_ty e)
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
-        ADDOP_IN_SCOPE(c, POP_TOP);
+        co = assemble(c, 0);
     }
     else {
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
+        co = assemble(c, 1);
     }
-    co = assemble(c, 1);
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
