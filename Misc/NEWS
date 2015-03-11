@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23615: Modules bz2, tarfile and tokenize now can be reloaded with
+  imp.reload().  Patch by Thomas Kluyver.
+
 - Issue #23476: In the ssl module, enable OpenSSL's X509_V_FLAG_TRUSTED_FIRST
   flag on certificate stores when it is available.
 
