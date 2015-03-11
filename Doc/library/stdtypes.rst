@@ -3165,7 +3165,7 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'o'``    | Signed octal value.                                 | \(1)  |
 +------------+-----------------------------------------------------+-------+
-| ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(7)  |
+| ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(8)  |
 +------------+-----------------------------------------------------+-------+
 | ``'x'``    | Signed hexadecimal (lowercase).                     | \(2)  |
 +------------+-----------------------------------------------------+-------+
@@ -3199,6 +3199,9 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'a'``    | Bytes (converts any Python object using             | \(5)  |
 |            | ``repr(obj).encode('ascii','backslashreplace)``).   |       |
++------------+-----------------------------------------------------+-------+
+| ``'r'``    | ``'r'`` is an alias for ``'a'`` and should only     | \(7)  |
+|            | be used for Python2/3 code bases.                   |       |
 +------------+-----------------------------------------------------+-------+
 | ``'%'``    | No argument is converted, results in a ``'%'``      |       |
 |            | character in the result.                            |       |
@@ -3238,6 +3241,9 @@ Notes:
    ``b'%s'`` is deprecated, but will not be removed during the 3.x series.
 
 (7)
+   ``b'%r'`` is deprecated, but will not be removed during the 3.x series.
+
+(8)
    See :pep:`237`.
 
 .. note::
