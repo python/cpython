@@ -38,6 +38,7 @@ __credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
 #---------
 # Imports
 #---------
+from builtins import open as bltn_open
 import sys
 import os
 import io
@@ -2433,7 +2434,6 @@ def is_tarfile(name):
     except TarError:
         return False
 
-bltn_open = open
 open = TarFile.open
 
 
