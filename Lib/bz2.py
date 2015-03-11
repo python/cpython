@@ -9,6 +9,7 @@ __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor",
 
 __author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
 
+from builtins import open as _builtin_open
 import io
 import warnings
 
@@ -26,8 +27,6 @@ _MODE_READ_EOF = 2
 _MODE_WRITE    = 3
 
 _BUFFER_SIZE = 8192
-
-_builtin_open = open
 
 
 class BZ2File(io.BufferedIOBase):
