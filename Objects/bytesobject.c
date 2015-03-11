@@ -720,6 +720,8 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 pbuf = "%";
                 len = 1;
                 break;
+            case 'r':
+                // %r is only for 2/3 code; 3 only code should use %a
             case 'a':
                 temp = PyObject_ASCII(v);
                 if (temp == NULL)

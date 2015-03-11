@@ -310,6 +310,11 @@ class FormatTest(unittest.TestCase):
         testcommon(b"%a", b"ghi", b"b'ghi'")
         testcommon(b"%a", "jkl", b"'jkl'")
         testcommon(b"%a", "\u0544", b"'\\u0544'")
+        # %r is an alias for %a
+        testcommon(b"%r", 3.14, b"3.14")
+        testcommon(b"%r", b"ghi", b"b'ghi'")
+        testcommon(b"%r", "jkl", b"'jkl'")
+        testcommon(b"%r", "\u0544", b"'\\u0544'")
 
         # Test exception for unknown format characters, etc.
         if verbose:
