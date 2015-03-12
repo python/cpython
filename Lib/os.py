@@ -374,7 +374,10 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
             if is_dir:
                 dirs.append(entry.name)
+            else:
+                nondirs.append(entry.name)
 
+            if is_dir and not followlinks:
                 try:
                     if entry.is_symlink():
                         symlinks.add(entry.name)
@@ -383,8 +386,6 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     # entry is not a symbolik link, same behaviour than
                     # os.path.islink().
                     pass
-            else:
-                nondirs.append(entry.name)
     except OSError as error:
         # scandir() or iterating into scandir() iterator raised an OSError
         if onerror is not None:
