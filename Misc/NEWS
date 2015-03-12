@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22928: Disabled HTTP header injections in http.client.
+  Original patch by Demian Brecht.
+
 - Issue #23615: Modules bz2, tarfile and tokenize now can be reloaded with
   imp.reload().  Patch by Thomas Kluyver.
 
