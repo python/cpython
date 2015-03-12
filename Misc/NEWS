@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23581: Add matmul support to MagicMock. Patch by Håkan Lövdahl.
+
 - Issue #23566: enable(), register(), dump_traceback() and
   dump_traceback_later() functions of faulthandler now accept file
   descriptors. Patch by Wei Wu.
