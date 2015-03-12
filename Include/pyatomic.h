@@ -6,12 +6,12 @@
 
 #include "pyconfig.h"
 
-#if defined(HAVE_STD_ATOMIC)
-#include <stdatomic.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(HAVE_STD_ATOMIC)
+#include <stdatomic.h>
 #endif
 
 /* This is modeled after the atomics interface from C1x, according to
