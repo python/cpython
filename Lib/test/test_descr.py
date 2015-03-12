@@ -21,7 +21,9 @@ class OperatorsTest(unittest.TestCase):
             'add': '+',
             'sub': '-',
             'mul': '*',
-            'div': '/',
+            'matmul': '@',
+            'truediv': '/',
+            'floordiv': '//',
             'divmod': 'divmod',
             'pow': '**',
             'lshift': '<<',
@@ -52,8 +54,6 @@ class OperatorsTest(unittest.TestCase):
             'invert': '~',
             'int': 'int',
             'float': 'float',
-            'oct': 'oct',
-            'hex': 'hex',
         }
 
         for name, expr in list(self.unops.items()):
@@ -81,12 +81,6 @@ class OperatorsTest(unittest.TestCase):
 
     def binop_test(self, a, b, res, expr="a+b", meth="__add__"):
         d = {'a': a, 'b': b}
-
-        # XXX Hack so this passes before 2.3 when -Qnew is specified.
-        if meth == "__div__" and 1/2 == 0.5:
-            meth = "__truediv__"
-
-        if meth == '__divmod__': pass
 
         self.assertEqual(eval(expr, d), res)
         t = type(a)
@@ -221,7 +215,7 @@ class OperatorsTest(unittest.TestCase):
     def number_operators(self, a, b, skip=[]):
         dict = {'a': a, 'b': b}
 
-        for name, expr in list(self.binops.items()):
+        for name, expr in self.binops.items():
             if name not in skip:
                 name = "__%s__" % name
                 if hasattr(a, name):
@@ -261,7 +255,7 @@ class OperatorsTest(unittest.TestCase):
         # Testing complex operations...
         self.number_operators(100.0j, 3.0j, skip=['lt', 'le', 'gt', 'ge',
                                                   'int', 'float',
-                                                  'divmod', 'mod'])
+                                                  'floordiv', 'divmod', 'mod'])
 
         class Number(complex):
             __slots__ = ['prec']
@@ -4177,9 +4171,8 @@ order (MRO) for bases """
                 ('__sub__',      'x - y',                   'x -= y'),
                 ('__mul__',      'x * y',                   'x *= y'),
                 ('__matmul__',   'x @ y',                   'x @= y'),
-                ('__truediv__',  'operator.truediv(x, y)',  None),
-                ('__floordiv__', 'operator.floordiv(x, y)', None),
-                ('__div__',      'x / y',                   'x /= y'),
+                ('__truediv__',  'x / y',                   'x /= y'),
+                ('__floordiv__', 'x // y',                  'x //= y'),
                 ('__mod__',      'x % y',                   'x %= y'),
                 ('__divmod__',   'divmod(x, y)',            None),
                 ('__pow__',      'x ** y',                  'x **= y'),
@@ -4241,8 +4234,8 @@ order (MRO) for bases """
         # Also check type_getattro for correctness.
         class Meta(type):
             pass
-        class X(object):
-            __metaclass__ = Meta
+        class X(metaclass=Meta):
+            pass
         X.a = 42
         Meta.a = Descr("a")
         self.assertEqual(X.a, 42)
