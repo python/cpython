@@ -68,6 +68,7 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 
 from array import array
 import os
+import re
 import socket
 from sys import py3kwarning
 from urlparse import urlsplit
@@ -217,6 +218,34 @@ _MAXLINE = 65536
 
 # maximum amount of headers accepted
 _MAXHEADERS = 100
+
+# Header name/value ABNF (http://tools.ietf.org/html/rfc7230#section-3.2)
+#
+# VCHAR          = %x21-7E
+# obs-text       = %x80-FF
+# header-field   = field-name ":" OWS field-value OWS
+# field-name     = token
+# field-value    = *( field-content / obs-fold )
+# field-content  = field-vchar [ 1*( SP / HTAB ) field-vchar ]
+# field-vchar    = VCHAR / obs-text
+#
+# obs-fold       = CRLF 1*( SP / HTAB )
+#                ; obsolete line folding
+#                ; see Section 3.2.4
+
+# token          = 1*tchar
+#
+# tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+#                / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+#                / DIGIT / ALPHA
+#                ; any VCHAR, except delimiters
+#
+# VCHAR defined in http://tools.ietf.org/html/rfc5234#appendix-B.1
+
+# the patterns for both name and value are more leniant than RFC
+# definitions to allow for backwards compatibility
+_is_legal_header_name = re.compile(r'\A[^:\s][^:\r\n]*\Z').match
+_is_illegal_header_value = re.compile(r'\n(?![ \t])|\r(?![ \t\n])').search
 
 
 class HTTPMessage(mimetools.Message):
@@ -983,7 +1012,16 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        hdr = '%s: %s' % (header, '\r\n\t'.join([str(v) for v in values]))
+        header = '%s' % header
+        if not _is_legal_header_name(header):
+            raise ValueError('Invalid header name %r' % (header,))
+
+        values = [str(v) for v in values]
+        for one_value in values:
+            if _is_illegal_header_value(one_value):
+                raise ValueError('Invalid header value %r' % (one_value,))
+
+        hdr = '%s: %s' % (header, '\r\n\t'.join(values))
         self._output(hdr)
 
     def endheaders(self, message_body=None):

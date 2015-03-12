@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22928: Disabled HTTP header injections in httplib.
+  Original patch by Demian Brecht.
+
 - Issue #23615: Module tarfile is now can be reloaded with imp.reload().
 
 - Issue #22853: Fixed a deadlock when use multiprocessing.Queue at import time.
