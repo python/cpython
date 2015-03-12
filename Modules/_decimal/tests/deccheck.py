@@ -126,7 +126,7 @@ ContextFunctions = {
 
 # Functions that require a restricted exponent range for reasonable runtimes.
 UnaryRestricted = [
-  '__ceil__', '__floor__', '__int__', '__long__', '__trunc__',
+  '__ceil__', '__floor__', '__int__', '__trunc__',
   'to_integral', 'to_integral_value'
 ]
 

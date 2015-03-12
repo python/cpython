@@ -140,9 +140,9 @@ class PropertyTests(unittest.TestCase):
         # check that the property's __isabstractmethod__ descriptor does the
         # right thing when presented with a value that fails truth testing:
         class NotBool(object):
-            def __nonzero__(self):
+            def __bool__(self):
                 raise ValueError()
-            __len__ = __nonzero__
+            __len__ = __bool__
         with self.assertRaises(ValueError):
             class C(object):
                 def foo(self):

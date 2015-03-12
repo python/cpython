@@ -136,14 +136,6 @@ class AugAssignTest(unittest.TestCase):
                 output.append("__imul__ called")
                 return self
 
-            def __div__(self, val):
-                output.append("__div__ called")
-            def __rdiv__(self, val):
-                output.append("__rdiv__ called")
-            def __idiv__(self, val):
-                output.append("__idiv__ called")
-                return self
-
             def __floordiv__(self, val):
                 output.append("__floordiv__ called")
                 return self

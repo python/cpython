@@ -786,7 +786,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         class Meta(type):
             fish = 'slap'
             def __dir__(self):
-                return ['__class__', '__modules__', '__name__', 'fish']
+                return ['__class__', '__module__', '__name__', 'fish']
         class Class(metaclass=Meta):
             pass
         should_find = inspect.Attribute('fish', 'data', Meta, 'slap')
