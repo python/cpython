@@ -1831,7 +1831,7 @@ itself.  This means, for example, that one shared object can contain a second:
          >>> l = manager.list(range(10))
          >>> l._callmethod('__len__')
          10
-         >>> l._callmethod('__getslice__', (2, 7))   # equiv to `l[2:7]`
+         >>> l._callmethod('__getitem__', (slice(2, 7),))  # equiv to `l[2:7]`
          [2, 3, 4, 5, 6]
          >>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`
          Traceback (most recent call last):

@@ -992,7 +992,7 @@ FUNC1(tanh, tanh, 0,
    Note 4: A similar implementation is in Modules/cmathmodule.c.
    Be sure to update both when making changes.
 
-   Note 5: The signature of math.fsum() differs from __builtin__.sum()
+   Note 5: The signature of math.fsum() differs from builtins.sum()
    because the start argument doesn't make sense in the context of
    accurate summation.  Since the partials table is collapsed before
    returning a result, sum(seq2, start=sum(seq1)) may not equal the

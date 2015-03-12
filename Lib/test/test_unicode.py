@@ -1988,64 +1988,26 @@ class UnicodeTest(string_tests.CommonTest,
             self.fail("Should have raised UnicodeDecodeError")
 
     def test_conversion(self):
-        # Make sure __unicode__() works properly
-        class Foo0:
+        # Make sure __str__() works properly
+        class ObjectToStr:
             def __str__(self):
                 return "foo"
 
-        class Foo1:
+        class StrSubclassToStr(str):
             def __str__(self):
                 return "foo"
 
-        class Foo2(object):
-            def __str__(self):
-                return "foo"
-
-        class Foo3(object):
-            def __str__(self):
-                return "foo"
-
-        class Foo4(str):
-            def __str__(self):
-                return "foo"
-
-        class Foo5(str):
-            def __str__(self):
-                return "foo"
-
-        class Foo6(str):
-            def __str__(self):
-                return "foos"
-
-            def __str__(self):
-                return "foou"
-
-        class Foo7(str):
-            def __str__(self):
-                return "foos"
-            def __str__(self):
-                return "foou"
-
-        class Foo8(str):
+        class StrSubclassToStrSubclass(str):
             def __new__(cls, content=""):
                 return str.__new__(cls, 2*content)
             def __str__(self):
                 return self
 
-        class Foo9(str):
-            def __str__(self):
-                return "not unicode"
-
-        self.assertEqual(str(Foo0()), "foo")
-        self.assertEqual(str(Foo1()), "foo")
-        self.assertEqual(str(Foo2()), "foo")
-        self.assertEqual(str(Foo3()), "foo")
-        self.assertEqual(str(Foo4("bar")), "foo")
-        self.assertEqual(str(Foo5("bar")), "foo")
-        self.assertEqual(str(Foo6("bar")), "foou")
-        self.assertEqual(str(Foo7("bar")), "foou")
-        self.assertEqual(str(Foo8("foo")), "foofoo")
-        self.assertEqual(str(Foo9("foo")), "not unicode")
+        self.assertEqual(str(ObjectToStr()), "foo")
+        self.assertEqual(str(StrSubclassToStr("bar")), "foo")
+        s = str(StrSubclassToStrSubclass("foo"))
+        self.assertEqual(s, "foofoo")
+        self.assertIs(type(s), StrSubclassToStrSubclass)
 
     def test_unicode_repr(self):
         class s1:

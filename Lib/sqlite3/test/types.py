@@ -88,19 +88,10 @@ class DeclTypesTests(unittest.TestCase):
                 _val = _val.decode('utf-8')
             self.val = _val
 
-        def __cmp__(self, other):
-            if not isinstance(other, DeclTypesTests.Foo):
-                raise ValueError
-            if self.val == other.val:
-                return 0
-            else:
-                return 1
-
         def __eq__(self, other):
-            c = self.__cmp__(other)
-            if c is NotImplemented:
-                return c
-            return c == 0
+            if not isinstance(other, DeclTypesTests.Foo):
+                return NotImplemented
+            return self.val == other.val
 
         def __conform__(self, protocol):
             if protocol is sqlite.PrepareProtocol:
