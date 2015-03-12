@@ -1668,7 +1668,7 @@ magic_methods = (
 )
 
 numerics = (
-    "add sub mul div floordiv mod lshift rshift and xor or pow truediv"
+    "add sub mul matmul div floordiv mod lshift rshift and xor or pow truediv"
 )
 inplace = ' '.join('i%s' % n for n in numerics.split())
 right = ' '.join('r%s' % n for n in numerics.split())
