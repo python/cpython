@@ -366,6 +366,8 @@ result back on the stack.
 
    Implements ``TOS = TOS1 @ TOS``.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: BINARY_FLOOR_DIVIDE
 
@@ -442,6 +444,8 @@ the original TOS1.
 .. opcode:: INPLACE_MATRIX_MULTIPLY
 
    Implements in-place ``TOS = TOS1 @ TOS``.
+
+   .. versionadded:: 3.5
 
 
 .. opcode:: INPLACE_FLOOR_DIVIDE
