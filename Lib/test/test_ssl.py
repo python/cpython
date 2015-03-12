@@ -18,7 +18,6 @@ import asyncore
 import weakref
 import platform
 import functools
-from unittest import mock
 
 ssl = support.import_module("ssl")
 
