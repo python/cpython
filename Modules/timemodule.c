@@ -1386,74 +1386,94 @@ floattime(_Py_clock_info_t *info)
 static int
 floatsleep(double secs)
 {
-/* XXX Should test for MS_WINDOWS first! */
-#if defined(HAVE_SELECT) && !defined(__EMX__)
-    struct timeval t;
+    _PyTime_timeval deadline, monotonic;
+#ifndef MS_WINDOWS
+    struct timeval timeout;
     double frac;
-    int err;
+    int err = 0;
 
-    frac = fmod(secs, 1.0);
-    secs = floor(secs);
-    t.tv_sec = (long)secs;
-    t.tv_usec = (long)(frac*1000000.0);
-    Py_BEGIN_ALLOW_THREADS
-    err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
-    Py_END_ALLOW_THREADS
-    if (err != 0) {
-#ifdef EINTR
-        if (errno == EINTR) {
-            if (PyErr_CheckSignals())
-                return -1;
-        }
-        else
-#endif
-        {
-            PyErr_SetFromErrno(PyExc_OSError);
+    _PyTime_monotonic(&deadline);
+    _PyTime_ADD_SECONDS(deadline, secs);
+
+    while (1) {
+        frac = fmod(secs, 1.0);
+        secs = floor(secs);
+        timeout.tv_sec = (long)secs;
+        timeout.tv_usec = (long)(frac*1000000.0);
+
+        Py_BEGIN_ALLOW_THREADS
+        err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+        Py_END_ALLOW_THREADS
+
+        if (!(err != 0 && errno == EINTR))
+            break;
+
+        /* select() was interrupted by a signal */
+        if (PyErr_CheckSignals())
             return -1;
+
+        _PyTime_monotonic(&monotonic);
+        secs = _PyTime_INTERVAL(monotonic, deadline);
+        if (secs <= 0.0) {
+            err = 0;
+            errno = 0;
+            break;
         }
     }
-#elif defined(__WATCOMC__) && !defined(__QNX__)
-    /* XXX Can't interrupt this sleep */
-    Py_BEGIN_ALLOW_THREADS
-    delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
-    Py_END_ALLOW_THREADS
-#elif defined(MS_WINDOWS)
-    {
-        double millisecs = secs * 1000.0;
-        unsigned long ul_millis;
 
+    if (err != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+#else
+    double millisecs;
+    unsigned long ul_millis;
+    DWORD rc;
+    HANDLE hInterruptEvent;
+
+    _PyTime_monotonic(&deadline);
+    _PyTime_ADD_SECONDS(deadline, secs);
+
+    do {
+        millisecs = secs * 1000.0;
         if (millisecs > (double)ULONG_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "sleep length is too large");
             return -1;
         }
-        Py_BEGIN_ALLOW_THREADS
+
         /* Allow sleep(0) to maintain win32 semantics, and as decreed
          * by Guido, only the main thread can be interrupted.
          */
         ul_millis = (unsigned long)millisecs;
-        if (ul_millis == 0 || !_PyOS_IsMainThread())
-            Sleep(ul_millis);
-        else {
-            DWORD rc;
-            HANDLE hInterruptEvent = _PyOS_SigintEvent();
-            ResetEvent(hInterruptEvent);
-            rc = WaitForSingleObjectEx(hInterruptEvent, ul_millis, FALSE);
-            if (rc == WAIT_OBJECT_0) {
-                Py_BLOCK_THREADS
-                errno = EINTR;
-                PyErr_SetFromErrno(PyExc_OSError);
-                return -1;
-            }
+        if (ul_millis == 0 || !_PyOS_IsMainThread()) {
+            Py_BEGIN_ALLOW_THREADS
+            Sleep(0);
+            Py_END_ALLOW_THREADS
+            break;
         }
-        Py_END_ALLOW_THREADS
-    }
-#else
-    /* XXX Can't interrupt this sleep */
-    Py_BEGIN_ALLOW_THREADS
-    sleep((int)secs);
-    Py_END_ALLOW_THREADS
-#endif
+        else {
+            hInterruptEvent = _PyOS_SigintEvent();
+            ResetEvent(hInterruptEvent);
 
+            Py_BEGIN_ALLOW_THREADS
+            rc = WaitForSingleObjectEx(hInterruptEvent, ul_millis, FALSE);
+            Py_END_ALLOW_THREADS
+
+            if (rc != WAIT_OBJECT_0)
+                break;
+
+            /* WaitForSingleObjectEx() was interrupted by SIGINT */
+
+            if (PyErr_CheckSignals())
+                return -1;
+
+            _PyTime_monotonic(&monotonic);
+            secs = _PyTime_INTERVAL(monotonic, deadline);
+            if (secs <= 0.0)
+                break;
+        }
+    } while (1);
+#endif
     return 0;
 }
