@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23566: enable(), register(), dump_traceback() and
+  dump_traceback_later() functions of faulthandler now accept file
+  descriptors. Patch by Wei Wu.
+
 - Issue #22928: Disabled HTTP header injections in http.client.
   Original patch by Demian Brecht.
 
