@@ -698,7 +698,7 @@ class TestBasicOps(unittest.TestCase):
         # iter.__next__ failure on inner object
         self.assertRaises(ExpectedError, gulp, delayed_raise(1))
 
-        # __cmp__ failure
+        # __eq__ failure
         class DummyCmp:
             def __eq__(self, dst):
                 raise ExpectedError

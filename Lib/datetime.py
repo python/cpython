@@ -651,7 +651,7 @@ class date:
     Operators:
 
     __repr__, __str__
-    __cmp__, __hash__
+    __eq__, __le__, __lt__, __ge__, __gt__, __hash__
     __add__, __radd__, __sub__ (add/radd only with timedelta arg)
 
     Methods:
@@ -786,7 +786,8 @@ class date:
         """day (1-31)"""
         return self._day
 
-    # Standard conversions, __cmp__, __hash__ (and helpers)
+    # Standard conversions, __eq__, __le__, __lt__, __ge__, __gt__,
+    # __hash__ (and helpers)
 
     def timetuple(self):
         "Return local time tuple compatible with time.localtime()."
@@ -1010,7 +1011,7 @@ class time:
     Operators:
 
     __repr__, __str__
-    __cmp__, __hash__
+    __eq__, __le__, __lt__, __ge__, __gt__, __hash__
 
     Methods:
 
