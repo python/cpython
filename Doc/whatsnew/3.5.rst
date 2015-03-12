@@ -417,6 +417,14 @@ xmlrpc
 * :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`.
   (Contributed by Claudiu Popa in :issue:`20627`.)
 
+faulthandler
+------------
+
+* :func:`~faulthandler.enable`, :func:`~faulthandler.register`,
+  :func:`~faulthandler.dump_traceback` and
+  :func:`~faulthandler.dump_traceback_later` functions now accept file
+  descriptors.  (Contributed by Wei Wu in :issue:`23566`.)
+
 
 Optimizations
 =============
