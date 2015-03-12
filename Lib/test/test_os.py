@@ -694,9 +694,17 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
 
+    # Wrapper to hide minor differences between os.walk and os.fwalk
+    # to tests both functions with the same code base
+    def walk(self, directory, topdown=True, follow_symlinks=False):
+        walk_it = os.walk(directory,
+                          topdown=topdown,
+                          followlinks=follow_symlinks)
+        for root, dirs, files in walk_it:
+            yield (root, dirs, files)
+
     def setUp(self):
-        import os
-        from os.path import join
+        join = os.path.join
 
         # Build:
         #     TESTFN/
@@ -711,36 +719,39 @@ class WalkTests(unittest.TestCase):
         #           broken_link
         #       TEST2/
         #         tmp4              a lone file
-        walk_path = join(support.TESTFN, "TEST1")
-        sub1_path = join(walk_path, "SUB1")
-        sub11_path = join(sub1_path, "SUB11")
-        sub2_path = join(walk_path, "SUB2")
-        tmp1_path = join(walk_path, "tmp1")
-        tmp2_path = join(sub1_path, "tmp2")
+        self.walk_path = join(support.TESTFN, "TEST1")
+        self.sub1_path = join(self.walk_path, "SUB1")
+        self.sub11_path = join(self.sub1_path, "SUB11")
+        sub2_path = join(self.walk_path, "SUB2")
+        tmp1_path = join(self.walk_path, "tmp1")
+        tmp2_path = join(self.sub1_path, "tmp2")
         tmp3_path = join(sub2_path, "tmp3")
-        link_path = join(sub2_path, "link")
+        self.link_path = join(sub2_path, "link")
         t2_path = join(support.TESTFN, "TEST2")
         tmp4_path = join(support.TESTFN, "TEST2", "tmp4")
-        link_path = join(sub2_path, "link")
         broken_link_path = join(sub2_path, "broken_link")
 
         # Create stuff.
-        os.makedirs(sub11_path)
+        os.makedirs(self.sub11_path)
         os.makedirs(sub2_path)
         os.makedirs(t2_path)
+
         for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
             f = open(path, "w")
             f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
             f.close()
-        if support.can_symlink():
-            os.symlink(os.path.abspath(t2_path), link_path)
-            os.symlink('broken', broken_link_path, True)
-            sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
-        else:
-            sub2_tree = (sub2_path, [], ["tmp3"])
 
+        if support.can_symlink():
+            os.symlink(os.path.abspath(t2_path), self.link_path)
+            os.symlink('broken', broken_link_path, True)
+            self.sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
+        else:
+            self.sub2_tree = (sub2_path, [], ["tmp3"])
+
+    def test_walk_topdown(self):
         # Walk top-down.
-        all = list(os.walk(walk_path))
+        all = list(os.walk(self.walk_path))
+
         self.assertEqual(len(all), 4)
         # We can't know which order SUB1 and SUB2 will appear in.
         # Not flipped:  TESTFN, SUB1, SUB11, SUB2
@@ -748,26 +759,32 @@ class WalkTests(unittest.TestCase):
         flipped = all[0][1][0] != "SUB1"
         all[0][1].sort()
         all[3 - 2 * flipped][-1].sort()
-        self.assertEqual(all[0], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
-        self.assertEqual(all[1 + flipped], (sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 + flipped], (sub11_path, [], []))
-        self.assertEqual(all[3 - 2 * flipped], sub2_tree)
+        self.assertEqual(all[0], (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
+        self.assertEqual(all[1 + flipped], (self.sub1_path, ["SUB11"], ["tmp2"]))
+        self.assertEqual(all[2 + flipped], (self.sub11_path, [], []))
+        self.assertEqual(all[3 - 2 * flipped], self.sub2_tree)
 
+    def test_walk_prune(self):
         # Prune the search.
         all = []
-        for root, dirs, files in os.walk(walk_path):
+        for root, dirs, files in self.walk(self.walk_path):
             all.append((root, dirs, files))
             # Don't descend into SUB1.
             if 'SUB1' in dirs:
                 # Note that this also mutates the dirs we appended to all!
                 dirs.remove('SUB1')
-        self.assertEqual(len(all), 2)
-        self.assertEqual(all[0], (walk_path, ["SUB2"], ["tmp1"]))
-        all[1][-1].sort()
-        self.assertEqual(all[1], sub2_tree)
 
+        self.assertEqual(len(all), 2)
+        self.assertEqual(all[0],
+                         (self.walk_path, ["SUB2"], ["tmp1"]))
+
+        all[1][-1].sort()
+        self.assertEqual(all[1], self.sub2_tree)
+
+    def test_walk_bottom_up(self):
         # Walk bottom-up.
-        all = list(os.walk(walk_path, topdown=False))
+        all = list(self.walk(self.walk_path, topdown=False))
+
         self.assertEqual(len(all), 4)
         # We can't know which order SUB1 and SUB2 will appear in.
         # Not flipped:  SUB11, SUB1, SUB2, TESTFN
@@ -775,20 +792,28 @@ class WalkTests(unittest.TestCase):
         flipped = all[3][1][0] != "SUB1"
         all[3][1].sort()
         all[2 - 2 * flipped][-1].sort()
-        self.assertEqual(all[3], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
-        self.assertEqual(all[flipped], (sub11_path, [], []))
-        self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 - 2 * flipped], sub2_tree)
+        self.assertEqual(all[3],
+                         (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
+        self.assertEqual(all[flipped],
+                         (self.sub11_path, [], []))
+        self.assertEqual(all[flipped + 1],
+                         (self.sub1_path, ["SUB11"], ["tmp2"]))
+        self.assertEqual(all[2 - 2 * flipped],
+                         self.sub2_tree)
 
-        if support.can_symlink():
-            # Walk, following symlinks.
-            for root, dirs, files in os.walk(walk_path, followlinks=True):
-                if root == link_path:
-                    self.assertEqual(dirs, [])
-                    self.assertEqual(files, ["tmp4"])
-                    break
-            else:
-                self.fail("Didn't follow symlink with followlinks=True")
+    def test_walk_symlink(self):
+        if not support.can_symlink():
+            self.skipTest("need symlink support")
+
+        # Walk, following symlinks.
+        walk_it = self.walk(self.walk_path, follow_symlinks=True)
+        for root, dirs, files in walk_it:
+            if root == self.link_path:
+                self.assertEqual(dirs, [])
+                self.assertEqual(files, ["tmp4"])
+                break
+        else:
+            self.fail("Didn't follow symlink with followlinks=True")
 
     def tearDown(self):
         # Tear everything down.  This is a decent use for bottom-up on
@@ -810,6 +835,14 @@ class WalkTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
+
+    def walk(self, directory, topdown=True, follow_symlinks=False):
+        walk_it = os.fwalk(directory,
+                           topdown=topdown,
+                           follow_symlinks=follow_symlinks)
+        for root, dirs, files, root_fd in walk_it:
+            yield (root, dirs, files)
+
 
     def _compare_to_walk(self, walk_kwargs, fwalk_kwargs):
         """
