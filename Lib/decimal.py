@@ -967,13 +967,12 @@ class Decimal(object):
         return self._cmp(other) >= 0
 
     def compare(self, other, context=None):
-        """Compares one to another.
+        """Compare self to other.  Return a decimal value:
 
-        -1 => a < b
-        0  => a = b
-        1  => a > b
-        NaN => one is NaN
-        Like __cmp__, but returns Decimal instances.
+        a or b is a NaN ==> Decimal('NaN')
+        a < b           ==> Decimal('-1')
+        a == b          ==> Decimal('0')
+        a > b           ==> Decimal('1')
         """
         other = _convert_other(other, raiseit=True)
 

@@ -1579,19 +1579,19 @@ The full list of supported magic methods is:
 * ``__hash__``, ``__sizeof__``, ``__repr__`` and ``__str__``
 * ``__dir__``, ``__format__`` and ``__subclasses__``
 * ``__floor__``, ``__trunc__`` and ``__ceil__``
-* Comparisons: ``__cmp__``, ``__lt__``, ``__gt__``, ``__le__``, ``__ge__``,
+* Comparisons: ``__lt__``, ``__gt__``, ``__le__``, ``__ge__``,
   ``__eq__`` and ``__ne__``
 * Container methods: ``__getitem__``, ``__setitem__``, ``__delitem__``,
-  ``__contains__``, ``__len__``, ``__iter__``, ``__getslice__``,
-  ``__setslice__``, ``__reversed__`` and ``__missing__``
+  ``__contains__``, ``__len__``, ``__iter__``, ``__reversed__``
+  and ``__missing__``
 * Context manager: ``__enter__`` and ``__exit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
-  ``__add__``, ``__sub__``, ``__mul__``, ``__div__``,
+  ``__add__``, ``__sub__``, ``__mul__``, ``__div__``,``__truediv__``,
   ``__floordiv__``, ``__mod__``, ``__divmod__``, ``__lshift__``,
   ``__rshift__``, ``__and__``, ``__xor__``, ``__or__``, and ``__pow__``
-* Numeric conversion methods: ``__complex__``, ``__int__``, ``__float__``,
-  ``__index__`` and ``__coerce__``
+* Numeric conversion methods: ``__complex__``, ``__int__``, ``__float__``
+  and ``__index__``
 * Descriptor methods: ``__get__``, ``__set__`` and ``__delete__``
 * Pickling: ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``,
   ``__getnewargs__``, ``__getstate__`` and ``__setstate__``

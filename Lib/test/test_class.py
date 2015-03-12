@@ -15,6 +15,8 @@ testmeths = [
     "rmul",
     "truediv",
     "rtruediv",
+    "floordiv",
+    "rfloordiv",
     "mod",
     "rmod",
     "divmod",
@@ -174,15 +176,23 @@ class ClassTests(unittest.TestCase):
         1 * testme
         self.assertCallStack([("__rmul__", (testme, 1))])
 
-        if 1/2 == 0:
-            callLst[:] = []
-            testme / 1
-            self.assertCallStack([("__div__", (testme, 1))])
+        callLst[:] = []
+        testme / 1
+        self.assertCallStack([("__truediv__", (testme, 1))])
 
 
-            callLst[:] = []
-            1 / testme
-            self.assertCallStack([("__rdiv__", (testme, 1))])
+        callLst[:] = []
+        1 / testme
+        self.assertCallStack([("__rtruediv__", (testme, 1))])
+
+        callLst[:] = []
+        testme // 1
+        self.assertCallStack([("__floordiv__", (testme, 1))])
+
+
+        callLst[:] = []
+        1 // testme
+        self.assertCallStack([("__rfloordiv__", (testme, 1))])
 
         callLst[:] = []
         testme % 1
@@ -444,12 +454,16 @@ class ClassTests(unittest.TestCase):
             def __int__(self):
                 return None
             __float__ = __int__
+            __complex__ = __int__
             __str__ = __int__
             __repr__ = __int__
-            __oct__ = __int__
-            __hex__ = __int__
+            __bytes__ = __int__
+            __bool__ = __int__
+            __index__ = __int__
+        def index(x):
+            return [][x]
 
-        for f in [int, float, str, repr, oct, hex]:
+        for f in [float, complex, str, repr, bytes, bin, oct, hex, bool, index]:
             self.assertRaises(TypeError, f, BadTypeClass())
 
     def testHashStuff(self):

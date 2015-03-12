@@ -1830,7 +1830,6 @@ __gt__
 __hash__
 __iadd__
 __iand__
-__idivmod__
 __ifloordiv__
 __ilshift__
 __imod__
