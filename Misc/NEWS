@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23051: multiprocessing.Pool methods imap() and imap_unordered() now
+  handle exceptions raised by an iterator.  Patch by Alon Diamant and Davin
+  Potts.
+
 - Issue #22928: Disabled HTTP header injections in httplib.
   Original patch by Demian Brecht.
 
