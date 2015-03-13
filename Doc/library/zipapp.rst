@@ -103,7 +103,7 @@ The module defines two convenience functions:
 
    Create an application archive from *source*.  The source can be any
    of the following:
-   
+
    * The name of a directory, in which case a new application archive
      will be created from the content of that directory.
    * The name of an existing application archive file, in which case the file is
@@ -113,10 +113,10 @@ The module defines two convenience functions:
    * A file object open for reading in bytes mode.  The content of the
      file should be an application archive, and the file object is
      assumed to be positioned at the start of the archive.
-   
+
    The *target* argument determines where the resulting archive will be
    written:
-   
+
    * If it is the name of a file, the archive will be written to that
      file.
    * If it is an open file object, the archive will be written to that
@@ -124,7 +124,7 @@ The module defines two convenience functions:
    * If the target is omitted (or None), the source must be a directory
      and the target will be a file with the same name as the source, with
      a ``.pyz`` extension added.
-   
+
    The *interpreter* argument specifies the name of the Python
    interpreter with which the archive will be executed.  It is written as
    a "shebang" line at the start of the archive.  On POSIX, this will be
@@ -132,7 +132,7 @@ The module defines two convenience functions:
    launcher.  Omitting the *interpreter* results in no shebang line being
    written.  If an interpreter is specified, and the target is a
    filename, the executable bit of the target file will be set.
-   
+
    The *main* argument specifies the name of a callable which will be
    used as the main program for the archive.  It can only be specified if
    the source is a directory, and the source does not already contain a
@@ -142,10 +142,10 @@ The module defines two convenience functions:
    is an error to omit *main* if the source is a directory and does not
    contain a ``__main__.py`` file, as otherwise the resulting archive
    would not be executable.
-   
+
    If a file object is specified for *source* or *target*, it is the
    caller's responsibility to close it after calling create_archive.
-   
+
    When copying an existing archive, file objects supplied only need
    ``read`` and ``readline``, or ``write`` methods.  When creating an
    archive from a directory, if the target is a file object it will be
@@ -255,3 +255,4 @@ on POSIX systems, to allow it to be executed directly.
 There is no requirement that the tools in this module are used to create
 application archives - the module is a convenience, but archives in the above
 format created by any means are acceptable to Python.
+
