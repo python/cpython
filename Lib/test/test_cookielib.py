@@ -445,6 +445,9 @@ class CookieTests(TestCase):
         interact_netscape(c, "http://www.acme.com:80/", 'foo=bar; expires=')
         interact_netscape(c, "http://www.acme.com:80/", 'spam=eggs; '
                           'expires="Foo Bar 25 33:22:11 3022"')
+        interact_netscape(c, 'http://www.acme.com/', 'fortytwo=')
+        interact_netscape(c, 'http://www.acme.com/', '=unladenswallow')
+        interact_netscape(c, 'http://www.acme.com/', 'holyhandgrenade')
 
         cookie = c._cookies[".acme.com"]["/"]["spam"]
         self.assertEqual(cookie.domain, ".acme.com")
@@ -470,6 +473,16 @@ class CookieTests(TestCase):
         spam = c._cookies["www.acme.com"]["/"]["foo"]
         self.assertIsNone(foo.expires)
         self.assertIsNone(spam.expires)
+
+        cookie = c._cookies['www.acme.com']['/']['fortytwo']
+        self.assertIsNotNone(cookie.value)
+        self.assertEqual(cookie.value, '')
+
+        # there should be a distinction between a present but empty value
+        # (above) and a value that's entirely missing (below)
+
+        cookie = c._cookies['www.acme.com']['/']['holyhandgrenade']
+        self.assertIsNone(cookie.value)
 
     def test_ns_parser_special_names(self):
         # names such as 'expires' are not special in first name=value pair
@@ -1092,6 +1105,13 @@ class CookieTests(TestCase):
             parse_ns_headers(["foo"]),
             [[("foo", None), ("version", "0")]]
             )
+        # missing cookie values for parsed attributes
+        self.assertEqual(
+            parse_ns_headers(['foo=bar; expires']),
+            [[('foo', 'bar'), ('expires', None), ('version', '0')]])
+        self.assertEqual(
+            parse_ns_headers(['foo=bar; version']),
+            [[('foo', 'bar'), ('version', None)]])
         # shouldn't add version if header is empty
         self.assertEqual(parse_ns_headers([""]), [])
 
@@ -1106,6 +1126,8 @@ class CookieTests(TestCase):
             c.extract_cookies(r, req)
             return c
 
+        future = cookielib.time2netscape(time.time()+3600)
+
         # none of these bad headers should cause an exception to be raised
         for headers in [
             ["Set-Cookie: "],  # actually, nothing wrong with this
@@ -1116,6 +1138,7 @@ class CookieTests(TestCase):
             ["Set-Cookie: b=foo; max-age=oops"],
             # bad version
             ["Set-Cookie: b=foo; version=spam"],
+            ["Set-Cookie:; Expires=%s" % future],
             ]:
             c = cookiejar_from_cookie_headers(headers)
             # these bad cookies shouldn't be set

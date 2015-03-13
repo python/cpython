@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23138: Fixed parsing cookies with absent keys or values in cookiejar.
+  Patch by Demian Brecht.
+
 - Issue #23051: multiprocessing.Pool methods imap() and imap_unordered() now
   handle exceptions raised by an iterator.  Patch by Alon Diamant and Davin
   Potts.
