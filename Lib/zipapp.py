@@ -96,7 +96,7 @@ def create_archive(source, target=None, interpreter=None, main=None):
         _copy_archive(source, target, interpreter)
         return
 
-    # We are creating a new archive from a directory
+    # We are creating a new archive from a directory.
     has_main = os.path.exists(os.path.join(source, '__main__.py'))
     if main and has_main:
         raise ZipAppError(
@@ -106,7 +106,7 @@ def create_archive(source, target=None, interpreter=None, main=None):
 
     main_py = None
     if main:
-        # Check that main has the right format
+        # Check that main has the right format.
         mod, sep, fn = main.partition(':')
         mod_ok = all(part.isidentifier() for part in mod.split('.'))
         fn_ok = all(part.isidentifier() for part in fn.split('.'))
