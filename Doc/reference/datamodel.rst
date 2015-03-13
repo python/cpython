@@ -1993,15 +1993,15 @@ objects.  Immutable sequences methods should at most only define
       :meth:`__getslice__`.  Therefore, you have to override it in derived
       classes when implementing slicing.)
 
-   Called to implement evaluation of ``self[i:j]``. The returned object should be
-   of the same type as *self*.  Note that missing *i* or *j* in the slice
-   expression are replaced by zero or ``sys.maxint``, respectively.  If negative
-   indexes are used in the slice, the length of the sequence is added to that
-   index. If the instance does not implement the :meth:`__len__` method, an
-   :exc:`AttributeError` is raised. No guarantee is made that indexes adjusted this
-   way are not still negative.  Indexes which are greater than the length of the
-   sequence are not modified. If no :meth:`__getslice__` is found, a slice object
-   is created instead, and passed to :meth:`__getitem__` instead.
+   Called to implement evaluation of ``self[i:j]``. The returned object should
+   be of the same type as *self*.  Note that missing *i* or *j* in the slice
+   expression are replaced by zero or :attr:`sys.maxsize`, respectively.  If
+   negative indexes are used in the slice, the length of the sequence is added
+   to that index. If the instance does not implement the :meth:`__len__` method,
+   an :exc:`AttributeError` is raised. No guarantee is made that indexes
+   adjusted this way are not still negative.  Indexes which are greater than the
+   length of the sequence are not modified. If no :meth:`__getslice__` is found,
+   a slice object is created instead, and passed to :meth:`__getitem__` instead.
 
 
 .. method:: object.__setslice__(self, i, j, sequence)
