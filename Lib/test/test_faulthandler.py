@@ -221,6 +221,8 @@ class FaultHandlerTests(unittest.TestCase):
                 'Segmentation fault',
                 filename=filename)
 
+    @unittest.skipIf(sys.platform == "win32",
+                     "subprocess doesn't support pass_fds on Windows")
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             fd = fp.fileno()
@@ -373,6 +375,8 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_dump_traceback(filename=filename)
 
+    @unittest.skipIf(sys.platform == "win32",
+                     "subprocess doesn't support pass_fds on Windows")
     def test_dump_traceback_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback(fd=fp.fileno())
@@ -545,6 +549,8 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_dump_traceback_later(filename=filename)
 
+    @unittest.skipIf(sys.platform == "win32",
+                     "subprocess doesn't support pass_fds on Windows")
     def test_dump_traceback_later_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback_later(fd=fp.fileno())
@@ -645,6 +651,8 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_register(filename=filename)
 
+    @unittest.skipIf(sys.platform == "win32",
+                     "subprocess doesn't support pass_fds on Windows")
     def test_register_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_register(fd=fp.fileno())
