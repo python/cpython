@@ -210,6 +210,13 @@ ZipFile Objects
    password used for encrypted files.  Calling  :meth:`.open` on a closed
    ZipFile will raise a  :exc:`RuntimeError`.
 
+   :func:`~ZipFile.open` is also a context manager and therefore supports the
+   :keyword:`with` statement::
+
+      with ZipFile('spam.zip') as myzip:
+          with myzip.open('eggs.txt') as myfile:
+              print(myfile.read())
+
    .. note::
 
       The file-like object is read-only and provides the following methods:
