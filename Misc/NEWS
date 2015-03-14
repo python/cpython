@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23568: Add rdivmod support to MagicMock() objects.
+  Patch by Håkan Lövdahl.
+
 - Issue #23138: Fixed parsing cookies with absent keys or values in cookiejar.
   Patch by Demian Brecht.
 
