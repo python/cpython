@@ -663,7 +663,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
 
       pr = cProfile.Profile(your_integer_time_func, 0.001)
 
-   As the :mod:`cProfile.Profile` class cannot be calibrated, custom timer
+   As the :class:`cProfile.Profile` class cannot be calibrated, custom timer
    functions should be used with care and should be as fast as possible.  For
    the best results with a custom timer, it might be necessary to hard-code it
    in the C source of the internal :mod:`_lsprof` module.

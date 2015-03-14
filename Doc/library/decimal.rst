@@ -236,7 +236,7 @@ For more advanced work, it may be useful to create alternate contexts using the
 Context() constructor.  To make an alternate active, use the :func:`setcontext`
 function.
 
-In accordance with the standard, the :mod:`Decimal` module provides two ready to
+In accordance with the standard, the :mod:`decimal` module provides two ready to
 use standard contexts, :const:`BasicContext` and :const:`ExtendedContext`. The
 former is especially useful for debugging because many of the traps are
 enabled:

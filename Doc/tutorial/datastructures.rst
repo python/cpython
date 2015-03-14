@@ -179,9 +179,9 @@ There are three built-in functions that are very useful when used with lists:
 
 ``filter(function, sequence)`` returns a sequence consisting of those items from
 the sequence for which ``function(item)`` is true. If *sequence* is a
-:class:`string` or :class:`tuple`, the result will be of the same type;
-otherwise, it is always a :class:`list`. For example, to compute a sequence of
-numbers divisible by 3 or 5::
+:class:`str`, :class:`unicode` or :class:`tuple`, the result will be of the
+same type; otherwise, it is always a :class:`list`.  For example, to compute a
+sequence of numbers divisible by 3 or 5::
 
    >>> def f(x): return x % 3 == 0 or x % 5 == 0
    ...
