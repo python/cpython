@@ -1598,7 +1598,7 @@ _file_template = """
 
 <head>
     <meta http-equiv="Content-Type"
-          content="text/html; charset=ISO-8859-1" />
+          content="text/html; charset=%(charset)s" />
     <title></title>
     <style type="text/css">%(styles)s
     </style>
@@ -1685,8 +1685,8 @@ class HtmlDiff(object):
         self._linejunk = linejunk
         self._charjunk = charjunk
 
-    def make_file(self,fromlines,tolines,fromdesc='',todesc='',context=False,
-                  numlines=5):
+    def make_file(self, fromlines, tolines, fromdesc='', todesc='',
+                  context=False, numlines=5, *, charset='utf-8'):
         """Returns HTML file of side by side comparison with change highlights
 
         Arguments:
@@ -1701,13 +1701,16 @@ class HtmlDiff(object):
             When context is False, controls the number of lines to place
             the "next" link anchors before the next change (so click of
             "next" link jumps to just before the change).
+        charset -- charset of the HTML document
         """
 
-        return self._file_template % dict(
-            styles = self._styles,
-            legend = self._legend,
-            table = self.make_table(fromlines,tolines,fromdesc,todesc,
-                                    context=context,numlines=numlines))
+        return (self._file_template % dict(
+            styles=self._styles,
+            legend=self._legend,
+            table=self.make_table(fromlines, tolines, fromdesc, todesc,
+                                  context=context, numlines=numlines),
+            charset=charset
+        )).encode(charset, 'xmlcharrefreplace').decode(charset)
 
     def _tab_newline_replace(self,fromlines,tolines):
         """Returns from/to line lists with tabs expanded and newlines removed.

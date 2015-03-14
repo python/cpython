@@ -107,6 +107,20 @@ patch914575_to1 = """
    5. Flat is better than nested.
 """
 
+patch914575_nonascii_from1 = """
+   1. Beautiful is beTTer than ugly.
+   2. Explicit is better than ımplıcıt.
+   3. Simple is better than complex.
+   4. Complex is better than complicated.
+"""
+
+patch914575_nonascii_to1 = """
+   1. Beautiful is better than ügly.
+   3.   Sımple is better than complex.
+   4. Complicated is better than cömplex.
+   5. Flat is better than nested.
+"""
+
 patch914575_from2 = """
 \t\tLine 1: preceeded by from:[tt] to:[ssss]
   \t\tLine 2: preceeded by from:[sstt] to:[sssst]
@@ -222,6 +236,27 @@ class TestSFpatches(unittest.TestCase):
         old = [(i%2 and "K:%d" or "V:A:%d") % i for i in range(limit*2)]
         new = [(i%2 and "K:%d" or "V:B:%d") % i for i in range(limit*2)]
         difflib.SequenceMatcher(None, old, new).get_opcodes()
+
+    def test_make_file_default_charset(self):
+        html_diff = difflib.HtmlDiff()
+        output = html_diff.make_file(patch914575_from1.splitlines(),
+                                     patch914575_to1.splitlines())
+        self.assertIn('content="text/html; charset=utf-8"', output)
+
+    def test_make_file_iso88591_charset(self):
+        html_diff = difflib.HtmlDiff()
+        output = html_diff.make_file(patch914575_from1.splitlines(),
+                                     patch914575_to1.splitlines(),
+                                     charset='iso-8859-1')
+        self.assertIn('content="text/html; charset=iso-8859-1"', output)
+
+    def test_make_file_usascii_charset_with_nonascii_input(self):
+        html_diff = difflib.HtmlDiff()
+        output = html_diff.make_file(patch914575_nonascii_from1.splitlines(),
+                                     patch914575_nonascii_to1.splitlines(),
+                                     charset='us-ascii')
+        self.assertIn('content="text/html; charset=us-ascii"', output)
+        self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
 
 class TestOutputFormat(unittest.TestCase):
