@@ -593,7 +593,7 @@ get_inheritable(int fd, int raise)
     handle = (HANDLE)_get_osfhandle(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
-            PyErr_SetFromWindowsErr(0);
+            PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
 
@@ -648,10 +648,10 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 
     if (atomic_flag_works != NULL && !inheritable) {
         if (*atomic_flag_works == -1) {
-            int inheritable = get_inheritable(fd, raise);
-            if (inheritable == -1)
+            int isInheritable = get_inheritable(fd, raise);
+            if (isInheritable == -1)
                 return -1;
-            *atomic_flag_works = !inheritable;
+            *atomic_flag_works = !isInheritable;
         }
 
         if (*atomic_flag_works)
@@ -668,7 +668,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     handle = (HANDLE)_get_osfhandle(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
-            PyErr_SetFromWindowsErr(0);
+            PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
 
@@ -1027,7 +1027,7 @@ _Py_dup(int fd)
 #ifdef MS_WINDOWS
     handle = (HANDLE)_get_osfhandle(fd);
     if (handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetFromWindowsErr(0);
+        PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
 
