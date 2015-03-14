@@ -1661,7 +1661,9 @@ magic_methods = (
     "len contains iter "
     "hash str sizeof "
     "enter exit "
-    "divmod neg pos abs invert "
+    # we added divmod and rdivmod here instead of numerics
+    # because there is no idivmod
+    "divmod rdivmod neg pos abs invert "
     "complex int float index "
     "trunc floor ceil "
     "bool next "
