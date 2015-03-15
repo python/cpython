@@ -441,6 +441,16 @@ class CodecCallbackTest(unittest.TestCase):
             codecs.strict_errors,
             UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")
         )
+        self.assertRaises(
+            UnicodeDecodeError,
+            codecs.strict_errors,
+            UnicodeDecodeError("ascii", "\xff", 0, 1, "ouch")
+        )
+        self.assertRaises(
+            UnicodeTranslateError,
+            codecs.strict_errors,
+            UnicodeTranslateError(u"\u3042", 0, 1, "ouch")
+        )
 
     def test_badandgoodignoreexceptions(self):
         # "ignore" complains about a non-exception passed in
@@ -531,13 +541,16 @@ class CodecCallbackTest(unittest.TestCase):
             UnicodeTranslateError(u"\u3042", 0, 1, "ouch")
         )
         # Use the correct exception
-        cs = (0, 1, 9, 10, 99, 100, 999, 1000, 9999, 10000, 0x3042)
-        s = "".join(unichr(c) for c in cs)
+        cs = (0, 1, 9, 10, 99, 100, 999, 1000, 9999, 10000)
+        cs += (0xdfff, 0xd800)
+        s = u"".join(unichr(c) for c in cs)
+        s += u"\U0001869f\U000186a0\U000f423f\U000f4240"
+        cs += (99999, 100000, 999999, 1000000)
         self.assertEqual(
             codecs.xmlcharrefreplace_errors(
                 UnicodeEncodeError("ascii", s, 0, len(s), "ouch")
             ),
-            (u"".join(u"&#%d;" % ord(c) for c in s), len(s))
+            (u"".join(u"&#%d;" % c for c in cs), len(s))
         )
 
     def test_badandgoodbackslashreplaceexceptions(self):
@@ -565,34 +578,33 @@ class CodecCallbackTest(unittest.TestCase):
             UnicodeTranslateError(u"\u3042", 0, 1, "ouch")
         )
         # Use the correct exception
-        self.assertEqual(
-            codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
-            (u"\\u3042", 1)
-        )
-        self.assertEqual(
-            codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\x00", 0, 1, "ouch")),
-            (u"\\x00", 1)
-        )
-        self.assertEqual(
-            codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\xff", 0, 1, "ouch")),
-            (u"\\xff", 1)
-        )
-        self.assertEqual(
-            codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\u0100", 0, 1, "ouch")),
-            (u"\\u0100", 1)
-        )
-        self.assertEqual(
-            codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\uffff", 0, 1, "ouch")),
-            (u"\\uffff", 1)
-        )
-        if sys.maxunicode>0xffff:
+        tests = [
+            (u"\u3042", u"\\u3042"),
+            (u"\n", u"\\x0a"),
+            (u"a", u"\\x61"),
+            (u"\x00", u"\\x00"),
+            (u"\xff", u"\\xff"),
+            (u"\u0100", u"\\u0100"),
+            (u"\uffff", u"\\uffff"),
+            # Lone surrogates
+            (u"\ud800", u"\\ud800"),
+            (u"\udfff", u"\\udfff"),
+        ]
+        if sys.maxunicode > 0xffff:
+            tests += [
+                (u"\U00010000", u"\\U00010000"),
+                (u"\U0010ffff", u"\\U0010ffff"),
+            ]
+        else:
+            tests += [
+                (u"\U00010000", u"\\ud800\\udc00"),
+                (u"\U0010ffff", u"\\udbff\\udfff"),
+            ]
+        for s, r in tests:
             self.assertEqual(
-                codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\U00010000", 0, 1, "ouch")),
-                (u"\\U00010000", 1)
-            )
-            self.assertEqual(
-                codecs.backslashreplace_errors(UnicodeEncodeError("ascii", u"\U0010ffff", 0, 1, "ouch")),
-                (u"\\U0010ffff", 1)
+                codecs.backslashreplace_errors(
+                    UnicodeEncodeError("ascii", s, 0, len(s), "ouch")),
+                (r, len(s))
             )
 
     def test_badhandlerresults(self):
