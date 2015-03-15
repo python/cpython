@@ -49,7 +49,8 @@ The following functions are provided:
 .. function:: heappop(heap)
 
    Pop and return the smallest item from the *heap*, maintaining the heap
-   invariant.  If the heap is empty, :exc:`IndexError` is raised.
+   invariant.  If the heap is empty, :exc:`IndexError` is raised.  To access the
+   smallest item without popping it, use ``heap[0]``.
 
 .. function:: heappushpop(heap, item)
 
@@ -125,7 +126,8 @@ The module also offers three general purpose functions based on heaps.
 The latter two functions perform best for smaller values of *n*.  For larger
 values, it is more efficient to use the :func:`sorted` function.  Also, when
 ``n==1``, it is more efficient to use the built-in :func:`min` and :func:`max`
-functions.
+functions.  If repeated usage of these functions is required, consider turning
+the iterable into an actual heap.
 
 
 Basic Examples
