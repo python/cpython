@@ -555,6 +555,14 @@ class TestStack(unittest.TestCase):
             ['  File "foo.py", line 1, in fred\n    line\n'],
             s.format())
 
+    def test_from_list_edited_stack(self):
+        s = traceback.StackSummary.from_list([('foo.py', 1, 'fred', 'line')])
+        s[0] = ('foo.py', 2, 'fred', 'line')
+        s2 = traceback.StackSummary.from_list(s)
+        self.assertEqual(
+            ['  File "foo.py", line 2, in fred\n    line\n'],
+            s2.format())
+
     def test_format_smoke(self):
         # For detailed tests see the format_list tests, which consume the same
         # code.
@@ -585,7 +593,7 @@ class TestStack(unittest.TestCase):
                 traceback.walk_stack(None), capture_locals=True, limit=1)
         s = some_inner(3, 4)
         self.assertEqual(
-            ['  File "' + __file__ + '", line 585, '
+            ['  File "' + __file__ + '", line 593, '
              'in some_inner\n'
              '    traceback.walk_stack(None), capture_locals=True, limit=1)\n'
              '    a = 1\n'

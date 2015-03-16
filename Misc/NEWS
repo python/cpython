@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23631: Fix traceback.format_list when a traceback has been mutated.
+
 - Issue #23568: Add rdivmod support to MagicMock() objects.
   Patch by Håkan Lövdahl.
 
