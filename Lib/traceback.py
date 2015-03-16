@@ -348,11 +348,17 @@ class StackSummary(list):
         This method supports the older Python API. Each tuple should be a
         4-tuple with (filename, lineno, name, line) elements.
         """
-        if isinstance(a_list, StackSummary):
-            return StackSummary(a_list)
+        # While doing a fast-path check for isinstance(a_list, StackSummary) is
+        # appealing, idlelib.run.cleanup_traceback and other similar code may
+        # break this by making arbitrary frames plain tuples, so we need to
+        # check on a frame by frame basis.
         result = StackSummary()
-        for filename, lineno, name, line in a_list:
-            result.append(FrameSummary(filename, lineno, name, line=line))
+        for frame in a_list:
+            if isinstance(frame, FrameSummary):
+                result.append(frame)
+            else:
+                filename, lineno, name, line = frame
+                result.append(FrameSummary(filename, lineno, name, line=line))
         return result
 
     def format(self):
