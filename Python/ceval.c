@@ -4118,6 +4118,13 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 {
     PyObject *result;
 
+#ifdef Py_DEBUG
+    /* PyEval_CallObjectWithKeywords() must not be called with an exception
+       set. It raises a new exception if parameters are invalid or if
+       PyTuple_New() fails, and so the original exception is lost. */
+    assert(!PyErr_Occurred());
+#endif
+
     if (arg == NULL) {
         arg = PyTuple_New(0);
         if (arg == NULL)
