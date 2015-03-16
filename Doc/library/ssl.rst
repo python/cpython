@@ -245,14 +245,13 @@ purposes.
    :const:`None`, this function can choose to trust the system's default
    CA certificates instead.
 
-   The settings in Python 2.7.9 are: :data:`PROTOCOL_SSLv23`,
-   :data:`OP_NO_SSLv2`, and :data:`OP_NO_SSLv3` with high encryption cipher
-   suites without RC4 and without unauthenticated cipher suites. Passing
-   :data:`~Purpose.SERVER_AUTH` as *purpose* sets
-   :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED` and either loads CA
-   certificates (when at least one of *cafile*, *capath* or *cadata* is given)
-   or uses :meth:`SSLContext.load_default_certs` to load default CA
-   certificates.
+   The settings are: :data:`PROTOCOL_SSLv23`, :data:`OP_NO_SSLv2`, and
+   :data:`OP_NO_SSLv3` with high encryption cipher suites without RC4 and
+   without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
+   as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
+   and either loads CA certificates (when at least one of *cafile*, *capath* or
+   *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
+   default CA certificates.
 
    .. note::
       The protocol, options, cipher and other settings may change to more
@@ -276,6 +275,10 @@ purposes.
          ctx.options &= ~ssl.OP_NO_SSLv3
 
    .. versionadded:: 2.7.9
+
+   .. versionchanged:: 2.7.10
+
+     RC4 was dropped from the default cipher string.
 
 
 Random generation
