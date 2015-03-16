@@ -3544,11 +3544,13 @@ class SignalsTest(unittest.TestCase):
         returning a partial result or EINTR), properly invokes the signal
         handler and retries if the latter returned successfully."""
         select = support.import_module("select")
+
         # A quantity that exceeds the buffer size of an anonymous pipe's
         # write end.
         N = support.PIPE_MAX_SIZE
         r, w = os.pipe()
         fdopen_kwargs["closefd"] = False
+
         # We need a separate thread to read from the pipe and allow the
         # write() to finish.  This thread is started after the SIGALRM is
         # received (forcing a first EINTR in write()).
@@ -3566,6 +3568,8 @@ class SignalsTest(unittest.TestCase):
             signal.alarm(1)
         def alarm2(sig, frame):
             t.start()
+
+        large_data = item * N
         signal.signal(signal.SIGALRM, alarm1)
         try:
             wio = self.io.open(w, **fdopen_kwargs)
@@ -3575,10 +3579,13 @@ class SignalsTest(unittest.TestCase):
             #   and the first alarm)
             # - second raw write() returns EINTR (because of the second alarm)
             # - subsequent write()s are successful (either partial or complete)
-            self.assertEqual(N, wio.write(item * N))
+            written = wio.write(large_data)
+            self.assertEqual(N, written)
+
             wio.flush()
             write_finished = True
             t.join()
+
             self.assertEqual(N, sum(len(x) for x in read_results))
         finally:
             write_finished = True
