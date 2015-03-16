@@ -48,6 +48,10 @@ Library
   The usage of os.scandir() reduces the number of calls to os.stat().
   Initial patch written by Ben Hoyt.
 
+Build
+-----
+
+- Issue #23585: make patchcheck will ensure the interpreter is built.
 
 What's New in Python 3.5 alpha 2?
 =================================
