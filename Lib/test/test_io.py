@@ -3431,6 +3431,7 @@ class SignalsTest(unittest.TestCase):
         t.daemon = True
         r, w = os.pipe()
         fdopen_kwargs["closefd"] = False
+        large_data = item * (support.PIPE_MAX_SIZE // len(item) + 1)
         try:
             wio = self.io.open(w, **fdopen_kwargs)
             t.start()
@@ -3442,8 +3443,7 @@ class SignalsTest(unittest.TestCase):
             # handlers, which in this case will invoke alarm_interrupt().
             signal.alarm(1)
             try:
-                self.assertRaises(ZeroDivisionError,
-                            wio.write, item * (support.PIPE_MAX_SIZE // len(item) + 1))
+                self.assertRaises(ZeroDivisionError, wio.write, large_data)
             finally:
                 signal.alarm(0)
             t.join()
