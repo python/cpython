@@ -467,16 +467,19 @@ class CodecCallbackTest(unittest.TestCase):
         )
         # If the correct exception is passed in, "ignore" returns an empty replacement
         self.assertEqual(
-            codecs.ignore_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
-            (u"", 1)
+            codecs.ignore_errors(
+                UnicodeEncodeError("ascii", u"a\u3042b", 1, 2, "ouch")),
+            (u"", 2)
         )
         self.assertEqual(
-            codecs.ignore_errors(UnicodeDecodeError("ascii", "\xff", 0, 1, "ouch")),
-            (u"", 1)
+            codecs.ignore_errors(
+                UnicodeDecodeError("ascii", "a\xffb", 1, 2, "ouch")),
+            (u"", 2)
         )
         self.assertEqual(
-            codecs.ignore_errors(UnicodeTranslateError(u"\u3042", 0, 1, "ouch")),
-            (u"", 1)
+            codecs.ignore_errors(
+                UnicodeTranslateError(u"a\u3042b", 1, 2, "ouch")),
+            (u"", 2)
         )
 
     def test_badandgoodreplaceexceptions(self):
@@ -504,16 +507,19 @@ class CodecCallbackTest(unittest.TestCase):
         )
         # With the correct exception, "replace" returns an "?" or u"\ufffd" replacement
         self.assertEqual(
-            codecs.replace_errors(UnicodeEncodeError("ascii", u"\u3042", 0, 1, "ouch")),
-            (u"?", 1)
+            codecs.replace_errors(
+                UnicodeEncodeError("ascii", u"a\u3042b", 1, 2, "ouch")),
+            (u"?", 2)
         )
         self.assertEqual(
-            codecs.replace_errors(UnicodeDecodeError("ascii", "\xff", 0, 1, "ouch")),
-            (u"\ufffd", 1)
+            codecs.replace_errors(
+                UnicodeDecodeError("ascii", "a\xffb", 1, 2, "ouch")),
+            (u"\ufffd", 2)
         )
         self.assertEqual(
-            codecs.replace_errors(UnicodeTranslateError(u"\u3042", 0, 1, "ouch")),
-            (u"\ufffd", 1)
+            codecs.replace_errors(
+                UnicodeTranslateError(u"a\u3042b", 1, 2, "ouch")),
+            (u"\ufffd", 2)
         )
 
     def test_badandgoodxmlcharrefreplaceexceptions(self):
@@ -548,9 +554,10 @@ class CodecCallbackTest(unittest.TestCase):
         cs += (99999, 100000, 999999, 1000000)
         self.assertEqual(
             codecs.xmlcharrefreplace_errors(
-                UnicodeEncodeError("ascii", s, 0, len(s), "ouch")
+                UnicodeEncodeError("ascii", u"a" + s + u"b",
+                                   1, 1 + len(s), "ouch")
             ),
-            (u"".join(u"&#%d;" % c for c in cs), len(s))
+            (u"".join(u"&#%d;" % c for c in cs), 1 + len(s))
         )
 
     def test_badandgoodbackslashreplaceexceptions(self):
@@ -603,8 +610,9 @@ class CodecCallbackTest(unittest.TestCase):
         for s, r in tests:
             self.assertEqual(
                 codecs.backslashreplace_errors(
-                    UnicodeEncodeError("ascii", s, 0, len(s), "ouch")),
-                (r, len(s))
+                    UnicodeEncodeError("ascii", u"a" + s + u"b",
+                                       1, 1 + len(s), "ouch")),
+                (r, 1 + len(s))
             )
 
     def test_badhandlerresults(self):
