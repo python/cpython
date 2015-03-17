@@ -116,11 +116,8 @@ newossobject(PyObject *arg)
        provides a special ioctl() for non-blocking read/write, which is
        exposed via oss_nonblock() below. */
     fd = _Py_open(devicename, imode|O_NONBLOCK);
-
-    if (fd == -1) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
+    if (fd == -1)
         return NULL;
-    }
 
     /* And (try to) put it back in blocking mode so we get the
        expected write() semantics. */
@@ -180,10 +177,8 @@ newossmixerobject(PyObject *arg)
     }
 
     fd = _Py_open(devicename, O_RDWR);
-    if (fd == -1) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
+    if (fd == -1)
         return NULL;
-    }
 
     if ((self = PyObject_New(oss_mixer_t, &OSSMixerType)) == NULL) {
         close(fd);

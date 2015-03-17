@@ -62,6 +62,10 @@ PyAPI_FUNC(int) _Py_stat(
 PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
+
+PyAPI_FUNC(int) _Py_open_noraise(
+    const char *pathname,
+    int flags);
 #endif
 
 PyAPI_FUNC(FILE *) _Py_wfopen(
