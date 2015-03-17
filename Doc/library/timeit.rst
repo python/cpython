@@ -179,7 +179,7 @@ Command-Line Interface
 
 When called as a program from the command line, the following form is used::
 
-   python -m timeit [-n N] [-r N] [-s S] [-t] [-c] [-h] [statement ...]
+   python -m timeit [-n N] [-r N] [-u U] [-s S] [-t] [-c] [-h] [statement ...]
 
 Where the following options are understood:
 
@@ -207,6 +207,12 @@ Where the following options are understood:
 .. cmdoption:: -t, --time
 
    use :func:`time.time` (deprecated)
+
+.. cmdoption:: -u, --unit=U
+
+    specify a time unit for timer output; can select usec, msec, or sec
+
+   .. versionadded:: 3.5
 
 .. cmdoption:: -c, --clock
 

@@ -312,6 +312,26 @@ class TestTimeit(unittest.TestCase):
                 10000 loops, best of 3: 50 usec per loop
             """))
 
+    def test_main_with_time_unit(self):
+        unit_sec = self.run_main(seconds_per_increment=0.002,
+                switches=['-u', 'sec'])
+        self.assertEqual(unit_sec,
+                "1000 loops, best of 3: 0.002 sec per loop\n")
+        unit_msec = self.run_main(seconds_per_increment=0.002,
+                switches=['-u', 'msec'])
+        self.assertEqual(unit_msec,
+                "1000 loops, best of 3: 2 msec per loop\n")
+        unit_usec = self.run_main(seconds_per_increment=0.002,
+                switches=['-u', 'usec'])
+        self.assertEqual(unit_usec,
+                "1000 loops, best of 3: 2e+03 usec per loop\n")
+        # Test invalid unit input
+        with captured_stderr() as error_stringio:
+            invalid = self.run_main(seconds_per_increment=0.002,
+                    switches=['-u', 'parsec'])
+        self.assertEqual(error_stringio.getvalue(),
+                    "Unrecognized unit. Please select usec, msec, or sec.\n")
+
     def test_main_exception(self):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['1/0'])
