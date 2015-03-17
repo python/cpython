@@ -7930,7 +7930,7 @@ os_openpty_impl(PyModuleDef *module)
 
     slave_fd = _Py_open(slave_name, O_RDWR);
     if (slave_fd < 0)
-        goto posix_error;
+        goto error;
 
 #else
     master_fd = open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
@@ -7958,8 +7958,8 @@ os_openpty_impl(PyModuleDef *module)
         goto posix_error;
 
     slave_fd = _Py_open(slave_name, O_RDWR | O_NOCTTY); /* open slave */
-    if (slave_fd < 0)
-        goto posix_error;
+    if (slave_fd == -1)
+        goto error;
 
     if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
         goto posix_error;
@@ -7977,9 +7977,7 @@ os_openpty_impl(PyModuleDef *module)
 
 posix_error:
     posix_error();
-#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY)
 error:
-#endif
     if (master_fd != -1)
         close(master_fd);
     if (slave_fd != -1)
