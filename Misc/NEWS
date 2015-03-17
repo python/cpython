@@ -19,7 +19,7 @@ Library
 -------
 
 - Issue #18983: Allow selection of output units in timeit.
-  Patch by Serhiy Storchaka.
+  Patch by Julian Gindi.
 
 - Issue #23631: Fix traceback.format_list when a traceback has been mutated.
 
