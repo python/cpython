@@ -2567,6 +2567,7 @@ def test_main():
         MakedirTests,
         DevNullTests,
         URandomTests,
+        URandomFDTests,
         ExecTests,
         Win32ErrorTests,
         TestInvalidFD,
