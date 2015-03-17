@@ -249,7 +249,7 @@ static struct PyModuleDef mod_module = {
 extern "C" {
 #endif
 
-PyObject*
+PyMODINIT_FUNC
 PyInit__scproxy(void)
 {
     return PyModule_Create(&mod_module);

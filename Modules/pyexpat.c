@@ -1900,16 +1900,6 @@ PyDoc_STRVAR(pyexpat_module_documentation,
 #define MODULE_INITFUNC PyInit_pyexpat
 #endif
 
-#ifndef PyMODINIT_FUNC
-#   ifdef MS_WINDOWS
-#       define PyMODINIT_FUNC __declspec(dllexport) void
-#   else
-#       define PyMODINIT_FUNC void
-#   endif
-#endif
-
-PyMODINIT_FUNC MODULE_INITFUNC(void);  /* avoid compiler warnings */
-
 static struct PyModuleDef pyexpatmodule = {
         PyModuleDef_HEAD_INIT,
         MODULE_NAME,
