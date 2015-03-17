@@ -671,20 +671,6 @@ information is sometimes used to indicate sub-releases.  These are
               ],
           )
 
-If you wish to include classifiers in your :file:`setup.py` file and also wish
-to remain backwards-compatible with Python releases prior to 2.2.3, then you can
-include the following code fragment in your :file:`setup.py` before the
-:func:`setup` call. ::
-
-    # patch distutils if it can't cope with the "classifiers" or
-    # "download_url" keywords
-    from sys import version
-    if version < '2.2.3':
-        from distutils.dist import DistributionMetadata
-        DistributionMetadata.classifiers = None
-        DistributionMetadata.download_url = None
-
-
 .. _debug-setup-script:
 
 Debugging the setup script
