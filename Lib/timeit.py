@@ -19,6 +19,7 @@ Options:
   -t/--time: use time.time() (deprecated)
   -c/--clock: use time.clock() (deprecated)
   -v/--verbose: print raw timing results; repeat for more digits precision
+  -u/--unit: set the output time unit (usec, msec, or sec)
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
   statement: statement to be timed (default 'pass')
@@ -250,10 +251,10 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
                                    ["number=", "setup=", "repeat=",
                                     "time", "clock", "process",
-                                    "verbose", "help"])
+                                    "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
         print("use -h/--help for command line help")
@@ -264,12 +265,21 @@ def main(args=None, *, _wrap_timer=None):
     setup = []
     repeat = default_repeat
     verbose = 0
+    time_unit = None
+    units = {"usec": 1, "msec": 1e3, "sec": 1e6}
     precision = 3
     for o, a in opts:
         if o in ("-n", "--number"):
             number = int(a)
         if o in ("-s", "--setup"):
             setup.append(a)
+        if o in ("-u", "--unit"):
+            if a in units:
+                time_unit = a
+            else:
+                print("Unrecognized unit. Please select usec, msec, or sec.",
+                    file=sys.stderr)
+                return 2
         if o in ("-r", "--repeat"):
             repeat = int(a)
             if repeat <= 0:
@@ -319,15 +329,21 @@ def main(args=None, *, _wrap_timer=None):
         print("raw times:", " ".join(["%.*g" % (precision, x) for x in r]))
     print("%d loops," % number, end=' ')
     usec = best * 1e6 / number
-    if usec < 1000:
-        print("best of %d: %.*g usec per loop" % (repeat, precision, usec))
+    if time_unit is not None:
+        print("best of %d: %.*g %s per loop" % (repeat, precision,
+                                             usec/units[time_unit], time_unit))
     else:
-        msec = usec / 1000
-        if msec < 1000:
-            print("best of %d: %.*g msec per loop" % (repeat, precision, msec))
+        if usec < 1000:
+            print("best of %d: %.*g usec per loop" % (repeat, precision, usec))
         else:
-            sec = msec / 1000
-            print("best of %d: %.*g sec per loop" % (repeat, precision, sec))
+            msec = usec / 1000
+            if msec < 1000:
+                print("best of %d: %.*g msec per loop" % (repeat,
+                                                          precision, msec))
+            else:
+                sec = msec / 1000
+                print("best of %d: %.*g sec per loop" % (repeat,
+                                                         precision, sec))
     return None
 
 if __name__ == "__main__":
