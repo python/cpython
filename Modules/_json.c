@@ -1995,7 +1995,7 @@ static struct PyModuleDef jsonmodule = {
         NULL
 };
 
-PyObject*
+PyMODINIT_FUNC
 PyInit__json(void)
 {
     PyObject *m = PyModule_Create(&jsonmodule);
