@@ -571,6 +571,8 @@ class URandomTests (unittest.TestCase):
 
     # os.urandom() doesn't use a file descriptor on Windows
     @unittest.skipIf(sys.platform == "win32", "POSIX specific tests")
+    # FD_CLOEXEC is first supported on OS X 10.5
+    @test_support.requires_mac_ver(10, 5)
     def test_urandom_fd_non_inheritable(self):
         # Issue #23458: os.urandom() keeps a file descriptor open, but it
         # must be non inheritable
