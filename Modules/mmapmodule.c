@@ -1221,7 +1221,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         fd = devzero = _Py_open("/dev/zero", O_RDWR);
         if (devzero == -1) {
             Py_DECREF(m_obj);
-            PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
 #endif

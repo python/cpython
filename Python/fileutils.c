@@ -30,7 +30,8 @@ extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
     0: open() ignores O_CLOEXEC flag, ex: Linux kernel older than 2.6.23
     1: open() supports O_CLOEXEC flag, close-on-exec is set
 
-   The flag is used by _Py_open(), io.FileIO and os.open() */
+   The flag is used by _Py_open(), _Py_open_noraise(), io.FileIO
+   and os.open(). */
 int _Py_open_cloexec_works = -1;
 #endif
 
@@ -907,35 +908,72 @@ _Py_set_inheritable(int fd, int inheritable, int *atomic_flag_works)
     return set_inheritable(fd, inheritable, 1, atomic_flag_works);
 }
 
-/* Open a file with the specified flags (wrapper to open() function).
-   The file descriptor is created non-inheritable. */
-int
-_Py_open(const char *pathname, int flags)
+static int
+_Py_open_impl(const char *pathname, int flags, int gil_held)
 {
     int fd;
-#ifdef MS_WINDOWS
-    fd = open(pathname, flags | O_NOINHERIT);
-    if (fd < 0)
-        return fd;
-#else
-
+#ifndef MS_WINDOWS
     int *atomic_flag_works;
-#ifdef O_CLOEXEC
+#endif
+
+#ifdef MS_WINDOWS
+    flags |= O_NOINHERIT;
+#elif defined(O_CLOEXEC)
     atomic_flag_works = &_Py_open_cloexec_works;
     flags |= O_CLOEXEC;
 #else
     atomic_flag_works = NULL;
 #endif
-    fd = open(pathname, flags);
-    if (fd < 0)
-        return fd;
 
-    if (set_inheritable(fd, 0, 0, atomic_flag_works) < 0) {
+    if (gil_held) {
+        Py_BEGIN_ALLOW_THREADS
+        fd = open(pathname, flags);
+        Py_END_ALLOW_THREADS
+
+        if (fd < 0) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, pathname);
+            return -1;
+        }
+    }
+    else {
+        fd = open(pathname, flags);
+        if (fd < 0)
+            return -1;
+    }
+
+#ifndef MS_WINDOWS
+    if (set_inheritable(fd, 0, gil_held, atomic_flag_works) < 0) {
         close(fd);
         return -1;
     }
-#endif   /* !MS_WINDOWS */
+#endif
+
     return fd;
+}
+
+/* Open a file with the specified flags (wrapper to open() function).
+   Return a file descriptor on success. Raise an exception and return -1 on
+   error.
+
+   The file descriptor is created non-inheritable.
+
+   The GIL must be held. Use _Py_open_noraise() if the GIL cannot be held. */
+int
+_Py_open(const char *pathname, int flags)
+{
+    /* _Py_open() must be called with the GIL held. */
+    assert(PyGILState_Check());
+    return _Py_open_impl(pathname, flags, 1);
+}
+
+/* Open a file with the specified flags (wrapper to open() function).
+   Return a file descriptor on success. Set errno and return -1 on error.
+
+   The file descriptor is created non-inheritable. */
+int
+_Py_open_noraise(const char *pathname, int flags)
+{
+    return _Py_open_impl(pathname, flags, 0);
 }
 
 /* Open a file. Use _wfopen() on Windows, encode the path to the locale

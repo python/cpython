@@ -111,7 +111,7 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
 
     assert (0 < size);
 
-    fd = _Py_open("/dev/urandom", O_RDONLY);
+    fd = _Py_open_noraise("/dev/urandom", O_RDONLY);
     if (fd < 0)
         Py_FatalError("Failed to open /dev/urandom");
 
@@ -158,17 +158,13 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
     if (urandom_cache.fd >= 0)
         fd = urandom_cache.fd;
     else {
-        Py_BEGIN_ALLOW_THREADS
         fd = _Py_open("/dev/urandom", O_RDONLY);
-        Py_END_ALLOW_THREADS
-        if (fd < 0)
-        {
+        if (fd < 0) {
             if (errno == ENOENT || errno == ENXIO ||
                 errno == ENODEV || errno == EACCES)
                 PyErr_SetString(PyExc_NotImplementedError,
                                 "/dev/urandom (or equivalent) not found");
-            else
-                PyErr_SetFromErrno(PyExc_OSError);
+            /* otherwise, keep the OSError exception raised by _Py_open() */
             return -1;
         }
         if (urandom_cache.fd >= 0) {
