@@ -419,20 +419,17 @@ class WakeupSignalTests(unittest.TestCase):
             TIMEOUT_HALF = 5
 
             signal.alarm(1)
-
+            before_time = time.time()
             # We attempt to get a signal during the sleep,
             # before select is called
-            try:
-                select.select([], [], [], TIMEOUT_FULL)
-            except InterruptedError:
-                pass
-            else:
-                raise Exception("select() was not interrupted")
-
-            before_time = time.time()
+            time.sleep(TIMEOUT_FULL)
+            mid_time = time.time()
+            dt = mid_time - before_time
+            if dt >= TIMEOUT_HALF:
+                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
             select.select([read], [], [], TIMEOUT_FULL)
             after_time = time.time()
-            dt = after_time - before_time
+            dt = after_time - mid_time
             if dt >= TIMEOUT_HALF:
                 raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
         """, signal.SIGALRM)
