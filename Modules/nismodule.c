@@ -456,8 +456,8 @@ static struct PyModuleDef nismodule = {
     NULL
 };
 
-PyObject*
-PyInit_nis (void)
+PyMODINIT_FUNC
+PyInit_nis(void)
 {
     PyObject *m, *d;
     m = PyModule_Create(&nismodule);

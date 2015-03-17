@@ -401,7 +401,7 @@ errorexit:
         NULL,                                                           \
         NULL                                                            \
     };                                                                  \
-    PyObject*                                                           \
+    PyMODINIT_FUNC                                                      \
     PyInit__codecs_##loc(void)                                          \
     {                                                                   \
         PyObject *m = PyModule_Create(&__module);                       \
