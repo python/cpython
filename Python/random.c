@@ -1,11 +1,17 @@
 #include "Python.h"
 #ifdef MS_WINDOWS
-#include <windows.h>
+#  include <windows.h>
 #else
-#include <fcntl.h>
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
+#  include <fcntl.h>
+#  ifdef HAVE_SYS_STAT_H
+#    include <sys/stat.h>
+#  endif
+#  ifdef HAVE_SYS_SYSCALL_H
+#    include <sys/syscall.h>
+#    if defined(__linux__) && defined(SYS_getrandom)
+#      define HAVE_GETRANDOM
+#    endif
+#  endif
 #endif
 
 #ifdef Py_DEBUG
@@ -94,12 +100,64 @@ py_getentropy(unsigned char *buffer, Py_ssize_t size, int fatal)
     return 0;
 }
 
-#else
+#else   /* !HAVE_GETENTROPY */
+
+#ifdef HAVE_GETRANDOM
+static int
+py_getrandom(void *buffer, Py_ssize_t size, int raise)
+{
+    /* is getrandom() supported by the running kernel?
+     * need Linux kernel 3.17 or later */
+    static int getrandom_works = 1;
+    /* Use /dev/urandom, block if the kernel has no entropy */
+    const int flags = 0;
+    int n;
+
+    if (!getrandom_works)
+        return 0;
+
+    while (0 < size) {
+        errno = 0;
+        /* the libc doesn't expose getrandom() yet, see:
+         * https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
+        n = syscall(SYS_getrandom, buffer, size, flags);
+        if (n < 0) {
+            if (errno == ENOSYS) {
+                getrandom_works = 0;
+                return 0;
+            }
+
+            if (errno == EINTR) {
+                /* Note: EINTR should not occur with flags=0 */
+                if (PyErr_CheckSignals()) {
+                    if (!raise)
+                        Py_FatalError("getrandom() interrupted by a signal");
+                    return -1;
+                }
+                /* retry getrandom() */
+                continue;
+            }
+
+            if (raise)
+                PyErr_SetFromErrno(PyExc_OSError);
+            else
+                Py_FatalError("getrandom() failed");
+            return -1;
+        }
+
+        buffer += n;
+        size -= n;
+    }
+    return 1;
+}
+#endif
+
 static struct {
     int fd;
     dev_t st_dev;
     ino_t st_ino;
 } urandom_cache = { -1 };
+
 
 /* Read size bytes from /dev/urandom into buffer.
    Call Py_FatalError() on error. */
@@ -114,6 +172,13 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
     fd = _Py_open_noraise("/dev/urandom", O_RDONLY);
     if (fd < 0)
         Py_FatalError("Failed to open /dev/urandom");
+
+#ifdef HAVE_GETRANDOM
+    if (py_getrandom(buffer, size, 0) == 1)
+        return;
+    /* getrandom() is not supported by the running kernel, fall back
+     * on reading /dev/urandom */
+#endif
 
     while (0 < size)
     {
@@ -140,9 +205,22 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
     int fd;
     Py_ssize_t n;
     struct _Py_stat_struct st;
+#ifdef HAVE_GETRANDOM
+    int res;
+#endif
 
     if (size <= 0)
         return 0;
+
+#ifdef HAVE_GETRANDOM
+    res = py_getrandom(buffer, size, 1);
+    if (res < 0)
+        return -1;
+    if (res == 1)
+        return 0;
+    /* getrandom() is not supported by the running kernel, fall back
+     * on reading /dev/urandom */
+#endif
 
     if (urandom_cache.fd >= 0) {
         /* Does the fd point to the same thing as before? (issue #21207) */
