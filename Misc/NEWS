@@ -18,6 +18,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #2211: Updated the implementation of the http.cookies.Morsel class.
+  Setting attributes key, value and coded_value directly now is deprecated.
+  update() and setdefault() now transform and check keys.  Comparing for
+  equality now takes into account attributes key, value and coded_value.
+  copy() now returns a Morsel, not a dict.  repr() now contains all attributes.
+  Optimized checking keys and quoting values.  Added new tests.
+  Original patch by Demian Brecht.
+
 - Issue #18983: Allow selection of output units in timeit.
   Patch by Julian Gindi.
 

@@ -200,6 +200,15 @@ class CookieTests(unittest.TestCase):
 class MorselTests(unittest.TestCase):
     """Tests for the Morsel object."""
 
+    def test_defaults(self):
+        morsel = cookies.Morsel()
+        self.assertIsNone(morsel.key)
+        self.assertIsNone(morsel.value)
+        self.assertIsNone(morsel.coded_value)
+        self.assertEqual(morsel.keys(), cookies.Morsel._reserved.keys())
+        for key, val in morsel.items():
+            self.assertEqual(val, '', key)
+
     def test_reserved_keys(self):
         M = cookies.Morsel()
         # tests valid and invalid reserved keys for Morsels
@@ -243,6 +252,176 @@ class MorselTests(unittest.TestCase):
             self.assertRaises(cookies.CookieError,
                               M.set, i, '%s_value' % i, '%s_value' % i)
 
+    def test_deprecation(self):
+        morsel = cookies.Morsel()
+        with self.assertWarnsRegex(DeprecationWarning, r'\bkey\b'):
+            morsel.key = ''
+        with self.assertWarnsRegex(DeprecationWarning, r'\bvalue\b'):
+            morsel.value = ''
+        with self.assertWarnsRegex(DeprecationWarning, r'\bcoded_value\b'):
+            morsel.coded_value = ''
+
+    def test_eq(self):
+        base_case = ('key', 'value', '"value"')
+        attribs = {
+            'path': '/',
+            'comment': 'foo',
+            'domain': 'example.com',
+            'version': 2,
+        }
+        morsel_a = cookies.Morsel()
+        morsel_a.update(attribs)
+        morsel_a.set(*base_case)
+        morsel_b = cookies.Morsel()
+        morsel_b.update(attribs)
+        morsel_b.set(*base_case)
+        self.assertTrue(morsel_a == morsel_b)
+        self.assertFalse(morsel_a != morsel_b)
+        cases = (
+            ('key', 'value', 'mismatch'),
+            ('key', 'mismatch', '"value"'),
+            ('mismatch', 'value', '"value"'),
+        )
+        for case_b in cases:
+            with self.subTest(case_b):
+                morsel_b = cookies.Morsel()
+                morsel_b.update(attribs)
+                morsel_b.set(*case_b)
+                self.assertFalse(morsel_a == morsel_b)
+                self.assertTrue(morsel_a != morsel_b)
+
+        morsel_b = cookies.Morsel()
+        morsel_b.update(attribs)
+        morsel_b.set(*base_case)
+        morsel_b['comment'] = 'bar'
+        self.assertFalse(morsel_a == morsel_b)
+        self.assertTrue(morsel_a != morsel_b)
+
+        # test mismatched types
+        self.assertFalse(cookies.Morsel() == 1)
+        self.assertTrue(cookies.Morsel() != 1)
+        self.assertFalse(cookies.Morsel() == '')
+        self.assertTrue(cookies.Morsel() != '')
+        items = list(cookies.Morsel().items())
+        self.assertFalse(cookies.Morsel() == items)
+        self.assertTrue(cookies.Morsel() != items)
+
+        # morsel/dict
+        morsel = cookies.Morsel()
+        morsel.set(*base_case)
+        morsel.update(attribs)
+        self.assertTrue(morsel == dict(morsel))
+        self.assertFalse(morsel != dict(morsel))
+
+    def test_copy(self):
+        morsel_a = cookies.Morsel()
+        morsel_a.set('foo', 'bar', 'baz')
+        morsel_a.update({
+            'version': 2,
+            'comment': 'foo',
+        })
+        morsel_b = morsel_a.copy()
+        self.assertIsInstance(morsel_b, cookies.Morsel)
+        self.assertIsNot(morsel_a, morsel_b)
+        self.assertEqual(morsel_a, morsel_b)
+
+    def test_setitem(self):
+        morsel = cookies.Morsel()
+        morsel['expires'] = 0
+        self.assertEqual(morsel['expires'], 0)
+        morsel['Version'] = 2
+        self.assertEqual(morsel['version'], 2)
+        morsel['DOMAIN'] = 'example.com'
+        self.assertEqual(morsel['domain'], 'example.com')
+
+        with self.assertRaises(cookies.CookieError):
+            morsel['invalid'] = 'value'
+        self.assertNotIn('invalid', morsel)
+
+    def test_setdefault(self):
+        morsel = cookies.Morsel()
+        morsel.update({
+            'domain': 'example.com',
+            'version': 2,
+        })
+        # this shouldn't override the default value
+        self.assertEqual(morsel.setdefault('expires', 'value'), '')
+        self.assertEqual(morsel['expires'], '')
+        self.assertEqual(morsel.setdefault('Version', 1), 2)
+        self.assertEqual(morsel['version'], 2)
+        self.assertEqual(morsel.setdefault('DOMAIN', 'value'), 'example.com')
+        self.assertEqual(morsel['domain'], 'example.com')
+
+        with self.assertRaises(cookies.CookieError):
+            morsel.setdefault('invalid', 'value')
+        self.assertNotIn('invalid', morsel)
+
+    def test_update(self):
+        attribs = {'expires': 1, 'Version': 2, 'DOMAIN': 'example.com'}
+        # test dict update
+        morsel = cookies.Morsel()
+        morsel.update(attribs)
+        self.assertEqual(morsel['expires'], 1)
+        self.assertEqual(morsel['version'], 2)
+        self.assertEqual(morsel['domain'], 'example.com')
+        # test iterable update
+        morsel = cookies.Morsel()
+        morsel.update(list(attribs.items()))
+        self.assertEqual(morsel['expires'], 1)
+        self.assertEqual(morsel['version'], 2)
+        self.assertEqual(morsel['domain'], 'example.com')
+        # test iterator update
+        morsel = cookies.Morsel()
+        morsel.update((k, v) for k, v in attribs.items())
+        self.assertEqual(morsel['expires'], 1)
+        self.assertEqual(morsel['version'], 2)
+        self.assertEqual(morsel['domain'], 'example.com')
+
+        with self.assertRaises(cookies.CookieError):
+            morsel.update({'invalid': 'value'})
+        self.assertNotIn('invalid', morsel)
+        self.assertRaises(TypeError, morsel.update)
+        self.assertRaises(TypeError, morsel.update, 0)
+
+    def test_repr(self):
+        morsel = cookies.Morsel()
+        self.assertEqual(repr(morsel), '<Morsel: None=None>')
+        self.assertEqual(str(morsel), 'Set-Cookie: None=None')
+        morsel.set('key', 'val', 'coded_val')
+        self.assertEqual(repr(morsel), '<Morsel: key=coded_val>')
+        self.assertEqual(str(morsel), 'Set-Cookie: key=coded_val')
+        morsel.update({
+            'path': '/',
+            'comment': 'foo',
+            'domain': 'example.com',
+            'max-age': 0,
+            'secure': 0,
+            'version': 1,
+        })
+        self.assertEqual(repr(morsel),
+                '<Morsel: key=coded_val; Comment=foo; Domain=example.com; '
+                'Max-Age=0; Path=/; Version=1>')
+        self.assertEqual(str(morsel),
+                'Set-Cookie: key=coded_val; Comment=foo; Domain=example.com; '
+                'Max-Age=0; Path=/; Version=1')
+        morsel['secure'] = True
+        morsel['httponly'] = 1
+        self.assertEqual(repr(morsel),
+                '<Morsel: key=coded_val; Comment=foo; Domain=example.com; '
+                'HttpOnly; Max-Age=0; Path=/; Secure; Version=1>')
+        self.assertEqual(str(morsel),
+                'Set-Cookie: key=coded_val; Comment=foo; Domain=example.com; '
+                'HttpOnly; Max-Age=0; Path=/; Secure; Version=1')
+
+        morsel = cookies.Morsel()
+        morsel.set('key', 'val', 'coded_val')
+        morsel['expires'] = 0
+        self.assertRegex(repr(morsel),
+                r'<Morsel: key=coded_val; '
+                r'expires=\w+, \d+ \w+ \d+ \d+:\d+:\d+ \w+>')
+        self.assertRegex(str(morsel),
+                r'Set-Cookie: key=coded_val; '
+                r'expires=\w+, \d+ \w+ \d+ \d+:\d+:\d+ \w+')
 
 def test_main():
     run_unittest(CookieTests, MorselTests)
