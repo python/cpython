@@ -228,7 +228,7 @@ new_threadstate(PyInterpreterState *interp, int init)
             tstate->next->prev = tstate;
         interp->tstate_head = tstate;
         HEAD_UNLOCK();
-        
+
 #if defined _MSC_VER && _MSC_VER >= 1900
         /* Issue #23524: Temporary fix to disable termination due to invalid parameters */
         _set_thread_local_invalid_parameter_handler((_invalid_parameter_handler)_Py_silent_invalid_parameter_handler);

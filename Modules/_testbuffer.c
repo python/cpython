@@ -190,7 +190,7 @@ ndbuf_delete(NDArrayObject *nd, ndbuf_t *elt)
         elt->prev->next = elt->next;
     else
         nd->head = elt->next;
-    
+
     if (elt->next)
         elt->next->prev = elt->prev;
 
@@ -767,7 +767,7 @@ out:
   +-----------------+-----------+-------------+----------------+
   | base.readonly   |     0     |     OK      |       OK       |
   +-----------------+-----------+-------------+----------------+
-  | base.format     |    NULL   |     OK      |       OK       |  
+  | base.format     |    NULL   |     OK      |       OK       |
   +-----------------+-----------+-------------+----------------+
   | base.ndim       |     1     |      1      |       OK       |
   +-----------------+-----------+-------------+----------------+
@@ -2018,7 +2018,7 @@ ndarray_get_obj(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
 
-    if (base->obj == NULL) { 
+    if (base->obj == NULL) {
         Py_RETURN_NONE;
     }
     Py_INCREF(base->obj);
@@ -2558,7 +2558,7 @@ result:
     PyBuffer_Release(&v1);
     PyBuffer_Release(&v2);
 
-    ret = equal ? Py_True : Py_False; 
+    ret = equal ? Py_True : Py_False;
     Py_INCREF(ret);
     return ret;
 }

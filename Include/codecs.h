@@ -71,7 +71,7 @@ PyAPI_FUNC(int) PyCodec_KnownEncoding(
    object is passed through the encoder function found for the given
    encoding using the error handling method defined by errors. errors
    may be NULL to use the default method defined for the codec.
-   
+
    Raises a LookupError in case no encoder can be found.
 
  */
@@ -87,7 +87,7 @@ PyAPI_FUNC(PyObject *) PyCodec_Encode(
    object is passed through the decoder function found for the given
    encoding using the error handling method defined by errors. errors
    may be NULL to use the default method defined for the codec.
-   
+
    Raises a LookupError in case no encoder can be found.
 
  */
@@ -145,7 +145,7 @@ PyAPI_FUNC(PyObject *) _PyCodecInfo_GetIncrementalEncoder(
 
 
 
-/* --- Codec Lookup APIs -------------------------------------------------- 
+/* --- Codec Lookup APIs --------------------------------------------------
 
    All APIs return a codec object with incremented refcount and are
    based on _PyCodec_Lookup().  The same comments w/r to the encoding

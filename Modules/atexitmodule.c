@@ -94,7 +94,7 @@ atexit_callfuncs(void)
             if (exc_type) {
                 Py_DECREF(exc_type);
                 Py_XDECREF(exc_value);
-                Py_XDECREF(exc_tb);    
+                Py_XDECREF(exc_tb);
             }
             PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
             if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
@@ -147,7 +147,7 @@ atexit_register(PyObject *self, PyObject *args, PyObject *kwargs)
     if (PyTuple_GET_SIZE(args) == 0) {
         PyErr_SetString(PyExc_TypeError,
                 "register() takes at least 1 argument (0 given)");
-        return NULL; 
+        return NULL;
     }
 
     func = PyTuple_GET_ITEM(args, 0);
@@ -159,7 +159,7 @@ atexit_register(PyObject *self, PyObject *args, PyObject *kwargs)
 
     new_callback = PyMem_Malloc(sizeof(atexit_callback));
     if (new_callback == NULL)
-        return PyErr_NoMemory();   
+        return PyErr_NoMemory();
 
     new_callback->args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (new_callback->args == NULL) {
@@ -336,7 +336,7 @@ PyInit_atexit(void)
     modstate = GET_ATEXIT_STATE(m);
     modstate->callback_len = 32;
     modstate->ncallbacks = 0;
-    modstate->atexit_callbacks = PyMem_New(atexit_callback*, 
+    modstate->atexit_callbacks = PyMem_New(atexit_callback*,
                                            modstate->callback_len);
     if (modstate->atexit_callbacks == NULL)
         return NULL;

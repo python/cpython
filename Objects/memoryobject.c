@@ -892,7 +892,7 @@ memory_from_contiguous_copy(Py_buffer *src, char order)
    The logical structure of the input and output buffers is the same
    (i.e. tolist(input) == tolist(output)), but the physical layout in
    memory can be explicitly chosen.
- 
+
    As usual, if buffertype=PyBUF_WRITE, the exporter's buffer must be writable,
    otherwise it may be writable or read-only.
 
@@ -1241,7 +1241,7 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
     view->suboffsets = NULL;
 
     init_flags(mv);
- 
+
     ret = 0;
 
 out:
@@ -2288,7 +2288,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 {
     Py_buffer *view;
     view = &(self->view);
-    
+
     CHECK_RELEASED(self);
 
     if (view->ndim == 0) {

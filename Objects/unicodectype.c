@@ -27,7 +27,7 @@
 #define EXTENDED_CASE_MASK 0x4000
 
 typedef struct {
-    /* 
+    /*
        These are either deltas to the character or offsets in
        _PyUnicode_ExtendedCase.
     */

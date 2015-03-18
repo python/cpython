@@ -59,7 +59,7 @@ stringlib_expandtabs(PyObject *self, PyObject *args, PyObject *kwds)
 
     j = 0;
     q = STRINGLIB_STR(u);
-    
+
     for (p = STRINGLIB_STR(self); p < e; p++) {
         if (*p == '\t') {
             if (tabsize > 0) {

@@ -149,10 +149,10 @@ grow_buffer(PyObject **buf, Py_ssize_t max_length)
 {
     Py_ssize_t size = PyBytes_GET_SIZE(*buf);
     Py_ssize_t newsize = size + (size >> 3) + 6;
-    
+
     if (max_length > 0 && newsize > max_length)
         newsize = max_length;
-    
+
     return _PyBytes_Resize(buf, newsize);
 }
 
@@ -906,7 +906,7 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
     Py_ssize_t data_size = 0;
     PyObject *result;
     lzma_stream *lzs = &d->lzs;
-    
+
     if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
         result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
     else
@@ -916,7 +916,7 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
 
     lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result);
     lzs->avail_out = PyBytes_GET_SIZE(result);
-    
+
     for (;;) {
         lzma_ret lzret;
 
@@ -947,7 +947,7 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
             goto error;
 
     return result;
-    
+
 error:
     Py_XDECREF(result);
     return NULL;
@@ -959,11 +959,11 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     char input_buffer_in_use;
     PyObject *result;
     lzma_stream *lzs = &d->lzs;
-    
+
     /* Prepend unconsumed input if necessary */
     if (lzs->next_in != NULL) {
         size_t avail_now, avail_total;
-        
+
         /* Number of bytes we can append to input buffer */
         avail_now = (d->input_buffer + d->input_buffer_size)
             - (lzs->next_in + lzs->avail_in);
@@ -987,7 +987,7 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
             }
             d->input_buffer = tmp;
             d->input_buffer_size = new_size;
-            
+
             lzs->next_in = d->input_buffer + offset;
         }
         else if (avail_now < len) {
@@ -1054,7 +1054,7 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
             lzs->next_in = d->input_buffer;
         }
     }
-    
+
     return result;
 
 error:
@@ -1247,7 +1247,7 @@ Decompressor_dealloc(Decompressor *self)
 {
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
-    
+
     lzma_end(&self->lzs);
     Py_CLEAR(self->unused_data);
 #ifdef WITH_THREAD

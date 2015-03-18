@@ -41,7 +41,7 @@ PyAPI_FUNC(int) _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 PyAPI_FUNC(int) PySlice_GetIndices(PyObject *r, Py_ssize_t length,
                                   Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step);
 PyAPI_FUNC(int) PySlice_GetIndicesEx(PyObject *r, Py_ssize_t length,
-				    Py_ssize_t *start, Py_ssize_t *stop, 
+				    Py_ssize_t *start, Py_ssize_t *stop,
 				    Py_ssize_t *step, Py_ssize_t *slicelength);
 
 #ifdef __cplusplus
