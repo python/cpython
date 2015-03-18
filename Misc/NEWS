@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22903: The fake test case created by unittest.loader when it fails
+  importing a test module is now picklable.
+
 - Issue #23568: Add rdivmod support to MagicMock() objects.
   Patch by Håkan Lövdahl.
 
