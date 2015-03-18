@@ -939,6 +939,9 @@ read_directory(PyObject *archive)
         header_size = name_size +
            PyMarshal_ReadShortFromFile(fp) +
            PyMarshal_ReadShortFromFile(fp);
+        if (PyErr_Occurred())
+            goto error;
+
         if (fread(dummy, 1, 8, fp) != 8) /* Skip unused fields, avoid fseek */
             goto file_error;
         file_offset = PyMarshal_ReadLongFromFile(fp) + arc_offset;
