@@ -2941,11 +2941,9 @@ load_dh_params(PySSLContext *self, PyObject *filepath)
     DH *dh;
 
     f = _Py_fopen_obj(filepath, "rb");
-    if (f == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, filepath);
+    if (f == NULL)
         return NULL;
-    }
+
     errno = 0;
     PySSL_BEGIN_ALLOW_THREADS
     dh = PEM_read_DHparams(f, NULL, NULL, NULL);

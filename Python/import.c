@@ -1945,8 +1945,6 @@ _imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path, PyOb
         fp = _Py_fopen_obj(path, "r");
         if (fp == NULL) {
             Py_DECREF(path);
-            if (!PyErr_Occurred())
-                PyErr_SetFromErrno(PyExc_IOError);
             return NULL;
         }
     }
