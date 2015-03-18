@@ -373,7 +373,7 @@ Balloc(int k)
         x = 1 << k;
         len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
             /sizeof(double);
-        if (k <= Kmax && pmem_next - private_mem + len <= PRIVATE_mem) {
+        if (k <= Kmax && pmem_next - private_mem + len <= (Py_ssize_t)PRIVATE_mem) {
             rv = (Bigint*)pmem_next;
             pmem_next += len;
         }
@@ -1087,7 +1087,7 @@ sd2b(U *d, int scale, int *e)
     b = Balloc(1);
     if (b == NULL)
         return NULL;
-    
+
     /* First construct b and e assuming that scale == 0. */
     b->wds = 2;
     b->x[0] = word1(d);
