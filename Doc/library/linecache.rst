@@ -59,5 +59,5 @@ The :mod:`linecache` module defines the following functions:
 Example::
 
    >>> import linecache
-   >>> linecache.getline('/etc/passwd', 4)
-   'sys:x:3:3:sys:/dev:/bin/sh\n'
+   >>> linecache.getline(linecache.__file__, 8)
+   'import sys\n'
