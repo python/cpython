@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22903: The fake test case created by unittest.loader when it fails
+  importing a test module is now picklable.
+
 - Issue #22181: On Linux, os.urandom() now uses the new getrandom() syscall if
   available, syscall introduced in the Linux kernel 3.17. It is more reliable
   and more secure, because it avoids the need of a file descriptor and waits
