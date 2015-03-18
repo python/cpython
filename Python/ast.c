@@ -115,7 +115,7 @@ validate_arguments(arguments_ty args)
     }
     if (!validate_args(args->kwonlyargs))
         return 0;
-    if (args->kwarg && args->kwarg->annotation 
+    if (args->kwarg && args->kwarg->annotation
         && !validate_expr(args->kwarg->annotation, Load)) {
             return 0;
     }
@@ -164,6 +164,8 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             return 0;
         }
         check_ctx = 0;
+        /* set actual_ctx to prevent gcc warning */
+        actual_ctx = 0;
     }
     if (check_ctx && actual_ctx != ctx) {
         PyErr_Format(PyExc_ValueError, "expression must have %s context but has %s instead",
@@ -451,7 +453,7 @@ validate_exprs(asdl_seq *exprs, expr_context_ty ctx, int null_ok)
                             "None disallowed in expression list");
             return 0;
         }
-            
+
     }
     return 1;
 }
