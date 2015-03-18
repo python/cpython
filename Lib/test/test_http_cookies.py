@@ -1,5 +1,6 @@
 # Simple test suite for http/cookies.py
 
+import copy
 from test.support import run_unittest, run_doctest, check_warnings
 import unittest
 from http import cookies
@@ -325,6 +326,11 @@ class MorselTests(unittest.TestCase):
         self.assertIsNot(morsel_a, morsel_b)
         self.assertEqual(morsel_a, morsel_b)
 
+        morsel_b = copy.copy(morsel_a)
+        self.assertIsInstance(morsel_b, cookies.Morsel)
+        self.assertIsNot(morsel_a, morsel_b)
+        self.assertEqual(morsel_a, morsel_b)
+
     def test_setitem(self):
         morsel = cookies.Morsel()
         morsel['expires'] = 0
@@ -382,6 +388,20 @@ class MorselTests(unittest.TestCase):
         self.assertNotIn('invalid', morsel)
         self.assertRaises(TypeError, morsel.update)
         self.assertRaises(TypeError, morsel.update, 0)
+
+    def test_pickle(self):
+        morsel_a = cookies.Morsel()
+        morsel_a.set('foo', 'bar', 'baz')
+        morsel_a.update({
+            'version': 2,
+            'comment': 'foo',
+        })
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                morsel_b = pickle.loads(pickle.dumps(morsel_a, proto))
+                self.assertIsInstance(morsel_b, cookies.Morsel)
+                self.assertEqual(morsel_b, morsel_a)
+                self.assertEqual(str(morsel_b), str(morsel_a))
 
     def test_repr(self):
         morsel = cookies.Morsel()
