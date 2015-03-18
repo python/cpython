@@ -875,7 +875,7 @@ read_directory(PyObject *archive)
 
     fp = _Py_fopen_obj(archive, "rb");
     if (fp == NULL) {
-        if (!PyErr_Occurred())
+        if (PyErr_ExceptionMatches(PyExc_OSError))
             PyErr_Format(ZipImportError, "can't open Zip file: %R", archive);
         return NULL;
     }
@@ -1073,12 +1073,8 @@ get_data(PyObject *archive, PyObject *toc_entry)
     }
 
     fp = _Py_fopen_obj(archive, "rb");
-    if (!fp) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_IOError,
-               "zipimport: can not open file %U", archive);
+    if (!fp)
         return NULL;
-    }
 
     /* Check to make sure the local file header is correct */
     if (fseek(fp, file_offset, 0) == -1) {

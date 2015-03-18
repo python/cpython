@@ -1126,6 +1126,10 @@ PyErr_ProgramTextObject(PyObject *filename, int lineno)
     if (filename == NULL || lineno <= 0)
         return NULL;
     fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
+    if (fp == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
     return err_programtext(fp, lineno);
 }
 
