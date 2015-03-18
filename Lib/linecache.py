@@ -1,4 +1,4 @@
-"""Cache lines from files.
+"""Cache lines from Python source files.
 
 This is intended to read lines from modules imported -- hence if a filename
 is not found, it will look down the module search path for a file by
@@ -32,7 +32,7 @@ def clearcache():
 
 
 def getlines(filename, module_globals=None):
-    """Get the lines for a file from the cache.
+    """Get the lines for a Python source file from the cache.
     Update the cache if it doesn't contain an entry for this file already."""
 
     if filename in cache:
