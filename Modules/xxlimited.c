@@ -169,7 +169,7 @@ xx_roj(PyObject *self, PyObject *args)
 
 /* ---------- */
 
-static PyType_Slot Str_Type_slots[] = {    
+static PyType_Slot Str_Type_slots[] = {
     {Py_tp_base, NULL}, /* filled out in module init function */
     {0, 0},
 };

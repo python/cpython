@@ -31,7 +31,7 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
      variable (gil_drop_request) is used for that purpose, which is checked
      at every turn of the eval loop. That variable is set after a wait of
      `interval` microseconds on `gil_cond` has timed out.
-      
+
       [Actually, another volatile boolean variable (eval_breaker) is used
        which ORs several conditions into one. Volatile booleans are
        sufficient as inter-thread signalling means since Python is run
@@ -41,7 +41,7 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
      time (`interval` microseconds) before setting gil_drop_request. This
      encourages a defined switching period, but doesn't enforce it since
      opcodes can take an arbitrary time to execute.
- 
+
      The `interval` value is available for the user to read and modify
      using the Python API `sys.{get,set}switchinterval()`.
 
@@ -51,7 +51,7 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
      the value of gil_last_holder is changed to something else than its
      own thread state pointer, indicating that another thread was able to
      take the GIL.
- 
+
      This is meant to prohibit the latency-adverse behaviour on multi-core
      machines where one thread would speculatively release the GIL, but still
      run and end up being the first to re-acquire it, making the "timeslices"
@@ -186,7 +186,7 @@ static void drop_gil(PyThreadState *tstate)
     _Py_atomic_store_relaxed(&gil_locked, 0);
     COND_SIGNAL(gil_cond);
     MUTEX_UNLOCK(gil_mutex);
-    
+
 #ifdef FORCE_SWITCHING
     if (_Py_atomic_load_relaxed(&gil_drop_request) && tstate != NULL) {
         MUTEX_LOCK(switch_mutex);
@@ -215,7 +215,7 @@ static void take_gil(PyThreadState *tstate)
 
     if (!_Py_atomic_load_relaxed(&gil_locked))
         goto _ready;
-    
+
     while (_Py_atomic_load_relaxed(&gil_locked)) {
         int timed_out = 0;
         unsigned long saved_switchnum;
@@ -254,7 +254,7 @@ _ready:
     if (tstate->async_exc != NULL) {
         _PyEval_SignalAsyncExc();
     }
-    
+
     MUTEX_UNLOCK(gil_mutex);
     errno = err;
 }

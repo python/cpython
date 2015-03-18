@@ -96,7 +96,7 @@ error(int rc, wchar_t * format, ... )
     fwprintf(stderr, L"%ls\n", message);
 #else
     MessageBox(NULL, message, TEXT("Python Launcher is sorry to say ..."),
-               MB_OK); 
+               MB_OK);
 #endif
     ExitProcess(rc);
 }
@@ -349,7 +349,7 @@ locate_all_pythons()
         locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ | KEY_WOW64_64KEY);
         locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_64KEY);
     }
-#endif    
+#endif
     // now hit the "native" key for this process bittedness.
     debug(L"locating Pythons in native registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ);
@@ -604,7 +604,7 @@ run_child(wchar_t * cmdline)
     // window, or fetching a message).  As this launcher doesn't do this
     // directly, that cursor remains even after the child process does these
     // things.  We avoid that by doing a simple post+get message.
-    // See http://bugs.python.org/issue17290 and 
+    // See http://bugs.python.org/issue17290 and
     // https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
     MSG msg;
 

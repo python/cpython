@@ -2788,7 +2788,7 @@ validate_argument(node *tree)
     int nch = NCH(tree);
     int res = (validate_ntype(tree, argument)
                && ((nch == 1) || (nch == 2) || (nch == 3)));
-    if (res) 
+    if (res)
         res = validate_test(CHILD(tree, 0));
     if (res && (nch == 2))
         res = validate_comp_for(CHILD(tree, 1));

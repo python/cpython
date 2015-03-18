@@ -1,6 +1,6 @@
 #include "pyconfig.h"
 #include "pyfpe.h"
-/* 
+/*
  * The signal handler for SIGFPE is actually declared in an external
  * module fpectl, or as preferred by the user.  These variable
  * definitions are required in order to compile Python without
@@ -13,7 +13,7 @@ jmp_buf PyFPE_jbuf;
 int PyFPE_counter = 0;
 #endif
 
-/* Have this outside the above #ifdef, since some picky ANSI compilers issue a 
+/* Have this outside the above #ifdef, since some picky ANSI compilers issue a
    warning when compiling an empty file. */
 
 double

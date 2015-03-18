@@ -260,7 +260,7 @@ method_repr(PyMethodObject *a)
             PyErr_Clear();
         }
     }
-    
+
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
         Py_DECREF(funcname);
         funcname = NULL;

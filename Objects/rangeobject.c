@@ -987,7 +987,7 @@ static PyObject *
 longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
 {
     int cmp;
-   
+
     /* clip the value */
     PyObject *zero = PyLong_FromLong(0);
     if (zero == NULL)
@@ -1007,7 +1007,7 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
         return NULL;
     if (cmp > 0)
         state = r->len;
-    
+
     Py_CLEAR(r->index);
     r->index = state;
     Py_INCREF(r->index);
