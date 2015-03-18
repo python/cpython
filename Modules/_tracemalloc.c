@@ -60,7 +60,7 @@ static PyThread_type_lock tables_lock;
 /* Pack the frame_t structure to reduce the memory footprint on 64-bit
    architectures: 12 bytes instead of 16. This optimization might produce
    SIGBUS on architectures not supporting unaligned memory accesses (64-bit
-   IPS CPU?): on such architecture, the structure must not be packed. */
+   MIPS CPU?): on such architecture, the structure must not be packed. */
 typedef struct
 #ifdef __GNUC__
 __attribute__((packed))
