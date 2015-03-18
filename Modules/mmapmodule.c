@@ -1192,7 +1192,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                 return NULL;
             }
             map_size = (Py_ssize_t) (st.st_size - offset);
-        } else if (offset + (size_t)map_size > st.st_size) {
+        } else if (offset + map_size > st.st_size) {
             PyErr_SetString(PyExc_ValueError,
                             "mmap length is greater than file size");
             return NULL;
