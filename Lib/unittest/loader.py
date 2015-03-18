@@ -19,20 +19,31 @@ __unittest = True
 VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
 
 
+class _FailedTest(case.TestCase):
+    _testMethodName = None
+
+    def __init__(self, method_name, exception):
+        self._exception = exception
+        super(_FailedTest, self).__init__(method_name)
+
+    def __getattr__(self, name):
+        if name != self._testMethodName:
+            return super(_FailedTest, self).__getattr__(name)
+        def testFailure():
+            raise self._exception
+        return testFailure
+
+
 def _make_failed_import_test(name, suiteClass):
     message = 'Failed to import test module: %s\n%s' % (name, traceback.format_exc())
-    return _make_failed_test('ModuleImportFailure', name, ImportError(message),
-                             suiteClass)
+    return _make_failed_test(name, ImportError(message), suiteClass)
 
 def _make_failed_load_tests(name, exception, suiteClass):
-    return _make_failed_test('LoadTestsFailure', name, exception, suiteClass)
+    return _make_failed_test(name, exception, suiteClass)
 
-def _make_failed_test(classname, methodname, exception, suiteClass):
-    def testFailure(self):
-        raise exception
-    attrs = {methodname: testFailure}
-    TestClass = type(classname, (case.TestCase,), attrs)
-    return suiteClass((TestClass(methodname),))
+def _make_failed_test(methodname, exception, suiteClass):
+    test = _FailedTest(methodname, exception)
+    return suiteClass((test,))
 
 def _make_skipped_test(methodname, exception, suiteClass):
     @case.skip(str(exception))
