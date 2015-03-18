@@ -377,6 +377,18 @@ class Morsel(dict):
         self._value = val
         self._coded_value = coded_val
 
+    def __getstate__(self):
+        return {
+            'key': self._key,
+            'value': self._value,
+            'coded_value': self._coded_value,
+        }
+
+    def __setstate__(self, state):
+        self._key = state['key']
+        self._value = state['value']
+        self._coded_value = state['coded_value']
+
     def output(self, attrs=None, header="Set-Cookie:"):
         return "%s %s" % (header, self.OutputString(attrs))
 
