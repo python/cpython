@@ -1442,22 +1442,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 static PyObject *
 diff_to_bool(int diff, int op)
 {
-    PyObject *result;
-    int istrue;
-
-    switch (op) {
-        case Py_EQ: istrue = diff == 0; break;
-        case Py_NE: istrue = diff != 0; break;
-        case Py_LE: istrue = diff <= 0; break;
-        case Py_GE: istrue = diff >= 0; break;
-        case Py_LT: istrue = diff < 0; break;
-        case Py_GT: istrue = diff > 0; break;
-        default:
-            Py_UNREACHABLE();
-    }
-    result = istrue ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    Py_RETURN_RICHCOMPARE(diff, 0, op);
 }
 
 /* Raises a "can't compare" TypeError and returns NULL. */
