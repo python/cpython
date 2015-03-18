@@ -661,6 +661,52 @@ class ExceptionTests(unittest.TestCase):
             pass
         self.assertEqual(sys.exc_info(), (None, None, None))
 
+    def test_generator_leaking3(self):
+        # See issue #23353.  When gen.throw() is called, the caller's
+        # exception state should be save and restored.
+        def g():
+            try:
+                yield
+            except ZeroDivisionError:
+                yield sys.exc_info()[1]
+        it = g()
+        next(it)
+        try:
+            1/0
+        except ZeroDivisionError as e:
+            self.assertIs(sys.exc_info()[1], e)
+            gen_exc = it.throw(e)
+            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(gen_exc, e)
+        self.assertEqual(sys.exc_info(), (None, None, None))
+
+    def test_generator_leaking4(self):
+        # See issue #23353.  When an exception is raised by a generator,
+        # the caller's exception state should still be restored.
+        def g():
+            try:
+                1/0
+            except ZeroDivisionError:
+                yield sys.exc_info()[0]
+                raise
+        it = g()
+        try:
+            raise TypeError
+        except TypeError:
+            # The caller's exception state (TypeError) is temporarily
+            # saved in the generator.
+            tp = next(it)
+        self.assertIs(tp, ZeroDivisionError)
+        try:
+            next(it)
+            # We can't check it immediately, but while next() returns
+            # with an exception, it shouldn't have restored the old
+            # exception state (TypeError).
+        except ZeroDivisionError as e:
+            self.assertIs(sys.exc_info()[1], e)
+        # We used to find TypeError here.
+        self.assertEqual(sys.exc_info(), (None, None, None))
+
     def test_generator_doesnt_retain_old_exc(self):
         def g():
             self.assertIsInstance(sys.exc_info()[1], RuntimeError)
