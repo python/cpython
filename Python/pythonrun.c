@@ -981,13 +981,17 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
 
     magic = PyMarshal_ReadLongFromFile(fp);
     if (magic != PyImport_GetMagicNumber()) {
-        PyErr_SetString(PyExc_RuntimeError,
-                   "Bad magic number in .pyc file");
+        if (!PyErr_Occurred())
+            PyErr_SetString(PyExc_RuntimeError,
+                       "Bad magic number in .pyc file");
         return NULL;
     }
     /* Skip mtime and size */
     (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
+    if (PyErr_Occurred())
+        return NULL;
+
     v = PyMarshal_ReadLastObjectFromFile(fp);
     if (v == NULL || !PyCode_Check(v)) {
         Py_XDECREF(v);
