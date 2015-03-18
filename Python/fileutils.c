@@ -912,6 +912,7 @@ static int
 _Py_open_impl(const char *pathname, int flags, int gil_held)
 {
     int fd;
+    int async_err = 0;
 #ifndef MS_WINDOWS
     int *atomic_flag_works;
 #endif
@@ -926,10 +927,14 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #endif
 
     if (gil_held) {
-        Py_BEGIN_ALLOW_THREADS
-        fd = open(pathname, flags);
-        Py_END_ALLOW_THREADS
-
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            fd = open(pathname, flags);
+            Py_END_ALLOW_THREADS
+        } while (fd < 0
+                 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        if (async_err)
+            return -1;
         if (fd < 0) {
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, pathname);
             return -1;
@@ -957,6 +962,9 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 
    The file descriptor is created non-inheritable.
 
+   When interrupted by a signal (open() fails with EINTR), retry the syscall,
+   except if the Python signal handler raises an exception.
+
    The GIL must be held. */
 int
 _Py_open(const char *pathname, int flags)
@@ -969,7 +977,9 @@ _Py_open(const char *pathname, int flags)
 /* Open a file with the specified flags (wrapper to open() function).
    Return a file descriptor on success. Set errno and return -1 on error.
 
-   The file descriptor is created non-inheritable. */
+   The file descriptor is created non-inheritable.
+
+   If interrupted by a signal, fail with EINTR. */
 int
 _Py_open_noraise(const char *pathname, int flags)
 {
@@ -979,7 +989,9 @@ _Py_open_noraise(const char *pathname, int flags)
 /* Open a file. Use _wfopen() on Windows, encode the path to the locale
    encoding and use fopen() otherwise.
 
-   The file descriptor is created non-inheritable). */
+   The file descriptor is created non-inheritable.
+
+   If interrupted by a signal, fail with EINTR. */
 FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
@@ -1012,7 +1024,9 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 
 /* Wrapper to fopen().
 
-   The file descriptor is created non-inheritable). */
+   The file descriptor is created non-inheritable.
+
+   If interrupted by a signal, fail with EINTR. */
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
@@ -1034,11 +1048,15 @@ _Py_fopen(const char *pathname, const char *mode)
 
    The file descriptor is created non-inheritable.
 
+   When interrupted by a signal (open() fails with EINTR), retry the syscall,
+   except if the Python signal handler raises an exception.
+
    The GIL must be held. */
 FILE*
 _Py_fopen_obj(PyObject *path, const char *mode)
 {
     FILE *f;
+    int async_err = 0;
 #ifdef MS_WINDOWS
     wchar_t *wpath;
     wchar_t wmode[10];
@@ -1062,9 +1080,12 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    f = _wfopen(wpath, wmode);
-    Py_END_ALLOW_THREADS
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        f = _wfopen(wpath, wmode);
+        Py_END_ALLOW_THREADS
+    } while (f == NULL
+             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
     PyObject *bytes;
     char *path_bytes;
@@ -1075,12 +1096,18 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         return NULL;
     path_bytes = PyBytes_AS_STRING(bytes);
 
-    Py_BEGIN_ALLOW_THREADS
-    f = fopen(path_bytes, mode);
-    Py_END_ALLOW_THREADS
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        f = fopen(path_bytes, mode);
+        Py_END_ALLOW_THREADS
+    } while (f == NULL
+             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
     Py_DECREF(bytes);
 #endif
+    if (async_err)
+        return NULL;
+
     if (f == NULL) {
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
         return NULL;
