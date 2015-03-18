@@ -38,7 +38,7 @@ static PyModuleDef noddymodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_noddy(void) 
+PyInit_noddy(void)
 {
     PyObject* m;
 

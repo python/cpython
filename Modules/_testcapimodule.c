@@ -2476,7 +2476,7 @@ make_memoryview_from_NULL_pointer(PyObject *self)
         return NULL;
     return PyMemoryView_FromBuffer(&info);
 }
- 
+
 static PyObject *
 test_from_contiguous(PyObject* self, PyObject *noargs)
 {

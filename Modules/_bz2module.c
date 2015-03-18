@@ -666,7 +666,7 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL)
         goto error;
-    
+
     bzerror = BZ2_bzDecompressInit(&self->bzs, 0, 0);
     if (catch_bz2_error(bzerror))
         goto error;

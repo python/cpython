@@ -1055,7 +1055,7 @@ _buffered_readinto_generic(buffered *self, PyObject *args, char readinto1)
         }
         else
             n = 0;
-        
+
         if (n == 0 || (n == -2 && written > 0))
             break;
         if (n < 0) {
@@ -1065,7 +1065,7 @@ _buffered_readinto_generic(buffered *self, PyObject *args, char readinto1)
             }
             goto end;
         }
-        
+
         /* At most one read in readinto1 mode */
         if (readinto1) {
             written += n;

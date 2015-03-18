@@ -37,7 +37,7 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__loader__);
     _Py_IDENTIFIER(__spec__);
-    
+
     if (md_dict == NULL)
         return -1;
     if (doc == NULL)
