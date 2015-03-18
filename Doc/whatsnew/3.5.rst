@@ -512,6 +512,12 @@ Deprecated Python modules, functions and methods
   ``True``, but this default is deprecated.  Specify the *decode_data* keyword
   with an appropriate value to avoid the deprecation warning.
 
+* :class:`~http.cookies.Morsel` has previously allowed for setting attributes
+  :attr:`~http.cookies.Morsel.key`, :attr:`~http.cookies.Morsel.value` and
+  :attr:`~http.cookies.Morsel.coded_value`. Use the preferred
+  :func:`~http.cookies.Morsel.set` method in order to avoid the deprecation
+  warning.
+
 
 Deprecated functions and types of the C API
 -------------------------------------------

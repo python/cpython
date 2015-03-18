@@ -148,15 +148,27 @@ Morsel Objects
 
    The value of the cookie.
 
+   .. deprecated:: 3.5
+      Setting :attr:`~Morsel.value` directly has been deprecated in favour of
+      using :func:`~Morsel.set`
+
 
 .. attribute:: Morsel.coded_value
 
    The encoded value of the cookie --- this is what should be sent.
 
+   .. deprecated:: 3.5
+      Setting :attr:`~Morsel.coded_value` directly has been deprecated in
+      favour of using :func:`~Morsel.set`
+
 
 .. attribute:: Morsel.key
 
    The name of the cookie.
+
+   .. deprecated:: 3.5
+      Setting :attr:`~Morsel.key` directly has been deprecated in
+      favour of using :func:`~Morsel.set`
 
 
 .. method:: Morsel.set(key, value, coded_value)
