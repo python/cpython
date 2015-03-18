@@ -53,7 +53,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *cell;
     PyObject *cls = NULL;
     Py_ssize_t nargs;
-    int isclass;
+    int isclass = 0;   /* initialize to prevent gcc warning */
 
     assert(args != NULL);
     if (!PyTuple_Check(args)) {
