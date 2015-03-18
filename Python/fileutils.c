@@ -957,7 +957,7 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 
    The file descriptor is created non-inheritable.
 
-   The GIL must be held. Use _Py_open_noraise() if the GIL cannot be held. */
+   The GIL must be held. */
 int
 _Py_open(const char *pathname, int flags)
 {
@@ -977,8 +977,9 @@ _Py_open_noraise(const char *pathname, int flags)
 }
 
 /* Open a file. Use _wfopen() on Windows, encode the path to the locale
-   encoding and use fopen() otherwise. The file descriptor is created
-   non-inheritable. */
+   encoding and use fopen() otherwise.
+
+   The file descriptor is created non-inheritable). */
 FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
@@ -1009,7 +1010,9 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     return f;
 }
 
-/* Wrapper to fopen(). The file descriptor is created non-inheritable. */
+/* Wrapper to fopen().
+
+   The file descriptor is created non-inheritable). */
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
@@ -1024,11 +1027,14 @@ _Py_fopen(const char *pathname, const char *mode)
 }
 
 /* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
-   encoding and call fopen() otherwise. The file descriptor is created
-   non-inheritable.
+   encoding and call fopen() otherwise.
 
-   Return the new file object on success, or NULL if the file cannot be open or
-   (if PyErr_Occurred()) on unicode error. */
+   Return the new file object on success. Raise an exception and return NULL
+   on error.
+
+   The file descriptor is created non-inheritable.
+
+   The GIL must be held. */
 FILE*
 _Py_fopen_obj(PyObject *path, const char *mode)
 {
@@ -1037,6 +1043,8 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
+
+    assert(PyGILState_Check());
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError,
@@ -1049,20 +1057,36 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         return NULL;
 
     usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
-    if (usize == 0)
+    if (usize == 0) {
+        PyErr_SetFromWindowsErr(0);
         return NULL;
+    }
 
+    Py_BEGIN_ALLOW_THREADS
     f = _wfopen(wpath, wmode);
+    Py_END_ALLOW_THREADS
 #else
     PyObject *bytes;
+    char *path_bytes;
+
+    assert(PyGILState_Check());
+
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
-    f = fopen(PyBytes_AS_STRING(bytes), mode);
+    path_bytes = PyBytes_AS_STRING(bytes);
+
+    Py_BEGIN_ALLOW_THREADS
+    f = fopen(path_bytes, mode);
+    Py_END_ALLOW_THREADS
+
     Py_DECREF(bytes);
 #endif
-    if (f == NULL)
+    if (f == NULL) {
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
         return NULL;
-    if (make_non_inheritable(fileno(f)) < 0) {
+    }
+
+    if (set_inheritable(fileno(f), 0, 1, NULL) < 0) {
         fclose(f);
         return NULL;
     }
