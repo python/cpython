@@ -378,6 +378,7 @@ class StreamReader:
             else:
                 self._paused = True
 
+    @coroutine
     def _wait_for_data(self, func_name):
         """Wait until feed_data() or feed_eof() is called."""
         # StreamReader uses a future to link the protocol feed_data() method
