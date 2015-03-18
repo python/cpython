@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import types
+import pickle
 import builtins
 from test import support
 
@@ -216,6 +217,10 @@ class TestDiscovery(unittest.TestCase):
         with self.assertRaises(ImportError):
             test.test_this_does_not_exist()
 
+        # Check picklability
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pickle.loads(pickle.dumps(test, proto))
+
     def test_discover_with_module_that_raises_SkipTest_on_import(self):
         loader = unittest.TestLoader()
 
@@ -231,6 +236,10 @@ class TestDiscovery(unittest.TestCase):
         result = unittest.TestResult()
         suite.run(result)
         self.assertEqual(len(result.skipped), 1)
+
+        # Check picklability
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pickle.loads(pickle.dumps(suite, proto))
 
     def test_command_line_handling_parseArgs(self):
         program = TestableTestProgram()
