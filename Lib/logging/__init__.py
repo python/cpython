@@ -1734,8 +1734,8 @@ def basicConfig(**kwargs):
                                      "specified together with 'handlers'")
             if handlers is None:
                 filename = kwargs.pop("filename", None)
+                mode = kwargs.pop("filemode", 'a')
                 if filename:
-                    mode = kwargs.pop("filemode", 'a')
                     h = FileHandler(filename, mode)
                 else:
                     stream = kwargs.pop("stream", None)

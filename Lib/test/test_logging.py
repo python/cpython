@@ -3589,6 +3589,10 @@ class BasicConfigTest(unittest.TestCase):
                                                      handlers=handlers)
         assertRaises(ValueError, logging.basicConfig, stream=stream,
                                                      handlers=handlers)
+        # Issue 23207: test for invalid kwargs
+        assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
+        # Should pop both filename and filemode even if filename is None
+        logging.basicConfig(filename=None, filemode='a')
 
     def test_handlers(self):
         handlers = [
