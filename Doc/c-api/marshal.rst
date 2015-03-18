@@ -53,6 +53,8 @@ written using these routines?
    for reading.  Only a 32-bit value can be read in using this function,
    regardless of the native size of :c:type:`long`.
 
+   On error, raise an exception and return ``-1``.
+
 
 .. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
 
@@ -60,11 +62,15 @@ written using these routines?
    for reading.  Only a 16-bit value can be read in using this function,
    regardless of the native size of :c:type:`short`.
 
+   On error, raise an exception and return ``-1``.
+
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
 
    Return a Python object from the data stream in a :c:type:`FILE\*` opened for
-   reading.  On error, sets the appropriate exception (:exc:`EOFError` or
+   reading.
+
+   On error, sets the appropriate exception (:exc:`EOFError` or
    :exc:`TypeError`) and returns *NULL*.
 
 
@@ -76,14 +82,17 @@ written using these routines?
    aggressively load file data into memory so that the de-serialization can
    operate from data in memory rather than reading a byte at a time from the
    file.  Only use these variant if you are certain that you won't be reading
-   anything else from the file.  On error, sets the appropriate exception
-   (:exc:`EOFError` or :exc:`TypeError`) and returns *NULL*.
+   anything else from the file.
+
+   On error, sets the appropriate exception (:exc:`EOFError` or
+   :exc:`TypeError`) and returns *NULL*.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromString(char *string, Py_ssize_t len)
 
    Return a Python object from the data stream in a character buffer
-   containing *len* bytes pointed to by *string*.  On error, sets the
-   appropriate exception (:exc:`EOFError` or :exc:`TypeError`) and returns
-   *NULL*.
+   containing *len* bytes pointed to by *string*.
+
+   On error, sets the appropriate exception (:exc:`EOFError` or
+   :exc:`TypeError`) and returns *NULL*.
 
