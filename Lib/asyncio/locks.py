@@ -162,6 +162,7 @@ class Lock:
         # always raises; that's how the with-statement works.
         pass
 
+    @coroutine
     def __iter__(self):
         # This is not a coroutine.  It is meant to enable the idiom:
         #
@@ -362,6 +363,7 @@ class Condition:
     def __exit__(self, *args):
         pass
 
+    @coroutine
     def __iter__(self):
         # See comment in Lock.__iter__().
         yield from self.acquire()
@@ -446,6 +448,7 @@ class Semaphore:
     def __exit__(self, *args):
         pass
 
+    @coroutine
     def __iter__(self):
         # See comment in Lock.__iter__().
         yield from self.acquire()
