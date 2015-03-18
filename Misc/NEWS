@@ -18,6 +18,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #22181: On Linux, os.urandom() now uses the new getrandom() syscall if
+  available, syscall introduced in the Linux kernel 3.17. It is more reliable
+  and more secure, because it avoids the need of a file descriptor and waits
+  until the kernel has enough entropy.
+
 - Issue #2211: Updated the implementation of the http.cookies.Morsel class.
   Setting attributes key, value and coded_value directly now is deprecated.
   update() and setdefault() now transform and check keys.  Comparing for
