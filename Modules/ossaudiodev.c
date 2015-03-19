@@ -400,7 +400,6 @@ static PyObject *
 oss_read(oss_audio_t *self, PyObject *args)
 {
     int size, count;
-    char *cp;
     PyObject *rv;
 
     if (!_is_fd_valid(self->fd))
@@ -408,20 +407,17 @@ oss_read(oss_audio_t *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "i:read", &size))
         return NULL;
+
     rv = PyBytes_FromStringAndSize(NULL, size);
     if (rv == NULL)
         return NULL;
-    cp = PyBytes_AS_STRING(rv);
 
-    Py_BEGIN_ALLOW_THREADS
-    count = read(self->fd, cp, size);
-    Py_END_ALLOW_THREADS
-
-    if (count < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+    count = _Py_read(self->fd, PyBytes_AS_STRING(rv), size);
+    if (count == -1) {
         Py_DECREF(rv);
         return NULL;
     }
+
     self->icount += count;
     _PyBytes_Resize(&rv, count);
     return rv;
@@ -440,15 +436,11 @@ oss_write(oss_audio_t *self, PyObject *args)
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    rv = write(self->fd, cp, size);
-    Py_END_ALLOW_THREADS
+    rv = _Py_write(self->fd, cp, size);
+    if (rv == -1)
+        return NULL;
 
-    if (rv == -1) {
-        return PyErr_SetFromErrno(PyExc_IOError);
-    } else {
-        self->ocount += rv;
-    }
+    self->ocount += rv;
     return PyLong_FromLong(rv);
 }
 
@@ -486,24 +478,26 @@ oss_writeall(oss_audio_t *self, PyObject *args)
         Py_BEGIN_ALLOW_THREADS
         select_rv = select(self->fd+1, NULL, &write_set_fds, NULL, NULL);
         Py_END_ALLOW_THREADS
-        assert(select_rv != 0);         /* no timeout, can't expire */
+
+        assert(select_rv != 0);   /* no timeout, can't expire */
         if (select_rv == -1)
             return PyErr_SetFromErrno(PyExc_IOError);
 
-        Py_BEGIN_ALLOW_THREADS
-        rv = write(self->fd, cp, size);
-        Py_END_ALLOW_THREADS
+        rv = _Py_write(self->fd, cp, size);
         if (rv == -1) {
-            if (errno == EAGAIN) {      /* buffer is full, try again */
-                errno = 0;
+            /* buffer is full, try again */
+            if (errno == EAGAIN) {
+                PyErr_Clear();
                 continue;
-            } else                      /* it's a real error */
-                return PyErr_SetFromErrno(PyExc_IOError);
-        } else {                        /* wrote rv bytes */
-            self->ocount += rv;
-            size -= rv;
-            cp += rv;
+            }
+            /* it's a real error */
+            return NULL;
         }
+
+        /* wrote rv bytes */
+        self->ocount += rv;
+        size -= rv;
+        cp += rv;
     }
     Py_INCREF(Py_None);
     return Py_None;
