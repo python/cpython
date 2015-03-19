@@ -126,10 +126,10 @@ from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
 
 from _ssl import _OPENSSL_API_VERSION
 
-_SSLMethod = _IntEnum('_SSLMethod',
-                      {name: value for name, value in vars(_ssl).items()
-                       if name.startswith('PROTOCOL_')})
-globals().update(_SSLMethod.__members__)
+_IntEnum._convert(
+        '_SSLMethod', __name__,
+        lambda name: name.startswith('PROTOCOL_'),
+        source=_ssl)
 
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 

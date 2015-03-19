@@ -5,27 +5,21 @@ from enum import IntEnum as _IntEnum
 
 _globals = globals()
 
-Signals = _IntEnum(
-    'Signals',
-    {name: value for name, value in _globals.items()
-     if name.isupper()
-        and (name.startswith('SIG') and not name.startswith('SIG_'))
-        or name.startswith('CTRL_')})
+_IntEnum._convert(
+        'Signals', __name__,
+        lambda name:
+            name.isupper()
+            and (name.startswith('SIG') and not name.startswith('SIG_'))
+            or name.startswith('CTRL_'))
 
-class Handlers(_IntEnum):
-    SIG_DFL = _signal.SIG_DFL
-    SIG_IGN = _signal.SIG_IGN
-
-_globals.update(Signals.__members__)
-_globals.update(Handlers.__members__)
+_IntEnum._convert(
+        'Handlers', __name__,
+        lambda name: name in ('SIG_DFL', 'SIG_IGN'))
 
 if 'pthread_sigmask' in _globals:
-    class Sigmasks(_IntEnum):
-        SIG_BLOCK = _signal.SIG_BLOCK
-        SIG_UNBLOCK = _signal.SIG_UNBLOCK
-        SIG_SETMASK = _signal.SIG_SETMASK
-
-    _globals.update(Sigmasks.__members__)
+    _IntEnum._convert(
+            'Sigmasks', __name__,
+            lambda name: name in ('SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'))
 
 
 def _int_to_enum(value, enum_klass):
