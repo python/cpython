@@ -383,26 +383,15 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    if (!PyArg_ParseTuple(args, "s", &c)) {
+    if (!PyArg_ParseTuple(args, "s", &c))
         return NULL;
-    }
-    n = strlen(c);
 
-    Py_BEGIN_ALLOW_THREADS
-    errno = 0;
-#ifdef MS_WINDOWS
-    if (n > INT_MAX)
-        n = INT_MAX;
-    n = write(self->fd, c, (int)n);
-#else
-    n = write(self->fd, c, n);
-#endif
-    Py_END_ALLOW_THREADS
-
-    if (n < 0) {
-        if (errno == EAGAIN)
+    n = _Py_write(self->fd, c, strlen(c));
+    if (n == -1) {
+        if (errno == EAGAIN) {
+            PyErr_Clear();
             Py_RETURN_NONE;
-        PyErr_SetFromErrno(PyExc_IOError);
+        }
         return NULL;
     }
 
