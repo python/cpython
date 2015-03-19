@@ -262,29 +262,21 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
         }
     }
 
-    Py_BEGIN_ALLOW_THREADS
     do {
-        do {
-            n = read(fd, buffer, (size_t)size);
-        } while (n < 0 && errno == EINTR);
-        if (n <= 0)
-            break;
-        buffer += n;
-        size -= (Py_ssize_t)n;
-    } while (0 < size);
-    Py_END_ALLOW_THREADS
-
-    if (n <= 0)
-    {
-        /* stop on error or if read(size) returned 0 */
-        if (n < 0)
-            PyErr_SetFromErrno(PyExc_OSError);
-        else
+        n = _Py_read(fd, buffer, (size_t)size);
+        if (n == -1)
+            return -1;
+        if (n == 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "Failed to read %zi bytes from /dev/urandom",
-                         size);
-        return -1;
-    }
+                    "Failed to read %zi bytes from /dev/urandom",
+                    size);
+            return -1;
+        }
+
+        buffer += n;
+        size -= n;
+    } while (0 < size);
+
     return 0;
 }
 
