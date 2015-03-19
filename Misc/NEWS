@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23646: If time.sleep() is interrupted by a signal, the sleep is now
+  retried with the recomputed delay, except if the signal handler raises an
+  exception (PEP 475).
+
 - Issue #23136: _strptime now uniformly handles all days in week 0, including
   Dec 30 of previous year.  Based on patch by Jim Carroll.
 
