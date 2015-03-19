@@ -707,6 +707,19 @@ class TestNamedTemporaryFile(BaseTestCase):
             # No reference cycle was created.
             self.assertIsNone(wr())
 
+    def test_iter(self):
+        # Issue #23700: getting iterator from a temporary file should keep
+        # it alive as long as it's being iterated over
+        lines = [b'spam\n', b'eggs\n', b'beans\n']
+        def make_file():
+            f = tempfile.NamedTemporaryFile(mode='w+b')
+            f.write(b''.join(lines))
+            f.seek(0)
+            return f
+        for i, l in enumerate(make_file()):
+            self.assertEqual(l, lines[i])
+        self.assertEqual(i, len(lines) - 1)
+
     def test_creates_named(self):
         # NamedTemporaryFile creates files with names
         f = tempfile.NamedTemporaryFile()
