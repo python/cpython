@@ -718,14 +718,10 @@ static int devpoll_flush(devpollObject *self)
     size = sizeof(struct pollfd)*self->n_fds;
     self->n_fds = 0;
 
-    Py_BEGIN_ALLOW_THREADS
-    n = write(self->fd_devpoll, self->fds, size);
-    Py_END_ALLOW_THREADS
-
-    if (n == -1 ) {
-        PyErr_SetFromErrno(PyExc_IOError);
+    n = _Py_write(self->fd_devpoll, self->fds, size);
+    if (n == -1)
         return -1;
-    }
+
     if (n < size) {
         /*
         ** Data writed to /dev/poll is a binary data structure. It is not
