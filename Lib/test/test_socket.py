@@ -1377,6 +1377,11 @@ class GeneralModuleTests(unittest.TestCase):
         with sock:
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
                 self.assertRaises(TypeError, pickle.dumps, sock, protocol)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            family = pickle.loads(pickle.dumps(socket.AF_INET, protocol))
+            self.assertEqual(family, socket.AF_INET)
+            type = pickle.loads(pickle.dumps(socket.SOCK_STREAM, protocol))
+            self.assertEqual(type, socket.SOCK_STREAM)
 
     def test_listen_backlog(self):
         for backlog in 0, -1:

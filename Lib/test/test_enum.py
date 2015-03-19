@@ -581,6 +581,14 @@ class TestEnum(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, self.NestedEnum.twigs,
                 protocol=(4, HIGHEST_PROTOCOL))
 
+    def test_pickle_by_name(self):
+        class ReplaceGlobalInt(IntEnum):
+            ONE = 1
+            TWO = 2
+        ReplaceGlobalInt.__reduce_ex__ = enum._reduce_ex_by_name
+        for proto in range(HIGHEST_PROTOCOL):
+            self.assertEqual(ReplaceGlobalInt.TWO.__reduce_ex__(proto), 'TWO')
+
     def test_exploding_pickle(self):
         BadPickle = Enum(
                 'BadPickle', 'dill sweet bread-n-butter', module=__name__)
