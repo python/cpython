@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23136: _strptime now uniformly handles all days in week 0, including
+  Jan 30 of previous year.  Based on patch by Jim Carroll.
+
 - Issue #23138: Fixed parsing cookies with absent keys or values in cookiejar.
   Patch by Demian Brecht.
 
