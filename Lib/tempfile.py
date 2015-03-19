@@ -426,7 +426,9 @@ class _TemporaryFileWrapper:
 
     # iter() doesn't use __getattr__ to find the __iter__ method
     def __iter__(self):
-        return iter(self.file)
+        # don't return iter(self.file), but yield from it to avoid closing
+        # file as long as it's being used as iterator, see issue #23000
+        yield from iter(self.file)
 
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
