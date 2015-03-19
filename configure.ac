@@ -4972,6 +4972,30 @@ if test "$have_dirent_d_type" = yes; then
               [Define to 1 if the dirent structure has a d_type field])
 fi
 
+# check if the Linux getrandom() syscall is available
+AC_MSG_CHECKING(for the Linux getrandom() syscall)
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <sys/syscall.h>
+
+    int main() {
+        const int flags = 0;
+        char buffer[1];
+        int n;
+        /* ignore the result, Python checks for ENOSYS at runtime */
+        (void)syscall(SYS_getrandom, buffer, sizeof(buffer), flags);
+        return 0;
+    }
+  ]])
+],[have_getrandom_syscall=yes],[have_getrandom_syscall=no])
+AC_MSG_RESULT($have_getrandom_syscall)
+
+if test "$have_getrandom_syscall" = yes; then
+    AC_DEFINE(HAVE_GETRANDOM_SYSCALL, 1,
+              [Define to 1 if the Linux getrandom() syscall is available])
+fi
+
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
