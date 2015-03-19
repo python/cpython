@@ -1,17 +1,17 @@
 # HG changeset patch
-# Parent  973741cf5a045b2ba895094d98b2c3649dc00b61
+# Parent  25a9af415e8c3faf591c360d5f0e361d049b2b43
 # openssl_sdk_makedepend.patch
 #
-# 	using openssl 1.0.2
+# 	using openssl 1.0.2a
 #
 # - support building with an OS X SDK
 # - allow "make depend" to use compilers with names other than "gcc"
 
 diff Configure
 
-diff -r 973741cf5a04 Configure
---- a/Configure	Thu Mar 05 13:45:59 2015 -0800
-+++ b/Configure	Thu Mar 05 14:00:20 2015 -0800
+diff --git a/Configure b/Configure
+--- a/Configure
++++ b/Configure
 @@ -617,12 +617,12 @@
  
  ##### MacOS X (a.k.a. Rhapsody or Darwin) setup
@@ -40,9 +40,9 @@ diff -r 973741cf5a04 Configure
  		}
  	s/^CFLAG=.*$/CFLAG= $cflags/;
  	s/^DEPFLAG=.*$/DEPFLAG=$depflags/;
-diff -r 973741cf5a04 util/domd
---- a/util/domd	Thu Mar 05 13:45:59 2015 -0800
-+++ b/util/domd	Thu Mar 05 14:00:20 2015 -0800
+diff --git a/util/domd b/util/domd
+--- a/util/domd
++++ b/util/domd
 @@ -14,7 +14,7 @@
  cp Makefile Makefile.save
  # fake the presence of Kerberos
