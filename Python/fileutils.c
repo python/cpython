@@ -1120,6 +1120,155 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     return f;
 }
 
+/* Read count bytes from fd into buf.
+ *
+ * On success, return the number of read bytes, it can be lower than count.
+ * If the current file offset is at or past the end of file, no bytes are read,
+ * and read() returns zero.
+ *
+ * On error, raise an exception, set errno and return -1.
+ *
+ * When interrupted by a signal (read() fails with EINTR), retry the syscall.
+ * If the Python signal handler raises an exception, the function returns -1
+ * (the syscall is not retried).
+ *
+ * The GIL must be held. */
+Py_ssize_t
+_Py_read(int fd, void *buf, size_t count)
+{
+    Py_ssize_t n;
+    int async_err = 0;
+
+    /* _Py_read() must not be called with an exception set, otherwise the
+     * caller may think that read() was interrupted by a signal and the signal
+     * handler raised an exception. */
+    assert(!PyErr_Occurred());
+
+    if (!_PyVerify_fd(fd)) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        assert(errno == EBADF);
+        return -1;
+    }
+
+#ifdef MS_WINDOWS
+    if (count > INT_MAX) {
+        /* On Windows, the count parameter of read() is an int */
+        count = INT_MAX;
+    }
+#else
+    if (count > PY_SSIZE_T_MAX) {
+        /* if count is greater than PY_SSIZE_T_MAX,
+         * read() result is undefined */
+        count = PY_SSIZE_T_MAX;
+    }
+#endif
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
+#ifdef MS_WINDOWS
+        n = read(fd, buf, (int)count);
+#else
+        n = read(fd, buf, count);
+#endif
+        Py_END_ALLOW_THREADS
+    } while (n < 0 && errno == EINTR &&
+            !(async_err = PyErr_CheckSignals()));
+
+    if (async_err) {
+        /* read() was interrupted by a signal (failed with EINTR)
+         * and the Python signal handler raised an exception */
+        assert(errno == EINTR && PyErr_Occurred());
+        return -1;
+    }
+    if (n < 0) {
+#ifndef NDEBUG
+        int err = errno;
+#endif
+        PyErr_SetFromErrno(PyExc_OSError);
+        assert(errno == err);
+        return -1;
+    }
+
+    return n;
+}
+
+/* Write count bytes of buf into fd.
+ *
+ * -On success, return the number of written bytes, it can be lower than count
+ *   including 0
+ * - On error, raise an exception, set errno and return -1.
+ *
+ * When interrupted by a signal (write() fails with EINTR), retry the syscall.
+ * If the Python signal handler raises an exception, the function returns -1
+ * (the syscall is not retried).
+ *
+ * The GIL must be held. */
+Py_ssize_t
+_Py_write(int fd, const void *buf, size_t count)
+{
+    Py_ssize_t n;
+    int async_err = 0;
+
+    /* _Py_write() must not be called with an exception set, otherwise the
+     * caller may think that write() was interrupted by a signal and the signal
+     * handler raised an exception. */
+    assert(!PyErr_Occurred());
+
+    if (!_PyVerify_fd(fd)) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        assert(errno == EBADF);
+        return -1;
+    }
+
+#ifdef MS_WINDOWS
+    if (count > 32767 && isatty(fd)) {
+        /* Issue #11395: the Windows console returns an error (12: not
+           enough space error) on writing into stdout if stdout mode is
+           binary and the length is greater than 66,000 bytes (or less,
+           depending on heap usage). */
+        count = 32767;
+    }
+    else if (count > INT_MAX)
+        count = INT_MAX;
+#else
+    if (count > PY_SSIZE_T_MAX) {
+        /* write() should truncate count to PY_SSIZE_T_MAX, but it's safer
+         * to do it ourself to have a portable behaviour. */
+        count = PY_SSIZE_T_MAX;
+    }
+#endif
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
+#ifdef MS_WINDOWS
+        n = write(fd, buf, (int)count);
+#else
+        n = write(fd, buf, count);
+#endif
+        Py_END_ALLOW_THREADS
+    } while (n < 0 && errno == EINTR &&
+            !(async_err = PyErr_CheckSignals()));
+
+    if (async_err) {
+        /* write() was interrupted by a signal (failed with EINTR)
+         * and the Python signal handler raised an exception */
+        assert(errno == EINTR && PyErr_Occurred());
+        return -1;
+    }
+    if (n < 0) {
+#ifndef NDEBUG
+        int err = errno;
+#endif
+        PyErr_SetFromErrno(PyExc_OSError);
+        assert(errno == err);
+        return -1;
+    }
+
+    return n;
+}
+
 #ifdef HAVE_READLINK
 
 /* Read value of symbolic link. Encode the path to the locale encoding, decode
