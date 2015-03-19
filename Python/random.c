@@ -6,11 +6,8 @@
 #  ifdef HAVE_SYS_STAT_H
 #    include <sys/stat.h>
 #  endif
-#  ifdef HAVE_SYS_SYSCALL_H
+#  ifdef HAVE_GETRANDOM_SYSCALL
 #    include <sys/syscall.h>
-#    if defined(__linux__) && defined(SYS_getrandom)
-#      define HAVE_GETRANDOM
-#    endif
 #  endif
 #endif
 
@@ -102,7 +99,7 @@ py_getentropy(unsigned char *buffer, Py_ssize_t size, int fatal)
 
 #else   /* !HAVE_GETENTROPY */
 
-#ifdef HAVE_GETRANDOM
+#ifdef HAVE_GETRANDOM_SYSCALL
 static int
 py_getrandom(void *buffer, Py_ssize_t size, int raise)
 {
@@ -173,7 +170,7 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
     if (fd < 0)
         Py_FatalError("Failed to open /dev/urandom");
 
-#ifdef HAVE_GETRANDOM
+#ifdef HAVE_GETRANDOM_SYSCALL
     if (py_getrandom(buffer, size, 0) == 1)
         return;
     /* getrandom() is not supported by the running kernel, fall back
@@ -205,14 +202,14 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
     int fd;
     Py_ssize_t n;
     struct _Py_stat_struct st;
-#ifdef HAVE_GETRANDOM
+#ifdef HAVE_GETRANDOM_SYSCALL
     int res;
 #endif
 
     if (size <= 0)
         return 0;
 
-#ifdef HAVE_GETRANDOM
+#ifdef HAVE_GETRANDOM_SYSCALL
     res = py_getrandom(buffer, size, 1);
     if (res < 0)
         return -1;

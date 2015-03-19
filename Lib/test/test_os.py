@@ -1199,9 +1199,12 @@ class URandomTests(unittest.TestCase):
 
 
 HAVE_GETENTROPY = (sysconfig.get_config_var('HAVE_GETENTROPY') == 1)
+HAVE_GETRANDOM = (sysconfig.get_config_var('HAVE_GETRANDOM_SYSCALL') == 1)
 
 @unittest.skipIf(HAVE_GETENTROPY,
                  "getentropy() does not use a file descriptor")
+@unittest.skipIf(HAVE_GETRANDOM,
+                 "getrandom() does not use a file descriptor")
 class URandomFDTests(unittest.TestCase):
     @unittest.skipUnless(resource, "test requires the resource module")
     def test_urandom_failure(self):
