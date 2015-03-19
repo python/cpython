@@ -166,16 +166,16 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
 
     assert (0 < size);
 
-    fd = _Py_open_noraise("/dev/urandom", O_RDONLY);
-    if (fd < 0)
-        Py_FatalError("Failed to open /dev/urandom");
-
 #ifdef HAVE_GETRANDOM_SYSCALL
     if (py_getrandom(buffer, size, 0) == 1)
         return;
     /* getrandom() is not supported by the running kernel, fall back
      * on reading /dev/urandom */
 #endif
+
+    fd = _Py_open_noraise("/dev/urandom", O_RDONLY);
+    if (fd < 0)
+        Py_FatalError("Failed to open /dev/urandom");
 
     while (0 < size)
     {
