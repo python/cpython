@@ -101,7 +101,7 @@ Build
 - Issue #23445: pydebug builds now use "gcc -Og" where possible, to make
   the resulting executable faster.
 
-- Issue #23593: Update OS X 10.5 installer build to use OpenSSL 1.0.2.
+- Issue #23686: Update OS X 10.5 installer build to use OpenSSL 1.0.2a.
 
 
 What's New in Python 3.4.3?
