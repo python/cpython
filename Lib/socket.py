@@ -69,16 +69,16 @@ __all__.extend(os._get_exports_list(_socket))
 # Note that _socket only knows about the integer values. The public interface
 # in this module understands the enums and translates them back from integers
 # where needed (e.g. .family property of a socket object).
-AddressFamily = IntEnum('AddressFamily',
-                        {name: value for name, value in globals().items()
-                         if name.isupper() and name.startswith('AF_')})
-globals().update(AddressFamily.__members__)
 
-SocketKind = IntEnum('SocketKind',
-                     {name: value for name, value in globals().items()
-                      if name.isupper() and name.startswith('SOCK_')})
-globals().update(SocketKind.__members__)
+IntEnum._convert(
+        'AddressFamily',
+        __name__,
+        lambda C: C.isupper() and C.startswith('AF_'))
 
+IntEnum._convert(
+        'SocketKind',
+        __name__,
+        lambda C: C.isupper() and C.startswith('SOCK_'))
 
 _LOCALHOST    = '127.0.0.1'
 _LOCALHOST_V6 = '::1'
