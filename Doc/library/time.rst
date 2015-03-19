@@ -350,6 +350,11 @@ The module defines the following functions and data items:
    requested by an arbitrary amount because of the scheduling of other activity
    in the system.
 
+   .. versionchanged:: 3.5
+      The function now sleeps at least *secs* even if the sleep is interrupted
+      by a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale).
+
 
 .. function:: strftime(format[, t])
 
