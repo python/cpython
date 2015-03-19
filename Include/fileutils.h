@@ -80,6 +80,16 @@ PyAPI_FUNC(FILE*) _Py_fopen_obj(
     PyObject *path,
     const char *mode);
 
+PyAPI_FUNC(Py_ssize_t) _Py_read(
+    int fd,
+    void *buf,
+    size_t count);
+
+PyAPI_FUNC(Py_ssize_t) _Py_write(
+    int fd,
+    const void *buf,
+    size_t count);
+
 #ifdef HAVE_READLINK
 PyAPI_FUNC(int) _Py_wreadlink(
     const wchar_t *path,
