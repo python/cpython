@@ -192,10 +192,10 @@ PyTypeObject _PyManagedBuffer_Type = {
 #define VIEW_ADDR(mv) (&((PyMemoryViewObject *)mv)->view)
 
 /* Check for the presence of suboffsets in the first dimension. */
-#define HAVE_PTR(suboffsets) (suboffsets && suboffsets[0] >= 0)
+#define HAVE_PTR(suboffsets, dim) (suboffsets && suboffsets[dim] >= 0)
 /* Adjust ptr if suboffsets are present. */
-#define ADJUST_PTR(ptr, suboffsets) \
-    (HAVE_PTR(suboffsets) ? *((char**)ptr) + suboffsets[0] : ptr)
+#define ADJUST_PTR(ptr, suboffsets, dim) \
+    (HAVE_PTR(suboffsets, dim) ? *((char**)ptr) + suboffsets[dim] : ptr)
 
 /* Memoryview buffer properties */
 #define MV_C_CONTIGUOUS(flags) (flags&(_Py_MEMORYVIEW_SCALAR|_Py_MEMORYVIEW_C))
@@ -332,11 +332,11 @@ copy_base(const Py_ssize_t *shape, Py_ssize_t itemsize,
         char *p;
         Py_ssize_t i;
         for (i=0, p=mem; i < shape[0]; p+=itemsize, sptr+=sstrides[0], i++) {
-            char *xsptr = ADJUST_PTR(sptr, ssuboffsets);
+            char *xsptr = ADJUST_PTR(sptr, ssuboffsets, 0);
             memcpy(p, xsptr, itemsize);
         }
         for (i=0, p=mem; i < shape[0]; p+=itemsize, dptr+=dstrides[0], i++) {
-            char *xdptr = ADJUST_PTR(dptr, dsuboffsets);
+            char *xdptr = ADJUST_PTR(dptr, dsuboffsets, 0);
             memcpy(xdptr, p, itemsize);
         }
     }
@@ -364,8 +364,8 @@ copy_rec(const Py_ssize_t *shape, Py_ssize_t ndim, Py_ssize_t itemsize,
     }
 
     for (i = 0; i < shape[0]; dptr+=dstrides[0], sptr+=sstrides[0], i++) {
-        char *xdptr = ADJUST_PTR(dptr, dsuboffsets);
-        char *xsptr = ADJUST_PTR(sptr, ssuboffsets);
+        char *xdptr = ADJUST_PTR(dptr, dsuboffsets, 0);
+        char *xsptr = ADJUST_PTR(sptr, ssuboffsets, 0);
 
         copy_rec(shape+1, ndim-1, itemsize,
                  xdptr, dstrides+1, dsuboffsets ? dsuboffsets+1 : NULL,
@@ -2057,7 +2057,7 @@ tolist_base(const char *ptr, const Py_ssize_t *shape,
         return NULL;
 
     for (i = 0; i < shape[0]; ptr+=strides[0], i++) {
-        const char *xptr = ADJUST_PTR(ptr, suboffsets);
+        const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
         item = unpack_single(xptr, fmt);
         if (item == NULL) {
             Py_DECREF(lst);
@@ -2091,7 +2091,7 @@ tolist_rec(const char *ptr, Py_ssize_t ndim, const Py_ssize_t *shape,
         return NULL;
 
     for (i = 0; i < shape[0]; ptr+=strides[0], i++) {
-        const char *xptr = ADJUST_PTR(ptr, suboffsets);
+        const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
         item = tolist_rec(xptr, ndim-1, shape+1,
                           strides+1, suboffsets ? suboffsets+1 : NULL,
                           fmt);
@@ -2171,30 +2171,63 @@ memory_repr(PyMemoryViewObject *self)
 /*                          Indexing and slicing                          */
 /**************************************************************************/
 
-/* Get the pointer to the item at index. */
 static char *
-ptr_from_index(Py_buffer *view, Py_ssize_t index)
+lookup_dimension(Py_buffer *view, char *ptr, int dim, Py_ssize_t index)
 {
-    char *ptr;
-    Py_ssize_t nitems; /* items in the first dimension */
+    Py_ssize_t nitems; /* items in the given dimension */
 
     assert(view->shape);
     assert(view->strides);
 
-    nitems = view->shape[0];
+    nitems = view->shape[dim];
     if (index < 0) {
         index += nitems;
     }
     if (index < 0 || index >= nitems) {
-        PyErr_SetString(PyExc_IndexError, "index out of bounds");
+        PyErr_Format(PyExc_IndexError,
+                     "index out of bounds on dimension %d", dim + 1);
         return NULL;
     }
 
-    ptr = (char *)view->buf;
-    ptr += view->strides[0] * index;
+    ptr += view->strides[dim] * index;
 
-    ptr = ADJUST_PTR(ptr, view->suboffsets);
+    ptr = ADJUST_PTR(ptr, view->suboffsets, dim);
 
+    return ptr;
+}
+
+/* Get the pointer to the item at index. */
+static char *
+ptr_from_index(Py_buffer *view, Py_ssize_t index)
+{
+    char *ptr = (char *)view->buf;
+    return lookup_dimension(view, ptr, 0, index);
+}
+
+/* Get the pointer to the item at tuple. */
+static char *
+ptr_from_tuple(Py_buffer *view, PyObject *tup)
+{
+    char *ptr = (char *)view->buf;
+    Py_ssize_t dim, nindices = PyTuple_GET_SIZE(tup);
+
+    if (nindices > view->ndim) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot index %zd-dimension view with %zd-element tuple",
+                     view->ndim, nindices);
+        return NULL;
+    }
+
+    for (dim = 0; dim < nindices; dim++) {
+        Py_ssize_t index;
+        index = PyNumber_AsSsize_t(PyTuple_GET_ITEM(tup, dim),
+                                   PyExc_IndexError);
+        if (index == -1 && PyErr_Occurred())
+            return NULL;
+        ptr = lookup_dimension(view, ptr, dim, index);
+        if (ptr == NULL)
+            return NULL;
+    }
     return ptr;
 }
 
@@ -2227,6 +2260,32 @@ memory_item(PyMemoryViewObject *self, Py_ssize_t index)
     PyErr_SetString(PyExc_NotImplementedError,
         "multi-dimensional sub-views are not implemented");
     return NULL;
+}
+
+/* Return the item at position *key* (a tuple of indices). */
+static PyObject *
+memory_item_multi(PyMemoryViewObject *self, PyObject *tup)
+{
+    Py_buffer *view = &(self->view);
+    const char *fmt;
+    Py_ssize_t nindices = PyTuple_GET_SIZE(tup);
+    char *ptr;
+
+    CHECK_RELEASED(self);
+
+    fmt = adjust_fmt(view);
+    if (fmt == NULL)
+        return NULL;
+
+    if (nindices < view->ndim) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "sub-views are not implemented");
+        return NULL;
+    }
+    ptr = ptr_from_tuple(view, tup);
+    if (ptr == NULL)
+        return NULL;
+    return unpack_single(ptr, fmt);
 }
 
 Py_LOCAL_INLINE(int)
@@ -2272,6 +2331,22 @@ is_multislice(PyObject *key)
     for (i = 0; i < size; i++) {
         PyObject *x = PyTuple_GET_ITEM(key, i);
         if (!PySlice_Check(x))
+            return 0;
+    }
+    return 1;
+}
+
+static Py_ssize_t
+is_multiindex(PyObject *key)
+{
+    Py_ssize_t size, i;
+
+    if (!PyTuple_Check(key))
+        return 0;
+    size = PyTuple_GET_SIZE(key);
+    for (i = 0; i < size; i++) {
+        PyObject *x = PyTuple_GET_ITEM(key, i);
+        if (!PyIndex_Check(x))
             return 0;
     }
     return 1;
@@ -2332,6 +2407,9 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 
         return (PyObject *)sliced;
     }
+    else if (is_multiindex(key)) {
+        return memory_item_multi(self, key);
+    }
     else if (is_multislice(key)) {
         PyErr_SetString(PyExc_NotImplementedError,
             "multi-dimensional slicing is not implemented");
@@ -2376,14 +2454,15 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
             return -1;
         }
     }
-    if (view->ndim != 1) {
-        PyErr_SetString(PyExc_NotImplementedError,
-            "memoryview assignments are currently restricted to ndim = 1");
-        return -1;
-    }
 
     if (PyIndex_Check(key)) {
-        Py_ssize_t index = PyNumber_AsSsize_t(key, PyExc_IndexError);
+        Py_ssize_t index;
+        if (1 < view->ndim) {
+            PyErr_SetString(PyExc_NotImplementedError,
+                            "sub-views are not implemented");
+            return -1;
+        }
+        index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
             return -1;
         ptr = ptr_from_index(view, index);
@@ -2418,7 +2497,19 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         PyBuffer_Release(&src);
         return ret;
     }
-    else if (PySlice_Check(key) || is_multislice(key)) {
+    if (is_multiindex(key)) {
+        char *ptr;
+        if (PyTuple_GET_SIZE(key) < view->ndim) {
+            PyErr_SetString(PyExc_NotImplementedError,
+                            "sub-views are not implemented");
+            return -1;
+        }
+        ptr = ptr_from_tuple(view, key);
+        if (ptr == NULL)
+            return -1;
+        return pack_single(ptr, value, fmt);
+    }
+    if (PySlice_Check(key) || is_multislice(key)) {
         /* Call memory_subscript() to produce a sliced lvalue, then copy
            rvalue into lvalue. This is already implemented in _testbuffer.c. */
         PyErr_SetString(PyExc_NotImplementedError,
@@ -2591,8 +2682,8 @@ cmp_base(const char *p, const char *q, const Py_ssize_t *shape,
     int equal;
 
     for (i = 0; i < shape[0]; p+=pstrides[0], q+=qstrides[0], i++) {
-        const char *xp = ADJUST_PTR(p, psuboffsets);
-        const char *xq = ADJUST_PTR(q, qsuboffsets);
+        const char *xp = ADJUST_PTR(p, psuboffsets, 0);
+        const char *xq = ADJUST_PTR(q, qsuboffsets, 0);
         equal = unpack_cmp(xp, xq, fmt, unpack_p, unpack_q);
         if (equal <= 0)
             return equal;
@@ -2626,8 +2717,8 @@ cmp_rec(const char *p, const char *q,
     }
 
     for (i = 0; i < shape[0]; p+=pstrides[0], q+=qstrides[0], i++) {
-        const char *xp = ADJUST_PTR(p, psuboffsets);
-        const char *xq = ADJUST_PTR(q, qsuboffsets);
+        const char *xp = ADJUST_PTR(p, psuboffsets, 0);
+        const char *xq = ADJUST_PTR(q, qsuboffsets, 0);
         equal = cmp_rec(xp, xq, ndim-1, shape+1,
                         pstrides+1, psuboffsets ? psuboffsets+1 : NULL,
                         qstrides+1, qsuboffsets ? qsuboffsets+1 : NULL,

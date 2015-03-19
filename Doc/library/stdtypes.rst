@@ -3282,10 +3282,8 @@ copying.
    the view. The :class:`~memoryview.itemsize` attribute will give you the
    number of bytes in a single element.
 
-   A :class:`memoryview` supports slicing to expose its data. If
-   :class:`~memoryview.format` is one of the native format specifiers
-   from the :mod:`struct` module, indexing will return a single element
-   with the correct type. Full slicing will result in a subview::
+   A :class:`memoryview` supports slicing and indexing to expose its data.
+   One-dimensional slicing will result in a subview::
 
     >>> v = memoryview(b'abcefg')
     >>> v[1]
@@ -3297,25 +3295,29 @@ copying.
     >>> bytes(v[1:4])
     b'bce'
 
-   Other native formats::
+   If :class:`~memoryview.format` is one of the native format specifiers
+   from the :mod:`struct` module, indexing with an integer or a tuple of
+   integers is also supported and returns a single *element* with
+   the correct type.  One-dimensional memoryviews can be indexed
+   with an integer or a one-integer tuple.  Multi-dimensional memoryviews
+   can be indexed with tuples of exactly *ndim* integers where *ndim* is
+   the number of dimensions.  Zero-dimensional memoryviews can be indexed
+   with the empty tuple.
+
+   Here is an example with a non-byte format::
 
       >>> import array
       >>> a = array.array('l', [-11111111, 22222222, -33333333, 44444444])
-      >>> a[0]
+      >>> m = memoryview(a)
+      >>> m[0]
       -11111111
-      >>> a[-1]
+      >>> m[-1]
       44444444
-      >>> a[2:3].tolist()
-      [-33333333]
-      >>> a[::2].tolist()
+      >>> m[::2].tolist()
       [-11111111, -33333333]
-      >>> a[::-1].tolist()
-      [44444444, -33333333, 22222222, -11111111]
 
-   .. versionadded:: 3.3
-
-   If the underlying object is writable, the memoryview supports slice
-   assignment. Resizing is not allowed::
+   If the underlying object is writable, the memoryview supports
+   one-dimensional slice assignment. Resizing is not allowed::
 
       >>> data = bytearray(b'abcefg')
       >>> v = memoryview(data)
@@ -3348,11 +3350,15 @@ copying.
       True
 
    .. versionchanged:: 3.3
+      One-dimensional memoryviews can now be sliced.
       One-dimensional memoryviews with formats 'B', 'b' or 'c' are now hashable.
 
    .. versionchanged:: 3.4
       memoryview is now registered automatically with
       :class:`collections.abc.Sequence`
+
+   .. versionchanged:: 3.5
+      memoryviews can now be indexed with tuple of integers.
 
    :class:`memoryview` has several methods:
 
