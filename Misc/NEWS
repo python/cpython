@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23700: Iterator of NamedTemporaryFile now keeps a reference to
+  NamedTemporaryFile instance.  Patch by Bohuslav Kabrda.
+
 - Issue #22903: The fake test case created by unittest.loader when it fails
   importing a test module is now picklable.
 
