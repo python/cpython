@@ -252,8 +252,26 @@ class SocketEINTRTest(EINTRBaseTest):
                         lambda path: os.close(os.open(path, os.O_WRONLY)))
 
 
+@unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
+class TimeEINTRTest(EINTRBaseTest):
+    """ EINTR tests for the time module. """
+
+    def test_sleep(self):
+        t0 = time.monotonic()
+        # time.sleep() may retry when interrupted by a signal
+        time.sleep(2)
+        signal.alarm(0)
+        dt = time.monotonic() - t0
+        # Tolerate a difference 100 ms: on Windows, time.monotonic() has
+        # a resolution of 15.6 ms or greater
+        self.assertGreaterEqual(dt, 1.9)
+
+
 def test_main():
-    support.run_unittest(OSEINTRTest, SocketEINTRTest)
+    support.run_unittest(
+        OSEINTRTest,
+        SocketEINTRTest,
+        TimeEINTRTest)
 
 
 if __name__ == "__main__":
