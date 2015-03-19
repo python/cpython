@@ -494,6 +494,24 @@ class CalculationTests(unittest.TestCase):
         test_helper((2006, 12, 31), "Last Sunday of 2006")
         test_helper((2006, 12, 24), "Second to last Sunday of 2006")
 
+    def test_week_0(self):
+        def check(value, format, *expected):
+            self.assertEqual(_strptime._strptime_time(value, format)[:-1], expected)
+        check('2015 0 0', '%Y %U %w', 2014, 12, 28, 0, 0, 0, 6, -3)
+        check('2015 0 0', '%Y %W %w', 2015, 1, 4, 0, 0, 0, 6, 4)
+        check('2015 0 1', '%Y %U %w', 2014, 12, 29, 0, 0, 0, 0, -2)
+        check('2015 0 1', '%Y %W %w', 2014, 12, 29, 0, 0, 0, 0, -2)
+        check('2015 0 2', '%Y %U %w', 2014, 12, 30, 0, 0, 0, 1, -1)
+        check('2015 0 2', '%Y %W %w', 2014, 12, 30, 0, 0, 0, 1, -1)
+        check('2015 0 3', '%Y %U %w', 2014, 12, 31, 0, 0, 0, 2, 0)
+        check('2015 0 3', '%Y %W %w', 2014, 12, 31, 0, 0, 0, 2, 0)
+        check('2015 0 4', '%Y %U %w', 2015, 1, 1, 0, 0, 0, 3, 1)
+        check('2015 0 4', '%Y %W %w', 2015, 1, 1, 0, 0, 0, 3, 1)
+        check('2015 0 5', '%Y %U %w', 2015, 1, 2, 0, 0, 0, 4, 2)
+        check('2015 0 5', '%Y %W %w', 2015, 1, 2, 0, 0, 0, 4, 2)
+        check('2015 0 6', '%Y %U %w', 2015, 1, 3, 0, 0, 0, 5, 3)
+        check('2015 0 6', '%Y %W %w', 2015, 1, 3, 0, 0, 0, 5, 3)
+
 
 class CacheTests(unittest.TestCase):
     """Test that caching works properly."""
