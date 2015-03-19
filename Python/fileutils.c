@@ -1144,7 +1144,7 @@ _Py_read(int fd, void *buf, size_t count)
      * handler raised an exception. */
     assert(!PyErr_Occurred());
 
-    if (!_PyVerify_fd(self->fd)) {
+    if (!_PyVerify_fd(fd)) {
         PyErr_SetFromErrno(PyExc_OSError);
         assert(errno == EBADF);
         return -1;
