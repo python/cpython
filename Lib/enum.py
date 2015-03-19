@@ -511,10 +511,36 @@ class Enum(metaclass=EnumMeta):
         """The value of the Enum member."""
         return self._value_
 
+    @classmethod
+    def _convert(cls, name, module, filter, source=None):
+        """
+        Create a new Enum subclass that replaces a collection of global constants
+        """
+        # convert all constants from source (or module) that pass filter() to
+        # a new Enum called name, and export the enum and its members back to
+        # module;
+        # also, replace the __reduce_ex__ method so unpickling works in
+        # previous Python versions
+        module_globals = vars(sys.modules[module])
+        if source:
+            source = vars(source)
+        else:
+            source = module_globals
+        members = {name: value for name, value in source.items()
+                if filter(name)}
+        cls = cls(name, members, module=module)
+        cls.__reduce_ex__ = _reduce_ex_by_name
+        module_globals.update(cls.__members__)
+        module_globals[name] = cls
+        return cls
+
 
 class IntEnum(int, Enum):
     """Enum where members are also (and must be) ints"""
 
+
+def _reduce_ex_by_name(self, proto):
+    return self.name
 
 def unique(enumeration):
     """Class decorator for enumerations ensuring unique member values."""
