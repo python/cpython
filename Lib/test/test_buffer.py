@@ -11,6 +11,7 @@
 # memoryview tests is now in this module.
 #
 
+import contextlib
 import unittest
 from test import support
 from itertools import permutations, product
@@ -2825,6 +2826,13 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(ex)
         self.assertRaises(TypeError, eval, "9.0 in m", locals())
 
+    @contextlib.contextmanager
+    def assert_out_of_bounds_error(self, dim):
+        with self.assertRaises(IndexError) as cm:
+            yield
+        self.assertEqual(str(cm.exception),
+                         "index out of bounds on dimension %d" % (dim,))
+
     def test_memoryview_index(self):
 
         # ndim = 0
@@ -2851,12 +2859,31 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(IndexError, m.__getitem__, -8)
         self.assertRaises(IndexError, m.__getitem__, 8)
 
-        # Not implemented: multidimensional sub-views
+        # multi-dimensional
         ex = ndarray(list(range(12)), shape=[3,4], flags=ND_WRITABLE)
         m = memoryview(ex)
 
-        self.assertRaises(NotImplementedError, m.__getitem__, 0)
-        self.assertRaises(NotImplementedError, m.__setitem__, 0, 9)
+        self.assertEqual(m[0, 0], 0)
+        self.assertEqual(m[2, 0], 8)
+        self.assertEqual(m[2, 3], 11)
+        self.assertEqual(m[-1, -1], 11)
+        self.assertEqual(m[-3, -4], 0)
+
+        # out of bounds
+        for index in (3, -4):
+            with self.assert_out_of_bounds_error(dim=1):
+                m[index, 0]
+        for index in (4, -5):
+            with self.assert_out_of_bounds_error(dim=2):
+                m[0, index]
+        self.assertRaises(IndexError, m.__getitem__, (2**64, 0))
+        self.assertRaises(IndexError, m.__getitem__, (0, 2**64))
+
+        self.assertRaises(TypeError, m.__getitem__, (0, 0, 0))
+        self.assertRaises(TypeError, m.__getitem__, (0.0, 0.0))
+
+        # Not implemented: multidimensional sub-views
+        self.assertRaises(NotImplementedError, m.__getitem__, ())
         self.assertRaises(NotImplementedError, m.__getitem__, 0)
 
     def test_memoryview_assign(self):
@@ -2945,10 +2972,27 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(ex)
         self.assertRaises(NotImplementedError, m.__setitem__, 0, 1)
 
-        # Not implemented: multidimensional sub-views
+        # multi-dimensional
         ex = ndarray(list(range(12)), shape=[3,4], flags=ND_WRITABLE)
         m = memoryview(ex)
+        m[0,1] = 42
+        self.assertEqual(ex[0][1], 42)
+        m[-1,-1] = 43
+        self.assertEqual(ex[2][3], 43)
+        # errors
+        for index in (3, -4):
+            with self.assert_out_of_bounds_error(dim=1):
+                m[index, 0] = 0
+        for index in (4, -5):
+            with self.assert_out_of_bounds_error(dim=2):
+                m[0, index] = 0
+        self.assertRaises(IndexError, m.__setitem__, (2**64, 0), 0)
+        self.assertRaises(IndexError, m.__setitem__, (0, 2**64), 0)
 
+        self.assertRaises(TypeError, m.__setitem__, (0, 0, 0), 0)
+        self.assertRaises(TypeError, m.__setitem__, (0.0, 0.0), 0)
+
+        # Not implemented: multidimensional sub-views
         self.assertRaises(NotImplementedError, m.__setitem__, 0, [2, 3])
 
     def test_memoryview_slice(self):
@@ -2961,8 +3005,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, m.__setitem__, slice(0,2,0),
                           bytearray([1,2]))
 
-        # invalid slice key
-        self.assertRaises(TypeError, m.__getitem__, ())
+        # 0-dim slicing (identity function)
+        self.assertRaises(NotImplementedError, m.__getitem__, ())
 
         # multidimensional slices
         ex = ndarray(list(range(12)), shape=[12], flags=ND_WRITABLE)
