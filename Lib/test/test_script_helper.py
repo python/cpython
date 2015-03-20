@@ -22,14 +22,14 @@ class TestScriptHelper(unittest.TestCase):
         with self.assertRaises(AssertionError) as error_context:
             script_helper._assert_python(True, '-c', 'sys.exit(0)')
         error_msg = str(error_context.exception)
-        self.assertIn('command line was:', error_msg)
+        self.assertIn('command line:', error_msg)
         self.assertIn('sys.exit(0)', error_msg, msg='unexpected command line')
 
     def test_assert_python_raises_expect_failure(self):
         with self.assertRaises(AssertionError) as error_context:
             script_helper._assert_python(False, '-c', 'import sys; sys.exit(0)')
         error_msg = str(error_context.exception)
-        self.assertIn('Process return code is 0,', error_msg)
+        self.assertIn('Process return code is 0\n', error_msg)
         self.assertIn('import sys; sys.exit(0)', error_msg,
                       msg='unexpected command line.')
 
