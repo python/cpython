@@ -1178,7 +1178,8 @@ _Py_read(int fd, void *buf, size_t count)
     if (async_err) {
         /* read() was interrupted by a signal (failed with EINTR)
          * and the Python signal handler raised an exception */
-        assert(errno == EINTR && PyErr_Occurred());
+        assert(errno == EINTR);
+        assert(PyErr_Occurred());
         return -1;
     }
     if (n < 0) {
@@ -1254,7 +1255,8 @@ _Py_write(int fd, const void *buf, size_t count)
     if (async_err) {
         /* write() was interrupted by a signal (failed with EINTR)
          * and the Python signal handler raised an exception */
-        assert(errno == EINTR && PyErr_Occurred());
+        assert(errno == EINTR);
+        assert(PyErr_Occurred());
         return -1;
     }
     if (n < 0) {
