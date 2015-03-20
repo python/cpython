@@ -1738,7 +1738,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                     return 0;
                 }
 
-                if (PyBytes_GET_SIZE(ctl_name) > sizeof(info.ctl_name)) {
+                if (PyBytes_GET_SIZE(ctl_name) > (Py_ssize_t)sizeof(info.ctl_name)) {
                     PyErr_SetString(PyExc_ValueError,
                                     "provided string is too long");
                     Py_DECREF(ctl_name);
