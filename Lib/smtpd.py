@@ -154,7 +154,7 @@ class SMTPChannel(asynchat.async_chat):
         else:
             self._emptystring = b''
             self._linesep = b'\r\n'
-            self._dotsep = b'.'
+            self._dotsep = ord(b'.')
             self._newline = b'\n'
         self._set_rset_state()
         self.seen_greeting = ''
