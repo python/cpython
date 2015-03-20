@@ -28,41 +28,41 @@ descriptor.
 The module defines the following functions:
 
 
-.. function:: fcntl(fd, op[, arg])
+.. function:: fcntl(fd, cmd, arg=0)
 
-   Perform the operation *op* on file descriptor *fd* (file objects providing
+   Perform the operation *cmd* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well).  The values used
-   for *op* are operating system dependent, and are available as constants
+   for *cmd* are operating system dependent, and are available as constants
    in the :mod:`fcntl` module, using the same names as used in the relevant C
-   header files.  The argument *arg* is optional, and defaults to the integer
-   value ``0``.  When present, it can either be an integer value, or a string.
-   With the argument missing or an integer value, the return value of this function
-   is the integer return value of the C :c:func:`fcntl` call.  When the argument is
-   a string it represents a binary structure, e.g. created by :func:`struct.pack`.
-   The binary data is copied to a buffer whose address is passed to the C
-   :c:func:`fcntl` call.  The return value after a successful call is the contents
-   of the buffer, converted to a string object.  The length of the returned string
-   will be the same as the length of the *arg* argument.  This is limited to 1024
-   bytes.  If the information returned in the buffer by the operating system is
-   larger than 1024 bytes, this is most likely to result in a segmentation
-   violation or a more subtle data corruption.
+   header files. The argument *arg* can either be an integer value, or a
+   :class:`bytes` object. With an integer value, the return value of this
+   function is the integer return value of the C :c:func:`fcntl` call.  When
+   the argument is bytes it represents a binary structure, e.g. created by
+   :func:`struct.pack`. The binary data is copied to a buffer whose address is
+   passed to the C :c:func:`fcntl` call.  The return value after a successful
+   call is the contents of the buffer, converted to a :class:`bytes` object.
+   The length of the returned object will be the same as the length of the
+   *arg* argument. This is limited to 1024 bytes. If the information returned
+   in the buffer by the operating system is larger than 1024 bytes, this is
+   most likely to result in a segmentation violation or a more subtle data
+   corruption.
 
    If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
 
 
-.. function:: ioctl(fd, op[, arg[, mutate_flag]])
+.. function:: ioctl(fd, request, arg=0, mutate_flag=True)
 
    This function is identical to the :func:`~fcntl.fcntl` function, except
    that the argument handling is even more complicated.
 
-   The op parameter is limited to values that can fit in 32-bits.
-   Additional constants of interest for use as the *op* argument can be
+   The *request* parameter is limited to values that can fit in 32-bits.
+   Additional constants of interest for use as the *request* argument can be
    found in the :mod:`termios` module, under the same names as used in
    the relevant C header files.
 
-   The parameter *arg* can be one of an integer, absent (treated identically to the
-   integer ``0``), an object supporting the read-only buffer interface (most likely
-   a plain Python string) or an object supporting the read-write buffer interface.
+   The parameter *arg* can be one of an integer, an object supporting the
+   read-only buffer interface (like :class:`bytes`) or an object supporting
+   the read-write buffer interface (like :class:`bytearray`).
 
    In all but the last case, behaviour is as for the :func:`~fcntl.fcntl`
    function.
@@ -72,7 +72,7 @@ The module defines the following functions:
 
    If it is false, the buffer's mutability is ignored and behaviour is as for a
    read-only buffer, except that the 1024 byte limit mentioned above is avoided --
-   so long as the buffer you pass is as least as long as what the operating system
+   so long as the buffer you pass is at least as long as what the operating system
    wants to put there, things should work.
 
    If *mutate_flag* is true (the default), then the buffer is (in effect) passed
@@ -97,25 +97,25 @@ The module defines the following functions:
       array('h', [13341])
 
 
-.. function:: flock(fd, op)
+.. function:: flock(fd, operation)
 
-   Perform the lock operation *op* on file descriptor *fd* (file objects providing
+   Perform the lock operation *operation* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well). See the Unix manual
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
    using :c:func:`fcntl`.)
 
 
-.. function:: lockf(fd, operation, [length, [start, [whence]]])
+.. function:: lockf(fd, cmd, len=0, start=0, whence=0)
 
    This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
-   *fd* is the file descriptor of the file to lock or unlock, and *operation*
+   *fd* is the file descriptor of the file to lock or unlock, and *cmd*
    is one of the following values:
 
    * :const:`LOCK_UN` -- unlock
    * :const:`LOCK_SH` -- acquire a shared lock
    * :const:`LOCK_EX` -- acquire an exclusive lock
 
-   When *operation* is :const:`LOCK_SH` or :const:`LOCK_EX`, it can also be
+   When *cmd* is :const:`LOCK_SH` or :const:`LOCK_EX`, it can also be
    bitwise ORed with :const:`LOCK_NB` to avoid blocking on lock acquisition.
    If :const:`LOCK_NB` is used and the lock cannot be acquired, an
    :exc:`OSError` will be raised and the exception will have an *errno*
@@ -124,7 +124,7 @@ The module defines the following functions:
    systems, :const:`LOCK_EX` can only be used if the file descriptor refers to a
    file opened for writing.
 
-   *length* is the number of bytes to lock, *start* is the byte offset at
+   *len* is the number of bytes to lock, *start* is the byte offset at
    which the lock starts, relative to *whence*, and *whence* is as with
    :func:`io.IOBase.seek`, specifically:
 
@@ -133,7 +133,7 @@ The module defines the following functions:
    * :const:`2` -- relative to the end of the file (:data:`os.SEEK_END`)
 
    The default for *start* is 0, which means to start at the beginning of the file.
-   The default for *length* is 0 which means to lock to the end of the file.  The
+   The default for *len* is 0 which means to lock to the end of the file.  The
    default for *whence* is also 0.
 
 Examples (all on a SVR4 compliant system)::
@@ -147,9 +147,9 @@ Examples (all on a SVR4 compliant system)::
    rv = fcntl.fcntl(f, fcntl.F_SETLKW, lockdata)
 
 Note that in the first example the return value variable *rv* will hold an
-integer value; in the second example it will hold a string value.  The structure
-lay-out for the *lockdata* variable is system dependent --- therefore using the
-:func:`flock` call may be better.
+integer value; in the second example it will hold a :class:`bytes` object.  The
+structure lay-out for the *lockdata* variable is system dependent --- therefore
+using the :func:`flock` call may be better.
 
 
 .. seealso::
