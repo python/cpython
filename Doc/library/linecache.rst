@@ -14,9 +14,9 @@ attempting to optimize internally, using a cache, the common case where many
 lines are read from a single file.  This is used by the :mod:`traceback` module
 to retrieve source lines for inclusion in  the formatted traceback.
 
-The :func:`tokenize.open` function is used to open Python source files. This
+The :func:`tokenize.open` function is used to open files. This
 function uses :func:`tokenize.detect_encoding` to get the encoding of the
-Python source file.
+file; in the absence of an encoding token, the file encoding defaults to UTF-8.
 
 The :mod:`linecache` module defines the following functions:
 
