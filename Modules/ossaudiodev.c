@@ -19,6 +19,7 @@
  * $Id$
  */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
 
@@ -51,8 +52,8 @@ typedef struct {
     char    *devicename;              /* name of the device file */
     int      fd;                      /* file descriptor */
     int      mode;                    /* file mode (O_RDONLY, etc.) */
-    int      icount;                  /* input count */
-    int      ocount;                  /* output count */
+    Py_ssize_t icount;                /* input count */
+    Py_ssize_t ocount;                /* output count */
     uint32_t afmts;                   /* audio formats supported by hardware */
 } oss_audio_t;
 
@@ -399,13 +400,13 @@ oss_post(oss_audio_t *self, PyObject *args)
 static PyObject *
 oss_read(oss_audio_t *self, PyObject *args)
 {
-    int size, count;
+    Py_ssize_t size, count;
     PyObject *rv;
 
     if (!_is_fd_valid(self->fd))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "i:read", &size))
+    if (!PyArg_ParseTuple(args, "n:read", &size))
         return NULL;
 
     rv = PyBytes_FromStringAndSize(NULL, size);
@@ -427,7 +428,7 @@ static PyObject *
 oss_write(oss_audio_t *self, PyObject *args)
 {
     Py_buffer data;
-    int rv;
+    Py_ssize_t rv;
 
     if (!_is_fd_valid(self->fd))
         return NULL;
@@ -451,7 +452,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
     Py_buffer data;
     const char *cp;
     Py_ssize_t size;
-    int rv;
+    Py_ssize_t rv;
     fd_set write_set_fds;
     int select_rv;
 
