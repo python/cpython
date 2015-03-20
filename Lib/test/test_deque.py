@@ -164,6 +164,26 @@ class TestBasic(unittest.TestCase):
                 self.assertEqual(x >  y, list(x) >  list(y), (x,y))
                 self.assertEqual(x >= y, list(x) >= list(y), (x,y))
 
+    def test_contains(self):
+        n = 200
+
+        d = deque(range(n))
+        for i in range(n):
+            self.assertTrue(i in d)
+        self.assertTrue((n+1) not in d)
+
+        # Test detection of mutation during iteration
+        d = deque(range(n))
+        d[n//2] = MutateCmp(d, False)
+        with self.assertRaises(RuntimeError):
+            n in d
+
+        # Test detection of comparison exceptions
+        d = deque(range(n))
+        d[n//2] = BadCmp()
+        with self.assertRaises(RuntimeError):
+            n in d
+
     def test_extend(self):
         d = deque('a')
         self.assertRaises(TypeError, d.extend, 1)
