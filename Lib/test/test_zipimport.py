@@ -453,7 +453,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
             with self.assertRaises(zipimport.ZipImportError) as cm:
                 zipimport.zipimporter(TESTMOD)
-            self.assertIsInstance(cm.exception.__context__, PermissionError)
         finally:
             # If we leave "the read-only bit" set on Windows, nothing can
             # delete TESTMOD, and later tests suffer bogus failures.
