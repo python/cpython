@@ -162,6 +162,8 @@ Some smaller changes made to the core Python language are:
   error handlers now works with decoding and translating.
   (Contributed by Serhiy Storchaka in :issue:`19676` and :issue:`22286`.)
 
+* The :option:`-b` option now affects comparisons of :class:`bytes` with
+  :class:`int`.  (Contributed by Serhiy Storchaka in :issue:`23681`)
 
 
 New Modules
