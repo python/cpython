@@ -268,12 +268,16 @@ class TimeEINTRTest(EINTRBaseTest):
 class SignalEINTRTest(EINTRBaseTest):
     """ EINTR tests for the signal module. """
 
+    @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
+                         'need signal.sigtimedwait()')
     def test_sigtimedwait(self):
         t0 = time.monotonic()
         signal.sigtimedwait([], self.sleep_time)
         dt = time.monotonic() - t0
         self.assertGreaterEqual(dt, self.sleep_time)
 
+    @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
+                         'need signal.sigwaitinfo()')
     def test_sigwaitinfo(self):
         signum = signal.SIGUSR1
         pid = os.getpid()
