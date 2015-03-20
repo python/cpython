@@ -136,7 +136,7 @@ class POP3:
         # so only possibilities are ...LF, ...CRLF, CR...LF
         if line[-2:] == CRLF:
             return line[:-2], octets
-        if line[0] == CR:
+        if line[:1] == CR:
             return line[1:-1], octets
         return line[:-1], octets
 
