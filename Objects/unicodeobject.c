@@ -4799,7 +4799,7 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
-    if (PY_SSIZE_T_MAX / sizeof(wchar_t) < (size + 1))
+    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < (size + 1))
         return NULL;
     unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
     if (!unicode)
