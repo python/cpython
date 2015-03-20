@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23001: Few functions in modules mmap, ossaudiodev, socket, ssl, and
+  codecs, that accepted only read-only bytes-like object now accept writable
+  bytes-like object too.
+
 - Issue #23646: If time.sleep() is interrupted by a signal, the sleep is now
   retried with the recomputed delay, except if the signal handler raises an
   exception (PEP 475).

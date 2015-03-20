@@ -208,15 +208,18 @@ static PyObject *
 escape_decode(PyObject *self,
               PyObject *args)
 {
+    Py_buffer pbuf;
     const char *errors = NULL;
-    const char *data;
-    Py_ssize_t size;
+    PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "s#|z:escape_decode",
-                          &data, &size, &errors))
+    if (!PyArg_ParseTuple(args, "s*|z:escape_decode",
+                          &pbuf, &errors))
         return NULL;
-    return codec_tuple(PyBytes_DecodeEscape(data, size, errors, 0, NULL),
-                       size);
+    result = codec_tuple(
+            PyBytes_DecodeEscape(pbuf.buf, pbuf.len, errors, 0, NULL),
+            pbuf.len);
+    PyBuffer_Release(&pbuf);
+    return result;
 }
 
 static PyObject *

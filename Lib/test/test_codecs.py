@@ -1086,6 +1086,7 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(codecs.escape_decode(b""), (b"", 0))
+        self.assertEqual(codecs.escape_decode(bytearray()), (b"", 0))
 
     def test_raw(self):
         decode = codecs.escape_decode
