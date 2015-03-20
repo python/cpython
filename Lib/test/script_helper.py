@@ -86,10 +86,29 @@ def _assert_python(expected_success, *args, **env_vars):
     rc = p.returncode
     err = strip_python_stderr(err)
     if (rc and expected_success) or (not rc and not expected_success):
-        raise AssertionError(
-            "Process return code is %d, command line was: %r, "
-            "stderr follows:\n%s" % (rc, cmd_line,
-                                     err.decode('ascii', 'ignore')))
+        # Limit to 80 lines to ASCII characters
+        maxlen = 80 * 100
+        if len(out) > maxlen:
+            out = b'(... truncated stdout ...)' + out[-maxlen:]
+        if len(err) > maxlen:
+            err = b'(... truncated stderr ...)' + err[-maxlen:]
+        out = out.decode('ascii', 'replace').rstrip()
+        err = err.decode('ascii', 'replace').rstrip()
+        raise AssertionError("Process return code is %d\n"
+                             "command line: %r\n"
+                             "\n"
+                             "stdout:\n"
+                             "---\n"
+                             "%s\n"
+                             "---\n"
+                             "\n"
+                             "stderr:\n"
+                             "---\n"
+                             "%s\n"
+                             "---"
+                             % (rc, cmd_line,
+                                out,
+                                err))
     return rc, out, err
 
 def assert_python_ok(*args, **env_vars):
