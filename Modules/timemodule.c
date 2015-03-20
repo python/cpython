@@ -1433,7 +1433,7 @@ floatsleep(double secs)
         ul_millis = (unsigned long)millisecs;
         if (ul_millis == 0 || !_PyOS_IsMainThread()) {
             Py_BEGIN_ALLOW_THREADS
-            Sleep(0);
+            Sleep(ul_millis);
             Py_END_ALLOW_THREADS
             break;
         }
