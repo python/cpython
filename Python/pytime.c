@@ -7,6 +7,12 @@
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
 #endif
 
+#define SEC_TO_MS 1000
+#define MS_TO_US 1000
+#define US_TO_NS 1000
+
+#define SEC_TO_US (SEC_TO_MS * MS_TO_US)
+
 static int
 pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
 {
@@ -24,8 +30,8 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
        the 1st january 1601 and the 1st january 1970 (369 years + 89 leap
        days). */
     microseconds = large.QuadPart / 10 - 11644473600000000;
-    tp->tv_sec = microseconds / 1000000;
-    tp->tv_usec = microseconds % 1000000;
+    tp->tv_sec = microseconds / SEC_TO_US;
+    tp->tv_usec = microseconds % SEC_TO_US;
     if (info) {
         DWORD timeAdjustment, timeIncrement;
         BOOL isTimeAdjustmentDisabled, ok;
@@ -58,7 +64,7 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
         return -1;
     }
     tp->tv_sec = ts.tv_sec;
-    tp->tv_usec = ts.tv_nsec / 1000;
+    tp->tv_usec = ts.tv_nsec / US_TO_NS;
 
     if (info) {
         struct timespec res;
@@ -92,7 +98,7 @@ pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
     }
 #endif   /* !HAVE_CLOCK_GETTIME */
 #endif   /* !MS_WINDOWS */
-    assert(0 <= tp->tv_usec && tp->tv_usec < 1000 * 1000);
+    assert(0 <= tp->tv_usec && tp->tv_usec < SEC_TO_US);
     return 0;
 }
 
@@ -126,8 +132,8 @@ pymonotonic(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
 
     result = GetTickCount64();
 
-    tp->tv_sec = result / 1000;
-    tp->tv_usec = (result % 1000) * 1000;
+    tp->tv_sec = result / SEC_TO_MS;
+    tp->tv_usec = (result % SEC_TO_MS) * MS_TO_US;
 
     if (info) {
         DWORD timeAdjustment, timeIncrement;
@@ -157,12 +163,12 @@ pymonotonic(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
     time = mach_absolute_time();
 
     /* nanoseconds => microseconds */
-    time /= 1000;
+    time /= US_TO_NS;
     /* apply timebase factor */
     time *= timebase.numer;
     time /= timebase.denom;
-    tp->tv_sec = time / (1000 * 1000);
-    tp->tv_usec = time % (1000 * 1000);
+    tp->tv_sec = time / SEC_TO_US;
+    tp->tv_usec = time % SEC_TO_US;
 
     if (info) {
         info->implementation = "mach_absolute_time()";
@@ -205,9 +211,9 @@ pymonotonic(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
         info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
     }
     tp->tv_sec = ts.tv_sec;
-    tp->tv_usec = ts.tv_nsec / 1000;
+    tp->tv_usec = ts.tv_nsec / US_TO_NS;
 #endif
-    assert(0 <= tp->tv_usec && tp->tv_usec < 1000 * 1000);
+    assert(0 <= tp->tv_usec && tp->tv_usec < SEC_TO_US);
 #ifdef Py_DEBUG
     /* monotonic clock cannot go backward */
     assert(last.tv_usec == -1
@@ -380,8 +386,8 @@ _PyTime_AddDouble(_PyTime_timeval *tv, double interval, _PyTime_round_t round)
 
     tv->tv_sec += tv2.tv_sec;
     tv->tv_usec += tv2.tv_usec;
-    tv->tv_sec += (time_t)(tv->tv_usec / 1000000);
-    tv->tv_usec %= 1000000;
+    tv->tv_sec += (time_t)(tv->tv_usec / SEC_TO_US);
+    tv->tv_usec %= SEC_TO_US;
 }
 
 int
