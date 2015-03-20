@@ -258,13 +258,10 @@ class TimeEINTRTest(EINTRBaseTest):
 
     def test_sleep(self):
         t0 = time.monotonic()
-        # time.sleep() may retry when interrupted by a signal
-        time.sleep(2)
+        time.sleep(self.sleep_time)
         signal.alarm(0)
         dt = time.monotonic() - t0
-        # Tolerate a difference 100 ms: on Windows, time.monotonic() has
-        # a resolution of 15.6 ms or greater
-        self.assertGreaterEqual(dt, 1.9)
+        self.assertGreaterEqual(dt, self.sleep_time)
 
 
 def test_main():
