@@ -491,7 +491,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
             return PyErr_SetFromErrno(PyExc_IOError);
         }
 
-        rv = _Py_write(self->fd, , cp, Py_MIN(size, INT_MAX));
+        rv = _Py_write(self->fd, cp, Py_MIN(size, INT_MAX));
         if (rv == -1) {
             /* buffer is full, try again */
             if (errno == EAGAIN) {
