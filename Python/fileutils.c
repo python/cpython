@@ -1137,6 +1137,7 @@ Py_ssize_t
 _Py_read(int fd, void *buf, size_t count)
 {
     Py_ssize_t n;
+    int err;
     int async_err = 0;
 
     /* _Py_read() must not be called with an exception set, otherwise the
@@ -1145,8 +1146,10 @@ _Py_read(int fd, void *buf, size_t count)
     assert(!PyErr_Occurred());
 
     if (!_PyVerify_fd(fd)) {
+        /* save/restore errno because PyErr_SetFromErrno() can modify it */
+        err = errno;
         PyErr_SetFromErrno(PyExc_OSError);
-        assert(errno == EBADF);
+        errno = err;
         return -1;
     }
 
@@ -1171,23 +1174,23 @@ _Py_read(int fd, void *buf, size_t count)
 #else
         n = read(fd, buf, count);
 #endif
+        /* save/restore errno because PyErr_CheckSignals()
+         * and PyErr_SetFromErrno() can modify it */
+        err = errno;
         Py_END_ALLOW_THREADS
-    } while (n < 0 && errno == EINTR &&
+    } while (n < 0 && err == EINTR &&
             !(async_err = PyErr_CheckSignals()));
 
     if (async_err) {
         /* read() was interrupted by a signal (failed with EINTR)
          * and the Python signal handler raised an exception */
-        assert(errno == EINTR);
-        assert(PyErr_Occurred());
+        errno = err;
+        assert(errno == EINTR && PyErr_Occurred());
         return -1;
     }
     if (n < 0) {
-#ifndef NDEBUG
-        int err = errno;
-#endif
         PyErr_SetFromErrno(PyExc_OSError);
-        assert(errno == err);
+        errno = err;
         return -1;
     }
 
@@ -1209,6 +1212,7 @@ Py_ssize_t
 _Py_write(int fd, const void *buf, size_t count)
 {
     Py_ssize_t n;
+    int err;
     int async_err = 0;
 
     /* _Py_write() must not be called with an exception set, otherwise the
@@ -1217,8 +1221,10 @@ _Py_write(int fd, const void *buf, size_t count)
     assert(!PyErr_Occurred());
 
     if (!_PyVerify_fd(fd)) {
+        /* save/restore errno because PyErr_SetFromErrno() can modify it */
+        err = errno;
         PyErr_SetFromErrno(PyExc_OSError);
-        assert(errno == EBADF);
+        errno = err;
         return -1;
     }
 
@@ -1248,6 +1254,9 @@ _Py_write(int fd, const void *buf, size_t count)
 #else
         n = write(fd, buf, count);
 #endif
+        /* save/restore errno because PyErr_CheckSignals()
+         * and PyErr_SetFromErrno() can modify it */
+        err = errno;
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR &&
             !(async_err = PyErr_CheckSignals()));
@@ -1255,16 +1264,13 @@ _Py_write(int fd, const void *buf, size_t count)
     if (async_err) {
         /* write() was interrupted by a signal (failed with EINTR)
          * and the Python signal handler raised an exception */
-        assert(errno == EINTR);
-        assert(PyErr_Occurred());
+        errno = err;
+        assert(errno == EINTR && PyErr_Occurred());
         return -1;
     }
     if (n < 0) {
-#ifndef NDEBUG
-        int err = errno;
-#endif
         PyErr_SetFromErrno(PyExc_OSError);
-        assert(errno == err);
+        errno = err;
         return -1;
     }
 
