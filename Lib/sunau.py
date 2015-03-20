@@ -210,12 +210,9 @@ class Au_read:
         self._framesize = self._framesize * self._nchannels
         if self._hdr_size > 24:
             self._info = file.read(self._hdr_size - 24)
-            for i in range(len(self._info)):
-                if self._info[i] == b'\0':
-                    self._info = self._info[:i]
-                    break
+            self._info, _, _ = self._info.partition(b'\0')
         else:
-            self._info = ''
+            self._info = b''
         try:
             self._data_pos = file.tell()
         except (AttributeError, OSError):

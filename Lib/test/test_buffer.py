@@ -149,15 +149,15 @@ def randrange_fmt(mode, char, obj):
        format character."""
     x = randrange(*fmtdict[mode][char])
     if char == 'c':
-        x = bytes(chr(x), 'latin1')
+        x = bytes([x])
+        if obj == 'numpy' and x == b'\x00':
+            # http://projects.scipy.org/numpy/ticket/1925
+            x = b'\x01'
     if char == '?':
         x = bool(x)
     if char == 'f' or char == 'd':
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
-    if obj == 'numpy' and x == b'\x00':
-        # http://projects.scipy.org/numpy/ticket/1925
-        x = b'\x01'
     return x
 
 def gen_item(fmt, obj):
