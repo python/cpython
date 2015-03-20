@@ -875,8 +875,12 @@ read_directory(PyObject *archive)
 
     fp = _Py_fopen_obj(archive, "rb");
     if (fp == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_OSError))
+        if (PyErr_ExceptionMatches(PyExc_OSError)) {
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
             PyErr_Format(ZipImportError, "can't open Zip file: %R", archive);
+            _PyErr_ChainExceptions(exc, val, tb);
+        }
         return NULL;
     }
 
