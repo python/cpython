@@ -39,13 +39,13 @@ conv_descriptor(PyObject *object, int *target)
 fcntl.fcntl
 
     fd: object(type='int', converter='conv_descriptor')
-    code: int
-    arg: object = NULL
+    cmd as code: int
+    arg: object(c_default='NULL') = 0
     /
 
-Perform the operation `code` on file descriptor fd.
+Perform the operation `cmd` on file descriptor fd.
 
-The values used for `code` are operating system dependent, and are available
+The values used for `cmd` are operating system dependent, and are available
 as constants in the fcntl module, using the same names as used in
 the relevant C header files.  The argument arg is optional, and
 defaults to 0; it may be an int or a string.  If arg is given as a string,
@@ -58,7 +58,7 @@ corresponding to the return value of the fcntl call in the C code.
 
 static PyObject *
 fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg)
-/*[clinic end generated code: output=afc5bfa74a03ef0d input=4850c13a41e86930]*/
+/*[clinic end generated code: output=afc5bfa74a03ef0d input=8cefbe59b29efbe2]*/
 {
     unsigned int int_arg = 0;
     int ret;
@@ -111,15 +111,15 @@ fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg)
 fcntl.ioctl
 
     fd: object(type='int', converter='conv_descriptor')
-    op as code: unsigned_int(bitwise=True)
-    arg as ob_arg: object = NULL
+    request as code: unsigned_int(bitwise=True)
+    arg as ob_arg: object(c_default='NULL') = 0
     mutate_flag as mutate_arg: bool = True
     /
 
-Perform the operation op on file descriptor fd.
+Perform the operation `request` on file descriptor `fd`.
 
-The values used for op are operating system dependent, and are available as
-constants in the fcntl or termios library modules, using the same names as
+The values used for `request` are operating system dependent, and are available
+as constants in the fcntl or termios library modules, using the same names as
 used in the relevant C header files.
 
 The argument `arg` is optional, and defaults to 0; it may be an int or a
@@ -132,9 +132,8 @@ the OS will be reflected in the contents of the buffer after the call has
 returned.  The return value is the integer returned by the ioctl system
 call.
 
-If the argument is a mutable buffer and the mutable_flag argument is not
-passed or is false, the behavior is as if a string had been passed.  This
-behavior will change in future releases of Python.
+If the argument is a mutable buffer and the mutable_flag argument is false,
+the behavior is as if a string had been passed.
 
 If the argument is an immutable buffer (most likely a string) then a copy
 of the buffer is passed to the operating system and the return value is a
@@ -149,7 +148,7 @@ code.
 
 static PyObject *
 fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code, PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=ad47738c118622bf input=a55a6ee8e494c449]*/
+/*[clinic end generated code: output=ad47738c118622bf input=ede70c433cccbbb2]*/
 {
 #define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
@@ -270,10 +269,10 @@ fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code, PyObject *ob_ar
 fcntl.flock
 
     fd: object(type='int', converter='conv_descriptor')
-    code: int
+    operation as code: int
     /
 
-Perform the lock operation op on file descriptor fd.
+Perform the lock operation `operation` on file descriptor `fd`.
 
 See the Unix manual page for flock(2) for details (On some systems, this
 function is emulated using fcntl()).
@@ -281,7 +280,7 @@ function is emulated using fcntl()).
 
 static PyObject *
 fcntl_flock_impl(PyModuleDef *module, int fd, int code)
-/*[clinic end generated code: output=c9035133a7dbfc96 input=b762aa9448d05e43]*/
+/*[clinic end generated code: output=c9035133a7dbfc96 input=b70a0a41ca22a8a0]*/
 {
     int ret;
 
@@ -328,15 +327,15 @@ fcntl_flock_impl(PyModuleDef *module, int fd, int code)
 fcntl.lockf
 
     fd: object(type='int', converter='conv_descriptor')
-    code: int
-    lenobj: object = NULL
-    startobj: object = NULL
+    cmd as code: int
+    len as lenobj: object(c_default='NULL') = 0
+    start as startobj: object(c_default='NULL') = 0
     whence: int = 0
     /
 
 A wrapper around the fcntl() locking calls.
 
-fd is the file descriptor of the file to lock or unlock, and operation is one
+`fd` is the file descriptor of the file to lock or unlock, and operation is one
 of the following values:
 
     LOCK_UN - unlock
@@ -349,9 +348,9 @@ lock cannot be acquired, an IOError will be raised and the exception will
 have an errno attribute set to EACCES or EAGAIN (depending on the operating
 system -- for portability, check for either value).
 
-length is the number of bytes to lock, with the default meaning to lock to
-EOF.  start is the byte offset, relative to whence, to that the lock
-starts.  whence is as with fileobj.seek(), specifically:
+`len` is the number of bytes to lock, with the default meaning to lock to
+EOF.  `start` is the byte offset, relative to `whence`, to that the lock
+starts.  `whence` is as with fileobj.seek(), specifically:
 
     0 - relative to the start of the file (SEEK_SET)
     1 - relative to the current buffer position (SEEK_CUR)
@@ -360,7 +359,7 @@ starts.  whence is as with fileobj.seek(), specifically:
 
 static PyObject *
 fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj, PyObject *startobj, int whence)
-/*[clinic end generated code: output=5536df2892bf3ce9 input=44856fa06db36184]*/
+/*[clinic end generated code: output=5536df2892bf3ce9 input=9c594391de821f24]*/
 {
     int ret;
 
