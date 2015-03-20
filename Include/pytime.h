@@ -41,13 +41,6 @@ PyAPI_FUNC(int) _PyTime_gettimeofday_info(
     _PyTime_timeval *tp,
     _Py_clock_info_t *info);
 
-#define _PyTime_ADD_SECONDS(tv, interval) \
-do { \
-    tv.tv_usec += (long) (((long) interval - interval) * 1000000); \
-    tv.tv_sec += (time_t) interval + (time_t) (tv.tv_usec / 1000000); \
-    tv.tv_usec %= 1000000; \
-} while (0)
-
 #define _PyTime_INTERVAL(tv_start, tv_end) \
     ((tv_end.tv_sec - tv_start.tv_sec) + \
      (tv_end.tv_usec - tv_start.tv_usec) * 0.000001)
@@ -108,6 +101,11 @@ PyAPI_FUNC(void) _PyTime_monotonic(
 PyAPI_FUNC(int) _PyTime_monotonic_info(
     _PyTime_timeval *tp,
     _Py_clock_info_t *info);
+
+/* Add interval seconds to tv */
+PyAPI_FUNC(void)
+_PyTime_AddDouble(_PyTime_timeval *tv, double interval,
+                  _PyTime_round_t round);
 
 /* Initialize time.
    Return 0 on success, raise an exception and return -1 on error. */
