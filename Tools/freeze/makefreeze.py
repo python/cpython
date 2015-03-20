@@ -39,36 +39,34 @@ def makefreeze(base, dict, debug=0, entry_point=None, fail_import=()):
         mangled = "__".join(mod.split("."))
         if m.__code__:
             file = 'M_' + mangled + '.c'
-            outfp = bkfile.open(base + file, 'w')
-            files.append(file)
-            if debug:
-                print("freezing", mod, "...")
-            str = marshal.dumps(m.__code__)
-            size = len(str)
-            if m.__path__:
-                # Indicate package by negative size
-                size = -size
-            done.append((mod, mangled, size))
-            writecode(outfp, mangled, str)
-            outfp.close()
+            with bkfile.open(base + file, 'w') as outfp:
+                files.append(file)
+                if debug:
+                    print("freezing", mod, "...")
+                str = marshal.dumps(m.__code__)
+                size = len(str)
+                if m.__path__:
+                    # Indicate package by negative size
+                    size = -size
+                done.append((mod, mangled, size))
+                writecode(outfp, mangled, str)
     if debug:
         print("generating table of frozen modules")
-    outfp = bkfile.open(base + 'frozen.c', 'w')
-    for mod, mangled, size in done:
-        outfp.write('extern unsigned char M_%s[];\n' % mangled)
-    outfp.write(header)
-    for mod, mangled, size in done:
-        outfp.write('\t{"%s", M_%s, %d},\n' % (mod, mangled, size))
-    outfp.write('\n')
-    # The following modules have a NULL code pointer, indicating
-    # that the frozen program should not search for them on the host
-    # system. Importing them will *always* raise an ImportError.
-    # The zero value size is never used.
-    for mod in fail_import:
-        outfp.write('\t{"%s", NULL, 0},\n' % (mod,))
-    outfp.write(trailer)
-    outfp.write(entry_point)
-    outfp.close()
+    with bkfile.open(base + 'frozen.c', 'w') as outfp:
+        for mod, mangled, size in done:
+            outfp.write('extern unsigned char M_%s[];\n' % mangled)
+        outfp.write(header)
+        for mod, mangled, size in done:
+            outfp.write('\t{"%s", M_%s, %d},\n' % (mod, mangled, size))
+        outfp.write('\n')
+        # The following modules have a NULL code pointer, indicating
+        # that the frozen program should not search for them on the host
+        # system. Importing them will *always* raise an ImportError.
+        # The zero value size is never used.
+        for mod in fail_import:
+            outfp.write('\t{"%s", NULL, 0},\n' % (mod,))
+        outfp.write(trailer)
+        outfp.write(entry_point)
     return files
 
 
