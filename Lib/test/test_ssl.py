@@ -171,6 +171,8 @@ class BasicSocketTests(unittest.TestCase):
             self.assertRaises(TypeError, ssl.RAND_egd, 1)
             self.assertRaises(TypeError, ssl.RAND_egd, 'foo', 1)
         ssl.RAND_add("this is a random string", 75.0)
+        ssl.RAND_add(b"this is a random bytes object", 75.0)
+        ssl.RAND_add(bytearray(b"this is a random bytearray object"), 75.0)
 
     @unittest.skipUnless(os.name == 'posix', 'requires posix')
     def test_random_fork(self):

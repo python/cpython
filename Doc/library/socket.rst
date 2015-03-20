@@ -46,16 +46,19 @@ created.  Socket addresses are represented as follows:
 - The address of an :const:`AF_UNIX` socket bound to a file system node
   is represented as a string, using the file system encoding and the
   ``'surrogateescape'`` error handler (see :pep:`383`).  An address in
-  Linux's abstract namespace is returned as a :class:`bytes` object with
+  Linux's abstract namespace is returned as a :term:`bytes-like object` with
   an initial null byte; note that sockets in this namespace can
   communicate with normal file system sockets, so programs intended to
   run on Linux may need to deal with both types of address.  A string or
-  :class:`bytes` object can be used for either type of address when
+  bytes-like object can be used for either type of address when
   passing it as an argument.
 
    .. versionchanged:: 3.3
       Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
       encoding.
+
+   .. versionchanged: 3.5
+      Writable :term:`bytes-like object` is now accepted.
 
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
   where *host* is a string representing either a hostname in Internet domain
@@ -609,8 +612,8 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: inet_ntoa(packed_ip)
 
-   Convert a 32-bit packed IPv4 address (a bytes object four characters in
-   length) to its standard dotted-quad string representation (for example,
+   Convert a 32-bit packed IPv4 address (a :term:`bytes-like object` four
+   bytes in length) to its standard dotted-quad string representation (for example,
    '123.45.67.89').  This is useful when conversing with a program that uses the
    standard C library and needs objects of type :c:type:`struct in_addr`, which
    is the C type for the 32-bit packed binary data this function takes as an
@@ -620,6 +623,9 @@ The :mod:`socket` module also offers various network-related services:
    length, :exc:`OSError` will be raised. :func:`inet_ntoa` does not
    support IPv6, and :func:`inet_ntop` should be used instead for IPv4/v6 dual
    stack support.
+
+   .. versionchanged: 3.5
+      Writable :term:`bytes-like object` is now accepted.
 
 
 .. function:: inet_pton(address_family, ip_string)
@@ -643,21 +649,25 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: inet_ntop(address_family, packed_ip)
 
-   Convert a packed IP address (a bytes object of some number of characters) to its
-   standard, family-specific string representation (for example, ``'7.10.0.5'`` or
-   ``'5aef:2b::8'``). :func:`inet_ntop` is useful when a library or network protocol
-   returns an object of type :c:type:`struct in_addr` (similar to :func:`inet_ntoa`)
-   or :c:type:`struct in6_addr`.
+   Convert a packed IP address (a :term:`bytes-like object` of some number of
+   bytes) to its standard, family-specific string representation (for
+   example, ``'7.10.0.5'`` or ``'5aef:2b::8'``).
+   :func:`inet_ntop` is useful when a library or network protocol returns an
+   object of type :c:type:`struct in_addr` (similar to :func:`inet_ntoa`) or
+   :c:type:`struct in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
-   :const:`AF_INET6`. If the string *packed_ip* is not the correct length for the
-   specified address family, :exc:`ValueError` will be raised.  A
-   :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
+   :const:`AF_INET6`. If the bytes object *packed_ip* is not the correct
+   length for the specified address family, :exc:`ValueError` will be raised.
+   A :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
    Availability: Unix (maybe not all platforms), Windows.
 
    .. versionchanged:: 3.4
       Windows support added
+
+   .. versionchanged: 3.5
+      Writable :term:`bytes-like object` is now accepted.
 
 
 ..
@@ -1207,10 +1217,14 @@ to sockets.
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
-   :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer or a
-   bytes object representing a buffer.  In the latter case it is up to the caller to
+   :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer or
+   a :term:`bytes-like object` representing a buffer.  In the latter case it is
+   up to the caller to
    ensure that the bytestring contains the proper bits (see the optional built-in
    module :mod:`struct` for a way to encode C structures as bytestrings).
+
+   .. versionchanged: 3.5
+      Writable :term:`bytes-like object` is now accepted.
 
 
 .. method:: socket.shutdown(how)

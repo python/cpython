@@ -426,17 +426,18 @@ oss_read(oss_audio_t *self, PyObject *args)
 static PyObject *
 oss_write(oss_audio_t *self, PyObject *args)
 {
-    char *cp;
-    int rv, size;
+    Py_buffer data;
+    int rv;
 
     if (!_is_fd_valid(self->fd))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "y#:write", &cp, &size)) {
+    if (!PyArg_ParseTuple(args, "y*:write", &data)) {
         return NULL;
     }
 
-    rv = _Py_write(self->fd, cp, size);
+    rv = _Py_write(self->fd, data.buf, data.len);
+    PyBuffer_Release(&data);
     if (rv == -1)
         return NULL;
 
@@ -447,8 +448,10 @@ oss_write(oss_audio_t *self, PyObject *args)
 static PyObject *
 oss_writeall(oss_audio_t *self, PyObject *args)
 {
-    char *cp;
-    int rv, size;
+    Py_buffer data;
+    const char *cp;
+    Py_ssize_t size;
+    int rv;
     fd_set write_set_fds;
     int select_rv;
 
@@ -462,17 +465,20 @@ oss_writeall(oss_audio_t *self, PyObject *args)
     if (!_is_fd_valid(self->fd))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "y#:write", &cp, &size))
+    if (!PyArg_ParseTuple(args, "y*:writeall", &data))
         return NULL;
 
     if (!_PyIsSelectable_fd(self->fd)) {
         PyErr_SetString(PyExc_ValueError,
                         "file descriptor out of range for select");
+        PyBuffer_Release(&data);
         return NULL;
     }
     /* use select to wait for audio device to be available */
     FD_ZERO(&write_set_fds);
     FD_SET(self->fd, &write_set_fds);
+    cp = (const char *)data.buf;
+    size = data.len;
 
     while (size > 0) {
         Py_BEGIN_ALLOW_THREADS
@@ -480,10 +486,12 @@ oss_writeall(oss_audio_t *self, PyObject *args)
         Py_END_ALLOW_THREADS
 
         assert(select_rv != 0);   /* no timeout, can't expire */
-        if (select_rv == -1)
+        if (select_rv == -1) {
+            PyBuffer_Release(&data);
             return PyErr_SetFromErrno(PyExc_IOError);
+        }
 
-        rv = _Py_write(self->fd, cp, size);
+        rv = _Py_write(self->fd, , cp, Py_MIN(size, INT_MAX));
         if (rv == -1) {
             /* buffer is full, try again */
             if (errno == EAGAIN) {
@@ -491,6 +499,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
                 continue;
             }
             /* it's a real error */
+            PyBuffer_Release(&data);
             return NULL;
         }
 
@@ -499,6 +508,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
         size -= rv;
         cp += rv;
     }
+    PyBuffer_Release(&data);
     Py_INCREF(Py_None);
     return Py_None;
 }

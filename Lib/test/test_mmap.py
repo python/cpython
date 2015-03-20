@@ -282,6 +282,7 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.find(b'one', 1), 8)
         self.assertEqual(m.find(b'one', 1, -1), 8)
         self.assertEqual(m.find(b'one', 1, -2), -1)
+        self.assertEqual(m.find(bytearray(b'one')), 0)
 
 
     def test_rfind(self):
@@ -300,6 +301,7 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.rfind(b'one', 0, -2), 0)
         self.assertEqual(m.rfind(b'one', 1, -1), 8)
         self.assertEqual(m.rfind(b'one', 1, -2), -1)
+        self.assertEqual(m.rfind(bytearray(b'one')), 8)
 
 
     def test_double_close(self):
@@ -601,8 +603,10 @@ class MmapTests(unittest.TestCase):
         m.write(b"bar")
         self.assertEqual(m.tell(), 6)
         self.assertEqual(m[:], b"012bar6789")
-        m.seek(8)
-        self.assertRaises(ValueError, m.write, b"bar")
+        m.write(bytearray(b"baz"))
+        self.assertEqual(m.tell(), 9)
+        self.assertEqual(m[:], b"012barbaz9")
+        self.assertRaises(ValueError, m.write, b"ba")
 
     def test_non_ascii_byte(self):
         for b in (129, 200, 255): # > 128
