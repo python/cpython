@@ -3,12 +3,12 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(fcntl_fcntl__doc__,
-"fcntl($module, fd, code, arg=None, /)\n"
+"fcntl($module, fd, cmd, arg=0, /)\n"
 "--\n"
 "\n"
-"Perform the operation `code` on file descriptor fd.\n"
+"Perform the operation `cmd` on file descriptor fd.\n"
 "\n"
-"The values used for `code` are operating system dependent, and are available\n"
+"The values used for `cmd` are operating system dependent, and are available\n"
 "as constants in the fcntl module, using the same names as used in\n"
 "the relevant C header files.  The argument arg is optional, and\n"
 "defaults to 0; it may be an int or a string.  If arg is given as a string,\n"
@@ -43,13 +43,13 @@ exit:
 }
 
 PyDoc_STRVAR(fcntl_ioctl__doc__,
-"ioctl($module, fd, op, arg=None, mutate_flag=True, /)\n"
+"ioctl($module, fd, request, arg=0, mutate_flag=True, /)\n"
 "--\n"
 "\n"
-"Perform the operation op on file descriptor fd.\n"
+"Perform the operation `request` on file descriptor `fd`.\n"
 "\n"
-"The values used for op are operating system dependent, and are available as\n"
-"constants in the fcntl or termios library modules, using the same names as\n"
+"The values used for `request` are operating system dependent, and are available\n"
+"as constants in the fcntl or termios library modules, using the same names as\n"
 "used in the relevant C header files.\n"
 "\n"
 "The argument `arg` is optional, and defaults to 0; it may be an int or a\n"
@@ -62,9 +62,8 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "returned.  The return value is the integer returned by the ioctl system\n"
 "call.\n"
 "\n"
-"If the argument is a mutable buffer and the mutable_flag argument is not\n"
-"passed or is false, the behavior is as if a string had been passed.  This\n"
-"behavior will change in future releases of Python.\n"
+"If the argument is a mutable buffer and the mutable_flag argument is false,\n"
+"the behavior is as if a string had been passed.\n"
 "\n"
 "If the argument is an immutable buffer (most likely a string) then a copy\n"
 "of the buffer is passed to the operating system and the return value is a\n"
@@ -102,10 +101,10 @@ exit:
 }
 
 PyDoc_STRVAR(fcntl_flock__doc__,
-"flock($module, fd, code, /)\n"
+"flock($module, fd, operation, /)\n"
 "--\n"
 "\n"
-"Perform the lock operation op on file descriptor fd.\n"
+"Perform the lock operation `operation` on file descriptor `fd`.\n"
 "\n"
 "See the Unix manual page for flock(2) for details (On some systems, this\n"
 "function is emulated using fcntl()).");
@@ -134,12 +133,12 @@ exit:
 }
 
 PyDoc_STRVAR(fcntl_lockf__doc__,
-"lockf($module, fd, code, lenobj=None, startobj=None, whence=0, /)\n"
+"lockf($module, fd, cmd, len=0, start=0, whence=0, /)\n"
 "--\n"
 "\n"
 "A wrapper around the fcntl() locking calls.\n"
 "\n"
-"fd is the file descriptor of the file to lock or unlock, and operation is one\n"
+"`fd` is the file descriptor of the file to lock or unlock, and operation is one\n"
 "of the following values:\n"
 "\n"
 "    LOCK_UN - unlock\n"
@@ -152,9 +151,9 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "have an errno attribute set to EACCES or EAGAIN (depending on the operating\n"
 "system -- for portability, check for either value).\n"
 "\n"
-"length is the number of bytes to lock, with the default meaning to lock to\n"
-"EOF.  start is the byte offset, relative to whence, to that the lock\n"
-"starts.  whence is as with fileobj.seek(), specifically:\n"
+"`len` is the number of bytes to lock, with the default meaning to lock to\n"
+"EOF.  `start` is the byte offset, relative to `whence`, to that the lock\n"
+"starts.  `whence` is as with fileobj.seek(), specifically:\n"
 "\n"
 "    0 - relative to the start of the file (SEEK_SET)\n"
 "    1 - relative to the current buffer position (SEEK_CUR)\n"
@@ -185,4 +184,4 @@ fcntl_lockf(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84bdde73a92f7c61 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec482672292aab0c input=a9049054013a1b77]*/
