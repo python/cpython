@@ -10,6 +10,8 @@ Release date: 2015-03-28
 Core and Builtins
 -----------------
 
+- Issue #23681: The -b option now affects comparisons of bytes with int.
+
 - Issue #23632: Memoryviews now allow tuple indexing (including for
   multi-dimensional memoryviews).
 

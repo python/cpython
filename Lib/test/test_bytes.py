@@ -1338,20 +1338,35 @@ class AssortedBytesTest(unittest.TestCase):
         b = bytearray()
         self.assertFalse(b.replace(b'', b'') is b)
 
+    @unittest.skipUnless(sys.flags.bytes_warning,
+                         "BytesWarning is needed for this test: use -bb option")
     def test_compare(self):
-        if sys.flags.bytes_warning:
-            def bytes_warning():
-                return test.support.check_warnings(('', BytesWarning))
-            with bytes_warning():
-                b'' == ''
-            with bytes_warning():
-                b'' != ''
-            with bytes_warning():
-                bytearray(b'') == ''
-            with bytes_warning():
-                bytearray(b'') != ''
-        else:
-            self.skipTest("BytesWarning is needed for this test: use -bb option")
+        def bytes_warning():
+            return test.support.check_warnings(('', BytesWarning))
+        with bytes_warning():
+            b'' == ''
+        with bytes_warning():
+            '' == b''
+        with bytes_warning():
+            b'' != ''
+        with bytes_warning():
+            '' != b''
+        with bytes_warning():
+            bytearray(b'') == ''
+        with bytes_warning():
+            '' == bytearray(b'')
+        with bytes_warning():
+            bytearray(b'') != ''
+        with bytes_warning():
+            '' != bytearray(b'')
+        with bytes_warning():
+            b'\0' == 0
+        with bytes_warning():
+            0 == b'\0'
+        with bytes_warning():
+            b'\0' != 0
+        with bytes_warning():
+            0 != b'\0'
 
     # Optimizations:
     # __iter__? (optimization)

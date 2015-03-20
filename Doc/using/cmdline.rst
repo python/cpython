@@ -190,9 +190,12 @@ Miscellaneous options
 
 .. cmdoption:: -b
 
-   Issue a warning when comparing str and bytes. Issue an error when the
+   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
+   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error when the
    option is given twice (:option:`-bb`).
 
+   .. versionchanged: 3.5
+      Affects comparisons of :class:`bytes` with :class:`int`.
 
 .. cmdoption:: -B
 
