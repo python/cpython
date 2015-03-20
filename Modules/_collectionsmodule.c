@@ -724,6 +724,38 @@ deque_count(dequeobject *deque, PyObject *v)
 PyDoc_STRVAR(count_doc,
 "D.count(value) -> integer -- return number of occurrences of value");
 
+static int
+deque_contains(dequeobject *deque, PyObject *v)
+{
+    block *b = deque->leftblock;
+    Py_ssize_t index = deque->leftindex;
+    Py_ssize_t n = Py_SIZE(deque);
+    Py_ssize_t i;
+    size_t start_state = deque->state;
+    PyObject *item;
+    int cmp;
+
+    for (i=0 ; i<n ; i++) {
+        CHECK_NOT_END(b);
+        item = b->data[index];
+        cmp = PyObject_RichCompareBool(item, v, Py_EQ);
+        if (cmp) {
+            return cmp;
+        }
+        if (start_state != deque->state) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "deque mutated during iteration");
+            return -1;
+        }
+        index++;
+        if (index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
+        }
+    }
+    return 0;
+}
+
 static Py_ssize_t
 deque_len(dequeobject *deque)
 {
@@ -1154,7 +1186,7 @@ static PySequenceMethods deque_as_sequence = {
     0,                                  /* sq_slice */
     (ssizeobjargproc)deque_ass_item,    /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    0,                                  /* sq_contains */
+    (objobjproc)deque_contains,         /* sq_contains */
     (binaryfunc)deque_inplace_concat,   /* sq_inplace_concat */
     0,                                  /* sq_inplace_repeat */
 
