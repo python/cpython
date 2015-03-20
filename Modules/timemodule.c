@@ -1399,14 +1399,14 @@ floatsleep(double secs)
 #endif
 
     _PyTime_monotonic(&deadline);
-    _PyTime_ADD_SECONDS(deadline, secs);
+    _PyTime_AddDouble(&deadline, secs, _PyTime_ROUND_UP);
 
     do {
 #ifndef MS_WINDOWS
         frac = fmod(secs, 1.0);
         secs = floor(secs);
         timeout.tv_sec = (long)secs;
-        timeout.tv_usec = (long)(frac*1000000.0);
+        timeout.tv_usec = (long)(frac*1e6);
 
         Py_BEGIN_ALLOW_THREADS
         err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);

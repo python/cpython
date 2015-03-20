@@ -687,7 +687,7 @@ internal_select(PySocketSockObject *s, int writing)
         if (has_timeout) { \
             _PyTime_monotonic(&now); \
             deadline = now; \
-            _PyTime_ADD_SECONDS(deadline, s->sock_timeout); \
+            _PyTime_AddDouble(&deadline, s->sock_timeout, _PyTime_ROUND_UP); \
         } \
         while (1) { \
             errno = 0; \
