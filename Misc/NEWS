@@ -21,6 +21,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #23715: :func:`signal.sigwaitinfo` and :func:`signal.sigtimedwait` are
+  now retried when interrupted by a signal not in the *sigset* parameter, if
+  the signal handler does not raise an exception. signal.sigtimedwait()
+  recomputes the timeout with a monotonic clock when it is retried.
+
 - Issue #23001: Few functions in modules mmap, ossaudiodev, socket, ssl, and
   codecs, that accepted only read-only bytes-like object now accept writable
   bytes-like object too.

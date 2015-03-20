@@ -936,35 +936,6 @@ class PendingSignalsTests(unittest.TestCase):
         signum = signal.SIGALRM
         self.assertRaises(ValueError, signal.sigtimedwait, [signum], -1.0)
 
-    @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
-                         'need signal.sigwaitinfo()')
-    # Issue #18238: sigwaitinfo() can be interrupted on Linux (raises
-    # InterruptedError), but not on AIX
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'signal.sigwaitinfo() cannot be interrupted on AIX')
-    def test_sigwaitinfo_interrupted(self):
-        self.wait_helper(signal.SIGUSR1, '''
-        def test(signum):
-            import errno
-
-            hndl_called = True
-            def alarm_handler(signum, frame):
-                hndl_called = False
-
-            signal.signal(signal.SIGALRM, alarm_handler)
-            signal.alarm(1)
-            try:
-                signal.sigwaitinfo([signal.SIGUSR1])
-            except OSError as e:
-                if e.errno == errno.EINTR:
-                    if not hndl_called:
-                        raise Exception("SIGALRM handler not called")
-                else:
-                    raise Exception("Expected EINTR to be raised by sigwaitinfo")
-            else:
-                raise Exception("Expected EINTR to be raised by sigwaitinfo")
-        ''')
-
     @unittest.skipUnless(hasattr(signal, 'sigwait'),
                          'need signal.sigwait()')
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),

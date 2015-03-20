@@ -934,6 +934,7 @@ signal_sigwaitinfo(PyObject *self, PyObject *args)
     sigset_t set;
     siginfo_t si;
     int err;
+    int async_err = 0;
 
     if (!PyArg_ParseTuple(args, "O:sigwaitinfo", &signals))
         return NULL;
@@ -941,11 +942,14 @@ signal_sigwaitinfo(PyObject *self, PyObject *args)
     if (iterable_to_sigset(signals, &set))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS
-    err = sigwaitinfo(&set, &si);
-    Py_END_ALLOW_THREADS
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        err = sigwaitinfo(&set, &si);
+        Py_END_ALLOW_THREADS
+    } while (err == -1
+             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (err == -1)
-        return PyErr_SetFromErrno(PyExc_OSError);
+        return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
     return fill_siginfo(&si);
 }
@@ -962,25 +966,19 @@ Returns a struct_siginfo containing information about the signal.");
 static PyObject *
 signal_sigtimedwait(PyObject *self, PyObject *args)
 {
-    PyObject *signals, *timeout;
-    struct timespec buf;
+    PyObject *signals;
+    double timeout, frac;
+    struct timespec ts;
     sigset_t set;
     siginfo_t si;
-    time_t tv_sec;
-    long tv_nsec;
-    int err;
+    int res;
+    _PyTime_timeval deadline, monotonic;
 
-    if (!PyArg_ParseTuple(args, "OO:sigtimedwait",
+    if (!PyArg_ParseTuple(args, "Od:sigtimedwait",
                           &signals, &timeout))
         return NULL;
 
-    if (_PyTime_ObjectToTimespec(timeout, &tv_sec, &tv_nsec,
-                                 _PyTime_ROUND_DOWN) == -1)
-        return NULL;
-    buf.tv_sec = tv_sec;
-    buf.tv_nsec = tv_nsec;
-
-    if (buf.tv_sec < 0 || buf.tv_nsec < 0) {
+    if (timeout < 0) {
         PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
         return NULL;
     }
@@ -988,15 +986,38 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
     if (iterable_to_sigset(signals, &set))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS
-    err = sigtimedwait(&set, &si, &buf);
-    Py_END_ALLOW_THREADS
-    if (err == -1) {
-        if (errno == EAGAIN)
-            Py_RETURN_NONE;
-        else
-            return PyErr_SetFromErrno(PyExc_OSError);
-    }
+    _PyTime_monotonic(&deadline);
+    _PyTime_AddDouble(&deadline, timeout, _PyTime_ROUND_UP);
+
+    do {
+        frac = fmod(timeout, 1.0);
+        timeout = floor(timeout);
+        ts.tv_sec = (long)timeout;
+        ts.tv_nsec = (long)(frac*1e9);
+
+        Py_BEGIN_ALLOW_THREADS
+        res = sigtimedwait(&set, &si, &ts);
+        Py_END_ALLOW_THREADS
+
+        if (res != -1)
+            break;
+
+        if (errno != EINTR) {
+            if (errno == EAGAIN)
+                Py_RETURN_NONE;
+            else
+                return PyErr_SetFromErrno(PyExc_OSError);
+        }
+
+        /* sigtimedwait() was interrupted by a signal (EINTR) */
+        if (PyErr_CheckSignals())
+            return NULL;
+
+        _PyTime_monotonic(&monotonic);
+        timeout = _PyTime_INTERVAL(monotonic, deadline);
+        if (timeout <= 0.0)
+            break;
+    } while (1);
 
     return fill_siginfo(&si);
 }

@@ -264,11 +264,47 @@ class TimeEINTRTest(EINTRBaseTest):
         self.assertGreaterEqual(dt, self.sleep_time)
 
 
+@unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
+class SignalEINTRTest(EINTRBaseTest):
+    """ EINTR tests for the signal module. """
+
+    def test_sigtimedwait(self):
+        t0 = time.monotonic()
+        signal.sigtimedwait([], self.sleep_time)
+        dt = time.monotonic() - t0
+        self.assertGreaterEqual(dt, self.sleep_time)
+
+    def test_sigwaitinfo(self):
+        signum = signal.SIGUSR1
+        pid = os.getpid()
+
+        old_handler = signal.signal(signum, lambda *args: None)
+        self.addCleanup(signal.signal, signum, old_handler)
+
+        t0 = time.monotonic()
+        child_pid = os.fork()
+        if child_pid == 0:
+            # child
+            try:
+                self._sleep()
+                os.kill(pid, signum)
+            finally:
+                os._exit(0)
+        else:
+            # parent
+            signal.sigwaitinfo([signum])
+            dt = time.monotonic() - t0
+            os.waitpid(child_pid, 0)
+
+        self.assertGreaterEqual(dt, self.sleep_time)
+
+
 def test_main():
     support.run_unittest(
         OSEINTRTest,
         SocketEINTRTest,
-        TimeEINTRTest)
+        TimeEINTRTest,
+        SignalEINTRTest)
 
 
 if __name__ == "__main__":
