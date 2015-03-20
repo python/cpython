@@ -301,16 +301,17 @@ mmap_gfind(mmap_object *self,
 {
     Py_ssize_t start = self->pos;
     Py_ssize_t end = self->size;
-    const char *needle;
-    Py_ssize_t len;
+    Py_buffer view;
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, reverse ? "y#|nn:rfind" : "y#|nn:find",
-                          &needle, &len, &start, &end)) {
+    if (!PyArg_ParseTuple(args, reverse ? "y*|nn:rfind" : "y*|nn:find",
+                          &view, &start, &end)) {
         return NULL;
     } else {
         const char *p, *start_p, *end_p;
         int sign = reverse ? -1 : 1;
+        const char *needle = view.buf;
+        Py_ssize_t len = view.len;
 
         if (start < 0)
             start += self->size;
@@ -335,9 +336,11 @@ mmap_gfind(mmap_object *self,
             for (i = 0; i < len && needle[i] == p[i]; ++i)
                 /* nothing */;
             if (i == len) {
+                PyBuffer_Release(&view);
                 return PyLong_FromSsize_t(p - self->data);
             }
         }
+        PyBuffer_Release(&view);
         return PyLong_FromLong(-1);
     }
 }
@@ -385,22 +388,25 @@ static PyObject *
 mmap_write_method(mmap_object *self,
                   PyObject *args)
 {
-    Py_ssize_t length;
-    char *data;
+    Py_buffer data;
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "y#:write", &data, &length))
+    if (!PyArg_ParseTuple(args, "y*:write", &data))
         return(NULL);
 
-    if (!is_writable(self))
-        return NULL;
-
-    if ((self->pos + length) > self->size) {
-        PyErr_SetString(PyExc_ValueError, "data out of range");
+    if (!is_writable(self)) {
+        PyBuffer_Release(&data);
         return NULL;
     }
-    memcpy(self->data+self->pos, data, length);
-    self->pos = self->pos+length;
+
+    if ((self->pos + data.len) > self->size) {
+        PyErr_SetString(PyExc_ValueError, "data out of range");
+        PyBuffer_Release(&data);
+        return NULL;
+    }
+    memcpy(self->data + self->pos, data.buf, data.len);
+    self->pos = self->pos + data.len;
+    PyBuffer_Release(&data);
     Py_INCREF(Py_None);
     return Py_None;
 }

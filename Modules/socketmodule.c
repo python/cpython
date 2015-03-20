@@ -1299,8 +1299,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_UNIX:
     {
         struct sockaddr_un* addr;
-        char *path;
-        int len;
+        Py_buffer path;
         int retval = 0;
 
         /* PEP 383.  Not using PyUnicode_FSConverter since we need to
@@ -1311,15 +1310,17 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
         else
             Py_INCREF(args);
-        if (!PyArg_Parse(args, "y#", &path, &len))
-            goto unix_out;
-        assert(len >= 0);
+        if (!PyArg_Parse(args, "y*", &path)) {
+            Py_DECREF(args);
+            return retval;
+        }
+        assert(path.len >= 0);
 
         addr = (struct sockaddr_un*)addr_ret;
 #ifdef linux
-        if (len > 0 && path[0] == 0) {
+        if (path.len > 0 && *(const char *)path.buf == 0) {
             /* Linux abstract namespace extension */
-            if ((size_t)len > sizeof addr->sun_path) {
+            if ((size_t)path.len > sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
                 goto unix_out;
@@ -1329,18 +1330,19 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #endif /* linux */
         {
             /* regular NULL-terminated string */
-            if ((size_t)len >= sizeof addr->sun_path) {
+            if ((size_t)path.len >= sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
                 goto unix_out;
             }
-            addr->sun_path[len] = 0;
+            addr->sun_path[path.len] = 0;
         }
         addr->sun_family = s->sock_family;
-        memcpy(addr->sun_path, path, len);
-        *len_ret = len + offsetof(struct sockaddr_un, sun_path);
+        memcpy(addr->sun_path, path.buf, path.len);
+        *len_ret = path.len + offsetof(struct sockaddr_un, sun_path);
         retval = 1;
     unix_out:
+        PyBuffer_Release(&path);
         Py_DECREF(args);
         return retval;
     }
@@ -1562,8 +1564,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         int protoNumber;
         int hatype = 0;
         int pkttype = 0;
-        char *haddr = NULL;
-        unsigned int halen = 0;
+        Py_buffer haddr = {NULL, NULL};
 
         if (!PyTuple_Check(args)) {
             PyErr_Format(
@@ -1573,25 +1574,28 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "si|iiy#", &interfaceName,
+        if (!PyArg_ParseTuple(args, "si|iiy*", &interfaceName,
                               &protoNumber, &pkttype, &hatype,
-                              &haddr, &halen))
+                              &haddr))
             return 0;
         strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
         ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
         if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
             s->errorhandler();
+            PyBuffer_Release(&haddr);
             return 0;
         }
-        if (halen > 8) {
-          PyErr_SetString(PyExc_ValueError,
-                          "Hardware address must be 8 bytes or less");
-          return 0;
+        if (haddr.buf && haddr.len > 8) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Hardware address must be 8 bytes or less");
+            PyBuffer_Release(&haddr);
+            return 0;
         }
         if (protoNumber < 0 || protoNumber > 0xffff) {
             PyErr_SetString(
                 PyExc_OverflowError,
                 "getsockaddrarg: protoNumber must be 0-65535.");
+            PyBuffer_Release(&haddr);
             return 0;
         }
         addr = (struct sockaddr_ll*)addr_ret;
@@ -1600,11 +1604,14 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         addr->sll_ifindex = ifr.ifr_ifindex;
         addr->sll_pkttype = pkttype;
         addr->sll_hatype = hatype;
-        if (halen != 0) {
-          memcpy(&addr->sll_addr, haddr, halen);
+        if (haddr.buf) {
+            memcpy(&addr->sll_addr, haddr.buf, haddr.len);
+            addr->sll_halen = haddr.len;
         }
-        addr->sll_halen = halen;
+        else
+            addr->sll_halen = 0;
         *len_ret = sizeof *addr;
+        PyBuffer_Release(&haddr);
         return 1;
     }
 #endif
@@ -2230,22 +2237,21 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     int level;
     int optname;
     int res;
-    char *buf;
-    int buflen;
+    Py_buffer optval;
     int flag;
 
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
-        buf = (char *) &flag;
-        buflen = sizeof flag;
+        res = setsockopt(s->sock_fd, level, optname, &flag, sizeof flag);
     }
     else {
         PyErr_Clear();
-        if (!PyArg_ParseTuple(args, "iiy#:setsockopt",
-                              &level, &optname, &buf, &buflen))
+        if (!PyArg_ParseTuple(args, "iiy*:setsockopt",
+                              &level, &optname, &optval))
             return NULL;
+        res = setsockopt(s->sock_fd, level, optname, optval.buf, optval.len);
+        PyBuffer_Release(&optval);
     }
-    res = setsockopt(s->sock_fd, level, optname, (void *)buf, buflen);
     if (res < 0)
         return s->errorhandler();
     Py_INCREF(Py_None);
@@ -5037,21 +5043,22 @@ Convert an IP address from 32-bit packed binary format to string format");
 static PyObject*
 socket_inet_ntoa(PyObject *self, PyObject *args)
 {
-    char *packed_str;
-    int addr_len;
+    Py_buffer packed_ip;
     struct in_addr packed_addr;
 
-    if (!PyArg_ParseTuple(args, "y#:inet_ntoa", &packed_str, &addr_len)) {
+    if (!PyArg_ParseTuple(args, "y*:inet_ntoa", &packed_ip)) {
         return NULL;
     }
 
-    if (addr_len != sizeof(packed_addr)) {
+    if (packed_ip.len != sizeof(packed_addr)) {
         PyErr_SetString(PyExc_OSError,
             "packed IP wrong length for inet_ntoa");
+        PyBuffer_Release(&packed_ip);
         return NULL;
     }
 
-    memcpy(&packed_addr, packed_str, addr_len);
+    memcpy(&packed_addr, packed_ip.buf, packed_ip.len);
+    PyBuffer_Release(&packed_ip);
 
     return PyUnicode_FromString(inet_ntoa(packed_addr));
 }
@@ -5162,8 +5169,7 @@ static PyObject *
 socket_inet_ntop(PyObject *self, PyObject *args)
 {
     int af;
-    char* packed;
-    int len;
+    Py_buffer packed_ip;
     const char* retval;
 #ifdef ENABLE_IPV6
     char ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
@@ -5174,31 +5180,35 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     /* Guarantee NUL-termination for PyUnicode_FromString() below */
     memset((void *) &ip[0], '\0', sizeof(ip));
 
-    if (!PyArg_ParseTuple(args, "iy#:inet_ntop", &af, &packed, &len)) {
+    if (!PyArg_ParseTuple(args, "iy*:inet_ntop", &af, &packed_ip)) {
         return NULL;
     }
 
     if (af == AF_INET) {
-        if (len != sizeof(struct in_addr)) {
+        if (packed_ip.len != sizeof(struct in_addr)) {
             PyErr_SetString(PyExc_ValueError,
                 "invalid length of packed IP address string");
+            PyBuffer_Release(&packed_ip);
             return NULL;
         }
 #ifdef ENABLE_IPV6
     } else if (af == AF_INET6) {
-        if (len != sizeof(struct in6_addr)) {
+        if (packed_ip.len != sizeof(struct in6_addr)) {
             PyErr_SetString(PyExc_ValueError,
                 "invalid length of packed IP address string");
+            PyBuffer_Release(&packed_ip);
             return NULL;
         }
 #endif
     } else {
         PyErr_Format(PyExc_ValueError,
             "unknown address family %d", af);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     }
 
-    retval = inet_ntop(af, packed, ip, sizeof(ip));
+    retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
+    PyBuffer_Release(&packed_ip);
     if (!retval) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -5217,8 +5227,7 @@ static PyObject *
 socket_inet_ntop(PyObject *self, PyObject *args)
 {
     int af;
-    char* packed;
-    int len;
+    Py_buffer packed_ip;
     struct sockaddr_in6 addr;
     DWORD addrlen, ret, retlen;
 #ifdef ENABLE_IPV6
@@ -5230,38 +5239,42 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     /* Guarantee NUL-termination for PyUnicode_FromString() below */
     memset((void *) &ip[0], '\0', sizeof(ip));
 
-    if (!PyArg_ParseTuple(args, "iy#:inet_ntop", &af, &packed, &len)) {
+    if (!PyArg_ParseTuple(args, "iy*:inet_ntop", &af, &packed_ip)) {
         return NULL;
     }
 
     if (af == AF_INET) {
         struct sockaddr_in * addr4 = (struct sockaddr_in *)&addr;
 
-        if (len != sizeof(struct in_addr)) {
+        if (packed_ip.len != sizeof(struct in_addr)) {
             PyErr_SetString(PyExc_ValueError,
                 "invalid length of packed IP address string");
+            PyBuffer_Release(&packed_ip);
             return NULL;
         }
         memset(addr4, 0, sizeof(struct sockaddr_in));
         addr4->sin_family = AF_INET;
-        memcpy(&(addr4->sin_addr), packed, sizeof(addr4->sin_addr));
+        memcpy(&(addr4->sin_addr), packed_ip.buf, sizeof(addr4->sin_addr));
         addrlen = sizeof(struct sockaddr_in);
     } else if (af == AF_INET6) {
-        if (len != sizeof(struct in6_addr)) {
+        if (packed_ip.len != sizeof(struct in6_addr)) {
             PyErr_SetString(PyExc_ValueError,
                 "invalid length of packed IP address string");
+            PyBuffer_Release(&packed_ip);
             return NULL;
         }
 
         memset(&addr, 0, sizeof(addr));
         addr.sin6_family = AF_INET6;
-        memcpy(&(addr.sin6_addr), packed, sizeof(addr.sin6_addr));
+        memcpy(&(addr.sin6_addr), packed_ip.buf, sizeof(addr.sin6_addr));
         addrlen = sizeof(addr);
     } else {
         PyErr_Format(PyExc_ValueError,
             "unknown address family %d", af);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     }
+    PyBuffer_Release(&packed_ip);
 
     retlen = sizeof(ip);
     ret = WSAAddressToStringA((struct sockaddr*)&addr, addrlen, NULL,

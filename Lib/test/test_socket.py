@@ -1074,6 +1074,7 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid(f, b'\x00' * 3)
         assertInvalid(f, b'\x00' * 5)
         assertInvalid(f, b'\x00' * 16)
+        self.assertEqual('170.85.170.85', f(bytearray(b'\xaa\x55\xaa\x55')))
 
         self.assertEqual('1.0.1.0', g(b'\x01\x00\x01\x00'))
         self.assertEqual('170.85.170.85', g(b'\xaa\x55\xaa\x55'))
@@ -1081,6 +1082,7 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid(g, b'\x00' * 3)
         assertInvalid(g, b'\x00' * 5)
         assertInvalid(g, b'\x00' * 16)
+        self.assertEqual('170.85.170.85', g(bytearray(b'\xaa\x55\xaa\x55')))
 
     @unittest.skipUnless(hasattr(socket, 'inet_ntop'),
                          'test needs socket.inet_ntop()')
@@ -1110,6 +1112,7 @@ class GeneralModuleTests(unittest.TestCase):
             'aef:b01:506:1001:ffff:9997:55:170',
             f(b'\x0a\xef\x0b\x01\x05\x06\x10\x01\xff\xff\x99\x97\x00\x55\x01\x70')
         )
+        self.assertEqual('::1', f(bytearray(b'\x00' * 15 + b'\x01')))
 
         assertInvalid(b'\x12' * 15)
         assertInvalid(b'\x12' * 17)
@@ -1497,6 +1500,7 @@ class BasicCANTest(unittest.TestCase):
             s.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_FILTER, can_filter)
             self.assertEqual(can_filter,
                     s.getsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_FILTER, 8))
+            s.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_FILTER, bytearray(can_filter))
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
@@ -4507,6 +4511,12 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
             self.assertEqual(s.getsockname(), b"\x00python\x00test\x00")
         finally:
             s.close()
+
+    def testBytearrayName(self):
+        # Check that an abstract name can be passed as a bytearray.
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.bind(bytearray(b"\x00python\x00test\x00"))
+            self.assertEqual(s.getsockname(), b"\x00python\x00test\x00")
 
 @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'test needs socket.AF_UNIX')
 class TestUnixDomain(unittest.TestCase):
