@@ -1041,11 +1041,18 @@ class NNTP(_NNTPBase):
         self.host = host
         self.port = port
         self.sock = socket.create_connection((host, port), timeout)
-        file = self.sock.makefile("rwb")
-        _NNTPBase.__init__(self, file, host,
-                           readermode, timeout)
-        if user or usenetrc:
-            self.login(user, password, usenetrc)
+        file = None
+        try:
+            file = self.sock.makefile("rwb")
+            _NNTPBase.__init__(self, file, host,
+                               readermode, timeout)
+            if user or usenetrc:
+                self.login(user, password, usenetrc)
+        except:
+            if file:
+                file.close()
+            self.sock.close()
+            raise
 
     def _close(self):
         try:
@@ -1065,12 +1072,19 @@ if _have_ssl:
             in default port and the `ssl_context` argument for SSL connections.
             """
             self.sock = socket.create_connection((host, port), timeout)
-            self.sock = _encrypt_on(self.sock, ssl_context, host)
-            file = self.sock.makefile("rwb")
-            _NNTPBase.__init__(self, file, host,
-                               readermode=readermode, timeout=timeout)
-            if user or usenetrc:
-                self.login(user, password, usenetrc)
+            file = None
+            try:
+                self.sock = _encrypt_on(self.sock, ssl_context, host)
+                file = self.sock.makefile("rwb")
+                _NNTPBase.__init__(self, file, host,
+                                   readermode=readermode, timeout=timeout)
+                if user or usenetrc:
+                    self.login(user, password, usenetrc)
+            except:
+                if file:
+                    file.close()
+                self.sock.close()
+                raise
 
         def _close(self):
             try:
