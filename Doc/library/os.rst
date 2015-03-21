@@ -805,8 +805,10 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
-   Availability: Unix.
+   Availability: Unix, Windows.
 
+   .. versionchanged:: 3.5
+      Added support for Windows
 
 .. function:: get_blocking(fd)
 
@@ -2492,10 +2494,12 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
-   Availability: Unix.
+   Availability: Unix, Windows.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.5
+      Added support for Windows
 
 .. function:: unlink(path, *, dir_fd=None)
 

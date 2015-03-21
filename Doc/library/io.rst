@@ -339,8 +339,11 @@ I/O Base Classes
       if *size* is not specified).  The current stream position isn't changed.
       This resizing can extend or reduce the current file size.  In case of
       extension, the contents of the new file area depend on the platform
-      (on most systems, additional bytes are zero-filled, on Windows they're
-      undetermined).  The new file size is returned.
+      (on most systems, additional bytes are zero-filled).  The new file size
+      is returned.
+
+   .. versionchanged:: 3.5
+      Windows will now zero-fill files when extending.
 
    .. method:: writable()
 
