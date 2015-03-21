@@ -37,7 +37,7 @@ typedef struct {
 typedef struct {
     int		 s_narcs;
     arc		*s_arc;		/* Array of arcs */
-	
+
     /* Optional accelerators */
     int		 s_lower;	/* Lowest label index */
     int		 s_upper;	/* Highest label index */
