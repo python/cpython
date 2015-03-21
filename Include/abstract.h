@@ -267,8 +267,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
                                           PyObject *args, PyObject *kw);
 
 #ifndef Py_LIMITED_API
-     PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *obj,
-                                                    const char *func_name);
+     PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
+                                                    PyObject *result,
+                                                    const char *where);
 #endif
 
        /*
