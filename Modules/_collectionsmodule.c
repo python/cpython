@@ -763,6 +763,91 @@ deque_len(dequeobject *deque)
 }
 
 static PyObject *
+deque_index(dequeobject *deque, PyObject *args)
+{
+    Py_ssize_t i, start=0, stop=Py_SIZE(deque);
+    PyObject *v, *item;
+    block *b = deque->leftblock;
+    Py_ssize_t index = deque->leftindex;
+    size_t start_state = deque->state;
+
+    if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
+                                _PyEval_SliceIndex, &start,
+                                _PyEval_SliceIndex, &stop))
+        return NULL;
+    if (start < 0) {
+        start += Py_SIZE(deque);
+        if (start < 0)
+            start = 0;
+    }
+    if (stop < 0) {
+        stop += Py_SIZE(deque);
+        if (stop < 0)
+            stop = 0;
+    }
+
+    for (i=0 ; i<stop ; i++) {
+        if (i >= start) {
+            int cmp;
+            CHECK_NOT_END(b);
+            item = b->data[index];
+            cmp = PyObject_RichCompareBool(item, v, Py_EQ);
+            if (cmp > 0)
+                return PyLong_FromSsize_t(i);
+            else if (cmp < 0)
+                return NULL;
+            if (start_state != deque->state) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "deque mutated during iteration");
+                return NULL;
+            }
+        }
+        index++;
+        if (index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
+        }
+    }
+    PyErr_Format(PyExc_ValueError, "%R is not in deque", v);
+    return NULL;
+}
+
+PyDoc_STRVAR(index_doc,
+"D.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
+"Raises ValueError if the value is not present.");
+
+static PyObject *
+deque_insert(dequeobject *deque, PyObject *args)
+{
+    Py_ssize_t index;
+    Py_ssize_t n = Py_SIZE(deque);
+    PyObject *value;
+    PyObject *rv;
+
+    if (!PyArg_ParseTuple(args, "nO:insert", &index, &value))
+        return NULL;
+    if (index >= n)
+        return deque_append(deque, value);
+    if (index <= -n || index == 0)
+        return deque_appendleft(deque, value);
+    if (_deque_rotate(deque, -index))
+        return NULL;
+    if (index < 0)
+        rv = deque_append(deque, value);
+    else
+        rv = deque_appendleft(deque, value);
+    if (rv == NULL)
+        return NULL;
+    Py_DECREF(rv);
+    if (_deque_rotate(deque, index))
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(insert_doc,
+"D.insert(index, object) -- insert object before index");
+
+static PyObject *
 deque_remove(dequeobject *deque, PyObject *value)
 {
     Py_ssize_t i, n=Py_SIZE(deque);
@@ -1208,12 +1293,18 @@ static PyMethodDef deque_methods[] = {
         METH_NOARGS,             clear_doc},
     {"__copy__",                (PyCFunction)deque_copy,
         METH_NOARGS,             copy_doc},
+    {"copy",                    (PyCFunction)deque_copy,
+        METH_NOARGS,             copy_doc},
     {"count",                   (PyCFunction)deque_count,
         METH_O,                         count_doc},
     {"extend",                  (PyCFunction)deque_extend,
         METH_O,                  extend_doc},
     {"extendleft",              (PyCFunction)deque_extendleft,
         METH_O,                  extendleft_doc},
+    {"index",                   (PyCFunction)deque_index,
+        METH_VARARGS,            index_doc},
+    {"insert",                  (PyCFunction)deque_insert,
+        METH_VARARGS,            insert_doc},
     {"pop",                     (PyCFunction)deque_pop,
         METH_NOARGS,             pop_doc},
     {"popleft",                 (PyCFunction)deque_popleft,
