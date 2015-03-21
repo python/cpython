@@ -839,9 +839,7 @@ static PyObject *
 fileio_truncate(fileio *self, PyObject *args)
 {
     PyObject *posobj = NULL; /* the new size wanted by the user */
-#ifndef MS_WINDOWS
     Py_off_t pos;
-#endif
     int ret;
     int fd;
 
@@ -864,52 +862,6 @@ fileio_truncate(fileio *self, PyObject *args)
         Py_INCREF(posobj);
     }
 
-#ifdef MS_WINDOWS
-    /* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
-       so don't even try using it. */
-    {
-        PyObject *oldposobj, *tempposobj;
-        HANDLE hFile;
-
-        /* we save the file pointer position */
-        oldposobj = portable_lseek(fd, NULL, 1);
-        if (oldposobj == NULL) {
-            Py_DECREF(posobj);
-            return NULL;
-        }
-
-        /* we then move to the truncation position */
-        tempposobj = portable_lseek(fd, posobj, 0);
-        if (tempposobj == NULL) {
-            Py_DECREF(oldposobj);
-            Py_DECREF(posobj);
-            return NULL;
-        }
-        Py_DECREF(tempposobj);
-
-        /* Truncate.  Note that this may grow the file! */
-        Py_BEGIN_ALLOW_THREADS
-        errno = 0;
-        hFile = (HANDLE)_get_osfhandle(fd);
-        ret = hFile == (HANDLE)-1; /* testing for INVALID_HANDLE value */
-        if (ret == 0) {
-            ret = SetEndOfFile(hFile) == 0;
-            if (ret)
-                errno = EACCES;
-        }
-        Py_END_ALLOW_THREADS
-
-        /* we restore the file pointer position in any case */
-        tempposobj = portable_lseek(fd, oldposobj, 0);
-        Py_DECREF(oldposobj);
-        if (tempposobj == NULL) {
-            Py_DECREF(posobj);
-            return NULL;
-        }
-        Py_DECREF(tempposobj);
-    }
-#else
-
 #if defined(HAVE_LARGEFILE_SUPPORT)
     pos = PyLong_AsLongLong(posobj);
 #else
@@ -922,10 +874,12 @@ fileio_truncate(fileio *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS
     errno = 0;
+#ifdef MS_WINDOWS
+    ret = _chsize_s(fd, pos);
+#else
     ret = ftruncate(fd, pos);
+#endif
     Py_END_ALLOW_THREADS
-
-#endif /* !MS_WINDOWS */
 
     if (ret != 0) {
         Py_DECREF(posobj);

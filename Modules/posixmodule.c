@@ -2315,6 +2315,10 @@ FTRUNCATE
 #endif
 /*[python end generated code: output=4bd4f6f7d41267f1 input=80b4c890b6774ea5]*/
 
+#ifdef MS_WINDOWS
+    #undef PATH_HAVE_FTRUNCATE
+    #define PATH_HAVE_FTRUNCATE 1
+#endif
 
 /*[python input]
 
@@ -8753,7 +8757,7 @@ os_makedev_impl(PyModuleDef *module, int major, int minor)
 #endif /* HAVE_DEVICE_MACROS */
 
 
-#ifdef HAVE_FTRUNCATE
+#if defined HAVE_FTRUNCATE || defined MS_WINDOWS
 /*[clinic input]
 os.ftruncate
 
@@ -8771,9 +8775,16 @@ os_ftruncate_impl(PyModuleDef *module, int fd, Py_off_t length)
     int result;
     int async_err = 0;
 
+    if (!_PyVerify_fd(fd))
+        return posix_error();
+
     do {
         Py_BEGIN_ALLOW_THREADS
+#ifdef MS_WINDOWS
+        result = _chsize_s(fd, length);
+#else
         result = ftruncate(fd, length);
+#endif
         Py_END_ALLOW_THREADS
     } while (result != 0 && errno == EINTR &&
              !(async_err = PyErr_CheckSignals()));
@@ -8781,10 +8792,10 @@ os_ftruncate_impl(PyModuleDef *module, int fd, Py_off_t length)
         return (!async_err) ? posix_error() : NULL;
     Py_RETURN_NONE;
 }
-#endif /* HAVE_FTRUNCATE */
+#endif /* HAVE_FTRUNCATE || MS_WINDOWS */
 
 
-#ifdef HAVE_TRUNCATE
+#if defined HAVE_TRUNCATE || defined MS_WINDOWS
 /*[clinic input]
 os.truncate
     path: path_t(allow_fd='PATH_HAVE_FTRUNCATE')
@@ -8801,21 +8812,37 @@ os_truncate_impl(PyModuleDef *module, path_t *path, Py_off_t length)
 /*[clinic end generated code: output=f60a9e08370e9e2e input=77229cf0b50a9b77]*/
 {
     int result;
+#ifdef MS_WINDOWS
+    int fd;
+#endif
+
+    if (path->fd != -1)
+        return os_ftruncate_impl(module, path->fd, length);
 
     Py_BEGIN_ALLOW_THREADS
-#ifdef HAVE_FTRUNCATE
-    if (path->fd != -1)
-        result = ftruncate(path->fd, length);
+#ifdef MS_WINDOWS
+    if (path->wide)
+        fd = _wopen(path->wide, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
     else
+        fd = _open(path->narrow, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
+    if (fd < 0) 
+        result = -1;
+    else {
+        result = _chsize_s(fd, length);
+        close(fd);
+        if (result < 0)
+            errno = result;
+    }
+#else
+    result = truncate(path->narrow, length);
 #endif
-        result = truncate(path->narrow, length);
     Py_END_ALLOW_THREADS
     if (result < 0)
         return path_error(path);
 
     Py_RETURN_NONE;
 }
-#endif /* HAVE_TRUNCATE */
+#endif /* HAVE_TRUNCATE || MS_WINDOWS */
 
 
 /* Issue #22396: On 32-bit AIX platform, the prototypes of os.posix_fadvise()
@@ -12771,7 +12798,7 @@ static char *have_functions[] = {
     "HAVE_FSTATVFS",
 #endif
 
-#ifdef HAVE_FTRUNCATE
+#if defined HAVE_FTRUNCATE || defined MS_WINDOWS
     "HAVE_FTRUNCATE",
 #endif
 
