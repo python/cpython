@@ -184,7 +184,7 @@ class CAPITest(unittest.TestCase):
                     _testcapi.return_null_without_error()
             """)
             rc, out, err = assert_python_failure('-c', code)
-            self.assertIn(b'_Py_CheckFunctionResult: Assertion', err)
+            self.assertIn(b'_Py_CheckFunctionResult', err)
         else:
             with self.assertRaises(SystemError) as cm:
                 _testcapi.return_null_without_error()
@@ -203,7 +203,7 @@ class CAPITest(unittest.TestCase):
                     _testcapi.return_result_with_error()
             """)
             rc, out, err = assert_python_failure('-c', code)
-            self.assertIn(b'_Py_CheckFunctionResult: Assertion', err)
+            self.assertIn(b'_Py_CheckFunctionResult', err)
         else:
             with self.assertRaises(SystemError) as cm:
                 _testcapi.return_result_with_error()
