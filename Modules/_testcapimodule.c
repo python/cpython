@@ -3360,6 +3360,24 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
     return Py_BuildValue("Nl", obj, pos);
 }
 
+static PyObject*
+return_null_without_error(PyObject *self, PyObject *args)
+{
+    /* invalid call: return NULL without setting an error,
+     * _Py_CheckFunctionResult() must detect such bug at runtime. */
+    PyErr_Clear();
+    return NULL;
+}
+
+static PyObject*
+return_result_with_error(PyObject *self, PyObject *args)
+{
+    /* invalid call: return a result with an error set,
+     * _Py_CheckFunctionResult() must detect such bug at runtime. */
+    PyErr_SetNone(PyExc_ValueError);
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3519,6 +3537,10 @@ static PyMethodDef TestMethods[] = {
         pymarshal_read_last_object_from_file, METH_VARARGS},
     {"pymarshal_read_object_from_file",
         pymarshal_read_object_from_file, METH_VARARGS},
+    {"return_null_without_error",
+        return_null_without_error, METH_NOARGS},
+    {"return_result_with_error",
+        return_result_with_error, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
