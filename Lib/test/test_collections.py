@@ -13,6 +13,7 @@ import re
 import sys
 from collections import UserDict
 from collections import ChainMap
+from collections import deque
 from collections.abc import Hashable, Iterable, Iterator
 from collections.abc import Sized, Container, Callable
 from collections.abc import Set, MutableSet
@@ -1014,7 +1015,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [tuple, str, bytes]:
             self.assertNotIsInstance(sample(), MutableSequence)
             self.assertFalse(issubclass(sample, MutableSequence))
-        for sample in [list, bytearray]:
+        for sample in [list, bytearray, deque]:
             self.assertIsInstance(sample(), MutableSequence)
             self.assertTrue(issubclass(sample, MutableSequence))
         self.assertFalse(issubclass(str, MutableSequence))

@@ -437,6 +437,13 @@ or subtracting from an empty counter.
         Remove all elements from the deque leaving it with length 0.
 
 
+    .. method:: copy()
+
+        Create a shallow copy of the deque.
+
+        .. versionadded:: 3.5
+
+
     .. method:: count(x)
 
         Count the number of deque elements equal to *x*.
@@ -455,6 +462,21 @@ or subtracting from an empty counter.
         Extend the left side of the deque by appending elements from *iterable*.
         Note, the series of left appends results in reversing the order of
         elements in the iterable argument.
+
+
+    .. method:: index(x[, start[, end]])
+
+        Return the position of *x* in the deque.  Returns the first match
+        or raises :exc:`ValueError` if not found.
+
+        .. versionadded:: 3.5
+
+
+    .. method:: insert(i, x)
+
+        Insert *x* into the deque at position *i*.
+
+        .. versionadded:: 3.5
 
 
     .. method:: pop()

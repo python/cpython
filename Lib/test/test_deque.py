@@ -231,6 +231,54 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(IndexError, d.__getitem__, 0)
         self.assertRaises(IndexError, d.__getitem__, -1)
 
+    def test_index(self):
+        for n in 1, 2, 30, 40, 200:
+
+            d = deque(range(n))
+            for i in range(n):
+                self.assertEqual(d.index(i), i)
+
+            with self.assertRaises(ValueError):
+                d.index(n+1)
+
+            # Test detection of mutation during iteration
+            d = deque(range(n))
+            d[n//2] = MutateCmp(d, False)
+            with self.assertRaises(RuntimeError):
+                d.index(n)
+
+            # Test detection of comparison exceptions
+            d = deque(range(n))
+            d[n//2] = BadCmp()
+            with self.assertRaises(RuntimeError):
+                d.index(n)
+
+        # Test start and stop arguments behavior matches list.index()
+        elements = 'ABCDEFGHI'
+        nonelement = 'Z'
+        d = deque(elements * 2)
+        s = list(elements * 2)
+        for start in range(-5 - len(s)*2, 5 + len(s) * 2):
+            for stop in range(-5 - len(s)*2, 5 + len(s) * 2):
+                for element in elements + 'Z':
+                    try:
+                        target = s.index(element, start, stop)
+                    except ValueError:
+                        with self.assertRaises(ValueError):
+                            d.index(element, start, stop)
+                    else:
+                        self.assertEqual(d.index(element, start, stop), target)
+
+    def test_insert(self):
+        # Test to make sure insert behaves like lists
+        elements = 'ABCDEFGHI'
+        for i in range(-5 - len(elements)*2, 5 + len(elements) * 2):
+            d = deque('ABCDEFGHI')
+            s = list('ABCDEFGHI')
+            d.insert(i, 'Z')
+            s.insert(i, 'Z')
+            self.assertEqual(list(d), s)
+
     def test_setitem(self):
         n = 200
         d = deque(range(n))
@@ -519,6 +567,15 @@ class TestBasic(unittest.TestCase):
         mut = [10]
         d = deque([mut])
         e = copy.copy(d)
+        self.assertEqual(list(d), list(e))
+        mut[0] = 11
+        self.assertNotEqual(id(d), id(e))
+        self.assertEqual(list(d), list(e))
+
+    def test_copy_method(self):
+        mut = [10]
+        d = deque([mut])
+        e = d.copy()
         self.assertEqual(list(d), list(e))
         mut[0] = 11
         self.assertNotEqual(id(d), id(e))
