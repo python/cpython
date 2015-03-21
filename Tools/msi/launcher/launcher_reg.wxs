@@ -28,14 +28,14 @@
                 <RegistryValue Root="HKCR" Key="$(var.TestPrefix)Python.CompiledFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
 
                 <ProgId Id="$(var.TestPrefix)Python.ArchiveFile" Description="!(loc.PythonArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
-                    <Extension Id="$(var.ArchiveFileExtension)" ContentType="application/x-zip-compressed">
+                    <Extension Id="$(var.FileExtension)z" ContentType="application/x-zip-compressed">
                         <Verb Id="open" TargetFile="py.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
                 <RegistryValue Root="HKCR" Key="$(var.TestPrefix)Python.ArchiveFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
                 
                 <ProgId Id="$(var.TestPrefix)Python.NoConArchiveFile" Description="!(loc.PythonNoConArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
-                    <Extension Id="$(var.ArchiveFileExtension)w" ContentType="application/x-zip-compressed">
+                    <Extension Id="$(var.FileExtension)zw" ContentType="application/x-zip-compressed">
                         <Verb Id="open" TargetFile="pyw.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
