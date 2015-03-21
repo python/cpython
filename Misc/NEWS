@@ -286,6 +286,8 @@ Library
 
 - Issue #2052: Add charset parameter to HtmlDiff.make_file().
 
+- Issue #23668: Support os.truncate and os.ftruncate on Windows.
+
 - Issue #23138: Fixed parsing cookies with absent keys or values in cookiejar.
   Patch by Demian Brecht.
 
