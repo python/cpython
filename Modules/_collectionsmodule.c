@@ -64,7 +64,7 @@ typedef struct {
     Py_ssize_t rightindex;      /* in range(BLOCKLEN) */
     size_t state;               /* incremented whenever the indices move */
     Py_ssize_t maxlen;
-    PyObject *weakreflist; /* List of weak references */
+    PyObject *weakreflist;
 } dequeobject;
 
 static PyTypeObject deque_type;
@@ -1274,7 +1274,6 @@ static PySequenceMethods deque_as_sequence = {
     (objobjproc)deque_contains,         /* sq_contains */
     (binaryfunc)deque_inplace_concat,   /* sq_inplace_concat */
     0,                                  /* sq_inplace_repeat */
-
 };
 
 /* deque object ********************************************************/
@@ -1296,7 +1295,7 @@ static PyMethodDef deque_methods[] = {
     {"copy",                    (PyCFunction)deque_copy,
         METH_NOARGS,             copy_doc},
     {"count",                   (PyCFunction)deque_count,
-        METH_O,                         count_doc},
+        METH_O,                  count_doc},
     {"extend",                  (PyCFunction)deque_extend,
         METH_O,                  extend_doc},
     {"extendleft",              (PyCFunction)deque_extendleft,
@@ -1309,7 +1308,7 @@ static PyMethodDef deque_methods[] = {
         METH_NOARGS,             pop_doc},
     {"popleft",                 (PyCFunction)deque_popleft,
         METH_NOARGS,             popleft_doc},
-    {"__reduce__",      (PyCFunction)deque_reduce,
+    {"__reduce__",              (PyCFunction)deque_reduce,
         METH_NOARGS,             reduce_doc},
     {"remove",                  (PyCFunction)deque_remove,
         METH_O,                  remove_doc},
