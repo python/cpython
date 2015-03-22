@@ -1,4 +1,5 @@
 import httplib
+import itertools
 import array
 import StringIO
 import socket
@@ -122,21 +123,59 @@ class HeaderTests(TestCase):
                     self.content_length = kv[1].strip()
                 list.append(self, item)
 
-        # POST with empty body
-        conn = httplib.HTTPConnection('example.com')
-        conn.sock = FakeSocket(None)
-        conn._buffer = ContentLengthChecker()
-        conn.request('POST', '/', '')
-        self.assertEqual(conn._buffer.content_length, '0',
-                        'Header Content-Length not set')
+        # Here, we're testing that methods expecting a body get a
+        # content-length set to zero if the body is empty (either None or '')
+        bodies = (None, '')
+        methods_with_body = ('PUT', 'POST', 'PATCH')
+        for method, body in itertools.product(methods_with_body, bodies):
+            conn = httplib.HTTPConnection('example.com')
+            conn.sock = FakeSocket(None)
+            conn._buffer = ContentLengthChecker()
+            conn.request(method, '/', body)
+            self.assertEqual(
+                conn._buffer.content_length, '0',
+                'Header Content-Length incorrect on {}'.format(method)
+            )
 
-        # PUT request with empty body
-        conn = httplib.HTTPConnection('example.com')
-        conn.sock = FakeSocket(None)
-        conn._buffer = ContentLengthChecker()
-        conn.request('PUT', '/', '')
-        self.assertEqual(conn._buffer.content_length, '0',
-                        'Header Content-Length not set')
+        # For these methods, we make sure that content-length is not set when
+        # the body is None because it might cause unexpected behaviour on the
+        # server.
+        methods_without_body = (
+             'GET', 'CONNECT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE',
+        )
+        for method in methods_without_body:
+            conn = httplib.HTTPConnection('example.com')
+            conn.sock = FakeSocket(None)
+            conn._buffer = ContentLengthChecker()
+            conn.request(method, '/', None)
+            self.assertEqual(
+                conn._buffer.content_length, None,
+                'Header Content-Length set for empty body on {}'.format(method)
+            )
+
+        # If the body is set to '', that's considered to be "present but
+        # empty" rather than "missing", so content length would be set, even
+        # for methods that don't expect a body.
+        for method in methods_without_body:
+            conn = httplib.HTTPConnection('example.com')
+            conn.sock = FakeSocket(None)
+            conn._buffer = ContentLengthChecker()
+            conn.request(method, '/', '')
+            self.assertEqual(
+                conn._buffer.content_length, '0',
+                'Header Content-Length incorrect on {}'.format(method)
+            )
+
+        # If the body is set, make sure Content-Length is set.
+        for method in itertools.chain(methods_without_body, methods_with_body):
+            conn = httplib.HTTPConnection('example.com')
+            conn.sock = FakeSocket(None)
+            conn._buffer = ContentLengthChecker()
+            conn.request(method, '/', ' ')
+            self.assertEqual(
+                conn._buffer.content_length, '1',
+                'Header Content-Length incorrect on {}'.format(method)
+            )
 
     def test_putheader(self):
         conn = httplib.HTTPConnection('example.com')

@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23539: If body is None, http.client.HTTPConnection.request now sets
+  Content-Length to 0 for PUT, POST, and PATCH headers to avoid 411 errors from
+  some web servers.
+
 - Issue #23136: _strptime now uniformly handles all days in week 0, including
   Dec 30 of previous year.  Based on patch by Jim Carroll.
 

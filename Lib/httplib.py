@@ -247,6 +247,10 @@ _MAXHEADERS = 100
 _is_legal_header_name = re.compile(r'\A[^:\s][^:\r\n]*\Z').match
 _is_illegal_header_value = re.compile(r'\n(?![ \t])|\r(?![ \t\n])').search
 
+# We always set the Content-Length header for these methods because some
+# servers will otherwise respond with a 411
+_METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
+
 
 class HTTPMessage(mimetools.Message):
 
@@ -1043,19 +1047,25 @@ class HTTPConnection:
         """Send a complete request to the server."""
         self._send_request(method, url, body, headers)
 
-    def _set_content_length(self, body):
-        # Set the content-length based on the body.
+    def _set_content_length(self, body, method):
+        # Set the content-length based on the body. If the body is "empty", we
+        # set Content-Length: 0 for methods that expect a body (RFC 7230,
+        # Section 3.3.2). If the body is set for other methods, we set the
+        # header provided we can figure out what the length is.
         thelen = None
-        try:
-            thelen = str(len(body))
-        except TypeError, te:
-            # If this is a file-like object, try to
-            # fstat its file descriptor
+        if body is None and method.upper() in _METHODS_EXPECTING_BODY:
+            thelen = '0'
+        elif body is not None:
             try:
-                thelen = str(os.fstat(body.fileno()).st_size)
-            except (AttributeError, OSError):
-                # Don't send a length if this failed
-                if self.debuglevel > 0: print "Cannot stat!!"
+                thelen = str(len(body))
+            except TypeError:
+                # If this is a file-like object, try to
+                # fstat its file descriptor
+                try:
+                    thelen = str(os.fstat(body.fileno()).st_size)
+                except (AttributeError, OSError):
+                    # Don't send a length if this failed
+                    if self.debuglevel > 0: print "Cannot stat!!"
 
         if thelen is not None:
             self.putheader('Content-Length', thelen)
@@ -1071,8 +1081,8 @@ class HTTPConnection:
 
         self.putrequest(method, url, **skips)
 
-        if body is not None and 'content-length' not in header_names:
-            self._set_content_length(body)
+        if 'content-length' not in header_names:
+            self._set_content_length(body, method)
         for hdr, value in headers.iteritems():
             self.putheader(hdr, value)
         self.endheaders(body)

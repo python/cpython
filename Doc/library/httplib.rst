@@ -433,9 +433,16 @@ HTTPConnection Objects
    and the selector *url*.  If the *body* argument is present, it should be a
    string of data to send after the headers are finished. Alternatively, it may
    be an open file object, in which case the contents of the file is sent; this
-   file object should support ``fileno()`` and ``read()`` methods. The header
-   Content-Length is automatically set to the correct value. The *headers*
-   argument should be a mapping of extra HTTP headers to send with the request.
+   file object should support ``fileno()`` and ``read()`` methods. The
+   *headers* argument should be a mapping of extra HTTP headers to send with
+   the request.
+
+   If one is not provided in *headers*, a ``Content-Length`` header is added
+   automatically for all methods if the length of the body can be determined,
+   either from the length of the ``str`` representation, or from the reported
+   size of the file on disk. If *body* is ``None`` the header is not set except
+   for methods that expect a body (``PUT``, ``POST``, and ``PATCH``) in which
+   case it is set to ``0``.
 
    .. versionchanged:: 2.6
       *body* can be a file object.
