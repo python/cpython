@@ -4803,11 +4803,14 @@ PyType_Ready(PyTypeObject *type)
             PyObject *b = PyTuple_GET_ITEM(bases, i);
             if (PyType_Check(b) &&
                 (((PyTypeObject *)b)->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-                PyErr_Format(PyExc_TypeError,
-                             "type '%.100s' is not dynamically allocated but "
-                             "its base type '%.100s' is dynamically allocated",
-                             type->tp_name, ((PyTypeObject *)b)->tp_name);
-                goto error;
+                char buf[300];
+                PyOS_snprintf(buf, sizeof(buf),
+                              "type '%.100s' is not dynamically allocated but "
+                              "its base type '%.100s' is dynamically allocated",
+                              type->tp_name, ((PyTypeObject *)b)->tp_name);
+                if (PyErr_Warn(PyExc_DeprecationWarning, buf) < 0)
+                    goto error;
+                break;
             }
         }
 
