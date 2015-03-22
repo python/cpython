@@ -413,22 +413,32 @@ HTTPConnection Objects
 .. method:: HTTPConnection.request(method, url, body=None, headers={})
 
    This will send a request to the server using the HTTP request
-   method *method* and the selector *url*.  If the *body* argument is
-   present, it should be string or bytes object of data to send after
-   the headers are finished.  Strings are encoded as ISO-8859-1, the
-   default charset for HTTP.  To use other encodings, pass a bytes
-   object.  The Content-Length header is set to the length of the
-   string.
+   method *method* and the selector *url*.
 
-   The *body* may also be an open :term:`file object`, in which case the
-   contents of the file is sent; this file object should support ``fileno()``
-   and ``read()`` methods. The header Content-Length is automatically set to
-   the length of the file as reported by stat. The *body* argument may also be
-   an iterable and Content-Length header should be explicitly provided when the
-   body is an iterable.
+   If *body* is specified, the specified data is sent after the headers are
+   finished.  It may be a string, a :term:`bytes-like object`, an open
+   :term:`file object`, or an iterable of :term:`bytes-like object`\s.  If
+   *body* is a string, it is encoded as ISO-8851-1, the default for HTTP.  If
+   it is a bytes-like object the bytes are sent as is.  If it is a :term:`file
+   object`, the contents of the file is sent; this file object should support
+   at least the ``read()`` method.  If the file object has a ``mode``
+   attribute, the data returned by the ``read()`` method will be encoded as
+   ISO-8851-1 unless the ``mode`` attribute contains the substring ``b``,
+   otherwise the data returned by ``read()`` is sent as is.  If *body* is an
+   iterable, the elements of the iterable are sent as is until the iterable is
+   exhausted.
 
    The *headers* argument should be a mapping of extra HTTP
    headers to send with the request.
+
+   If *headers* does not contain a Content-Length item, one is added
+   automatically if possible.  If *body* is ``None``, the Content-Length header
+   is set to ``0`` for methods that expect a body (``PUT``, ``POST``, and
+   ``PATCH``).  If *body* is a string or bytes object, the Content-Length
+   header is set to its length.  If *body* is a :term:`file object` and it
+   works to call :func:`~os.fstat` on the result of its ``fileno()`` method,
+   then the Content-Length header is set to the ``st_size`` reported by the
+   ``fstat`` call.  Otherwise no Content-Length header is added.
 
    .. versionadded:: 3.2
       *body* can now be an iterable.

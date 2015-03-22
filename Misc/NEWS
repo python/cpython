@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23539: If body is None, http.client.HTTPConnection.request now sets
+  Content-Length to 0 for PUT, POST, and PATCH headers to avoid 411 errors from
+  some web servers.
+
 - Issue #22351: The nntplib.NNTP constructor no longer leaves the connection
   and socket open until the garbage collector cleans them up.  Patch by
   Martin Panter.
