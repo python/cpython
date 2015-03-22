@@ -1685,25 +1685,63 @@ class Tellable:
         self.offset = 0
 
     def write(self, data):
-        self.offset += self.fp.write(data)
+        n = self.fp.write(data)
+        self.offset += n
+        return n
 
     def tell(self):
         return self.offset
 
     def flush(self):
-        pass
+        self.fp.flush()
+
+class Unseekable:
+    def __init__(self, fp):
+        self.fp = fp
+
+    def write(self, data):
+        return self.fp.write(data)
+
+    def flush(self):
+        self.fp.flush()
 
 class UnseekableTests(unittest.TestCase):
-    def test_writestr_tellable(self):
-        f = io.BytesIO()
-        with zipfile.ZipFile(Tellable(f), 'w', zipfile.ZIP_STORED) as zipfp:
-            zipfp.writestr('ones', b'111')
-            zipfp.writestr('twos', b'222')
-        with zipfile.ZipFile(f, mode='r') as zipf:
-            with zipf.open('ones') as zopen:
-                self.assertEqual(zopen.read(), b'111')
-            with zipf.open('twos') as zopen:
-                self.assertEqual(zopen.read(), b'222')
+    def test_writestr(self):
+        for wrapper in (lambda f: f), Tellable, Unseekable:
+            with self.subTest(wrapper=wrapper):
+                f = io.BytesIO()
+                f.write(b'abc')
+                bf = io.BufferedWriter(f)
+                with zipfile.ZipFile(wrapper(bf), 'w', zipfile.ZIP_STORED) as zipfp:
+                    zipfp.writestr('ones', b'111')
+                    zipfp.writestr('twos', b'222')
+                self.assertEqual(f.getvalue()[:5], b'abcPK')
+                with zipfile.ZipFile(f, mode='r') as zipf:
+                    with zipf.open('ones') as zopen:
+                        self.assertEqual(zopen.read(), b'111')
+                    with zipf.open('twos') as zopen:
+                        self.assertEqual(zopen.read(), b'222')
+
+    def test_write(self):
+        for wrapper in (lambda f: f), Tellable, Unseekable:
+            with self.subTest(wrapper=wrapper):
+                f = io.BytesIO()
+                f.write(b'abc')
+                bf = io.BufferedWriter(f)
+                with zipfile.ZipFile(wrapper(bf), 'w', zipfile.ZIP_STORED) as zipfp:
+                    self.addCleanup(unlink, TESTFN)
+                    with open(TESTFN, 'wb') as f2:
+                        f2.write(b'111')
+                    zipfp.write(TESTFN, 'ones')
+                    with open(TESTFN, 'wb') as f2:
+                        f2.write(b'222')
+                    zipfp.write(TESTFN, 'twos')
+                self.assertEqual(f.getvalue()[:5], b'abcPK')
+                with zipfile.ZipFile(f, mode='r') as zipf:
+                    with zipf.open('ones') as zopen:
+                        self.assertEqual(zopen.read(), b'111')
+                    with zipf.open('twos') as zopen:
+                        self.assertEqual(zopen.read(), b'222')
 
 
 @requires_zlib

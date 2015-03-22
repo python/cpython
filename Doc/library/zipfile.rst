@@ -140,6 +140,7 @@ ZipFile Objects
    ZIP file, then a new ZIP archive is appended to the file.  This is meant for
    adding a ZIP archive to another file (such as :file:`python.exe`).  If
    *mode* is ``a`` and the file does not exist at all, it is created.
+   If *mode* is ``r`` or ``a``, the file should be seekable.
    *compression* is the ZIP compression method to use when writing the archive,
    and should be :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`,
    :const:`ZIP_BZIP2` or :const:`ZIP_LZMA`; unrecognized
@@ -170,6 +171,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.4
       ZIP64 extensions are enabled by default.
+
+   .. versionchanged:: 3.5
+      Added support for writing to unseekable streams.
 
 
 .. method:: ZipFile.close()
@@ -327,7 +331,6 @@ ZipFile Objects
 
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
-
 
 .. method:: ZipFile.writestr(zinfo_or_arcname, bytes[, compress_type])
 

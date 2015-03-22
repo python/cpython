@@ -667,6 +667,26 @@ class _SharedFile:
             self._file = None
             self._close(fileobj)
 
+# Provide the tell method for unseekable stream
+class _Tellable:
+    def __init__(self, fp):
+        self.fp = fp
+        self.offset = 0
+
+    def write(self, data):
+        n = self.fp.write(data)
+        self.offset += n
+        return n
+
+    def tell(self):
+        return self.offset
+
+    def flush(self):
+        self.fp.flush()
+
+    def close(self):
+        self.fp.close()
+
 
 class ZipExtFile(io.BufferedIOBase):
     """File-like object for reading an archive member.
@@ -994,6 +1014,7 @@ class ZipFile:
             self.filename = getattr(file, 'name', None)
         self._fileRefCnt = 1
         self._lock = threading.RLock()
+        self._seekable = True
 
         try:
             if mode == 'r':
@@ -1002,13 +1023,24 @@ class ZipFile:
                 # set the modified flag so central directory gets written
                 # even if no files are added to the archive
                 self._didModify = True
-                self.start_dir = self.fp.tell()
+                try:
+                    self.start_dir = self.fp.tell()
+                except (AttributeError, OSError):
+                    self.fp = _Tellable(self.fp)
+                    self.start_dir = 0
+                    self._seekable = False
+                else:
+                    # Some file-like objects can provide tell() but not seek()
+                    try:
+                        self.fp.seek(self.start_dir)
+                    except (AttributeError, OSError):
+                        self._seekable = False
             elif mode == 'a':
                 try:
                     # See if file is a zip file
                     self._RealGetContents()
                     # seek to start of directory and overwrite
-                    self.fp.seek(self.start_dir, 0)
+                    self.fp.seek(self.start_dir)
                 except BadZipFile:
                     # file is not a zip file, just append
                     self.fp.seek(0, 2)
@@ -1415,7 +1447,8 @@ class ZipFile:
         zinfo.file_size = st.st_size
         zinfo.flag_bits = 0x00
         with self._lock:
-            self.fp.seek(self.start_dir, 0)
+            if self._seekable:
+                self.fp.seek(self.start_dir)
             zinfo.header_offset = self.fp.tell()    # Start of header bytes
             if zinfo.compress_type == ZIP_LZMA:
                 # Compressed data includes an end-of-stream (EOS) marker
@@ -1436,6 +1469,8 @@ class ZipFile:
                 return
 
             cmpr = _get_compressor(zinfo.compress_type)
+            if not self._seekable:
+                zinfo.flag_bits |= 0x08
             with open(filename, "rb") as fp:
                 # Must overwrite CRC and sizes with correct data later
                 zinfo.CRC = CRC = 0
@@ -1464,17 +1499,24 @@ class ZipFile:
                 zinfo.compress_size = file_size
             zinfo.CRC = CRC
             zinfo.file_size = file_size
-            if not zip64 and self._allowZip64:
-                if file_size > ZIP64_LIMIT:
-                    raise RuntimeError('File size has increased during compressing')
-                if compress_size > ZIP64_LIMIT:
-                    raise RuntimeError('Compressed size larger than uncompressed size')
-            # Seek backwards and write file header (which will now include
-            # correct CRC and file sizes)
-            self.start_dir = self.fp.tell()       # Preserve current position in file
-            self.fp.seek(zinfo.header_offset, 0)
-            self.fp.write(zinfo.FileHeader(zip64))
-            self.fp.seek(self.start_dir, 0)
+            if zinfo.flag_bits & 0x08:
+                # Write CRC and file sizes after the file data
+                fmt = '<LQQ' if zip64 else '<LLL'
+                self.fp.write(struct.pack(fmt, zinfo.CRC, zinfo.compress_size,
+                                          zinfo.file_size))
+                self.start_dir = self.fp.tell()
+            else:
+                if not zip64 and self._allowZip64:
+                    if file_size > ZIP64_LIMIT:
+                        raise RuntimeError('File size has increased during compressing')
+                    if compress_size > ZIP64_LIMIT:
+                        raise RuntimeError('Compressed size larger than uncompressed size')
+                # Seek backwards and write file header (which will now include
+                # correct CRC and file sizes)
+                self.start_dir = self.fp.tell() # Preserve current position in file
+                self.fp.seek(zinfo.header_offset)
+                self.fp.write(zinfo.FileHeader(zip64))
+                self.fp.seek(self.start_dir)
             self.filelist.append(zinfo)
             self.NameToInfo[zinfo.filename] = zinfo
 
@@ -1504,11 +1546,8 @@ class ZipFile:
 
         zinfo.file_size = len(data)            # Uncompressed size
         with self._lock:
-            try:
+            if self._seekable:
                 self.fp.seek(self.start_dir)
-            except (AttributeError, io.UnsupportedOperation):
-                # Some file-like objects can provide tell() but not seek()
-                pass
             zinfo.header_offset = self.fp.tell()    # Start of header data
             if compress_type is not None:
                 zinfo.compress_type = compress_type
@@ -1557,11 +1596,8 @@ class ZipFile:
         try:
             if self.mode in ("w", "a") and self._didModify: # write ending records
                 with self._lock:
-                    try:
+                    if self._seekable:
                         self.fp.seek(self.start_dir)
-                    except (AttributeError, io.UnsupportedOperation):
-                        # Some file-like objects can provide tell() but not seek()
-                        pass
                     self._write_end_record()
         finally:
             fp = self.fp
