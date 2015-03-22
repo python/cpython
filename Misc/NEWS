@@ -455,6 +455,8 @@ Tests
 - Issue #23345: Prevent test_ssl failures with large OpenSSL patch level
   values (like 0.9.8zc).
 
+- Issue #22289: Prevent test_urllib2net failures due to ftp connection timeout.
+
 Build
 -----
 
