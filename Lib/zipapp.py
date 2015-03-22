@@ -36,6 +36,8 @@ class ZipAppError(ValueError):
 
 @contextlib.contextmanager
 def _maybe_open(archive, mode):
+    if isinstance(archive, pathlib.Path):
+        archive = str(archive)
     if isinstance(archive, str):
         with open(archive, mode) as f:
             yield f
@@ -46,7 +48,7 @@ def _maybe_open(archive, mode):
 def _write_file_prefix(f, interpreter):
     """Write a shebang line."""
     if interpreter:
-        shebang = b'#!%b\n' % (interpreter.encode(shebang_encoding),)
+        shebang = b'#!' + interpreter.encode(shebang_encoding) + b'\n'
         f.write(shebang)
 
 
@@ -92,12 +94,22 @@ def create_archive(source, target=None, interpreter=None, main=None):
     is an error to omit MAIN if the directory has no __main__.py.
     """
     # Are we copying an existing archive?
-    if not (isinstance(source, str) and os.path.isdir(source)):
+    source_is_file = False
+    if hasattr(source, 'read') and hasattr(source, 'readline'):
+        source_is_file = True
+    else:
+        source = pathlib.Path(source)
+        if source.is_file():
+            source_is_file = True
+
+    if source_is_file:
         _copy_archive(source, target, interpreter)
         return
 
     # We are creating a new archive from a directory.
-    has_main = os.path.exists(os.path.join(source, '__main__.py'))
+    if not source.exists():
+        raise ZipAppError("Source does not exist")
+    has_main = (source / '__main__.py').is_file()
     if main and has_main:
         raise ZipAppError(
             "Cannot specify entry point if the source has __main__.py")
@@ -115,7 +127,9 @@ def create_archive(source, target=None, interpreter=None, main=None):
         main_py = MAIN_TEMPLATE.format(module=mod, fn=fn)
 
     if target is None:
-        target = source + '.pyz'
+        target = source.with_suffix('.pyz')
+    elif not hasattr(target, 'write'):
+        target = pathlib.Path(target)
 
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
@@ -127,8 +141,8 @@ def create_archive(source, target=None, interpreter=None, main=None):
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))
 
-    if interpreter and isinstance(target, str):
-        os.chmod(target, os.stat(target).st_mode | stat.S_IEXEC)
+    if interpreter and not hasattr(target, 'write'):
+        target.chmod(target.stat().st_mode | stat.S_IEXEC)
 
 
 def get_interpreter(archive):
@@ -137,7 +151,13 @@ def get_interpreter(archive):
             return f.readline().strip().decode(shebang_encoding)
 
 
-def main():
+def main(args=None):
+    """Run the zipapp command line interface.
+
+    The ARGS parameter lets you specify the argument list directly.
+    Omitting ARGS (or setting it to None) works as for argparse, using
+    sys.argv[1:] as the argument list.
+    """
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -155,7 +175,7 @@ def main():
     parser.add_argument('source',
             help="Source directory (or existing archive).")
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     # Handle `python -m zipapp archive.pyz --info`.
     if args.info:
@@ -166,7 +186,8 @@ def main():
         sys.exit(0)
 
     if os.path.isfile(args.source):
-        if args.output is None or os.path.samefile(args.source, args.output):
+        if args.output is None or (os.path.exists(args.output) and
+                                   os.path.samefile(args.source, args.output)):
             raise SystemExit("In-place editing of archives is not supported")
         if args.main:
             raise SystemExit("Cannot change the main function when copying")
