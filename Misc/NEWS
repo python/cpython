@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23647: Increase impalib's MAXLINE to accommodate modern mailbox sizes.
+
 - Issue #23539: If body is None, http.client.HTTPConnection.request now sets
   Content-Length to 0 for PUT, POST, and PATCH headers to avoid 411 errors from
   some web servers.
