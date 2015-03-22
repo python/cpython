@@ -229,6 +229,7 @@ typedef struct {
     int dispatching;
     /* We cannot include tclInt.h, as this is internal.
        So we cache interesting types here. */
+    const Tcl_ObjType *OldBooleanType;
     const Tcl_ObjType *BooleanType;
     const Tcl_ObjType *ByteArrayType;
     const Tcl_ObjType *DoubleType;
@@ -585,7 +586,8 @@ Tkapp_New(const char *screenName, const char *className,
     }
 #endif
 
-    v->BooleanType = Tcl_GetObjType("boolean");
+    v->OldBooleanType = Tcl_GetObjType("boolean");
+    v->BooleanType = Tcl_GetObjType("booleanString");
     v->ByteArrayType = Tcl_GetObjType("bytearray");
     v->DoubleType = Tcl_GetObjType("double");
     v->IntType = Tcl_GetObjType("int");
@@ -1001,15 +1003,18 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 {
     PyObject *result = NULL;
     TkappObject *app = (TkappObject*)tkapp;
+    Tcl_Interp *interp = Tkapp_Interp(tkapp);
 
     if (value->typePtr == NULL) {
         return unicodeFromTclStringAndSize(value->bytes, value->length);
     }
 
-    if (value->typePtr == app->BooleanType) {
-        result = value->internalRep.longValue ? Py_True : Py_False;
-        Py_INCREF(result);
-        return result;
+    if (value->typePtr == app->BooleanType ||
+        value->typePtr == app->OldBooleanType) {
+        int boolValue;
+        if (Tcl_GetBooleanFromObj(interp, value, &boolValue) == TCL_ERROR)
+            return Tkinter_Error(tkapp);
+        return PyBool_FromLong(boolValue);
     }
 
     if (value->typePtr == app->ByteArrayType) {
@@ -1032,15 +1037,14 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
         PyObject *elem;
         Tcl_Obj *tcl_elem;
 
-        status = Tcl_ListObjLength(Tkapp_Interp(tkapp), value, &size);
+        status = Tcl_ListObjLength(interp, value, &size);
         if (status == TCL_ERROR)
             return Tkinter_Error(tkapp);
         result = PyTuple_New(size);
         if (!result)
             return NULL;
         for (i = 0; i < size; i++) {
-            status = Tcl_ListObjIndex(Tkapp_Interp(tkapp),
-                                      value, i, &tcl_elem);
+            status = Tcl_ListObjIndex(interp, value, i, &tcl_elem);
             if (status == TCL_ERROR) {
                 Py_DECREF(result);
                 return Tkinter_Error(tkapp);
