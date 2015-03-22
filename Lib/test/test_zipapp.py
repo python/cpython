@@ -9,6 +9,7 @@ import unittest
 import zipapp
 import zipfile
 
+from unittest.mock import patch
 
 class ZipAppTest(unittest.TestCase):
 
@@ -26,6 +27,15 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = self.tmpdir / 'source.pyz'
         zipapp.create_archive(str(source), str(target))
+        self.assertTrue(target.is_file())
+
+    def test_create_archive_with_pathlib(self):
+        # Test packing a directory using Path objects for source and target.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        target = self.tmpdir / 'source.pyz'
+        zipapp.create_archive(source, target)
         self.assertTrue(target.is_file())
 
     def test_create_archive_with_subdirs(self):
@@ -184,6 +194,18 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(target), new_target, interpreter='python2.7')
         self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
 
+    def test_read_from_pathobj(self):
+        # Test that we can copy an archive using an pathlib.Path object
+        # for the source.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        target1 = self.tmpdir / 'target1.pyz'
+        target2 = self.tmpdir / 'target2.pyz'
+        zipapp.create_archive(source, target1, interpreter='python')
+        zipapp.create_archive(target1, target2, interpreter='python2.7')
+        self.assertEqual(zipapp.get_interpreter(target2), 'python2.7')
+
     def test_read_from_fileobj(self):
         # Test that we can copy an archive using an open file object.
         source = self.tmpdir / 'source'
@@ -244,6 +266,83 @@ class ZipAppTest(unittest.TestCase):
         target = self.tmpdir / 'source.pyz'
         zipapp.create_archive(str(source), str(target), interpreter=None)
         self.assertFalse(target.stat().st_mode & stat.S_IEXEC)
+
+
+class ZipAppCmdlineTest(unittest.TestCase):
+
+    """Test zipapp module command line API."""
+
+    def setUp(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        self.tmpdir = pathlib.Path(tmpdir.name)
+
+    def make_archive(self):
+        # Test that an archive with no shebang line is not made executable.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        target = self.tmpdir / 'source.pyz'
+        zipapp.create_archive(source, target)
+        return target
+
+    def test_cmdline_create(self):
+        # Test the basic command line API.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        args = [str(source)]
+        zipapp.main(args)
+        target = source.with_suffix('.pyz')
+        self.assertTrue(target.is_file())
+
+    def test_cmdline_copy(self):
+        # Test copying an archive.
+        original = self.make_archive()
+        target = self.tmpdir / 'target.pyz'
+        args = [str(original), '-o', str(target)]
+        zipapp.main(args)
+        self.assertTrue(target.is_file())
+
+    def test_cmdline_copy_inplace(self):
+        # Test copying an archive in place fails.
+        original = self.make_archive()
+        target = self.tmpdir / 'target.pyz'
+        args = [str(original), '-o', str(original)]
+        with self.assertRaises(SystemExit) as cm:
+            zipapp.main(args)
+        # Program should exit with a non-zero returm code.
+        self.assertTrue(cm.exception.code)
+
+    def test_cmdline_copy_change_main(self):
+        # Test copying an archive doesn't allow changing __main__.py.
+        original = self.make_archive()
+        target = self.tmpdir / 'target.pyz'
+        args = [str(original), '-o', str(target), '-m', 'foo:bar']
+        with self.assertRaises(SystemExit) as cm:
+            zipapp.main(args)
+        # Program should exit with a non-zero returm code.
+        self.assertTrue(cm.exception.code)
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_info_command(self, mock_stdout):
+        # Test the output of the info command.
+        target = self.make_archive()
+        args = [str(target), '--info']
+        with self.assertRaises(SystemExit) as cm:
+            zipapp.main(args)
+        # Program should exit with a zero returm code.
+        self.assertEqual(cm.exception.code, 0)
+        self.assertEqual(mock_stdout.getvalue(), "Interpreter: <none>\n")
+
+    def test_info_error(self):
+        # Test the info command fails when the archive does not exist.
+        target = self.tmpdir / 'dummy.pyz'
+        args = [str(target), '--info']
+        with self.assertRaises(SystemExit) as cm:
+            zipapp.main(args)
+        # Program should exit with a non-zero returm code.
+        self.assertTrue(cm.exception.code)
 
 
 if __name__ == "__main__":
