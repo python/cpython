@@ -4074,16 +4074,19 @@ PyType_Ready(PyTypeObject *type)
     }
 
     /* All bases of statically allocated type should be statically allocated */
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+    if (Py_Py3kWarningFlag && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
         for (i = 0; i < n; i++) {
             PyObject *b = PyTuple_GET_ITEM(bases, i);
             if (PyType_Check(b) &&
                 (((PyTypeObject *)b)->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-                PyErr_Format(PyExc_TypeError,
-                             "type '%.100s' is not dynamically allocated but "
-                             "its base type '%.100s' is dynamically allocated",
-                             type->tp_name, ((PyTypeObject *)b)->tp_name);
-                goto error;
+                char buf[300];
+                PyOS_snprintf(buf, sizeof(buf),
+                              "type '%.100s' is not dynamically allocated but "
+                              "its base type '%.100s' is dynamically allocated",
+                              type->tp_name, ((PyTypeObject *)b)->tp_name);
+                if (PyErr_WarnPy3k(buf, 1) < 0)
+                    goto error;
+                break;
             }
         }
 
