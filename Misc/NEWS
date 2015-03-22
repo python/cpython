@@ -104,6 +104,11 @@ Build
 
 - Issue #23585: make patchcheck will ensure the interpreter is built.
 
+Tests
+-----
+
+- Issue #22289: Prevent test_urllib2net failures due to ftp connection timeout.
+
 Tools/Demos
 -----------
 
