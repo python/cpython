@@ -164,12 +164,9 @@ Directory and files operations
 
    Recursively move a file or directory (*src*) to another location (*dst*).
 
-   If the destination is a directory or a symlink to a directory, then *src* is
-   moved inside that directory.
-
-   The destination directory must not already exist.  If the destination already
-   exists but is not a directory, it may be overwritten depending on
-   :func:`os.rename` semantics.
+   If the destination is an existing directory, then *src* is moved inside that
+   directory. If the destination already exists but is not a directory, it may
+   be overwritten depending on :func:`os.rename` semantics.
 
    If the destination is on the current filesystem, then :func:`os.rename` is
    used.  Otherwise, *src* is copied (using :func:`shutil.copy2`) to *dst* and
