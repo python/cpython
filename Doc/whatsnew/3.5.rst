@@ -448,6 +448,12 @@ faulthandler
   :func:`~faulthandler.dump_traceback_later` functions now accept file
   descriptors.  (Contributed by Wei Wu in :issue:`23566`.)
 
+zipfile
+-------
+
+* Added support for writing ZIP files to unseekable streams.
+  (Contributed by Serhiy Storchaka in :issue:`23252`.)
+
 
 Optimizations
 =============
