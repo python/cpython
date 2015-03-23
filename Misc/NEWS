@@ -23,6 +23,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #23491: Added a zipapp module to support creating executable zip
+  file archives of Python code. Registered ".pyz" and ".pyzw" extensions
+  on Windows for these archives (PEP 441).
+
+- Issue #23657: Avoid explicit checks for str in zipapp, adding support
+  for pathlib.Path objects as arguments.
+  
 - Issue #23688: Added support of arbitrary bytes-like objects and avoided
   unnecessary copying of memoryview in gzip.GzipFile.write().
   Original patch by Wolfgang Maier.
