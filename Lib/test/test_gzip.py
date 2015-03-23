@@ -6,6 +6,7 @@ from test import support
 import os
 import io
 import struct
+import array
 gzip = support.import_module('gzip')
 
 data1 = b"""  int length=DEFAULTALLOC, err = Z_OK;
@@ -43,6 +44,14 @@ class BaseTest(unittest.TestCase):
 
 
 class TestGzip(BaseTest):
+    def write_and_read_back(self, data, mode='b'):
+        b_data = bytes(data)
+        with gzip.GzipFile(self.filename, 'w'+mode) as f:
+            l = f.write(data)
+        self.assertEqual(l, len(b_data))
+        with gzip.GzipFile(self.filename, 'r'+mode) as f:
+            self.assertEqual(f.read(), b_data)
+
     def test_write(self):
         with gzip.GzipFile(self.filename, 'wb') as f:
             f.write(data1 * 50)
@@ -56,6 +65,34 @@ class TestGzip(BaseTest):
 
         # Test multiple close() calls.
         f.close()
+
+    # The following test_write_xy methods test that write accepts
+    # the corresponding bytes-like object type as input
+    # and that the data written equals bytes(xy) in all cases.
+    def test_write_memoryview(self):
+        self.write_and_read_back(memoryview(data1 * 50))
+        m = memoryview(bytes(range(256)))
+        data = m.cast('B', shape=[8,8,4])
+        self.write_and_read_back(data)
+
+    def test_write_bytearray(self):
+        self.write_and_read_back(bytearray(data1 * 50))
+
+    def test_write_array(self):
+        self.write_and_read_back(array.array('I', data1 * 40))
+
+    def test_write_incompatible_type(self):
+        # Test that non-bytes-like types raise TypeError.
+        # Issue #21560: attempts to write incompatible types
+        # should not affect the state of the fileobject
+        with gzip.GzipFile(self.filename, 'wb') as f:
+            with self.assertRaises(TypeError):
+                f.write('')
+            with self.assertRaises(TypeError):
+                f.write([])
+            f.write(data1)
+        with gzip.GzipFile(self.filename, 'rb') as f:
+            self.assertEqual(f.read(), data1)
 
     def test_read(self):
         self.test_write()

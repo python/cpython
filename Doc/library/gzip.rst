@@ -137,6 +137,10 @@ The module defines the following items:
    .. versionchanged:: 3.4
       Added support for the ``'x'`` and ``'xb'`` modes.
 
+   .. versionchanged:: 3.5
+      Added support for writing arbitrary
+      :term:`bytes-like objects <bytes-like object>`.
+
 
 .. function:: compress(data, compresslevel=9)
 

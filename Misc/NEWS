@@ -23,6 +23,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23688: Added support of arbitrary bytes-like objects and avoided
+  unnecessary copying of memoryview in gzip.GzipFile.write().
+  Original patch by Wolfgang Maier.
+
 - Issue #23252:  Added support for writing ZIP files to unseekable streams.
 
 - Issue #21526: Tkinter now supports new boolean type in Tcl 8.5.

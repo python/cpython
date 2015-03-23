@@ -334,17 +334,20 @@ class GzipFile(io.BufferedIOBase):
         if self.fileobj is None:
             raise ValueError("write() on closed GzipFile object")
 
-        # Convert data type if called by io.BufferedWriter.
-        if isinstance(data, memoryview):
-            data = data.tobytes()
+        if isinstance(data, bytes):
+            length = len(data)
+        else:
+            # accept any data that supports the buffer protocol
+            data = memoryview(data)
+            length = data.nbytes
 
-        if len(data) > 0:
-            self.size = self.size + len(data)
+        if length > 0:
+            self.fileobj.write(self.compress.compress(data))
+            self.size += length
             self.crc = zlib.crc32(data, self.crc) & 0xffffffff
-            self.fileobj.write( self.compress.compress(data) )
-            self.offset += len(data)
+            self.offset += length
 
-        return len(data)
+        return length
 
     def read(self, size=-1):
         self._check_closed()
