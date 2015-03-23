@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21560: An attempt to write a data of wrong type no longer cause
+  GzipFile corruption.  Original patch by Wolfgang Maier.
+
 - Issue #23647: Increase impalib's MAXLINE to accommodate modern mailbox sizes.
 
 - Issue #23539: If body is None, http.client.HTTPConnection.request now sets

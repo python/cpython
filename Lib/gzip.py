@@ -238,9 +238,9 @@ class GzipFile(io.BufferedIOBase):
             data = data.tobytes()
 
         if len(data) > 0:
-            self.size = self.size + len(data)
+            self.fileobj.write(self.compress.compress(data))
+            self.size += len(data)
             self.crc = zlib.crc32(data, self.crc) & 0xffffffffL
-            self.fileobj.write( self.compress.compress(data) )
             self.offset += len(data)
 
         return len(data)

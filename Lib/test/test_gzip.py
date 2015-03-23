@@ -30,6 +30,14 @@ class TestGzip(unittest.TestCase):
     def tearDown(self):
         test_support.unlink(self.filename)
 
+    def write_and_read_back(self, data, mode='b'):
+        b_data = memoryview(data).tobytes()
+        with gzip.GzipFile(self.filename, 'w'+mode) as f:
+            l = f.write(data)
+        self.assertEqual(l, len(b_data))
+        with gzip.GzipFile(self.filename, 'r'+mode) as f:
+            self.assertEqual(f.read(), b_data)
+
     @test_support.requires_unicode
     def test_unicode_filename(self):
         unicode_filename = test_support.TESTFN_UNICODE
@@ -59,6 +67,25 @@ class TestGzip(unittest.TestCase):
 
         # Test multiple close() calls.
         f.close()
+
+    # The following test_write_xy methods test that write accepts
+    # the corresponding bytes-like object type as input
+    # and that the data written equals bytes(xy) in all cases.
+    def test_write_memoryview(self):
+        self.write_and_read_back(memoryview(data1 * 50))
+
+    def test_write_incompatible_type(self):
+        # Test that non-bytes-like types raise TypeError.
+        # Issue #21560: attempts to write incompatible types
+        # should not affect the state of the fileobject
+        with gzip.GzipFile(self.filename, 'wb') as f:
+            with self.assertRaises(UnicodeEncodeError):
+                f.write(u'\xff')
+            with self.assertRaises(TypeError):
+                f.write([1])
+            f.write(data1)
+        with gzip.GzipFile(self.filename, 'rb') as f:
+            self.assertEqual(f.read(), data1)
 
     def test_read(self):
         self.test_write()
