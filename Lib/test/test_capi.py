@@ -184,7 +184,15 @@ class CAPITest(unittest.TestCase):
                     _testcapi.return_null_without_error()
             """)
             rc, out, err = assert_python_failure('-c', code)
-            self.assertIn(b'_Py_CheckFunctionResult', err)
+            self.assertRegex(err.replace(b'\r', b''),
+                             br'Fatal Python error: '
+                                br'Function result is invalid\n'
+                             br'SystemError: <built-in function '
+                                 br'return_null_without_error> returned NULL '
+                                 br'without setting an error\n'
+                             br'\n'
+                             br'Current thread.*:\n'
+                             br'  File .*", line 6 in <module>')
         else:
             with self.assertRaises(SystemError) as cm:
                 _testcapi.return_null_without_error()
@@ -203,7 +211,20 @@ class CAPITest(unittest.TestCase):
                     _testcapi.return_result_with_error()
             """)
             rc, out, err = assert_python_failure('-c', code)
-            self.assertIn(b'_Py_CheckFunctionResult', err)
+            self.assertRegex(err.replace(b'\r', b''),
+                             br'Fatal Python error: '
+                                br'Function result is invalid\n'
+                             br'ValueError\n'
+                             br'\n'
+                             br'During handling of the above exception, '
+                                br'another exception occurred:\n'
+                             br'\n'
+                             br'SystemError: <built-in '
+                                br'function return_result_with_error> '
+                                br'returned a result with an error set\n'
+                             br'\n'
+                             br'Current thread.*:\n'
+                             br'  File .*, line 6 in <module>')
         else:
             with self.assertRaises(SystemError) as cm:
                 _testcapi.return_result_with_error()
