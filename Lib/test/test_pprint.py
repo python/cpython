@@ -7,6 +7,7 @@ import test.test_set
 import random
 import collections
 import itertools
+import types
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -271,6 +272,34 @@ class QueryTestCase(unittest.TestCase):
  'a': 6,
  'lazy': 7,
  'dog': 8}""")
+
+    def test_mapping_proxy(self):
+        words = 'the quick brown fox jumped over a lazy dog'.split()
+        d = dict(zip(words, itertools.count()))
+        m = types.MappingProxyType(d)
+        self.assertEqual(pprint.pformat(m), """\
+mappingproxy({'a': 6,
+              'brown': 2,
+              'dog': 8,
+              'fox': 3,
+              'jumped': 4,
+              'lazy': 7,
+              'over': 5,
+              'quick': 1,
+              'the': 0})""")
+        d = collections.OrderedDict(zip(words, itertools.count()))
+        m = types.MappingProxyType(d)
+        self.assertEqual(pprint.pformat(m), """\
+mappingproxy({'the': 0,
+              'quick': 1,
+              'brown': 2,
+              'fox': 3,
+              'jumped': 4,
+              'over': 5,
+              'a': 6,
+              'lazy': 7,
+              'dog': 8})""")
+
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',
              'others.should.not.be': 'like.this'}

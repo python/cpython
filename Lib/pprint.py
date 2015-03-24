@@ -36,6 +36,7 @@ saferepr()
 
 import re
 import sys as _sys
+import types as _types
 from collections import OrderedDict as _OrderedDict
 from io import StringIO as _StringIO
 
@@ -312,6 +313,14 @@ class PrettyPrinter:
         write(')')
 
     _dispatch[bytearray.__repr__] = _pprint_bytearray
+
+    def _pprint_mappingproxy(self, object, stream, indent, allowance, context, level):
+        stream.write('mappingproxy(')
+        self._format(object.copy(), stream, indent + 13, allowance + 1,
+                     context, level)
+        stream.write(')')
+
+    _dispatch[_types.MappingProxyType.__repr__] = _pprint_mappingproxy
 
     def _format_dict_items(self, items, stream, indent, allowance, context,
                            level):
