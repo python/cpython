@@ -22,11 +22,16 @@ available.  They are listed here in alphabetical order.
 :func:`classmethod`  :func:`getattr`    :func:`map`         |func-repr|_       :func:`xrange`
 :func:`cmp`          :func:`globals`    :func:`max`         :func:`reversed`   :func:`zip`
 :func:`compile`      :func:`hasattr`    |func-memoryview|_  :func:`round`      :func:`__import__`
-:func:`complex`      :func:`hash`       :func:`min`         |func-set|_        :func:`apply`
-:func:`delattr`      :func:`help`       :func:`next`        :func:`setattr`    :func:`buffer`
-|func-dict|_         :func:`hex`        :func:`object`      :func:`slice`      :func:`coerce`
-:func:`dir`          :func:`id`         :func:`oct`         :func:`sorted`     :func:`intern`
+:func:`complex`      :func:`hash`       :func:`min`         |func-set|_        ..
+:func:`delattr`      :func:`help`       :func:`next`        :func:`setattr`    ..
+|func-dict|_         :func:`hex`        :func:`object`      :func:`slice`      ..
+:func:`dir`          :func:`id`         :func:`oct`         :func:`sorted`     ..
 ===================  =================  ==================  =================  ====================
+
+In addition, there are other four built-in functions that are no longer
+considered essential: :func:`apply`, :func:`buffer`, :func:`coerce`, and
+:func:`intern`.  They are documented in the :ref:`non-essential-built-in-funcs`
+section.
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
