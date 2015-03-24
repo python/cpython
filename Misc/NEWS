@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21802: The reader in BufferedRWPair now is closed even when closing
+  writer failed in BufferedRWPair.close().
+
 - Issue #23671: string.Template now allows to specify the "self" parameter as
   keyword argument.  string.Formatter now allows to specify the "self" and
   the "format_string" parameters as keyword arguments.

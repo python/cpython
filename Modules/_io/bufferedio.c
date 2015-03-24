@@ -2200,12 +2200,25 @@ bufferedrwpair_writable(rwpair *self, PyObject *args)
 static PyObject *
 bufferedrwpair_close(rwpair *self, PyObject *args)
 {
+    PyObject *exc = NULL, *val, *tb;
     PyObject *ret = _forward_call(self->writer, "close", args);
     if (ret == NULL)
-        return NULL;
-    Py_DECREF(ret);
-
-    return _forward_call(self->reader, "close", args);
+        PyErr_Fetch(&exc, &val, &tb);
+    else
+        Py_DECREF(ret);
+    ret = _forward_call(self->reader, "close", args);
+    if (exc != NULL) {
+        if (ret != NULL) {
+            Py_CLEAR(ret);
+            PyErr_Restore(exc, val, tb);
+        }
+        else {
+            Py_DECREF(exc);
+            Py_XDECREF(val);
+            Py_XDECREF(tb);
+        }
+    }
+    return ret;
 }
 
 static PyObject *
