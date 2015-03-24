@@ -108,6 +108,11 @@ Library
 
 - Issue #23361: Fix possible overflow in Windows subprocess creation code.
 
+Tests
+-----
+
+- Issue #23583: Added tests for standard IO streams in IDLE.
+
 Build
 -----
 
