@@ -21,6 +21,7 @@ DIGITS = frozenset("0123456789")
 
 OCTDIGITS = frozenset("01234567")
 HEXDIGITS = frozenset("0123456789abcdefABCDEF")
+ASCIILETTERS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 WHITESPACE = frozenset(" \t\n\r\v\f")
 
@@ -344,6 +345,10 @@ def _class_escape(source, escape):
         elif c in DIGITS:
             raise ValueError
         if len(escape) == 2:
+            if c in ASCIILETTERS:
+                import warnings
+                warnings.warn('bad escape %s' % escape,
+                              DeprecationWarning, stacklevel=8)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -407,6 +412,10 @@ def _escape(source, escape, state):
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
+            if c in ASCIILETTERS:
+                import warnings
+                warnings.warn('bad escape %s' % escape,
+                              DeprecationWarning, stacklevel=8)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -903,7 +912,10 @@ def parse_template(source, pattern):
                 try:
                     this = chr(ESCAPES[this][1])
                 except KeyError:
-                    pass
+                    if c in ASCIILETTERS:
+                        import warnings
+                        warnings.warn('bad escape %s' % this,
+                                      DeprecationWarning, stacklevel=5)
                 lappend(this)
         else:
             lappend(this)
