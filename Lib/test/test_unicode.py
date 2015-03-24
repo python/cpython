@@ -180,6 +180,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(3, 'aaa', 'count',  'a', -10)
         self.checkequalnofix(2, 'aaa', 'count',  'a', 0, -1)
         self.checkequalnofix(0, 'aaa', 'count',  'a', 0, -10)
+        # test mixed kinds
+        self.checkequal(10, '\u0102' + 'a' * 10, 'count', 'a')
+        self.checkequal(10, '\U00100304' + 'a' * 10, 'count', 'a')
+        self.checkequal(10, '\U00100304' + '\u0102' * 10, 'count', '\u0102')
+        self.checkequal(0, 'a' * 10, 'count', '\u0102')
+        self.checkequal(0, 'a' * 10, 'count', '\U00100304')
+        self.checkequal(0, '\u0102' * 10, 'count', '\U00100304')
+        self.checkequal(10, '\u0102' + 'a_' * 10, 'count', 'a_')
+        self.checkequal(10, '\U00100304' + 'a_' * 10, 'count', 'a_')
+        self.checkequal(10, '\U00100304' + '\u0102_' * 10, 'count', '\u0102_')
+        self.checkequal(0, 'a' * 10, 'count', 'a\u0102')
+        self.checkequal(0, 'a' * 10, 'count', 'a\U00100304')
+        self.checkequal(0, '\u0102' * 10, 'count', '\u0102\U00100304')
 
     def test_find(self):
         string_tests.CommonTest.test_find(self)
@@ -198,6 +211,19 @@ class UnicodeTest(string_tests.CommonTest,
 
         self.assertRaises(TypeError, 'hello'.find)
         self.assertRaises(TypeError, 'hello'.find, 42)
+        # test mixed kinds
+        self.checkequal(100, '\u0102' * 100 + 'a', 'find', 'a')
+        self.checkequal(100, '\U00100304' * 100 + 'a', 'find', 'a')
+        self.checkequal(100, '\U00100304' * 100 + '\u0102', 'find', '\u0102')
+        self.checkequal(-1, 'a' * 100, 'find', '\u0102')
+        self.checkequal(-1, 'a' * 100, 'find', '\U00100304')
+        self.checkequal(-1, '\u0102' * 100, 'find', '\U00100304')
+        self.checkequal(100, '\u0102' * 100 + 'a_', 'find', 'a_')
+        self.checkequal(100, '\U00100304' * 100 + 'a_', 'find', 'a_')
+        self.checkequal(100, '\U00100304' * 100 + '\u0102_', 'find', '\u0102_')
+        self.checkequal(-1, 'a' * 100, 'find', 'a\u0102')
+        self.checkequal(-1, 'a' * 100, 'find', 'a\U00100304')
+        self.checkequal(-1, '\u0102' * 100, 'find', '\u0102\U00100304')
 
     def test_rfind(self):
         string_tests.CommonTest.test_rfind(self)
@@ -213,6 +239,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(9,   'abcdefghiabc', 'rfind', 'abc')
         self.checkequalnofix(12,  'abcdefghiabc', 'rfind', '')
         self.checkequalnofix(12, 'abcdefghiabc', 'rfind',  '')
+        # test mixed kinds
+        self.checkequal(0, 'a' + '\u0102' * 100, 'rfind', 'a')
+        self.checkequal(0, 'a' + '\U00100304' * 100, 'rfind', 'a')
+        self.checkequal(0, '\u0102' + '\U00100304' * 100, 'rfind', '\u0102')
+        self.checkequal(-1, 'a' * 100, 'rfind', '\u0102')
+        self.checkequal(-1, 'a' * 100, 'rfind', '\U00100304')
+        self.checkequal(-1, '\u0102' * 100, 'rfind', '\U00100304')
+        self.checkequal(0, '_a' + '\u0102' * 100, 'rfind', '_a')
+        self.checkequal(0, '_a' + '\U00100304' * 100, 'rfind', '_a')
+        self.checkequal(0, '_\u0102' + '\U00100304' * 100, 'rfind', '_\u0102')
+        self.checkequal(-1, 'a' * 100, 'rfind', '\u0102a')
+        self.checkequal(-1, 'a' * 100, 'rfind', '\U00100304a')
+        self.checkequal(-1, '\u0102' * 100, 'rfind', '\U00100304\u0102')
 
     def test_index(self):
         string_tests.CommonTest.test_index(self)
@@ -224,6 +263,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, 'abcdefghiab'.index,  'abc', 1)
         self.assertRaises(ValueError, 'abcdefghi'.index,  'ghi', 8)
         self.assertRaises(ValueError, 'abcdefghi'.index,  'ghi', -1)
+        # test mixed kinds
+        self.checkequal(100, '\u0102' * 100 + 'a', 'index', 'a')
+        self.checkequal(100, '\U00100304' * 100 + 'a', 'index', 'a')
+        self.checkequal(100, '\U00100304' * 100 + '\u0102', 'index', '\u0102')
+        self.assertRaises(ValueError, ('a' * 100).index, '\u0102')
+        self.assertRaises(ValueError, ('a' * 100).index, '\U00100304')
+        self.assertRaises(ValueError, ('\u0102' * 100).index, '\U00100304')
+        self.checkequal(100, '\u0102' * 100 + 'a_', 'index', 'a_')
+        self.checkequal(100, '\U00100304' * 100 + 'a_', 'index', 'a_')
+        self.checkequal(100, '\U00100304' * 100 + '\u0102_', 'index', '\u0102_')
+        self.assertRaises(ValueError, ('a' * 100).index, 'a\u0102')
+        self.assertRaises(ValueError, ('a' * 100).index, 'a\U00100304')
+        self.assertRaises(ValueError, ('\u0102' * 100).index, '\u0102\U00100304')
 
     def test_rindex(self):
         string_tests.CommonTest.test_rindex(self)
@@ -237,6 +289,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, 'defghiabc'.rindex,  'abc', 0, -1)
         self.assertRaises(ValueError, 'abcdefghi'.rindex,  'ghi', 0, 8)
         self.assertRaises(ValueError, 'abcdefghi'.rindex,  'ghi', 0, -1)
+        # test mixed kinds
+        self.checkequal(0, 'a' + '\u0102' * 100, 'rindex', 'a')
+        self.checkequal(0, 'a' + '\U00100304' * 100, 'rindex', 'a')
+        self.checkequal(0, '\u0102' + '\U00100304' * 100, 'rindex', '\u0102')
+        self.assertRaises(ValueError, ('a' * 100).rindex, '\u0102')
+        self.assertRaises(ValueError, ('a' * 100).rindex, '\U00100304')
+        self.assertRaises(ValueError, ('\u0102' * 100).rindex, '\U00100304')
+        self.checkequal(0, '_a' + '\u0102' * 100, 'rindex', '_a')
+        self.checkequal(0, '_a' + '\U00100304' * 100, 'rindex', '_a')
+        self.checkequal(0, '_\u0102' + '\U00100304' * 100, 'rindex', '_\u0102')
+        self.assertRaises(ValueError, ('a' * 100).rindex, '\u0102a')
+        self.assertRaises(ValueError, ('a' * 100).rindex, '\U00100304a')
+        self.assertRaises(ValueError, ('\u0102' * 100).rindex, '\U00100304\u0102')
 
     def test_maketrans_translate(self):
         # these work with plain translate()
@@ -277,6 +342,67 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//')
         self.checkequalnofix(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//')
         self.checkequalnofix(['endcase ', ''], 'endcase test', 'split', 'test')
+        # test mixed kinds
+        for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
+            left *= 9
+            right *= 9
+            for delim in ('c', '\u0102', '\U00010302'):
+                self.checkequal([left + right],
+                                left + right, 'split', delim)
+                self.checkequal([left, right],
+                                left + delim + right, 'split', delim)
+                self.checkequal([left + right],
+                                left + right, 'split', delim * 2)
+                self.checkequal([left, right],
+                                left + delim * 2 + right, 'split', delim *2)
+
+    def test_rsplit(self):
+        string_tests.CommonTest.test_rsplit(self)
+        # test mixed kinds
+        for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
+            left *= 9
+            right *= 9
+            for delim in ('c', '\u0102', '\U00010302'):
+                self.checkequal([left + right],
+                                left + right, 'rsplit', delim)
+                self.checkequal([left, right],
+                                left + delim + right, 'rsplit', delim)
+                self.checkequal([left + right],
+                                left + right, 'rsplit', delim * 2)
+                self.checkequal([left, right],
+                                left + delim * 2 + right, 'rsplit', delim *2)
+
+    def test_partition(self):
+        string_tests.MixinStrUnicodeUserStringTest.test_partition(self)
+        # test mixed kinds
+        for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
+            left *= 9
+            right *= 9
+            for delim in ('c', '\u0102', '\U00010302'):
+                self.checkequal((left + right, '', ''),
+                                left + right, 'partition', delim)
+                self.checkequal((left, delim, right),
+                                left + delim + right, 'partition', delim)
+                self.checkequal((left + right, '', ''),
+                                left + right, 'partition', delim * 2)
+                self.checkequal((left, delim * 2, right),
+                                left + delim * 2 + right, 'partition', delim * 2)
+
+    def test_rpartition(self):
+        string_tests.MixinStrUnicodeUserStringTest.test_rpartition(self)
+        # test mixed kinds
+        for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
+            left *= 9
+            right *= 9
+            for delim in ('c', '\u0102', '\U00010302'):
+                self.checkequal(('', '', left + right),
+                                left + right, 'rpartition', delim)
+                self.checkequal((left, delim, right),
+                                left + delim + right, 'rpartition', delim)
+                self.checkequal(('', '', left + right),
+                                left + right, 'rpartition', delim * 2)
+                self.checkequal((left, delim * 2, right),
+                                left + delim * 2 + right, 'rpartition', delim * 2)
 
     def test_join(self):
         string_tests.MixinStrUnicodeUserStringTest.test_join(self)
@@ -304,6 +430,22 @@ class UnicodeTest(string_tests.CommonTest,
         # method call forwarded from str implementation because of unicode argument
         self.checkequalnofix('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
         self.assertRaises(TypeError, 'replace'.replace, "r", 42)
+        # test mixed kinds
+        for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
+            left *= 9
+            right *= 9
+            for delim in ('c', '\u0102', '\U00010302'):
+                for repl in ('d', '\u0103', '\U00010303'):
+                    self.checkequal(left + right,
+                                    left + right, 'replace', delim, repl)
+                    self.checkequal(left + repl + right,
+                                    left + delim + right,
+                                    'replace', delim, repl)
+                    self.checkequal(left + right,
+                                    left + right, 'replace', delim * 2, repl)
+                    self.checkequal(left + repl + right,
+                                    left + delim * 2 + right,
+                                    'replace', delim * 2, repl)
 
     @support.cpython_only
     def test_replace_id(self):
@@ -708,6 +850,14 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertNotIn('asdf', '')
 
         self.assertRaises(TypeError, "abc".__contains__)
+        # test mixed kinds
+        for fill in ('a', '\u0100', '\U00010300'):
+            fill *= 9
+            for delim in ('c', '\u0102', '\U00010302'):
+                self.assertNotIn(delim, fill)
+                self.assertIn(delim, fill + delim)
+                self.assertNotIn(delim * 2, fill)
+                self.assertIn(delim * 2, fill + delim * 2)
 
     def test_issue18183(self):
         '\U00010000\U00100000'.lower()
