@@ -41,7 +41,7 @@ Library
 - Issue #22687: Fixed some corner cases in breaking words in tetxtwrap.
   Got rid of quadratic complexity in breaking long words.
 
-- Issue #20289: The copy module now uses pickle protocol 4 (PEP 3154) and
+- Issue #4727: The copy module now uses pickle protocol 4 (PEP 3154) and
   supports copying of instances of classes whose __new__ method takes
   keyword-only arguments.
 
