@@ -79,10 +79,25 @@ class TextWrapper:
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
     # (after stripping out empty strings).
-    wordsep_re = re.compile(
-        r'(\s+|'                                  # any whitespace
-        r'[^\s\w]*\w+[^0-9\W]-(?=\w+[^0-9\W])|'   # hyphenated words
-        r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
+    word_punct = r'[\w!"\'&.,?]'
+    letter = r'[^\d\W]'
+    wordsep_re = re.compile(r'''
+        ( # any whitespace
+          \s+
+        | # em-dash between words
+          (?<=%(wp)s) -{2,} (?=\w)
+        | # word, possibly hyphenated
+          \S+? (?:
+            # hyphenated word
+              -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
+              (?= %(lt)s -? %(lt)s)
+            | # end of word
+              (?=\s|\Z)
+            | # em-dash
+              (?<=%(wp)s) (?=-{2,}\w)
+            )
+        )''' % {'wp': word_punct, 'lt': letter}, re.VERBOSE)
+    del word_punct, letter
 
     # This less funky little regex just split on recognized spaces. E.g.
     #   "Hello there -- you goof-ball, use the -b option!"
