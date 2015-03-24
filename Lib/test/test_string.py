@@ -31,6 +31,21 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(fmt.format("foo"), "foo")
         self.assertEqual(fmt.format("foo{0}", "bar"), "foobar")
         self.assertEqual(fmt.format("foo{1}{0}-{1}", "bar", 6), "foo6bar-6")
+        self.assertRaises(TypeError, fmt.format)
+        self.assertRaises(TypeError, string.Formatter.format)
+
+    def test_format_keyword_arguments(self):
+        fmt = string.Formatter()
+        self.assertEqual(fmt.format("-{arg}-", arg='test'), '-test-')
+        self.assertRaises(KeyError, fmt.format, "-{arg}-")
+        self.assertEqual(fmt.format("-{self}-", self='test'), '-test-')
+        self.assertRaises(KeyError, fmt.format, "-{self}-")
+        self.assertEqual(fmt.format("-{format_string}-", format_string='test'),
+                         '-test-')
+        self.assertRaises(KeyError, fmt.format, "-{format_string}-")
+        with self.assertWarnsRegex(DeprecationWarning, "format_string"):
+            self.assertEqual(fmt.format(arg='test', format_string="-{arg}-"),
+                             '-test-')
 
     def test_auto_numbering(self):
         fmt = string.Formatter()

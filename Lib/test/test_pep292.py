@@ -26,6 +26,7 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(s.substitute(dict(who='tim', what='ham')),
                          'tim likes to eat a bag of ham worth $100')
         self.assertRaises(KeyError, s.substitute, dict(who='tim'))
+        self.assertRaises(TypeError, Template.substitute)
 
     def test_regular_templates_with_braces(self):
         s = Template('$who likes ${what} for ${meal}')
@@ -198,6 +199,9 @@ class TestTemplate(unittest.TestCase):
         eq(s.substitute(dict(mapping='one'), mapping='two'),
            'the mapping is two')
 
+        s = Template('the self is $self')
+        eq(s.substitute(self='bozo'), 'the self is bozo')
+
     def test_keyword_arguments_safe(self):
         eq = self.assertEqual
         raises = self.assertRaises
@@ -215,6 +219,9 @@ class TestTemplate(unittest.TestCase):
         d = dict(mapping='one')
         raises(TypeError, s.substitute, d, {})
         raises(TypeError, s.safe_substitute, d, {})
+
+        s = Template('the self is $self')
+        eq(s.safe_substitute(self='bozo'), 'the self is bozo')
 
     def test_delimiter_override(self):
         eq = self.assertEqual
