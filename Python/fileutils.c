@@ -519,17 +519,8 @@ Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 #endif   /* __APPLE__ */
 }
 
-/* In principle, this should use HAVE__WSTAT, and _wstat
-   should be detected by autoconf. However, no current
-   POSIX system provides that function, so testing for
-   it is pointless.
-   Not sure whether the MS_WINDOWS guards are necessary:
-   perhaps for cygwin/mingw builds?
-*/
-#if defined(HAVE_STAT) && !defined(MS_WINDOWS)
 
 /* Get file status. Encode the path to the locale encoding. */
-
 int
 _Py_wstat(const wchar_t* path, struct stat *buf)
 {
@@ -544,10 +535,7 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
     PyMem_Free(fname);
     return err;
 }
-#endif
 
-
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
 
 #ifdef MS_WINDOWS
 static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
@@ -679,10 +667,8 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
     return fstat(fd, result);
 #endif
 }
-#endif   /* HAVE_FSTAT || MS_WINDOWS */
 
 
-#ifdef HAVE_STAT
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
 
@@ -714,8 +700,6 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     return ret;
 #endif
 }
-
-#endif   /* HAVE_STAT */
 
 
 static int

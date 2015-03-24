@@ -180,7 +180,6 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 check_fd(int fd)
 {
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
     struct _Py_stat_struct buf;
     if (_Py_fstat(fd, &buf) < 0 &&
 #ifdef MS_WINDOWS
@@ -197,7 +196,6 @@ check_fd(int fd)
         Py_XDECREF(exc);
         return -1;
     }
-#endif
     return 0;
 }
 
@@ -228,9 +226,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 #elif !defined(MS_WINDOWS)
     int *atomic_flag_works = NULL;
 #endif
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
     struct _Py_stat_struct fdfstat;
-#endif
     int async_err = 0;
 
     assert(PyFileIO_Check(oself));
@@ -427,7 +423,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     }
 
     self->blksize = DEFAULT_BUFFER_SIZE;
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
     if (_Py_fstat(self->fd, &fdfstat) < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto error;
@@ -446,7 +441,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     if (fdfstat.st_blksize > 1)
         self->blksize = fdfstat.st_blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
-#endif /* HAVE_FSTAT || MS_WINDOWS */
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
     /* don't translate newlines (\r\n <=> \n) */
@@ -597,8 +591,6 @@ fileio_readinto(fileio *self, PyObject *args)
     return PyLong_FromSsize_t(n);
 }
 
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
-
 static size_t
 new_buffersize(fileio *self, size_t currentsize)
 {
@@ -701,18 +693,6 @@ fileio_readall(fileio *self)
     }
     return result;
 }
-
-#else
-
-static PyObject *
-fileio_readall(fileio *self)
-{
-    _Py_IDENTIFIER(readall);
-    return _PyObject_CallMethodId((PyObject*)&PyRawIOBase_Type,
-                                  &PyId_readall, "O", self);
-}
-
-#endif /* HAVE_FSTAT || MS_WINDOWS */
 
 static PyObject *
 fileio_read(fileio *self, PyObject *args)
