@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21802: The reader in BufferedRWPair now is closed even when closing
+  writer failed in BufferedRWPair.close().
+
 - Issue #23622: Unknown escapes in regular expressions that consist of ``'\'``
   and ASCII letter now raise a deprecation warning and will be forbidden in
   Python 3.6.
