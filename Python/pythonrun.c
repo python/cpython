@@ -2587,28 +2587,75 @@ cleanup:
     }
 }
 
+/* Print the current exception (if an exception is set) with its traceback,
+ * or display the current Python stack.
+ *
+ * Don't call PyErr_PrintEx() and the except hook, because Py_FatalError() is
+ * called on catastrophic cases. */
+
+static void
+_Py_PrintFatalError(int fd)
+{
+    PyObject *exception, *v, *tb;
+    int has_tb;
+    PyThreadState *tstate;
+
+    PyErr_Fetch(&exception, &v, &tb);
+    if (exception == NULL) {
+        /* No current exception */
+        goto display_stack;
+    }
+
+    PyErr_NormalizeException(&exception, &v, &tb);
+    if (tb == NULL) {
+        tb = Py_None;
+        Py_INCREF(tb);
+    }
+    PyException_SetTraceback(v, tb);
+    if (exception == NULL) {
+        /* too bad, PyErr_NormalizeException() failed */
+        goto display_stack;
+    }
+
+    has_tb = (tb != NULL && tb != Py_None);
+    PyErr_Display(exception, v, tb);
+    Py_XDECREF(exception);
+    Py_XDECREF(v);
+    Py_XDECREF(tb);
+    if (has_tb)
+        return;
+
+display_stack:
+    /* PyGILState_GetThisThreadState() works even if the GIL was released */
+    tstate = PyGILState_GetThisThreadState();
+    if (tstate == NULL) {
+        /* _Py_DumpTracebackThreads() requires the thread state to display
+         * frames */
+        return;
+    }
+
+    fputc('\n', stderr);
+    fflush(stderr);
+
+    /* display the current Python stack */
+    _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
+}
+
 /* Print fatal error message and abort */
 
 void
 Py_FatalError(const char *msg)
 {
     const int fd = fileno(stderr);
-    PyThreadState *tstate;
 
     fprintf(stderr, "Fatal Python error: %s\n", msg);
     fflush(stderr); /* it helps in Windows debug build */
-    if (PyErr_Occurred()) {
-        PyErr_PrintEx(0);
-    }
-    else {
-        tstate = _Py_atomic_load_relaxed(&_PyThreadState_Current);
-        if (tstate != NULL) {
-            fputc('\n', stderr);
-            fflush(stderr);
-            _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
-        }
-        _PyFaulthandler_Fini();
-    }
+
+    _Py_PrintFatalError(fd);
+
+    /* The main purpose of faulthandler is to display the traceback. We already
+     * did our best to display it. So faulthandler can now be disabled. */
+    _PyFaulthandler_Fini();
 
 #ifdef MS_WINDOWS
     {
