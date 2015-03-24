@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23502: The pprint module now supports mapping proxies.
+
 - Issue #17530: pprint now wraps long bytes objects and bytearrays.
 
 - Issue #22687: Fixed some corner cases in breaking words in tetxtwrap.
