@@ -185,8 +185,8 @@ class CAPITest(unittest.TestCase):
             """)
             rc, out, err = assert_python_failure('-c', code)
             self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: '
-                                br'Function result is invalid\n'
+                             br'Fatal Python error: a function returned NULL '
+                                br'without setting an error\n'
                              br'SystemError: <built-in function '
                                  br'return_null_without_error> returned NULL '
                                  br'without setting an error\n'
@@ -212,8 +212,8 @@ class CAPITest(unittest.TestCase):
             """)
             rc, out, err = assert_python_failure('-c', code)
             self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: '
-                                br'Function result is invalid\n'
+                             br'Fatal Python error: a function returned a '
+                                br'result with an error set\n'
                              br'ValueError\n'
                              br'\n'
                              br'During handling of the above exception, '

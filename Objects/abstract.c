@@ -2090,7 +2090,11 @@ _Py_CheckFunctionResult(PyObject *func, PyObject *result, const char *where)
                 PyErr_Format(PyExc_SystemError,
                              "%s returned NULL without setting an error",
                              where);
-            goto error;
+#ifdef Py_DEBUG
+            /* Ensure that the bug is catched in debug mode */
+            Py_FatalError("a function returned NULL without setting an error");
+#endif
+            return NULL;
         }
     }
     else {
@@ -2109,17 +2113,14 @@ _Py_CheckFunctionResult(PyObject *func, PyObject *result, const char *where)
                              "%s returned a result with an error set",
                              where);
             _PyErr_ChainExceptions(exc, val, tb);
-            goto error;
+#ifdef Py_DEBUG
+            /* Ensure that the bug is catched in debug mode */
+            Py_FatalError("a function returned a result with an error set");
+#endif
+            return NULL;
         }
     }
     return result;
-
-error:
-#ifdef Py_DEBUG
-    /* Ensure that the bug is catched in debug mode */
-    Py_FatalError("Function result is invalid");
-#endif
-    return NULL;
 }
 
 PyObject *
