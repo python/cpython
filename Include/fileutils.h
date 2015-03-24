@@ -15,14 +15,11 @@ PyAPI_FUNC(char*) Py_EncodeLocale(
     const wchar_t *text,
     size_t *error_pos);
 
-#if defined(HAVE_STAT) && !defined(MS_WINDOWS)
 PyAPI_FUNC(int) _Py_wstat(
     const wchar_t* path,
     struct stat *buf);
-#endif
 
 #ifndef Py_LIMITED_API
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
 
 #ifdef MS_WINDOWS
 struct _Py_stat_struct {
@@ -49,14 +46,11 @@ struct _Py_stat_struct {
 PyAPI_FUNC(int) _Py_fstat(
     int fd,
     struct _Py_stat_struct *stat);
-#endif   /* HAVE_FSTAT || MS_WINDOWS */
 #endif   /* Py_LIMITED_API */
 
-#ifdef HAVE_STAT
 PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *statbuf);
-#endif   /* HAVE_STAT */
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _Py_open(

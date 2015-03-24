@@ -357,28 +357,6 @@ typedef int Py_ssize_clean_t;
  * stat() and fstat() fiddling *
  *******************************/
 
-/* We expect that stat and fstat exist on most systems.
- *  It's confirmed on Unix, Mac and Windows.
- *  If you don't have them, add
- *      #define DONT_HAVE_STAT
- * and/or
- *      #define DONT_HAVE_FSTAT
- * to your pyconfig.h. Python code beyond this should check HAVE_STAT and
- * HAVE_FSTAT instead.
- * Also
- *      #define HAVE_SYS_STAT_H
- * if <sys/stat.h> exists on your platform, and
- *      #define HAVE_STAT_H
- * if <stat.h> does.
- */
-#ifndef DONT_HAVE_STAT
-#define HAVE_STAT
-#endif
-
-#ifndef DONT_HAVE_FSTAT
-#define HAVE_FSTAT
-#endif
-
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #elif defined(HAVE_STAT_H)
