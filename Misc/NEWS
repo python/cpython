@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17530: pprint now wraps long bytes objects and bytearrays.
+
 - Issue #22687: Fixed some corner cases in breaking words in tetxtwrap.
   Got rid of quadratic complexity in breaking long words.
 
