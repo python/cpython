@@ -184,6 +184,16 @@ What a mess!
         self.check_wrap(text, 42,
                         ["this-is-a-useful-feature-for-reformatting-",
                          "posts-from-tim-peters'ly"])
+        # The test tests current behavior but is not testing parts of the API.
+        expect = ("this-|is-|a-|useful-|feature-|for-|"
+                  "reformatting-|posts-|from-|tim-|peters'ly").split('|')
+        self.check_wrap(text, 1, expect, break_long_words=False)
+        self.check_split(text, expect)
+
+        self.check_split('e-mail', ['e-mail'])
+        self.check_split('Jelly-O', ['Jelly-O'])
+        # The test tests current behavior but is not testing parts of the API.
+        self.check_split('half-a-crown', 'half-|a-|crown'.split('|'))
 
     def test_hyphenated_numbers(self):
         # Test that hyphenated numbers (eg. dates) are not broken like words.
@@ -195,6 +205,7 @@ What a mess!
                                    'released on 1994-02-15.'])
         self.check_wrap(text, 40, ['Python 1.0.0 was released on 1994-01-26.',
                                    'Python 1.0.1 was released on 1994-02-15.'])
+        self.check_wrap(text, 1, text.split(), break_long_words=False)
 
         text = "I do all my shopping at 7-11."
         self.check_wrap(text, 25, ["I do all my shopping at",
@@ -202,6 +213,7 @@ What a mess!
         self.check_wrap(text, 27, ["I do all my shopping at",
                                    "7-11."])
         self.check_wrap(text, 29, ["I do all my shopping at 7-11."])
+        self.check_wrap(text, 1, text.split(), break_long_words=False)
 
     def test_em_dash(self):
         # Test text with em-dashes
@@ -325,6 +337,10 @@ What a mess!
                          ['the', ' ', "(wibble-", "wobble)", ' ', 'widget'])
         self.check_split("the ['wibble-wobble'] widget",
                          ['the', ' ', "['wibble-", "wobble']", ' ', 'widget'])
+
+        # The test tests current behavior but is not testing parts of the API.
+        self.check_split("what-d'you-call-it.",
+                         "what-d'you-|call-|it.".split('|'))
 
     def test_funky_parens (self):
         # Second part of SF bug #596434: long option strings inside
