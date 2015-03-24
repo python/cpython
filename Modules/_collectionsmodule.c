@@ -1249,6 +1249,12 @@ deque_sizeof(dequeobject *deque, void *unused)
 PyDoc_STRVAR(sizeof_doc,
 "D.__sizeof__() -- size of D in memory, in bytes");
 
+static int
+deque_bool(dequeobject *deque)
+{
+    return Py_SIZE(deque) != 0;
+}
+
 static PyObject *
 deque_get_maxlen(dequeobject *deque)
 {
@@ -1275,6 +1281,23 @@ static PySequenceMethods deque_as_sequence = {
     (binaryfunc)deque_inplace_concat,   /* sq_inplace_concat */
     0,                                  /* sq_inplace_repeat */
 };
+
+static PyNumberMethods deque_as_number = {
+    0,                                  /* nb_add */
+    0,                                  /* nb_subtract */
+    0,                                  /* nb_multiply */
+    0,                                  /* nb_remainder */
+    0,                                  /* nb_divmod */
+    0,                                  /* nb_power */
+    0,                                  /* nb_negative */
+    0,                                  /* nb_positive */
+    0,                                  /* nb_absolute */
+    (inquiry)deque_bool,                /* nb_bool */
+    0,                                  /* nb_invert */
+    0,                                  /* nb_lshift */
+    0,                                  /* nb_rshift */
+ };
+
 
 /* deque object ********************************************************/
 
@@ -1340,7 +1363,7 @@ static PyTypeObject deque_type = {
     0,                                  /* tp_setattr */
     0,                                  /* tp_reserved */
     deque_repr,                         /* tp_repr */
-    0,                                  /* tp_as_number */
+    &deque_as_number,                   /* tp_as_number */
     &deque_as_sequence,                 /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
     PyObject_HashNotImplemented,        /* tp_hash */
