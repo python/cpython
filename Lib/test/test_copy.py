@@ -146,6 +146,40 @@ class TestCopy(unittest.TestCase):
         x = C(42)
         self.assertEqual(copy.copy(x), x)
 
+    def test_copy_inst_getnewargs(self):
+        class C(int):
+            def __new__(cls, foo):
+                self = int.__new__(cls)
+                self.foo = foo
+                return self
+            def __getnewargs__(self):
+                return self.foo,
+            def __eq__(self, other):
+                return self.foo == other.foo
+        x = C(42)
+        y = copy.copy(x)
+        self.assertIsInstance(y, C)
+        self.assertEqual(y, x)
+        self.assertIsNot(y, x)
+        self.assertEqual(y.foo, x.foo)
+
+    def test_copy_inst_getnewargs_ex(self):
+        class C(int):
+            def __new__(cls, *, foo):
+                self = int.__new__(cls)
+                self.foo = foo
+                return self
+            def __getnewargs_ex__(self):
+                return (), {'foo': self.foo}
+            def __eq__(self, other):
+                return self.foo == other.foo
+        x = C(foo=42)
+        y = copy.copy(x)
+        self.assertIsInstance(y, C)
+        self.assertEqual(y, x)
+        self.assertIsNot(y, x)
+        self.assertEqual(y.foo, x.foo)
+
     def test_copy_inst_getstate(self):
         class C:
             def __init__(self, foo):
@@ -403,6 +437,42 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertEqual(y, x)
         self.assertIsNot(y, x)
+        self.assertIsNot(y.foo, x.foo)
+
+    def test_deepcopy_inst_getnewargs(self):
+        class C(int):
+            def __new__(cls, foo):
+                self = int.__new__(cls)
+                self.foo = foo
+                return self
+            def __getnewargs__(self):
+                return self.foo,
+            def __eq__(self, other):
+                return self.foo == other.foo
+        x = C([42])
+        y = copy.deepcopy(x)
+        self.assertIsInstance(y, C)
+        self.assertEqual(y, x)
+        self.assertIsNot(y, x)
+        self.assertEqual(y.foo, x.foo)
+        self.assertIsNot(y.foo, x.foo)
+
+    def test_deepcopy_inst_getnewargs_ex(self):
+        class C(int):
+            def __new__(cls, *, foo):
+                self = int.__new__(cls)
+                self.foo = foo
+                return self
+            def __getnewargs_ex__(self):
+                return (), {'foo': self.foo}
+            def __eq__(self, other):
+                return self.foo == other.foo
+        x = C(foo=[42])
+        y = copy.deepcopy(x)
+        self.assertIsInstance(y, C)
+        self.assertEqual(y, x)
+        self.assertIsNot(y, x)
+        self.assertEqual(y.foo, x.foo)
         self.assertIsNot(y.foo, x.foo)
 
     def test_deepcopy_inst_getstate(self):
