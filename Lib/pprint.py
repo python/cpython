@@ -152,130 +152,141 @@ class PrettyPrinter:
         return readable and not recursive
 
     def _format(self, object, stream, indent, allowance, context, level):
-        level = level + 1
         objid = id(object)
         if objid in context:
             stream.write(_recursion(object))
             self._recursive = True
             self._readable = False
             return
-        rep = self._repr(object, context, level - 1)
-        typ = type(object)
+        rep = self._repr(object, context, level)
         max_width = self._width - indent - allowance
-        sepLines = len(rep) > max_width
+        if len(rep) > max_width:
+            p = self._dispatch.get(type(object).__repr__, None)
+            if p is not None:
+                context[objid] = 1
+                p(self, object, stream, indent, allowance, context, level + 1)
+                del context[objid]
+                return
+            elif isinstance(object, dict):
+                context[objid] = 1
+                self._pprint_dict(object, stream, indent, allowance,
+                                  context, level + 1)
+                del context[objid]
+                return
+        stream.write(rep)
+
+    _dispatch = {}
+
+    def _pprint_dict(self, object, stream, indent, allowance, context, level):
         write = stream.write
+        write('{')
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * ' ')
+        length = len(object)
+        if length:
+            if isinstance(object, _OrderedDict):
+                items = list(object.items())
+            else:
+                items = sorted(object.items(), key=_safe_tuple)
+            self._format_dict_items(items, stream, indent, allowance + 1,
+                                    context, level)
+        write('}')
 
-        if sepLines:
-            r = getattr(typ, "__repr__", None)
-            if issubclass(typ, dict):
-                write('{')
-                if self._indent_per_level > 1:
-                    write((self._indent_per_level - 1) * ' ')
-                length = len(object)
-                if length:
-                    context[objid] = 1
-                    if issubclass(typ, _OrderedDict):
-                        items = list(object.items())
-                    else:
-                        items = sorted(object.items(), key=_safe_tuple)
-                    self._format_dict_items(items, stream,
-                                            indent + self._indent_per_level,
-                                            allowance + 1,
-                                            context, level)
-                    del context[objid]
-                write('}')
-                return
+    _dispatch[dict.__repr__] = _pprint_dict
+    _dispatch[_OrderedDict.__repr__] = _pprint_dict
 
-            if ((issubclass(typ, list) and r is list.__repr__) or
-                (issubclass(typ, tuple) and r is tuple.__repr__) or
-                (issubclass(typ, set) and r is set.__repr__) or
-                (issubclass(typ, frozenset) and r is frozenset.__repr__)
-               ):
-                length = len(object)
-                if issubclass(typ, list):
-                    write('[')
-                    endchar = ']'
-                elif issubclass(typ, tuple):
-                    write('(')
-                    if length == 1:
-                        endchar = ',)'
-                    else:
-                        endchar = ')'
-                else:
-                    if not length:
-                        write(rep)
-                        return
-                    if typ is set:
-                        write('{')
-                        endchar = '}'
-                    else:
-                        write(typ.__name__)
-                        write('({')
-                        endchar = '})'
-                        indent += len(typ.__name__) + 1
-                    object = sorted(object, key=_safe_key)
-                if self._indent_per_level > 1:
-                    write((self._indent_per_level - 1) * ' ')
-                if length:
-                    context[objid] = 1
-                    self._format_items(object, stream,
-                                       indent + self._indent_per_level,
-                                       allowance + len(endchar),
-                                       context, level)
-                    del context[objid]
-                write(endchar)
-                return
+    def _pprint_list(self, object, stream, indent, allowance, context, level):
+        stream.write('[')
+        self._format_items(object, stream, indent, allowance + 1,
+                           context, level)
+        stream.write(']')
 
-            if issubclass(typ, str) and len(object) > 0 and r is str.__repr__:
-                chunks = []
-                lines = object.splitlines(True)
-                if level == 1:
-                    indent += 1
-                    allowance += 1
-                max_width1 = max_width = self._width - indent
-                for i, line in enumerate(lines):
-                    rep = repr(line)
-                    if i == len(lines) - 1:
-                        max_width1 -= allowance
-                    if len(rep) <= max_width1:
-                        chunks.append(rep)
-                    else:
-                        # A list of alternating (non-space, space) strings
-                        parts = re.findall(r'\S*\s*', line)
-                        assert parts
-                        assert not parts[-1]
-                        parts.pop()  # drop empty last part
-                        max_width2 = max_width
-                        current = ''
-                        for j, part in enumerate(parts):
-                            candidate = current + part
-                            if j == len(parts) - 1 and i == len(lines) - 1:
-                                max_width2 -= allowance
-                            if len(repr(candidate)) > max_width2:
-                                if current:
-                                    chunks.append(repr(current))
-                                current = part
-                            else:
-                                current = candidate
+    _dispatch[list.__repr__] = _pprint_list
+
+    def _pprint_tuple(self, object, stream, indent, allowance, context, level):
+        stream.write('(')
+        endchar = ',)' if len(object) == 1 else ')'
+        self._format_items(object, stream, indent, allowance + len(endchar),
+                           context, level)
+        stream.write(endchar)
+
+    _dispatch[tuple.__repr__] = _pprint_tuple
+
+    def _pprint_set(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        typ = object.__class__
+        if typ is set:
+            stream.write('{')
+            endchar = '}'
+        else:
+            stream.write(typ.__name__ + '({')
+            endchar = '})'
+            indent += len(typ.__name__) + 1
+        object = sorted(object, key=_safe_key)
+        self._format_items(object, stream, indent, allowance + len(endchar),
+                           context, level)
+        stream.write(endchar)
+
+    _dispatch[set.__repr__] = _pprint_set
+    _dispatch[frozenset.__repr__] = _pprint_set
+
+    def _pprint_str(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        if not len(object):
+            write(repr(object))
+            return
+        chunks = []
+        lines = object.splitlines(True)
+        if level == 1:
+            indent += 1
+            allowance += 1
+        max_width1 = max_width = self._width - indent
+        for i, line in enumerate(lines):
+            rep = repr(line)
+            if i == len(lines) - 1:
+                max_width1 -= allowance
+            if len(rep) <= max_width1:
+                chunks.append(rep)
+            else:
+                # A list of alternating (non-space, space) strings
+                parts = re.findall(r'\S*\s*', line)
+                assert parts
+                assert not parts[-1]
+                parts.pop()  # drop empty last part
+                max_width2 = max_width
+                current = ''
+                for j, part in enumerate(parts):
+                    candidate = current + part
+                    if j == len(parts) - 1 and i == len(lines) - 1:
+                        max_width2 -= allowance
+                    if len(repr(candidate)) > max_width2:
                         if current:
                             chunks.append(repr(current))
-                if len(chunks) == 1:
-                    write(rep)
-                    return
-                if level == 1:
-                    write('(')
-                for i, rep in enumerate(chunks):
-                    if i > 0:
-                        write('\n' + ' '*indent)
-                    write(rep)
-                if level == 1:
-                    write(')')
-                return
-        write(rep)
+                        current = part
+                    else:
+                        current = candidate
+                if current:
+                    chunks.append(repr(current))
+        if len(chunks) == 1:
+            write(rep)
+            return
+        if level == 1:
+            write('(')
+        for i, rep in enumerate(chunks):
+            if i > 0:
+                write('\n' + ' '*indent)
+            write(rep)
+        if level == 1:
+            write(')')
+
+    _dispatch[str.__repr__] = _pprint_str
 
     def _format_dict_items(self, items, stream, indent, allowance, context,
                            level):
         write = stream.write
+        indent += self._indent_per_level
         delimnl = ',\n' + ' ' * indent
         last_index = len(items) - 1
         for i, (key, ent) in enumerate(items):
@@ -291,6 +302,9 @@ class PrettyPrinter:
 
     def _format_items(self, items, stream, indent, allowance, context, level):
         write = stream.write
+        indent += self._indent_per_level
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * ' ')
         delimnl = ',\n' + ' ' * indent
         delim = ''
         width = max_width = self._width - indent + 1
