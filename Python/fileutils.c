@@ -520,23 +520,6 @@ Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 }
 
 
-/* Get file status. Encode the path to the locale encoding. */
-int
-_Py_wstat(const wchar_t* path, struct stat *buf)
-{
-    int err;
-    char *fname;
-    fname = Py_EncodeLocale(path, NULL);
-    if (fname == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    err = stat(fname, buf);
-    PyMem_Free(fname);
-    return err;
-}
-
-
 #ifdef MS_WINDOWS
 static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
 

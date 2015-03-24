@@ -15,10 +15,6 @@ PyAPI_FUNC(char*) Py_EncodeLocale(
     const wchar_t *text,
     size_t *error_pos);
 
-PyAPI_FUNC(int) _Py_wstat(
-    const wchar_t* path,
-    struct stat *buf);
-
 #ifndef Py_LIMITED_API
 
 #ifdef MS_WINDOWS

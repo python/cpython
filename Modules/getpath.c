@@ -131,6 +131,23 @@ static wchar_t exec_prefix[MAXPATHLEN+1];
 static wchar_t progpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
 
+/* Get file status. Encode the path to the locale encoding. */
+
+static int
+_Py_wstat(const wchar_t* path, struct stat *buf)
+{
+    int err;
+    char *fname;
+    fname = Py_EncodeLocale(path, NULL);
+    if (fname == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    err = stat(fname, buf);
+    PyMem_Free(fname);
+    return err;
+}
+
 static void
 reduce(wchar_t *dir)
 {
