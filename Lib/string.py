@@ -94,7 +94,11 @@ class Template(metaclass=_TemplateMetaclass):
         raise ValueError('Invalid placeholder in string: line %d, col %d' %
                          (lineno, colno))
 
-    def substitute(self, *args, **kws):
+    def substitute(*args, **kws):
+        if not args:
+            raise TypeError("descriptor 'substitute' of 'Template' object "
+                            "needs an argument")
+        self, *args = args  # allow the "self" keyword be passed
         if len(args) > 1:
             raise TypeError('Too many positional arguments')
         if not args:
@@ -120,7 +124,11 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
-    def safe_substitute(self, *args, **kws):
+    def safe_substitute(*args, **kws):
+        if not args:
+            raise TypeError("descriptor 'safe_substitute' of 'Template' object "
+                            "needs an argument")
+        self, *args = args  # allow the "self" keyword be passed
         if len(args) > 1:
             raise TypeError('Too many positional arguments')
         if not args:
@@ -160,7 +168,19 @@ class Template(metaclass=_TemplateMetaclass):
 # The field name parser is implemented in _string.formatter_field_name_split
 
 class Formatter:
-    def format(self, format_string, *args, **kwargs):
+    def format(*args, **kwargs):
+        if not args:
+            raise TypeError("descriptor 'format' of 'Formatter' object "
+                            "needs an argument")
+        self, *args = args  # allow the "self" keyword be passed
+        try:
+            format_string, *args = args # allow the "format_string" keyword be passed
+        except ValueError:
+            if 'format_string' in kwargs:
+                format_string = kwargs.pop('format_string')
+            else:
+                raise TypeError("format() missing 1 required positional "
+                                "argument: 'format_string'") from None
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):
