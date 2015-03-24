@@ -1112,9 +1112,7 @@ _GetMapSize(PyObject *o, const char* param)
 static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
-#ifdef HAVE_FSTAT
     struct _Py_stat_struct st;
-#endif
     mmap_object *m_obj;
     PyObject *map_size_obj = NULL;
     Py_ssize_t map_size;
@@ -1179,7 +1177,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (fd != -1)
         (void)fcntl(fd, F_FULLFSYNC);
 #endif
-#ifdef HAVE_FSTAT
     if (fd != -1 && _Py_fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
         if (map_size == 0) {
             if (st.st_size == 0) {
@@ -1204,7 +1201,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             return NULL;
         }
     }
-#endif
     m_obj = (mmap_object *)type->tp_alloc(type, 0);
     if (m_obj == NULL) {return NULL;}
     m_obj->data = NULL;

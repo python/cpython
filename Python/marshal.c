@@ -1481,7 +1481,6 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     return res;
 }
 
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
 /* Return size of file in bytes; < 0 if unknown or INT_MAX if too big */
 static off_t
 getfilesize(FILE *fp)
@@ -1496,7 +1495,6 @@ getfilesize(FILE *fp)
     else
         return (off_t)st.st_size;
 }
-#endif
 
 /* If we can get the size of the file up-front, and it's reasonably small,
  * read it in one gulp and delegate to ...FromString() instead.  Much quicker
@@ -1509,7 +1507,6 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
 {
 /* REASONABLE_FILE_LIMIT is by defn something big enough for Tkinter.pyc. */
 #define REASONABLE_FILE_LIMIT (1L << 18)
-#if defined(HAVE_FSTAT) || defined(MS_WINDOWS)
     off_t filesize;
     filesize = getfilesize(fp);
     if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {
@@ -1522,7 +1519,6 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
         }
 
     }
-#endif
     /* We don't have fstat, or we do but the file is larger than
      * REASONABLE_FILE_LIMIT or malloc failed -- read a byte at a time.
      */

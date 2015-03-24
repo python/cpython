@@ -10,6 +10,9 @@ Release date: 2015-03-28
 Core and Builtins
 -----------------
 
+- Issue #23753: Python doesn't support anymore platforms without stat() or
+  fstat(), these functions are always required.
+
 - Issue #23681: The -b option now affects comparisons of bytes with int.
 
 - Issue #23632: Memoryviews now allow tuple indexing (including for
@@ -29,7 +32,7 @@ Library
 
 - Issue #23657: Avoid explicit checks for str in zipapp, adding support
   for pathlib.Path objects as arguments.
-  
+
 - Issue #23688: Added support of arbitrary bytes-like objects and avoided
   unnecessary copying of memoryview in gzip.GzipFile.write().
   Original patch by Wolfgang Maier.
