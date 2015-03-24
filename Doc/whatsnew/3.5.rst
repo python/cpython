@@ -526,6 +526,10 @@ Deprecated Python modules, functions and methods
   :func:`~http.cookies.Morsel.set` method in order to avoid the deprecation
   warning.
 
+* Passing a format string as keyword argument *format_string* to the
+  :meth:`~string.Formatter.format` method of the :class:`string.Formatter`
+  class has been deprecated.
+
 
 Deprecated functions and types of the C API
 -------------------------------------------

@@ -95,6 +95,10 @@ implementation as the built-in :meth:`format` method.
       an arbitrary set of positional and keyword arguments.
       :meth:`format` is just a wrapper that calls :meth:`vformat`.
 
+      .. deprecated:: 3.5
+         Passing a format string as keyword argument *format_string* has been
+         deprecated.
+
    .. method:: vformat(format_string, args, kwargs)
 
       This function does the actual work of formatting.  It is exposed as a
