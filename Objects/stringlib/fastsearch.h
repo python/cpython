@@ -36,7 +36,7 @@
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(fastsearch_memchr_1char)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                                    STRINGLIB_CHAR ch, unsigned char needle,
-                                   Py_ssize_t maxcount, int mode)
+                                   int mode)
 {
     if (mode == FAST_SEARCH) {
         const STRINGLIB_CHAR *ptr = s;
@@ -115,7 +115,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
             if (needle != 0)
 #endif
                 return STRINGLIB(fastsearch_memchr_1char)
-                       (s, n, p[0], needle, maxcount, mode);
+                       (s, n, p[0], needle, mode);
         }
         if (mode == FAST_COUNT) {
             for (i = 0; i < n; i++)

@@ -1914,7 +1914,7 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
     char byte;
     Py_buffer subbuf;
     const char *sub;
-    Py_ssize_t sub_len;
+    Py_ssize_t len, sub_len;
     Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
     Py_ssize_t res;
 
@@ -1933,15 +1933,30 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
         sub = &byte;
         sub_len = 1;
     }
+    len = PyBytes_GET_SIZE(self);
 
-    if (dir > 0)
-        res = stringlib_find_slice(
-            PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-            sub, sub_len, start, end);
-    else
-        res = stringlib_rfind_slice(
-            PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-            sub, sub_len, start, end);
+    ADJUST_INDICES(start, end, len);
+    if (end - start < sub_len)
+        res = -1;
+    else if (sub_len == 1) {
+        unsigned char needle = *sub;
+        int mode = (dir > 0) ? FAST_SEARCH : FAST_RSEARCH;
+        res = stringlib_fastsearch_memchr_1char(
+            PyBytes_AS_STRING(self) + start, end - start,
+            needle, needle, mode);
+        if (res >= 0)
+            res += start;
+    }
+    else {
+        if (dir > 0)
+            res = stringlib_find_slice(
+                PyBytes_AS_STRING(self), len,
+                sub, sub_len, start, end);
+        else
+            res = stringlib_rfind_slice(
+                PyBytes_AS_STRING(self), len,
+                sub, sub_len, start, end);
+    }
 
     if (subobj)
         PyBuffer_Release(&subbuf);
