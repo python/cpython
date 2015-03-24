@@ -2413,12 +2413,18 @@ bufferedrwpair_writable(rwpair *self, PyObject *args)
 static PyObject *
 bufferedrwpair_close(rwpair *self, PyObject *args)
 {
+    PyObject *exc = NULL, *val, *tb;
     PyObject *ret = _forward_call(self->writer, &PyId_close, args);
     if (ret == NULL)
-        return NULL;
-    Py_DECREF(ret);
-
-    return _forward_call(self->reader, &PyId_close, args);
+        PyErr_Fetch(&exc, &val, &tb);
+    else
+        Py_DECREF(ret);
+    ret = _forward_call(self->reader, &PyId_close, args);
+    if (exc != NULL) {
+        _PyErr_ChainExceptions(exc, val, tb);
+        Py_CLEAR(ret);
+    }
+    return ret;
 }
 
 static PyObject *
