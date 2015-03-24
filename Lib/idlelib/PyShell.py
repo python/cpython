@@ -1347,7 +1347,7 @@ class PseudoOutputFile(PseudoFile):
         if type(s) not in (unicode, str, bytearray):
             # See issue #19481
             if isinstance(s, unicode):
-                s = unicode.__getslice__(s, None, None)
+                s = unicode.__getitem__(s, slice(None))
             elif isinstance(s, str):
                 s = str.__str__(s)
             elif isinstance(s, bytearray):

@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23583: Fixed writing unicode to standard output stream in IDLE.
+
 - Issue #21560: An attempt to write a data of wrong type no longer cause
   GzipFile corruption.  Original patch by Wolfgang Maier.
 
@@ -172,6 +174,8 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #23583: Added tests for standard IO streams in IDLE.
 
 - Issue #23392: Added tests for marshal C API that works with FILE*.
 
