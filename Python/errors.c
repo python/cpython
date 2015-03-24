@@ -74,11 +74,11 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
         if (value == NULL || !PyExceptionInstance_Check(value)) {
             /* We must normalize the value right now */
             PyObject *args, *fixed_value;
-#ifdef Py_DEBUG
-            /* in debug mode, PyEval_EvalFrameEx() fails with an assertion
-               error if an exception is set when it is called */
+
+            /* Issue #23571: PyEval_CallObject() must not be called with an
+               exception set */
             PyErr_Clear();
-#endif
+
             if (value == NULL || value == Py_None)
                 args = PyTuple_New(0);
             else if (PyTuple_Check(value)) {
@@ -778,13 +778,12 @@ PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
 {
     PyObject* string;
 
-#ifdef Py_DEBUG
-    /* in debug mode, PyEval_EvalFrameEx() fails with an assertion error
-       if an exception is set when it is called */
+    /* Issue #23571: PyUnicode_FromFormatV() must not be called with an
+       exception set, it calls arbitrary Python code like PyObject_Repr() */
     PyErr_Clear();
-#endif
 
     string = PyUnicode_FromFormatV(format, vargs);
+
     PyErr_SetObject(exception, string);
     Py_XDECREF(string);
     return NULL;
