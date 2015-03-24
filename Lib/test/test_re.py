@@ -100,11 +100,14 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx'), 'xxxx')
         self.assertEqual(re.sub('(?P<unk>x)', '\g<1>\g<1>', 'xx'), 'xxxx')
 
-        self.assertEqual(re.sub('a',r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D','a'),
-                         '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D')
-        self.assertEqual(re.sub('a', '\t\n\v\r\f\a', 'a'), '\t\n\v\r\f\a')
-        self.assertEqual(re.sub('a', '\t\n\v\r\f\a', 'a'),
-                         (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)))
+        self.assertEqual(re.sub('a', r'\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
+        self.assertEqual(re.sub('a', '\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
+        self.assertEqual(re.sub('a', '\t\n\v\r\f\a\b', 'a'),
+                         (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)+chr(8)))
+        for c in 'cdehijklmopqsuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            with self.subTest(c):
+                with self.assertWarns(DeprecationWarning):
+                    self.assertEqual(re.sub('a', '\\' + c, 'a'), '\\' + c)
 
         self.assertEqual(re.sub('^\s*', 'X', 'test'), 'Xtest')
 
@@ -551,14 +554,23 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"\(", '(').group(), '(')
         self.assertIsNone(re.match(r"\(", ')'))
         self.assertEqual(re.match(r"\\", '\\').group(), '\\')
-        self.assertEqual(re.match(r"\y", 'y').group(), 'y')
-        self.assertIsNone(re.match(r"\y", 'z'))
         self.assertEqual(re.match(r"[\]]", ']').group(), ']')
         self.assertIsNone(re.match(r"[\]]", '['))
         self.assertEqual(re.match(r"[a\-c]", '-').group(), '-')
         self.assertIsNone(re.match(r"[a\-c]", 'b'))
         self.assertEqual(re.match(r"[\^a]+", 'a^').group(), 'a^')
         self.assertIsNone(re.match(r"[\^a]+", 'b'))
+        re.purge()  # for warnings
+        for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
+            with self.subTest(c):
+                with self.assertWarns(DeprecationWarning):
+                    self.assertEqual(re.fullmatch('\\%c' % c, c).group(), c)
+                    self.assertIsNone(re.match('\\%c' % c, 'a'))
+        for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
+            with self.subTest(c):
+                with self.assertWarns(DeprecationWarning):
+                    self.assertEqual(re.fullmatch('[\\%c]' % c, c).group(), c)
+                    self.assertIsNone(re.match('[\\%c]' % c, 'a'))
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -907,8 +919,10 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"\x%02x" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"\x%02x0" % i).encode(), bytes([i])+b"0"))
             self.assertTrue(re.match((r"\x%02xz" % i).encode(), bytes([i])+b"z"))
-        self.assertTrue(re.match(br"\u", b'u'))
-        self.assertTrue(re.match(br"\U", b'U'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(br"\u1234", b'u1234'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(br"\U00012345", b'U00012345'))
         self.assertTrue(re.match(br"\0", b"\000"))
         self.assertTrue(re.match(br"\08", b"\0008"))
         self.assertTrue(re.match(br"\01", b"\001"))
@@ -928,8 +942,10 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"[\x%02x]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02x0]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02xz]" % i).encode(), bytes([i])))
-        self.assertTrue(re.match(br"[\u]", b'u'))
-        self.assertTrue(re.match(br"[\U]", b'U'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(br"[\u1234]", b'u'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(br"[\U00012345]", b'U'))
         self.assertRaises(re.error, re.match, br"[\567]", b"")
         self.assertRaises(re.error, re.match, br"[\911]", b"")
         self.assertRaises(re.error, re.match, br"[\x1z]", b"")
@@ -1304,8 +1320,9 @@ class ReTests(unittest.TestCase):
     def test_bug_13899(self):
         # Issue #13899: re pattern r"[\A]" should work like "A" but matches
         # nothing. Ditto B and Z.
-        self.assertEqual(re.findall(r'[\A\B\b\C\Z]', 'AB\bCZ'),
-                         ['A', 'B', '\b', 'C', 'Z'])
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(re.findall(r'[\A\B\b\C\Z]', 'AB\bCZ'),
+                             ['A', 'B', '\b', 'C', 'Z'])
 
     @bigmemtest(size=_2G, memuse=1)
     def test_large_search(self, size):
