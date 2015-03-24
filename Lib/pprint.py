@@ -283,6 +283,36 @@ class PrettyPrinter:
 
     _dispatch[str.__repr__] = _pprint_str
 
+    def _pprint_bytes(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        if len(object) <= 4:
+            write(repr(object))
+            return
+        parens = level == 1
+        if parens:
+            indent += 1
+            allowance += 1
+            write('(')
+        delim = ''
+        for rep in _wrap_bytes_repr(object, self._width - indent, allowance):
+            write(delim)
+            write(rep)
+            if not delim:
+                delim = '\n' + ' '*indent
+        if parens:
+            write(')')
+
+    _dispatch[bytes.__repr__] = _pprint_bytes
+
+    def _pprint_bytearray(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        write('bytearray(')
+        self._pprint_bytes(bytes(object), stream, indent + 10,
+                           allowance + 1, context, level + 1)
+        write(')')
+
+    _dispatch[bytearray.__repr__] = _pprint_bytearray
+
     def _format_dict_items(self, items, stream, indent, allowance, context,
                            level):
         write = stream.write
@@ -462,6 +492,23 @@ def _perfcheck(object=None):
     t3 = time.time()
     print("_safe_repr:", t2 - t1)
     print("pformat:", t3 - t2)
+
+def _wrap_bytes_repr(object, width, allowance):
+    current = b''
+    last = len(object) // 4 * 4
+    for i in range(0, len(object), 4):
+        part = object[i: i+4]
+        candidate = current + part
+        if i == last:
+            width -= allowance
+        if len(repr(candidate)) > width:
+            if current:
+                yield repr(current)
+            current = part
+        else:
+            current = candidate
+    if current:
+        yield repr(current)
 
 if __name__ == "__main__":
     _perfcheck()
