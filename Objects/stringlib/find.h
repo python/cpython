@@ -11,8 +11,7 @@ STRINGLIB(find)(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 {
     Py_ssize_t pos;
 
-    if (str_len < 0)
-        return -1;
+    assert(str_len >= 0);
     if (sub_len == 0)
         return offset;
 
@@ -31,8 +30,7 @@ STRINGLIB(rfind)(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 {
     Py_ssize_t pos;
 
-    if (str_len < 0)
-        return -1;
+    assert(str_len >= 0);
     if (sub_len == 0)
         return str_len + offset;
 
@@ -44,27 +42,11 @@ STRINGLIB(rfind)(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
     return pos;
 }
 
-/* helper macro to fixup start/end slice values */
-#define ADJUST_INDICES(start, end, len)         \
-    if (end > len)                              \
-        end = len;                              \
-    else if (end < 0) {                         \
-        end += len;                             \
-        if (end < 0)                            \
-            end = 0;                            \
-    }                                           \
-    if (start < 0) {                            \
-        start += len;                           \
-        if (start < 0)                          \
-            start = 0;                          \
-    }
-
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(find_slice)(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
                      const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
                      Py_ssize_t start, Py_ssize_t end)
 {
-    ADJUST_INDICES(start, end, str_len);
     return STRINGLIB(find)(str + start, end - start, sub, sub_len, start);
 }
 
@@ -73,7 +55,6 @@ STRINGLIB(rfind_slice)(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
                       const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
                       Py_ssize_t start, Py_ssize_t end)
 {
-    ADJUST_INDICES(start, end, str_len);
     return STRINGLIB(rfind)(str + start, end - start, sub, sub_len, start);
 }
 
