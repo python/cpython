@@ -94,7 +94,7 @@ def copy(x):
     else:
         reductor = getattr(x, "__reduce_ex__", None)
         if reductor:
-            rv = reductor(2)
+            rv = reductor(4)
         else:
             reductor = getattr(x, "__reduce__", None)
             if reductor:
@@ -171,7 +171,7 @@ def deepcopy(x, memo=None, _nil=[]):
                 else:
                     reductor = getattr(x, "__reduce_ex__", None)
                     if reductor:
-                        rv = reductor(2)
+                        rv = reductor(4)
                     else:
                         reductor = getattr(x, "__reduce__", None)
                         if reductor:
