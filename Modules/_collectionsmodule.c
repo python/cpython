@@ -23,31 +23,51 @@
 #define BLOCKLEN 64
 #define CENTER ((BLOCKLEN - 1) / 2)
 
-/* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
+/* Data for deque objects is stored in a doubly-linked list of fixed
+ * length blocks.  This assures that appends or pops never move any
+ * other data elements besides the one being appended or popped.
+ *
+ * Another advantage is that it completely avoids use of realloc(),
+ * resulting in more predictable performance.
+ *
+ * Textbook implementations of doubly-linked lists store one datum
+ * per link, but that gives them a 200% memory overhead (a prev and
+ * next link for each datum) and it costs one malloc() call per data
+ * element.  By using fixed-length blocks, the link to data ratio is
+ * significantly improved and there are proportionally fewer calls
+ * to malloc() and free().  The data blocks of consecutive pointers
+ * also improve cache locality.
+ *
  * The list of blocks is never empty, so d.leftblock and d.rightblock
  * are never equal to NULL.  The list is not circular.
  *
  * A deque d's first element is at d.leftblock[leftindex]
  * and its last element is at d.rightblock[rightindex].
- * Unlike Python slice indices, these indices are inclusive
- * on both ends.  This makes the algorithms for left and
- * right operations more symmetrical and simplifies the design.
  *
- * The indices, d.leftindex and d.rightindex are always in the range
- *     0 <= index < BLOCKLEN.
- * Their exact relationship is:
- *     (d.leftindex + d.len - 1) % BLOCKLEN == d.rightindex.
+ * Unlike Python slice indices, these indices are inclusive on both
+ * ends.  This makes the algorithms for left and right operations
+ * more symmetrical and it simplifies the design.
  *
- * Empty deques have d.len == 0; d.leftblock==d.rightblock;
- * d.leftindex == CENTER+1; and d.rightindex == CENTER.
- * Checking for d.len == 0 is the intended way to see whether d is empty.
+ * The indices, d.leftindex and d.rightindex are always in the range:
+ *     0 <= index < BLOCKLEN
+ *
+ * And their exact relationship is:
+ *     (d.leftindex + d.len - 1) % BLOCKLEN == d.rightindex
  *
  * Whenever d.leftblock == d.rightblock,
- *     d.leftindex + d.len - 1 == d.rightindex.
+ *     d.leftindex + d.len - 1 == d.rightindex
  *
- * However, when d.leftblock != d.rightblock, d.leftindex and d.rightindex
- * become indices into distinct blocks and either may be larger than the
- * other.
+ * However, when d.leftblock != d.rightblock, the d.leftindex and
+ * d.rightindex become indices into distinct blocks and either may
+ * be larger than the other.
+ *
+ * Empty deques have:
+ *     d.len == 0
+ *     d.leftblock == d.rightblock
+ *     d.leftindex == CENTER + 1
+ *     d.rightindex == CENTER
+ *
+ * Checking for d.len == 0 is the intended way to see whether d is empty.
  */
 
 typedef struct BLOCK {
@@ -60,8 +80,8 @@ typedef struct {
     PyObject_VAR_HEAD
     block *leftblock;
     block *rightblock;
-    Py_ssize_t leftindex;       /* in range(BLOCKLEN) */
-    Py_ssize_t rightindex;      /* in range(BLOCKLEN) */
+    Py_ssize_t leftindex;       /* 0 <= leftindex < BLOCKLEN */
+    Py_ssize_t rightindex;      /* 0 <= rightindex < BLOCKLEN */
     size_t state;               /* incremented whenever the indices move */
     Py_ssize_t maxlen;
     PyObject *weakreflist;
@@ -91,7 +111,7 @@ static PyTypeObject deque_type;
 #endif
 
 /* A simple freelisting scheme is used to minimize calls to the memory
-   allocator.  It accomodates common use cases where new blocks are being
+   allocator.  It accommodates common use cases where new blocks are being
    added at about the same rate as old blocks are being freed.
  */
 
@@ -816,6 +836,14 @@ PyDoc_STRVAR(index_doc,
 "D.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
 "Raises ValueError if the value is not present.");
 
+/* insert(), remove(), and delitem() are implemented in terms of
+   rotate() for simplicity and reasonable performance near the end
+   points.  If for some reason these methods become popular, it is not
+   hard to re-implement this using direct data movement (similar to
+   the code used in list slice assignments) and achieve a performance
+   boost (by moving each pointer only one instead of twice).
+*/
+
 static PyObject *
 deque_insert(dequeobject *deque, PyObject *args)
 {
@@ -944,13 +972,6 @@ deque_item(dequeobject *deque, Py_ssize_t i)
     Py_INCREF(item);
     return item;
 }
-
-/* delitem() implemented in terms of rotate for simplicity and reasonable
-   performance near the end points.  If for some reason this method becomes
-   popular, it is not hard to re-implement this using direct data movement
-   (similar to code in list slice assignment) and achieve a two or threefold
-   performance boost.
-*/
 
 static int
 deque_del_item(dequeobject *deque, Py_ssize_t i)
