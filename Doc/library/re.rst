@@ -438,6 +438,10 @@ three digits in length.
 .. versionchanged:: 3.3
    The ``'\u'`` and ``'\U'`` escape sequences have been added.
 
+.. deprecated-removed:: 3.5 3.6
+   Unknown escapes consist of ``'\'`` and ASCII letter now raise a
+   deprecation warning and will be forbidden in Python 3.6.
+
 
 .. seealso::
 
@@ -687,7 +691,7 @@ form.
    *string* is returned unchanged.  *repl* can be a string or a function; if it is
    a string, any backslash escapes in it are processed.  That is, ``\n`` is
    converted to a single newline character, ``\r`` is converted to a carriage return, and
-   so forth.  Unknown escapes such as ``\j`` are left alone.  Backreferences, such
+   so forth.  Unknown escapes such as ``\&`` are left alone.  Backreferences, such
    as ``\6``, are replaced with the substring matched by group 6 in the pattern.
    For example:
 
@@ -731,6 +735,10 @@ form.
 
    .. versionchanged:: 3.5
       Unmatched groups are replaced with an empty string.
+
+   .. deprecated-removed:: 3.5 3.6
+      Unknown escapes consist of ``'\'`` and ASCII letter now raise a
+      deprecation warning and will be forbidden in Python 3.6.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)

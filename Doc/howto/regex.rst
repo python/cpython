@@ -1138,7 +1138,7 @@ Empty matches are replaced only when they're not adjacent to a previous match.
 
 If *replacement* is a string, any backslash escapes in it are processed.  That
 is, ``\n`` is converted to a single newline character, ``\r`` is converted to a
-carriage return, and so forth. Unknown escapes such as ``\j`` are left alone.
+carriage return, and so forth. Unknown escapes such as ``\&`` are left alone.
 Backreferences, such as ``\6``, are replaced with the substring matched by the
 corresponding group in the RE.  This lets you incorporate portions of the
 original text in the resulting replacement string.
