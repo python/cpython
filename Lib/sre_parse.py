@@ -915,7 +915,7 @@ def parse_template(source, pattern):
                     if c in ASCIILETTERS:
                         import warnings
                         warnings.warn('bad escape %s' % this,
-                                      DeprecationWarning, stacklevel=5)
+                                      DeprecationWarning, stacklevel=4)
                 lappend(this)
         else:
             lappend(this)
