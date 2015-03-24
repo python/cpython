@@ -114,7 +114,7 @@ class CmdLineTest(unittest.TestCase):
                              expected_loader):
         if verbose > 1:
             print("Output from test script %r:" % script_name)
-            print(data)
+            print(repr(data))
         self.assertEqual(exit_code, 0)
         printed_loader = '__loader__==%a' % expected_loader
         printed_file = '__file__==%a' % expected_file
@@ -153,7 +153,7 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure(*run_args)
         if verbose > 1:
             print('Output from test script %r:' % script_name)
-            print(err)
+            print(repr(err))
             print('Expected output: %r' % expected_msg)
         self.assertIn(expected_msg.encode('utf-8'), err)
 
@@ -362,7 +362,7 @@ class CmdLineTest(unittest.TestCase):
                 script_name = _make_test_script(pkg_dir, 'script')
                 rc, out, err = assert_python_ok('-m', 'test_pkg.script', *example_args, __isolated=False)
                 if verbose > 1:
-                    print(out)
+                    print(repr(out))
                 expected = "init_argv0==%r" % '-m'
                 self.assertIn(expected.encode('utf-8'), out)
                 self._check_output(script_name, rc, out,
@@ -380,7 +380,7 @@ class CmdLineTest(unittest.TestCase):
                         'import sys; print("sys.path[0]==%r" % sys.path[0])',
                         __isolated=False)
                     if verbose > 1:
-                        print(out)
+                        print(repr(out))
                     expected = "sys.path[0]==%r" % ''
                     self.assertIn(expected.encode('utf-8'), out)
 
@@ -410,7 +410,7 @@ class CmdLineTest(unittest.TestCase):
                                                 "if __name__ == '__main__': raise ValueError")
                 rc, out, err = assert_python_failure('-m', 'test_pkg.other', *example_args)
                 if verbose > 1:
-                    print(out)
+                    print(repr(out))
                 self.assertEqual(rc, 1)
 
     def test_pep_409_verbiage(self):
