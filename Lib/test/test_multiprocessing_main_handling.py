@@ -143,7 +143,7 @@ class MultiProcessingCmdLineMixin():
     def _check_output(self, script_name, exit_code, out, err):
         if verbose > 1:
             print("Output from test script %r:" % script_name)
-            print(out)
+            print(repr(out))
         self.assertEqual(exit_code, 0)
         self.assertEqual(err.decode('utf-8'), '')
         expected_results = "%s -> [1, 4, 9]" % self.start_method
