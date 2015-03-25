@@ -237,6 +237,7 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.expandvars("%?bar%")', "%?bar%")
             tester('ntpath.expandvars("%foo%%bar")', "bar%bar")
             tester('ntpath.expandvars("\'%foo%\'%bar")', "\'%foo%\'%bar")
+            tester('ntpath.expandvars("bar\'%foo%")', "bar\'%foo%")
 
     @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
     def test_expandvars_nonascii(self):

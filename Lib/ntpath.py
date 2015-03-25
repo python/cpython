@@ -400,7 +400,7 @@ def expandvars(path):
                 index = path.index(c)
                 res += c + path[:index + 1]
             except ValueError:
-                res += path
+                res += c + path
                 index = pathlen - 1
         elif c == percent:  # variable or '%'
             if path[index + 1:index + 2] == percent:
