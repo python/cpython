@@ -723,6 +723,11 @@ public: // IBootstrapperApplication
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Skipping package: %ls, after restart because it was applied before the restart.", wzPackageId);
 
                 *pRequestState = BOOTSTRAPPER_REQUEST_STATE_NONE;
+        } else if ((_plannedAction == BOOTSTRAPPER_ACTION_INSTALL || _plannedAction == BOOTSTRAPPER_ACTION_MODIFY) &&
+                   SUCCEEDED(BalInfoFindPackageById(&_bundle.packages, wzPackageId, &pPackage))) {
+            BOOL f = FALSE;
+            if (SUCCEEDED(_engine->EvaluateCondition(pPackage->sczInstallCondition, &f)) && f) {
+                *pRequestState = BOOTSTRAPPER_REQUEST_STATE_PRESENT;
             }
         }
 
@@ -1233,10 +1238,11 @@ private:
 
         hr = LoadBootstrapperBAFunctions();
         BalExitOnFailure(hr, "Failed to load bootstrapper functions.");
+        hr = UpdateUIStrings(_command.action);
+        BalExitOnFailure(hr, "Failed to load UI strings.");
 
         GetBundleFileVersion();
         // don't fail if we couldn't get the version info; best-effort only
-
     LExit:
         ReleaseObject(pixdManifest);
         ReleaseStr(sczModulePath);
@@ -1835,18 +1841,10 @@ private:
 
         return;
     }
-
-
-    //
-    // OnPlan - plan the detected changes.
-    //
-    void OnPlan(__in BOOTSTRAPPER_ACTION action) {
+    HRESULT UpdateUIStrings(__in BOOTSTRAPPER_ACTION action) {
         HRESULT hr = S_OK;
         LPCWSTR likeInstalling = nullptr;
         LPCWSTR likeInstallation = nullptr;
-
-        _plannedAction = action;
-
         switch (action) {
         case BOOTSTRAPPER_ACTION_INSTALL:
             likeInstalling = L"Installing";
@@ -1895,6 +1893,19 @@ private:
                 SUCCEEDED(hr) && locText ? locText->wzText : likeInstallation
             );
         }
+        return hr;
+    }
+
+    //
+    // OnPlan - plan the detected changes.
+    //
+    void OnPlan(__in BOOTSTRAPPER_ACTION action) {
+        HRESULT hr = S_OK;
+
+        _plannedAction = action;
+
+        hr = UpdateUIStrings(action);
+        BalExitOnFailure(hr, "Failed to update strings");
 
         // If we are going to apply a downgrade, bail.
         if (_downgrading && BOOTSTRAPPER_ACTION_UNINSTALL < action) {
