@@ -59,9 +59,26 @@ exit /B 0
     @echo Printing version
     "%~2\Python\python.exe" -c "import sys; print(sys.version)" > "%~2\version.txt" 2>&1
 )
+
+@if not errorlevel 1 (
+    @echo Capturing Start Menu
+    @dir /s/b "%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs" | findstr /ic:"python" > "%~2\startmenu.txt" 2>&1
+    @dir /s/b "%APPDATA%\Microsoft\Windows\Start Menu\Programs" | findstr /ic:"python"  >> "%~2\startmenu.txt" 2>&1
+
+    @echo Capturing registry
+    @for /F "usebackq" %%f in (`reg query HKCR /s /f python /k`) do @(
+        echo %%f >> "%~2\hkcr.txt"
+        reg query "%%f" /s >> "%~2\hkcr.txt" 2>&1
+    )
+    @reg query HKCU\Software\Python /s > "%~2\hkcu.txt" 2>&1
+    @reg query HKLM\Software\Python /reg:32 /s > "%~2\hklm.txt" 2>&1
+    @reg query HKLM\Software\Python /reg:64 /s >> "%~2\hklm.txt" 2>&1
+    cmd /k exit 0
+)
+
 @if not errorlevel 1 (
     @echo Installing package
-    "%~2\Python\python.exe" -m pip install azure > "%~2\pip.txt" 2>&1
+    "%~2\Python\python.exe" -m pip install "azure<0.10" > "%~2\pip.txt" 2>&1
     @if not errorlevel 1 (
         "%~2\Python\python.exe" -m pip uninstall -y azure python-dateutil six >> "%~2\pip.txt" 2>&1
     )
@@ -74,9 +91,6 @@ exit /B 0
 )
 
 @set EXITCODE=%ERRORLEVEL%
-
-@for /d %%f in ("%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Python*") do @dir "%%~ff\*.lnk" /s/b > "%~2\startmenu.txt" 2>&1
-@for /d %%f in ("%APPDATA%\Microsoft\Windows\Start Menu\Programs\Python*") do @dir "%%~ff\*.lnk" /s/b >> "%~2\startmenu.txt" 2>&1
 
 @echo Result was %EXITCODE%
 @echo Removing %1

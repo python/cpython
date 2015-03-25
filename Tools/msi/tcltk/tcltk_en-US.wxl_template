@@ -5,4 +5,8 @@
     <String Id="NoPython">No !(loc.ProductName) installation was detected.</String>
     <String Id="ShortcutName">IDLE (Python {{ShortVersion}} {{Bitness}})</String>
     <String Id="ShortcutDescription">Launches IDLE, the interactive environment for !(loc.ProductName).</String>
+    <String Id="PyDocShortcutName">Python {{ShortVersion}} Module Docs ({{Bitness}})</String>
+    <String Id="PyDocShortcutDescription">Start the !(loc.ProductName) documentation server.</String>
+    <String Id="EditMenu">&amp;Edit with IDLE</String>
+    <String Id="EditSubMenu">Edit with IDLE {{ShortVersion}} ({{Bitness}})</String>
 </WixLocalization>
