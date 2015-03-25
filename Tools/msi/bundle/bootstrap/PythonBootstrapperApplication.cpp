@@ -707,8 +707,7 @@ public: // IBootstrapperApplication
         HRESULT hr = S_OK;
         BAL_INFO_PACKAGE* pPackage = nullptr;
 
-        if (_nextPackageAfterRestart) // after force restart, skip packages until after the package that caused the restart.
-        {
+        if (_nextPackageAfterRestart) {
             // After restart we need to finish the dependency registration for our package so allow the package
             // to go present.
             if (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, _nextPackageAfterRestart, -1)) {
@@ -723,6 +722,7 @@ public: // IBootstrapperApplication
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Skipping package: %ls, after restart because it was applied before the restart.", wzPackageId);
 
                 *pRequestState = BOOTSTRAPPER_REQUEST_STATE_NONE;
+            }
         } else if ((_plannedAction == BOOTSTRAPPER_ACTION_INSTALL || _plannedAction == BOOTSTRAPPER_ACTION_MODIFY) &&
                    SUCCEEDED(BalInfoFindPackageById(&_bundle.packages, wzPackageId, &pPackage))) {
             BOOL f = FALSE;
