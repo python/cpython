@@ -1104,6 +1104,19 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
+    def test_exclusive_create_zip_file(self):
+        """Test exclusive creating a new zipfile."""
+        unlink(TESTFN2)
+        filename = 'testfile.txt'
+        content = b'hello, world. this is some content.'
+        with zipfile.ZipFile(TESTFN2, "x", zipfile.ZIP_STORED) as zipfp:
+            zipfp.writestr(filename, content)
+        with self.assertRaises(FileExistsError):
+            zipfile.ZipFile(TESTFN2, "x", zipfile.ZIP_STORED)
+        with zipfile.ZipFile(TESTFN2, "r") as zipfp:
+            self.assertEqual(zipfp.namelist(), [filename])
+            self.assertEqual(zipfp.read(filename), content)
+
     def test_create_non_existent_file_for_append(self):
         if os.path.exists(TESTFN):
             os.unlink(TESTFN)
