@@ -30,6 +30,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23742: ntpath.expandvars() no longer loses unbalanced single quotes.
+
 - Issue #21717: The zipfile.ZipFile.open function now supports 'x' (exclusive
   creation) mode.
 
