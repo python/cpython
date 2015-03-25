@@ -38,6 +38,24 @@ class ReTests(unittest.TestCase):
                 self.assertIs(type(actual), type(expect), msg)
         recurse(actual, expect)
 
+    def checkPatternError(self, pattern, errmsg, pos=None):
+        with self.assertRaises(re.error) as cm:
+            re.compile(pattern)
+        with self.subTest(pattern=pattern):
+            err = cm.exception
+            self.assertEqual(err.msg, errmsg)
+            if pos is not None:
+                self.assertEqual(err.pos, pos)
+
+    def checkTemplateError(self, pattern, repl, string, errmsg, pos=None):
+        with self.assertRaises(re.error) as cm:
+            re.sub(pattern, repl, string)
+        with self.subTest(pattern=pattern, repl=repl):
+            err = cm.exception
+            self.assertEqual(err.msg, errmsg)
+            if pos is not None:
+                self.assertEqual(err.pos, pos)
+
     def test_keep_buffer(self):
         # See bug 14212
         b = bytearray(b'x')
@@ -148,6 +166,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('x', r'\009', 'x'), '\0' + '9')
         self.assertEqual(re.sub('x', r'\111', 'x'), '\111')
         self.assertEqual(re.sub('x', r'\117', 'x'), '\117')
+        self.assertEqual(re.sub('x', r'\377', 'x'), '\377')
 
         self.assertEqual(re.sub('x', r'\1111', 'x'), '\1111')
         self.assertEqual(re.sub('x', r'\1111', 'x'), '\111' + '1')
@@ -158,21 +177,25 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('x', r'\09', 'x'), '\0' + '9')
         self.assertEqual(re.sub('x', r'\0a', 'x'), '\0' + 'a')
 
-        self.assertRaises(re.error, re.sub, 'x', r'\400', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\777', 'x')
+        self.checkTemplateError('x', r'\400', 'x',
+                                r'octal escape value \400 outside of '
+                                r'range 0-0o377', 0)
+        self.checkTemplateError('x', r'\777', 'x',
+                                r'octal escape value \777 outside of '
+                                r'range 0-0o377', 0)
 
-        self.assertRaises(re.error, re.sub, 'x', r'\1', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\8', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\9', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\11', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\18', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\1a', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\90', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\99', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\118', 'x') # r'\11' + '8'
-        self.assertRaises(re.error, re.sub, 'x', r'\11a', 'x')
-        self.assertRaises(re.error, re.sub, 'x', r'\181', 'x') # r'\18' + '1'
-        self.assertRaises(re.error, re.sub, 'x', r'\800', 'x') # r'\80' + '0'
+        self.checkTemplateError('x', r'\1', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\8', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\9', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\11', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\18', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\1a', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\90', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\99', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\118', 'x', 'invalid group reference') # r'\11' + '8'
+        self.checkTemplateError('x', r'\11a', 'x', 'invalid group reference')
+        self.checkTemplateError('x', r'\181', 'x', 'invalid group reference') # r'\18' + '1'
+        self.checkTemplateError('x', r'\800', 'x', 'invalid group reference') # r'\80' + '0'
 
         # in python2.3 (etc), these loop endlessly in sre_parser.py
         self.assertEqual(re.sub('(((((((((((x)))))))))))', r'\11', 'x'), 'x')
@@ -198,47 +221,65 @@ class ReTests(unittest.TestCase):
         re.compile('(?P<a>x)(?P=a)(?(a)y)')
         re.compile('(?P<a1>x)(?P=a1)(?(a1)y)')
         re.compile('(?P<a1>x)\1(?(1)y)')
-        self.assertRaises(re.error, re.compile, '(?P<a>)(?P<a>)')
-        self.assertRaises(re.error, re.compile, '(?Px)')
-        self.assertRaises(re.error, re.compile, '(?P=)')
-        self.assertRaises(re.error, re.compile, '(?P=1)')
-        self.assertRaises(re.error, re.compile, '(?P=a)')
-        self.assertRaises(re.error, re.compile, '(?P=a1)')
-        self.assertRaises(re.error, re.compile, '(?P=a.)')
-        self.assertRaises(re.error, re.compile, '(?P<)')
-        self.assertRaises(re.error, re.compile, '(?P<>)')
-        self.assertRaises(re.error, re.compile, '(?P<1>)')
-        self.assertRaises(re.error, re.compile, '(?P<a.>)')
-        self.assertRaises(re.error, re.compile, '(?())')
-        self.assertRaises(re.error, re.compile, '(?(a))')
-        self.assertRaises(re.error, re.compile, '(?(1a))')
-        self.assertRaises(re.error, re.compile, '(?(a.))')
+        self.checkPatternError('(?P<a>)(?P<a>)',
+                               "redefinition of group name 'a' as group 2; "
+                               "was group 1")
+        self.checkPatternError('(?Pxy)', 'unknown extension ?Px')
+        self.checkPatternError('(?P<a>)(?P=a', 'missing ), unterminated name', 11)
+        self.checkPatternError('(?P=', 'missing group name', 4)
+        self.checkPatternError('(?P=)', 'missing group name', 4)
+        self.checkPatternError('(?P=1)', "bad character in group name '1'", 4)
+        self.checkPatternError('(?P=a)', "unknown group name 'a'")
+        self.checkPatternError('(?P=a1)', "unknown group name 'a1'")
+        self.checkPatternError('(?P=a.)', "bad character in group name 'a.'", 4)
+        self.checkPatternError('(?P<)', 'missing >, unterminated name', 4)
+        self.checkPatternError('(?P<a', 'missing >, unterminated name', 4)
+        self.checkPatternError('(?P<', 'missing group name', 4)
+        self.checkPatternError('(?P<>)', 'missing group name', 4)
+        self.checkPatternError(r'(?P<1>)', "bad character in group name '1'", 4)
+        self.checkPatternError(r'(?P<a.>)', "bad character in group name 'a.'", 4)
+        self.checkPatternError(r'(?(', 'missing group name', 3)
+        self.checkPatternError(r'(?())', 'missing group name', 3)
+        self.checkPatternError(r'(?(a))', "unknown group name 'a'", 3)
+        self.checkPatternError(r'(?(-1))', "bad character in group name '-1'", 3)
+        self.checkPatternError(r'(?(1a))', "bad character in group name '1a'", 3)
+        self.checkPatternError(r'(?(a.))', "bad character in group name 'a.'", 3)
         # New valid/invalid identifiers in Python 3
         re.compile('(?P<µ>x)(?P=µ)(?(µ)y)')
         re.compile('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)(?P=𝔘𝔫𝔦𝔠𝔬𝔡𝔢)(?(𝔘𝔫𝔦𝔠𝔬𝔡𝔢)y)')
-        self.assertRaises(re.error, re.compile, '(?P<©>x)')
+        self.checkPatternError('(?P<©>x)', "bad character in group name '©'", 4)
         # Support > 100 groups.
         pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
         pat = '(?:%s)(?(200)z|t)' % pat
         self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
 
     def test_symbolic_refs(self):
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<a', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<a a>', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<>', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<1a1>', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', r'\g<2>', 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', r'\2', 'xx')
-        self.assertRaises(IndexError, re.sub, '(?P<a>x)', '\g<ab>', 'xx')
+        self.checkTemplateError('(?P<a>x)', '\g<a', 'xx',
+                                'missing >, unterminated name', 3)
+        self.checkTemplateError('(?P<a>x)', '\g<', 'xx',
+                                'missing group name', 3)
+        self.checkTemplateError('(?P<a>x)', '\g', 'xx', 'missing <', 2)
+        self.checkTemplateError('(?P<a>x)', '\g<a a>', 'xx',
+                                "bad character in group name 'a a'", 3)
+        self.checkTemplateError('(?P<a>x)', '\g<>', 'xx',
+                                'missing group name', 3)
+        self.checkTemplateError('(?P<a>x)', '\g<1a1>', 'xx',
+                                "bad character in group name '1a1'", 3)
+        self.checkTemplateError('(?P<a>x)', r'\g<2>', 'xx',
+                                'invalid group reference')
+        self.checkTemplateError('(?P<a>x)', r'\2', 'xx',
+                                'invalid group reference')
+        with self.assertRaisesRegex(IndexError, "unknown group name 'ab'"):
+            re.sub('(?P<a>x)', '\g<ab>', 'xx')
         self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\g<b>', 'xx'), '')
         self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\2', 'xx'), '')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<-1>', 'xx')
+        self.checkTemplateError('(?P<a>x)', '\g<-1>', 'xx',
+                                "bad character in group name '-1'", 3)
         # New valid/invalid identifiers in Python 3
         self.assertEqual(re.sub('(?P<µ>x)', r'\g<µ>', 'xx'), 'xx')
         self.assertEqual(re.sub('(?P<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>x)', r'\g<𝔘𝔫𝔦𝔠𝔬𝔡𝔢>', 'xx'), 'xx')
-        self.assertRaises(re.error, re.sub, '(?P<a>x)', r'\g<©>', 'xx')
+        self.checkTemplateError('(?P<a>x)', '\g<©>', 'xx',
+                                "bad character in group name '©'", 3)
         # Support > 100 groups.
         pat = '|'.join('x(?P<a%d>%x)y' % (i, i) for i in range(1, 200 + 1))
         self.assertEqual(re.sub(pat, '\g<200>', 'xc8yzxc8y'), 'c8zc8')
@@ -444,6 +485,19 @@ class ReTests(unittest.TestCase):
         pat = '(?:%s)(?(200)z)' % pat
         self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
 
+        self.checkPatternError(r'(?P<a>)(?(0))', 'bad group number', 10)
+        self.checkPatternError(r'()(?(1)a|b',
+                               'missing ), unterminated subpattern', 2)
+        self.checkPatternError(r'()(?(1)a|b|c)',
+                               'conditional backref with more than '
+                               'two branches', 10)
+
+    def test_re_groupref_overflow(self):
+        self.checkTemplateError('()', '\g<%s>' % sre_constants.MAXGROUPS, 'xx',
+                                'invalid group reference', 3)
+        self.checkPatternError(r'(?P<a>)(?(%d))' % sre_constants.MAXGROUPS,
+                               'invalid group reference', 10)
+
     def test_re_groupref(self):
         self.assertEqual(re.match(r'^(\|)?([^()]+)\1$', '|a|').groups(),
                          ('|', 'a'))
@@ -455,6 +509,8 @@ class ReTests(unittest.TestCase):
                          ('a', 'a'))
         self.assertEqual(re.match(r'^(?:(a)|c)(\1)?$', 'c').groups(),
                          (None, None))
+
+        self.checkPatternError(r'(abc\1)', 'cannot refer to an open group', 4)
 
     def test_groupdict(self):
         self.assertEqual(re.match('(?P<first>first) (?P<second>second)',
@@ -493,6 +549,7 @@ class ReTests(unittest.TestCase):
 
         self.assertTrue(re.match("^x{3}$", "xxx"))
         self.assertTrue(re.match("^x{1,3}$", "xxx"))
+        self.assertTrue(re.match("^x{3,3}$", "xxx"))
         self.assertTrue(re.match("^x{1,4}$", "xxx"))
         self.assertTrue(re.match("^x{3,4}?$", "xxx"))
         self.assertTrue(re.match("^x{3}?$", "xxx"))
@@ -502,6 +559,9 @@ class ReTests(unittest.TestCase):
 
         self.assertIsNone(re.match("^x{}$", "xxx"))
         self.assertTrue(re.match("^x{}$", "x{}"))
+
+        self.checkPatternError(r'x{2,1}',
+                               'min repeat greater than max repeat', 2)
 
     def test_getattr(self):
         self.assertEqual(re.compile("(?i)(a)(b)").pattern, "(?i)(a)(b)")
@@ -550,7 +610,7 @@ class ReTests(unittest.TestCase):
                                    b"1aa! a", re.LOCALE).group(0), b"1aa! a")
 
     def test_other_escapes(self):
-        self.assertRaises(re.error, re.compile, "\\")
+        self.checkPatternError("\\", 'bad escape (end of pattern)', 0)
         self.assertEqual(re.match(r"\(", '(').group(), '(')
         self.assertIsNone(re.match(r"\(", ')'))
         self.assertEqual(re.match(r"\\", '\\').group(), '\\')
@@ -875,15 +935,17 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r"\08", "\0008"))
         self.assertTrue(re.match(r"\01", "\001"))
         self.assertTrue(re.match(r"\018", "\0018"))
-        self.assertRaises(re.error, re.match, r"\567", "")
-        self.assertRaises(re.error, re.match, r"\911", "")
-        self.assertRaises(re.error, re.match, r"\x1", "")
-        self.assertRaises(re.error, re.match, r"\x1z", "")
-        self.assertRaises(re.error, re.match, r"\u123", "")
-        self.assertRaises(re.error, re.match, r"\u123z", "")
-        self.assertRaises(re.error, re.match, r"\U0001234", "")
-        self.assertRaises(re.error, re.match, r"\U0001234z", "")
-        self.assertRaises(re.error, re.match, r"\U00110000", "")
+        self.checkPatternError(r"\567",
+                               r'octal escape value \567 outside of '
+                               r'range 0-0o377', 0)
+        self.checkPatternError(r"\911", 'invalid group reference', 0)
+        self.checkPatternError(r"\x1", r'incomplete escape \x1', 0)
+        self.checkPatternError(r"\x1z", r'incomplete escape \x1', 0)
+        self.checkPatternError(r"\u123", r'incomplete escape \u123', 0)
+        self.checkPatternError(r"\u123z", r'incomplete escape \u123', 0)
+        self.checkPatternError(r"\U0001234", r'incomplete escape \U0001234', 0)
+        self.checkPatternError(r"\U0001234z", r'incomplete escape \U0001234', 0)
+        self.checkPatternError(r"\U00110000", r'bad escape \U00110000', 0)
 
     def test_sre_character_class_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255, 256, 0xFFFF, 0x10000, 0x10FFFF]:
@@ -903,12 +965,14 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(r"[\U%08x]" % i, chr(i)))
             self.assertTrue(re.match(r"[\U%08x0]" % i, chr(i)+"0"))
             self.assertTrue(re.match(r"[\U%08xz]" % i, chr(i)+"z"))
-        self.assertRaises(re.error, re.match, r"[\567]", "")
-        self.assertRaises(re.error, re.match, r"[\911]", "")
-        self.assertRaises(re.error, re.match, r"[\x1z]", "")
-        self.assertRaises(re.error, re.match, r"[\u123z]", "")
-        self.assertRaises(re.error, re.match, r"[\U0001234z]", "")
-        self.assertRaises(re.error, re.match, r"[\U00110000]", "")
+        self.checkPatternError(r"[\567]",
+                               r'octal escape value \567 outside of '
+                               r'range 0-0o377', 1)
+        self.checkPatternError(r"[\911]", r'bad escape \9', 1)
+        self.checkPatternError(r"[\x1z]", r'incomplete escape \x1', 1)
+        self.checkPatternError(r"[\u123z]", r'incomplete escape \u123', 1)
+        self.checkPatternError(r"[\U0001234z]", r'incomplete escape \U0001234', 1)
+        self.checkPatternError(r"[\U00110000]", r'bad escape \U00110000', 1)
         self.assertTrue(re.match(r"[\U0001d49c-\U0001d4b5]", "\U0001d49e"))
 
     def test_sre_byte_literals(self):
@@ -927,10 +991,12 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(br"\08", b"\0008"))
         self.assertTrue(re.match(br"\01", b"\001"))
         self.assertTrue(re.match(br"\018", b"\0018"))
-        self.assertRaises(re.error, re.match, br"\567", b"")
-        self.assertRaises(re.error, re.match, br"\911", b"")
-        self.assertRaises(re.error, re.match, br"\x1", b"")
-        self.assertRaises(re.error, re.match, br"\x1z", b"")
+        self.checkPatternError(br"\567",
+                               r'octal escape value \567 outside of '
+                               r'range 0-0o377', 0)
+        self.checkPatternError(br"\911", 'invalid group reference', 0)
+        self.checkPatternError(br"\x1", r'incomplete escape \x1', 0)
+        self.checkPatternError(br"\x1z", r'incomplete escape \x1', 0)
 
     def test_sre_byte_class_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255]:
@@ -946,9 +1012,22 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(br"[\u1234]", b'u'))
         with self.assertWarns(DeprecationWarning):
             self.assertTrue(re.match(br"[\U00012345]", b'U'))
-        self.assertRaises(re.error, re.match, br"[\567]", b"")
-        self.assertRaises(re.error, re.match, br"[\911]", b"")
-        self.assertRaises(re.error, re.match, br"[\x1z]", b"")
+        self.checkPatternError(br"[\567]",
+                               r'octal escape value \567 outside of '
+                               r'range 0-0o377', 1)
+        self.checkPatternError(br"[\911]", r'bad escape \9', 1)
+        self.checkPatternError(br"[\x1z]", r'incomplete escape \x1', 1)
+
+    def test_character_set_errors(self):
+        self.checkPatternError(r'[', 'unterminated character set', 0)
+        self.checkPatternError(r'[^', 'unterminated character set', 0)
+        self.checkPatternError(r'[a', 'unterminated character set', 0)
+        # bug 545855 -- This pattern failed to cause a compile error as it
+        # should, instead provoking a TypeError.
+        self.checkPatternError(r"[a-", 'unterminated character set', 0)
+        self.checkPatternError(r"[\w-b]", r'bad character range \w-b', 1)
+        self.checkPatternError(r"[a-\w]", r'bad character range a-\w', 1)
+        self.checkPatternError(r"[b-a]", 'bad character range b-a', 1)
 
     def test_bug_113254(self):
         self.assertEqual(re.match(r'(a)|(b)', 'b').start(1), -1)
@@ -962,11 +1041,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r'(?P<a>a)(?P<b>b)?b','ab').lastgroup, 'a')
         self.assertEqual(re.match("(?P<a>a(b))", "ab").lastgroup, 'a')
         self.assertEqual(re.match("((a))", "a").lastindex, 1)
-
-    def test_bug_545855(self):
-        # bug 545855 -- This pattern failed to cause a compile error as it
-        # should, instead provoking a TypeError.
-        self.assertRaises(re.error, re.compile, 'foo[a-')
 
     def test_bug_418626(self):
         # bugs 418626 at al. -- Testing Greg Chapman's addition of op code
@@ -990,6 +1064,24 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match('(x)*', 50000*'x').group(1), 'x')
         self.assertEqual(re.match('(x)*y', 50000*'x'+'y').group(1), 'x')
         self.assertEqual(re.match('(x)*?y', 50000*'x'+'y').group(1), 'x')
+
+    def test_nothing_to_repeat(self):
+        for reps in '*', '+', '?', '{1,2}':
+            for mod in '', '?':
+                self.checkPatternError('%s%s' % (reps, mod),
+                                       'nothing to repeat', 0)
+                self.checkPatternError('(?:%s%s)' % (reps, mod),
+                                       'nothing to repeat', 3)
+
+    def test_multiple_repeat(self):
+        for outer_reps in '*', '+', '{1,2}':
+            for outer_mod in '', '?':
+                outer_op = outer_reps + outer_mod
+                for inner_reps in '*', '+', '?', '{1,2}':
+                    for inner_mod in '', '?':
+                        inner_op = inner_reps + inner_mod
+                        self.checkPatternError(r'x%s%s' % (inner_op, outer_op),
+                                'multiple repeat', 1 + len(inner_op))
 
     def test_unlimited_zero_width_repeat(self):
         # Issue #9669
@@ -1381,13 +1473,13 @@ class ReTests(unittest.TestCase):
 
     def test_backref_group_name_in_exception(self):
         # Issue 17341: Poor error message when compiling invalid regex
-        with self.assertRaisesRegex(sre_constants.error, '<foo>'):
-            re.compile('(?P=<foo>)')
+        self.checkPatternError('(?P=<foo>)',
+                               "bad character in group name '<foo>'", 4)
 
     def test_group_name_in_exception(self):
         # Issue 17341: Poor error message when compiling invalid regex
-        with self.assertRaisesRegex(sre_constants.error, '\?foo'):
-            re.compile('(?P<?foo>)')
+        self.checkPatternError('(?P<?foo>)',
+                               "bad character in group name '?foo'", 4)
 
     def test_issue17998(self):
         for reps in '*', '+', '?', '{1}':
@@ -1555,6 +1647,19 @@ SUBPATTERN None
         self.assertIn(err.msg, str(err))
         self.assertIn(' at position 77', str(err))
         self.assertIn('(line 5, column 17)', str(err))
+
+    def test_misc_errors(self):
+        self.checkPatternError(r'(', 'missing ), unterminated subpattern', 0)
+        self.checkPatternError(r'((a|b)', 'missing ), unterminated subpattern', 0)
+        self.checkPatternError(r'(a|b))', 'unbalanced parenthesis', 5)
+        self.checkPatternError(r'(?P', 'unexpected end of pattern', 3)
+        self.checkPatternError(r'(?z)', 'unknown extension ?z', 1)
+        self.checkPatternError(r'(?iz)', 'unknown flag', 3)
+        self.checkPatternError(r'(?i', 'missing )', 3)
+        self.checkPatternError(r'(?#abc', 'missing ), unterminated comment', 0)
+        self.checkPatternError(r'(?<', 'unexpected end of pattern', 3)
+        self.checkPatternError(r'(?<>)', 'unknown extension ?<>', 1)
+        self.checkPatternError(r'(?', 'unexpected end of pattern', 2)
 
 
 class PatternReprTests(unittest.TestCase):
