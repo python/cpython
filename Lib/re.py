@@ -286,7 +286,7 @@ def _compile(pattern, flags):
     if isinstance(pattern, _pattern_type):
         if flags:
             raise ValueError(
-                "Cannot process flags argument with a compiled pattern")
+                "cannot process flags argument with a compiled pattern")
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")

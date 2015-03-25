@@ -315,7 +315,7 @@ getstring(PyObject* string, Py_ssize_t* p_length,
 
     /* get pointer to byte string buffer */
     if (PyObject_GetBuffer(string, view, PyBUF_SIMPLE) != 0) {
-        PyErr_SetString(PyExc_TypeError, "expected string or buffer");
+        PyErr_SetString(PyExc_TypeError, "expected string or bytes-like object");
         return NULL;
     }
 
@@ -359,12 +359,12 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     if (isbytes && pattern->isbytes == 0) {
         PyErr_SetString(PyExc_TypeError,
-                        "can't use a string pattern on a bytes-like object");
+                        "cannot use a string pattern on a bytes-like object");
         goto err;
     }
     if (!isbytes && pattern->isbytes > 0) {
         PyErr_SetString(PyExc_TypeError,
-                        "can't use a bytes pattern on a string-like object");
+                        "cannot use a bytes pattern on a string-like object");
         goto err;
     }
 
