@@ -962,7 +962,8 @@ class ZipFile:
 
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
-    mode: The mode can be either read "r", write "w" or append "a".
+    mode: The mode can be either read 'r', write 'w', exclusive create 'x',
+          or append 'a'.
     compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
                  ZIP_BZIP2 (requires bz2) or ZIP_LZMA (requires lzma).
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
@@ -975,9 +976,10 @@ class ZipFile:
     _windows_illegal_name_trans_table = None
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True):
-        """Open the ZIP file with mode read "r", write "w" or append "a"."""
-        if mode not in ("r", "w", "a"):
-            raise RuntimeError('ZipFile() requires mode "r", "w", or "a"')
+        """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
+        or append 'a'."""
+        if mode not in ('r', 'w', 'x', 'a'):
+            raise RuntimeError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
 
         _check_compression(compression)
 
@@ -996,8 +998,8 @@ class ZipFile:
             # No, it's a filename
             self._filePassed = 0
             self.filename = file
-            modeDict = {'r' : 'rb', 'w': 'w+b', 'a' : 'r+b',
-                        'r+b': 'w+b', 'w+b': 'wb'}
+            modeDict = {'r' : 'rb', 'w': 'w+b', 'x': 'x+b', 'a' : 'r+b',
+                        'r+b': 'w+b', 'w+b': 'wb', 'x+b': 'xb'}
             filemode = modeDict[mode]
             while True:
                 try:
@@ -1019,7 +1021,7 @@ class ZipFile:
         try:
             if mode == 'r':
                 self._RealGetContents()
-            elif mode == 'w':
+            elif mode in ('w', 'x'):
                 # set the modified flag so central directory gets written
                 # even if no files are added to the archive
                 self._didModify = True
@@ -1050,7 +1052,7 @@ class ZipFile:
                     self._didModify = True
                     self.start_dir = self.fp.tell()
             else:
-                raise RuntimeError('Mode must be "r", "w" or "a"')
+                raise RuntimeError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
             fp = self.fp
             self.fp = None
@@ -1400,8 +1402,8 @@ class ZipFile:
         if zinfo.filename in self.NameToInfo:
             import warnings
             warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
-        if self.mode not in ("w", "a"):
-            raise RuntimeError('write() requires mode "w" or "a"')
+        if self.mode not in ('w', 'x', 'a'):
+            raise RuntimeError("write() requires mode 'w', 'x', or 'a'")
         if not self.fp:
             raise RuntimeError(
                 "Attempt to write ZIP archive that was already closed")
@@ -1588,13 +1590,13 @@ class ZipFile:
         self.close()
 
     def close(self):
-        """Close the file, and for mode "w" and "a" write the ending
+        """Close the file, and for mode 'w', 'x' and 'a' write the ending
         records."""
         if self.fp is None:
             return
 
         try:
-            if self.mode in ("w", "a") and self._didModify: # write ending records
+            if self.mode in ('w', 'x', 'a') and self._didModify: # write ending records
                 with self._lock:
                     if self._seekable:
                         self.fp.seek(self.start_dir)
