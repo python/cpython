@@ -54,7 +54,7 @@
  * And their exact relationship is:
  *     (d.leftindex + d.len - 1) % BLOCKLEN == d.rightindex
  *
- * Whenever d.leftblock == d.rightblock,
+ * Whenever d.leftblock == d.rightblock, then:
  *     d.leftindex + d.len - 1 == d.rightindex
  *
  * However, when d.leftblock != d.rightblock, the d.leftindex and
@@ -206,13 +206,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
     deque->state++;
 
     if (deque->rightindex == -1) {
-        if (Py_SIZE(deque) == 0) {
-            assert(deque->leftblock == deque->rightblock);
-            assert(deque->leftindex == deque->rightindex+1);
-            /* re-center instead of freeing a block */
-            deque->leftindex = CENTER + 1;
-            deque->rightindex = CENTER;
-        } else {
+        if (Py_SIZE(deque)) {
             prevblock = deque->rightblock->leftlink;
             assert(deque->leftblock != deque->rightblock);
             freeblock(deque->rightblock);
@@ -220,6 +214,12 @@ deque_pop(dequeobject *deque, PyObject *unused)
             MARK_END(prevblock->rightlink);
             deque->rightblock = prevblock;
             deque->rightindex = BLOCKLEN - 1;
+        } else {
+            assert(deque->leftblock == deque->rightblock);
+            assert(deque->leftindex == deque->rightindex+1);
+            /* re-center instead of freeing a block */
+            deque->leftindex = CENTER + 1;
+            deque->rightindex = CENTER;
         }
     }
     return item;
@@ -244,13 +244,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
     deque->state++;
 
     if (deque->leftindex == BLOCKLEN) {
-        if (Py_SIZE(deque) == 0) {
-            assert(deque->leftblock == deque->rightblock);
-            assert(deque->leftindex == deque->rightindex+1);
-            /* re-center instead of freeing a block */
-            deque->leftindex = CENTER + 1;
-            deque->rightindex = CENTER;
-        } else {
+        if (Py_SIZE(deque)) {
             assert(deque->leftblock != deque->rightblock);
             prevblock = deque->leftblock->rightlink;
             freeblock(deque->leftblock);
@@ -258,6 +252,12 @@ deque_popleft(dequeobject *deque, PyObject *unused)
             MARK_END(prevblock->leftlink);
             deque->leftblock = prevblock;
             deque->leftindex = 0;
+        } else {
+            assert(deque->leftblock == deque->rightblock);
+            assert(deque->leftindex == deque->rightindex+1);
+            /* re-center instead of freeing a block */
+            deque->leftindex = CENTER + 1;
+            deque->rightindex = CENTER;
         }
     }
     return item;
@@ -300,7 +300,7 @@ static PyObject *
 deque_append(dequeobject *deque, PyObject *item)
 {
     deque->state++;
-    if (deque->rightindex == BLOCKLEN-1) {
+    if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(Py_SIZE(deque));
         if (b == NULL)
             return NULL;
@@ -396,7 +396,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 
     while ((item = PyIter_Next(it)) != NULL) {
         deque->state++;
-        if (deque->rightindex == BLOCKLEN-1) {
+        if (deque->rightindex == BLOCKLEN - 1) {
             block *b = newblock(Py_SIZE(deque));
             if (b == NULL) {
                 Py_DECREF(item);
@@ -669,7 +669,7 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     block *rightblock = deque->rightblock;
     Py_ssize_t leftindex = deque->leftindex;
     Py_ssize_t rightindex = deque->rightindex;
-    Py_ssize_t n = (Py_SIZE(deque))/2;
+    Py_ssize_t n = Py_SIZE(deque) / 2;
     Py_ssize_t i;
     PyObject *tmp;
 
@@ -1135,7 +1135,6 @@ deque_repr(PyObject *deque)
         return NULL;
     }
     if (((dequeobject *)deque)->maxlen != -1)
-
         result = PyUnicode_FromFormat("deque(%R, maxlen=%zd)",
                                       aslist, ((dequeobject *)deque)->maxlen);
     else
@@ -1315,8 +1314,6 @@ static PyNumberMethods deque_as_number = {
     0,                                  /* nb_absolute */
     (inquiry)deque_bool,                /* nb_bool */
     0,                                  /* nb_invert */
-    0,                                  /* nb_lshift */
-    0,                                  /* nb_rshift */
  };
 
 
