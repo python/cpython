@@ -14,7 +14,7 @@
         
         <?if $(var.UpgradeCode)!=$(var.CoreUpgradeCode) ?>
         <Upgrade Id="$(var.CoreUpgradeCode)">
-            <UpgradeVersion Property="MISSING_CORE" Minimum="$(var.Version)" Maximum="$(var.Version)" OnlyDetect="yes" />
+            <UpgradeVersion Property="MISSING_CORE" Minimum="$(var.Version)" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="yes" OnlyDetect="yes" />
         </Upgrade>
         <?endif ?>
         
