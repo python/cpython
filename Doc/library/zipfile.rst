@@ -134,8 +134,11 @@ ZipFile Objects
 
    Open a ZIP file, where *file* can be either a path to a file (a string) or a
    file-like object.  The *mode* parameter should be ``'r'`` to read an existing
-   file, ``'w'`` to truncate and write a new file, or ``'a'`` to append to an
-   existing file.  If *mode* is ``'a'`` and *file* refers to an existing ZIP
+   file, ``'w'`` to truncate and write a new file, ``'x'`` to exclusive create
+   and write a new file, or ``'a'`` to append to an existing file.
+   If *mode* is ``'x'`` and *file* refers to an existing file,
+   a :exc:`FileExistsError` will be raised.
+   If *mode* is ``'a'`` and *file* refers to an existing ZIP
    file, then additional files are added to it.  If *file* does not refer to a
    ZIP file, then a new ZIP archive is appended to the file.  This is meant for
    adding a ZIP archive to another file (such as :file:`python.exe`).  If
@@ -152,7 +155,7 @@ ZipFile Objects
    extensions when the zipfile is larger than 2 GiB. If it is  false :mod:`zipfile`
    will raise an exception when the ZIP file would require ZIP64 extensions.
 
-   If the file is created with mode ``'a'`` or ``'w'`` and then
+   If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
    ZIP structures for an empty archive will be written to the file.
 
@@ -174,6 +177,7 @@ ZipFile Objects
 
    .. versionchanged:: 3.5
       Added support for writing to unseekable streams.
+      Added support for the ``'x'`` mode.
 
 
 .. method:: ZipFile.close()
@@ -310,7 +314,8 @@ ZipFile Objects
    *arcname* (by default, this will be the same as *filename*, but without a drive
    letter and with leading path separators removed).  If given, *compress_type*
    overrides the value given for the *compression* parameter to the constructor for
-   the new entry.  The archive must be open with mode ``'w'`` or ``'a'`` -- calling
+   the new entry.
+   The archive must be open with mode ``'w'``, ``'x'`` or ``'a'`` -- calling
    :meth:`write` on a ZipFile created with mode ``'r'`` will raise a
    :exc:`RuntimeError`.  Calling  :meth:`write` on a closed ZipFile will raise a
    :exc:`RuntimeError`.
@@ -337,10 +342,11 @@ ZipFile Objects
    Write the string *bytes* to the archive; *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
    an instance, at least the filename, date, and time must be given.  If it's a
-   name, the date and time is set to the current date and time. The archive must be
-   opened with mode ``'w'`` or ``'a'`` -- calling  :meth:`writestr` on a ZipFile
-   created with mode ``'r'``  will raise a :exc:`RuntimeError`.  Calling
-   :meth:`writestr` on a closed ZipFile will raise a :exc:`RuntimeError`.
+   name, the date and time is set to the current date and time.
+   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'`` -- calling
+   :meth:`writestr` on a ZipFile created with mode ``'r'`` will raise a
+   :exc:`RuntimeError`.  Calling :meth:`writestr` on a closed ZipFile will
+   raise a :exc:`RuntimeError`.
 
    If given, *compress_type* overrides the value given for the *compression*
    parameter to the constructor for the new entry, or in the *zinfo_or_arcname*
@@ -368,7 +374,8 @@ The following data attributes are also available:
 .. attribute:: ZipFile.comment
 
    The comment text associated with the ZIP file.  If assigning a comment to a
-   :class:`ZipFile` instance created with mode 'a' or 'w', this should be a
+   :class:`ZipFile` instance created with mode ``'w'``, ``'x'`` or ``'a'``,
+   this should be a
    string no longer than 65535 bytes.  Comments longer than this will be
    truncated in the written archive when :meth:`close` is called.
 

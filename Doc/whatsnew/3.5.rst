@@ -454,6 +454,9 @@ zipfile
 * Added support for writing ZIP files to unseekable streams.
   (Contributed by Serhiy Storchaka in :issue:`23252`.)
 
+* The :func:`zipfile.ZipFile.open` function now supports ``'x'`` (exclusive
+  creation) mode.  (Contributed by Serhiy Storchaka in :issue:`21717`.)
+
 
 Optimizations
 =============

@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21717: The zipfile.ZipFile.open function now supports 'x' (exclusive
+  creation) mode.
+
 - Issue #21802: The reader in BufferedRWPair now is closed even when closing
   writer failed in BufferedRWPair.close().
 
