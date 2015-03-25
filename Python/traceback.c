@@ -309,13 +309,20 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     }
     fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
-    Py_DECREF(binary);
     PyMem_FREE(found_encoding);
 
     if (fob == NULL) {
         PyErr_Clear();
+
+        res = _PyObject_CallMethodId(binary, &PyId_close, "");
+        Py_DECREF(binary);
+        if (res)
+            Py_DECREF(res);
+        else
+            PyErr_Clear();
         return 0;
     }
+    Py_DECREF(binary);
 
     /* get the line number lineno */
     for (i = 0; i < lineno; i++) {
