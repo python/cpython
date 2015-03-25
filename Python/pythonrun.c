@@ -2663,6 +2663,19 @@ void
 Py_FatalError(const char *msg)
 {
     const int fd = fileno(stderr);
+    static int reentrant = 0;
+#ifdef MS_WINDOWS
+    size_t len;
+    WCHAR* buffer;
+    size_t i;
+#endif
+
+    if (reentrant) {
+        /* Py_FatalError() caused a second fatal error.
+           Example: flush_std_files() raises a recursion error. */
+        goto exit;
+    }
+    reentrant = 1;
 
     fprintf(stderr, "Fatal Python error: %s\n", msg);
     fflush(stderr); /* it helps in Windows debug build */
@@ -2680,25 +2693,23 @@ Py_FatalError(const char *msg)
     _PyFaulthandler_Fini();
 
 #ifdef MS_WINDOWS
-    {
-        size_t len = strlen(msg);
-        WCHAR* buffer;
-        size_t i;
+    len = strlen(msg);
 
-        /* Convert the message to wchar_t. This uses a simple one-to-one
-        conversion, assuming that the this error message actually uses ASCII
-        only. If this ceases to be true, we will have to convert. */
-        buffer = alloca( (len+1) * (sizeof *buffer));
-        for( i=0; i<=len; ++i)
-            buffer[i] = msg[i];
-        OutputDebugStringW(L"Fatal Python error: ");
-        OutputDebugStringW(buffer);
-        OutputDebugStringW(L"\n");
-    }
-#ifdef _DEBUG
+    /* Convert the message to wchar_t. This uses a simple one-to-one
+    conversion, assuming that the this error message actually uses ASCII
+    only. If this ceases to be true, we will have to convert. */
+    buffer = alloca( (len+1) * (sizeof *buffer));
+    for( i=0; i<=len; ++i)
+        buffer[i] = msg[i];
+    OutputDebugStringW(L"Fatal Python error: ");
+    OutputDebugStringW(buffer);
+    OutputDebugStringW(L"\n");
+#endif /* MS_WINDOWS */
+
+exit:
+#if defined(MS_WINDOWS) && defined(_DEBUG)
     DebugBreak();
 #endif
-#endif /* MS_WINDOWS */
     abort();
 }
 
