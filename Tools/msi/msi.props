@@ -49,9 +49,9 @@
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         <ReuseCabinetCache>true</ReuseCabinetCache>
-        <CRTRedist Condition="">$([System.IO.Path]::GetFullPath(`$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT`))</CRTRedist>
-        <CRTRedist Condition="'$(CRTRedist)' != '' and !Exists($(CRTRedist))">$(MSBuildThisFileDirectory)\redist\$(Platform)</CRTRedist>
-        <CRTRedist Condition="'$(CRTRedist)' != '' and !Exists($(CRTRedist))"></CRTRedist>
+        <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\redist</CRTRedist>
+        <CRTRedist Condition="!Exists($(CRTRedist))"></CRTRedist>
+        <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
 
         <RevisionNumber>$(ReleaseLevelNumber)</RevisionNumber>
         <RevisionNumber Condition="!$(BuildForRelease)">$([System.Math]::Floor($([System.DateTime]::Now.Subtract($([System.DateTime]::new(2001, 1, 1))).TotalDays)))</RevisionNumber>
@@ -69,6 +69,7 @@
             MinorVersionNumber=$(MinorVersionNumber);
             UpgradeMinimumVersion=$(MajorVersionNumber).$(MinorVersionNumber).0.0;
             NextMajorVersionNumber=$(MajorVersionNumber).$([msbuild]::Add($(MinorVersionNumber), 1)).0.0;
+            Bitness=$(Bitness);
             PyDebugExt=$(PyDebugExt);
         </DefineConstants>
         <DefineConstants Condition="'$(CRTRedist)' != ''">
@@ -109,10 +110,10 @@
             <BindName>tcltk</BindName>
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(CRTRedist)" Condition="'$(CRTRedist)' != ''">
-            <BindName>crt</BindName>
-        </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(MSBuildThisFileDirectory)\redist">
             <BindName>redist</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(CRTRedist)\$(Platform)" Condition="'$(CRTRedist)' != ''">
+            <BindName>crt</BindName>
         </LinkerBindInputPaths>
     </ItemGroup>
 

@@ -742,6 +742,8 @@ public: // IBootstrapperApplication
             } else {
                 *pRequestedState = BOOTSTRAPPER_FEATURE_STATE_ABSENT;
             }
+        } else {
+            *pRequestedState = BOOTSTRAPPER_FEATURE_STATE_LOCAL;
         }
         return CheckCanceled() ? IDCANCEL : IDNOACTION;
     }
