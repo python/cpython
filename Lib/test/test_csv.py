@@ -124,12 +124,19 @@ class Test_Csv(unittest.TestCase):
             self.assertEqual(fileobj.read(),
                              expect + writer.dialect.lineterminator)
 
+    def _write_error_test(self, exc, fields, **kwargs):
+        with TemporaryFile("w+", newline='') as fileobj:
+            writer = csv.writer(fileobj, **kwargs)
+            with self.assertRaises(exc):
+                writer.writerow(fields)
+            fileobj.seek(0)
+            self.assertEqual(fileobj.read(), '')
+
     def test_write_arg_valid(self):
-        self.assertRaises(csv.Error, self._write_test, None, '')
+        self._write_error_test(csv.Error, None)
         self._write_test((), '')
         self._write_test([None], '""')
-        self.assertRaises(csv.Error, self._write_test,
-                          [None], None, quoting = csv.QUOTE_NONE)
+        self._write_error_test(csv.Error, [None], quoting = csv.QUOTE_NONE)
         # Check that exceptions are passed up the chain
         class BadList:
             def __len__(self):
@@ -137,11 +144,11 @@ class Test_Csv(unittest.TestCase):
             def __getitem__(self, i):
                 if i > 2:
                     raise OSError
-        self.assertRaises(OSError, self._write_test, BadList(), '')
+        self._write_error_test(OSError, BadList())
         class BadItem:
             def __str__(self):
                 raise OSError
-        self.assertRaises(OSError, self._write_test, [BadItem()], '')
+        self._write_error_test(OSError, [BadItem()])
 
     def test_write_bigfield(self):
         # This exercises the buffer realloc functionality
@@ -151,10 +158,8 @@ class Test_Csv(unittest.TestCase):
 
     def test_write_quoting(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"')
-        self.assertRaises(csv.Error,
-                          self._write_test,
-                          ['a',1,'p,q'], 'a,1,p,q',
-                          quoting = csv.QUOTE_NONE)
+        self._write_error_test(csv.Error, ['a',1,'p,q'],
+                               quoting = csv.QUOTE_NONE)
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
                          quoting = csv.QUOTE_MINIMAL)
         self._write_test(['a',1,'p,q'], '"a",1,"p,q"',
@@ -167,10 +172,8 @@ class Test_Csv(unittest.TestCase):
     def test_write_escape(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
                          escapechar='\\')
-        self.assertRaises(csv.Error,
-                          self._write_test,
-                          ['a',1,'p,"q"'], 'a,1,"p,\\"q\\""',
-                          escapechar=None, doublequote=False)
+        self._write_error_test(csv.Error, ['a',1,'p,"q"'],
+                               escapechar=None, doublequote=False)
         self._write_test(['a',1,'p,"q"'], 'a,1,"p,\\"q\\""',
                          escapechar='\\', doublequote = False)
         self._write_test(['"'], '""""',
@@ -1061,7 +1064,6 @@ class TestUnicode(unittest.TestCase):
             expected = ",".join(self.names)+"\r\n"
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), expected)
-
 
 
 def test_main():
