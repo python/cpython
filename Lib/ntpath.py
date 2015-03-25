@@ -351,7 +351,7 @@ def expandvars(path):
                 index = path.index('\'')
                 res = res + '\'' + path[:index + 1]
             except ValueError:
-                res = res + path
+                res = res + c + path
                 index = pathlen - 1
         elif c == '%':  # variable or '%'
             if path[index + 1:index + 2] == '%':

@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23742: ntpath.expandvars() no longer loses unbalanced single quotes.
+
 - Issue #21802: The reader in BufferedRWPair now is closed even when closing
   writer failed in BufferedRWPair.close().
 
