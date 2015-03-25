@@ -841,7 +841,7 @@ PyDoc_STRVAR(index_doc,
    points.  If for some reason these methods become popular, it is not
    hard to re-implement this using direct data movement (similar to
    the code used in list slice assignments) and achieve a performance
-   boost (by moving each pointer only one instead of twice).
+   boost (by moving each pointer only once instead of twice).
 */
 
 static PyObject *
