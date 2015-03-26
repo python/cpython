@@ -1065,6 +1065,11 @@ are always available.  They are listed here in alphabetical order.
 
       The ``'U'`` mode.
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal does not raise an
+      exception, the function now retries the system call instead of raising an
+      :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 
 .. function:: ord(c)
 
