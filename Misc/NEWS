@@ -30,6 +30,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23765: Removed IsBadStringPtr calls in ctypes
+
 - Issue #22364: Improved some re error messages using regex for hints.
 
 - Issue #23742: ntpath.expandvars() no longer loses unbalanced single quotes.
