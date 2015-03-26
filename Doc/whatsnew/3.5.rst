@@ -572,6 +572,14 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
+* :pep:`475`: the following functions are now retried when interrupted instead
+  of raising :exc:`InterruptedError` if the signal handler does not raise
+  an exception:
+
+  - :func:`os.open`, :func:`open`
+  - :func:`os.read`, :func:`os.write`
+  - :func:`time.sleep`
+
 * Before Python 3.5, a :class:`datetime.time` object was considered to be false
   if it represented midnight in UTC.  This behavior was considered obscure and
   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full

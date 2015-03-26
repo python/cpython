@@ -905,6 +905,11 @@ as internal buffering of data.
    .. versionadded:: 3.3
       The *dir_fd* argument.
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal does not raise an
+      exception, the function now retries the system call instead of raising an
+      :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 The following constants are options for the *flags* parameter to the
 :func:`~os.open` function.  They can be combined using the bitwise OR operator
 ``|``.  Some of them are not available on all platforms.  For descriptions of
@@ -1082,6 +1087,11 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
       :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
       :meth:`~file.read` or :meth:`~file.readline` methods.
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal does not raise an
+      exception, the function now retries the system call instead of raising an
+      :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 
 .. function:: sendfile(out, in, offset, nbytes)
               sendfile(out, in, offset, nbytes, headers=None, trailers=None, flags=0)
@@ -1196,6 +1206,11 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
       :meth:`~file.write` method.
+
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal does not raise an
+      exception, the function now retries the system call instead of raising an
+      :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
 .. function:: writev(fd, buffers)
@@ -3358,6 +3373,11 @@ written in Python, such as a mail server's external command delivery program.
    value of integer *options* has no effect. *pid* can refer to any process whose
    id is known, not necessarily a child process. The :func:`spawn\* <spawnl>`
    functions called with :const:`P_NOWAIT` return suitable process handles.
+
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal does not raise an
+      exception, the function now retries the system call instead of raising an
+      :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
 .. function:: wait3(options)
