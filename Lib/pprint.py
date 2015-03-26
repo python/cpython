@@ -124,9 +124,12 @@ class PrettyPrinter:
         """
         indent = int(indent)
         width = int(width)
-        assert indent >= 0, "indent must be >= 0"
-        assert depth is None or depth > 0, "depth must be > 0"
-        assert width, "width must be != 0"
+        if indent < 0:
+            raise ValueError('indent must be >= 0')
+        if depth is not None and depth <= 0:
+            raise ValueError('depth must be > 0')
+        if not width:
+            raise ValueError('width must be != 0')
         self._depth = depth
         self._indent_per_level = indent
         self._width = width
