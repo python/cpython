@@ -272,19 +272,23 @@ class QueryTestCase(unittest.TestCase):
             r"{5: [[]], 'xy\tab\n': (3,), (): {}}")
 
     def test_ordered_dict(self):
+        d = collections.OrderedDict()
+        self.assertEqual(pprint.pformat(d, width=1), 'OrderedDict()')
+        d = collections.OrderedDict([])
+        self.assertEqual(pprint.pformat(d, width=1), 'OrderedDict()')
         words = 'the quick brown fox jumped over a lazy dog'.split()
         d = collections.OrderedDict(zip(words, itertools.count()))
         self.assertEqual(pprint.pformat(d),
 """\
-{'the': 0,
- 'quick': 1,
- 'brown': 2,
- 'fox': 3,
- 'jumped': 4,
- 'over': 5,
- 'a': 6,
- 'lazy': 7,
- 'dog': 8}""")
+OrderedDict([('the', 0),
+             ('quick', 1),
+             ('brown', 2),
+             ('fox', 3),
+             ('jumped', 4),
+             ('over', 5),
+             ('a', 6),
+             ('lazy', 7),
+             ('dog', 8)])""")
 
     def test_mapping_proxy(self):
         words = 'the quick brown fox jumped over a lazy dog'.split()
@@ -303,15 +307,15 @@ mappingproxy({'a': 6,
         d = collections.OrderedDict(zip(words, itertools.count()))
         m = types.MappingProxyType(d)
         self.assertEqual(pprint.pformat(m), """\
-mappingproxy({'the': 0,
-              'quick': 1,
-              'brown': 2,
-              'fox': 3,
-              'jumped': 4,
-              'over': 5,
-              'a': 6,
-              'lazy': 7,
-              'dog': 8})""")
+mappingproxy(OrderedDict([('the', 0),
+                          ('quick', 1),
+                          ('brown', 2),
+                          ('fox', 3),
+                          ('jumped', 4),
+                          ('over', 5),
+                          ('a', 6),
+                          ('lazy', 7),
+                          ('dog', 8)]))""")
 
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',
