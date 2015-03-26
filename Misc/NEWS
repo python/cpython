@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23775: pprint() of OrderedDict now outputs the same representation
+  as repr().
+
 - Issue #23765: Removed IsBadStringPtr calls in ctypes
 
 - Issue #22364: Improved some re error messages using regex for hints.
