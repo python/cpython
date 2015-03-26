@@ -13422,6 +13422,7 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
     maxchar = PyUnicode_MAX_CHAR_VALUE(str);
     if (maxchar > writer->maxchar || len > writer->size - writer->pos) {
         if (writer->buffer == NULL && !writer->overallocate) {
+            assert(_PyUnicode_CheckConsistency(str, 1));
             writer->readonly = 1;
             Py_INCREF(str);
             writer->buffer = str;
