@@ -272,7 +272,7 @@ class SignalEINTRTest(EINTRBaseTest):
                          'need signal.sigtimedwait()')
     def test_sigtimedwait(self):
         t0 = time.monotonic()
-        signal.sigtimedwait([], self.sleep_time)
+        signal.sigtimedwait([signal.SIGUSR1], self.sleep_time)
         dt = time.monotonic() - t0
         self.assertGreaterEqual(dt, self.sleep_time)
 
