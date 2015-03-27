@@ -572,6 +572,27 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
     return 0;
 }
 
+#ifdef HAVE_CLOCK_GETTIME
+int
+_PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
+{
+    _PyTime_t sec, nsec;
+    sec = t / SEC_TO_NS;
+    nsec = t % SEC_TO_NS;
+    if (nsec < 0) {
+        nsec += SEC_TO_NS;
+        sec -= 1;
+    }
+    ts->tv_sec = (time_t)sec;
+    if ((_PyTime_t)ts->tv_sec != sec) {
+        _PyTime_overflow();
+        return -1;
+    }
+    ts->tv_nsec = nsec;
+    return 0;
+}
+#endif
+
 static int
 pygettimeofday_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
