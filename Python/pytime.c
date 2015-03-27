@@ -424,7 +424,7 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
 #endif
 
 int
-_PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
+_PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
 {
     if (PyFloat_Check(obj)) {
         double d, err;
@@ -433,8 +433,7 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
         d = PyFloat_AsDouble(obj);
         d *= 1e9;
 
-        /* FIXME: use sign */
-        if (round == _PyTime_ROUND_UP)
+        if ((round == _PyTime_ROUND_UP) ^ (d < 0))
             d = ceil(d);
         else
             d = floor(d);
@@ -469,6 +468,18 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
         }
         return 0;
     }
+}
+
+PyObject *
+_PyTime_AsNanosecondsObject(_PyTime_t t)
+{
+#ifdef HAVE_LONG_LONG
+    assert(sizeof(PY_LONG_LONG) >= sizeof(_PyTime_t));
+    return PyLong_FromLongLong((PY_LONG_LONG)t);
+#else
+    assert(sizeof(long) >= sizeof(_PyTime_t));
+    return PyLong_FromLong((long)t);
+#endif
 }
 
 static _PyTime_t
