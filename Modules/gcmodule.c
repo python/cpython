@@ -25,7 +25,7 @@
 
 #include "Python.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
-#include "pytime.h"             /* for _PyTime_monotonic, _PyTime_INTERVAL */
+#include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
 
 /* Get an object's GC head */
 #define AS_GC(o) ((PyGC_Head *)(o)-1)
@@ -908,7 +908,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     PyGC_Head *gc;
-    _PyTime_timeval t1;
+    _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
 
     struct gc_generation_stats *stats = &generation_stats[generation];
 
@@ -919,7 +919,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
         for (i = 0; i < NUM_GENERATIONS; i++)
             PySys_FormatStderr(" %zd",
                               gc_list_size(GEN_HEAD(i)));
-        _PyTime_monotonic(&t1);
+        t1 = _PyTime_GetMonotonicClock();
 
         PySys_WriteStderr("\n");
     }
@@ -1024,8 +1024,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     if (debug & DEBUG_STATS) {
-        _PyTime_timeval t2;
-        _PyTime_monotonic(&t2);
+        _PyTime_t t2 = _PyTime_GetMonotonicClock();
 
         if (m == 0 && n == 0)
             PySys_WriteStderr("gc: done");
@@ -1033,7 +1032,8 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
             PySys_FormatStderr(
                 "gc: done, %zd unreachable, %zd uncollectable",
                 n+m, n);
-        PySys_WriteStderr(", %.4fs elapsed\n", _PyTime_INTERVAL(t1, t2));
+        PySys_WriteStderr(", %.4fs elapsed\n",
+                          _PyTime_AsSecondsDouble(t2 - t1));
     }
 
     /* Append instances in the uncollectable set to a Python
