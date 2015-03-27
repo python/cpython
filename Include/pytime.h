@@ -121,14 +121,17 @@ typedef PY_INT64_T _PyTime_t;
 
 /* Convert a Python float or int to a timetamp.
    Raise an exception and return -1 on error, return 0 on success. */
-PyAPI_FUNC(int) _PyTime_FromObject(_PyTime_t *t,
+PyAPI_FUNC(int) _PyTime_FromSecondsObject(_PyTime_t *t,
     PyObject *obj,
     _PyTime_round_t round);
 
 /* Convert timestamp to a number of milliseconds (10^-3 seconds). */
-PyAPI_FUNC(_PyTime_t)
-_PyTime_AsMilliseconds(_PyTime_t t,
+PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
     _PyTime_round_t round);
+
+/* Convert timestamp to a number of nanoseconds (10^-9 seconds) as a Python int
+   object. */
+PyAPI_FUNC(PyObject *) _PyTime_AsNanosecondsObject(_PyTime_t t);
 
 /* Convert a timestamp to a timeval structure. */
 PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
