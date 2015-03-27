@@ -1438,7 +1438,7 @@ def python_is_optimized():
     for opt in cflags.split():
         if opt.startswith('-O'):
             final_opt = opt
-    return final_opt != '' and final_opt != '-O0'
+    return final_opt not in ('', '-O0', '-Og')
 
 
 _header = 'nP'
