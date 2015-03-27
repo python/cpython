@@ -3408,6 +3408,23 @@ test_pytime_assecondsdouble(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(d);
 }
 
+#ifdef HAVE_CLOCK_GETTIME
+static PyObject *
+test_PyTime_AsTimespec(PyObject *self, PyObject *args)
+{
+    PY_LONG_LONG ns;
+    _PyTime_t t;
+    struct timespec ts;
+
+    if (!PyArg_ParseTuple(args, "L", &ns))
+        return NULL;
+    t = _PyTime_FromNanoseconds(ns);
+    if (_PyTime_AsTimespec(t, &ts) == -1)
+        return NULL;
+    return Py_BuildValue("Nl", _PyLong_FromTime_t(ts.tv_sec), ts.tv_nsec);
+}
+#endif
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3573,6 +3590,9 @@ static PyMethodDef TestMethods[] = {
         return_result_with_error, METH_NOARGS},
     {"PyTime_FromSecondsObject", test_pytime_fromsecondsobject,  METH_VARARGS},
     {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},
+#ifdef HAVE_CLOCK_GETTIME
+    {"PyTime_AsTimespec", test_PyTime_AsTimespec, METH_VARARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 

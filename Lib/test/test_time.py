@@ -10,6 +10,11 @@ try:
     import threading
 except ImportError:
     threading = None
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -768,7 +773,8 @@ class TestPytime(unittest.TestCase):
         self.assertIs(lt.tm_zone, None)
 
 
-@support.cpython_only
+@unittest.skipUnless(_testcapi is not None,
+                     'need the _testcapi module')
 class TestPyTime_t(unittest.TestCase):
     def test_FromSecondsObject(self):
         from _testcapi import PyTime_FromSecondsObject
@@ -895,6 +901,27 @@ class TestPyTime_t(unittest.TestCase):
             with self.subTest(nanoseconds=nanoseconds, seconds=seconds):
                 self.assertEqual(PyTime_AsSecondsDouble(nanoseconds),
                                  seconds)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec'),
+                         'need _testcapi.PyTime_AsTimespec')
+    def test_timespec(self):
+        from _testcapi import PyTime_AsTimespec
+        for ns, ts in (
+            # nanoseconds
+            (0, (0, 0)),
+            (1, (0, 1)),
+            (-1, (-1, 999999999)),
+
+            # seconds
+            (2 * SEC_TO_NS, (2, 0)),
+            (-3 * SEC_TO_NS, (-3, 0)),
+
+            # seconds + nanoseconds
+            (1234567890, (1, 234567890)),
+            (-1234567890, (-2, 765432110)),
+        ):
+            with self.subTest(nanoseconds=ns, timespec=ts):
+                self.assertEqual(PyTime_AsTimespec(ns), ts)
 
 
 if __name__ == "__main__":

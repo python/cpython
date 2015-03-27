@@ -966,16 +966,18 @@ Returns a struct_siginfo containing information about the signal.");
 static PyObject *
 signal_sigtimedwait(PyObject *self, PyObject *args)
 {
-    PyObject *signals;
-    double timeout, frac;
+    PyObject *signals, *timeout_obj;
     struct timespec ts;
     sigset_t set;
     siginfo_t si;
     int res;
-    _PyTime_timeval deadline, monotonic;
+    _PyTime_t timeout, deadline, monotonic;
 
-    if (!PyArg_ParseTuple(args, "Od:sigtimedwait",
-                          &signals, &timeout))
+    if (!PyArg_ParseTuple(args, "OO:sigtimedwait",
+                          &signals, &timeout_obj))
+        return NULL;
+
+    if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_UP) < 0)
         return NULL;
 
     if (timeout < 0) {
@@ -986,14 +988,11 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
     if (iterable_to_sigset(signals, &set))
         return NULL;
 
-    _PyTime_monotonic(&deadline);
-    _PyTime_AddDouble(&deadline, timeout, _PyTime_ROUND_UP);
+    deadline = _PyTime_GetMonotonicClock() + timeout;
 
     do {
-        frac = fmod(timeout, 1.0);
-        timeout = floor(timeout);
-        ts.tv_sec = (long)timeout;
-        ts.tv_nsec = (long)(frac*1e9);
+        if (_PyTime_AsTimespec(timeout, &ts) < 0)
+            return NULL;
 
         Py_BEGIN_ALLOW_THREADS
         res = sigtimedwait(&set, &si, &ts);
@@ -1013,9 +1012,9 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
         if (PyErr_CheckSignals())
             return NULL;
 
-        _PyTime_monotonic(&monotonic);
-        timeout = _PyTime_INTERVAL(monotonic, deadline);
-        if (timeout <= 0.0)
+        monotonic = _PyTime_GetMonotonicClock();
+        timeout = deadline - monotonic;
+        if (timeout <= 0)
             break;
     } while (1);
 

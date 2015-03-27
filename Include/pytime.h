@@ -145,6 +145,12 @@ PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
     struct timeval *tv,
     _PyTime_round_t round);
 
+#ifdef HAVE_CLOCK_GETTIME
+/* Convert a timestamp to a timespec structure (nanosecond resolution).
+   Raise an exception and return -1 on error, return 0 on success. */
+PyAPI_FUNC(int) _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts);
+#endif
+
 /* Get the current time from the system clock.
  * Fill clock information if info is not NULL.
  * Raise an exception and return -1 on error, return 0 on success.
