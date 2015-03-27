@@ -31,7 +31,7 @@
 #endif /* !__WATCOMC__ || __QNX__ */
 
 /* Forward declarations */
-static int floatsleep(double);
+static int pysleep(_PyTime_t);
 static PyObject* floattime(_Py_clock_info_t *info);
 
 static PyObject *
@@ -218,17 +218,17 @@ Return the resolution (precision) of the specified clock clk_id.");
 #endif   /* HAVE_CLOCK_GETTIME */
 
 static PyObject *
-time_sleep(PyObject *self, PyObject *args)
+time_sleep(PyObject *self, PyObject *obj)
 {
-    double secs;
-    if (!PyArg_ParseTuple(args, "d:sleep", &secs))
+    _PyTime_t secs;
+    if (_PyTime_FromObject(&secs, obj, _PyTime_ROUND_UP))
         return NULL;
     if (secs < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "sleep length must be non-negative");
         return NULL;
     }
-    if (floatsleep(secs) != 0)
+    if (pysleep(secs) != 0)
         return NULL;
     Py_INCREF(Py_None);
     return Py_None;
@@ -1258,7 +1258,7 @@ static PyMethodDef time_methods[] = {
     {"clock_settime",   time_clock_settime, METH_VARARGS, clock_settime_doc},
     {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
 #endif
-    {"sleep",           time_sleep, METH_VARARGS, sleep_doc},
+    {"sleep",           time_sleep, METH_O, sleep_doc},
     {"gmtime",          time_gmtime, METH_VARARGS, gmtime_doc},
     {"localtime",       time_localtime, METH_VARARGS, localtime_doc},
     {"asctime",         time_asctime, METH_VARARGS, asctime_doc},
@@ -1379,34 +1379,30 @@ floattime(_Py_clock_info_t *info)
 }
 
 
-/* Implement floatsleep() for various platforms.
+/* Implement pysleep() for various platforms.
    When interrupted (or when another error occurs), return -1 and
    set an exception; else return 0. */
 
 static int
-floatsleep(double secs)
+pysleep(_PyTime_t secs)
 {
-    _PyTime_timeval deadline, monotonic;
+    _PyTime_t deadline, monotonic;
 #ifndef MS_WINDOWS
     struct timeval timeout;
-    double frac;
     int err = 0;
 #else
-    double millisecs;
+    _PyTime_t millisecs;
     unsigned long ul_millis;
     DWORD rc;
     HANDLE hInterruptEvent;
 #endif
 
-    _PyTime_monotonic(&deadline);
-    _PyTime_AddDouble(&deadline, secs, _PyTime_ROUND_UP);
+    deadline = _PyTime_GetMonotonicClock() + secs;
 
     do {
 #ifndef MS_WINDOWS
-        frac = fmod(secs, 1.0);
-        secs = floor(secs);
-        timeout.tv_sec = (long)secs;
-        timeout.tv_usec = (long)(frac*1e6);
+        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_UP) < 0)
+            return -1;
 
         Py_BEGIN_ALLOW_THREADS
         err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
@@ -1420,7 +1416,7 @@ floatsleep(double secs)
             return -1;
         }
 #else
-        millisecs = secs * 1000.0;
+        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_UP);
         if (millisecs > (double)ULONG_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "sleep length is too large");
@@ -1453,9 +1449,9 @@ floatsleep(double secs)
         if (PyErr_CheckSignals())
             return -1;
 
-        _PyTime_monotonic(&monotonic);
-        secs = _PyTime_INTERVAL(monotonic, deadline);
-        if (secs <= 0.0)
+        monotonic = _PyTime_GetMonotonicClock();
+        secs = deadline - monotonic;
+        if (secs <= 00)
             break;
         /* retry with the recomputed delay */
     } while (1);
