@@ -19,10 +19,6 @@
 #define MS_TO_NS (MS_TO_US * US_TO_NS)
 #define SEC_TO_NS (SEC_TO_MS * MS_TO_NS)
 
-#ifdef MS_WINDOWS
-static OSVERSIONINFOEX winver;
-#endif
-
 static int
 pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
 {
@@ -542,41 +538,11 @@ pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     static _PyTime_t last = 0;
 #endif
 #if defined(MS_WINDOWS)
-    static ULONGLONG (*GetTickCount64) (void) = NULL;
-    static ULONGLONG (CALLBACK *Py_GetTickCount64)(void);
-    static int has_gettickcount64 = -1;
     ULONGLONG result;
 
     assert(info == NULL || raise);
 
-    if (has_gettickcount64 == -1) {
-        /* GetTickCount64() was added to Windows Vista */
-        has_gettickcount64 = (winver.dwMajorVersion >= 6);
-        if (has_gettickcount64) {
-            HINSTANCE hKernel32;
-            hKernel32 = GetModuleHandleW(L"KERNEL32");
-            *(FARPROC*)&Py_GetTickCount64 = GetProcAddress(hKernel32,
-                                                           "GetTickCount64");
-            assert(Py_GetTickCount64 != NULL);
-        }
-    }
-
-    if (has_gettickcount64) {
-        result = Py_GetTickCount64();
-    }
-    else {
-        static DWORD last_ticks = 0;
-        static DWORD n_overflow = 0;
-        DWORD ticks;
-
-        ticks = GetTickCount();
-        if (ticks < last_ticks)
-            n_overflow++;
-        last_ticks = ticks;
-
-        result = (ULONGLONG)n_overflow << 32;
-        result += ticks;
-    }
+    result = GetTickCount64();
 
     *tp = result * MS_TO_NS;
     if (*tp / MS_TO_NS != result) {
@@ -591,10 +557,7 @@ pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     if (info) {
         DWORD timeAdjustment, timeIncrement;
         BOOL isTimeAdjustmentDisabled, ok;
-        if (has_gettickcount64)
-            info->implementation = "GetTickCount64()";
-        else
-            info->implementation = "GetTickCount()";
+        info->implementation = "GetTickCount64()";
         info->monotonic = 1;
         ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
                                      &isTimeAdjustmentDisabled);
@@ -691,14 +654,6 @@ _PyTime_Init(void)
 {
     _PyTime_timeval tv;
     _PyTime_t t;
-
-#ifdef MS_WINDOWS
-    winver.dwOSVersionInfoSize = sizeof(winver);
-    if (!GetVersionEx((OSVERSIONINFO*)&winver)) {
-        PyErr_SetFromWindowsErr(0);
-        return -1;
-    }
-#endif
 
     /* ensure that the system clock works */
     if (_PyTime_gettimeofday_info(&tv, NULL) < 0)
