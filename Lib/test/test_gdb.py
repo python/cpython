@@ -802,25 +802,27 @@ id(42)
                          "Python was compiled without thread support")
     def test_pycfunction(self):
         'Verify that "py-bt" displays invocations of PyCFunction instances'
-        cmd = ('from time import sleep\n'
+        # Tested function must not be defined with METH_NOARGS or METH_O,
+        # otherwise call_function() doesn't call PyCFunction_Call()
+        cmd = ('from time import gmtime\n'
                'def foo():\n'
-               '    sleep(1)\n'
+               '    gmtime(1)\n'
                'def bar():\n'
                '    foo()\n'
                'bar()\n')
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
-                                          breakpoint='time_sleep',
+                                          breakpoint='time_gmtime',
                                           cmds_after_breakpoint=['bt', 'py-bt'],
                                           )
-        self.assertIn('<built-in method sleep', gdb_output)
+        self.assertIn('<built-in method gmtime', gdb_output)
 
         # Verify with "py-bt-full":
         gdb_output = self.get_stack_trace(cmd,
-                                          breakpoint='time_sleep',
+                                          breakpoint='time_gmtime',
                                           cmds_after_breakpoint=['py-bt-full'],
                                           )
-        self.assertIn('#0 <built-in method sleep', gdb_output)
+        self.assertIn('#0 <built-in method gmtime', gdb_output)
 
 
 class PyPrintTests(DebuggerTests):
