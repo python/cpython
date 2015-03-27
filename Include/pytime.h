@@ -119,11 +119,17 @@ typedef PY_INT64_T _PyTime_t;
 #  error "_PyTime_t need signed 64-bit integer type"
 #endif
 
+/* Create a timestamp from a number of nanoseconds (C long). */
+PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(PY_LONG_LONG ns);
+
 /* Convert a Python float or int to a timetamp.
    Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_FromSecondsObject(_PyTime_t *t,
     PyObject *obj,
     _PyTime_round_t round);
+
+/* Convert a timestamp to a number of seconds as a C double. */
+PyAPI_FUNC(double) _PyTime_AsSecondsDouble(_PyTime_t t);
 
 /* Convert timestamp to a number of milliseconds (10^-3 seconds). */
 PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
@@ -133,7 +139,8 @@ PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
    object. */
 PyAPI_FUNC(PyObject *) _PyTime_AsNanosecondsObject(_PyTime_t t);
 
-/* Convert a timestamp to a timeval structure. */
+/* Convert a timestamp to a timeval structure (microsecond resolution).
+   Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
     struct timeval *tv,
     _PyTime_round_t round);
@@ -146,6 +153,18 @@ PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
    The function cannot fail. _PyTime_Init() ensures that a monotonic clock
    is available and works. */
 PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock(void);
+
+/* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
+   The clock is not affected by system clock updates. The reference point of
+   the returned value is undefined, so that only the difference between the
+   results of consecutive calls is valid.
+
+   Fill info (if set) with information of the function used to get the time.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int) _PyTime_GetMonotonicClockWithInfo(
+    _PyTime_t *t,
+    _Py_clock_info_t *info);
 
 
 #ifdef __cplusplus

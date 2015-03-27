@@ -3394,6 +3394,20 @@ test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
     return _PyTime_AsNanosecondsObject(ts);
 }
 
+static PyObject *
+test_pytime_assecondsdouble(PyObject *self, PyObject *args)
+{
+    PY_LONG_LONG ns;
+    _PyTime_t ts;
+    double d;
+
+    if (!PyArg_ParseTuple(args, "L", &ns))
+        return NULL;
+    ts = _PyTime_FromNanoseconds(ns);
+    d = _PyTime_AsSecondsDouble(ts);
+    return PyFloat_FromDouble(d);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3557,7 +3571,8 @@ static PyMethodDef TestMethods[] = {
         return_null_without_error, METH_NOARGS},
     {"return_result_with_error",
         return_result_with_error, METH_NOARGS},
-    {"pytime_fromsecondsobject", test_pytime_fromsecondsobject,  METH_VARARGS},
+    {"PyTime_FromSecondsObject", test_pytime_fromsecondsobject,  METH_VARARGS},
+    {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

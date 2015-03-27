@@ -405,6 +405,15 @@ _PyTime_overflow(void)
                     "timestamp too large to convert to C _PyTime_t");
 }
 
+_PyTime_t
+_PyTime_FromNanoseconds(PY_LONG_LONG ns)
+{
+    _PyTime_t t;
+    assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+    t = Py_SAFE_DOWNCAST(ns, PY_LONG_LONG, _PyTime_t);
+    return t;
+}
+
 #if !defined(MS_WINDOWS) && !defined(__APPLE__)
 static int
 _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
@@ -468,6 +477,17 @@ _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
         }
         return 0;
     }
+}
+
+double
+_PyTime_AsSecondsDouble(_PyTime_t t)
+{
+    _PyTime_t sec, ns;
+    /* Divide using integers to avoid rounding issues on the integer part.
+       1e-9 cannot be stored exactly in IEEE 64-bit. */
+    sec = t / SEC_TO_NS;
+    ns = t % SEC_TO_NS;
+    return (double)sec + (double)ns * 1e-9;
 }
 
 PyObject *
@@ -658,6 +678,12 @@ _PyTime_GetMonotonicClock(void)
         t = 0;
     }
     return t;
+}
+
+int
+_PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    return pymonotonic_new(tp, info, 1);
 }
 
 int

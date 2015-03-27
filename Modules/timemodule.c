@@ -887,12 +887,14 @@ should not be relied on.");
 static PyObject *
 pymonotonic(_Py_clock_info_t *info)
 {
-    _PyTime_timeval tv;
-    if (_PyTime_monotonic_info(&tv, info) < 0) {
+    _PyTime_t t;
+    double d;
+    if (_PyTime_GetMonotonicClockWithInfo(&t, info) < 0) {
         assert(info != NULL);
         return NULL;
     }
-    return PyFloat_FromDouble((double)tv.tv_sec + tv.tv_usec * 1e-6);
+    d = _PyTime_AsSecondsDouble(t);
+    return PyFloat_FromDouble(d);
 }
 
 static PyObject *
