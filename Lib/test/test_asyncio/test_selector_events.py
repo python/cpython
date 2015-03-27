@@ -62,6 +62,11 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.add_reader._is_coroutine = False
         transport = self.loop._make_socket_transport(m, asyncio.Protocol())
         self.assertIsInstance(transport, _SelectorSocketTransport)
+
+        # Calling repr() must not fail when the event loop is closed
+        self.loop.close()
+        repr(transport)
+
         close_transport(transport)
 
     @unittest.skipIf(ssl is None, 'No ssl module')
