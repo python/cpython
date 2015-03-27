@@ -145,6 +145,14 @@ PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
     struct timeval *tv,
     _PyTime_round_t round);
 
+/* Get the current time from the system clock.
+ * Fill clock information if info is not NULL.
+ * Raise an exception and return -1 on error, return 0 on success.
+ */
+PyAPI_FUNC(int) _PyTime_GetSystemClockWithInfo(
+    _PyTime_t *t,
+    _Py_clock_info_t *info);
+
 /* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
    The clock is not affected by system clock updates. The reference point of
    the returned value is undefined, so that only the difference between the

@@ -1372,12 +1372,14 @@ PyInit_time(void)
 static PyObject*
 floattime(_Py_clock_info_t *info)
 {
-    _PyTime_timeval t;
-    if (_PyTime_gettimeofday_info(&t, info) < 0) {
+    _PyTime_t t;
+    double d;
+    if (_PyTime_GetSystemClockWithInfo(&t, info) < 0) {
         assert(info != NULL);
         return NULL;
     }
-    return PyFloat_FromDouble((double)t.tv_sec + t.tv_usec * 1e-6);
+    d = _PyTime_AsSecondsDouble(t);
+    return PyFloat_FromDouble(d);
 }
 
 
