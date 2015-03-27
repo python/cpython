@@ -72,7 +72,7 @@ def python_is_optimized():
     for opt in cflags.split():
         if opt.startswith('-O'):
             final_opt = opt
-    return (final_opt and final_opt != '-O0')
+    return final_opt not in ('', '-O0', '-Og')
 
 def gdb_has_frame_select():
     # Does this build of gdb have gdb.Frame.select ?
