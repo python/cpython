@@ -469,15 +469,6 @@ class FindSpecTests:
                 self.assertEqual((name, None, None),
                                  self.util.find_spec(name))
 
-#    def test_success_path(self):
-#        # Searching on a path should work.
-#        name = 'some_mod'
-#        path = 'path to some place'
-#        with util.uncache(name):
-#            with util.import_state(meta_path=[self.FakeMetaFinder]):
-#                self.assertEqual((name, path, None),
-#                                 self.util.find_spec(name, path))
-
     def test_nothing(self):
         # None is returned upon failure to find a loader.
         self.assertIsNone(self.util.find_spec('nevergoingtofindthismodule'))
