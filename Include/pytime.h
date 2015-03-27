@@ -111,6 +111,40 @@ _PyTime_AddDouble(_PyTime_timeval *tv, double interval,
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_Init(void);
 
+/****************** NEW _PyTime_t API **********************/
+
+#ifdef PY_INT64_T
+typedef PY_INT64_T _PyTime_t;
+#else
+#  error "_PyTime_t need signed 64-bit integer type"
+#endif
+
+/* Convert a Python float or int to a timetamp.
+   Raise an exception and return -1 on error, return 0 on success. */
+PyAPI_FUNC(int) _PyTime_FromObject(_PyTime_t *t,
+    PyObject *obj,
+    _PyTime_round_t round);
+
+/* Convert timestamp to a number of milliseconds (10^-3 seconds). */
+PyAPI_FUNC(_PyTime_t)
+_PyTime_AsMilliseconds(_PyTime_t t,
+    _PyTime_round_t round);
+
+/* Convert a timestamp to a timeval structure. */
+PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
+    struct timeval *tv,
+    _PyTime_round_t round);
+
+/* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
+   The clock is not affected by system clock updates. The reference point of
+   the returned value is undefined, so that only the difference between the
+   results of consecutive calls is valid.
+
+   The function cannot fail. _PyTime_Init() ensures that a monotonic clock
+   is available and works. */
+PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock(void);
+
+
 #ifdef __cplusplus
 }
 #endif

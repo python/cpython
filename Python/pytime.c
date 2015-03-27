@@ -7,11 +7,21 @@
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
 #endif
 
+/* To millisecond (10^-3) */
 #define SEC_TO_MS 1000
-#define MS_TO_US 1000
-#define US_TO_NS 1000
 
+/* To microseconds (10^-6) */
+#define MS_TO_US 1000
 #define SEC_TO_US (SEC_TO_MS * MS_TO_US)
+
+/* To nanoseconds (10^-9) */
+#define US_TO_NS 1000
+#define MS_TO_NS (MS_TO_US * US_TO_NS)
+#define SEC_TO_NS (SEC_TO_MS * MS_TO_NS)
+
+#ifdef MS_WINDOWS
+static OSVERSIONINFOEX winver;
+#endif
 
 static int
 pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
@@ -390,10 +400,305 @@ _PyTime_AddDouble(_PyTime_timeval *tv, double interval, _PyTime_round_t round)
     tv->tv_usec %= SEC_TO_US;
 }
 
+/****************** NEW _PyTime_t API **********************/
+
+static void
+_PyTime_overflow(void)
+{
+    PyErr_SetString(PyExc_OverflowError,
+                    "timestamp too large to convert to C _PyTime_t");
+}
+
+#if !defined(MS_WINDOWS) && !defined(__APPLE__)
+static int
+_PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
+{
+    _PyTime_t t;
+    t = (_PyTime_t)ts->tv_sec * SEC_TO_NS;
+    if (t / SEC_TO_NS != ts->tv_sec) {
+        _PyTime_overflow();
+        return -1;
+    }
+
+    t += ts->tv_nsec;
+
+    *tp = t;
+    return 0;
+}
+#endif
+
+int
+_PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
+{
+    if (PyFloat_Check(obj)) {
+        double d, err;
+
+        /* convert to a number of nanoseconds */
+        d = PyFloat_AsDouble(obj);
+        d *= 1e9;
+
+        /* FIXME: use sign */
+        if (round == _PyTime_ROUND_UP)
+            d = ceil(d);
+        else
+            d = floor(d);
+
+        *t = (_PyTime_t)d;
+        err = d - (double)*t;
+        if (fabs(err) >= 1.0) {
+            _PyTime_overflow();
+            return -1;
+        }
+        return 0;
+    }
+    else {
+#ifdef HAVE_LONG_LONG
+        PY_LONG_LONG sec;
+        sec = PyLong_AsLongLong(obj);
+        assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+#else
+        long sec;
+        sec = PyLong_AsLong(obj);
+        assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+#endif
+        if (sec == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+                _PyTime_overflow();
+            return -1;
+        }
+        *t = sec * SEC_TO_NS;
+        if (*t / SEC_TO_NS != sec) {
+            _PyTime_overflow();
+            return -1;
+        }
+        return 0;
+    }
+}
+
+static _PyTime_t
+_PyTime_Multiply(_PyTime_t t, unsigned int multiply, _PyTime_round_t round)
+{
+    _PyTime_t k;
+    if (multiply < SEC_TO_NS) {
+        k = SEC_TO_NS / multiply;
+        if (round == _PyTime_ROUND_UP)
+            return (t + k - 1) / k;
+        else
+            return t / k;
+    }
+    else {
+        k = multiply / SEC_TO_NS;
+        return t * k;
+    }
+}
+
+_PyTime_t
+_PyTime_AsMilliseconds(_PyTime_t t, _PyTime_round_t round)
+{
+    return _PyTime_Multiply(t, 1000, round);
+}
+
+int
+_PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
+{
+    _PyTime_t secs, ns;
+
+    secs = t / SEC_TO_NS;
+    ns = t % SEC_TO_NS;
+
+#ifdef MS_WINDOWS
+    /* On Windows, timeval.tv_sec is a long (32 bit),
+       whereas time_t can be 64-bit. */
+    assert(sizeof(tv->tv_sec) == sizeof(long));
+#if SIZEOF_TIME_T > SIZEOF_LONG
+    if (secs > LONG_MAX) {
+        _PyTime_overflow();
+        return -1;
+    }
+#endif
+    tv->tv_sec = (long)secs;
+#else
+    /* On OpenBSD 5.4, timeval.tv_sec is a long.
+       Example: long is 64-bit, whereas time_t is 32-bit. */
+    tv->tv_sec = secs;
+    if ((_PyTime_t)tv->tv_sec != secs) {
+        _PyTime_overflow();
+        return -1;
+    }
+#endif
+
+    if (round == _PyTime_ROUND_UP)
+        tv->tv_usec = (int)((ns + US_TO_NS - 1) / US_TO_NS);
+    else
+        tv->tv_usec = (int)(ns / US_TO_NS);
+    return 0;
+}
+
+static int
+pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+{
+#ifdef Py_DEBUG
+    static int last_set = 0;
+    static _PyTime_t last = 0;
+#endif
+#if defined(MS_WINDOWS)
+    static ULONGLONG (*GetTickCount64) (void) = NULL;
+    static ULONGLONG (CALLBACK *Py_GetTickCount64)(void);
+    static int has_gettickcount64 = -1;
+    ULONGLONG result;
+
+    assert(info == NULL || raise);
+
+    if (has_gettickcount64 == -1) {
+        /* GetTickCount64() was added to Windows Vista */
+        has_gettickcount64 = (winver.dwMajorVersion >= 6);
+        if (has_gettickcount64) {
+            HINSTANCE hKernel32;
+            hKernel32 = GetModuleHandleW(L"KERNEL32");
+            *(FARPROC*)&Py_GetTickCount64 = GetProcAddress(hKernel32,
+                                                           "GetTickCount64");
+            assert(Py_GetTickCount64 != NULL);
+        }
+    }
+
+    if (has_gettickcount64) {
+        result = Py_GetTickCount64();
+    }
+    else {
+        static DWORD last_ticks = 0;
+        static DWORD n_overflow = 0;
+        DWORD ticks;
+
+        ticks = GetTickCount();
+        if (ticks < last_ticks)
+            n_overflow++;
+        last_ticks = ticks;
+
+        result = (ULONGLONG)n_overflow << 32;
+        result += ticks;
+    }
+
+    *tp = result * MS_TO_NS;
+    if (*tp / MS_TO_NS != result) {
+        if (raise) {
+            _PyTime_overflow();
+            return -1;
+        }
+        /* Hello, time traveler! */
+        assert(0);
+    }
+
+    if (info) {
+        DWORD timeAdjustment, timeIncrement;
+        BOOL isTimeAdjustmentDisabled, ok;
+        if (has_gettickcount64)
+            info->implementation = "GetTickCount64()";
+        else
+            info->implementation = "GetTickCount()";
+        info->monotonic = 1;
+        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
+                                     &isTimeAdjustmentDisabled);
+        if (!ok) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+        info->resolution = timeIncrement * 1e-7;
+        info->adjustable = 0;
+    }
+
+#elif defined(__APPLE__)
+    static mach_timebase_info_data_t timebase;
+    uint64_t time;
+
+    if (timebase.denom == 0) {
+        /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
+           fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
+        (void)mach_timebase_info(&timebase);
+    }
+
+    time = mach_absolute_time();
+
+    /* apply timebase factor */
+    time *= timebase.numer;
+    time /= timebase.denom;
+
+    *tp = time;
+
+    if (info) {
+        info->implementation = "mach_absolute_time()";
+        info->resolution = (double)timebase.numer / timebase.denom * 1e-9;
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+
+#else
+    struct timespec ts;
+#ifdef CLOCK_HIGHRES
+    const clockid_t clk_id = CLOCK_HIGHRES;
+    const char *implementation = "clock_gettime(CLOCK_HIGHRES)";
+#else
+    const clockid_t clk_id = CLOCK_MONOTONIC;
+    const char *implementation = "clock_gettime(CLOCK_MONOTONIC)";
+#endif
+
+    assert(info == NULL || raise);
+
+    if (clock_gettime(clk_id, &ts) != 0) {
+        if (raise) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        return -1;
+    }
+
+    if (info) {
+        struct timespec res;
+        info->monotonic = 1;
+        info->implementation = implementation;
+        info->adjustable = 0;
+        if (clock_getres(clk_id, &res) != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+    }
+    if (_PyTime_FromTimespec(tp, &ts) < 0)
+        return -1;
+#endif
+#ifdef Py_DEBUG
+    /* monotonic clock cannot go backward */
+    assert(!last_set || last <= *tp);
+    last = *tp;
+    last_set = 1;
+#endif
+    return 0;
+}
+
+_PyTime_t
+_PyTime_GetMonotonicClock(void)
+{
+    _PyTime_t t;
+    if (pymonotonic_new(&t, NULL, 0) < 0) {
+        /* cannot happen, _PyTime_Init() checks that pymonotonic_new() works */
+        assert(0);
+        t = 0;
+    }
+    return t;
+}
+
 int
 _PyTime_Init(void)
 {
     _PyTime_timeval tv;
+    _PyTime_t t;
+
+#ifdef MS_WINDOWS
+    winver.dwOSVersionInfoSize = sizeof(winver);
+    if (!GetVersionEx((OSVERSIONINFO*)&winver)) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+#endif
 
     /* ensure that the system clock works */
     if (_PyTime_gettimeofday_info(&tv, NULL) < 0)
@@ -401,6 +706,10 @@ _PyTime_Init(void)
 
     /* ensure that the operating system provides a monotonic clock */
     if (_PyTime_monotonic_info(&tv, NULL) < 0)
+        return -1;
+
+    /* ensure that the operating system provides a monotonic clock */
+    if (pymonotonic_new(&t, NULL, 1) < 0)
         return -1;
     return 0;
 }
