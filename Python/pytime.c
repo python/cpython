@@ -119,12 +119,6 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
     }
 }
 
-int
-_PyTime_gettimeofday_info(_PyTime_timeval *tp, _Py_clock_info_t *info)
-{
-    return pygettimeofday(tp, info, 1);
-}
-
 static int
 pymonotonic(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
 {
@@ -414,7 +408,7 @@ _PyTime_FromNanoseconds(PY_LONG_LONG ns)
     return t;
 }
 
-#if !defined(MS_WINDOWS) && !defined(__APPLE__)
+#ifdef HAVE_CLOCK_GETTIME
 static int
 _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
 {
@@ -426,6 +420,23 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
     }
 
     t += ts->tv_nsec;
+
+    *tp = t;
+    return 0;
+}
+#else
+static int
+_PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv)
+{
+    _PyTime_t t;
+
+    t = (_PyTime_t)tv->tv_sec * SEC_TO_NS;
+    if (t / SEC_TO_NS != tv->tv_sec) {
+        _PyTime_overflow();
+        return -1;
+    }
+
+    t += (_PyTime_t)tv->tv_usec * US_TO_NS;
 
     *tp = t;
     return 0;
@@ -562,6 +573,102 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
 }
 
 static int
+pygettimeofday_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+{
+#ifdef MS_WINDOWS
+    FILETIME system_time;
+    ULARGE_INTEGER large;
+
+    assert(info == NULL || raise);
+
+    GetSystemTimeAsFileTime(&system_time);
+    large.u.LowPart = system_time.dwLowDateTime;
+    large.u.HighPart = system_time.dwHighDateTime;
+    /* 11,644,473,600,000,000,000: number of nanoseconds between
+       the 1st january 1601 and the 1st january 1970 (369 years + 89 leap
+       days). */
+    *tp = large.QuadPart * 100 - 11644473600000000000;
+    if (info) {
+        DWORD timeAdjustment, timeIncrement;
+        BOOL isTimeAdjustmentDisabled, ok;
+
+        info->implementation = "GetSystemTimeAsFileTime()";
+        info->monotonic = 0;
+        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
+                                     &isTimeAdjustmentDisabled);
+        if (!ok) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+        info->resolution = timeIncrement * 1e-7;
+        info->adjustable = 1;
+    }
+
+#else   /* MS_WINDOWS */
+    int err;
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+#else
+    struct timeval tv;
+#endif
+
+    assert(info == NULL || raise);
+
+#ifdef HAVE_CLOCK_GETTIME
+    err = clock_gettime(CLOCK_REALTIME, &ts);
+    if (err) {
+        if (raise)
+            PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    if (_PyTime_FromTimespec(tp, &ts) < 0)
+        return -1;
+
+    if (info) {
+        struct timespec res;
+        info->implementation = "clock_gettime(CLOCK_REALTIME)";
+        info->monotonic = 0;
+        info->adjustable = 1;
+        if (clock_getres(CLOCK_REALTIME, &res) == 0)
+            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+        else
+            info->resolution = 1e-9;
+    }
+#else   /* HAVE_CLOCK_GETTIME */
+
+     /* test gettimeofday() */
+#ifdef GETTIMEOFDAY_NO_TZ
+    err = gettimeofday(&tv);
+#else
+    err = gettimeofday(&tv, (struct timezone *)NULL);
+#endif
+    if (err) {
+        if (raise)
+            PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    if (_PyTime_FromTimeval(tp, &tv) < 0)
+        return -1;
+
+    if (info) {
+        info->implementation = "gettimeofday()";
+        info->resolution = 1e-6;
+        info->monotonic = 0;
+        info->adjustable = 1;
+    }
+#endif   /* !HAVE_CLOCK_GETTIME */
+#endif   /* !MS_WINDOWS */
+    return 0;
+}
+
+int
+_PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
+{
+    return pygettimeofday_new(t, info, 1);
+}
+
+
+static int
 pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
 #ifdef Py_DEBUG
@@ -693,7 +800,11 @@ _PyTime_Init(void)
     _PyTime_t t;
 
     /* ensure that the system clock works */
-    if (_PyTime_gettimeofday_info(&tv, NULL) < 0)
+    if (pygettimeofday(&tv, NULL, 1) < 0)
+        return -1;
+
+    /* ensure that the system clock works */
+    if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0)
         return -1;
 
     /* ensure that the operating system provides a monotonic clock */
@@ -701,7 +812,7 @@ _PyTime_Init(void)
         return -1;
 
     /* ensure that the operating system provides a monotonic clock */
-    if (pymonotonic_new(&t, NULL, 1) < 0)
+    if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0)
         return -1;
     return 0;
 }
