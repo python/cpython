@@ -3378,6 +3378,22 @@ return_result_with_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    int round;
+    _PyTime_t ts;
+
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round))
+        return NULL;
+    if (check_time_rounding(round) < 0)
+        return NULL;
+    if (_PyTime_FromSecondsObject(&ts, obj, round) == -1)
+        return NULL;
+    return _PyTime_AsNanosecondsObject(ts);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3541,6 +3557,7 @@ static PyMethodDef TestMethods[] = {
         return_null_without_error, METH_NOARGS},
     {"return_result_with_error",
         return_result_with_error, METH_NOARGS},
+    {"pytime_fromsecondsobject", test_pytime_fromsecondsobject,  METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
