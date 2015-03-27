@@ -16,6 +16,7 @@ SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
 TIME_MINYEAR = -TIME_MAXYEAR - 1
 
+SEC_TO_NS = 10 ** 9
 
 class _PyTime(enum.IntEnum):
     # Round towards zero
@@ -770,9 +771,7 @@ class TestPytime(unittest.TestCase):
 @support.cpython_only
 class TestPyTime_t(unittest.TestCase):
     def test_FromSecondsObject(self):
-        from _testcapi import pytime_fromsecondsobject
-        SEC_TO_NS = 10 ** 9
-        MAX_SEC = 2 ** 63 // 10 ** 9
+        from _testcapi import PyTime_FromSecondsObject
 
         # Conversion giving the same result for all rounding methods
         for rnd in ALL_ROUNDING_METHODS:
@@ -811,21 +810,21 @@ class TestPyTime_t(unittest.TestCase):
                 (2**25       , 33554432000000000),
                 (2**25 + 1e-9, 33554432000000000),
 
-                # close to 2^63 nanoseconds
+                # close to 2^63 nanoseconds (_PyTime_t limit)
                 (9223372036, 9223372036 * SEC_TO_NS),
                 (9223372036.0, 9223372036 * SEC_TO_NS),
                 (-9223372036, -9223372036 * SEC_TO_NS),
                 (-9223372036.0, -9223372036 * SEC_TO_NS),
             ):
                 with self.subTest(obj=obj, round=rnd, timestamp=ts):
-                    self.assertEqual(pytime_fromsecondsobject(obj, rnd), ts)
+                    self.assertEqual(PyTime_FromSecondsObject(obj, rnd), ts)
 
             with self.subTest(round=rnd):
                 with self.assertRaises(OverflowError):
-                    pytime_fromsecondsobject(9223372037, rnd)
-                    pytime_fromsecondsobject(9223372037.0, rnd)
-                    pytime_fromsecondsobject(-9223372037, rnd)
-                    pytime_fromsecondsobject(-9223372037.0, rnd)
+                    PyTime_FromSecondsObject(9223372037, rnd)
+                    PyTime_FromSecondsObject(9223372037.0, rnd)
+                    PyTime_FromSecondsObject(-9223372037, rnd)
+                    PyTime_FromSecondsObject(-9223372037.0, rnd)
 
         # Conversion giving different results depending on the rounding method
         UP = _PyTime.ROUND_UP
@@ -850,7 +849,52 @@ class TestPyTime_t(unittest.TestCase):
             (-0.9999999999, -1000000000, UP),
         ):
             with self.subTest(obj=obj, round=rnd, timestamp=ts):
-                self.assertEqual(pytime_fromsecondsobject(obj, rnd), ts)
+                self.assertEqual(PyTime_FromSecondsObject(obj, rnd), ts)
+
+    def test_AsSecondsDouble(self):
+        from _testcapi import PyTime_AsSecondsDouble
+
+        for nanoseconds, seconds in (
+            # near 1 nanosecond
+            ( 0,  0.0),
+            ( 1,  1e-9),
+            (-1, -1e-9),
+
+            # near 1 second
+            (SEC_TO_NS + 1, 1.0 + 1e-9),
+            (SEC_TO_NS,     1.0),
+            (SEC_TO_NS - 1, 1.0 - 1e-9),
+
+            # a few seconds
+            (123 * SEC_TO_NS, 123.0),
+            (-567 * SEC_TO_NS, -567.0),
+
+            # nanosecond are kept for value <= 2^23 seconds
+            (4194303999999999, 2**22 - 1e-9),
+            (4194304000000000, 2**22),
+            (4194304000000001, 2**22 + 1e-9),
+
+            # start loosing precision for value > 2^23 seconds
+            (8388608000000002, 2**23 + 1e-9),
+
+            # nanoseconds are lost for value > 2^23 seconds
+            (16777215999999998, 2**24 - 1e-9),
+            (16777215999999999, 2**24 - 1e-9),
+            (16777216000000000, 2**24       ),
+            (16777216000000001, 2**24       ),
+            (16777216000000002, 2**24 + 2e-9),
+
+            (33554432000000000, 2**25       ),
+            (33554432000000002, 2**25       ),
+            (33554432000000004, 2**25 + 4e-9),
+
+            # close to 2^63 nanoseconds (_PyTime_t limit)
+            (9223372036 * SEC_TO_NS, 9223372036.0),
+            (-9223372036 * SEC_TO_NS, -9223372036.0),
+        ):
+            with self.subTest(nanoseconds=nanoseconds, seconds=seconds):
+                self.assertEqual(PyTime_AsSecondsDouble(nanoseconds),
+                                 seconds)
 
 
 if __name__ == "__main__":
