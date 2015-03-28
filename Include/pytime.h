@@ -38,8 +38,12 @@ PyAPI_FUNC(void) _PyTime_gettimeofday(_PyTime_timeval *tp);
 typedef enum {
     /* Round towards zero. */
     _PyTime_ROUND_DOWN=0,
-    /* Round away from zero. */
-    _PyTime_ROUND_UP
+    /* Round away from zero.
+       For example, used for timeout to wait "at least" N seconds. */
+    _PyTime_ROUND_UP,
+    /* Round towards minus infinity (-inf).
+       For example, used to read a clock. */
+    _PyTime_ROUND_FLOOR
 } _PyTime_round_t;
 
 /* Convert a number of seconds, int or float, to time_t. */
@@ -81,6 +85,9 @@ PyAPI_FUNC(int) _PyTime_Init(void);
 /****************** NEW _PyTime_t API **********************/
 
 #ifdef PY_INT64_T
+/* _PyTime_t: Python timestamp with subsecond precision. It can be used to
+   store a duration, and so indirectly a date (related to another date, like
+   UNIX epoch). */
 typedef PY_INT64_T _PyTime_t;
 #define _PyTime_MIN PY_LLONG_MIN
 #define _PyTime_MAX PY_LLONG_MAX
