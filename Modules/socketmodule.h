@@ -174,7 +174,7 @@ typedef struct {
     PyObject *(*errorhandler)(void); /* Error handler; checks
                                         errno, returns NULL and
                                         sets a Python exception */
-    double sock_timeout;                 /* Operation timeout in seconds;
+    _PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
 } PySocketSockObject;
 

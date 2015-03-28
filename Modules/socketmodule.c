@@ -460,7 +460,7 @@ static PyTypeObject sock_type;
 #else
 /* If there's no timeout left, we don't have to call select, so it's a safe,
  * little white lie. */
-#define IS_SELECTABLE(s) (_PyIsSelectable_fd((s)->sock_fd) || (s)->sock_timeout <= 0.0)
+#define IS_SELECTABLE(s) (_PyIsSelectable_fd((s)->sock_fd) || (s)->sock_timeout <= 0)
 #endif
 
 static PyObject*
@@ -597,9 +597,17 @@ internal_setblocking(PySocketSockObject *s, int block)
    after they've reacquired the interpreter lock.
    Returns 1 on timeout, -1 on error, 0 otherwise. */
 static int
-internal_select_ex(PySocketSockObject *s, int writing, double interval)
+internal_select_ex(PySocketSockObject *s, int writing, _PyTime_t interval)
 {
     int n;
+#ifdef HAVE_POLL
+    struct pollfd pollfd;
+    _PyTime_t timeout;
+    int timeout_int;
+#else
+    fd_set fds;
+    struct timeval tv;
+#endif
 
 #ifdef WITH_THREAD
     /* must be called with the GIL held */
@@ -607,7 +615,7 @@ internal_select_ex(PySocketSockObject *s, int writing, double interval)
 #endif
 
     /* Nothing to do unless we're in timeout mode (not non-blocking) */
-    if (s->sock_timeout <= 0.0)
+    if (s->sock_timeout <= 0)
         return 0;
 
     /* Guard against closed socket */
@@ -615,46 +623,40 @@ internal_select_ex(PySocketSockObject *s, int writing, double interval)
         return 0;
 
     /* Handling this condition here simplifies the select loops */
-    if (interval < 0.0)
+    if (interval < 0)
         return 1;
 
     /* Prefer poll, if available, since you can poll() any fd
      * which can't be done with select(). */
 #ifdef HAVE_POLL
-    {
-        struct pollfd pollfd;
-        int timeout;
+    pollfd.fd = s->sock_fd;
+    pollfd.events = writing ? POLLOUT : POLLIN;
 
-        pollfd.fd = s->sock_fd;
-        pollfd.events = writing ? POLLOUT : POLLIN;
+    /* s->sock_timeout is in seconds, timeout in ms */
+    timeout = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_UP);
+    assert(timeout <= INT_MAX);
+    timeout_int = (int)timeout;
 
-        /* s->sock_timeout is in seconds, timeout in ms */
-        timeout = (int)(interval * 1000 + 0.5);
-
-        Py_BEGIN_ALLOW_THREADS;
-        n = poll(&pollfd, 1, timeout);
-        Py_END_ALLOW_THREADS;
-    }
+    Py_BEGIN_ALLOW_THREADS;
+    n = poll(&pollfd, 1, timeout_int);
+    Py_END_ALLOW_THREADS;
 #else
-    {
-        /* Construct the arguments to select */
-        fd_set fds;
-        struct timeval tv;
-        tv.tv_sec = (int)interval;
-        tv.tv_usec = (int)((interval - tv.tv_sec) * 1e6);
-        FD_ZERO(&fds);
-        FD_SET(s->sock_fd, &fds);
+    /* conversion was already checked for overflow when
+       the timeout was set */
+    (void)_PyTime_AsTimeval(interval, &tv, _PyTime_ROUND_UP);
 
-        /* See if the socket is ready */
-        Py_BEGIN_ALLOW_THREADS;
-        if (writing)
-            n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
-                       NULL, &fds, NULL, &tv);
-        else
-            n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
-                       &fds, NULL, NULL, &tv);
-        Py_END_ALLOW_THREADS;
-    }
+    FD_ZERO(&fds);
+    FD_SET(s->sock_fd, &fds);
+
+    /* See if the socket is ready */
+    Py_BEGIN_ALLOW_THREADS;
+    if (writing)
+        n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
+                   NULL, &fds, NULL, &tv);
+    else
+        n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
+                   &fds, NULL, NULL, &tv);
+    Py_END_ALLOW_THREADS;
 #endif
 
     if (n < 0)
@@ -694,14 +696,11 @@ internal_select(PySocketSockObject *s, int writing)
 
 #define BEGIN_SELECT_LOOP(s) \
     { \
-        _PyTime_timeval now, deadline = {0, 0}; \
-        double interval = s->sock_timeout; \
-        int has_timeout = s->sock_timeout > 0.0; \
-        if (has_timeout) { \
-            _PyTime_monotonic(&now); \
-            deadline = now; \
-            _PyTime_AddDouble(&deadline, s->sock_timeout, _PyTime_ROUND_UP); \
-        } \
+        _PyTime_t deadline = 0; \
+        _PyTime_t interval = s->sock_timeout; \
+        int has_timeout = (s->sock_timeout > 0); \
+        if (has_timeout) \
+            deadline = _PyTime_GetMonotonicClock() + interval; \
         while (1) { \
             errno = 0; \
 
@@ -709,14 +708,13 @@ internal_select(PySocketSockObject *s, int writing)
             if (!has_timeout || \
                 (!CHECK_ERRNO(EWOULDBLOCK) && !CHECK_ERRNO(EAGAIN))) \
                 break; \
-            _PyTime_monotonic(&now); \
-            interval = _PyTime_INTERVAL(now, deadline); \
+            interval = deadline - _PyTime_GetMonotonicClock(); \
         } \
     } \
 
 /* Initialize a new socket object. */
 
-static double defaulttimeout = -1.0; /* Default timeout for new sockets */
+static _PyTime_t defaulttimeout = -1; /* Default timeout for new sockets */
 
 static void
 init_sockobject(PySocketSockObject *s,
@@ -730,12 +728,12 @@ init_sockobject(PySocketSockObject *s,
     s->errorhandler = &set_error;
 #ifdef SOCK_NONBLOCK
     if (type & SOCK_NONBLOCK)
-        s->sock_timeout = 0.0;
+        s->sock_timeout = 0;
     else
 #endif
     {
         s->sock_timeout = defaulttimeout;
-        if (defaulttimeout >= 0.0)
+        if (defaulttimeout >= 0)
             internal_setblocking(s, 0);
     }
 
@@ -2168,7 +2166,7 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
     if (block == -1 && PyErr_Occurred())
         return NULL;
 
-    s->sock_timeout = block ? -1.0 : 0.0;
+    s->sock_timeout = block ? -1 : 0;
     internal_setblocking(s, block);
 
     Py_INCREF(Py_None);
@@ -2182,6 +2180,43 @@ Set the socket to blocking (flag is true) or non-blocking (false).\n\
 setblocking(True) is equivalent to settimeout(None);\n\
 setblocking(False) is equivalent to settimeout(0.0).");
 
+static int
+socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
+{
+#ifdef MS_WINDOWS
+    struct timeval tv;
+#endif
+    int overflow = 0;
+
+    if (timeout_obj == Py_None) {
+        *timeout = -1;
+        return 0;
+    }
+
+    if (_PyTime_FromSecondsObject(timeout, timeout_obj, _PyTime_ROUND_UP) < 0)
+        return -1;
+
+    if (*timeout < 0) {
+        PyErr_SetString(PyExc_ValueError, "Timeout value out of range");
+        return -1;
+    }
+
+#ifdef MS_WINDOWS
+    overflow = (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_UP) < 0);
+#endif
+#ifndef HAVE_POLL
+    timeout = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_UP);
+    overflow = (timeout > INT_MAX);
+#endif
+    if (overflow) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "timeout doesn't fit into C timeval");
+        return -1;
+    }
+
+    return 0;
+}
+
 /* s.settimeout(timeout) method.  Argument:
    None -- no timeout, blocking mode; same as setblocking(True)
    0.0  -- non-blocking mode; same as setblocking(False)
@@ -2191,22 +2226,13 @@ setblocking(False) is equivalent to settimeout(0.0).");
 static PyObject *
 sock_settimeout(PySocketSockObject *s, PyObject *arg)
 {
-    double timeout;
+    _PyTime_t timeout;
 
-    if (arg == Py_None)
-        timeout = -1.0;
-    else {
-        timeout = PyFloat_AsDouble(arg);
-        if (timeout < 0.0) {
-            if (!PyErr_Occurred())
-                PyErr_SetString(PyExc_ValueError,
-                                "Timeout value out of range");
-            return NULL;
-        }
-    }
+    if (socket_parse_timeout(&timeout, arg) < 0)
+        return NULL;
 
     s->sock_timeout = timeout;
-    internal_setblocking(s, timeout < 0.0);
+    internal_setblocking(s, timeout < 0);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -2225,12 +2251,14 @@ Setting a timeout of zero is the same as setblocking(0).");
 static PyObject *
 sock_gettimeout(PySocketSockObject *s)
 {
-    if (s->sock_timeout < 0.0) {
+    if (s->sock_timeout < 0) {
         Py_INCREF(Py_None);
         return Py_None;
     }
-    else
-        return PyFloat_FromDouble(s->sock_timeout);
+    else {
+        double seconds = _PyTime_AsSecondsDouble(s->sock_timeout);
+        return PyFloat_FromDouble(seconds);
+    }
 }
 
 PyDoc_STRVAR(gettimeout_doc,
@@ -2409,27 +2437,28 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 {
     int res, timeout;
 
-
     timeout = 0;
 
     Py_BEGIN_ALLOW_THREADS
     res = connect(s->sock_fd, addr, addrlen);
     Py_END_ALLOW_THREADS
 
-
 #ifdef MS_WINDOWS
 
-    if (s->sock_timeout > 0.0
+    if (s->sock_timeout > 0
         && res < 0 && WSAGetLastError() == WSAEWOULDBLOCK
         && IS_SELECTABLE(s)) {
         /* This is a mess.  Best solution: trust select */
         fd_set fds;
         fd_set fds_exc;
         struct timeval tv;
+        int conv;
+
+        /* conversion was already checked for overflow when
+           the timeout was set */
+        (void)_PyTime_AsTimeval(s->sock_timeout, &tv, _PyTime_ROUND_UP);
 
         Py_BEGIN_ALLOW_THREADS
-        tv.tv_sec = (int)s->sock_timeout;
-        tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
         FD_ZERO(&fds);
         FD_SET(s->sock_fd, &fds);
         FD_ZERO(&fds_exc);
@@ -2469,7 +2498,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 
 #else
 
-    if (s->sock_timeout > 0.0
+    if (s->sock_timeout > 0
         && res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
 
         timeout = internal_select(s, 1);
@@ -2498,6 +2527,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 #endif
     *timeoutp = timeout;
 
+    assert(res >= 0);
     return res;
 }
 
@@ -2520,8 +2550,11 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
         PyErr_SetString(socket_timeout, "timed out");
         return NULL;
     }
-    if (res != 0)
+    if (res < 0)
+        return NULL;
+    if (res != 0) {
         return s->errorhandler();
+    }
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -2547,6 +2580,9 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
         return NULL;
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, &timeout);
+
+    if (res < 0)
+        return NULL;
 
     /* Signals are not errors (though they may raise exceptions).  Adapted
        from PyErr_SetFromErrnoWithFilenameObject(). */
@@ -3967,8 +4003,12 @@ static PyMemberDef sock_memberlist[] = {
        {"family", T_INT, offsetof(PySocketSockObject, sock_family), READONLY, "the socket family"},
        {"type", T_INT, offsetof(PySocketSockObject, sock_type), READONLY, "the socket type"},
        {"proto", T_INT, offsetof(PySocketSockObject, sock_proto), READONLY, "the socket protocol"},
-       {"timeout", T_DOUBLE, offsetof(PySocketSockObject, sock_timeout), READONLY, "the socket timeout"},
        {0},
+};
+
+static PyGetSetDef sock_getsetlist[] = {
+    {"timeout", (getter)sock_gettimeout, NULL, PyDoc_STR("the socket timeout")},
+    {NULL} /* sentinel */
 };
 
 /* Deallocate a socket object in response to the last Py_DECREF().
@@ -4034,7 +4074,7 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     new = type->tp_alloc(type, 0);
     if (new != NULL) {
         ((PySocketSockObject *)new)->sock_fd = -1;
-        ((PySocketSockObject *)new)->sock_timeout = -1.0;
+        ((PySocketSockObject *)new)->sock_timeout = -1;
         ((PySocketSockObject *)new)->errorhandler = &set_error;
     }
     return new;
@@ -4217,7 +4257,7 @@ static PyTypeObject sock_type = {
     0,                                          /* tp_iternext */
     sock_methods,                               /* tp_methods */
     sock_memberlist,                            /* tp_members */
-    0,                                          /* tp_getset */
+    sock_getsetlist,                            /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
@@ -5540,12 +5580,14 @@ Get host and port for a sockaddr.");
 static PyObject *
 socket_getdefaulttimeout(PyObject *self)
 {
-    if (defaulttimeout < 0.0) {
+    if (defaulttimeout < 0) {
         Py_INCREF(Py_None);
         return Py_None;
     }
-    else
-        return PyFloat_FromDouble(defaulttimeout);
+    else {
+        double seconds = _PyTime_AsSecondsDouble(defaulttimeout);
+        return PyFloat_FromDouble(seconds);
+    }
 }
 
 PyDoc_STRVAR(getdefaulttimeout_doc,
@@ -5558,19 +5600,10 @@ When the socket module is first imported, the default is None.");
 static PyObject *
 socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 {
-    double timeout;
+    _PyTime_t timeout;
 
-    if (arg == Py_None)
-        timeout = -1.0;
-    else {
-        timeout = PyFloat_AsDouble(arg);
-        if (timeout < 0.0) {
-            if (!PyErr_Occurred())
-                PyErr_SetString(PyExc_ValueError,
-                                "Timeout value out of range");
-            return NULL;
-        }
-    }
+    if (socket_parse_timeout(&timeout, arg) < 0)
+        return NULL;
 
     defaulttimeout = timeout;
 
