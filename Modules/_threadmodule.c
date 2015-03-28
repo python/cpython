@@ -49,21 +49,18 @@ lock_dealloc(lockobject *self)
  * timeout.
  */
 static PyLockStatus
-acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
+acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 {
     PyLockStatus r;
-    _PyTime_timeval curtime;
-    _PyTime_timeval endtime;
+    _PyTime_t endtime = 0;
+    _PyTime_t microseconds;
 
-
-    if (microseconds > 0) {
-        _PyTime_monotonic(&endtime);
-        endtime.tv_sec += microseconds / (1000 * 1000);
-        endtime.tv_usec += microseconds % (1000 * 1000);
-    }
-
+    if (timeout > 0)
+        endtime = _PyTime_GetMonotonicClock() + timeout;
 
     do {
+        microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_UP);
+
         /* first a simple non-blocking try without releasing the GIL */
         r = PyThread_acquire_lock_timed(lock, 0, 0);
         if (r == PY_LOCK_FAILURE && microseconds != 0) {
@@ -82,14 +79,12 @@ acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
 
             /* If we're using a timeout, recompute the timeout after processing
              * signals, since those can take time.  */
-            if (microseconds > 0) {
-                _PyTime_monotonic(&curtime);
-                microseconds = ((endtime.tv_sec - curtime.tv_sec) * 1000000 +
-                                (endtime.tv_usec - curtime.tv_usec));
+            if (timeout > 0) {
+                timeout = endtime - _PyTime_GetMonotonicClock();
 
                 /* Check for negative values, since those mean block forever.
                  */
-                if (microseconds <= 0) {
+                if (timeout <= 0) {
                     r = PY_LOCK_FAILURE;
                 }
             }
@@ -99,44 +94,60 @@ acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
     return r;
 }
 
-static PyObject *
-lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
+static int
+lock_acquire_parse_args(PyObject *args, PyObject *kwds,
+                        _PyTime_t *timeout)
 {
     char *kwlist[] = {"blocking", "timeout", NULL};
     int blocking = 1;
-    double timeout = -1;
-    PY_TIMEOUT_T microseconds;
-    PyLockStatus r;
+    PyObject *timeout_obj = NULL;
+    const _PyTime_t unset_timeout = _PyTime_FromNanoseconds(-1000000000);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|id:acquire", kwlist,
-                                     &blocking, &timeout))
-        return NULL;
+    *timeout = unset_timeout ;
 
-    if (!blocking && timeout != -1) {
-        PyErr_SetString(PyExc_ValueError, "can't specify a timeout "
-                        "for a non-blocking call");
-        return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO:acquire", kwlist,
+                                     &blocking, &timeout_obj))
+        return -1;
+
+    if (timeout_obj
+        && _PyTime_FromSecondsObject(timeout, timeout_obj, _PyTime_ROUND_UP) < 0)
+        return -1;
+
+    if (!blocking && *timeout != unset_timeout ) {
+        PyErr_SetString(PyExc_ValueError,
+                        "can't specify a timeout for a non-blocking call");
+        return -1;
     }
-    if (timeout < 0 && timeout != -1) {
-        PyErr_SetString(PyExc_ValueError, "timeout value must be "
-                        "strictly positive");
-        return NULL;
+    if (*timeout < 0 && *timeout != unset_timeout) {
+        PyErr_SetString(PyExc_ValueError,
+                        "timeout value must be positive");
+        return -1;
     }
     if (!blocking)
-        microseconds = 0;
-    else if (timeout == -1)
-        microseconds = -1;
-    else {
-        timeout *= 1e6;
-        if (timeout >= (double) PY_TIMEOUT_MAX) {
+        *timeout = 0;
+    else if (*timeout != unset_timeout) {
+        _PyTime_t microseconds;
+
+        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_UP);
+        if (microseconds >= PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
-            return NULL;
+            return -1;
         }
-        microseconds = (PY_TIMEOUT_T) timeout;
     }
+    return 0;
+}
 
-    r = acquire_timed(self->lock_lock, microseconds);
+static PyObject *
+lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
+{
+    _PyTime_t timeout;
+    PyLockStatus r;
+
+    if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
+        return NULL;
+
+    r = acquire_timed(self->lock_lock, timeout);
     if (r == PY_LOCK_INTR) {
         return NULL;
     }
@@ -281,40 +292,12 @@ rlock_dealloc(rlockobject *self)
 static PyObject *
 rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 {
-    char *kwlist[] = {"blocking", "timeout", NULL};
-    int blocking = 1;
-    double timeout = -1;
-    PY_TIMEOUT_T microseconds;
+    _PyTime_t timeout;
     long tid;
     PyLockStatus r = PY_LOCK_ACQUIRED;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|id:acquire", kwlist,
-                                     &blocking, &timeout))
+    if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
         return NULL;
-
-    if (!blocking && timeout != -1) {
-        PyErr_SetString(PyExc_ValueError, "can't specify a timeout "
-                        "for a non-blocking call");
-        return NULL;
-    }
-    if (timeout < 0 && timeout != -1) {
-        PyErr_SetString(PyExc_ValueError, "timeout value must be "
-                        "strictly positive");
-        return NULL;
-    }
-    if (!blocking)
-        microseconds = 0;
-    else if (timeout == -1)
-        microseconds = -1;
-    else {
-        timeout *= 1e6;
-        if (timeout >= (double) PY_TIMEOUT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "timeout value is too large");
-            return NULL;
-        }
-        microseconds = (PY_TIMEOUT_T) timeout;
-    }
 
     tid = PyThread_get_thread_ident();
     if (self->rlock_count > 0 && tid == self->rlock_owner) {
@@ -327,7 +310,7 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
         self->rlock_count = count;
         Py_RETURN_TRUE;
     }
-    r = acquire_timed(self->rlock_lock, microseconds);
+    r = acquire_timed(self->rlock_lock, timeout);
     if (r == PY_LOCK_ACQUIRED) {
         assert(self->rlock_count == 0);
         self->rlock_owner = tid;
@@ -1362,7 +1345,9 @@ static struct PyModuleDef threadmodule = {
 PyMODINIT_FUNC
 PyInit__thread(void)
 {
-    PyObject *m, *d, *timeout_max;
+    PyObject *m, *d, *v;
+    double time_max;
+    double timeout_max;
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)
@@ -1379,10 +1364,14 @@ PyInit__thread(void)
     if (m == NULL)
         return NULL;
 
-    timeout_max = PyFloat_FromDouble(PY_TIMEOUT_MAX / 1000000);
-    if (!timeout_max)
+    timeout_max = PY_TIMEOUT_MAX / 1000000;
+    time_max = floor(_PyTime_AsSecondsDouble(_PyTime_MAX));
+    timeout_max = Py_MIN(timeout_max, time_max);
+
+    v = PyFloat_FromDouble(timeout_max);
+    if (!v)
         return NULL;
-    if (PyModule_AddObject(m, "TIMEOUT_MAX", timeout_max) < 0)
+    if (PyModule_AddObject(m, "TIMEOUT_MAX", v) < 0)
         return NULL;
 
     /* Add a symbolic constant */

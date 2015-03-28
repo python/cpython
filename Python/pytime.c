@@ -119,128 +119,6 @@ _PyTime_gettimeofday(_PyTime_timeval *tp)
     }
 }
 
-static int
-pymonotonic(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
-{
-#ifdef Py_DEBUG
-    static _PyTime_timeval last = {0, -1};
-#endif
-#if defined(MS_WINDOWS)
-    ULONGLONG result;
-
-    assert(info == NULL || raise);
-
-    result = GetTickCount64();
-
-    tp->tv_sec = result / SEC_TO_MS;
-    tp->tv_usec = (result % SEC_TO_MS) * MS_TO_US;
-
-    if (info) {
-        DWORD timeAdjustment, timeIncrement;
-        BOOL isTimeAdjustmentDisabled, ok;
-        info->implementation = "GetTickCount64()";
-        info->monotonic = 1;
-        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                                     &isTimeAdjustmentDisabled);
-        if (!ok) {
-            PyErr_SetFromWindowsErr(0);
-            return -1;
-        }
-        info->resolution = timeIncrement * 1e-7;
-        info->adjustable = 0;
-    }
-
-#elif defined(__APPLE__)
-    static mach_timebase_info_data_t timebase;
-    uint64_t time;
-
-    if (timebase.denom == 0) {
-        /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
-           fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
-        (void)mach_timebase_info(&timebase);
-    }
-
-    time = mach_absolute_time();
-
-    /* nanoseconds => microseconds */
-    time /= US_TO_NS;
-    /* apply timebase factor */
-    time *= timebase.numer;
-    time /= timebase.denom;
-    tp->tv_sec = time / SEC_TO_US;
-    tp->tv_usec = time % SEC_TO_US;
-
-    if (info) {
-        info->implementation = "mach_absolute_time()";
-        info->resolution = (double)timebase.numer / timebase.denom * 1e-9;
-        info->monotonic = 1;
-        info->adjustable = 0;
-    }
-
-#else
-    struct timespec ts;
-#ifdef CLOCK_HIGHRES
-    const clockid_t clk_id = CLOCK_HIGHRES;
-    const char *implementation = "clock_gettime(CLOCK_HIGHRES)";
-#else
-    const clockid_t clk_id = CLOCK_MONOTONIC;
-    const char *implementation = "clock_gettime(CLOCK_MONOTONIC)";
-#endif
-
-    assert(info == NULL || raise);
-
-    if (clock_gettime(clk_id, &ts) != 0) {
-        if (raise) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            return -1;
-        }
-        tp->tv_sec = 0;
-        tp->tv_usec = 0;
-        return -1;
-    }
-
-    if (info) {
-        struct timespec res;
-        info->monotonic = 1;
-        info->implementation = implementation;
-        info->adjustable = 0;
-        if (clock_getres(clk_id, &res) != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            return -1;
-        }
-        info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-    }
-    tp->tv_sec = ts.tv_sec;
-    tp->tv_usec = ts.tv_nsec / US_TO_NS;
-#endif
-    assert(0 <= tp->tv_usec && tp->tv_usec < SEC_TO_US);
-#ifdef Py_DEBUG
-    /* monotonic clock cannot go backward */
-    assert(last.tv_usec == -1
-           || tp->tv_sec > last.tv_sec
-           || (tp->tv_sec == last.tv_sec && tp->tv_usec >= last.tv_usec));
-    last = *tp;
-#endif
-    return 0;
-}
-
-void
-_PyTime_monotonic(_PyTime_timeval *tp)
-{
-    if (pymonotonic(tp, NULL, 0) < 0) {
-        /* cannot happen, _PyTime_Init() checks that pymonotonic() works */
-        assert(0);
-        tp->tv_sec = 0;
-        tp->tv_usec = 0;
-    }
-}
-
-int
-_PyTime_monotonic_info(_PyTime_timeval *tp, _Py_clock_info_t *info)
-{
-    return pymonotonic(tp, info, 1);
-}
-
 static void
 error_time_t_overflow(void)
 {
@@ -534,6 +412,12 @@ _PyTime_t
 _PyTime_AsMilliseconds(_PyTime_t t, _PyTime_round_t round)
 {
     return _PyTime_Multiply(t, 1000, round);
+}
+
+_PyTime_t
+_PyTime_AsMicroseconds(_PyTime_t t, _PyTime_round_t round)
+{
+    return _PyTime_Multiply(t, 1000 * 1000, round);
 }
 
 int
@@ -840,10 +724,6 @@ _PyTime_Init(void)
 
     /* ensure that the system clock works */
     if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0)
-        return -1;
-
-    /* ensure that the operating system provides a monotonic clock */
-    if (_PyTime_monotonic_info(&tv, NULL) < 0)
         return -1;
 
     /* ensure that the operating system provides a monotonic clock */
