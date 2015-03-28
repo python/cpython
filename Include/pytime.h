@@ -74,11 +74,6 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
     long *nsec,
     _PyTime_round_t);
 
-/* Add interval seconds to tv */
-PyAPI_FUNC(void)
-_PyTime_AddDouble(_PyTime_timeval *tv, double interval,
-                  _PyTime_round_t round);
-
 /* Initialize time.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_Init(void);

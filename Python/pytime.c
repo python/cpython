@@ -251,23 +251,6 @@ _PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec,
     return _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
 }
 
-void
-_PyTime_AddDouble(_PyTime_timeval *tv, double interval, _PyTime_round_t round)
-{
-    _PyTime_timeval tv2;
-    double frac;
-
-    frac = fmod(interval, 1.0);
-    interval = floor(interval);
-    tv2.tv_sec = (long)interval;
-    tv2.tv_usec = (long)(frac*1e6);
-
-    tv->tv_sec += tv2.tv_sec;
-    tv->tv_usec += tv2.tv_usec;
-    tv->tv_sec += (time_t)(tv->tv_usec / SEC_TO_US);
-    tv->tv_usec %= SEC_TO_US;
-}
-
 /****************** NEW _PyTime_t API **********************/
 
 static void
