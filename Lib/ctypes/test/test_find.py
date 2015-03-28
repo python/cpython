@@ -32,14 +32,23 @@ class Test_OpenGL_libs(unittest.TestCase):
     def setUp(self):
         self.gl = self.glu = self.gle = None
         if lib_gl:
-            self.gl = CDLL(lib_gl, mode=RTLD_GLOBAL)
+            try:
+                self.gl = CDLL(lib_gl, mode=RTLD_GLOBAL)
+            except OSError:
+                pass
         if lib_glu:
-            self.glu = CDLL(lib_glu, RTLD_GLOBAL)
+            try:
+                self.glu = CDLL(lib_glu, RTLD_GLOBAL)
+            except OSError:
+                pass
         if lib_gle:
             try:
                 self.gle = CDLL(lib_gle)
             except OSError:
                 pass
+
+    def tearDown(self):
+        self.gl = self.glu = self.gle = None
 
     @unittest.skipUnless(lib_gl, 'lib_gl not available')
     def test_gl(self):

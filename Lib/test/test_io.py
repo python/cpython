@@ -3149,11 +3149,15 @@ class SignalsTest(unittest.TestCase):
         # received (forcing a first EINTR in write()).
         read_results = []
         write_finished = False
+        error = [None]
         def _read():
-            while not write_finished:
-                while r in select.select([r], [], [], 1.0)[0]:
-                    s = os.read(r, 1024)
-                    read_results.append(s)
+            try:
+                while not write_finished:
+                    while r in select.select([r], [], [], 1.0)[0]:
+                        s = os.read(r, 1024)
+                        read_results.append(s)
+            except BaseException as exc:
+                error[0] = exc
         t = threading.Thread(target=_read)
         t.daemon = True
         def alarm1(sig, frame):
@@ -3174,6 +3178,8 @@ class SignalsTest(unittest.TestCase):
             wio.flush()
             write_finished = True
             t.join()
+
+            self.assertIsNone(error[0])
             self.assertEqual(N, sum(len(x) for x in read_results))
         finally:
             write_finished = True

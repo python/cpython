@@ -357,10 +357,12 @@ class GCTests(unittest.TestCase):
             for i in range(N_THREADS):
                 t = threading.Thread(target=run_thread)
                 threads.append(t)
-            for t in threads:
-                t.start()
-            time.sleep(1.0)
-            exit = True
+            try:
+                for t in threads:
+                    t.start()
+            finally:
+                time.sleep(1.0)
+                exit = True
             for t in threads:
                 t.join()
         finally:
