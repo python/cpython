@@ -279,36 +279,41 @@ _PyTime_FromNanoseconds(PY_LONG_LONG ns)
 
 #ifdef HAVE_CLOCK_GETTIME
 static int
-_PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
+_PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts, int raise)
 {
     _PyTime_t t;
+    int res = 0;
+
     t = (_PyTime_t)ts->tv_sec * SEC_TO_NS;
     if (t / SEC_TO_NS != ts->tv_sec) {
-        _PyTime_overflow();
-        return -1;
+        if (raise)
+            _PyTime_overflow();
+        res = -1;
     }
 
     t += ts->tv_nsec;
 
     *tp = t;
-    return 0;
+    return res;
 }
 #else
 static int
-_PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv)
+_PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
 {
     _PyTime_t t;
+    int res = 0;
 
     t = (_PyTime_t)tv->tv_sec * SEC_TO_NS;
     if (t / SEC_TO_NS != tv->tv_sec) {
-        _PyTime_overflow();
-        return -1;
+        if (raise)
+            _PyTime_overflow();
+        res = -1;
     }
 
     t += (_PyTime_t)tv->tv_usec * US_TO_NS;
 
     *tp = t;
-    return 0;
+    return res;
 }
 #endif
 
@@ -532,7 +537,7 @@ pygettimeofday_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
-    if (_PyTime_FromTimespec(tp, &ts) < 0)
+    if (_PyTime_FromTimespec(tp, &ts, raise) < 0)
         return -1;
 
     if (info) {
@@ -558,7 +563,7 @@ pygettimeofday_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
-    if (_PyTime_FromTimeval(tp, &tv) < 0)
+    if (_PyTime_FromTimeval(tp, &tv, raise) < 0)
         return -1;
 
     if (info) {
@@ -674,7 +679,7 @@ pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         }
         info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
     }
-    if (_PyTime_FromTimespec(tp, &ts) < 0)
+    if (_PyTime_FromTimespec(tp, &ts, raise) < 0)
         return -1;
 #endif
 #ifdef Py_DEBUG
@@ -691,8 +696,11 @@ _PyTime_GetMonotonicClock(void)
 {
     _PyTime_t t;
     if (pymonotonic_new(&t, NULL, 0) < 0) {
-        /* cannot happen, _PyTime_Init() checks that pymonotonic_new() works */
+        /* should not happen, _PyTime_Init() checked that monotonic clock at
+           startup */
         assert(0);
+
+        /* use a fixed value instead of a random value from the stack */
         t = 0;
     }
     return t;
