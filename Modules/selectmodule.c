@@ -206,38 +206,17 @@ select_select(PyObject *self, PyObject *args)
 
     if (tout == Py_None)
         tvp = (struct timeval *)0;
-    else if (!PyNumber_Check(tout)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "timeout must be a float or None");
-        return NULL;
-    }
     else {
-        /* On OpenBSD 5.4, timeval.tv_sec is a long.
-         * Example: long is 64-bit, whereas time_t is 32-bit. */
-        time_t sec;
-        /* On OS X 64-bit, timeval.tv_usec is an int (and thus still 4
-           bytes as required), but no longer defined by a long. */
-        long usec;
-        if (_PyTime_ObjectToTimeval(tout, &sec, &usec,
-                                    _PyTime_ROUND_UP) == -1)
-            return NULL;
-#ifdef MS_WINDOWS
-        /* On Windows, timeval.tv_sec is a long (32 bit),
-         * whereas time_t can be 64-bit. */
-        assert(sizeof(tv.tv_sec) == sizeof(long));
-#if SIZEOF_TIME_T > SIZEOF_LONG
-        if (sec > LONG_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "timeout is too large");
+        _PyTime_t ts;
+
+        if (_PyTime_FromSecondsObject(&ts, tout, _PyTime_ROUND_UP) < 0) {
+            PyErr_SetString(PyExc_TypeError,
+                            "timeout must be a float or None");
             return NULL;
         }
-#endif
-        tv.tv_sec = (long)sec;
-#else
-        assert(sizeof(tv.tv_sec) >= sizeof(sec));
-        tv.tv_sec = sec;
-#endif
-        tv.tv_usec = usec;
+
+        if (_PyTime_AsTimeval(ts, &tv, _PyTime_ROUND_UP) == -1)
+            return NULL;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
             return NULL;
@@ -2032,9 +2011,18 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     if (otimeout == Py_None || otimeout == NULL) {
         ptimeoutspec = NULL;
     }
-    else if (PyNumber_Check(otimeout)) {
-        if (_PyTime_ObjectToTimespec(otimeout, &timeout.tv_sec,
-                                     &timeout.tv_nsec, _PyTime_ROUND_UP) == -1)
+    else {
+        _PyTime_t ts;
+
+        if (_PyTime_FromSecondsObject(&ts, otimeout, _PyTime_ROUND_UP) < 0) {
+            PyErr_Format(PyExc_TypeError,
+                "timeout argument must be an number "
+                "or None, got %.200s",
+                Py_TYPE(otimeout)->tp_name);
+            return NULL;
+        }
+
+        if (_PyTime_AsTimespec(ts, &timeout) == -1)
             return NULL;
 
         if (timeout.tv_sec < 0) {
@@ -2043,13 +2031,6 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
             return NULL;
         }
         ptimeoutspec = &timeout;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-            "timeout argument must be an number "
-            "or None, got %.200s",
-            Py_TYPE(otimeout)->tp_name);
-        return NULL;
     }
 
     if (ch != NULL && ch != Py_None) {

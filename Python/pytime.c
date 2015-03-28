@@ -469,7 +469,7 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
     return res;
 }
 
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
 int
 _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
 {

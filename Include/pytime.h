@@ -124,7 +124,7 @@ PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
     struct timeval *tv,
     _PyTime_round_t round);
 
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
 /* Convert a timestamp to a timespec structure (nanosecond resolution).
    tv_nsec is always positive.
    Raise an exception and return -1 on error, return 0 on success. */
