@@ -902,6 +902,44 @@ class TestPyTime_t(unittest.TestCase):
                 self.assertEqual(PyTime_AsSecondsDouble(nanoseconds),
                                  seconds)
 
+    def test_timeval(self):
+        from _testcapi import PyTime_AsTimeval
+        for rnd in ALL_ROUNDING_METHODS:
+            for ns, tv in (
+                # microseconds
+                (0, (0, 0)),
+                (1000, (0, 1)),
+                (-1000, (-1, 999999)),
+
+                # seconds
+                (2 * SEC_TO_NS, (2, 0)),
+                (-3 * SEC_TO_NS, (-3, 0)),
+
+                # seconds + nanoseconds
+                (1234567000, (1, 234567)),
+                (-1234567000, (-2, 765433)),
+            ):
+                with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
+                    self.assertEqual(PyTime_AsTimeval(ns, rnd), tv)
+
+        UP = _PyTime.ROUND_UP
+        DOWN = _PyTime.ROUND_DOWN
+        for ns, tv, rnd in (
+            # nanoseconds
+            (1, (0, 1), UP),
+            (1, (0, 0), DOWN),
+            (-1, (0, 0), DOWN),
+            (-1, (-1, 999999), UP),
+
+            # seconds + nanoseconds
+            (1234567001, (1, 234568), UP),
+            (1234567001, (1, 234567), DOWN),
+            (-1234567001, (-2, 765433), DOWN),
+            (-1234567001, (-2, 765432), UP),
+        ):
+            with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
+                self.assertEqual(PyTime_AsTimeval(ns, rnd), tv)
+
     @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec'),
                          'need _testcapi.PyTime_AsTimespec')
     def test_timespec(self):

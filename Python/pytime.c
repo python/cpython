@@ -540,9 +540,14 @@ int
 _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
 {
     _PyTime_t secs, ns;
+    int res = 0;
 
     secs = t / SEC_TO_NS;
     ns = t % SEC_TO_NS;
+    if (ns < 0) {
+        ns += SEC_TO_NS;
+        secs -= 1;
+    }
 
 #ifdef MS_WINDOWS
     /* On Windows, timeval.tv_sec is a long (32 bit),
@@ -550,8 +555,12 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
     assert(sizeof(tv->tv_sec) == sizeof(long));
 #if SIZEOF_TIME_T > SIZEOF_LONG
     if (secs > LONG_MAX) {
-        _PyTime_overflow();
-        return -1;
+        secs = LONG_MAX;
+        res = -1;
+    }
+    else if (secs < LONG_MIN) {
+        secs = LONG_MIN;
+        res = -1;
     }
 #endif
     tv->tv_sec = (long)secs;
@@ -559,32 +568,37 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
     /* On OpenBSD 5.4, timeval.tv_sec is a long.
        Example: long is 64-bit, whereas time_t is 32-bit. */
     tv->tv_sec = secs;
-    if ((_PyTime_t)tv->tv_sec != secs) {
-        _PyTime_overflow();
-        return -1;
-    }
+    if ((_PyTime_t)tv->tv_sec != secs)
+        res = -1;
 #endif
 
-    if (round == _PyTime_ROUND_UP)
+    if ((round == _PyTime_ROUND_UP) ^ (tv->tv_sec < 0))
         tv->tv_usec = (int)((ns + US_TO_NS - 1) / US_TO_NS);
     else
         tv->tv_usec = (int)(ns / US_TO_NS);
-    return 0;
+
+    if (tv->tv_usec >= SEC_TO_US) {
+        tv->tv_usec -= SEC_TO_US;
+        tv->tv_sec += 1;
+    }
+
+    return res;
 }
 
 #ifdef HAVE_CLOCK_GETTIME
 int
 _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
 {
-    _PyTime_t sec, nsec;
-    sec = t / SEC_TO_NS;
+    _PyTime_t secs, nsec;
+
+    secs = t / SEC_TO_NS;
     nsec = t % SEC_TO_NS;
     if (nsec < 0) {
         nsec += SEC_TO_NS;
-        sec -= 1;
+        secs -= 1;
     }
-    ts->tv_sec = (time_t)sec;
-    if ((_PyTime_t)ts->tv_sec != sec) {
+    ts->tv_sec = (time_t)secs;
+    if ((_PyTime_t)ts->tv_sec != secs) {
         _PyTime_overflow();
         return -1;
     }

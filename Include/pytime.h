@@ -140,13 +140,15 @@ PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
 PyAPI_FUNC(PyObject *) _PyTime_AsNanosecondsObject(_PyTime_t t);
 
 /* Convert a timestamp to a timeval structure (microsecond resolution).
-   Raise an exception and return -1 on error, return 0 on success. */
+   tv_usec is always positive.
+   Return -1 if the conversion overflowed, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
     struct timeval *tv,
     _PyTime_round_t round);
 
 #ifdef HAVE_CLOCK_GETTIME
 /* Convert a timestamp to a timespec structure (nanosecond resolution).
+   tv_nsec is always positive.
    Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts);
 #endif
