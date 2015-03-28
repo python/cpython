@@ -260,6 +260,14 @@ _PyTime_overflow(void)
                     "timestamp too large to convert to C _PyTime_t");
 }
 
+int
+_PyTime_RoundTowardsInfinity(int is_neg, _PyTime_round_t round)
+{
+    if (round == _PyTime_ROUND_FLOOR)
+        return 0;
+    return ((round == _PyTime_ROUND_UP) ^ is_neg);
+}
+
 _PyTime_t
 _PyTime_FromNanoseconds(PY_LONG_LONG ns)
 {
@@ -314,7 +322,7 @@ _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
         d = PyFloat_AsDouble(obj);
         d *= 1e9;
 
-        if ((round == _PyTime_ROUND_UP) ^ (d < 0))
+        if (_PyTime_RoundTowardsInfinity(d < 0, round))
             d = ceil(d);
         else
             d = floor(d);
@@ -380,7 +388,7 @@ _PyTime_Multiply(_PyTime_t t, unsigned int multiply, _PyTime_round_t round)
     _PyTime_t k;
     if (multiply < SEC_TO_NS) {
         k = SEC_TO_NS / multiply;
-        if (round == _PyTime_ROUND_UP)
+        if (_PyTime_RoundTowardsInfinity(t < 0, round))
             return (t + k - 1) / k;
         else
             return t / k;
@@ -397,6 +405,7 @@ _PyTime_AsMilliseconds(_PyTime_t t, _PyTime_round_t round)
     return _PyTime_Multiply(t, 1000, round);
 }
 
+/* FIXME: write unit tests */
 _PyTime_t
 _PyTime_AsMicroseconds(_PyTime_t t, _PyTime_round_t round)
 {
@@ -439,7 +448,7 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
         res = -1;
 #endif
 
-    if ((round == _PyTime_ROUND_UP) ^ (tv->tv_sec < 0))
+    if (_PyTime_RoundTowardsInfinity(tv->tv_sec < 0, round))
         tv->tv_usec = (int)((ns + US_TO_NS - 1) / US_TO_NS);
     else
         tv->tv_usec = (int)(ns / US_TO_NS);
