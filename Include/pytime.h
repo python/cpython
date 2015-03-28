@@ -35,16 +35,6 @@ typedef struct {
  */
 PyAPI_FUNC(void) _PyTime_gettimeofday(_PyTime_timeval *tp);
 
-/* Similar to _PyTime_gettimeofday() but retrieve also information on the
- * clock used to get the current time. */
-PyAPI_FUNC(int) _PyTime_gettimeofday_info(
-    _PyTime_timeval *tp,
-    _Py_clock_info_t *info);
-
-#define _PyTime_INTERVAL(tv_start, tv_end) \
-    ((tv_end.tv_sec - tv_start.tv_sec) + \
-     (tv_end.tv_usec - tv_start.tv_usec) * 0.000001)
-
 typedef enum {
     /* Round towards zero. */
     _PyTime_ROUND_DOWN=0,
