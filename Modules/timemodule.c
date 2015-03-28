@@ -1405,8 +1405,11 @@ pysleep(_PyTime_t secs)
 
     do {
 #ifndef MS_WINDOWS
-        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_UP) < 0)
+        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_UP) < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "delay doesn't fit into C timeval");
             return -1;
+        }
 
         Py_BEGIN_ALLOW_THREADS
         err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
