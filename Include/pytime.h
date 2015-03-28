@@ -74,24 +74,6 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
     long *nsec,
     _PyTime_round_t);
 
-/* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
-   The clock is not affected by system clock updates. The reference point of
-   the returned value is undefined, so that only the difference between the
-   results of consecutive calls is valid.
-
-   The function never fails. _PyTime_Init() ensures that a monotonic clock
-   is available and works. */
-PyAPI_FUNC(void) _PyTime_monotonic(
-    _PyTime_timeval *tp);
-
-/* Similar to _PyTime_monotonic(), fill also info (if set) with information of
-   the function used to get the time.
-
-   Return 0 on success, raise an exception and return -1 on error. */
-PyAPI_FUNC(int) _PyTime_monotonic_info(
-    _PyTime_timeval *tp,
-    _Py_clock_info_t *info);
-
 /* Add interval seconds to tv */
 PyAPI_FUNC(void)
 _PyTime_AddDouble(_PyTime_timeval *tv, double interval,
@@ -105,6 +87,8 @@ PyAPI_FUNC(int) _PyTime_Init(void);
 
 #ifdef PY_INT64_T
 typedef PY_INT64_T _PyTime_t;
+#define _PyTime_MIN PY_LLONG_MIN
+#define _PyTime_MAX PY_LLONG_MAX
 #else
 #  error "_PyTime_t need signed 64-bit integer type"
 #endif
@@ -123,6 +107,10 @@ PyAPI_FUNC(double) _PyTime_AsSecondsDouble(_PyTime_t t);
 
 /* Convert timestamp to a number of milliseconds (10^-3 seconds). */
 PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
+    _PyTime_round_t round);
+
+/* Convert timestamp to a number of microseconds (10^-6 seconds). */
+PyAPI_FUNC(_PyTime_t) _PyTime_AsMicroseconds(_PyTime_t t,
     _PyTime_round_t round);
 
 /* Convert timestamp to a number of nanoseconds (10^-9 seconds) as a Python int
