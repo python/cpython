@@ -366,7 +366,14 @@ class Morsel(dict):
     def isReservedKey(self, K):
         return K.lower() in self._reserved
 
-    def set(self, key, val, coded_val):
+    def set(self, key, val, coded_val, LegalChars=_LegalChars):
+        if LegalChars != _LegalChars:
+            import warnings
+            warnings.warn(
+                'LegalChars parameter is deprecated, ignored and will '
+                'be removed in future versions.', DeprecationWarning,
+                stacklevel=2)
+
         if key.lower() in self._reserved:
             raise CookieError('Attempt to set a reserved key %r' % (key,))
         if not _is_legal_key(key):
