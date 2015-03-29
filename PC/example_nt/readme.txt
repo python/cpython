@@ -3,7 +3,7 @@ Example Python extension for Windows NT
 
 This directory contains everything needed (except for the Python
 distribution!) to build a Python extension module using Microsoft VC++.
-Notice that you need to use the same compiler version that was used to build 
+Notice that you need to use the same compiler version that was used to build
 Python itself.
 
 The simplest way to build this example is to use the distutils script
@@ -16,7 +16,7 @@ after everything builds and installs, you can test it:
   % python -c "import example; example.foo()"
   Hello, world
 
-See setup.py for more details.  alternatively, see below for instructions on 
+See setup.py for more details.  alternatively, see below for instructions on
 how to build inside the Visual Studio environment.
 
 Visual Studio Build Instructions
@@ -27,8 +27,8 @@ instructions and project files have not been updated to the latest VC
 version.  In general, it is recommended you use the 'setup.py' instructions
 above.
 
-It has been tested with VC++ 7.1 on Python 2.4.  You can also use earlier 
-versions of VC to build Python extensions, but the sample VC project file 
+It has been tested with VC++ 7.1 on Python 2.4.  You can also use earlier
+versions of VC to build Python extensions, but the sample VC project file
 (example.dsw in this directory) is in VC 7.1 format.
 
 COPY THIS DIRECTORY!
@@ -129,7 +129,7 @@ created a new project yourself, add the file spam.def to the project now.
 (This is an annoying little file with only two lines.  An alternative
 approach is to forget about the .def file, and add the option
 "/export:initspam" somewhere to the Link settings, by manually editing the
-"Project -> Properties -> Linker -> Command Line -> Additional Options" 
+"Project -> Properties -> Linker -> Command Line -> Additional Options"
 box).
 
 You are now all set to build your extension, unless it requires other
@@ -142,13 +142,13 @@ CREATING A BRAND NEW PROJECT
 Use the
     File -> New -> Project...
 dialog to create a new Project Workspace.  Select "Visual C++ Projects/Win32/
-Win32 Project", enter the name ("spam"), and make sure the "Location" is 
-set to parent of the spam directory you have created (which should be a direct 
-subdirectory of the Python build tree, a sibling of Include and PC).  
+Win32 Project", enter the name ("spam"), and make sure the "Location" is
+set to parent of the spam directory you have created (which should be a direct
+subdirectory of the Python build tree, a sibling of Include and PC).
 In "Application Settings", select "DLL", and "Empty Project".  Click OK.
 
 You should now create the file spam.def as instructed in the previous
-section. Add the source files (including the .def file) to the project, 
+section. Add the source files (including the .def file) to the project,
 using "Project", "Add Existing Item".
 
 Now open the
@@ -174,7 +174,7 @@ list in the "Additional Dependencies" box.
 
 Select "Debug" in the "Settings for:" dropdown list, and append
 "python24_d.lib" to the list in the Additional Dependencies" box.  Then
-click on the C/C++ tab, select "Code Generation", and select 
+click on the C/C++ tab, select "Code Generation", and select
 "Multi-threaded Debug DLL" from the "Runtime library" dropdown list.
 
 Select "Release" again from the "Settings for:" dropdown list.

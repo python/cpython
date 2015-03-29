@@ -11,7 +11,7 @@ What's New in IDLEfork 0.8.1?
 *Release date: 22-Jul-2001*
 
 - New tarball released as a result of the 'revitalisation' of the IDLEfork
-  project. 
+  project.
 
 - This release requires python 2.1 or better. Compatibility with earlier
   versions of python (especially ancient ones like 1.5x) is no longer a
@@ -26,8 +26,8 @@ What's New in IDLEfork 0.8.1?
   not working, but I believe this was the case with the previous IDLE fork
   release (0.7.1) as well.
 
-- This release is being made now to mark the point at which IDLEfork is 
-  launching into a new stage of development. 
+- This release is being made now to mark the point at which IDLEfork is
+  launching into a new stage of development.
 
 - IDLEfork CVS will now be branched to enable further development and
   exploration of the two "execution in a remote process" patches submitted by
@@ -96,7 +96,7 @@ IDLEfork 0.7.1 - 29 May 2000
     instead of the IDLE help; shift-TAB is now a synonym for unindent.
 
 - New modules:
-  
+
   ExecBinding.py         Executes program through loader
   loader.py              Bootstraps user program
   protocol.py            RPC protocol
