@@ -26,6 +26,14 @@ error_time_t_overflow(void)
                     "timestamp out of range for platform time_t");
 }
 
+static int
+_PyTime_RoundTowardsPosInf(int is_neg, _PyTime_round_t round)
+{
+    if (round == _PyTime_ROUND_FLOOR)
+        return 0;
+    return ((round == _PyTime_ROUND_UP) ^ is_neg);
+}
+
 time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
@@ -74,17 +82,15 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
         }
 
         floatpart *= denominator;
-        if (round == _PyTime_ROUND_UP) {
-            if (intpart >= 0) {
-                floatpart = ceil(floatpart);
-                if (floatpart >= denominator) {
-                    floatpart = 0.0;
-                    intpart += 1.0;
-                }
+        if (_PyTime_RoundTowardsPosInf(intpart < 0, round)) {
+            floatpart = ceil(floatpart);
+            if (floatpart >= denominator) {
+                floatpart = 0.0;
+                intpart += 1.0;
             }
-            else {
-                floatpart = floor(floatpart);
-            }
+        }
+        else {
+            floatpart = floor(floatpart);
         }
 
         *sec = (time_t)intpart;
@@ -113,12 +119,10 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         double d, intpart, err;
 
         d = PyFloat_AsDouble(obj);
-        if (round == _PyTime_ROUND_UP) {
-            if (d >= 0)
-                d = ceil(d);
-            else
-                d = floor(d);
-        }
+        if (_PyTime_RoundTowardsPosInf(d < 0, round))
+            d = ceil(d);
+        else
+            d = floor(d);
         (void)modf(d, &intpart);
 
         *sec = (time_t)intpart;
@@ -156,14 +160,6 @@ _PyTime_overflow(void)
 {
     PyErr_SetString(PyExc_OverflowError,
                     "timestamp too large to convert to C _PyTime_t");
-}
-
-int
-_PyTime_RoundTowardsPosInf(int is_neg, _PyTime_round_t round)
-{
-    if (round == _PyTime_ROUND_FLOOR)
-        return 0;
-    return ((round == _PyTime_ROUND_UP) ^ is_neg);
 }
 
 _PyTime_t
