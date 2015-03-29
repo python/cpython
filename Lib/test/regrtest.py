@@ -1031,7 +1031,7 @@ class saved_test_environment:
                  # to a thread, so check processes first.
                  'multiprocessing.process._dangling', 'threading._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
-                 'support.TESTFN', 'locale', 'warnings.showwarning',
+                 'files', 'locale', 'warnings.showwarning',
                 )
 
     def get_sys_argv(self):
@@ -1187,20 +1187,16 @@ class saved_test_environment:
         sysconfig._INSTALL_SCHEMES.clear()
         sysconfig._INSTALL_SCHEMES.update(saved[2])
 
-    def get_support_TESTFN(self):
-        if os.path.isfile(support.TESTFN):
-            result = 'f'
-        elif os.path.isdir(support.TESTFN):
-            result = 'd'
-        else:
-            result = None
-        return result
-    def restore_support_TESTFN(self, saved_value):
-        if saved_value is None:
-            if os.path.isfile(support.TESTFN):
-                os.unlink(support.TESTFN)
-            elif os.path.isdir(support.TESTFN):
-                shutil.rmtree(support.TESTFN)
+    def get_files(self):
+        return sorted(fn + ('/' if os.path.isdir(fn) else '')
+                      for fn in os.listdir())
+    def restore_files(self, saved_value):
+        fn = support.TESTFN
+        if fn not in saved_value and (fn + '/') not in saved_value:
+            if os.path.isfile(fn):
+                support.unlink(fn)
+            elif os.path.isdir(fn):
+                support.rmtree(fn)
 
     _lc = [getattr(locale, lc) for lc in dir(locale)
            if lc.startswith('LC_')]
