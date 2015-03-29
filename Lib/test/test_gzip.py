@@ -41,6 +41,7 @@ class TestGzip(unittest.TestCase):
     @test_support.requires_unicode
     def test_unicode_filename(self):
         unicode_filename = test_support.TESTFN_UNICODE
+        self.filename = unicode_filename
         try:
             unicode_filename.encode(test_support.TESTFN_ENCODING)
         except (UnicodeError, TypeError):
