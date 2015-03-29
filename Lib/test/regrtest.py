@@ -844,12 +844,12 @@ class saved_test_environment:
         return sorted(fn + ('/' if os.path.isdir(fn) else '')
                       for fn in os.listdir(os.curdir))
     def restore_files(self, saved_value):
-        fn = support.TESTFN
+        fn = test_support.TESTFN
         if fn not in saved_value and (fn + '/') not in saved_value:
             if os.path.isfile(fn):
-                support.unlink(fn)
+                test_support.unlink(fn)
             elif os.path.isdir(fn):
-                support.rmtree(fn)
+                test_support.rmtree(fn)
 
     def resource_info(self):
         for name in self.resources:
