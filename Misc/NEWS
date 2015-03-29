@@ -182,6 +182,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #22390: test.regrtest now emits a warning if temporary files or
+  directories are left after running a test.
+
 - Issue #23583: Added tests for standard IO streams in IDLE.
 
 - Issue #23392: Added tests for marshal C API that works with FILE*.
