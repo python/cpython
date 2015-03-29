@@ -13,15 +13,6 @@ functions and constants
 extern "C" {
 #endif
 
-#ifdef HAVE_GETTIMEOFDAY
-typedef struct timeval _PyTime_timeval;
-#else
-typedef struct {
-    time_t       tv_sec;   /* seconds since Jan. 1, 1970 */
-    long         tv_usec;  /* and microseconds */
-} _PyTime_timeval;
-#endif
-
 /* Structure used by time.get_clock_info() */
 typedef struct {
     const char *implementation;
@@ -29,11 +20,6 @@ typedef struct {
     int adjustable;
     double resolution;
 } _Py_clock_info_t;
-
-/* Similar to POSIX gettimeofday but cannot fail.  If system gettimeofday
- * fails or is not available, fall back to lower resolution clocks.
- */
-PyAPI_FUNC(void) _PyTime_gettimeofday(_PyTime_timeval *tp);
 
 typedef enum {
     /* Round towards zero. */
@@ -132,6 +118,12 @@ PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
    Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts);
 #endif
+
+/* Get the current time from the system clock.
+
+   The function cannot fail. _PyTime_Init() ensures that the system clock
+   works. */
+PyAPI_FUNC(_PyTime_t) _PyTime_GetSystemClock(void);
 
 /* Get the current time from the system clock.
  * Fill clock information if info is not NULL.
