@@ -138,12 +138,9 @@ library/ipaddress,,:db00,2001:db00::0/ffff:ff00::
 library/ipaddress,,::,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,:stop,elements from seq[start:stop:step]
-library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,`,# Add more tasks using `put()`
-library/multiprocessing,,`,">>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`"
-library/multiprocessing,,`,">>> l._callmethod('__getslice__', (2, 7))   # equiv to `l[2:7]`"
 library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable=lambda:queue)"
 library/multiprocessing,,`,# register the Foo class; make `f()` and `g()` accessible via proxy
 library/multiprocessing,,`,# register the Foo class; make `g()` and `_h()` accessible via proxy
@@ -181,8 +178,6 @@ library/ssl,,:MyState,State or Province Name (full name) [Some-State]:MyState
 library/ssl,,:ops,Email Address []:ops@myserver.mygroup.myorganization.com
 library/ssl,,:Some,"Locality Name (eg, city) []:Some City"
 library/ssl,,:US,Country Name (2 letter code) [AU]:US
-library/stdtypes,,::,>>> a[::-1].tolist()
-library/stdtypes,,::,>>> a[::2].tolist()
 library/stdtypes,,:end,s[start:end]
 library/stdtypes,,::,>>> hash(v[::-2]) == hash(b'abcefg'[::-2])
 library/stdtypes,,:len,s[len(s):len(s)]
@@ -280,3 +275,18 @@ whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/changelog,,:gz,": TarFile opened with external fileobj and ""w:gz"" mode didn't"
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
+library/stdtypes,3688,::,>>> m[::2].tolist()
+library/tarfile,149,:xz,'x:xz'
+library/xml.etree.elementtree,290,:sometag,prefix:sometag
+library/xml.etree.elementtree,301,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""
+library/xml.etree.elementtree,301,:character,<fictional:character>Lancelot</fictional:character>
+library/xml.etree.elementtree,301,:character,<fictional:character>Archie Leach</fictional:character>
+library/xml.etree.elementtree,301,:character,<fictional:character>Sir Robin</fictional:character>
+library/xml.etree.elementtree,301,:character,<fictional:character>Gunther</fictional:character>
+library/xml.etree.elementtree,301,:character,<fictional:character>Commander Clement</fictional:character>
+library/xml.etree.elementtree,332,:actor,"for actor in root.findall('real_person:actor', ns):"
+library/xml.etree.elementtree,332,:name,"name = actor.find('real_person:name', ns)"
+library/xml.etree.elementtree,332,:character,"for char in actor.findall('role:character', ns):"
+library/zipapp,31,:main,"$ python -m zipapp myapp -m ""myapp:main"""
+library/zipapp,82,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
+library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be run by importing"
