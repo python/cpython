@@ -151,8 +151,6 @@ _PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec,
     return _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
 }
 
-/****************** NEW _PyTime_t API **********************/
-
 static void
 _PyTime_overflow(void)
 {
@@ -161,7 +159,7 @@ _PyTime_overflow(void)
 }
 
 int
-_PyTime_RoundTowardsInfinity(int is_neg, _PyTime_round_t round)
+_PyTime_RoundTowardsPosInf(int is_neg, _PyTime_round_t round)
 {
     if (round == _PyTime_ROUND_FLOOR)
         return 0;
@@ -196,7 +194,7 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts, int raise)
     *tp = t;
     return res;
 }
-#else
+#elif !defined(MS_WINDOWS)
 static int
 _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
 {
@@ -227,7 +225,7 @@ _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
         d = PyFloat_AsDouble(obj);
         d *= 1e9;
 
-        if (_PyTime_RoundTowardsInfinity(d < 0, round))
+        if (_PyTime_RoundTowardsPosInf(d < 0, round))
             d = ceil(d);
         else
             d = floor(d);
@@ -293,7 +291,7 @@ _PyTime_Multiply(_PyTime_t t, unsigned int multiply, _PyTime_round_t round)
     _PyTime_t k;
     if (multiply < SEC_TO_NS) {
         k = SEC_TO_NS / multiply;
-        if (_PyTime_RoundTowardsInfinity(t < 0, round))
+        if (_PyTime_RoundTowardsPosInf(t < 0, round))
             return (t + k - 1) / k;
         else
             return t / k;
@@ -353,7 +351,7 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
         res = -1;
 #endif
 
-    if (_PyTime_RoundTowardsInfinity(tv->tv_sec < 0, round))
+    if (_PyTime_RoundTowardsPosInf(tv->tv_sec < 0, round))
         tv->tv_usec = (int)((ns + US_TO_NS - 1) / US_TO_NS);
     else
         tv->tv_usec = (int)(ns / US_TO_NS);
