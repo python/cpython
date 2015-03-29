@@ -124,6 +124,9 @@ Library
 
 - Issue #23361: Fix possible overflow in Windows subprocess creation code.
 
+- Issue #23801: Fix issue where cgi.FieldStorage did not always ignore the
+  entire preamble to a multipart body.
+
 Tests
 -----
 

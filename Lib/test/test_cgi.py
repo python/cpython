@@ -248,6 +248,25 @@ class CgiTests(unittest.TestCase):
                 got = getattr(fs.list[x], k)
                 self.assertEqual(got, exp)
 
+    def test_fieldstorage_multipart_leading_whitespace(self):
+        env = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary={}'.format(BOUNDARY),
+            'CONTENT_LENGTH': '560'}
+        # Add some leading whitespace to our post data that will cause the
+        # first line to not be the innerboundary.
+        fp = BytesIO(b"\r\n" + POSTDATA.encode('latin-1'))
+        fs = cgi.FieldStorage(fp, environ=env, encoding="latin-1")
+        self.assertEqual(len(fs.list), 4)
+        expect = [{'name':'id', 'filename':None, 'value':'1234'},
+                  {'name':'title', 'filename':None, 'value':''},
+                  {'name':'file', 'filename':'test.txt', 'value':b'Testing 123.\n'},
+                  {'name':'submit', 'filename':None, 'value':' Add '}]
+        for x in range(len(fs.list)):
+            for k, exp in expect[x].items():
+                got = getattr(fs.list[x], k)
+                self.assertEqual(got, exp)
+
     def test_fieldstorage_multipart_non_ascii(self):
         #Test basic FieldStorage multipart parsing
         env = {'REQUEST_METHOD':'POST',
