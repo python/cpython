@@ -12681,7 +12681,7 @@ PyUnicode_Partition(PyObject *str_in, PyObject *sep_in)
     len1 = PyUnicode_GET_LENGTH(str_obj);
     len2 = PyUnicode_GET_LENGTH(sep_obj);
 
-    switch (PyUnicode_KIND(str_obj)) {
+    switch (kind) {
     case PyUnicode_1BYTE_KIND:
         if (PyUnicode_IS_ASCII(str_obj) && PyUnicode_IS_ASCII(sep_obj))
             out = asciilib_partition(str_obj, buf1, len1, sep_obj, buf2, len2);
@@ -12737,12 +12737,12 @@ PyUnicode_RPartition(PyObject *str_in, PyObject *sep_in)
         return NULL;
     }
 
-    kind1 = PyUnicode_KIND(str_in);
+    kind1 = PyUnicode_KIND(str_obj);
     kind2 = PyUnicode_KIND(sep_obj);
     kind = Py_MAX(kind1, kind2);
-    buf1 = PyUnicode_DATA(str_in);
+    buf1 = PyUnicode_DATA(str_obj);
     if (kind1 != kind)
-        buf1 = _PyUnicode_AsKind(str_in, kind);
+        buf1 = _PyUnicode_AsKind(str_obj, kind);
     if (!buf1)
         goto onError;
     buf2 = PyUnicode_DATA(sep_obj);
@@ -12753,7 +12753,7 @@ PyUnicode_RPartition(PyObject *str_in, PyObject *sep_in)
     len1 = PyUnicode_GET_LENGTH(str_obj);
     len2 = PyUnicode_GET_LENGTH(sep_obj);
 
-    switch (PyUnicode_KIND(str_in)) {
+    switch (kind) {
     case PyUnicode_1BYTE_KIND:
         if (PyUnicode_IS_ASCII(str_obj) && PyUnicode_IS_ASCII(sep_obj))
             out = asciilib_rpartition(str_obj, buf1, len1, sep_obj, buf2, len2);

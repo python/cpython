@@ -375,6 +375,7 @@ class UnicodeTest(string_tests.CommonTest,
     def test_partition(self):
         string_tests.MixinStrUnicodeUserStringTest.test_partition(self)
         # test mixed kinds
+        self.checkequal(('ABCDEFGH', '', ''), 'ABCDEFGH', 'partition', '\u4200')
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
             left *= 9
             right *= 9
@@ -391,6 +392,7 @@ class UnicodeTest(string_tests.CommonTest,
     def test_rpartition(self):
         string_tests.MixinStrUnicodeUserStringTest.test_rpartition(self)
         # test mixed kinds
+        self.checkequal(('', '', 'ABCDEFGH'), 'ABCDEFGH', 'rpartition', '\u4200')
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
             left *= 9
             right *= 9
