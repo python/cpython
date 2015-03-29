@@ -231,20 +231,21 @@ class Sniffer:
         quotes = {}
         delims = {}
         spaces = 0
+        groupindex = regexp.groupindex
         for m in matches:
-            n = regexp.groupindex['quote'] - 1
+            n = groupindex['quote'] - 1
             key = m[n]
             if key:
                 quotes[key] = quotes.get(key, 0) + 1
             try:
-                n = regexp.groupindex['delim'] - 1
+                n = groupindex['delim'] - 1
                 key = m[n]
             except KeyError:
                 continue
             if key and (delimiters is None or key in delimiters):
                 delims[key] = delims.get(key, 0) + 1
             try:
-                n = regexp.groupindex['space'] - 1
+                n = groupindex['space'] - 1
             except KeyError:
                 continue
             if m[n]:

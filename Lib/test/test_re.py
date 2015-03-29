@@ -577,6 +577,14 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match("(a)", "a").regs, ((0, 1), (0, 1)))
         self.assertTrue(re.match("(a)", "a").re)
 
+        # Issue 14260. groupindex should be non-modifiable mapping.
+        p = re.compile(r'(?i)(?P<first>a)(?P<other>b)')
+        self.assertEqual(sorted(p.groupindex), ['first', 'other'])
+        self.assertEqual(p.groupindex['other'], 2)
+        with self.assertRaises(TypeError):
+            p.groupindex['other'] = 0
+        self.assertEqual(p.groupindex['other'], 2)
+
     def test_special_escapes(self):
         self.assertEqual(re.search(r"\b(b.)\b",
                                    "abcd abc bcd bx").group(1), "bx")

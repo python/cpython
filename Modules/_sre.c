@@ -1384,12 +1384,24 @@ static PyMethodDef pattern_methods[] = {
     {NULL, NULL}
 };
 
+/* PatternObject's 'groupindex' method. */
+static PyObject *
+pattern_groupindex(PatternObject *self)
+{
+    return PyDictProxy_New(self->groupindex);
+}
+
+static PyGetSetDef pattern_getset[] = {
+    {"groupindex", (getter)pattern_groupindex, (setter)NULL,
+      "A dictionary mapping group names to group numbers."},
+    {NULL}  /* Sentinel */
+};
+
 #define PAT_OFF(x) offsetof(PatternObject, x)
 static PyMemberDef pattern_members[] = {
     {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY},
     {"flags",      T_INT,       PAT_OFF(flags),         READONLY},
     {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY},
-    {"groupindex", T_OBJECT,    PAT_OFF(groupindex),    READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1422,6 +1434,7 @@ static PyTypeObject Pattern_Type = {
     0,                                  /* tp_iternext */
     pattern_methods,                    /* tp_methods */
     pattern_members,                    /* tp_members */
+    pattern_getset,                     /* tp_getset */
 };
 
 static int _validate(PatternObject *self); /* Forward */
