@@ -19,7 +19,7 @@ OS X specific arguments to configure
 
   If this argument is specified the build will create a Python.framework rather
   than a traditional Unix install. See the section
-  _`Building and using a framework-based Python on Mac OS X` for more 
+  _`Building and using a framework-based Python on Mac OS X` for more
   information on frameworks.
 
   If the optional directory argument is specified the framework is installed
@@ -53,7 +53,7 @@ OS X specific arguments to configure
 
 * ``--with-univeral-archs=VALUE``
 
-  Specify the kind of universal binary that should be created. This option is 
+  Specify the kind of universal binary that should be created. This option is
   only valid when ``--enable-universalsdk`` is specified.  The default is
   ``32-bit`` if a building with a SDK that supports PPC, otherwise defaults
   to ``intel``.
@@ -174,14 +174,14 @@ Building and using a framework-based Python on Mac OS X.
 --------------------------------------------------------------------------
 
 The main reason is because you want to create GUI programs in Python. With the
-exception of X11/XDarwin-based GUI toolkits all GUI programs need to be run 
+exception of X11/XDarwin-based GUI toolkits all GUI programs need to be run
 from a Mac OS X application bundle (".app").
 
 While it is technically possible to create a .app without using frameworks you
 will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
-only two places: "/Library/Framework/Python.framework" and 
+only two places: "/Library/Framework/Python.framework" and
 "/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.4",
 "2.7", etc.  This simplifies matters for users installing
 Python from a binary distribution if they want to get rid of it again. Moreover,
@@ -228,11 +228,11 @@ in the sequence
  1. ./configure --enable-framework
 
  2. make
- 
+
  3. make install
 
 This sequence will put the framework in ``/Library/Framework/Python.framework``,
-the applications in ``/Applications/Python <VERSION>`` and the unix tools in 
+the applications in ``/Applications/Python <VERSION>`` and the unix tools in
 ``/usr/local/bin``.
 
 Installing in another place, for instance ``$HOME/Library/Frameworks`` if you
@@ -300,7 +300,7 @@ All of this is normally done completely isolated in /tmp/_py, so it does not
 use your normal build directory nor does it install into /.
 
 Because of the way the script locates the files it needs you have to run it
-from within the BuildScript directory. The script accepts a number of 
+from within the BuildScript directory. The script accepts a number of
 command-line arguments, run it with --help for more information.
 
 Configure warnings

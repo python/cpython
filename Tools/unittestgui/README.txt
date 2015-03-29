@@ -1,5 +1,5 @@
-unittestgui.py is GUI framework and application for use with Python unit 
-testing framework. It executes tests written using the framework provided 
+unittestgui.py is GUI framework and application for use with Python unit
+testing framework. It executes tests written using the framework provided
 by the 'unittest' module.
 
 Based on the original by Steve Purcell, from:

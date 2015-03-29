@@ -117,7 +117,7 @@ dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 
 arglist: (argument ',')* (argument [',']
-                         |'*' test (',' argument)* [',' '**' test] 
+                         |'*' test (',' argument)* [',' '**' test]
                          |'**' test)
 # The reason that keywords are test nodes instead of NAME is that using NAME
 # results in an ambiguity. ast.c makes sure it's a NAME.

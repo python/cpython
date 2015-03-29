@@ -27,7 +27,7 @@ And you'll need a config.c file, which lists the built-in modules you
 support.  Start with Modules/config.c.in.
 
 Finally, you'll run into some things that aren't supported on your
-target platform.  Forget about the posix module for now -- simply take 
+target platform.  Forget about the posix module for now -- simply take
 it out of the config.c file.
 
 Bang on it until you get a >>> prompt.  (You may have to disable the

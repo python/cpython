@@ -4,7 +4,7 @@ PYBENCH - A Python Benchmark Suite
 ________________________________________________________________________
 
      Extendable suite of low-level benchmarks for measuring
-          the performance of the Python implementation 
+          the performance of the Python implementation
                  (interpreter, compiler or VM).
 
 pybench is a collection of tests that provides a standardized way to
@@ -34,11 +34,11 @@ to have it store the results in a file too.
 
 It is usually a good idea to run pybench.py multiple times to see
 whether the environment, timers and benchmark run-times are suitable
-for doing benchmark tests. 
+for doing benchmark tests.
 
 You can use the comparison feature of pybench.py ('pybench.py -c
 <file>') to check how well the system behaves in comparison to a
-reference run. 
+reference run.
 
 If the differences are well below 10% for each test, then you have a
 system that is good for doing benchmark testings.  Of you get random
@@ -232,7 +232,7 @@ class IntegerCounting(Test):
     # for comparisons of benchmark runs - tests with unequal version
     # number will not get compared.
     version = 1.0
-    
+
     # The number of abstract operations done in each round of the
     # test. An operation is the basic unit of what you want to
     # measure. The benchmark will output the amount of run-time per
@@ -264,7 +264,7 @@ class IntegerCounting(Test):
 
             # Repeat the operations per round to raise the run-time
             # per operation significantly above the noise level of the
-            # for-loop overhead. 
+            # for-loop overhead.
 
 	    # Execute 20 operations (a += 1):
             a += 1
@@ -358,8 +358,8 @@ Version History
         - changed the output format a bit to make it look
           nicer
         - refactored the APIs somewhat
-  1.3+: Steve Holden added the NewInstances test and the filtering 
-       option during the NeedForSpeed sprint; this also triggered a long 
+  1.3+: Steve Holden added the NewInstances test and the filtering
+       option during the NeedForSpeed sprint; this also triggered a long
        discussion on how to improve benchmark timing and finally
        resulted in the release of 2.0
   1.3: initial checkin into the Python SVN repository
