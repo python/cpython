@@ -855,6 +855,7 @@ def parse_template(source, pattern):
             del literal[:]
         groups.append((len(literals), index))
         literals.append(None)
+    groupindex = pattern.groupindex
     while True:
         this = sget()
         if this is None:
@@ -869,7 +870,7 @@ def parse_template(source, pattern):
                 name = s.getuntil(">")
                 if name.isidentifier():
                     try:
-                        index = pattern.groupindex[name]
+                        index = groupindex[name]
                     except KeyError:
                         raise IndexError("unknown group name %r" % name)
                 else:
