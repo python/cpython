@@ -261,6 +261,8 @@ class MorselTests(unittest.TestCase):
             morsel.value = ''
         with self.assertWarnsRegex(DeprecationWarning, r'\bcoded_value\b'):
             morsel.coded_value = ''
+        with self.assertWarnsRegex(DeprecationWarning, r'\bLegalChars\b'):
+            morsel.set('key', 'value', 'coded_value', LegalChars='.*')
 
     def test_eq(self):
         base_case = ('key', 'value', '"value"')

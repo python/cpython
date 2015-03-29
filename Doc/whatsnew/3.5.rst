@@ -525,11 +525,12 @@ Deprecated Python modules, functions and methods
   ``True``, but this default is deprecated.  Specify the *decode_data* keyword
   with an appropriate value to avoid the deprecation warning.
 
-* :class:`~http.cookies.Morsel` has previously allowed for setting attributes
-  :attr:`~http.cookies.Morsel.key`, :attr:`~http.cookies.Morsel.value` and
-  :attr:`~http.cookies.Morsel.coded_value`. Use the preferred
-  :func:`~http.cookies.Morsel.set` method in order to avoid the deprecation
-  warning.
+* Directly assigning values to the :attr:`~http.cookies.Morsel.key`,
+  :attr:`~http.cookies.Morsel.value` and
+  :attr:`~http.cookies.Morsel.coded_value` of :class:`~http.cookies.Morsel`
+  objects is deprecated.  Use the :func:`~http.cookies.Morsel.set` method
+  instead.  In addition, the undocumented *LegalChars* parameter of
+  :func:`~http.cookies.Morsel.set` is deprecated, and is now ignored.
 
 * Passing a format string as keyword argument *format_string* to the
   :meth:`~string.Formatter.format` method of the :class:`string.Formatter`
@@ -634,6 +635,16 @@ Changes in the Python API
   an empty string.  For compatibility use patterns that never match an empty
   string (e.g. ``'x+'`` instead of ``'x*'``).  Patterns that could only match
   an empty string (such as ``'\b'``) now raise an error.
+
+* The :class:`~http.cookies.Morsel` dict-like interface has been made self
+  consistent:  morsel comparison now takes the :attr:`~http.cookies.Morsel.key`
+  and :attr:`~http.cookies.Morsel.value` into account,
+  :meth:`~http.cookies.Morsel.copy` now results in a
+  :class:`~http.cookies.Morsel` instance rather than a *dict*, and
+  :meth:`~http.cookies.Morsel.update` will no raise an exception if any of the
+  keys in the update dictionary are invalid.  In addition, the undocumented
+  *LegalChars* parameter of :func:`~http.cookies.Morsel.set` is deprecated and
+  is now ignored.  (:issue:`2211`)
 
 Changes in the C API
 --------------------
