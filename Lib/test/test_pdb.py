@@ -63,6 +63,7 @@ class PdbTestCase(unittest.TestCase):
         with open('bar.py', 'w') as f:
             f.write(textwrap.dedent(bar))
         self.addCleanup(test_support.unlink, 'bar.py')
+        self.addCleanup(test_support.unlink, 'bar.pyc')
         stdout, stderr = self.run_pdb(script, commands)
         self.assertTrue(
             any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
