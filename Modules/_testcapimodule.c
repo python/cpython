@@ -15,7 +15,7 @@
 #include <signal.h>
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>
+#  include <winsock2.h>         /* struct timeval */
 #endif
 
 #ifdef WITH_THREAD
