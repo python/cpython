@@ -302,6 +302,9 @@ Library
 - Issue #19705: turtledemo now has a visual sorting algorithm demo.  Original
   patch from Jason Yeo.
 
+- Issue #23801: Fix issue where cgi.FieldStorage did not always ignore the
+  entire preamble to a multipart body.
+
 Build
 -----
 
