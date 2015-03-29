@@ -693,8 +693,13 @@ class FieldStorage:
             raise ValueError("%s should return bytes, got %s" \
                              % (self.fp, type(first_line).__name__))
         self.bytes_read += len(first_line)
-        # first line holds boundary ; ignore it, or check that
-        # b"--" + ib == first_line.strip() ?
+
+        # Ensure that we consume the file until we've hit our inner boundary
+        while (first_line.strip() != (b"--" + self.innerboundary) and
+                first_line):
+            first_line = self.fp.readline()
+            self.bytes_read += len(first_line)
+
         while True:
             parser = FeedParser()
             hdr_text = b""
