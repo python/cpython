@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14260: The groupindex attribute of regular expression pattern object
+  now is non-modifiable mapping.
+
 - Issue #23792: Ignore KeyboardInterrupt when the pydoc pager is active.
   This mimics the behavior of the standard unix pagers, and prevents
   pipepager from shutting down while the pager itself is still running.
