@@ -20,7 +20,7 @@ IDLEfork ChangeLog
 2001-07-19 14:49  elguavas
 
 	* ChangeLog, EditorWindow.py, INSTALLATION, NEWS.txt, README.txt,
-	TODO.txt, idlever.py: 
+	TODO.txt, idlever.py:
 	minor tidy-ups ready for 0.8.1 alpha tarball release
 
 2001-07-17 15:12  kbk
@@ -172,7 +172,7 @@ IDLEfork ChangeLog
 	all this work w/ a future-stmt just looks harder and harder."
 	--tim_one
 	
-	(From Rel 1.8: "Hack to make this still work with Python 1.5.2. 
+	(From Rel 1.8: "Hack to make this still work with Python 1.5.2.
 	;-( " --fdrake)
 
 2001-07-14 14:51  kbk
@@ -193,7 +193,7 @@ IDLEfork ChangeLog
 	test() to _test()."  --GvR
 	
 	This was an interesting merge. The join completely missed removing
-	goodname(), which was adjacent, but outside of, a small conflict. 
+	goodname(), which was adjacent, but outside of, a small conflict.
 	I only caught it by comparing the 1.1.3.2/1.1.3.3 diff.  CVS ain't
 	infallible.
 
@@ -516,12 +516,12 @@ IDLEfork ChangeLog
 
 2000-08-15 22:51  nowonder
 
-	* IDLEFORK.html: 
+	* IDLEFORK.html:
 	corrected email address
 
 2000-08-15 22:47  nowonder
 
-	* IDLEFORK.html: 
+	* IDLEFORK.html:
 	added .html file for http://idlefork.sourceforge.net
 
 2000-08-15 11:13  dscherer

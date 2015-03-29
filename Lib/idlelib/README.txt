@@ -14,7 +14,7 @@ code objects from a top level viewpoint without dealing with code folding.
 There is a Python Shell window which features colorizing and command recall.
 
 IDLE executes Python code in a separate process, which is restarted for each
-Run (F5) initiated from an editor window.  The environment can also be 
+Run (F5) initiated from an editor window.  The environment can also be
 restarted from the Shell window without restarting IDLE.
 
 This enhancement has often been requested, and is now finally available.  The
