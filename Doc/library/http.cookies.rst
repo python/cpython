@@ -143,14 +143,17 @@ Morsel Objects
 
    The keys are case-insensitive.
 
+   .. versionchanged:: 3.5
+      :meth:`~Morsel.__eq__` now takes :attr:`~Morsel.key` and :attr:`~Morsel.value`
+      into account.
+
 
 .. attribute:: Morsel.value
 
    The value of the cookie.
 
    .. deprecated:: 3.5
-      Setting :attr:`~Morsel.value` directly has been deprecated in favour of
-      using :func:`~Morsel.set`
+      assigning to ``value``; use :meth:`~Morsel.set` instead.
 
 
 .. attribute:: Morsel.coded_value
@@ -158,8 +161,7 @@ Morsel Objects
    The encoded value of the cookie --- this is what should be sent.
 
    .. deprecated:: 3.5
-      Setting :attr:`~Morsel.coded_value` directly has been deprecated in
-      favour of using :func:`~Morsel.set`
+      assigning to ``coded_value``; use :meth:`~Morsel.set` instead.
 
 
 .. attribute:: Morsel.key
@@ -167,13 +169,16 @@ Morsel Objects
    The name of the cookie.
 
    .. deprecated:: 3.5
-      Setting :attr:`~Morsel.key` directly has been deprecated in
-      favour of using :func:`~Morsel.set`
+      assigning to ``key``; use :meth:`~Morsel.set` instead.
 
 
 .. method:: Morsel.set(key, value, coded_value)
 
    Set the *key*, *value* and *coded_value* attributes.
+
+   .. deprecated:: 3.5
+      The undocumented *LegalChars* parameter is ignored and will be removed in
+      a future version.
 
 
 .. method:: Morsel.isReservedKey(K)
@@ -203,6 +208,24 @@ Morsel Objects
    JavaScript.
 
    The meaning for *attrs* is the same as in :meth:`output`.
+
+
+.. method:: Morsel.update(values)
+
+   Update the values in the Morsel dictionary with the values in the dictionary
+   *values*.  Raise an error if any of the keys in the *values* dict is not a
+   valid :rfc:`2109` attribute.
+
+   .. versionchanged:: 3.5
+      an error is raised for invalid keys.
+
+
+.. method:: Morsel.copy(value)
+
+   Return a shallow copy of the Morsel object.
+
+   .. versionchanged:: 3.5
+      return a Morsel object instead of a dict.
 
 
 .. _cookie-example:
