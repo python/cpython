@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22117: Fix os.utime(), it now rounds the timestamp towards minus
+  infinity (-inf) instead of rounding towards zero.
+
 - Issue #14260: The groupindex attribute of regular expression pattern object
   now is non-modifiable mapping.
 
