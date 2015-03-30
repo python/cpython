@@ -221,7 +221,7 @@ static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
 {
     _PyTime_t secs;
-    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_UP))
+    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_CEILING))
         return NULL;
     if (secs < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -1405,7 +1405,7 @@ pysleep(_PyTime_t secs)
 
     do {
 #ifndef MS_WINDOWS
-        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_UP) < 0)
+        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0)
             return -1;
 
         Py_BEGIN_ALLOW_THREADS
@@ -1420,7 +1420,7 @@ pysleep(_PyTime_t secs)
             return -1;
         }
 #else
-        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_UP);
+        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
         if (millisecs > (double)ULONG_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "sleep length is too large");
