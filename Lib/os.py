@@ -402,7 +402,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     is_symlink = entry.is_symlink()
                 except OSError:
                     # If is_symlink() raises an OSError, consider that the
-                    # entry is not a symbolik link, same behaviour than
+                    # entry is not a symbolic link, same behaviour than
                     # os.path.islink().
                     is_symlink = False
                 walk_into = not is_symlink
