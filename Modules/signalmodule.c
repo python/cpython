@@ -977,7 +977,8 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
                           &signals, &timeout_obj))
         return NULL;
 
-    if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_UP) < 0)
+    if (_PyTime_FromSecondsObject(&timeout,
+                                  timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return NULL;
 
     if (timeout < 0) {

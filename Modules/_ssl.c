@@ -1637,7 +1637,7 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
 
         /* s->sock_timeout is in seconds, timeout in ms */
         timeout = (int)_PyTime_AsMilliseconds(s->sock_timeout,
-                                              _PyTime_ROUND_UP);
+                                              _PyTime_ROUND_CEILING);
 
         PySSL_BEGIN_ALLOW_THREADS
         rc = poll(&pollfd, 1, timeout);
@@ -1651,7 +1651,7 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
     if (!_PyIsSelectable_fd(s->sock_fd))
         return SOCKET_TOO_LARGE_FOR_SELECT;
 
-    _PyTime_AsTimeval_noraise(s->sock_timeout, &tv, _PyTime_ROUND_UP);
+    _PyTime_AsTimeval_noraise(s->sock_timeout, &tv, _PyTime_ROUND_CEILING);
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
