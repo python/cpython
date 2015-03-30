@@ -59,7 +59,7 @@ acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
         endtime = _PyTime_GetMonotonicClock() + timeout;
 
     do {
-        microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_UP);
+        microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
 
         /* first a simple non-blocking try without releasing the GIL */
         r = PyThread_acquire_lock_timed(lock, 0, 0);
@@ -110,7 +110,8 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
         return -1;
 
     if (timeout_obj
-        && _PyTime_FromSecondsObject(timeout, timeout_obj, _PyTime_ROUND_UP) < 0)
+        && _PyTime_FromSecondsObject(timeout,
+                                     timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return -1;
 
     if (!blocking && *timeout != unset_timeout ) {
@@ -128,7 +129,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     else if (*timeout != unset_timeout) {
         _PyTime_t microseconds;
 
-        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_UP);
+        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_CEILING);
         if (microseconds >= PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
