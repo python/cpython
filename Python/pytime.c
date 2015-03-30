@@ -26,16 +26,6 @@ error_time_t_overflow(void)
                     "timestamp out of range for platform time_t");
 }
 
-static int
-_PyTime_RoundTowardsPosInf(int is_neg, _PyTime_round_t round)
-{
-    if (round == _PyTime_ROUND_FLOOR)
-        return 0;
-    if (round == _PyTime_ROUND_CEILING)
-        return 1;
-    return ((round == _PyTime_ROUND_UP) ^ is_neg);
-}
-
 time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
@@ -84,7 +74,7 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
         }
 
         floatpart *= denominator;
-        if (_PyTime_RoundTowardsPosInf(intpart < 0, round)) {
+        if (round == _PyTime_ROUND_CEILING) {
             floatpart = ceil(floatpart);
             if (floatpart >= denominator) {
                 floatpart = 0.0;
@@ -121,7 +111,7 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         double d, intpart, err;
 
         d = PyFloat_AsDouble(obj);
-        if (_PyTime_RoundTowardsPosInf(d < 0, round))
+        if (round == _PyTime_ROUND_CEILING)
             d = ceil(d);
         else
             d = floor(d);
@@ -223,7 +213,7 @@ _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
         d = PyFloat_AsDouble(obj);
         d *= 1e9;
 
-        if (_PyTime_RoundTowardsPosInf(d < 0, round))
+        if (round == _PyTime_ROUND_CEILING)
             d = ceil(d);
         else
             d = floor(d);
@@ -289,7 +279,7 @@ _PyTime_Multiply(_PyTime_t t, unsigned int multiply, _PyTime_round_t round)
     _PyTime_t k;
     if (multiply < SEC_TO_NS) {
         k = SEC_TO_NS / multiply;
-        if (_PyTime_RoundTowardsPosInf(t < 0, round))
+        if (round == _PyTime_ROUND_CEILING)
             return (t + k - 1) / k;
         else
             return t / k;
@@ -350,7 +340,7 @@ _PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
         res = -1;
 #endif
 
-    if (_PyTime_RoundTowardsPosInf(tv->tv_sec < 0, round))
+    if (round == _PyTime_ROUND_CEILING)
         tv->tv_usec = (int)((ns + US_TO_NS - 1) / US_TO_NS);
     else
         tv->tv_usec = (int)(ns / US_TO_NS);

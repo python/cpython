@@ -25,14 +25,9 @@ typedef PY_INT64_T _PyTime_t;
 #endif
 
 typedef enum {
-    /* Round towards zero. */
-    _PyTime_ROUND_DOWN=0,
-    /* Round away from zero.
-       For example, used for timeout to wait "at least" N seconds. */
-    _PyTime_ROUND_UP,
     /* Round towards minus infinity (-inf).
        For example, used to read a clock. */
-    _PyTime_ROUND_FLOOR,
+    _PyTime_ROUND_FLOOR=0,
     /* Round towards infinity (+inf).
        For example, used for timeout to wait "at least" N seconds. */
     _PyTime_ROUND_CEILING
