@@ -41,11 +41,11 @@ class TestGzip(unittest.TestCase):
     @test_support.requires_unicode
     def test_unicode_filename(self):
         unicode_filename = test_support.TESTFN_UNICODE
-        self.filename = unicode_filename
         try:
             unicode_filename.encode(test_support.TESTFN_ENCODING)
         except (UnicodeError, TypeError):
             self.skipTest("Requires unicode filenames support")
+        self.filename = unicode_filename
         with gzip.GzipFile(unicode_filename, "wb") as f:
             f.write(data1 * 50)
         with gzip.GzipFile(unicode_filename, "rb") as f:
