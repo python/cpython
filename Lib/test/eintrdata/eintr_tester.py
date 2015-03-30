@@ -10,6 +10,7 @@ sub-second periodicity (contrarily to signal()).
 
 import io
 import os
+import select
 import signal
 import socket
 import time
@@ -303,12 +304,25 @@ class SignalEINTRTest(EINTRBaseTest):
         self.assertGreaterEqual(dt, self.sleep_time)
 
 
+@unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
+class SelectEINTRTest(EINTRBaseTest):
+    """ EINTR tests for the select module. """
+
+    def test_select(self):
+        t0 = time.monotonic()
+        select.select([], [], [], self.sleep_time)
+        signal.alarm(0)
+        dt = time.monotonic() - t0
+        self.assertGreaterEqual(dt, self.sleep_time)
+
+
 def test_main():
     support.run_unittest(
         OSEINTRTest,
         SocketEINTRTest,
         TimeEINTRTest,
-        SignalEINTRTest)
+        SignalEINTRTest,
+        SelectEINTRTest)
 
 
 if __name__ == "__main__":

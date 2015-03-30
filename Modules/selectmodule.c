@@ -193,29 +193,31 @@ select_select(PyObject *self, PyObject *args)
 #endif /* SELECT_USES_HEAP */
     PyObject *ifdlist, *ofdlist, *efdlist;
     PyObject *ret = NULL;
-    PyObject *tout = Py_None;
+    PyObject *timeout_obj = Py_None;
     fd_set ifdset, ofdset, efdset;
     struct timeval tv, *tvp;
     int imax, omax, emax, max;
     int n;
+    _PyTime_t timeout, deadline = 0;
 
     /* convert arguments */
     if (!PyArg_UnpackTuple(args, "select", 3, 4,
-                          &ifdlist, &ofdlist, &efdlist, &tout))
+                          &ifdlist, &ofdlist, &efdlist, &timeout_obj))
         return NULL;
 
-    if (tout == Py_None)
-        tvp = (struct timeval *)0;
+    if (timeout_obj == Py_None)
+        tvp = (struct timeval *)NULL;
     else {
-        _PyTime_t ts;
-
-        if (_PyTime_FromSecondsObject(&ts, tout, _PyTime_ROUND_CEILING) < 0) {
-            PyErr_SetString(PyExc_TypeError,
-                            "timeout must be a float or None");
+        if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
+                                      _PyTime_ROUND_CEILING) < 0) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "timeout must be a float or None");
+            }
             return NULL;
         }
 
-        if (_PyTime_AsTimeval(ts, &tv, _PyTime_ROUND_CEILING) == -1)
+        if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_CEILING) == -1)
             return NULL;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
@@ -223,7 +225,6 @@ select_select(PyObject *self, PyObject *args)
         }
         tvp = &tv;
     }
-
 
 #ifdef SELECT_USES_HEAP
     /* Allocate memory for the lists */
@@ -237,6 +238,7 @@ select_select(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 #endif /* SELECT_USES_HEAP */
+
     /* Convert sequences to fd_sets, and get maximum fd number
      * propagates the Python exception set in seq2set()
      */
@@ -249,13 +251,36 @@ select_select(PyObject *self, PyObject *args)
         goto finally;
     if ((emax=seq2set(efdlist, &efdset, efd2obj)) < 0)
         goto finally;
+
     max = imax;
     if (omax > max) max = omax;
     if (emax > max) max = emax;
 
-    Py_BEGIN_ALLOW_THREADS
-    n = select(max, &ifdset, &ofdset, &efdset, tvp);
-    Py_END_ALLOW_THREADS
+    if (tvp)
+        deadline = _PyTime_GetMonotonicClock() + timeout;
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
+        n = select(max, &ifdset, &ofdset, &efdset, tvp);
+        Py_END_ALLOW_THREADS
+
+        if (errno != EINTR)
+            break;
+
+        /* select() was interrupted by a signal */
+        if (PyErr_CheckSignals())
+            goto finally;
+
+        if (tvp) {
+            timeout = deadline - _PyTime_GetMonotonicClock();
+            if (timeout < 0) {
+                n = 0;
+                break;
+            }
+            _PyTime_AsTimeval_noraise(timeout, &tv, _PyTime_ROUND_CEILING);
+        }
+    } while (1);
 
 #ifdef MS_WINDOWS
     if (n == SOCKET_ERROR) {

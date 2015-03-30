@@ -173,9 +173,10 @@ PEP and implementation written by Ben Hoyt with the help of Victor Stinner.
 PEP 475: Retry system calls failing with EINTR
 ----------------------------------------------
 
-:pep:`475` adds support for automatic retry of system calls failing with EINTR:
-this means that user code doesn't have to deal with EINTR or InterruptedError
-manually, and should make it more robust against asynchronous signal reception.
+:pep:`475` adds support for automatic retry of system calls failing with
+:py:data:`~errno.EINTR`: this means that user code doesn't have to deal with
+EINTR or :exc:`InterruptedError` manually, and should make it more robust
+against asynchronous signal reception.
 
 .. seealso::
 
@@ -614,12 +615,13 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* :pep:`475`: the following functions are now retried when interrupted instead
-  of raising :exc:`InterruptedError` if the signal handler does not raise
-  an exception:
+* :pep:`475`: Examples of functions which are now retried when interrupted
+  instead of raising :exc:`InterruptedError` if the signal handler does not
+  raise an exception:
 
   - :func:`os.open`, :func:`open`
   - :func:`os.read`, :func:`os.write`
+  - :func:`select.select`
   - :func:`time.sleep`
 
 * Before Python 3.5, a :class:`datetime.time` object was considered to be false

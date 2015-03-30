@@ -310,10 +310,7 @@ class SelectSelector(_BaseSelectorImpl):
     def select(self, timeout=None):
         timeout = None if timeout is None else max(timeout, 0)
         ready = []
-        try:
-            r, w, _ = self._select(self._readers, self._writers, [], timeout)
-        except InterruptedError:
-            return ready
+        r, w, _ = self._select(self._readers, self._writers, [], timeout)
         r = set(r)
         w = set(w)
         for fd in r | w:
