@@ -145,6 +145,13 @@ The module defines the following:
       library, and does not handle file descriptors that don't originate from
       WinSock.
 
+   .. versionchanged:: 3.5
+      The function is now retried with a recomputed timeout when interrupted by
+      a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale), instead of raising
+      :exc:`InterruptedError`.
+
+
 .. attribute:: PIPE_BUF
 
    The minimum number of bytes which can be written without blocking to a pipe

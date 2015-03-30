@@ -536,7 +536,12 @@ depending on the system error code.
 .. exception:: InterruptedError
 
    Raised when a system call is interrupted by an incoming signal.
-   Corresponds to :c:data:`errno` ``EINTR``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EINTR`.
+
+   .. versionchanged:: 3.5
+      Python now retries system calls when a syscall is interrupted by a
+      signal, except if the signal handler raises an exception (see :pep:`475`
+      for the rationale), instead of raising :exc:`InterruptedError`.
 
 .. exception:: IsADirectoryError
 
