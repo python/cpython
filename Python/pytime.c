@@ -207,7 +207,8 @@ int
 _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
 {
     if (PyFloat_Check(obj)) {
-        double d, err;
+        /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
+        volatile double d, err;
 
         /* convert to a number of nanoseconds */
         d = PyFloat_AsDouble(obj);
