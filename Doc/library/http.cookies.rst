@@ -228,6 +228,12 @@ Morsel Objects
       return a Morsel object instead of a dict.
 
 
+.. method:: Morsel.setdefault(key, value=None)
+
+   Raise an error if key is not a valid :rfc:`2109` attribute, otherwise
+   behave the same as :meth:`dict.setdefault`.
+
+
 .. _cookie-example:
 
 Example
