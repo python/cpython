@@ -1455,7 +1455,7 @@ pysleep(_PyTime_t secs)
 
         monotonic = _PyTime_GetMonotonicClock();
         secs = deadline - monotonic;
-        if (secs <= 00)
+        if (secs < 0)
             break;
         /* retry with the recomputed delay */
     } while (1);

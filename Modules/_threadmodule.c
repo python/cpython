@@ -84,7 +84,7 @@ acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 
                 /* Check for negative values, since those mean block forever.
                  */
-                if (timeout <= 0) {
+                if (timeout < 0) {
                     r = PY_LOCK_FAILURE;
                 }
             }
