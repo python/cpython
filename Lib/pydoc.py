@@ -1451,7 +1451,12 @@ def pipepager(text, cmd):
     proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE)
     try:
         with io.TextIOWrapper(proc.stdin, errors='backslashreplace') as pipe:
-            pipe.write(text)
+            try:
+                pipe.write(text)
+            except KeyboardInterrupt:
+                # We've hereby abandoned whatever text hasn't been written,
+                # but the pager is still in control of the terminal.
+                pass
     except OSError:
         pass # Ignore broken pipes caused by quitting the pager program.
     while True:
