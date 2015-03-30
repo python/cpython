@@ -38,8 +38,12 @@ class EINTRBaseTest(unittest.TestCase):
                          cls.signal_period)
 
     @classmethod
-    def tearDownClass(cls):
+    def stop_alarm(cls):
         signal.setitimer(signal.ITIMER_REAL, 0, 0)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.stop_alarm()
         signal.signal(signal.SIGALRM, cls.orig_handler)
 
     @classmethod
@@ -260,7 +264,7 @@ class TimeEINTRTest(EINTRBaseTest):
     def test_sleep(self):
         t0 = time.monotonic()
         time.sleep(self.sleep_time)
-        signal.alarm(0)
+        self.stop_alarm()
         dt = time.monotonic() - t0
         self.assertGreaterEqual(dt, self.sleep_time)
 
@@ -311,7 +315,17 @@ class SelectEINTRTest(EINTRBaseTest):
     def test_select(self):
         t0 = time.monotonic()
         select.select([], [], [], self.sleep_time)
-        signal.alarm(0)
+        self.stop_alarm()
+        dt = time.monotonic() - t0
+        self.assertGreaterEqual(dt, self.sleep_time)
+
+    @unittest.skipUnless(hasattr(select, 'poll'), 'need select.poll')
+    def test_poll(self):
+        poller = select.poll()
+
+        t0 = time.monotonic()
+        poller.poll(self.sleep_time * 1e3)
+        self.stop_alarm()
         dt = time.monotonic() - t0
         self.assertGreaterEqual(dt, self.sleep_time)
 
