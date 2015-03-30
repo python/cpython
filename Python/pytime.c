@@ -203,8 +203,9 @@ _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
 }
 #endif
 
-int
-_PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
+static int
+_PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
+                   long to_nanoseconds)
 {
     if (PyFloat_Check(obj)) {
         /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
@@ -212,7 +213,7 @@ _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
 
         /* convert to a number of nanoseconds */
         d = PyFloat_AsDouble(obj);
-        d *= 1e9;
+        d *= to_nanoseconds;
 
         if (round == _PyTime_ROUND_CEILING)
             d = ceil(d);
@@ -242,13 +243,25 @@ _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
                 _PyTime_overflow();
             return -1;
         }
-        *t = sec * SEC_TO_NS;
-        if (*t / SEC_TO_NS != sec) {
+        *t = sec * to_nanoseconds;
+        if (*t / to_nanoseconds != sec) {
             _PyTime_overflow();
             return -1;
         }
         return 0;
     }
+}
+
+int
+_PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
+{
+    return _PyTime_FromObject(t, obj, round, SEC_TO_NS);
+}
+
+int
+_PyTime_FromMillisecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
+{
+    return _PyTime_FromObject(t, obj, round, MS_TO_NS);
 }
 
 double
