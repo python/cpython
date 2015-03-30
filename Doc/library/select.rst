@@ -329,6 +329,12 @@ Edge and Level Trigger Polling (epoll) Objects
 
    Wait for events. timeout in seconds (float)
 
+   .. versionchanged:: 3.5
+      The function is now retried with a recomputed timeout when interrupted by
+      a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale), instead of raising
+      :exc:`InterruptedError`.
+
 
 .. _poll-objects:
 
