@@ -2338,12 +2338,9 @@ textiowrapper_tell(textio *self, PyObject *args)
         PyErr_Fetch(&type, &value, &traceback);
 
         res = PyObject_CallMethod(self->decoder, "setstate", "(O)", saved_state);
+        _PyErr_ReplaceException(type, value, traceback);
         Py_DECREF(saved_state);
-        if (res == NULL)
-            return NULL;
-        Py_DECREF(res);
-
-        PyErr_Restore(type, value, traceback);
+        Py_XDECREF(res);
     }
     return NULL;
 }
