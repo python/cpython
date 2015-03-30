@@ -418,13 +418,20 @@ class WakeupSignalTests(unittest.TestCase):
             TIMEOUT_FULL = 10
             TIMEOUT_HALF = 5
 
+            class InterruptSelect(Exception):
+                pass
+
+            def handler(signum, frame):
+                raise InterruptSelect
+            signal.signal(signal.SIGALRM, handler)
+
             signal.alarm(1)
 
             # We attempt to get a signal during the sleep,
             # before select is called
             try:
                 select.select([], [], [], TIMEOUT_FULL)
-            except InterruptedError:
+            except InterruptSelect:
                 pass
             else:
                 raise Exception("select() was not interrupted")
@@ -445,15 +452,22 @@ class WakeupSignalTests(unittest.TestCase):
             TIMEOUT_FULL = 10
             TIMEOUT_HALF = 5
 
+            class InterruptSelect(Exception):
+                pass
+
+            def handler(signum, frame):
+                raise InterruptSelect
+            signal.signal(signal.SIGALRM, handler)
+
             signal.alarm(1)
             before_time = time.monotonic()
             # We attempt to get a signal during the select call
             try:
                 select.select([read], [], [], TIMEOUT_FULL)
-            except OSError:
+            except InterruptSelect:
                 pass
             else:
-                raise Exception("OSError not raised")
+                raise Exception("select() was not interrupted")
             after_time = time.monotonic()
             dt = after_time - before_time
             if dt >= TIMEOUT_HALF:
