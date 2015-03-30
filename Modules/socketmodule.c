@@ -633,7 +633,7 @@ internal_select_ex(PySocketSockObject *s, int writing, _PyTime_t interval)
     pollfd.events = writing ? POLLOUT : POLLIN;
 
     /* s->sock_timeout is in seconds, timeout in ms */
-    timeout = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_UP);
+    timeout = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
     assert(timeout <= INT_MAX);
     timeout_int = (int)timeout;
 
@@ -641,9 +641,7 @@ internal_select_ex(PySocketSockObject *s, int writing, _PyTime_t interval)
     n = poll(&pollfd, 1, timeout_int);
     Py_END_ALLOW_THREADS;
 #else
-    /* conversion was already checked for overflow when
-       the timeout was set */
-    (void)_PyTime_AsTimeval(interval, &tv, _PyTime_ROUND_UP);
+    _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
@@ -2193,7 +2191,8 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
         return 0;
     }
 
-    if (_PyTime_FromSecondsObject(timeout, timeout_obj, _PyTime_ROUND_UP) < 0)
+    if (_PyTime_FromSecondsObject(timeout,
+                                  timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return -1;
 
     if (*timeout < 0) {
@@ -2202,10 +2201,10 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
     }
 
 #ifdef MS_WINDOWS
-    overflow = (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_UP) < 0);
+    overflow = (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_CEILING) < 0);
 #endif
 #ifndef HAVE_POLL
-    timeout = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_UP);
+    timeout = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
     overflow = (timeout > INT_MAX);
 #endif
     if (overflow) {
@@ -2454,9 +2453,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
         struct timeval tv;
         int conv;
 
-        /* conversion was already checked for overflow when
-           the timeout was set */
-        (void)_PyTime_AsTimeval(s->sock_timeout, &tv, _PyTime_ROUND_UP);
+        _PyTime_AsTimeval_noraise(s->sock_timeout, &tv, _PyTime_ROUND_CEILING);
 
         Py_BEGIN_ALLOW_THREADS
         FD_ZERO(&fds);

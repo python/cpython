@@ -1486,7 +1486,7 @@ static off_t
 getfilesize(FILE *fp)
 {
     struct _Py_stat_struct st;
-    if (_Py_fstat(fileno(fp), &st) != 0)
+    if (_Py_fstat_noraise(fileno(fp), &st) != 0)
         return -1;
 #if SIZEOF_OFF_T == 4
     else if (st.st_size >= INT_MAX)

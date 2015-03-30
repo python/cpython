@@ -7,6 +7,10 @@
 
 #include <time.h>
 
+#ifdef MS_WINDOWS
+#  include <winsock2.h>         /* struct timeval */
+#endif
+
 /* Differentiate between building the core module and building extension
  * modules.
  */
@@ -2459,7 +2463,7 @@ date_local_from_object(PyObject *cls, PyObject *obj)
     struct tm *tm;
     time_t t;
 
-    if (_PyTime_ObjectToTime_t(obj, &t, _PyTime_ROUND_DOWN) == -1)
+    if (_PyTime_ObjectToTime_t(obj, &t, _PyTime_ROUND_FLOOR) == -1)
         return NULL;
 
     tm = localtime(&t);
@@ -4091,8 +4095,11 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
     time_t timet;
     long us;
 
-    if (_PyTime_ObjectToTimeval(timestamp, &timet, &us, _PyTime_ROUND_DOWN) == -1)
+    if (_PyTime_ObjectToTimeval(timestamp,
+                                &timet, &us, _PyTime_ROUND_FLOOR) == -1)
         return NULL;
+    assert(0 <= us && us <= 999999);
+
     return datetime_from_timet_and_us(cls, f, timet, (int)us, tzinfo);
 }
 
@@ -4103,10 +4110,14 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
 static PyObject *
 datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
 {
-    _PyTime_timeval t;
-    _PyTime_gettimeofday(&t);
-    return datetime_from_timet_and_us(cls, f, t.tv_sec, (int)t.tv_usec,
-                                      tzinfo);
+    _PyTime_t ts = _PyTime_GetSystemClock();
+    struct timeval tv;
+
+    if (_PyTime_AsTimeval(ts, &tv, _PyTime_ROUND_FLOOR) < 0)
+        return NULL;
+    assert(0 <= tv.tv_usec && tv.tv_usec <= 999999);
+
+    return datetime_from_timet_and_us(cls, f, tv.tv_sec, tv.tv_usec, tzinfo);
 }
 
 /*[clinic input]

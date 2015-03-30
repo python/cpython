@@ -351,7 +351,7 @@ static int win32_can_symlink = 0;
 #ifdef MS_WINDOWS
 #       define STAT win32_stat
 #       define LSTAT win32_lstat
-#       define FSTAT _Py_fstat
+#       define FSTAT _Py_fstat_noraise
 #       define STRUCT_STAT struct _Py_stat_struct
 #else
 #       define STAT stat
@@ -6127,9 +6127,9 @@ os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times, PyObject *ns, 
         }
         utime.now = 0;
         if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 0),
-                                     &a_sec, &a_nsec, _PyTime_ROUND_DOWN) == -1 ||
+                                     &a_sec, &a_nsec, _PyTime_ROUND_FLOOR) == -1 ||
             _PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
-                                     &m_sec, &m_nsec, _PyTime_ROUND_DOWN) == -1) {
+                                     &m_sec, &m_nsec, _PyTime_ROUND_FLOOR) == -1) {
             goto exit;
         }
         utime.atime_s = a_sec;

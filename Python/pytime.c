@@ -19,106 +19,6 @@
 #define MS_TO_NS (MS_TO_US * US_TO_NS)
 #define SEC_TO_NS (SEC_TO_MS * MS_TO_NS)
 
-static int
-pygettimeofday(_PyTime_timeval *tp, _Py_clock_info_t *info, int raise)
-{
-#ifdef MS_WINDOWS
-    FILETIME system_time;
-    ULARGE_INTEGER large;
-    ULONGLONG microseconds;
-
-    assert(info == NULL || raise);
-
-    GetSystemTimeAsFileTime(&system_time);
-    large.u.LowPart = system_time.dwLowDateTime;
-    large.u.HighPart = system_time.dwHighDateTime;
-    /* 11,644,473,600,000,000: number of microseconds between
-       the 1st january 1601 and the 1st january 1970 (369 years + 89 leap
-       days). */
-    microseconds = large.QuadPart / 10 - 11644473600000000;
-    tp->tv_sec = microseconds / SEC_TO_US;
-    tp->tv_usec = microseconds % SEC_TO_US;
-    if (info) {
-        DWORD timeAdjustment, timeIncrement;
-        BOOL isTimeAdjustmentDisabled, ok;
-
-        info->implementation = "GetSystemTimeAsFileTime()";
-        info->monotonic = 0;
-        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                                     &isTimeAdjustmentDisabled);
-        if (!ok) {
-            PyErr_SetFromWindowsErr(0);
-            return -1;
-        }
-        info->resolution = timeIncrement * 1e-7;
-        info->adjustable = 1;
-    }
-
-#else   /* MS_WINDOWS */
-    int err;
-#ifdef HAVE_CLOCK_GETTIME
-    struct timespec ts;
-#endif
-
-    assert(info == NULL || raise);
-
-#ifdef HAVE_CLOCK_GETTIME
-    err = clock_gettime(CLOCK_REALTIME, &ts);
-    if (err) {
-        if (raise)
-            PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
-    }
-    tp->tv_sec = ts.tv_sec;
-    tp->tv_usec = ts.tv_nsec / US_TO_NS;
-
-    if (info) {
-        struct timespec res;
-        info->implementation = "clock_gettime(CLOCK_REALTIME)";
-        info->monotonic = 0;
-        info->adjustable = 1;
-        if (clock_getres(CLOCK_REALTIME, &res) == 0)
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-        else
-            info->resolution = 1e-9;
-    }
-#else   /* HAVE_CLOCK_GETTIME */
-
-     /* test gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-    err = gettimeofday(tp);
-#else
-    err = gettimeofday(tp, (struct timezone *)NULL);
-#endif
-    if (err) {
-        if (raise)
-            PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
-    }
-
-    if (info) {
-        info->implementation = "gettimeofday()";
-        info->resolution = 1e-6;
-        info->monotonic = 0;
-        info->adjustable = 1;
-    }
-#endif   /* !HAVE_CLOCK_GETTIME */
-#endif   /* !MS_WINDOWS */
-    assert(0 <= tp->tv_usec && tp->tv_usec < SEC_TO_US);
-    return 0;
-}
-
-void
-_PyTime_gettimeofday(_PyTime_timeval *tp)
-{
-    if (pygettimeofday(tp, NULL, 0) < 0) {
-        /* cannot happen, _PyTime_Init() checks that pygettimeofday() works */
-        assert(0);
-        tp->tv_sec = 0;
-        tp->tv_usec = 0;
-    }
-}
-
 static void
 error_time_t_overflow(void)
 {
@@ -174,17 +74,15 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
         }
 
         floatpart *= denominator;
-        if (round == _PyTime_ROUND_UP) {
-            if (intpart >= 0) {
-                floatpart = ceil(floatpart);
-                if (floatpart >= denominator) {
-                    floatpart = 0.0;
-                    intpart += 1.0;
-                }
+        if (round == _PyTime_ROUND_CEILING) {
+            floatpart = ceil(floatpart);
+            if (floatpart >= denominator) {
+                floatpart = 0.0;
+                intpart += 1.0;
             }
-            else {
-                floatpart = floor(floatpart);
-            }
+        }
+        else {
+            floatpart = floor(floatpart);
         }
 
         *sec = (time_t)intpart;
@@ -213,12 +111,10 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         double d, intpart, err;
 
         d = PyFloat_AsDouble(obj);
-        if (round == _PyTime_ROUND_UP) {
-            if (d >= 0)
-                d = ceil(d);
-            else
-                d = floor(d);
-        }
+        if (round == _PyTime_ROUND_CEILING)
+            d = ceil(d);
+        else
+            d = floor(d);
         (void)modf(d, &intpart);
 
         *sec = (time_t)intpart;
@@ -251,21 +147,11 @@ _PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec,
     return _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
 }
 
-/****************** NEW _PyTime_t API **********************/
-
 static void
 _PyTime_overflow(void)
 {
     PyErr_SetString(PyExc_OverflowError,
                     "timestamp too large to convert to C _PyTime_t");
-}
-
-int
-_PyTime_RoundTowardsInfinity(int is_neg, _PyTime_round_t round)
-{
-    if (round == _PyTime_ROUND_FLOOR)
-        return 0;
-    return ((round == _PyTime_ROUND_UP) ^ is_neg);
 }
 
 _PyTime_t
@@ -296,7 +182,7 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts, int raise)
     *tp = t;
     return res;
 }
-#else
+#elif !defined(MS_WINDOWS)
 static int
 _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
 {
@@ -321,13 +207,14 @@ int
 _PyTime_FromSecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round)
 {
     if (PyFloat_Check(obj)) {
-        double d, err;
+        /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
+        volatile double d, err;
 
         /* convert to a number of nanoseconds */
         d = PyFloat_AsDouble(obj);
         d *= 1e9;
 
-        if (_PyTime_RoundTowardsInfinity(d < 0, round))
+        if (round == _PyTime_ROUND_CEILING)
             d = ceil(d);
         else
             d = floor(d);
@@ -393,7 +280,7 @@ _PyTime_Multiply(_PyTime_t t, unsigned int multiply, _PyTime_round_t round)
     _PyTime_t k;
     if (multiply < SEC_TO_NS) {
         k = SEC_TO_NS / multiply;
-        if (_PyTime_RoundTowardsInfinity(t < 0, round))
+        if (round == _PyTime_ROUND_CEILING)
             return (t + k - 1) / k;
         else
             return t / k;
@@ -417,8 +304,9 @@ _PyTime_AsMicroseconds(_PyTime_t t, _PyTime_round_t round)
     return _PyTime_Multiply(t, 1000 * 1000, round);
 }
 
-int
-_PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
+static int
+_PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
+                       int raise)
 {
     _PyTime_t secs, ns;
     int res = 0;
@@ -453,7 +341,7 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
         res = -1;
 #endif
 
-    if (_PyTime_RoundTowardsInfinity(tv->tv_sec < 0, round))
+    if (round == _PyTime_ROUND_CEILING)
         tv->tv_usec = (int)((ns + US_TO_NS - 1) / US_TO_NS);
     else
         tv->tv_usec = (int)(ns / US_TO_NS);
@@ -463,7 +351,23 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
         tv->tv_sec += 1;
     }
 
+    if (res && raise)
+        _PyTime_overflow();
+
+    assert(0 <= tv->tv_usec && tv->tv_usec <= 999999);
     return res;
+}
+
+int
+_PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
+{
+    return _PyTime_AsTimeval_impl(t, tv, round, 1);
+}
+
+int
+_PyTime_AsTimeval_noraise(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
+{
+    return _PyTime_AsTimeval_impl(t, tv, round, 0);
 }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
@@ -484,6 +388,8 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
         return -1;
     }
     ts->tv_nsec = nsec;
+
+    assert(0 <= ts->tv_nsec && ts->tv_nsec <= 999999999);
     return 0;
 }
 #endif
@@ -575,6 +481,20 @@ pygettimeofday_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 #endif   /* !HAVE_CLOCK_GETTIME */
 #endif   /* !MS_WINDOWS */
     return 0;
+}
+
+_PyTime_t
+_PyTime_GetSystemClock(void)
+{
+    _PyTime_t t;
+    if (pygettimeofday_new(&t, NULL, 0) < 0) {
+        /* should not happen, _PyTime_Init() checked the clock at startup */
+        assert(0);
+
+        /* use a fixed value instead of a random value from the stack */
+        t = 0;
+    }
+    return t;
 }
 
 int
@@ -715,12 +635,7 @@ _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 int
 _PyTime_Init(void)
 {
-    _PyTime_timeval tv;
     _PyTime_t t;
-
-    /* ensure that the system clock works */
-    if (pygettimeofday(&tv, NULL, 1) < 0)
-        return -1;
 
     /* ensure that the system clock works */
     if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0)

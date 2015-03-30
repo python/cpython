@@ -186,6 +186,14 @@ class Test_Csv(unittest.TestCase):
         self._write_test(['a',1,'p,q'], 'a,1,p\\,q',
                          escapechar='\\', quoting = csv.QUOTE_NONE)
 
+    def test_write_iterable(self):
+        self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
+        self._write_test(iter(['a', 1, None]), 'a,1,')
+        self._write_test(iter([]), '')
+        self._write_test(iter([None]), '""')
+        self._write_error_test(csv.Error, iter([None]), quoting=csv.QUOTE_NONE)
+        self._write_test(iter([None, None]), ',')
+
     def test_writerows(self):
         class BrokenFile:
             def write(self, buf):

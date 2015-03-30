@@ -2441,14 +2441,10 @@ fail:
     if (saved_state) {
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
-
         res = _PyObject_CallMethodId(self->decoder, &PyId_setstate, "(O)", saved_state);
+        _PyErr_ChainExceptions(type, value, traceback);
         Py_DECREF(saved_state);
-        if (res == NULL)
-            return NULL;
-        Py_DECREF(res);
-
-        PyErr_Restore(type, value, traceback);
+        Py_XDECREF(res);
     }
     return NULL;
 }
