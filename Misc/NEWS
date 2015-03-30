@@ -2,6 +2,32 @@
 Python News
 +++++++++++
 
+What's New in Python 3.5.0 alpha 4?
+===================================
+
+Release date: XXX
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #23752: When built from an existing file descriptor, io.FileIO() now
+  only calls fstat() once. Before fstat() was called twice, which was not
+  necessary.
+
+Build
+-----
+
+Tests
+-----
+
+Tools/Demos
+-----------
+
+
+
 What's New in Python 3.5.0 alpha 3?
 ===================================
 

@@ -177,28 +177,6 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *) self;
 }
 
-static int
-check_fd(int fd)
-{
-    struct _Py_stat_struct buf;
-    if (_Py_fstat(fd, &buf) < 0 &&
-#ifdef MS_WINDOWS
-        GetLastError() == ERROR_INVALID_HANDLE
-#else
-        errno == EBADF
-#endif
-        ) {
-        PyObject *exc;
-        char *msg = strerror(EBADF);
-        exc = PyObject_CallFunction(PyExc_OSError, "(is)",
-                                    EBADF, msg);
-        PyErr_SetObject(PyExc_OSError, exc);
-        Py_XDECREF(exc);
-        return -1;
-    }
-    return 0;
-}
-
 #ifdef O_CLOEXEC
 extern int _Py_open_cloexec_works;
 #endif
@@ -355,8 +333,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 #endif
 
     if (fd >= 0) {
-        if (check_fd(fd))
-            goto error;
         self->fd = fd;
         self->closefd = closefd;
     }
