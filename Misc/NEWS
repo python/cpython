@@ -36,6 +36,9 @@ Release date: 2015-03-28
 Core and Builtins
 -----------------
 
+- Issue #23466: %c, %o, %x, and %X in bytes formatting now raise TypeError on
+  non-integer input.
+
 - Issue #23573: Increased performance of string search operations (str.find,
   str.index, str.count, the in operator, str.split, str.partition) with
   arguments of different kinds (UCS1, UCS2, UCS4).
