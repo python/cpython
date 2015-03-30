@@ -115,9 +115,18 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
 
     while (0 < size) {
         errno = 0;
-        /* the libc doesn't expose getrandom() yet, see:
+
+        /* Use syscall() because the libc doesn't expose getrandom() yet, see:
          * https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
-        n = syscall(SYS_getrandom, buffer, size, flags);
+        if (raise) {
+            Py_BEGIN_ALLOW_THREADS
+            n = syscall(SYS_getrandom, buffer, size, flags);
+            Py_END_ALLOW_THREADS
+        }
+        else {
+            n = syscall(SYS_getrandom, buffer, size, flags);
+        }
+
         if (n < 0) {
             if (errno == ENOSYS) {
                 getrandom_works = 0;
