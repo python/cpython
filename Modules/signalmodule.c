@@ -1011,7 +1011,7 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
 
         monotonic = _PyTime_GetMonotonicClock();
         timeout = deadline - monotonic;
-        if (timeout <= 0)
+        if (timeout < 0)
             break;
     } while (1);
 
