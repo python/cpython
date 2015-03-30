@@ -64,12 +64,12 @@ For full details, see the :source:`Misc/NEWS` file.
 Summary -- Release highlights
 =============================
 
-.. This section singles out the most important changes in Python 3.3.
+.. This section singles out the most important changes in Python 3.5.
    Brevity is key.
 
 New syntax features:
 
-* None yet.
+*  :pep:`465`, a new matrix multiplication operator: ``a @ b``.
 
 New library modules:
 
@@ -78,7 +78,8 @@ New library modules:
 
 New built-in features:
 
-* None yet.
+* ``bytes % args``, ``bytearray % args``: :pep:`461` - Adding ``%`` formatting
+  to bytes and bytearray
 
 Implementation improvements:
 
@@ -113,6 +114,44 @@ Please read on for a comprehensive list of user-facing changes.
     :pep:`4XX` - Python Virtual Environments
        PEP written by Carl Meyer
 
+
+PEP 461 - Adding % formatting to bytes and bytearray
+----------------------------------------------------
+
+This PEP proposes adding % formatting operations similar to Python 2's ``str``
+type to :class:`bytes` and :class:`bytearray`.
+
+Examples::
+
+    >>> b'Hello %s!' % b'World'
+    b'Hello World!'
+    >>> b'x=%i y=%f' % (1, 2.5)
+    b'x=1 y=2.500000'
+
+Unicode is not allowed for ``%s``, but it is accepted by ``%a`` (equivalent of
+``repr(obj).encode('ascii', 'backslashreplace')``)::
+
+    >>> b'Hello %s!' % 'World'
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: %b requires bytes, or an object that implements __bytes__, not 'str'
+    >>> b'price: %a' % '10€'
+    b"price: '10\\u20ac'"
+
+.. seealso::
+
+   :pep:`461` -- Adding % formatting to bytes and bytearray
+
+
+PEP 465 - A dedicated infix operator for matrix multiplication
+--------------------------------------------------------------
+
+This PEP proposes a new binary operator to be used for matrix multiplication,
+called ``@``. (Mnemonic: ``@`` is ``*`` for mATrices.)
+
+.. seealso::
+
+   :pep:`465` -- A dedicated infix operator for matrix multiplication
 
 
 PEP 471 - os.scandir() function -- a better and faster directory iterator
