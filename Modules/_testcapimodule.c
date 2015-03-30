@@ -3427,11 +3427,8 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
     if (check_time_rounding(round) < 0)
         return NULL;
     t = _PyTime_FromNanoseconds(ns);
-    if (_PyTime_AsTimeval(t, &tv, round) < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "timeout doesn't fit into C timeval");
+    if (_PyTime_AsTimeval(t, &tv, round) < 0)
         return NULL;
-    }
 
     seconds = PyLong_FromLong((PY_LONG_LONG)tv.tv_sec);
     if (seconds == NULL)
