@@ -641,9 +641,7 @@ internal_select_ex(PySocketSockObject *s, int writing, _PyTime_t interval)
     n = poll(&pollfd, 1, timeout_int);
     Py_END_ALLOW_THREADS;
 #else
-    /* conversion was already checked for overflow when
-       the timeout was set */
-    (void)_PyTime_AsTimeval(interval, &tv, _PyTime_ROUND_UP);
+    _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_UP);
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
@@ -2454,9 +2452,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
         struct timeval tv;
         int conv;
 
-        /* conversion was already checked for overflow when
-           the timeout was set */
-        (void)_PyTime_AsTimeval(s->sock_timeout, &tv, _PyTime_ROUND_UP);
+        _PyTime_AsTimeval_noraise(s->sock_timeout, &tv, _PyTime_ROUND_UP);
 
         Py_BEGIN_ALLOW_THREADS
         FD_ZERO(&fds);

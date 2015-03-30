@@ -94,8 +94,14 @@ PyAPI_FUNC(PyObject *) _PyTime_AsNanosecondsObject(_PyTime_t t);
 
 /* Convert a timestamp to a timeval structure (microsecond resolution).
    tv_usec is always positive.
-   Return -1 if the conversion overflowed, return 0 on success. */
+   Raise an exception and return -1 if the conversion overflowed,
+   return 0 on success. */
 PyAPI_FUNC(int) _PyTime_AsTimeval(_PyTime_t t,
+    struct timeval *tv,
+    _PyTime_round_t round);
+
+/* Similar to _PyTime_AsTimeval(), but don't raise an exception on error. */
+PyAPI_FUNC(int) _PyTime_AsTimeval_noraise(_PyTime_t t,
     struct timeval *tv,
     _PyTime_round_t round);
 
