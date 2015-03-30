@@ -465,15 +465,13 @@ mmap_size_method(mmap_object *self,
 
 #ifdef UNIX
     {
-        struct _Py_stat_struct buf;
-        if (-1 == _Py_fstat(self->fd, &buf)) {
-            PyErr_SetFromErrno(PyExc_OSError);
+        struct _Py_stat_struct status;
+        if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
-        }
 #ifdef HAVE_LARGEFILE_SUPPORT
-        return PyLong_FromLongLong(buf.st_size);
+        return PyLong_FromLongLong(status.st_size);
 #else
-        return PyLong_FromLong(buf.st_size);
+        return PyLong_FromLong(status.st_size);
 #endif
     }
 #endif /* UNIX */
@@ -1112,7 +1110,7 @@ _GetMapSize(PyObject *o, const char* param)
 static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
-    struct _Py_stat_struct st;
+    struct _Py_stat_struct status;
     mmap_object *m_obj;
     PyObject *map_size_obj = NULL;
     Py_ssize_t map_size;
@@ -1177,25 +1175,26 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (fd != -1)
         (void)fcntl(fd, F_FULLFSYNC);
 #endif
-    if (fd != -1 && _Py_fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
+    if (fd != -1 && _Py_fstat_noraise(fd, &status) == 0
+        && S_ISREG(status.st_mode)) {
         if (map_size == 0) {
-            if (st.st_size == 0) {
+            if (status.st_size == 0) {
                 PyErr_SetString(PyExc_ValueError,
                                 "cannot mmap an empty file");
                 return NULL;
             }
-            if (offset >= st.st_size) {
+            if (offset >= status.st_size) {
                 PyErr_SetString(PyExc_ValueError,
                                 "mmap offset is greater than file size");
                 return NULL;
             }
-            if (st.st_size - offset > PY_SSIZE_T_MAX) {
+            if (status.st_size - offset > PY_SSIZE_T_MAX) {
                 PyErr_SetString(PyExc_ValueError,
                                  "mmap length is too large");
                 return NULL;
             }
-            map_size = (Py_ssize_t) (st.st_size - offset);
-        } else if (offset + map_size > st.st_size) {
+            map_size = (Py_ssize_t) (status.st_size - offset);
+        } else if (offset + map_size > status.st_size) {
             PyErr_SetString(PyExc_ValueError,
                             "mmap length is greater than file size");
             return NULL;

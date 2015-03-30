@@ -71,22 +71,20 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
 
     if (fp != NULL) {
         int i;
-        struct _Py_stat_struct statb;
-        if (_Py_fstat(fileno(fp), &statb) == -1) {
-            PyErr_SetFromErrno(PyExc_IOError);
+        struct _Py_stat_struct status;
+        if (_Py_fstat(fileno(fp), &status) == -1)
             return NULL;
-        }
         for (i = 0; i < nhandles; i++) {
-            if (statb.st_dev == handles[i].dev &&
-                statb.st_ino == handles[i].ino) {
+            if (status.st_dev == handles[i].dev &&
+                status.st_ino == handles[i].ino) {
                 p = (dl_funcptr) dlsym(handles[i].handle,
                                        funcname);
                 return p;
             }
         }
         if (nhandles < 128) {
-            handles[nhandles].dev = statb.st_dev;
-            handles[nhandles].ino = statb.st_ino;
+            handles[nhandles].dev = status.st_dev;
+            handles[nhandles].ino = status.st_ino;
         }
     }
 
