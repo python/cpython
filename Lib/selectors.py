@@ -423,11 +423,9 @@ if hasattr(select, 'epoll'):
             # FD is registered.
             max_ev = max(len(self._fd_to_key), 1)
 
+            fd_event_list = self._epoll.poll(timeout, max_ev)
+
             ready = []
-            try:
-                fd_event_list = self._epoll.poll(timeout, max_ev)
-            except InterruptedError:
-                return ready
             for fd, event in fd_event_list:
                 events = 0
                 if event & ~select.EPOLLIN:
