@@ -141,10 +141,7 @@ def poll(timeout=0.0, map=None):
             time.sleep(timeout)
             return
 
-        try:
-            r, w, e = select.select(r, w, e, timeout)
-        except InterruptedError:
-            return
+        r, w, e = select.select(r, w, e, timeout)
 
         for fd in r:
             obj = map.get(fd)
