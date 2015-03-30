@@ -535,7 +535,7 @@ poll_poll(pollObject *self, PyObject *args)
     if (timeout_obj == NULL || timeout_obj == Py_None) {
         timeout = -1;
         ms = -1;
-        deadline = 0;
+        deadline = 0;   /* initialize to prevent gcc warning */
     }
     else {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
@@ -1465,34 +1465,46 @@ fd is the target file descriptor of the operation.");
 static PyObject *
 pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 {
-    double dtimeout = -1.;
-    int timeout;
+    static char *kwlist[] = {"timeout", "maxevents", NULL};
+    PyObject *timeout_obj = NULL;
     int maxevents = -1;
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
     struct epoll_event *evs = NULL;
-    static char *kwlist[] = {"timeout", "maxevents", NULL};
+    _PyTime_t timeout, ms, deadline;
 
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|di:poll", kwlist,
-                                     &dtimeout, &maxevents)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:poll", kwlist,
+                                     &timeout_obj, &maxevents)) {
         return NULL;
     }
 
-    if (dtimeout < 0) {
+    if (timeout_obj == NULL || timeout_obj == Py_None) {
         timeout = -1;
-    }
-    else if (dtimeout * 1000.0 > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "timeout is too large");
-        return NULL;
+        ms = -1;
+        deadline = 0;   /* initialize to prevent gcc warning */
     }
     else {
-        /* epoll_wait() has a resolution of 1 millisecond, round away from zero
-           to wait *at least* dtimeout seconds. */
-        timeout = (int)ceil(dtimeout * 1000.0);
+        /* epoll_wait() has a resolution of 1 millisecond, round towards
+           infinity to wait at least timeout seconds. */
+        if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
+                                      _PyTime_ROUND_CEILING) < 0) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "timeout must be an integer or None");
+            }
+            return NULL;
+        }
+
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        if (ms < INT_MIN || ms > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+            return NULL;
+        }
+
+        deadline = _PyTime_GetMonotonicClock() + timeout;
     }
 
     if (maxevents == -1) {
@@ -1511,9 +1523,30 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    nfds = epoll_wait(self->epfd, evs, maxevents, timeout);
-    Py_END_ALLOW_THREADS
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
+        nfds = epoll_wait(self->epfd, evs, maxevents, (int)ms);
+        Py_END_ALLOW_THREADS
+
+        if (errno != EINTR)
+            break;
+
+        /* poll() was interrupted by a signal */
+        if (PyErr_CheckSignals())
+            goto error;
+
+        if (timeout >= 0) {
+            timeout = deadline - _PyTime_GetMonotonicClock();
+            if (timeout < 0) {
+                nfds = 0;
+                break;
+            }
+            ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+            /* retry epoll_wait() with the recomputed timeout */
+        }
+    } while(1);
+
     if (nfds < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto error;

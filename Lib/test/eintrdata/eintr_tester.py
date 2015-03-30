@@ -329,6 +329,17 @@ class SelectEINTRTest(EINTRBaseTest):
         dt = time.monotonic() - t0
         self.assertGreaterEqual(dt, self.sleep_time)
 
+    @unittest.skipUnless(hasattr(select, 'epoll'), 'need select.epoll')
+    def test_epoll(self):
+        poller = select.epoll()
+        self.addCleanup(poller.close)
+
+        t0 = time.monotonic()
+        poller.poll(self.sleep_time)
+        self.stop_alarm()
+        dt = time.monotonic() - t0
+        self.assertGreaterEqual(dt, self.sleep_time)
+
 
 def test_main():
     support.run_unittest(
