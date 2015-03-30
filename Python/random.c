@@ -103,16 +103,24 @@ py_getentropy(unsigned char *buffer, Py_ssize_t size, int fatal)
 {
     while (size > 0) {
         Py_ssize_t len = size < 256 ? size : 256;
-        int res = getentropy(buffer, len);
-        if (res < 0) {
-            if (fatal) {
-                Py_FatalError("getentropy() failed");
-            }
-            else {
+        int res;
+
+        if (!fatal) {
+            Py_BEGIN_ALLOW_THREADS
+            res = getentropy(buffer, len);
+            Py_END_ALLOW_THREADS
+
+            if (res < 0) {
                 PyErr_SetFromErrno(PyExc_OSError);
                 return -1;
             }
         }
+        else {
+            res = getentropy(buffer, len);
+            if (res < 0)
+                Py_FatalError("getentropy() failed");
+        }
+
         buffer += len;
         size -= len;
     }
