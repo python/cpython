@@ -177,28 +177,6 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *) self;
 }
 
-static int
-check_fd(int fd)
-{
-    struct _Py_stat_struct buf;
-    if (_Py_fstat(fd, &buf) < 0 &&
-#ifdef MS_WINDOWS
-        GetLastError() == ERROR_INVALID_HANDLE
-#else
-        errno == EBADF
-#endif
-        ) {
-        PyObject *exc;
-        char *msg = strerror(EBADF);
-        exc = PyObject_CallFunction(PyExc_OSError, "(is)",
-                                    EBADF, msg);
-        PyErr_SetObject(PyExc_OSError, exc);
-        Py_XDECREF(exc);
-        return -1;
-    }
-    return 0;
-}
-
 #ifdef O_CLOEXEC
 extern int _Py_open_cloexec_works;
 #endif
@@ -355,8 +333,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 #endif
 
     if (fd >= 0) {
-        if (check_fd(fd))
-            goto error;
         self->fd = fd;
         self->closefd = closefd;
     }
@@ -423,10 +399,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     }
 
     self->blksize = DEFAULT_BUFFER_SIZE;
-    if (_Py_fstat(self->fd, &fdfstat) < 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+    if (_Py_fstat(self->fd, &fdfstat) < 0)
         goto error;
-    }
 #if defined(S_ISDIR) && defined(EISDIR)
     /* On Unix, open will succeed for directories.
        In Python, there should be no file objects referring to
@@ -613,7 +587,7 @@ new_buffersize(fileio *self, size_t currentsize)
 static PyObject *
 fileio_readall(fileio *self)
 {
-    struct _Py_stat_struct st;
+    struct _Py_stat_struct status;
     Py_off_t pos, end;
     PyObject *result;
     Py_ssize_t bytes_read = 0;
@@ -630,8 +604,8 @@ fileio_readall(fileio *self)
 #else
     pos = lseek(self->fd, 0L, SEEK_CUR);
 #endif
-    if (_Py_fstat(self->fd, &st) == 0)
-        end = st.st_size;
+    if (_Py_fstat_noraise(self->fd, &status) == 0)
+        end = status.st_size;
     else
         end = (Py_off_t)-1;
 

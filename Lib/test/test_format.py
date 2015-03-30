@@ -272,9 +272,18 @@ class FormatTest(unittest.TestCase):
         #test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
         #         "unsupported format character '?' (0x3000) at index 5")
         test_exc('%d', '1', TypeError, "%d format: a number is required, not str")
+        test_exc('%x', '1', TypeError, "%x format: a number is required, not str")
+        test_exc('%x', 3.14, TypeError, "%x format: an integer is required, not float")
         test_exc('%g', '1', TypeError, "a float is required")
         test_exc('no format', '1', TypeError,
                  "not all arguments converted during string formatting")
+        test_exc('%c', -1, OverflowError, "%c arg not in range(0x110000)")
+        test_exc('%c', sys.maxunicode+1, OverflowError,
+                 "%c arg not in range(0x110000)")
+        #test_exc('%c', 2**128, OverflowError, "%c arg not in range(0x110000)")
+        test_exc('%c', 3.14, TypeError, "%c requires int or char")
+        test_exc('%c', 'ab', TypeError, "%c requires int or char")
+        test_exc('%c', b'x', TypeError, "%c requires int or char")
 
         if maxsize == 2**31-1:
             # crashes 2.2.1 and earlier:
@@ -339,6 +348,8 @@ class FormatTest(unittest.TestCase):
                 "%d format: a number is required, not str")
         test_exc(b'%d', b'1', TypeError,
                 "%d format: a number is required, not bytes")
+        test_exc(b'%x', 3.14, TypeError,
+                "%x format: an integer is required, not float")
         test_exc(b'%g', '1', TypeError, "float argument required, not str")
         test_exc(b'%g', b'1', TypeError, "float argument required, not bytes")
         test_exc(b'no format', 7, TypeError,
@@ -347,11 +358,17 @@ class FormatTest(unittest.TestCase):
                  "not all arguments converted during bytes formatting")
         test_exc(b'no format', bytearray(b'1'), TypeError,
                  "not all arguments converted during bytes formatting")
+        test_exc(b"%c", -1, TypeError,
+                "%c requires an integer in range(256) or a single byte")
         test_exc(b"%c", 256, TypeError,
+                "%c requires an integer in range(256) or a single byte")
+        test_exc(b"%c", 2**128, TypeError,
                 "%c requires an integer in range(256) or a single byte")
         test_exc(b"%c", b"Za", TypeError,
                 "%c requires an integer in range(256) or a single byte")
-        test_exc(b"%c", "Yb", TypeError,
+        test_exc(b"%c", "Y", TypeError,
+                "%c requires an integer in range(256) or a single byte")
+        test_exc(b"%c", 3.14, TypeError,
                 "%c requires an integer in range(256) or a single byte")
         test_exc(b"%b", "Xc", TypeError,
                 "%b requires bytes, or an object that implements __bytes__, not 'str'")

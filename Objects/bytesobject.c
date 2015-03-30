@@ -433,7 +433,41 @@ formatfloat(PyObject *v, int flags, int prec, int type)
     return result;
 }
 
-Py_LOCAL_INLINE(int)
+static PyObject *
+formatlong(PyObject *v, int flags, int prec, int type)
+{
+    PyObject *result, *iobj;
+    if (type == 'i')
+        type = 'd';
+    if (PyLong_Check(v))
+        return _PyUnicode_FormatLong(v, flags & F_ALT, prec, type);
+    if (PyNumber_Check(v)) {
+        /* make sure number is a type of integer for o, x, and X */
+        if (type == 'o' || type == 'x' || type == 'X')
+            iobj = PyNumber_Index(v);
+        else
+            iobj = PyNumber_Long(v);
+        if (iobj == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_TypeError))
+                return NULL;
+        }
+        else if (!PyLong_Check(iobj))
+            Py_CLEAR(iobj);
+        if (iobj != NULL) {
+            result = _PyUnicode_FormatLong(iobj, flags & F_ALT, prec, type);
+            Py_DECREF(iobj);
+            return result;
+        }
+    }
+    PyErr_Format(PyExc_TypeError,
+        "%%%c format: %s is required, not %.200s", type,
+        (type == 'o' || type == 'x' || type == 'X') ? "an integer"
+                                                    : "a number",
+        Py_TYPE(v)->tp_name);
+    return NULL;
+}
+
+static int
 byte_converter(PyObject *arg, char *p)
 {
     if (PyBytes_Check(arg) && PyBytes_Size(arg) == 1) {
@@ -445,12 +479,29 @@ byte_converter(PyObject *arg, char *p)
         return 1;
     }
     else {
-        long ival = PyLong_AsLong(arg);
-        if (0 <= ival && ival <= 255) {
+        PyObject *iobj;
+        long ival;
+        int overflow;
+        /* make sure number is a type of integer */
+        if (PyLong_Check(arg)) {
+            ival = PyLong_AsLongAndOverflow(arg, &overflow);
+        }
+        else {
+            iobj = PyNumber_Index(arg);
+            if (iobj == NULL) {
+                if (!PyErr_ExceptionMatches(PyExc_TypeError))
+                    return 0;
+                goto onError;
+            }
+            ival = PyLong_AsLongAndOverflow(iobj, &overflow);
+            Py_DECREF(iobj);
+        }
+        if (!overflow && 0 <= ival && ival <= 255) {
             *p = (char)ival;
             return 1;
         }
     }
+  onError:
     PyErr_SetString(PyExc_TypeError,
         "%c requires an integer in range(256) or a single byte");
     return 0;
@@ -561,7 +612,6 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             int prec = -1;
             int c = '\0';
             int fill;
-            PyObject *iobj;
             PyObject *v = NULL;
             PyObject *temp = NULL;
             const char *pbuf = NULL;
@@ -747,28 +797,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             case 'o':
             case 'x':
             case 'X':
-                if (c == 'i')
-                    c = 'd';
-                iobj = NULL;
-                if (PyNumber_Check(v)) {
-                    if ((PyLong_Check(v))) {
-                        iobj = v;
-                        Py_INCREF(iobj);
-                    }
-                    else {
-                        iobj = PyNumber_Long(v);
-                        if (iobj != NULL && !PyLong_Check(iobj))
-                            Py_CLEAR(iobj);
-                    }
-                }
-                if (iobj == NULL) {
-                    PyErr_Format(PyExc_TypeError,
-                        "%%%c format: a number is required, "
-                        "not %.200s", c, Py_TYPE(v)->tp_name);
-                    goto error;
-                }
-                temp = _PyUnicode_FormatLong(iobj, flags & F_ALT, prec, c);
-                Py_DECREF(iobj);
+                temp = formatlong(v, flags, prec, c);
                 if (!temp)
                     goto error;
                 assert(PyUnicode_IS_ASCII(temp));

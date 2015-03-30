@@ -15,7 +15,7 @@
 #include <signal.h>
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>
+#  include <winsock2.h>         /* struct timeval */
 #endif
 
 #ifdef WITH_THREAD
@@ -2634,8 +2634,7 @@ run_in_subinterp(PyObject *self, PyObject *args)
 static int
 check_time_rounding(int round)
 {
-    if (round != _PyTime_ROUND_DOWN && round != _PyTime_ROUND_UP
-        && round != _PyTime_ROUND_FLOOR) {
+    if (round != _PyTime_ROUND_FLOOR && round != _PyTime_ROUND_CEILING) {
         PyErr_SetString(PyExc_ValueError, "invalid rounding");
         return -1;
     }
@@ -3427,11 +3426,8 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
     if (check_time_rounding(round) < 0)
         return NULL;
     t = _PyTime_FromNanoseconds(ns);
-    if (_PyTime_AsTimeval(t, &tv, round) < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "timeout doesn't fit into C timeval");
+    if (_PyTime_AsTimeval(t, &tv, round) < 0)
         return NULL;
-    }
 
     seconds = PyLong_FromLong((PY_LONG_LONG)tv.tv_sec);
     if (seconds == NULL)

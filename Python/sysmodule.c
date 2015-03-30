@@ -1690,7 +1690,7 @@ _PySys_Init(void)
 #if !defined(MS_WINDOWS)
     {
         struct _Py_stat_struct sb;
-        if (_Py_fstat(fileno(stdin), &sb) == 0 &&
+        if (_Py_fstat_noraise(fileno(stdin), &sb) == 0 &&
             S_ISDIR(sb.st_mode)) {
             /* There's nothing more we can do. */
             /* Py_FatalError() will core dump, so just exit. */

@@ -753,9 +753,11 @@ Py_Main(int argc, wchar_t **argv)
             }
             {
                 struct _Py_stat_struct sb;
-                if (_Py_fstat(fileno(fp), &sb) == 0 &&
+                if (_Py_fstat_noraise(fileno(fp), &sb) == 0 &&
                     S_ISDIR(sb.st_mode)) {
-                    fprintf(stderr, "%ls: '%ls' is a directory, cannot continue\n", argv[0], filename);
+                    fprintf(stderr,
+                            "%ls: '%ls' is a directory, cannot continue\n",
+                            argv[0], filename);
                     fclose(fp);
                     return 1;
                 }

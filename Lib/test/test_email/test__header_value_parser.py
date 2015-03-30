@@ -2456,6 +2456,115 @@ class TestParser(TestParserMixin, TestEmailBase):
             ";foo", ";foo", ";foo", [errors.InvalidHeaderDefect]*3
         )
 
+
+@parameterize
+class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
+
+    def mime_parameters_as_value(self,
+                                 value,
+                                 tl_str,
+                                 tl_value,
+                                 params,
+                                 defects):
+        mime_parameters = self._test_parse_x(parser.parse_mime_parameters,
+            value, tl_str, tl_value, defects)
+        self.assertEqual(mime_parameters.token_type, 'mime-parameters')
+        self.assertEqual(list(mime_parameters.params), params)
+
+
+    mime_parameters_params = {
+
+        'simple': (
+            'filename="abc.py"',
+            ' filename="abc.py"',
+            'filename=abc.py',
+            [('filename', 'abc.py')],
+            []),
+
+        'multiple_keys': (
+            'filename="abc.py"; xyz=abc',
+            ' filename="abc.py"; xyz="abc"',
+            'filename=abc.py; xyz=abc',
+            [('filename', 'abc.py'), ('xyz', 'abc')],
+            []),
+
+        'split_value': (
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66",
+            ' filename="201.tif"',
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66",
+            [('filename', '201.tif')],
+            []),
+
+        # Note that it is undefined what we should do for error recovery when
+        # there are duplicate parameter names or duplicate parts in a split
+        # part.  We choose to ignore all duplicate parameters after the first
+        # and to take duplicate or missing rfc 2231 parts in apperance order.
+        # This is backward compatible with get_param's behavior, but the
+        # decisions are arbitrary.
+
+        'duplicate_key': (
+            'filename=abc.gif; filename=def.tiff',
+            ' filename="abc.gif"',
+            "filename=abc.gif; filename=def.tiff",
+            [('filename', 'abc.gif')],
+            [errors.InvalidHeaderDefect]),
+
+        'duplicate_key_with_split_value': (
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66;"
+                " filename=abc.gif",
+            ' filename="201.tif"',
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66;"
+                " filename=abc.gif",
+            [('filename', '201.tif')],
+            [errors.InvalidHeaderDefect]),
+
+        'duplicate_key_with_split_value_other_order': (
+            "filename=abc.gif; "
+                " filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66",
+            ' filename="abc.gif"',
+            "filename=abc.gif;"
+                " filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66",
+            [('filename', 'abc.gif')],
+            [errors.InvalidHeaderDefect]),
+
+        'duplicate_in_split_value': (
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66;"
+                " filename*1*=abc.gif",
+            ' filename="201.tifabc.gif"',
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*1*=%74%69%66;"
+                " filename*1*=abc.gif",
+            [('filename', '201.tifabc.gif')],
+            [errors.InvalidHeaderDefect]),
+
+        'missing_split_value': (
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*3*=%74%69%66;",
+            ' filename="201.tif"',
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*3*=%74%69%66;",
+            [('filename', '201.tif')],
+            [errors.InvalidHeaderDefect]),
+
+        'duplicate_and_missing_split_value': (
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*3*=%74%69%66;"
+                " filename*3*=abc.gif",
+            ' filename="201.tifabc.gif"',
+            "filename*0*=iso-8859-1''%32%30%31%2E; filename*3*=%74%69%66;"
+                " filename*3*=abc.gif",
+            [('filename', '201.tifabc.gif')],
+            [errors.InvalidHeaderDefect]*2),
+
+        # Here we depart from get_param and assume the *0* was missing.
+        'duplicate_with_broken_split_value': (
+            "filename=abc.gif; "
+                " filename*2*=iso-8859-1''%32%30%31%2E; filename*3*=%74%69%66",
+            ' filename="abc.gif201.tif"',
+            "filename=abc.gif;"
+                " filename*2*=iso-8859-1''%32%30%31%2E; filename*3*=%74%69%66",
+            [('filename', 'abc.gif201.tif')],
+            # Defects are apparent missing *0*, and two 'out of sequence'.
+            [errors.InvalidHeaderDefect]*3),
+
+    }
+
 @parameterize
 class Test_parse_mime_version(TestParserMixin, TestEmailBase):
 
