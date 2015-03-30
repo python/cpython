@@ -311,8 +311,9 @@ _PyTime_AsMicroseconds(_PyTime_t t, _PyTime_round_t round)
     return _PyTime_Multiply(t, 1000 * 1000, round);
 }
 
-int
-_PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
+static int
+_PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
+                       int raise)
 {
     _PyTime_t secs, ns;
     int res = 0;
@@ -357,7 +358,21 @@ _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
         tv->tv_sec += 1;
     }
 
+    if (res && raise)
+        _PyTime_overflow();
     return res;
+}
+
+int
+_PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
+{
+    return _PyTime_AsTimeval_impl(t, tv, round, 1);
+}
+
+int
+_PyTime_AsTimeval_noraise(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
+{
+    return _PyTime_AsTimeval_impl(t, tv, round, 0);
 }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
