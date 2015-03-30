@@ -254,10 +254,9 @@ _close_open_fds_safe(int start_fd, PyObject* py_fds_to_keep)
 {
     int fd_dir_fd;
 
-    fd_dir_fd = _Py_open(FD_DIR, O_RDONLY);
+    fd_dir_fd = _Py_open_noraise(FD_DIR, O_RDONLY);
     if (fd_dir_fd == -1) {
         /* No way to get a list of open fds. */
-        PyErr_Clear();
         _close_fds_by_brute_force(start_fd, py_fds_to_keep);
         return;
     } else {
