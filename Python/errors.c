@@ -263,6 +263,26 @@ PyErr_Clear(void)
     PyErr_Restore(NULL, NULL, NULL);
 }
 
+/* Restore previously fetched exception if an exception is not set,
+   otherwise drop previously fetched exception.
+   Like _PyErr_ChainExceptions() in Python 3, but doesn't set the context.
+ */
+void
+_PyErr_ReplaceException(PyObject *exc, PyObject *val, PyObject *tb)
+{
+    if (exc == NULL)
+        return;
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(exc);
+        Py_XDECREF(val);
+        Py_XDECREF(tb);
+    }
+    else {
+        PyErr_Restore(exc, val, tb);
+    }
+}
+
 /* Convenience functions to set a type error exception and return 0 */
 
 int

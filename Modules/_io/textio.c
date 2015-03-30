@@ -2480,15 +2480,8 @@ textiowrapper_close(textio *self, PyObject *args)
 
         res = PyObject_CallMethod(self->buffer, "close", NULL);
         if (exc != NULL) {
-            if (res != NULL) {
-                Py_CLEAR(res);
-                PyErr_Restore(exc, val, tb);
-            }
-            else {
-                Py_DECREF(exc);
-                Py_XDECREF(val);
-                Py_XDECREF(tb);
-            }
+            _PyErr_ReplaceException(exc, val, tb);
+            Py_CLEAR(res);
         }
         return res;
     }
