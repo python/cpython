@@ -32,7 +32,10 @@ typedef enum {
     _PyTime_ROUND_UP,
     /* Round towards minus infinity (-inf).
        For example, used to read a clock. */
-    _PyTime_ROUND_FLOOR
+    _PyTime_ROUND_FLOOR,
+    /* Round towards infinity (+inf).
+       For example, used for timeout to wait "at least" N seconds. */
+    _PyTime_ROUND_CEILING
 } _PyTime_round_t;
 
 /* Convert a time_t to a PyLong. */

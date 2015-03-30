@@ -2635,7 +2635,7 @@ static int
 check_time_rounding(int round)
 {
     if (round != _PyTime_ROUND_DOWN && round != _PyTime_ROUND_UP
-        && round != _PyTime_ROUND_FLOOR) {
+        && round != _PyTime_ROUND_FLOOR && round != _PyTime_ROUND_CEILING) {
         PyErr_SetString(PyExc_ValueError, "invalid rounding");
         return -1;
     }

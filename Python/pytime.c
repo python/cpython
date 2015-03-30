@@ -31,6 +31,8 @@ _PyTime_RoundTowardsPosInf(int is_neg, _PyTime_round_t round)
 {
     if (round == _PyTime_ROUND_FLOOR)
         return 0;
+    if (round == _PyTime_ROUND_CEILING)
+        return 1;
     return ((round == _PyTime_ROUND_UP) ^ is_neg);
 }
 
