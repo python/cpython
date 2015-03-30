@@ -351,7 +351,7 @@ static int win32_can_symlink = 0;
 #ifdef MS_WINDOWS
 #       define STAT win32_stat
 #       define LSTAT win32_lstat
-#       define FSTAT _Py_fstat
+#       define FSTAT _Py_fstat_noraise
 #       define STRUCT_STAT struct _Py_stat_struct
 #else
 #       define STAT stat
