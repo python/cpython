@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23745: The new email header parser now handles duplicate MIME
+  parameter names without error, similar to how get_param behaves.
+
 - Issue #22117: Fix os.utime(), it now rounds the timestamp towards minus
   infinity (-inf) instead of rounding towards zero.
 
