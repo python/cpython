@@ -209,13 +209,13 @@ select_select(PyObject *self, PyObject *args)
     else {
         _PyTime_t ts;
 
-        if (_PyTime_FromSecondsObject(&ts, tout, _PyTime_ROUND_UP) < 0) {
+        if (_PyTime_FromSecondsObject(&ts, tout, _PyTime_ROUND_CEILING) < 0) {
             PyErr_SetString(PyExc_TypeError,
                             "timeout must be a float or None");
             return NULL;
         }
 
-        if (_PyTime_AsTimeval(ts, &tv, _PyTime_ROUND_UP) == -1)
+        if (_PyTime_AsTimeval(ts, &tv, _PyTime_ROUND_CEILING) == -1)
             return NULL;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
@@ -2014,7 +2014,8 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     else {
         _PyTime_t ts;
 
-        if (_PyTime_FromSecondsObject(&ts, otimeout, _PyTime_ROUND_UP) < 0) {
+        if (_PyTime_FromSecondsObject(&ts,
+                                      otimeout, _PyTime_ROUND_CEILING) < 0) {
             PyErr_Format(PyExc_TypeError,
                 "timeout argument must be an number "
                 "or None, got %.200s",

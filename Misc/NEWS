@@ -2,6 +2,32 @@
 Python News
 +++++++++++
 
+What's New in Python 3.5.0 alpha 4?
+===================================
+
+Release date: XXX
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #23752: When built from an existing file descriptor, io.FileIO() now
+  only calls fstat() once. Before fstat() was called twice, which was not
+  necessary.
+
+Build
+-----
+
+Tests
+-----
+
+Tools/Demos
+-----------
+
+
+
 What's New in Python 3.5.0 alpha 3?
 ===================================
 
@@ -9,6 +35,9 @@ Release date: 2015-03-28
 
 Core and Builtins
 -----------------
+
+- Issue #23466: %c, %o, %x, and %X in bytes formatting now raise TypeError on
+  non-integer input.
 
 - Issue #23573: Increased performance of string search operations (str.find,
   str.index, str.count, the in operator, str.split, str.partition) with
@@ -29,6 +58,14 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #23171: csv.Writer.writerow() now supports arbitrary iterables.
+
+- Issue #23745: The new email header parser now handles duplicate MIME
+  parameter names without error, similar to how get_param behaves.
+
+- Issue #22117: Fix os.utime(), it now rounds the timestamp towards minus
+  infinity (-inf) instead of rounding towards zero.
 
 - Issue #14260: The groupindex attribute of regular expression pattern object
   now is non-modifiable mapping.
@@ -175,6 +212,9 @@ Build
 
 Tests
 -----
+
+- Issue #22390: test.regrtest now emits a warning if temporary files or
+  directories are left after running a test.
 
 - Issue #23583: Added tests for standard IO streams in IDLE.
 
