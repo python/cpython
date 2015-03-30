@@ -503,7 +503,7 @@ signal_siginterrupt(PyObject *self, PyObject *args)
 static PyObject *
 signal_set_wakeup_fd(PyObject *self, PyObject *args)
 {
-    struct _Py_stat_struct st;
+    struct _Py_stat_struct status;
 #ifdef MS_WINDOWS
     PyObject *fdobj;
     SOCKET_T sockfd, old_sockfd;
@@ -559,10 +559,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
                 return NULL;
             }
 
-            if (_Py_fstat(fd, &st) != 0) {
-                PyErr_SetExcFromWindowsErr(PyExc_OSError, GetLastError());
+            if (_Py_fstat(fd, &status) != 0)
                 return NULL;
-            }
 
             /* on Windows, a file cannot be set to non-blocking mode */
         }
@@ -591,10 +589,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        if (_Py_fstat(fd, &st) != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
+        if (_Py_fstat(fd, &status) != 0)
             return NULL;
-        }
 
         blocking = _Py_get_blocking(fd);
         if (blocking < 0)

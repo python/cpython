@@ -565,7 +565,8 @@ attributes_to_mode(DWORD attr)
 }
 
 void
-_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, struct _Py_stat_struct *result)
+_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
+                           struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
     result->st_mode = attributes_to_mode(info->dwFileAttributes);
@@ -595,9 +596,12 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, 
    files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
    than 2 GB because the file size type is an signed 32-bit integer: see issue
    #23152.
-   */
+
+   On Windows, set the last Windows error and return nonzero on error. On
+   POSIX, set errno and return nonzero on error. Fill status and return 0 on
+   success. */
 int
-_Py_fstat(int fd, struct _Py_stat_struct *result)
+_Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
 {
 #ifdef MS_WINDOWS
     BY_HANDLE_FILE_INFORMATION info;
@@ -619,22 +623,21 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
         SetLastError(ERROR_INVALID_HANDLE);
         return -1;
     }
-    memset(result, 0, sizeof(*result));
+    memset(status, 0, sizeof(*status));
 
     type = GetFileType(h);
     if (type == FILE_TYPE_UNKNOWN) {
         DWORD error = GetLastError();
-        if (error != 0) {
+        if (error != 0)
             return -1;
-        }
         /* else: valid but unknown file */
     }
 
     if (type != FILE_TYPE_DISK) {
         if (type == FILE_TYPE_CHAR)
-            result->st_mode = _S_IFCHR;
+            status->st_mode = _S_IFCHR;
         else if (type == FILE_TYPE_PIPE)
-            result->st_mode = _S_IFIFO;
+            status->st_mode = _S_IFIFO;
         return 0;
     }
 
@@ -642,15 +645,48 @@ _Py_fstat(int fd, struct _Py_stat_struct *result)
         return -1;
     }
 
-    _Py_attribute_data_to_stat(&info, 0, result);
+    _Py_attribute_data_to_stat(&info, 0, status);
     /* specific to fstat() */
-    result->st_ino = (((__int64)info.nFileIndexHigh)<<32) + info.nFileIndexLow;
+    status->st_ino = (((__int64)info.nFileIndexHigh)<<32) + info.nFileIndexLow;
     return 0;
 #else
-    return fstat(fd, result);
+    return fstat(fd, status);
 #endif
 }
 
+/* Return information about a file.
+
+   On POSIX, use fstat().
+
+   On Windows, use GetFileType() and GetFileInformationByHandle() which support
+   files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
+   than 2 GB because the file size type is an signed 32-bit integer: see issue
+   #23152.
+
+   Raise an exception and return -1 on error. On Windows, set the last Windows
+   error on error. On POSIX, set errno on error. Fill status and return 0 on
+   success.
+
+   The GIL must be held. */
+int
+_Py_fstat(int fd, struct _Py_stat_struct *status)
+{
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = _Py_fstat_noraise(fd, status);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0) {
+#ifdef MS_WINDOWS
+        PyErr_SetFromWindowsErr(0);
+#else
+        PyErr_SetFromErrno(PyExc_OSError);
+#endif
+        return -1;
+    }
+    return 0;
+}
 
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.

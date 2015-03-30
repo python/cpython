@@ -41,12 +41,16 @@ struct _Py_stat_struct {
 
 PyAPI_FUNC(int) _Py_fstat(
     int fd,
-    struct _Py_stat_struct *stat);
+    struct _Py_stat_struct *status);
+
+PyAPI_FUNC(int) _Py_fstat_noraise(
+    int fd,
+    struct _Py_stat_struct *status);
 #endif   /* Py_LIMITED_API */
 
 PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
-    struct stat *statbuf);
+    struct stat *status);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _Py_open(

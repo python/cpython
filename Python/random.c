@@ -221,7 +221,7 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
 
     if (urandom_cache.fd >= 0) {
         /* Does the fd point to the same thing as before? (issue #21207) */
-        if (_Py_fstat(urandom_cache.fd, &st)
+        if (_Py_fstat_noraise(urandom_cache.fd, &st)
             || st.st_dev != urandom_cache.st_dev
             || st.st_ino != urandom_cache.st_ino) {
             /* Something changed: forget the cached fd (but don't close it,
@@ -250,7 +250,6 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
         }
         else {
             if (_Py_fstat(fd, &st)) {
-                PyErr_SetFromErrno(PyExc_OSError);
                 close(fd);
                 return -1;
             }
