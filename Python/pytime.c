@@ -360,6 +360,8 @@ _PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
 
     if (res && raise)
         _PyTime_overflow();
+
+    assert(0 <= tv->tv_usec && tv->tv_usec <= 999999);
     return res;
 }
 
@@ -393,6 +395,8 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
         return -1;
     }
     ts->tv_nsec = nsec;
+
+    assert(0 <= ts->tv_nsec && ts->tv_nsec <= 999999999);
     return 0;
 }
 #endif
