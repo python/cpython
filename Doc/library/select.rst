@@ -249,6 +249,12 @@ object.
    returning. If *timeout* is omitted, -1, or :const:`None`, the call will
    block until there is an event for this poll object.
 
+   .. versionchanged:: 3.5
+      The function is now retried with a recomputed timeout when interrupted by
+      a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale), instead of raising
+      :exc:`InterruptedError`.
+
 
 .. _epoll-objects:
 
@@ -453,6 +459,12 @@ Kqueue Objects
    - changelist must be an iterable of kevent object or None
    - max_events must be 0 or a positive integer
    - timeout in seconds (floats possible)
+
+   .. versionchanged:: 3.5
+      The function is now retried with a recomputed timeout when interrupted by
+      a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale), instead of raising
+      :exc:`InterruptedError`.
 
 
 .. _kevent-objects:
