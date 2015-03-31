@@ -152,6 +152,8 @@ typedef struct {
 
     /* codecs.encode, used for saving bytes in older protocols */
     PyObject *codecs_encode;
+    /* builtins.getattr, used for saving nested names with protocol < 4 */
+    PyObject *getattr;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -188,15 +190,25 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->name_mapping_3to2);
     Py_CLEAR(st->import_mapping_3to2);
     Py_CLEAR(st->codecs_encode);
+    Py_CLEAR(st->getattr);
 }
 
 /* Initialize the given pickle module state. */
 static int
 _Pickle_InitState(PickleState *st)
 {
+    PyObject *builtins;
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
     PyObject *codecs = NULL;
+
+    builtins = PyEval_GetBuiltins();
+    if (builtins == NULL)
+        goto error;
+    st->getattr = PyDict_GetItemString(builtins, "getattr");
+    if (st->getattr == NULL)
+        goto error;
+    Py_INCREF(st->getattr);
 
     copyreg = PyImport_ImportModule("copyreg");
     if (!copyreg)
@@ -1535,7 +1547,7 @@ memo_put(PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-get_dotted_path(PyObject *obj, PyObject *name, int allow_qualname) {
+get_dotted_path(PyObject *obj, PyObject *name) {
     _Py_static_string(PyId_dot, ".");
     _Py_static_string(PyId_locals, "<locals>");
     PyObject *dotted_path;
@@ -1546,20 +1558,6 @@ get_dotted_path(PyObject *obj, PyObject *name, int allow_qualname) {
         return NULL;
     n = PyList_GET_SIZE(dotted_path);
     assert(n >= 1);
-    if (!allow_qualname && n > 1) {
-        if (obj == NULL)
-            PyErr_Format(PyExc_AttributeError,
-                         "Can't pickle qualified object %R; "
-                         "use protocols >= 4 to enable support",
-                         name);
-        else
-            PyErr_Format(PyExc_AttributeError,
-                         "Can't pickle qualified attribute %R on %R; "
-                         "use protocols >= 4 to enable support",
-                         name, obj);
-        Py_DECREF(dotted_path);
-        return NULL;
-    }
     for (i = 0; i < n; i++) {
         PyObject *subpath = PyList_GET_ITEM(dotted_path, i);
         PyObject *result = PyUnicode_RichCompare(
@@ -1582,22 +1580,28 @@ get_dotted_path(PyObject *obj, PyObject *name, int allow_qualname) {
 }
 
 static PyObject *
-get_deep_attribute(PyObject *obj, PyObject *names)
+get_deep_attribute(PyObject *obj, PyObject *names, PyObject **pparent)
 {
     Py_ssize_t i, n;
+    PyObject *parent = NULL;
 
     assert(PyList_CheckExact(names));
     Py_INCREF(obj);
     n = PyList_GET_SIZE(names);
     for (i = 0; i < n; i++) {
         PyObject *name = PyList_GET_ITEM(names, i);
-        PyObject *tmp;
-        tmp = PyObject_GetAttr(obj, name);
-        Py_DECREF(obj);
-        if (tmp == NULL)
+        Py_XDECREF(parent);
+        parent = obj;
+        obj = PyObject_GetAttr(parent, name);
+        if (obj == NULL) {
+            Py_DECREF(parent);
             return NULL;
-        obj = tmp;
+        }
     }
+    if (pparent != NULL)
+        *pparent = parent;
+    else
+        Py_XDECREF(parent);
     return obj;
 }
 
@@ -1617,18 +1621,22 @@ getattribute(PyObject *obj, PyObject *name, int allow_qualname)
 {
     PyObject *dotted_path, *attr;
 
-    dotted_path = get_dotted_path(obj, name, allow_qualname);
-    if (dotted_path == NULL)
-        return NULL;
-    attr = get_deep_attribute(obj, dotted_path);
-    Py_DECREF(dotted_path);
+    if (allow_qualname) {
+        dotted_path = get_dotted_path(obj, name);
+        if (dotted_path == NULL)
+            return NULL;
+        attr = get_deep_attribute(obj, dotted_path, NULL);
+        Py_DECREF(dotted_path);
+    }
+    else
+        attr = PyObject_GetAttr(obj, name);
     if (attr == NULL)
         reformat_attribute_error(obj, name);
     return attr;
 }
 
 static PyObject *
-whichmodule(PyObject *global, PyObject *global_name, int allow_qualname)
+whichmodule(PyObject *global, PyObject *dotted_path)
 {
     PyObject *module_name;
     PyObject *modules_dict;
@@ -1637,7 +1645,6 @@ whichmodule(PyObject *global, PyObject *global_name, int allow_qualname)
     _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(modules);
     _Py_IDENTIFIER(__main__);
-    PyObject *dotted_path;
 
     module_name = _PyObject_GetAttrId(global, &PyId___module__);
 
@@ -1663,10 +1670,6 @@ whichmodule(PyObject *global, PyObject *global_name, int allow_qualname)
         return NULL;
     }
 
-    dotted_path = get_dotted_path(NULL, global_name, allow_qualname);
-    if (dotted_path == NULL)
-        return NULL;
-
     i = 0;
     while (PyDict_Next(modules_dict, &i, &module_name, &module)) {
         PyObject *candidate;
@@ -1676,19 +1679,16 @@ whichmodule(PyObject *global, PyObject *global_name, int allow_qualname)
         if (module == Py_None)
             continue;
 
-        candidate = get_deep_attribute(module, dotted_path);
+        candidate = get_deep_attribute(module, dotted_path, NULL);
         if (candidate == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                Py_DECREF(dotted_path);
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
                 return NULL;
-            }
             PyErr_Clear();
             continue;
         }
 
         if (candidate == global) {
             Py_INCREF(module_name);
-            Py_DECREF(dotted_path);
             Py_DECREF(candidate);
             return module_name;
         }
@@ -1698,7 +1698,6 @@ whichmodule(PyObject *global, PyObject *global_name, int allow_qualname)
     /* If no module is found, use __main__. */
     module_name = _PyUnicode_FromId(&PyId___main__);
     Py_INCREF(module_name);
-    Py_DECREF(dotted_path);
     return module_name;
 }
 
@@ -3105,6 +3104,9 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
     PyObject *global_name = NULL;
     PyObject *module_name = NULL;
     PyObject *module = NULL;
+    PyObject *parent = NULL;
+    PyObject *dotted_path = NULL;
+    PyObject *lastname = NULL;
     PyObject *cls;
     PickleState *st = _Pickle_GetGlobalState();
     int status = 0;
@@ -3118,13 +3120,11 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
         global_name = name;
     }
     else {
-        if (self->proto >= 4) {
-            global_name = _PyObject_GetAttrId(obj, &PyId___qualname__);
-            if (global_name == NULL) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                    goto error;
-                PyErr_Clear();
-            }
+        global_name = _PyObject_GetAttrId(obj, &PyId___qualname__);
+        if (global_name == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+                goto error;
+            PyErr_Clear();
         }
         if (global_name == NULL) {
             global_name = _PyObject_GetAttrId(obj, &PyId___name__);
@@ -3133,7 +3133,10 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
         }
     }
 
-    module_name = whichmodule(obj, global_name, self->proto >= 4);
+    dotted_path = get_dotted_path(module, global_name);
+    if (dotted_path == NULL)
+        goto error;
+    module_name = whichmodule(obj, dotted_path);
     if (module_name == NULL)
         goto error;
 
@@ -3152,7 +3155,10 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
                      obj, module_name);
         goto error;
     }
-    cls = getattribute(module, global_name, self->proto >= 4);
+    lastname = PyList_GET_ITEM(dotted_path, PyList_GET_SIZE(dotted_path)-1);
+    Py_INCREF(lastname);
+    cls = get_deep_attribute(module, dotted_path, &parent);
+    Py_CLEAR(dotted_path);
     if (cls == NULL) {
         PyErr_Format(st->PicklingError,
                      "Can't pickle %R: attribute lookup %S on %S failed",
@@ -3239,6 +3245,11 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
     }
     else {
   gen_global:
+        if (parent == module) {
+            Py_INCREF(lastname);
+            Py_DECREF(global_name);
+            global_name = lastname;
+        }
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;
 
@@ -3248,6 +3259,15 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
                 goto error;
 
             if (_Pickler_Write(self, &stack_global_op, 1) < 0)
+                goto error;
+        }
+        else if (parent != module) {
+            PickleState *st = _Pickle_GetGlobalState();
+            PyObject *reduce_value = Py_BuildValue("(O(OO))",
+                                        st->getattr, parent, lastname);
+            status = save_reduce(self, reduce_value, NULL);
+            Py_DECREF(reduce_value);
+            if (status < 0)
                 goto error;
         }
         else {
@@ -3328,6 +3348,9 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
     Py_XDECREF(module_name);
     Py_XDECREF(global_name);
     Py_XDECREF(module);
+    Py_XDECREF(parent);
+    Py_XDECREF(dotted_path);
+    Py_XDECREF(lastname);
 
     return status;
 }
@@ -7150,6 +7173,7 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->name_mapping_3to2);
     Py_VISIT(st->import_mapping_3to2);
     Py_VISIT(st->codecs_encode);
+    Py_VISIT(st->getattr);
     return 0;
 }
 

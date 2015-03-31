@@ -1602,12 +1602,23 @@ class AbstractPickleTests(unittest.TestCase):
                 class B:
                     class C:
                         pass
-
-        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for obj in [Nested.A, Nested.A.B, Nested.A.B.C]:
                 with self.subTest(proto=proto, obj=obj):
                     unpickled = self.loads(self.dumps(obj, proto))
                     self.assertIs(obj, unpickled)
+
+    def test_recursive_nested_names(self):
+        global Recursive
+        class Recursive:
+            pass
+        Recursive.mod = sys.modules[Recursive.__module__]
+        Recursive.__qualname__ = 'Recursive.mod.Recursive'
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(Recursive, proto))
+                self.assertIs(unpickled, Recursive)
+        del Recursive.mod # break reference loop
 
     def test_py_methods(self):
         global PyMethodsTest
@@ -1647,7 +1658,7 @@ class AbstractPickleTests(unittest.TestCase):
             (PyMethodsTest.biscuits, PyMethodsTest),
             (PyMethodsTest.Nested.pie, PyMethodsTest.Nested)
         )
-        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for method in py_methods:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
@@ -1687,7 +1698,7 @@ class AbstractPickleTests(unittest.TestCase):
             (Subclass.Nested("sweet").count, ("e",)),
             (Subclass.Nested.count, (Subclass.Nested("sweet"), "e")),
         )
-        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for method, args in c_methods:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
