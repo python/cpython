@@ -159,6 +159,12 @@ below:
           timeout has elapsed if the current process receives a signal: in this
           case, an empty list will be returned.
 
+      .. versionchanged:: 3.5
+         The selector is now retried with a recomputed timeout when interrupted
+         by a signal if the signal handler did not raise an exception (see
+         :pep:`475` for the rationale), instead of returning an empty list
+         of events before the timeout.
+
    .. method:: close()
 
       Close the selector.

@@ -479,11 +479,10 @@ if hasattr(select, 'devpoll'):
                 # devpoll() has a resolution of 1 millisecond, round away from
                 # zero to wait *at least* timeout seconds.
                 timeout = math.ceil(timeout * 1e3)
+
+            fd_event_list = self._devpoll.poll(timeout)
+
             ready = []
-            try:
-                fd_event_list = self._devpoll.poll(timeout)
-            except InterruptedError:
-                return ready
             for fd, event in fd_event_list:
                 events = 0
                 if event & ~select.POLLIN:
@@ -549,11 +548,9 @@ if hasattr(select, 'kqueue'):
         def select(self, timeout=None):
             timeout = None if timeout is None else max(timeout, 0)
             max_ev = len(self._fd_to_key)
+            kev_list = self._kqueue.control(None, max_ev, timeout)
+
             ready = []
-            try:
-                kev_list = self._kqueue.control(None, max_ev, timeout)
-            except InterruptedError:
-                return ready
             for kev in kev_list:
                 fd = kev.ident
                 flag = kev.filter
