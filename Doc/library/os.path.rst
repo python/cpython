@@ -66,11 +66,24 @@ the :mod:`glob` module.)
    empty string (``''``).
 
 
+.. function:: commonpath(paths)
+
+   Return the longest common sub-path of each pathname in the sequence
+   *paths*.  Raise ValueError if *paths* contains both absolute and relative
+   pathnames, or if *paths* is empty.  Unlike :func:`commonprefix`, this
+   returns a valid path.
+
+   Availability: Unix, Windows
+
+   .. versionadded:: 3.5
+
+
 .. function:: commonprefix(list)
 
-   Return the longest path prefix (taken character-by-character) that is a prefix
-   of all paths in  *list*.  If *list* is empty, return the empty string (``''``).
-   Note that this may return invalid paths because it works a character at a time.
+   Return the longest path prefix (taken character-by-character) that is a
+   prefix of all paths in  *list*.  If *list* is empty, return the empty string
+   (``''``).  Note that this may return invalid paths because it works a
+   character at a time.  To obtain a valid path, see :func:`commonpath`.
 
 
 .. function:: dirname(path)
