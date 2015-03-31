@@ -1,8 +1,10 @@
+import collections
 import copyreg
+import dbm
 import io
+import functools
 import pickle
 import pickletools
-import random
 import struct
 import sys
 import unittest
@@ -1690,6 +1692,51 @@ class AbstractPickleTests(unittest.TestCase):
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(*args), unpickled(*args))
+
+    def test_compat_pickle(self):
+        tests = [
+            (range(1, 7), '__builtin__', 'xrange'),
+            (map(int, '123'), 'itertools', 'imap'),
+            (functools.reduce, '__builtin__', 'reduce'),
+            (dbm.whichdb, 'whichdb', 'whichdb'),
+            (Exception(), 'exceptions', 'Exception'),
+            (collections.UserDict(), 'UserDict', 'IterableUserDict'),
+            (collections.UserList(), 'UserList', 'UserList'),
+            (collections.defaultdict(), 'collections', 'defaultdict'),
+        ]
+        for val, mod, name in tests:
+            for proto in range(3):
+                with self.subTest(type=type(val), proto=proto):
+                    pickled = self.dumps(val, proto)
+                    self.assertIn(('c%s\n%s' % (mod, name)).encode(), pickled)
+                    self.assertIs(type(self.loads(pickled)), type(val))
+
+    def test_compat_unpickle(self):
+        # xrange(1, 7)
+        pickled = b'\x80\x02c__builtin__\nxrange\nK\x01K\x07K\x01\x87R.'
+        unpickled = self.loads(pickled)
+        self.assertIs(type(unpickled), range)
+        self.assertEqual(unpickled, range(1, 7))
+        self.assertEqual(list(unpickled), [1, 2, 3, 4, 5, 6])
+        # reduce
+        pickled = b'\x80\x02c__builtin__\nreduce\n.'
+        self.assertIs(self.loads(pickled), functools.reduce)
+        # whichdb.whichdb
+        pickled = b'\x80\x02cwhichdb\nwhichdb\n.'
+        self.assertIs(self.loads(pickled), dbm.whichdb)
+        # Exception(), StandardError()
+        for name in (b'Exception', b'StandardError'):
+            pickled = (b'\x80\x02cexceptions\n' + name + b'\nU\x03ugh\x85R.')
+            unpickled = self.loads(pickled)
+            self.assertIs(type(unpickled), Exception)
+            self.assertEqual(str(unpickled), 'ugh')
+        # UserDict.UserDict({1: 2}), UserDict.IterableUserDict({1: 2})
+        for name in (b'UserDict', b'IterableUserDict'):
+            pickled = (b'\x80\x02(cUserDict\n' + name +
+                       b'\no}U\x04data}K\x01K\x02ssb.')
+            unpickled = self.loads(pickled)
+            self.assertIs(type(unpickled), collections.UserDict)
+            self.assertEqual(unpickled, collections.UserDict({1: 2}))
 
     def test_local_lookup_error(self):
         # Test that whichmodule() errors out cleanly when looking up
