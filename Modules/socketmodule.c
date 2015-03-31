@@ -2197,6 +2197,9 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
 #ifdef MS_WINDOWS
     struct timeval tv;
 #endif
+#ifndef HAVE_POLL
+    _PyTime_t ms;
+#endif
     int overflow = 0;
 
     if (timeout_obj == Py_None) {
@@ -2214,11 +2217,11 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
     }
 
 #ifdef MS_WINDOWS
-    overflow = (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_CEILING) < 0);
+    overflow |= (_PyTime_AsTimeval(*timeout, &tv, _PyTime_ROUND_CEILING) < 0);
 #endif
 #ifndef HAVE_POLL
-    timeout = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
-    overflow = (timeout > INT_MAX);
+    ms = _PyTime_AsMilliseconds(*timeout, _PyTime_ROUND_CEILING);
+    overflow |= (ms > INT_MAX);
 #endif
     if (overflow) {
         PyErr_SetString(PyExc_OverflowError,
