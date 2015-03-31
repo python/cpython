@@ -21,6 +21,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18473: Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed
+  ambigious reverse mappings.  Added many new mappings.  Import mapping is no
+  longer applied to modules already mapped with full name mapping.
+
 - Issue #23745: The new email header parser now handles duplicate MIME
   parameter names without error, similar to how get_param behaves.
 

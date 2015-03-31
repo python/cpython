@@ -3026,6 +3026,7 @@ fix_imports(PyObject **module_name, PyObject **global_name)
         Py_INCREF(fixed_global_name);
         *module_name = fixed_module_name;
         *global_name = fixed_global_name;
+        return 0;
     }
     else if (PyErr_Occurred()) {
         return -1;
@@ -6278,20 +6279,21 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyObject *module_name, 
         else if (PyErr_Occurred()) {
             return NULL;
         }
-
-        /* Check if the module was renamed. */
-        item = PyDict_GetItemWithError(st->import_mapping_2to3, module_name);
-        if (item) {
-            if (!PyUnicode_Check(item)) {
-                PyErr_Format(PyExc_RuntimeError,
-                             "_compat_pickle.IMPORT_MAPPING values should be "
-                             "strings, not %.200s", Py_TYPE(item)->tp_name);
+        else {
+            /* Check if the module was renamed. */
+            item = PyDict_GetItemWithError(st->import_mapping_2to3, module_name);
+            if (item) {
+                if (!PyUnicode_Check(item)) {
+                    PyErr_Format(PyExc_RuntimeError,
+                                "_compat_pickle.IMPORT_MAPPING values should be "
+                                "strings, not %.200s", Py_TYPE(item)->tp_name);
+                    return NULL;
+                }
+                module_name = item;
+            }
+            else if (PyErr_Occurred()) {
                 return NULL;
             }
-            module_name = item;
-        }
-        else if (PyErr_Occurred()) {
-            return NULL;
         }
     }
 
