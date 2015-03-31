@@ -680,7 +680,7 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
 static int
 internal_connect_select(PySocketSockObject *s)
 {
-    return internal_select(s, 1, s->sock_timeout, 1);
+    return internal_select_impl(s, 1, s->sock_timeout, 1);
 }
 
 /*
