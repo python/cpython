@@ -591,19 +591,13 @@ internal_setblocking(PySocketSockObject *s, int block)
     return 1;
 }
 
-/* Do a select()/poll() on the socket, if necessary (sock_timeout > 0).
-   The argument writing indicates the direction.
-   This does not raise an exception; we'll let our caller do that
-   after they've reacquired the interpreter lock.
-   Returns 1 on timeout, -1 on error, 0 otherwise. */
 static int
-internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
+internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval)
 {
     int n;
 #ifdef HAVE_POLL
     struct pollfd pollfd;
-    _PyTime_t timeout;
-    int timeout_int;
+    _PyTime_t ms;
 #else
     fd_set fds;
     struct timeval tv;
@@ -633,12 +627,11 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
     pollfd.events = writing ? POLLOUT : POLLIN;
 
     /* s->sock_timeout is in seconds, timeout in ms */
-    timeout = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
-    assert(timeout <= INT_MAX);
-    timeout_int = (int)timeout;
+    ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
+    assert(ms <= INT_MAX);
 
     Py_BEGIN_ALLOW_THREADS;
-    n = poll(&pollfd, 1, timeout_int);
+    n = poll(&pollfd, 1, (int)ms);
     Py_END_ALLOW_THREADS;
 #else
     _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
@@ -662,6 +655,23 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
     if (n == 0)
         return 1;
     return 0;
+}
+
+/* Do a select()/poll() on the socket, if necessary (sock_timeout > 0).
+   The argument writing indicates the direction.
+   This does not raise an exception; we'll let our caller do that
+   after they've reacquired the interpreter lock.
+   Returns 1 on timeout, -1 on error, 0 otherwise. */
+static int
+internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
+{
+    return internal_select_impl(s, writing, interval);
+}
+
+static int
+internal_connect_select(PySocketSockObject *s)
+{
+    return internal_select(s, 1, s->sock_timeout);
 }
 
 /*
@@ -2492,7 +2502,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     if (s->sock_timeout > 0
         && res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
 
-        timeout = internal_select(s, 1, s->sock_timeout);
+        timeout = internal_connect_select(s);
 
         if (timeout == 0) {
             /* Bug #1019808: in case of an EINPROGRESS,
