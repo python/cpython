@@ -66,18 +66,14 @@ try:
 except Exception:
     pass
 
-def test_pickle_dump_load(assertion, source, target=None,
-        *, protocol=(0, HIGHEST_PROTOCOL)):
-    start, stop = protocol
+def test_pickle_dump_load(assertion, source, target=None):
     if target is None:
         target = source
-    for protocol in range(start, stop+1):
+    for protocol in range(HIGHEST_PROTOCOL + 1):
         assertion(loads(dumps(source, protocol=protocol)), target)
 
-def test_pickle_exception(assertion, exception, obj,
-        *, protocol=(0, HIGHEST_PROTOCOL)):
-    start, stop = protocol
-    for protocol in range(start, stop+1):
+def test_pickle_exception(assertion, exception, obj):
+    for protocol in range(HIGHEST_PROTOCOL + 1):
         with assertion(exception):
             dumps(obj, protocol=protocol)
 
@@ -575,11 +571,7 @@ class TestEnum(unittest.TestCase):
 
         self.__class__.NestedEnum = NestedEnum
         self.NestedEnum.__qualname__ = '%s.NestedEnum' % self.__class__.__name__
-        test_pickle_exception(
-                self.assertRaises, PicklingError, self.NestedEnum.twigs,
-                protocol=(0, 3))
-        test_pickle_dump_load(self.assertIs, self.NestedEnum.twigs,
-                protocol=(4, HIGHEST_PROTOCOL))
+        test_pickle_dump_load(self.assertIs, self.NestedEnum.twigs)
 
     def test_pickle_by_name(self):
         class ReplaceGlobalInt(IntEnum):
@@ -1096,9 +1088,9 @@ class TestEnum(unittest.TestCase):
         globals()['NEI'] = NEI
         NI5 = NamedInt('test', 5)
         self.assertEqual(NI5, 5)
-        test_pickle_dump_load(self.assertEqual, NI5, 5, protocol=(4, 4))
+        test_pickle_dump_load(self.assertEqual, NI5, 5)
         self.assertEqual(NEI.y.value, 2)
-        test_pickle_dump_load(self.assertIs, NEI.y, protocol=(4, 4))
+        test_pickle_dump_load(self.assertIs, NEI.y)
         test_pickle_dump_load(self.assertIs, NEI)
 
     def test_subclasses_with_reduce(self):
