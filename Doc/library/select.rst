@@ -249,6 +249,12 @@ object.
    returning. If *timeout* is omitted, -1, or :const:`None`, the call will
    block until there is an event for this poll object.
 
+   .. versionchanged:: 3.5
+      The function is now retried with a recomputed timeout when interrupted by
+      a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale), instead of raising
+      :exc:`InterruptedError`.
+
 
 .. _epoll-objects:
 
