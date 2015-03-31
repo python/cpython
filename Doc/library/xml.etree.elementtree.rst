@@ -272,8 +272,8 @@ Parsing XML with Namespaces
 If the XML input has `namespaces
 <https://en.wikipedia.org/wiki/XML_namespace>`__, tags and attributes
 with prefixes in the form ``prefix:sometag`` get expanded to
-``{uri}tag`` where the *prefix* is replaced by the full *URI*.  Also,
-if there is a `default namespace
+``{uri}sometag`` where the *prefix* is replaced by the full *URI*.
+Also, if there is a `default namespace
 <http://www.w3.org/TR/2006/REC-xml-names-20060816/#defaulting>`__,
 that full URI gets prepended to all of the non-prefixed tags.
 
@@ -299,17 +299,19 @@ prefix "fictional" and the other serving as the default namespace:
     </actors>
 
 One way to search and explore this XML example is to manually add the
-URI to every tag or attribute in the xpath of a *find()* or *findall()*::
+URI to every tag or attribute in the xpath of a
+:meth:`~Element.find` or :meth:`~Element.findall`::
 
-    root = from_string(xml_text)
+    root = fromstring(xml_text)
     for actor in root.findall('{http://people.example.com}actor'):
         name = actor.find('{http://people.example.com}name')
         print name.text
         for char in actor.findall('{http://characters.example.com}character'):
             print ' |-->', char.text
 
-Another way to search the namespaced XML example is to create a
-dictionary with your own prefixes and use those in the search::
+
+A better way to search the namespaced XML example is to create a
+dictionary with your own prefixes and use those in the search functions::
 
     ns = {'real_person': 'http://people.example.com',
           'role': 'http://characters.example.com'}
@@ -410,8 +412,9 @@ Supported XPath syntax
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
-| ``[tag=text]``        | Selects all elements that have a child named         |
-|                       | ``tag`` that includes the given ``text``.            |
+| ``[tag='text']``      | Selects all elements that have a child named         |
+|                       | ``tag`` whose complete text content, including       |
+|                       | descendants, equals the given ``text``.              |
 +-----------------------+------------------------------------------------------+
 | ``[position]``        | Selects all elements that are located at the given   |
 |                       | position.  The position can be either an integer     |
