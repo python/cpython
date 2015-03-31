@@ -142,8 +142,7 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
         return NULL;
     }
     else if (PySlice_Check(idx)) {
-        PyErr_SetString(PyExc_ValueError, "slices not implemented, yet");
-        return NULL;
+        return PyObject_GetItem(self->data, idx);
     }
     else {
         PyErr_SetString(PyExc_IndexError, "Index must be int or string");
